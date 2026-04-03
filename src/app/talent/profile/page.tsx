@@ -111,17 +111,20 @@ export default function TalentProfilePage() {
   }
 
   // ─── File uploads ───
-  const uploadFile = async (file: File, folder: string) => {
-    const path = `${profile.user_id || profile.id}/${folder}-${Date.now()}-${file.name}`
-    const { error } = await supabase.storage.from('talent-documents').upload(path, file, { upsert: true })
-    if (error) { setMessage(error.message); return null }
-    const { data: { publicUrl } } = supabase.storage.from('talent-documents').getPublicUrl(path)
+  // Paths use {userId}/ prefix so RLS storage policies match auth.uid()
+  const userId = profile?.user_id || profile?.id
+
+  const uploadToBucket = async (bucket: string, path: string, file: File): Promise<string | null> => {
+    const { error } = await supabase.storage.from(bucket).upload(path, file, { upsert: true })
+    if (error) { setMessage(`Upload failed: ${error.message}`); return null }
+    const { data: { publicUrl } } = supabase.storage.from(bucket).getPublicUrl(path)
     return publicUrl
   }
 
   const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]; if (!file || !profile?.id) return
-    const url = await uploadFile(file, 'photo')
+    const file = e.target.files?.[0]; if (!file || !userId) return
+    const ext = file.name.split('.').pop() || 'jpg'
+    const url = await uploadToBucket('talent-documents', `${userId}/profile-photo.${ext}`, file)
     if (url) {
       await supabase.from('candidate_profiles').update({ profile_image_url: url }).eq('id', profile.id)
       u('profile_image_url', url); setMessage('Photo updated!')
@@ -130,8 +133,9 @@ export default function TalentProfilePage() {
   }
 
   const handleCvUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]; if (!file || !profile?.id) return
-    const url = await uploadFile(file, 'cv')
+    const file = e.target.files?.[0]; if (!file || !userId) return
+    const ext = file.name.split('.').pop() || 'pdf'
+    const url = await uploadToBucket('talent-documents', `${userId}/cv.${ext}`, file)
     if (url) {
       await supabase.from('candidate_profiles').update({ cv_url: url }).eq('id', profile.id)
       u('cv_url', url); setMessage('CV uploaded!')
@@ -140,8 +144,9 @@ export default function TalentProfilePage() {
   }
 
   const handleInsuranceUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]; if (!file || !profile?.id) return
-    const url = await uploadFile(file, 'insurance')
+    const file = e.target.files?.[0]; if (!file || !userId) return
+    const ext = file.name.split('.').pop() || 'pdf'
+    const url = await uploadToBucket('talent-documents', `${userId}/insurance.${ext}`, file)
     if (url) {
       await supabase.from('candidate_profiles').update({ insurance_document_url: url }).eq('id', profile.id)
       u('insurance_document_url', url); setMessage('Insurance uploaded!')
@@ -150,10 +155,10 @@ export default function TalentProfilePage() {
   }
 
   const handleCertsUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files; if (!files || !profile?.id) return
+    const files = e.target.files; if (!files || !userId) return
     const urls: string[] = [...(profile.certificates_urls || [])]
     for (const file of Array.from(files)) {
-      const url = await uploadFile(file, 'cert')
+      const url = await uploadToBucket('talent-documents', `${userId}/certificates/${Date.now()}-${file.name}`, file)
       if (url) urls.push(url)
     }
     await supabase.from('candidate_profiles').update({ certificates_urls: urls }).eq('id', profile.id)

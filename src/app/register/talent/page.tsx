@@ -98,10 +98,10 @@ export default function TalentRegisterPage() {
     let insurance_document_url: string | null = null
     let certificates_urls: string[] = []
 
-    if (cvFile) cv_url = await uploadFile(cvFile, `${userId}/cv-${cvFile.name}`)
-    if (insuranceFile) insurance_document_url = await uploadFile(insuranceFile, `${userId}/insurance-${insuranceFile.name}`)
+    if (cvFile) cv_url = await uploadFile(cvFile, `${userId}/cv.${cvFile.name.split('.').pop() || 'pdf'}`)
+    if (insuranceFile) insurance_document_url = await uploadFile(insuranceFile, `${userId}/insurance.${insuranceFile.name.split('.').pop() || 'pdf'}`)
     for (const cert of certFiles) {
-      const url = await uploadFile(cert, `${userId}/cert-${cert.name}`)
+      const url = await uploadFile(cert, `${userId}/certificates/${Date.now()}-${cert.name}`)
       if (url) certificates_urls.push(url)
     }
 
