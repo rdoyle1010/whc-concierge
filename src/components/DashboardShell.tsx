@@ -45,6 +45,7 @@ const navItems: Record<string, NavItem[]> = {
   admin: [
     { label: 'Dashboard', href: '/admin/dashboard', icon: <LayoutDashboard size={20} /> },
     { label: 'Users', href: '/admin/users', icon: <Users size={20} /> },
+    { label: 'Messages', href: '/admin/messages', icon: <MessageSquare size={20} /> },
     { label: 'Matches', href: '/admin/matches', icon: <Heart size={20} /> },
     { label: 'Blog', href: '/admin/blog', icon: <FileText size={20} /> },
     { label: 'Campaigns', href: '/admin/campaigns', icon: <Megaphone size={20} /> },
