@@ -11,6 +11,7 @@ export default function HomePage() {
   const supabase = createClient()
   const [tab, setTab] = useState<'talent' | 'employer'>('talent')
   const [stats, setStats] = useState({ properties: 0, roles: 0 })
+  const [heroJob, setHeroJob] = useState<any>(null)
 
   useEffect(() => {
     async function load() {
@@ -19,6 +20,27 @@ export default function HomePage() {
         supabase.from('job_listings').select('id', { count: 'exact', head: true }).or('is_live.eq.true,status.eq.active'),
       ])
       setStats({ properties: p.count || 0, roles: j.count || 0 })
+
+      // Load a real featured job for the hero card
+      const { data: topJobs } = await supabase
+        .from('job_listings')
+        .select('*, employer_profiles(company_name, property_name)')
+        .eq('is_live', true)
+        .order('created_at', { ascending: false })
+        .limit(1)
+      if (topJobs && topJobs.length > 0) {
+        const j = topJobs[0]
+        setHeroJob({
+          title: j.job_title || j.title || 'Senior Spa Therapist',
+          company: j.employer_profiles?.property_name || j.employer_profiles?.company_name || 'Luxury Property',
+          location: j.location || 'UK',
+          salary: j.salary_min && j.salary_max ? `£${Math.round(j.salary_min/1000)}k–£${Math.round(j.salary_max/1000)}k` : 'Competitive',
+          tier: j.tier || 'Platinum',
+          brands: j.required_brands || j.required_product_houses || [],
+          qualifications: j.required_qualifications || [],
+          jobType: j.job_type || 'Full-time',
+        })
+      }
     }
     load()
   }, [])
@@ -60,19 +82,19 @@ export default function HomePage() {
                 <div className="relative bg-white border border-border rounded-xl shadow-sm overflow-hidden">
                   <div className="h-[180px] bg-gradient-to-br from-neutral-100 to-neutral-200 relative">
                     <img src="https://images.unsplash.com/photo-1600334089648-b0d9d3028eb2?w=600&q=80&auto=format&fit=crop" alt="" className="w-full h-full object-cover" />
-                    <span className="absolute top-3 left-3 badge-platinum">Platinum</span>
+                    <span className={`absolute top-3 left-3 ${heroJob?.tier === 'Gold' ? 'badge-gold' : heroJob?.tier === 'Silver' ? 'badge-silver' : 'badge-platinum'}`}>{heroJob?.tier || 'Platinum'}</span>
                     <span className="absolute top-3 right-3 match-perfect">94% Perfect Match</span>
                   </div>
                   <div className="p-5">
-                    <p className="eyebrow mb-1">Corinthia London</p>
-                    <h3 className="text-[18px] font-medium text-ink mb-2">Senior Spa Therapist</h3>
+                    <p className="eyebrow mb-1">{heroJob?.company || 'Luxury Property'}</p>
+                    <h3 className="text-[18px] font-medium text-ink mb-2">{heroJob?.title || 'Senior Spa Therapist'}</h3>
                     <div className="flex items-center gap-3 text-[13px] text-muted mb-4">
-                      <span className="flex items-center gap-1"><MapPin size={12} />London</span>
-                      <span>Full-time</span>
-                      <span>£32k–£38k</span>
+                      <span className="flex items-center gap-1"><MapPin size={12} />{heroJob?.location || 'UK'}</span>
+                      <span>{heroJob?.jobType || 'Full-time'}</span>
+                      <span>{heroJob?.salary || 'Competitive'}</span>
                     </div>
                     <div className="flex flex-wrap gap-1.5 mb-4">
-                      {['ESPA', 'CIDESCO', 'Hot Stone'].map((t) => (
+                      {(heroJob?.brands?.length > 0 ? heroJob.brands.slice(0, 3) : heroJob?.qualifications?.length > 0 ? heroJob.qualifications.slice(0, 3) : ['View details']).map((t: string) => (
                         <span key={t} className="text-[10px] border border-border text-muted px-2 py-0.5 rounded-full">{t}</span>
                       ))}
                     </div>

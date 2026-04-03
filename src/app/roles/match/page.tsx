@@ -15,14 +15,6 @@ const photos = [
   'https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?w=600&q=80&auto=format&fit=crop',
 ]
 
-const samples = [
-  { id:'s1', title:'Senior Spa Therapist', location:'London', salary_min:32000, salary_max:38000, tier:'Platinum', job_type:'Full-time', specialism:'Massage', description:'Join our ESPA Life team delivering world-class treatments.', employer_profiles:{ company_name:'Corinthia London' }, requirements:['CIDESCO qualified','3+ years luxury spa'], benefits:['Staff accommodation','Treatment allowance'], matchScore:94, matchLabel:'Perfect Match' },
-  { id:'s2', title:'Spa Manager', location:'Scotland', salary_min:45000, salary_max:55000, tier:'Gold', job_type:'Full-time', specialism:'Management', description:'Lead spa operations at a prestigious wellness destination.', employer_profiles:{ company_name:'Gleneagles' }, requirements:['5+ years management'], benefits:['Relocation package','Bonus scheme'], matchScore:87, matchLabel:'Strong Match' },
-  { id:'s3', title:'Wellness Practitioner', location:'London', salary_min:35000, salary_max:42000, tier:'Silver', job_type:'Full-time', specialism:'Holistic', description:'Deliver Eastern-inspired wellness rituals.', employer_profiles:{ company_name:'Mandarin Oriental' }, requirements:['Holistic qualifications'], benefits:['Meals on duty','Training budget'], matchScore:78, matchLabel:'Strong Match' },
-  { id:'s4', title:'Beauty Therapist', location:'Mayfair', salary_min:28000, salary_max:34000, tier:'Gold', job_type:'Full-time', specialism:'Beauty', description:'Premium facial and body treatments.', employer_profiles:{ company_name:'The Lanesborough' }, requirements:['NVQ Level 3'], benefits:['Staff meals'], matchScore:72, matchLabel:'Good Match' },
-  { id:'s5', title:'Yoga Instructor', location:'Cotswolds', salary_min:30000, salary_max:36000, tier:'Platinum', job_type:'Full-time', specialism:'Yoga', description:'Lead daily classes at our countryside retreat.', employer_profiles:{ company_name:'Soho Farmhouse' }, requirements:['200hr+ yoga training'], benefits:['Accommodation included'], matchScore:68, matchLabel:'Good Match' },
-]
-
 const tierClass = (t: string) => t === 'Platinum' ? 'badge-platinum' : t === 'Gold' ? 'badge-gold' : t === 'Silver' ? 'badge-silver' : 'badge-bronze'
 const matchClass = (s: number) => s >= 90 ? 'match-perfect' : s >= 75 ? 'match-strong' : s >= 60 ? 'match-good' : 'match-partial'
 
@@ -41,43 +33,48 @@ export default function SwipeMatchPage() {
       const { data:{ user } } = await supabase.auth.getUser()
       if (user) setUserId(user.id)
 
-      // Load candidate profile for real matching
+      // Load candidate profile for real matching (may be null)
       let candidateProfile: any = null
       if (user) {
         const { data: cp } = await supabase.from('candidate_profiles').select('*').eq('user_id', user.id).single()
         candidateProfile = cp
       }
 
-      // Query with real column names, then normalize for display
-      const { data: rawData } = await supabase.from('job_listings').select('*, employer_profiles(company_name, property_name, logo_url)').eq('is_live', true).order('created_at', { ascending: false }).limit(50)
-      // Normalize column names: job_title→title, job_description→description, required_brands→required_product_houses
-      const data = (rawData || []).map((j: any) => ({
+      // Always load real jobs from database — no sample fallback
+      const { data: rawData } = await supabase
+        .from('job_listings')
+        .select('*, employer_profiles(company_name, property_name, logo_url)')
+        .eq('is_live', true)
+        .order('created_at', { ascending: false })
+        .limit(50)
+
+      // Normalize DB column names for display
+      const normalized = (rawData || []).map((j: any) => ({
         ...j,
         title: j.job_title || j.title,
         description: j.job_description || j.description,
         required_product_houses: j.required_brands || j.required_product_houses,
-        status: j.is_live ? 'active' : j.status,
-        employer_profiles: { ...j.employer_profiles, company_name: j.employer_profiles?.property_name || j.employer_profiles?.company_name },
+        employer_profiles: {
+          ...j.employer_profiles,
+          company_name: j.employer_profiles?.property_name || j.employer_profiles?.company_name,
+        },
       }))
 
-      if (data && data.length > 0) {
-        // Calculate real match scores
-        const scored = data.map((job: any) => {
-          if (candidateProfile) {
-            const result = calculateMatchScore(candidateProfile, job)
-            return { ...job, matchScore: result.score, matchLabel: result.label }
-          }
-          // No profile — show without score
-          return { ...job, matchScore: 0, matchLabel: '' }
-        })
-        // Filter out hard-stopped and below threshold, sort by score desc
-        const filtered = scored
-          .filter((j: any) => j.matchScore >= 45 || !candidateProfile)
-          .sort((a: any, b: any) => b.matchScore - a.matchScore)
-        setJobs(filtered.length > 0 ? filtered : samples)
-      } else {
-        setJobs(samples)
-      }
+      // Score each job against the candidate profile
+      const scored = normalized.map((job: any) => {
+        if (candidateProfile && candidateProfile.role_level) {
+          const result = calculateMatchScore(candidateProfile, job)
+          if (result.hardStop) return null // exclude hard-stopped
+          return { ...job, matchScore: result.score, matchLabel: result.label }
+        }
+        // No profile or profile incomplete — show with generic 75% score
+        return { ...job, matchScore: 75, matchLabel: 'Strong Match' }
+      }).filter(Boolean)
+
+      // Sort by match score descending
+      scored.sort((a: any, b: any) => b.matchScore - a.matchScore)
+
+      setJobs(scored)
       setLoading(false)
     }
     load()
@@ -102,8 +99,8 @@ export default function SwipeMatchPage() {
     <div className="min-h-screen bg-white flex items-center justify-center px-6">
       <div className="text-center max-w-sm animate-fade-in-up">
         <div className="w-16 h-16 bg-surface border border-border rounded-2xl flex items-center justify-center mx-auto mb-6"><Sparkles size={24} className="text-muted" /></div>
-        <h2 className="text-[24px] font-medium text-ink mb-2">You&apos;re all caught up</h2>
-        <p className="text-[14px] text-muted mb-8">New roles are added daily. Check back soon.</p>
+        <h2 className="text-[24px] font-medium text-ink mb-2">{jobs.length === 0 ? 'No active roles right now' : 'You\u2019re all caught up'}</h2>
+        <p className="text-[14px] text-muted mb-8">{jobs.length === 0 ? 'Check back soon — new roles are added regularly.' : 'You\u2019ve seen all available roles. New ones are added daily.'}</p>
         <div className="space-y-2"><Link href="/talent/dashboard" className="btn-primary block text-center">Dashboard</Link><Link href="/" className="btn-ghost block text-center">Home</Link></div>
       </div>
     </div>
