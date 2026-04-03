@@ -14,13 +14,28 @@ export async function getUserRole(): Promise<UserRole | null> {
   const { data: { session } } = await supabase.auth.getSession()
   if (!session) return null
 
+  // 1. Check the profiles table first (single source of truth)
   const { data: profile } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', session.user.id)
+    .single()
+
+  if (profile?.role === 'admin') return 'admin'
+  if (profile?.role === 'employer') return 'employer'
+  if (profile?.role === 'candidate' || profile?.role === 'talent') return 'talent'
+
+  // 2. Fallback: check user_metadata
+  if (session.user.user_metadata?.role === 'admin') return 'admin'
+
+  // 3. Fallback: check profile tables directly
+  const { data: candidate } = await supabase
     .from('candidate_profiles')
     .select('id')
     .eq('user_id', session.user.id)
     .single()
 
-  if (profile) return 'talent'
+  if (candidate) return 'talent'
 
   const { data: employer } = await supabase
     .from('employer_profiles')
@@ -29,10 +44,6 @@ export async function getUserRole(): Promise<UserRole | null> {
     .single()
 
   if (employer) return 'employer'
-
-  // Check admin via user metadata or a separate admin table
-  const meta = session.user.user_metadata
-  if (meta?.role === 'admin') return 'admin'
 
   return null
 }

@@ -44,13 +44,47 @@ function LoginForm() {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) { setError('Login failed'); setLoading(false); return }
 
-    // Check admin
+    // 1. Check the profiles table for role (covers admin, employer, candidate)
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .single()
+
+    if (profile?.role === 'admin') {
+      router.push('/admin/dashboard')
+      return
+    }
+
+    if (profile?.role === 'employer') {
+      router.push('/employer/dashboard')
+      return
+    }
+
+    if (profile?.role === 'candidate' || profile?.role === 'talent') {
+      // Check if they have a candidate_profiles record (complete profile)
+      const { data: candidate } = await supabase
+        .from('candidate_profiles')
+        .select('id')
+        .eq('user_id', user.id)
+        .single()
+
+      if (candidate) {
+        router.push('/talent/dashboard')
+        return
+      }
+      // Has a profiles role but no candidate_profiles row yet — send to register
+      router.push('/register/talent')
+      return
+    }
+
+    // 2. Fallback: check user_metadata.role (in case profiles table wasn't populated)
     if (user.user_metadata?.role === 'admin') {
       router.push('/admin/dashboard')
       return
     }
 
-    // Check candidate profile
+    // 3. Fallback: check candidate_profiles / employer_profiles directly
     const { data: candidate } = await supabase
       .from('candidate_profiles')
       .select('id')
@@ -62,7 +96,6 @@ function LoginForm() {
       return
     }
 
-    // Check employer profile
     const { data: employer } = await supabase
       .from('employer_profiles')
       .select('id')
@@ -74,7 +107,7 @@ function LoginForm() {
       return
     }
 
-    // No profile yet — redirect to create one
+    // No profile found anywhere — redirect to create one
     router.push(`/register/${role}`)
   }
 
