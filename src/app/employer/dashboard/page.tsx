@@ -3,13 +3,14 @@
 import { useEffect, useState } from 'react'
 import DashboardShell from '@/components/DashboardShell'
 import { createClient } from '@/lib/supabase/client'
-import { Briefcase, Users, FileText, MessageSquare, ArrowRight, TrendingUp } from 'lucide-react'
+import { Briefcase, Users, FileText, MessageSquare, ArrowRight, Plus } from 'lucide-react'
 import Link from 'next/link'
 
 export default function EmployerDashboard() {
   const supabase = createClient()
   const [profile, setProfile] = useState<any>(null)
   const [stats, setStats] = useState({ jobs: 0, applications: 0, messages: 0, matches: 0 })
+  const [listings, setListings] = useState<any[]>([])
   const [recentApps, setRecentApps] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -17,124 +18,98 @@ export default function EmployerDashboard() {
     async function load() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
-
-      const { data: prof } = await supabase
-        .from('employer_profiles')
-        .select('*')
-        .eq('user_id', user.id)
-        .single()
+      const { data: prof } = await supabase.from('employer_profiles').select('*').eq('user_id', user.id).single()
       setProfile(prof)
-
       if (prof) {
         const [jobs, msgs, matches] = await Promise.all([
-          supabase.from('job_listings').select('id', { count: 'exact', head: true }).eq('employer_id', prof.id),
+          supabase.from('job_listings').select('*').eq('employer_id', prof.id).order('created_at', { ascending: false }),
           supabase.from('messages').select('id', { count: 'exact', head: true }).eq('receiver_id', user.id).eq('read', false),
           supabase.from('matches').select('id', { count: 'exact', head: true }).eq('employer_id', prof.id),
         ])
-
-        // Count applications for this employer's jobs
-        const { data: jobIds } = await supabase.from('job_listings').select('id').eq('employer_id', prof.id)
+        setListings(jobs.data || [])
+        const jobIds = (jobs.data||[]).map((j:any) => j.id)
         let appCount = 0
-        if (jobIds && jobIds.length > 0) {
-          const { count } = await supabase.from('applications').select('id', { count: 'exact', head: true })
-            .in('job_id', jobIds.map(j => j.id))
+        if (jobIds.length > 0) {
+          const { count } = await supabase.from('applications').select('id', { count: 'exact', head: true }).in('job_id', jobIds)
           appCount = count || 0
-        }
-
-        setStats({
-          jobs: jobs.count || 0,
-          applications: appCount,
-          messages: msgs.count || 0,
-          matches: matches.count || 0,
-        })
-
-        // Recent applications
-        if (jobIds && jobIds.length > 0) {
-          const { data: apps } = await supabase
-            .from('applications')
-            .select('*, job_listings(title), candidate_profiles(full_name, headline)')
-            .in('job_id', jobIds.map(j => j.id))
-            .order('created_at', { ascending: false })
-            .limit(5)
+          const { data: apps } = await supabase.from('applications').select('*, job_listings(title), candidate_profiles(full_name, headline)').in('job_id', jobIds).order('created_at', { ascending: false }).limit(5)
           setRecentApps(apps || [])
         }
+        setStats({ jobs: (jobs.data||[]).filter((j:any) => j.status === 'active').length, applications: appCount, messages: msgs.count||0, matches: matches.count||0 })
       }
-
       setLoading(false)
     }
     load()
   }, [])
 
-  if (loading) {
-    return <DashboardShell role="employer"><div className="flex items-center justify-center h-64"><div className="animate-spin w-8 h-8 border-2 border-gold border-t-transparent rounded-full" /></div></DashboardShell>
-  }
+  if (loading) return <DashboardShell role="employer"><div className="flex items-center justify-center h-64"><div className="animate-spin w-6 h-6 border-2 border-ink border-t-transparent rounded-full" /></div></DashboardShell>
 
   return (
     <DashboardShell role="employer" userName={profile?.contact_name || profile?.company_name}>
       <div className="mb-8">
-        <h1 className="text-2xl font-serif font-bold text-ink">
-          {profile?.company_name || 'Employer Dashboard'}
-        </h1>
-        <p className="text-gray-500 text-sm mt-1">Manage your listings and find exceptional talent.</p>
+        <h1 className="text-[24px] font-medium text-ink">{profile?.company_name || 'Dashboard'}</h1>
+        <p className="text-[13px] text-muted mt-1">{new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</p>
       </div>
 
-      {/* Stats */}
+      {/* Metrics */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         {[
-          { label: 'Active Jobs', value: stats.jobs, icon: <Briefcase size={20} />, color: 'text-blue-600 bg-blue-50', href: '/employer/jobs' },
-          { label: 'Applications', value: stats.applications, icon: <FileText size={20} />, color: 'text-green-600 bg-green-50', href: '/employer/applications' },
-          { label: 'Messages', value: stats.messages, icon: <MessageSquare size={20} />, color: 'text-amber-600 bg-amber-50', href: '/employer/messages' },
-          { label: 'Matches', value: stats.matches, icon: <TrendingUp size={20} />, color: 'text-purple-600 bg-purple-50', href: '/employer/candidates' },
-        ].map((stat) => (
-          <Link key={stat.label} href={stat.href} className="dashboard-card hover:border-gold/30 transition-all">
-            <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${stat.color} mb-3`}>{stat.icon}</div>
-            <p className="text-2xl font-bold text-ink">{stat.value}</p>
-            <p className="text-gray-500 text-sm">{stat.label}</p>
+          { label: 'Active listings', value: stats.jobs, icon: <Briefcase size={16}/>, href: '/employer/jobs' },
+          { label: 'Applications', value: stats.applications, icon: <FileText size={16}/>, href: '/employer/applications' },
+          { label: 'Candidates matched', value: stats.matches, icon: <Users size={16}/>, href: '/employer/candidates' },
+          { label: 'Messages', value: stats.messages, icon: <MessageSquare size={16}/>, href: '/employer/messages' },
+        ].map(s => (
+          <Link key={s.label} href={s.href} className="dashboard-card hover:border-ink/20 transition-colors">
+            <div className="text-muted mb-2">{s.icon}</div>
+            <p className="text-[22px] font-semibold text-ink">{s.value}</p>
+            <p className="text-[11px] text-muted">{s.label}</p>
           </Link>
         ))}
       </div>
 
-      {/* Quick Actions */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-        <Link href="/employer/post-role" className="dashboard-card bg-neutral-50 border-neutral-200 hover:border-black flex items-center justify-between transition-colors">
-          <div>
-            <h3 className="text-lg font-semibold text-black">Post a New Role</h3>
-            <p className="text-sm text-neutral-400">Create a job listing with payment</p>
-          </div>
-          <ArrowRight className="text-neutral-400" size={20} />
-        </Link>
-        <Link href="/employer/candidates" className="dashboard-card hover:border-gold/30 flex items-center justify-between">
-          <div>
-            <h3 className="font-serif text-lg font-semibold text-ink">Browse Candidates</h3>
-            <p className="text-sm text-gray-500">Search the talent pool</p>
-          </div>
-          <ArrowRight className="text-gray-400" size={20} />
-        </Link>
+      {/* Quick actions */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-8">
+        <Link href="/employer/post-role" className="btn-primary flex items-center justify-center gap-2 py-3"><Plus size={14}/>Post a new role</Link>
+        <Link href="/agency" className="btn-secondary flex items-center justify-center gap-2 py-3">Find agency cover</Link>
+        <Link href="/employer/candidates" className="btn-secondary flex items-center justify-center gap-2 py-3">Browse candidates</Link>
       </div>
 
-      {/* Recent Applications */}
-      <div className="dashboard-card">
-        <div className="flex items-center justify-between mb-6">
-          <h3 className="font-serif text-lg font-semibold">Recent Applications</h3>
-          <Link href="/employer/applications" className="text-gold text-sm font-medium flex items-center">
-            View All <ArrowRight size={14} className="ml-1" />
-          </Link>
-        </div>
-        <div className="space-y-4">
-          {recentApps.map((app) => (
-            <div key={app.id} className="flex items-center justify-between p-4 rounded-xl bg-gray-50">
-              <div>
-                <p className="font-medium text-ink">{app.candidate_profiles?.full_name || 'Candidate'}</p>
-                <p className="text-sm text-gray-500">{app.candidate_profiles?.headline}</p>
-                <p className="text-xs text-gray-400 mt-1">Applied for: {app.job_listings?.title}</p>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Active listings */}
+        <div className="dashboard-card">
+          <div className="flex items-center justify-between mb-4">
+            <p className="text-[14px] font-medium text-ink">Active listings</p>
+            <Link href="/employer/jobs" className="text-[12px] text-muted hover:text-ink flex items-center gap-1">View all <ArrowRight size={12}/></Link>
+          </div>
+          <div className="space-y-2">
+            {listings.filter(j => j.status === 'active').slice(0, 5).map(job => (
+              <div key={job.id} className="flex items-center justify-between p-3 border border-border rounded-lg">
+                <div>
+                  <div className="flex items-center gap-2"><p className="text-[13px] font-medium text-ink">{job.title}</p><span className={job.tier==='Platinum'?'badge-platinum':job.tier==='Gold'?'badge-gold':job.tier==='Silver'?'badge-silver':'badge-bronze'}>{job.tier||'Standard'}</span></div>
+                  <p className="text-[11px] text-muted">{job.location} &middot; {job.job_type}</p>
+                </div>
+                <span className={`text-[11px] font-medium px-2 py-0.5 rounded-full ${job.status==='active'?'bg-emerald-50 text-emerald-700':'bg-surface text-muted'}`}>{job.status}</span>
               </div>
-              <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${
-                app.status === 'pending' ? 'bg-amber-50 text-amber-700' :
-                app.status === 'shortlisted' ? 'bg-green-50 text-green-700' : 'bg-gray-100 text-gray-600'
-              }`}>{app.status}</span>
-            </div>
-          ))}
-          {recentApps.length === 0 && <p className="text-gray-400 text-center py-8">No applications yet.</p>}
+            ))}
+            {listings.filter(j => j.status === 'active').length === 0 && <p className="text-[13px] text-muted text-center py-6">No active listings.</p>}
+          </div>
+        </div>
+
+        {/* Recent applications */}
+        <div className="dashboard-card">
+          <div className="flex items-center justify-between mb-4">
+            <p className="text-[14px] font-medium text-ink">Recent applications</p>
+            <Link href="/employer/applications" className="text-[12px] text-muted hover:text-ink flex items-center gap-1">View all <ArrowRight size={12}/></Link>
+          </div>
+          <div className="space-y-2">
+            {recentApps.map(app => (
+              <div key={app.id} className="flex items-center justify-between p-3 border border-border rounded-lg">
+                <div><p className="text-[13px] font-medium text-ink">{app.candidate_profiles?.full_name||'Candidate'}</p><p className="text-[11px] text-muted">Applied for: {app.job_listings?.title}</p></div>
+                <span className={`text-[11px] font-medium px-2 py-0.5 rounded-full ${app.status==='pending'?'bg-amber-50 text-amber-700':app.status==='shortlisted'?'bg-emerald-50 text-emerald-700':'bg-surface text-muted'}`}>{app.status}</span>
+              </div>
+            ))}
+            {recentApps.length === 0 && <p className="text-[13px] text-muted text-center py-6">No applications yet.</p>}
+          </div>
         </div>
       </div>
     </DashboardShell>

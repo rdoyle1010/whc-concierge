@@ -5,313 +5,304 @@ import Link from 'next/link'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
 import { createClient } from '@/lib/supabase/client'
-import {
-  ArrowRight, ChevronDown, ChevronUp, MapPin, Briefcase, Clock, Mail,
-  Target, EyeOff, Star, MessageSquare, Store, Sparkles
-} from 'lucide-react'
-
-const partners = ['Fairmont', 'Mandarin Oriental', 'Rosewood', 'Four Seasons', 'Corinthia', 'The Lanesborough', 'Gleneagles', 'ESPA']
-
-const features = [
-  { icon: <Sparkles size={20} />, title: 'Specialist Focus', desc: 'Built exclusively for luxury spa, wellness and hospitality.' },
-  { icon: <Target size={20} />, title: 'Intelligent Matching', desc: 'Our algorithm connects you with roles that truly fit.' },
-  { icon: <EyeOff size={20} />, title: 'Stealth Mode', desc: 'Block employers from seeing your profile. Search confidently.' },
-  { icon: <Star size={20} />, title: 'Verified Reviews', desc: 'Transparent feedback from real placements.' },
-  { icon: <MessageSquare size={20} />, title: 'Direct Messaging', desc: 'Connect directly with hiring managers. No middlemen.' },
-  { icon: <Store size={20} />, title: 'Agency Marketplace', desc: 'Flexible shift work at top properties.' },
-]
-
-const faqs = [
-  { q: 'Is it free to create a candidate profile?', a: 'Yes. Browse roles, set up alerts and apply without cost. Premium features are available with optional tiers.' },
-  { q: 'How does matching work?', a: 'Our algorithm considers your skills, experience, specialisms, location and salary expectations to surface the most relevant opportunities.' },
-  { q: 'What is Stealth Mode?', a: 'Block specific employers from viewing your profile. Perfect if you\'re currently employed and exploring discreetly.' },
-  { q: 'How much does it cost to post a role?', a: 'Packages range from £150 (Silver) to £250 (Platinum) with increasing visibility and promotion.' },
-]
+import { ArrowRight, Star, Check, Briefcase, MapPin, Users, Clock } from 'lucide-react'
 
 export default function HomePage() {
   const supabase = createClient()
-  const [openFaq, setOpenFaq] = useState<number | null>(null)
-  const [email, setEmail] = useState('')
-  const [featuredJobs, setFeaturedJobs] = useState<any[]>([])
-  const [blogPosts, setBlogPosts] = useState<any[]>([])
-  const [stats, setStats] = useState({ properties: 0, roles: 0, candidates: 0 })
+  const [tab, setTab] = useState<'talent' | 'employer'>('talent')
+  const [stats, setStats] = useState({ properties: 0, roles: 0 })
 
   useEffect(() => {
     async function load() {
-      const { data: jobs } = await supabase.from('job_listings').select('*, employer_profiles(company_name)').eq('status', 'active').order('created_at', { ascending: false }).limit(3)
-      setFeaturedJobs(jobs || [])
-      const { data: posts } = await supabase.from('blog_posts').select('*').eq('published', true).order('created_at', { ascending: false }).limit(3)
-      setBlogPosts(posts || [])
-      const [p, j, c] = await Promise.all([
+      const [p, j] = await Promise.all([
         supabase.from('employer_profiles').select('id', { count: 'exact', head: true }),
         supabase.from('job_listings').select('id', { count: 'exact', head: true }).eq('status', 'active'),
-        supabase.from('candidate_profiles').select('id', { count: 'exact', head: true }),
       ])
-      setStats({ properties: p.count || 0, roles: j.count || 0, candidates: c.count || 0 })
+      setStats({ properties: p.count || 0, roles: j.count || 0 })
     }
     load()
   }, [])
-
-  const sampleJobs = [
-    { id: '1', title: 'Senior Spa Therapist', location: 'London', salary_min: 32000, salary_max: 38000, tier: 'Platinum', job_type: 'Full-time', employer_profiles: { company_name: 'Corinthia London' } },
-    { id: '2', title: 'Spa Manager', location: 'Scotland', salary_min: 45000, salary_max: 55000, tier: 'Gold', job_type: 'Full-time', employer_profiles: { company_name: 'Gleneagles' } },
-    { id: '3', title: 'Wellness Practitioner', location: 'London', salary_min: 35000, salary_max: 42000, tier: 'Silver', job_type: 'Full-time', employer_profiles: { company_name: 'Mandarin Oriental' } },
-  ]
-  const displayJobs = featuredJobs.length > 0 ? featuredJobs : sampleJobs
 
   return (
     <div className="min-h-screen bg-white">
       <Navbar />
 
-      {/* Hero */}
+      {/* ═══════ S1: HERO ═══════ */}
       <section className="pt-16">
-        <div className="grid grid-cols-1 lg:grid-cols-2 min-h-[85vh]">
-          {/* Left — text */}
-          <div className="flex items-center px-6 sm:px-12 lg:px-16 xl:px-24 py-20">
+        <div className="max-w-7xl mx-auto px-6 lg:px-8 py-20 lg:py-28">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
             <div className="max-w-xl">
-              <p className="text-neutral-400 text-sm tracking-widest uppercase mb-6 animate-fade-in-up">Luxury Wellness Careers</p>
-              <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold text-black leading-[1.02] tracking-tight mb-8 animate-fade-in-up delay-100">
-                Where talent meets opportunity
+              <p className="eyebrow mb-5 animate-fade-in-up">The luxury wellness careers platform</p>
+              <h1 className="text-[44px] md:text-[52px] font-medium text-ink leading-[1.1] tracking-tight mb-6 animate-fade-in-up delay-100">
+                The right match.<br />Every time.
               </h1>
-              <p className="text-neutral-400 text-lg font-light leading-relaxed mb-10 max-w-md animate-fade-in-up delay-200">
-                Connecting exceptional spa, wellness and hospitality professionals with the world&apos;s finest properties.
+              <p className="text-[16px] text-secondary leading-[1.7] max-w-[480px] mb-8 animate-fade-in-up delay-200">
+                WHC Concierge connects exceptional spa and wellness professionals with the world&apos;s finest properties — using intelligent matching that understands your world.
               </p>
-              <div className="flex flex-wrap gap-4 animate-fade-in-up delay-300">
-                <Link href="/roles/match" className="btn-primary px-8 py-3.5">Start Matching</Link>
-                <Link href="/register/employer" className="btn-secondary px-8 py-3.5">Post a Role</Link>
+              <div className="flex flex-wrap gap-3 mb-12 animate-fade-in-up delay-300">
+                <Link href="/roles/match" className="btn-primary">Find your next role</Link>
+                <Link href="/register/employer" className="btn-secondary">Hire exceptional talent</Link>
               </div>
-
               {/* Stats */}
-              <div className="flex items-center space-x-10 mt-16 animate-fade-in-up delay-400">
-                <div><p className="text-3xl font-bold text-black">{stats.properties || '480'}+</p><p className="text-neutral-400 text-xs tracking-widest uppercase mt-1">Properties</p></div>
-                <div><p className="text-3xl font-bold text-black">{stats.roles || '1,200'}+</p><p className="text-neutral-400 text-xs tracking-widest uppercase mt-1">Active Roles</p></div>
-                <div><p className="text-3xl font-bold text-black">96%</p><p className="text-neutral-400 text-xs tracking-widest uppercase mt-1">Match Rate</p></div>
+              <div className="flex items-center divide-x divide-border animate-fade-in-up delay-400">
+                <div className="pr-6"><p className="text-[22px] font-semibold text-ink">{stats.properties || '480'}+</p><p className="text-[12px] text-muted">Properties</p></div>
+                <div className="px-6"><p className="text-[22px] font-semibold text-ink">96%</p><p className="text-[12px] text-muted">Match accuracy</p></div>
+                <div className="pl-6"><p className="text-[22px] font-semibold text-ink">72hrs</p><p className="text-[12px] text-muted">Avg time to hire</p></div>
               </div>
             </div>
-          </div>
 
-          {/* Right — image */}
-          <div className="hidden lg:block relative overflow-hidden">
-            <img
-              src="https://images.unsplash.com/photo-1600334089648-b0d9d3028eb2?w=1200&q=80&auto=format&fit=crop"
-              alt="Luxury spa"
-              className="absolute inset-0 w-full h-full object-cover"
-            />
-            <div className="absolute inset-0 bg-neutral-100/10" />
-          </div>
-        </div>
-      </section>
-
-      {/* Trust */}
-      <section className="py-14 border-y border-neutral-100">
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="flex items-center justify-center flex-wrap gap-10 md:gap-16">
-            {partners.map((name) => (
-              <span key={name} className="text-neutral-200 text-lg font-semibold tracking-wide hover:text-neutral-400 transition-colors cursor-default">{name}</span>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Features */}
-      <section className="py-24">
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="max-w-xl mb-16">
-            <p className="text-neutral-400 text-xs tracking-widest uppercase mb-3">The Platform</p>
-            <h2 className="text-4xl md:text-5xl font-bold text-black tracking-tight leading-tight">Why WHC Concierge</h2>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-px bg-neutral-200">
-            {features.map((f) => (
-              <div key={f.title} className="bg-white p-8 hover:bg-neutral-50 transition-colors">
-                <div className="text-neutral-300 mb-4">{f.icon}</div>
-                <h3 className="text-lg font-semibold text-black mb-2">{f.title}</h3>
-                <p className="text-neutral-400 text-sm leading-relaxed">{f.desc}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Featured Roles */}
-      <section className="py-24 bg-neutral-50">
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="flex items-end justify-between mb-14">
-            <div>
-              <p className="text-neutral-400 text-xs tracking-widest uppercase mb-3">Opportunities</p>
-              <h2 className="text-4xl md:text-5xl font-bold text-black tracking-tight">Latest Roles</h2>
-            </div>
-            <Link href="/jobs" className="hidden md:flex items-center text-black text-sm font-medium hover:underline">
-              View all <ArrowRight size={16} className="ml-1" />
-            </Link>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 stagger-children">
-            {displayJobs.map((job: any) => (
-              <div key={job.id} className="card">
-                <div className="flex items-center justify-between mb-4">
-                  <span className={`text-xs font-medium px-3 py-1 ${
-                    job.tier === 'Platinum' ? 'bg-black text-white' : job.tier === 'Gold' ? 'bg-neutral-700 text-white' : 'bg-neutral-200 text-neutral-600'
-                  }`}>{job.tier || 'Standard'}</span>
-                  <span className="text-neutral-400 text-xs">{job.job_type}</span>
-                </div>
-                <h3 className="text-xl font-semibold text-black mb-1">{job.title}</h3>
-                <p className="text-neutral-500 text-sm mb-4">{job.employer_profiles?.company_name}</p>
-                <div className="space-y-1.5 text-sm text-neutral-400 mb-6">
-                  <p className="flex items-center space-x-2"><MapPin size={14} /><span>{job.location}</span></p>
-                  <p className="flex items-center space-x-2"><Briefcase size={14} /><span>
-                    {job.salary_min && job.salary_max ? `£${(job.salary_min/1000).toFixed(0)}k – £${(job.salary_max/1000).toFixed(0)}k` : 'Competitive'}
-                  </span></p>
-                </div>
-                <Link href="/roles/match" className="text-black text-sm font-medium flex items-center hover:underline">
-                  View Role <ArrowRight size={14} className="ml-1" />
-                </Link>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Residency */}
-      <section className="py-24">
-        <div className="max-w-7xl mx-auto px-4 grid grid-cols-1 lg:grid-cols-2 gap-20 items-center">
-          <div>
-            <p className="text-neutral-400 text-xs tracking-widest uppercase mb-3">Residency Programme</p>
-            <h2 className="text-4xl md:text-5xl font-bold text-black tracking-tight leading-tight mb-6">Elite wellness residencies</h2>
-            <p className="text-neutral-400 text-lg font-light leading-relaxed mb-8">
-              Exclusive 1–6 month placements at the world&apos;s most iconic properties. Build your portfolio and elevate your career.
-            </p>
-            <ul className="space-y-3 mb-10">
-              {['Direct booking with top-tier properties', 'Portfolio-building opportunities', 'Competitive rates and accommodation', 'Brand partnership exposure'].map((item) => (
-                <li key={item} className="flex items-center space-x-3 text-sm text-neutral-500">
-                  <span className="w-1.5 h-1.5 bg-black rounded-full flex-shrink-0" />
-                  <span>{item}</span>
-                </li>
-              ))}
-            </ul>
-            <Link href="/residency" className="btn-primary">Explore Residencies</Link>
-          </div>
-          <div className="grid grid-cols-2 gap-6">
-            {[{ n: '50+', l: 'Properties' }, { n: '1–6', l: 'Months' }, { n: '200+', l: 'Placed' }, { n: '94%', l: 'Return Rate' }].map((s) => (
-              <div key={s.l} className="bg-neutral-50 p-8 text-center">
-                <p className="text-3xl font-bold text-black">{s.n}</p>
-                <p className="text-neutral-400 text-xs tracking-widest uppercase mt-2">{s.l}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Agency */}
-      <section className="py-24 bg-neutral-50">
-        <div className="max-w-7xl mx-auto px-4 grid grid-cols-1 lg:grid-cols-2 gap-20 items-center">
-          <div className="order-2 lg:order-1">
-            <div className="space-y-3">
-              {['Shift flexibility on your terms', 'Instant booking confirmation', 'Transparent payment tracking', 'Build your reputation with reviews'].map((item, i) => (
-                <div key={item} className="flex items-center space-x-4 p-5 bg-white border border-neutral-200">
-                  <span className="w-8 h-8 bg-black text-white flex items-center justify-center text-sm font-semibold flex-shrink-0">{i + 1}</span>
-                  <span className="text-sm font-medium text-black">{item}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-          <div className="order-1 lg:order-2">
-            <p className="text-neutral-400 text-xs tracking-widest uppercase mb-3">Agency Marketplace</p>
-            <h2 className="text-4xl md:text-5xl font-bold text-black tracking-tight leading-tight mb-6">Flexible shifts at top properties</h2>
-            <p className="text-neutral-400 text-lg font-light leading-relaxed mb-8">
-              Pick up shifts at premium spas and wellness centres on your schedule.
-            </p>
-            <Link href="/agency" className="btn-primary">Browse Agency Shifts</Link>
-          </div>
-        </div>
-      </section>
-
-      {/* Blog preview */}
-      {blogPosts.length > 0 && (
-        <section className="py-24">
-          <div className="max-w-7xl mx-auto px-4">
-            <div className="flex items-end justify-between mb-14">
-              <div>
-                <p className="text-neutral-400 text-xs tracking-widest uppercase mb-3">Insights</p>
-                <h2 className="text-4xl md:text-5xl font-bold text-black tracking-tight">From the Blog</h2>
-              </div>
-              <Link href="/blog" className="hidden md:flex items-center text-black text-sm font-medium hover:underline">All Articles <ArrowRight size={16} className="ml-1" /></Link>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {blogPosts.map((post) => (
-                <Link key={post.id} href={`/blog/${post.slug}`} className="card group p-0 overflow-hidden">
-                  {post.image_url ? (
-                    <div className="aspect-[16/10] bg-neutral-100 overflow-hidden">
-                      <img src={post.image_url} alt={post.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                    </div>
-                  ) : <div className="aspect-[16/10] bg-neutral-100" />}
-                  <div className="p-6">
-                    {post.category && <p className="text-neutral-400 text-xs tracking-widest uppercase mb-2">{post.category}</p>}
-                    <h3 className="text-lg font-semibold text-black mb-2 group-hover:underline">{post.title}</h3>
-                    <p className="text-neutral-400 text-sm line-clamp-2">{post.excerpt || post.content?.slice(0, 120)}</p>
+            {/* Right: animated match card */}
+            <div className="hidden lg:block animate-fade-in-up delay-300">
+              <div className="relative ml-auto max-w-[380px]">
+                {/* Background card */}
+                <div className="absolute inset-x-4 top-4 h-full bg-surface border border-border rounded-xl" />
+                {/* Main card */}
+                <div className="relative bg-white border border-border rounded-xl shadow-sm overflow-hidden">
+                  <div className="h-[180px] bg-gradient-to-br from-neutral-100 to-neutral-200 relative">
+                    <img src="https://images.unsplash.com/photo-1600334089648-b0d9d3028eb2?w=600&q=80&auto=format&fit=crop" alt="" className="w-full h-full object-cover" />
+                    <span className="absolute top-3 left-3 badge-platinum">Platinum</span>
+                    <span className="absolute top-3 right-3 match-perfect">94% Perfect Match</span>
                   </div>
-                </Link>
-              ))}
+                  <div className="p-5">
+                    <p className="eyebrow mb-1">Corinthia London</p>
+                    <h3 className="text-[18px] font-medium text-ink mb-2">Senior Spa Therapist</h3>
+                    <div className="flex items-center gap-3 text-[13px] text-muted mb-4">
+                      <span className="flex items-center gap-1"><MapPin size={12} />London</span>
+                      <span>Full-time</span>
+                      <span>£32k–£38k</span>
+                    </div>
+                    <div className="flex flex-wrap gap-1.5 mb-4">
+                      {['ESPA', 'CIDESCO', 'Hot Stone'].map((t) => (
+                        <span key={t} className="text-[10px] border border-border text-muted px-2 py-0.5 rounded-full">{t}</span>
+                      ))}
+                    </div>
+                    {/* Score bars */}
+                    <div className="space-y-2">
+                      {[{ label: 'Role level', pct: 100 }, { label: 'Product houses', pct: 80 }, { label: 'Qualifications', pct: 100 }, { label: 'Location', pct: 100 }].map((b) => (
+                        <div key={b.label} className="flex items-center gap-3">
+                          <span className="text-[11px] text-muted w-24">{b.label}</span>
+                          <div className="flex-1 h-1.5 bg-surface rounded-full overflow-hidden"><div className="h-full bg-ink rounded-full" style={{ width: `${b.pct}%` }} /></div>
+                          <span className="text-[11px] text-ink font-medium w-8 text-right">{b.pct}%</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
-        </section>
-      )}
-
-      {/* Founder */}
-      <section className="py-24 bg-neutral-50">
-        <div className="max-w-3xl mx-auto px-4 text-center">
-          <blockquote className="text-2xl md:text-3xl font-light text-black leading-relaxed mb-8">
-            &ldquo;WHC Concierge was created by a wellness industry professional who saw first-hand how broken recruitment is in our sector.&rdquo;
-          </blockquote>
-          <p className="text-black font-semibold">Rebecca Doyle</p>
-          <p className="text-neutral-400 text-sm">Founder, Wellness House Collective</p>
         </div>
       </section>
 
-      {/* Dual CTA */}
+      {/* ═══════ S2: TRUST BAR ═══════ */}
+      <section className="border-y border-border py-8">
+        <div className="max-w-7xl mx-auto px-6 lg:px-8">
+          <p className="text-[11px] text-muted uppercase tracking-[0.08em] text-center mb-5">Trusted by the world&apos;s finest properties</p>
+          <div className="flex flex-wrap justify-center gap-3">
+            {['Fairmont', 'Mandarin Oriental', 'Rosewood', 'Four Seasons', 'Corinthia', 'Gleneagles', 'The Lanesborough', 'ESPA'].map((name) => (
+              <span key={name} className="text-[12px] text-muted border border-border px-3 py-1.5 rounded-full">{name}</span>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ═══════ S3: WHY WHC ═══════ */}
       <section className="py-24">
-        <div className="max-w-7xl mx-auto px-4 grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="bg-neutral-50 p-12 text-center">
-            <h3 className="text-2xl font-bold text-black mb-3">For Candidates</h3>
-            <p className="text-neutral-400 text-sm mb-8 max-w-sm mx-auto">Create your free profile and discover roles at the world&apos;s finest wellness destinations.</p>
-            <Link href="/register/talent" className="btn-primary">Create Your Profile</Link>
+        <div className="max-w-7xl mx-auto px-6 lg:px-8">
+          <div className="max-w-2xl mb-16">
+            <p className="eyebrow mb-3">Why WHC Concierge</p>
+            <h2 className="section-heading mb-4">Not a job board.<br />An intelligent platform.</h2>
+            <p className="text-secondary">Built exclusively for luxury wellness. Every feature designed around how this industry actually works.</p>
           </div>
-          <div className="bg-black p-12 text-center">
-            <h3 className="text-2xl font-bold text-white mb-3">For Employers</h3>
-            <p className="text-white/50 text-sm mb-8 max-w-sm mx-auto">Post roles, search specialist talent, and fill vacancies faster than ever.</p>
-            <Link href="/register/employer" className="bg-white text-black px-6 py-3 text-sm font-medium tracking-wide hover:bg-neutral-100 transition-colors inline-block">Post a Role</Link>
-          </div>
-        </div>
-      </section>
-
-      {/* FAQ */}
-      <section className="py-24 bg-neutral-50">
-        <div className="max-w-3xl mx-auto px-4">
-          <div className="mb-14">
-            <p className="text-neutral-400 text-xs tracking-widest uppercase mb-3">Support</p>
-            <h2 className="text-4xl font-bold text-black tracking-tight">Frequently Asked Questions</h2>
-          </div>
-          <div className="divide-y divide-neutral-200">
-            {faqs.map((faq, i) => (
-              <div key={i}>
-                <button onClick={() => setOpenFaq(openFaq === i ? null : i)} className="w-full flex items-center justify-between py-6 text-left">
-                  <span className="text-base font-medium text-black pr-4">{faq.q}</span>
-                  {openFaq === i ? <ChevronUp size={18} className="text-neutral-400 flex-shrink-0" /> : <ChevronDown size={18} className="text-neutral-400 flex-shrink-0" />}
-                </button>
-                {openFaq === i && <p className="pb-6 text-neutral-400 text-sm leading-relaxed">{faq.a}</p>}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {[
+              { title: 'Weighted matching algorithm', body: 'Role level, product house knowledge, qualifications and location — all scored and weighted. A Director of Spa never sees apprentice roles. Never.' },
+              { title: 'Stealth mode', body: 'Block your current employer from seeing your profile. Search confidentially without any risk to your current position.' },
+              { title: 'Agency by radius', body: 'Find verified practitioners within 5, 10, 20 or 50 miles. Direct booking — no agency fees, no middlemen.' },
+            ].map((f) => (
+              <div key={f.title} className="card-hover p-7">
+                <h3 className="text-[17px] font-medium text-ink mb-3">{f.title}</h3>
+                <p className="text-[14px] text-secondary leading-[1.7]">{f.body}</p>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Newsletter */}
-      <section className="py-16 border-t border-neutral-200">
-        <div className="max-w-xl mx-auto px-4 text-center">
-          <h3 className="text-xl font-semibold text-black mb-2">Stay in the loop</h3>
-          <p className="text-neutral-400 text-sm mb-6">The latest roles, industry insights and platform updates.</p>
-          <form onSubmit={(e) => e.preventDefault()} className="flex gap-0">
-            <input type="email" placeholder="Enter your email" value={email} onChange={(e) => setEmail(e.target.value)} className="input-field flex-1 border-r-0" />
-            <button type="submit" className="btn-primary">Subscribe</button>
-          </form>
+      {/* ═══════ S4: THE ALGORITHM ═══════ */}
+      <section className="py-24 bg-surface">
+        <div className="max-w-7xl mx-auto px-6 lg:px-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+            <div>
+              <p className="eyebrow mb-3">The matching engine</p>
+              <h2 className="text-[36px] md:text-[42px] font-medium text-ink leading-[1.12] tracking-tight mb-5">Intelligent. Transparent.<br />Explained.</h2>
+              <p className="text-secondary mb-6">Every match shows a full breakdown — role level, product house alignment, qualifications and location — all scored and weighted so you know exactly why you&apos;re matched.</p>
+              <p className="text-secondary">Hard stops prevent irrelevant matches entirely. A Spa Manager never sees apprentice roles. Candidates without insurance are excluded from roles that require it.</p>
+            </div>
+            {/* Match breakdown card */}
+            <div className="card p-0 overflow-hidden">
+              <div className="p-6 border-b border-border">
+                <div className="flex items-center justify-between mb-1">
+                  <p className="eyebrow">Corinthia London</p>
+                  <span className="match-perfect">Perfect Match</span>
+                </div>
+                <h3 className="text-[20px] font-medium text-ink">Senior Spa Therapist</h3>
+              </div>
+              <div className="p-6">
+                <div className="text-center mb-6">
+                  <p className="text-[56px] font-semibold text-ink leading-none">94</p>
+                  <p className="text-[12px] text-muted mt-1">Overall match score</p>
+                </div>
+                <div className="space-y-4">
+                  {[{ label: 'Role level', pct: 100, detail: 'Exact match' }, { label: 'Product houses', pct: 80, detail: '4 of 5 required' }, { label: 'Qualifications', pct: 100, detail: 'All met' }, { label: 'Location', pct: 100, detail: 'Within range' }].map((b) => (
+                    <div key={b.label}>
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-[13px] text-ink font-medium">{b.label}</span>
+                        <span className="text-[13px] text-ink font-semibold">{b.pct}%</span>
+                      </div>
+                      <div className="h-2 bg-surface rounded-full overflow-hidden"><div className="h-full bg-ink rounded-full transition-all" style={{ width: `${b.pct}%` }} /></div>
+                      <p className="text-[11px] text-muted mt-0.5">{b.detail}</p>
+                    </div>
+                  ))}
+                </div>
+                <p className="text-[12px] text-muted mt-5 pt-4 border-t border-border">Missing: Comfort Zone certification. Add it to your profile to reach 100%.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ═══════ S5: TWO PORTALS ═══════ */}
+      <section className="py-24">
+        <div className="max-w-7xl mx-auto px-6 lg:px-8">
+          <div className="text-center mb-12">
+            <h2 className="text-[36px] md:text-[42px] font-medium text-ink leading-[1.12] tracking-tight">Built for both sides. Equally.</h2>
+          </div>
+          {/* Tabs */}
+          <div className="flex justify-center gap-1 bg-surface rounded-lg p-1 w-fit mx-auto mb-10">
+            <button onClick={() => setTab('talent')} className={`px-5 py-2 rounded-md text-[13px] font-medium transition-colors ${tab === 'talent' ? 'bg-white text-ink shadow-sm' : 'text-muted'}`}>I&apos;m looking for work</button>
+            <button onClick={() => setTab('employer')} className={`px-5 py-2 rounded-md text-[13px] font-medium transition-colors ${tab === 'employer' ? 'bg-white text-ink shadow-sm' : 'text-muted'}`}>I&apos;m hiring talent</button>
+          </div>
+
+          {tab === 'talent' ? (
+            <div className="card p-8 max-w-3xl mx-auto">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+                {[{ n: '12', l: 'Matches' }, { n: '3', l: 'Applications' }, { n: '847', l: 'Profile views' }, { n: '4.9', l: 'Star rating' }].map((s) => (
+                  <div key={s.l} className="text-center p-4 bg-surface rounded-lg"><p className="text-[22px] font-semibold text-ink">{s.n}</p><p className="text-[11px] text-muted">{s.l}</p></div>
+                ))}
+              </div>
+              <p className="eyebrow mb-3">Your top matches</p>
+              <div className="space-y-3">
+                {[
+                  { role: 'Senior Spa Therapist', prop: 'Corinthia London', score: 94, label: 'Perfect' },
+                  { role: 'Spa Manager', prop: 'Gleneagles', score: 87, label: 'Strong' },
+                  { role: 'Wellness Practitioner', prop: 'Mandarin Oriental', score: 78, label: 'Strong' },
+                ].map((m) => (
+                  <div key={m.role} className="flex items-center justify-between p-3 border border-border rounded-lg">
+                    <div><p className="text-[14px] font-medium text-ink">{m.role}</p><p className="text-[12px] text-muted">{m.prop}</p></div>
+                    <span className={m.score >= 90 ? 'match-perfect' : m.score >= 75 ? 'match-strong' : 'match-good'}>{m.score}% {m.label}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <div className="card p-8 max-w-3xl mx-auto">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+                {[{ n: '4', l: 'Active listings' }, { n: '28', l: 'Candidates matched' }, { n: '12', l: 'Messages' }, { n: '89%', l: 'Hire rate' }].map((s) => (
+                  <div key={s.l} className="text-center p-4 bg-surface rounded-lg"><p className="text-[22px] font-semibold text-ink">{s.n}</p><p className="text-[11px] text-muted">{s.l}</p></div>
+                ))}
+              </div>
+              <div className="flex gap-3">
+                <Link href="/employer/post-role" className="btn-primary flex-1 text-center">Post a new role</Link>
+                <Link href="/agency" className="btn-secondary flex-1 text-center">Find agency cover</Link>
+              </div>
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* ═══════ S6: AGENCY & RESIDENCY ═══════ */}
+      <section className="py-24 bg-surface">
+        <div className="max-w-7xl mx-auto px-6 lg:px-8 grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="card-hover p-8">
+            <p className="eyebrow mb-3">Agency marketplace</p>
+            <h3 className="text-[24px] font-medium text-ink leading-tight mb-3">Fill shifts instantly.<br />No agency fees.</h3>
+            <p className="text-secondary text-[14px] mb-6">Find verified practitioners in your area, book directly, confirm instantly. Radius search by postcode. 10% platform fee only on confirmed bookings.</p>
+            <Link href="/agency" className="btn-primary inline-block">Browse practitioners</Link>
+          </div>
+          <div className="card-hover p-8">
+            <p className="eyebrow mb-3">Residency programme</p>
+            <h3 className="text-[24px] font-medium text-ink leading-tight mb-3">Discover visiting<br />specialists.</h3>
+            <p className="text-secondary text-[14px] mb-6">Browse the residency talent pool, contact practitioners directly, agree terms. Elite 1–6 month placements at iconic properties worldwide.</p>
+            <Link href="/residency" className="btn-primary inline-block">Explore residencies</Link>
+          </div>
+        </div>
+      </section>
+
+      {/* ═══════ S7: SOCIAL PROOF ═══════ */}
+      <section className="py-24">
+        <div className="max-w-7xl mx-auto px-6 lg:px-8">
+          <div className="text-center mb-14">
+            <h2 className="text-[36px] font-medium text-ink tracking-tight">What our community says</h2>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {[
+              { quote: 'WHC matched me with my dream role at Corinthia within a week. The algorithm genuinely understands this industry.', name: 'Sophie L.', role: 'Senior Spa Therapist', prop: 'Corinthia London', stars: 5 },
+              { quote: 'We filled three positions in under 10 days. The quality of candidates is leagues above any recruiter we\'ve used.', name: 'James H.', role: 'Spa Director', prop: 'Gleneagles', stars: 5 },
+              { quote: 'The agency feature saved us during peak season. Two therapists booked within hours, both brilliant.', name: 'Emma R.', role: 'Operations Manager', prop: 'The Lanesborough', stars: 5 },
+            ].map((t) => (
+              <div key={t.name} className="card p-6">
+                <div className="flex gap-0.5 mb-4">{Array.from({ length: t.stars }).map((_, i) => <Star key={i} size={14} className="text-amber-400" fill="currentColor" />)}</div>
+                <p className="text-[14px] text-secondary leading-[1.7] mb-5">&ldquo;{t.quote}&rdquo;</p>
+                <div><p className="text-[13px] font-medium text-ink">{t.name}</p><p className="text-[12px] text-muted">{t.role}, {t.prop}</p></div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ═══════ S8: PRICING ═══════ */}
+      <section className="py-24 bg-surface">
+        <div className="max-w-7xl mx-auto px-6 lg:px-8">
+          <div className="text-center mb-14">
+            <h2 className="text-[36px] font-medium text-ink tracking-tight mb-3">Simple, transparent pricing.</h2>
+            <p className="text-secondary">Talent profiles are free. Always.</p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+            {/* Talent free */}
+            <div className="card p-5 lg:col-span-1">
+              <p className="eyebrow mb-1">Talent</p>
+              <p className="text-[28px] font-semibold text-ink">Free</p>
+              <p className="text-[12px] text-muted mb-4">£20/m to feature</p>
+              <Link href="/register/talent" className="btn-secondary w-full text-center block text-[12px]">Join free</Link>
+            </div>
+            {/* Employer tiers */}
+            {[
+              { name: 'Bronze', price: '£150', days: '30 days' },
+              { name: 'Silver', price: '£200', days: '60 days' },
+              { name: 'Gold', price: '£225', days: '75 days', pop: true },
+              { name: 'Platinum', price: '£250', days: '90 days' },
+            ].map((t) => (
+              <div key={t.name} className={`card p-5 relative ${t.pop ? 'border-ink' : ''}`}>
+                {t.pop && <span className="absolute -top-2.5 right-4 bg-ink text-white text-[9px] font-semibold px-2 py-0.5 rounded-full">Popular</span>}
+                <p className="eyebrow mb-1">{t.name}</p>
+                <p className="text-[28px] font-semibold text-ink">{t.price}</p>
+                <p className="text-[12px] text-muted mb-4">{t.days}</p>
+                <Link href="/register/employer" className={`w-full text-center block text-[12px] ${t.pop ? 'btn-primary' : 'btn-secondary'}`}>Get started</Link>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ═══════ S9: FINAL CTA ═══════ */}
+      <section className="py-24">
+        <div className="max-w-2xl mx-auto px-6 lg:px-8 text-center">
+          <h2 className="text-[36px] md:text-[42px] font-medium text-ink leading-[1.12] tracking-tight mb-6">Ready to find your<br />perfect match?</h2>
+          <div className="flex justify-center gap-3">
+            <Link href="/register/talent" className="btn-primary">Join as talent</Link>
+            <Link href="/register/employer" className="btn-secondary">Post a role</Link>
+          </div>
         </div>
       </section>
 

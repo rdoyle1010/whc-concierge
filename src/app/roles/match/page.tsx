@@ -3,189 +3,147 @@
 import { useEffect, useState, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
-import { MapPin, Briefcase, Star, X, Heart, ArrowLeft, ChevronUp } from 'lucide-react'
+import { MapPin, X, Heart, ArrowLeft, ChevronDown, Sparkles } from 'lucide-react'
 
-const spaPhotos = [
-  'https://images.unsplash.com/photo-1600334089648-b0d9d3028eb2?w=800&q=80&auto=format&fit=crop',
-  'https://images.unsplash.com/photo-1540555700478-4be289fbec6d?w=800&q=80&auto=format&fit=crop',
-  'https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?w=800&q=80&auto=format&fit=crop',
-  'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?w=800&q=80&auto=format&fit=crop',
-  'https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=800&q=80&auto=format&fit=crop',
-  'https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?w=800&q=80&auto=format&fit=crop',
+const photos = [
+  'https://images.unsplash.com/photo-1600334089648-b0d9d3028eb2?w=600&q=80&auto=format&fit=crop',
+  'https://images.unsplash.com/photo-1540555700478-4be289fbec6d?w=600&q=80&auto=format&fit=crop',
+  'https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?w=600&q=80&auto=format&fit=crop',
+  'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?w=600&q=80&auto=format&fit=crop',
+  'https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=600&q=80&auto=format&fit=crop',
+  'https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?w=600&q=80&auto=format&fit=crop',
 ]
 
-const sampleJobs = [
-  { id: 's1', title: 'Senior Spa Therapist', location: 'London', salary_min: 32000, salary_max: 38000, tier: 'Platinum', job_type: 'Full-time', specialism: 'Massage Therapy', description: 'Join our award-winning ESPA Life team delivering world-class treatments to discerning guests.', employer_profiles: { company_name: 'Corinthia London', property_type: 'Luxury Hotel & Spa' }, requirements: ['CIDESCO qualified', '3+ years luxury spa', 'Excellent communication'], benefits: ['Staff accommodation', 'Treatment allowance', 'Career progression'] },
-  { id: 's2', title: 'Spa Manager', location: 'Scotland', salary_min: 45000, salary_max: 55000, tier: 'Gold', job_type: 'Full-time', specialism: 'Spa Management', description: 'Lead spa operations at one of Scotland\'s most prestigious wellness destinations.', employer_profiles: { company_name: 'Gleneagles', property_type: 'Resort & Spa' }, requirements: ['5+ years management', 'Revenue management', 'Team leadership'], benefits: ['Relocation package', 'Bonus scheme', 'Use of facilities'] },
-  { id: 's3', title: 'Wellness Practitioner', location: 'London', salary_min: 35000, salary_max: 42000, tier: 'Silver', job_type: 'Full-time', specialism: 'Holistic Therapy', description: 'Deliver Eastern-inspired wellness rituals at our flagship Knightsbridge property.', employer_profiles: { company_name: 'Mandarin Oriental', property_type: 'Luxury Hotel & Spa' }, requirements: ['Holistic therapy qualifications', '2+ years experience'], benefits: ['Meals on duty', 'Training budget'] },
-  { id: 's4', title: 'Beauty Therapist', location: 'Mayfair, London', salary_min: 28000, salary_max: 34000, tier: 'Gold', job_type: 'Full-time', specialism: 'Beauty Therapy', description: 'Premium facial and body treatments for high-profile clients.', employer_profiles: { company_name: 'The Lanesborough', property_type: 'Luxury Hotel & Spa' }, requirements: ['NVQ Level 3', 'Luxury experience'], benefits: ['Staff meals', 'Product discounts'] },
-  { id: 's5', title: 'Yoga Instructor', location: 'Cotswolds', salary_min: 30000, salary_max: 36000, tier: 'Platinum', job_type: 'Full-time', specialism: 'Yoga & Pilates', description: 'Lead daily yoga classes at our exclusive countryside wellness retreat.', employer_profiles: { company_name: 'Soho Farmhouse', property_type: 'Members Club & Spa' }, requirements: ['200hr+ yoga training', 'Multiple styles'], benefits: ['Accommodation included', 'Membership benefits'] },
+const samples = [
+  { id:'s1', title:'Senior Spa Therapist', location:'London', salary_min:32000, salary_max:38000, tier:'Platinum', job_type:'Full-time', specialism:'Massage', description:'Join our ESPA Life team delivering world-class treatments.', employer_profiles:{ company_name:'Corinthia London' }, requirements:['CIDESCO qualified','3+ years luxury spa'], benefits:['Staff accommodation','Treatment allowance'], matchScore:94, matchLabel:'Perfect Match' },
+  { id:'s2', title:'Spa Manager', location:'Scotland', salary_min:45000, salary_max:55000, tier:'Gold', job_type:'Full-time', specialism:'Management', description:'Lead spa operations at a prestigious wellness destination.', employer_profiles:{ company_name:'Gleneagles' }, requirements:['5+ years management'], benefits:['Relocation package','Bonus scheme'], matchScore:87, matchLabel:'Strong Match' },
+  { id:'s3', title:'Wellness Practitioner', location:'London', salary_min:35000, salary_max:42000, tier:'Silver', job_type:'Full-time', specialism:'Holistic', description:'Deliver Eastern-inspired wellness rituals.', employer_profiles:{ company_name:'Mandarin Oriental' }, requirements:['Holistic qualifications'], benefits:['Meals on duty','Training budget'], matchScore:78, matchLabel:'Strong Match' },
+  { id:'s4', title:'Beauty Therapist', location:'Mayfair', salary_min:28000, salary_max:34000, tier:'Gold', job_type:'Full-time', specialism:'Beauty', description:'Premium facial and body treatments.', employer_profiles:{ company_name:'The Lanesborough' }, requirements:['NVQ Level 3'], benefits:['Staff meals'], matchScore:72, matchLabel:'Good Match' },
+  { id:'s5', title:'Yoga Instructor', location:'Cotswolds', salary_min:30000, salary_max:36000, tier:'Platinum', job_type:'Full-time', specialism:'Yoga', description:'Lead daily classes at our countryside retreat.', employer_profiles:{ company_name:'Soho Farmhouse' }, requirements:['200hr+ yoga training'], benefits:['Accommodation included'], matchScore:68, matchLabel:'Good Match' },
 ]
+
+const tierClass = (t: string) => t === 'Platinum' ? 'badge-platinum' : t === 'Gold' ? 'badge-gold' : t === 'Silver' ? 'badge-silver' : 'badge-bronze'
+const matchClass = (s: number) => s >= 90 ? 'match-perfect' : s >= 75 ? 'match-strong' : s >= 60 ? 'match-good' : 'match-partial'
 
 export default function SwipeMatchPage() {
   const supabase = createClient()
   const [jobs, setJobs] = useState<any[]>([])
-  const [currentIndex, setCurrentIndex] = useState(0)
+  const [idx, setIdx] = useState(0)
   const [loading, setLoading] = useState(true)
-  const [swipeDir, setSwipeDir] = useState<'left' | 'right' | null>(null)
+  const [dir, setDir] = useState<'left'|'right'|null>(null)
   const [showMatch, setShowMatch] = useState(false)
-  const [userId, setUserId] = useState<string | null>(null)
+  const [userId, setUserId] = useState<string|null>(null)
   const [expanded, setExpanded] = useState(false)
 
   useEffect(() => {
     async function load() {
-      const { data: { user } } = await supabase.auth.getUser()
+      const { data:{ user } } = await supabase.auth.getUser()
       if (user) setUserId(user.id)
-      const { data } = await supabase.from('job_listings').select('*, employer_profiles(company_name, logo_url, location, property_type)').eq('status', 'active').order('created_at', { ascending: false }).limit(50)
-      setJobs(data && data.length > 0 ? data : sampleJobs)
-      setLoading(false)
+      const { data } = await supabase.from('job_listings').select('*, employer_profiles(company_name, logo_url)').eq('status', 'active').order('created_at', { ascending: false }).limit(50)
+      const list = data && data.length > 0 ? data.map((j:any,i:number) => ({ ...j, matchScore: Math.max(45, 100 - i*7), matchLabel: (100-i*7)>=90?'Perfect Match':(100-i*7)>=75?'Strong Match':(100-i*7)>=60?'Good Match':'Partial Match' })) : samples
+      setJobs(list); setLoading(false)
     }
     load()
   }, [])
 
-  const currentJob = jobs[currentIndex]
-  const photoUrl = spaPhotos[currentIndex % spaPhotos.length]
+  const job = jobs[idx]
 
-  const handleSwipe = useCallback(async (direction: 'left' | 'right') => {
-    if (!currentJob || swipeDir) return
-    setSwipeDir(direction)
-    if (userId) {
-      await supabase.from('swipes').insert({ user_id: userId, target_id: currentJob.id, direction, target_type: 'job' })
-      if (direction === 'right') {
-        const { data: match } = await supabase.from('matches').select('id').eq('job_id', currentJob.id).eq('candidate_id', userId).single()
-        if (match) { setTimeout(() => setShowMatch(true), 400); return }
-      }
-    }
-    setTimeout(() => { setSwipeDir(null); setCurrentIndex(prev => prev + 1); setExpanded(false) }, 400)
-  }, [currentJob, userId, supabase, swipeDir])
+  const swipe = useCallback(async (d:'left'|'right') => {
+    if (!job || dir) return; setDir(d)
+    if (userId) await supabase.from('swipes').insert({ user_id: userId, target_id: job.id, direction: d, target_type: 'job' })
+    setTimeout(() => { setDir(null); setIdx(p => p + 1); setExpanded(false) }, 350)
+  }, [job, userId, supabase, dir])
 
   useEffect(() => {
-    const handleKey = (e: KeyboardEvent) => { if (e.key === 'ArrowLeft') handleSwipe('left'); if (e.key === 'ArrowRight') handleSwipe('right') }
-    window.addEventListener('keydown', handleKey)
-    return () => window.removeEventListener('keydown', handleKey)
-  }, [handleSwipe])
+    const h = (e:KeyboardEvent) => { if (e.key==='ArrowLeft') swipe('left'); if (e.key==='ArrowRight') swipe('right') }
+    window.addEventListener('keydown', h); return () => window.removeEventListener('keydown', h)
+  }, [swipe])
 
-  if (loading) return (
-    <div className="min-h-screen bg-white flex items-center justify-center">
-      <div className="text-center"><div className="animate-spin w-8 h-8 border-2 border-black border-t-transparent rounded-full mx-auto mb-4" /><p className="text-neutral-400 text-sm">Loading roles...</p></div>
-    </div>
-  )
+  if (loading) return <div className="min-h-screen bg-white flex items-center justify-center"><div className="animate-spin w-6 h-6 border-2 border-ink border-t-transparent rounded-full" /></div>
 
-  if (currentIndex >= jobs.length) return (
-    <div className="min-h-screen bg-white flex items-center justify-center px-4">
-      <div className="text-center max-w-md animate-fade-in-up">
-        <p className="text-6xl mb-6">&#10024;</p>
-        <h2 className="text-3xl font-bold text-black mb-3">You&apos;re all caught up</h2>
-        <p className="text-neutral-400 mb-10">You&apos;ve seen all available roles. New roles are added daily.</p>
-        <div className="space-y-3">
-          <Link href="/talent/dashboard" className="btn-primary block text-center">Go to Dashboard</Link>
-          <Link href="/" className="btn-ghost block text-center">Back to Home</Link>
-        </div>
+  if (idx >= jobs.length) return (
+    <div className="min-h-screen bg-white flex items-center justify-center px-6">
+      <div className="text-center max-w-sm animate-fade-in-up">
+        <div className="w-16 h-16 bg-surface border border-border rounded-2xl flex items-center justify-center mx-auto mb-6"><Sparkles size={24} className="text-muted" /></div>
+        <h2 className="text-[24px] font-medium text-ink mb-2">You&apos;re all caught up</h2>
+        <p className="text-[14px] text-muted mb-8">New roles are added daily. Check back soon.</p>
+        <div className="space-y-2"><Link href="/talent/dashboard" className="btn-primary block text-center">Dashboard</Link><Link href="/" className="btn-ghost block text-center">Home</Link></div>
       </div>
     </div>
   )
 
   if (showMatch) return (
-    <div className="min-h-screen bg-white flex items-center justify-center px-4">
+    <div className="min-h-screen bg-white flex items-center justify-center px-6">
       <div className="text-center animate-match-pop">
-        <div className="w-24 h-24 bg-black rounded-full flex items-center justify-center mx-auto mb-8">
-          <Heart size={40} className="text-white" fill="white" />
-        </div>
-        <h2 className="text-4xl font-bold text-black mb-2">It&apos;s a Match</h2>
-        <p className="text-neutral-400 mb-1">{currentJob?.employer_profiles?.company_name}</p>
-        <p className="text-black text-lg font-medium mb-10">{currentJob?.title}</p>
-        <div className="space-y-3 max-w-xs mx-auto">
-          <Link href="/talent/messages" className="btn-primary block text-center">Send a Message</Link>
-          <button onClick={() => { setShowMatch(false); setSwipeDir(null); setCurrentIndex(prev => prev + 1); setExpanded(false) }} className="btn-ghost block w-full text-center">Keep Browsing</button>
-        </div>
+        <div className="w-20 h-20 bg-match-perfect-bg rounded-2xl flex items-center justify-center mx-auto mb-6"><Heart size={32} className="text-match-perfect-text" fill="currentColor" /></div>
+        <h2 className="text-[28px] font-medium text-ink mb-1">It&apos;s a match</h2>
+        <p className="text-[14px] text-muted mb-8">{job?.employer_profiles?.company_name} &middot; {job?.title}</p>
+        <div className="space-y-2 max-w-[280px] mx-auto"><Link href="/messages" className="btn-primary block text-center">Send a message</Link><button onClick={() => { setShowMatch(false); setDir(null); setIdx(p=>p+1); setExpanded(false) }} className="btn-secondary block w-full text-center">Keep browsing</button></div>
       </div>
     </div>
   )
 
+  const photo = photos[idx % photos.length]
+  const score = job?.matchScore || 75
+
   return (
-    <div className="min-h-screen bg-neutral-50">
+    <div className="min-h-screen bg-surface flex flex-col">
       {/* Header */}
-      <div className="fixed top-0 left-0 right-0 z-30 bg-white border-b border-neutral-100 px-4 h-14 flex items-center justify-between">
-        <Link href="/" className="text-neutral-400 hover:text-black text-sm flex items-center space-x-1 transition-colors"><ArrowLeft size={16} /><span>Back</span></Link>
-        <p className="text-black font-semibold text-sm">WHC Concierge</p>
-        <p className="text-neutral-300 text-sm">{currentIndex + 1} / {jobs.length}</p>
+      <div className="bg-white border-b border-border h-[56px] px-6 flex items-center justify-between shrink-0">
+        <Link href="/" className="text-muted hover:text-ink text-[13px] flex items-center gap-1.5"><ArrowLeft size={14} />Back</Link>
+        <span className="text-[14px] font-medium text-ink">WHC Concierge</span>
+        <span className="text-[13px] text-muted">{idx+1} / {jobs.length}</span>
       </div>
 
       {/* Card */}
-      <div className="pt-14 flex items-center justify-center min-h-screen px-4 pb-28">
-        {/* Background card */}
-        {jobs[currentIndex + 1] && (
-          <div className="absolute w-full max-w-md h-[70vh] max-h-[580px] bg-neutral-100 scale-[0.94] translate-y-2 opacity-30" />
-        )}
-
-        <div className={`swipe-card relative w-full max-w-md h-[70vh] max-h-[580px] bg-white border border-neutral-200 overflow-hidden shadow-sm
-          ${swipeDir === 'left' ? 'swipe-left' : swipeDir === 'right' ? 'swipe-right' : ''}`}>
-          {/* Photo */}
-          <div className="h-[45%] relative overflow-hidden">
-            <img src={currentJob?.employer_profiles?.logo_url || photoUrl} alt="" className="w-full h-full object-cover" />
-            <div className="absolute top-4 left-4">
-              <span className={`text-xs font-medium px-3 py-1 ${
-                currentJob?.tier === 'Platinum' ? 'bg-black text-white' : currentJob?.tier === 'Gold' ? 'bg-neutral-700 text-white' : 'bg-white text-neutral-600 border border-neutral-200'
-              }`}>{currentJob?.tier || 'Standard'}</span>
-            </div>
-            <div className="absolute top-4 right-4 text-xs text-white/80 bg-black/30 px-2 py-1">{currentJob?.employer_profiles?.property_type || 'Luxury Property'}</div>
-
-            {/* Swipe labels */}
-            {swipeDir === 'right' && <div className="absolute inset-0 bg-emerald-500/20 flex items-center justify-center"><span className="text-emerald-600 text-2xl font-bold border-2 border-emerald-500 px-6 py-2 rotate-[-8deg]">INTERESTED</span></div>}
-            {swipeDir === 'left' && <div className="absolute inset-0 bg-red-500/20 flex items-center justify-center"><span className="text-red-500 text-2xl font-bold border-2 border-red-500 px-6 py-2 rotate-[8deg]">PASS</span></div>}
+      <div className="flex-1 flex items-center justify-center px-4 py-8">
+        <div className={`swipe-card w-full max-w-[440px] bg-white border border-border rounded-xl shadow-sm overflow-hidden ${dir==='left'?'swipe-left':dir==='right'?'swipe-right':''}`}>
+          {/* Image */}
+          <div className="h-[200px] relative overflow-hidden bg-surface">
+            <img src={job?.employer_profiles?.logo_url || photo} alt="" className="w-full h-full object-cover" />
+            <span className={`absolute top-3 left-3 ${tierClass(job?.tier||'Standard')}`}>{job?.tier||'Standard'}</span>
+            <span className={`absolute top-3 right-3 ${matchClass(score)}`}>{score}% {job?.matchLabel}</span>
+            {dir==='right' && <div className="absolute inset-0 bg-emerald-500/15 flex items-center justify-center"><span className="text-emerald-600 text-[18px] font-bold border-2 border-emerald-500 px-5 py-1.5 rounded-lg rotate-[-6deg]">INTERESTED</span></div>}
+            {dir==='left' && <div className="absolute inset-0 bg-red-500/15 flex items-center justify-center"><span className="text-red-500 text-[18px] font-bold border-2 border-red-500 px-5 py-1.5 rounded-lg rotate-[6deg]">PASS</span></div>}
           </div>
 
-          {/* Content */}
-          <div className="h-[55%] p-6 flex flex-col justify-between overflow-y-auto">
-            <div>
-              <p className="text-neutral-400 text-xs tracking-wider uppercase mb-1">{currentJob?.employer_profiles?.company_name}</p>
-              <h2 className="text-2xl font-bold text-black mb-2">{currentJob?.title}</h2>
-              <div className="flex items-center space-x-4 text-sm text-neutral-400 mb-3">
-                <span className="flex items-center space-x-1"><MapPin size={13} /><span>{currentJob?.location}</span></span>
-                <span className="flex items-center space-x-1"><Briefcase size={13} /><span>{currentJob?.job_type}</span></span>
-              </div>
-              <p className="text-xl font-semibold text-black mb-2">
-                {currentJob?.salary_min && currentJob?.salary_max ? `£${currentJob.salary_min.toLocaleString()} – £${currentJob.salary_max.toLocaleString()}` : 'Competitive Salary'}
-              </p>
-              {currentJob?.specialism && <span className="inline-block text-xs border border-neutral-200 text-neutral-500 px-3 py-1 mb-2">{currentJob.specialism}</span>}
-
-              {/* Expand toggle */}
-              <button onClick={() => setExpanded(!expanded)} className="flex items-center text-xs text-neutral-400 hover:text-black mt-2 transition-colors">
-                <ChevronUp size={14} className={`mr-1 transition-transform ${expanded ? 'rotate-180' : ''}`} />{expanded ? 'Less' : 'More details'}
-              </button>
-
-              {expanded && (
-                <div className="mt-3 pt-3 border-t border-neutral-100 space-y-3 animate-fade-in">
-                  {currentJob?.description && <p className="text-neutral-400 text-sm leading-relaxed">{currentJob.description}</p>}
-                  {currentJob?.requirements?.length > 0 && (
-                    <div>
-                      <p className="text-xs font-medium text-neutral-500 uppercase tracking-wider mb-1">Requirements</p>
-                      <ul className="space-y-1">{currentJob.requirements.map((r: string, i: number) => <li key={i} className="text-neutral-400 text-sm flex items-start space-x-2"><span className="w-1 h-1 bg-black rounded-full mt-2 flex-shrink-0" /><span>{r}</span></li>)}</ul>
-                    </div>
-                  )}
-                  {currentJob?.benefits?.length > 0 && (
-                    <div className="flex flex-wrap gap-2">{currentJob.benefits.map((b: string, i: number) => <span key={i} className="text-xs bg-neutral-100 text-neutral-500 px-2.5 py-1">{b}</span>)}</div>
-                  )}
-                </div>
-              )}
+          {/* Body */}
+          <div className="p-5">
+            <p className="eyebrow mb-0.5">{job?.employer_profiles?.company_name}</p>
+            <h2 className="text-[20px] font-medium text-ink mb-2">{job?.title}</h2>
+            <div className="flex flex-wrap gap-3 text-[13px] text-muted mb-3">
+              <span className="flex items-center gap-1"><MapPin size={12} />{job?.location}</span>
+              <span>{job?.job_type}</span>
+              <span>{job?.salary_min && job?.salary_max ? `£${(job.salary_min/1000).toFixed(0)}k–£${(job.salary_max/1000).toFixed(0)}k` : 'Competitive'}</span>
             </div>
+            {job?.specialism && <span className="text-[10px] border border-border text-muted px-2 py-0.5 rounded-full">{job.specialism}</span>}
+
+            {/* Expand */}
+            <button onClick={() => setExpanded(!expanded)} className="flex items-center gap-1 text-[12px] text-muted hover:text-ink mt-3">
+              <ChevronDown size={13} className={`transition-transform ${expanded?'rotate-180':''}`} />{expanded?'Less':'More details'}
+            </button>
+            {expanded && (
+              <div className="mt-3 pt-3 border-t border-border space-y-3 animate-fade-in">
+                {job?.description && <p className="text-[13px] text-secondary leading-[1.7]">{job.description}</p>}
+                {job?.requirements?.length>0 && <div><p className="eyebrow mb-1">Requirements</p><ul className="space-y-1">{job.requirements.map((r:string,i:number)=><li key={i} className="text-[12px] text-secondary flex items-start gap-1.5"><span className="w-1 h-1 bg-ink rounded-full mt-1.5 shrink-0"/>{r}</li>)}</ul></div>}
+                {job?.benefits?.length>0 && <div className="flex flex-wrap gap-1.5">{job.benefits.map((b:string,i:number)=><span key={i} className="text-[10px] bg-surface text-muted px-2 py-0.5 rounded-full">{b}</span>)}</div>}
+              </div>
+            )}
           </div>
         </div>
       </div>
 
       {/* Buttons */}
-      <div className="fixed bottom-0 left-0 right-0 z-30 pb-8 pt-4 bg-gradient-to-t from-neutral-50 to-transparent">
-        <div className="flex items-center justify-center space-x-8">
-          <button onClick={() => handleSwipe('left')}
-            className="w-14 h-14 border border-neutral-300 flex items-center justify-center hover:bg-red-50 hover:border-red-300 transition-all group">
-            <X size={24} className="text-neutral-400 group-hover:text-red-500" />
+      <div className="bg-white border-t border-border py-5 shrink-0">
+        <div className="flex items-center justify-center gap-8">
+          <button onClick={()=>swipe('left')} className="w-[52px] h-[52px] border border-border rounded-full flex items-center justify-center hover:bg-red-50 hover:border-red-200 transition-colors group">
+            <X size={22} className="text-muted group-hover:text-red-500" />
           </button>
-          <button onClick={() => handleSwipe('right')}
-            className="w-16 h-16 bg-black flex items-center justify-center hover:bg-neutral-800 transition-colors">
-            <Heart size={28} className="text-white" />
+          <button onClick={()=>swipe('right')} className="w-[60px] h-[60px] bg-ink rounded-full flex items-center justify-center hover:bg-black/80 transition-colors shadow-sm">
+            <Heart size={24} className="text-white" />
           </button>
         </div>
-        <p className="text-center text-neutral-300 text-xs mt-3">Arrow keys or buttons to swipe</p>
+        <p className="text-center text-[11px] text-muted mt-3">Arrow keys or buttons to swipe</p>
       </div>
     </div>
   )
