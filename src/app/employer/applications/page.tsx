@@ -24,7 +24,7 @@ export default function EmployerApplicationsPage() {
 
       const { data } = await supabase
         .from('applications')
-        .select('*, job_listings(title), candidate_profiles(full_name, headline, email, location, specialisms)')
+        .select('*, job_listings(job_title, title), candidate_profiles(full_name, headline, email, location, specialisms)')
         .in('job_id', jobIds.map(j => j.id))
         .order('created_at', { ascending: false })
 
@@ -56,7 +56,7 @@ export default function EmployerApplicationsPage() {
                   <h3 className="font-serif text-lg font-semibold text-ink">{app.candidate_profiles?.full_name}</h3>
                   <p className="text-sm text-gray-500">{app.candidate_profiles?.headline}</p>
                   <p className="text-xs text-gray-400 mt-1">
-                    Applied for: <span className="text-gold">{app.job_listings?.title}</span>
+                    Applied for: <span className="text-gold">{app.job_listings?.job_title || app.job_listings?.title}</span>
                     {' '}&middot; {new Date(app.created_at).toLocaleDateString()}
                   </p>
                   {app.candidate_profiles?.specialisms?.length > 0 && (

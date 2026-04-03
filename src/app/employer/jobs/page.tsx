@@ -29,7 +29,7 @@ export default function EmployerJobsPage() {
       setProfile(prof)
       if (prof) {
         const { data } = await supabase.from('job_listings').select('*').eq('employer_id', prof.id).order('created_at', { ascending: false })
-        setJobs(data || [])
+        setJobs((data || []).map((j: any) => ({ ...j, title: j.job_title || j.title, description: j.job_description || j.description, status: j.is_live === false ? 'closed' : (j.status || 'active') })))
       }
       setLoading(false)
     }

@@ -48,7 +48,17 @@ export default function SwipeMatchPage() {
         candidateProfile = cp
       }
 
-      const { data } = await supabase.from('job_listings').select('*, employer_profiles(company_name, logo_url)').eq('status', 'active').order('created_at', { ascending: false }).limit(50)
+      // Query with real column names, then normalize for display
+      const { data: rawData } = await supabase.from('job_listings').select('*, employer_profiles(company_name, property_name, logo_url)').eq('is_live', true).order('created_at', { ascending: false }).limit(50)
+      // Normalize column names: job_title→title, job_description→description, required_brands→required_product_houses
+      const data = (rawData || []).map((j: any) => ({
+        ...j,
+        title: j.job_title || j.title,
+        description: j.job_description || j.description,
+        required_product_houses: j.required_brands || j.required_product_houses,
+        status: j.is_live ? 'active' : j.status,
+        employer_profiles: { ...j.employer_profiles, company_name: j.employer_profiles?.property_name || j.employer_profiles?.company_name },
+      }))
 
       if (data && data.length > 0) {
         // Calculate real match scores

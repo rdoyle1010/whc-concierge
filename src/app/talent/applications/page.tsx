@@ -28,7 +28,7 @@ export default function TalentApplicationsPage() {
 
       const { data } = await supabase
         .from('applications')
-        .select('*, job_listings(title, location, salary_min, salary_max, employer_profiles(company_name))')
+        .select('*, job_listings(job_title, title, location, salary_min, salary_max, employer_profiles(company_name, property_name))')
         .eq('candidate_id', profile.id)
         .order('created_at', { ascending: false })
 
@@ -56,7 +56,7 @@ export default function TalentApplicationsPage() {
             return (
               <div key={app.id} className="dashboard-card flex items-center justify-between">
                 <div>
-                  <h3 className="font-serif text-lg font-semibold text-ink">{app.job_listings?.title}</h3>
+                  <h3 className="font-serif text-lg font-semibold text-ink">{app.job_listings?.job_title || app.job_listings?.title}</h3>
                   <p className="text-sm text-gray-500">
                     {app.job_listings?.employer_profiles?.company_name} &middot; {app.job_listings?.location}
                   </p>

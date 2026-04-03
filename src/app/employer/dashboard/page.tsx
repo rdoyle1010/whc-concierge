@@ -26,16 +26,18 @@ export default function EmployerDashboard() {
           supabase.from('messages').select('id', { count: 'exact', head: true }).eq('receiver_id', user.id).eq('read', false),
           supabase.from('matches').select('id', { count: 'exact', head: true }).eq('employer_id', prof.id),
         ])
-        setListings(jobs.data || [])
-        const jobIds = (jobs.data||[]).map((j:any) => j.id)
+        // Normalize column names for display
+        const normalizedJobs = (jobs.data || []).map((j: any) => ({ ...j, title: j.job_title || j.title, description: j.job_description || j.description, status: j.is_live === false ? 'closed' : (j.status || 'active') }))
+        setListings(normalizedJobs)
+        const jobIds = normalizedJobs.map((j:any) => j.id)
         let appCount = 0
         if (jobIds.length > 0) {
           const { count } = await supabase.from('applications').select('id', { count: 'exact', head: true }).in('job_id', jobIds)
           appCount = count || 0
-          const { data: apps } = await supabase.from('applications').select('*, job_listings(title), candidate_profiles(full_name, headline)').in('job_id', jobIds).order('created_at', { ascending: false }).limit(5)
-          setRecentApps(apps || [])
+          const { data: apps } = await supabase.from('applications').select('*, job_listings(job_title, title), candidate_profiles(full_name, headline)').in('job_id', jobIds).order('created_at', { ascending: false }).limit(5)
+          setRecentApps((apps || []).map((a: any) => ({ ...a, job_listings: { ...a.job_listings, title: a.job_listings?.job_title || a.job_listings?.title } })))
         }
-        setStats({ jobs: (jobs.data||[]).filter((j:any) => j.status === 'active').length, applications: appCount, messages: msgs.count||0, matches: matches.count||0 })
+        setStats({ jobs: normalizedJobs.filter((j:any) => j.status === 'active' || j.is_live === true).length, applications: appCount, messages: msgs.count||0, matches: matches.count||0 })
       }
       setLoading(false)
     }

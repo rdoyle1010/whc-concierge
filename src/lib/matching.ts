@@ -35,6 +35,7 @@ interface CandidateProfile {
 interface JobListing {
   required_role_level?: string
   required_product_houses?: string[]
+  required_brands?: string[] // real DB column name
   required_qualifications?: string[]
   required_systems?: string[]
   location_postcode?: string
@@ -159,8 +160,9 @@ export function calculateMatchScore(candidate: CandidateProfile, job: JobListing
     }
   }
 
-  // Product houses and qualifications
-  const productScore = getArrayMatchScore(candidate.product_houses, job.required_product_houses)
+  // Product houses and qualifications — check both column name variants
+  const jobBrands = job.required_product_houses || job.required_brands
+  const productScore = getArrayMatchScore(candidate.product_houses, jobBrands)
   const qualScore = getArrayMatchScore(candidate.qualifications, job.required_qualifications)
 
   const breakdown: MatchBreakdown = {

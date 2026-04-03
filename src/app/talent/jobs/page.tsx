@@ -27,12 +27,12 @@ export default function TalentJobsPage() {
 
       let query = supabase
         .from('job_listings')
-        .select('*, employer_profiles(company_name, logo_url, location)')
-        .eq('status', 'active')
+        .select('*, employer_profiles(company_name, property_name, logo_url, location)')
+        .or('is_live.eq.true,status.eq.active')
         .order('created_at', { ascending: false })
 
       const { data } = await query
-      setJobs(data || [])
+      setJobs((data || []).map((j: any) => ({ ...j, title: j.job_title || j.title, description: j.job_description || j.description, employer_profiles: { ...j.employer_profiles, company_name: j.employer_profiles?.property_name || j.employer_profiles?.company_name } })))
       setLoading(false)
     }
     load()

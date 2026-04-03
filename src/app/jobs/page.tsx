@@ -16,12 +16,12 @@ export default function PublicJobsPage() {
 
   useEffect(() => {
     async function load() {
-      const { data } = await supabase
+      const { data: rawData } = await supabase
         .from('job_listings')
-        .select('*, employer_profiles(company_name)')
-        .eq('status', 'active')
+        .select('*, employer_profiles(company_name, property_name)')
+        .or('is_live.eq.true,status.eq.active')
         .order('created_at', { ascending: false })
-      setJobs(data || [])
+      setJobs((rawData || []).map((j: any) => ({ ...j, title: j.job_title || j.title, description: j.job_description || j.description, employer_profiles: { ...j.employer_profiles, company_name: j.employer_profiles?.property_name || j.employer_profiles?.company_name } })))
       setLoading(false)
     }
     load()

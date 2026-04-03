@@ -16,7 +16,7 @@ export default function HomePage() {
     async function load() {
       const [p, j] = await Promise.all([
         supabase.from('employer_profiles').select('id', { count: 'exact', head: true }),
-        supabase.from('job_listings').select('id', { count: 'exact', head: true }).eq('status', 'active'),
+        supabase.from('job_listings').select('id', { count: 'exact', head: true }).or('is_live.eq.true,status.eq.active'),
       ])
       setStats({ properties: p.count || 0, roles: j.count || 0 })
     }
