@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
-import { Menu, X, ChevronDown } from 'lucide-react'
+import { Menu, X, ChevronDown, Flame } from 'lucide-react'
 
 export default function Navbar() {
   const [open, setOpen] = useState(false)
@@ -43,6 +43,7 @@ export default function Navbar() {
           <div className="hidden lg:flex items-center space-x-8">
             <Link href="/" className="text-white/80 hover:text-gold text-sm font-medium transition-colors">Home</Link>
             <Link href="/jobs" className="text-white/80 hover:text-gold text-sm font-medium transition-colors">Browse Roles</Link>
+            <Link href="/roles/match" className="text-white/80 hover:text-gold text-sm font-medium transition-colors flex items-center space-x-1"><Flame size={14} className="text-gold" /><span>Match</span></Link>
             <Link href="/specialisms" className="text-white/80 hover:text-gold text-sm font-medium transition-colors">Specialisms</Link>
             <Link href="/properties" className="text-white/80 hover:text-gold text-sm font-medium transition-colors">Properties</Link>
             <Link href="/agency" className="text-white/80 hover:text-gold text-sm font-medium transition-colors">Agency</Link>
@@ -80,6 +81,7 @@ export default function Navbar() {
           <div className="px-4 py-6 space-y-4">
             <Link href="/" className="block text-white/80 hover:text-gold py-2" onClick={() => setOpen(false)}>Home</Link>
             <Link href="/jobs" className="block text-white/80 hover:text-gold py-2" onClick={() => setOpen(false)}>Browse Roles</Link>
+            <Link href="/roles/match" className="flex items-center space-x-2 text-white/80 hover:text-gold py-2" onClick={() => setOpen(false)}><Flame size={14} className="text-gold" /><span>Match</span></Link>
             <Link href="/specialisms" className="block text-white/80 hover:text-gold py-2" onClick={() => setOpen(false)}>Specialisms</Link>
             <Link href="/properties" className="block text-white/80 hover:text-gold py-2" onClick={() => setOpen(false)}>Properties</Link>
             <Link href="/agency" className="block text-white/80 hover:text-gold py-2" onClick={() => setOpen(false)}>Agency</Link>

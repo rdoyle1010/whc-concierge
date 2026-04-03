@@ -85,10 +85,10 @@ export default function AgencyPage() {
                   <div className="h-20 bg-gradient-to-r from-ink to-navy-light relative">
                     <div className="absolute -bottom-8 left-6">
                       <div className="w-16 h-16 rounded-2xl bg-white shadow-lg flex items-center justify-center overflow-hidden border-2 border-white">
-                        {c.profile_image_url ? (
-                          <img src={c.profile_image_url} alt="" className="w-full h-full object-cover" />
+                        {c.profile_image_url || c.avatar_url ? (
+                          <img src={c.profile_image_url || c.avatar_url} alt="" className="w-full h-full object-cover" />
                         ) : (
-                          <span className="font-serif font-bold text-2xl text-gray-200">{c.full_name?.[0]}</span>
+                          <img src={`https://images.unsplash.com/photo-1594824476967-48c8b964273f?w=200&q=80&fit=crop`} alt="" className="w-full h-full object-cover" />
                         )}
                       </div>
                     </div>
@@ -168,7 +168,22 @@ export default function AgencyPage() {
                   ))}
                 </div>
               </div>
-              <button onClick={() => { setShowBooking(null); alert('Booking request sent!') }} className="btn-primary w-full mt-2">
+              <button onClick={async () => {
+                // Save booking to agency_bookings table
+                const { data: { user } } = await supabase.auth.getUser()
+                if (user && bookingDate) {
+                  await supabase.from('agency_bookings').insert({
+                    candidate_id: showBooking.id,
+                    employer_id: user.id,
+                    shift_date: bookingDate,
+                    shift_type: bookingType,
+                    status: 'pending',
+                  })
+                }
+                setShowBooking(null)
+                setBookingDate('')
+                alert('Booking request sent!')
+              }} className="btn-primary w-full mt-2">
                 Send Request
               </button>
             </div>

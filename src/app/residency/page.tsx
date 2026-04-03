@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { createClient } from '@/lib/supabase/client'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
 import Link from 'next/link'
@@ -13,8 +14,19 @@ const residencies = [
 ]
 
 export default function ResidencyPage() {
+  const supabase = createClient()
   const [step, setStep] = useState(0) // 0 = info, 1-3 = application steps
   const [form, setForm] = useState({ name: '', email: '', phone: '', experience: '', specialisms: '', motivation: '', availability: '' })
+  const [dbResidencies, setDbResidencies] = useState<any[]>([])
+  const [submitting, setSubmitting] = useState(false)
+
+  useEffect(() => {
+    async function load() {
+      const { data } = await supabase.from('residency_profiles').select('*').order('created_at', { ascending: false })
+      if (data && data.length > 0) setDbResidencies(data)
+    }
+    load()
+  }, [])
 
   return (
     <div className="min-h-screen">
@@ -160,7 +172,25 @@ export default function ResidencyPage() {
                   <textarea rows={5} value={form.motivation} onChange={(e) => setForm({...form, motivation: e.target.value})} className="input-field" /></div>
                 <div className="flex gap-3">
                   <button onClick={() => setStep(2)} className="btn-secondary flex-1">Back</button>
-                  <button onClick={() => { setStep(0); alert('Application submitted!') }} className="btn-primary flex-1">Submit Application</button>
+                  <button onClick={async () => {
+                    setSubmitting(true)
+                    await supabase.from('residency_applications').insert({
+                      name: form.name,
+                      email: form.email,
+                      phone: form.phone || null,
+                      experience: form.experience || null,
+                      specialisms: form.specialisms || null,
+                      motivation: form.motivation || null,
+                      availability: form.availability || null,
+                      status: 'pending',
+                    })
+                    setSubmitting(false)
+                    setStep(0)
+                    setForm({ name: '', email: '', phone: '', experience: '', specialisms: '', motivation: '', availability: '' })
+                    alert('Application submitted! We\'ll be in touch soon.')
+                  }} disabled={submitting} className="btn-primary flex-1 disabled:opacity-50">
+                    {submitting ? 'Submitting...' : 'Submit Application'}
+                  </button>
                 </div>
               </div>
             )}
