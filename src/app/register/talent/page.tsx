@@ -4,9 +4,42 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
-import { ROLE_LEVELS, PRODUCT_HOUSES, QUALIFICATIONS, SYSTEMS, TRAVEL_OPTIONS, AVAILABILITY_STATUSES } from '@/lib/constants'
-import CheckboxGroup from '@/components/CheckboxGroup'
+import { ROLE_LEVELS, TRAVEL_OPTIONS, AVAILABILITY_STATUSES } from '@/lib/constants'
+import CollapsibleCheckboxSection from '@/components/CollapsibleCheckboxSection'
 import { Upload, Check } from 'lucide-react'
+
+// ─── SECTION A: Services Offered ───
+const SERVICES_CATEGORIES = [
+  { name: 'Massage & Bodywork', items: ['Swedish Massage', 'Deep Tissue Massage', 'Hot Stone Massage', 'Sports Massage', 'Lymphatic Drainage', 'Pregnancy Massage', 'Thai Massage', 'Lomi Lomi', 'Shiatsu', 'Reflexology', 'Aromatherapy Massage'] },
+  { name: 'Facial Treatments', items: ['Classic Facial', 'Anti-Ageing Facial', 'Microdermabrasion', 'Chemical Peel', 'LED Therapy', 'Microneedling', 'Dermaplaning', 'Hydrafacial', 'Lymphatic Facial', 'Bespoke Facial'] },
+  { name: 'Body Treatments', items: ['Body Wrap', 'Body Scrub', 'Hydrotherapy', 'Mud Treatment', 'Thalassotherapy', 'Detox Treatment', 'Slimming Treatment'] },
+  { name: 'Beauty & Aesthetics', items: ['Manicure', 'Pedicure', 'Gel Nails', 'Nail Art', 'Lash Extensions', 'Lash Lift & Tint', 'Brow Shaping', 'Brow Lamination', 'HD Brows', 'Waxing', 'Threading', 'Tinting', 'Semi-Permanent Makeup', 'Spray Tan'] },
+  { name: 'Hair', items: ['Cutting', 'Colouring', 'Highlights', 'Blow Dry', 'Hair Up', 'Keratin Treatment', 'Scalp Treatment', 'Barbering'] },
+  { name: 'Wellness & Movement', items: ['Yoga', 'Pilates', 'Meditation', 'Breathwork', 'Sound Healing', 'Reiki', 'Crystal Healing', 'Chakra Balancing', 'Hypnotherapy', 'Life Coaching', 'Nutrition Consultation', 'Personal Training', 'Fitness Classes', 'Swimming Instruction', 'Golf Instruction'] },
+  { name: 'Holistic & Eastern', items: ['Acupuncture', 'Acupressure', 'Ayurvedic Treatments', 'Abhyanga', 'Shirodhara', 'Marma Therapy', 'Traditional Chinese Medicine', 'Cupping', 'Gua Sha', 'Moxibustion'] },
+  { name: 'Medical Aesthetics', items: ['Botox/Fillers', 'Laser Hair Removal', 'IPL', 'Skin Peels', 'Mesotherapy', 'PRP', 'Collagen Induction', 'HIFU'] },
+  { name: 'Water Therapies', items: ['Flotation Therapy', 'Watsu', 'Aqua Wellness', 'Hydrotherapy Pool'] },
+]
+
+// ─── SECTION B: Product Houses ───
+const PRODUCT_HOUSES_FULL = [
+  'ESPA', 'Elemis', 'Decléor', 'Comfort Zone', 'La Stone', 'Kama Ayurveda',
+  '111SKIN', 'Wildsmith', 'Dr Barbara Sturm', 'VOYA', 'Bamford',
+  'Subtle Energies', 'Sodashi', 'Ila Spa', 'Thalgo', 'Guinot', 'Dermalogica',
+  'IMAGE Skincare', 'Environ', 'Medik8', 'Murad', 'Payot', 'Caudalie',
+  'Clarins', 'Sisley', 'La Mer', 'Darphin', 'Valmont', 'Biologique Recherche',
+  'QMS Medicosmetics', 'Intraceuticals', 'Babor', 'Germaine de Capuccini',
+  'Anne Semonin', 'Susanne Kaufmann', 'Aromatherapy Associates',
+  'REN Clean Skincare', 'Eve Lom', 'Liz Earle', 'Cowshed', 'Oriela Frank',
+  'Grown Alchemist', 'Mauli Rituals', 'Temple Spa', 'Sothys', 'Repêchage', 'Other',
+]
+
+// ─── SECTION C: Qualifications & Certifications ───
+const QUALIFICATIONS_CATEGORIES = [
+  { name: 'Industry Qualifications', items: ['CIDESCO', 'CIBTAC', 'ITEC', 'VTCT', 'City & Guilds', 'BTEC Level 2 Beauty', 'BTEC Level 3 Beauty', 'NVQ Level 2 Beauty', 'NVQ Level 3 Beauty', 'NVQ Level 4 Beauty', 'NVQ Level 2 Hairdressing', 'NVQ Level 3 Hairdressing', 'HND Beauty', 'Degree in Beauty Therapy'] },
+  { name: 'Specialist Certifications', items: ['First Aid', 'Manual Handling', 'COSHH', 'Food Hygiene Level 2', 'Level 3 Sports Massage', 'Level 4 Sports Massage', 'Ayurvedic Practitioner Diploma', 'Hot Stone Certified', 'Lymphatic Drainage Certified', 'Pregnancy Massage Certified', 'Medical Aesthetics Certificate', 'Laser/IPL Certified', 'Dermaplaning Certified', 'Microneedling Certified', 'Reflexology Diploma', 'Aromatherapy Diploma', 'Reiki Level 1', 'Reiki Level 2', 'Reiki Master', 'Yoga Teacher 200hr', 'Yoga Teacher 500hr', 'Pilates Instructor', 'Personal Training Level 3', 'Nutrition Advisor', 'Life Coach Certificate'] },
+  { name: 'Systems', items: ['Book4Time', 'SpaSoft', 'Mindbody', 'Spa Booker', 'Treatwell', 'Premier Software', 'Rezlynx', 'Opera PMS', 'Concept', 'Shortcuts', 'Salon IQ', 'Other'] },
+]
 
 export default function TalentRegisterPage() {
   const router = useRouter()
@@ -23,11 +56,13 @@ export default function TalentRegisterPage() {
     role_level: '', bio: '', experience_years: '', headline: '',
     day_rate_min: '', day_rate_max: '', availability_status: 'immediately',
     // Step 3
-    product_houses: [] as string[], qualifications: [] as string[],
-    systems_experience: [] as string[], travel_availability: 'uk_only',
+    services_offered: [] as string[],
+    product_houses: [] as string[],
+    qualifications: [] as string[],
+    travel_availability: 'uk_only',
     travel_radius_miles: '', travel_postcode: '',
     // Step 4
-    has_insurance: false, work_email: '',
+    has_insurance: false,
   })
 
   const [cvFile, setCvFile] = useState<File | null>(null)
@@ -73,22 +108,25 @@ export default function TalentRegisterPage() {
     // Calculate completion score
     let score = 0
     if (form.full_name) score += 10
-    if (form.email) score += 5
     if (form.phone) score += 5
     if (form.role_level) score += 15
     if (form.bio) score += 10
     if (form.headline) score += 5
-    if (form.product_houses.length > 0) score += 15
+    if (form.services_offered.length > 0) score += 15
+    if (form.product_houses.length > 0) score += 10
     if (form.qualifications.length > 0) score += 15
     if (cv_url) score += 10
-    if (form.work_email) score += 5
     if (form.has_insurance) score += 5
 
-    // Insert profile — core fields first, then extended
+    // Extract systems from qualifications (they're stored together in the form)
+    const systemsList = ['Book4Time', 'SpaSoft', 'Mindbody', 'Spa Booker', 'Treatwell', 'Premier Software', 'Rezlynx', 'Opera PMS', 'Concept', 'Shortcuts', 'Salon IQ', 'Other']
+    const systems_experience = form.qualifications.filter(q => systemsList.includes(q))
+    const qualifications_only = form.qualifications.filter(q => !systemsList.includes(q))
+
+    // Insert profile — NO email column (email lives in auth.users)
     const profileData: Record<string, any> = {
       user_id: userId,
       full_name: form.full_name,
-      email: form.email,
       phone: form.phone || null,
       postcode: form.postcode || null,
       location: form.postcode || null,
@@ -100,16 +138,16 @@ export default function TalentRegisterPage() {
       day_rate_min: form.day_rate_min ? parseInt(form.day_rate_min) : null,
       day_rate_max: form.day_rate_max ? parseInt(form.day_rate_max) : null,
       availability_status: form.availability_status,
+      specialisms: form.services_offered.length > 0 ? form.services_offered : null,
       product_houses: form.product_houses.length > 0 ? form.product_houses : null,
-      qualifications: form.qualifications.length > 0 ? form.qualifications : null,
-      systems_experience: form.systems_experience.length > 0 ? form.systems_experience : null,
+      qualifications: qualifications_only.length > 0 ? qualifications_only : null,
+      systems_experience: systems_experience.length > 0 ? systems_experience : null,
       travel_availability: form.travel_availability,
       travel_radius_miles: form.travel_radius_miles ? parseInt(form.travel_radius_miles) : null,
       has_insurance: form.has_insurance,
       insurance_document_url,
       cv_url,
       certificates_urls: certificates_urls.length > 0 ? certificates_urls : null,
-      work_email: form.work_email || null,
       approval_status: 'pending',
       profile_completion_score: score,
     }
@@ -117,9 +155,9 @@ export default function TalentRegisterPage() {
     const { error: profileError } = await supabase.from('candidate_profiles').insert(profileData)
 
     if (profileError) {
-      // Retry with just essential fields
+      // Retry with just essential fields — NO email column
       const { error: retryError } = await supabase.from('candidate_profiles').insert({
-        user_id: userId, full_name: form.full_name, email: form.email,
+        user_id: userId, full_name: form.full_name,
         phone: form.phone || null, bio: form.bio || null, headline: form.headline || null,
       })
       if (retryError) { setError(retryError.message); setLoading(false); return }
@@ -136,7 +174,6 @@ export default function TalentRegisterPage() {
 
   return (
     <div className="min-h-screen bg-white">
-      {/* Header */}
       <div className="border-b border-neutral-100 px-4 py-4 flex items-center justify-between max-w-3xl mx-auto">
         <Link href="/" className="text-black font-semibold tracking-tight">WHC Concierge</Link>
         <Link href="/login?role=talent" className="text-sm text-neutral-400 hover:text-black">Already have an account?</Link>
@@ -160,7 +197,7 @@ export default function TalentRegisterPage() {
 
         {error && <div className="bg-red-50 text-red-600 text-sm px-4 py-3 mb-6">{error}</div>}
 
-        {/* Step 1: Account & Personal */}
+        {/* ── Step 1: Account & Personal ── */}
         {step === 1 && (
           <div className="space-y-5">
             <p className="text-xs font-medium text-neutral-400 uppercase tracking-widest mb-6">Step 1 — Account & Personal Details</p>
@@ -180,7 +217,7 @@ export default function TalentRegisterPage() {
           </div>
         )}
 
-        {/* Step 2: Professional Profile */}
+        {/* ── Step 2: Professional Profile ── */}
         {step === 2 && (
           <div className="space-y-5">
             <p className="text-xs font-medium text-neutral-400 uppercase tracking-widest mb-6">Step 2 — Professional Profile</p>
@@ -208,14 +245,37 @@ export default function TalentRegisterPage() {
           </div>
         )}
 
-        {/* Step 3: Skills & Qualifications */}
+        {/* ── Step 3: Services, Product Houses, Qualifications ── */}
         {step === 3 && (
-          <div className="space-y-8">
-            <p className="text-xs font-medium text-neutral-400 uppercase tracking-widest mb-2">Step 3 — Skills & Qualifications</p>
-            <CheckboxGroup label="Product Houses" options={PRODUCT_HOUSES} selected={form.product_houses} onChange={(v) => update('product_houses', v)} />
-            <CheckboxGroup label="Qualifications Held" options={QUALIFICATIONS} selected={form.qualifications} onChange={(v) => update('qualifications', v)} />
-            <CheckboxGroup label="Systems Experience" options={SYSTEMS} selected={form.systems_experience} onChange={(v) => update('systems_experience', v)} columns={2} />
-            <div>
+          <div className="space-y-4">
+            <p className="text-xs font-medium text-neutral-400 uppercase tracking-widest mb-4">Step 3 — Skills & Qualifications</p>
+
+            {/* Section A: Services Offered */}
+            <CollapsibleCheckboxSection
+              title="A — Services Offered"
+              categories={SERVICES_CATEGORIES}
+              selected={form.services_offered}
+              onChange={(v) => update('services_offered', v)}
+            />
+
+            {/* Section B: Product Houses */}
+            <CollapsibleCheckboxSection
+              title="B — Product Houses"
+              flatItems={PRODUCT_HOUSES_FULL}
+              selected={form.product_houses}
+              onChange={(v) => update('product_houses', v)}
+            />
+
+            {/* Section C: Qualifications & Certifications */}
+            <CollapsibleCheckboxSection
+              title="C — Qualifications & Certifications"
+              categories={QUALIFICATIONS_CATEGORIES}
+              selected={form.qualifications}
+              onChange={(v) => update('qualifications', v)}
+            />
+
+            {/* Travel */}
+            <div className="pt-4">
               <label className="block text-xs font-medium text-neutral-500 uppercase tracking-wider mb-3">Travel Availability</label>
               <div className="flex flex-wrap gap-2">
                 {TRAVEL_OPTIONS.map((t) => (
@@ -232,11 +292,12 @@ export default function TalentRegisterPage() {
                 </div>
               )}
             </div>
-            <div className="flex gap-3"><button onClick={() => setStep(2)} className="btn-secondary flex-1">Back</button><button onClick={() => setStep(4)} className="btn-primary flex-1">Continue</button></div>
+
+            <div className="flex gap-3 pt-4"><button onClick={() => setStep(2)} className="btn-secondary flex-1">Back</button><button onClick={() => setStep(4)} className="btn-primary flex-1">Continue</button></div>
           </div>
         )}
 
-        {/* Step 4: Documents & Verification */}
+        {/* ── Step 4: Documents ── */}
         {step === 4 && (
           <div className="space-y-6">
             <p className="text-xs font-medium text-neutral-400 uppercase tracking-widest mb-2">Step 4 — Documents & Verification</p>
@@ -269,8 +330,6 @@ export default function TalentRegisterPage() {
                 </label>
               )}
             </div>
-
-            <div><label className="block text-xs font-medium text-neutral-500 uppercase tracking-wider mb-1.5">Work Email (for verification)</label><input type="email" value={form.work_email} onChange={(e) => update('work_email', e.target.value)} className="input-field" placeholder="your.name@employer.com" /></div>
 
             <div className="bg-neutral-50 p-4 text-sm text-neutral-500">
               Your profile will be reviewed by our team within 24 hours. You&apos;ll receive an email once approved.
