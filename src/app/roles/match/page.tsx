@@ -6,14 +6,12 @@ import Link from 'next/link'
 import { MapPin, Briefcase, Star, X, Heart, ArrowLeft, ChevronUp } from 'lucide-react'
 
 const spaPhotos = [
-  'https://images.unsplash.com/photo-1540555700478-4be289fbec6d?w=800&q=80',
-  'https://images.unsplash.com/photo-1596178065887-1198b6148b2b?w=800&q=80',
-  'https://images.unsplash.com/photo-1600334129128-685c5582fd35?w=800&q=80',
-  'https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=800&q=80',
-  'https://images.unsplash.com/photo-1544161515-4ab6ce6db874?w=800&q=80',
-  'https://images.unsplash.com/photo-1515377905703-c4788e51af15?w=800&q=80',
-  'https://images.unsplash.com/photo-1507652313519-d4e9174996dd?w=800&q=80',
-  'https://images.unsplash.com/photo-1560750588-73207b1ef5b8?w=800&q=80',
+  'https://images.unsplash.com/photo-1600334089648-b0d9d3028eb2?w=800&q=80&auto=format&fit=crop',
+  'https://images.unsplash.com/photo-1540555700478-4be289fbec6d?w=800&q=80&auto=format&fit=crop',
+  'https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?w=800&q=80&auto=format&fit=crop',
+  'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?w=800&q=80&auto=format&fit=crop',
+  'https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=800&q=80&auto=format&fit=crop',
+  'https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?w=800&q=80&auto=format&fit=crop',
 ]
 
 const sampleJobs = [

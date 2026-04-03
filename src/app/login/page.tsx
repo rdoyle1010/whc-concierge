@@ -108,7 +108,7 @@ function LoginForm() {
 
       {/* Right — image */}
       <div className="hidden lg:block w-1/2 relative">
-        <img src="https://images.unsplash.com/photo-1596178065887-1198b6148b2b?w=1200&q=80" alt="" className="absolute inset-0 w-full h-full object-cover" />
+        <img src="https://images.unsplash.com/photo-1600334089648-b0d9d3028eb2?w=1200&q=80&auto=format&fit=crop" alt="Luxury spa" className="absolute inset-0 w-full h-full object-cover" />
       </div>
     </div>
   )

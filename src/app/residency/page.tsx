@@ -47,7 +47,7 @@ export default function ResidencyPage() {
             </div>
           </div>
           <div className="hidden lg:block relative">
-            <img src="https://images.unsplash.com/photo-1600334129128-685c5582fd35?w=1200&q=80" alt="" className="absolute inset-0 w-full h-full object-cover" />
+            <img src="https://images.unsplash.com/photo-1600334089648-b0d9d3028eb2?w=1200&q=80&auto=format&fit=crop" alt="Luxury wellness" className="absolute inset-0 w-full h-full object-cover" />
           </div>
         </div>
       </section>
@@ -75,7 +75,7 @@ export default function ResidencyPage() {
             {fallbackResidencies.map((r) => (
               <div key={r.property} className="border border-neutral-200 hover:border-neutral-400 transition-colors">
                 <div className="h-48 bg-neutral-100 relative overflow-hidden">
-                  <img src="https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=600&q=80" alt="" className="w-full h-full object-cover" />
+                  <img src="https://images.unsplash.com/photo-1540555700478-4be289fbec6d?w=600&q=80&auto=format&fit=crop" alt="Spa property" className="w-full h-full object-cover" />
                 </div>
                 <div className="p-6">
                   <p className="text-neutral-400 text-xs tracking-widest uppercase mb-2">{r.type}</p>

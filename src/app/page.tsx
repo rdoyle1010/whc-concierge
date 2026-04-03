@@ -93,7 +93,7 @@ export default function HomePage() {
           {/* Right — image */}
           <div className="hidden lg:block relative overflow-hidden">
             <img
-              src="https://images.unsplash.com/photo-1540555700478-4be289fbec6d?w=1200&q=80"
+              src="https://images.unsplash.com/photo-1600334089648-b0d9d3028eb2?w=1200&q=80&auto=format&fit=crop"
               alt="Luxury spa"
               className="absolute inset-0 w-full h-full object-cover"
             />

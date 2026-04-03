@@ -48,7 +48,7 @@ export default function AgencyPage() {
             </div>
           </div>
           <div className="hidden lg:block relative">
-            <img src="https://images.unsplash.com/photo-1544161515-4ab6ce6db874?w=1200&q=80" alt="" className="absolute inset-0 w-full h-full object-cover" />
+            <img src="https://images.unsplash.com/photo-1600334089648-b0d9d3028eb2?w=1200&q=80&auto=format&fit=crop" alt="Wellness spa" className="absolute inset-0 w-full h-full object-cover" />
           </div>
         </div>
       </section>
