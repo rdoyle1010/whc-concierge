@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { calculateMatchScore } from '@/lib/matching'
 import Link from 'next/link'
 import { MapPin, X, Heart, ArrowLeft, ChevronDown, Sparkles } from 'lucide-react'
 
@@ -39,9 +40,35 @@ export default function SwipeMatchPage() {
     async function load() {
       const { data:{ user } } = await supabase.auth.getUser()
       if (user) setUserId(user.id)
+
+      // Load candidate profile for real matching
+      let candidateProfile: any = null
+      if (user) {
+        const { data: cp } = await supabase.from('candidate_profiles').select('*').eq('user_id', user.id).single()
+        candidateProfile = cp
+      }
+
       const { data } = await supabase.from('job_listings').select('*, employer_profiles(company_name, logo_url)').eq('status', 'active').order('created_at', { ascending: false }).limit(50)
-      const list = data && data.length > 0 ? data.map((j:any,i:number) => ({ ...j, matchScore: Math.max(45, 100 - i*7), matchLabel: (100-i*7)>=90?'Perfect Match':(100-i*7)>=75?'Strong Match':(100-i*7)>=60?'Good Match':'Partial Match' })) : samples
-      setJobs(list); setLoading(false)
+
+      if (data && data.length > 0) {
+        // Calculate real match scores
+        const scored = data.map((job: any) => {
+          if (candidateProfile) {
+            const result = calculateMatchScore(candidateProfile, job)
+            return { ...job, matchScore: result.score, matchLabel: result.label }
+          }
+          // No profile — show without score
+          return { ...job, matchScore: 0, matchLabel: '' }
+        })
+        // Filter out hard-stopped and below threshold, sort by score desc
+        const filtered = scored
+          .filter((j: any) => j.matchScore >= 45 || !candidateProfile)
+          .sort((a: any, b: any) => b.matchScore - a.matchScore)
+        setJobs(filtered.length > 0 ? filtered : samples)
+      } else {
+        setJobs(samples)
+      }
+      setLoading(false)
     }
     load()
   }, [])

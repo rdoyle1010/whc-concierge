@@ -72,10 +72,13 @@ export default function TalentRegisterPage() {
   const update = (field: string, value: any) => setForm({ ...form, [field]: value })
 
   const uploadFile = async (file: File, path: string): Promise<string | null> => {
-    const { error } = await supabase.storage.from('talent-documents').upload(path, file, { upsert: true })
-    if (error) return null
-    const { data: { publicUrl } } = supabase.storage.from('talent-documents').getPublicUrl(path)
-    return publicUrl
+    const formData = new FormData()
+    formData.append('file', file)
+    formData.append('bucket', 'talent-documents')
+    formData.append('path', path)
+    const res = await fetch('/api/upload', { method: 'POST', body: formData })
+    const data = await res.json()
+    return res.ok ? data.url : null
   }
 
   const handleSubmit = async () => {
