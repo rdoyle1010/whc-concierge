@@ -53,13 +53,18 @@ export default function EmployerRegisterPage() {
       approval_status: 'pending',
     }
 
-    const { error: profileError } = await supabase.from('employer_profiles').insert(profileData)
-    if (profileError) {
-      const { error: retryError } = await supabase.from('employer_profiles').insert({
-        user_id: authData.user.id, company_name: form.company_name,
-        contact_name: form.contact_name, email: form.email,
-      })
-      if (retryError) { setError(retryError.message); setLoading(false); return }
+    // POST to server-side API route (uses service role key to bypass RLS)
+    const res = await fetch('/api/register/employer', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId: authData.user.id, profileData }),
+    })
+    const result = await res.json()
+
+    if (!res.ok) {
+      setError(result.error || 'Failed to create profile')
+      setLoading(false)
+      return
     }
 
     router.push('/employer/dashboard')

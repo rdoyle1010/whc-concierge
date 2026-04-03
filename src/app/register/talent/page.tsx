@@ -152,15 +152,18 @@ export default function TalentRegisterPage() {
       profile_completion_score: score,
     }
 
-    const { error: profileError } = await supabase.from('candidate_profiles').insert(profileData)
+    // POST to server-side API route (uses service role key to bypass RLS)
+    const res = await fetch('/api/register/talent', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId, profileData }),
+    })
+    const result = await res.json()
 
-    if (profileError) {
-      // Retry with just essential fields — NO email column
-      const { error: retryError } = await supabase.from('candidate_profiles').insert({
-        user_id: userId, full_name: form.full_name,
-        phone: form.phone || null, bio: form.bio || null, headline: form.headline || null,
-      })
-      if (retryError) { setError(retryError.message); setLoading(false); return }
+    if (!res.ok) {
+      setError(result.error || 'Failed to create profile')
+      setLoading(false)
+      return
     }
 
     router.push('/talent/dashboard')
