@@ -29,21 +29,25 @@ function LoginForm() {
     if (authError) { setError(authError.message); setLoading(false); return }
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) { setError('Login failed'); setLoading(false); return }
-    // Route by profile
+    // Route by role — default always goes to /talent/dashboard
     const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
-    if (profile?.role === 'admin') { router.push('/admin/dashboard'); return }
-    if (profile?.role === 'employer') { router.push('/employer/dashboard'); return }
-    if (profile?.role === 'candidate' || profile?.role === 'talent') {
-      const { data: c } = await supabase.from('candidate_profiles').select('id').eq('user_id', user.id).single()
-      if (c) { router.push('/talent/dashboard'); return }
-      router.push('/register/talent'); return
+    const role_from_profile = profile?.role
+    const role_from_meta = user.user_metadata?.role
+
+    // Admin check (profiles table or user_metadata)
+    if (role_from_profile === 'admin' || role_from_meta === 'admin') {
+      router.push('/admin/dashboard'); return
     }
-    if (user.user_metadata?.role === 'admin') { router.push('/admin/dashboard'); return }
-    const { data: c } = await supabase.from('candidate_profiles').select('id').eq('user_id', user.id).single()
-    if (c) { router.push('/talent/dashboard'); return }
+
+    // Employer check (profiles table, user_metadata, or employer_profiles exists)
+    if (role_from_profile === 'employer' || role_from_meta === 'employer') {
+      router.push('/employer/dashboard'); return
+    }
     const { data: emp } = await supabase.from('employer_profiles').select('id').eq('user_id', user.id).single()
     if (emp) { router.push('/employer/dashboard'); return }
-    router.push(`/register/${role}`)
+
+    // Everything else → talent dashboard (candidate, talent, null, undefined)
+    router.push('/talent/dashboard')
   }
 
   return (

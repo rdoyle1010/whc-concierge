@@ -45,7 +45,8 @@ export async function getUserRole(): Promise<UserRole | null> {
 
   if (employer) return 'employer'
 
-  return null
+  // Default to talent — never return null for a logged-in user
+  return 'talent'
 }
 
 export async function requireAuth(allowedRoles?: UserRole[]) {
