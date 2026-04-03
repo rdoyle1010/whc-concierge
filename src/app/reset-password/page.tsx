@@ -18,6 +18,7 @@ function ResetPasswordForm() {
   const searchParams = useSearchParams()
   const router = useRouter()
   const supabase = createClient()
+  const code = searchParams.get('code')
 
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
@@ -26,21 +27,48 @@ function ResetPasswordForm() {
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
   const [sessionReady, setSessionReady] = useState(false)
+  const [exchangeError, setExchangeError] = useState(false)
 
   useEffect(() => {
-    // Supabase automatically exchanges the code in the URL for a session
-    // when using the PKCE flow. We just need to wait for it.
-    supabase.auth.onAuthStateChange((event) => {
+    async function exchangeCode() {
+      if (!code) {
+        // No code — check if there's already a session from the auth callback
+        const { data: { session } } = await supabase.auth.getSession()
+        if (session) {
+          setSessionReady(true)
+        } else {
+          setExchangeError(true)
+        }
+        return
+      }
+
+      // Exchange the code from the URL for a session
+      const { data, error } = await supabase.auth.exchangeCodeForSession(code)
+
+      if (error) {
+        console.error('Code exchange failed:', error.message)
+        setExchangeError(true)
+        return
+      }
+
+      if (data.session) {
+        setSessionReady(true)
+      } else {
+        setExchangeError(true)
+      }
+    }
+
+    // Also listen for PASSWORD_RECOVERY event as a fallback
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
       if (event === 'PASSWORD_RECOVERY') {
         setSessionReady(true)
       }
     })
 
-    // Also check if we already have a session (e.g. code was already exchanged)
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) setSessionReady(true)
-    })
-  }, [])
+    exchangeCode()
+
+    return () => subscription.unsubscribe()
+  }, [code])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -93,6 +121,11 @@ function ResetPasswordForm() {
               </div>
               <p className="text-gray-600 mb-2">Your password has been updated.</p>
               <p className="text-gray-400 text-sm">Redirecting to sign in...</p>
+            </div>
+          ) : exchangeError ? (
+            <div className="text-center py-6">
+              <p className="text-red-500 mb-4">This reset link is invalid or has expired.</p>
+              <Link href="/forgot-password" className="text-gold font-medium">Request a new reset link</Link>
             </div>
           ) : !sessionReady ? (
             <div className="text-center py-6">

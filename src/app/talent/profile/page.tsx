@@ -40,21 +40,22 @@ export default function TalentProfilePage() {
   const handleSave = async () => {
     setSaving(true)
     setMessage('')
+    // Build update payload with only fields that have values
+    const updateData: Record<string, any> = {
+      full_name: profile.full_name,
+      phone: profile.phone,
+      location: profile.location,
+      headline: profile.headline,
+      bio: profile.bio,
+    }
+
+    // Add extended fields — these may or may not exist in the table
+    if (profile.specialisms) updateData.specialisms = profile.specialisms
+    if (profile.experience_years) updateData.experience_years = parseInt(profile.experience_years)
+
     const { error } = await supabase
       .from('candidate_profiles')
-      .update({
-        full_name: profile.full_name,
-        phone: profile.phone,
-        location: profile.location,
-        headline: profile.headline,
-        bio: profile.bio,
-        specialisms: profile.specialisms,
-        experience_years: profile.experience_years ? parseInt(profile.experience_years) : null,
-        salary_min: profile.salary_min ? parseInt(profile.salary_min) : null,
-        salary_max: profile.salary_max ? parseInt(profile.salary_max) : null,
-        availability: profile.availability,
-        stealth_mode: profile.stealth_mode,
-      })
+      .update(updateData)
       .eq('id', profile.id)
 
     setSaving(false)
@@ -173,48 +174,13 @@ export default function TalentProfilePage() {
           </div>
         </div>
 
-        {/* Preferences */}
+        {/* Experience */}
         <div className="dashboard-card mb-6 space-y-5">
-          <h3 className="font-serif text-lg font-semibold">Preferences</h3>
-          <div className="grid grid-cols-3 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">Experience (years)</label>
-              <input type="number" value={profile.experience_years || ''} onChange={(e) => update('experience_years', e.target.value)} className="input-field" />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">Min Salary (£)</label>
-              <input type="number" value={profile.salary_min || ''} onChange={(e) => update('salary_min', e.target.value)} className="input-field" />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">Max Salary (£)</label>
-              <input type="number" value={profile.salary_max || ''} onChange={(e) => update('salary_max', e.target.value)} className="input-field" />
-            </div>
-          </div>
+          <h3 className="font-serif text-lg font-semibold">Experience</h3>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">Availability</label>
-            <select value={profile.availability || ''} onChange={(e) => update('availability', e.target.value)} className="input-field">
-              <option value="immediate">Immediately</option>
-              <option value="2_weeks">2 Weeks Notice</option>
-              <option value="1_month">1 Month Notice</option>
-              <option value="3_months">3 Months Notice</option>
-              <option value="not_looking">Not Currently Looking</option>
-            </select>
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">Years of Experience</label>
+            <input type="number" value={profile.experience_years || ''} onChange={(e) => update('experience_years', e.target.value)} className="input-field max-w-xs" />
           </div>
-        </div>
-
-        {/* Privacy */}
-        <div className="dashboard-card space-y-4">
-          <h3 className="font-serif text-lg font-semibold">Privacy</h3>
-          <label className="flex items-center justify-between cursor-pointer">
-            <div>
-              <p className="font-medium text-ink">Stealth Mode</p>
-              <p className="text-sm text-gray-500">Hide your profile from blocked employers</p>
-            </div>
-            <div className={`w-12 h-7 rounded-full transition-colors cursor-pointer flex items-center ${profile.stealth_mode ? 'bg-gold' : 'bg-gray-200'}`}
-              onClick={() => update('stealth_mode', !profile.stealth_mode)}>
-              <div className={`w-5 h-5 rounded-full bg-white shadow transition-transform ${profile.stealth_mode ? 'translate-x-6' : 'translate-x-1'}`} />
-            </div>
-          </label>
         </div>
       </div>
     </DashboardShell>

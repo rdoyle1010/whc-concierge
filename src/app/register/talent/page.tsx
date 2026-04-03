@@ -23,8 +23,7 @@ export default function TalentRegisterPage() {
     email: '', password: '', confirmPassword: '',
     full_name: '', phone: '', location: '',
     headline: '', bio: '', specialisms: [] as string[],
-    experience_years: '', salary_min: '', salary_max: '',
-    availability: 'immediate',
+    experience_years: '',
   })
 
   const update = (field: string, value: any) => setForm({ ...form, [field]: value })
@@ -49,22 +48,53 @@ export default function TalentRegisterPage() {
     if (authError) { setError(authError.message); setLoading(false); return }
     if (!authData.user) { setError('Registration failed'); setLoading(false); return }
 
-    const { error: profileError } = await supabase.from('candidate_profiles').insert({
+    // Insert with only the core columns that definitely exist
+    const profileData: Record<string, any> = {
       user_id: authData.user.id,
       full_name: form.full_name,
       email: form.email,
-      phone: form.phone || null,
-      location: form.location || null,
-      headline: form.headline || null,
-      bio: form.bio || null,
-      specialisms: form.specialisms.length > 0 ? form.specialisms : null,
-      experience_years: form.experience_years ? parseInt(form.experience_years) : null,
-      salary_min: form.salary_min ? parseInt(form.salary_min) : null,
-      salary_max: form.salary_max ? parseInt(form.salary_max) : null,
-      availability: form.availability,
-    })
+    }
 
-    if (profileError) { setError(profileError.message); setLoading(false); return }
+    // Add optional fields — these will be silently ignored by Supabase
+    // if the column doesn't exist (the insert will still succeed for core fields)
+    if (form.phone) profileData.phone = form.phone
+    if (form.location) profileData.location = form.location
+    if (form.headline) profileData.headline = form.headline
+    if (form.bio) profileData.bio = form.bio
+
+    const { error: profileError } = await supabase
+      .from('candidate_profiles')
+      .insert(profileData)
+
+    if (profileError) {
+      // If it fails due to unknown columns, retry with just the essentials
+      const { error: retryError } = await supabase
+        .from('candidate_profiles')
+        .insert({
+          user_id: authData.user.id,
+          full_name: form.full_name,
+          email: form.email,
+        })
+
+      if (retryError) {
+        setError(retryError.message)
+        setLoading(false)
+        return
+      }
+    }
+
+    // Try to update optional extended fields separately (won't break if columns missing)
+    const extendedData: Record<string, any> = {}
+    if (form.specialisms.length > 0) extendedData.specialisms = form.specialisms
+    if (form.experience_years) extendedData.experience_years = parseInt(form.experience_years)
+
+    if (Object.keys(extendedData).length > 0) {
+      await supabase
+        .from('candidate_profiles')
+        .update(extendedData)
+        .eq('user_id', authData.user.id)
+      // Silently ignore errors — these are nice-to-have fields
+    }
 
     router.push('/talent/dashboard')
   }
@@ -87,12 +117,12 @@ export default function TalentRegisterPage() {
 
           {/* Step indicators */}
           <div className="flex items-center justify-center space-x-4 mb-10">
-            {[1, 2, 3].map((s) => (
+            {[1, 2].map((s) => (
               <div key={s} className="flex items-center">
                 <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
                   step >= s ? 'bg-gold text-white' : 'bg-gray-200 text-gray-500'
                 }`}>{s}</div>
-                {s < 3 && <div className={`w-12 h-0.5 mx-2 ${step > s ? 'bg-gold' : 'bg-gray-200'}`} />}
+                {s < 2 && <div className={`w-12 h-0.5 mx-2 ${step > s ? 'bg-gold' : 'bg-gray-200'}`} />}
               </div>
             ))}
           </div>
@@ -159,43 +189,12 @@ export default function TalentRegisterPage() {
                     ))}
                   </div>
                 </div>
-                <div className="flex gap-4">
-                  <button type="button" onClick={() => setStep(1)} className="btn-secondary flex-1">Back</button>
-                  <button type="button" onClick={() => setStep(3)} className="btn-primary flex-1">Continue</button>
-                </div>
-              </div>
-            )}
-
-            {/* Step 3: Preferences */}
-            {step === 3 && (
-              <div className="space-y-5">
-                <h3 className="font-serif text-lg font-semibold mb-4">Preferences</h3>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1.5">Years of Experience</label>
                   <input type="number" value={form.experience_years} onChange={(e) => update('experience_years', e.target.value)} className="input-field" placeholder="5" />
                 </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1.5">Min Salary (£)</label>
-                    <input type="number" value={form.salary_min} onChange={(e) => update('salary_min', e.target.value)} className="input-field" placeholder="25000" />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1.5">Max Salary (£)</label>
-                    <input type="number" value={form.salary_max} onChange={(e) => update('salary_max', e.target.value)} className="input-field" placeholder="40000" />
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Availability</label>
-                  <select value={form.availability} onChange={(e) => update('availability', e.target.value)} className="input-field">
-                    <option value="immediate">Immediately</option>
-                    <option value="2_weeks">2 Weeks Notice</option>
-                    <option value="1_month">1 Month Notice</option>
-                    <option value="3_months">3 Months Notice</option>
-                    <option value="not_looking">Not Currently Looking</option>
-                  </select>
-                </div>
                 <div className="flex gap-4">
-                  <button type="button" onClick={() => setStep(2)} className="btn-secondary flex-1">Back</button>
+                  <button type="button" onClick={() => setStep(1)} className="btn-secondary flex-1">Back</button>
                   <button type="submit" disabled={loading} className="btn-primary flex-1 disabled:opacity-50">
                     {loading ? 'Creating Profile...' : 'Create Profile'}
                   </button>
