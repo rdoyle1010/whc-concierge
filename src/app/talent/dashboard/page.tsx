@@ -64,12 +64,40 @@ export default function TalentDashboard() {
 
   return (
     <DashboardShell role="talent" userName={profile?.full_name}>
+      {/* Approval status banner */}
+      {profile?.approval_status === 'pending' && (
+        <div className="bg-amber-50 border border-amber-200 p-4 mb-6 flex items-center space-x-3">
+          <span className="text-amber-600 text-lg">&#9203;</span>
+          <div><p className="text-sm font-medium text-amber-800">Your profile is under review</p><p className="text-xs text-amber-600">Our team will review your profile within 24 hours. You&apos;ll receive an email once approved.</p></div>
+        </div>
+      )}
+      {profile?.approval_status === 'rejected' && (
+        <div className="bg-red-50 border border-red-200 p-4 mb-6 flex items-center space-x-3">
+          <span className="text-red-600 text-lg">&#10060;</span>
+          <div><p className="text-sm font-medium text-red-800">Your profile needs attention</p><p className="text-xs text-red-600">{profile.approval_notes || 'Please update your profile and resubmit.'}</p></div>
+        </div>
+      )}
+      {profile?.approval_status === 'approved' && (
+        <div className="bg-emerald-50 border border-emerald-200 p-4 mb-6 flex items-center space-x-3">
+          <span className="text-emerald-600 text-lg">&#10003;</span>
+          <div><p className="text-sm font-medium text-emerald-800">Profile approved — you&apos;re live</p></div>
+        </div>
+      )}
+
       {/* Welcome */}
-      <div className="mb-8">
-        <h1 className="text-2xl font-serif font-bold text-ink">
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold text-black">
           Welcome back{profile?.full_name ? `, ${profile.full_name.split(' ')[0]}` : ''}
         </h1>
-        <p className="text-gray-500 text-sm mt-1">Here&apos;s what&apos;s happening with your career profile.</p>
+        <p className="text-neutral-400 text-sm mt-1">Here&apos;s what&apos;s happening with your career profile.</p>
+      </div>
+
+      {/* Quick links */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+        <Link href="/talent/profile" className="border border-neutral-200 p-4 text-center hover:border-black transition-colors"><p className="text-sm font-medium text-black">Edit Profile</p></Link>
+        <Link href="/jobs" className="border border-neutral-200 p-4 text-center hover:border-black transition-colors"><p className="text-sm font-medium text-black">Browse Jobs</p></Link>
+        <Link href="/roles/match" className="border border-neutral-200 p-4 text-center hover:border-black transition-colors"><p className="text-sm font-medium text-black">Go to Match</p></Link>
+        <Link href="/talent/agency" className="border border-neutral-200 p-4 text-center hover:border-black transition-colors"><p className="text-sm font-medium text-black">Agency Shifts</p></Link>
       </div>
 
       {/* Stats */}

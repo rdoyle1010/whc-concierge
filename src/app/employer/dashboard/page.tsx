@@ -96,12 +96,12 @@ export default function EmployerDashboard() {
 
       {/* Quick Actions */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-        <Link href="/employer/jobs?new=true" className="dashboard-card bg-gold/5 border-gold/20 hover:bg-gold/10 flex items-center justify-between">
+        <Link href="/employer/post-role" className="dashboard-card bg-neutral-50 border-neutral-200 hover:border-black flex items-center justify-between transition-colors">
           <div>
-            <h3 className="font-serif text-lg font-semibold text-ink">Post a New Role</h3>
-            <p className="text-sm text-gray-500">Create a new job listing</p>
+            <h3 className="text-lg font-semibold text-black">Post a New Role</h3>
+            <p className="text-sm text-neutral-400">Create a job listing with payment</p>
           </div>
-          <ArrowRight className="text-gold" size={20} />
+          <ArrowRight className="text-neutral-400" size={20} />
         </Link>
         <Link href="/employer/candidates" className="dashboard-card hover:border-gold/30 flex items-center justify-between">
           <div>
