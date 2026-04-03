@@ -4,13 +4,9 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
-
-const specialisms = [
-  'Massage Therapy', 'Beauty Therapy', 'Spa Management', 'Wellness Coaching',
-  'Physiotherapy', 'Yoga & Pilates', 'Nutritional Therapy', 'Aesthetic Treatments',
-  'Nail Technology', 'Hair Styling', 'Holistic Therapy', 'Fitness Training',
-  'Ayurveda', 'Acupuncture', 'Reflexology', 'Aromatherapy'
-]
+import { ROLE_LEVELS, PRODUCT_HOUSES, QUALIFICATIONS, SYSTEMS, TRAVEL_OPTIONS, AVAILABILITY_STATUSES } from '@/lib/constants'
+import CheckboxGroup from '@/components/CheckboxGroup'
+import { Upload, Check } from 'lucide-react'
 
 export default function TalentRegisterPage() {
   const router = useRouter()
@@ -20,193 +16,274 @@ export default function TalentRegisterPage() {
   const [error, setError] = useState('')
 
   const [form, setForm] = useState({
+    // Step 1
     email: '', password: '', confirmPassword: '',
-    full_name: '', phone: '', location: '',
-    headline: '', bio: '', specialisms: [] as string[],
-    experience_years: '',
+    full_name: '', phone: '', postcode: '', has_car: false,
+    // Step 2
+    role_level: '', bio: '', experience_years: '', headline: '',
+    day_rate_min: '', day_rate_max: '', availability_status: 'immediately',
+    // Step 3
+    product_houses: [] as string[], qualifications: [] as string[],
+    systems_experience: [] as string[], travel_availability: 'uk_only',
+    travel_radius_miles: '', travel_postcode: '',
+    // Step 4
+    has_insurance: false, work_email: '',
   })
+
+  const [cvFile, setCvFile] = useState<File | null>(null)
+  const [certFiles, setCertFiles] = useState<File[]>([])
+  const [insuranceFile, setInsuranceFile] = useState<File | null>(null)
 
   const update = (field: string, value: any) => setForm({ ...form, [field]: value })
 
-  const toggleSpecialism = (s: string) => {
-    const current = form.specialisms
-    update('specialisms', current.includes(s) ? current.filter(x => x !== s) : [...current, s])
+  const uploadFile = async (file: File, path: string): Promise<string | null> => {
+    const { error } = await supabase.storage.from('talent-documents').upload(path, file, { upsert: true })
+    if (error) return null
+    const { data: { publicUrl } } = supabase.storage.from('talent-documents').getPublicUrl(path)
+    return publicUrl
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const handleSubmit = async () => {
     if (form.password !== form.confirmPassword) { setError('Passwords do not match'); return }
     setLoading(true)
     setError('')
 
+    // Create auth user
     const { data: authData, error: authError } = await supabase.auth.signUp({
-      email: form.email,
-      password: form.password,
+      email: form.email, password: form.password,
       options: { data: { role: 'talent', full_name: form.full_name } }
     })
-
     if (authError) { setError(authError.message); setLoading(false); return }
     if (!authData.user) { setError('Registration failed'); setLoading(false); return }
 
-    // Insert with only the core columns that definitely exist
+    const userId = authData.user.id
+
+    // Upload documents
+    let cv_url: string | null = null
+    let insurance_document_url: string | null = null
+    let certificates_urls: string[] = []
+
+    if (cvFile) cv_url = await uploadFile(cvFile, `${userId}/cv-${cvFile.name}`)
+    if (insuranceFile) insurance_document_url = await uploadFile(insuranceFile, `${userId}/insurance-${insuranceFile.name}`)
+    for (const cert of certFiles) {
+      const url = await uploadFile(cert, `${userId}/cert-${cert.name}`)
+      if (url) certificates_urls.push(url)
+    }
+
+    // Calculate completion score
+    let score = 0
+    if (form.full_name) score += 10
+    if (form.email) score += 5
+    if (form.phone) score += 5
+    if (form.role_level) score += 15
+    if (form.bio) score += 10
+    if (form.headline) score += 5
+    if (form.product_houses.length > 0) score += 15
+    if (form.qualifications.length > 0) score += 15
+    if (cv_url) score += 10
+    if (form.work_email) score += 5
+    if (form.has_insurance) score += 5
+
+    // Insert profile — core fields first, then extended
     const profileData: Record<string, any> = {
-      user_id: authData.user.id,
+      user_id: userId,
       full_name: form.full_name,
       email: form.email,
+      phone: form.phone || null,
+      postcode: form.postcode || null,
+      location: form.postcode || null,
+      has_car: form.has_car,
+      role_level: form.role_level || null,
+      bio: form.bio || null,
+      headline: form.headline || null,
+      experience_years: form.experience_years ? parseInt(form.experience_years) : null,
+      day_rate_min: form.day_rate_min ? parseInt(form.day_rate_min) : null,
+      day_rate_max: form.day_rate_max ? parseInt(form.day_rate_max) : null,
+      availability_status: form.availability_status,
+      product_houses: form.product_houses.length > 0 ? form.product_houses : null,
+      qualifications: form.qualifications.length > 0 ? form.qualifications : null,
+      systems_experience: form.systems_experience.length > 0 ? form.systems_experience : null,
+      travel_availability: form.travel_availability,
+      travel_radius_miles: form.travel_radius_miles ? parseInt(form.travel_radius_miles) : null,
+      has_insurance: form.has_insurance,
+      insurance_document_url,
+      cv_url,
+      certificates_urls: certificates_urls.length > 0 ? certificates_urls : null,
+      work_email: form.work_email || null,
+      approval_status: 'pending',
+      profile_completion_score: score,
     }
 
-    // Add optional fields — these will be silently ignored by Supabase
-    // if the column doesn't exist (the insert will still succeed for core fields)
-    if (form.phone) profileData.phone = form.phone
-    if (form.location) profileData.location = form.location
-    if (form.headline) profileData.headline = form.headline
-    if (form.bio) profileData.bio = form.bio
-
-    const { error: profileError } = await supabase
-      .from('candidate_profiles')
-      .insert(profileData)
+    const { error: profileError } = await supabase.from('candidate_profiles').insert(profileData)
 
     if (profileError) {
-      // If it fails due to unknown columns, retry with just the essentials
-      const { error: retryError } = await supabase
-        .from('candidate_profiles')
-        .insert({
-          user_id: authData.user.id,
-          full_name: form.full_name,
-          email: form.email,
-        })
-
-      if (retryError) {
-        setError(retryError.message)
-        setLoading(false)
-        return
-      }
-    }
-
-    // Try to update optional extended fields separately (won't break if columns missing)
-    const extendedData: Record<string, any> = {}
-    if (form.specialisms.length > 0) extendedData.specialisms = form.specialisms
-    if (form.experience_years) extendedData.experience_years = parseInt(form.experience_years)
-
-    if (Object.keys(extendedData).length > 0) {
-      await supabase
-        .from('candidate_profiles')
-        .update(extendedData)
-        .eq('user_id', authData.user.id)
-      // Silently ignore errors — these are nice-to-have fields
+      // Retry with just essential fields
+      const { error: retryError } = await supabase.from('candidate_profiles').insert({
+        user_id: userId, full_name: form.full_name, email: form.email,
+        phone: form.phone || null, bio: form.bio || null, headline: form.headline || null,
+      })
+      if (retryError) { setError(retryError.message); setLoading(false); return }
     }
 
     router.push('/talent/dashboard')
   }
 
+  const stepValid = (s: number) => {
+    if (s === 1) return form.full_name && form.email && form.password && form.password === form.confirmPassword
+    if (s === 2) return form.role_level
+    return true
+  }
+
   return (
-    <div className="min-h-screen bg-ink flex items-center justify-center px-4 py-12">
-      <div className="w-full max-w-2xl">
-        <div className="text-center mb-10">
-          <Link href="/" className="inline-flex items-center space-x-3">
-            <div className="w-12 h-12 rounded-full gold-gradient flex items-center justify-center">
-              <span className="text-white font-serif font-bold text-xl">W</span>
+    <div className="min-h-screen bg-white">
+      {/* Header */}
+      <div className="border-b border-neutral-100 px-4 py-4 flex items-center justify-between max-w-3xl mx-auto">
+        <Link href="/" className="text-black font-semibold tracking-tight">WHC Concierge</Link>
+        <Link href="/login?role=talent" className="text-sm text-neutral-400 hover:text-black">Already have an account?</Link>
+      </div>
+
+      <div className="max-w-2xl mx-auto px-4 py-12">
+        <h1 className="text-3xl font-bold text-black mb-2">Create your profile</h1>
+        <p className="text-neutral-400 mb-10">Join the luxury wellness careers community</p>
+
+        {/* Progress */}
+        <div className="flex items-center space-x-2 mb-10">
+          {[1,2,3,4].map((s) => (
+            <div key={s} className="flex items-center flex-1">
+              <div className={`w-8 h-8 flex items-center justify-center text-sm font-medium ${
+                step > s ? 'bg-black text-white' : step === s ? 'border-2 border-black text-black' : 'border border-neutral-200 text-neutral-300'
+              }`}>{step > s ? <Check size={14} /> : s}</div>
+              {s < 4 && <div className={`flex-1 h-px mx-2 ${step > s ? 'bg-black' : 'bg-neutral-200'}`} />}
             </div>
-            <span className="text-white font-serif text-2xl font-semibold">WHC Concierge</span>
-          </Link>
+          ))}
         </div>
 
-        <div className="bg-white rounded-2xl p-8 shadow-xl">
-          <h1 className="font-serif text-2xl font-bold text-ink text-center mb-2">Create Your Talent Profile</h1>
-          <p className="text-gray-400 text-center text-sm mb-8">Join the luxury wellness careers community</p>
+        {error && <div className="bg-red-50 text-red-600 text-sm px-4 py-3 mb-6">{error}</div>}
 
-          {/* Step indicators */}
-          <div className="flex items-center justify-center space-x-4 mb-10">
-            {[1, 2].map((s) => (
-              <div key={s} className="flex items-center">
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
-                  step >= s ? 'bg-gold text-white' : 'bg-gray-200 text-gray-500'
-                }`}>{s}</div>
-                {s < 2 && <div className={`w-12 h-0.5 mx-2 ${step > s ? 'bg-gold' : 'bg-gray-200'}`} />}
-              </div>
-            ))}
+        {/* Step 1: Account & Personal */}
+        {step === 1 && (
+          <div className="space-y-5">
+            <p className="text-xs font-medium text-neutral-400 uppercase tracking-widest mb-6">Step 1 — Account & Personal Details</p>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="col-span-2"><label className="block text-xs font-medium text-neutral-500 uppercase tracking-wider mb-1.5">Full Name *</label><input type="text" value={form.full_name} onChange={(e) => update('full_name', e.target.value)} className="input-field" /></div>
+              <div className="col-span-2"><label className="block text-xs font-medium text-neutral-500 uppercase tracking-wider mb-1.5">Email *</label><input type="email" value={form.email} onChange={(e) => update('email', e.target.value)} className="input-field" /></div>
+              <div><label className="block text-xs font-medium text-neutral-500 uppercase tracking-wider mb-1.5">Password *</label><input type="password" value={form.password} onChange={(e) => update('password', e.target.value)} className="input-field" /></div>
+              <div><label className="block text-xs font-medium text-neutral-500 uppercase tracking-wider mb-1.5">Confirm *</label><input type="password" value={form.confirmPassword} onChange={(e) => update('confirmPassword', e.target.value)} className="input-field" /></div>
+              <div><label className="block text-xs font-medium text-neutral-500 uppercase tracking-wider mb-1.5">Phone</label><input type="tel" value={form.phone} onChange={(e) => update('phone', e.target.value)} className="input-field" /></div>
+              <div><label className="block text-xs font-medium text-neutral-500 uppercase tracking-wider mb-1.5">Postcode</label><input type="text" value={form.postcode} onChange={(e) => update('postcode', e.target.value)} className="input-field" /></div>
+            </div>
+            <label className="flex items-center space-x-3 cursor-pointer py-2">
+              <input type="checkbox" checked={form.has_car} onChange={(e) => update('has_car', e.target.checked)} className="w-4 h-4 border-neutral-300 text-black focus:ring-black rounded-sm" />
+              <span className="text-sm text-neutral-600">I have access to a car</span>
+            </label>
+            <button onClick={() => setStep(2)} disabled={!stepValid(1)} className="btn-primary w-full disabled:opacity-40">Continue</button>
           </div>
+        )}
 
-          {error && <div className="bg-red-50 text-red-600 text-sm px-4 py-3 rounded-lg mb-6">{error}</div>}
+        {/* Step 2: Professional Profile */}
+        {step === 2 && (
+          <div className="space-y-5">
+            <p className="text-xs font-medium text-neutral-400 uppercase tracking-widest mb-6">Step 2 — Professional Profile</p>
+            <div>
+              <label className="block text-xs font-medium text-neutral-500 uppercase tracking-wider mb-1.5">Role Level *</label>
+              <select value={form.role_level} onChange={(e) => update('role_level', e.target.value)} className="input-field">
+                <option value="">Select your role level</option>
+                {ROLE_LEVELS.map((r) => <option key={r} value={r}>{r}</option>)}
+              </select>
+            </div>
+            <div><label className="block text-xs font-medium text-neutral-500 uppercase tracking-wider mb-1.5">Headline</label><input type="text" value={form.headline} onChange={(e) => update('headline', e.target.value)} className="input-field" placeholder="e.g. Senior Spa Therapist | CIDESCO Qualified | 8 Years Experience" /></div>
+            <div><label className="block text-xs font-medium text-neutral-500 uppercase tracking-wider mb-1.5">Bio</label><textarea rows={4} value={form.bio} onChange={(e) => update('bio', e.target.value)} className="input-field" placeholder="Tell employers about your experience and what you're looking for..." /></div>
+            <div className="grid grid-cols-3 gap-4">
+              <div><label className="block text-xs font-medium text-neutral-500 uppercase tracking-wider mb-1.5">Experience (years)</label><input type="number" value={form.experience_years} onChange={(e) => update('experience_years', e.target.value)} className="input-field" /></div>
+              <div><label className="block text-xs font-medium text-neutral-500 uppercase tracking-wider mb-1.5">Day Rate Min (£)</label><input type="number" value={form.day_rate_min} onChange={(e) => update('day_rate_min', e.target.value)} className="input-field" /></div>
+              <div><label className="block text-xs font-medium text-neutral-500 uppercase tracking-wider mb-1.5">Day Rate Max (£)</label><input type="number" value={form.day_rate_max} onChange={(e) => update('day_rate_max', e.target.value)} className="input-field" /></div>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-neutral-500 uppercase tracking-wider mb-1.5">Availability</label>
+              <select value={form.availability_status} onChange={(e) => update('availability_status', e.target.value)} className="input-field">
+                {AVAILABILITY_STATUSES.map((a) => <option key={a.value} value={a.value}>{a.label}</option>)}
+              </select>
+            </div>
+            <div className="flex gap-3"><button onClick={() => setStep(1)} className="btn-secondary flex-1">Back</button><button onClick={() => setStep(3)} disabled={!stepValid(2)} className="btn-primary flex-1 disabled:opacity-40">Continue</button></div>
+          </div>
+        )}
 
-          <form onSubmit={handleSubmit}>
-            {/* Step 1: Account */}
-            {step === 1 && (
-              <div className="space-y-5">
-                <h3 className="font-serif text-lg font-semibold mb-4">Account Details</h3>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Full Name *</label>
-                  <input type="text" required value={form.full_name} onChange={(e) => update('full_name', e.target.value)} className="input-field" placeholder="Jane Smith" />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Email *</label>
-                  <input type="email" required value={form.email} onChange={(e) => update('email', e.target.value)} className="input-field" placeholder="jane@example.com" />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1.5">Password *</label>
-                    <input type="password" required value={form.password} onChange={(e) => update('password', e.target.value)} className="input-field" placeholder="Min 8 characters" />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1.5">Confirm Password *</label>
-                    <input type="password" required value={form.confirmPassword} onChange={(e) => update('confirmPassword', e.target.value)} className="input-field" />
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1.5">Phone</label>
-                    <input type="tel" value={form.phone} onChange={(e) => update('phone', e.target.value)} className="input-field" placeholder="+44..." />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1.5">Location</label>
-                    <input type="text" value={form.location} onChange={(e) => update('location', e.target.value)} className="input-field" placeholder="London, UK" />
-                  </div>
-                </div>
-                <button type="button" onClick={() => setStep(2)} className="btn-primary w-full">Continue</button>
-              </div>
-            )}
-
-            {/* Step 2: Professional */}
-            {step === 2 && (
-              <div className="space-y-5">
-                <h3 className="font-serif text-lg font-semibold mb-4">Professional Details</h3>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Headline</label>
-                  <input type="text" value={form.headline} onChange={(e) => update('headline', e.target.value)} className="input-field" placeholder="e.g. Senior Spa Therapist | CIDESCO Qualified" />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Bio</label>
-                  <textarea rows={4} value={form.bio} onChange={(e) => update('bio', e.target.value)} className="input-field" placeholder="Tell employers about your experience, qualifications and what you're looking for..." />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-3">Specialisms</label>
-                  <div className="flex flex-wrap gap-2">
-                    {specialisms.map((s) => (
-                      <button key={s} type="button" onClick={() => toggleSpecialism(s)}
-                        className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
-                          form.specialisms.includes(s) ? 'bg-gold text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                        }`}>{s}</button>
-                    ))}
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Years of Experience</label>
-                  <input type="number" value={form.experience_years} onChange={(e) => update('experience_years', e.target.value)} className="input-field" placeholder="5" />
-                </div>
-                <div className="flex gap-4">
-                  <button type="button" onClick={() => setStep(1)} className="btn-secondary flex-1">Back</button>
-                  <button type="submit" disabled={loading} className="btn-primary flex-1 disabled:opacity-50">
-                    {loading ? 'Creating Profile...' : 'Create Profile'}
+        {/* Step 3: Skills & Qualifications */}
+        {step === 3 && (
+          <div className="space-y-8">
+            <p className="text-xs font-medium text-neutral-400 uppercase tracking-widest mb-2">Step 3 — Skills & Qualifications</p>
+            <CheckboxGroup label="Product Houses" options={PRODUCT_HOUSES} selected={form.product_houses} onChange={(v) => update('product_houses', v)} />
+            <CheckboxGroup label="Qualifications Held" options={QUALIFICATIONS} selected={form.qualifications} onChange={(v) => update('qualifications', v)} />
+            <CheckboxGroup label="Systems Experience" options={SYSTEMS} selected={form.systems_experience} onChange={(v) => update('systems_experience', v)} columns={2} />
+            <div>
+              <label className="block text-xs font-medium text-neutral-500 uppercase tracking-wider mb-3">Travel Availability</label>
+              <div className="flex flex-wrap gap-2">
+                {TRAVEL_OPTIONS.map((t) => (
+                  <button key={t.value} onClick={() => update('travel_availability', t.value)}
+                    className={`px-4 py-2 text-sm font-medium transition-colors ${form.travel_availability === t.value ? 'bg-black text-white' : 'bg-neutral-100 text-neutral-500'}`}>
+                    {t.label}
                   </button>
-                </div>
+                ))}
               </div>
-            )}
-          </form>
+              {form.travel_availability === 'radius' && (
+                <div className="grid grid-cols-2 gap-4 mt-3">
+                  <div><label className="block text-xs text-neutral-500 mb-1">Miles</label><input type="number" value={form.travel_radius_miles} onChange={(e) => update('travel_radius_miles', e.target.value)} className="input-field" placeholder="25" /></div>
+                  <div><label className="block text-xs text-neutral-500 mb-1">From Postcode</label><input type="text" value={form.travel_postcode} onChange={(e) => update('travel_postcode', e.target.value)} className="input-field" /></div>
+                </div>
+              )}
+            </div>
+            <div className="flex gap-3"><button onClick={() => setStep(2)} className="btn-secondary flex-1">Back</button><button onClick={() => setStep(4)} className="btn-primary flex-1">Continue</button></div>
+          </div>
+        )}
 
-          <p className="text-center text-sm text-gray-500 mt-8">
-            Already have an account? <Link href="/login?role=talent" className="text-gold font-medium">Sign in</Link>
-          </p>
-        </div>
+        {/* Step 4: Documents & Verification */}
+        {step === 4 && (
+          <div className="space-y-6">
+            <p className="text-xs font-medium text-neutral-400 uppercase tracking-widest mb-2">Step 4 — Documents & Verification</p>
+
+            <div>
+              <label className="block text-xs font-medium text-neutral-500 uppercase tracking-wider mb-1.5">CV (PDF or Word)</label>
+              <label className="flex items-center justify-center border border-dashed border-neutral-300 py-6 cursor-pointer hover:border-black transition-colors">
+                <div className="text-center"><Upload size={20} className="mx-auto text-neutral-300 mb-2" /><p className="text-sm text-neutral-400">{cvFile ? cvFile.name : 'Click to upload CV'}</p></div>
+                <input type="file" accept=".pdf,.doc,.docx" onChange={(e) => setCvFile(e.target.files?.[0] || null)} className="hidden" />
+              </label>
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium text-neutral-500 uppercase tracking-wider mb-1.5">Certificates (PDFs)</label>
+              <label className="flex items-center justify-center border border-dashed border-neutral-300 py-6 cursor-pointer hover:border-black transition-colors">
+                <div className="text-center"><Upload size={20} className="mx-auto text-neutral-300 mb-2" /><p className="text-sm text-neutral-400">{certFiles.length > 0 ? `${certFiles.length} file(s) selected` : 'Click to upload certificates'}</p></div>
+                <input type="file" accept=".pdf" multiple onChange={(e) => setCertFiles(Array.from(e.target.files || []))} className="hidden" />
+              </label>
+            </div>
+
+            <div>
+              <label className="flex items-center space-x-3 cursor-pointer mb-2">
+                <input type="checkbox" checked={form.has_insurance} onChange={(e) => update('has_insurance', e.target.checked)} className="w-4 h-4 border-neutral-300 text-black focus:ring-black rounded-sm" />
+                <span className="text-sm text-neutral-600">I have professional insurance</span>
+              </label>
+              {form.has_insurance && (
+                <label className="flex items-center justify-center border border-dashed border-neutral-300 py-4 cursor-pointer hover:border-black transition-colors mt-2">
+                  <div className="text-center"><p className="text-sm text-neutral-400">{insuranceFile ? insuranceFile.name : 'Upload insurance certificate'}</p></div>
+                  <input type="file" accept=".pdf" onChange={(e) => setInsuranceFile(e.target.files?.[0] || null)} className="hidden" />
+                </label>
+              )}
+            </div>
+
+            <div><label className="block text-xs font-medium text-neutral-500 uppercase tracking-wider mb-1.5">Work Email (for verification)</label><input type="email" value={form.work_email} onChange={(e) => update('work_email', e.target.value)} className="input-field" placeholder="your.name@employer.com" /></div>
+
+            <div className="bg-neutral-50 p-4 text-sm text-neutral-500">
+              Your profile will be reviewed by our team within 24 hours. You&apos;ll receive an email once approved.
+            </div>
+
+            <div className="flex gap-3">
+              <button onClick={() => setStep(3)} className="btn-secondary flex-1">Back</button>
+              <button onClick={handleSubmit} disabled={loading} className="btn-primary flex-1 disabled:opacity-50">
+                {loading ? 'Creating profile...' : 'Submit for Approval'}
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )

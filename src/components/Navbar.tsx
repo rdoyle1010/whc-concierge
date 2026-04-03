@@ -62,6 +62,7 @@ export default function Navbar() {
           <div className="hidden lg:flex items-center space-x-5">
             {user ? (
               <>
+                <Link href="/messages" className="text-neutral-500 hover:text-black text-[13px] tracking-wide transition-colors">Messages</Link>
                 <Link href="/talent/dashboard" className="text-neutral-500 hover:text-black text-[13px] tracking-wide transition-colors">Dashboard</Link>
                 <button onClick={handleSignOut} className="text-neutral-500 hover:text-black text-[13px] tracking-wide transition-colors">Sign Out</button>
               </>
