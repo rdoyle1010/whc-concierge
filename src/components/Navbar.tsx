@@ -3,21 +3,13 @@
 import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
-import { Menu, X, Flame, Bell, User, ChevronDown, LayoutDashboard, Settings, LogOut, MessageSquare } from 'lucide-react'
-
-const NAV_LINKS = [
-  { href: '/', label: 'Home' },
-  { href: '/jobs', label: 'Browse Roles' },
-  { href: '/roles/match', label: 'Match', icon: true },
-  { href: '/agency', label: 'Agency' },
-  { href: '/residency', label: 'Residency' },
-  { href: '/blog', label: 'Blog' },
-]
+import { Menu, X, Flame, Bell, User, ChevronDown, LayoutDashboard, Settings, LogOut, MessageSquare, Briefcase } from 'lucide-react'
 
 export default function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false)
   const [profileOpen, setProfileOpen] = useState(false)
   const [user, setUser] = useState<any>(null)
+  const [role, setRole] = useState<string | null>(null)
   const [unread, setUnread] = useState(0)
   const dropdownRef = useRef<HTMLDivElement>(null)
   const supabase = createClient()
@@ -26,37 +18,54 @@ export default function Navbar() {
     supabase.auth.getUser().then(({ data }) => {
       setUser(data.user)
       if (data.user) {
-        supabase.from('messages').select('id', { count: 'exact', head: true })
-          .eq('receiver_id', data.user.id).eq('read', false)
-          .then(({ count }) => setUnread(count || 0))
+        // Get role
+        supabase.from('profiles').select('role').eq('id', data.user.id).single().then(({ data: p }) => {
+          setRole(p?.role || data.user?.user_metadata?.role || 'talent')
+        })
+        // Unread messages
+        supabase.from('messages').select('id', { count: 'exact', head: true }).eq('receiver_id', data.user.id).eq('read', false).then(({ count }) => setUnread(count || 0))
       }
     })
   }, [])
 
   useEffect(() => {
-    const handleClick = (e: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) setProfileOpen(false)
-    }
-    document.addEventListener('mousedown', handleClick)
-    return () => document.removeEventListener('mousedown', handleClick)
+    const h = (e: MouseEvent) => { if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) setProfileOpen(false) }
+    document.addEventListener('mousedown', h); return () => document.removeEventListener('mousedown', h)
   }, [])
 
   const handleSignOut = async () => { await supabase.auth.signOut(); window.location.href = '/' }
 
   const initials = user?.user_metadata?.full_name
-    ? user.user_metadata.full_name.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase()
-    : '?'
+    ? user.user_metadata.full_name.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase() : '?'
+
+  const isEmployer = role === 'employer'
+  const isAdmin = role === 'admin'
+  const dashboardHref = isAdmin ? '/admin/dashboard' : isEmployer ? '/employer/dashboard' : '/talent/dashboard'
+  const profileHref = isEmployer ? '/employer/profile' : '/talent/profile'
+
+  // Nav links based on role
+  const navLinks = user
+    ? isEmployer
+      ? [{ href: '/employer/post-role', label: 'Post a Role' }, { href: '/employer/jobs', label: 'My Listings' }, { href: '/agency', label: 'Agency' }]
+      : isAdmin
+        ? [{ href: '/admin/users', label: 'Users' }, { href: '/admin/blog', label: 'Blog' }, { href: '/admin/complaints', label: 'Complaints' }]
+        : [{ href: '/jobs', label: 'Browse Roles' }, { href: '/roles/match', label: 'Match', icon: true }, { href: '/agency', label: 'Agency' }, { href: '/residency', label: 'Residency' }]
+    : [{ href: '/jobs', label: 'Browse Roles' }, { href: '/agency', label: 'Agency' }, { href: '/blog', label: 'Blog' }]
 
   return (
     <nav className="fixed top-0 w-full z-50 bg-white border-b border-border h-[60px]">
       <div className="max-w-7xl mx-auto px-6 lg:px-8 h-full flex items-center justify-between">
-        <Link href="/" className="text-ink font-semibold text-[16px] tracking-tight shrink-0">WHC Concierge</Link>
+        {/* Logo */}
+        <Link href="/" className="flex items-center gap-3 shrink-0">
+          <img src="/logo.svg" alt="WHC Concierge" className="h-7 w-auto" />
+          <span className="text-[11px] tracking-[0.2em] text-accent font-light uppercase hidden sm:block">Concierge</span>
+        </Link>
 
-        {/* Centre */}
+        {/* Centre nav */}
         <div className="hidden lg:flex items-center gap-6">
-          {NAV_LINKS.map((link) => (
+          {navLinks.map(link => (
             <Link key={link.href} href={link.href} className="text-[13px] text-muted hover:text-ink transition-colors flex items-center gap-1">
-              {link.icon && <Flame size={11} className="text-muted" />}
+              {(link as any).icon && <Flame size={11} className="text-accent" />}
               <span>{link.label}</span>
             </Link>
           ))}
@@ -77,8 +86,8 @@ export default function Navbar() {
                 </button>
                 {profileOpen && (
                   <div className="absolute right-0 mt-2 w-[200px] bg-white border border-border rounded-lg shadow-lg py-1 animate-fade-in">
-                    <Link href="/talent/dashboard" className="flex items-center gap-2.5 px-4 py-2 text-[13px] text-secondary hover:bg-surface hover:text-ink" onClick={() => setProfileOpen(false)}><LayoutDashboard size={13} />Dashboard</Link>
-                    <Link href="/talent/profile" className="flex items-center gap-2.5 px-4 py-2 text-[13px] text-secondary hover:bg-surface hover:text-ink" onClick={() => setProfileOpen(false)}><User size={13} />My Profile</Link>
+                    <Link href={dashboardHref} className="flex items-center gap-2.5 px-4 py-2 text-[13px] text-secondary hover:bg-surface hover:text-ink" onClick={() => setProfileOpen(false)}><LayoutDashboard size={13} />Dashboard</Link>
+                    {!isAdmin && <Link href={profileHref} className="flex items-center gap-2.5 px-4 py-2 text-[13px] text-secondary hover:bg-surface hover:text-ink" onClick={() => setProfileOpen(false)}><User size={13} />My Profile</Link>}
                     <Link href="/messages" className="flex items-center gap-2.5 px-4 py-2 text-[13px] text-secondary hover:bg-surface hover:text-ink" onClick={() => setProfileOpen(false)}><MessageSquare size={13} />Messages</Link>
                     <Link href="/talent/settings" className="flex items-center gap-2.5 px-4 py-2 text-[13px] text-secondary hover:bg-surface hover:text-ink" onClick={() => setProfileOpen(false)}><Settings size={13} />Settings</Link>
                     <div className="border-t border-border my-1" />
@@ -101,14 +110,14 @@ export default function Navbar() {
       {mobileOpen && (
         <div className="lg:hidden bg-white border-t border-border">
           <div className="px-6 py-5 space-y-1">
-            {NAV_LINKS.map((link) => (
+            {navLinks.map(link => (
               <Link key={link.href} href={link.href} className="block py-2.5 text-[14px] text-secondary hover:text-ink" onClick={() => setMobileOpen(false)}>{link.label}</Link>
             ))}
             <div className="border-t border-border pt-4 mt-4 space-y-2">
               {user ? (
                 <>
-                  <Link href="/talent/dashboard" className="block py-2 text-[14px] text-ink font-medium" onClick={() => setMobileOpen(false)}>Dashboard</Link>
-                  <Link href="/messages" className="block py-2 text-[14px] text-secondary" onClick={() => setMobileOpen(false)}>Messages</Link>
+                  <Link href={dashboardHref} className="block py-2 text-[14px] text-ink font-medium" onClick={() => setMobileOpen(false)}>Dashboard</Link>
+                  <Link href="/messages" className="block py-2 text-[14px] text-secondary" onClick={() => setMobileOpen(false)}>Messages {unread > 0 && `(${unread})`}</Link>
                   <button onClick={handleSignOut} className="block py-2 text-[14px] text-muted w-full text-left">Sign Out</button>
                 </>
               ) : (

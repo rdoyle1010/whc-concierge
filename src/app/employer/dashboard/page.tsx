@@ -3,75 +3,94 @@
 import { useEffect, useState } from 'react'
 import DashboardShell from '@/components/DashboardShell'
 import { createClient } from '@/lib/supabase/client'
-import { Briefcase, Users, FileText, MessageSquare, ArrowRight, Plus } from 'lucide-react'
+import { Briefcase, Users, FileText, MessageSquare, ArrowRight, Plus, Clock } from 'lucide-react'
 import Link from 'next/link'
 
 export default function EmployerDashboard() {
   const supabase = createClient()
   const [profile, setProfile] = useState<any>(null)
-  const [stats, setStats] = useState({ jobs: 0, applications: 0, messages: 0, matches: 0 })
   const [listings, setListings] = useState<any[]>([])
+  const [stats, setStats] = useState({ active: 0, applications: 0, matches: 0, messages: 0 })
   const [recentApps, setRecentApps] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     async function load() {
       const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return
+      if (!user) { setLoading(false); return }
+
       const { data: prof } = await supabase.from('employer_profiles').select('*').eq('user_id', user.id).single()
       setProfile(prof)
-      if (prof) {
-        const [jobs, msgs, matches] = await Promise.all([
-          supabase.from('job_listings').select('*').eq('employer_id', prof.id).order('created_at', { ascending: false }),
-          supabase.from('messages').select('id', { count: 'exact', head: true }).eq('receiver_id', user.id).eq('read', false),
-          supabase.from('matches').select('id', { count: 'exact', head: true }).eq('employer_id', prof.id),
-        ])
-        // Normalize column names for display
-        const normalizedJobs = (jobs.data || []).map((j: any) => ({ ...j, title: j.job_title || j.title, description: j.job_description || j.description, status: j.is_live === false ? 'closed' : (j.status || 'active') }))
-        setListings(normalizedJobs)
-        const jobIds = normalizedJobs.map((j:any) => j.id)
-        let appCount = 0
-        if (jobIds.length > 0) {
-          const { count } = await supabase.from('applications').select('id', { count: 'exact', head: true }).in('job_id', jobIds)
-          appCount = count || 0
-          const { data: apps } = await supabase.from('applications').select('*, job_listings(job_title, title), candidate_profiles(full_name, headline)').in('job_id', jobIds).order('created_at', { ascending: false }).limit(5)
-          setRecentApps((apps || []).map((a: any) => ({ ...a, job_listings: { ...a.job_listings, title: a.job_listings?.job_title || a.job_listings?.title } })))
-        }
-        setStats({ jobs: normalizedJobs.filter((j:any) => j.status === 'active' || j.is_live === true).length, applications: appCount, messages: msgs.count||0, matches: matches.count||0 })
+      if (!prof) { setLoading(false); return }
+
+      // Load this employer's listings
+      const { data: jobs } = await supabase.from('job_listings').select('*').eq('employer_id', prof.id).order('created_at', { ascending: false })
+      const normalizedJobs = (jobs || []).map((j: any) => ({
+        ...j,
+        title: j.job_title || j.title,
+        status: j.is_live ? 'active' : 'closed',
+      }))
+      setListings(normalizedJobs)
+
+      const activeJobs = normalizedJobs.filter(j => j.is_live)
+      const jobIds = normalizedJobs.map(j => j.id)
+
+      // Stats
+      let appCount = 0
+      if (jobIds.length > 0) {
+        const { count } = await supabase.from('applications').select('id', { count: 'exact', head: true }).in('job_id', jobIds)
+        appCount = count || 0
+
+        const { data: apps } = await supabase
+          .from('applications')
+          .select('*, candidate_profiles(full_name, headline)')
+          .in('job_id', jobIds)
+          .order('created_at', { ascending: false })
+          .limit(5)
+        setRecentApps((apps || []).map((a: any) => {
+          const job = normalizedJobs.find(j => j.id === a.job_id || j.id === a.job_listing_id)
+          return { ...a, jobTitle: job?.title || 'Role' }
+        }))
       }
+
+      const { count: msgCount } = await supabase.from('messages').select('id', { count: 'exact', head: true }).eq('receiver_id', user.id).eq('read', false)
+
+      setStats({ active: activeJobs.length, applications: appCount, matches: 0, messages: msgCount || 0 })
       setLoading(false)
     }
     load()
   }, [])
 
-  if (loading) return <DashboardShell role="employer"><div className="flex items-center justify-center h-64"><div className="animate-spin w-6 h-6 border-2 border-ink border-t-transparent rounded-full" /></div></DashboardShell>
+  const tierClass = (t: string) => t === 'Platinum' ? 'badge-platinum' : t === 'Gold' ? 'badge-gold' : t === 'Silver' ? 'badge-silver' : 'badge-bronze'
+
+  if (loading) return <DashboardShell role="employer"><div className="space-y-4"><div className="skeleton h-12 w-1/3" /><div className="grid grid-cols-4 gap-4">{[1,2,3,4].map(i=><div key={i} className="skeleton h-24" />)}</div><div className="skeleton h-64" /></div></DashboardShell>
 
   return (
     <DashboardShell role="employer" userName={profile?.contact_name || profile?.company_name}>
       <div className="mb-8">
-        <h1 className="text-[24px] font-medium text-ink">{profile?.company_name || 'Dashboard'}</h1>
+        <h1 className="text-[24px] font-medium text-ink">{profile?.property_name || profile?.company_name || 'Dashboard'}</h1>
         <p className="text-[13px] text-muted mt-1">{new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</p>
       </div>
 
       {/* Metrics */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         {[
-          { label: 'Active listings', value: stats.jobs, icon: <Briefcase size={16}/>, href: '/employer/jobs' },
-          { label: 'Applications', value: stats.applications, icon: <FileText size={16}/>, href: '/employer/applications' },
-          { label: 'Candidates matched', value: stats.matches, icon: <Users size={16}/>, href: '/employer/candidates' },
-          { label: 'Messages', value: stats.messages, icon: <MessageSquare size={16}/>, href: '/employer/messages' },
+          { label: 'Active listings', value: stats.active, icon: <Briefcase size={16} /> },
+          { label: 'Applications', value: stats.applications, icon: <FileText size={16} /> },
+          { label: 'Candidates matched', value: stats.matches || '—', icon: <Users size={16} /> },
+          { label: 'Messages', value: stats.messages, icon: <MessageSquare size={16} /> },
         ].map(s => (
-          <Link key={s.label} href={s.href} className="dashboard-card hover:border-ink/20 transition-colors">
+          <div key={s.label} className="dashboard-card">
             <div className="text-muted mb-2">{s.icon}</div>
-            <p className="text-[22px] font-semibold text-ink">{s.value}</p>
+            <p className="text-[24px] font-semibold text-ink">{s.value}</p>
             <p className="text-[11px] text-muted">{s.label}</p>
-          </Link>
+          </div>
         ))}
       </div>
 
       {/* Quick actions */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-8">
-        <Link href="/employer/post-role" className="btn-primary flex items-center justify-center gap-2 py-3"><Plus size={14}/>Post a new role</Link>
+        <Link href="/employer/post-role" className="btn-primary flex items-center justify-center gap-2 py-3"><Plus size={14} />Post a new role</Link>
         <Link href="/agency" className="btn-secondary flex items-center justify-center gap-2 py-3">Find agency cover</Link>
         <Link href="/employer/candidates" className="btn-secondary flex items-center justify-center gap-2 py-3">Browse candidates</Link>
       </div>
@@ -80,38 +99,54 @@ export default function EmployerDashboard() {
         {/* Active listings */}
         <div className="dashboard-card">
           <div className="flex items-center justify-between mb-4">
-            <p className="text-[14px] font-medium text-ink">Active listings</p>
-            <Link href="/employer/jobs" className="text-[12px] text-muted hover:text-ink flex items-center gap-1">View all <ArrowRight size={12}/></Link>
+            <p className="text-[14px] font-medium text-ink">Your listings</p>
+            <Link href="/employer/jobs" className="text-[12px] text-muted hover:text-ink flex items-center gap-1">Manage <ArrowRight size={12} /></Link>
           </div>
-          <div className="space-y-2">
-            {listings.filter(j => j.status === 'active').slice(0, 5).map(job => (
-              <div key={job.id} className="flex items-center justify-between p-3 border border-border rounded-lg">
-                <div>
-                  <div className="flex items-center gap-2"><p className="text-[13px] font-medium text-ink">{job.title}</p><span className={job.tier==='Platinum'?'badge-platinum':job.tier==='Gold'?'badge-gold':job.tier==='Silver'?'badge-silver':'badge-bronze'}>{job.tier||'Standard'}</span></div>
-                  <p className="text-[11px] text-muted">{job.location} &middot; {job.job_type}</p>
+          {listings.length === 0 ? (
+            <div className="text-center py-8">
+              <Briefcase size={24} className="mx-auto text-muted mb-2" />
+              <p className="text-[13px] text-muted mb-3">No listings yet</p>
+              <Link href="/employer/post-role" className="btn-primary text-[12px]">Post your first role</Link>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {listings.slice(0, 5).map(job => (
+                <div key={job.id} className="flex items-center justify-between p-3 border border-border rounded-xl">
+                  <div>
+                    <div className="flex items-center gap-2 mb-0.5">
+                      <p className="text-[13px] font-medium text-ink">{job.title}</p>
+                      <span className={tierClass(job.tier || 'Standard')}>{job.tier || '—'}</span>
+                    </div>
+                    <p className="text-[11px] text-muted">{job.location} &middot; {job.contract_type?.replace('_', ' ') || job.job_type}</p>
+                  </div>
+                  <span className={`text-[11px] font-medium px-2 py-0.5 rounded-full ${job.is_live ? 'bg-emerald-50 text-emerald-700' : 'bg-neutral-100 text-muted'}`}>{job.is_live ? 'Live' : 'Closed'}</span>
                 </div>
-                <span className={`text-[11px] font-medium px-2 py-0.5 rounded-full ${job.status==='active'?'bg-emerald-50 text-emerald-700':'bg-surface text-muted'}`}>{job.status}</span>
-              </div>
-            ))}
-            {listings.filter(j => j.status === 'active').length === 0 && <p className="text-[13px] text-muted text-center py-6">No active listings.</p>}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Recent applications */}
         <div className="dashboard-card">
           <div className="flex items-center justify-between mb-4">
             <p className="text-[14px] font-medium text-ink">Recent applications</p>
-            <Link href="/employer/applications" className="text-[12px] text-muted hover:text-ink flex items-center gap-1">View all <ArrowRight size={12}/></Link>
+            <Link href="/employer/applications" className="text-[12px] text-muted hover:text-ink flex items-center gap-1">View all <ArrowRight size={12} /></Link>
           </div>
-          <div className="space-y-2">
-            {recentApps.map(app => (
-              <div key={app.id} className="flex items-center justify-between p-3 border border-border rounded-lg">
-                <div><p className="text-[13px] font-medium text-ink">{app.candidate_profiles?.full_name||'Candidate'}</p><p className="text-[11px] text-muted">Applied for: {app.job_listings?.title}</p></div>
-                <span className={`text-[11px] font-medium px-2 py-0.5 rounded-full ${app.status==='pending'?'bg-amber-50 text-amber-700':app.status==='shortlisted'?'bg-emerald-50 text-emerald-700':'bg-surface text-muted'}`}>{app.status}</span>
-              </div>
-            ))}
-            {recentApps.length === 0 && <p className="text-[13px] text-muted text-center py-6">No applications yet.</p>}
-          </div>
+          {recentApps.length === 0 ? (
+            <p className="text-[13px] text-muted text-center py-8">No applications yet.</p>
+          ) : (
+            <div className="space-y-2">
+              {recentApps.map(app => (
+                <div key={app.id} className="flex items-center justify-between p-3 border border-border rounded-xl">
+                  <div>
+                    <p className="text-[13px] font-medium text-ink">{app.candidate_profiles?.full_name || 'Candidate'}</p>
+                    <p className="text-[11px] text-muted">For: {app.jobTitle} &middot; {app.match_score ? `${app.match_score}% match` : ''}</p>
+                  </div>
+                  <span className={`text-[11px] font-medium px-2 py-0.5 rounded-full ${app.status === 'pending' ? 'bg-amber-50 text-amber-700' : app.status === 'shortlisted' ? 'bg-emerald-50 text-emerald-700' : 'bg-neutral-100 text-muted'}`}>{app.status}</span>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </DashboardShell>

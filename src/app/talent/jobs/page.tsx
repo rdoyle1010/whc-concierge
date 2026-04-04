@@ -3,211 +3,156 @@
 import { useEffect, useState } from 'react'
 import DashboardShell from '@/components/DashboardShell'
 import { createClient } from '@/lib/supabase/client'
-import { Search, MapPin, Briefcase, Filter, X, Heart, ChevronLeft, ChevronRight } from 'lucide-react'
+import { calculateMatchScore } from '@/lib/matching'
+import { Search, MapPin, Briefcase, Heart, ArrowUpDown, Check } from 'lucide-react'
+import { ROLE_LEVELS, CONTRACT_TYPES } from '@/lib/constants'
 
 export default function TalentJobsPage() {
   const supabase = createClient()
   const [jobs, setJobs] = useState<any[]>([])
-  const [loading, setLoading] = useState(true)
-  const [search, setSearch] = useState('')
-  const [locationFilter, setLocationFilter] = useState('')
-  const [typeFilter, setTypeFilter] = useState('')
-  const [selectedJob, setSelectedJob] = useState<any>(null)
-  const [applying, setApplying] = useState(false)
-  const [coverLetter, setCoverLetter] = useState('')
   const [profile, setProfile] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
+  const [userId, setUserId] = useState<string | null>(null)
+
+  // Filters
+  const [search, setSearch] = useState('')
+  const [roleFilter, setRoleFilter] = useState('')
+  const [contractFilter, setContractFilter] = useState('')
+  const [minMatch, setMinMatch] = useState(0)
+  const [sortBy, setSortBy] = useState('match')
+  const [applied, setApplied] = useState<Set<string>>(new Set())
 
   useEffect(() => {
     async function load() {
       const { data: { user } } = await supabase.auth.getUser()
+      if (user) setUserId(user.id)
+
+      let cp: any = null
       if (user) {
-        const { data: prof } = await supabase.from('candidate_profiles').select('*').eq('user_id', user.id).single()
-        setProfile(prof)
+        const { data } = await supabase.from('candidate_profiles').select('*').eq('user_id', user.id).single()
+        cp = data
+        setProfile(data)
+        // Load existing applications
+        const { data: apps } = await supabase.from('applications').select('job_listing_id, job_id').eq('candidate_id', user.id)
+        if (apps) setApplied(new Set(apps.map(a => a.job_listing_id || a.job_id)))
       }
 
-      let query = supabase
+      const { data: rawData } = await supabase
         .from('job_listings')
-        .select('*, employer_profiles(company_name, property_name, location)')
+        .select('*, employer_profiles(company_name, property_name)')
         .eq('is_live', true)
         .order('created_at', { ascending: false })
 
-      const { data } = await query
-      setJobs((data || []).map((j: any) => ({ ...j, title: j.job_title || j.title, description: j.job_description || j.description, employer_profiles: { ...j.employer_profiles, company_name: j.employer_profiles?.property_name || j.employer_profiles?.company_name } })))
+      const normalized = (rawData || []).map((j: any) => {
+        const title = j.job_title || j.title
+        const description = j.job_description || j.description
+        const companyName = j.employer_profiles?.property_name || j.employer_profiles?.company_name
+        let matchScore = 75, matchLabel = 'Strong Match', matchBadge = 'match-strong'
+        if (cp && cp.role_level) {
+          const r = calculateMatchScore(cp, j)
+          if (r.hardStop) return null
+          matchScore = r.score; matchLabel = r.label; matchBadge = r.badgeClass
+        }
+        return { ...j, title, description, employer_profiles: { ...j.employer_profiles, company_name: companyName }, matchScore, matchLabel, matchBadge }
+      }).filter(Boolean)
+
+      setJobs(normalized)
       setLoading(false)
     }
     load()
   }, [])
 
-  const filtered = jobs.filter((job) => {
-    if (search && !job.title.toLowerCase().includes(search.toLowerCase()) &&
-        !job.employer_profiles?.company_name?.toLowerCase().includes(search.toLowerCase())) return false
-    if (locationFilter && !job.location?.toLowerCase().includes(locationFilter.toLowerCase())) return false
-    if (typeFilter && job.job_type !== typeFilter) return false
+  // Filter and sort
+  const filtered = jobs.filter(j => {
+    if (search && !j.title?.toLowerCase().includes(search.toLowerCase()) && !j.employer_profiles?.company_name?.toLowerCase().includes(search.toLowerCase())) return false
+    if (roleFilter && j.required_role_level !== roleFilter) return false
+    if (contractFilter && j.contract_type !== contractFilter) return false
+    if (minMatch && j.matchScore < minMatch) return false
     return true
   })
 
-  const handleApply = async () => {
-    if (!profile || !selectedJob) return
-    setApplying(true)
+  const sorted = [...filtered].sort((a, b) => {
+    if (sortBy === 'match') return b.matchScore - a.matchScore
+    if (sortBy === 'newest') return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    if (sortBy === 'salary_high') return (b.salary_max || 0) - (a.salary_max || 0)
+    if (sortBy === 'salary_low') return (a.salary_min || 999999) - (b.salary_min || 999999)
+    return 0
+  })
 
-    await supabase.from('applications').insert({
-      job_id: selectedJob.id,
-      candidate_id: profile.id,
-      cover_letter: coverLetter || null,
-      status: 'pending',
-    })
-
-    setApplying(false)
-    setCoverLetter('')
-    setSelectedJob(null)
-    alert('Application submitted!')
+  const handleApply = async (jobId: string, matchScore: number) => {
+    if (!userId) return
+    await supabase.from('applications').insert({ candidate_id: userId, job_listing_id: jobId, job_id: jobId, status: 'pending', match_score: matchScore })
+    setApplied(new Set(Array.from(applied).concat(jobId)))
   }
 
-  const handleSwipe = async (jobId: string, direction: 'left' | 'right') => {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return
-    await supabase.from('swipes').insert({
-      user_id: user.id,
-      target_id: jobId,
-      direction,
-      target_type: 'job',
-    })
-    if (direction === 'right') {
-      setSelectedJob(jobs.find(j => j.id === jobId))
-    }
-  }
+  const tierClass = (t: string) => t === 'Platinum' ? 'badge-platinum' : t === 'Gold' ? 'badge-gold' : t === 'Silver' ? 'badge-silver' : 'badge-bronze'
+
+  if (loading) return <DashboardShell role="talent"><div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">{[1,2,3,4,5,6].map(i => <div key={i} className="skeleton h-64 rounded-xl" />)}</div></DashboardShell>
 
   return (
     <DashboardShell role="talent" userName={profile?.full_name}>
-      <h1 className="text-2xl font-serif font-bold text-ink mb-6">Browse Roles</h1>
-
-      {/* Filters */}
-      <div className="dashboard-card mb-6">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="relative md:col-span-2">
-            <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-            <input type="text" placeholder="Search roles or properties..." value={search} onChange={(e) => setSearch(e.target.value)}
-              className="input-field pl-10" />
-          </div>
-          <input type="text" placeholder="Location..." value={locationFilter} onChange={(e) => setLocationFilter(e.target.value)} className="input-field" />
-          <select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)} className="input-field">
-            <option value="">All Types</option>
-            <option value="Full-time">Full-time</option>
-            <option value="Part-time">Part-time</option>
-            <option value="Contract">Contract</option>
-            <option value="Temporary">Temporary</option>
-            <option value="Freelance">Freelance</option>
-          </select>
-        </div>
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-[24px] font-medium text-ink">Browse Roles</h1>
+        <p className="text-[13px] text-muted">{sorted.length} role{sorted.length !== 1 ? 's' : ''}</p>
       </div>
 
-      {loading ? (
-        <div className="flex items-center justify-center h-64">
-          <div className="animate-spin w-8 h-8 border-2 border-gold border-t-transparent rounded-full" />
+      {/* Filters */}
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
+        <div className="md:col-span-2 relative">
+          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
+          <input type="text" placeholder="Search roles or properties..." value={search} onChange={e => setSearch(e.target.value)} className="input-field pl-9 !py-2 text-[13px]" />
         </div>
+        <select value={roleFilter} onChange={e => setRoleFilter(e.target.value)} className="input-field !py-2 text-[13px]">
+          <option value="">All levels</option>
+          {ROLE_LEVELS.map(r => <option key={r} value={r}>{r}</option>)}
+        </select>
+        <select value={contractFilter} onChange={e => setContractFilter(e.target.value)} className="input-field !py-2 text-[13px]">
+          <option value="">All contracts</option>
+          {CONTRACT_TYPES.map(c => <option key={c} value={c}>{c.replace('_', ' ')}</option>)}
+        </select>
+        <select value={sortBy} onChange={e => setSortBy(e.target.value)} className="input-field !py-2 text-[13px]">
+          <option value="match">Best match</option>
+          <option value="newest">Newest</option>
+          <option value="salary_high">Salary: high–low</option>
+          <option value="salary_low">Salary: low–high</option>
+        </select>
+      </div>
+
+      {sorted.length === 0 ? (
+        <div className="text-center py-20"><Briefcase size={32} className="mx-auto text-muted mb-3" /><p className="text-[14px] text-muted">No roles match your filters.</p></div>
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          {filtered.map((job) => (
-            <div key={job.id} className="dashboard-card hover:border-gold/30 cursor-pointer transition-all" onClick={() => setSelectedJob(job)}>
-              <div className="flex items-start justify-between mb-3">
-                <div>
-                  <h3 className="font-serif text-lg font-semibold text-ink">{job.title}</h3>
-                  <p className="text-gold text-sm font-medium">{job.employer_profiles?.company_name}</p>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {sorted.map(job => (
+            <div key={job.id} className="card p-0 overflow-hidden">
+              <div className="p-5">
+                <div className="flex items-center justify-between mb-3">
+                  <span className={tierClass(job.tier || 'Standard')}>{job.tier || 'Standard'}</span>
+                  <span className={job.matchBadge}>{job.matchScore}%</span>
                 </div>
-                {job.tier && (
-                  <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${
-                    job.tier === 'Platinum' ? 'bg-purple-100 text-purple-700' :
-                    job.tier === 'Gold' ? 'bg-amber-100 text-amber-700' : 'bg-gray-100 text-gray-600'
-                  }`}>{job.tier}</span>
+                <p className="eyebrow mb-0.5">{job.employer_profiles?.company_name}</p>
+                <h3 className="text-[16px] font-medium text-ink mb-2">{job.title}</h3>
+                <div className="flex flex-wrap gap-2 text-[12px] text-muted mb-3">
+                  <span className="flex items-center gap-1"><MapPin size={11} />{job.location}</span>
+                  <span>{job.contract_type?.replace('_', ' ') || job.job_type}</span>
+                  {job.salary_min && job.salary_max && <span>£{(job.salary_min/1000).toFixed(0)}k–£{(job.salary_max/1000).toFixed(0)}k</span>}
+                </div>
+                {(job.required_brands || job.required_product_houses || []).length > 0 && (
+                  <div className="flex flex-wrap gap-1 mb-4">
+                    {(job.required_brands || job.required_product_houses).slice(0, 3).map((b: string) => (
+                      <span key={b} className="text-[10px] border border-border text-muted px-2 py-0.5 rounded-full">{b}</span>
+                    ))}
+                  </div>
                 )}
-              </div>
-              <div className="flex items-center space-x-4 text-sm text-gray-500 mb-3">
-                <span className="flex items-center space-x-1"><MapPin size={14} /><span>{job.location}</span></span>
-                <span className="flex items-center space-x-1"><Briefcase size={14} /><span>{job.job_type}</span></span>
-              </div>
-              <p className="text-sm text-gray-500 line-clamp-2 mb-4">{job.description}</p>
-              <div className="flex items-center justify-between">
-                <p className="font-medium text-ink">
-                  {job.salary_min && job.salary_max ? `£${job.salary_min.toLocaleString()} – £${job.salary_max.toLocaleString()}` : 'Competitive salary'}
-                </p>
-                <div className="flex space-x-2">
-                  <button onClick={(e) => { e.stopPropagation(); handleSwipe(job.id, 'left') }}
-                    className="p-2 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-400"><X size={16} /></button>
-                  <button onClick={(e) => { e.stopPropagation(); handleSwipe(job.id, 'right') }}
-                    className="p-2 rounded-full bg-gold/10 hover:bg-gold/20 text-gold"><Heart size={16} /></button>
+                <div className="flex gap-2">
+                  {applied.has(job.id) ? (
+                    <div className="btn-secondary flex-1 text-center flex items-center justify-center gap-1 opacity-60 cursor-default"><Check size={12} />Applied</div>
+                  ) : (
+                    <button onClick={() => handleApply(job.id, job.matchScore)} className="btn-primary flex-1">Apply</button>
+                  )}
                 </div>
               </div>
             </div>
           ))}
-          {filtered.length === 0 && (
-            <div className="col-span-2 text-center py-16 text-gray-400">
-              <Briefcase size={48} className="mx-auto mb-4 opacity-50" />
-              <p>No roles found matching your criteria.</p>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Application Modal */}
-      {selectedJob && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setSelectedJob(null)}>
-          <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-8" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-start justify-between mb-6">
-              <div>
-                <h2 className="font-serif text-2xl font-bold text-ink">{selectedJob.title}</h2>
-                <p className="text-gold font-medium">{selectedJob.employer_profiles?.company_name}</p>
-              </div>
-              <button onClick={() => setSelectedJob(null)} className="text-gray-400 hover:text-gray-600"><X size={24} /></button>
-            </div>
-
-            <div className="flex flex-wrap gap-3 mb-6">
-              <span className="text-sm bg-gray-100 px-3 py-1 rounded-full">{selectedJob.location}</span>
-              <span className="text-sm bg-gray-100 px-3 py-1 rounded-full">{selectedJob.job_type}</span>
-              {selectedJob.specialism && <span className="text-sm bg-gold/10 text-gold px-3 py-1 rounded-full">{selectedJob.specialism}</span>}
-            </div>
-
-            <div className="prose prose-sm max-w-none mb-6">
-              <p className="text-gray-600 whitespace-pre-wrap">{selectedJob.description}</p>
-            </div>
-
-            {selectedJob.salary_min && (
-              <p className="text-lg font-medium text-ink mb-6">
-                £{selectedJob.salary_min.toLocaleString()} – £{selectedJob.salary_max?.toLocaleString()}
-              </p>
-            )}
-
-            {selectedJob.requirements?.length > 0 && (
-              <div className="mb-6">
-                <h4 className="font-serif font-semibold mb-2">Requirements</h4>
-                <ul className="list-disc list-inside text-sm text-gray-600 space-y-1">
-                  {selectedJob.requirements.map((r: string, i: number) => <li key={i}>{r}</li>)}
-                </ul>
-              </div>
-            )}
-
-            {selectedJob.benefits?.length > 0 && (
-              <div className="mb-6">
-                <h4 className="font-serif font-semibold mb-2">Benefits</h4>
-                <ul className="list-disc list-inside text-sm text-gray-600 space-y-1">
-                  {selectedJob.benefits.map((b: string, i: number) => <li key={i}>{b}</li>)}
-                </ul>
-              </div>
-            )}
-
-            <hr className="my-6" />
-
-            <h4 className="font-serif font-semibold mb-3">Apply for this Role</h4>
-            <textarea
-              rows={4}
-              value={coverLetter}
-              onChange={(e) => setCoverLetter(e.target.value)}
-              className="input-field mb-4"
-              placeholder="Add a cover letter (optional)..."
-            />
-            <button onClick={handleApply} disabled={applying} className="btn-primary w-full disabled:opacity-50">
-              {applying ? 'Submitting...' : 'Submit Application'}
-            </button>
-          </div>
         </div>
       )}
     </DashboardShell>

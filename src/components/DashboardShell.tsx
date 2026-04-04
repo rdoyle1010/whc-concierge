@@ -93,11 +93,9 @@ export default function DashboardShell({ children, role, userName }: DashboardSh
       }`}>
         <div className="p-6">
           <div className="flex items-center justify-between">
-            <Link href="/" className="flex items-center space-x-2">
-              <div className="w-10 h-10 rounded-full gold-gradient flex items-center justify-center">
-                <span className="text-white font-serif font-bold text-lg">W</span>
-              </div>
-              <span className="font-serif text-lg font-semibold">WHC</span>
+            <Link href="/" className="flex items-center gap-2">
+              <img src="/logo-white.svg" alt="WHC" className="h-6 w-auto" style={{ filter: 'brightness(0) invert(1)' }} />
+              <span className="text-[10px] tracking-[0.2em] text-[#C9A96E] uppercase">Concierge</span>
             </Link>
             <button onClick={() => setSidebarOpen(false)} className="lg:hidden text-white/60 hover:text-white">
               <X size={20} />
