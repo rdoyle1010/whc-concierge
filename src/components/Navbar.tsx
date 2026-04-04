@@ -46,11 +46,11 @@ export default function Navbar() {
   // Nav links based on role
   const navLinks = user
     ? isEmployer
-      ? [{ href: '/employer/post-role', label: 'Post a Role' }, { href: '/employer/jobs', label: 'My Listings' }, { href: '/agency', label: 'Agency' }]
+      ? [{ href: '/employer/post-role', label: 'Post a Role' }, { href: '/employer/jobs', label: 'My Listings' }, { href: '/agency', label: 'Agency' }, { href: '/residency', label: 'Residency' }]
       : isAdmin
         ? [{ href: '/admin/users', label: 'Users' }, { href: '/admin/blog', label: 'Blog' }, { href: '/admin/complaints', label: 'Complaints' }]
         : [{ href: '/jobs', label: 'Browse Roles' }, { href: '/roles/match', label: 'Match', icon: true }, { href: '/agency', label: 'Agency' }, { href: '/residency', label: 'Residency' }]
-    : [{ href: '/jobs', label: 'Browse Roles' }, { href: '/agency', label: 'Agency' }, { href: '/blog', label: 'Blog' }]
+    : [{ href: '/jobs', label: 'Browse Roles' }, { href: '/agency', label: 'Agency' }, { href: '/residency', label: 'Residency' }, { href: '/blog', label: 'Blog' }]
 
   return (
     <nav className="fixed top-0 w-full z-50 bg-white border-b border-border h-[60px]">
