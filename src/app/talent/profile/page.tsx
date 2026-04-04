@@ -178,7 +178,7 @@ export default function TalentProfilePage() {
         {/* Header + save */}
         <div className="flex items-center justify-between mb-2">
           <h1 className="text-[24px] font-medium text-ink">Edit Profile</h1>
-          <button onClick={handleSave} disabled={saving} className="btn-primary flex items-center gap-2 disabled:opacity-50">
+          <button type="button" onClick={handleSave} disabled={saving} className="btn-primary flex items-center gap-2 disabled:opacity-50">
             <Save size={14} />{saving ? 'Saving...' : 'Save Changes'}
           </button>
         </div>
@@ -302,7 +302,7 @@ export default function TalentProfilePage() {
               <label className="eyebrow block mb-2">Travel Availability</label>
               <div className="flex flex-wrap gap-2">
                 {TRAVEL_OPTIONS.map(t => (
-                  <button key={t.value} onClick={()=>u('travel_availability',t.value)}
+                  <button type="button" key={t.value} onClick={()=>u('travel_availability',t.value)}
                     className={`px-4 py-2 rounded-lg text-[12px] font-medium transition-colors ${profile.travel_availability===t.value?'bg-ink text-white':'bg-surface text-muted border border-border'}`}>{t.label}</button>
                 ))}
               </div>
@@ -316,7 +316,7 @@ export default function TalentProfilePage() {
           </div>
 
           {/* Bottom save */}
-          <button onClick={handleSave} disabled={saving} className="btn-primary w-full flex items-center justify-center gap-2 disabled:opacity-50">
+          <button type="button" onClick={handleSave} disabled={saving} className="btn-primary w-full flex items-center justify-center gap-2 disabled:opacity-50">
             <Save size={14} />{saving ? 'Saving...' : 'Save All Changes'}
           </button>
         </div>
