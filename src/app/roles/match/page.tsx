@@ -41,12 +41,15 @@ export default function SwipeMatchPage() {
       }
 
       // Always load real jobs from database — no sample fallback
-      const { data: rawData } = await supabase
+      // Use .or() to catch is_live=true OR is_live is null (for older rows)
+      const { data: rawData, error: queryError } = await supabase
         .from('job_listings')
         .select('*, employer_profiles(company_name, property_name)')
-        .eq('is_live', true)
+        .or('is_live.eq.true,is_live.is.null')
         .order('created_at', { ascending: false })
         .limit(50)
+
+      if (queryError) console.error('Job query error:', queryError.message)
 
       // Normalize DB column names for display
       const normalized = (rawData || []).map((j: any) => ({
