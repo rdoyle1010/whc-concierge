@@ -7,7 +7,7 @@ export interface CandidateProfile {
   location?: string
   bio?: string
   headline?: string
-  specialisms?: string[]
+  services_offered?: string[]
   experience_years?: number
   salary_min?: number
   salary_max?: number

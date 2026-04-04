@@ -66,7 +66,7 @@ export default function TalentDashboard() {
     { done: !!profile?.role_level, label: 'Role level' },
     { done: !!profile?.headline, label: 'Headline' },
     { done: !!profile?.bio, label: 'Bio' },
-    { done: (profile?.specialisms?.length || 0) > 0, label: 'Services' },
+    { done: (profile?.services_offered?.length || 0) > 0, label: 'Services' },
     { done: (profile?.product_houses?.length || 0) > 0, label: 'Product houses' },
     { done: (profile?.qualifications?.length || 0) > 0, label: 'Qualifications' },
     { done: !!profile?.cv_url, label: 'CV' },

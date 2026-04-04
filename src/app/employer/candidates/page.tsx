@@ -35,7 +35,7 @@ export default function EmployerCandidatesPage() {
     if (c.stealth_mode && c.blocked_employers?.includes(profile?.id)) return false
     if (search && !c.full_name?.toLowerCase().includes(search.toLowerCase()) &&
         !c.headline?.toLowerCase().includes(search.toLowerCase())) return false
-    if (specFilter && !(c.specialisms || []).some((s: string) => s.toLowerCase().includes(specFilter.toLowerCase()))) return false
+    if (specFilter && !(c.services_offered || []).some((s: string) => s.toLowerCase().includes(specFilter.toLowerCase()))) return false
     return true
   })
 
@@ -89,12 +89,12 @@ export default function EmployerCandidatesPage() {
                 </p>
               )}
 
-              {c.specialisms?.length > 0 && (
+              {c.services_offered?.length > 0 && (
                 <div className="flex flex-wrap gap-1 mb-3">
-                  {c.specialisms.slice(0, 3).map((s: string) => (
+                  {c.services_offered.slice(0, 3).map((s: string) => (
                     <span key={s} className="text-xs bg-gold/10 text-gold px-2 py-0.5 rounded-full">{s}</span>
                   ))}
-                  {c.specialisms.length > 3 && <span className="text-xs text-gray-400">+{c.specialisms.length - 3}</span>}
+                  {c.services_offered.length > 3 && <span className="text-xs text-gray-400">+{c.services_offered.length - 3}</span>}
                 </div>
               )}
 

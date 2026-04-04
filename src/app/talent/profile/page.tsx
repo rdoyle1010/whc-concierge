@@ -62,7 +62,7 @@ export default function TalentProfilePage() {
     { done: !!profile?.role_level, label: 'Role level' },
     { done: !!profile?.headline, label: 'Headline' },
     { done: !!profile?.bio, label: 'Bio' },
-    { done: (profile?.specialisms?.length || 0) > 0, label: 'Services offered' },
+    { done: (profile?.services_offered?.length || 0) > 0, label: 'Services offered' },
     { done: (profile?.product_houses?.length || 0) > 0, label: 'Product houses' },
     { done: (profile?.qualifications?.length || 0) > 0, label: 'Qualifications' },
     { done: !!profile?.cv_url, label: 'CV uploaded' },
@@ -94,7 +94,7 @@ export default function TalentProfilePage() {
       day_rate_min: profile.day_rate_min ? parseInt(profile.day_rate_min) : null,
       day_rate_max: profile.day_rate_max ? parseInt(profile.day_rate_max) : null,
       availability_status: profile.availability_status || null,
-      specialisms: (profile.specialisms?.length || 0) > 0 ? profile.specialisms : null,
+      services_offered: (profile.services_offered?.length || 0) > 0 ? profile.services_offered : null,
       product_houses: (profile.product_houses?.length || 0) > 0 ? profile.product_houses : null,
       qualifications: qualifications_only.length > 0 ? qualifications_only : null,
       systems_experience: systems_experience.length > 0 ? systems_experience : null,
@@ -230,7 +230,7 @@ export default function TalentProfilePage() {
           </div>
 
           {/* ── S3: Services Offered ── */}
-          <CollapsibleCheckboxSection title="Services Offered" categories={SERVICES_CATEGORIES} selected={profile.specialisms||[]} onChange={v=>u('specialisms',v)} />
+          <CollapsibleCheckboxSection title="Services Offered" categories={SERVICES_CATEGORIES} selected={profile.services_offered||[]} onChange={v=>u('services_offered',v)} />
 
           {/* ── S4: Product Houses ── */}
           <CollapsibleCheckboxSection title="Product Houses" flatItems={PRODUCT_HOUSES} selected={profile.product_houses||[]} onChange={v=>u('product_houses',v)} />

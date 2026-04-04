@@ -79,10 +79,10 @@ export default function AgencyProfilePage() {
             )}
 
             {/* Services */}
-            {profile.specialisms?.length > 0 && (
+            {profile.services_offered?.length > 0 && (
               <div className="bg-white border border-border rounded-xl p-6">
                 <h2 className="text-[16px] font-medium text-ink mb-3">Services Offered</h2>
-                <div className="flex flex-wrap gap-2">{profile.specialisms.map((s: string) => <span key={s} className="text-[11px] font-medium bg-gray-100 text-gray-700 px-2.5 py-1 rounded-full">{s}</span>)}</div>
+                <div className="flex flex-wrap gap-2">{profile.services_offered.map((s: string) => <span key={s} className="text-[11px] font-medium bg-gray-100 text-gray-700 px-2.5 py-1 rounded-full">{s}</span>)}</div>
               </div>
             )}
 

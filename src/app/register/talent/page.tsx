@@ -142,7 +142,7 @@ export default function TalentRegisterPage() {
       day_rate_min: form.day_rate_min ? parseInt(form.day_rate_min) : null,
       day_rate_max: form.day_rate_max ? parseInt(form.day_rate_max) : null,
       availability_status: form.availability_status,
-      specialisms: form.services_offered.length > 0 ? form.services_offered : null,
+      services_offered: form.services_offered.length > 0 ? form.services_offered : null,
       product_houses: form.product_houses.length > 0 ? form.product_houses : null,
       qualifications: qualifications_only.length > 0 ? qualifications_only : null,
       systems_experience: systems_experience.length > 0 ? systems_experience : null,

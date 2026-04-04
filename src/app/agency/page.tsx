@@ -56,7 +56,7 @@ export default function AgencyPage() {
   const filtered = candidates.filter(c => {
     if (insuredOnly && !c.has_insurance) return false
     if (availNow && c.availability_status !== 'immediately') return false
-    if (services.length > 0 && !services.some(s => (c.specialisms || []).some((sp: string) => sp.toLowerCase().includes(s.toLowerCase())))) return false
+    if (services.length > 0 && !services.some(s => (c.services_offered || []).some((sp: string) => sp.toLowerCase().includes(s.toLowerCase())))) return false
     if (brands.length > 0 && !brands.some(b => (c.product_houses || []).some((ph: string) => ph.toLowerCase().includes(b.toLowerCase())))) return false
     if (roles.length > 0 && !roles.includes(c.role_level)) return false
     return true
@@ -179,10 +179,10 @@ export default function AgencyPage() {
                         </div>
 
                         {/* Services */}
-                        {c.specialisms?.length > 0 && (
+                        {c.services_offered?.length > 0 && (
                           <div className="flex flex-wrap gap-1 mb-2.5">
-                            {c.specialisms.slice(0, 4).map((s: string) => <span key={s} className="text-[10px] font-medium bg-gray-100 text-gray-700 px-2 py-0.5 rounded-full">{s}</span>)}
-                            {c.specialisms.length > 4 && <span className="text-[10px] text-muted">+{c.specialisms.length - 4}</span>}
+                            {c.services_offered.slice(0, 4).map((s: string) => <span key={s} className="text-[10px] font-medium bg-gray-100 text-gray-700 px-2 py-0.5 rounded-full">{s}</span>)}
+                            {c.services_offered.length > 4 && <span className="text-[10px] text-muted">+{c.services_offered.length - 4}</span>}
                           </div>
                         )}
 
