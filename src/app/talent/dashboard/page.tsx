@@ -42,10 +42,10 @@ export default function TalentDashboard() {
         scored = jobs.map((job: any) => {
           const result = calculateMatchScore(prof, job)
           if (result.hardStop) return null
-          return { ...job, matchScore: result.score, matchLabel: result.label, matchBadge: result.badgeClass }
+          return { ...job, matchScore: result.score, matchLabel: result.label, matchColour: result.colour, matchBg: result.bgColour }
         }).filter(Boolean).sort((a: any, b: any) => b.matchScore - a.matchScore)
       } else {
-        scored = jobs.map((job: any) => ({ ...job, matchScore: 75, matchLabel: 'Strong Match', matchBadge: 'match-strong' }))
+        scored = jobs.map((job: any) => ({ ...job, matchScore: 75, matchLabel: 'Strong Match', matchColour: '#1D4ED8', matchBg: '#DBEAFE' }))
       }
 
       setMatchedJobs(scored.slice(0, 3))
@@ -172,7 +172,7 @@ export default function TalentDashboard() {
                   <p className="text-[13px] font-medium text-ink">{job.title}</p>
                   <p className="text-[11px] text-muted">{job.employer_profiles?.company_name} &middot; {job.location} &middot; {job.salary_min && job.salary_max ? `£${(job.salary_min/1000).toFixed(0)}k–£${(job.salary_max/1000).toFixed(0)}k` : ''}</p>
                 </div>
-                <span className={job.matchBadge || 'match-strong'}>{job.matchScore}%</span>
+                <span className="text-[11px] font-semibold px-2.5 py-1 rounded-full" style={{ backgroundColor: job.matchBg || '#DBEAFE', color: job.matchColour || '#1D4ED8' }}>{job.matchScore}%</span>
               </div>
             ))}
             {matchedJobs.length === 0 && <p className="text-[13px] text-muted text-center py-8">No active roles right now — check back soon.</p>}

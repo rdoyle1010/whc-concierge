@@ -57,9 +57,9 @@ export default function SwipeMatchPage() {
         if (candidateProfile && candidateProfile.role_level) {
           const result = calculateMatchScore(candidateProfile, job)
           if (result.hardStop) return null
-          return { ...job, matchScore: result.score, matchLabel: result.label, matchBadge: result.badgeClass, matchingSkills: result.matchingSkills || [] }
+          return { ...job, matchScore: result.score, matchLabel: result.label, matchColour: result.colour, matchBg: result.bgColour, matchingSkills: result.matchingSkills || [] }
         }
-        return { ...job, matchScore: 75, matchLabel: 'Strong Match', matchBadge: 'match-strong', matchingSkills: [] }
+        return { ...job, matchScore: 75, matchLabel: 'Strong Match', matchColour: '#1D4ED8', matchBg: '#DBEAFE', matchingSkills: [] }
       }).filter(Boolean)
 
       scored.sort((a: any, b: any) => b.matchScore - a.matchScore)
@@ -139,7 +139,7 @@ export default function SwipeMatchPage() {
           <div className="h-[180px] relative overflow-hidden bg-surface">
             <img src={photo} alt="" className="w-full h-full object-cover" />
             <span className={`absolute top-3 left-3 ${tierClass(job?.tier||'Standard')}`}>{job?.tier||'Standard'}</span>
-            <span className={`absolute top-3 right-3 ${job?.matchBadge || 'match-strong'}`}>{score}% {job?.matchLabel}</span>
+            <span className="absolute top-3 right-3 text-[11px] font-semibold px-2.5 py-1 rounded-full" style={{ backgroundColor: job?.matchBg || '#DBEAFE', color: job?.matchColour || '#1D4ED8' }}>{score}% {job?.matchLabel}</span>
             {dir==='right' && <div className="absolute inset-0 bg-success/20 flex items-center justify-center"><span className="text-success text-[18px] font-bold border-2 border-success px-5 py-1.5 rounded-lg rotate-[-6deg]">INTERESTED</span></div>}
             {dir==='left' && <div className="absolute inset-0 bg-red-500/15 flex items-center justify-center"><span className="text-red-500 text-[18px] font-bold border-2 border-red-500 px-5 py-1.5 rounded-lg rotate-[6deg]">PASS</span></div>}
           </div>

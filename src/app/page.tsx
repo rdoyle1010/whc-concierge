@@ -83,7 +83,7 @@ export default function HomePage() {
                   <div className="h-[180px] bg-gradient-to-br from-neutral-100 to-neutral-200 relative">
                     <img src="https://images.unsplash.com/photo-1600334089648-b0d9d3028eb2?w=600&q=80&auto=format&fit=crop" alt="" className="w-full h-full object-cover" />
                     <span className={`absolute top-3 left-3 ${heroJob?.tier === 'Gold' ? 'badge-gold' : heroJob?.tier === 'Silver' ? 'badge-silver' : 'badge-platinum'}`}>{heroJob?.tier || 'Platinum'}</span>
-                    <span className="absolute top-3 right-3 match-perfect">94% Perfect Match</span>
+                    <span className="absolute top-3 right-3 text-[11px] font-semibold px-2.5 py-1 rounded-full" style={{ backgroundColor: '#DCFCE7', color: '#16A34A' }}>94% Perfect Match</span>
                   </div>
                   <div className="p-5">
                     <p className="eyebrow mb-1">{heroJob?.company || 'Luxury Property'}</p>

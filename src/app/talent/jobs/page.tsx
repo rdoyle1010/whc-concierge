@@ -47,13 +47,13 @@ export default function TalentJobsPage() {
         const title = j.job_title || j.title
         const description = j.job_description || j.description
         const companyName = j.employer_profiles?.property_name || j.employer_profiles?.company_name
-        let matchScore = 75, matchLabel = 'Strong Match', matchBadge = 'match-strong'
+        let matchScore = 75, matchLabel = 'Strong Match', matchColour = '#1D4ED8', matchBg = '#DBEAFE'
         if (cp && cp.role_level) {
           const r = calculateMatchScore(cp, j)
           if (r.hardStop) return null
-          matchScore = r.score; matchLabel = r.label; matchBadge = r.badgeClass
+          matchScore = r.score; matchLabel = r.label; matchColour = r.colour; matchBg = r.bgColour
         }
-        return { ...j, title, description, employer_profiles: { ...j.employer_profiles, company_name: companyName }, matchScore, matchLabel, matchBadge }
+        return { ...j, title, description, employer_profiles: { ...j.employer_profiles, company_name: companyName }, matchScore, matchLabel, matchColour, matchBg }
       }).filter(Boolean)
 
       setJobs(normalized)
@@ -127,7 +127,7 @@ export default function TalentJobsPage() {
               <div className="p-5">
                 <div className="flex items-center justify-between mb-3">
                   <span className={tierClass(job.tier || 'Standard')}>{job.tier || 'Standard'}</span>
-                  <span className={job.matchBadge}>{job.matchScore}%</span>
+                  <span className="text-[11px] font-semibold px-2.5 py-1 rounded-full" style={{ backgroundColor: job.matchBg, color: job.matchColour }}>{job.matchScore}%</span>
                 </div>
                 <p className="eyebrow mb-0.5">{job.employer_profiles?.company_name}</p>
                 <h3 className="text-[16px] font-medium text-ink mb-2">{job.title}</h3>
