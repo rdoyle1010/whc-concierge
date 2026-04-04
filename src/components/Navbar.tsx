@@ -58,7 +58,9 @@ export default function Navbar() {
       <div className="max-w-7xl mx-auto px-6 lg:px-8 h-full flex items-center justify-between">
         {/* Logo */}
         <Link href="/" className="shrink-0">
-          <Image src="/images/whc-logo.jpg" alt="Wellness House Collective" width={160} height={52} className="object-contain mix-blend-multiply" />
+          <div className="bg-white px-3 py-2 rounded">
+            <Image src="/images/whc-logo.jpg" alt="Wellness House Collective" width={140} height={46} className="h-10 w-auto object-contain" />
+          </div>
         </Link>
 
         {/* Centre nav */}
