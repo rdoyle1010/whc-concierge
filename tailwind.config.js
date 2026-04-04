@@ -4,15 +4,17 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        ink: '#0a0a0a',
+        ink: '#0A0A0A',
         body: '#4a4a4a',
         muted: '#999999',
         secondary: '#666666',
-        surface: '#fafafa',
+        surface: '#F5F4F2',
         border: '#e5e5e5',
         parchment: '#ffffff',
-        gold: { DEFAULT: '#0a0a0a', light: '#1a1a1a', dark: '#000000' },
-        navy: { DEFAULT: '#0a0a0a', light: '#1a1a1a', dark: '#000000' },
+        accent: '#C9A96E',
+        success: '#22C55E',
+        gold: { DEFAULT: '#C9A96E', light: '#D4B87E', dark: '#B8945A' },
+        navy: { DEFAULT: '#0A0A0A', light: '#1a1a1a', dark: '#000000' },
         match: {
           perfect: { bg: '#dcfce7', text: '#166534' },
           strong: { bg: '#dbeafe', text: '#1e40af' },
@@ -24,9 +26,7 @@ module.exports = {
         sans: ['-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'sans-serif'],
         serif: ['-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'sans-serif'],
       },
-      fontSize: {
-        eyebrow: ['11px', { letterSpacing: '0.08em', lineHeight: '1.4' }],
-      },
+      fontSize: { eyebrow: ['11px', { letterSpacing: '0.08em', lineHeight: '1.4' }] },
     },
   },
   plugins: [],

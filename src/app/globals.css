@@ -8,41 +8,33 @@
 }
 
 @layer components {
-  .btn-primary {
-    @apply bg-ink text-white px-5 py-2.5 rounded-lg text-[13px] font-medium
-           hover:bg-black/80 transition-colors duration-150;
-  }
-  .btn-secondary {
-    @apply bg-white text-ink border border-border px-5 py-2.5 rounded-lg text-[13px] font-medium
-           hover:bg-surface transition-colors duration-150;
-  }
+  .btn-primary { @apply bg-ink text-white px-5 py-2.5 rounded-lg text-[13px] font-medium hover:bg-black/80 transition-all duration-150; }
+  .btn-secondary { @apply bg-white text-ink border border-border px-5 py-2.5 rounded-lg text-[13px] font-medium hover:bg-surface transition-all duration-150; }
+  .btn-accent { @apply bg-accent text-white px-5 py-2.5 rounded-lg text-[13px] font-medium hover:bg-gold-dark transition-all duration-150; }
   .btn-ghost { @apply text-secondary text-[13px] font-medium hover:text-ink transition-colors; }
-  .input-field {
-    @apply w-full px-3.5 py-2.5 bg-white border border-border rounded-lg text-[14px] text-ink
-           focus:outline-none focus:ring-2 focus:ring-ink/10 focus:border-ink/30
-           transition-all duration-150 placeholder:text-muted;
-  }
-  .card {
-    @apply bg-white border border-border rounded-xl p-6 transition-all duration-200;
-  }
-  .card-hover { @apply card hover:border-ink/20 hover:shadow-sm; }
+  .input-field { @apply w-full px-3.5 py-2.5 bg-white border border-border rounded-lg text-[14px] text-ink focus:outline-none focus:ring-2 focus:ring-ink/10 focus:border-ink/30 transition-all duration-150 placeholder:text-muted; }
+  .card { @apply bg-white border border-border rounded-xl p-6 transition-all duration-200 hover:shadow-md hover:-translate-y-0.5; }
+  .card-flat { @apply bg-white border border-border rounded-xl p-6; }
   .eyebrow { @apply text-eyebrow uppercase text-muted font-medium; }
   .dashboard-card { @apply bg-white border border-border rounded-xl p-5; }
   .section-heading { @apply text-[42px] md:text-[52px] font-medium text-ink leading-[1.1] tracking-tight; }
 
-  .badge-platinum { @apply bg-ink text-white text-[10px] font-semibold px-2 py-0.5 rounded-full; }
-  .badge-gold { @apply bg-neutral-700 text-white text-[10px] font-semibold px-2 py-0.5 rounded-full; }
-  .badge-silver { @apply bg-neutral-400 text-white text-[10px] font-semibold px-2 py-0.5 rounded-full; }
-  .badge-bronze { @apply bg-amber-700 text-white text-[10px] font-semibold px-2 py-0.5 rounded-full; }
+  .badge-platinum { @apply bg-ink text-white text-[10px] font-semibold px-2.5 py-0.5 rounded-full; }
+  .badge-gold { @apply bg-accent text-white text-[10px] font-semibold px-2.5 py-0.5 rounded-full; }
+  .badge-silver { @apply bg-neutral-400 text-white text-[10px] font-semibold px-2.5 py-0.5 rounded-full; }
+  .badge-bronze { @apply bg-amber-700 text-white text-[10px] font-semibold px-2.5 py-0.5 rounded-full; }
 
   .match-perfect { @apply bg-match-perfect-bg text-match-perfect-text text-[11px] font-semibold px-2.5 py-1 rounded-full; }
   .match-strong { @apply bg-match-strong-bg text-match-strong-text text-[11px] font-semibold px-2.5 py-1 rounded-full; }
   .match-good { @apply bg-match-good-bg text-match-good-text text-[11px] font-semibold px-2.5 py-1 rounded-full; }
   .match-partial { @apply bg-match-partial-bg text-match-partial-text text-[11px] font-semibold px-2.5 py-1 rounded-full; }
 
-  .gold-gradient { @apply bg-ink; }
-  .gradient-text-gold { color: #0a0a0a; }
+  .gold-gradient { @apply bg-accent; }
+  .gradient-text-gold { color: #C9A96E; }
   .animate-pulse-gold {}
+
+  /* Skeleton */
+  .skeleton { @apply bg-surface rounded animate-pulse; }
 }
 
 @keyframes fadeUp { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }
