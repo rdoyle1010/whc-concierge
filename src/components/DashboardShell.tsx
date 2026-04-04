@@ -51,6 +51,7 @@ const navItems: Record<string, NavItem[]> = {
     { label: 'Blog', href: '/admin/blog', icon: <FileText size={20} /> },
     { label: 'Campaigns', href: '/admin/campaigns', icon: <Megaphone size={20} /> },
     { label: 'Images', href: '/admin/images', icon: <ImageIcon size={20} /> },
+    { label: 'Taxonomy', href: '/admin/taxonomy', icon: <Briefcase size={20} /> },
     { label: 'Complaints', href: '/admin/complaints', icon: <AlertTriangle size={20} /> },
     { label: 'Settings', href: '/admin/settings', icon: <Settings size={20} /> },
   ],
