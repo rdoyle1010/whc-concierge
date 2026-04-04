@@ -27,7 +27,7 @@ export default function TalentJobsPage() {
 
       let query = supabase
         .from('job_listings')
-        .select('*, employer_profiles(company_name, property_name, logo_url, location)')
+        .select('*, employer_profiles(company_name, property_name, location)')
         .or('is_live.eq.true,status.eq.active')
         .order('created_at', { ascending: false })
 

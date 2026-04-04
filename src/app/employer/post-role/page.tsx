@@ -58,12 +58,8 @@ export default function PostRolePage() {
 
     const { error: insertError } = await supabase.from('job_listings').insert({
       employer_id: profile.id,
-      // Use real DB column names
       job_title: form.title,
       job_description: form.description,
-      // Also set legacy names in case table has those
-      title: form.title,
-      description: form.description,
       location: form.location,
       location_postcode: form.location_postcode || null,
       radius_miles: form.radius_miles ? parseInt(form.radius_miles) : null,
@@ -72,12 +68,8 @@ export default function PostRolePage() {
       required_role_level: form.required_role_level || null,
       salary_min: form.salary_min ? parseInt(form.salary_min) : null,
       salary_max: form.salary_max ? parseInt(form.salary_max) : null,
-      specialism: form.specialism || null,
       required_brands: form.required_product_houses.length > 0 ? form.required_product_houses : null,
-      required_product_houses: form.required_product_houses.length > 0 ? form.required_product_houses : null,
       required_qualifications: form.required_qualifications.length > 0 ? form.required_qualifications : null,
-      requirements: form.requirements ? form.requirements.split('\n').filter(Boolean) : null,
-      benefits: form.benefits ? form.benefits.split('\n').filter(Boolean) : null,
       insurance_required: form.insurance_required,
       is_agency_role: form.is_agency_role,
       is_residency_role: form.is_residency_role,

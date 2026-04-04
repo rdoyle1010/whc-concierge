@@ -43,7 +43,7 @@ export default function SwipeMatchPage() {
       // Always load real jobs from database — no sample fallback
       const { data: rawData } = await supabase
         .from('job_listings')
-        .select('*, employer_profiles(company_name, property_name, logo_url)')
+        .select('*, employer_profiles(company_name, property_name)')
         .eq('is_live', true)
         .order('created_at', { ascending: false })
         .limit(50)
@@ -134,7 +134,7 @@ export default function SwipeMatchPage() {
         <div className={`swipe-card w-full max-w-[440px] bg-white border border-border rounded-xl shadow-sm overflow-hidden ${dir==='left'?'swipe-left':dir==='right'?'swipe-right':''}`}>
           {/* Image */}
           <div className="h-[200px] relative overflow-hidden bg-surface">
-            <img src={job?.employer_profiles?.logo_url || photo} alt="" className="w-full h-full object-cover" />
+            <img src={photo} alt="" className="w-full h-full object-cover" />
             <span className={`absolute top-3 left-3 ${tierClass(job?.tier||'Standard')}`}>{job?.tier||'Standard'}</span>
             <span className={`absolute top-3 right-3 ${matchClass(score)}`}>{score}% {job?.matchLabel}</span>
             {dir==='right' && <div className="absolute inset-0 bg-emerald-500/15 flex items-center justify-center"><span className="text-emerald-600 text-[18px] font-bold border-2 border-emerald-500 px-5 py-1.5 rounded-lg rotate-[-6deg]">INTERESTED</span></div>}

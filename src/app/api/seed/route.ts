@@ -120,13 +120,11 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Could not create employer' }, { status: 500 })
     }
 
-    // Insert jobs — map to real DB column names
+    // Insert jobs — use real DB column names only
     const jobs = SEED_JOBS.map(j => ({
       employer_id: employerId,
       job_title: j.title,
       job_description: j.description,
-      title: j.title, // legacy fallback
-      description: j.description,
       location: j.location,
       location_postcode: j.location_postcode,
       job_type: j.job_type,
@@ -135,13 +133,9 @@ export async function POST(req: NextRequest) {
       salary_min: j.salary_min,
       salary_max: j.salary_max,
       required_brands: j.required_product_houses,
-      required_product_houses: j.required_product_houses,
       required_qualifications: j.required_qualifications,
-      requirements: j.requirements,
-      benefits: j.benefits,
       tier: j.tier,
       is_live: true,
-      status: 'active',
       insurance_required: j.insurance_required,
       is_agency_role: j.is_agency_role,
     }))
