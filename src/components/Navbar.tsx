@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { createClient } from '@/lib/supabase/client'
 import { Menu, X, Flame, Bell, User, ChevronDown, LayoutDashboard, Settings, LogOut, MessageSquare, Briefcase } from 'lucide-react'
 
@@ -56,9 +57,8 @@ export default function Navbar() {
     <nav className="fixed top-0 w-full z-50 bg-white border-b border-border h-[60px]">
       <div className="max-w-7xl mx-auto px-6 lg:px-8 h-full flex items-center justify-between">
         {/* Logo */}
-        <Link href="/" className="flex items-center gap-3 shrink-0">
-          <img src="/logo.svg" alt="WHC Concierge" className="h-7 w-auto" />
-          <span className="text-[11px] tracking-[0.2em] text-accent font-light uppercase hidden sm:block">Concierge</span>
+        <Link href="/" className="shrink-0">
+          <Image src="/images/whc-logo.jpg" alt="Wellness House Collective" width={160} height={52} className="object-contain mix-blend-multiply" />
         </Link>
 
         {/* Centre nav */}

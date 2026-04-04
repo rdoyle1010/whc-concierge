@@ -2,11 +2,12 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import {
   LayoutDashboard, User, Briefcase, MessageSquare, Star, Calendar,
-  Settings, LogOut, Menu, X, Users, FileText, Image, Megaphone,
+  Settings, LogOut, Menu, X, Users, FileText, Image as ImageIcon, Megaphone,
   AlertTriangle, Heart, Building2, ChevronRight
 } from 'lucide-react'
 
@@ -49,7 +50,7 @@ const navItems: Record<string, NavItem[]> = {
     { label: 'Matches', href: '/admin/matches', icon: <Heart size={20} /> },
     { label: 'Blog', href: '/admin/blog', icon: <FileText size={20} /> },
     { label: 'Campaigns', href: '/admin/campaigns', icon: <Megaphone size={20} /> },
-    { label: 'Images', href: '/admin/images', icon: <Image size={20} /> },
+    { label: 'Images', href: '/admin/images', icon: <ImageIcon size={20} /> },
     { label: 'Complaints', href: '/admin/complaints', icon: <AlertTriangle size={20} /> },
     { label: 'Settings', href: '/admin/settings', icon: <Settings size={20} /> },
   ],
@@ -74,10 +75,7 @@ export default function DashboardShell({ children, role, userName }: DashboardSh
           <Menu size={24} />
         </button>
         <div className="flex items-center space-x-2">
-          <div className="w-8 h-8 rounded-full gold-gradient flex items-center justify-center">
-            <span className="text-white font-serif font-bold text-sm">W</span>
-          </div>
-          <span className="font-serif font-semibold">WHC Concierge</span>
+          <Image src="/images/whc-logo.jpg" alt="WHC" width={100} height={32} className="object-contain brightness-0 invert" />
         </div>
         <div className="w-6" />
       </div>
@@ -93,9 +91,8 @@ export default function DashboardShell({ children, role, userName }: DashboardSh
       }`}>
         <div className="p-6">
           <div className="flex items-center justify-between">
-            <Link href="/" className="flex items-center gap-2">
-              <img src="/logo-white.svg" alt="WHC" className="h-6 w-auto" style={{ filter: 'brightness(0) invert(1)' }} />
-              <span className="text-[10px] tracking-[0.2em] text-[#C9A96E] uppercase">Concierge</span>
+            <Link href="/">
+              <Image src="/images/whc-logo.jpg" alt="Wellness House Collective" width={130} height={42} className="object-contain brightness-0 invert" />
             </Link>
             <button onClick={() => setSidebarOpen(false)} className="lg:hidden text-white/60 hover:text-white">
               <X size={20} />

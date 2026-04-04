@@ -3,6 +3,7 @@
 import { useState, Suspense } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
+import Image from 'next/image'
 import { createClient } from '@/lib/supabase/client'
 import { Eye, EyeOff } from 'lucide-react'
 
@@ -80,7 +81,7 @@ function LoginForm() {
       {/* Left: form */}
       <div className="flex-1 flex items-center justify-center px-6 py-12">
         <div className="w-full max-w-[360px]">
-          <Link href="/" className="text-ink font-semibold text-[16px] tracking-tight">WHC Concierge</Link>
+          <Link href="/"><Image src="/images/whc-logo.jpg" alt="Wellness House Collective" width={140} height={46} className="object-contain mix-blend-multiply" /></Link>
           <h1 className="text-[28px] font-medium text-ink mt-10 mb-1 leading-tight">Welcome back</h1>
           <p className="text-[14px] text-muted mb-8">Sign in to your account</p>
 
@@ -121,7 +122,7 @@ function LoginForm() {
         <div className="absolute inset-0 bg-black/30" />
         <div className="absolute bottom-12 left-12 right-12">
           <p className="text-white/90 text-[20px] font-medium leading-snug">&ldquo;Where exceptional talent meets exceptional opportunity.&rdquo;</p>
-          <p className="text-white/50 text-[13px] mt-3">WHC Concierge</p>
+          <p className="text-white/50 text-[13px] mt-3">Wellness House Collective</p>
         </div>
       </div>
     </div>

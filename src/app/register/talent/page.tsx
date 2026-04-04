@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import Image from 'next/image'
 import { createClient } from '@/lib/supabase/client'
 import { ROLE_LEVELS, TRAVEL_OPTIONS, AVAILABILITY_STATUSES } from '@/lib/constants'
 import CollapsibleCheckboxSection from '@/components/CollapsibleCheckboxSection'
@@ -182,7 +183,7 @@ export default function TalentRegisterPage() {
   return (
     <div className="min-h-screen bg-white">
       <div className="border-b border-neutral-100 px-4 py-4 flex items-center justify-between max-w-3xl mx-auto">
-        <Link href="/" className="text-black font-semibold tracking-tight">WHC Concierge</Link>
+        <Link href="/"><Image src="/images/whc-logo.jpg" alt="Wellness House Collective" width={130} height={42} className="object-contain mix-blend-multiply" /></Link>
         <Link href="/login?role=talent" className="text-sm text-neutral-400 hover:text-black">Already have an account?</Link>
       </div>
 
