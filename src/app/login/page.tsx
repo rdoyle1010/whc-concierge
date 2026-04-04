@@ -24,30 +24,55 @@ function LoginForm() {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
-    setLoading(true); setError('')
-    const { error: authError } = await supabase.auth.signInWithPassword({ email, password })
-    if (authError) { setError(authError.message); setLoading(false); return }
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) { setError('Login failed'); setLoading(false); return }
-    // Route by role — default always goes to /talent/dashboard
-    const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
-    const role_from_profile = profile?.role
-    const role_from_meta = user.user_metadata?.role
+    setLoading(true)
+    setError('')
 
-    // Admin check (profiles table or user_metadata)
-    if (role_from_profile === 'admin' || role_from_meta === 'admin') {
-      router.push('/admin/dashboard'); return
+    try {
+      // 1. Sign in
+      const { error: authError } = await supabase.auth.signInWithPassword({ email, password })
+      if (authError) { setError(authError.message); setLoading(false); return }
+
+      // 2. Get user
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) { setError('Login failed'); setLoading(false); return }
+
+      // 3. Check role from profiles table (may not exist — that's OK)
+      let userRole: string | null = null
+      try {
+        const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
+        userRole = profile?.role || null
+      } catch {
+        // profiles table may not exist or query may fail — continue
+      }
+
+      // Also check user_metadata
+      const metaRole = user.user_metadata?.role
+
+      // 4. Route — admin
+      if (userRole === 'admin' || metaRole === 'admin') {
+        router.push('/admin/dashboard')
+        return
+      }
+
+      // 5. Route — employer
+      if (userRole === 'employer' || metaRole === 'employer') {
+        router.push('/employer/dashboard')
+        return
+      }
+      // Also check if they have an employer_profiles record
+      try {
+        const { data: emp } = await supabase.from('employer_profiles').select('id').eq('user_id', user.id).single()
+        if (emp) { router.push('/employer/dashboard'); return }
+      } catch {
+        // No employer profile — continue
+      }
+
+      // 6. Default — talent dashboard
+      router.push('/talent/dashboard')
+    } catch (err: any) {
+      setError(err.message || 'An unexpected error occurred')
+      setLoading(false)
     }
-
-    // Employer check (profiles table, user_metadata, or employer_profiles exists)
-    if (role_from_profile === 'employer' || role_from_meta === 'employer') {
-      router.push('/employer/dashboard'); return
-    }
-    const { data: emp } = await supabase.from('employer_profiles').select('id').eq('user_id', user.id).single()
-    if (emp) { router.push('/employer/dashboard'); return }
-
-    // Everything else → talent dashboard (candidate, talent, null, undefined)
-    router.push('/talent/dashboard')
   }
 
   return (
@@ -59,10 +84,10 @@ function LoginForm() {
           <h1 className="text-[28px] font-medium text-ink mt-10 mb-1 leading-tight">Welcome back</h1>
           <p className="text-[14px] text-muted mb-8">Sign in to your account</p>
 
-          {/* Tabs */}
+          {/* Tabs — outside the form to prevent accidental submission */}
           <div className="flex bg-surface rounded-lg p-1 mb-7">
-            <button onClick={() => setRole('talent')} className={`flex-1 py-2 rounded-md text-[13px] font-medium transition-colors ${role === 'talent' ? 'bg-white text-ink shadow-sm' : 'text-muted'}`}>Talent</button>
-            <button onClick={() => setRole('employer')} className={`flex-1 py-2 rounded-md text-[13px] font-medium transition-colors ${role === 'employer' ? 'bg-white text-ink shadow-sm' : 'text-muted'}`}>Hotel / Employer</button>
+            <button type="button" onClick={() => setRole('talent')} className={`flex-1 py-2 rounded-md text-[13px] font-medium transition-colors ${role === 'talent' ? 'bg-white text-ink shadow-sm' : 'text-muted'}`}>Talent</button>
+            <button type="button" onClick={() => setRole('employer')} className={`flex-1 py-2 rounded-md text-[13px] font-medium transition-colors ${role === 'employer' ? 'bg-white text-ink shadow-sm' : 'text-muted'}`}>Hotel / Employer</button>
           </div>
 
           {error && <div className="bg-red-50 text-red-600 text-[13px] px-3 py-2.5 rounded-lg mb-5">{error}</div>}
