@@ -68,21 +68,34 @@ export default function ResidencyPage() {
             <h2 className="text-4xl font-bold text-black tracking-tight">Featured Residencies</h2>
           </div>
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 stagger-children">
-            {dbResidencies.length > 0 ? dbResidencies.map((r: any) => (
-              <div key={r.id} className="border border-neutral-200 hover:border-neutral-400 transition-colors">
-                <div className="p-6">
-                  <h3 className="text-xl font-semibold text-black mb-2">{r.title}</h3>
-                  <div className="flex items-center space-x-4 text-sm text-neutral-400 mb-4">
-                    {r.duration && <span className="flex items-center space-x-1"><Clock size={13} /><span>{r.duration}</span></span>}
-                    {r.travel_availability && <span>{r.travel_availability}</span>}
+            {dbResidencies.length > 0 ? dbResidencies.map((r: any, i: number) => {
+              const photos = [
+                'https://images.unsplash.com/photo-1600334089648-b0d9d3028eb2?w=600&q=80&auto=format&fit=crop',
+                'https://images.unsplash.com/photo-1540555700478-4be289fbec6d?w=600&q=80&auto=format&fit=crop',
+                'https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?w=600&q=80&auto=format&fit=crop',
+              ]
+              return (
+                <div key={r.id} className="border border-border hover:border-ink/20 transition-all hover:shadow-sm overflow-hidden">
+                  <div className="h-40 bg-surface overflow-hidden">
+                    <img src={r.photos?.[0] || photos[i % photos.length]} alt={r.title} className="w-full h-full object-cover" />
                   </div>
-                  {r.description && <p className="text-neutral-400 text-sm leading-relaxed mb-4">{r.description}</p>}
-                  {r.day_rate && <p className="text-sm font-medium text-black mb-4">From £{r.day_rate}/day</p>}
-                  <button type="button" onClick={() => setStep(1)} className="text-black text-sm font-medium hover:underline">Apply &rarr;</button>
+                  <div className="p-6">
+                    <h3 className="text-[16px] font-medium text-ink mb-2">{r.title}</h3>
+                    <div className="flex items-center gap-3 text-[12px] text-muted mb-3">
+                      {r.duration && <span className="flex items-center gap-1"><Clock size={12} />{r.duration}</span>}
+                      {r.travel_availability && <span className="capitalize">{r.travel_availability.replace('_', ' ')}</span>}
+                    </div>
+                    {r.description && <p className="text-[13px] text-secondary leading-relaxed mb-3 line-clamp-3">{r.description}</p>}
+                    {r.day_rate && <p className="text-[13px] font-medium text-ink mb-4">From £{r.day_rate}/day</p>}
+                    {r.services_offered?.length > 0 && (
+                      <div className="flex flex-wrap gap-1 mb-4">{r.services_offered.slice(0, 3).map((s: string) => <span key={s} className="text-[10px] border border-border text-muted px-2 py-0.5 rounded-full">{s}</span>)}</div>
+                    )}
+                    <button type="button" onClick={() => setStep(1)} className="text-ink text-[13px] font-medium hover:underline">Apply &rarr;</button>
+                  </div>
                 </div>
-              </div>
-            )) : (
-              <div className="lg:col-span-3 text-center py-12">
+              )
+            }) : (
+              <div className="lg:col-span-3 text-center py-16">
                 <p className="text-muted text-[14px] mb-4">No residency placements available yet.</p>
                 <Link href="/residency/create" className="btn-primary inline-block">List your residency availability</Link>
               </div>

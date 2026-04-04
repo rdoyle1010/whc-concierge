@@ -63,6 +63,7 @@ export default function TalentRegisterPage() {
     travel_radius_miles: '', travel_postcode: '',
     // Step 4
     has_insurance: false,
+    agreed_terms: false,
   })
 
   const [cvFile, setCvFile] = useState<File | null>(null)
@@ -337,13 +338,32 @@ export default function TalentRegisterPage() {
               )}
             </div>
 
-            <div className="bg-neutral-50 p-4 text-sm text-neutral-500">
+            {/* Terms & Conditions */}
+            <div className="border border-border rounded-lg p-4 max-h-48 overflow-y-auto text-[12px] text-secondary leading-relaxed">
+              <p className="font-medium text-ink mb-2">Terms & Conditions</p>
+              <p className="mb-2">By creating a profile on WHC Concierge, you agree to the following:</p>
+              <p className="mb-2">1. <strong>Accuracy of information:</strong> All information provided in your profile, including qualifications, experience, and availability, must be accurate and up to date. WHC Concierge reserves the right to remove profiles containing false or misleading information.</p>
+              <p className="mb-2">2. <strong>Profile review:</strong> All profiles are subject to review and approval by the WHC Concierge team. We may request additional documentation to verify your qualifications.</p>
+              <p className="mb-2">3. <strong>Professional conduct:</strong> You agree to conduct yourself professionally in all interactions facilitated through the platform, including with employers, properties, and other practitioners.</p>
+              <p className="mb-2">4. <strong>Data protection:</strong> Your personal data will be processed in accordance with our <a href="/privacy" className="underline text-ink">Privacy Policy</a>. We will share relevant profile information with employers who view or match with your profile.</p>
+              <p className="mb-2">5. <strong>Agency bookings:</strong> For agency shifts booked through the platform, a 10% platform fee applies to the agreed rate. Payment terms are agreed between you and the property.</p>
+              <p className="mb-2">6. <strong>Insurance:</strong> If you indicate you hold professional insurance, you may be asked to provide proof. For roles requiring insurance, you must maintain valid cover throughout the engagement.</p>
+              <p className="mb-2">7. <strong>Intellectual property:</strong> All content, design, and functionality of WHC Concierge remains the property of Wellness House Collective Ltd.</p>
+              <p>8. <strong>Termination:</strong> We reserve the right to suspend or remove your profile at any time if you breach these terms or engage in conduct that is harmful to the platform or its users.</p>
+            </div>
+
+            <label className="flex items-start gap-3 cursor-pointer">
+              <input type="checkbox" checked={form.agreed_terms} onChange={(e) => update('agreed_terms', e.target.checked)} className="w-4 h-4 border-border rounded text-ink focus:ring-ink mt-0.5" />
+              <span className="text-[13px] text-secondary">I have read and agree to the <Link href="/terms" className="underline text-ink">Terms & Conditions</Link> and <Link href="/privacy" className="underline text-ink">Privacy Policy</Link></span>
+            </label>
+
+            <div className="bg-surface p-4 rounded-lg text-[13px] text-muted">
               Your profile will be reviewed by our team within 24 hours. You&apos;ll receive an email once approved.
             </div>
 
             <div className="flex gap-3">
               <button type="button" onClick={() => setStep(3)} className="btn-secondary flex-1">Back</button>
-              <button type="button" onClick={handleSubmit} disabled={loading} className="btn-primary flex-1 disabled:opacity-50">
+              <button type="button" onClick={handleSubmit} disabled={loading || !form.agreed_terms} className="btn-primary flex-1 disabled:opacity-40">
                 {loading ? 'Creating profile...' : 'Submit for Approval'}
               </button>
             </div>

@@ -20,7 +20,7 @@ export default function EmployerRegisterPage() {
     company_name: '', contact_name: '', work_email: '', website: '',
     company_type: '', postcode: '', description: '', phone: '',
     product_houses_used: [] as string[], systems_used: [] as string[],
-    treatment_rooms: '', team_size: '',
+    treatment_rooms: '', team_size: '', agreed_terms: false,
   })
 
   const update = (field: string, value: any) => setForm({ ...form, [field]: value })
@@ -135,16 +135,32 @@ export default function EmployerRegisterPage() {
           <div className="space-y-6">
             <p className="text-xs font-medium text-neutral-400 uppercase tracking-widest mb-2">Step 3 — Verification</p>
             <div><label className="block text-xs font-medium text-neutral-500 uppercase tracking-wider mb-1.5">Work Email (for verification)</label><input type="email" value={form.work_email} onChange={(e) => update('work_email', e.target.value)} className="input-field" placeholder="name@property.com" /></div>
-            <div className="bg-neutral-50 p-4 text-sm text-neutral-500">
+            {/* Terms & Conditions */}
+            <div className="border border-border rounded-lg p-4 max-h-48 overflow-y-auto text-[12px] text-secondary leading-relaxed">
+              <p className="font-medium text-ink mb-2">Terms & Conditions — Employer</p>
+              <p className="mb-2">By registering a property on WHC Concierge, you agree to the following:</p>
+              <p className="mb-2">1. <strong>Accuracy of listings:</strong> All job listings and company information must be accurate and represent genuine vacancies. WHC Concierge reserves the right to remove misleading listings.</p>
+              <p className="mb-2">2. <strong>Account review:</strong> All employer accounts are subject to review and approval by the WHC Concierge team before listings become visible to candidates.</p>
+              <p className="mb-2">3. <strong>Job posting fees:</strong> Job listings are subject to the pricing tier selected at the time of posting (Bronze £150, Silver £200, Gold £225, Platinum £250). Fees are non-refundable once the listing is published.</p>
+              <p className="mb-2">4. <strong>Agency commission:</strong> For shifts booked through the WHC agency marketplace, a 10% platform commission applies to the agreed rate.</p>
+              <p className="mb-2">5. <strong>Candidate data:</strong> You agree to handle candidate personal data in accordance with GDPR and our <a href="/privacy" className="underline text-ink">Privacy Policy</a>. Candidate information accessed through the platform must not be shared with third parties.</p>
+              <p className="mb-2">6. <strong>Professional conduct:</strong> You agree to treat all candidates fairly and professionally. Discriminatory practices are prohibited.</p>
+              <p className="mb-2">7. <strong>Payment terms:</strong> All payments are processed securely through Stripe. You are responsible for fulfilling salary and compensation terms as advertised in your listings.</p>
+              <p>8. <strong>Termination:</strong> We reserve the right to suspend or remove your account at any time if you breach these terms.</p>
+            </div>
+
+            <label className="flex items-start gap-3 cursor-pointer">
+              <input type="checkbox" checked={form.agreed_terms} onChange={(e) => update('agreed_terms', e.target.checked)} className="w-4 h-4 border-border rounded text-ink focus:ring-ink mt-0.5" />
+              <span className="text-[13px] text-secondary">I have read and agree to the <Link href="/terms" className="underline text-ink">Terms & Conditions</Link> and <Link href="/privacy" className="underline text-ink">Privacy Policy</Link></span>
+            </label>
+
+            <div className="bg-surface p-4 rounded-lg text-[13px] text-muted">
               Your account will be reviewed by our team within 24 hours. You&apos;ll receive an email once approved.
             </div>
-            <label className="flex items-start space-x-3 cursor-pointer">
-              <input type="checkbox" required className="w-4 h-4 border-neutral-300 text-black focus:ring-black rounded-sm mt-0.5" />
-              <span className="text-sm text-neutral-600">I accept the <Link href="/terms" className="underline">Terms of Service</Link> and <Link href="/privacy" className="underline">Privacy Policy</Link></span>
-            </label>
+
             <div className="flex gap-3">
               <button type="button" onClick={() => setStep(2)} className="btn-secondary flex-1">Back</button>
-              <button type="button" onClick={handleSubmit} disabled={loading} className="btn-primary flex-1 disabled:opacity-50">{loading ? 'Creating account...' : 'Submit for Approval'}</button>
+              <button type="button" onClick={handleSubmit} disabled={loading || !form.agreed_terms} className="btn-primary flex-1 disabled:opacity-40">{loading ? 'Creating account...' : 'Submit for Approval'}</button>
             </div>
           </div>
         )}
