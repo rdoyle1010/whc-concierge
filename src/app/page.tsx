@@ -49,26 +49,32 @@ export default function HomePage() {
       <Navbar />
 
       {/* ═══════ S1: HERO ═══════ */}
-      <section className="pt-16">
-        <div className="max-w-7xl mx-auto px-6 lg:px-8 py-20 lg:py-28">
+      <section className="pt-16 relative min-h-[90vh] flex items-center overflow-hidden">
+        {/* Background image */}
+        <div className="absolute inset-0">
+          <img src="https://images.unsplash.com/photo-1560750588-73207b1ef5b8?w=1800&q=80&auto=format&fit=crop" alt="" className="w-full h-full object-cover" />
+          <div className="absolute inset-0 bg-black/55" />
+        </div>
+
+        <div className="relative z-10 max-w-7xl mx-auto px-6 lg:px-8 py-20 lg:py-28 w-full">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
             <div className="max-w-xl">
-              <p className="eyebrow mb-5 animate-fade-in-up">The luxury wellness careers platform</p>
-              <h1 className="text-[44px] md:text-[52px] font-medium text-ink leading-[1.1] tracking-tight mb-6 animate-fade-in-up delay-100">
+              <p className="text-[11px] tracking-[0.08em] uppercase text-white/50 font-medium mb-5 animate-fade-in-up">The luxury wellness careers platform</p>
+              <h1 className="text-[44px] md:text-[52px] font-medium text-white leading-[1.1] tracking-tight mb-6 animate-fade-in-up delay-100">
                 The right match.<br />Every time.
               </h1>
-              <p className="text-[16px] text-secondary leading-[1.7] max-w-[480px] mb-8 animate-fade-in-up delay-200">
+              <p className="text-[16px] text-white/60 leading-[1.7] max-w-[480px] mb-8 animate-fade-in-up delay-200">
                 WHC Concierge connects exceptional spa and wellness professionals with the world&apos;s finest properties — using intelligent matching that understands your world.
               </p>
               <div className="flex flex-wrap gap-3 mb-12 animate-fade-in-up delay-300">
-                <Link href="/roles/match" className="btn-primary">Find your next role</Link>
-                <Link href="/register/employer" className="btn-secondary">Hire exceptional talent</Link>
+                <Link href="/roles/match" className="bg-white text-ink px-5 py-2.5 rounded-lg text-[13px] font-medium hover:bg-white/90 transition-colors">Find your next role</Link>
+                <Link href="/register/employer" className="border border-white/30 text-white px-5 py-2.5 rounded-lg text-[13px] font-medium hover:bg-white/10 transition-colors">Hire exceptional talent</Link>
               </div>
               {/* Stats — real data only */}
               {(stats.properties > 0 || stats.roles > 0) && (
-                <div className="flex items-center divide-x divide-border animate-fade-in-up delay-400">
-                  <div className="pr-6"><p className="text-[22px] font-semibold text-ink">{stats.properties}</p><p className="text-[12px] text-muted">Properties</p></div>
-                  <div className="px-6"><p className="text-[22px] font-semibold text-ink">{stats.roles}</p><p className="text-[12px] text-muted">Active Roles</p></div>
+                <div className="flex items-center divide-x divide-white/20 animate-fade-in-up delay-400">
+                  <div className="pr-6"><p className="text-[22px] font-semibold text-white">{stats.properties}</p><p className="text-[12px] text-white/40">Properties</p></div>
+                  <div className="px-6"><p className="text-[22px] font-semibold text-white">{stats.roles}</p><p className="text-[12px] text-white/40">Active Roles</p></div>
                 </div>
               )}
             </div>
@@ -113,6 +119,50 @@ export default function HomePage() {
               </div>
             </div>
           </div>
+        </div>
+      </section>
+
+      {/* ═══════ EDITORIAL GRID ═══════ */}
+      <section className="py-20">
+        <div className="max-w-7xl mx-auto px-6 lg:px-8">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 h-auto lg:h-[520px]">
+            {/* Left — tall image */}
+            <div className="lg:row-span-2 relative overflow-hidden rounded-lg">
+              <img src="https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=800&q=80&auto=format&fit=crop" alt="Meditation in nature" className="w-full h-full min-h-[300px] object-cover" />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+              <p className="absolute bottom-5 left-5 right-5 text-white text-[14px] italic">Where stillness meets ambition</p>
+            </div>
+            {/* Top right */}
+            <div className="lg:col-span-2 relative overflow-hidden rounded-lg">
+              <img src="/images/gathering-canopy.jpg" alt="Community gathering" className="w-full h-full min-h-[200px] object-cover" />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
+              <p className="absolute bottom-4 left-5 text-white text-[14px] italic">Community. Practice. Purpose.</p>
+            </div>
+            {/* Bottom right */}
+            <div className="lg:col-span-2 relative overflow-hidden rounded-lg">
+              <img src="https://images.unsplash.com/photo-1573843981267-be1999ff37cd?w=800&q=80&auto=format&fit=crop" alt="Infinity pool overlooking ocean" className="w-full h-full min-h-[200px] object-cover" />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
+              <p className="absolute bottom-4 left-5 text-white text-[14px] italic">The world&apos;s finest settings</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ═══════ LIFESTYLE STRIP ═══════ */}
+      <section className="pb-16 overflow-hidden">
+        <div className="flex gap-4 px-6 overflow-x-auto" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none', WebkitOverflowScrolling: 'touch' }}>
+          {[
+            { src: 'https://images.unsplash.com/photo-1510414842594-a61c69b5ae57?w=500&q=80&auto=format&fit=crop', alt: 'Golden hour water' },
+            { src: 'https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=500&q=80&auto=format&fit=crop', alt: 'Yoga at sunset' },
+            { src: 'https://images.unsplash.com/photo-1551632811-561732d1e306?w=500&q=80&auto=format&fit=crop', alt: 'Mountain trail' },
+            { src: 'https://images.unsplash.com/photo-1545205597-3d9d02c29597?w=500&q=80&auto=format&fit=crop', alt: 'Wellness stillness' },
+            { src: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=500&q=80&auto=format&fit=crop', alt: 'Turquoise coast' },
+            { src: 'https://images.unsplash.com/photo-1544161515-4ab6ce6db874?w=500&q=80&auto=format&fit=crop', alt: 'Spa treatment' },
+          ].map((img) => (
+            <div key={img.alt} className="shrink-0 w-[300px] h-[200px] rounded-lg overflow-hidden">
+              <img src={img.src} alt={img.alt} className="w-full h-full object-cover hover:scale-105 transition-transform duration-700" />
+            </div>
+          ))}
         </div>
       </section>
 
