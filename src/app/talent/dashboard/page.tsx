@@ -27,7 +27,7 @@ export default function TalentDashboard() {
         ])
         setStats({ applications: apps.count||0, messages: msgs.count||0, views: 0, matches: matches.count||0 })
       }
-      const { data: rawJobs } = await supabase.from('job_listings').select('*, employer_profiles(company_name, property_name)').or('is_live.eq.true,is_live.is.null').order('created_at', { ascending: false }).limit(5)
+      const { data: rawJobs } = await supabase.from('job_listings').select('*, employer_profiles(company_name, property_name)').eq('is_live', true).order('created_at', { ascending: false }).limit(5)
       const jobs = (rawJobs || []).map((j: any) => ({ ...j, title: j.job_title || j.title, description: j.job_description || j.description, employer_profiles: { ...j.employer_profiles, company_name: j.employer_profiles?.property_name || j.employer_profiles?.company_name } }))
       setRecentJobs(jobs || [])
       setLoading(false)

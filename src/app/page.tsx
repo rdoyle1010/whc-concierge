@@ -17,7 +17,7 @@ export default function HomePage() {
     async function load() {
       const [p, j] = await Promise.all([
         supabase.from('employer_profiles').select('id', { count: 'exact', head: true }),
-        supabase.from('job_listings').select('id', { count: 'exact', head: true }).or('is_live.eq.true,is_live.is.null'),
+        supabase.from('job_listings').select('id', { count: 'exact', head: true }).eq('is_live', true),
       ])
       setStats({ properties: p.count || 0, roles: j.count || 0 })
 
@@ -25,7 +25,7 @@ export default function HomePage() {
       const { data: topJobs } = await supabase
         .from('job_listings')
         .select('*, employer_profiles(company_name, property_name)')
-        .or('is_live.eq.true,is_live.is.null')
+        .eq('is_live', true)
         .order('created_at', { ascending: false })
         .limit(1)
       if (topJobs && topJobs.length > 0) {

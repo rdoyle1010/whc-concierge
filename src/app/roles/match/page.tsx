@@ -41,11 +41,10 @@ export default function SwipeMatchPage() {
       }
 
       // Always load real jobs from database — no sample fallback
-      // Use .or() to catch is_live=true OR is_live is null (for older rows)
       const { data: rawData, error: queryError } = await supabase
         .from('job_listings')
         .select('*, employer_profiles(company_name, property_name)')
-        .or('is_live.eq.true,is_live.is.null')
+        .eq('is_live', true)
         .order('created_at', { ascending: false })
         .limit(50)
 
