@@ -33,7 +33,7 @@ export async function middleware(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser()
   const path = request.nextUrl.pathname
 
-  if ((path.startsWith('/talent') || path.startsWith('/employer') || path.startsWith('/admin')) && !user) {
+  if ((path.startsWith('/talent') || path.startsWith('/employer') || path.startsWith('/hotel') || path.startsWith('/admin')) && !user) {
     const url = request.nextUrl.clone()
     url.pathname = '/login'
     return NextResponse.redirect(url)
@@ -43,5 +43,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/talent/:path*', '/employer/:path*', '/admin/:path*'],
+  matcher: ['/talent/:path*', '/employer/:path*', '/hotel/:path*', '/admin/:path*'],
 }

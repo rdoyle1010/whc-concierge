@@ -75,7 +75,7 @@ export default function DashboardShell({ children, role, userName }: DashboardSh
           <Menu size={24} />
         </button>
         <div className="flex items-center space-x-2">
-          <Image src="/images/whc-logo.jpg" alt="WHC" width={100} height={32} className="object-contain brightness-0 invert" />
+          <div className="bg-white px-2 py-1.5 rounded"><Image src="/images/whc-logo.jpg" alt="WHC" width={90} height={28} className="h-7 w-auto object-contain" /></div>
         </div>
         <div className="w-6" />
       </div>
@@ -92,7 +92,7 @@ export default function DashboardShell({ children, role, userName }: DashboardSh
         <div className="p-6">
           <div className="flex items-center justify-between">
             <Link href="/">
-              <Image src="/images/whc-logo.jpg" alt="Wellness House Collective" width={130} height={42} className="object-contain brightness-0 invert" />
+              <div className="bg-white px-2 py-1.5 rounded"><Image src="/images/whc-logo.jpg" alt="Wellness House Collective" width={110} height={36} className="h-8 w-auto object-contain" /></div>
             </Link>
             <button onClick={() => setSidebarOpen(false)} className="lg:hidden text-white/60 hover:text-white">
               <X size={20} />
