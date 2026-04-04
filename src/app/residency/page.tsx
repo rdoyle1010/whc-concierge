@@ -7,11 +7,7 @@ import Footer from '@/components/Footer'
 import Link from 'next/link'
 import { MapPin, Clock, Check, X } from 'lucide-react'
 
-const fallbackResidencies = [
-  { property: 'Corinthia London', location: 'London, UK', duration: '3 months', type: 'Luxury Hotel & Spa', desc: 'Join the award-winning ESPA Life team for a transformative residency in the heart of Whitehall.' },
-  { property: 'Gleneagles', location: 'Perthshire, Scotland', duration: '6 months', type: 'Resort & Spa', desc: 'A rare opportunity to work within one of Scotland\'s most prestigious wellness destinations.' },
-  { property: 'Mandarin Oriental', location: 'London, UK', duration: '2 months', type: 'Luxury Hotel & Spa', desc: 'Experience world-class spa operations and Eastern-inspired wellness at its finest.' },
-]
+// Residencies loaded from database — no hardcoded fallback data
 
 export default function ResidencyPage() {
   const supabase = createClient()
@@ -55,7 +51,7 @@ export default function ResidencyPage() {
       {/* Stats */}
       <section className="py-16 border-y border-neutral-100">
         <div className="max-w-5xl mx-auto px-4 grid grid-cols-2 md:grid-cols-4 gap-8">
-          {[{ n: '50+', l: 'Partner Properties' }, { n: '1–6', l: 'Month Placements' }, { n: '200+', l: 'Practitioners Placed' }, { n: '94%', l: 'Return Rate' }].map((s) => (
+          {[{ n: '1–6', l: 'Month Placements' }, { n: 'UK & Europe', l: 'Locations' }, { n: '5-Star', l: 'Properties' }].map((s) => (
             <div key={s.l} className="text-center">
               <p className="text-3xl font-bold text-black">{s.n}</p>
               <p className="text-neutral-400 text-xs tracking-widest uppercase mt-2">{s.l}</p>
@@ -72,23 +68,25 @@ export default function ResidencyPage() {
             <h2 className="text-4xl font-bold text-black tracking-tight">Featured Residencies</h2>
           </div>
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 stagger-children">
-            {fallbackResidencies.map((r) => (
-              <div key={r.property} className="border border-neutral-200 hover:border-neutral-400 transition-colors">
-                <div className="h-48 bg-neutral-100 relative overflow-hidden">
-                  <img src="https://images.unsplash.com/photo-1540555700478-4be289fbec6d?w=600&q=80&auto=format&fit=crop" alt="Spa property" className="w-full h-full object-cover" />
-                </div>
+            {dbResidencies.length > 0 ? dbResidencies.map((r: any) => (
+              <div key={r.id} className="border border-neutral-200 hover:border-neutral-400 transition-colors">
                 <div className="p-6">
-                  <p className="text-neutral-400 text-xs tracking-widest uppercase mb-2">{r.type}</p>
-                  <h3 className="text-xl font-semibold text-black mb-2">{r.property}</h3>
+                  <h3 className="text-xl font-semibold text-black mb-2">{r.title}</h3>
                   <div className="flex items-center space-x-4 text-sm text-neutral-400 mb-4">
-                    <span className="flex items-center space-x-1"><MapPin size={13} /><span>{r.location}</span></span>
-                    <span className="flex items-center space-x-1"><Clock size={13} /><span>{r.duration}</span></span>
+                    {r.duration && <span className="flex items-center space-x-1"><Clock size={13} /><span>{r.duration}</span></span>}
+                    {r.travel_availability && <span>{r.travel_availability}</span>}
                   </div>
-                  <p className="text-neutral-400 text-sm leading-relaxed mb-6">{r.desc}</p>
-                  <button onClick={() => setStep(1)} className="text-black text-sm font-medium hover:underline">Apply &rarr;</button>
+                  {r.description && <p className="text-neutral-400 text-sm leading-relaxed mb-4">{r.description}</p>}
+                  {r.day_rate && <p className="text-sm font-medium text-black mb-4">From £{r.day_rate}/day</p>}
+                  <button type="button" onClick={() => setStep(1)} className="text-black text-sm font-medium hover:underline">Apply &rarr;</button>
                 </div>
               </div>
-            ))}
+            )) : (
+              <div className="lg:col-span-3 text-center py-12">
+                <p className="text-muted text-[14px] mb-4">No residency placements available yet.</p>
+                <Link href="/residency/create" className="btn-primary inline-block">List your residency availability</Link>
+              </div>
+            )}
           </div>
         </div>
       </section>

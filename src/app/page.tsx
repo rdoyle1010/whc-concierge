@@ -9,7 +9,6 @@ import { ArrowRight, Star, Check, Briefcase, MapPin, Users, Clock } from 'lucide
 
 export default function HomePage() {
   const supabase = createClient()
-  const [tab, setTab] = useState<'talent' | 'employer'>('talent')
   const [stats, setStats] = useState({ properties: 0, roles: 0 })
   const [heroJob, setHeroJob] = useState<any>(null)
 
@@ -65,12 +64,13 @@ export default function HomePage() {
                 <Link href="/roles/match" className="btn-primary">Find your next role</Link>
                 <Link href="/register/employer" className="btn-secondary">Hire exceptional talent</Link>
               </div>
-              {/* Stats */}
-              <div className="flex items-center divide-x divide-border animate-fade-in-up delay-400">
-                <div className="pr-6"><p className="text-[22px] font-semibold text-ink">{stats.properties || '480'}+</p><p className="text-[12px] text-muted">Properties</p></div>
-                <div className="px-6"><p className="text-[22px] font-semibold text-ink">96%</p><p className="text-[12px] text-muted">Match accuracy</p></div>
-                <div className="pl-6"><p className="text-[22px] font-semibold text-ink">72hrs</p><p className="text-[12px] text-muted">Avg time to hire</p></div>
-              </div>
+              {/* Stats — real data only */}
+              {(stats.properties > 0 || stats.roles > 0) && (
+                <div className="flex items-center divide-x divide-border animate-fade-in-up delay-400">
+                  <div className="pr-6"><p className="text-[22px] font-semibold text-ink">{stats.properties}</p><p className="text-[12px] text-muted">Properties</p></div>
+                  <div className="px-6"><p className="text-[22px] font-semibold text-ink">{stats.roles}</p><p className="text-[12px] text-muted">Active Roles</p></div>
+                </div>
+              )}
             </div>
 
             {/* Right: animated match card */}
@@ -200,46 +200,20 @@ export default function HomePage() {
           <div className="text-center mb-12">
             <h2 className="text-[36px] md:text-[42px] font-medium text-ink leading-[1.12] tracking-tight">Built for both sides. Equally.</h2>
           </div>
-          {/* Tabs */}
-          <div className="flex justify-center gap-1 bg-surface rounded-lg p-1 w-fit mx-auto mb-10">
-            <button onClick={() => setTab('talent')} className={`px-5 py-2 rounded-md text-[13px] font-medium transition-colors ${tab === 'talent' ? 'bg-white text-ink shadow-sm' : 'text-muted'}`}>I&apos;m looking for work</button>
-            <button onClick={() => setTab('employer')} className={`px-5 py-2 rounded-md text-[13px] font-medium transition-colors ${tab === 'employer' ? 'bg-white text-ink shadow-sm' : 'text-muted'}`}>I&apos;m hiring talent</button>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-3xl mx-auto">
+            <div className="card-flat p-8">
+              <p className="eyebrow mb-3">For talent</p>
+              <h3 className="text-[20px] font-medium text-ink mb-3">Find your perfect role</h3>
+              <p className="text-[14px] text-secondary mb-6">Create your profile, get matched with roles at luxury properties, and apply with one click.</p>
+              <Link href="/register/talent" className="btn-primary inline-block">Create free profile</Link>
+            </div>
+            <div className="card-flat p-8 bg-ink text-white">
+              <p className="text-[11px] tracking-[0.08em] uppercase text-white/50 font-medium mb-3">For employers</p>
+              <h3 className="text-[20px] font-medium text-white mb-3">Hire exceptional talent</h3>
+              <p className="text-[14px] text-white/60 mb-6">Post roles, search verified candidates, and fill vacancies with intelligent matching.</p>
+              <Link href="/register/employer" className="bg-white text-ink px-5 py-2.5 rounded-lg text-[13px] font-medium hover:bg-white/90 transition-colors inline-block">Post a role</Link>
+            </div>
           </div>
-
-          {tab === 'talent' ? (
-            <div className="card p-8 max-w-3xl mx-auto">
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-                {[{ n: '12', l: 'Matches' }, { n: '3', l: 'Applications' }, { n: '847', l: 'Profile views' }, { n: '4.9', l: 'Star rating' }].map((s) => (
-                  <div key={s.l} className="text-center p-4 bg-surface rounded-lg"><p className="text-[22px] font-semibold text-ink">{s.n}</p><p className="text-[11px] text-muted">{s.l}</p></div>
-                ))}
-              </div>
-              <p className="eyebrow mb-3">Your top matches</p>
-              <div className="space-y-3">
-                {[
-                  { role: 'Senior Spa Therapist', prop: 'Corinthia London', score: 94, label: 'Perfect' },
-                  { role: 'Spa Manager', prop: 'Gleneagles', score: 87, label: 'Strong' },
-                  { role: 'Wellness Practitioner', prop: 'Mandarin Oriental', score: 78, label: 'Strong' },
-                ].map((m) => (
-                  <div key={m.role} className="flex items-center justify-between p-3 border border-border rounded-lg">
-                    <div><p className="text-[14px] font-medium text-ink">{m.role}</p><p className="text-[12px] text-muted">{m.prop}</p></div>
-                    <span className={m.score >= 90 ? 'match-perfect' : m.score >= 75 ? 'match-strong' : 'match-good'}>{m.score}% {m.label}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          ) : (
-            <div className="card p-8 max-w-3xl mx-auto">
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-                {[{ n: '4', l: 'Active listings' }, { n: '28', l: 'Candidates matched' }, { n: '12', l: 'Messages' }, { n: '89%', l: 'Hire rate' }].map((s) => (
-                  <div key={s.l} className="text-center p-4 bg-surface rounded-lg"><p className="text-[22px] font-semibold text-ink">{s.n}</p><p className="text-[11px] text-muted">{s.l}</p></div>
-                ))}
-              </div>
-              <div className="flex gap-3">
-                <Link href="/employer/post-role" className="btn-primary flex-1 text-center">Post a new role</Link>
-                <Link href="/agency" className="btn-secondary flex-1 text-center">Find agency cover</Link>
-              </div>
-            </div>
-          )}
         </div>
       </section>
 
@@ -261,27 +235,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ═══════ S7: SOCIAL PROOF ═══════ */}
-      <section className="py-24">
-        <div className="max-w-7xl mx-auto px-6 lg:px-8">
-          <div className="text-center mb-14">
-            <h2 className="text-[36px] font-medium text-ink tracking-tight">What our community says</h2>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {[
-              { quote: 'WHC matched me with my dream role at Corinthia within a week. The algorithm genuinely understands this industry.', name: 'Sophie L.', role: 'Senior Spa Therapist', prop: 'Corinthia London', stars: 5 },
-              { quote: 'We filled three positions in under 10 days. The quality of candidates is leagues above any recruiter we\'ve used.', name: 'James H.', role: 'Spa Director', prop: 'Gleneagles', stars: 5 },
-              { quote: 'The agency feature saved us during peak season. Two therapists booked within hours, both brilliant.', name: 'Emma R.', role: 'Operations Manager', prop: 'The Lanesborough', stars: 5 },
-            ].map((t) => (
-              <div key={t.name} className="card p-6">
-                <div className="flex gap-0.5 mb-4">{Array.from({ length: t.stars }).map((_, i) => <Star key={i} size={14} className="text-amber-400" fill="currentColor" />)}</div>
-                <p className="text-[14px] text-secondary leading-[1.7] mb-5">&ldquo;{t.quote}&rdquo;</p>
-                <div><p className="text-[13px] font-medium text-ink">{t.name}</p><p className="text-[12px] text-muted">{t.role}, {t.prop}</p></div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
+      {/* Social proof section — will show real reviews when available */}
 
       {/* ═══════ S8: PRICING ═══════ */}
       <section className="py-24 bg-surface">
