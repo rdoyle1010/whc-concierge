@@ -104,20 +104,30 @@ export default function TalentProfilePage() {
       profile_completion_score: completionPct,
     }
 
-    const { error } = await supabase.from('candidate_profiles').update(data).eq('id', profile.id)
+    // Save via server API to bypass RLS
+    const res = await fetch('/api/profile/update', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ profileId: profile.id, data }),
+    })
+    const result = await res.json()
     setSaving(false)
-    setMessage(error ? error.message : 'Profile saved successfully!')
+    setMessage(res.ok ? 'Profile saved successfully!' : (result.error || 'Save failed'))
     setTimeout(() => setMessage(''), 4000)
   }
 
   // ─── File uploads via server-side API (bypasses storage RLS) ───
   const userId = profile?.user_id || profile?.id
 
-  const uploadViaApi = async (file: File, bucket: string, path: string): Promise<string | null> => {
+  const uploadViaApi = async (file: File, bucket: string, path: string, column?: string): Promise<string | null> => {
     const formData = new FormData()
     formData.append('file', file)
     formData.append('bucket', bucket)
     formData.append('path', path)
+    if (profile?.id && column) {
+      formData.append('profileId', profile.id)
+      formData.append('column', column)
+    }
     const res = await fetch('/api/upload', { method: 'POST', body: formData })
     const data = await res.json()
     if (!res.ok) { setMessage(`Upload failed: ${data.error}`); return null }
@@ -127,34 +137,23 @@ export default function TalentProfilePage() {
   const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]; if (!file || !userId) return
     const ext = file.name.split('.').pop() || 'jpg'
-    const url = await uploadViaApi(file, 'talent-documents', `${userId}/profile-photo.${ext}`)
-    if (url) {
-      await supabase.from('candidate_profiles').update({ profile_image_url: url }).eq('id', profile.id)
-      u('profile_image_url', url); setMessage('Photo updated!')
-      setTimeout(() => setMessage(''), 3000)
-    }
+    // Use site-images (public) so photos are accessible
+    const url = await uploadViaApi(file, 'site-images', `profiles/${userId}/photo.${ext}`, 'profile_image_url')
+    if (url) { u('profile_image_url', url); setMessage('Photo updated!'); setTimeout(() => setMessage(''), 3000) }
   }
 
   const handleCvUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]; if (!file || !userId) return
     const ext = file.name.split('.').pop() || 'pdf'
-    const url = await uploadViaApi(file, 'talent-documents', `${userId}/cv.${ext}`)
-    if (url) {
-      await supabase.from('candidate_profiles').update({ cv_url: url }).eq('id', profile.id)
-      u('cv_url', url); setMessage('CV uploaded!')
-      setTimeout(() => setMessage(''), 3000)
-    }
+    const url = await uploadViaApi(file, 'talent-documents', `${userId}/cv.${ext}`, 'cv_url')
+    if (url) { u('cv_url', url); setMessage('CV uploaded!'); setTimeout(() => setMessage(''), 3000) }
   }
 
   const handleInsuranceUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]; if (!file || !userId) return
     const ext = file.name.split('.').pop() || 'pdf'
-    const url = await uploadViaApi(file, 'talent-documents', `${userId}/insurance.${ext}`)
-    if (url) {
-      await supabase.from('candidate_profiles').update({ insurance_document_url: url }).eq('id', profile.id)
-      u('insurance_document_url', url); setMessage('Insurance uploaded!')
-      setTimeout(() => setMessage(''), 3000)
-    }
+    const url = await uploadViaApi(file, 'talent-documents', `${userId}/insurance.${ext}`, 'insurance_document_url')
+    if (url) { u('insurance_document_url', url); setMessage('Insurance uploaded!'); setTimeout(() => setMessage(''), 3000) }
   }
 
   const handleCertsUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -164,7 +163,8 @@ export default function TalentProfilePage() {
       const url = await uploadViaApi(file, 'talent-documents', `${userId}/cert_${Date.now()}_${file.name}`)
       if (url) urls.push(url)
     }
-    await supabase.from('candidate_profiles').update({ certificates_urls: urls }).eq('id', profile.id)
+    // Update via server API to bypass RLS
+    await fetch('/api/profile/update', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ profileId: profile.id, data: { certificates_urls: urls } }) })
     u('certificates_urls', urls); setMessage('Certificates uploaded!')
     setTimeout(() => setMessage(''), 3000)
   }
