@@ -49,15 +49,10 @@ export async function POST(req: NextRequest) {
         continue
       }
 
-      // Retry with minimal fields
+      // Retry with only user_id — absolute minimum
       const { error: retryError } = await supabase
         .from('employer_profiles')
-        .insert({
-          user_id: userId,
-          company_name: profileData.company_name,
-          contact_name: profileData.contact_name,
-          email: profileData.email || null,
-        })
+        .insert({ user_id: userId })
 
       if (!retryError) {
         return NextResponse.json({ success: true })
