@@ -219,7 +219,7 @@ export default function TalentRegisterPage() {
               <input type="checkbox" checked={form.has_car} onChange={(e) => update('has_car', e.target.checked)} className="w-4 h-4 border-neutral-300 text-black focus:ring-black rounded-sm" />
               <span className="text-sm text-neutral-600">I have access to a car</span>
             </label>
-            <button onClick={() => setStep(2)} disabled={!stepValid(1)} className="btn-primary w-full disabled:opacity-40">Continue</button>
+            <button type="button" onClick={() => setStep(2)} disabled={!stepValid(1)} className="btn-primary w-full disabled:opacity-40">Continue</button>
           </div>
         )}
 
@@ -247,7 +247,7 @@ export default function TalentRegisterPage() {
                 {AVAILABILITY_STATUSES.map((a) => <option key={a.value} value={a.value}>{a.label}</option>)}
               </select>
             </div>
-            <div className="flex gap-3"><button onClick={() => setStep(1)} className="btn-secondary flex-1">Back</button><button onClick={() => setStep(3)} disabled={!stepValid(2)} className="btn-primary flex-1 disabled:opacity-40">Continue</button></div>
+            <div className="flex gap-3"><button type="button" onClick={() => setStep(1)} className="btn-secondary flex-1">Back</button><button type="button" onClick={() => setStep(3)} disabled={!stepValid(2)} className="btn-primary flex-1 disabled:opacity-40">Continue</button></div>
           </div>
         )}
 
@@ -285,7 +285,7 @@ export default function TalentRegisterPage() {
               <label className="block text-xs font-medium text-neutral-500 uppercase tracking-wider mb-3">Travel Availability</label>
               <div className="flex flex-wrap gap-2">
                 {TRAVEL_OPTIONS.map((t) => (
-                  <button key={t.value} onClick={() => update('travel_availability', t.value)}
+                  <button type="button" key={t.value} onClick={() => update('travel_availability', t.value)}
                     className={`px-4 py-2 text-sm font-medium transition-colors ${form.travel_availability === t.value ? 'bg-black text-white' : 'bg-neutral-100 text-neutral-500'}`}>
                     {t.label}
                   </button>
@@ -299,7 +299,7 @@ export default function TalentRegisterPage() {
               )}
             </div>
 
-            <div className="flex gap-3 pt-4"><button onClick={() => setStep(2)} className="btn-secondary flex-1">Back</button><button onClick={() => setStep(4)} className="btn-primary flex-1">Continue</button></div>
+            <div className="flex gap-3 pt-4"><button type="button" onClick={() => setStep(2)} className="btn-secondary flex-1">Back</button><button type="button" onClick={() => setStep(4)} className="btn-primary flex-1">Continue</button></div>
           </div>
         )}
 
@@ -342,8 +342,8 @@ export default function TalentRegisterPage() {
             </div>
 
             <div className="flex gap-3">
-              <button onClick={() => setStep(3)} className="btn-secondary flex-1">Back</button>
-              <button onClick={handleSubmit} disabled={loading} className="btn-primary flex-1 disabled:opacity-50">
+              <button type="button" onClick={() => setStep(3)} className="btn-secondary flex-1">Back</button>
+              <button type="button" onClick={handleSubmit} disabled={loading} className="btn-primary flex-1 disabled:opacity-50">
                 {loading ? 'Creating profile...' : 'Submit for Approval'}
               </button>
             </div>

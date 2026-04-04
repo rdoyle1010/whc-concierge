@@ -112,7 +112,7 @@ export default function EmployerRegisterPage() {
               <div><label className="block text-xs font-medium text-neutral-500 uppercase tracking-wider mb-1.5">Phone</label><input type="tel" value={form.phone} onChange={(e) => update('phone', e.target.value)} className="input-field" /></div>
             </div>
             <div><label className="block text-xs font-medium text-neutral-500 uppercase tracking-wider mb-1.5">Description</label><textarea rows={3} value={form.description} onChange={(e) => update('description', e.target.value)} className="input-field" /></div>
-            <button onClick={() => setStep(2)} disabled={!form.company_name || !form.email || !form.password} className="btn-primary w-full disabled:opacity-40">Continue</button>
+            <button type="button" onClick={() => setStep(2)} disabled={!form.company_name || !form.email || !form.password} className="btn-primary w-full disabled:opacity-40">Continue</button>
           </div>
         )}
 
@@ -126,7 +126,7 @@ export default function EmployerRegisterPage() {
               <div><label className="block text-xs font-medium text-neutral-500 uppercase tracking-wider mb-1.5">Treatment Rooms</label><input type="number" value={form.treatment_rooms} onChange={(e) => update('treatment_rooms', e.target.value)} className="input-field" /></div>
               <div><label className="block text-xs font-medium text-neutral-500 uppercase tracking-wider mb-1.5">Team Size</label><input type="number" value={form.team_size} onChange={(e) => update('team_size', e.target.value)} className="input-field" /></div>
             </div>
-            <div className="flex gap-3"><button onClick={() => setStep(1)} className="btn-secondary flex-1">Back</button><button onClick={() => setStep(3)} className="btn-primary flex-1">Continue</button></div>
+            <div className="flex gap-3"><button type="button" onClick={() => setStep(1)} className="btn-secondary flex-1">Back</button><button type="button" onClick={() => setStep(3)} className="btn-primary flex-1">Continue</button></div>
           </div>
         )}
 
@@ -143,8 +143,8 @@ export default function EmployerRegisterPage() {
               <span className="text-sm text-neutral-600">I accept the <Link href="/terms" className="underline">Terms of Service</Link> and <Link href="/privacy" className="underline">Privacy Policy</Link></span>
             </label>
             <div className="flex gap-3">
-              <button onClick={() => setStep(2)} className="btn-secondary flex-1">Back</button>
-              <button onClick={handleSubmit} disabled={loading} className="btn-primary flex-1 disabled:opacity-50">{loading ? 'Creating account...' : 'Submit for Approval'}</button>
+              <button type="button" onClick={() => setStep(2)} className="btn-secondary flex-1">Back</button>
+              <button type="button" onClick={handleSubmit} disabled={loading} className="btn-primary flex-1 disabled:opacity-50">{loading ? 'Creating account...' : 'Submit for Approval'}</button>
             </div>
           </div>
         )}
