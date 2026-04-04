@@ -156,7 +156,7 @@ export default function TalentDashboard() {
               </div>
             ))}
           </div>
-          <Link href="/talent/profile" className="text-[12px] text-accent font-medium flex items-center gap-1 mt-4 hover:underline">Complete profile <ArrowRight size={12}/></Link>
+          <Link href="/talent/onboarding" className="text-[12px] text-accent font-medium flex items-center gap-1 mt-4 hover:underline">Complete profile <ArrowRight size={12}/></Link>
         </div>
 
         {/* Top matches */}
