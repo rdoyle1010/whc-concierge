@@ -26,7 +26,7 @@ export default function HotelDashboard() {
       setProfile(prof)
 
       // Load listings
-      const { data: jobs } = await supabase.from('job_listings').select('*').eq('employer_id', prof.id).order('created_at', { ascending: false })
+      const { data: jobs } = await supabase.from('job_listings').select('*').eq('employer_id', prof.id).order('posted_date', { ascending: false })
       const normalizedJobs = (jobs || []).map((j: any) => ({ ...j, title: j.job_title || j.title, status: j.is_live ? 'active' : 'closed' }))
       setListings(normalizedJobs)
 
@@ -43,7 +43,7 @@ export default function HotelDashboard() {
           .from('applications')
           .select('*, candidate_profiles(full_name, headline)')
           .in('job_id', jobIds)
-          .order('created_at', { ascending: false })
+          .order('posted_date', { ascending: false })
           .limit(8)
         setRecentApps((apps || []).map((a: any) => {
           const job = normalizedJobs.find(j => j.id === a.job_id || j.id === a.job_listing_id)
