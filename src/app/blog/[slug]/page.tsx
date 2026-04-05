@@ -13,7 +13,7 @@ export default async function BlogPostPage({ params }: { params: { slug: string 
     .from('blog_posts')
     .select('*')
     .eq('slug', params.slug)
-    .eq('published', true)
+    .eq('status', 'published')
     .single()
 
   if (!post) notFound()
