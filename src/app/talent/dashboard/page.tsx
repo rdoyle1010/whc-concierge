@@ -29,7 +29,7 @@ export default function TalentDashboard() {
       ])
 
       // Load jobs and calculate real match scores
-      const { data: rawJobs } = await supabase.from('job_listings').select('*, employer_profiles(company_name, property_name)').eq('is_live', true).order('created_at', { ascending: false }).limit(20)
+      const { data: rawJobs } = await supabase.from('job_listings').select('*, employer_profiles(company_name, property_name)').eq('is_live', true).order('posted_date', { ascending: false }).limit(20)
 
       const jobs = (rawJobs || []).map((j: any) => ({
         ...j,
