@@ -61,7 +61,6 @@ export default function EmployerJobsPage() {
       await supabase.from('job_listings').insert(payload)
     }
 
-    // Reload
     const { data } = await supabase.from('job_listings').select('*').eq('employer_id', profile.id).order('created_at', { ascending: false })
     setJobs(data || [])
     setShowForm(false)
@@ -89,11 +88,12 @@ export default function EmployerJobsPage() {
   }
 
   const toggleStatus = async (job: any) => {
-    const newStatus = job.status === 'active' ? 'closed' : 'active'
-    await supabase.from('job_listings').update({ status: newStatus }).eq('id', job.id)
-    setJobs(jobs.map(j => j.id === job.id ? { ...j, status: newStatus } : j))
+    const isCurrentlyActive = job.status === 'active'
+    const newIsLive = !isCurrentlyActive
+    const newStatus = newIsLive ? 'active' : 'closed'
+    await supabase.from('job_listings').update({ is_live: newIsLive, status: newStatus }).eq('id', job.id)
+    setJobs(jobs.map(j => j.id === job.id ? { ...j, status: newStatus, is_live: newIsLive } : j))
   }
-
   return (
     <DashboardShell role="employer" userName={profile?.company_name}>
       <div className="flex items-center justify-between mb-6">
@@ -104,7 +104,6 @@ export default function EmployerJobsPage() {
         </button>
       </div>
 
-      {/* Job Form Modal */}
       {showForm && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setShowForm(false)}>
           <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-8" onClick={(e) => e.stopPropagation()}>
@@ -128,11 +127,11 @@ export default function EmployerJobsPage() {
               </div>
               <div className="grid grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Min Salary (£)</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Min Salary (\u00a3)</label>
                   <input type="number" value={form.salary_min} onChange={(e) => setForm({ ...form, salary_min: e.target.value })} className="input-field" />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Max Salary (£)</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Max Salary (\u00a3)</label>
                   <input type="number" value={form.salary_max} onChange={(e) => setForm({ ...form, salary_max: e.target.value })} className="input-field" />
                 </div>
                 <div>
@@ -168,7 +167,6 @@ export default function EmployerJobsPage() {
           </div>
         </div>
       )}
-
       {loading ? (
         <div className="flex items-center justify-center h-64"><div className="animate-spin w-8 h-8 border-2 border-gold border-t-transparent rounded-full" /></div>
       ) : jobs.length === 0 ? (
@@ -190,7 +188,7 @@ export default function EmployerJobsPage() {
                     job.tier === 'Gold' ? 'bg-amber-100 text-amber-700' : 'bg-gray-100 text-gray-600'
                   }`}>{job.tier}</span>}
                 </div>
-                <p className="text-sm text-gray-500 mt-1">{job.location} &middot; {job.job_type}</p>
+                <p className="text-sm text-gray-500 mt-1">{job.location} \u00b7 {job.job_type}</p>
               </div>
               <div className="flex items-center space-x-2">
                 <button onClick={() => toggleStatus(job)} className="p-2 rounded-lg hover:bg-gray-100 text-gray-400" title={job.status === 'active' ? 'Close' : 'Activate'}>
