@@ -31,12 +31,34 @@ export default function EmployerMessagesPage() {
       for (const msg of allMsgs || []) {
         const partnerId = msg.sender_id === user.id ? msg.receiver_id : msg.sender_id
         if (!partners.has(partnerId)) {
-          partners.set(partnerId, { partnerId, lastMessage: msg, unread: 0 })
+          partners.set(partnerId, { partnerId, lastMessage: msg, unread: 0, partnerName: null })
         }
         if (msg.receiver_id === user.id && !msg.read) {
           partners.get(partnerId)!.unread++
         }
       }
+
+      const partnerIds = Array.from(partners.keys())
+      if (partnerIds.length > 0) {
+        const { data: candProfiles } = await supabase
+          .from('candidate_profiles')
+          .select('user_id, full_name')
+          .in('user_id', partnerIds)
+        for (const cp of candProfiles || []) {
+          const p = partners.get(cp.user_id)
+          if (p) p.partnerName = cp.full_name
+        }
+
+        const { data: empProfiles } = await supabase
+          .from('employer_profiles')
+          .select('user_id, company_name, contact_name, property_name')
+          .in('user_id', partnerIds)
+        for (const ep of empProfiles || []) {
+          const p = partners.get(ep.user_id)
+          if (p && !p.partnerName) p.partnerName = ep.property_name || ep.company_name || ep.contact_name
+        }
+      }
+
       setConversations(Array.from(partners.values()))
       setLoading(false)
     }
@@ -66,6 +88,7 @@ export default function EmployerMessagesPage() {
     setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 100)
   }
 
+  const activePartner = conversations.find(c => c.partnerId === activeConvo)
   return (
     <DashboardShell role="employer">
       <h1 className="text-2xl font-serif font-bold text-ink mb-6">Messages</h1>
@@ -78,7 +101,7 @@ export default function EmployerMessagesPage() {
               <button key={convo.partnerId} onClick={() => setActiveConvo(convo.partnerId)}
                 className={`w-full p-4 text-left border-b border-gray-50 hover:bg-gray-50 ${activeConvo === convo.partnerId ? 'bg-gold/5 border-l-2 border-l-gold' : ''}`}>
                 <div className="flex items-center justify-between">
-                  <p className="font-medium text-ink text-sm">{convo.partnerId.slice(0, 8)}...</p>
+                  <p className="font-medium text-ink text-sm truncate">{convo.partnerName || 'Unknown User'}</p>
                   {convo.unread > 0 && <span className="w-5 h-5 bg-gold text-white text-xs rounded-full flex items-center justify-center">{convo.unread}</span>}
                 </div>
                 <p className="text-xs text-gray-400 truncate mt-1">{convo.lastMessage?.content}</p>
@@ -90,6 +113,9 @@ export default function EmployerMessagesPage() {
               <div className="flex-1 flex items-center justify-center text-gray-400">Select a conversation</div>
             ) : (
               <>
+                <div className="px-6 py-3 border-b border-gray-100">
+                  <p className="font-medium text-ink text-sm">{activePartner?.partnerName || 'Unknown User'}</p>
+                </div>
                 <div className="flex-1 overflow-y-auto p-6 space-y-4">
                   {messages.map((msg, i) => (
                     <div key={i} className={`flex ${msg.sender_id === userId ? 'justify-end' : 'justify-start'}`}>
