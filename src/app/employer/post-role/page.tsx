@@ -10,8 +10,8 @@ import { Check } from 'lucide-react'
 
 const tierCards = [
   { key: 'Bronze', price: '£150', days: 30, features: ['30-day listing', 'Basic matching', 'Applicant tracking'] },
-  { key: 'Silver', price: '£200', days: 60, features: ['60-day listing', 'Enhanced matching', 'Priority support', 'Applicant tracking'] },
-  { key: 'Gold', price: '£225', days: 75, features: ['75-day listing', 'Advanced matching', 'Featured placement', 'Direct messaging'] },
+  { key: 'Silver', price: '£175', days: 45, features: ['45-day listing', 'Enhanced matching', 'Priority support', 'Applicant tracking'] },
+  { key: 'Gold', price: '£200', days: 60, features: ['60-day listing', 'Advanced matching', 'Featured placement', 'Direct messaging'] },
   { key: 'Platinum', price: '£250', days: 90, features: ['90-day listing', 'Priority matching', 'Homepage featuring', 'Social promotion', 'Full analytics'] },
 ]
 
@@ -52,8 +52,9 @@ export default function PostRolePage() {
     setSaving(true)
     setError('')
 
-    // Create the job listing as pending (not live until payment succeeds)
+    // Create the job listing first
     const tierConfig = JOB_TIERS[selectedTier as keyof typeof JOB_TIERS]
+    const expiresAt = new Date(Date.now() + (tierConfig?.days || 30) * 24 * 60 * 60 * 1000).toISOString()
 
     const { data: insertedJob, error: insertError } = await supabase.from('job_listings').insert({
       employer_id: profile.id,
@@ -94,7 +95,7 @@ export default function PostRolePage() {
       setSaving(false)
       setCheckoutLoading(false)
     }
-  }
+      }
 
   return (
     <DashboardShell role="employer" userName={profile?.company_name}>
@@ -187,3 +188,4 @@ export default function PostRolePage() {
     </DashboardShell>
   )
 }
+
