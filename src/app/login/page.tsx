@@ -55,23 +55,29 @@ function LoginForm() {
         return
       }
 
-      // 5. Route — employer (only check employer_profiles if user selected employer tab)
+      // 5. Route — talent: redirect immediately, never touch employer_profiles
+      if (userRole === 'talent' || userRole === 'candidate' || metaRole === 'talent' || metaRole === 'candidate') {
+        router.push('/talent/dashboard')
+        return
+      }
+
+      // 6. Route — employer
       if (userRole === 'employer' || metaRole === 'employer') {
         router.push('/employer/dashboard')
         return
       }
+
+      // 7. Role unknown — only check employer_profiles if user selected employer tab
       if (role === 'employer') {
-        // Only query employer_profiles if the user selected the Hotel/Employer tab
-        // This avoids a 406 RLS error when talent users hit this query
         try {
           const { data: emp } = await supabase.from('employer_profiles').select('id').eq('user_id', user.id).single()
           if (emp) { router.push('/employer/dashboard'); return }
         } catch {
-          // No employer profile — fall through to talent dashboard
+          // No employer profile found
         }
       }
 
-      // 6. Default — talent dashboard
+      // 8. Default — talent dashboard
       router.push('/talent/dashboard')
     } catch (err: any) {
       setError(err.message || 'An unexpected error occurred')
