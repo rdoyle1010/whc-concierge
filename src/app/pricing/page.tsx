@@ -7,8 +7,8 @@ import { Check } from 'lucide-react'
 
 const jobTiers = [
   { name: 'Bronze', price: '£150', period: '30 days', features: ['30-day listing', 'Basic candidate matching', 'Applicant tracking', 'Email notifications'] },
-  { name: 'Silver', price: '£200', period: '60 days', features: ['60-day listing', 'Enhanced matching algorithm', 'Priority support', 'Applicant tracking', 'Direct messaging'], popular: true },
-  { name: 'Gold', price: '£225', period: '75 days', features: ['75-day listing', 'Advanced matching', 'Featured placement', 'Priority support', 'Direct messaging', 'Analytics dashboard'] },
+  { name: 'Silver', price: '£175', period: '45 days', features: ['45-day listing', 'Enhanced matching algorithm', 'Priority support', 'Applicant tracking', 'Direct messaging'], popular: true },
+  { name: 'Gold', price: '£200', period: '60 days', features: ['60-day listing', 'Advanced matching', 'Featured placement', 'Priority support', 'Direct messaging', 'Analytics dashboard'] },
   { name: 'Platinum', price: '£250', period: '90 days', features: ['90-day listing', 'Priority matching', 'Homepage featuring', 'Social media promotion', 'Dedicated account support', 'Full analytics'] },
 ]
 
@@ -58,7 +58,7 @@ export default function PricingPage() {
               </ul>
             </div>
             <div className="text-center flex-shrink-0">
-              <p className="text-4xl font-bold">£20<span className="text-lg font-normal text-white/50">/month</span></p>
+              <p className="text-4xl font-bold">£10<span className="text-lg font-normal text-white/50">/month</span></p>
               <p className="text-white/30 text-sm">Cancel anytime</p>
               <Link href="/talent/upgrade" className="bg-white text-black px-6 py-3 text-sm font-medium hover:bg-neutral-100 transition-colors inline-block mt-4">Upgrade Now</Link>
             </div>
@@ -112,3 +112,4 @@ export default function PricingPage() {
     </div>
   )
 }
+
