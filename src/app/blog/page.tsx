@@ -15,7 +15,7 @@ export default function BlogPage() {
 
   useEffect(() => {
     async function load() {
-      const { data } = await supabase.from('blog_posts').select('*').eq('published', true).order('created_at', { ascending: false })
+      const { data } = await supabase.from('blog_posts').select('*').eq('status', 'published').order('created_at', { ascending: false })
       setPosts(data || [])
       setLoading(false)
     }
