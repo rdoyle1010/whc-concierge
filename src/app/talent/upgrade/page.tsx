@@ -75,12 +75,12 @@ export default function TalentUpgradePage() {
             </div>
 
             <div className="bg-black text-white p-8 text-center">
-              <p className="text-3xl font-bold mb-1">£20<span className="text-lg font-normal text-white/50">/month</span></p>
+              <p className="text-3xl font-bold mb-1">£10<span className="text-lg font-normal text-white/50">/month</span></p>
               <p className="text-white/50 text-sm mb-1">{slotsAvailable} of 10 featured slots available</p>
               <p className="text-white/30 text-xs mb-6">Cancel anytime. No long-term commitment.</p>
               {slotsAvailable > 0 ? (
                 <button onClick={handleCheckout} disabled={checkoutLoading} className="bg-white text-black px-8 py-3 text-sm font-medium hover:bg-neutral-100 transition-colors disabled:opacity-50">
-                  {checkoutLoading ? 'Redirecting...' : 'Feature My Profile — £20/month'}
+                  {checkoutLoading ? 'Redirecting...' : 'Feature My Profile — £10/month'}
                 </button>
               ) : (
                 <p className="text-white/50 text-sm">All featured slots are currently taken. Check back soon.</p>
@@ -92,3 +92,4 @@ export default function TalentUpgradePage() {
     </DashboardShell>
   )
 }
+
