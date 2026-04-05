@@ -3,13 +3,15 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 
-// \u2500\u2500 Whitelists \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+// ── Whitelists ────────────────────────────────────────────────────────────
+// Columns that may be written after an upload completes.
 const ALLOWED_COLUMNS = new Set([
   'profile_image_url',
   'cv_url',
   'insurance_document_url',
 ])
 
+// Storage buckets the client is allowed to target.
 const ALLOWED_BUCKETS = new Set([
   'site-images',
   'profile-photos',
@@ -20,9 +22,14 @@ const ALLOWED_BUCKETS = new Set([
 const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10 MB
 const ALLOWED_IMAGE_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif'])
 const ALLOWED_DOC_TYPES = new Set(['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'])
-const ALLOWED_FILE_TYPES = new Set([...ALLOWED_IMAGE_TYPES, ...ALLOWED_DOC_TYPES])
+const ALLOWED_FILE_TYPES = new Set([
+  'image/jpeg', 'image/png', 'image/webp', 'image/gif',
+  'application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+])
+
 export async function POST(req: NextRequest) {
   try {
+    // ── Auth: caller must be logged in ──
     const cookieStore = cookies()
     const supabaseAuth = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -30,7 +37,7 @@ export async function POST(req: NextRequest) {
       {
         cookies: {
           getAll() { return cookieStore.getAll() },
-          setAll() {},
+          setAll() { /* read-only in Route Handlers */ },
         },
       }
     )
@@ -50,27 +57,27 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Missing file, bucket, or path' }, { status: 400 })
     }
 
-    // Validate file size
+    // ── Validate file size ──
     if (file.size > MAX_FILE_SIZE) {
       return NextResponse.json({ error: 'File too large. Maximum size is 10 MB.' }, { status: 400 })
     }
 
-    // Validate file type
+    // ── Validate file type ──
     if (file.type && !ALLOWED_FILE_TYPES.has(file.type)) {
       return NextResponse.json({ error: 'File type not allowed. Accepted: JPEG, PNG, WebP, GIF, PDF, DOC, DOCX.' }, { status: 400 })
     }
 
-    // Validate bucket
+    // ── Validate bucket ──
     if (!ALLOWED_BUCKETS.has(bucket)) {
       return NextResponse.json({ error: 'Invalid bucket' }, { status: 400 })
     }
 
-    // Validate column
+    // ── Validate column (if provided) ──
     if (column && !ALLOWED_COLUMNS.has(column)) {
       return NextResponse.json({ error: 'Invalid column' }, { status: 400 })
     }
 
-    // Ownership check
+    // ── Ownership: if updating a profile, it must belong to the caller ──
     const admin = createAdminClient()
     if (profileId) {
       const { data: profile } = await admin
@@ -87,6 +94,7 @@ export async function POST(req: NextRequest) {
     const arrayBuffer = await file.arrayBuffer()
     const buffer = Buffer.from(arrayBuffer)
 
+    // For profile photos, always use site-images (public bucket)
     const actualBucket = bucket === 'profile-photos' ? 'site-images' : bucket
 
     const { error: uploadError } = await admin.storage
@@ -95,7 +103,9 @@ export async function POST(req: NextRequest) {
         upsert: true,
         contentType: file.type || 'application/octet-stream',
       })
+
     if (uploadError) {
+      // Try site-images as fallback if primary bucket fails
       if (actualBucket !== 'site-images') {
         const { error: fallbackError } = await admin.storage
           .from('site-images')
@@ -105,6 +115,7 @@ export async function POST(req: NextRequest) {
         }
         const { data: { publicUrl } } = admin.storage.from('site-images').getPublicUrl(path)
 
+        // Update profile if requested (column already validated)
         if (profileId && column) {
           await admin.from('candidate_profiles').update({ [column]: publicUrl }).eq('id', profileId)
         }
@@ -116,6 +127,7 @@ export async function POST(req: NextRequest) {
 
     const { data: { publicUrl } } = admin.storage.from(actualBucket).getPublicUrl(path)
 
+    // Update profile record if requested (column already validated)
     if (profileId && column) {
       await admin.from('candidate_profiles').update({ [column]: publicUrl }).eq('id', profileId)
     }
