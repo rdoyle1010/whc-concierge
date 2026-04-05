@@ -20,7 +20,7 @@ export default function PublicJobsPage() {
         .from('job_listings')
         .select('*, employer_profiles(company_name, property_name)')
         .eq('is_live', true)
-        .order('created_at', { ascending: false })
+        .order('posted_date', { ascending: false })
       setJobs((rawData || []).map((j: any) => ({ ...j, title: j.job_title || j.title, description: j.job_description || j.description, employer_profiles: { ...j.employer_profiles, company_name: j.employer_profiles?.property_name || j.employer_profiles?.company_name } })))
       setLoading(false)
     }
