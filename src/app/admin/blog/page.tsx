@@ -15,7 +15,7 @@ export default function AdminBlogPage() {
 
   const emptyPost = {
     title: '', slug: '', content: '', excerpt: '', image_url: '',
-    author: 'WHC Concierge', category: '', tags: '', published: false,
+    author: 'WHC Concierge', category: '', tags: '', status: 'draft' as string,
   }
   const [form, setForm] = useState(emptyPost)
 
@@ -40,8 +40,7 @@ export default function AdminBlogPage() {
       image_url: form.image_url || null,
       author: form.author,
       category: form.category || null,
-      tags: form.tags ? (form.tags as string).split(',').map(t => t.trim()) : null,
-      published: form.published,
+      status: form.status,
     }
 
     if (editing) {
@@ -63,7 +62,7 @@ export default function AdminBlogPage() {
       title: post.title, slug: post.slug, content: post.content,
       excerpt: post.excerpt || '', image_url: post.image_url || '',
       author: post.author || 'WHC Concierge', category: post.category || '',
-      tags: post.tags?.join(', ') || '', published: post.published,
+      tags: post.tags?.join(', ') || '', status: post.status || 'draft',
     })
     setEditing(post)
     setShowForm(true)
@@ -76,8 +75,9 @@ export default function AdminBlogPage() {
   }
 
   const togglePublish = async (post: any) => {
-    await supabase.from('blog_posts').update({ published: !post.published }).eq('id', post.id)
-    setPosts(posts.map(p => p.id === post.id ? { ...p, published: !p.published } : p))
+    const newStatus = post.status === 'published' ? 'draft' : 'published'
+    await supabase.from('blog_posts').update({ status: newStatus }).eq('id', post.id)
+    setPosts(posts.map(p => p.id === post.id ? { ...p, status: newStatus } : p))
   }
 
   return (
@@ -130,7 +130,7 @@ export default function AdminBlogPage() {
                 </div>
               </div>
               <label className="flex items-center space-x-3 cursor-pointer">
-                <input type="checkbox" checked={form.published} onChange={(e) => setForm({ ...form, published: e.target.checked })} className="rounded border-gray-300 text-gold focus:ring-gold" />
+                <input type="checkbox" checked={form.status === 'published'} onChange={(e) => setForm({ ...form, status: e.target.checked ? 'published' : 'draft' })} className="rounded border-gray-300 text-gold focus:ring-gold" />
                 <span className="text-sm font-medium text-gray-700">Publish immediately</span>
               </label>
               <div className="flex gap-4 pt-2">
@@ -155,8 +155,8 @@ export default function AdminBlogPage() {
               <div>
                 <div className="flex items-center space-x-3">
                   <h3 className="font-serif text-lg font-semibold text-ink">{post.title}</h3>
-                  <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${post.published ? 'bg-green-50 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
-                    {post.published ? 'Published' : 'Draft'}
+                  <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${post.status === 'published' ? 'bg-green-50 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
+                    {post.status === 'published' ? 'Published' : 'Draft'}
                   </span>
                 </div>
                 <p className="text-sm text-gray-500 mt-1">
@@ -165,8 +165,8 @@ export default function AdminBlogPage() {
                 </p>
               </div>
               <div className="flex items-center space-x-2">
-                <button onClick={() => togglePublish(post)} className="p-2 rounded-lg hover:bg-gray-100 text-gray-400" title={post.published ? 'Unpublish' : 'Publish'}>
-                  {post.published ? <EyeOff size={18} /> : <Eye size={18} />}
+                <button onClick={() => togglePublish(post)} className="p-2 rounded-lg hover:bg-gray-100 text-gray-400" title={post.status === 'published' ? 'Unpublish' : 'Publish'}>
+                  {post.status === 'published' ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
                 <button onClick={() => handleEdit(post)} className="p-2 rounded-lg hover:bg-gray-100 text-gray-400"><Edit2 size={18} /></button>
                 <button onClick={() => handleDelete(post.id)} className="p-2 rounded-lg hover:bg-red-50 text-gray-400 hover:text-red-500"><Trash2 size={18} /></button>
