@@ -28,7 +28,7 @@ export default function EmployerJobsPage() {
       const { data: prof } = await supabase.from('employer_profiles').select('*').eq('user_id', user.id).single()
       setProfile(prof)
       if (prof) {
-        const { data } = await supabase.from('job_listings').select('*').eq('employer_id', prof.id).order('created_at', { ascending: false })
+        const { data } = await supabase.from('job_listings').select('*').eq('employer_id', prof.id).order('posted_date', { ascending: false })
         setJobs((data || []).map((j: any) => ({ ...j, title: j.job_title || j.title, description: j.job_description || j.description, status: j.is_live === false ? 'closed' : (j.status || 'active') })))
       }
       setLoading(false)
@@ -61,7 +61,7 @@ export default function EmployerJobsPage() {
       await supabase.from('job_listings').insert(payload)
     }
 
-    const { data } = await supabase.from('job_listings').select('*').eq('employer_id', profile.id).order('created_at', { ascending: false })
+    const { data } = await supabase.from('job_listings').select('*').eq('employer_id', profile.id).order('posted_date', { ascending: false })
     setJobs(data || [])
     setShowForm(false)
     setEditing(null)
