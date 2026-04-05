@@ -21,23 +21,42 @@ export default function TalentMessagesPage() {
       if (!user) return
       setUserId(user.id)
 
-      // Get all messages for this user
       const { data: allMsgs } = await supabase
         .from('messages')
         .select('*')
         .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`)
         .order('created_at', { ascending: false })
 
-      // Group by conversation partner
       const partners = new Map<string, any>()
       for (const msg of allMsgs || []) {
         const partnerId = msg.sender_id === user.id ? msg.receiver_id : msg.sender_id
         if (!partners.has(partnerId)) {
-          partners.set(partnerId, { partnerId, lastMessage: msg, unread: 0 })
+          partners.set(partnerId, { partnerId, lastMessage: msg, unread: 0, partnerName: null })
         }
         if (msg.receiver_id === user.id && !msg.read) {
           const p = partners.get(partnerId)!
           p.unread++
+        }
+      }
+
+      const partnerIds = Array.from(partners.keys())
+      if (partnerIds.length > 0) {
+        const { data: empProfiles } = await supabase
+          .from('employer_profiles')
+          .select('user_id, company_name, contact_name, property_name')
+          .in('user_id', partnerIds)
+        for (const ep of empProfiles || []) {
+          const p = partners.get(ep.user_id)
+          if (p) p.partnerName = ep.property_name || ep.company_name || ep.contact_name
+        }
+
+        const { data: candProfiles } = await supabase
+          .from('candidate_profiles')
+          .select('user_id, full_name')
+          .in('user_id', partnerIds)
+        for (const cp of candProfiles || []) {
+          const p = partners.get(cp.user_id)
+          if (p && !p.partnerName) p.partnerName = cp.full_name
         }
       }
 
@@ -46,7 +65,6 @@ export default function TalentMessagesPage() {
     }
     load()
   }, [])
-
   useEffect(() => {
     if (!activeConvo || !userId) return
 
@@ -59,7 +77,6 @@ export default function TalentMessagesPage() {
 
       setMessages(data || [])
 
-      // Mark as read
       await supabase.from('messages').update({ read: true })
         .eq('sender_id', activeConvo).eq('receiver_id', userId).eq('read', false)
 
@@ -83,13 +100,13 @@ export default function TalentMessagesPage() {
     setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 100)
   }
 
+  const activePartner = conversations.find(c => c.partnerId === activeConvo)
   return (
     <DashboardShell role="talent">
       <h1 className="text-2xl font-serif font-bold text-ink mb-6">Messages</h1>
 
       <div className="dashboard-card p-0 overflow-hidden" style={{ height: 'calc(100vh - 200px)' }}>
         <div className="flex h-full">
-          {/* Conversation list */}
           <div className="w-80 border-r border-gray-100 overflow-y-auto">
             {conversations.length === 0 ? (
               <div className="p-8 text-center text-gray-400">
@@ -103,7 +120,7 @@ export default function TalentMessagesPage() {
                   activeConvo === convo.partnerId ? 'bg-gold/5 border-l-2 border-l-gold' : ''
                 }`}>
                 <div className="flex items-center justify-between">
-                  <p className="font-medium text-ink text-sm truncate">{convo.partnerId.slice(0, 8)}...</p>
+                  <p className="font-medium text-ink text-sm truncate">{convo.partnerName || 'Unknown User'}</p>
                   {convo.unread > 0 && (
                     <span className="w-5 h-5 bg-gold text-white text-xs rounded-full flex items-center justify-center">{convo.unread}</span>
                   )}
@@ -113,7 +130,6 @@ export default function TalentMessagesPage() {
             ))}
           </div>
 
-          {/* Messages */}
           <div className="flex-1 flex flex-col">
             {!activeConvo ? (
               <div className="flex-1 flex items-center justify-center text-gray-400">
@@ -121,6 +137,9 @@ export default function TalentMessagesPage() {
               </div>
             ) : (
               <>
+                <div className="px-6 py-3 border-b border-gray-100">
+                  <p className="font-medium text-ink text-sm">{activePartner?.partnerName || 'Unknown User'}</p>
+                </div>
                 <div className="flex-1 overflow-y-auto p-6 space-y-4">
                   {messages.map((msg, i) => (
                     <div key={i} className={`flex ${msg.sender_id === userId ? 'justify-end' : 'justify-start'}`}>
