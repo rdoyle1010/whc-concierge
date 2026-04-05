@@ -55,17 +55,20 @@ function LoginForm() {
         return
       }
 
-      // 5. Route — employer
+      // 5. Route — employer (only check employer_profiles if user selected employer tab)
       if (userRole === 'employer' || metaRole === 'employer') {
         router.push('/employer/dashboard')
         return
       }
-      // Also check if they have an employer_profiles record
-      try {
-        const { data: emp } = await supabase.from('employer_profiles').select('id').eq('user_id', user.id).single()
-        if (emp) { router.push('/employer/dashboard'); return }
-      } catch {
-        // No employer profile — continue
+      if (role === 'employer') {
+        // Only query employer_profiles if the user selected the Hotel/Employer tab
+        // This avoids a 406 RLS error when talent users hit this query
+        try {
+          const { data: emp } = await supabase.from('employer_profiles').select('id').eq('user_id', user.id).single()
+          if (emp) { router.push('/employer/dashboard'); return }
+        } catch {
+          // No employer profile — fall through to talent dashboard
+        }
       }
 
       // 6. Default — talent dashboard
@@ -96,12 +99,12 @@ function LoginForm() {
           <form onSubmit={handleLogin} className="space-y-4">
             <div>
               <label className="eyebrow block mb-1.5">Email</label>
-              <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} className="input-field" placeholder="your@email.com" />
+              <input type="email" required autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} className="input-field" placeholder="your@email.com" />
             </div>
             <div>
               <label className="eyebrow block mb-1.5">Password</label>
               <div className="relative">
-                <input type={show ? 'text' : 'password'} required value={password} onChange={(e) => setPassword(e.target.value)} className="input-field pr-10" />
+                <input type={show ? 'text' : 'password'} required autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} className="input-field pr-10" />
                 <button type="button" onClick={() => setShow(!show)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted hover:text-ink">{show ? <EyeOff size={15} /> : <Eye size={15} />}</button>
               </div>
             </div>
