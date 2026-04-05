@@ -65,10 +65,10 @@ export const RESIDENCY_DURATIONS = [
 
 export const JOB_TIERS = {
   Bronze: { price: 15000, days: 30, label: 'Bronze — £150' },
-  Silver: { price: 20000, days: 60, label: 'Silver — £200' },
-  Gold: { price: 22500, days: 75, label: 'Gold — £225' },
+  Silver: { price: 17500, days: 45, label: 'Silver — £175' },
+  Gold: { price: 20000, days: 60, label: 'Gold — £200' },
   Platinum: { price: 25000, days: 90, label: 'Platinum — £250' },
 } as const
 
-export const FEATURED_PROFILE_PRICE = 2000 // £20/month in pence
+export const FEATURED_PROFILE_PRICE = 1000 // £10/month in pence
 export const AGENCY_COMMISSION_RATE = 0.10 // 10%
