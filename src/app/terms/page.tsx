@@ -26,13 +26,13 @@ export default function TermsPage() {
           <p>Candidate profiles are free to create. By submitting your profile, you grant WHC Concierge permission to display your professional information to registered employers on the platform. You are responsible for keeping your qualifications, experience, and availability up to date. If you indicate you hold professional insurance, you may be required to provide proof.</p>
 
           <h2 className="text-[18px] font-medium text-ink mt-8">4. For Employers (Properties)</h2>
-          <p>Job listings are subject to the pricing tier selected at posting: Bronze (£150, 30 days), Silver (£200, 60 days), Gold (£225, 75 days), or Platinum (£250, 90 days). Fees are non-refundable once a listing is published. Employers agree to handle candidate data in accordance with GDPR and not to share it with third parties.</p>
+          <p>Job listings are subject to the pricing tier selected at posting: Bronze (£150, 30 days), Silver (£175, 45 days), Gold (£200, 60 days), or Platinum (£250, 90 days). Fees are non-refundable once a listing is published. Employers agree to handle candidate data in accordance with GDPR and not to share it with third parties.</p>
 
           <h2 className="text-[18px] font-medium text-ink mt-8">5. Agency Marketplace</h2>
           <p>For shifts booked through the WHC agency marketplace, a 10% platform commission applies to the agreed rate between the practitioner and the property. Payment terms for the shift itself are agreed directly between the parties.</p>
 
           <h2 className="text-[18px] font-medium text-ink mt-8">6. Featured Profiles</h2>
-          <p>Candidates may subscribe to a Featured Profile for £20/month. Featured profiles receive premium placement in search results and employer newsletters. Subscriptions are managed through Stripe and can be cancelled at any time.</p>
+          <p>Candidates may subscribe to a Featured Profile for £10/month. Featured profiles receive premium placement in search results and employer newsletters. Subscriptions are managed through Stripe and can be cancelled at any time.</p>
 
           <h2 className="text-[18px] font-medium text-ink mt-8">7. Matching Algorithm</h2>
           <p>WHC Concierge uses a weighted matching algorithm to suggest relevant roles and candidates. Match scores are indicative and do not guarantee suitability. Both parties are responsible for conducting their own due diligence before entering into any employment or engagement agreement.</p>
@@ -63,3 +63,4 @@ export default function TermsPage() {
     </div>
   )
 }
+
