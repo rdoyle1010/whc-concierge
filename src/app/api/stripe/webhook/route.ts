@@ -29,11 +29,21 @@ export async function POST(req: NextRequest) {
         }).eq('id', meta.candidate_id)
       }
 
-      if (meta?.type === 'job_posting' && meta?.employer_id) {
-        await supabase.from('employer_profiles').update({
-          subscription_tier: meta.tier,
-          stripe_customer_id: session.customer as string,
-        }).eq('id', meta.employer_id)
+      if (meta?.type === 'job_posting' && meta?.job_id) {
+        const days = meta.days ? parseInt(meta.days) : 30
+        const expiresAt = new Date(Date.now() + days * 24 * 60 * 60 * 1000).toISOString()
+        await supabase.from('job_listings').update({
+          is_live: true,
+          status: 'active',
+          expires_at: expiresAt,
+        }).eq('id', meta.job_id)
+
+        if (meta.employer_id) {
+          await supabase.from('employer_profiles').update({
+            subscription_tier: meta.tier,
+            stripe_customer_id: session.customer as string,
+          }).eq('id', meta.employer_id)
+        }
       }
       break
     }
