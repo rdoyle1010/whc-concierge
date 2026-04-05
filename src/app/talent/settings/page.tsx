@@ -30,7 +30,6 @@ export default function TalentSettingsPage() {
 
     setLoading(true)
 
-    // Verify current password by re-authenticating
     const { data: { user } } = await supabase.auth.getUser()
     if (!user?.email) {
       setLoading(false)
@@ -51,7 +50,6 @@ export default function TalentSettingsPage() {
       return
     }
 
-    // Current password verified \u2014 now update
     const { error } = await supabase.auth.updateUser({ password: newPassword })
     setLoading(false)
 
@@ -68,11 +66,27 @@ export default function TalentSettingsPage() {
     setTimeout(() => setMessage(''), 4000)
   }
 
+  const [deleting, setDeleting] = useState(false)
+
   const handleDeleteAccount = async () => {
-    if (!confirm('Are you sure you want to delete your account? This action cannot be undone.')) return
-    // Sign out \u2014 actual deletion would need admin endpoint
-    await supabase.auth.signOut()
-    window.location.href = '/'
+    if (!confirm('Are you sure you want to delete your account? All your data \u2014 profile, applications, messages, and documents \u2014 will be permanently removed. This cannot be undone.')) return
+    if (!confirm('Final confirmation: delete your account and all associated data?')) return
+
+    setDeleting(true)
+    try {
+      const res = await fetch('/api/account/delete', { method: 'POST' })
+      if (!res.ok) {
+        const data = await res.json()
+        alert(data.error || 'Failed to delete account. Please contact support.')
+        setDeleting(false)
+        return
+      }
+      await supabase.auth.signOut()
+      window.location.href = '/?deleted=true'
+    } catch {
+      alert('Something went wrong. Please contact support.')
+      setDeleting(false)
+    }
   }
 
   return (
@@ -106,11 +120,12 @@ export default function TalentSettingsPage() {
         <div className="dashboard-card border-red-100">
           <h3 className="font-serif text-lg font-semibold text-red-600 mb-2">Danger Zone</h3>
           <p className="text-sm text-gray-500 mb-4">Once you delete your account, there is no going back.</p>
-          <button onClick={handleDeleteAccount} className="px-4 py-2 bg-red-50 text-red-600 rounded-lg text-sm font-medium hover:bg-red-100 transition-colors">
-            Delete Account
+          <button onClick={handleDeleteAccount} disabled={deleting} className="px-4 py-2 bg-red-50 text-red-600 rounded-lg text-sm font-medium hover:bg-red-100 transition-colors disabled:opacity-50">
+            {deleting ? 'Deleting...' : 'Delete Account'}
           </button>
         </div>
       </div>
     </DashboardShell>
   )
 }
+
