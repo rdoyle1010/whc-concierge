@@ -35,7 +35,7 @@ export default function HotelJobsPage() {
       const { data: prof } = await supabase.from('employer_profiles').select('*').eq('user_id', user.id).single()
       if (!prof) { router.push('/login?role=employer'); return }
       setProfile(prof)
-      const { data } = await supabase.from('job_listings').select('*').eq('employer_id', prof.id).order('created_at', { ascending: false })
+      const { data } = await supabase.from('job_listings').select('*').eq('employer_id', prof.id).order('posted_date', { ascending: false })
       setJobs((data || []).map((j: any) => ({ ...j, title: j.job_title || j.title })))
       setLoading(false)
     }
@@ -62,7 +62,7 @@ export default function HotelJobsPage() {
       is_live: true,
       tier: selectedTier,
     })
-    const { data } = await supabase.from('job_listings').select('*').eq('employer_id', profile.id).order('created_at', { ascending: false })
+    const { data } = await supabase.from('job_listings').select('*').eq('employer_id', profile.id).order('posted_date', { ascending: false })
     setJobs((data || []).map((j: any) => ({ ...j, title: j.job_title || j.title })))
     setShowForm(false)
     setForm(emptyJob)
