@@ -48,7 +48,7 @@ export default function HomePage() {
     <div className="min-h-screen bg-white">
       <Navbar />
 
-      {/* ═══════ S1: HERO ═══════ */}
+      {/* S1: HERO */}
       <section className="pt-16 relative min-h-[90vh] flex items-center overflow-hidden">
         {/* Background image */}
         <div className="absolute inset-0">
@@ -70,7 +70,7 @@ export default function HomePage() {
                 <Link href="/roles/match" className="bg-white text-ink px-5 py-2.5 rounded-lg text-[13px] font-medium hover:bg-white/90 transition-colors">Find your next role</Link>
                 <Link href="/register/employer" className="border border-white/30 text-white px-5 py-2.5 rounded-lg text-[13px] font-medium hover:bg-white/10 transition-colors">Hire exceptional talent</Link>
               </div>
-              {/* Stats — real data only */}
+              {/* Stats */}
               {(stats.properties > 0 || stats.roles > 0) && (
                 <div className="flex items-center divide-x divide-white/20 animate-fade-in-up delay-400">
                   <div className="pr-6"><p className="text-[22px] font-semibold text-white">{stats.properties}</p><p className="text-[12px] text-white/40">Properties</p></div>
@@ -82,9 +82,7 @@ export default function HomePage() {
             {/* Right: animated match card */}
             <div className="hidden lg:block animate-fade-in-up delay-300">
               <div className="relative ml-auto max-w-[380px]">
-                {/* Background card */}
                 <div className="absolute inset-x-4 top-4 h-full bg-surface border border-border rounded-xl" />
-                {/* Main card */}
                 <div className="relative bg-white border border-border rounded-xl shadow-sm overflow-hidden">
                   <div className="h-[180px] bg-gradient-to-br from-neutral-100 to-neutral-200 relative">
                     <img src="https://images.unsplash.com/photo-1545205597-3d9d02c29597?w=600&q=80&auto=format&fit=crop" alt="" className="w-full h-full object-cover" />
@@ -104,7 +102,6 @@ export default function HomePage() {
                         <span key={t} className="text-[10px] border border-border text-muted px-2 py-0.5 rounded-full">{t}</span>
                       ))}
                     </div>
-                    {/* Score bars */}
                     <div className="space-y-2">
                       {[{ label: 'Role level', pct: 100 }, { label: 'Product houses', pct: 80 }, { label: 'Qualifications', pct: 100 }, { label: 'Location', pct: 100 }].map((b) => (
                         <div key={b.label} className="flex items-center gap-3">
@@ -122,23 +119,20 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ═══════ EDITORIAL GRID ═══════ */}
+      {/* EDITORIAL GRID */}
       <section className="py-20">
         <div className="max-w-7xl mx-auto px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 h-auto lg:h-[520px]">
-            {/* Left — tall image */}
             <div className="lg:row-span-2 relative overflow-hidden rounded-lg">
               <img src="https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=800&q=80&auto=format&fit=crop" alt="Meditation in nature" className="w-full h-full min-h-[300px] object-cover" />
               <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
               <p className="absolute bottom-5 left-5 right-5 text-white text-[14px] italic">Where stillness meets ambition</p>
             </div>
-            {/* Top right */}
             <div className="lg:col-span-2 relative overflow-hidden rounded-lg">
               <img src="/images/gathering-canopy.jpg" alt="Community gathering" className="w-full h-full min-h-[200px] object-cover" />
               <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
               <p className="absolute bottom-4 left-5 text-white text-[14px] italic">Community. Practice. Purpose.</p>
             </div>
-            {/* Bottom right */}
             <div className="lg:col-span-2 relative overflow-hidden rounded-lg">
               <img src="https://images.unsplash.com/photo-1573843981267-be1999ff37cd?w=800&q=80&auto=format&fit=crop" alt="Infinity pool overlooking ocean" className="w-full h-full min-h-[200px] object-cover" />
               <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
@@ -148,7 +142,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ═══════ LIFESTYLE STRIP ═══════ */}
+      {/* LIFESTYLE STRIP */}
       <section className="pb-16 overflow-hidden">
         <div className="flex gap-4 px-6 overflow-x-auto" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none', WebkitOverflowScrolling: 'touch' }}>
           {[
@@ -166,7 +160,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ═══════ S2: TRUST BAR ═══════ */}
+      {/* TRUST BAR */}
       <section className="border-y border-border py-8">
         <div className="max-w-7xl mx-auto px-6 lg:px-8">
           <p className="text-[11px] text-muted uppercase tracking-[0.08em] text-center mb-5">Trusted by the world&apos;s finest properties</p>
@@ -178,7 +172,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ═══════ S3: WHY WHC ═══════ */}
+      {/* WHY WHC */}
       <section className="py-24">
         <div className="max-w-7xl mx-auto px-6 lg:px-8">
           <div className="max-w-2xl mb-16">
@@ -201,7 +195,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ═══════ S4: THE ALGORITHM ═══════ */}
+      {/* THE ALGORITHM */}
       <section className="py-24 bg-surface">
         <div className="max-w-7xl mx-auto px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
@@ -211,7 +205,6 @@ export default function HomePage() {
               <p className="text-secondary mb-6">Every match shows a full breakdown — role level, product house alignment, qualifications and location — all scored and weighted so you know exactly why you&apos;re matched.</p>
               <p className="text-secondary">Hard stops prevent irrelevant matches entirely. A Spa Manager never sees apprentice roles. Candidates without insurance are excluded from roles that require it.</p>
             </div>
-            {/* Match breakdown card */}
             <div className="card p-0 overflow-hidden">
               <div className="p-6 border-b border-border">
                 <div className="flex items-center justify-between mb-1">
@@ -244,7 +237,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ═══════ S5: TWO PORTALS ═══════ */}
+      {/* TWO PORTALS */}
       <section className="py-24">
         <div className="max-w-7xl mx-auto px-6 lg:px-8">
           <div className="text-center mb-12">
@@ -267,7 +260,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ═══════ S6: AGENCY & RESIDENCY ═══════ */}
+      {/* AGENCY & RESIDENCY */}
       <section className="py-24 bg-surface">
         <div className="max-w-7xl mx-auto px-6 lg:px-8 grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="card-hover p-8">
@@ -285,9 +278,9 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Social proof section — will show real reviews when available */}
+      {/* Social proof section */}
 
-      {/* ═══════ S8: PRICING ═══════ */}
+      {/* PRICING */}
       <section className="py-24 bg-surface">
         <div className="max-w-7xl mx-auto px-6 lg:px-8">
           <div className="text-center mb-14">
@@ -295,18 +288,16 @@ export default function HomePage() {
             <p className="text-secondary">Talent profiles are free. Always.</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-            {/* Talent free */}
             <div className="card p-5 lg:col-span-1">
               <p className="eyebrow mb-1">Talent</p>
               <p className="text-[28px] font-semibold text-ink">Free</p>
-              <p className="text-[12px] text-muted mb-4">£20/m to feature</p>
+              <p className="text-[12px] text-muted mb-4">£10/m to feature</p>
               <Link href="/register/talent" className="btn-secondary w-full text-center block text-[12px]">Join free</Link>
             </div>
-            {/* Employer tiers */}
             {[
               { name: 'Bronze', price: '£150', days: '30 days' },
-              { name: 'Silver', price: '£200', days: '60 days' },
-              { name: 'Gold', price: '£225', days: '75 days', pop: true },
+              { name: 'Silver', price: '£175', days: '45 days' },
+              { name: 'Gold', price: '£200', days: '60 days', pop: true },
               { name: 'Platinum', price: '£250', days: '90 days' },
             ].map((t) => (
               <div key={t.name} className={`card p-5 relative ${t.pop ? 'border-ink' : ''}`}>
@@ -321,7 +312,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ═══════ S9: FINAL CTA ═══════ */}
+      {/* FINAL CTA */}
       <section className="py-24">
         <div className="max-w-2xl mx-auto px-6 lg:px-8 text-center">
           <h2 className="text-[36px] md:text-[42px] font-medium text-ink leading-[1.12] tracking-tight mb-6">Ready to find your<br />perfect match?</h2>
@@ -336,3 +327,4 @@ export default function HomePage() {
     </div>
   )
 }
+
