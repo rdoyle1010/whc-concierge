@@ -30,7 +30,7 @@ export async function POST(req: NextRequest) {
     }
 
     if (type === 'job_posting') {
-      const { tier, employerId } = body
+      const { tier, employerId, jobId } = body
       const tierConfig = JOB_TIERS[tier as keyof typeof JOB_TIERS]
       if (!tierConfig) return NextResponse.json({ error: 'Invalid tier' }, { status: 400 })
 
@@ -47,7 +47,7 @@ export async function POST(req: NextRequest) {
         mode: 'payment',
         success_url: `${origin}/employer/jobs?success=true`,
         cancel_url: `${origin}/employer/post-role?cancelled=true`,
-        metadata: { type: 'job_posting', tier, employer_id: employerId, days: String(tierConfig.days) },
+        metadata: { type: 'job_posting', tier, employer_id: employerId, job_id: jobId, days: String(tierConfig.days) },
       })
       return NextResponse.json({ url: session.url })
     }
