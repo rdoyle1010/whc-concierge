@@ -52,11 +52,10 @@ export default function PostRolePage() {
     setSaving(true)
     setError('')
 
-    // Create the job listing first
+    // Create the job listing as pending (not live until payment succeeds)
     const tierConfig = JOB_TIERS[selectedTier as keyof typeof JOB_TIERS]
-    const expiresAt = new Date(Date.now() + (tierConfig?.days || 30) * 24 * 60 * 60 * 1000).toISOString()
 
-    const { error: insertError } = await supabase.from('job_listings').insert({
+    const { data: insertedJob, error: insertError } = await supabase.from('job_listings').insert({
       employer_id: profile.id,
       job_title: form.title,
       job_description: form.description,
@@ -73,26 +72,27 @@ export default function PostRolePage() {
       insurance_required: form.insurance_required,
       is_agency_role: form.is_agency_role,
       is_residency_role: form.is_residency_role,
-      is_live: true,
+      is_live: false,
       tier: selectedTier,
-      status: 'active',
-    })
+      status: 'pending_payment',
+    }).select('id').single()
 
-    if (insertError) { setError(insertError.message); setSaving(false); return }
+    if (insertError || !insertedJob) { setError(insertError?.message || 'Failed to create listing'); setSaving(false); return }
 
     // Redirect to Stripe checkout
     setCheckoutLoading(true)
     const res = await fetch('/api/stripe/checkout', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ type: 'job_posting', tier: selectedTier, employerId: profile.id, returnUrl: window.location.origin }),
+      body: JSON.stringify({ type: 'job_posting', tier: selectedTier, employerId: profile.id, jobId: insertedJob.id, returnUrl: window.location.origin }),
     })
     const data = await res.json()
     if (data.url) {
       window.location.href = data.url
     } else {
-      // Payment failed but job still created — redirect to jobs
-      router.push('/employer/jobs?success=true')
+      setError('Could not start checkout. Please try again.')
+      setSaving(false)
+      setCheckoutLoading(false)
     }
   }
 
