@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /talent/
+Disallow: /employer/
+Disallow: /api/
+
+Sitemap: https://talent.wellnesshousecollective.co.uk/sitemap.xml
