@@ -9,6 +9,11 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
     }
 
+    // Prevent self-reviews
+    if (reviewer_id === reviewed_id) {
+      return NextResponse.json({ error: 'Cannot review yourself' }, { status: 400 })
+    }
+
     const supabase = createAdminClient()
 
     // Insert review
@@ -27,12 +32,11 @@ export async function POST(req: NextRequest) {
     if (reviews && reviews.length > 0) {
       const avgScore = reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length
       const table = type === 'employer' ? 'employer_profiles' : 'candidate_profiles'
-      const idField = type === 'employer' ? 'user_id' : 'user_id'
 
       await supabase.from(table).update({
         review_score: Math.round(avgScore * 10) / 10,
         review_count: reviews.length,
-      }).eq(idField, reviewed_id)
+      }).eq('user_id', reviewed_id)
     }
 
     return NextResponse.json({ success: true })
