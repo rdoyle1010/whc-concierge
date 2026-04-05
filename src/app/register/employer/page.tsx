@@ -142,7 +142,7 @@ export default function EmployerRegisterPage() {
               <p className="mb-2">By registering a property on WHC Concierge, you agree to the following:</p>
               <p className="mb-2">1. <strong>Accuracy of listings:</strong> All job listings and company information must be accurate and represent genuine vacancies. WHC Concierge reserves the right to remove misleading listings.</p>
               <p className="mb-2">2. <strong>Account review:</strong> All employer accounts are subject to review and approval by the WHC Concierge team before listings become visible to candidates.</p>
-              <p className="mb-2">3. <strong>Job posting fees:</strong> Job listings are subject to the pricing tier selected at the time of posting (Bronze £150, Silver £200, Gold £225, Platinum £250). Fees are non-refundable once the listing is published.</p>
+              <p className="mb-2">3. <strong>Job posting fees:</strong> Job listings are subject to the pricing tier selected at the time of posting (Bronze £150, Silver £175, Gold £200, Platinum £250). Fees are non-refundable once the listing is published.</p>
               <p className="mb-2">4. <strong>Agency commission:</strong> For shifts booked through the WHC agency marketplace, a 10% platform commission applies to the agreed rate.</p>
               <p className="mb-2">5. <strong>Candidate data:</strong> You agree to handle candidate personal data in accordance with GDPR and our <a href="/privacy" className="underline text-ink">Privacy Policy</a>. Candidate information accessed through the platform must not be shared with third parties.</p>
               <p className="mb-2">6. <strong>Professional conduct:</strong> You agree to treat all candidates fairly and professionally. Discriminatory practices are prohibited.</p>
@@ -169,3 +169,4 @@ export default function EmployerRegisterPage() {
     </div>
   )
 }
+
