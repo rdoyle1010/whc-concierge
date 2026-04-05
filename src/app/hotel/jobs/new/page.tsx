@@ -197,7 +197,7 @@ export default function NewJobWizard() {
                 </select></div>
               <div><label className="eyebrow block mb-1.5">Listing Tier</label>
                 <select value={job.tier} onChange={e => setJob({ ...job, tier: e.target.value })} className="input-field">
-                  <option value="bronze">Bronze £150</option><option value="silver">Silver £200</option><option value="gold">Gold £225</option><option value="platinum">Platinum £250</option>
+                  <option value="bronze">Bronze £150</option><option value="silver">Silver £175</option><option value="gold">Gold £200</option><option value="platinum">Platinum £250</option>
                 </select></div>
             </div>
             <div className="grid grid-cols-3 gap-4">
@@ -350,3 +350,4 @@ export default function NewJobWizard() {
     </DashboardShell>
   )
 }
+
