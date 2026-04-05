@@ -31,7 +31,7 @@ export default function BrowseRolesPage() {
         .from('job_listings')
         .select('*, employer_profiles(company_name, property_name)')
         .eq('is_live', true)
-        .order('created_at', { ascending: false })
+        .order('posted_date', { ascending: false })
 
       const normalized = (rawJobs || []).map((j: any) => {
         const title = j.job_title || j.title
