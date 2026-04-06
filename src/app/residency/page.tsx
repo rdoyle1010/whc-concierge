@@ -31,8 +31,16 @@ export default function ResidencyPage() {
   }, [])
 
   const filtered = residencies.filter(r => {
-    if (specFilter && !(r.services_offered || []).some((s: string) => s.toLowerCase().includes(specFilter.toLowerCase()))) return false
-    if (regionFilter && r.travel_availability !== regionFilter) return false
+    if (specFilter) {
+      const s = specFilter.toLowerCase()
+      const matchesPrimary = (r.primary_specialism || '').toLowerCase().includes(s)
+      const matchesSecondary = (r.secondary_specialisms || []).some((sp: string) => sp.toLowerCase().includes(s))
+      const matchesServices = (r.services_offered || []).some((sp: string) => sp.toLowerCase().includes(s))
+      if (!matchesPrimary && !matchesSecondary && !matchesServices) return false
+    }
+    if (regionFilter) {
+      if (regionFilter !== (r.travel_availability || r.will_travel_to || '')) return false
+    }
     return true
   })
 
@@ -89,63 +97,89 @@ export default function ResidencyPage() {
           </div>
         ) : (
           <div className="space-y-6">
-            {filtered.map((r, i) => (
-              <div key={r.id} className={`bg-white border rounded-xl p-6 md:p-8 hover:shadow-md transition-all ${r.is_featured ? 'border-[#C9A96E]/30 ring-1 ring-[#C9A96E]/10' : 'border-border'}`}>
-                <div className="flex flex-col md:flex-row gap-6">
-                  {/* Avatar */}
-                  <div className="shrink-0 flex flex-col items-center">
-                    <div className="w-24 h-24 rounded-full overflow-hidden bg-surface border-2 border-white shadow-md">
-                      <img src={r.photo_url || r.photos?.[0] || avatarPhotos[i % avatarPhotos.length]} alt="" className="w-full h-full object-cover" />
-                    </div>
-                    {r.is_featured && <span className="mt-2 text-[9px] font-semibold px-2.5 py-0.5 rounded-full" style={{ backgroundColor: '#FDF6EC', color: '#C9A96E' }}>Featured</span>}
-                  </div>
+            {filtered.map((r, i) => {
+              const name = r.full_name || r.title || 'Specialist'
+              const bio = r.bio || r.description || ''
+              const bioExcerpt = bio.length > 180 ? bio.slice(0, 180) + '...' : bio
+              const secondarySpecs = r.secondary_specialisms || r.services_offered || []
+              const quals = r.qualifications || []
+              const brands = r.brand_experience || r.product_houses || []
+              const location = r.current_location || ''
+              const travelTo = r.will_travel_to || r.travel_availability || ''
+              const travelLabel = travelTo === 'worldwide' ? 'Worldwide' : travelTo === 'uk_only' ? 'UK' : travelTo === 'uk_and_europe' ? 'UK & Europe' : travelTo.replace('_', ' ')
+              const duration = r.preferred_duration || r.duration || ''
+              const rate = r.weekly_rate || r.day_rate
 
-                  {/* Content */}
-                  <div className="flex-1 min-w-0">
-                    <h3 className="text-[20px] font-medium text-ink mb-1 leading-snug">{r.title}</h3>
-                    {r.description && <p className="text-[14px] text-secondary leading-[1.7] mb-4 line-clamp-3">{r.description}</p>}
-
-                    {/* Specialism badges */}
-                    {r.services_offered?.length > 0 && (
-                      <div className="flex flex-wrap gap-1.5 mb-4">
-                        {r.services_offered.slice(0, 5).map((s: string) => (
-                          <span key={s} className="text-[10px] font-medium px-2.5 py-0.5 rounded-full" style={{ backgroundColor: '#FDF6EC', color: '#C9A96E', border: '1px solid rgba(201, 169, 110, 0.25)' }}>{s}</span>
-                        ))}
-                        {r.services_offered.length > 5 && <span className="text-[10px] text-muted">+{r.services_offered.length - 5} more</span>}
+              return (
+                <div key={r.id} className={`bg-white border rounded-xl p-6 md:p-8 hover:shadow-md transition-all ${r.is_featured ? 'border-[#C9A96E]/30 ring-1 ring-[#C9A96E]/10' : 'border-border'}`}>
+                  <div className="flex flex-col md:flex-row gap-6">
+                    {/* Avatar */}
+                    <div className="shrink-0 flex flex-col items-center">
+                      <div className="w-24 h-24 rounded-full overflow-hidden bg-surface border-2 border-white shadow-md">
+                        <img src={r.photo_url || r.photos?.[0] || avatarPhotos[i % avatarPhotos.length]} alt={name} className="w-full h-full object-cover" />
                       </div>
-                    )}
+                      {r.is_featured && <span className="mt-2 text-[9px] font-semibold px-2.5 py-0.5 rounded-full" style={{ backgroundColor: '#FDF6EC', color: '#C9A96E' }}>Featured</span>}
+                      {r.years_experience && <p className="mt-2 text-[11px] text-muted text-center">{r.years_experience} years exp.</p>}
+                    </div>
 
-                    {/* Stats row */}
-                    <div className="flex flex-wrap items-center gap-4 text-[12px] text-muted mb-4">
-                      {r.travel_availability && (
-                        <span className="flex items-center gap-1"><MapPin size={12} />{r.travel_availability === 'worldwide' ? 'Worldwide' : r.travel_availability === 'uk_only' ? 'UK' : r.travel_availability === 'uk_and_europe' ? 'UK & Europe' : r.travel_availability.replace('_', ' ')}</span>
+                    {/* Content */}
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-[22px] font-semibold text-ink mb-1 leading-snug">{name}</h3>
+
+                      {/* Primary specialism */}
+                      {r.primary_specialism && (
+                        <span className="inline-block text-[11px] font-medium px-3 py-0.5 rounded-full mb-3" style={{ backgroundColor: '#FDF6EC', color: '#C9A96E', border: '1px solid rgba(201, 169, 110, 0.3)' }}>{r.primary_specialism}</span>
                       )}
-                      {r.availability_start && <span className="flex items-center gap-1"><Clock size={12} />From {new Date(r.availability_start).toLocaleDateString('en-GB', { month: 'short', year: 'numeric' })}</span>}
-                      {r.duration && <span className="flex items-center gap-1"><Briefcase size={12} />{r.duration}</span>}
-                    </div>
 
-                    {/* Product houses */}
-                    {r.product_houses?.length > 0 && (
-                      <div className="flex flex-wrap gap-1 mb-4">
-                        {r.product_houses.slice(0, 4).map((b: string) => <span key={b} className="text-[10px] font-medium bg-surface text-muted px-2 py-0.5 rounded-full">{b}</span>)}
-                      </div>
-                    )}
+                      {/* Bio */}
+                      {bioExcerpt && <p className="text-[14px] text-secondary leading-[1.7] mb-3">{bioExcerpt}</p>}
 
-                    {/* Rate + CTA row */}
-                    <div className="flex items-center justify-between pt-4 border-t border-border">
-                      <div className="text-[13px]">
-                        {r.day_rate && <span className="font-medium text-ink">From £{r.day_rate}/day</span>}
-                        {r.weekly_rate && <span className="text-muted ml-2">· £{r.weekly_rate}/week</span>}
+                      {/* Secondary specialisms */}
+                      {secondarySpecs.length > 0 && (
+                        <div className="flex flex-wrap gap-1.5 mb-3">
+                          {secondarySpecs.slice(0, 4).map((s: string) => (
+                            <span key={s} className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-surface text-ink">{s}</span>
+                          ))}
+                          {secondarySpecs.length > 4 && <span className="text-[10px] text-muted">+{secondarySpecs.length - 4} more</span>}
+                        </div>
+                      )}
+
+                      {/* Qualifications */}
+                      {quals.length > 0 && (
+                        <div className="flex flex-wrap gap-1.5 mb-3">
+                          {quals.slice(0, 3).map((q: string) => (
+                            <span key={q} className="text-[9px] font-medium px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700">{q}</span>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Info row */}
+                      <div className="flex flex-wrap items-center gap-3 text-[12px] text-muted mb-3">
+                        {location && <span className="flex items-center gap-1"><MapPin size={11} />{location}</span>}
+                        {travelTo && <span>Travels: {travelLabel}</span>}
+                        {duration && <span className="flex items-center gap-1"><Clock size={11} />{duration}</span>}
                       </div>
-                      <div className="flex gap-2">
-                        <Link href={`/residency/${r.id}`} className="text-[12px] font-medium text-muted hover:text-ink flex items-center gap-1 transition-colors">View Profile <ArrowRight size={12} /></Link>
-                        <button type="button" onClick={() => setShowEnquiry(r)} className="px-4 py-2 rounded-lg text-[12px] font-semibold text-white" style={{ backgroundColor: '#C9A96E' }}>Enquire</button>
+
+                      {/* Brands */}
+                      {brands.length > 0 && (
+                        <p className="text-[11px] text-muted mb-3">Brands: {brands.slice(0, 3).join(', ')}{brands.length > 3 ? ` +${brands.length - 3} more` : ''}</p>
+                      )}
+
+                      {/* Rate + CTA */}
+                      <div className="flex items-center justify-between pt-4 border-t border-border">
+                        <div className="text-[13px]">
+                          {rate && <span className="font-medium text-ink">From £{rate}/{r.weekly_rate ? 'week' : 'day'}</span>}
+                        </div>
+                        <div className="flex gap-2">
+                          <Link href={`/residency/${r.id}`} className="text-[12px] font-medium text-muted hover:text-ink flex items-center gap-1 transition-colors">View Profile <ArrowRight size={12} /></Link>
+                          <button type="button" onClick={() => setShowEnquiry(r)} className="px-4 py-2 rounded-lg text-[12px] font-semibold text-white" style={{ backgroundColor: '#C9A96E' }}>Enquire</button>
+                        </div>
                       </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              )
+            })}
           </div>
         )}
       </section>
