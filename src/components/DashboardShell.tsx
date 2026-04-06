@@ -8,7 +8,7 @@ import { createClient } from '@/lib/supabase/client'
 import {
   LayoutDashboard, User, Briefcase, MessageSquare, Star, Calendar,
   Settings, LogOut, Menu, X, Users, FileText, Image as ImageIcon, Megaphone,
-  AlertTriangle, Heart, Building2, ChevronRight
+  AlertTriangle, Heart, Building2, ChevronRight, BarChart3
 } from 'lucide-react'
 
 interface NavItem {
@@ -41,6 +41,7 @@ const navItems: Record<string, NavItem[]> = {
     { label: 'Job Listings', href: '/employer/jobs', icon: <Briefcase size={20} /> },
     { label: 'Candidates', href: '/employer/candidates', icon: <Users size={20} /> },
     { label: 'Applications', href: '/employer/applications', icon: <FileText size={20} /> },
+    { label: 'Analytics', href: '/employer/analytics', icon: <BarChart3 size={20} /> },
     { label: 'Messages', href: '/employer/messages', icon: <MessageSquare size={20} /> },
     { label: 'Settings', href: '/employer/settings', icon: <Settings size={20} /> },
   ],
