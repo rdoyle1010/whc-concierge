@@ -5,6 +5,7 @@ import Footer from '@/components/Footer'
 import { MapPin, ArrowRight } from 'lucide-react'
 import { createServerSupabaseClient } from '@/lib/supabase/server'
 import HomepageHowItWorks from '@/components/HomepageHowItWorks'
+import HeroCarousel from '@/components/HeroCarousel'
 
 export const revalidate = 300
 
@@ -86,6 +87,9 @@ export default async function HomePage() {
         </div>
       </section>
 
+      {/* ═══ IMAGE CAROUSEL ═══ */}
+      <HeroCarousel />
+
       {/* ═══ LIVE STATS BAR ═══ */}
       <section className="border-y" style={{ background: '#F8F7F5', borderColor: '#E8E5E0' }}>
         <div className="max-w-5xl mx-auto px-6 lg:px-8 py-8">
@@ -139,8 +143,20 @@ export default async function HomePage() {
               <Link href="/roles" className="hidden md:flex items-center gap-1.5 text-[13px] font-medium transition-colors" style={{ color: '#6B7280' }}>View all roles <ArrowRight size={13} /></Link>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-              {featuredRoles.map((role: any) => (
-                <Link key={role.id} href="/roles" className="group rounded-xl p-6 hover:shadow-lg hover:-translate-y-0.5 transition-all bg-white" style={{ border: '1px solid #E5E5E5' }}>
+              {featuredRoles.map((role: any, i: number) => (
+                <Link key={role.id} href="/roles" className="group rounded-xl overflow-hidden hover:shadow-lg hover:-translate-y-0.5 transition-all bg-white" style={{ border: '1px solid #E5E5E5' }}>
+                  <div className="relative h-36 overflow-hidden">
+                    <Image
+                      src={[
+                        'https://images.unsplash.com/photo-1540555700478-4be289fbec6d?w=600&q=80&auto=format&fit=crop',
+                        'https://images.unsplash.com/photo-1600334089648-b0d9d3028eb2?w=600&q=80&auto=format&fit=crop',
+                        'https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=600&q=80&auto=format&fit=crop',
+                      ][i % 3]}
+                      alt="" fill className="object-cover group-hover:scale-105 transition-transform duration-500" sizes="(max-width: 768px) 100vw, 33vw"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-white/60 to-transparent" />
+                  </div>
+                  <div className="p-6">
                   <div className="flex items-center justify-between mb-4">
                     <span className={`text-[10px] font-semibold px-2.5 py-1 rounded-full ${role.tier === 'Platinum' ? 'bg-ink text-white' : role.tier === 'Gold' ? 'bg-[#FDF6EC] text-[#C9A96E]' : 'bg-surface text-muted'}`}>{role.tier}</span>
                     {role.type && <span className="text-[11px] capitalize" style={{ color: '#6B7280' }}>{role.type}</span>}
@@ -150,6 +166,7 @@ export default async function HomePage() {
                   <div className="flex items-center gap-3 text-[12px]" style={{ color: '#6B7280' }}>
                     {role.location && <span className="flex items-center gap-1"><MapPin size={11} />{role.location}</span>}
                     <span className="font-medium" style={{ color: '#C9A96E' }}>{role.salary}</span>
+                  </div>
                   </div>
                 </Link>
               ))}
