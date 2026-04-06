@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import DashboardShell from '@/components/DashboardShell'
 import { createClient } from '@/lib/supabase/client'
-import { Save } from 'lucide-react'
+import { Save, Download, AlertTriangle } from 'lucide-react'
 
 export default function EmployerSettingsPage() {
   const supabase = createClient()
@@ -67,6 +67,36 @@ export default function EmployerSettingsPage() {
   }
 
   const [deleting, setDeleting] = useState(false)
+  const [exporting, setExporting] = useState(false)
+  const [showDeleteRequest, setShowDeleteRequest] = useState(false)
+  const [deleteRequested, setDeleteRequested] = useState(false)
+
+  const handleExportData = async () => {
+    setExporting(true)
+    try {
+      const res = await fetch('/api/data-export')
+      if (!res.ok) { alert('Failed to export data.'); setExporting(false); return }
+      const blob = await res.blob()
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = res.headers.get('content-disposition')?.match(/filename="(.+)"/)?.[1] || 'whc-data-export.json'
+      document.body.appendChild(a); a.click(); document.body.removeChild(a)
+      URL.revokeObjectURL(url)
+    } catch { alert('Something went wrong.') }
+    setExporting(false)
+  }
+
+  const handleDeletionRequest = async () => {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+    await fetch('/api/contact-notify', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: 'Account Deletion Request', email: user.email, subject: `Account Deletion Request — ${user.id}`, message: `User ${user.email} (ID: ${user.id}) has requested account deletion via employer settings.`, type: 'general' }),
+    }).catch(() => {})
+    setDeleteRequested(true)
+    setShowDeleteRequest(false)
+  }
 
   const handleDeleteAccount = async () => {
     if (!confirm('Are you sure you want to delete your account? All your data \u2014 profile, job listings, applications, and messages \u2014 will be permanently removed. This cannot be undone.')) return
@@ -115,13 +145,50 @@ export default function EmployerSettingsPage() {
           </form>
         </div>
 
+        {/* Data & Privacy */}
+        <div className="dashboard-card">
+          <h3 className="font-serif text-lg font-semibold mb-4">Your Data</h3>
+          <p className="text-sm text-gray-500 mb-4">Download a copy of all personal data we hold about you, in compliance with GDPR Article 15.</p>
+          <button type="button" onClick={handleExportData} disabled={exporting}
+            className="btn-secondary flex items-center gap-2 disabled:opacity-50">
+            {exporting ? <><div className="animate-spin w-4 h-4 border-2 border-ink border-t-transparent rounded-full" /> Generating...</> : <><Download size={14} /> Download My Data</>}
+          </button>
+        </div>
+
         <div className="dashboard-card border-red-100">
           <h3 className="font-serif text-lg font-semibold text-red-600 mb-2">Danger Zone</h3>
           <p className="text-sm text-gray-500 mb-4">Once you delete your account, there is no going back. All job listings, applications, and data will be permanently removed.</p>
-          <button onClick={handleDeleteAccount} disabled={deleting} className="px-4 py-2 bg-red-50 text-red-600 rounded-lg text-sm font-medium hover:bg-red-100 transition-colors disabled:opacity-50">
-            {deleting ? 'Deleting...' : 'Delete Account'}
-          </button>
+          <div className="flex flex-wrap gap-3">
+            <button onClick={handleDeleteAccount} disabled={deleting} className="px-4 py-2 bg-red-50 text-red-600 rounded-lg text-sm font-medium hover:bg-red-100 transition-colors disabled:opacity-50">
+              {deleting ? 'Deleting...' : 'Delete Account'}
+            </button>
+            <button type="button" onClick={() => setShowDeleteRequest(true)} disabled={deleteRequested}
+              className="px-4 py-2 border border-red-200 text-red-500 rounded-lg text-sm font-medium hover:bg-red-50 transition-colors disabled:opacity-50">
+              {deleteRequested ? 'Request Sent' : 'Request Account Deletion'}
+            </button>
+          </div>
         </div>
+
+        {showDeleteRequest && (
+          <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setShowDeleteRequest(false)}>
+            <div className="bg-white rounded-xl max-w-sm w-full p-6 text-center" onClick={e => e.stopPropagation()}>
+              <div className="w-12 h-12 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                <AlertTriangle size={20} className="text-red-500" />
+              </div>
+              <h3 className="text-[16px] font-medium text-ink mb-2">Request Account Deletion</h3>
+              <p className="text-[13px] text-muted mb-2">This will send a deletion request to our team. We will:</p>
+              <ul className="text-[12px] text-muted text-left mb-6 space-y-1 pl-4">
+                <li>&bull; Verify your identity</li>
+                <li>&bull; Remove all personal data within 30 days</li>
+                <li>&bull; Send confirmation when complete</li>
+              </ul>
+              <div className="flex gap-3">
+                <button type="button" onClick={() => setShowDeleteRequest(false)} className="btn-secondary flex-1">Cancel</button>
+                <button type="button" onClick={handleDeletionRequest} className="flex-1 px-4 py-2 bg-red-500 text-white text-[13px] font-medium rounded-lg hover:bg-red-600 transition-colors">Send Request</button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </DashboardShell>
   )
