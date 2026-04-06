@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import DashboardShell from '@/components/DashboardShell'
 import { createClient } from '@/lib/supabase/client'
-import { Search, MapPin, Star, Heart, X, MessageSquare } from 'lucide-react'
+import { Search, MapPin, Star, X, MessageSquare } from 'lucide-react'
 import { notify } from '@/lib/notify'
 
 export default function EmployerCandidatesPage() {
@@ -13,6 +13,7 @@ export default function EmployerCandidatesPage() {
   const [search, setSearch] = useState('')
   const [specFilter, setSpecFilter] = useState('')
   const [profile, setProfile] = useState<any>(null)
+  const [shortlistedIds, setShortlistedIds] = useState<Set<string>>(new Set())
 
   useEffect(() => {
     async function load() {
@@ -31,6 +32,14 @@ export default function EmployerCandidatesPage() {
       const visible = (candidateRes.data || []).filter((c: any) => !blockedIds.has(c.id))
 
       setCandidates(visible)
+
+      // Load shortlisted candidates
+      const slRes = await fetch('/api/shortlist')
+      if (slRes.ok) {
+        const slData = await slRes.json()
+        setShortlistedIds(new Set((slData.shortlisted || []).map((s: any) => s.candidate_id)))
+      }
+
       setLoading(false)
     }
     load()
@@ -42,6 +51,30 @@ export default function EmployerCandidatesPage() {
     if (specFilter && !(c.services_offered || []).some((s: string) => s.toLowerCase().includes(specFilter.toLowerCase()))) return false
     return true
   })
+
+  const toggleShortlist = async (candidateId: string) => {
+    const isShortlisted = shortlistedIds.has(candidateId)
+    const next = new Set(shortlistedIds)
+    if (isShortlisted) {
+      // Need to find the shortlist ID to delete — for simplicity, use the POST/DELETE by candidateId approach
+      // We'll refetch after toggle
+      next.delete(candidateId)
+      const slRes = await fetch('/api/shortlist')
+      if (slRes.ok) {
+        const slData = await slRes.json()
+        const entry = (slData.shortlisted || []).find((s: any) => s.candidate_id === candidateId)
+        if (entry) await fetch('/api/shortlist', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: entry.id }) })
+      }
+    } else {
+      next.add(candidateId)
+      await fetch('/api/shortlist', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ candidateId }) })
+      const candidate = candidates.find(c => c.id === candidateId)
+      if (candidate?.user_id) {
+        notify(candidate.user_id, 'new_match', 'You\'ve been shortlisted', 'An employer has shortlisted your profile. Check your matches for details.', '/talent/dashboard')
+      }
+    }
+    setShortlistedIds(next)
+  }
 
   const handleSwipe = async (candidateId: string, direction: 'left' | 'right') => {
     const { data: { user } } = await supabase.auth.getUser()
@@ -116,9 +149,9 @@ export default function EmployerCandidatesPage() {
                   className="flex-1 py-2 rounded-lg bg-gray-50 hover:bg-gray-100 text-gray-400 flex items-center justify-center space-x-1 text-sm">
                   <X size={14} /><span>Pass</span>
                 </button>
-                <button onClick={() => handleSwipe(c.id, 'right')}
-                  className="flex-1 py-2 rounded-lg bg-gold/10 hover:bg-gold/20 text-gold flex items-center justify-center space-x-1 text-sm">
-                  <Heart size={14} /><span>Shortlist</span>
+                <button onClick={() => toggleShortlist(c.id)}
+                  className={`flex-1 py-2 rounded-lg flex items-center justify-center space-x-1 text-sm transition-colors ${shortlistedIds.has(c.id) ? 'bg-[#FDF6EC] text-accent' : 'bg-gold/10 hover:bg-gold/20 text-gold'}`}>
+                  <Star size={14} fill={shortlistedIds.has(c.id) ? 'currentColor' : 'none'} /><span>{shortlistedIds.has(c.id) ? 'Shortlisted' : 'Shortlist'}</span>
                 </button>
               </div>
             </div>

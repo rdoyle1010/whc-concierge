@@ -13,6 +13,7 @@ export default function EmployerApplicationsPage() {
   const [profile, setProfile] = useState<any>(null)
   const [page, setPage] = useState(1)
   const [perPage, setPerPage] = useState(25)
+  const [shortlistedIds, setShortlistedIds] = useState<Set<string>>(new Set())
 
   useEffect(() => {
     async function load() {
@@ -32,10 +33,24 @@ export default function EmployerApplicationsPage() {
         .order('created_at', { ascending: false })
 
       setApplications(data || [])
+
+      // Load shortlisted IDs
+      const slRes = await fetch('/api/shortlist')
+      if (slRes.ok) {
+        const slData = await slRes.json()
+        setShortlistedIds(new Set((slData.shortlisted || []).map((s: any) => s.candidate_id)))
+      }
+
       setLoading(false)
     }
     load()
   }, [])
+
+  const addToShortlist = async (candidateId: string, jobId: string) => {
+    if (shortlistedIds.has(candidateId)) return
+    await fetch('/api/shortlist', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ candidateId, jobId }) })
+    setShortlistedIds(new Set([...shortlistedIds, candidateId]))
+  }
 
   const updateStatus = async (appId: string, status: string) => {
     await supabase.from('applications').update({ status }).eq('id', appId)
@@ -91,9 +106,9 @@ export default function EmployerApplicationsPage() {
                   )}
                 </div>
                 <div className="flex items-center space-x-2">
-                  <button onClick={() => updateStatus(app.id, 'shortlisted')} title="Shortlist"
-                    className={`p-2 rounded-lg ${app.status === 'shortlisted' ? 'bg-green-100 text-green-700' : 'hover:bg-green-50 text-gray-400'}`}>
-                    <Star size={18} />
+                  <button onClick={() => { updateStatus(app.id, 'shortlisted'); addToShortlist(app.candidate_profiles?.id || app.candidate_id, app.job_id) }} title="Shortlist"
+                    className={`p-2 rounded-lg ${app.status === 'shortlisted' || shortlistedIds.has(app.candidate_profiles?.id || app.candidate_id) ? 'bg-[#FDF6EC] text-accent' : 'hover:bg-green-50 text-gray-400'}`}>
+                    <Star size={18} fill={app.status === 'shortlisted' || shortlistedIds.has(app.candidate_profiles?.id || app.candidate_id) ? 'currentColor' : 'none'} />
                   </button>
                   <button onClick={() => updateStatus(app.id, 'accepted')} title="Accept"
                     className={`p-2 rounded-lg ${app.status === 'accepted' ? 'bg-emerald-100 text-emerald-700' : 'hover:bg-emerald-50 text-gray-400'}`}>
