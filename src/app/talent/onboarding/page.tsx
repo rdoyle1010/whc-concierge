@@ -38,7 +38,12 @@ function ProficiencySelect({ value, onChange }: { value: string; onChange: (v: s
 }
 
 // ── Step labels ──
-const STEPS = ['Basic Info', 'Treatment Skills', 'Business Skills', 'Systems', 'Product Houses', 'Qualifications', 'Brand Experience', 'Review']
+const STEPS = ['Basic Info', 'Logistics & Preferences', 'Treatment Skills', 'Business Skills', 'Systems', 'Product Houses', 'Qualifications', 'Brand Experience', 'Review']
+
+const TRANSPORT_OPTIONS = ['Own car', 'Public transport', 'Bicycle', 'Walking', 'Relocating for role']
+const COMMUTE_OPTIONS = ['15 min', '30 min', '45 min', '1 hour', '1.5 hours', 'Willing to relocate']
+const SHIFT_OPTIONS = ['Early morning', 'Daytime', 'Evening', 'Overnight', 'Split shifts', 'Weekends only', 'Flexible']
+const LOCATION_PREF_OPTIONS = ['London', 'South East', 'South West', 'Midlands', 'North West', 'North East', 'Scotland', 'Wales', 'Northern Ireland', 'Europe', 'Middle East', 'Asia', 'Worldwide']
 
 export default function OnboardingWizard() {
   const supabase = createClient()
@@ -56,6 +61,8 @@ export default function OnboardingWizard() {
     employment_types_wanted: [] as string[], years_experience: '', current_job_title: '',
     headline: '', bio: '', availability_date: '', salary_min: '', salary_max: '',
     willing_to_relocate: false, languages: '',
+    transport_method: '', max_commute: '', shift_preferences: [] as string[],
+    location_preferences: [] as string[], needs_accommodation: false,
   })
 
   // Taxonomy data loaded from DB
@@ -92,6 +99,9 @@ export default function OnboardingWizard() {
           availability_date: profile.availability_date || '', salary_min: profile.salary_min?.toString() || profile.day_rate_min?.toString() || '',
           salary_max: profile.salary_max?.toString() || profile.day_rate_max?.toString() || '',
           willing_to_relocate: profile.willing_to_relocate || false, languages: (profile.languages || []).join(', '),
+          transport_method: profile.transport_method || '', max_commute: profile.max_commute || '',
+          shift_preferences: profile.shift_preferences || [], location_preferences: profile.location_preferences || [],
+          needs_accommodation: profile.needs_accommodation || false,
         })
 
         // Load existing selections
@@ -181,7 +191,20 @@ export default function OnboardingWizard() {
       })
     }
 
-    if (step === 2 || step === 3) {
+    if (step === 2) {
+      await fetch('/api/profile/update', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ profileId, data: {
+          transport_method: basic.transport_method || null,
+          max_commute: basic.max_commute || null,
+          shift_preferences: basic.shift_preferences.length > 0 ? basic.shift_preferences : null,
+          location_preferences: basic.location_preferences.length > 0 ? basic.location_preferences : null,
+          needs_accommodation: basic.needs_accommodation,
+        }}),
+      })
+    }
+
+    if (step === 3 || step === 4) {
       // Save skills: delete existing, re-insert
       const allSkills = Array.from(selectedSkills.entries()).map(([skill_id, data]) => ({
         candidate_id: profileId, skill_id, proficiency: data.proficiency || 'competent', years_using: data.years_using || null,
@@ -190,7 +213,7 @@ export default function OnboardingWizard() {
       if (allSkills.length > 0) await supabase.from('candidate_skills').insert(allSkills)
     }
 
-    if (step === 4) {
+    if (step === 5) {
       const rows = Array.from(selectedSystems.entries()).map(([system_id, data]) => ({
         candidate_id: profileId, system_id, proficiency: data.proficiency || 'competent',
       }))
@@ -198,7 +221,7 @@ export default function OnboardingWizard() {
       if (rows.length > 0) await supabase.from('candidate_systems').insert(rows)
     }
 
-    if (step === 5) {
+    if (step === 6) {
       const rows = Array.from(selectedPH.entries()).map(([product_house_id, data]) => ({
         candidate_id: profileId, product_house_id, years_using: data.years_using || null,
       }))
@@ -206,7 +229,7 @@ export default function OnboardingWizard() {
       if (rows.length > 0) await supabase.from('candidate_product_houses').insert(rows)
     }
 
-    if (step === 6) {
+    if (step === 7) {
       const rows = Array.from(selectedCerts.entries()).map(([certification_id, data]) => ({
         candidate_id: profileId, certification_id, issued_date: data.issued_date || null, expiry_date: data.expiry_date || null, is_verified: false,
       }))
@@ -214,7 +237,7 @@ export default function OnboardingWizard() {
       if (rows.length > 0) await supabase.from('candidate_certifications').insert(rows)
     }
 
-    if (step === 7) {
+    if (step === 8) {
       const rows = Array.from(selectedBrands.entries()).map(([hotel_brand_id, data]) => ({
         candidate_id: profileId, hotel_brand_id, years_worked: data.years_worked || null, role_held: data.role_held || null,
       }))
@@ -237,10 +260,18 @@ export default function OnboardingWizard() {
     router.push('/talent/dashboard')
   }
 
-  // ── Employment type multi-select ──
+  // ── Multi-select toggles ──
   const toggleEmpType = (t: string) => {
     const next = basic.employment_types_wanted.includes(t) ? basic.employment_types_wanted.filter(x => x !== t) : [...basic.employment_types_wanted, t]
     setBasic({ ...basic, employment_types_wanted: next })
+  }
+  const toggleShiftPref = (t: string) => {
+    const next = basic.shift_preferences.includes(t) ? basic.shift_preferences.filter(x => x !== t) : [...basic.shift_preferences, t]
+    setBasic({ ...basic, shift_preferences: next })
+  }
+  const toggleLocationPref = (t: string) => {
+    const next = basic.location_preferences.includes(t) ? basic.location_preferences.filter(x => x !== t) : [...basic.location_preferences, t]
+    setBasic({ ...basic, location_preferences: next })
   }
 
   // ── Group helper ──
@@ -312,8 +343,54 @@ export default function OnboardingWizard() {
           </div>
         )}
 
-        {/* ═══ STEP 2: Treatment Skills ═══ */}
+        {/* ═══ STEP 2: Logistics & Preferences ═══ */}
         {step === 2 && (
+          <div className="space-y-5">
+            <div>
+              <label className="eyebrow block mb-1.5">Transport Method</label>
+              <select value={basic.transport_method} onChange={e => setBasic({ ...basic, transport_method: e.target.value })} className="input-field">
+                <option value="">Select...</option>
+                {TRANSPORT_OPTIONS.map(t => <option key={t} value={t}>{t}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="eyebrow block mb-1.5">Maximum Commute</label>
+              <select value={basic.max_commute} onChange={e => setBasic({ ...basic, max_commute: e.target.value })} className="input-field">
+                <option value="">Select...</option>
+                {COMMUTE_OPTIONS.map(t => <option key={t} value={t}>{t}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="eyebrow block mb-2">Shift Preference</label>
+              <div className="flex flex-wrap gap-2">
+                {SHIFT_OPTIONS.map(t => (
+                  <button key={t} type="button" onClick={() => toggleShiftPref(t)}
+                    className={`px-3 py-1.5 rounded-full text-[12px] font-medium transition-all ${basic.shift_preferences.includes(t) ? 'bg-ink text-white' : 'bg-surface border border-border text-secondary hover:border-ink/30'}`}>
+                    {basic.shift_preferences.includes(t) && <Check size={10} className="inline mr-1" />}{t}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div>
+              <label className="eyebrow block mb-2">Location Preference</label>
+              <div className="flex flex-wrap gap-2">
+                {LOCATION_PREF_OPTIONS.map(t => (
+                  <button key={t} type="button" onClick={() => toggleLocationPref(t)}
+                    className={`px-3 py-1.5 rounded-full text-[12px] font-medium transition-all ${basic.location_preferences.includes(t) ? 'bg-ink text-white' : 'bg-surface border border-border text-secondary hover:border-ink/30'}`}>
+                    {basic.location_preferences.includes(t) && <Check size={10} className="inline mr-1" />}{t}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input type="checkbox" checked={basic.needs_accommodation} onChange={e => setBasic({ ...basic, needs_accommodation: e.target.checked })} className="w-3.5 h-3.5 border-border rounded text-ink" />
+              <span className="text-[13px] text-secondary">Accommodation needed (for live-in roles)</span>
+            </label>
+          </div>
+        )}
+
+        {/* ═══ STEP 3: Treatment Skills ═══ */}
+        {step === 3 && (
           <div className="space-y-5">
             <p className="text-[14px] text-secondary">Select the treatment skills you can deliver. Set your proficiency level for each.</p>
             <div className="relative"><Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" /><input type="text" placeholder="Search skills..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="input-field pl-9 !py-2 text-[13px]" /></div>
@@ -332,8 +409,8 @@ export default function OnboardingWizard() {
           </div>
         )}
 
-        {/* ═══ STEP 3: Business Skills ═══ */}
-        {step === 3 && (
+        {/* ═══ STEP 4: Business Skills ═══ */}
+        {step === 4 && (
           <div className="space-y-5">
             <p className="text-[14px] text-secondary">Select your commercial, leadership and operational capabilities.</p>
             {Object.entries(groupBy(businessSkills, 'category')).map(([cat, items]) => (
@@ -356,8 +433,8 @@ export default function OnboardingWizard() {
           </div>
         )}
 
-        {/* ═══ STEP 4: Systems ═══ */}
-        {step === 4 && (
+        {/* ═══ STEP 5: Systems ═══ */}
+        {step === 5 && (
           <div className="space-y-5">
             <p className="text-[14px] text-secondary">Select the booking, POS and management systems you&apos;ve used.</p>
             <ChipGrid items={systemsList} selected={selectedSystems} onToggle={(id, name) => toggleInMap(selectedSystems, setSelectedSystems, id, name)} />
@@ -375,8 +452,8 @@ export default function OnboardingWizard() {
           </div>
         )}
 
-        {/* ═══ STEP 5: Product Houses ═══ */}
-        {step === 5 && (
+        {/* ═══ STEP 6: Product Houses ═══ */}
+        {step === 6 && (
           <div className="space-y-5">
             <p className="text-[14px] text-secondary">Select the product houses and skincare brands you have experience with.</p>
             {['ultra_luxury', 'luxury', 'professional', 'mass'].map(tier => {
@@ -403,8 +480,8 @@ export default function OnboardingWizard() {
           </div>
         )}
 
-        {/* ═══ STEP 6: Certifications ═══ */}
-        {step === 6 && (
+        {/* ═══ STEP 7: Certifications ═══ */}
+        {step === 7 && (
           <div className="space-y-5">
             <p className="text-[14px] text-secondary">Select your qualifications and certifications.</p>
             {Object.entries(groupBy(certsList, 'category')).map(([cat, items]) => (
@@ -427,8 +504,8 @@ export default function OnboardingWizard() {
           </div>
         )}
 
-        {/* ═══ STEP 7: Brand Experience ═══ */}
-        {step === 7 && (
+        {/* ═══ STEP 8: Brand Experience ═══ */}
+        {step === 8 && (
           <div className="space-y-5">
             <p className="text-[14px] text-secondary">Select the hotel and spa brands you&apos;ve worked with.</p>
             {['ultra_luxury', 'luxury', 'lifestyle', 'boutique', 'independent'].map(tier => {
@@ -456,8 +533,8 @@ export default function OnboardingWizard() {
           </div>
         )}
 
-        {/* ═══ STEP 8: Review ═══ */}
-        {step === 8 && (
+        {/* ═══ STEP 9: Review ═══ */}
+        {step === 9 && (
           <div className="space-y-6">
             <p className="text-[14px] text-secondary">Review your profile before submitting.</p>
 
@@ -490,7 +567,7 @@ export default function OnboardingWizard() {
         {/* ═══ Navigation ═══ */}
         <div className="flex gap-3 mt-8 pt-6 border-t border-border">
           {step > 1 && <button type="button" onClick={goBack} className="btn-secondary flex items-center gap-2 flex-1"><ArrowLeft size={14} />Back</button>}
-          {step < 8 ? (
+          {step < 9 ? (
             <button type="button" onClick={goNext} disabled={saving} className="btn-primary flex items-center justify-center gap-2 flex-1 disabled:opacity-50">
               {saving ? 'Saving...' : 'Continue'}<ArrowRight size={14} />
             </button>
