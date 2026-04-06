@@ -24,13 +24,13 @@ export const metadata: Metadata = {
     title: 'WHC Concierge | Luxury Wellness Careers Platform',
     description: 'The UK\'s premier recruitment platform for luxury spa, wellness and hospitality professionals. Connecting elite therapists with five-star properties.',
     url: 'https://talent.wellnesshousecollective.co.uk',
-    images: [{ url: '/images/whc-logo.jpg', width: 1200, height: 630, alt: 'Wellness House Collective' }],
+    images: [{ url: '/opengraph-image', width: 1200, height: 630, alt: 'WHC Concierge — Luxury Wellness Careers Platform' }],
   },
   twitter: {
     card: 'summary_large_image',
     title: 'WHC Concierge | Luxury Wellness Careers Platform',
     description: 'The UK\'s premier recruitment platform for luxury spa, wellness and hospitality professionals.',
-    images: ['/images/whc-logo.jpg'],
+    images: ['/opengraph-image'],
   },
   icons: {
     icon: '/favicon.ico',
