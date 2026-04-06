@@ -4,17 +4,9 @@ import { useEffect, useState } from 'react'
 import DashboardShell from '@/components/DashboardShell'
 import { createClient } from '@/lib/supabase/client'
 import { Save, Upload } from 'lucide-react'
-import { PRODUCT_HOUSES, SYSTEMS, COMPANY_TYPES } from '@/lib/constants'
+import { COMPANY_TYPES } from '@/lib/constants'
+import { SERVICES_CATEGORIES, PRODUCT_HOUSES_FULL, QUALS_CATEGORIES, SYSTEMS_FULL } from '@/lib/taxonomy'
 import CollapsibleCheckboxSection from '@/components/CollapsibleCheckboxSection'
-
-const SERVICES = [
-  'Massage', 'Facials', 'Body treatments', 'Manicure & Pedicure',
-  'Nail care', 'Hair styling', 'Barbering', 'Thermal suite',
-  'Hydrotherapy', 'Yoga', 'Pilates', 'Personal training',
-  'Nutrition', 'Meditation', 'Ayurveda', 'Acupuncture',
-  'Reflexology', 'Aromatherapy', 'Reiki', 'Pregnancy treatments',
-  'Men\'s grooming', 'Tanning', 'Make-up', 'Lash & Brow',
-]
 
 const STAR_RATINGS = ['3', '4', '5', 'Boutique', 'Independent']
 
@@ -218,7 +210,7 @@ export default function EmployerProfilePage() {
         <div className="dashboard-card mb-6 space-y-5">
           <div>
             <h3 className="font-serif text-lg font-semibold">Spa Operations</h3>
-            <p className="text-sm text-gray-500 mt-1">This information helps us match you with the right candidates. The more you complete, the better your matches.</p>
+            <p className="text-sm text-gray-500 mt-1">This information is used to match candidates to your roles. The more you complete, the better your matches.</p>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
@@ -233,22 +225,29 @@ export default function EmployerProfilePage() {
           </div>
 
           <CollapsibleCheckboxSection
-            title="Product Houses Used"
-            flatItems={[...PRODUCT_HOUSES]}
-            selected={profile.product_houses_used || []}
-            onChange={(v) => update('product_houses_used', v)}
-          />
-
-          <CollapsibleCheckboxSection
             title="Services Offered"
-            flatItems={SERVICES}
+            categories={SERVICES_CATEGORIES}
             selected={profile.services_offered || []}
             onChange={(v) => update('services_offered', v)}
           />
 
           <CollapsibleCheckboxSection
+            title="Product Houses Used"
+            flatItems={PRODUCT_HOUSES_FULL}
+            selected={profile.product_houses_used || []}
+            onChange={(v) => update('product_houses_used', v)}
+          />
+
+          <CollapsibleCheckboxSection
+            title="Qualifications We Look For"
+            categories={QUALS_CATEGORIES}
+            selected={profile.brand_partners || []}
+            onChange={(v) => update('brand_partners', v)}
+          />
+
+          <CollapsibleCheckboxSection
             title="Systems Used"
-            flatItems={[...SYSTEMS]}
+            flatItems={SYSTEMS_FULL}
             selected={profile.systems_used || []}
             onChange={(v) => update('systems_used', v)}
           />
