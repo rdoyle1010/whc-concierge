@@ -4,8 +4,12 @@ import Footer from '@/components/Footer'
 import Link from 'next/link'
 
 export const metadata: Metadata = {
-  title: 'About',
-  description: 'WHC Concierge is the specialist careers platform for luxury wellness, connecting exceptional spa and hospitality professionals with the world\'s finest properties.',
+  title: 'About WHC Concierge | Luxury Wellness Recruitment',
+  description: 'WHC Concierge is the UK\'s specialist careers platform for luxury wellness, connecting exceptional spa and hospitality professionals with the world\'s finest properties.',
+  openGraph: {
+    title: 'About WHC Concierge | Luxury Wellness Recruitment',
+    description: 'The story behind the UK\'s specialist careers platform for luxury wellness professionals.',
+  },
 }
 
 export default function AboutPage() {
