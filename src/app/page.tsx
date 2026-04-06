@@ -5,7 +5,7 @@ import { MapPin, ArrowRight } from 'lucide-react'
 import { createServerSupabaseClient } from '@/lib/supabase/server'
 import HomepageHowItWorks from '@/components/HomepageHowItWorks'
 
-export const revalidate = 300 // revalidate every 5 minutes
+export const revalidate = 300
 
 async function getStats() {
   try {
@@ -15,11 +15,7 @@ async function getStats() {
       supabase.from('job_listings').select('id', { count: 'exact', head: true }).eq('is_live', true),
       supabase.from('employer_profiles').select('id', { count: 'exact', head: true }),
     ])
-    return {
-      professionals: (talent.count || 0) + 50,
-      roles: roles.count || 0,
-      employers: (employers.count || 0) + 10,
-    }
+    return { professionals: (talent.count || 0) + 50, roles: roles.count || 0, employers: (employers.count || 0) + 10 }
   } catch { return { professionals: 50, roles: 0, employers: 10 } }
 }
 
@@ -53,22 +49,32 @@ export default async function HomePage() {
     <div className="min-h-screen bg-white">
       <Navbar />
 
-      {/* ═══ HERO ═══ */}
-      <section className="pt-[60px] relative overflow-hidden bg-white">
-        <div className="relative z-10 max-w-7xl mx-auto px-6 lg:px-8 py-24 lg:py-36 text-center">
-          <div className="w-10 h-[1px] bg-[#C9A96E] mx-auto mb-8" />
-          <h1 className="text-[40px] md:text-[56px] lg:text-[64px] font-medium text-ink leading-[1.08] tracking-tight mb-6 max-w-4xl mx-auto">
-            Where Luxury Wellness Meets <span style={{ color: '#C9A96E' }}>Exceptional Talent</span>
+      {/* ═══ HERO — Luxury imagery with white overlay ═══ */}
+      <section className="pt-[60px] relative min-h-[85vh] flex items-center overflow-hidden">
+        <img
+          src="https://images.unsplash.com/photo-1540555700478-4be289fbec6d?w=1920&q=80&auto=format&fit=crop"
+          alt="" className="absolute inset-0 w-full h-full object-cover"
+        />
+        <div className="absolute inset-0 bg-white/75" />
+
+        <div className="relative z-10 max-w-7xl mx-auto px-6 lg:px-8 py-20 lg:py-32 text-center w-full">
+          <div className="w-10 h-[1px] mx-auto mb-8" style={{ backgroundColor: '#C9A96E' }} />
+          <h1 className="text-[38px] md:text-[52px] lg:text-[62px] font-medium leading-[1.08] tracking-tight mb-6 max-w-4xl mx-auto" style={{ color: '#1a1a1a' }}>
+            Where Luxury Wellness Meets{' '}
+            <span style={{ color: '#C9A96E' }}>Exceptional Talent</span>
           </h1>
-          <p className="text-[16px] md:text-[18px] text-secondary leading-[1.7] max-w-2xl mx-auto mb-10">
+          <p className="text-[16px] md:text-[18px] leading-[1.7] max-w-2xl mx-auto mb-10" style={{ color: '#6B7280' }}>
             The UK&apos;s premier platform connecting elite spa and wellness professionals with prestigious employers
           </p>
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-6">
-            <Link href="/register/employer" className="group relative px-7 py-3 rounded-lg text-[14px] font-semibold overflow-hidden transition-all hover:shadow-lg hover:shadow-[#C9A96E]/20" style={{ background: 'linear-gradient(135deg, #C9A96E, #E8D5A8)', color: '#1a1a1a' }}>
-              <span className="relative z-10">Find Talent</span>
-              <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500" style={{ background: 'linear-gradient(135deg, #E8D5A8, #C9A96E)' }} />
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+            <Link href="/register/employer"
+              className="px-8 py-3.5 rounded-lg text-[14px] font-semibold text-white transition-all hover:shadow-lg hover:shadow-[#C9A96E]/25"
+              style={{ backgroundColor: '#C9A96E' }}>
+              Find Talent
             </Link>
-            <Link href="/roles" className="px-7 py-3 border border-border text-secondary rounded-lg text-[14px] font-medium hover:border-ink/30 hover:text-ink transition-all">
+            <Link href="/roles"
+              className="px-8 py-3.5 rounded-lg text-[14px] font-medium transition-all hover:bg-[#C9A96E]/10"
+              style={{ border: '1.5px solid #C9A96E', color: '#1a1a1a' }}>
               Find Roles <ArrowRight size={14} className="inline ml-1" />
             </Link>
           </div>
@@ -76,7 +82,7 @@ export default async function HomePage() {
       </section>
 
       {/* ═══ LIVE STATS BAR ═══ */}
-      <section className="border-y border-border" style={{ background: '#F8F7F5' }}>
+      <section className="border-y" style={{ background: '#F8F7F5', borderColor: '#E8E5E0' }}>
         <div className="max-w-5xl mx-auto px-6 lg:px-8 py-8">
           <div className="flex items-center justify-center gap-8 md:gap-16">
             {[
@@ -86,7 +92,7 @@ export default async function HomePage() {
             ].map(s => (
               <div key={s.label} className="text-center">
                 <p className="text-[24px] md:text-[32px] font-semibold" style={{ color: '#C9A96E' }}>{s.value}</p>
-                <p className="text-[11px] md:text-[12px] text-muted tracking-wide uppercase">{s.label}</p>
+                <p className="text-[11px] md:text-[12px] tracking-wide uppercase" style={{ color: '#6B7280' }}>{s.label}</p>
               </div>
             ))}
           </div>
@@ -98,19 +104,19 @@ export default async function HomePage() {
         <div className="max-w-5xl mx-auto px-6 lg:px-8">
           <div className="text-center mb-14">
             <p className="text-[11px] tracking-[0.15em] uppercase font-medium mb-3" style={{ color: '#C9A96E' }}>How it works</p>
-            <h2 className="text-[32px] md:text-[40px] font-medium text-ink tracking-tight leading-[1.1]">Three steps to your next chapter</h2>
+            <h2 className="text-[32px] md:text-[40px] font-medium tracking-tight leading-[1.1]" style={{ color: '#1a1a1a' }}>Three steps to your next chapter</h2>
           </div>
           <HomepageHowItWorks />
         </div>
       </section>
 
       {/* ═══ TRUST SIGNALS ═══ */}
-      <section className="py-16 border-y border-border" style={{ background: '#F8F7F5' }}>
+      <section className="py-16" style={{ background: '#F8F7F5', borderTop: '1px solid #E8E5E0', borderBottom: '1px solid #E8E5E0' }}>
         <div className="max-w-6xl mx-auto px-6 lg:px-8">
-          <p className="text-[11px] tracking-[0.12em] uppercase text-muted text-center mb-8">Trusted by leading wellness brands across the UK</p>
+          <p className="text-[11px] tracking-[0.12em] uppercase text-center mb-8" style={{ color: '#6B7280' }}>Trusted by leading wellness brands across the UK</p>
           <div className="flex flex-wrap items-center justify-center gap-x-10 gap-y-4">
             {TRUST_BRANDS.map(name => (
-              <span key={name} className="text-[14px] font-medium tracking-wide" style={{ color: 'rgba(26, 26, 26, 0.25)' }}>{name}</span>
+              <span key={name} className="text-[15px] font-medium tracking-wide" style={{ color: '#2D2D2D', opacity: 0.3 }}>{name}</span>
             ))}
           </div>
         </div>
@@ -123,22 +129,22 @@ export default async function HomePage() {
             <div className="flex items-end justify-between mb-10">
               <div>
                 <p className="text-[11px] tracking-[0.15em] uppercase font-medium mb-3" style={{ color: '#C9A96E' }}>Latest opportunities</p>
-                <h2 className="text-[32px] md:text-[40px] font-medium text-ink tracking-tight leading-[1.1]">Featured roles</h2>
+                <h2 className="text-[32px] md:text-[40px] font-medium tracking-tight leading-[1.1]" style={{ color: '#1a1a1a' }}>Featured roles</h2>
               </div>
-              <Link href="/roles" className="hidden md:flex items-center gap-1.5 text-[13px] font-medium text-muted hover:text-ink transition-colors">View all roles <ArrowRight size={13} /></Link>
+              <Link href="/roles" className="hidden md:flex items-center gap-1.5 text-[13px] font-medium transition-colors" style={{ color: '#6B7280' }}>View all roles <ArrowRight size={13} /></Link>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
               {featuredRoles.map((role: any) => (
-                <Link key={role.id} href="/roles" className="group border border-border rounded-xl p-6 hover:shadow-md hover:-translate-y-0.5 transition-all bg-white">
+                <Link key={role.id} href="/roles" className="group rounded-xl p-6 hover:shadow-lg hover:-translate-y-0.5 transition-all bg-white" style={{ border: '1px solid #E5E5E5' }}>
                   <div className="flex items-center justify-between mb-4">
                     <span className={`text-[10px] font-semibold px-2.5 py-1 rounded-full ${role.tier === 'Platinum' ? 'bg-ink text-white' : role.tier === 'Gold' ? 'bg-[#FDF6EC] text-[#C9A96E]' : 'bg-surface text-muted'}`}>{role.tier}</span>
-                    {role.type && <span className="text-[11px] text-muted capitalize">{role.type}</span>}
+                    {role.type && <span className="text-[11px] capitalize" style={{ color: '#6B7280' }}>{role.type}</span>}
                   </div>
-                  <p className="text-[11px] text-muted uppercase tracking-wide mb-1">{role.property}</p>
-                  <h3 className="text-[18px] font-medium text-ink mb-3 group-hover:text-[#C9A96E] transition-colors">{role.title}</h3>
-                  <div className="flex items-center gap-3 text-[12px] text-muted">
+                  <p className="text-[11px] uppercase tracking-wide mb-1" style={{ color: '#6B7280' }}>{role.property}</p>
+                  <h3 className="text-[18px] font-medium mb-3 transition-colors" style={{ color: '#1a1a1a' }}>{role.title}</h3>
+                  <div className="flex items-center gap-3 text-[12px]" style={{ color: '#6B7280' }}>
                     {role.location && <span className="flex items-center gap-1"><MapPin size={11} />{role.location}</span>}
-                    <span className="font-medium text-ink">{role.salary}</span>
+                    <span className="font-medium" style={{ color: '#C9A96E' }}>{role.salary}</span>
                   </div>
                 </Link>
               ))}
@@ -150,21 +156,31 @@ export default async function HomePage() {
         </section>
       )}
 
-      {/* ═══ FINAL CTA ═══ */}
-      <section className="py-24" style={{ background: '#F8F7F5' }}>
-        <div className="max-w-5xl mx-auto px-6 lg:px-8">
+      {/* ═══ FINAL CTA — Luxury imagery with white overlay ═══ */}
+      <section className="relative overflow-hidden">
+        <img
+          src="https://images.unsplash.com/photo-1600334089648-b0d9d3028eb2?w=1920&q=80&auto=format&fit=crop"
+          alt="" className="absolute inset-0 w-full h-full object-cover"
+        />
+        <div className="absolute inset-0 bg-white/80" />
+
+        <div className="relative z-10 max-w-5xl mx-auto px-6 lg:px-8 py-24">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div className="rounded-xl p-8 md:p-10 bg-white border border-border">
+            <div className="rounded-xl p-8 md:p-10 bg-white/90 backdrop-blur-sm" style={{ border: '1px solid #E5E5E5' }}>
               <p className="text-[11px] tracking-[0.15em] uppercase font-medium mb-4" style={{ color: '#C9A96E' }}>For talent</p>
-              <h3 className="text-[24px] md:text-[28px] font-medium text-ink leading-[1.15] mb-4">Ready to elevate your wellness career?</h3>
-              <p className="text-[14px] text-secondary leading-[1.7] mb-8">Create your free profile, get matched with premium roles, and take the next step in your career.</p>
+              <h3 className="text-[24px] md:text-[28px] font-medium leading-[1.15] mb-4" style={{ color: '#1a1a1a' }}>Ready to elevate your wellness career?</h3>
+              <p className="text-[14px] leading-[1.7] mb-8" style={{ color: '#6B7280' }}>Create your free profile, get matched with premium roles, and take the next step in your career.</p>
               <Link href="/register/talent" className="btn-primary inline-block">Create free profile</Link>
             </div>
-            <div className="rounded-xl p-8 md:p-10 bg-white border border-border" style={{ borderColor: 'rgba(201, 169, 110, 0.3)' }}>
+            <div className="rounded-xl p-8 md:p-10 bg-white/90 backdrop-blur-sm" style={{ border: '1px solid rgba(201, 169, 110, 0.35)' }}>
               <p className="text-[11px] tracking-[0.15em] uppercase font-medium mb-4" style={{ color: '#C9A96E' }}>For employers</p>
-              <h3 className="text-[24px] md:text-[28px] font-medium text-ink leading-[1.15] mb-4">Ready to find exceptional talent?</h3>
-              <p className="text-[14px] text-secondary leading-[1.7] mb-8">Post your roles, search verified candidates, and hire with confidence using intelligent matching.</p>
-              <Link href="/register/employer" className="inline-block px-6 py-2.5 rounded-lg text-[13px] font-semibold transition-all hover:shadow-lg hover:shadow-[#C9A96E]/20" style={{ background: 'linear-gradient(135deg, #C9A96E, #E8D5A8)', color: '#1a1a1a' }}>Post a role</Link>
+              <h3 className="text-[24px] md:text-[28px] font-medium leading-[1.15] mb-4" style={{ color: '#1a1a1a' }}>Ready to find exceptional talent?</h3>
+              <p className="text-[14px] leading-[1.7] mb-8" style={{ color: '#6B7280' }}>Post your roles, search verified candidates, and hire with confidence using intelligent matching.</p>
+              <Link href="/register/employer"
+                className="inline-block px-6 py-2.5 rounded-lg text-[13px] font-semibold text-white transition-all hover:shadow-lg hover:shadow-[#C9A96E]/25"
+                style={{ backgroundColor: '#C9A96E' }}>
+                Post a role
+              </Link>
             </div>
           </div>
         </div>
