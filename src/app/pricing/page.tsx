@@ -5,17 +5,14 @@ import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
 import Link from 'next/link'
 import { Check, X, ChevronDown, Shield } from 'lucide-react'
+import { JOB_TIERS } from '@/lib/constants'
 
-const TIERS = [
-  { name: 'Bronze', price: '£49', duration: '7 days', visibility: 'Standard', matchNotifs: 'Basic', badge: null, shortlisting: null, analytics: null, support: 'Email' },
-  { name: 'Silver', price: '£89', duration: '14 days', visibility: 'Enhanced', matchNotifs: 'Priority', badge: 'Silver badge', shortlisting: 'Basic', analytics: 'Basic', support: 'Email' },
-  { name: 'Gold', price: '£149', duration: '30 days', visibility: 'Premium', matchNotifs: 'Instant', badge: 'Gold badge', shortlisting: 'Full', analytics: 'Full', support: 'Priority', popular: true },
-  { name: 'Platinum', price: '£249', duration: '60 days', visibility: 'Maximum', matchNotifs: 'Instant + Featured', badge: 'Platinum badge', shortlisting: 'Full + Notes', analytics: 'Full + Export', support: 'Dedicated' },
-]
+const TIER_KEYS = ['Bronze', 'Silver', 'Gold', 'Platinum'] as const
+const TIERS = TIER_KEYS.map(k => ({ name: k, ...JOB_TIERS[k] }))
 
-const ROWS = [
-  { label: 'Price', key: 'price' },
-  { label: 'Duration', key: 'duration' },
+const ROWS: { label: string; key: string; boolean?: boolean }[] = [
+  { label: 'Price', key: 'display' },
+  { label: 'Duration', key: 'days' },
   { label: 'Listing visibility', key: 'visibility' },
   { label: 'Match notifications', key: 'matchNotifs' },
   { label: 'Featured badge', key: 'badge', boolean: true },
@@ -93,27 +90,28 @@ export default function PricingPage() {
                 <tr>
                   <th className="text-left py-4 pr-4 w-[180px]" />
                   {TIERS.map(t => (
-                    <th key={t.name} className="py-4 px-3 text-center relative" style={t.popular ? { borderLeft: '2px solid #C9A96E', borderRight: '2px solid #C9A96E', borderTop: '2px solid #C9A96E', borderRadius: '12px 12px 0 0', background: 'rgba(201, 169, 110, 0.04)' } : {}}>
-                      {t.popular && <span className="absolute -top-3 left-1/2 -translate-x-1/2 text-[9px] font-semibold px-3 py-0.5 rounded-full text-white" style={{ backgroundColor: '#C9A96E' }}>Most Popular</span>}
+                    <th key={t.name} className="py-4 px-3 text-center relative" style={'popular' in t && t.popular ? { borderLeft: '2px solid #C9A96E', borderRight: '2px solid #C9A96E', borderTop: '2px solid #C9A96E', borderRadius: '12px 12px 0 0', background: 'rgba(201, 169, 110, 0.04)' } : {}}>
+                      {'popular' in t && t.popular && <span className="absolute -top-3 left-1/2 -translate-x-1/2 text-[9px] font-semibold px-3 py-0.5 rounded-full text-white" style={{ backgroundColor: '#C9A96E' }}>Most Popular</span>}
                       <p className="text-[15px] font-medium" style={{ color: '#1a1a1a' }}>{t.name}</p>
                     </th>
                   ))}
                 </tr>
               </thead>
               <tbody>
-                {ROWS.map((row, ri) => (
+                {ROWS.map((row) => (
                   <tr key={row.key} style={{ borderBottom: '1px solid #F0EFED' }}>
                     <td className="py-3.5 pr-4 text-[13px] font-medium" style={{ color: '#6B7280' }}>{row.label}</td>
                     {TIERS.map(t => {
                       const val = (t as any)[row.key]
-                      const isGold = t.popular
+                      const isGold = 'popular' in t && t.popular
+                      const displayVal = row.key === 'days' ? `${val} days` : val
                       return (
                         <td key={t.name} className="py-3.5 px-3 text-center text-[13px]"
                           style={isGold ? { borderLeft: '2px solid #C9A96E', borderRight: '2px solid #C9A96E', background: 'rgba(201, 169, 110, 0.04)' } : {}}>
                           {row.boolean ? (
                             val ? <span style={{ color: '#1a1a1a' }}>{val}</span> : <X size={14} className="inline" style={{ color: '#D1D5DB' }} />
                           ) : (
-                            <span style={{ color: row.key === 'price' ? '#1a1a1a' : '#4B5563', fontWeight: row.key === 'price' ? 600 : 400, fontSize: row.key === 'price' ? 18 : 13 }}>{val}</span>
+                            <span style={{ color: row.key === 'display' ? '#1a1a1a' : '#4B5563', fontWeight: row.key === 'display' ? 600 : 400, fontSize: row.key === 'display' ? 18 : 13 }}>{displayVal}</span>
                           )}
                         </td>
                       )
@@ -125,10 +123,10 @@ export default function PricingPage() {
                   <td className="py-5" />
                   {TIERS.map(t => (
                     <td key={t.name} className="py-5 px-3 text-center"
-                      style={t.popular ? { borderLeft: '2px solid #C9A96E', borderRight: '2px solid #C9A96E', borderBottom: '2px solid #C9A96E', borderRadius: '0 0 12px 12px', background: 'rgba(201, 169, 110, 0.04)' } : {}}>
+                      style={'popular' in t && t.popular ? { borderLeft: '2px solid #C9A96E', borderRight: '2px solid #C9A96E', borderBottom: '2px solid #C9A96E', borderRadius: '0 0 12px 12px', background: 'rgba(201, 169, 110, 0.04)' } : {}}>
                       <Link href="/employer/post-role"
                         className="inline-block px-5 py-2.5 rounded-lg text-[12px] font-semibold transition-all"
-                        style={t.popular ? { backgroundColor: '#C9A96E', color: 'white' } : { border: '1px solid #E5E5E5', color: '#1a1a1a' }}>
+                        style={'popular' in t && t.popular ? { backgroundColor: '#C9A96E', color: 'white' } : { border: '1px solid #E5E5E5', color: '#1a1a1a' }}>
                         Post a Role
                       </Link>
                     </td>

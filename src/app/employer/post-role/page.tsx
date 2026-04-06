@@ -9,12 +9,13 @@ import CollapsibleCheckboxSection from '@/components/CollapsibleCheckboxSection'
 import { Check } from 'lucide-react'
 import { jobListingSchema } from '@/lib/validations'
 
-const tierCards = [
-  { key: 'Bronze', price: '£150', days: 30, features: ['30-day listing', 'Basic matching', 'Applicant tracking'] },
-  { key: 'Silver', price: '£175', days: 45, features: ['45-day listing', 'Enhanced matching', 'Priority support', 'Applicant tracking'] },
-  { key: 'Gold', price: '£200', days: 60, features: ['60-day listing', 'Advanced matching', 'Featured placement', 'Direct messaging'] },
-  { key: 'Platinum', price: '£250', days: 90, features: ['90-day listing', 'Priority matching', 'Homepage featuring', 'Social promotion', 'Full analytics'] },
-]
+const TIER_KEYS = ['Bronze', 'Silver', 'Gold', 'Platinum'] as const
+const tierCards = TIER_KEYS.map(k => ({
+  key: k,
+  price: JOB_TIERS[k].display,
+  days: JOB_TIERS[k].days,
+  features: JOB_TIERS[k].features as readonly string[],
+}))
 
 export default function PostRolePage() {
   const router = useRouter()
