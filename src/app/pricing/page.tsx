@@ -1,110 +1,187 @@
 'use client'
 
+import { useState } from 'react'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
 import Link from 'next/link'
-import { Check } from 'lucide-react'
+import { Check, X, ChevronDown, Shield } from 'lucide-react'
 
-const jobTiers = [
-  { name: 'Bronze', price: '£150', period: '30 days', features: ['30-day listing', 'Basic candidate matching', 'Applicant tracking', 'Email notifications'] },
-  { name: 'Silver', price: '£175', period: '45 days', features: ['45-day listing', 'Enhanced matching algorithm', 'Priority support', 'Applicant tracking', 'Direct messaging'], popular: true },
-  { name: 'Gold', price: '£200', period: '60 days', features: ['60-day listing', 'Advanced matching', 'Featured placement', 'Priority support', 'Direct messaging', 'Analytics dashboard'] },
-  { name: 'Platinum', price: '£250', period: '90 days', features: ['90-day listing', 'Priority matching', 'Homepage featuring', 'Social media promotion', 'Dedicated account support', 'Full analytics'] },
+const TIERS = [
+  { name: 'Bronze', price: '£49', duration: '7 days', visibility: 'Standard', matchNotifs: 'Basic', badge: null, shortlisting: null, analytics: null, support: 'Email' },
+  { name: 'Silver', price: '£89', duration: '14 days', visibility: 'Enhanced', matchNotifs: 'Priority', badge: 'Silver badge', shortlisting: 'Basic', analytics: 'Basic', support: 'Email' },
+  { name: 'Gold', price: '£149', duration: '30 days', visibility: 'Premium', matchNotifs: 'Instant', badge: 'Gold badge', shortlisting: 'Full', analytics: 'Full', support: 'Priority', popular: true },
+  { name: 'Platinum', price: '£249', duration: '60 days', visibility: 'Maximum', matchNotifs: 'Instant + Featured', badge: 'Platinum badge', shortlisting: 'Full + Notes', analytics: 'Full + Export', support: 'Dedicated' },
+]
+
+const ROWS = [
+  { label: 'Price', key: 'price' },
+  { label: 'Duration', key: 'duration' },
+  { label: 'Listing visibility', key: 'visibility' },
+  { label: 'Match notifications', key: 'matchNotifs' },
+  { label: 'Featured badge', key: 'badge', boolean: true },
+  { label: 'Candidate shortlisting', key: 'shortlisting', boolean: true },
+  { label: 'Analytics access', key: 'analytics', boolean: true },
+  { label: 'Support level', key: 'support' },
+]
+
+const FAQS = [
+  { q: 'Can I upgrade my listing?', a: 'Yes — contact us to upgrade during the listing period. We\'ll apply the price difference to the higher tier.' },
+  { q: 'What payment methods do you accept?', a: 'All major credit and debit cards via Stripe. We also accept Apple Pay and Google Pay.' },
+  { q: 'Do you charge commission on permanent hires?', a: 'No, never. You pay for the listing, not the hire. Once you\'ve found your candidate, there are no additional fees.' },
+  { q: 'Can I get a refund?', a: 'Within 48 hours if no applications have been received. Contact us and we\'ll process it promptly.' },
+  { q: 'Do you offer bulk discounts?', a: 'Yes — contact us for volume pricing on multiple listings. We offer packages for hotel groups and multi-property employers.' },
 ]
 
 export default function PricingPage() {
+  const [openFaq, setOpenFaq] = useState<number | null>(null)
+
   return (
     <div className="min-h-screen bg-white">
       <Navbar />
 
-      <section className="pt-28 pb-16 px-4">
-        <div className="max-w-7xl mx-auto">
-          <p className="text-neutral-400 text-xs tracking-widest uppercase mb-3">Pricing</p>
-          <h1 className="text-5xl md:text-6xl font-bold text-black tracking-tight mb-4">Simple, transparent pricing</h1>
-          <p className="text-neutral-400 text-lg font-light max-w-xl">No hidden fees. Candidate profiles are always free.</p>
+      {/* Hero */}
+      <section className="pt-28 pb-16 px-6 bg-white">
+        <div className="max-w-4xl mx-auto text-center">
+          <p className="text-[11px] tracking-[0.15em] uppercase font-medium mb-4" style={{ color: '#C9A96E' }}>Pricing</p>
+          <h1 className="text-[40px] md:text-[52px] font-medium tracking-tight leading-[1.08] mb-4" style={{ color: '#1a1a1a' }}>
+            Simple, <span style={{ color: '#C9A96E' }}>Transparent</span> Pricing
+          </h1>
+          <p className="text-[16px] md:text-[18px] leading-[1.7] max-w-2xl mx-auto" style={{ color: '#6B7280' }}>
+            No commission on hires. No hidden fees. Just the right plan for your hiring needs.
+          </p>
         </div>
       </section>
 
       {/* Talent — Free */}
-      <section className="pb-16 px-4">
-        <div className="max-w-7xl mx-auto">
-          <div className="bg-neutral-50 p-8 md:p-12 flex flex-col md:flex-row items-center justify-between gap-8">
-            <div>
-              <p className="text-xs font-medium text-neutral-400 uppercase tracking-widest mb-2">For Talent</p>
-              <h2 className="text-3xl font-bold text-black mb-2">Free to join</h2>
-              <p className="text-neutral-400">Create your profile, browse roles, get matched, and apply — all completely free.</p>
-            </div>
-            <div className="text-center flex-shrink-0">
-              <p className="text-4xl font-bold text-black">£0</p>
-              <p className="text-neutral-400 text-sm">forever</p>
-              <Link href="/register/talent" className="btn-primary inline-block mt-4">Create Free Profile</Link>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Featured Profile */}
-      <section className="pb-16 px-4">
-        <div className="max-w-7xl mx-auto">
-          <div className="bg-black text-white p-8 md:p-12 flex flex-col md:flex-row items-center justify-between gap-8">
-            <div>
-              <p className="text-xs font-medium text-white/40 uppercase tracking-widest mb-2">Featured Profile</p>
-              <h2 className="text-3xl font-bold mb-2">Stand out from the crowd</h2>
-              <p className="text-white/50 mb-4">Get premium visibility with a featured profile.</p>
-              <ul className="space-y-2">
-                {['Top of employer search results', 'Homepage talent spotlight', 'Social media promotion', 'Weekly newsletter inclusion'].map((f) => (
-                  <li key={f} className="flex items-center space-x-2 text-sm text-white/60"><Check size={14} className="text-white flex-shrink-0" /><span>{f}</span></li>
-                ))}
-              </ul>
-            </div>
-            <div className="text-center flex-shrink-0">
-              <p className="text-4xl font-bold">£10<span className="text-lg font-normal text-white/50">/month</span></p>
-              <p className="text-white/30 text-sm">Cancel anytime</p>
-              <Link href="/talent/upgrade" className="bg-white text-black px-6 py-3 text-sm font-medium hover:bg-neutral-100 transition-colors inline-block mt-4">Upgrade Now</Link>
+      <section className="pb-12 px-6" style={{ background: '#F8F7F5' }}>
+        <div className="max-w-5xl mx-auto -mt-4 pt-12">
+          <div className="bg-white rounded-xl p-8 md:p-10" style={{ border: '1px solid #E5E5E5' }}>
+            <div className="flex flex-col md:flex-row items-center justify-between gap-8">
+              <div>
+                <p className="text-[11px] tracking-[0.15em] uppercase font-medium mb-2" style={{ color: '#C9A96E' }}>For Therapists &amp; Professionals</p>
+                <h2 className="text-[28px] font-medium mb-2" style={{ color: '#1a1a1a' }}>Free to join</h2>
+                <p className="text-[14px] mb-4" style={{ color: '#6B7280' }}>Create your profile, get matched, apply for roles — always free.</p>
+                <div className="bg-white rounded-lg p-4 mb-4" style={{ border: '1px solid rgba(201, 169, 110, 0.25)', background: '#FDFBF7' }}>
+                  <p className="text-[13px] font-medium mb-1" style={{ color: '#1a1a1a' }}>Go Featured — £10/month</p>
+                  <p className="text-[12px]" style={{ color: '#6B7280' }}>Priority visibility, featured badge, appear at the top of search results.</p>
+                </div>
+              </div>
+              <div className="text-center shrink-0">
+                <p className="text-[48px] font-semibold" style={{ color: '#1a1a1a' }}>£0</p>
+                <p className="text-[13px] mb-4" style={{ color: '#6B7280' }}>forever</p>
+                <div className="flex flex-col gap-2">
+                  <Link href="/register/talent" className="btn-primary text-center">Create Free Profile</Link>
+                  <Link href="/talent/upgrade" className="px-5 py-2 rounded-lg text-[13px] font-medium text-center" style={{ backgroundColor: '#C9A96E', color: 'white' }}>Go Featured</Link>
+                </div>
+              </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Job Posting Tiers */}
-      <section className="pb-16 px-4">
-        <div className="max-w-7xl mx-auto">
-          <p className="text-xs font-medium text-neutral-400 uppercase tracking-widest mb-3">For Employers</p>
-          <h2 className="text-3xl font-bold text-black mb-8">Job posting packages</h2>
+      {/* Employer comparison table */}
+      <section className="py-16 px-6 bg-white">
+        <div className="max-w-5xl mx-auto">
+          <div className="text-center mb-10">
+            <p className="text-[11px] tracking-[0.15em] uppercase font-medium mb-3" style={{ color: '#C9A96E' }}>For Employers</p>
+            <h2 className="text-[32px] md:text-[40px] font-medium tracking-tight" style={{ color: '#1a1a1a' }}>Job posting packages</h2>
+          </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {jobTiers.map((tier) => (
-              <div key={tier.name} className={`border p-6 ${tier.popular ? 'border-black' : 'border-neutral-200'} relative`}>
-                {tier.popular && <div className="absolute -top-3 left-4 bg-black text-white text-[10px] font-semibold px-3 py-1 uppercase tracking-wider">Popular</div>}
-                <h3 className="font-bold text-black text-lg">{tier.name}</h3>
-                <p className="text-3xl font-bold text-black mt-2">{tier.price}</p>
-                <p className="text-neutral-400 text-xs mb-6">{tier.period}</p>
-                <ul className="space-y-2.5 mb-8">
-                  {tier.features.map((f) => (
-                    <li key={f} className="flex items-center space-x-2 text-sm text-neutral-500"><Check size={14} className="text-black flex-shrink-0" /><span>{f}</span></li>
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[640px]">
+              <thead>
+                <tr>
+                  <th className="text-left py-4 pr-4 w-[180px]" />
+                  {TIERS.map(t => (
+                    <th key={t.name} className="py-4 px-3 text-center relative" style={t.popular ? { borderLeft: '2px solid #C9A96E', borderRight: '2px solid #C9A96E', borderTop: '2px solid #C9A96E', borderRadius: '12px 12px 0 0', background: 'rgba(201, 169, 110, 0.04)' } : {}}>
+                      {t.popular && <span className="absolute -top-3 left-1/2 -translate-x-1/2 text-[9px] font-semibold px-3 py-0.5 rounded-full text-white" style={{ backgroundColor: '#C9A96E' }}>Most Popular</span>}
+                      <p className="text-[15px] font-medium" style={{ color: '#1a1a1a' }}>{t.name}</p>
+                    </th>
                   ))}
-                </ul>
-                <Link href="/register/employer" className={`block text-center text-sm font-medium py-3 ${tier.popular ? 'btn-primary' : 'btn-secondary'}`}>Get Started</Link>
+                </tr>
+              </thead>
+              <tbody>
+                {ROWS.map((row, ri) => (
+                  <tr key={row.key} style={{ borderBottom: '1px solid #F0EFED' }}>
+                    <td className="py-3.5 pr-4 text-[13px] font-medium" style={{ color: '#6B7280' }}>{row.label}</td>
+                    {TIERS.map(t => {
+                      const val = (t as any)[row.key]
+                      const isGold = t.popular
+                      return (
+                        <td key={t.name} className="py-3.5 px-3 text-center text-[13px]"
+                          style={isGold ? { borderLeft: '2px solid #C9A96E', borderRight: '2px solid #C9A96E', background: 'rgba(201, 169, 110, 0.04)' } : {}}>
+                          {row.boolean ? (
+                            val ? <span style={{ color: '#1a1a1a' }}>{val}</span> : <X size={14} className="inline" style={{ color: '#D1D5DB' }} />
+                          ) : (
+                            <span style={{ color: row.key === 'price' ? '#1a1a1a' : '#4B5563', fontWeight: row.key === 'price' ? 600 : 400, fontSize: row.key === 'price' ? 18 : 13 }}>{val}</span>
+                          )}
+                        </td>
+                      )
+                    })}
+                  </tr>
+                ))}
+                {/* CTA row */}
+                <tr>
+                  <td className="py-5" />
+                  {TIERS.map(t => (
+                    <td key={t.name} className="py-5 px-3 text-center"
+                      style={t.popular ? { borderLeft: '2px solid #C9A96E', borderRight: '2px solid #C9A96E', borderBottom: '2px solid #C9A96E', borderRadius: '0 0 12px 12px', background: 'rgba(201, 169, 110, 0.04)' } : {}}>
+                      <Link href="/employer/post-role"
+                        className="inline-block px-5 py-2.5 rounded-lg text-[12px] font-semibold transition-all"
+                        style={t.popular ? { backgroundColor: '#C9A96E', color: 'white' } : { border: '1px solid #E5E5E5', color: '#1a1a1a' }}>
+                        Post a Role
+                      </Link>
+                    </td>
+                  ))}
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      {/* Agency */}
+      <section className="py-12 px-6" style={{ background: '#F8F7F5' }}>
+        <div className="max-w-5xl mx-auto">
+          <div className="bg-white rounded-xl p-8 md:p-10 flex flex-col md:flex-row items-center justify-between gap-8" style={{ border: '1px solid #E5E5E5' }}>
+            <div>
+              <p className="text-[11px] tracking-[0.15em] uppercase font-medium mb-2" style={{ color: '#C9A96E' }}>For Agency &amp; Temporary Staffing</p>
+              <h2 className="text-[24px] font-medium mb-2" style={{ color: '#1a1a1a' }}>10% commission on confirmed bookings</h2>
+              <p className="text-[14px]" style={{ color: '#6B7280' }}>No upfront cost. List your availability and only pay when a booking is confirmed through the platform.</p>
+            </div>
+            <Link href="/agency" className="btn-primary shrink-0">List Agency Shifts</Link>
+          </div>
+        </div>
+      </section>
+
+      {/* FAQ */}
+      <section className="py-16 px-6 bg-white">
+        <div className="max-w-3xl mx-auto">
+          <h2 className="text-[28px] font-medium text-center mb-10" style={{ color: '#1a1a1a' }}>Frequently Asked Questions</h2>
+          <div className="space-y-2">
+            {FAQS.map((faq, i) => (
+              <div key={i} className="rounded-xl" style={{ border: '1px solid #E5E5E5' }}>
+                <button type="button" onClick={() => setOpenFaq(openFaq === i ? null : i)}
+                  className="w-full flex items-center justify-between px-5 py-4 text-left">
+                  <span className="text-[14px] font-medium" style={{ color: '#1a1a1a' }}>{faq.q}</span>
+                  <ChevronDown size={16} className={`transition-transform shrink-0 ml-4 ${openFaq === i ? 'rotate-180' : ''}`} style={{ color: '#6B7280' }} />
+                </button>
+                {openFaq === i && (
+                  <div className="px-5 pb-4">
+                    <p className="text-[14px] leading-[1.7]" style={{ color: '#6B7280' }}>{faq.a}</p>
+                  </div>
+                )}
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Agency Commission */}
-      <section className="pb-24 px-4">
-        <div className="max-w-7xl mx-auto">
-          <div className="bg-neutral-50 p-8 md:p-12 flex flex-col md:flex-row items-center justify-between gap-8">
-            <div>
-              <p className="text-xs font-medium text-neutral-400 uppercase tracking-widest mb-2">Agency Marketplace</p>
-              <h2 className="text-3xl font-bold text-black mb-2">10% commission</h2>
-              <p className="text-neutral-400 max-w-lg">When a booking is confirmed through the WHC agency marketplace, a 10% commission is applied to the agreed rate. No upfront fees — you only pay when a booking happens.</p>
-            </div>
-            <div className="text-center flex-shrink-0">
-              <p className="text-4xl font-bold text-black">10%</p>
-              <p className="text-neutral-400 text-sm">per confirmed booking</p>
-            </div>
-          </div>
+      {/* Trust bar */}
+      <section className="py-8 px-6" style={{ background: '#F8F7F5', borderTop: '1px solid #E8E5E0' }}>
+        <div className="max-w-5xl mx-auto flex items-center justify-center gap-3">
+          <Shield size={16} style={{ color: '#6B7280' }} />
+          <p className="text-[13px]" style={{ color: '#6B7280' }}>Secure payments via Stripe. All data encrypted and GDPR compliant.</p>
         </div>
       </section>
 
@@ -112,4 +189,3 @@ export default function PricingPage() {
     </div>
   )
 }
-
