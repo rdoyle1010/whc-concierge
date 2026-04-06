@@ -5,6 +5,7 @@ import DashboardShell from '@/components/DashboardShell'
 import { createClient } from '@/lib/supabase/client'
 import { calculateMatchScore } from '@/lib/matching'
 import { Search, MapPin, Briefcase, Heart, ArrowUpDown, Check } from 'lucide-react'
+import { notify } from '@/lib/notify'
 import { ROLE_LEVELS, CONTRACT_TYPES } from '@/lib/constants'
 
 export default function TalentJobsPage() {
@@ -83,6 +84,12 @@ export default function TalentJobsPage() {
     if (!userId) return
     await supabase.from('applications').insert({ candidate_id: userId, job_listing_id: jobId, job_id: jobId, status: 'pending', match_score: matchScore })
     setApplied(new Set(Array.from(applied).concat(jobId)))
+    // Notify employer
+    const job = jobs.find((j: any) => j.id === jobId)
+    const employerUserId = job?.employer_id || job?.employer_user_id
+    if (employerUserId) {
+      notify(employerUserId, 'job_application', 'New application received', `A candidate has applied for ${job?.title || 'your role'}`, '/employer/applications')
+    }
   }
 
   const tierClass = (t: string) => t === 'Platinum' ? 'badge-platinum' : t === 'Gold' ? 'badge-gold' : t === 'Silver' ? 'badge-silver' : 'badge-bronze'

@@ -4,14 +4,14 @@ import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { createClient } from '@/lib/supabase/client'
-import { Menu, X, Flame, Bell, User, ChevronDown, LayoutDashboard, Settings, LogOut, MessageSquare, Briefcase } from 'lucide-react'
+import { Menu, X, Flame, User, ChevronDown, LayoutDashboard, Settings, LogOut, MessageSquare, Briefcase } from 'lucide-react'
+import NotificationBell from '@/components/NotificationBell'
 
 export default function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false)
   const [profileOpen, setProfileOpen] = useState(false)
   const [user, setUser] = useState<any>(null)
   const [role, setRole] = useState<string | null>(null)
-  const [unread, setUnread] = useState(0)
   const dropdownRef = useRef<HTMLDivElement>(null)
   const supabase = createClient()
 
@@ -23,8 +23,6 @@ export default function Navbar() {
         supabase.from('profiles').select('role').eq('id', data.user.id).single().then(({ data: p }) => {
           setRole(p?.role || data.user?.user_metadata?.role || 'talent')
         })
-        // Unread messages
-        supabase.from('messages').select('id', { count: 'exact', head: true }).eq('receiver_id', data.user.id).eq('read', false).then(({ count }) => setUnread(count || 0))
       }
     })
   }, [])
@@ -77,10 +75,7 @@ export default function Navbar() {
         <div className="hidden lg:flex items-center gap-3">
           {user ? (
             <>
-              <Link href="/messages" className="relative p-2 text-muted hover:text-ink transition-colors">
-                <Bell size={17} />
-                {unread > 0 && <span className="absolute top-0.5 right-0.5 w-[14px] h-[14px] bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center">{unread > 9 ? '9+' : unread}</span>}
-              </Link>
+              <NotificationBell userId={user.id} />
               <div className="relative" ref={dropdownRef}>
                 <button onClick={() => setProfileOpen(!profileOpen)} className="flex items-center gap-1.5 text-muted hover:text-ink transition-colors">
                   <div className="w-7 h-7 bg-surface border border-border rounded-full flex items-center justify-center text-[10px] font-semibold text-muted">{initials}</div>
@@ -119,7 +114,7 @@ export default function Navbar() {
               {user ? (
                 <>
                   <Link href={dashboardHref} className="block py-2 text-[14px] text-ink font-medium" onClick={() => setMobileOpen(false)}>Dashboard</Link>
-                  <Link href="/messages" className="block py-2 text-[14px] text-secondary" onClick={() => setMobileOpen(false)}>Messages {unread > 0 && `(${unread})`}</Link>
+                  <Link href="/messages" className="block py-2 text-[14px] text-secondary" onClick={() => setMobileOpen(false)}>Messages</Link>
                   <button type="button" onClick={handleSignOut} className="block py-2 text-[14px] text-muted w-full text-left">Sign Out</button>
                 </>
               ) : (

@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import DashboardShell from '@/components/DashboardShell'
 import { createClient } from '@/lib/supabase/client'
 import { Users, Briefcase, Clock, FileText, MessageSquare, CheckCircle, XCircle } from 'lucide-react'
+import { notify } from '@/lib/notify'
 import Link from 'next/link'
 
 export default function AdminDashboard() {
@@ -53,6 +54,12 @@ export default function AdminDashboard() {
     await supabase.from(table).update({ approval_status: 'approved' }).eq('id', id)
     setRecent(recent.map(r => r.id === id ? { ...r, approval_status: 'approved' } : r))
     setStats({ ...stats, pending: Math.max(0, (stats.pending || 0) - 1) })
+    // Notify the user
+    const profile = recent.find(r => r.id === id)
+    if (profile?.user_id) {
+      const dashboard = type === 'talent' ? '/talent/dashboard' : '/employer/dashboard'
+      notify(profile.user_id, 'profile_approved', 'Profile approved', 'Your profile has been approved and is now live.', dashboard)
+    }
   }
 
   const handleReject = async (type: string, id: string) => {

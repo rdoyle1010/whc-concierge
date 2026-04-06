@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import DashboardShell from '@/components/DashboardShell'
 import { createClient } from '@/lib/supabase/client'
 import { Search, Users, Building2, CheckCircle, XCircle, Clock, Eye, X, FileText, ExternalLink } from 'lucide-react'
+import { notify } from '@/lib/notify'
 
 export default function AdminUsersPage() {
   const supabase = createClient()
@@ -41,6 +42,12 @@ export default function AdminUsersPage() {
     await supabase.from(table).update({ approval_status: 'approved' }).eq('id', id)
     if (type === 'candidate') setCandidates(candidates.map(c => c.id === id ? { ...c, approval_status: 'approved' } : c))
     else setEmployers(employers.map(e => e.id === id ? { ...e, approval_status: 'approved' } : e))
+    // Notify the user their profile was approved
+    const profile = type === 'candidate' ? candidates.find(c => c.id === id) : employers.find(e => e.id === id)
+    if (profile?.user_id) {
+      const dashboard = type === 'candidate' ? '/talent/dashboard' : '/employer/dashboard'
+      notify(profile.user_id, 'profile_approved', 'Profile approved', 'Your profile has been approved and is now live. Employers can find you in search results.', dashboard)
+    }
     setSelected(null)
   }
 

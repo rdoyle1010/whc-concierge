@@ -4,6 +4,7 @@ import { useEffect, useState, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import Navbar from '@/components/Navbar'
 import { Send, MessageSquare, ArrowLeft } from 'lucide-react'
+import { notify } from '@/lib/notify'
 import Link from 'next/link'
 
 export default function MessagesPage() {
@@ -89,6 +90,7 @@ export default function MessagesPage() {
     setNewMsg('')
     setMessages(prev => [...prev, { sender_id: userId, receiver_id: activeThread, content, created_at: new Date().toISOString() }])
     await supabase.from('messages').insert({ sender_id: userId, receiver_id: activeThread, content, read: false })
+    notify(activeThread, 'new_message', 'New message', content.length > 80 ? content.slice(0, 80) + '...' : content, '/messages')
     setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 100)
   }
 

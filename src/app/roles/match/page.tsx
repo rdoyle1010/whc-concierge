@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/client'
 import { calculateMatchScore } from '@/lib/matching'
 import Link from 'next/link'
 import { MapPin, X, Heart, ArrowLeft, ChevronDown, Sparkles, Check } from 'lucide-react'
+import { notify } from '@/lib/notify'
 
 const photos = [
   'https://images.unsplash.com/photo-1545205597-3d9d02c29597?w=600&q=80&auto=format&fit=crop', // zen stones, water
@@ -80,6 +81,11 @@ export default function SwipeMatchPage() {
       await supabase.from('swipes').insert({ user_id: userId, target_id: job.id, direction: d, target_type: 'job' })
       if (d === 'right') {
         await supabase.from('applications').insert({ candidate_id: userId, job_listing_id: job.id, job_id: job.id, status: 'pending', match_score: job.matchScore })
+        // Notify employer of new application
+        const employerUserId = job.employer_id || job.employer_user_id
+        if (employerUserId) {
+          notify(employerUserId, 'job_application', 'New application received', `A candidate has applied for ${job.title}`, '/employer/applications')
+        }
       }
     }
     setTimeout(() => { setDir(null); setIdx(p => p + 1); setExpanded(false) }, 350)
