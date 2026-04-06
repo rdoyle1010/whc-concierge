@@ -28,17 +28,20 @@ export default function SwipeMatchPage() {
   const [dir, setDir] = useState<'left'|'right'|null>(null)
   const [showMatch, setShowMatch] = useState(false)
   const [userId, setUserId] = useState<string|null>(null)
+  const [userEmail, setUserEmail] = useState<string>('')
+  const [candidateData, setCandidateData] = useState<any>(null)
   const [expanded, setExpanded] = useState(false)
 
   useEffect(() => {
     async function load() {
       const { data:{ user } } = await supabase.auth.getUser()
-      if (user) setUserId(user.id)
+      if (user) { setUserId(user.id); setUserEmail(user.email || '') }
 
       let candidateProfile: any = null
       if (user) {
         const { data: cp } = await supabase.from('candidate_profiles').select('*').eq('user_id', user.id).single()
         candidateProfile = cp
+        setCandidateData(cp)
       }
 
       const { data: rawData } = await supabase
@@ -86,10 +89,25 @@ export default function SwipeMatchPage() {
         if (employerUserId) {
           notify(employerUserId, 'job_application', 'New application received', `A candidate has applied for ${job.title}`, '/employer/applications')
         }
+        // Send application confirmation emails (fire-and-forget)
+        if (userEmail) {
+          fetch('/api/application-email', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              applicantEmail: userEmail,
+              applicantName: candidateData?.full_name || '',
+              employerEmail: job.employer_email || '',
+              employerName: job.employer_profiles?.company_name || '',
+              jobTitle: job.title || '',
+              propertyName: job.employer_profiles?.company_name || '',
+              roleLevel: candidateData?.role_level || '',
+            }),
+          }).catch(() => {})
+        }
       }
     }
     setTimeout(() => { setDir(null); setIdx(p => p + 1); setExpanded(false) }, 350)
-  }, [job, userId, supabase, dir])
+  }, [job, userId, userEmail, candidateData, supabase, dir])
 
   useEffect(() => {
     const h = (e:KeyboardEvent) => { if (e.key==='ArrowLeft') swipe('left'); if (e.key==='ArrowRight') swipe('right') }

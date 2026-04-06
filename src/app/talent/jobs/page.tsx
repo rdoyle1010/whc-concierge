@@ -90,6 +90,22 @@ export default function TalentJobsPage() {
     if (employerUserId) {
       notify(employerUserId, 'job_application', 'New application received', `A candidate has applied for ${job?.title || 'your role'}`, '/employer/applications')
     }
+    // Send application confirmation emails (fire-and-forget)
+    const { data: { user } } = await supabase.auth.getUser()
+    if (user?.email && job) {
+      fetch('/api/application-email', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          applicantEmail: user.email,
+          applicantName: profile?.full_name || '',
+          employerEmail: job.employer_email || '',
+          employerName: job.employer_profiles?.company_name || '',
+          jobTitle: job.title || job.job_title || '',
+          propertyName: job.employer_profiles?.company_name || '',
+          roleLevel: profile?.role_level || '',
+        }),
+      }).catch(() => {})
+    }
   }
 
   const tierClass = (t: string) => t === 'Platinum' ? 'badge-platinum' : t === 'Gold' ? 'badge-gold' : t === 'Silver' ? 'badge-silver' : 'badge-bronze'
