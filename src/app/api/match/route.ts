@@ -26,7 +26,19 @@ export async function POST(req: NextRequest) {
 
     if (!candidates) return NextResponse.json({ results: [] })
 
-    const results = rankCandidates(candidates, job)
+    // Exclude candidates who have blocked this employer
+    const employerId = job.employer_id || job.employer_profile_id
+    let blockedCandidateIds: string[] = []
+    if (employerId) {
+      const { data: blocks } = await supabase
+        .from('profile_blocks')
+        .select('candidate_id')
+        .eq('blocked_employer_id', employerId)
+      blockedCandidateIds = (blocks || []).map((b: any) => b.candidate_id)
+    }
+
+    const filtered = candidates.filter(c => !blockedCandidateIds.includes(c.id))
+    const results = rankCandidates(filtered, job)
 
     return NextResponse.json({ results })
   } catch (error: any) {

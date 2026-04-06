@@ -209,9 +209,20 @@ export function calculateMatchScore(candidate: any, job: any): {
   }
 }
 
-export function rankCandidates(candidates: any[], job: any, minScore = 45) {
+export function rankCandidates(candidates: any[], job: any, minScore = 45, blockedEmployerIds?: string[]) {
+  const employerId = job.employer_id || job.employer_profile_id
   return candidates
+    .filter(c => {
+      if (blockedEmployerIds && employerId && blockedEmployerIds.includes(c.id)) return false
+      return true
+    })
     .map(c => ({ ...calculateMatchScore(c, job), candidateId: c.id }))
     .filter(r => !r.hardStop && r.score >= minScore)
     .sort((a, b) => b.score - a.score)
+}
+
+/** Filter candidates who have blocked a specific employer via profile_blocks */
+export function filterBlockedCandidates(candidates: any[], blockedCandidateIds: string[]) {
+  if (!blockedCandidateIds.length) return candidates
+  return candidates.filter(c => !blockedCandidateIds.includes(c.id))
 }

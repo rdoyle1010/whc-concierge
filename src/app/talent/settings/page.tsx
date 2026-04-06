@@ -1,9 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import DashboardShell from '@/components/DashboardShell'
 import { createClient } from '@/lib/supabase/client'
-import { Save } from 'lucide-react'
+import { Save, Search, ShieldOff, X } from 'lucide-react'
 
 export default function TalentSettingsPage() {
   const supabase = createClient()
@@ -13,6 +13,77 @@ export default function TalentSettingsPage() {
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState('')
   const [messageType, setMessageType] = useState<'success' | 'error'>('error')
+
+  // Stealth mode state
+  const [stealthEnabled, setStealthEnabled] = useState(false)
+  const [blockedEmployers, setBlockedEmployers] = useState<any[]>([])
+  const [allEmployers, setAllEmployers] = useState<any[]>([])
+  const [employerSearch, setEmployerSearch] = useState('')
+  const [stealthLoading, setStealthLoading] = useState(true)
+  const [userId, setUserId] = useState<string | null>(null)
+  const [candidateId, setCandidateId] = useState<string | null>(null)
+
+  useEffect(() => {
+    async function loadStealth() {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) { setStealthLoading(false); return }
+      setUserId(user.id)
+
+      const [profileRes, employersRes] = await Promise.all([
+        supabase.from('candidate_profiles').select('id, stealth_mode').eq('user_id', user.id).single(),
+        supabase.from('employer_profiles').select('id, company_name, property_name').order('company_name'),
+      ])
+
+      const profile = profileRes.data
+      if (profile) {
+        setCandidateId(profile.id)
+        setStealthEnabled(!!profile.stealth_mode)
+
+        const { data: blocks } = await supabase
+          .from('profile_blocks')
+          .select('blocked_employer_id')
+          .eq('candidate_id', profile.id)
+
+        const blockedIds = new Set((blocks || []).map((b: any) => b.blocked_employer_id))
+        setBlockedEmployers((employersRes.data || []).filter((e: any) => blockedIds.has(e.id)))
+      }
+
+      setAllEmployers(employersRes.data || [])
+      setStealthLoading(false)
+    }
+    loadStealth()
+  }, [])
+
+  const toggleStealth = async (enabled: boolean) => {
+    setStealthEnabled(enabled)
+    if (candidateId) {
+      await fetch('/api/profile/update', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ profileId: candidateId, data: { stealth_mode: enabled } }),
+      })
+    }
+  }
+
+  const blockEmployer = async (employer: any) => {
+    if (!candidateId || blockedEmployers.some(e => e.id === employer.id)) return
+    await supabase.from('profile_blocks').insert({ candidate_id: candidateId, blocked_employer_id: employer.id })
+    setBlockedEmployers([...blockedEmployers, employer])
+    setEmployerSearch('')
+    if (!stealthEnabled) toggleStealth(true)
+  }
+
+  const unblockEmployer = async (employerId: string) => {
+    if (!candidateId) return
+    await supabase.from('profile_blocks').delete().eq('candidate_id', candidateId).eq('blocked_employer_id', employerId)
+    setBlockedEmployers(blockedEmployers.filter(e => e.id !== employerId))
+  }
+
+  const filteredEmployers = employerSearch.length >= 2
+    ? allEmployers.filter(e =>
+        !blockedEmployers.some(b => b.id === e.id) &&
+        ((e.property_name || e.company_name || '').toLowerCase().includes(employerSearch.toLowerCase()))
+      ).slice(0, 8)
+    : []
 
   const handlePasswordChange = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -115,6 +186,60 @@ export default function TalentSettingsPage() {
               <Save size={16} /><span>{loading ? 'Updating...' : 'Update Password'}</span>
             </button>
           </form>
+        </div>
+
+        {/* Stealth Mode */}
+        <div className="dashboard-card">
+          <div className="flex items-start justify-between mb-4">
+            <div>
+              <h3 className="font-serif text-lg font-semibold flex items-center gap-2"><ShieldOff size={18} /> Stealth Mode</h3>
+              <p className="text-sm text-gray-500 mt-1">Hide your profile from specific employers. Your profile won&apos;t appear in their search results or matches.</p>
+            </div>
+            <button type="button" onClick={() => toggleStealth(!stealthEnabled)}
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors shrink-0 ${stealthEnabled ? 'bg-ink' : 'bg-gray-200'}`}>
+              <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${stealthEnabled ? 'translate-x-6' : 'translate-x-1'}`} />
+            </button>
+          </div>
+
+          {stealthEnabled && (
+            <div className="pt-4 border-t border-border space-y-4">
+              {/* Search employers */}
+              <div className="relative">
+                <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
+                <input type="text" placeholder="Search employers to block..." value={employerSearch}
+                  onChange={e => setEmployerSearch(e.target.value)} className="input-field pl-9 text-[13px]" />
+                {filteredEmployers.length > 0 && (
+                  <div className="absolute z-10 top-full mt-1 left-0 right-0 bg-white border border-border rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                    {filteredEmployers.map(e => (
+                      <button key={e.id} type="button" onClick={() => blockEmployer(e)}
+                        className="w-full text-left px-3 py-2 text-[13px] hover:bg-surface transition-colors flex items-center justify-between">
+                        <span className="text-ink">{e.property_name || e.company_name}</span>
+                        <span className="text-[11px] text-muted">Block</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Blocked list */}
+              {blockedEmployers.length > 0 ? (
+                <div className="space-y-2">
+                  <p className="eyebrow">Blocked employers ({blockedEmployers.length})</p>
+                  {blockedEmployers.map(e => (
+                    <div key={e.id} className="flex items-center justify-between p-2.5 bg-surface rounded-lg">
+                      <span className="text-[13px] text-ink">{e.property_name || e.company_name}</span>
+                      <button type="button" onClick={() => unblockEmployer(e.id)}
+                        className="text-[11px] text-red-500 hover:text-red-700 flex items-center gap-1 font-medium">
+                        <X size={12} /> Unblock
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-[13px] text-muted">No employers blocked. Search above to add employers you&apos;d like to hide from.</p>
+              )}
+            </div>
+          )}
         </div>
 
         <div className="dashboard-card border-red-100">

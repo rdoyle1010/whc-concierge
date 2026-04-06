@@ -20,19 +20,22 @@ export default function EmployerCandidatesPage() {
       const { data: prof } = await supabase.from('employer_profiles').select('*').eq('user_id', user.id).single()
       setProfile(prof)
 
-      const { data } = await supabase
-        .from('candidate_profiles')
-        .select('*')
-        .order('created_at', { ascending: false })
+      // Fetch candidates and blocked list in parallel
+      const [candidateRes, blocksRes] = await Promise.all([
+        supabase.from('candidate_profiles').select('*').order('created_at', { ascending: false }),
+        prof ? supabase.from('profile_blocks').select('candidate_id').eq('blocked_employer_id', prof.id) : Promise.resolve({ data: [] }),
+      ])
 
-      setCandidates(data || [])
+      const blockedIds = new Set((blocksRes.data || []).map((b: any) => b.candidate_id))
+      const visible = (candidateRes.data || []).filter((c: any) => !blockedIds.has(c.id))
+
+      setCandidates(visible)
       setLoading(false)
     }
     load()
   }, [])
 
   const filtered = candidates.filter((c) => {
-    if (c.stealth_mode && c.blocked_employers?.includes(profile?.id)) return false
     if (search && !c.full_name?.toLowerCase().includes(search.toLowerCase()) &&
         !c.headline?.toLowerCase().includes(search.toLowerCase())) return false
     if (specFilter && !(c.services_offered || []).some((s: string) => s.toLowerCase().includes(specFilter.toLowerCase()))) return false
