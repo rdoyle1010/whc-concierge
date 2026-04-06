@@ -40,6 +40,8 @@
 @keyframes fadeUp { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }
 @keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
 @keyframes matchPop { 0% { transform:scale(0.9); opacity:0; } 100% { transform:scale(1); opacity:1; } }
+@keyframes slideUp { from { opacity:0; transform:translateY(100%); } to { opacity:1; transform:translateY(0); } }
+.animate-slide-up { animation: slideUp .4s ease-out forwards; }
 .animate-fade-in-up { animation: fadeUp .45s ease-out forwards; }
 .animate-fade-in { animation: fadeIn .35s ease-out forwards; }
 .animate-match-pop { animation: matchPop .35s ease-out forwards; }
