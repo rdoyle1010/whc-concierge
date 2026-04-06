@@ -59,9 +59,9 @@ export default function SwipeMatchPage() {
         if (candidateProfile && candidateProfile.role_level) {
           const result = calculateMatchScore(candidateProfile, job)
           if (result.hardStop) return null
-          return { ...job, matchScore: result.score, matchLabel: result.label, matchColour: result.colour, matchBg: result.bgColour, matchingSkills: result.matchingSkills || [] }
+          return { ...job, matchScore: result.score, matchLabel: result.label, matchColour: result.colour, matchBg: result.bgColour, matchingSkills: result.matchingSkills || [], matchExplanation: result.matchExplanation || '' }
         }
-        return { ...job, matchScore: 75, matchLabel: 'Strong Match', matchColour: '#1D4ED8', matchBg: '#DBEAFE', matchingSkills: [] }
+        return { ...job, matchScore: 75, matchLabel: 'Strong Match', matchColour: '#1D4ED8', matchBg: '#DBEAFE', matchingSkills: [], matchExplanation: '' }
       }).filter(Boolean)
 
       scored.sort((a: any, b: any) => b.matchScore - a.matchScore)
@@ -141,7 +141,10 @@ export default function SwipeMatchPage() {
           <div className="h-[180px] relative overflow-hidden bg-surface">
             <img src={photo} alt="" className="w-full h-full object-cover" />
             <span className={`absolute top-3 left-3 ${tierClass(job?.tier||'Standard')}`}>{job?.tier||'Standard'}</span>
-            <span className="absolute top-3 right-3 text-[11px] font-semibold px-2.5 py-1 rounded-full" style={{ backgroundColor: job?.matchBg || '#DBEAFE', color: job?.matchColour || '#1D4ED8' }}>{score}% {job?.matchLabel}</span>
+            <div className="absolute top-3 right-3 flex items-center gap-1.5">
+              <span className="text-[11px] font-semibold px-2.5 py-1 rounded-full" style={{ backgroundColor: job?.matchBg || '#DBEAFE', color: job?.matchColour || '#1D4ED8' }}>{score}%</span>
+              <span className="text-[10px] font-medium px-2 py-1 rounded-full bg-white/90 backdrop-blur-sm" style={{ color: job?.matchColour || '#1D4ED8' }}>{job?.matchLabel}</span>
+            </div>
             {dir==='right' && <div className="absolute inset-0 bg-success/20 flex items-center justify-center"><span className="text-success text-[18px] font-bold border-2 border-success px-5 py-1.5 rounded-lg rotate-[-6deg]">INTERESTED</span></div>}
             {dir==='left' && <div className="absolute inset-0 bg-red-500/15 flex items-center justify-center"><span className="text-red-500 text-[18px] font-bold border-2 border-red-500 px-5 py-1.5 rounded-lg rotate-[6deg]">PASS</span></div>}
           </div>
@@ -149,7 +152,10 @@ export default function SwipeMatchPage() {
           {/* Body */}
           <div className="p-5">
             <p className="eyebrow mb-0.5">{job?.employer_profiles?.company_name}</p>
-            <h2 className="text-[20px] font-medium text-ink mb-2">{job?.title}</h2>
+            <h2 className="text-[20px] font-medium text-ink mb-1">{job?.title}</h2>
+            {job?.matchExplanation && (
+              <p className="text-[12px] text-accent leading-relaxed mb-2">{job.matchExplanation}</p>
+            )}
             <div className="flex flex-wrap gap-3 text-[13px] text-muted mb-3">
               <span className="flex items-center gap-1"><MapPin size={12} />{job?.location}</span>
               <span>{job?.contract_type?.replace('_', ' ') || job?.job_type}</span>
@@ -159,8 +165,8 @@ export default function SwipeMatchPage() {
             {/* Matching skills highlighted */}
             {job?.matchingSkills?.length > 0 && (
               <div className="flex flex-wrap gap-1.5 mb-3">
-                {job.matchingSkills.map((s: string) => (
-                  <span key={s} className="text-[10px] bg-match-perfect-bg text-match-perfect-text px-2 py-0.5 rounded-full flex items-center gap-0.5"><Check size={8} />{s}</span>
+                {job.matchingSkills.slice(0, 3).map((s: string) => (
+                  <span key={s} className="text-[10px] font-medium bg-[#FDF6EC] text-accent border border-accent/20 px-2.5 py-0.5 rounded-full flex items-center gap-1"><Check size={8} />{s}</span>
                 ))}
               </div>
             )}
