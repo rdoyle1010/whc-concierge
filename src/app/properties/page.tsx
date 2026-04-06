@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
@@ -43,20 +44,22 @@ export default function PropertiesPage() {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               {properties.map((p) => (
-                <div key={p.id} className="card hover:shadow-lg transition-all group">
-                  {p.logo_url && (
-                    <div className="aspect-video rounded-lg bg-gray-100 overflow-hidden mb-4 -mx-6 -mt-6">
-                      <img src={p.logo_url} alt={p.property_name || p.company_name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                <Link key={p.id} href={`/properties/${p.id}`}>
+                  <div className="card hover:shadow-lg transition-all group cursor-pointer">
+                    {p.logo_url && (
+                      <div className="aspect-video rounded-lg bg-gray-100 overflow-hidden mb-4 -mx-6 -mt-6">
+                        <img src={p.logo_url} alt={p.property_name || p.company_name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                      </div>
+                    )}
+                    <h3 className="font-serif text-xl font-semibold text-ink group-hover:text-gold transition-colors">{p.property_name || p.company_name}</h3>
+                    <div className="flex items-center space-x-2 text-sm text-gray-500 mt-1">
+                      {p.location && <><MapPin size={14} /><span>{p.location}</span></>}
+                      {p.review_score && <span className="flex items-center text-gold"><Star size={12} className="fill-gold" /> {p.review_score}</span>}
                     </div>
-                  )}
-                  <h3 className="font-serif text-xl font-semibold text-ink group-hover:text-gold transition-colors">{p.property_name || p.company_name}</h3>
-                  <div className="flex items-center space-x-2 text-sm text-gray-500 mt-1">
-                    {p.location && <><MapPin size={14} /><span>{p.location}</span></>}
-                    {p.review_score && <span className="flex items-center text-gold"><Star size={12} className="fill-gold" /> {p.review_score}</span>}
+                    {p.description && <p className="text-gray-500 text-sm mt-3 line-clamp-3">{p.description}</p>}
+                    {p.property_type && <span className="inline-block text-xs bg-gold/10 text-gold px-2 py-1 rounded mt-3">{p.property_type}</span>}
                   </div>
-                  {p.description && <p className="text-gray-500 text-sm mt-3 line-clamp-3">{p.description}</p>}
-                  {p.property_type && <span className="inline-block text-xs bg-gold/10 text-gold px-2 py-1 rounded mt-3">{p.property_type}</span>}
-                </div>
+                </Link>
               ))}
             </div>
           )}

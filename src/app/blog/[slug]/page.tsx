@@ -5,6 +5,7 @@ import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
 import { ArrowLeft } from 'lucide-react'
 import { generateBlogJsonLd } from '@/lib/blog-jsonld'
+import ShareButtons from '@/components/ShareButtons'
 
 export const revalidate = 60
 
@@ -68,6 +69,11 @@ export default async function BlogPostPage({ params }: { params: { slug: string 
             ))}
           </div>
         )}
+
+        <div className="mt-8 pt-6 border-t border-gray-200">
+          <p className="text-xs text-gray-400 uppercase tracking-wider mb-3">Share this article</p>
+          <ShareButtons url={`https://talent.wellnesshousecollective.co.uk/blog/${post.slug}`} title={post.title} />
+        </div>
       </article>
       <Footer />
     </div>

@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
 import Link from 'next/link'
+import { Award, Shield, Users, Heart } from 'lucide-react'
 
 export const metadata: Metadata = {
   title: 'About WHC Concierge | Luxury Wellness Recruitment',
@@ -17,78 +18,103 @@ export default function AboutPage() {
     <>
       <Navbar />
       <main className="pt-[60px]">
-        <section className="bg-gradient-to-b from-surface to-white py-20 px-6">
+        {/* Hero Section */}
+        <section className="bg-white py-20 px-6">
           <div className="max-w-3xl mx-auto text-center">
             <h1 className="text-4xl md:text-5xl font-serif text-ink mb-6">
-              The right people.<br />The right properties.
+              Redefining Wellness Recruitment
             </h1>
             <p className="text-lg text-secondary leading-relaxed">
-              WHC Concierge is the specialist careers platform built exclusively for
-              luxury wellness and hospitality. We connect exceptional spa, beauty and
-              wellness professionals with the world&apos;s finest properties &mdash;
-              intelligently, transparently and with real care for both sides.
+              Built by wellness industry insiders who knew there had to be a better way to connect exceptional talent with extraordinary properties.
             </p>
           </div>
         </section>
 
-        <section className="py-16 px-6">
-          <div className="max-w-3xl mx-auto space-y-8">
-            <div>
-              <h2 className="text-2xl font-serif text-ink mb-4">Why we exist</h2>
-              <p className="text-secondary leading-relaxed">
-                Recruitment in luxury wellness has been broken for years. Talented therapists
-                struggle to find roles that match their skills and aspirations. Five-star properties
-                waste time sifting through unsuitable candidates. We built WHC Concierge to fix
-                that &mdash; a platform where intelligent matching replaces guesswork, and both
-                sides get a genuinely better experience.
-              </p>
-            </div>
+        {/* The Story Section */}
+        <section className="bg-white py-16 px-6">
+          <div className="max-w-3xl mx-auto space-y-6">
+            <p className="text-secondary leading-relaxed">
+              Recruitment in luxury wellness is broken. Generic job boards don't understand the industry. Talented therapists get lost in a sea of unqualified applicants. Premium properties waste precious time screening candidates who don't fit. The whole system was built for generic corporate roles, not for the specialized world of luxury spa and hospitality.
+            </p>
 
-            <div>
-              <h2 className="text-2xl font-serif text-ink mb-4">What makes us different</h2>
-              <p className="text-secondary leading-relaxed">
-                We&apos;re not a generic job board with a wellness filter bolted on. Every feature
-                &mdash; from our matching algorithm to the way profiles are structured &mdash; has
-                been designed specifically for the luxury spa and wellness sector. We understand the
-                nuances: product house expertise, treatment specialisms, the difference between a
-                resort spa and a destination spa.
-              </p>
-            </div>
+            <p className="text-secondary leading-relaxed">
+              That's when we realized: the wellness industry needs its own dedicated, quality-controlled recruitment platform. One that speaks the language of CIDESCO, Elemis, and five-star service. One where a resume field actually understands what matters — product house expertise, treatment specialisms, the difference between a destination spa and a resort spa. One built by people who know the industry, not algorithms that don't.
+            </p>
 
-            <div>
-              <h2 className="text-2xl font-serif text-ink mb-4">For talent</h2>
-              <p className="text-secondary leading-relaxed">
-                Create a profile that properly represents your skills, experience and
-                certifications. Get matched to roles that genuinely suit you. Browse live positions
-                at verified properties. No middlemen, no guesswork &mdash; just direct connections
-                to the opportunities you deserve.
-              </p>
-            </div>
+            <p className="text-secondary leading-relaxed">
+              So we built WHC Concierge. A matching platform designed specifically for luxury spa and wellness, where every candidate is vetted and every property is verified. Where talented professionals find roles that genuinely suit them. Where five-star properties find the exceptional candidates they deserve. No generic filters. No spam. Just intelligent matching, built for the people who care most about this industry.
+            </p>
+          </div>
+        </section>
 
-            <div>
-              <h2 className="text-2xl font-serif text-ink mb-4">For properties</h2>
+        {/* Values Section */}
+        <section className="bg-white py-20 px-6">
+          <div className="max-w-4xl mx-auto">
+            <h2 className="text-3xl font-serif text-ink mb-12 text-center">Our Values</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              {/* Quality Over Quantity */}
+              <div className="card card-hover p-8">
+                <Award className="w-10 h-10 text-ink mb-4" />
+                <h3 className="text-xl font-serif text-ink mb-3">Quality Over Quantity</h3>
+                <p className="text-secondary">
+                  We vet every profile. No spam, no time-wasters.
+                </p>
+              </div>
+
+              {/* Industry Expertise */}
+              <div className="card card-hover p-8">
+                <Users className="w-10 h-10 text-ink mb-4" />
+                <h3 className="text-xl font-serif text-ink mb-3">Industry Expertise</h3>
+                <p className="text-secondary">
+                  Built by people who know the difference between a hot stone and a cold plunge.
+                </p>
+              </div>
+
+              {/* Fairness */}
+              <div className="card card-hover p-8">
+                <Heart className="w-10 h-10 text-ink mb-4" />
+                <h3 className="text-xl font-serif text-ink mb-3">Fairness</h3>
+                <p className="text-secondary">
+                  No commission on hires. Transparent pricing. No hidden fees.
+                </p>
+              </div>
+
+              {/* Confidentiality */}
+              <div className="card card-hover p-8">
+                <Shield className="w-10 h-10 text-ink mb-4" />
+                <h3 className="text-xl font-serif text-ink mb-3">Confidentiality</h3>
+                <p className="text-secondary">
+                  Stealth mode, data protection, and discretion built in.
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Founder Section */}
+        <section className="bg-white py-20 px-6">
+          <div className="max-w-3xl mx-auto">
+            <h2 className="text-3xl font-serif text-ink mb-8 text-center">Founded by Rebecca Doyle</h2>
+            <div className="text-center">
+              <p className="text-secondary leading-relaxed mb-4">
+                Rebecca spent years working in luxury wellness and hospitality, seeing firsthand how the industry struggled with recruitment. Talented professionals were stuck in the wrong roles. Five-star properties were settling for second-best candidates. The disconnect was costing everyone — the talented people who wanted better, the properties searching for better, and the industry as a whole.
+              </p>
               <p className="text-secondary leading-relaxed">
-                Post roles and let our algorithm surface the best-matched candidates from a pool
-                of verified, qualified professionals. Review detailed profiles, communicate directly
-                and fill positions faster &mdash; with confidence that every candidate has been
-                matched on the criteria that actually matter in luxury wellness.
+                WHC Concierge was built to bridge that gap — with technology that actually understands the sector, designed by someone who's lived it.
               </p>
             </div>
           </div>
         </section>
 
-        <section className="bg-ink py-16 px-6">
+        {/* CTA Section */}
+        <section className="bg-white py-20 px-6">
           <div className="max-w-2xl mx-auto text-center">
-            <h2 className="text-2xl font-serif text-white mb-4">Ready to find your match?</h2>
-            <p className="text-white/70 mb-8">
-              Whether you&apos;re a spa professional looking for your next role or a property
-              searching for exceptional talent, we&apos;re here to make it happen.
-            </p>
+            <h2 className="text-3xl font-serif text-ink mb-8">Ready to join?</h2>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link href="/register/talent" className="btn-primary !bg-accent !text-ink hover:!bg-accent/90">
+              <Link href="/register/talent" className="btn-primary">
                 Join as Talent
               </Link>
-              <Link href="/register/employer" className="btn-secondary !border-white/30 !text-white hover:!bg-white/10">
+              <Link href="/register/employer" className="btn-secondary">
                 Register a Property
               </Link>
             </div>

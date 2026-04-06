@@ -6,6 +6,7 @@ import { MapPin, ArrowRight } from 'lucide-react'
 import { createServerSupabaseClient } from '@/lib/supabase/server'
 import HomepageHowItWorks from '@/components/HomepageHowItWorks'
 import HeroCarousel from '@/components/HeroCarousel'
+import TestimonialCarousel from '@/components/TestimonialCarousel'
 
 export const revalidate = 300
 
@@ -207,6 +208,39 @@ export default async function HomePage() {
           </div>
         </div>
       </section>
+
+      {/* AGENCY & RESIDENCY */}
+      <section className="py-24 bg-surface">
+        <div className="max-w-7xl mx-auto px-6 lg:px-8 grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="card-hover p-8">
+            <p className="eyebrow mb-3">Agency marketplace</p>
+            <h3 className="text-[24px] font-medium text-ink leading-tight mb-3">Fill shifts instantly.<br />No agency fees.</h3>
+            <p className="text-secondary text-[14px] mb-6">Find verified practitioners in your area, book directly, confirm instantly. Radius search by postcode. 10% platform fee only on confirmed bookings.</p>
+            <Link href="/agency" className="btn-primary inline-block">Browse practitioners</Link>
+          </div>
+          <div className="card-hover p-8">
+            <p className="eyebrow mb-3">Residency programme</p>
+            <h3 className="text-[24px] font-medium text-ink leading-tight mb-3">Discover visiting<br />specialists.</h3>
+            <p className="text-secondary text-[14px] mb-6">Browse the residency talent pool, contact practitioners directly, agree terms. Elite 1-6 month placements at iconic properties worldwide.</p>
+            <Link href="/residency" className="btn-primary inline-block">Explore residencies</Link>
+          </div>
+        </div>
+      </section>
+
+      {/* TESTIMONIALS */}
+      <section className="py-24">
+        <div className="max-w-7xl mx-auto px-6 lg:px-8">
+          <div className="text-center mb-12">
+            <p className="eyebrow mb-3">What people say</p>
+            <h2 className="text-[36px] md:text-[42px] font-medium text-ink leading-[1.12] tracking-tight">Trusted by the industry.</h2>
+          </div>
+          <TestimonialCarousel />
+          <div className="text-center mt-8">
+            <Link href="/testimonials" className="text-[13px] text-muted hover:text-ink transition-colors underline underline-offset-4">Read all testimonials</Link>
+          </div>
+        </div>
+      </section>
+
 
       <Footer />
     </div>

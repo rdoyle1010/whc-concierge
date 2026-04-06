@@ -8,7 +8,7 @@ import { createClient } from '@/lib/supabase/client'
 import {
   LayoutDashboard, User, Briefcase, MessageSquare, Star, Calendar,
   Settings, LogOut, Menu, X, Users, FileText, Image as ImageIcon, Megaphone,
-  AlertTriangle, Heart, Building2, ChevronRight, BarChart3
+  AlertTriangle, Heart, Building2, ChevronRight, BarChart3, CreditCard
 } from 'lucide-react'
 
 interface NavItem {
@@ -33,6 +33,7 @@ const navItems: Record<string, NavItem[]> = {
     { label: 'Messages', href: '/talent/messages', icon: <MessageSquare size={20} /> },
     { label: 'Reviews', href: '/talent/reviews', icon: <Star size={20} /> },
     { label: 'Agency Shifts', href: '/talent/agency', icon: <Calendar size={20} /> },
+    { label: 'Billing', href: '/talent/billing', icon: <CreditCard size={20} /> },
     { label: 'Settings', href: '/talent/settings', icon: <Settings size={20} /> },
   ],
   employer: [
@@ -44,6 +45,7 @@ const navItems: Record<string, NavItem[]> = {
     { label: 'Shortlist', href: '/employer/shortlist', icon: <Star size={20} /> },
     { label: 'Analytics', href: '/employer/analytics', icon: <BarChart3 size={20} /> },
     { label: 'Messages', href: '/employer/messages', icon: <MessageSquare size={20} /> },
+    { label: 'Billing', href: '/employer/billing', icon: <CreditCard size={20} /> },
     { label: 'Settings', href: '/employer/settings', icon: <Settings size={20} /> },
   ],
   admin: [

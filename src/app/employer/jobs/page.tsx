@@ -1,11 +1,13 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import DashboardShell from '@/components/DashboardShell'
 import { createClient } from '@/lib/supabase/client'
-import { Plus, Edit2, Trash2, Eye, EyeOff } from 'lucide-react'
+import { Plus, Edit2, Trash2, Eye, EyeOff, Copy, RotateCcw } from 'lucide-react'
 
 export default function EmployerJobsPage() {
+  const router = useRouter()
   const supabase = createClient()
   const [profile, setProfile] = useState<any>(null)
   const [jobs, setJobs] = useState<any[]>([])
@@ -29,7 +31,7 @@ export default function EmployerJobsPage() {
       setProfile(prof)
       if (prof) {
         const { data } = await supabase.from('job_listings').select('*').eq('employer_id', prof.id).order('posted_date', { ascending: false })
-        setJobs((data || []).map((j: any) => ({ ...j, title: j.job_title || j.title, description: j.job_description || j.description, status: j.is_live === false ? 'closed' : (j.status || 'active') })))
+        setJobs((data || []).map((j: any) => ({ ...j, title: j.job_title || j.title, description: j.job_description || j.description })))
       }
       setLoading(false)
     }
@@ -181,7 +183,9 @@ export default function EmployerJobsPage() {
                 <div className="flex items-center space-x-3">
                   <h3 className="font-serif text-lg font-semibold text-ink">{job.title}</h3>
                   <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${
-                    job.status === 'active' ? 'bg-green-50 text-green-700' : 'bg-gray-100 text-gray-500'
+                    job.status === 'active' ? 'bg-green-50 text-green-700' :
+                    job.status === 'draft' ? 'bg-amber-50 text-amber-700' :
+                    'bg-gray-100 text-gray-500'
                   }`}>{job.status}</span>
                   {job.tier && <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${
                     job.tier === 'Platinum' ? 'bg-purple-100 text-purple-700' :
@@ -191,9 +195,19 @@ export default function EmployerJobsPage() {
                 <p className="text-sm text-gray-500 mt-1">{job.location} \u00b7 {job.job_type}</p>
               </div>
               <div className="flex items-center space-x-2">
-                <button onClick={() => toggleStatus(job)} className="p-2 rounded-lg hover:bg-gray-100 text-gray-400" title={job.status === 'active' ? 'Close' : 'Activate'}>
-                  {job.status === 'active' ? <EyeOff size={18} /> : <Eye size={18} />}
+                {job.status !== 'draft' && (
+                  <button onClick={() => toggleStatus(job)} className="p-2 rounded-lg hover:bg-gray-100 text-gray-400" title={job.status === 'active' ? 'Close' : 'Activate'}>
+                    {job.status === 'active' ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                )}
+                <button onClick={() => router.push(`/employer/post-role?clone=${job.id}`)} className="p-2 rounded-lg hover:bg-gray-100 text-gray-400" title="Clone">
+                  <Copy size={18} />
                 </button>
+                {(job.status === 'closed' || job.status === 'expired') && (
+                  <button onClick={() => router.push(`/employer/post-role?repost=${job.id}`)} className="p-2 rounded-lg hover:bg-gray-100 text-gray-400" title="Repost">
+                    <RotateCcw size={18} />
+                  </button>
+                )}
                 <button onClick={() => handleEdit(job)} className="p-2 rounded-lg hover:bg-gray-100 text-gray-400"><Edit2 size={18} /></button>
                 <button onClick={() => handleDelete(job.id)} className="p-2 rounded-lg hover:bg-red-50 text-gray-400 hover:text-red-500"><Trash2 size={18} /></button>
               </div>
