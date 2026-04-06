@@ -53,6 +53,7 @@ export default function AdminMatchesPage() {
           <p>No matches found.</p>
         </div>
       ) : (
+        <>
         <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
           <table className="w-full">
             <thead className="bg-gray-50 border-b border-gray-100">
@@ -97,6 +98,7 @@ export default function AdminMatchesPage() {
           </table>
         </div>
         <Pagination page={page} perPage={perPage} total={filtered.length} onPageChange={setPage} onPerPageChange={setPerPage} />
+        </>
       )}
     </DashboardShell>
   )

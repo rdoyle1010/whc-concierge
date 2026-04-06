@@ -49,7 +49,7 @@ export default function EmployerApplicationsPage() {
   const addToShortlist = async (candidateId: string, jobId: string) => {
     if (shortlistedIds.has(candidateId)) return
     await fetch('/api/shortlist', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ candidateId, jobId }) })
-    setShortlistedIds(new Set([...shortlistedIds, candidateId]))
+    setShortlistedIds(new Set(Array.from(shortlistedIds).concat(candidateId)))
   }
 
   const updateStatus = async (appId: string, status: string) => {

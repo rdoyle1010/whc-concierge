@@ -163,6 +163,7 @@ export default function TalentJobsPage() {
       {sorted.length === 0 ? (
         <div className="text-center py-20"><Briefcase size={32} className="mx-auto text-muted mb-3" /><p className="text-[14px] text-muted">No roles match your filters.</p></div>
       ) : (
+        <>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {paginatedSorted.map(job => (
             <div key={job.id} className="card p-0 overflow-hidden">
@@ -200,6 +201,7 @@ export default function TalentJobsPage() {
           ))}
         </div>
         <Pagination page={page} perPage={perPage} total={sorted.length} showPerPage={false} onPageChange={setPage} />
+        </>
       )}
     </DashboardShell>
   )

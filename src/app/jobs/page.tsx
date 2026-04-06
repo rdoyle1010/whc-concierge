@@ -82,6 +82,7 @@ export default function PublicJobsPage() {
           ) : filtered.length === 0 ? (
             <p className="text-center text-gray-400 py-16">No roles found. Try adjusting your search.</p>
           ) : (
+            <>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {paginatedJobs.map((job) => (
                 <div key={job.id} className="card hover:shadow-lg transition-all group border-t-4 border-t-gold/20 hover:border-t-gold">
@@ -116,6 +117,7 @@ export default function PublicJobsPage() {
               ))}
             </div>
             <Pagination page={page} perPage={perPage} total={filtered.length} showPerPage={false} onPageChange={setPage} />
+            </>
           )}
         </div>
       </section>

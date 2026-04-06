@@ -92,7 +92,7 @@ export const blogPostSchema = z.object({
 // ── Profile update (partial, any allowed field) ──
 export const profileUpdateSchema = z.object({
   profileId: z.string().uuid('Invalid profile ID'),
-  data: z.record(z.unknown()).refine(d => Object.keys(d).length > 0, 'No fields provided'),
+  data: z.record(z.string(), z.unknown()).refine(d => Object.keys(d).length > 0, 'No fields provided'),
 })
 
 // ── Helper ──

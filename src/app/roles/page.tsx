@@ -109,6 +109,7 @@ export default function BrowseRolesPage() {
             <p className="text-[13px] text-muted">Check back soon — new roles are added regularly.</p>
           </div>
         ) : (
+          <>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {filtered.slice((page - 1) * perPage, page * perPage).map(job => (
               <Link key={job.id} href="/roles/match" className="bg-white border border-border rounded-xl p-5 hover:shadow-md hover:-translate-y-0.5 transition-all">
@@ -134,6 +135,7 @@ export default function BrowseRolesPage() {
             ))}
           </div>
           <Pagination page={page} perPage={perPage} total={filtered.length} showPerPage={false} onPageChange={setPage} />
+          </>
         )}
       </section>
 
