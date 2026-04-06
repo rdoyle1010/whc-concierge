@@ -1,10 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { rateLimit, getClientIp } from '@/lib/rate-limit'
+
+const limiter = rateLimit('contact-notify', { windowMs: 15 * 60 * 1000, maxRequests: 5 })
 
 const RESEND_API_KEY = process.env.RESEND_API_KEY
 const FROM_EMAIL = 'WHC Concierge <noreply@wellnesshousecollective.co.uk>'
 const ADMIN_EMAIL = 'rebecca.whc@outlook.com'
 
 export async function POST(req: NextRequest) {
+  const { success, remaining } = limiter.check(getClientIp(req))
+  if (!success) return NextResponse.json({ error: 'Too many requests. Please try again later.' }, { status: 429, headers: { 'X-RateLimit-Remaining': '0' } })
+
   try {
     const { name, email, subject, message, type } = await req.json()
 
