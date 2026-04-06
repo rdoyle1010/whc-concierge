@@ -38,10 +38,23 @@ export const metadata: Metadata = {
   },
 }
 
+const organizationJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'Organization',
+  name: 'WHC Concierge',
+  url: 'https://talent.wellnesshousecollective.co.uk',
+  logo: 'https://talent.wellnesshousecollective.co.uk/images/whc-logo.jpg',
+  description: 'The UK\'s premier luxury wellness recruitment platform',
+  sameAs: [],
+}
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }} />
+        {children}
+      </body>
     </html>
   )
 }

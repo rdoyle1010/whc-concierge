@@ -4,6 +4,7 @@ import Link from 'next/link'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
 import { ArrowLeft } from 'lucide-react'
+import { generateBlogJsonLd } from '@/lib/blog-jsonld'
 
 export const revalidate = 60
 
@@ -18,8 +19,19 @@ export default async function BlogPostPage({ params }: { params: { slug: string 
 
   if (!post) notFound()
 
+  const jsonLd = generateBlogJsonLd({
+    title: post.title,
+    slug: post.slug,
+    excerpt: post.excerpt || post.content?.slice(0, 160),
+    category: post.category,
+    publishedAt: post.created_at,
+    updatedAt: post.updated_at,
+    authorName: post.author,
+  })
+
   return (
     <div className="min-h-screen">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       <Navbar />
       <section className="bg-ink pt-32 pb-16">
         <div className="max-w-3xl mx-auto px-4">
