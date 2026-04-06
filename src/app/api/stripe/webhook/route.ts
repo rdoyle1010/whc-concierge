@@ -45,6 +45,13 @@ export async function POST(req: NextRequest) {
             stripe_customer_id: session.customer as string,
           }).eq('id', meta.employer_id)
         }
+
+        // Fire job alerts for matching candidates (fire-and-forget)
+        fetch(new URL('/api/job-alerts', req.url).toString(), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ jobId: meta.job_id }),
+        }).catch(() => {})
       }
       break
     }

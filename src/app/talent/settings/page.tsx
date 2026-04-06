@@ -23,6 +23,11 @@ export default function TalentSettingsPage() {
   const [userId, setUserId] = useState<string | null>(null)
   const [candidateId, setCandidateId] = useState<string | null>(null)
 
+  // Job alerts state
+  const [alertsEnabled, setAlertsEnabled] = useState(true)
+  const [alertsFrequency, setAlertsFrequency] = useState('instant')
+  const [alertsMinScore, setAlertsMinScore] = useState(60)
+
   useEffect(() => {
     async function loadStealth() {
       const { data: { user } } = await supabase.auth.getUser()
@@ -30,7 +35,7 @@ export default function TalentSettingsPage() {
       setUserId(user.id)
 
       const [profileRes, employersRes] = await Promise.all([
-        supabase.from('candidate_profiles').select('id, stealth_mode').eq('user_id', user.id).single(),
+        supabase.from('candidate_profiles').select('id, stealth_mode, job_alerts_enabled, job_alerts_frequency, job_alerts_min_score').eq('user_id', user.id).single(),
         supabase.from('employer_profiles').select('id, company_name, property_name').order('company_name'),
       ])
 
@@ -38,6 +43,9 @@ export default function TalentSettingsPage() {
       if (profile) {
         setCandidateId(profile.id)
         setStealthEnabled(!!profile.stealth_mode)
+        setAlertsEnabled(profile.job_alerts_enabled !== false)
+        setAlertsFrequency(profile.job_alerts_frequency || 'instant')
+        setAlertsMinScore(profile.job_alerts_min_score || 60)
 
         const { data: blocks } = await supabase
           .from('profile_blocks')
@@ -76,6 +84,14 @@ export default function TalentSettingsPage() {
     if (!candidateId) return
     await supabase.from('profile_blocks').delete().eq('candidate_id', candidateId).eq('blocked_employer_id', employerId)
     setBlockedEmployers(blockedEmployers.filter(e => e.id !== employerId))
+  }
+
+  const saveAlertPref = (field: string, value: any) => {
+    if (!candidateId) return
+    fetch('/api/profile/update', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ profileId: candidateId, data: { [field]: value } }),
+    }).catch(() => {})
   }
 
   const filteredEmployers = employerSearch.length >= 2
@@ -238,6 +254,57 @@ export default function TalentSettingsPage() {
               ) : (
                 <p className="text-[13px] text-muted">No employers blocked. Search above to add employers you&apos;d like to hide from.</p>
               )}
+            </div>
+          )}
+        </div>
+
+        {/* Job Alerts */}
+        <div className="dashboard-card">
+          <div className="flex items-start justify-between mb-4">
+            <div>
+              <h3 className="font-serif text-lg font-semibold flex items-center gap-2">Job Alerts</h3>
+              <p className="text-sm text-gray-500 mt-1">Get notified when new roles match your profile.</p>
+            </div>
+            <button type="button" onClick={() => { const v = !alertsEnabled; setAlertsEnabled(v); saveAlertPref('job_alerts_enabled', v) }}
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors shrink-0 ${alertsEnabled ? 'bg-ink' : 'bg-gray-200'}`}>
+              <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${alertsEnabled ? 'translate-x-6' : 'translate-x-1'}`} />
+            </button>
+          </div>
+
+          {alertsEnabled && (
+            <div className="pt-4 border-t border-border space-y-5">
+              {/* Frequency */}
+              <div>
+                <label className="eyebrow block mb-2">Frequency</label>
+                <div className="flex flex-wrap gap-2">
+                  {[
+                    { value: 'instant', label: 'Instant' },
+                    { value: 'daily', label: 'Daily digest' },
+                    { value: 'weekly', label: 'Weekly digest' },
+                  ].map(opt => (
+                    <button key={opt.value} type="button"
+                      onClick={() => { setAlertsFrequency(opt.value); saveAlertPref('job_alerts_frequency', opt.value) }}
+                      className={`px-4 py-2 rounded-lg text-[12px] font-medium transition-colors ${alertsFrequency === opt.value ? 'bg-ink text-white' : 'bg-surface border border-border text-muted hover:border-ink/20'}`}>
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Minimum match score */}
+              <div>
+                <label className="eyebrow block mb-2">Minimum match score</label>
+                <div className="flex flex-wrap gap-2">
+                  {[60, 70, 80, 90].map(score => (
+                    <button key={score} type="button"
+                      onClick={() => { setAlertsMinScore(score); saveAlertPref('job_alerts_min_score', score) }}
+                      className={`px-4 py-2 rounded-lg text-[12px] font-medium transition-colors ${alertsMinScore === score ? 'bg-ink text-white' : 'bg-surface border border-border text-muted hover:border-ink/20'}`}>
+                      {score}%+
+                    </button>
+                  ))}
+                </div>
+                <p className="text-[11px] text-muted mt-2">Only roles scoring above this threshold will trigger an alert.</p>
+              </div>
             </div>
           )}
         </div>

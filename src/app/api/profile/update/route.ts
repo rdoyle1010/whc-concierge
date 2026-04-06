@@ -36,6 +36,15 @@ const ALLOWED_COLUMNS = new Set([
   'profile_image_url',
   'cv_url',
   'insurance_document_url',
+  'stealth_mode',
+  'job_alerts_enabled',
+  'job_alerts_frequency',
+  'job_alerts_min_score',
+  'transport_method',
+  'max_commute',
+  'shift_preferences',
+  'location_preferences',
+  'needs_accommodation',
 ])
 
 function stripToAllowed(data: Record<string, unknown>): Record<string, unknown> {
