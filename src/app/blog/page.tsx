@@ -6,6 +6,7 @@ import Link from 'next/link'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
 import { ArrowRight, Clock } from 'lucide-react'
+import SkeletonCard from '@/components/SkeletonCard'
 
 export default function BlogPage() {
   const supabase = createClient()
@@ -56,7 +57,7 @@ export default function BlogPage() {
       <section className="py-12">
         <div className="max-w-7xl mx-auto px-4">
           {loading ? (
-            <div className="flex items-center justify-center h-64"><div className="animate-spin w-8 h-8 border-2 border-black border-t-transparent rounded-full" /></div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">{[1,2,3,4,5,6].map(i => <SkeletonCard key={i} variant="blog" />)}</div>
           ) : posts.length === 0 ? (
             <div className="text-center py-24">
               <h3 className="text-2xl font-bold text-black mb-2">Coming Soon</h3>

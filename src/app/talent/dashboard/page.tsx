@@ -5,6 +5,8 @@ import DashboardShell from '@/components/DashboardShell'
 import { createClient } from '@/lib/supabase/client'
 import { calculateMatchScore } from '@/lib/matching'
 import { Briefcase, FileText, MessageSquare, Star, ArrowRight, AlertCircle, CheckCircle, Clock } from 'lucide-react'
+import SkeletonProfile from '@/components/SkeletonProfile'
+import SkeletonTable from '@/components/SkeletonTable'
 import Link from 'next/link'
 import ProfileStrength from '@/components/ProfileStrength'
 
@@ -62,7 +64,7 @@ export default function TalentDashboard() {
   }, [])
 
 
-  if (loading) return <DashboardShell role="talent"><div className="space-y-4"><div className="skeleton h-16 w-full" /><div className="grid grid-cols-4 gap-4">{[1,2,3,4].map(i=><div key={i} className="skeleton h-24" />)}</div><div className="skeleton h-64 w-full" /></div></DashboardShell>
+  if (loading) return <DashboardShell role="talent"><SkeletonProfile /><div className="mt-6"><SkeletonTable rows={3} /></div></DashboardShell>
 
   return (
     <DashboardShell role="talent" userName={profile?.full_name}>

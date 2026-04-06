@@ -7,6 +7,7 @@ import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
 import Link from 'next/link'
 import { MapPin, Briefcase, Search, Clock } from 'lucide-react'
+import SkeletonCard from '@/components/SkeletonCard'
 
 const ROLE_TYPES = ['All', 'Permanent', 'Fixed Term', 'Freelance', 'Agency', 'Seasonal']
 
@@ -97,7 +98,7 @@ export default function BrowseRolesPage() {
       {/* Results */}
       <section className="max-w-7xl mx-auto px-6 lg:px-8 py-10">
         {loading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">{[1,2,3,4,5,6].map(i => <div key={i} className="skeleton h-56 rounded-xl" />)}</div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">{[1,2,3,4,5,6].map(i => <SkeletonCard key={i} variant="role" />)}</div>
         ) : filtered.length === 0 ? (
           <div className="bg-white border border-border rounded-xl p-16 text-center">
             <Briefcase size={32} className="mx-auto text-muted mb-3" />

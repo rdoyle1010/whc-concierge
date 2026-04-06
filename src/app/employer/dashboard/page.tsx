@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import DashboardShell from '@/components/DashboardShell'
 import { createClient } from '@/lib/supabase/client'
 import { Briefcase, Users, FileText, MessageSquare, ArrowRight, Plus, Clock } from 'lucide-react'
+import SkeletonTable from '@/components/SkeletonTable'
 import Link from 'next/link'
 
 export default function EmployerDashboard() {
@@ -67,7 +68,23 @@ export default function EmployerDashboard() {
 
   const tierClass = (t: string) => t === 'Platinum' ? 'badge-platinum' : t === 'Gold' ? 'badge-gold' : t === 'Silver' ? 'badge-silver' : 'badge-bronze'
 
-  if (loading) return <DashboardShell role="employer"><div className="space-y-4"><div className="skeleton h-12 w-1/3" /><div className="grid grid-cols-4 gap-4">{[1,2,3,4].map(i=><div key={i} className="skeleton h-24" />)}</div><div className="skeleton h-64" /></div></DashboardShell>
+  if (loading) return (
+    <DashboardShell role="employer">
+      <div className="animate-pulse space-y-6">
+        <div className="h-6 w-48 bg-surface rounded" />
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          {[1,2,3,4].map(i => (
+            <div key={i} className="bg-white border border-border rounded-xl p-4">
+              <div className="h-3 w-6 bg-surface rounded mb-2" />
+              <div className="h-6 w-10 bg-surface rounded mb-1" />
+              <div className="h-2.5 w-14 bg-surface rounded" />
+            </div>
+          ))}
+        </div>
+      </div>
+      <div className="mt-6"><SkeletonTable rows={4} /></div>
+    </DashboardShell>
+  )
   return (
     <DashboardShell role="employer" userName={profile?.contact_name || profile?.company_name}>
       <div className="mb-8">
