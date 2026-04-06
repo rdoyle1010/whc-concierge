@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import DashboardShell from '@/components/DashboardShell'
 import { createClient } from '@/lib/supabase/client'
 import { Star } from 'lucide-react'
+import ReviewBreakdown from '@/components/ReviewBreakdown'
 
 export default function TalentReviewsPage() {
   const supabase = createClient()
@@ -56,11 +57,19 @@ export default function TalentReviewsPage() {
         <div className="space-y-4">
           {reviews.map((review) => (
             <div key={review.id} className="dashboard-card">
-              <div className="flex items-center space-x-1 mb-2">
-                {[1,2,3,4,5].map(i => <Star key={i} size={16} className={i <= review.rating ? 'text-gold fill-gold' : 'text-gray-200'} />)}
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center space-x-1">
+                  {[1,2,3,4,5].map(i => <Star key={i} size={16} className={i <= review.rating ? 'text-gold fill-gold' : 'text-gray-200'} />)}
+                  <span className="text-[13px] font-medium text-ink ml-2">{review.rating}</span>
+                </div>
+                <p className="text-xs text-gray-400">{new Date(review.created_at).toLocaleDateString()}</p>
               </div>
+              {review.criteria_scores && (
+                <div className="mb-3 pt-2 border-t border-border">
+                  <ReviewBreakdown criteriaScores={review.criteria_scores} />
+                </div>
+              )}
               {review.comment && <p className="text-gray-600 text-sm">{review.comment}</p>}
-              <p className="text-xs text-gray-400 mt-2">{new Date(review.created_at).toLocaleDateString()}</p>
             </div>
           ))}
         </div>

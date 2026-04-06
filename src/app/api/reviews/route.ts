@@ -3,9 +3,9 @@ import { createAdminClient } from '@/lib/supabase/admin'
 
 export async function POST(req: NextRequest) {
   try {
-    const { reviewer_id, reviewed_id, rating, comment, type } = await req.json()
+    const { reviewer_id, reviewed_id, rating, criteria_scores, comment, type } = await req.json()
 
-    if (!reviewer_id || !reviewed_id || !rating) {
+    if (!reviewer_id || !reviewed_id || (!rating && !criteria_scores)) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
     }
 
@@ -14,11 +14,24 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Cannot review yourself' }, { status: 400 })
     }
 
+    // Calculate overall rating from criteria if provided
+    let finalRating = rating
+    if (criteria_scores) {
+      const values = Object.values(criteria_scores) as number[]
+      if (values.length > 0) {
+        finalRating = Math.round((values.reduce((a, b) => a + b, 0) / values.length) * 10) / 10
+      }
+    }
+
     const supabase = createAdminClient()
 
-    // Insert review
+    // Insert review with criteria_scores
     const { error: reviewError } = await supabase.from('reviews').insert({
-      reviewer_id, reviewed_id, rating, comment: comment || null, type: type || 'candidate',
+      reviewer_id, reviewed_id,
+      rating: finalRating,
+      criteria_scores: criteria_scores || null,
+      comment: comment || null,
+      type: type || 'candidate',
     })
 
     if (reviewError) return NextResponse.json({ error: reviewError.message }, { status: 500 })

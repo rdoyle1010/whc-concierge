@@ -144,11 +144,21 @@ export interface SiteImage {
   created_at: string
 }
 
+export interface ReviewCriteriaScores {
+  professionalism: number
+  punctuality: number
+  communication: number
+  skillLevel: number
+  reliability: number
+  overallExperience: number
+}
+
 export interface Review {
   id: string
   reviewer_id: string
   reviewed_id: string
   rating: number
+  criteria_scores?: ReviewCriteriaScores
   comment?: string
   type: 'candidate' | 'employer'
   created_at: string

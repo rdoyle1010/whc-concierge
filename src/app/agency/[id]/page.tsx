@@ -7,6 +7,7 @@ import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
 import Link from 'next/link'
 import { MapPin, Star, Shield, Clock, Check, ArrowLeft } from 'lucide-react'
+import ReviewBreakdown from '@/components/ReviewBreakdown'
 
 export default function AgencyProfilePage() {
   const { id } = useParams()
@@ -108,9 +109,15 @@ export default function AgencyProfilePage() {
                 <h2 className="text-[16px] font-medium text-ink mb-4">Reviews</h2>
                 <div className="space-y-4">{reviews.map(r => (
                   <div key={r.id} className="border-b border-border pb-4 last:border-0 last:pb-0">
-                    <div className="flex items-center gap-1 mb-1">{Array.from({ length: r.rating }).map((_, i) => <Star key={i} size={12} className="text-amber-400" fill="currentColor" />)}</div>
+                    <div className="flex items-center justify-between mb-1">
+                      <div className="flex items-center gap-1">
+                        {Array.from({ length: 5 }).map((_, i) => <Star key={i} size={12} className={i < Math.round(r.rating) ? 'text-amber-400 fill-amber-400' : 'text-gray-200'} />)}
+                        <span className="text-[12px] font-medium text-ink ml-1">{r.rating}</span>
+                      </div>
+                      <p className="text-[11px] text-muted">{new Date(r.created_at).toLocaleDateString()}</p>
+                    </div>
+                    {r.criteria_scores && <div className="my-2"><ReviewBreakdown criteriaScores={r.criteria_scores} /></div>}
                     {r.comment && <p className="text-[13px] text-secondary">{r.comment}</p>}
-                    <p className="text-[11px] text-muted mt-1">{new Date(r.created_at).toLocaleDateString()}</p>
                   </div>
                 ))}</div>
               </div>
