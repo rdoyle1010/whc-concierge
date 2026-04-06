@@ -115,9 +115,9 @@ export default async function HomePage() {
                   <div className="relative h-36 overflow-hidden">
                     <Image
                       src={[
-                        'https://images.unsplash.com/photo-1515377905703-c4788e51af15?w=600&q=80&auto=format&fit=crop',
-                        'https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?w=600&q=80&auto=format&fit=crop',
-                        'https://images.unsplash.com/photo-1590490360182-c33d57733427?w=600&q=80&auto=format&fit=crop',
+                        'https://images.unsplash.com/photo-1600334089648-b0d9d3028eb2?w=600&q=80&auto=format&fit=crop',
+                        'https://images.unsplash.com/photo-1596178065887-1198b6148b2b?w=600&q=80&auto=format&fit=crop',
+                        'https://images.unsplash.com/photo-1560750588-73207b1ef5b8?w=600&q=80&auto=format&fit=crop',
                       ][i % 3]}
                       alt="" fill className="object-cover group-hover:scale-105 transition-transform duration-500" sizes="(max-width: 768px) 100vw, 33vw"
                     />
@@ -148,7 +148,7 @@ export default async function HomePage() {
       {/* ═══ FINAL CTA — Luxury imagery with white overlay ═══ */}
       <section className="relative overflow-hidden">
         <img
-          src="https://images.unsplash.com/photo-1583416750470-965b2707b355?w=1920&q=80&auto=format&fit=crop"
+          src="https://images.unsplash.com/photo-1540555700478-4be289fbec6d?w=1920&q=80&auto=format&fit=crop"
           alt="" className="absolute inset-0 w-full h-full object-cover"
         />
         <div className="absolute inset-0 bg-white/85" />
