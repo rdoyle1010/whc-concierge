@@ -33,6 +33,12 @@ export default function ContactPage() {
       return
     }
 
+    // Fire-and-forget email notification to admin
+    fetch('/api/contact-notify', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(form),
+    }).catch(() => {})
+
     setSent(true)
     setLoading(false)
   }
