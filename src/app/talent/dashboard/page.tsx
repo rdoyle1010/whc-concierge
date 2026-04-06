@@ -4,8 +4,9 @@ import { useEffect, useState } from 'react'
 import DashboardShell from '@/components/DashboardShell'
 import { createClient } from '@/lib/supabase/client'
 import { calculateMatchScore } from '@/lib/matching'
-import { Briefcase, FileText, MessageSquare, Star, ArrowRight, AlertCircle, CheckCircle, Clock, Check } from 'lucide-react'
+import { Briefcase, FileText, MessageSquare, Star, ArrowRight, AlertCircle, CheckCircle, Clock } from 'lucide-react'
 import Link from 'next/link'
+import ProfileStrength from '@/components/ProfileStrength'
 
 export default function TalentDashboard() {
   const supabase = createClient()
@@ -60,20 +61,6 @@ export default function TalentDashboard() {
     load()
   }, [])
 
-  // Completion
-  const completionItems = [
-    { done: !!profile?.full_name, label: 'Full name' },
-    { done: !!profile?.role_level, label: 'Role level' },
-    { done: !!profile?.headline, label: 'Headline' },
-    { done: !!profile?.bio, label: 'Bio' },
-    { done: (profile?.services_offered?.length || 0) > 0, label: 'Services' },
-    { done: (profile?.product_houses?.length || 0) > 0, label: 'Product houses' },
-    { done: (profile?.qualifications?.length || 0) > 0, label: 'Qualifications' },
-    { done: !!profile?.cv_url, label: 'CV' },
-    { done: !!profile?.experience_years, label: 'Experience' },
-    { done: !!profile?.postcode, label: 'Location' },
-  ]
-  const pct = profile ? Math.round(completionItems.filter(i => i.done).length / completionItems.length * 100) : 0
 
   if (loading) return <DashboardShell role="talent"><div className="space-y-4"><div className="skeleton h-16 w-full" /><div className="grid grid-cols-4 gap-4">{[1,2,3,4].map(i=><div key={i} className="skeleton h-24" />)}</div><div className="skeleton h-64 w-full" /></div></DashboardShell>
 
@@ -135,29 +122,8 @@ export default function TalentDashboard() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Profile completion */}
-        <div className="dashboard-card">
-          <div className="flex items-center justify-between mb-4">
-            <p className="text-[14px] font-medium text-ink">Profile</p>
-            {/* Completion ring */}
-            <div className="relative w-12 h-12">
-              <svg className="w-12 h-12 -rotate-90" viewBox="0 0 36 36">
-                <circle cx="18" cy="18" r="16" fill="none" stroke="#F5F4F2" strokeWidth="3" />
-                <circle cx="18" cy="18" r="16" fill="none" stroke={pct >= 80 ? '#22C55E' : pct >= 50 ? '#C9A96E' : '#e5e5e5'} strokeWidth="3" strokeDasharray={`${pct} ${100 - pct}`} strokeLinecap="round" />
-              </svg>
-              <span className="absolute inset-0 flex items-center justify-center text-[11px] font-semibold text-ink">{pct}%</span>
-            </div>
-          </div>
-          <div className="space-y-1.5">
-            {completionItems.map(i => (
-              <div key={i.label} className="flex items-center gap-2">
-                {i.done ? <Check size={12} className="text-success" /> : <div className="w-3 h-3 border border-border rounded-sm" />}
-                <span className={`text-[12px] ${i.done ? 'text-muted line-through' : 'text-ink'}`}>{i.label}</span>
-              </div>
-            ))}
-          </div>
-          <Link href="/talent/onboarding" className="text-[12px] text-accent font-medium flex items-center gap-1 mt-4 hover:underline">Complete profile <ArrowRight size={12}/></Link>
-        </div>
+        {/* Profile strength */}
+        <ProfileStrength profile={profile} />
 
         {/* Top matches */}
         <div className="dashboard-card lg:col-span-2">
