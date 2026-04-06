@@ -37,6 +37,23 @@ export default function EmployerApplicationsPage() {
   const updateStatus = async (appId: string, status: string) => {
     await supabase.from('applications').update({ status }).eq('id', appId)
     setApplications(applications.map(a => a.id === appId ? { ...a, status } : a))
+
+    // Send decision email for shortlisted/accepted/rejected (fire-and-forget)
+    if (status === 'shortlisted' || status === 'accepted' || status === 'rejected') {
+      const app = applications.find(a => a.id === appId)
+      if (app?.candidate_profiles?.email || app?.candidate_profiles?.full_name) {
+        fetch('/api/application-decision-email', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            applicantEmail: app.candidate_profiles?.email || '',
+            applicantName: app.candidate_profiles?.full_name || '',
+            jobTitle: app.job_listings?.job_title || app.job_listings?.title || '',
+            propertyName: profile?.property_name || profile?.company_name || '',
+            decision: status === 'shortlisted' || status === 'accepted' ? 'approved' : 'rejected',
+          }),
+        }).catch(() => {})
+      }
+    }
   }
 
   return (
