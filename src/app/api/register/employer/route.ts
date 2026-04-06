@@ -1,8 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { welcomeEmailHtml } from '@/lib/welcome-email-template'
+
+const RESEND_API_KEY = process.env.RESEND_API_KEY
+const FROM_EMAIL = 'WHC Concierge <noreply@wellnesshousecollective.co.uk>'
 
 async function sleep(ms: number) {
   return new Promise(resolve => setTimeout(resolve, ms))
+}
+
+function sendWelcomeEmail(email: string, firstName: string) {
+  const html = welcomeEmailHtml({ firstName, userType: 'employer', dashboardUrl: 'https://talent.wellnesshousecollective.co.uk/employer/dashboard' })
+  if (!RESEND_API_KEY) { console.log(`[Welcome email skipped] To: ${email}`); return }
+  fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: { 'Authorization': `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ from: FROM_EMAIL, to: email, subject: 'Welcome to WHC Concierge', html }),
+  }).catch(err => console.error('Welcome email failed:', err))
 }
 
 export async function POST(req: NextRequest) {
@@ -18,10 +32,12 @@ export async function POST(req: NextRequest) {
 
     // Wait for the user to be fully committed to auth.users
     let userVerified = false
+    let userEmail = ''
     for (let attempt = 0; attempt < 5; attempt++) {
       const { data, error } = await supabase.auth.admin.getUserById(userId)
       if (data?.user && !error) {
         userVerified = true
+        userEmail = data.user.email || ''
         break
       }
       await sleep(1000)
@@ -39,6 +55,7 @@ export async function POST(req: NextRequest) {
         .insert({ user_id: userId, ...profileData })
 
       if (!profileError) {
+        if (userEmail) sendWelcomeEmail(userEmail, profileData.company_name?.split(' ')[0] || profileData.contact_name?.split(' ')[0] || 'there')
         return NextResponse.json({ success: true })
       }
 
@@ -55,6 +72,7 @@ export async function POST(req: NextRequest) {
         .insert({ user_id: userId })
 
       if (!retryError) {
+        if (userEmail) sendWelcomeEmail(userEmail, 'there')
         return NextResponse.json({ success: true })
       }
 
