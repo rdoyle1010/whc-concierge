@@ -28,11 +28,12 @@ function ChipGrid({ items, selected, onToggle, search }: { items: any[]; selecte
 // ── Proficiency selector ──
 function ProficiencySelect({ value, onChange }: { value: string; onChange: (v: string) => void }) {
   return (
-    <select value={value} onChange={e => onChange(e.target.value)} className="input-field !py-1 !px-2 text-[11px] w-28">
-      <option value="basic">Basic</option>
-      <option value="competent">Competent</option>
+    <select value={value} onChange={e => onChange(e.target.value)}
+      className="input-field !py-1 !px-2 text-[11px] w-32 focus:border-[#C9A96E] focus:ring-[#C9A96E]/20">
+      <option value="beginner">Beginner</option>
+      <option value="intermediate">Intermediate</option>
       <option value="advanced">Advanced</option>
-      <option value="expert">Expert</option>
+      <option value="master">Master</option>
     </select>
   )
 }
@@ -159,7 +160,7 @@ export default function OnboardingWizard() {
   const toggleInMap = (map: Map<string, any>, setMap: (m: Map<string, any>) => void, id: string, name: string, defaults: any = {}) => {
     const next = new Map(map)
     if (next.has(id)) next.delete(id)
-    else next.set(id, { name, proficiency: 'competent', ...defaults })
+    else next.set(id, { name, proficiency: 'intermediate', ...defaults })
     setMap(next)
   }
 
@@ -207,7 +208,7 @@ export default function OnboardingWizard() {
     if (step === 3 || step === 4) {
       // Save skills: delete existing, re-insert
       const allSkills = Array.from(selectedSkills.entries()).map(([skill_id, data]) => ({
-        candidate_id: profileId, skill_id, proficiency: data.proficiency || 'competent', years_using: data.years_using || null,
+        candidate_id: profileId, skill_id, proficiency: data.proficiency || 'intermediate', years_using: data.years_using || null,
       }))
       await supabase.from('candidate_skills').delete().eq('candidate_id', profileId)
       if (allSkills.length > 0) await supabase.from('candidate_skills').insert(allSkills)
@@ -215,7 +216,7 @@ export default function OnboardingWizard() {
 
     if (step === 5) {
       const rows = Array.from(selectedSystems.entries()).map(([system_id, data]) => ({
-        candidate_id: profileId, system_id, proficiency: data.proficiency || 'competent',
+        candidate_id: profileId, system_id, proficiency: data.proficiency || 'intermediate',
       }))
       await supabase.from('candidate_systems').delete().eq('candidate_id', profileId)
       if (rows.length > 0) await supabase.from('candidate_systems').insert(rows)
@@ -223,7 +224,7 @@ export default function OnboardingWizard() {
 
     if (step === 6) {
       const rows = Array.from(selectedPH.entries()).map(([product_house_id, data]) => ({
-        candidate_id: profileId, product_house_id, years_using: data.years_using || null,
+        candidate_id: profileId, product_house_id, years_using: data.years_using || null, proficiency: data.proficiency || 'intermediate',
       }))
       await supabase.from('candidate_product_houses').delete().eq('candidate_id', profileId)
       if (rows.length > 0) await supabase.from('candidate_product_houses').insert(rows)
@@ -468,10 +469,11 @@ export default function OnboardingWizard() {
             })}
             {selectedPH.size > 0 && (
               <div className="space-y-2 pt-4 border-t border-border">
-                <p className="eyebrow">Selected ({selectedPH.size}) — add years of experience</p>
+                <p className="eyebrow">Selected ({selectedPH.size}) — set proficiency &amp; years</p>
                 {Array.from(selectedPH.entries()).map(([id, data]) => (
-                  <div key={id} className="flex items-center justify-between p-2 bg-surface rounded-lg">
-                    <span className="text-[13px] text-ink">{data.name}</span>
+                  <div key={id} className="flex items-center gap-3 p-2 bg-surface rounded-lg">
+                    <span className="text-[13px] text-ink flex-1">{data.name}</span>
+                    <ProficiencySelect value={data.proficiency || 'intermediate'} onChange={v => updateInMap(selectedPH, setSelectedPH, id, 'proficiency', v)} />
                     <input type="number" placeholder="Years" value={data.years_using || ''} onChange={e => updateInMap(selectedPH, setSelectedPH, id, 'years_using', e.target.value ? parseInt(e.target.value) : null)} className="input-field !py-1 !px-2 text-[11px] w-20" />
                   </div>
                 ))}

@@ -10,7 +10,13 @@ const ROLE_LEVELS: Record<string, number> = {
 }
 
 const PROFICIENCY_WEIGHT: Record<string, number> = {
-  'basic': 0.4, 'competent': 0.6, 'advanced': 0.85, 'expert': 1.0,
+  'beginner': 0.25, 'basic': 0.25, 'intermediate': 0.5, 'competent': 0.5,
+  'advanced': 0.75, 'master': 1.0, 'expert': 1.0,
+}
+
+const PROFICIENCY_LABEL: Record<string, string> = {
+  'beginner': 'beginner', 'basic': 'beginner', 'intermediate': 'intermediate',
+  'competent': 'intermediate', 'advanced': 'advanced', 'master': 'master', 'expert': 'master',
 }
 
 function overlapScore(candidateArr: string[], requiredArr: string[]): { score: number; matches: string[] } {
@@ -182,7 +188,12 @@ export function calculateMatchScore(candidate: any, job: any): {
   if (qualResult.matches.length > 0) reasons.push(`${qualResult.matches[0]} qualification`)
   if (brandResult.matches.length > 0) reasons.push(`${brandResult.matches[0]} product experience`)
   if (candYears >= 5 && roleLevelScore >= 60) reasons.push(`${candYears}+ years at ${candidate.role_level || 'senior'} level`)
-  if (treatmentResult.matches.length > 0 && reasons.length < 3) reasons.push(`${treatmentResult.matches[0]} skills`)
+  if (treatmentResult.matches.length > 0 && reasons.length < 3) {
+    const skillName = treatmentResult.matches[0]
+    const prof = candidateProficiencies[skillName.toLowerCase()] || Object.entries(candidateProficiencies).find(([k]) => k.toLowerCase() === skillName.toLowerCase())?.[1]
+    const profLabel = prof ? PROFICIENCY_LABEL[prof] : null
+    reasons.push(profLabel ? `${profLabel}-level ${skillName}` : `${skillName} skills`)
+  }
   if (sysResult.matches.length > 0 && reasons.length < 3) reasons.push(`${sysResult.matches[0]} system experience`)
   if (bizResult.matches.length > 0 && reasons.length < 3) reasons.push(`${bizResult.matches[0]} business skills`)
   if (locationScore === 100 && candidateLocPrefs.length > 0 && reasons.length < 3) reasons.push('location match')
