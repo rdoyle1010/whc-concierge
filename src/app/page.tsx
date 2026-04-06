@@ -53,14 +53,14 @@ export default async function HomePage() {
       {/* ═══ HERO — Luxury imagery with white overlay ═══ */}
       <section className="pt-[60px] relative min-h-[80vh] flex items-center overflow-hidden">
         <Image
-          src="https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=1920&q=80&auto=format&fit=crop"
-          alt="Luxury hotel infinity pool with mountain view"
+          src="https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=1920&q=80&auto=format&fit=crop"
+          alt="Wellness silhouette at sunset reflected on water"
           fill
           priority
           className="object-cover"
           sizes="100vw"
         />
-        <div className="absolute inset-0 bg-white/65" />
+        <div className="absolute inset-0 bg-white/60" />
 
         <div className="relative z-10 max-w-7xl mx-auto px-6 lg:px-8 py-20 lg:py-32 text-center w-full">
           <div className="w-10 h-[1px] mx-auto mb-8" style={{ backgroundColor: '#C9A96E' }} />
