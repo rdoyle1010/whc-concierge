@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import DashboardShell from '@/components/DashboardShell'
 import { createClient } from '@/lib/supabase/client'
 import { calculateMatchScore } from '@/lib/matching'
-import { Search, MapPin, Briefcase, Heart, ArrowUpDown, Check } from 'lucide-react'
+import { Search, MapPin, Briefcase, Bookmark, ArrowUpDown, Check } from 'lucide-react'
 import { notify } from '@/lib/notify'
 import Pagination from '@/components/Pagination'
 import { ROLE_LEVELS, CONTRACT_TYPES } from '@/lib/constants'
@@ -23,6 +23,7 @@ export default function TalentJobsPage() {
   const [minMatch, setMinMatch] = useState(0)
   const [sortBy, setSortBy] = useState('match')
   const [applied, setApplied] = useState<Set<string>>(new Set())
+  const [saved, setSaved] = useState<Set<string>>(new Set())
   const [page, setPage] = useState(1)
   const perPage = 12
 
@@ -39,6 +40,12 @@ export default function TalentJobsPage() {
         // Load existing applications
         const { data: apps } = await supabase.from('applications').select('job_listing_id, job_id').eq('candidate_id', user.id)
         if (apps) setApplied(new Set(apps.map(a => a.job_listing_id || a.job_id)))
+        // Load saved jobs
+        const savedRes = await fetch('/api/saved-jobs')
+        if (savedRes.ok) {
+          const savedData = await savedRes.json()
+          setSaved(new Set((savedData.saved || []).map((s: any) => s.job_id)))
+        }
       }
 
       const { data: rawData } = await supabase
@@ -83,6 +90,14 @@ export default function TalentJobsPage() {
     return 0
   })
   const paginatedSorted = sorted.slice((page - 1) * perPage, page * perPage)
+
+  const toggleSave = async (jobId: string) => {
+    const isSaved = saved.has(jobId)
+    const next = new Set(saved)
+    if (isSaved) { next.delete(jobId); await fetch('/api/saved-jobs', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ jobId }) }) }
+    else { next.add(jobId); await fetch('/api/saved-jobs', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ jobId }) }) }
+    setSaved(next)
+  }
 
   const handleApply = async (jobId: string, matchScore: number) => {
     if (!userId) return
@@ -176,6 +191,9 @@ export default function TalentJobsPage() {
                   ) : (
                     <button onClick={() => handleApply(job.id, job.matchScore)} className="btn-primary flex-1">Apply</button>
                   )}
+                  <button type="button" onClick={() => toggleSave(job.id)} className={`p-2 rounded-lg border transition-colors ${saved.has(job.id) ? 'bg-[#FDF6EC] border-accent/30 text-accent' : 'border-border text-muted hover:text-accent hover:border-accent/30'}`} title={saved.has(job.id) ? 'Unsave' : 'Save'}>
+                    <Bookmark size={14} fill={saved.has(job.id) ? 'currentColor' : 'none'} />
+                  </button>
                 </div>
               </div>
             </div>

@@ -5,7 +5,7 @@ import { createClient } from '@/lib/supabase/client'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
 import Link from 'next/link'
-import { Search, MapPin, Briefcase, ArrowRight } from 'lucide-react'
+import { Search, MapPin, Briefcase, ArrowRight, Bookmark } from 'lucide-react'
 import Pagination from '@/components/Pagination'
 
 export default function PublicJobsPage() {
@@ -16,6 +16,8 @@ export default function PublicJobsPage() {
   const [location, setLocation] = useState('')
   const [page, setPage] = useState(1)
   const perPage = 12
+  const [saved, setSaved] = useState<Set<string>>(new Set())
+  const [isLoggedIn, setIsLoggedIn] = useState(false)
 
   useEffect(() => {
     async function load() {
@@ -26,9 +28,25 @@ export default function PublicJobsPage() {
         .order('posted_date', { ascending: false })
       setJobs((rawData || []).map((j: any) => ({ ...j, title: j.job_title || j.title, description: j.job_description || j.description, employer_profiles: { ...j.employer_profiles, company_name: j.employer_profiles?.property_name || j.employer_profiles?.company_name } })))
       setLoading(false)
+      // Check if logged in and load saved
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) {
+        setIsLoggedIn(true)
+        const res = await fetch('/api/saved-jobs')
+        if (res.ok) { const d = await res.json(); setSaved(new Set((d.saved || []).map((s: any) => s.job_id))) }
+      }
     }
     load()
   }, [])
+
+  const toggleSave = async (jobId: string) => {
+    if (!isLoggedIn) return
+    const isSaved = saved.has(jobId)
+    const next = new Set(saved)
+    if (isSaved) { next.delete(jobId); await fetch('/api/saved-jobs', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ jobId }) }) }
+    else { next.add(jobId); await fetch('/api/saved-jobs', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ jobId }) }) }
+    setSaved(next)
+  }
 
   const filtered = jobs.filter((job) => {
     if (search && !job.title.toLowerCase().includes(search.toLowerCase()) && !job.employer_profiles?.company_name?.toLowerCase().includes(search.toLowerCase())) return false
@@ -84,9 +102,16 @@ export default function PublicJobsPage() {
                   <p className="font-medium text-ink mt-3">
                     {job.salary_min && job.salary_max ? `£${job.salary_min.toLocaleString()} – £${job.salary_max.toLocaleString()}` : 'Competitive salary'}
                   </p>
-                  <Link href="/login?role=talent" className="mt-4 flex items-center text-gold text-sm font-medium">
-                    Apply Now <ArrowRight size={16} className="ml-1" />
-                  </Link>
+                  <div className="flex items-center justify-between mt-4">
+                    <Link href="/login?role=talent" className="flex items-center text-gold text-sm font-medium">
+                      Apply Now <ArrowRight size={16} className="ml-1" />
+                    </Link>
+                    {isLoggedIn && (
+                      <button type="button" onClick={() => toggleSave(job.id)} className={`p-1.5 rounded-lg transition-colors ${saved.has(job.id) ? 'text-accent' : 'text-gray-300 hover:text-accent'}`} title={saved.has(job.id) ? 'Unsave' : 'Save'}>
+                        <Bookmark size={16} fill={saved.has(job.id) ? 'currentColor' : 'none'} />
+                      </button>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>

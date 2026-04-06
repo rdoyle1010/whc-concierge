@@ -28,6 +28,7 @@ const navItems: Record<string, NavItem[]> = {
     { label: 'Dashboard', href: '/talent/dashboard', icon: <LayoutDashboard size={20} /> },
     { label: 'My Profile', href: '/talent/profile', icon: <User size={20} /> },
     { label: 'Browse Jobs', href: '/talent/jobs', icon: <Briefcase size={20} /> },
+    { label: 'Saved Roles', href: '/talent/saved', icon: <Heart size={20} /> },
     { label: 'Applications', href: '/talent/applications', icon: <FileText size={20} /> },
     { label: 'Messages', href: '/talent/messages', icon: <MessageSquare size={20} /> },
     { label: 'Reviews', href: '/talent/reviews', icon: <Star size={20} /> },
