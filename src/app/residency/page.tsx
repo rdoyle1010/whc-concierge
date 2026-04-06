@@ -24,7 +24,7 @@ export default function ResidencyPage() {
 
   useEffect(() => {
     supabase.from('residency_profiles').select('*')
-      .eq('approval_status', 'approved')
+      .or('approval_status.eq.approved,approval_status.is.null')
       .order('is_featured', { ascending: false })
       .order('created_at', { ascending: false })
       .then(({ data }) => { setResidencies(data || []); setLoading(false) })

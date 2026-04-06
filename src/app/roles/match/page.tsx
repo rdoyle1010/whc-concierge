@@ -44,7 +44,7 @@ export default function SwipeMatchPage() {
         .from('job_listings')
         .select('*, employer_profiles(company_name, property_name)')
         .eq('is_live', true)
-        .order('created_at', { ascending: false })
+        .order('posted_date', { ascending: false })
         .limit(50)
 
       const normalized = (rawData || []).map((j: any) => ({
