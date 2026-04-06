@@ -8,10 +8,10 @@ import Link from 'next/link'
 import { Clock, MapPin, X, Star, Award, Briefcase, ArrowRight } from 'lucide-react'
 
 const avatarPhotos = [
-  'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=200&q=80&auto=format&fit=crop',
-  'https://images.unsplash.com/photo-1544161515-4ab6ce6db874?w=200&q=80&auto=format&fit=crop',
-  'https://images.unsplash.com/photo-1507652313519-d4e9174996dd?w=200&q=80&auto=format&fit=crop',
-  'https://images.unsplash.com/photo-1600334089648-b0d9d3028eb2?w=200&q=80&auto=format&fit=crop',
+  'https://images.pexels.com/photos/6187430/pexels-photo-6187430.jpeg?auto=compress&cs=tinysrgb&w=200&h=200&dpr=1',
+  'https://images.pexels.com/photos/19641835/pexels-photo-19641835.jpeg?auto=compress&cs=tinysrgb&w=200&h=200&dpr=1',
+  'https://images.pexels.com/photos/6724313/pexels-photo-6724313.jpeg?auto=compress&cs=tinysrgb&w=200&h=200&dpr=1',
+  'https://images.pexels.com/photos/19695969/pexels-photo-19695969.jpeg?auto=compress&cs=tinysrgb&w=200&h=200&dpr=1',
 ]
 
 export default function ResidencyPage() {

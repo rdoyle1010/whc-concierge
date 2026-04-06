@@ -115,9 +115,9 @@ export default async function HomePage() {
                   <div className="relative h-36 overflow-hidden">
                     <Image
                       src={[
-                        'https://images.unsplash.com/photo-1600334089648-b0d9d3028eb2?w=600&q=80&auto=format&fit=crop',
-                        'https://images.unsplash.com/photo-1596178065887-1198b6148b2b?w=600&q=80&auto=format&fit=crop',
-                        'https://images.unsplash.com/photo-1560750588-73207b1ef5b8?w=600&q=80&auto=format&fit=crop',
+                        'https://images.pexels.com/photos/6724313/pexels-photo-6724313.jpeg?auto=compress&cs=tinysrgb&w=600&h=400&dpr=1',
+                        'https://images.pexels.com/photos/19695969/pexels-photo-19695969.jpeg?auto=compress&cs=tinysrgb&w=600&h=400&dpr=1',
+                        'https://images.pexels.com/photos/16249146/pexels-photo-16249146.jpeg?auto=compress&cs=tinysrgb&w=600&h=400&dpr=1',
                       ][i % 3]}
                       alt="" fill className="object-cover group-hover:scale-105 transition-transform duration-500" sizes="(max-width: 768px) 100vw, 33vw"
                     />
@@ -148,7 +148,7 @@ export default async function HomePage() {
       {/* ═══ FINAL CTA — Luxury imagery with white overlay ═══ */}
       <section className="relative overflow-hidden">
         <img
-          src="https://images.unsplash.com/photo-1540555700478-4be289fbec6d?w=1920&q=80&auto=format&fit=crop"
+          src="https://images.pexels.com/photos/5563472/pexels-photo-5563472.jpeg?auto=compress&cs=tinysrgb&w=1920&h=1080&dpr=1"
           alt="" className="absolute inset-0 w-full h-full object-cover"
         />
         <div className="absolute inset-0 bg-white/85" />

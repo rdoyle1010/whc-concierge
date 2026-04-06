@@ -7,28 +7,28 @@ import { ArrowRight } from 'lucide-react'
 
 const SLIDES = [
   {
-    image: 'https://images.unsplash.com/photo-1540555700478-4be289fbec6d?w=1920&q=80&auto=format&fit=crop',
+    image: 'https://images.pexels.com/photos/3735619/pexels-photo-3735619.jpeg?auto=compress&cs=tinysrgb&w=1920&h=1080&dpr=1',
     heading: 'Where Luxury Wellness Meets\nExceptional Talent',
     text: 'The UK\u2019s premier platform connecting elite spa and wellness professionals with prestigious employers.',
     cta: true,
   },
   {
-    image: 'https://images.unsplash.com/photo-1600334089648-b0d9d3028eb2?w=1920&q=80&auto=format&fit=crop',
+    image: 'https://images.pexels.com/photos/6187430/pexels-photo-6187430.jpeg?auto=compress&cs=tinysrgb&w=1920&h=1080&dpr=1',
     heading: 'Precision Matching, Not Guesswork',
     text: 'Our 15-category algorithm matches therapists to roles based on skills, qualifications, brands, location, and availability.',
   },
   {
-    image: 'https://images.unsplash.com/photo-1596178065887-1198b6148b2b?w=1920&q=80&auto=format&fit=crop',
+    image: 'https://images.pexels.com/photos/7587466/pexels-photo-7587466.jpeg?auto=compress&cs=tinysrgb&w=1920&h=1080&dpr=1',
     heading: 'Every Profile, Personally Vetted',
     text: 'Only qualified wellness professionals make it onto the platform. CIDESCO, CIBTAC, VTCT \u2014 we verify credentials so you don\'t have to.',
   },
   {
-    image: 'https://images.unsplash.com/photo-1560750588-73207b1ef5b8?w=1920&q=80&auto=format&fit=crop',
+    image: 'https://images.pexels.com/photos/5563472/pexels-photo-5563472.jpeg?auto=compress&cs=tinysrgb&w=1920&h=1080&dpr=1',
     heading: 'Access the UK\'s Finest Properties',
     text: 'From five-star London hotels to country estate spas \u2014 exclusive roles at properties that set the standard.',
   },
   {
-    image: 'https://images.unsplash.com/photo-1544161515-4ab6ce6db874?w=1920&q=80&auto=format&fit=crop',
+    image: 'https://images.pexels.com/photos/19641835/pexels-photo-19641835.jpeg?auto=compress&cs=tinysrgb&w=1920&h=1080&dpr=1',
     heading: 'The Only Platform Built for Luxury Wellness',
     text: 'Generic job boards don\'t understand our industry. WHC Concierge speaks the language of spa, wellness, and five-star hospitality.',
   },
