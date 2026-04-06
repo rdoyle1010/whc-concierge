@@ -52,44 +52,10 @@ export default async function HomePage() {
     <div className="min-h-screen bg-white">
       <Navbar />
 
-      {/* ═══ HERO — Luxury imagery with white overlay ═══ */}
-      <section className="pt-[60px] relative min-h-[80vh] flex items-center overflow-hidden">
-        <Image
-          src="https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=1920&q=80&auto=format&fit=crop"
-          alt="Wellness silhouette at sunset reflected on water"
-          fill
-          priority
-          className="object-cover"
-          sizes="100vw"
-        />
-        <div className="absolute inset-0 bg-white/60" />
-
-        <div className="relative z-10 max-w-7xl mx-auto px-6 lg:px-8 py-20 lg:py-32 text-center w-full">
-          <div className="w-10 h-[1px] mx-auto mb-8" style={{ backgroundColor: '#C9A96E' }} />
-          <h1 className="text-[38px] md:text-[52px] lg:text-[62px] font-medium leading-[1.08] tracking-tight mb-6 max-w-4xl mx-auto" style={{ color: '#1a1a1a' }}>
-            Where Luxury Wellness Meets{' '}
-            <span style={{ color: '#C9A96E' }}>Exceptional Talent</span>
-          </h1>
-          <p className="text-[16px] md:text-[18px] leading-[1.7] max-w-2xl mx-auto mb-10" style={{ color: '#6B7280' }}>
-            The UK&apos;s premier platform connecting elite spa and wellness professionals with prestigious employers
-          </p>
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Link href="/register/employer"
-              className="px-8 py-3.5 rounded-lg text-[14px] font-semibold text-white transition-all hover:shadow-lg hover:shadow-[#C9A96E]/25"
-              style={{ backgroundColor: '#C9A96E' }}>
-              Find Talent
-            </Link>
-            <Link href="/roles"
-              className="px-8 py-3.5 rounded-lg text-[14px] font-medium transition-all hover:bg-[#C9A96E]/10"
-              style={{ border: '1.5px solid #C9A96E', color: '#1a1a1a' }}>
-              Find Roles <ArrowRight size={14} className="inline ml-1" />
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* ═══ IMAGE CAROUSEL ═══ */}
-      <HeroCarousel />
+      {/* ═══ HERO CAROUSEL — Single unified hero ═══ */}
+      <div className="pt-[60px]">
+        <HeroCarousel />
+      </div>
 
       {/* ═══ LIVE STATS BAR ═══ */}
       <section className="border-y" style={{ background: '#F8F7F5', borderColor: '#E8E5E0' }}>
@@ -149,8 +115,8 @@ export default async function HomePage() {
                   <div className="relative h-36 overflow-hidden">
                     <Image
                       src={[
-                        'https://images.unsplash.com/photo-1540555700478-4be289fbec6d?w=600&q=80&auto=format&fit=crop',
-                        'https://images.unsplash.com/photo-1600334089648-b0d9d3028eb2?w=600&q=80&auto=format&fit=crop',
+                        'https://images.unsplash.com/photo-1560750588-73207b1ef5b8?w=600&q=80&auto=format&fit=crop',
+                        'https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?w=600&q=80&auto=format&fit=crop',
                         'https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=600&q=80&auto=format&fit=crop',
                       ][i % 3]}
                       alt="" fill className="object-cover group-hover:scale-105 transition-transform duration-500" sizes="(max-width: 768px) 100vw, 33vw"
@@ -182,10 +148,10 @@ export default async function HomePage() {
       {/* ═══ FINAL CTA — Luxury imagery with white overlay ═══ */}
       <section className="relative overflow-hidden">
         <img
-          src="https://images.unsplash.com/photo-1600334089648-b0d9d3028eb2?w=1920&q=80&auto=format&fit=crop"
+          src="https://images.unsplash.com/photo-1596178065887-1198b6148b2b?w=1920&q=80&auto=format&fit=crop"
           alt="" className="absolute inset-0 w-full h-full object-cover"
         />
-        <div className="absolute inset-0 bg-white/80" />
+        <div className="absolute inset-0 bg-white/85" />
 
         <div className="relative z-10 max-w-5xl mx-auto px-6 lg:px-8 py-24">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">

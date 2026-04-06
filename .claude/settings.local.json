@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git add:*)",
+      "Bash(git commit -m ':*)",
+      "Bash(git push:*)",
+      "Bash(xargs grep:*)",
+      "Bash(npm install:*)",
+      "Bash(npx next:*)",
+      "Bash(node -e \"const fs = require\\('fs'\\); const code = fs.readFileSync\\('src/app/admin/matches/page.tsx', 'utf8'\\); try { require\\('acorn'\\).parse\\(code, {ecmaVersion: 2022, sourceType: 'module', plugins: {jsx: true}}\\); console.log\\('OK'\\); } catch\\(e\\) { console.log\\(e.message\\); }\")",
+      "Bash(npx tsc:*)",
+      "Read(//c/Users/rebec/talent/**)",
+      "Read(//c/Users/rebec/**)",
+      "Bash(git am:*)",
+      "Bash(git apply:*)"
+    ]
+  }
+}
