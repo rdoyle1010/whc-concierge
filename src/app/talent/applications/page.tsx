@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import DashboardShell from '@/components/DashboardShell'
 import { createClient } from '@/lib/supabase/client'
 import { FileText, Clock, CheckCircle, XCircle, Star } from 'lucide-react'
+import Pagination from '@/components/Pagination'
 
 const statusConfig: Record<string, { icon: React.ReactNode; color: string; label: string }> = {
   pending: { icon: <Clock size={16} />, color: 'text-amber-600 bg-amber-50', label: 'Pending' },
@@ -17,6 +18,8 @@ export default function TalentApplicationsPage() {
   const supabase = createClient()
   const [applications, setApplications] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [page, setPage] = useState(1)
+  const [perPage, setPerPage] = useState(25)
 
   useEffect(() => {
     async function load() {
@@ -51,7 +54,7 @@ export default function TalentApplicationsPage() {
         </div>
       ) : (
         <div className="space-y-4">
-          {applications.map((app) => {
+          {applications.slice((page - 1) * perPage, page * perPage).map((app) => {
             const status = statusConfig[app.status] || statusConfig.pending
             return (
               <div key={app.id} className="dashboard-card flex items-center justify-between">
@@ -69,6 +72,7 @@ export default function TalentApplicationsPage() {
               </div>
             )
           })}
+          <Pagination page={page} perPage={perPage} total={applications.length} onPageChange={setPage} onPerPageChange={setPerPage} />
         </div>
       )}
     </DashboardShell>

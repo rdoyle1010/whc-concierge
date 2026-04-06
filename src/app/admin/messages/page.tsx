@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import DashboardShell from '@/components/DashboardShell'
 import { createClient } from '@/lib/supabase/client'
 import { MessageSquare, Mail, Eye, Trash2, Check } from 'lucide-react'
+import Pagination from '@/components/Pagination'
 
 export default function AdminMessagesPage() {
   const supabase = createClient()
@@ -11,6 +12,8 @@ export default function AdminMessagesPage() {
   const [loading, setLoading] = useState(true)
   const [selected, setSelected] = useState<any>(null)
   const [filter, setFilter] = useState('all')
+  const [page, setPage] = useState(1)
+  const perPage = 25
 
   useEffect(() => {
     async function load() {
@@ -65,7 +68,7 @@ export default function AdminMessagesPage() {
             <div className="flex items-center justify-center h-32"><div className="animate-spin w-8 h-8 border-2 border-gold border-t-transparent rounded-full" /></div>
           ) : filtered.length === 0 ? (
             <div className="text-center py-12 text-gray-400"><Mail size={32} className="mx-auto mb-2 opacity-50" /><p className="text-sm">No messages</p></div>
-          ) : filtered.map((q) => (
+          ) : filtered.slice((page - 1) * perPage, page * perPage).map((q) => (
             <button key={q.id} onClick={() => setSelected(q)}
               className={`w-full text-left p-4 rounded-xl border transition-all ${
                 selected?.id === q.id ? 'border-gold/30 bg-gold/5' : 'border-gray-100 bg-white hover:bg-gray-50'
@@ -78,6 +81,7 @@ export default function AdminMessagesPage() {
               <p className="text-xs text-gray-300 mt-1">{new Date(q.created_at).toLocaleDateString()}</p>
             </button>
           ))}
+          <Pagination page={page} perPage={perPage} total={filtered.length} showPerPage={false} onPageChange={setPage} />
         </div>
 
         {/* Detail */}

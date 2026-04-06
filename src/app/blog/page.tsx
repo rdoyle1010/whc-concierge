@@ -7,12 +7,15 @@ import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
 import { ArrowRight, Clock } from 'lucide-react'
 import SkeletonCard from '@/components/SkeletonCard'
+import Pagination from '@/components/Pagination'
 
 export default function BlogPage() {
   const supabase = createClient()
   const [posts, setPosts] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState('All')
+  const [page, setPage] = useState(1)
+  const perPage = 9
 
   useEffect(() => {
     async function load() {
@@ -25,8 +28,10 @@ export default function BlogPage() {
 
   const categories = ['All', ...Array.from(new Set(posts.map(p => p.category).filter(Boolean)))]
   const filtered = filter === 'All' ? posts : posts.filter(p => p.category === filter)
-  const heroPost = filtered[0]
-  const gridPosts = filtered.slice(1)
+  const heroPost = page === 1 ? filtered[0] : null
+  const gridStart = page === 1 ? 1 : (page - 1) * perPage
+  const gridEnd = page === 1 ? perPage : page * perPage
+  const gridPosts = filtered.slice(gridStart, gridEnd)
   const readTime = (content: string) => Math.max(1, Math.ceil((content?.length || 0) / 1200))
 
   return (
@@ -110,6 +115,7 @@ export default function BlogPage() {
                   ))}
                 </div>
               )}
+              <Pagination page={page} perPage={perPage} total={filtered.length} showPerPage={false} onPageChange={setPage} />
             </>
           )}
         </div>

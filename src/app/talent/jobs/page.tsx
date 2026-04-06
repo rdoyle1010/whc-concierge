@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/client'
 import { calculateMatchScore } from '@/lib/matching'
 import { Search, MapPin, Briefcase, Heart, ArrowUpDown, Check } from 'lucide-react'
 import { notify } from '@/lib/notify'
+import Pagination from '@/components/Pagination'
 import { ROLE_LEVELS, CONTRACT_TYPES } from '@/lib/constants'
 
 export default function TalentJobsPage() {
@@ -22,6 +23,8 @@ export default function TalentJobsPage() {
   const [minMatch, setMinMatch] = useState(0)
   const [sortBy, setSortBy] = useState('match')
   const [applied, setApplied] = useState<Set<string>>(new Set())
+  const [page, setPage] = useState(1)
+  const perPage = 12
 
   useEffect(() => {
     async function load() {
@@ -79,6 +82,7 @@ export default function TalentJobsPage() {
     if (sortBy === 'salary_low') return (a.salary_min || 999999) - (b.salary_min || 999999)
     return 0
   })
+  const paginatedSorted = sorted.slice((page - 1) * perPage, page * perPage)
 
   const handleApply = async (jobId: string, matchScore: number) => {
     if (!userId) return
@@ -145,7 +149,7 @@ export default function TalentJobsPage() {
         <div className="text-center py-20"><Briefcase size={32} className="mx-auto text-muted mb-3" /><p className="text-[14px] text-muted">No roles match your filters.</p></div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {sorted.map(job => (
+          {paginatedSorted.map(job => (
             <div key={job.id} className="card p-0 overflow-hidden">
               <div className="p-5">
                 <div className="flex items-center justify-between mb-3">
@@ -177,6 +181,7 @@ export default function TalentJobsPage() {
             </div>
           ))}
         </div>
+        <Pagination page={page} perPage={perPage} total={sorted.length} showPerPage={false} onPageChange={setPage} />
       )}
     </DashboardShell>
   )

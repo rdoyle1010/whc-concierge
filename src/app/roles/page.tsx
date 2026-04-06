@@ -8,6 +8,7 @@ import Footer from '@/components/Footer'
 import Link from 'next/link'
 import { MapPin, Briefcase, Search, Clock } from 'lucide-react'
 import SkeletonCard from '@/components/SkeletonCard'
+import Pagination from '@/components/Pagination'
 
 const ROLE_TYPES = ['All', 'Permanent', 'Fixed Term', 'Freelance', 'Agency', 'Seasonal']
 
@@ -19,6 +20,8 @@ export default function BrowseRolesPage() {
   const [search, setSearch] = useState('')
   const [roleType, setRoleType] = useState('All')
   const [locationFilter, setLocationFilter] = useState('')
+  const [page, setPage] = useState(1)
+  const perPage = 12
 
   useEffect(() => {
     async function load() {
@@ -84,9 +87,9 @@ export default function BrowseRolesPage() {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
             <div className="md:col-span-2 relative">
               <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
-              <input type="text" placeholder="Search roles or properties..." value={search} onChange={e => setSearch(e.target.value)} className="input-field pl-9 !py-2 text-[13px]" />
+              <input type="text" placeholder="Search roles or properties..." value={search} onChange={e => { setSearch(e.target.value); setPage(1) }} className="input-field pl-9 !py-2 text-[13px]" />
             </div>
-            <select value={roleType} onChange={e => setRoleType(e.target.value)} className="input-field !py-2 text-[13px]">
+            <select value={roleType} onChange={e => { setRoleType(e.target.value); setPage(1) }} className="input-field !py-2 text-[13px]">
               {ROLE_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
             </select>
             <input type="text" placeholder="Location..." value={locationFilter} onChange={e => setLocationFilter(e.target.value)} className="input-field !py-2 text-[13px]" />
@@ -107,7 +110,7 @@ export default function BrowseRolesPage() {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filtered.map(job => (
+            {filtered.slice((page - 1) * perPage, page * perPage).map(job => (
               <Link key={job.id} href="/roles/match" className="bg-white border border-border rounded-xl p-5 hover:shadow-md hover:-translate-y-0.5 transition-all">
                 <div className="flex items-center justify-between mb-3">
                   {job.tier && <span className={tierClass(job.tier)}>{job.tier}</span>}
@@ -130,6 +133,7 @@ export default function BrowseRolesPage() {
               </Link>
             ))}
           </div>
+          <Pagination page={page} perPage={perPage} total={filtered.length} showPerPage={false} onPageChange={setPage} />
         )}
       </section>
 

@@ -5,6 +5,7 @@ import DashboardShell from '@/components/DashboardShell'
 import { createClient } from '@/lib/supabase/client'
 import { Search, Users, Building2, CheckCircle, XCircle, Clock, Eye, X, FileText, ExternalLink } from 'lucide-react'
 import { notify } from '@/lib/notify'
+import Pagination from '@/components/Pagination'
 
 export default function AdminUsersPage() {
   const supabase = createClient()
@@ -17,6 +18,8 @@ export default function AdminUsersPage() {
   const [selectedType, setSelectedType] = useState<'candidate' | 'employer'>('candidate')
   const [rejectReason, setRejectReason] = useState('')
   const [showReject, setShowReject] = useState(false)
+  const [page, setPage] = useState(1)
+  const [perPage, setPerPage] = useState(25)
 
   useEffect(() => {
     async function load() {
@@ -83,7 +86,7 @@ export default function AdminUsersPage() {
 
       <div className="relative mb-6 max-w-md">
         <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-300" />
-        <input type="text" placeholder="Search..." value={search} onChange={(e) => setSearch(e.target.value)} className="input-field pl-10" />
+        <input type="text" placeholder="Search..." value={search} onChange={(e) => { setSearch(e.target.value); setPage(1) }} className="input-field pl-10" />
       </div>
 
       {loading ? (
@@ -91,7 +94,7 @@ export default function AdminUsersPage() {
       ) : (
         <div className="space-y-2">
           {/* Candidates */}
-          {filterByStatus(candidates).map((c) => (
+          {filterByStatus(candidates).slice((page - 1) * perPage, page * perPage).map((c) => (
             <div key={c.id} className="bg-white border border-neutral-200 p-4 flex items-center justify-between hover:border-neutral-400 transition-colors cursor-pointer" onClick={() => { setSelected(c); setSelectedType('candidate') }}>
               <div className="flex items-center space-x-3">
                 <div className="w-8 h-8 bg-neutral-100 flex items-center justify-center text-xs font-bold text-neutral-400"><Users size={14} /></div>
@@ -125,6 +128,7 @@ export default function AdminUsersPage() {
           {filterByStatus(candidates).length === 0 && filterByStatus(employers).length === 0 && (
             <p className="text-center text-neutral-400 py-12">No {tab} users found.</p>
           )}
+          <Pagination page={page} perPage={perPage} total={filterByStatus(candidates).length + filterByStatus(employers).length} onPageChange={setPage} onPerPageChange={setPerPage} />
         </div>
       )}
 

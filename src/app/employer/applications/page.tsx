@@ -4,12 +4,15 @@ import { useEffect, useState } from 'react'
 import DashboardShell from '@/components/DashboardShell'
 import { createClient } from '@/lib/supabase/client'
 import { CheckCircle, XCircle, Star, Clock } from 'lucide-react'
+import Pagination from '@/components/Pagination'
 
 export default function EmployerApplicationsPage() {
   const supabase = createClient()
   const [applications, setApplications] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [profile, setProfile] = useState<any>(null)
+  const [page, setPage] = useState(1)
+  const [perPage, setPerPage] = useState(25)
 
   useEffect(() => {
     async function load() {
@@ -66,7 +69,7 @@ export default function EmployerApplicationsPage() {
         <div className="dashboard-card text-center py-16 text-gray-400">No applications received yet.</div>
       ) : (
         <div className="space-y-4">
-          {applications.map((app) => (
+          {applications.slice((page - 1) * perPage, page * perPage).map((app) => (
             <div key={app.id} className="dashboard-card">
               <div className="flex items-start justify-between">
                 <div>
@@ -104,6 +107,7 @@ export default function EmployerApplicationsPage() {
               </div>
             </div>
           ))}
+          <Pagination page={page} perPage={perPage} total={applications.length} onPageChange={setPage} onPerPageChange={setPerPage} />
         </div>
       )}
     </DashboardShell>

@@ -6,6 +6,7 @@ import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
 import Link from 'next/link'
 import { Search, MapPin, Briefcase, ArrowRight } from 'lucide-react'
+import Pagination from '@/components/Pagination'
 
 export default function PublicJobsPage() {
   const supabase = createClient()
@@ -13,6 +14,8 @@ export default function PublicJobsPage() {
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [location, setLocation] = useState('')
+  const [page, setPage] = useState(1)
+  const perPage = 12
 
   useEffect(() => {
     async function load() {
@@ -32,6 +35,7 @@ export default function PublicJobsPage() {
     if (location && !job.location?.toLowerCase().includes(location.toLowerCase())) return false
     return true
   })
+  const paginatedJobs = filtered.slice((page - 1) * perPage, page * perPage)
 
   return (
     <div className="min-h-screen">
@@ -43,11 +47,11 @@ export default function PublicJobsPage() {
           <div className="max-w-2xl mx-auto flex flex-col sm:flex-row gap-3">
             <div className="relative flex-1">
               <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-              <input type="text" placeholder="Job title or property..." value={search} onChange={(e) => setSearch(e.target.value)} className="input-field pl-10 bg-white" />
+              <input type="text" placeholder="Job title or property..." value={search} onChange={(e) => { setSearch(e.target.value); setPage(1) }} className="input-field pl-10 bg-white" />
             </div>
             <div className="relative flex-1">
               <MapPin size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-              <input type="text" placeholder="Location..." value={location} onChange={(e) => setLocation(e.target.value)} className="input-field pl-10 bg-white" />
+              <input type="text" placeholder="Location..." value={location} onChange={(e) => { setLocation(e.target.value); setPage(1) }} className="input-field pl-10 bg-white" />
             </div>
           </div>
         </div>
@@ -61,7 +65,7 @@ export default function PublicJobsPage() {
             <p className="text-center text-gray-400 py-16">No roles found. Try adjusting your search.</p>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filtered.map((job) => (
+              {paginatedJobs.map((job) => (
                 <div key={job.id} className="card hover:shadow-lg transition-all group border-t-4 border-t-gold/20 hover:border-t-gold">
                   <div className="flex items-center justify-between mb-3">
                     {job.tier && (
@@ -86,6 +90,7 @@ export default function PublicJobsPage() {
                 </div>
               ))}
             </div>
+            <Pagination page={page} perPage={perPage} total={filtered.length} showPerPage={false} onPageChange={setPage} />
           )}
         </div>
       </section>

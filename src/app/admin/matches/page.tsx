@@ -4,12 +4,15 @@ import { useEffect, useState } from 'react'
 import DashboardShell from '@/components/DashboardShell'
 import { createClient } from '@/lib/supabase/client'
 import { Heart, Search } from 'lucide-react'
+import Pagination from '@/components/Pagination'
 
 export default function AdminMatchesPage() {
   const supabase = createClient()
   const [matches, setMatches] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
+  const [page, setPage] = useState(1)
+  const [perPage, setPerPage] = useState(25)
 
   useEffect(() => {
     async function load() {
@@ -39,7 +42,7 @@ export default function AdminMatchesPage() {
       <div className="relative mb-6 max-w-md">
         <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
         <input type="text" placeholder="Search matches..." value={search}
-          onChange={(e) => setSearch(e.target.value)} className="input-field pl-10" />
+          onChange={(e) => { setSearch(e.target.value); setPage(1) }} className="input-field pl-10" />
       </div>
 
       {loading ? (
@@ -63,7 +66,7 @@ export default function AdminMatchesPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
-              {filtered.map((m) => (
+              {filtered.slice((page - 1) * perPage, page * perPage).map((m) => (
                 <tr key={m.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4">
                     <p className="text-sm font-medium text-ink">{m.candidate_profiles?.full_name || '—'}</p>
@@ -93,6 +96,7 @@ export default function AdminMatchesPage() {
             </tbody>
           </table>
         </div>
+        <Pagination page={page} perPage={perPage} total={filtered.length} onPageChange={setPage} onPerPageChange={setPerPage} />
       )}
     </DashboardShell>
   )
