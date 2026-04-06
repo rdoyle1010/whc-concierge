@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
+import { profileUpdateSchema, validateRequest } from '@/lib/validations'
 
 // -- Column whitelist --
 // Only these fields may be written via this endpoint.
@@ -64,10 +65,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
     }
 
-    const { profileId, data } = await req.json()
-    if (!profileId || !data) {
-      return NextResponse.json({ error: 'Missing profileId or data' }, { status: 400 })
+    const body = await req.json()
+    const validation = validateRequest(profileUpdateSchema, body)
+    if (!validation.success) {
+      return NextResponse.json({ error: 'Validation failed', errors: validation.errors }, { status: 400 })
     }
+    const { profileId, data } = validation.data!
 
     // -- Ownership: profile must belong to the caller --
     const admin = createAdminClient()

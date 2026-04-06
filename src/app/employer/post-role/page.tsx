@@ -7,6 +7,7 @@ import { createClient } from '@/lib/supabase/client'
 import { ROLE_LEVELS, PRODUCT_HOUSES, QUALIFICATIONS, CONTRACT_TYPES, JOB_TIERS } from '@/lib/constants'
 import CollapsibleCheckboxSection from '@/components/CollapsibleCheckboxSection'
 import { Check } from 'lucide-react'
+import { jobListingSchema } from '@/lib/validations'
 
 const tierCards = [
   { key: 'Bronze', price: '£150', days: 30, features: ['30-day listing', 'Basic matching', 'Applicant tracking'] },
@@ -24,6 +25,7 @@ export default function PostRolePage() {
   const [saving, setSaving] = useState(false)
   const [checkoutLoading, setCheckoutLoading] = useState(false)
   const [error, setError] = useState('')
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
 
   const [form, setForm] = useState({
     title: '', description: '', location: '', location_postcode: '',
@@ -48,9 +50,27 @@ export default function PostRolePage() {
   }, [])
 
   const handleSaveAndPay = async () => {
-    if (!profile || !form.title) return
+    if (!profile) return
     setSaving(true)
     setError('')
+    setFieldErrors({})
+
+    const validation = jobListingSchema.safeParse({
+      job_title: form.title,
+      job_description: form.description,
+      location: form.location,
+      salary_min: form.salary_min ? parseInt(form.salary_min) : undefined,
+      salary_max: form.salary_max ? parseInt(form.salary_max) : undefined,
+      contract_type: form.contract_type,
+      required_role_level: form.required_role_level || undefined,
+    })
+    if (!validation.success) {
+      const errs: Record<string, string> = {}
+      validation.error.issues.forEach(i => { errs[i.path[0] as string] = i.message })
+      setFieldErrors(errs)
+      setSaving(false)
+      return
+    }
 
     // Create the job listing first
     const tierConfig = JOB_TIERS[selectedTier as keyof typeof JOB_TIERS]
@@ -109,10 +129,12 @@ export default function PostRolePage() {
           <p className="text-xs font-medium text-neutral-400 uppercase tracking-widest">Job Details</p>
 
           <div><label className="block text-xs font-medium text-neutral-500 uppercase tracking-wider mb-1.5">Job Title *</label>
-            <input type="text" value={form.title} onChange={(e) => update('title', e.target.value)} className="input-field" placeholder="e.g. Senior Spa Therapist" /></div>
+            <input type="text" value={form.title} onChange={(e) => update('title', e.target.value)} className={`input-field ${fieldErrors.job_title ? 'border-red-300' : ''}`} placeholder="e.g. Senior Spa Therapist" />
+            {fieldErrors.job_title && <p className="text-red-500 text-xs mt-1">{fieldErrors.job_title}</p>}</div>
 
           <div><label className="block text-xs font-medium text-neutral-500 uppercase tracking-wider mb-1.5">Description *</label>
-            <textarea rows={5} value={form.description} onChange={(e) => update('description', e.target.value)} className="input-field" placeholder="Describe the role, responsibilities, and ideal candidate..." /></div>
+            <textarea rows={5} value={form.description} onChange={(e) => update('description', e.target.value)} className={`input-field ${fieldErrors.job_description ? 'border-red-300' : ''}`} placeholder="Describe the role, responsibilities, and ideal candidate..." />
+            {fieldErrors.job_description && <p className="text-red-500 text-xs mt-1">{fieldErrors.job_description}</p>}</div>
 
           <div className="grid grid-cols-2 gap-4">
             <div><label className="block text-xs font-medium text-neutral-500 uppercase tracking-wider mb-1.5">Role Level</label>
@@ -128,7 +150,8 @@ export default function PostRolePage() {
 
           <div className="grid grid-cols-2 gap-4">
             <div><label className="block text-xs font-medium text-neutral-500 uppercase tracking-wider mb-1.5">Location *</label>
-              <input type="text" value={form.location} onChange={(e) => update('location', e.target.value)} className="input-field" placeholder="London" /></div>
+              <input type="text" value={form.location} onChange={(e) => update('location', e.target.value)} className={`input-field ${fieldErrors.location ? 'border-red-300' : ''}`} placeholder="London" />
+              {fieldErrors.location && <p className="text-red-500 text-xs mt-1">{fieldErrors.location}</p>}</div>
             <div><label className="block text-xs font-medium text-neutral-500 uppercase tracking-wider mb-1.5">Postcode</label>
               <input type="text" value={form.location_postcode} onChange={(e) => update('location_postcode', e.target.value)} className="input-field" placeholder="SW1A 1AA" /></div>
           </div>

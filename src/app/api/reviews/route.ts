@@ -1,13 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { reviewSchema, validateRequest } from '@/lib/validations'
 
 export async function POST(req: NextRequest) {
   try {
-    const { reviewer_id, reviewed_id, rating, criteria_scores, comment, type } = await req.json()
-
-    if (!reviewer_id || !reviewed_id || (!rating && !criteria_scores)) {
-      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
+    const body = await req.json()
+    const validation = validateRequest(reviewSchema, body)
+    if (!validation.success) {
+      return NextResponse.json({ error: 'Validation failed', errors: validation.errors }, { status: 400 })
     }
+    const { reviewer_id, reviewed_id, rating, criteria_scores, comment, type } = validation.data!
 
     // Prevent self-reviews
     if (reviewer_id === reviewed_id) {

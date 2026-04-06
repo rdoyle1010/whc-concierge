@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { rateLimit, getClientIp } from '@/lib/rate-limit'
+import { contactFormSchema, validateRequest } from '@/lib/validations'
 
 const limiter = rateLimit('contact-notify', { windowMs: 15 * 60 * 1000, maxRequests: 5 })
 
@@ -12,11 +13,12 @@ export async function POST(req: NextRequest) {
   if (!success) return NextResponse.json({ error: 'Too many requests. Please try again later.' }, { status: 429, headers: { 'X-RateLimit-Remaining': '0' } })
 
   try {
-    const { name, email, subject, message, type } = await req.json()
-
-    if (!name || !email || !subject || !message) {
-      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
+    const body = await req.json()
+    const validation = validateRequest(contactFormSchema, body)
+    if (!validation.success) {
+      return NextResponse.json({ error: 'Validation failed', errors: validation.errors }, { status: 400 })
     }
+    const { name, email, subject, message, type } = validation.data!
 
     const emailSubject = `New WHC Contact: ${type || 'general'} — ${subject}`
 

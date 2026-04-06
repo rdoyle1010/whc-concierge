@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/client'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
 import { Mail, MapPin, Send, Check } from 'lucide-react'
+import { contactFormSchema } from '@/lib/validations'
 
 export default function ContactPage() {
   const supabase = createClient()
@@ -12,11 +13,22 @@ export default function ContactPage() {
   const [sent, setSent] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
     setError('')
+    setFieldErrors({})
+
+    const result = contactFormSchema.safeParse(form)
+    if (!result.success) {
+      const errs: Record<string, string> = {}
+      result.error.issues.forEach(i => { errs[i.path[0] as string] = i.message })
+      setFieldErrors(errs)
+      setLoading(false)
+      return
+    }
 
     const { error: insertError } = await supabase.from('contact_queries').insert({
       name: form.name,
@@ -100,14 +112,18 @@ export default function ContactPage() {
                 <form onSubmit={handleSubmit} className="space-y-5">
                   <div className="grid grid-cols-2 gap-4">
                     <div><label className="block text-sm font-medium text-gray-700 mb-1.5">Name</label>
-                      <input type="text" required value={form.name} onChange={(e) => setForm({...form, name: e.target.value})} className="input-field" /></div>
+                      <input type="text" required value={form.name} onChange={(e) => setForm({...form, name: e.target.value})} className={`input-field ${fieldErrors.name ? 'border-red-300' : ''}`} />
+                      {fieldErrors.name && <p className="text-red-500 text-xs mt-1">{fieldErrors.name}</p>}</div>
                     <div><label className="block text-sm font-medium text-gray-700 mb-1.5">Email</label>
-                      <input type="email" required value={form.email} onChange={(e) => setForm({...form, email: e.target.value})} className="input-field" /></div>
+                      <input type="email" required value={form.email} onChange={(e) => setForm({...form, email: e.target.value})} className={`input-field ${fieldErrors.email ? 'border-red-300' : ''}`} />
+                      {fieldErrors.email && <p className="text-red-500 text-xs mt-1">{fieldErrors.email}</p>}</div>
                   </div>
                   <div><label className="block text-sm font-medium text-gray-700 mb-1.5">Subject</label>
-                    <input type="text" required value={form.subject} onChange={(e) => setForm({...form, subject: e.target.value})} className="input-field" /></div>
+                    <input type="text" required value={form.subject} onChange={(e) => setForm({...form, subject: e.target.value})} className={`input-field ${fieldErrors.subject ? 'border-red-300' : ''}`} />
+                    {fieldErrors.subject && <p className="text-red-500 text-xs mt-1">{fieldErrors.subject}</p>}</div>
                   <div><label className="block text-sm font-medium text-gray-700 mb-1.5">Message</label>
-                    <textarea rows={6} required value={form.message} onChange={(e) => setForm({...form, message: e.target.value})} className="input-field" /></div>
+                    <textarea rows={6} required value={form.message} onChange={(e) => setForm({...form, message: e.target.value})} className={`input-field ${fieldErrors.message ? 'border-red-300' : ''}`} />
+                    {fieldErrors.message && <p className="text-red-500 text-xs mt-1">{fieldErrors.message}</p>}</div>
                   <button type="submit" disabled={loading} className="btn-primary flex items-center space-x-2 disabled:opacity-50">
                     <Send size={16} /><span>{loading ? 'Sending...' : 'Send Message'}</span>
                   </button>
