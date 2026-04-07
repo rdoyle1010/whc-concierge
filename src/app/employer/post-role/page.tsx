@@ -12,9 +12,8 @@ import { jobListingSchema } from '@/lib/validations'
 
 const TIER_KEYS = ['Bronze', 'Silver', 'Gold', 'Platinum'] as const
 const tierCards = TIER_KEYS.map(k => ({
-  key: k,
-  price: JOB_TIERS[k].display,
-  days: JOB_TIERS[k].days,
+  name: k,
+  price: JOB_TIERS[k].price / 100,
   features: JOB_TIERS[k].features as readonly string[],
 }))
 
@@ -32,15 +31,14 @@ export default function PostRolePage() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const supabase = createClient()
+
   const [profile, setProfile] = useState<any>(null)
-  const [phase, setPhase] = useState<'form' | 'preview' | 'tier'>('form')
-  const [selectedTier, setSelectedTier] = useState('Silver')
+  const [phase, setPhase] = useState<'form' | 'tier'>('form')
+  const [selectedTier, setSelectedTier] = useState('Bronze')
   const [saving, setSaving] = useState(false)
   const [checkoutLoading, setCheckoutLoading] = useState(false)
   const [error, setError] = useState('')
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
-  const [cloneJobId, setCloneJobId] = useState<string | null>(null)
-
   const [form, setForm] = useState({
     title: '', description: '', location: '', location_postcode: '',
     radius_miles: '', job_type: 'Full-time', contract_type: 'permanent',
@@ -59,12 +57,15 @@ export default function PostRolePage() {
     insurance_required: false, is_agency_role: false, is_residency_role: false,
   })
 
-  const update = (field: string, value: any) => setForm({ ...form, [field]: value })
+  const update = (field: keyof typeof form, value: any) => {
+    setForm(prev => ({ ...prev, [field]: value }))
+    setFieldErrors(prev => { const next = { ...prev }; delete next[field]; return next })
+  }
 
   useEffect(() => {
     async function load() {
       const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return
+      if (!user) { router.push('/login'); return }
       const { data } = await supabase.from('employer_profiles').select('*').eq('user_id', user.id).single()
       setProfile(data)
 
@@ -75,7 +76,6 @@ export default function PostRolePage() {
       if (jobIdToLoad) {
         const { data: jobData } = await supabase.from('job_listings').select('*').eq('id', jobIdToLoad).single()
         if (jobData) {
-          setCloneJobId(jobIdToLoad)
           setForm({
             title: jobData.job_title || '',
             description: jobData.job_description || '',
@@ -102,7 +102,6 @@ export default function PostRolePage() {
             is_agency_role: jobData.is_agency_role || false,
             is_residency_role: jobData.is_residency_role || false,
           })
-          if (jobData.tier) setSelectedTier(jobData.tier)
         }
       }
     }
@@ -151,68 +150,74 @@ export default function PostRolePage() {
         status: 'draft',
       })
 
-      if (insertError) {
-        setError(insertError.message || 'Failed to save draft')
-        setSaving(false)
-        return
-      }
-
-      router.push('/employer/jobs')
+      if (insertError) throw insertError
+      router.push('/employer/dashboard?tab=drafts')
     } catch (err: any) {
-      setError(err.message || 'Failed to save draft')
+      setError(err.message || 'Error saving draft')
       setSaving(false)
     }
   }
 
-  const handleSaveAndPay = async () => {
-    if (!profile) return
-    setSaving(true)
+  const handleValidateAndNext = async () => {
     setError('')
     setFieldErrors({})
 
-    const validation = jobListingSchema.safeParse({
-      job_title: form.title,
-      job_description: form.description,
-      location: form.location,
-      salary_min: form.salary_min ? parseInt(form.salary_min) : undefined,
-      salary_max: form.salary_max ? parseInt(form.salary_max) : undefined,
-      contract_type: form.contract_type,
-      required_role_level: form.required_role_level || undefined,
-    })
-    if (!validation.success) {
-      const errs: Record<string, string> = {}
-      validation.error.issues.forEach(i => { errs[i.path[0] as string] = i.message })
-      setFieldErrors(errs)
-      setSaving(false)
-      return
-    }
+    try {
+      const payload = {
+        job_title: form.title,
+        job_description: form.description,
+        location: form.location,
+      }
 
-    const tierConfig = JOB_TIERS[selectedTier as keyof typeof JOB_TIERS]
-    const expiresAt = new Date(Date.now() + (tierConfig?.days || 30) * 24 * 60 * 60 * 1000).toISOString()
-
-    const { data: insertedJob, error: insertError } = await supabase.from('job_listings').insert({
-      ...buildJobPayload(),
-      is_live: false,
-      status: 'pending_payment',
-    }).select('id').single()
-
-    if (insertError || !insertedJob) { setError(insertError?.message || 'Failed to create listing'); setSaving(false); return }
-
-    setCheckoutLoading(true)
-    const res = await fetch('/api/stripe/checkout', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ type: 'job_posting', tier: selectedTier, employerId: profile.id, jobId: insertedJob.id, returnUrl: window.location.origin }),
-    })
-    const data = await res.json()
-    if (data.url) {
-      window.location.href = data.url
-    } else {
-      setError('Could not start checkout. Please try again.')
-      setSaving(false)
-      setCheckoutLoading(false)
+      jobListingSchema.pick({ job_title: true, job_description: true, location: true }).parse(payload)
+      setPhase('tier')
+    } catch (err: any) {
+      const newErrors: Record<string, string> = {}
+      if (err.errors) {
+        err.errors.forEach((e: any) => {
+          newErrors[e.path?.[0] || 'general'] = e.message
+        })
+      }
+      setFieldErrors(newErrors)
     }
   }
+
+  const handlePostLive = async () => {
+    if (!profile) return
+    setSaving(true)
+    setError('')
+
+    try {
+      const tierConfig = JOB_TIERS[selectedTier as keyof typeof JOB_TIERS]
+      const expiresAt = new Date(Date.now() + (tierConfig?.days || 30) * 24 * 60 * 60 * 1000).toISOString()
+
+      const { data: insertedJob, error: insertError } = await supabase.from('job_listings').insert({
+        ...buildJobPayload(),
+        is_live: false,
+        status: 'pending_payment',
+      }).select('id').single()
+
+      if (insertError || !insertedJob) { setError(insertError?.message || 'Failed to create listing'); setSaving(false); return }
+
+      setCheckoutLoading(true)
+      const res = await fetch('/api/stripe/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          jobId: insertedJob.id,
+          tier: selectedTier,
+        }),
+      })
+
+      const { url } = await res.json()
+      window.location.href = url
+    } catch (err: any) {
+      setError(err.message)
+      setSaving(false)
+    }
+  }
+
+  if (!profile) return <div />
 
   return (
     <DashboardShell role="employer" userName={profile?.company_name}>
@@ -343,153 +348,186 @@ export default function PostRolePage() {
             <button onClick={handleSaveAsDraft} disabled={!form.title || !form.location || saving} className="btn-secondary flex-1 disabled:opacity-40">
               {saving ? 'Saving...' : 'Save as Draft'}
             </button>
-            <button onClick={() => setPhase('preview')} disabled={!form.title || !form.location} className="btn-primary flex-1 disabled:opacity-40">Continue to Preview</button>
-          </div>
-        </div>
-      ) : phase === 'preview' ? (
-        <div className="max-w-3xl space-y-6">
-          <p className="text-xs font-medium text-neutral-400 uppercase tracking-widest mb-6">Preview</p>
-
-          <div className="border border-neutral-200 rounded-lg p-8 bg-white">
-            <div className="mb-6">
-              <h2 className="text-3xl font-bold text-black mb-2">{form.title}</h2>
-              <p className="text-sm text-neutral-500 mb-4">{form.location}</p>
-
-              <div className="flex flex-wrap gap-3 mb-6">
-                {form.salary_min && form.salary_max && (
-                  <span className="inline-block px-3 py-1 bg-neutral-100 text-sm text-neutral-700 rounded">
-                    £{parseInt(form.salary_min).toLocaleString()} - £{parseInt(form.salary_max).toLocaleString()}
-                  </span>
-                )}
-                <span className="inline-block px-3 py-1 bg-neutral-100 text-sm text-neutral-700 rounded">{form.job_type}</span>
-                <span className="inline-block px-3 py-1 bg-neutral-100 text-sm text-neutral-700 rounded">{form.contract_type.replace('_', ' ')}</span>
-                {form.required_role_level && (
-                  <span className="inline-block px-3 py-1 bg-neutral-100 text-sm text-neutral-700 rounded">{form.required_role_level}</span>
-                )}
-                {form.min_years_experience && (
-                  <span className="inline-block px-3 py-1 bg-neutral-100 text-sm text-neutral-700 rounded">{form.min_years_experience}+ years</span>
-                )}
-                {form.shift_pattern && (
-                  <span className="inline-block px-3 py-1 bg-neutral-100 text-sm text-neutral-700 rounded">{form.shift_pattern}</span>
-                )}
-                {form.offers_accommodation && (
-                  <span className="inline-block px-3 py-1 bg-green-50 text-sm text-green-700 rounded">Accommodation provided</span>
-                )}
-              </div>
-            </div>
-
-            <div className="mb-6">
-              <h3 className="font-bold text-black mb-3">Description</h3>
-              <p className="text-sm text-neutral-700 whitespace-pre-line">{form.description}</p>
-            </div>
-
-            {form.requirements && (
-              <div className="mb-6">
-                <h3 className="font-bold text-black mb-3">Requirements</h3>
-                <ul className="space-y-2">
-                  {form.requirements.split('\n').filter(Boolean).map((req, i) => (
-                    <li key={i} className="text-sm text-neutral-700 flex items-start">
-                      <span className="mr-2">•</span>{req}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-
-            {form.benefits && (
-              <div className="mb-6">
-                <h3 className="font-bold text-black mb-3">Benefits</h3>
-                <ul className="space-y-2">
-                  {form.benefits.split('\n').filter(Boolean).map((benefit, i) => (
-                    <li key={i} className="text-sm text-neutral-700 flex items-start">
-                      <span className="mr-2">•</span>{benefit}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-
-            {form.required_skills.length > 0 && (
-              <div className="mb-6">
-                <h3 className="font-bold text-black mb-3">Required Services & Skills</h3>
-                <div className="flex flex-wrap gap-2">
-                  {form.required_skills.map((skill) => (
-                    <span key={skill} className="inline-block px-3 py-1 bg-black text-white text-xs rounded">{skill}</span>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {form.required_product_houses.length > 0 && (
-              <div className="mb-6">
-                <h3 className="font-bold text-black mb-3">Product Houses</h3>
-                <div className="flex flex-wrap gap-2">
-                  {form.required_product_houses.map((house) => (
-                    <span key={house} className="inline-block px-3 py-1 bg-black text-white text-xs rounded">{house}</span>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {form.required_qualifications.length > 0 && (
-              <div className="mb-6">
-                <h3 className="font-bold text-black mb-3">Qualifications</h3>
-                <div className="flex flex-wrap gap-2">
-                  {form.required_qualifications.map((qual) => (
-                    <span key={qual} className="inline-block px-3 py-1 bg-black text-white text-xs rounded">{qual}</span>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {form.required_systems.length > 0 && (
-              <div className="mb-6">
-                <h3 className="font-bold text-black mb-3">Systems</h3>
-                <div className="flex flex-wrap gap-2">
-                  {form.required_systems.map((sys) => (
-                    <span key={sys} className="inline-block px-3 py-1 bg-black text-white text-xs rounded">{sys}</span>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {form.preferred_business_skills.length > 0 && (
-              <div>
-                <h3 className="font-bold text-black mb-3">Preferred Business Skills</h3>
-                <div className="flex flex-wrap gap-2">
-                  {form.preferred_business_skills.map((skill) => (
-                    <span key={skill} className="inline-block px-3 py-1 bg-neutral-100 text-neutral-700 text-xs rounded">{skill}</span>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-
-          <div className="flex gap-3">
-            <button onClick={() => setPhase('form')} className="btn-secondary">Edit</button>
-            <button onClick={() => setPhase('tier')} className="btn-primary flex-1">Post & Pay</button>
+            <button onClick={handleValidateAndNext} disabled={!form.title || !form.location || saving} className="btn-primary flex-1 disabled:opacity-40">
+              {saving ? 'Validating...' : 'Continue →'}
+            </button>
           </div>
         </div>
       ) : (
-        <div className="max-w-3xl">
-          <p className="text-xs font-medium text-neutral-400 uppercase tracking-widest mb-6">Select Package</p>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-            {tierCards.map((tier) => (
-              <div key={tier.key} onClick={() => setSelectedTier(tier.key)}
-                className={`border p-6 cursor-pointer transition-all ${selectedTier === tier.key ? 'border-black bg-neutral-50' : 'border-neutral-200 hover:border-neutral-400'}`}>
-                <h3 className="font-bold text-black mb-1">{tier.key}</h3>
-                <p className="text-2xl font-bold text-black">{tier.price}</p>
-                <p className="text-xs text-neutral-400 mb-4">{tier.days} days</p>
-                <ul className="space-y-2">{tier.features.map((f) => (
-                  <li key={f} className="flex items-center space-x-2 text-xs text-neutral-500"><Check size={12} className="text-black flex-shrink-0" /><span>{f}</span></li>
-                ))}</ul>
+        <div className="max-w-4xl">
+          {/* Preview + Tier selection */}
+          <div className="grid grid-cols-2 gap-8 mb-8">
+            {/* Left: Preview */}
+            <div className="dashboard-card p-8">
+              <h3 className="text-lg font-bold text-black mb-4">Your Role Preview</h3>
+
+              <div className="mb-6">
+                <h2 className="text-xl font-bold text-black mb-2">{form.title}</h2>
+                <p className="text-gray-600 mb-4">{form.location}</p>
+
+                <div className="flex flex-wrap gap-2 mb-4">
+                  {form.job_type && (
+                    <span className="inline-block px-3 py-1 bg-neutral-100 text-sm text-neutral-700 rounded">{form.job_type}</span>
+                  )}
+                  {form.contract_type && (
+                    <span className="inline-block px-3 py-1 bg-neutral-100 text-sm text-neutral-700 rounded">{form.contract_type}</span>
+                  )}
+                  {form.required_role_level && (
+                    <span className="inline-block px-3 py-1 bg-neutral-100 text-sm text-neutral-700 rounded">{form.required_role_level}</span>
+                  )}
+                  {form.min_years_experience && (
+                    <span className="inline-block px-3 py-1 bg-neutral-100 text-sm text-neutral-700 rounded">{form.min_years_experience}+ years</span>
+                  )}
+                  {form.shift_pattern && (
+                    <span className="inline-block px-3 py-1 bg-neutral-100 text-sm text-neutral-700 rounded">{form.shift_pattern}</span>
+                  )}
+                  {form.offers_accommodation && (
+                    <span className="inline-block px-3 py-1 bg-green-50 text-sm text-green-700 rounded">Accommodation provided</span>
+                  )}
+                </div>
               </div>
-            ))}
+
+              {form.salary_min || form.salary_max ? (
+                <div className="mb-6">
+                  <p className="text-sm text-gray-600">Salary</p>
+                  <p className="text-xl font-bold text-black">
+                    £{form.salary_min || '0'} - £{form.salary_max || 'negotiable'}
+                  </p>
+                </div>
+              ) : null}
+
+              {form.description && (
+                <div className="mb-6">
+                  <h3 className="font-bold text-black mb-2">About the role</h3>
+                  <p className="text-sm text-gray-600 whitespace-pre-line">{form.description}</p>
+                </div>
+              )}
+
+              {form.requirements && (
+                <div className="mb-6">
+                  <h3 className="font-bold text-black mb-3">Requirements</h3>
+                  <ul className="space-y-2">
+                    {form.requirements.split('\n').filter(Boolean).map((req, i) => (
+                      <li key={i} className="text-sm text-gray-600 flex items-start gap-2">
+                        <span className="block w-1.5 h-1.5 rounded-full bg-black mt-2 shrink-0" />
+                        {req}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {form.benefits && (
+                <div>
+                  <h3 className="font-bold text-black mb-3">Benefits</h3>
+                  <ul className="space-y-2">
+                    {form.benefits.split('\n').filter(Boolean).map((ben, i) => (
+                      <li key={i} className="text-sm text-gray-600 flex items-start gap-2">
+                        <span className="block w-1.5 h-1.5 rounded-full bg-black mt-2 shrink-0" />
+                        {ben}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {form.required_skills.length > 0 && (
+                <div className="mb-6">
+                  <h3 className="font-bold text-black mb-3">Required Services & Skills</h3>
+                  <div className="flex flex-wrap gap-2">
+                    {form.required_skills.map((skill) => (
+                      <span key={skill} className="inline-block px-3 py-1 bg-black text-white text-xs rounded">{skill}</span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {form.required_product_houses.length > 0 && (
+                <div className="mb-6">
+                  <h3 className="font-bold text-black mb-3">Product Houses</h3>
+                  <div className="flex flex-wrap gap-2">
+                    {form.required_product_houses.map((house) => (
+                      <span key={house} className="inline-block px-3 py-1 bg-black text-white text-xs rounded">{house}</span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {form.required_qualifications.length > 0 && (
+                <div className="mb-6">
+                  <h3 className="font-bold text-black mb-3">Qualifications</h3>
+                  <div className="flex flex-wrap gap-2">
+                    {form.required_qualifications.map((qual) => (
+                      <span key={qual} className="inline-block px-3 py-1 bg-black text-white text-xs rounded">{qual}</span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {form.required_systems.length > 0 && (
+                <div className="mb-6">
+                  <h3 className="font-bold text-black mb-3">Systems</h3>
+                  <div className="flex flex-wrap gap-2">
+                    {form.required_systems.map((sys) => (
+                      <span key={sys} className="inline-block px-3 py-1 bg-black text-white text-xs rounded">{sys}</span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {form.preferred_business_skills.length > 0 && (
+                <div>
+                  <h3 className="font-bold text-black mb-3">Preferred Business Skills</h3>
+                  <div className="flex flex-wrap gap-2">
+                    {form.preferred_business_skills.map((skill) => (
+                      <span key={skill} className="inline-block px-3 py-1 bg-neutral-100 text-neutral-700 text-xs rounded">{skill}</span>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Right: Tier selection */}
+            <div>
+              <h3 className="text-lg font-bold text-black mb-6">Select your package</h3>
+              <div className="space-y-3">
+                {tierCards.map((tier) => (
+                  <label
+                    key={tier.name}
+                    className={`dashboard-card p-4 cursor-pointer transition-all ${selectedTier === tier.name ? 'ring-2 ring-black' : ''}`}
+                  >
+                    <input
+                      type="radio"
+                      name="tier"
+                      value={tier.name}
+                      checked={selectedTier === tier.name}
+                      onChange={(e) => setSelectedTier(e.target.value)}
+                      className="w-4 h-4 cursor-pointer"
+                    />
+                    <div className="inline-block ml-3">
+                      <p className="font-bold text-black">{tier.name}</p>
+                      <p className="text-sm text-gray-600">£{tier.price}</p>
+                    </div>
+                    <ul className="mt-3 space-y-1 text-xs text-gray-600 ml-7">
+                      {tier.features.map((feature, i) => (
+                        <li key={i} className="flex items-center gap-2">
+                          <Check size={12} className="text-green-600" />
+                          {feature}
+                        </li>
+                      ))}
+                    </ul>
+                  </label>
+                ))}
+              </div>
+            </div>
           </div>
+
           <div className="flex gap-3">
-            <button onClick={() => setPhase('form')} className="btn-secondary">Back to Edit</button>
-            <button onClick={handleSaveAndPay} disabled={saving || checkoutLoading} className="btn-primary disabled:opacity-50">
-              {checkoutLoading ? 'Redirecting to payment...' : saving ? 'Saving...' : `Post Role — ${tierCards.find(t => t.key === selectedTier)?.price}`}
+            <button onClick={() => setPhase('form')} className="btn-secondary flex-1">
+              ← Back to edit
+            </button>
+            <button onClick={handlePostLive} disabled={checkoutLoading} className="btn-primary flex-1 disabled:opacity-40">
+              {checkoutLoading ? 'Redirecting...' : 'Post role & pay'}
             </button>
           </div>
         </div>

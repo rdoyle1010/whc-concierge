@@ -43,10 +43,39 @@ async function getFeaturedRoles() {
   } catch { return [] }
 }
 
+const DEFAULT_FEATURED = [
+  'https://plus.unsplash.com/premium_photo-1663100126765-1ad02ca4ff69?w=600&q=80&auto=format&fit=crop',
+  'https://images.unsplash.com/photo-1590490360836-2e3b067c082b?w=600&q=80&auto=format&fit=crop',
+  'https://images.unsplash.com/photo-1647960563439-0160d88ca2b7?w=600&q=80&auto=format&fit=crop',
+]
+const DEFAULT_CTA_BG = 'https://images.unsplash.com/photo-1551816646-d64cca8d3ba0?w=1920&q=80&auto=format&fit=crop'
+
+async function getSiteImages() {
+  try {
+    const supabase = createServerSupabaseClient()
+    const { data } = await supabase
+      .from('site_images')
+      .select('slot, image_url')
+      .in('slot', ['featured_1', 'featured_2', 'featured_3', 'cta_bg'])
+    const map: Record<string, string> = {}
+    for (const row of data || []) map[row.slot] = row.image_url
+    return {
+      featured: [
+        map['featured_1'] || DEFAULT_FEATURED[0],
+        map['featured_2'] || DEFAULT_FEATURED[1],
+        map['featured_3'] || DEFAULT_FEATURED[2],
+      ],
+      ctaBg: map['cta_bg'] || DEFAULT_CTA_BG,
+    }
+  } catch {
+    return { featured: DEFAULT_FEATURED, ctaBg: DEFAULT_CTA_BG }
+  }
+}
+
 const TRUST_BRANDS = ['Champneys', 'Pennyhill Park', 'The Lanesborough', 'Mandarin Oriental', 'Gleneagles', 'Corinthia', 'Four Seasons', 'Rosewood', 'ESPA', 'Fairmont']
 
 export default async function HomePage() {
-  const [stats, featuredRoles] = await Promise.all([getStats(), getFeaturedRoles()])
+  const [stats, featuredRoles, siteImages] = await Promise.all([getStats(), getFeaturedRoles(), getSiteImages()])
 
   return (
     <div className="min-h-screen bg-white">
@@ -114,11 +143,7 @@ export default async function HomePage() {
                 <Link key={role.id} href="/roles" className="group rounded-xl overflow-hidden hover:shadow-lg hover:-translate-y-0.5 transition-all bg-white" style={{ border: '1px solid #E5E5E5' }}>
                   <div className="relative h-36 overflow-hidden">
                     <Image
-                      src={[
-                        'https://images.pexels.com/photos/6724313/pexels-photo-6724313.jpeg?auto=compress&cs=tinysrgb&w=600&h=400&dpr=1',
-                        'https://images.pexels.com/photos/19695969/pexels-photo-19695969.jpeg?auto=compress&cs=tinysrgb&w=600&h=400&dpr=1',
-                        'https://images.pexels.com/photos/16249146/pexels-photo-16249146.jpeg?auto=compress&cs=tinysrgb&w=600&h=400&dpr=1',
-                      ][i % 3]}
+                      src={siteImages.featured[i % 3]}
                       alt="" fill className="object-cover group-hover:scale-105 transition-transform duration-500" sizes="(max-width: 768px) 100vw, 33vw"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-white/60 to-transparent" />
@@ -148,7 +173,7 @@ export default async function HomePage() {
       {/* ═══ FINAL CTA — Luxury imagery with white overlay ═══ */}
       <section className="relative overflow-hidden">
         <img
-          src="https://images.pexels.com/photos/5563472/pexels-photo-5563472.jpeg?auto=compress&cs=tinysrgb&w=1920&h=1080&dpr=1"
+          src={siteImages.ctaBg}
           alt="" className="absolute inset-0 w-full h-full object-cover"
         />
         <div className="absolute inset-0 bg-white/85" />
