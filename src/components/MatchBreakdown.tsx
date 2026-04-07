@@ -90,7 +90,7 @@ export default function MatchBreakdown({
         >
           <ChevronDown size={13} className={`transition-transform ${open ? 'rotate-180' : ''}`} />
           Match breakdown
-          <span className="ml-auto text-[11px] font-semibold" style={{ color }}>{score}% {label}</span>
+          <span className="ml-auto text-[11px] font-semibold" style={{ color: colour }}>{score}% {label}</span>
         </button>
 
         {open && (
