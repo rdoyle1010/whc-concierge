@@ -6,6 +6,7 @@ import { calculateMatchScore } from '@/lib/matching'
 import Link from 'next/link'
 import { MapPin, X, Heart, ArrowLeft, ChevronDown, Sparkles, Check } from 'lucide-react'
 import { notify } from '@/lib/notify'
+import MatchBreakdown from '@/components/MatchBreakdown'
 
 const photos = [
   'https://images.pexels.com/photos/6187430/pexels-photo-6187430.jpeg?auto=compress&cs=tinysrgb&w=600&h=400&dpr=1', // luxury massage treatment
@@ -63,9 +64,9 @@ export default function SwipeMatchPage() {
         if (candidateProfile && candidateProfile.role_level) {
           const result = calculateMatchScore(candidateProfile, job)
           if (result.hardStop) return null
-          return { ...job, matchScore: result.score, matchLabel: result.label, matchColour: result.colour, matchBg: result.bgColour, matchingSkills: result.matchingSkills || [], matchExplanation: result.matchExplanation || '' }
+          return { ...job, matchScore: result.score, matchLabel: result.label, matchColour: result.colour, matchBg: result.bgColour, matchingSkills: result.matchingSkills || [], matchExplanation: result.matchExplanation || '', matchBreakdown: result.breakdown }
         }
-        return { ...job, matchScore: 75, matchLabel: 'Strong Match', matchColour: '#1D4ED8', matchBg: '#DBEAFE', matchingSkills: [], matchExplanation: '' }
+        return { ...job, matchScore: 75, matchLabel: 'Strong Match', matchColour: '#1D4ED8', matchBg: '#DBEAFE', matchingSkills: [], matchExplanation: '', matchBreakdown: null }
       }).filter(Boolean)
 
       scored.sort((a: any, b: any) => b.matchScore - a.matchScore)
@@ -210,6 +211,16 @@ export default function SwipeMatchPage() {
             </button>
             {expanded && (
               <div className="mt-3 pt-3 border-t border-border space-y-3 animate-fade-in">
+                {/* Match breakdown visualisation */}
+                {job?.matchBreakdown && (
+                  <MatchBreakdown
+                    breakdown={job.matchBreakdown}
+                    score={job.matchScore}
+                    label={job.matchLabel}
+                    colour={job.matchColour}
+                  />
+                )}
+
                 {job?.description && <p className="text-[13px] text-secondary leading-[1.7]">{job.description}</p>}
                 {job?.required_qualifications?.length > 0 && (
                   <div><p className="eyebrow mb-1">Required qualifications</p>
