@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/client'
 import { calculateMatchScore } from '@/lib/matching'
 import { Search, MapPin, Briefcase, Bookmark, ArrowUpDown, Check } from 'lucide-react'
 import { notify } from '@/lib/notify'
+import MatchBreakdown from '@/components/MatchBreakdown'
 import Pagination from '@/components/Pagination'
 import { ROLE_LEVELS, CONTRACT_TYPES } from '@/lib/constants'
 
@@ -58,13 +59,13 @@ export default function TalentJobsPage() {
         const title = j.job_title || j.title
         const description = j.job_description || j.description
         const companyName = j.employer_profiles?.property_name || j.employer_profiles?.company_name
-        let matchScore = 75, matchLabel = 'Strong Match', matchColour = '#1D4ED8', matchBg = '#DBEAFE'
+        let matchScore = 75, matchLabel = 'Strong Match', matchColour = '#1D4ED8', matchBg = '#DBEAFE', matchBreakdown: any = null
         if (cp && cp.role_level) {
           const r = calculateMatchScore(cp, j)
           if (r.hardStop) return null
-          matchScore = r.score; matchLabel = r.label; matchColour = r.colour; matchBg = r.bgColour
+          matchScore = r.score; matchLabel = r.label; matchColour = r.colour; matchBg = r.bgColour; matchBreakdown = r.breakdown
         }
-        return { ...j, title, description, employer_profiles: { ...j.employer_profiles, company_name: companyName }, matchScore, matchLabel, matchColour, matchBg }
+        return { ...j, title, description, employer_profiles: { ...j.employer_profiles, company_name: companyName }, matchScore, matchLabel, matchColour, matchBg, matchBreakdown }
       }).filter(Boolean)
 
       setJobs(normalized)
@@ -185,6 +186,15 @@ export default function TalentJobsPage() {
                       <span key={b} className="text-[10px] border border-border text-muted px-2 py-0.5 rounded-full">{b}</span>
                     ))}
                   </div>
+                )}
+                {job.matchBreakdown && (
+                  <MatchBreakdown
+                    breakdown={job.matchBreakdown}
+                    score={job.matchScore}
+                    label={job.matchLabel}
+                    colour={job.matchColour}
+                    compact
+                  />
                 )}
                 <div className="flex gap-2">
                   {applied.has(job.id) ? (
