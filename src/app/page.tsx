@@ -8,18 +8,37 @@ import HomepageHowItWorks from '@/components/HomepageHowItWorks'
 import HeroCarousel from '@/components/HeroCarousel'
 import TestimonialCarousel from '@/components/TestimonialCarousel'
 
-export const revalidate = 300
+export const revalidate = 60
 
-async function getStats() {
+type Stats = { professionals: number | null; roles: number | null; properties: number | null }
+
+async function getStats(): Promise<Stats> {
+  const today = new Date().toISOString().slice(0, 10)
   try {
     const supabase = createServerSupabaseClient()
-    const [talent, roles, employers] = await Promise.all([
-      supabase.from('candidate_profiles').select('id', { count: 'exact', head: true }),
-      supabase.from('job_listings').select('id', { count: 'exact', head: true }).eq('is_live', true),
-      supabase.from('employer_profiles').select('id', { count: 'exact', head: true }),
+    const [talent, roles, properties] = await Promise.all([
+      supabase
+        .from('candidate_profiles')
+        .select('id', { count: 'exact', head: true })
+        .eq('profile_visible', true),
+      supabase
+        .from('job_listings')
+        .select('id', { count: 'exact', head: true })
+        .eq('is_live', true)
+        .or(`application_deadline.is.null,application_deadline.gte.${today}`),
+      supabase
+        .from('employer_profiles')
+        .select('id', { count: 'exact', head: true })
+        .eq('approval_status', 'approved'),
     ])
-    return { professionals: (talent.count || 0) + 50, roles: roles.count || 0, employers: (employers.count || 0) + 10 }
-  } catch { return { professionals: 50, roles: 0, employers: 10 } }
+    return {
+      professionals: talent.error ? null : talent.count ?? null,
+      roles: roles.error ? null : roles.count ?? null,
+      properties: properties.error ? null : properties.count ?? null,
+    }
+  } catch {
+    return { professionals: null, roles: null, properties: null }
+  }
 }
 
 async function getFeaturedRoles() {
@@ -87,22 +106,28 @@ export default async function HomePage() {
       </div>
 
       {/* ═══ LIVE STATS BAR ═══ */}
-      <section className="border-y" style={{ background: '#F8F7F5', borderColor: '#E8E5E0' }}>
-        <div className="max-w-5xl mx-auto px-6 lg:px-8 py-8">
-          <div className="flex items-center justify-center gap-8 md:gap-16">
-            {[
-              { value: `${stats.professionals}+`, label: 'Professionals' },
-              { value: `${stats.roles}`, label: 'Live Roles' },
-              { value: `${stats.employers}+`, label: 'Premium Employers' },
-            ].map(s => (
-              <div key={s.label} className="text-center">
-                <p className="text-[24px] md:text-[32px] font-semibold" style={{ color: '#C9A96E' }}>{s.value}</p>
-                <p className="text-[11px] md:text-[12px] tracking-wide uppercase" style={{ color: '#6B7280' }}>{s.label}</p>
+      {(() => {
+        const items = [
+          { value: stats.professionals, label: 'Vetted Professionals' },
+          { value: stats.roles, label: 'Live Roles' },
+          { value: stats.properties, label: 'Verified Properties' },
+        ].filter((s): s is { value: number; label: string } => typeof s.value === 'number' && s.value > 0)
+        if (items.length === 0) return null
+        return (
+          <section className="border-y" style={{ background: '#F8F7F5', borderColor: '#E8E5E0' }}>
+            <div className="max-w-5xl mx-auto px-6 lg:px-8 py-8">
+              <div className="flex items-center justify-center gap-8 md:gap-16">
+                {items.map(s => (
+                  <div key={s.label} className="text-center">
+                    <p className="text-[24px] md:text-[32px] font-semibold" style={{ color: '#C9A96E' }}>{s.value}</p>
+                    <p className="text-[11px] md:text-[12px] tracking-wide uppercase" style={{ color: '#6B7280' }}>{s.label}</p>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
-        </div>
-      </section>
+            </div>
+          </section>
+        )
+      })()}
 
       {/* ═══ HOW IT WORKS ═══ */}
       <section className="py-24 bg-white">
@@ -118,12 +143,15 @@ export default async function HomePage() {
       {/* ═══ TRUST SIGNALS ═══ */}
       <section className="py-16" style={{ background: '#F8F7F5', borderTop: '1px solid #E8E5E0', borderBottom: '1px solid #E8E5E0' }}>
         <div className="max-w-6xl mx-auto px-6 lg:px-8">
-          <p className="text-[11px] tracking-[0.12em] uppercase text-center mb-8" style={{ color: '#6B7280' }}>Trusted by leading wellness brands across the UK</p>
+          <p className="text-[11px] tracking-[0.12em] uppercase text-center mb-8" style={{ color: '#6B7280' }}>Built for properties of this calibre.</p>
           <div className="flex flex-wrap items-center justify-center gap-x-10 gap-y-4">
             {TRUST_BRANDS.map(name => (
-              <span key={name} className="text-[15px] font-medium tracking-wide" style={{ color: '#2D2D2D', opacity: 0.3 }}>{name}</span>
+              <span key={name} className="text-[15px] font-medium" style={{ color: '#2D2D2D', opacity: 0.55, letterSpacing: '0.08em' }}>{name}</span>
             ))}
           </div>
+          <p className="text-[11px] italic text-center mt-6 max-w-2xl mx-auto" style={{ color: '#9CA3AF' }}>
+            Property names shown are representative of the calibre WHC Concierge is built to serve. Active partnerships are listed under the relevant role on Browse Roles.
+          </p>
         </div>
       </section>
 
