@@ -1,11 +1,12 @@
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'Wellness Industry Insights & Career Advice',
-  description: 'Expert articles on luxury spa careers, wellness industry trends, interview tips, and professional development for spa and hospitality professionals.',
+  title: { absolute: 'The Journal | Wellness Industry Insights | WHC Concierge' },
+  description: 'Insights, hiring guides and industry analysis for luxury spa and wellness professionals from WHC Concierge — The Journal.',
+  alternates: { canonical: 'https://talent.wellnesshousecollective.co.uk/blog' },
   openGraph: {
-    title: 'Wellness Industry Insights & Career Advice | WHC Blog',
-    description: 'Expert articles on luxury spa careers, wellness industry trends, and professional development.',
+    title: 'The Journal | Wellness Industry Insights | WHC Concierge',
+    description: 'Insights, hiring guides and industry analysis for luxury spa and wellness professionals.',
   },
 }
 

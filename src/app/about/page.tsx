@@ -12,10 +12,11 @@ import FounderImage from '@/components/FounderImage'
 // stay American-spelled. No further copy changes required elsewhere.
 
 export const metadata: Metadata = {
-  title: 'About WHC Concierge | Luxury Wellness Recruitment',
+  title: { absolute: 'About WHC Concierge | The UK\'s Specialist Luxury Wellness Recruitment Platform' },
   description: 'WHC Concierge is the UK\'s specialist recruitment platform for luxury spa and wellness — built by someone who has lived inside it.',
+  alternates: { canonical: 'https://talent.wellnesshousecollective.co.uk/about' },
   openGraph: {
-    title: 'About WHC Concierge | Luxury Wellness Recruitment',
+    title: 'About WHC Concierge | The UK\'s Specialist Luxury Wellness Recruitment Platform',
     description: 'The story behind the UK\'s specialist recruitment platform for luxury spa and wellness.',
   },
 }

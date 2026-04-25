@@ -1,9 +1,14 @@
-'use client'
-
+import type { Metadata } from 'next'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
 import Link from 'next/link'
 import { Star } from 'lucide-react'
+
+export const metadata: Metadata = {
+  title: { absolute: 'Client Testimonials | WHC Concierge' },
+  description: 'What spa professionals and luxury hospitality employers say about hiring and being hired through WHC Concierge.',
+  alternates: { canonical: 'https://talent.wellnesshousecollective.co.uk/testimonials' },
+}
 
 const testimonials = [
   {

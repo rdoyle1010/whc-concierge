@@ -1,11 +1,12 @@
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'Browse Luxury Spa & Wellness Jobs',
-  description: 'Search the latest luxury spa, wellness and hospitality vacancies across the UK and Europe. From therapist roles to spa director positions at five-star properties.',
+  title: { absolute: 'Browse Luxury Spa & Wellness Jobs | WHC Concierge' },
+  description: 'Browse live luxury spa, wellness and hospitality jobs across the UK. Roles at five-star hotels, country estates and boutique wellness centres.',
+  alternates: { canonical: 'https://talent.wellnesshousecollective.co.uk/jobs' },
   openGraph: {
     title: 'Browse Luxury Spa & Wellness Jobs | WHC Concierge',
-    description: 'Search the latest luxury spa, wellness and hospitality vacancies across the UK and Europe.',
+    description: 'Browse live luxury spa, wellness and hospitality jobs across the UK.',
   },
 }
 

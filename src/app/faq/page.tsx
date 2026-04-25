@@ -1,14 +1,10 @@
 'use client'
 
 import { useState } from 'react'
-import type { Metadata } from 'next'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
 import Link from 'next/link'
 import { ChevronDown } from 'lucide-react'
-
-// Note: Metadata export won't work with 'use client', but setting document title in useEffect
-// In production, consider splitting into server component wrapper
 
 interface FAQItem {
   question: string

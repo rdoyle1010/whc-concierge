@@ -1,11 +1,12 @@
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'Job Posting Pricing for Employers',
-  description: 'Transparent pricing for posting spa and wellness vacancies on WHC Concierge. Choose from Standard, Gold, and Platinum tiers to reach qualified candidates.',
+  title: { absolute: 'Job Posting Pricing for Employers | WHC Concierge' },
+  description: 'Transparent job posting pricing for spa and wellness employers. No commission on hires. Bronze, Silver, Gold and Platinum tiers.',
+  alternates: { canonical: 'https://talent.wellnesshousecollective.co.uk/pricing' },
   openGraph: {
     title: 'Job Posting Pricing for Employers | WHC Concierge',
-    description: 'Transparent pricing for posting spa and wellness vacancies on WHC Concierge.',
+    description: 'Transparent job posting pricing for spa and wellness employers. No commission on hires.',
   },
 }
 

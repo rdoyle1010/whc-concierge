@@ -16,7 +16,6 @@ export const metadata: Metadata = {
     'spa residency UK', 'wellness professionals', 'spa agency UK',
   ],
   metadataBase: new URL('https://talent.wellnesshousecollective.co.uk'),
-  alternates: { canonical: 'https://talent.wellnesshousecollective.co.uk' },
   robots: { index: true, follow: true },
   openGraph: {
     type: 'website',

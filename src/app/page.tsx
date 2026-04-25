@@ -1,3 +1,4 @@
+import type { Metadata } from 'next'
 import Link from 'next/link'
 import Image from 'next/image'
 import Navbar from '@/components/Navbar'
@@ -12,6 +13,12 @@ import MatchScoreMockup from '@/components/homepage-mockups/MatchScoreMockup'
 import RoleListingMockup from '@/components/homepage-mockups/RoleListingMockup'
 
 export const revalidate = 60
+
+export const metadata: Metadata = {
+  title: { absolute: 'WHC Concierge | Luxury Wellness Careers Platform' },
+  description: 'The UK\'s specialist recruitment platform for luxury spa, wellness and hospitality — connecting elite therapists with five-star properties.',
+  alternates: { canonical: 'https://talent.wellnesshousecollective.co.uk' },
+}
 
 type Stats = { professionals: number | null; roles: number | null; properties: number | null }
 
