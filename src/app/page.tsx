@@ -7,6 +7,9 @@ import { createServerSupabaseClient } from '@/lib/supabase/server'
 import HomepageHowItWorks from '@/components/HomepageHowItWorks'
 import HeroCarousel from '@/components/HeroCarousel'
 import TestimonialCarousel from '@/components/TestimonialCarousel'
+import CandidateProfileMockup from '@/components/homepage-mockups/CandidateProfileMockup'
+import MatchScoreMockup from '@/components/homepage-mockups/MatchScoreMockup'
+import RoleListingMockup from '@/components/homepage-mockups/RoleListingMockup'
 
 export const revalidate = 60
 
@@ -150,6 +153,47 @@ export default async function HomePage() {
                 aria-hidden="true"
                 className="w-full h-full max-h-[600px] object-cover rounded-2xl shadow-xl"
               />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ═══ PRODUCT MOCKUPS ═══ */}
+      <section className="py-24" style={{ background: 'linear-gradient(180deg, #FAFAF8 0%, #FFFFFF 100%)' }}>
+        <div className="max-w-7xl mx-auto px-6 lg:px-8">
+          <div className="text-center mb-14">
+            <p className="text-[11px] tracking-[0.15em] uppercase font-medium mb-3" style={{ color: '#C9A96E' }}>Tools built for the industry</p>
+            <h2 className="text-[32px] md:text-[40px] font-medium tracking-tight leading-[1.1] mb-4" style={{ color: '#1a1a1a' }}>
+              See the product, not just the promise.
+            </h2>
+            <p className="text-[15px] md:text-[16px] leading-[1.7] max-w-2xl mx-auto" style={{ color: '#6B7280' }}>
+              Most recruitment platforms make you sign up before you can see what you&apos;re getting. We don&apos;t. Here&apos;s what therapists and employers actually use, every day.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10 lg:gap-8">
+            <div className="flex flex-col">
+              <p className="text-[11px] tracking-[0.15em] uppercase font-medium text-center mb-5" style={{ color: '#C9A96E' }}>For employers</p>
+              <CandidateProfileMockup />
+              <p className="text-[13px] leading-[1.7] text-center mt-5 max-w-xs mx-auto" style={{ color: '#6B7280' }}>
+                Browse vetted, agency-available therapists with full transparency on rates and skills.
+              </p>
+            </div>
+
+            <div className="flex flex-col">
+              <p className="text-[11px] tracking-[0.15em] uppercase font-medium text-center mb-5" style={{ color: '#C9A96E' }}>Our algorithm</p>
+              <MatchScoreMockup />
+              <p className="text-[13px] leading-[1.7] text-center mt-5 max-w-xs mx-auto" style={{ color: '#6B7280' }}>
+                Fifteen weighted categories. No keyword matching. Real fit, scored honestly.
+              </p>
+            </div>
+
+            <div className="flex flex-col">
+              <p className="text-[11px] tracking-[0.15em] uppercase font-medium text-center mb-5" style={{ color: '#C9A96E' }}>For talent</p>
+              <RoleListingMockup />
+              <p className="text-[13px] leading-[1.7] text-center mt-5 max-w-xs mx-auto" style={{ color: '#6B7280' }}>
+                See live roles at properties of genuine calibre. Apply with one tap.
+              </p>
             </div>
           </div>
         </div>
