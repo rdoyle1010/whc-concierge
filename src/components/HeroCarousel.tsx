@@ -100,7 +100,7 @@ export default function HeroCarousel() {
             alt={slide.heading}
             className="w-full h-full object-cover"
           />
-          <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/40" />
+          <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/20 to-black/70" />
         </div>
       ))}
 
@@ -113,14 +113,14 @@ export default function HeroCarousel() {
           </p>
           <h2
             className="text-[32px] md:text-[44px] lg:text-[56px] font-medium leading-[1.08] tracking-tight mb-6 whitespace-pre-line"
-            style={{ color: '#1a1a1a' }}
+            style={{ color: '#FFFFFF', textShadow: '0 2px 16px rgba(0,0,0,0.5)' }}
             key={`h-${current}`}
           >
             {slides[current]?.heading}
           </h2>
           <p
             className="text-[16px] md:text-[18px] leading-[1.7] max-w-2xl mx-auto mb-10"
-            style={{ color: '#4B5563' }}
+            style={{ color: 'rgba(255,255,255,0.95)', textShadow: '0 1px 8px rgba(0,0,0,0.5)' }}
             key={`p-${current}`}
           >
             {slides[current]?.text}
