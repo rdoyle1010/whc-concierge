@@ -6,7 +6,7 @@ export const dynamic = 'force-dynamic'
 const SEED_RESIDENCIES = [
   {
     title: 'Award-Winning Yoga & Wellness Specialist',
-    description: 'With over 15 years in the luxury wellness industry, I specialise in Kundalini yoga, Vinyasa flow, yoga retreats, and yoga massage. I\'ve held residencies at The Corinthia London, SHA Wellness Clinic Spain, and Chiva-Som Thailand. I create bespoke retreat programmes combining breathwork, meditation, and therapeutic bodywork. Qualified in 200hr and 500hr YTT, Thai massage, and Ayurvedic treatments. Available for seasonal placements, wellness weekends, and full retreat programming.',
+    description: 'With over 15 years in the luxury wellness industry, I specialise in Kundalini yoga, Vinyasa flow, yoga retreats, and yoga massage. I\'ve held residencies at five-star London hotels, an internationally renowned wellness clinic in Spain, and a destination wellness retreat in Thailand. I create bespoke retreat programmes combining breathwork, meditation, and therapeutic bodywork. Qualified in 200hr and 500hr YTT, Thai massage, and Ayurvedic treatments. Available for seasonal placements, wellness weekends, and full retreat programming.',
     services_offered: ['Kundalini Yoga', 'Vinyasa Flow', 'Yoga Retreats', 'Yoga Massage', 'Breathwork', 'Meditation'],
     product_houses: ['Aromatherapy Associates', 'Bamford', 'Ground Wellbeing'],
     duration: '1–3 months',
@@ -26,7 +26,7 @@ const SEED_RESIDENCIES = [
   },
   {
     title: 'Senior Spa Therapist — Luxury Facial & Body Specialist',
-    description: '12 years\' experience across five-star London hotels and destination spas. CIDESCO and CIBTAC qualified with advanced training in Biologique Recherche, 111SKIN, and Dr Barbara Sturm protocols. I\'ve worked at Claridge\'s, The Lanesborough, and Pennyhill Park. My speciality is results-driven facial treatments and luxury body rituals. Available for short-term cover, seasonal placements, and product launch residencies.',
+    description: '12 years\' experience across five-star London hotels and destination spas. CIDESCO and CIBTAC qualified with advanced training in Biologique Recherche, 111SKIN, and Dr Barbara Sturm protocols. I\'ve worked at five-star London hotels and luxury country estate spas. My speciality is results-driven facial treatments and luxury body rituals. Available for short-term cover, seasonal placements, and product launch residencies.',
     services_offered: ['Advanced Facials', 'Body Rituals', 'Skincare Consultations', 'Aromatherapy', 'Hot Stone Massage'],
     product_houses: ['Biologique Recherche', '111SKIN', 'Natura Bissé', 'Dr Barbara Sturm'],
     duration: '1 week – 1 month',
@@ -46,7 +46,7 @@ const SEED_RESIDENCIES = [
   },
   {
     title: 'Holistic Wellness Practitioner & Retreat Leader',
-    description: 'A holistic therapist with 10 years\' experience blending Eastern and Western wellness traditions. Trained in Traditional Chinese Medicine, reflexology, aromatherapy, and crystal healing. I\'ve designed and delivered wellness programmes for Gleneagles, Cowley Manor, and Soho Farmhouse. I create immersive guest experiences combining treatments, workshops, and mindfulness sessions. ITEC, FHT, and IFA qualified.',
+    description: 'A holistic therapist with 10 years\' experience blending Eastern and Western wellness traditions. Trained in Traditional Chinese Medicine, reflexology, aromatherapy, and crystal healing. I\'ve designed and delivered wellness programmes for luxury Scottish resorts, country house hotels, and members\' clubs. I create immersive guest experiences combining treatments, workshops, and mindfulness sessions. ITEC, FHT, and IFA qualified.',
     services_offered: ['Reflexology', 'Aromatherapy', 'Crystal Healing', 'Sound Healing', 'Wellness Workshops', 'Mindfulness'],
     product_houses: ['ESPA', 'Comfort Zone', 'Wildsmith', 'Ila Spa'],
     duration: '2 weeks – 3 months',
