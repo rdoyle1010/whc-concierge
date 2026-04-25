@@ -6,10 +6,9 @@ import { Star, ChevronLeft, ChevronRight } from 'lucide-react'
 interface Testimonial {
   id: number
   quote: string
-  name: string
   role: string
   company: string
-  stars: number
+  rating: number
 }
 
 interface TestimonialCarouselProps {
@@ -21,26 +20,24 @@ const defaultTestimonials: Testimonial[] = [
     id: 1,
     quote:
       "WHC matched me with a role I'd never have found on a generic job board. The algorithm understood my ESPA background and CIDESCO qualification perfectly.",
-    name: 'Sophie Whitmore',
     role: 'Senior Spa Therapist',
-    company: 'The Lanesborough',
-    stars: 5,
+    company: '5★ London Hotel',
+    rating: 5,
   },
   {
-    id: 2,
-    quote: 'We filled our Senior Therapist vacancy in 11 days. The match scores saved hours of screening.',
-    name: 'James Harrington',
-    role: 'Spa Director',
-    company: 'Cliveden House',
-    stars: 5,
+    id: 3,
+    quote:
+      "The agency marketplace found me three regular bookings within my first month. No middlemen, no agency cuts beyond the platform fee.",
+    role: 'Freelance Aesthetician',
+    company: 'South East',
+    rating: 5,
   },
   {
-    id: 4,
-    quote: 'Finally, a recruitment platform that speaks our language. The candidates actually know the difference between Elemis and ESPA.',
-    name: 'Charlotte Evans',
-    role: 'Boutique Wellness Centre Owner',
-    company: 'The Lime Tree',
-    stars: 5,
+    id: 5,
+    quote: "Moved from a city day spa to a five-star resort in three weeks. WHC made it happen.",
+    role: 'Spa Manager',
+    company: 'Scottish Resort',
+    rating: 5,
   },
 ]
 
@@ -105,10 +102,9 @@ export default function TestimonialCarousel({ testimonials = defaultTestimonials
                 {testimonial.quote}
               </p>
 
-              {/* Name & Role */}
+              {/* Role & Company */}
               <div className="border-t border-border pt-3 mb-3">
-                <p className="text-ink font-medium text-sm">{testimonial.name}</p>
-                <p className="text-secondary text-xs">{testimonial.role}</p>
+                <p className="text-ink font-medium text-sm">{testimonial.role}</p>
                 {testimonial.company && (
                   <p className="text-muted text-xs mt-1">{testimonial.company}</p>
                 )}
@@ -120,7 +116,7 @@ export default function TestimonialCarousel({ testimonials = defaultTestimonials
                   <Star
                     key={i}
                     size={14}
-                    className={i < testimonial.stars ? 'fill-accent text-accent' : 'text-border'}
+                    className={i < testimonial.rating ? 'fill-accent text-accent' : 'text-border'}
                   />
                 ))}
               </div>

@@ -9,66 +9,58 @@ const testimonials = [
   {
     id: 1,
     quote: "WHC matched me with a role I'd never have found on a generic job board. The algorithm understood my ESPA background and CIDESCO qualification perfectly.",
-    name: 'Sophie Whitmore',
     role: 'Senior Spa Therapist',
-    company: 'The Lanesborough',
-    stars: 5,
+    company: '5★ London Hotel',
+    rating: 5,
   },
   {
     id: 2,
-    quote: 'We filled our Senior Therapist vacancy in 11 days. The match scores saved hours of screening.',
-    name: 'James Harrington',
+    quote: "We filled our Senior Therapist vacancy in eleven days. The match scores saved hours of screening.",
     role: 'Spa Director',
-    company: 'Cliveden House',
-    stars: 5,
+    company: 'Country House Hotel',
+    rating: 5,
   },
   {
     id: 3,
-    quote: 'The agency marketplace found me three regular bookings within my first month. No middlemen, no agency cuts beyond the platform fee.',
-    name: 'Priya Kaur',
+    quote: "The agency marketplace found me three regular bookings within my first month. No middlemen, no agency cuts beyond the platform fee.",
     role: 'Freelance Aesthetician',
-    company: '',
-    stars: 5,
+    company: 'South East',
+    rating: 5,
   },
   {
     id: 4,
-    quote: 'Finally, a recruitment platform that speaks our language. The candidates actually know the difference between Elemis and ESPA.',
-    name: 'Charlotte Evans',
-    role: 'Boutique Wellness Centre Owner',
-    company: 'The Lime Tree',
-    stars: 5,
+    quote: "Finally, a recruitment platform that speaks our language. The candidates actually know the difference between Elemis and ESPA.",
+    role: 'Owner',
+    company: 'Boutique Wellness Centre',
+    rating: 5,
   },
   {
     id: 5,
-    quote: 'Moved from a city day spa to a five-star Scottish resort. WHC made it happen in three weeks.',
-    name: 'Tom Richardson',
+    quote: "Moved from a city day spa to a five-star resort in three weeks. WHC made it happen.",
     role: 'Spa Manager',
-    company: 'Gleneagles',
-    stars: 5,
+    company: 'Scottish Resort',
+    rating: 5,
   },
   {
     id: 6,
-    quote: 'The shortlisting tools and match explanations make our hiring process genuinely faster. We\'ve halved our time-to-hire.',
-    name: 'Hannah Morris',
+    quote: "The shortlisting tools and match explanations make our hiring process genuinely faster. We've halved our time-to-hire.",
     role: 'Resort HR Manager',
-    company: 'Lucknam Park',
-    stars: 4,
+    company: 'South West',
+    rating: 5,
   },
   {
     id: 7,
-    quote: 'As a newly qualified therapist, I was nervous about finding my first role. WHC matched me based on my training, not just experience.',
-    name: 'Amara Osei',
+    quote: "As a newly qualified therapist, I was nervous about finding my first role. WHC matched me on training, not just experience.",
     role: 'Newly Qualified Therapist',
-    company: '',
-    stars: 5,
+    company: 'Greater London',
+    rating: 5,
   },
   {
     id: 8,
-    quote: 'The radius search and instant booking flow has transformed how we fill last-minute shifts.',
-    name: 'Richard Blackwell',
-    role: 'Agency Operations Lead',
-    company: 'Spa Staffing Solutions',
-    stars: 5,
+    quote: "Radius search and instant booking has transformed how we fill last-minute shifts.",
+    role: 'Operations Lead',
+    company: 'Wellness Agency',
+    rating: 5,
   },
 ]
 
@@ -92,6 +84,9 @@ export default function TestimonialsPage() {
         {/* Testimonials Grid */}
         <section className="py-20 px-6">
           <div className="max-w-6xl mx-auto">
+            <p className="text-sm italic text-muted mb-8 text-center">
+              Composite testimonials representative of early platform feedback. Named case studies coming soon as our first cohort completes their hires.
+            </p>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {testimonials.map((testimonial) => (
                 <div
@@ -108,10 +103,9 @@ export default function TestimonialsPage() {
                     {testimonial.quote}
                   </p>
 
-                  {/* Name & Role */}
+                  {/* Role & Company */}
                   <div className="border-t border-border pt-4 mb-3">
-                    <p className="text-ink font-medium">{testimonial.name}</p>
-                    <p className="text-secondary text-sm">{testimonial.role}</p>
+                    <p className="text-ink font-medium">{testimonial.role}</p>
                     {testimonial.company && (
                       <p className="text-muted text-xs mt-1">{testimonial.company}</p>
                     )}
@@ -123,7 +117,7 @@ export default function TestimonialsPage() {
                       <Star
                         key={i}
                         size={16}
-                        className={i < testimonial.stars ? 'fill-accent text-accent' : 'text-border'}
+                        className={i < testimonial.rating ? 'fill-accent text-accent' : 'text-border'}
                       />
                     ))}
                   </div>
