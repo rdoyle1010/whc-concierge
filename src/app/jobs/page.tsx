@@ -85,7 +85,12 @@ export default function PublicJobsPage() {
             <>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {paginatedJobs.map((job) => (
-                <div key={job.id} className="card hover:shadow-lg transition-all group border-t-4 border-t-gold/20 hover:border-t-gold">
+                <div key={job.id} className="card hover:shadow-lg transition-all group border-t-4 border-t-gold/20 hover:border-t-gold relative">
+                  <Link
+                    href={`/jobs/${job.id}`}
+                    aria-label={`View role: ${job.title}`}
+                    className="absolute inset-0 rounded-xl z-0"
+                  />
                   <div className="flex items-center justify-between mb-3">
                     {job.tier && (
                       <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${
@@ -103,15 +108,20 @@ export default function PublicJobsPage() {
                   <p className="font-medium text-ink mt-3">
                     {job.salary_min && job.salary_max ? `£${job.salary_min.toLocaleString()} – £${job.salary_max.toLocaleString()}` : 'Competitive salary'}
                   </p>
-                  <div className="flex items-center justify-between mt-4">
-                    <Link href="/login?role=talent" className="flex items-center text-gold text-sm font-medium">
+                  <div className="flex items-center justify-between mt-4 relative z-10">
+                    <Link href={`/jobs/${job.id}`} className="flex items-center text-gold text-sm font-medium">
                       Apply Now <ArrowRight size={16} className="ml-1" />
                     </Link>
-                    {isLoggedIn && (
-                      <button type="button" onClick={() => toggleSave(job.id)} className={`p-1.5 rounded-lg transition-colors ${saved.has(job.id) ? 'text-accent' : 'text-gray-300 hover:text-accent'}`} title={saved.has(job.id) ? 'Unsave' : 'Save'}>
-                        <Bookmark size={16} fill={saved.has(job.id) ? 'currentColor' : 'none'} />
-                      </button>
-                    )}
+                    <div className="flex items-center gap-3">
+                      <Link href={`/jobs/${job.id}`} className="text-xs text-gray-400 hover:text-ink transition-colors">
+                        View role →
+                      </Link>
+                      {isLoggedIn && (
+                        <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggleSave(job.id) }} className={`p-1.5 rounded-lg transition-colors ${saved.has(job.id) ? 'text-accent' : 'text-gray-300 hover:text-accent'}`} title={saved.has(job.id) ? 'Unsave' : 'Save'}>
+                          <Bookmark size={16} fill={saved.has(job.id) ? 'currentColor' : 'none'} />
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </div>
               ))}
