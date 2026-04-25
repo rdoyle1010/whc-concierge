@@ -10,47 +10,88 @@ export default function OGImage() {
     (
       <div
         style={{
-          width: '100%', height: '100%', display: 'flex', flexDirection: 'column',
-          alignItems: 'center', justifyContent: 'center',
-          background: 'linear-gradient(145deg, #0a0a14 0%, #1a1a2e 50%, #0f0f1e 100%)',
-          padding: '60px',
+          width: '100%',
+          height: '100%',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          background: '#F8F7F5',
+          padding: '80px',
+          position: 'relative',
+          fontFamily: 'Georgia, "Times New Roman", serif',
         }}
       >
-        {/* Decorative line */}
-        <div style={{ width: 60, height: 2, background: '#C9A96E', marginBottom: 40, display: 'flex' }} />
-
-        {/* Main title */}
+        {/* Brand eyebrow */}
         <div
           style={{
-            fontSize: 72, fontWeight: 700, letterSpacing: '-1px',
-            background: 'linear-gradient(135deg, #C9A96E, #E8D5A8)',
-            backgroundClip: 'text', color: 'transparent',
-            marginBottom: 20, display: 'flex',
+            display: 'flex',
+            fontSize: 18,
+            fontWeight: 600,
+            color: '#C9A96E',
+            letterSpacing: '6px',
+            textTransform: 'uppercase',
+            marginBottom: 56,
           }}
         >
           WHC Concierge
         </div>
 
-        {/* Tagline */}
+        {/* Gold rule */}
         <div
           style={{
-            fontSize: 28, fontWeight: 400, color: 'rgba(255, 255, 255, 0.5)',
-            letterSpacing: '3px', textTransform: 'uppercase' as const,
             display: 'flex',
+            width: 80,
+            height: 1,
+            background: '#C9A96E',
+            marginBottom: 40,
+          }}
+        />
+
+        {/* Headline */}
+        <div
+          style={{
+            display: 'flex',
+            textAlign: 'center',
+            fontSize: 68,
+            fontWeight: 500,
+            color: '#1a1a1a',
+            lineHeight: 1.12,
+            letterSpacing: '-1px',
+            maxWidth: 940,
+            marginBottom: 32,
           }}
         >
-          Luxury Wellness Careers Platform
+          Where Luxury Wellness Meets Exceptional Talent
         </div>
 
-        {/* Bottom decorative line */}
-        <div style={{ width: 60, height: 2, background: '#C9A96E', marginTop: 40, display: 'flex' }} />
-
-        {/* URL */}
+        {/* Subhead */}
         <div
           style={{
-            position: 'absolute', bottom: 40,
-            fontSize: 14, color: 'rgba(255, 255, 255, 0.25)',
-            letterSpacing: '1px', display: 'flex',
+            display: 'flex',
+            fontSize: 24,
+            fontWeight: 400,
+            color: '#6B7280',
+            textAlign: 'center',
+            maxWidth: 760,
+            lineHeight: 1.5,
+            fontFamily: 'system-ui, -apple-system, "Segoe UI", sans-serif',
+          }}
+        >
+          The UK&apos;s specialist platform for spa and wellness professionals.
+        </div>
+
+        {/* URL bottom-right */}
+        <div
+          style={{
+            position: 'absolute',
+            bottom: 50,
+            right: 80,
+            display: 'flex',
+            fontSize: 16,
+            color: '#9CA3AF',
+            letterSpacing: '1px',
+            fontFamily: 'system-ui, -apple-system, "Segoe UI", sans-serif',
           }}
         >
           talent.wellnesshousecollective.co.uk
