@@ -21,7 +21,7 @@ export default function HomepageHowItWorks() {
   return (
     <div>
       {/* Toggle */}
-      <div className="flex items-center justify-center gap-1 mb-14">
+      <div className="flex items-center gap-1 mb-10">
         <button type="button" onClick={() => setView('talent')}
           className={`px-5 py-2 rounded-full text-[13px] font-medium transition-all ${view === 'talent' ? 'bg-ink text-white' : 'bg-surface text-muted hover:text-ink'}`}>
           For Talent
@@ -32,20 +32,16 @@ export default function HomepageHowItWorks() {
         </button>
       </div>
 
-      {/* Steps */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-        {steps.map((step, i) => (
-          <div key={step.num} className="relative">
-            {/* Connector line */}
-            {i < steps.length - 1 && (
-              <div className="hidden md:block absolute top-6 left-[calc(50%+40px)] w-[calc(100%-80px)] h-[1px] bg-border" />
-            )}
-            <div className="text-center">
-              <div className="w-12 h-12 rounded-full border-2 flex items-center justify-center mx-auto mb-5" style={{ borderColor: '#C9A96E' }}>
-                <span className="text-[14px] font-semibold" style={{ color: '#C9A96E' }}>{step.num}</span>
-              </div>
+      {/* Steps — vertically stacked */}
+      <div className="flex flex-col gap-8">
+        {steps.map((step) => (
+          <div key={step.num} className="flex items-start gap-5">
+            <div className="w-12 h-12 rounded-full border-2 flex items-center justify-center flex-shrink-0" style={{ borderColor: '#C9A96E' }}>
+              <span className="text-[14px] font-semibold" style={{ color: '#C9A96E' }}>{step.num}</span>
+            </div>
+            <div className="pt-2">
               <h3 className="text-[17px] font-medium text-ink mb-2">{step.title}</h3>
-              <p className="text-[14px] text-secondary leading-[1.7] max-w-xs mx-auto">{step.desc}</p>
+              <p className="text-[14px] text-secondary leading-[1.7]">{step.desc}</p>
             </div>
           </div>
         ))}

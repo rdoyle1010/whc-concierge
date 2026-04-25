@@ -131,18 +131,34 @@ export default async function HomePage() {
 
       {/* ═══ HOW IT WORKS ═══ */}
       <section className="py-24 bg-white">
-        <div className="max-w-5xl mx-auto px-6 lg:px-8">
-          <div className="text-center mb-14">
-            <p className="text-[11px] tracking-[0.15em] uppercase font-medium mb-3" style={{ color: '#C9A96E' }}>How it works</p>
-            <h2 className="text-[32px] md:text-[40px] font-medium tracking-tight leading-[1.1]" style={{ color: '#1a1a1a' }}>Three steps to your next chapter</h2>
+        <div className="max-w-7xl mx-auto px-6 lg:px-8">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-x-6 gap-y-12 items-stretch">
+            {/* Left: copy + steps */}
+            <div className="lg:col-span-5">
+              <div className="mb-10">
+                <p className="text-[11px] tracking-[0.15em] uppercase font-medium mb-3" style={{ color: '#C9A96E' }}>How it works</p>
+                <h2 className="text-[32px] md:text-[40px] font-medium tracking-tight leading-[1.1]" style={{ color: '#1a1a1a' }}>Three steps to your next chapter</h2>
+              </div>
+              <HomepageHowItWorks />
+            </div>
+
+            {/* Right: luxury imagery (decorative) */}
+            <div className="lg:col-span-7 hidden sm:block">
+              <img
+                src="https://images.unsplash.com/photo-1540555700478-4be289fbecef?w=1600&q=80&auto=format&fit=crop"
+                alt=""
+                aria-hidden="true"
+                className="w-full h-full max-h-[600px] object-cover rounded-2xl shadow-xl"
+              />
+            </div>
           </div>
-          <HomepageHowItWorks />
         </div>
       </section>
 
       {/* ═══ TRUST SIGNALS ═══ */}
       <section className="py-16" style={{ background: '#F8F7F5', borderTop: '1px solid #E8E5E0', borderBottom: '1px solid #E8E5E0' }}>
         <div className="max-w-6xl mx-auto px-6 lg:px-8">
+          <div className="w-[60px] h-[1px] mx-auto mb-6" style={{ backgroundColor: '#C9A96E' }} />
           <p className="text-[11px] tracking-[0.12em] uppercase text-center mb-8" style={{ color: '#6B7280' }}>Built for properties of this calibre.</p>
           <div className="flex flex-wrap items-center justify-center gap-x-10 gap-y-4">
             {TRUST_BRANDS.map(name => (
