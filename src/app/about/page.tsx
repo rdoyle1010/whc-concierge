@@ -3,13 +3,20 @@ import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
 import Link from 'next/link'
 import { Award, Shield, Users, Heart } from 'lucide-react'
+import FounderImage from '@/components/FounderImage'
+
+// British-English audit (PART 1): the only American-spelled user copy in src/
+// was on this page (specialised, realised). All other matches across src/
+// are framework code (Tailwind `transition-colors`, the DOM
+// `ScrollIntoViewOptions.behavior` API, `colors` design tokens) and must
+// stay American-spelled. No further copy changes required elsewhere.
 
 export const metadata: Metadata = {
   title: 'About WHC Concierge | Luxury Wellness Recruitment',
-  description: 'WHC Concierge is the UK\'s specialist careers platform for luxury wellness, connecting exceptional spa and hospitality professionals with the world\'s finest properties.',
+  description: 'WHC Concierge is the UK\'s specialist recruitment platform for luxury spa and wellness — built by someone who has lived inside it.',
   openGraph: {
     title: 'About WHC Concierge | Luxury Wellness Recruitment',
-    description: 'The story behind the UK\'s specialist careers platform for luxury wellness professionals.',
+    description: 'The story behind the UK\'s specialist recruitment platform for luxury spa and wellness.',
   },
 }
 
@@ -18,104 +25,145 @@ export default function AboutPage() {
     <>
       <Navbar />
       <main className="pt-[60px]">
-        {/* Hero Section */}
-        <section className="bg-white py-20 px-6">
-          <div className="max-w-3xl mx-auto text-center">
-            <h1 className="text-4xl md:text-5xl font-serif text-ink mb-6">
-              Redefining Wellness Recruitment
+        {/* Hero — typography matches /pricing and /faq */}
+        <section className="pt-28 pb-16 px-6 bg-white">
+          <div className="max-w-4xl mx-auto text-center">
+            <p className="text-[11px] tracking-[0.15em] uppercase font-medium mb-4" style={{ color: '#C9A96E' }}>About</p>
+            <h1 className="text-[40px] md:text-[52px] font-medium tracking-tight leading-[1.08] mb-4" style={{ color: '#1a1a1a' }}>
+              Built for an industry that deserves better.
             </h1>
-            <p className="text-lg text-secondary leading-relaxed">
-              Built by wellness industry insiders who knew there had to be a better way to connect exceptional talent with extraordinary properties.
+            <p className="text-[16px] md:text-[18px] leading-[1.7] max-w-2xl mx-auto" style={{ color: '#6B7280' }}>
+              WHC Concierge is the UK&apos;s specialist recruitment platform for luxury spa and wellness — built by someone who has lived inside it.
             </p>
           </div>
         </section>
 
-        {/* The Story Section */}
-        <section className="bg-white py-16 px-6">
-          <div className="max-w-3xl mx-auto space-y-6">
-            <p className="text-secondary leading-relaxed">
-              Recruitment in luxury wellness is broken. Generic job boards don't understand the industry. Talented therapists get lost in a sea of unqualified applicants. Premium properties waste precious time screening candidates who don't fit. The whole system was built for generic corporate roles, not for the specialized world of luxury spa and hospitality.
+        {/* Opening paragraphs */}
+        <section className="bg-white pb-20 px-6">
+          <div className="max-w-3xl mx-auto space-y-8">
+            <p className="text-[16px] md:text-[17px] leading-[1.8]" style={{ color: '#374151' }}>
+              Recruitment in luxury wellness has been broken for years. Generic job boards do not understand what a CIDESCO qualification means, or why ESPA training is not interchangeable with Dermalogica. Talented therapists vanish into stacks of unsuitable applicants. Five-star properties settle for whoever applied first. Everyone loses.
             </p>
-
-            <p className="text-secondary leading-relaxed">
-              That's when we realized: the wellness industry needs its own dedicated, quality-controlled recruitment platform. One that speaks the language of CIDESCO, Elemis, and five-star service. One where a resume field actually understands what matters — product house expertise, treatment specialisms, the difference between a destination spa and a resort spa. One built by people who know the industry, not algorithms that don't.
+            <p className="text-[16px] md:text-[17px] leading-[1.8]" style={{ color: '#374151' }}>
+              WHC Concierge exists to change that. Every profile is vetted. Every property is verified. Our matching engine scores candidates across fifteen weighted categories — treatment skills, product house expertise, brand experience, location, availability, role level — so the right people surface first.
             </p>
-
-            <p className="text-secondary leading-relaxed">
-              So we built WHC Concierge. A matching platform designed specifically for luxury spa and wellness, where every candidate is vetted and every property is verified. Where talented professionals find roles that genuinely suit them. Where five-star properties find the exceptional candidates they deserve. No generic filters. No spam. Just intelligent matching, built for the people who care most about this industry.
+            <p className="text-[16px] md:text-[17px] leading-[1.8]" style={{ color: '#374151' }}>
+              No commission on hires. No spam. No generic filters built for office workers. Just the tools the wellness industry should always have had.
             </p>
-          </div>
-        </section>
-
-        {/* Values Section */}
-        <section className="bg-white py-20 px-6">
-          <div className="max-w-4xl mx-auto">
-            <h2 className="text-3xl font-serif text-ink mb-12 text-center">Our Values</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              {/* Quality Over Quantity */}
-              <div className="card card-hover p-8">
-                <Award className="w-10 h-10 text-ink mb-4" />
-                <h3 className="text-xl font-serif text-ink mb-3">Quality Over Quantity</h3>
-                <p className="text-secondary">
-                  We vet every profile. No spam, no time-wasters.
-                </p>
-              </div>
-
-              {/* Industry Expertise */}
-              <div className="card card-hover p-8">
-                <Users className="w-10 h-10 text-ink mb-4" />
-                <h3 className="text-xl font-serif text-ink mb-3">Industry Expertise</h3>
-                <p className="text-secondary">
-                  Built by people who know the difference between a hot stone and a cold plunge.
-                </p>
-              </div>
-
-              {/* Fairness */}
-              <div className="card card-hover p-8">
-                <Heart className="w-10 h-10 text-ink mb-4" />
-                <h3 className="text-xl font-serif text-ink mb-3">Fairness</h3>
-                <p className="text-secondary">
-                  No commission on hires. Transparent pricing. No hidden fees.
-                </p>
-              </div>
-
-              {/* Confidentiality */}
-              <div className="card card-hover p-8">
-                <Shield className="w-10 h-10 text-ink mb-4" />
-                <h3 className="text-xl font-serif text-ink mb-3">Confidentiality</h3>
-                <p className="text-secondary">
-                  Stealth mode, data protection, and discretion built in.
-                </p>
-              </div>
-            </div>
           </div>
         </section>
 
         {/* Founder Section */}
-        <section className="bg-white py-20 px-6">
-          <div className="max-w-3xl mx-auto">
-            <h2 className="text-3xl font-serif text-ink mb-8 text-center">Founded by Rebecca Doyle</h2>
-            <div className="text-center">
-              <p className="text-secondary leading-relaxed mb-4">
-                Rebecca spent years working in luxury wellness and hospitality, seeing firsthand how the industry struggled with recruitment. Talented professionals were stuck in the wrong roles. Five-star properties were settling for second-best candidates. The disconnect was costing everyone — the talented people who wanted better, the properties searching for better, and the industry as a whole.
+        <section className="py-20 px-6" style={{ background: '#F8F7F5', borderTop: '1px solid #E8E5E0', borderBottom: '1px solid #E8E5E0' }}>
+          <div className="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-[380px_1fr] gap-10 md:gap-14 items-center">
+            <div>
+              {/* Rebecca will upload founder-rebecca.jpg to /public/images/ — until then this will fall back to the placeholder */}
+              <FounderImage />
+            </div>
+            <div>
+              <p className="text-[11px] tracking-[0.15em] uppercase font-medium mb-3" style={{ color: '#C9A96E' }}>Founder</p>
+              <h2 className="text-[28px] md:text-[36px] font-medium tracking-tight leading-[1.12] mb-6" style={{ color: '#1a1a1a' }}>
+                Founded by Rebecca Doyle
+              </h2>
+              <p className="text-[15px] md:text-[16px] leading-[1.8] mb-5" style={{ color: '#374151' }}>
+                Rebecca built her career inside the luxury spa and wellness sector — watching firsthand how poorly the industry was served by mainstream recruitment. Properties she admired struggled to find the right people. Therapists with extraordinary CVs were stuck in the wrong roles. The disconnect was costing the entire sector its standards.
               </p>
-              <p className="text-secondary leading-relaxed">
-                WHC Concierge was built to bridge that gap — with technology that actually understands the sector, designed by someone who's lived it.
+              <p className="text-[15px] md:text-[16px] leading-[1.8] mb-8" style={{ color: '#374151' }}>
+                WHC Concierge is the platform she wished had existed when she was hiring. Built with industry knowledge, not algorithms designed for office workers. Designed to elevate the people who make luxury wellness what it is.
+              </p>
+              <a
+                href="https://www.linkedin.com/in/rebecca-doyle-whc/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-block px-6 py-2.5 rounded-lg text-[13px] font-semibold text-white transition-all hover:shadow-lg hover:shadow-[#C9A96E]/25"
+                style={{ backgroundColor: '#C9A96E' }}
+              >
+                Connect on LinkedIn →
+              </a>
+            </div>
+          </div>
+        </section>
+
+        {/* Values */}
+        <section className="bg-white py-20 px-6">
+          <div className="max-w-4xl mx-auto">
+            <h2 className="text-[28px] md:text-[36px] font-medium tracking-tight leading-[1.12] mb-12 text-center" style={{ color: '#1a1a1a' }}>
+              What we stand for
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div className="card card-hover p-8">
+                <Award className="w-10 h-10 mb-4" style={{ color: '#C9A96E' }} />
+                <h3 className="text-xl font-serif text-ink mb-3">Quality over quantity</h3>
+                <p className="text-secondary leading-relaxed">
+                  We vet every profile and verify every property. No spam, no time-wasters, no padding the numbers.
+                </p>
+              </div>
+
+              <div className="card card-hover p-8">
+                <Users className="w-10 h-10 mb-4" style={{ color: '#C9A96E' }} />
+                <h3 className="text-xl font-serif text-ink mb-3">Industry expertise</h3>
+                <p className="text-secondary leading-relaxed">
+                  Built by someone who has lived inside luxury wellness — not by generalists guessing at the sector.
+                </p>
+              </div>
+
+              <div className="card card-hover p-8">
+                <Heart className="w-10 h-10 mb-4" style={{ color: '#C9A96E' }} />
+                <h3 className="text-xl font-serif text-ink mb-3">Fairness</h3>
+                <p className="text-secondary leading-relaxed">
+                  No commission on hires. Transparent fixed pricing. The platform earns by working, not by extracting.
+                </p>
+              </div>
+
+              <div className="card card-hover p-8">
+                <Shield className="w-10 h-10 mb-4" style={{ color: '#C9A96E' }} />
+                <h3 className="text-xl font-serif text-ink mb-3">Confidentiality</h3>
+                <p className="text-secondary leading-relaxed">
+                  Stealth mode for candidates. Encrypted profiles. Discretion built in — because reputation matters in this industry.
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* What we believe */}
+        <section className="py-24 px-6" style={{ background: '#F8F7F5', borderTop: '1px solid #E8E5E0', borderBottom: '1px solid #E8E5E0' }}>
+          <div className="max-w-3xl mx-auto">
+            <p className="text-[11px] tracking-[0.15em] uppercase font-medium mb-10 text-left md:text-center" style={{ color: '#C9A96E' }}>
+              What we believe
+            </p>
+            <div className="space-y-10 md:space-y-12 text-left md:text-center">
+              <p className="font-serif italic text-[22px] md:text-[28px] leading-[1.4]" style={{ color: '#1a1a1a' }}>
+                Recruitment should reward expertise, not advertising spend.
+              </p>
+              <div className="w-12 h-[1px] mx-0 md:mx-auto" style={{ backgroundColor: '#C9A96E' }} />
+              <p className="font-serif italic text-[22px] md:text-[28px] leading-[1.4]" style={{ color: '#1a1a1a' }}>
+                Discretion is non-negotiable in luxury hospitality.
+              </p>
+              <div className="w-12 h-[1px] mx-0 md:mx-auto" style={{ backgroundColor: '#C9A96E' }} />
+              <p className="font-serif italic text-[22px] md:text-[28px] leading-[1.4]" style={{ color: '#1a1a1a' }}>
+                If a platform doesn&apos;t understand the industry, it can&apos;t serve it.
               </p>
             </div>
           </div>
         </section>
 
-        {/* CTA Section */}
+        {/* Final CTA */}
         <section className="bg-white py-20 px-6">
           <div className="max-w-2xl mx-auto text-center">
-            <h2 className="text-3xl font-serif text-ink mb-8">Ready to join?</h2>
+            <h2 className="text-[28px] md:text-[36px] font-medium tracking-tight leading-[1.15] mb-8" style={{ color: '#1a1a1a' }}>
+              Whether you&apos;re hiring or hired, WHC works for you.
+            </h2>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link href="/register/talent" className="btn-primary">
-                Join as Talent
+              <Link
+                href="/register/talent"
+                className="inline-block px-8 py-3.5 rounded-lg text-[14px] font-semibold text-white transition-all hover:shadow-lg hover:shadow-[#C9A96E]/25"
+                style={{ backgroundColor: '#C9A96E' }}
+              >
+                Create a profile
               </Link>
-              <Link href="/register/employer" className="btn-secondary">
-                Register a Property
+              <Link href="/register/employer" className="btn-secondary inline-block px-8 py-3.5 text-[14px]">
+                Post a role
               </Link>
             </div>
           </div>
