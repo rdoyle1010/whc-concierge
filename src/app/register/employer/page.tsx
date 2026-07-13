@@ -41,6 +41,7 @@ export default function EmployerRegisterPage() {
     const profileData: Record<string, any> = {
       user_id: authData.user.id,
       company_name: form.company_name,
+      property_name: form.company_name,
       contact_name: form.contact_name,
       email: form.email,
       phone: form.phone || null,
@@ -48,7 +49,7 @@ export default function EmployerRegisterPage() {
       location: form.postcode || null,
       postcode: form.postcode || null,
       company_type: form.company_type || null,
-      description: form.description || null,
+      about_text: form.description || null,
       product_houses_used: form.product_houses_used.length > 0 ? form.product_houses_used : null,
       systems_used: form.systems_used.length > 0 ? form.systems_used : null,
       approval_status: 'pending',
