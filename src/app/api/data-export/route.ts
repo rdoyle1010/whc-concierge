@@ -91,7 +91,7 @@ export async function GET(req: NextRequest) {
         const { data: apps } = await admin
           .from('applications')
           .select('*, candidate_profiles(full_name, headline)')
-          .in('job_id', jobIds)
+          .in('role_id', jobIds)
           .order('created_at', { ascending: false })
         exportData.applications_received = apps || []
       }
@@ -113,7 +113,7 @@ export async function GET(req: NextRequest) {
   const { data: messagesSent } = await admin.from('messages').select('*').eq('sender_id', user.id).order('created_at', { ascending: false }).limit(500)
   exportData.messages_sent = messagesSent || []
 
-  const { data: messagesReceived } = await admin.from('messages').select('*').eq('receiver_id', user.id).order('created_at', { ascending: false }).limit(500)
+  const { data: messagesReceived } = await admin.from('messages').select('*').eq('recipient_id', user.id).order('created_at', { ascending: false }).limit(500)
   exportData.messages_received = messagesReceived || []
 
   // Notifications

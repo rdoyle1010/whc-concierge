@@ -47,7 +47,7 @@ export default function EmployerAnalyticsPage() {
       const { data: allApps } = await supabase
         .from('applications')
         .select('*, candidate_profiles(services_offered, treatment_skills)')
-        .in('job_id', jobIds)
+        .in('role_id', jobIds)
 
       const apps = allApps || []
       const now = new Date()
@@ -67,7 +67,7 @@ export default function EmployerAnalyticsPage() {
       // Avg time to first application per job
       const ttfas: number[] = []
       for (const job of jobs) {
-        const jobApps = apps.filter(a => a.job_id === job.id).sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
+        const jobApps = apps.filter(a => a.role_id === job.id).sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
         if (jobApps.length > 0 && job.posted_date) {
           const days = Math.max(0, Math.round((new Date(jobApps[0].created_at).getTime() - new Date(job.posted_date).getTime()) / (1000 * 60 * 60 * 24)))
           ttfas.push(days)
@@ -85,7 +85,7 @@ export default function EmployerAnalyticsPage() {
 
       // Per-job breakdown
       const rows: JobRow[] = jobs.map(job => {
-        const jobApps = apps.filter(a => a.job_id === job.id)
+        const jobApps = apps.filter(a => a.role_id === job.id)
         const jobScores = jobApps.filter(a => a.match_score).map(a => a.match_score)
         const postedDate = job.posted_date ? new Date(job.posted_date) : new Date(job.created_at)
         const daysLive = Math.max(0, Math.round((now.getTime() - postedDate.getTime()) / (1000 * 60 * 60 * 24)))

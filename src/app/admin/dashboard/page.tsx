@@ -121,7 +121,7 @@ export default function AdminDashboard() {
 
       // ── Activity feed ──
       const [feedApps, feedMsgs, feedSignups] = await Promise.all([
-        supabase.from('applications').select('id, created_at, job_id, candidate_id').order('created_at', { ascending: false }).limit(7),
+        supabase.from('applications').select('id, created_at, role_id, candidate_id').order('created_at', { ascending: false }).limit(7),
         supabase.from('messages').select('id, created_at, sender_id').order('created_at', { ascending: false }).limit(7),
         supabase.from('candidate_profiles').select('id, full_name, created_at').order('created_at', { ascending: false }).limit(6),
       ])

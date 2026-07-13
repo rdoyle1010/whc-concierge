@@ -36,22 +36,22 @@ export default function HotelDashboard() {
       // Stats
       let appCount = 0
       if (jobIds.length > 0) {
-        const { count } = await supabase.from('applications').select('id', { count: 'exact', head: true }).in('job_id', jobIds)
+        const { count } = await supabase.from('applications').select('id', { count: 'exact', head: true }).in('role_id', jobIds)
         appCount = count || 0
 
         const { data: apps } = await supabase
           .from('applications')
           .select('*, candidate_profiles(full_name, headline)')
-          .in('job_id', jobIds)
+          .in('role_id', jobIds)
           .order('posted_date', { ascending: false })
           .limit(8)
         setRecentApps((apps || []).map((a: any) => {
-          const job = normalizedJobs.find(j => j.id === a.job_id || j.id === a.job_listing_id)
+          const job = normalizedJobs.find(j => j.id === a.role_id)
           return { ...a, jobTitle: job?.title || 'Role' }
         }))
       }
 
-      const { count: msgCount } = await supabase.from('messages').select('id', { count: 'exact', head: true }).eq('receiver_id', user.id).eq('read', false)
+      const { count: msgCount } = await supabase.from('messages').select('id', { count: 'exact', head: true }).eq('recipient_id', user.id).eq('read', false)
 
       setStats({ active: activeJobs.length, applications: appCount, matches: 0, messages: msgCount || 0 })
       setLoading(false)

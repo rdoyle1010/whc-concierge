@@ -194,7 +194,7 @@ export default function ResidencyPage() {
               const fd = new FormData(e.currentTarget)
               const { data: { user } } = await supabase.auth.getUser()
               if (user) {
-                await supabase.from('messages').insert({ sender_id: user.id, receiver_id: showEnquiry.user_id, content: `Residency enquiry from ${fd.get('name')} (${fd.get('property')}): ${fd.get('message')}`, read: false })
+                await supabase.from('messages').insert({ sender_id: user.id, recipient_id: showEnquiry.user_id, content: `Residency enquiry from ${fd.get('name')} (${fd.get('property')}): ${fd.get('message')}`, read: false })
               }
               setShowEnquiry(null)
             }} className="space-y-4">

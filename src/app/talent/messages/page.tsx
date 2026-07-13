@@ -60,16 +60,16 @@ export default function TalentMessagesPage() {
       const { data: allMsgs } = await supabase
         .from('messages')
         .select('*')
-        .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`)
+        .or(`sender_id.eq.${user.id},recipient_id.eq.${user.id}`)
         .order('created_at', { ascending: false })
 
       const partners = new Map<string, any>()
       for (const msg of allMsgs || []) {
-        const partnerId = msg.sender_id === user.id ? msg.receiver_id : msg.sender_id
+        const partnerId = msg.sender_id === user.id ? msg.recipient_id : msg.sender_id
         if (!partners.has(partnerId)) {
           partners.set(partnerId, { partnerId, lastMessage: msg, unread: 0, partnerName: null })
         }
-        if (msg.receiver_id === user.id && !msg.read) {
+        if (msg.recipient_id === user.id && !msg.read) {
           const p = partners.get(partnerId)!
           p.unread++
         }
@@ -108,13 +108,13 @@ export default function TalentMessagesPage() {
       const { data } = await supabase
         .from('messages')
         .select('*')
-        .or(`and(sender_id.eq.${userId},receiver_id.eq.${activeConvo}),and(sender_id.eq.${activeConvo},receiver_id.eq.${userId})`)
+        .or(`and(sender_id.eq.${userId},recipient_id.eq.${activeConvo}),and(sender_id.eq.${activeConvo},recipient_id.eq.${userId})`)
         .order('created_at', { ascending: true })
 
       setMessages(data || [])
 
       await supabase.from('messages').update({ read: true })
-        .eq('sender_id', activeConvo).eq('receiver_id', userId).eq('read', false)
+        .eq('sender_id', activeConvo).eq('recipient_id', userId).eq('read', false)
 
       setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 100)
     }
@@ -150,7 +150,7 @@ export default function TalentMessagesPage() {
 
       await supabase.from('messages').insert({
         sender_id: userId,
-        receiver_id: activeConvo,
+        recipient_id: activeConvo,
         content: newMsg.trim() || null,
         attachment_url: attachmentUrl,
         attachment_name: attachmentName,
@@ -160,7 +160,7 @@ export default function TalentMessagesPage() {
 
       setMessages([...messages, {
         sender_id: userId,
-        receiver_id: activeConvo,
+        recipient_id: activeConvo,
         content: newMsg.trim() || null,
         attachment_url: attachmentUrl,
         attachment_name: attachmentName,

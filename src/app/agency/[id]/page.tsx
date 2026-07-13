@@ -144,7 +144,7 @@ export default function AgencyProfilePage() {
                   const fd = new FormData(e.currentTarget)
                   const { data: { user } } = await supabase.auth.getUser()
                   if (user) {
-                    await supabase.from('messages').insert({ sender_id: user.id, receiver_id: profile.user_id || profile.id, content: `Enquiry from ${fd.get('name')} (${fd.get('property')}): ${fd.get('message')}`, read: false })
+                    await supabase.from('messages').insert({ sender_id: user.id, recipient_id: profile.user_id || profile.id, content: `Enquiry from ${fd.get('name')} (${fd.get('property')}): ${fd.get('message')}`, read: false })
                   }
                   setEnquirySent(true)
                 }} className="space-y-3">

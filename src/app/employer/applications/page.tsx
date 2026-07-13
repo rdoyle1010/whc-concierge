@@ -29,7 +29,7 @@ export default function EmployerApplicationsPage() {
       const { data } = await supabase
         .from('applications')
         .select('*, job_listings(job_title, title), candidate_profiles(full_name, headline, email, location, services_offered)')
-        .in('job_id', jobIds.map(j => j.id))
+        .in('role_id', jobIds.map(j => j.id))
         .order('created_at', { ascending: false })
 
       setApplications(data || [])
@@ -106,7 +106,7 @@ export default function EmployerApplicationsPage() {
                   )}
                 </div>
                 <div className="flex items-center space-x-2">
-                  <button onClick={() => { updateStatus(app.id, 'shortlisted'); addToShortlist(app.candidate_profiles?.id || app.candidate_id, app.job_id) }} title="Shortlist"
+                  <button onClick={() => { updateStatus(app.id, 'shortlisted'); addToShortlist(app.candidate_profiles?.id || app.candidate_id, app.role_id) }} title="Shortlist"
                     className={`p-2 rounded-lg ${app.status === 'shortlisted' || shortlistedIds.has(app.candidate_profiles?.id || app.candidate_id) ? 'bg-[#FDF6EC] text-accent' : 'hover:bg-green-50 text-gray-400'}`}>
                     <Star size={18} fill={app.status === 'shortlisted' || shortlistedIds.has(app.candidate_profiles?.id || app.candidate_id) ? 'currentColor' : 'none'} />
                   </button>

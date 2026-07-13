@@ -75,7 +75,7 @@ export interface JobListing {
 
 export interface Application {
   id: string
-  job_id: string
+  role_id: string
   candidate_id: string
   status: 'pending' | 'reviewed' | 'shortlisted' | 'rejected' | 'accepted'
   cover_letter?: string
@@ -100,7 +100,7 @@ export interface Match {
 export interface Message {
   id: string
   sender_id: string
-  receiver_id: string
+  recipient_id: string
   content: string
   read: boolean
   created_at: string

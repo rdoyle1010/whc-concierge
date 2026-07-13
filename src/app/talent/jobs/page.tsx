@@ -39,8 +39,8 @@ export default function TalentJobsPage() {
         cp = data
         setProfile(data)
         // Load existing applications
-        const { data: apps } = await supabase.from('applications').select('job_listing_id, job_id').eq('candidate_id', user.id)
-        if (apps) setApplied(new Set(apps.map(a => a.job_listing_id || a.job_id)))
+        const { data: apps } = await supabase.from('applications').select('role_id').eq('candidate_id', user.id)
+        if (apps) setApplied(new Set(apps.map(a => a.role_id)))
         // Load saved jobs
         const savedRes = await fetch('/api/saved-jobs')
         if (savedRes.ok) {
@@ -102,7 +102,7 @@ export default function TalentJobsPage() {
 
   const handleApply = async (jobId: string, matchScore: number) => {
     if (!userId) return
-    await supabase.from('applications').insert({ candidate_id: userId, job_listing_id: jobId, job_id: jobId, status: 'pending', match_score: matchScore })
+    await supabase.from('applications').insert({ candidate_id: userId, role_id: jobId, status: 'pending', match_score: matchScore })
     setApplied(new Set(Array.from(applied).concat(jobId)))
     // Notify employer
     const job = jobs.find((j: any) => j.id === jobId)

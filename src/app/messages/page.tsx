@@ -34,18 +34,18 @@ export default function MessagesPage() {
       const { data: legacyMsgs } = await supabase
         .from('messages')
         .select('*')
-        .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`)
+        .or(`sender_id.eq.${user.id},recipient_id.eq.${user.id}`)
         .order('created_at', { ascending: false })
 
       // Build thread list from both sources
       const partnerMap = new Map<string, { partnerId: string; lastMessage: any; unread: number }>()
 
       for (const msg of legacyMsgs || []) {
-        const partnerId = msg.sender_id === user.id ? msg.receiver_id : msg.sender_id
+        const partnerId = msg.sender_id === user.id ? msg.recipient_id : msg.sender_id
         if (!partnerMap.has(partnerId)) {
           partnerMap.set(partnerId, { partnerId, lastMessage: msg, unread: 0 })
         }
-        if (msg.receiver_id === user.id && !msg.read) {
+        if (msg.recipient_id === user.id && !msg.read) {
           partnerMap.get(partnerId)!.unread++
         }
       }
@@ -62,10 +62,10 @@ export default function MessagesPage() {
       const { data } = await supabase
         .from('messages')
         .select('*')
-        .or(`and(sender_id.eq.${userId},receiver_id.eq.${activeThread}),and(sender_id.eq.${activeThread},receiver_id.eq.${userId})`)
+        .or(`and(sender_id.eq.${userId},recipient_id.eq.${activeThread}),and(sender_id.eq.${activeThread},recipient_id.eq.${userId})`)
         .order('created_at', { ascending: true })
       setMessages(data || [])
-      await supabase.from('messages').update({ read: true }).eq('sender_id', activeThread).eq('receiver_id', userId).eq('read', false)
+      await supabase.from('messages').update({ read: true }).eq('sender_id', activeThread).eq('recipient_id', userId).eq('read', false)
       setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 100)
     }
     loadMessages()
@@ -74,7 +74,7 @@ export default function MessagesPage() {
     const channel = supabase.channel(`messages-${activeThread}`)
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, (payload) => {
         const msg = payload.new as any
-        if ((msg.sender_id === userId && msg.receiver_id === activeThread) || (msg.sender_id === activeThread && msg.receiver_id === userId)) {
+        if ((msg.sender_id === userId && msg.recipient_id === activeThread) || (msg.sender_id === activeThread && msg.recipient_id === userId)) {
           setMessages(prev => [...prev, msg])
           setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 100)
         }
@@ -88,8 +88,8 @@ export default function MessagesPage() {
     if (!newMsg.trim() || !activeThread) return
     const content = newMsg.trim()
     setNewMsg('')
-    setMessages(prev => [...prev, { sender_id: userId, receiver_id: activeThread, content, created_at: new Date().toISOString() }])
-    await supabase.from('messages').insert({ sender_id: userId, receiver_id: activeThread, content, read: false })
+    setMessages(prev => [...prev, { sender_id: userId, recipient_id: activeThread, content, created_at: new Date().toISOString() }])
+    await supabase.from('messages').insert({ sender_id: userId, recipient_id: activeThread, content, read: false })
     notify(activeThread, 'new_message', 'New message', content.length > 80 ? content.slice(0, 80) + '...' : content, '/messages')
     setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 100)
   }

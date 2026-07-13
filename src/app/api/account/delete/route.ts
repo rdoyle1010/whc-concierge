@@ -74,7 +74,7 @@ export async function POST(req: NextRequest) {
           await admin.from('job_required_systems').delete().in('job_id', jobIds)
           await admin.from('job_required_product_houses').delete().in('job_id', jobIds)
           await admin.from('job_required_certifications').delete().in('job_id', jobIds)
-          await admin.from('applications').delete().in('job_id', jobIds)
+          await admin.from('applications').delete().in('role_id', jobIds)
           await admin.from('job_listings').delete().eq('employer_id', eid)
         }
         await admin.from('employer_profiles').delete().eq('id', eid)
@@ -82,7 +82,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Clean shared tables
-    await admin.from('messages').delete().or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`)
+    await admin.from('messages').delete().or(`sender_id.eq.${user.id},recipient_id.eq.${user.id}`)
     await admin.from('reviews').delete().or(`reviewer_id.eq.${user.id},reviewed_id.eq.${user.id}`)
 
     // Remove profiles row
