@@ -85,12 +85,15 @@ export default function EmployerProfilePage() {
     const file = e.target.files?.[0]
     if (!file) return
     const ext = file.name.split('.').pop()
-    const path = `logos/${profile.id}.${ext}`
-    const { error: uploadError } = await supabase.storage.from('uploads').upload(path, file, { upsert: true })
-    if (uploadError) { setMessage(uploadError.message); return }
-    const { data: { publicUrl } } = supabase.storage.from('uploads').getPublicUrl(path)
-    await supabase.from('employer_profiles').update({ logo_url: publicUrl }).eq('id', profile.id)
-    update('logo_url', publicUrl)
+    const formData = new FormData()
+    formData.append('file', file)
+    formData.append('bucket', 'site-images')
+    formData.append('path', `logos/${profile.id}.${ext}`)
+    const res = await fetch('/api/upload', { method: 'POST', body: formData })
+    const data = await res.json()
+    if (!res.ok) { setMessage(`Upload failed: ${data.error}`); return }
+    await supabase.from('employer_profiles').update({ logo_url: data.url }).eq('id', profile.id)
+    update('logo_url', data.url)
     setMessage('Logo updated!')
     setTimeout(() => setMessage(''), 3000)
   }
