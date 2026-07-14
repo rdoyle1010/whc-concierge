@@ -38,6 +38,13 @@ const SLOT_GROUPS = [
     showText: false,
     maxSlots: 1,
   },
+  {
+    title: 'How It Works',
+    description: 'The large image beside the "Three steps to your next chapter" section on the homepage. Landscape works best (1600×1000).',
+    prefix: 'howitworks_',
+    showText: false,
+    maxSlots: 1,
+  },
 ]
 
 export default function AdminImagesPage() {

@@ -78,6 +78,7 @@ const DEFAULT_FEATURED = [
   'https://images.unsplash.com/photo-1647960563439-0160d88ca2b7?w=600&q=80&auto=format&fit=crop',
 ]
 const DEFAULT_CTA_BG = 'https://images.unsplash.com/photo-1551816646-d64cca8d3ba0?w=1920&q=80&auto=format&fit=crop'
+const DEFAULT_HOW_IT_WORKS = 'https://images.unsplash.com/photo-1540555700478-4be289fbecef?w=1600&q=80&auto=format&fit=crop'
 
 async function getSiteImages() {
   try {
@@ -85,7 +86,7 @@ async function getSiteImages() {
     const { data } = await supabase
       .from('site_images')
       .select('slot, image_url')
-      .in('slot', ['featured_1', 'featured_2', 'featured_3', 'cta_bg'])
+      .in('slot', ['featured_1', 'featured_2', 'featured_3', 'cta_bg', 'howitworks_1'])
     const map: Record<string, string> = {}
     for (const row of data || []) map[row.slot] = row.image_url
     return {
@@ -95,9 +96,10 @@ async function getSiteImages() {
         map['featured_3'] || DEFAULT_FEATURED[2],
       ],
       ctaBg: map['cta_bg'] || DEFAULT_CTA_BG,
+      howItWorks: map['howitworks_1'] || DEFAULT_HOW_IT_WORKS,
     }
   } catch {
-    return { featured: DEFAULT_FEATURED, ctaBg: DEFAULT_CTA_BG }
+    return { featured: DEFAULT_FEATURED, ctaBg: DEFAULT_CTA_BG, howItWorks: DEFAULT_HOW_IT_WORKS }
   }
 }
 
@@ -155,7 +157,7 @@ export default async function HomePage() {
             {/* Right: luxury imagery (decorative) */}
             <div className="lg:col-span-7 hidden sm:block">
               <img
-                src="https://images.unsplash.com/photo-1540555700478-4be289fbecef?w=1600&q=80&auto=format&fit=crop"
+                src={siteImages.howItWorks}
                 alt=""
                 aria-hidden="true"
                 className="w-full h-full max-h-[600px] object-cover rounded-2xl shadow-xl"
