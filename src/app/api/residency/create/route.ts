@@ -31,10 +31,11 @@ export async function POST(req: NextRequest) {
       .eq('user_id', user.id)
       .maybeSingle()
 
-    // Preferred duration: combine min/max when both provided
-    const duration = body.min_duration && body.max_duration && body.min_duration !== body.max_duration
-      ? `${body.min_duration} – ${body.max_duration}`
-      : (body.min_duration || body.max_duration || null)
+    // DB check constraints only allow these exact values
+    const ALLOWED_DURATIONS = ['1-2 months', '3-4 months', '5-6 months', 'Flexible']
+    const ALLOWED_TRAVEL = ['UK Only', 'Europe', 'Middle East', 'Asia Pacific', 'Global']
+    const duration = ALLOWED_DURATIONS.includes(body.preferred_duration) ? body.preferred_duration : null
+    const travel = ALLOWED_TRAVEL.includes(body.travel_availability) ? body.travel_availability : null
 
     const row: Record<string, any> = {
       user_id: user.id,
@@ -47,7 +48,7 @@ export async function POST(req: NextRequest) {
       qualifications: Array.isArray(body.qualifications) && body.qualifications.length > 0 ? body.qualifications : null,
       brand_experience: Array.isArray(body.product_houses) && body.product_houses.length > 0 ? body.product_houses : null,
       current_location: body.postcode || null,
-      will_travel_to: body.travel_availability || null,
+      will_travel_to: travel,
       preferred_duration: duration,
       weekly_rate: body.weekly_rate ? parseInt(String(body.weekly_rate), 10) : null,
       available_from: body.availability_start || null,

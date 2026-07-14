@@ -3,14 +3,16 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { PRODUCT_HOUSES, TRAVEL_OPTIONS } from '@/lib/constants'
+import { PRODUCT_HOUSES } from '@/lib/constants'
 import CollapsibleCheckboxSection from '@/components/CollapsibleCheckboxSection'
 import Link from 'next/link'
 import { ArrowLeft, Check, Upload } from 'lucide-react'
 
 const SERVICES_FLAT = ['Swedish Massage','Deep Tissue','Hot Stone','Aromatherapy','Reflexology','Reiki','Sound Healing','Breathwork','Yoga','Pilates','Meditation','Acupuncture','Ayurvedic Treatments','Facials','Body Wraps','Holistic Therapy','Beauty Therapy','Nail Services','Hair Styling','Personal Training','Nutrition Consultation']
 const QUALS_FLAT = ['CIDESCO','CIBTAC','ITEC','VTCT','NVQ Level 2','NVQ Level 3','NVQ Level 4','First Aid','Hot Stone Certified','Reiki Master','Yoga Teacher 200hr','Yoga Teacher 500hr','Pilates Instructor']
-const DURATION_OPTIONS = ['1 day','3 days','1 week','2 weeks','1 month','3 months','6 months','Flexible']
+// These match the database's allowed values exactly — do not change without a matching DB migration
+const DURATION_OPTIONS = ['1-2 months','3-4 months','5-6 months','Flexible']
+const RESIDENCY_TRAVEL_OPTIONS = ['UK Only','Europe','Middle East','Asia Pacific','Global']
 
 export default function ResidencyCreatePage() {
   const router = useRouter()
@@ -22,9 +24,9 @@ export default function ResidencyCreatePage() {
   const [form, setForm] = useState({
     title: '', description: '',
     services_offered: [] as string[], product_houses: [] as string[], qualifications: [] as string[],
-    availability_start: '', min_duration: '', max_duration: '',
+    availability_start: '', preferred_duration: '',
     day_rate: '', weekly_rate: '', monthly_rate: '', negotiable: true,
-    travel_availability: 'uk_only', travel_radius_miles: '', postcode: '',
+    travel_availability: 'UK Only', postcode: '',
   })
 
   const u = (f: string, v: any) => setForm({ ...form, [f]: v })
@@ -50,8 +52,7 @@ export default function ResidencyCreatePage() {
         weekly_rate: form.weekly_rate || autoWeekly || null,
         travel_availability: form.travel_availability,
         availability_start: form.availability_start || null,
-        min_duration: form.min_duration || null,
-        max_duration: form.max_duration || null,
+        preferred_duration: form.preferred_duration || null,
         postcode: form.postcode || null,
       }),
     })
@@ -111,10 +112,7 @@ export default function ResidencyCreatePage() {
           <div className="space-y-5">
             <p className="eyebrow mb-4">Step 3 — Availability & Rates</p>
             <div><label className="eyebrow block mb-1.5">Available From</label><input type="date" value={form.availability_start} onChange={e => u('availability_start', e.target.value)} className="input-field" /></div>
-            <div className="grid grid-cols-2 gap-4">
-              <div><label className="eyebrow block mb-1.5">Minimum Duration</label><select value={form.min_duration} onChange={e => u('min_duration', e.target.value)} className="input-field"><option value="">Select</option>{DURATION_OPTIONS.map(d => <option key={d} value={d}>{d}</option>)}</select></div>
-              <div><label className="eyebrow block mb-1.5">Maximum Duration</label><select value={form.max_duration} onChange={e => u('max_duration', e.target.value)} className="input-field"><option value="">Select</option>{DURATION_OPTIONS.map(d => <option key={d} value={d}>{d}</option>)}</select></div>
-            </div>
+            <div><label className="eyebrow block mb-1.5">Preferred Duration</label><select value={form.preferred_duration} onChange={e => u('preferred_duration', e.target.value)} className="input-field"><option value="">Select</option>{DURATION_OPTIONS.map(d => <option key={d} value={d}>{d}</option>)}</select></div>
             <div className="grid grid-cols-3 gap-4">
               <div><label className="eyebrow block mb-1.5">Day Rate (£)</label><input type="number" value={form.day_rate} onChange={e => u('day_rate', e.target.value)} className="input-field" /></div>
               <div><label className="eyebrow block mb-1.5">Weekly Rate (£)</label><input type="number" value={form.weekly_rate || autoWeekly} onChange={e => u('weekly_rate', e.target.value)} className="input-field" /></div>
@@ -132,13 +130,10 @@ export default function ResidencyCreatePage() {
             <div><label className="eyebrow block mb-1.5">Based In (Postcode)</label><input type="text" value={form.postcode} onChange={e => u('postcode', e.target.value)} className="input-field" /></div>
             <div>
               <label className="eyebrow block mb-2">Travel Availability</label>
-              <div className="flex flex-wrap gap-2">{TRAVEL_OPTIONS.map(t => (
-                <button type="button" key={t.value} onClick={() => u('travel_availability', t.value)} className={`px-4 py-2 rounded-lg text-[12px] font-medium transition-colors ${form.travel_availability === t.value ? 'bg-ink text-white' : 'bg-surface text-muted border border-border'}`}>{t.label}</button>
+              <div className="flex flex-wrap gap-2">{RESIDENCY_TRAVEL_OPTIONS.map(t => (
+                <button type="button" key={t} onClick={() => u('travel_availability', t)} className={`px-4 py-2 rounded-lg text-[12px] font-medium transition-colors ${form.travel_availability === t ? 'bg-ink text-white' : 'bg-surface text-muted border border-border'}`}>{t}</button>
               ))}</div>
             </div>
-            {form.travel_availability === 'radius' && (
-              <div><label className="eyebrow block mb-1.5">Radius (miles)</label><input type="number" value={form.travel_radius_miles} onChange={e => u('travel_radius_miles', e.target.value)} className="input-field" placeholder="50" /></div>
-            )}
             <div className="flex gap-3"><button type="button" onClick={() => setStep(3)} className="btn-secondary flex-1">Back</button><button type="button" onClick={() => setStep(5)} className="btn-primary flex-1">Review</button></div>
           </div>
         )}
@@ -157,7 +152,7 @@ export default function ResidencyCreatePage() {
                 {form.day_rate && <span className="bg-surface px-2.5 py-1 rounded-lg font-medium text-ink">£{form.day_rate}/day</span>}
                 {(form.weekly_rate || autoWeekly) && <span className="bg-surface px-2.5 py-1 rounded-lg font-medium text-ink">£{form.weekly_rate || autoWeekly}/week</span>}
               </div>
-              <p className="text-[12px] text-muted">Travel: {form.travel_availability.replace('_', ' ')} {form.availability_start ? `· From ${form.availability_start}` : ''} {form.min_duration ? `· Min ${form.min_duration}` : ''}</p>
+              <p className="text-[12px] text-muted">Travel: {form.travel_availability} {form.availability_start ? `· From ${form.availability_start}` : ''} {form.preferred_duration ? `· ${form.preferred_duration}` : ''}</p>
             </div>
 
             <div className="bg-surface p-4 rounded-lg text-[13px] text-muted">

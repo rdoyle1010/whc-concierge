@@ -39,7 +39,7 @@ export default function ResidencyPage() {
       if (!matchesPrimary && !matchesSecondary && !matchesServices) return false
     }
     if (regionFilter) {
-      if (regionFilter !== (r.travel_availability || r.will_travel_to || '')) return false
+      if (regionFilter !== (r.will_travel_to || r.travel_availability || '')) return false
     }
     return true
   })
@@ -77,9 +77,11 @@ export default function ResidencyPage() {
             className="input-field !py-2 text-[13px] w-auto flex-1 min-w-[200px]" />
           <select value={regionFilter} onChange={e => setRegionFilter(e.target.value)} className="input-field !py-2 text-[13px] w-auto">
             <option value="">All regions</option>
-            <option value="uk_only">UK Only</option>
-            <option value="uk_and_europe">UK & Europe</option>
-            <option value="worldwide">Worldwide</option>
+            <option value="UK Only">UK Only</option>
+            <option value="Europe">Europe</option>
+            <option value="Middle East">Middle East</option>
+            <option value="Asia Pacific">Asia Pacific</option>
+            <option value="Global">Global</option>
           </select>
         </div>
         <p className="text-[12px] text-muted mt-3">{filtered.length} specialist{filtered.length !== 1 ? 's' : ''} available</p>
