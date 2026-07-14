@@ -41,8 +41,16 @@ export default function AdminUsersPage() {
   }
 
   const approve = async (type: 'candidate' | 'employer', id: string) => {
-    const table = type === 'candidate' ? 'candidate_profiles' : 'employer_profiles'
-    await supabase.from(table).update({ approval_status: 'approved' }).eq('id', id)
+    const res = await fetch('/api/admin/users', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type, id, action: 'approve' }),
+    })
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}))
+      alert(`Could not approve: ${data.error || res.statusText}`)
+      return
+    }
     if (type === 'candidate') setCandidates(candidates.map(c => c.id === id ? { ...c, approval_status: 'approved' } : c))
     else setEmployers(employers.map(e => e.id === id ? { ...e, approval_status: 'approved' } : e))
     // Notify the user their profile was approved
@@ -55,8 +63,16 @@ export default function AdminUsersPage() {
   }
 
   const reject = async (type: 'candidate' | 'employer', id: string) => {
-    const table = type === 'candidate' ? 'candidate_profiles' : 'employer_profiles'
-    await supabase.from(table).update({ approval_status: 'rejected', approval_notes: rejectReason }).eq('id', id)
+    const res = await fetch('/api/admin/users', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type, id, action: 'reject', reason: rejectReason }),
+    })
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}))
+      alert(`Could not reject: ${data.error || res.statusText}`)
+      return
+    }
     if (type === 'candidate') setCandidates(candidates.map(c => c.id === id ? { ...c, approval_status: 'rejected', approval_notes: rejectReason } : c))
     else setEmployers(employers.map(e => e.id === id ? { ...e, approval_status: 'rejected', approval_notes: rejectReason } : e))
     setShowReject(false); setRejectReason(''); setSelected(null)
