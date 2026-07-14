@@ -102,7 +102,7 @@ export default function EmployerJobsPage() {
     <DashboardShell role="employer" userName={profile?.company_name}>
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-serif font-bold text-ink">Job Listings</h1>
-        <button onClick={() => { setForm(emptyJob); setEditing(null); setShowForm(true) }}
+        <button onClick={() => router.push('/employer/post-role')}
           className="btn-primary flex items-center space-x-2">
           <Plus size={16} /><span>Post New Role</span>
         </button>
