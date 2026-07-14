@@ -44,23 +44,25 @@ export default function EmployerJobsPage() {
 
     const payload = {
       employer_id: profile.id,
-      title: form.title,
-      description: form.description,
+      job_title: form.title,
+      job_description: form.description,
       location: form.location,
       job_type: form.job_type,
-      specialism: form.specialism || null,
       salary_min: form.salary_min ? parseInt(form.salary_min as string) : null,
       salary_max: form.salary_max ? parseInt(form.salary_max as string) : null,
       tier: form.tier,
       benefits: form.benefits ? (form.benefits as string).split('\n').filter(Boolean) : null,
       requirements: form.requirements ? (form.requirements as string).split('\n').filter(Boolean) : null,
       status: form.status,
+      is_live: form.status === 'active',
     }
 
     if (editing) {
-      await supabase.from('job_listings').update(payload).eq('id', editing.id)
+      const { error: saveError } = await supabase.from('job_listings').update(payload).eq('id', editing.id)
+      if (saveError) { alert('Could not save role: ' + saveError.message); setSaving(false); return }
     } else {
-      await supabase.from('job_listings').insert(payload)
+      const { error: saveError } = await supabase.from('job_listings').insert(payload)
+      if (saveError) { alert('Could not save role: ' + saveError.message); setSaving(false); return }
     }
 
     const { data } = await supabase.from('job_listings').select('*').eq('employer_id', profile.id).order('posted_date', { ascending: false })
