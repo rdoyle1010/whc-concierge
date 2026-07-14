@@ -77,7 +77,7 @@ export default function AdminMessagesPage() {
                 <p className="font-medium text-ink text-sm truncate">{q.name}</p>
                 <span className={`text-xs px-2 py-0.5 rounded-full ${statusColors[q.status] || 'bg-gray-100 text-gray-500'}`}>{q.status}</span>
               </div>
-              <p className="text-xs text-gray-500 truncate">{q.subject}</p>
+              <p className="text-xs text-gray-500 truncate">{q.subject || q.message}</p>
               <p className="text-xs text-gray-300 mt-1">{new Date(q.created_at).toLocaleDateString()}</p>
             </button>
           ))}

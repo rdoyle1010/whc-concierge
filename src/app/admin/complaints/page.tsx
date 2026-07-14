@@ -66,7 +66,7 @@ export default function AdminComplaintsPage() {
               <div className="flex items-start justify-between">
                 <div className="flex-1">
                   <div className="flex items-center space-x-3 mb-2">
-                    <h3 className="font-serif text-lg font-semibold text-ink">{c.subject}</h3>
+                    <h3 className="font-serif text-lg font-semibold text-ink">{c.subject || c.message}</h3>
                     <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${statusColors[c.status] || 'bg-gray-100 text-gray-500'}`}>{c.status}</span>
                   </div>
                   <p className="text-sm text-gray-500">From: {c.name} ({c.email})</p>
@@ -93,7 +93,7 @@ export default function AdminComplaintsPage() {
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setSelected(null)}>
           <div className="bg-white rounded-3xl max-w-lg w-full p-8 animate-fade-in-up" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-start justify-between mb-4">
-              <h2 className="font-serif text-xl font-bold text-ink">{selected.subject}</h2>
+              <h2 className="font-serif text-xl font-bold text-ink">{selected.subject || selected.message}</h2>
               <button onClick={() => setSelected(null)} className="text-gray-300 hover:text-gray-500"><X size={20} /></button>
             </div>
             <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${statusColors[selected.status] || ''}`}>{selected.status}</span>
