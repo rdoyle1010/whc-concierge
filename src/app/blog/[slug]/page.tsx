@@ -6,6 +6,7 @@ import Footer from '@/components/Footer'
 import { ArrowLeft } from 'lucide-react'
 import { generateBlogJsonLd } from '@/lib/blog-jsonld'
 import ShareButtons from '@/components/ShareButtons'
+import BlogImage from '@/components/BlogImage'
 
 export const revalidate = 60
 
@@ -50,7 +51,7 @@ export default async function BlogPostPage({ params }: { params: { slug: string 
       {post.image_url && (
         <div className="max-w-4xl mx-auto px-4 -mt-8">
           <div className="aspect-video rounded-2xl overflow-hidden shadow-lg">
-            <img src={post.image_url} alt={post.title} className="w-full h-full object-cover" />
+            <BlogImage src={post.image_url} alt={post.title} className="w-full h-full object-cover" />
           </div>
         </div>
       )}

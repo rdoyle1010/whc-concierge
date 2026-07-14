@@ -17,8 +17,8 @@ const galleryFallback = [
 
 export async function generateMetadata({ params }: { params: { id: string } }): Promise<Metadata> {
   const supabase = createServerSupabaseClient()
-  const { data } = await supabase.from('residency_profiles').select('full_name, title').eq('id', params.id).single()
-  const name = data?.full_name || data?.title || 'Specialist'
+  const { data } = await supabase.from('residency_profiles').select('full_name, primary_specialism').eq('id', params.id).single()
+  const name = data?.full_name || data?.primary_specialism || 'Specialist'
   return { title: `${name} — Residency Specialist` }
 }
 
@@ -59,7 +59,7 @@ export default async function ResidencyDetailPage({ params }: { params: { id: st
           {/* Photo */}
           <div className="shrink-0 text-center">
             <div className="w-32 h-32 rounded-full overflow-hidden bg-surface border-2 border-white shadow-lg">
-              <img src={r.photo_url || r.photos?.[0] || galleryFallback[0]} alt={name} className="w-full h-full object-cover" />
+              <img src={r.profile_photo_url || r.photo_url || r.photos?.[0] || galleryFallback[0]} alt={name} className="w-full h-full object-cover" />
             </div>
             {r.years_experience && <p className="mt-3 text-[13px] font-medium text-ink">{r.years_experience} years</p>}
             {r.years_experience && <p className="text-[11px] text-muted">experience</p>}
@@ -88,7 +88,7 @@ export default async function ResidencyDetailPage({ params }: { params: { id: st
             <div className="flex flex-wrap items-center gap-4 text-[13px] text-muted">
               {location && <span className="flex items-center gap-1.5"><MapPin size={13} />{location}</span>}
               {travelTo && <span>Travels: {travelLabel}</span>}
-              {r.availability_start && <span className="flex items-center gap-1.5"><Calendar size={13} />From {new Date(r.availability_start).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}</span>}
+              {(r.available_from || r.availability_start) && <span className="flex items-center gap-1.5"><Calendar size={13} />From {new Date(r.available_from || r.availability_start).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}</span>}
               {duration && <span className="flex items-center gap-1.5"><Clock size={13} />{duration}</span>}
             </div>
           </div>
@@ -158,7 +158,7 @@ export default async function ResidencyDetailPage({ params }: { params: { id: st
             <div className="bg-white border border-border rounded-xl p-6">
               <h3 className="text-[14px] font-medium text-ink mb-3">Availability & Logistics</h3>
               <div className="space-y-2.5 text-[13px]">
-                {r.availability_start && <div className="flex justify-between"><span className="text-muted">Available from</span><span className="text-ink">{new Date(r.availability_start).toLocaleDateString('en-GB', { month: 'short', year: 'numeric' })}</span></div>}
+                {(r.available_from || r.availability_start) && <div className="flex justify-between"><span className="text-muted">Available from</span><span className="text-ink">{new Date(r.available_from || r.availability_start).toLocaleDateString('en-GB', { month: 'short', year: 'numeric' })}</span></div>}
                 {duration && <div className="flex justify-between"><span className="text-muted">Preferred duration</span><span className="text-ink">{duration}</span></div>}
                 {location && <div className="flex justify-between"><span className="text-muted">Based in</span><span className="text-ink">{location}</span></div>}
                 {travelTo && <div className="flex justify-between"><span className="text-muted">Will travel to</span><span className="text-ink">{travelLabel}</span></div>}

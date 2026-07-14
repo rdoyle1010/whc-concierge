@@ -3,66 +3,52 @@ import { createAdminClient } from '@/lib/supabase/admin'
 
 export const dynamic = 'force-dynamic'
 
+// Column names below match the LIVE residency_profiles table:
+// primary_specialism, bio, secondary_specialisms, brand_experience,
+// preferred_duration, weekly_rate, will_travel_to, available_from,
+// profile_photo_url, qualifications, approval_status, is_featured.
 const SEED_RESIDENCIES = [
   {
-    title: 'Award-Winning Yoga & Wellness Specialist',
-    description: 'With over 15 years in the luxury wellness industry, I specialise in Kundalini yoga, Vinyasa flow, yoga retreats, and yoga massage. I\'ve held residencies at five-star London hotels, an internationally renowned wellness clinic in Spain, and a destination wellness retreat in Thailand. I create bespoke retreat programmes combining breathwork, meditation, and therapeutic bodywork. Qualified in 200hr and 500hr YTT, Thai massage, and Ayurvedic treatments. Available for seasonal placements, wellness weekends, and full retreat programming.',
-    services_offered: ['Kundalini Yoga', 'Vinyasa Flow', 'Yoga Retreats', 'Yoga Massage', 'Breathwork', 'Meditation'],
-    product_houses: ['Aromatherapy Associates', 'Bamford', 'Ground Wellbeing'],
-    duration: '1–3 months',
-    day_rate: 350,
+    primary_specialism: 'Award-Winning Yoga & Wellness Specialist',
+    bio: 'With over 15 years in the luxury wellness industry, I specialise in Kundalini yoga, Vinyasa flow, yoga retreats, and yoga massage. I\'ve held residencies at five-star London hotels, an internationally renowned wellness clinic in Spain, and a destination wellness retreat in Thailand. I create bespoke retreat programmes combining breathwork, meditation, and therapeutic bodywork. Qualified in 200hr and 500hr YTT, Thai massage, and Ayurvedic treatments. Available for seasonal placements, wellness weekends, and full retreat programming.',
+    secondary_specialisms: ['Kundalini Yoga', 'Vinyasa Flow', 'Yoga Retreats', 'Yoga Massage', 'Breathwork', 'Meditation'],
+    qualifications: ['Yoga Teacher 200hr', 'Yoga Teacher 500hr', 'Thai Massage', 'Ayurvedic Treatments'],
+    brand_experience: ['Aromatherapy Associates', 'Bamford', 'Ground Wellbeing'],
+    preferred_duration: '1–3 months',
     weekly_rate: 1750,
-    monthly_rate: 6000,
-    travel_availability: 'worldwide',
-    availability_start: '2026-05-01',
+    will_travel_to: 'worldwide',
+    available_from: '2026-05-01',
     approval_status: 'approved',
     is_featured: true,
-    gallery_urls: [
-      'https://images.pexels.com/photos/6724313/pexels-photo-6724313.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&dpr=1',
-      'https://images.pexels.com/photos/3735619/pexels-photo-3735619.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&dpr=1',
-      'https://images.pexels.com/photos/7587466/pexels-photo-7587466.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&dpr=1',
-      'https://images.pexels.com/photos/5563472/pexels-photo-5563472.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&dpr=1',
-    ],
+    profile_photo_url: 'https://images.pexels.com/photos/6724313/pexels-photo-6724313.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&dpr=1',
   },
   {
-    title: 'Senior Spa Therapist — Luxury Facial & Body Specialist',
-    description: '12 years\' experience across five-star London hotels and destination spas. CIDESCO and CIBTAC qualified with advanced training in Biologique Recherche, 111SKIN, and Dr Barbara Sturm protocols. I\'ve worked at five-star London hotels and luxury country estate spas. My speciality is results-driven facial treatments and luxury body rituals. Available for short-term cover, seasonal placements, and product launch residencies.',
-    services_offered: ['Advanced Facials', 'Body Rituals', 'Skincare Consultations', 'Aromatherapy', 'Hot Stone Massage'],
-    product_houses: ['Biologique Recherche', '111SKIN', 'Natura Bissé', 'Dr Barbara Sturm'],
-    duration: '1 week – 1 month',
-    day_rate: 400,
+    primary_specialism: 'Senior Spa Therapist — Luxury Facial & Body Specialist',
+    bio: '12 years\' experience across five-star London hotels and destination spas. CIDESCO and CIBTAC qualified with advanced training in Biologique Recherche, 111SKIN, and Dr Barbara Sturm protocols. I\'ve worked at five-star London hotels and luxury country estate spas. My speciality is results-driven facial treatments and luxury body rituals. Available for short-term cover, seasonal placements, and product launch residencies.',
+    secondary_specialisms: ['Advanced Facials', 'Body Rituals', 'Skincare Consultations', 'Aromatherapy', 'Hot Stone Massage'],
+    qualifications: ['CIDESCO', 'CIBTAC'],
+    brand_experience: ['Biologique Recherche', '111SKIN', 'Natura Bissé', 'Dr Barbara Sturm'],
+    preferred_duration: '1 week – 1 month',
     weekly_rate: 2000,
-    monthly_rate: 7000,
-    travel_availability: 'uk_and_europe',
-    availability_start: '2026-05-15',
+    will_travel_to: 'uk_and_europe',
+    available_from: '2026-05-15',
     approval_status: 'approved',
     is_featured: true,
-    gallery_urls: [
-      'https://images.pexels.com/photos/6187430/pexels-photo-6187430.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&dpr=1',
-      'https://images.pexels.com/photos/19641835/pexels-photo-19641835.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&dpr=1',
-      'https://images.pexels.com/photos/4041391/pexels-photo-4041391.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&dpr=1',
-      'https://images.pexels.com/photos/16249146/pexels-photo-16249146.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&dpr=1',
-    ],
+    profile_photo_url: 'https://images.pexels.com/photos/6187430/pexels-photo-6187430.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&dpr=1',
   },
   {
-    title: 'Holistic Wellness Practitioner & Retreat Leader',
-    description: 'A holistic therapist with 10 years\' experience blending Eastern and Western wellness traditions. Trained in Traditional Chinese Medicine, reflexology, aromatherapy, and crystal healing. I\'ve designed and delivered wellness programmes for luxury Scottish resorts, country house hotels, and members\' clubs. I create immersive guest experiences combining treatments, workshops, and mindfulness sessions. ITEC, FHT, and IFA qualified.',
-    services_offered: ['Reflexology', 'Aromatherapy', 'Crystal Healing', 'Sound Healing', 'Wellness Workshops', 'Mindfulness'],
-    product_houses: ['ESPA', 'Comfort Zone', 'Wildsmith', 'Ila Spa'],
-    duration: '2 weeks – 3 months',
-    day_rate: 300,
+    primary_specialism: 'Holistic Wellness Practitioner & Retreat Leader',
+    bio: 'A holistic therapist with 10 years\' experience blending Eastern and Western wellness traditions. Trained in Traditional Chinese Medicine, reflexology, aromatherapy, and crystal healing. I\'ve designed and delivered wellness programmes for luxury Scottish resorts, country house hotels, and members\' clubs. I create immersive guest experiences combining treatments, workshops, and mindfulness sessions. ITEC, FHT, and IFA qualified.',
+    secondary_specialisms: ['Reflexology', 'Aromatherapy', 'Crystal Healing', 'Sound Healing', 'Wellness Workshops', 'Mindfulness'],
+    qualifications: ['ITEC', 'FHT', 'IFA'],
+    brand_experience: ['ESPA', 'Comfort Zone', 'Wildsmith', 'Ila Spa'],
+    preferred_duration: '2 weeks – 3 months',
     weekly_rate: 1500,
-    monthly_rate: 5200,
-    travel_availability: 'uk_only',
-    availability_start: '2026-06-01',
+    will_travel_to: 'uk_only',
+    available_from: '2026-06-01',
     approval_status: 'approved',
     is_featured: false,
-    gallery_urls: [
-      'https://images.pexels.com/photos/19695969/pexels-photo-19695969.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&dpr=1',
-      'https://images.pexels.com/photos/10894305/pexels-photo-10894305.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&dpr=1',
-      'https://images.pexels.com/photos/34939747/pexels-photo-34939747.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&dpr=1',
-      'https://images.pexels.com/photos/4041392/pexels-photo-4041392.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&dpr=1',
-    ],
+    profile_photo_url: 'https://images.pexels.com/photos/19695969/pexels-photo-19695969.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&dpr=1',
   },
 ]
 
@@ -81,7 +67,7 @@ export async function GET() {
   const { data, error } = await supabase
     .from('residency_profiles')
     .insert(SEED_RESIDENCIES)
-    .select('id, title')
+    .select('id, primary_specialism')
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 })

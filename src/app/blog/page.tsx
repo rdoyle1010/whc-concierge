@@ -8,6 +8,7 @@ import Footer from '@/components/Footer'
 import { ArrowRight, Clock } from 'lucide-react'
 import SkeletonCard from '@/components/SkeletonCard'
 import Pagination from '@/components/Pagination'
+import BlogImage from '@/components/BlogImage'
 
 export default function BlogPage() {
   const supabase = createClient()
@@ -75,9 +76,7 @@ export default function BlogPage() {
                 <Link href={`/blog/${heroPost.slug}`} className="block mb-16 group">
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
                     <div className="aspect-[4/3] bg-neutral-100 overflow-hidden">
-                      {heroPost.image_url ? (
-                        <img src={heroPost.image_url} alt={heroPost.title} className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-700" />
-                      ) : <div className="w-full h-full bg-neutral-100" />}
+                      <BlogImage src={heroPost.image_url} alt={heroPost.title} className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-700" />
                     </div>
                     <div className="py-4">
                       {heroPost.category && <p className="text-neutral-400 text-xs tracking-widest uppercase mb-3">{heroPost.category}</p>}
@@ -101,9 +100,7 @@ export default function BlogPage() {
                   {gridPosts.map((post) => (
                     <Link key={post.id} href={`/blog/${post.slug}`} className="group">
                       <div className="aspect-[16/10] bg-neutral-100 overflow-hidden mb-4">
-                        {post.image_url ? (
-                          <img src={post.image_url} alt={post.title} className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-500" />
-                        ) : <div className="w-full h-full bg-neutral-100" />}
+                        <BlogImage src={post.image_url} alt={post.title} className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-500" />
                       </div>
                       <div className="flex items-center space-x-3 text-xs text-neutral-300 mb-2">
                         {post.category && <span className="text-neutral-400 uppercase tracking-wider">{post.category}</span>}

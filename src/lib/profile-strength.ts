@@ -5,8 +5,7 @@ type StrengthResult = {
 }
 
 const FIELDS: { key: string; label: string; weight: number; check: (p: any) => boolean }[] = [
-  { key: 'full_name', label: 'Full name', weight: 5, check: p => !!p.full_name },
-  { key: 'email', label: 'Email', weight: 5, check: p => !!p.email || !!p.work_email },
+  { key: 'full_name', label: 'Full name', weight: 10, check: p => !!p.full_name },
   { key: 'phone', label: 'Phone number', weight: 5, check: p => !!p.phone || !!p.phone_number },
   { key: 'photo', label: 'Profile photo', weight: 10, check: p => !!p.photo_url || !!p.avatar_url },
   { key: 'role_level', label: 'Role level', weight: 5, check: p => !!p.role_level },

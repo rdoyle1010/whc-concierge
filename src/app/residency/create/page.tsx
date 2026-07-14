@@ -38,25 +38,30 @@ export default function ResidencyCreatePage() {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) { setError('Please log in'); setLoading(false); return }
 
-    const res = await fetch('/api/upload', { method: 'POST', body: (() => { const fd = new FormData(); return fd })() }).catch(() => null)
-
-    const { error: insertError } = await supabase.from('residency_profiles').insert({
-      user_id: user.id,
-      title: form.title,
-      description: form.description || null,
-      services_offered: form.services_offered.length > 0 ? form.services_offered : null,
-      product_houses: form.product_houses.length > 0 ? form.product_houses : null,
-      day_rate: form.day_rate ? parseInt(form.day_rate) : null,
-      weekly_rate: form.weekly_rate ? parseInt(form.weekly_rate) : (autoWeekly ? parseInt(autoWeekly) : null),
-      monthly_rate: form.monthly_rate ? parseInt(form.monthly_rate) : (autoMonthly ? parseInt(autoMonthly) : null),
-      travel_availability: form.travel_availability,
-      travel_radius_miles: form.travel_radius_miles ? parseInt(form.travel_radius_miles) : null,
-      availability_start: form.availability_start || null,
-      duration: form.min_duration || null,
-      approval_status: 'pending',
+    const res = await fetch('/api/residency/create', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        title: form.title,
+        description: form.description,
+        services_offered: form.services_offered,
+        qualifications: form.qualifications,
+        product_houses: form.product_houses,
+        weekly_rate: form.weekly_rate || autoWeekly || null,
+        travel_availability: form.travel_availability,
+        availability_start: form.availability_start || null,
+        min_duration: form.min_duration || null,
+        max_duration: form.max_duration || null,
+        postcode: form.postcode || null,
+      }),
     })
 
-    if (insertError) { setError(insertError.message); setLoading(false); return }
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}))
+      setError(data.error || 'Something went wrong — please try again.')
+      setLoading(false)
+      return
+    }
     router.push('/residency?submitted=true')
   }
 

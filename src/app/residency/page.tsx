@@ -116,7 +116,7 @@ export default function ResidencyPage() {
                     {/* Avatar */}
                     <div className="shrink-0 flex flex-col items-center">
                       <div className="w-24 h-24 rounded-full overflow-hidden bg-surface border-2 border-white shadow-md">
-                        <img src={r.photo_url || r.photos?.[0] || avatarPhotos[i % avatarPhotos.length]} alt={name} className="w-full h-full object-cover" />
+                        <img src={r.profile_photo_url || r.photo_url || r.photos?.[0] || avatarPhotos[i % avatarPhotos.length]} alt={name} className="w-full h-full object-cover" />
                       </div>
                       {r.is_featured && <span className="mt-2 text-[9px] font-semibold px-2.5 py-0.5 rounded-full" style={{ backgroundColor: '#FDF6EC', color: '#C9A96E' }}>Featured</span>}
                       {r.years_experience && <p className="mt-2 text-[11px] text-muted text-center">{r.years_experience} years exp.</p>}
@@ -188,7 +188,7 @@ export default function ResidencyPage() {
       {showEnquiry && (
         <div className="fixed inset-0 bg-black/30 z-50 flex items-center justify-center p-4" onClick={() => setShowEnquiry(null)}>
           <div className="bg-white border border-border rounded-xl max-w-md w-full p-6 animate-fade-in-up" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between mb-5"><h3 className="text-[18px] font-medium text-ink">Enquire — {showEnquiry.title}</h3><button type="button" onClick={() => setShowEnquiry(null)} className="text-muted hover:text-ink"><X size={18} /></button></div>
+            <div className="flex items-center justify-between mb-5"><h3 className="text-[18px] font-medium text-ink">Enquire — {showEnquiry.full_name || showEnquiry.primary_specialism || showEnquiry.title}</h3><button type="button" onClick={() => setShowEnquiry(null)} className="text-muted hover:text-ink"><X size={18} /></button></div>
             <form onSubmit={async (e) => {
               e.preventDefault()
               const fd = new FormData(e.currentTarget)
