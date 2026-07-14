@@ -171,6 +171,7 @@ export default function PostRolePage() {
 
       jobListingSchema.pick({ job_title: true, job_description: true, location: true }).parse(payload)
       setPhase('tier')
+      window.scrollTo({ top: 0, behavior: 'smooth' })
     } catch (err: any) {
       const newErrors: Record<string, string> = {}
       if (err.errors) {
@@ -179,6 +180,10 @@ export default function PostRolePage() {
         })
       }
       setFieldErrors(newErrors)
+      const FIELD_LABELS: Record<string, string> = { job_title: 'Job Title', job_description: 'Description', location: 'Location' }
+      const missing = Object.keys(newErrors).map(k => FIELD_LABELS[k] || k).join(', ')
+      setError(`Please check these fields before continuing: ${missing}`)
+      window.scrollTo({ top: 0, behavior: 'smooth' })
     }
   }
 
