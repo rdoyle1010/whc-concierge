@@ -50,7 +50,8 @@ export async function POST(req: NextRequest) {
         await admin.from('candidate_hotel_brands').delete().eq('candidate_id', cid)
         // Remove applications, swipes, matches
         await admin.from('applications').delete().eq('candidate_id', cid)
-        await admin.from('swipes').delete().eq('swiper_id', cid)
+        await admin.from('swipes').delete().eq('swiper_id', user.id)
+        await admin.from('swipes').delete().eq('target_id', cid).eq('target_type', 'candidate')
         await admin.from('matches').delete().eq('candidate_id', cid)
         // Remove the candidate profile
         await admin.from('candidate_profiles').delete().eq('id', cid)

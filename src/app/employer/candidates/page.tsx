@@ -14,6 +14,7 @@ export default function EmployerCandidatesPage() {
   const [specFilter, setSpecFilter] = useState('')
   const [profile, setProfile] = useState<any>(null)
   const [shortlistedIds, setShortlistedIds] = useState<Set<string>>(new Set())
+  const [matchInfo, setMatchInfo] = useState<{ name: string; job: string } | null>(null)
 
   useEffect(() => {
     async function load() {
@@ -77,16 +78,21 @@ export default function EmployerCandidatesPage() {
   }
 
   const handleSwipe = async (candidateId: string, direction: 'left' | 'right') => {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return
-    await supabase.from('swipes').insert({
-      swiper_id: user.id, swiper_type: 'employer', target_id: candidateId, action: direction, target_type: 'candidate',
-    })
+    // Swipe + mutual-match detection, all server-side
+    const res = await fetch('/api/swipe', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ targetId: candidateId, targetType: 'candidate', action: direction }),
+    }).catch(() => null)
+    const result = res && res.ok ? await res.json().catch(() => null) : null
     if (direction === 'right') {
-      // Notify candidate they were shortlisted
-      const candidate = candidates.find(c => c.id === candidateId)
-      if (candidate?.user_id) {
-        notify(candidate.user_id, 'new_match', 'You\'ve been shortlisted', `An employer has shortlisted your profile. Check your matches for details.`, '/talent/dashboard')
+      if (result?.matched) {
+        setMatchInfo({ name: result.candidateName || 'This candidate', job: result.jobTitle || 'your role' })
+      } else {
+        // Notify candidate they were shortlisted
+        const candidate = candidates.find(c => c.id === candidateId)
+        if (candidate?.user_id) {
+          notify(candidate.user_id, 'new_match', 'You\'ve been shortlisted', `An employer has shortlisted your profile. Check your matches for details.`, '/talent/dashboard')
+        }
       }
     }
   }
@@ -159,6 +165,23 @@ export default function EmployerCandidatesPage() {
           {filtered.length === 0 && (
             <div className="col-span-3 text-center py-16 text-gray-400">No candidates found.</div>
           )}
+        </div>
+      )}
+
+      {/* Mutual match celebration */}
+      {matchInfo && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setMatchInfo(null)}>
+          <div className="bg-white rounded-2xl max-w-sm w-full p-8 text-center" onClick={(e) => e.stopPropagation()}>
+            <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-5" style={{ background: '#FDF6EC' }}>
+              <Star size={28} style={{ color: '#C9A96E' }} fill="currentColor" />
+            </div>
+            <h3 className="text-[22px] font-semibold text-ink mb-2">It&apos;s a match!</h3>
+            <p className="text-[14px] text-gray-500 mb-6">{matchInfo.name} already applied for {matchInfo.job}. They&apos;re waiting to hear from you.</p>
+            <div className="space-y-2">
+              <a href="/employer/applications" className="btn-primary block w-full text-center">View application</a>
+              <button onClick={() => setMatchInfo(null)} className="btn-secondary block w-full">Keep browsing</button>
+            </div>
+          </div>
         </div>
       )}
     </DashboardShell>

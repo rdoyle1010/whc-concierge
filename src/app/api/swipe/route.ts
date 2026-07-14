@@ -1,0 +1,187 @@
+import { NextRequest, NextResponse } from 'next/server'
+import { createAdminClient } from '@/lib/supabase/admin'
+import { createServerClient } from '@supabase/ssr'
+import { cookies } from 'next/headers'
+import { createNotification } from '@/lib/notifications'
+
+// Records a swipe server-side (swipes has unreliable RLS), creates the
+// application on a candidate right-swipe, and detects MUTUAL matches:
+// candidate right-swiped the job AND its employer right-swiped the candidate.
+// On a mutual match a row is written to `matches` and both sides are notified.
+export async function POST(req: NextRequest) {
+  try {
+    const cookieStore = cookies()
+    const supabaseAuth = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      { cookies: { getAll() { return cookieStore.getAll() }, setAll() {} } }
+    )
+    const { data: { user } } = await supabaseAuth.auth.getUser()
+    if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+
+    const body = await req.json()
+    const { targetId, targetType, action, matchScore } = body as {
+      targetId: string
+      targetType: 'job' | 'candidate'
+      action: 'left' | 'right'
+      matchScore?: number
+    }
+    if (!targetId || (targetType !== 'job' && targetType !== 'candidate') || (action !== 'left' && action !== 'right')) {
+      return NextResponse.json({ error: 'Invalid request' }, { status: 400 })
+    }
+
+    const admin = createAdminClient()
+
+    /* ── Candidate swiping on a job ── */
+    if (targetType === 'job') {
+      const { data: cand } = await admin
+        .from('candidate_profiles')
+        .select('id, full_name')
+        .eq('user_id', user.id)
+        .maybeSingle()
+      if (!cand) return NextResponse.json({ error: 'Candidate profile not found' }, { status: 404 })
+
+      await admin.from('swipes').insert({
+        swiper_id: user.id, swiper_type: 'candidate', target_id: targetId, target_type: 'job', action,
+      })
+
+      if (action !== 'right') return NextResponse.json({ matched: false })
+
+      const { data: job } = await admin
+        .from('job_listings')
+        .select('id, job_title, employer_id')
+        .eq('id', targetId)
+        .maybeSingle()
+      if (!job) return NextResponse.json({ matched: false })
+
+      // Create the application (linked by candidate PROFILE id, deduped)
+      const { data: existingApp } = await admin
+        .from('applications')
+        .select('id')
+        .eq('candidate_id', cand.id)
+        .eq('role_id', job.id)
+        .maybeSingle()
+      if (!existingApp) {
+        await admin.from('applications').insert({
+          candidate_id: cand.id, role_id: job.id, status: 'pending', match_score: matchScore ?? null,
+        })
+      }
+
+      const { data: employer } = await admin
+        .from('employer_profiles')
+        .select('id, user_id, property_name, company_name')
+        .eq('id', job.employer_id)
+        .maybeSingle()
+
+      if (employer?.user_id) {
+        await createNotification(employer.user_id, 'job_application', 'New application received',
+          `A candidate has applied for ${job.job_title}`, '/employer/applications')
+      }
+
+      // Mutual? Employer previously right-swiped this candidate
+      if (employer?.user_id) {
+        const { data: theirSwipe } = await admin
+          .from('swipes')
+          .select('id')
+          .eq('swiper_id', employer.user_id)
+          .eq('swiper_type', 'employer')
+          .eq('target_id', cand.id)
+          .eq('action', 'right')
+          .limit(1)
+          .maybeSingle()
+
+        if (theirSwipe) {
+          const { data: existingMatch } = await admin
+            .from('matches')
+            .select('id')
+            .eq('candidate_id', cand.id)
+            .eq('job_id', job.id)
+            .maybeSingle()
+          if (!existingMatch) {
+            await admin.from('matches').insert({
+              candidate_id: cand.id, employer_id: job.employer_id, job_id: job.id,
+              score: matchScore ?? null, status: 'active',
+            })
+          }
+          const employerName = employer.property_name || employer.company_name || 'An employer'
+          await createNotification(user.id, 'new_match', "It's a match!",
+            `You and ${employerName} both said yes to ${job.job_title}. Start the conversation.`, '/messages')
+          await createNotification(employer.user_id, 'new_match', "It's a match!",
+            `${cand.full_name || 'A candidate'} you shortlisted has applied for ${job.job_title}.`, '/employer/applications')
+          return NextResponse.json({ matched: true, jobTitle: job.job_title, employerName })
+        }
+      }
+      return NextResponse.json({ matched: false })
+    }
+
+    /* ── Employer swiping on a candidate ── */
+    const { data: emp } = await admin
+      .from('employer_profiles')
+      .select('id, property_name, company_name')
+      .eq('user_id', user.id)
+      .maybeSingle()
+    if (!emp) return NextResponse.json({ error: 'Employer profile not found' }, { status: 404 })
+
+    await admin.from('swipes').insert({
+      swiper_id: user.id, swiper_type: 'employer', target_id: targetId, target_type: 'candidate', action,
+    })
+
+    if (action !== 'right') return NextResponse.json({ matched: false })
+
+    const { data: cand } = await admin
+      .from('candidate_profiles')
+      .select('id, user_id, full_name')
+      .eq('id', targetId)
+      .maybeSingle()
+    if (!cand) return NextResponse.json({ matched: false })
+
+    const { data: myJobs } = await admin
+      .from('job_listings')
+      .select('id, job_title')
+      .eq('employer_id', emp.id)
+    const jobIds = (myJobs || []).map(j => j.id)
+    if (jobIds.length === 0) return NextResponse.json({ matched: false })
+
+    // Mutual? Candidate previously right-swiped one of my roles
+    const { data: theirSwipes } = await admin
+      .from('swipes')
+      .select('target_id')
+      .eq('swiper_id', cand.user_id)
+      .eq('swiper_type', 'candidate')
+      .eq('target_type', 'job')
+      .eq('action', 'right')
+      .in('target_id', jobIds)
+
+    if (!theirSwipes || theirSwipes.length === 0) return NextResponse.json({ matched: false })
+
+    const employerName = emp.property_name || emp.company_name || 'An employer'
+    let firstJobTitle = ''
+    for (const s of theirSwipes) {
+      const job = (myJobs || []).find(j => j.id === s.target_id)
+      if (!job) continue
+      if (!firstJobTitle) firstJobTitle = job.job_title
+      const { data: existingMatch } = await admin
+        .from('matches')
+        .select('id')
+        .eq('candidate_id', cand.id)
+        .eq('job_id', job.id)
+        .maybeSingle()
+      if (!existingMatch) {
+        await admin.from('matches').insert({
+          candidate_id: cand.id, employer_id: emp.id, job_id: job.id, score: null, status: 'active',
+        })
+      }
+    }
+
+    if (cand.user_id) {
+      await createNotification(cand.user_id, 'new_match', "It's a match!",
+        `${employerName} wants to talk about ${firstJobTitle}. Start the conversation.`, '/messages')
+    }
+    await createNotification(user.id, 'new_match', "It's a match!",
+      `${cand.full_name || 'A candidate'} already liked ${firstJobTitle}. Start the conversation.`, '/employer/candidates')
+
+    return NextResponse.json({ matched: true, candidateName: cand.full_name, jobTitle: firstJobTitle })
+  } catch (e: any) {
+    return NextResponse.json({ error: e.message }, { status: 500 })
+  }
+}

@@ -81,14 +81,19 @@ export default function SwipeMatchPage() {
   const swipe = useCallback(async (d:'left'|'right') => {
     if (!job || dir) return
     setDir(d)
+    let matched = false
     if (userId) {
-      await supabase.from('swipes').insert({ swiper_id: userId, swiper_type: 'candidate', target_id: job.id, action: d, target_type: 'job' })
+      // Swipe + application + mutual-match detection, all server-side
+      const res = await fetch('/api/swipe', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ targetId: job.id, targetType: 'job', action: d, matchScore: job.matchScore }),
+      }).catch(() => null)
+      const result = res && res.ok ? await res.json().catch(() => null) : null
       if (d === 'right') {
-        await supabase.from('applications').insert({ candidate_id: userId, role_id: job.id, status: 'pending', match_score: job.matchScore })
-        // Notify employer of new application
-        const employerUserId = job.employer_id || job.employer_user_id
-        if (employerUserId) {
-          notify(employerUserId, 'job_application', 'New application received', `A candidate has applied for ${job.title}`, '/employer/applications')
+        if (result?.matched) {
+          matched = true
+          setDir(null)
+          setShowMatch(true)
         }
         // Send application confirmation emails (fire-and-forget)
         if (userEmail) {
@@ -107,7 +112,10 @@ export default function SwipeMatchPage() {
         }
       }
     }
-    setTimeout(() => { setDir(null); setIdx(p => p + 1); setExpanded(false) }, 350)
+    // On a mutual match the celebration screen takes over; "Keep browsing" advances the deck
+    if (!matched) {
+      setTimeout(() => { setDir(null); setIdx(p => p + 1); setExpanded(false) }, 350)
+    }
   }, [job, userId, userEmail, candidateData, supabase, dir])
 
   useEffect(() => {
@@ -139,8 +147,8 @@ export default function SwipeMatchPage() {
     <div className="min-h-screen bg-white flex items-center justify-center px-6">
       <div className="text-center animate-match-pop">
         <div className="w-20 h-20 bg-match-perfect-bg rounded-2xl flex items-center justify-center mx-auto mb-6"><Heart size={32} className="text-match-perfect-text" fill="currentColor" /></div>
-        <h2 className="text-[28px] font-medium text-ink mb-1">Interest expressed</h2>
-        <p className="text-[14px] text-muted mb-8">{job?.employer_profiles?.company_name} &middot; {job?.title}</p>
+        <h2 className="text-[28px] font-medium text-ink mb-1">It&apos;s a match!</h2>
+        <p className="text-[14px] text-muted mb-8">{job?.employer_profiles?.company_name} &middot; {job?.title} - you both said yes.</p>
         <div className="space-y-2 max-w-[280px] mx-auto"><Link href="/messages" className="btn-primary block text-center">Send a message</Link>
         <button onClick={() => { setShowMatch(false); setDir(null); setIdx(p=>p+1); setExpanded(false) }} className="btn-secondary block w-full text-center">Keep browsing</button></div>
       </div>
