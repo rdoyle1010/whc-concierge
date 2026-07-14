@@ -82,7 +82,7 @@ export default function SwipeMatchPage() {
     if (!job || dir) return
     setDir(d)
     if (userId) {
-      await supabase.from('swipes').insert({ user_id: userId, target_id: job.id, direction: d, target_type: 'job' })
+      await supabase.from('swipes').insert({ swiper_id: userId, swiper_type: 'candidate', target_id: job.id, action: d, target_type: 'job' })
       if (d === 'right') {
         await supabase.from('applications').insert({ candidate_id: userId, role_id: job.id, status: 'pending', match_score: job.matchScore })
         // Notify employer of new application

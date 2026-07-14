@@ -80,7 +80,7 @@ export default function EmployerCandidatesPage() {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
     await supabase.from('swipes').insert({
-      user_id: user.id, target_id: candidateId, direction, target_type: 'candidate',
+      swiper_id: user.id, swiper_type: 'employer', target_id: candidateId, action: direction, target_type: 'candidate',
     })
     if (direction === 'right') {
       // Notify candidate they were shortlisted

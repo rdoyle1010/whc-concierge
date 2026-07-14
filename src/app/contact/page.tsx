@@ -39,9 +39,9 @@ export default function ContactPage() {
     const { error: insertError } = await supabase.from('contact_queries').insert({
       name: form.name,
       email: form.email,
-      subject: form.subject,
-      message: form.message,
-      type: form.type,
+      message: form.subject
+        ? `Subject: ${form.subject}${form.type ? ` [${form.type}]` : ''}\n\n${form.message}`
+        : form.message,
       status: 'open',
     })
 
