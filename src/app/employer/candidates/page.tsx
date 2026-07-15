@@ -15,6 +15,7 @@ export default function EmployerCandidatesPage() {
   const [profile, setProfile] = useState<any>(null)
   const [shortlistedIds, setShortlistedIds] = useState<Set<string>>(new Set())
   const [matchInfo, setMatchInfo] = useState<{ name: string; job: string } | null>(null)
+  const [viewing, setViewing] = useState<any>(null)
 
   useEffect(() => {
     async function load() {
@@ -78,6 +79,7 @@ export default function EmployerCandidatesPage() {
   }
 
   const handleSwipe = async (candidateId: string, direction: 'left' | 'right') => {
+    if (direction === 'left') setCandidates(prev => prev.filter(c => c.id !== candidateId))
     // Swipe + mutual-match detection, all server-side
     const res = await fetch('/api/swipe', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -127,8 +129,8 @@ export default function EmployerCandidatesPage() {
                     <span className="font-serif font-bold text-gray-300 text-lg">{c.full_name?.[0]}</span>
                   )}
                 </div>
-                <div className="min-w-0">
-                  <h3 className="font-semibold text-ink truncate">{c.full_name}</h3>
+                <div className="min-w-0 cursor-pointer" onClick={() => setViewing(c)}>
+                  <h3 className="font-semibold text-ink truncate hover:underline">{c.full_name}</h3>
                   <p className="text-sm text-gray-500 truncate">{c.headline}</p>
                 </div>
               </div>
@@ -150,6 +152,9 @@ export default function EmployerCandidatesPage() {
 
               {c.experience_years && <p className="text-xs text-gray-400 mb-3">{c.experience_years} years experience</p>}
 
+              <button onClick={() => setViewing(c)} className="w-full mb-2 py-2 rounded-lg text-[12px] font-medium transition-colors" style={{ background: '#FDF6EC', color: '#C9A96E', border: '1px solid rgba(201,169,110,0.35)' }}>
+                View Full Profile
+              </button>
               <div className="flex items-center space-x-2 pt-3 border-t border-gray-100">
                 <button onClick={() => handleSwipe(c.id, 'left')}
                   className="flex-1 py-2 rounded-lg bg-gray-50 hover:bg-gray-100 text-gray-400 flex items-center justify-center space-x-1 text-sm">
@@ -165,6 +170,51 @@ export default function EmployerCandidatesPage() {
           {filtered.length === 0 && (
             <div className="col-span-3 text-center py-16 text-gray-400">No candidates found.</div>
           )}
+        </div>
+      )}
+
+      {/* Candidate full profile */}
+      {viewing && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex justify-end" onClick={() => setViewing(null)}>
+          <div className="bg-white w-full max-w-lg h-full overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+            <div className="p-6 border-b border-gray-100 flex items-center justify-between sticky top-0 bg-white z-10">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden">
+                  {viewing.profile_image_url
+                    ? <img src={viewing.profile_image_url} alt="" className="w-full h-full object-cover" />
+                    : <span className="font-serif font-bold text-lg" style={{ color: '#C9A96E' }}>{viewing.full_name?.[0]}</span>}
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-ink">{viewing.full_name}</h3>
+                  <p className="text-[12px] text-gray-500">{viewing.headline}</p>
+                </div>
+              </div>
+              <button onClick={() => setViewing(null)} className="text-gray-300 hover:text-ink"><X size={20} /></button>
+            </div>
+            <div className="p-6 space-y-5 text-sm">
+              <div className="grid grid-cols-2 gap-4">
+                {viewing.role_level && <div><p className="text-[10px] text-gray-400 uppercase tracking-wider mb-0.5">Role Level</p><p className="text-ink">{viewing.role_level}</p></div>}
+                {viewing.location && <div><p className="text-[10px] text-gray-400 uppercase tracking-wider mb-0.5">Location</p><p className="text-ink">{viewing.location}</p></div>}
+                {viewing.experience_years && <div><p className="text-[10px] text-gray-400 uppercase tracking-wider mb-0.5">Experience</p><p className="text-ink">{viewing.experience_years} years</p></div>}
+                {viewing.phone && <div><p className="text-[10px] text-gray-400 uppercase tracking-wider mb-0.5">Phone</p><p className="text-ink">{viewing.phone}</p></div>}
+              </div>
+              {viewing.bio && <div><p className="text-[10px] text-gray-400 uppercase tracking-wider mb-1">About</p><p className="text-ink leading-relaxed whitespace-pre-wrap text-[13px]">{viewing.bio}</p></div>}
+              {viewing.services_offered?.length > 0 && <div><p className="text-[10px] text-gray-400 uppercase tracking-wider mb-1.5">Treatments & Services</p><div className="flex flex-wrap gap-1.5">{viewing.services_offered.map((x: string) => <span key={x} className="text-[11px] bg-gray-100 text-gray-700 px-2 py-0.5 rounded-full">{x}</span>)}</div></div>}
+              {viewing.qualifications?.length > 0 && <div><p className="text-[10px] text-gray-400 uppercase tracking-wider mb-1.5">Qualifications</p><div className="flex flex-wrap gap-1.5">{viewing.qualifications.map((x: string) => <span key={x} className="text-[11px] bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full">{x}</span>)}</div></div>}
+              {viewing.product_houses?.length > 0 && <div><p className="text-[10px] text-gray-400 uppercase tracking-wider mb-1.5">Product Houses</p><div className="flex flex-wrap gap-1.5">{viewing.product_houses.map((x: string) => <span key={x} className="text-[11px] px-2 py-0.5 rounded-full" style={{ background: '#FDF6EC', color: '#C9A96E' }}>{x}</span>)}</div></div>}
+              {viewing.systems_experience?.length > 0 && <div><p className="text-[10px] text-gray-400 uppercase tracking-wider mb-1.5">Systems</p><div className="flex flex-wrap gap-1.5">{viewing.systems_experience.map((x: string) => <span key={x} className="text-[11px] bg-gray-100 text-gray-700 px-2 py-0.5 rounded-full">{x}</span>)}</div></div>}
+              <div>
+                <p className="text-[10px] text-gray-400 uppercase tracking-wider mb-1.5">Documents</p>
+                {viewing.cv_url
+                  ? <a href={viewing.cv_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-[13px] font-medium hover:underline" style={{ color: '#C9A96E' }}>View CV</a>
+                  : <p className="text-gray-400 text-[12px]">No CV uploaded yet</p>}
+              </div>
+            </div>
+            <div className="p-6 border-t border-gray-100 sticky bottom-0 bg-white flex gap-2">
+              <button onClick={() => { toggleShortlist(viewing.id); }} className="btn-primary flex-1">{shortlistedIds.has(viewing.id) ? 'Shortlisted' : 'Shortlist'}</button>
+              {viewing.user_id && <a href={`/employer/messages?to=${viewing.user_id}`} className="btn-secondary flex-1 text-center">Message</a>}
+            </div>
+          </div>
         </div>
       )}
 
