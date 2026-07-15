@@ -28,7 +28,7 @@ export default function EmployerApplicationsPage() {
 
       const { data } = await supabase
         .from('applications')
-        .select('*, job_listings(job_title, title), candidate_profiles(id, full_name, headline, location, services_offered)')
+        .select('*, job_listings(job_title), candidate_profiles(id, full_name, headline, location, services_offered)')
         .in('role_id', jobIds.map(j => j.id))
         .order('created_at', { ascending: false })
 

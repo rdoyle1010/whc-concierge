@@ -36,12 +36,13 @@ export default function TalentApplicationsPage() {
       const { data: profile } = await supabase.from('candidate_profiles').select('id').eq('user_id', user.id).single()
       if (!profile) { setLoading(false); return }
 
-      // NOTE: order by created_at — the applications table has no updated_at
-      // column, and ordering by a missing column errors the whole query
-      // (which made this page show "No applications yet" forever).
+      // NOTE: select only columns that exist live (job_listings has job_title,
+      // not title) and order by created_at. Employer names are fetched in a
+      // second query rather than a nested embed, so a missing FK can't break
+      // the whole page.
       const { data, error } = await supabase
         .from('applications')
-        .select('*, job_listings(job_title, title, location, salary_min, salary_max, employer_profiles(company_name, property_name))')
+        .select('*, job_listings(job_title, location, salary_min, salary_max, employer_id)')
         .eq('candidate_id', profile.id)
         .order('created_at', { ascending: false })
 
@@ -49,7 +50,20 @@ export default function TalentApplicationsPage() {
         console.error('Applications load failed:', error.message)
         setLoadError('We could not load your applications just now. Please refresh the page - if it keeps happening, contact us.')
       }
-      setApplications(data || [])
+
+      let apps = data || []
+      const employerIds = Array.from(new Set(apps.map((a: any) => a.job_listings?.employer_id).filter(Boolean)))
+      if (employerIds.length > 0) {
+        const { data: emps } = await supabase
+          .from('employer_profiles')
+          .select('id, company_name, property_name')
+          .in('id', employerIds)
+        const empMap = new Map((emps || []).map((e: any) => [e.id, e]))
+        apps = apps.map((a: any) => a.job_listings
+          ? { ...a, job_listings: { ...a.job_listings, employer_profiles: empMap.get(a.job_listings.employer_id) || null } }
+          : a)
+      }
+      setApplications(apps)
       setLoading(false)
     }
     load()
