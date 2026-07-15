@@ -19,7 +19,7 @@ export default function TalentReviewsPage() {
       const { data } = await supabase
         .from('reviews')
         .select('*')
-        .eq('reviewed_id', user.id)
+        .eq('reviewee_id', user.id)
         .order('created_at', { ascending: false })
 
       setReviews(data || [])
@@ -69,7 +69,7 @@ export default function TalentReviewsPage() {
                   <ReviewBreakdown criteriaScores={review.criteria_scores} />
                 </div>
               )}
-              {review.comment && <p className="text-gray-600 text-sm">{review.comment}</p>}
+              {(review.text || review.comment) && <p className="text-gray-600 text-sm">{review.text || review.comment}</p>}
             </div>
           ))}
         </div>

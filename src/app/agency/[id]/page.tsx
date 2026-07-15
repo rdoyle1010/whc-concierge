@@ -28,7 +28,7 @@ export default function AgencyProfilePage() {
       const { data } = await supabase.from('candidate_profiles').select('*').eq('id', id).single()
       setProfile(data)
       if (data) {
-        const { data: revs } = await supabase.from('reviews').select('*').eq('reviewed_id', data.user_id || data.id).order('created_at', { ascending: false }).limit(10)
+        const { data: revs } = await supabase.from('reviews').select('*').eq('reviewee_id', data.user_id || data.id).order('created_at', { ascending: false }).limit(10)
         setReviews(revs || [])
       }
       // If the viewer is a logged-in employer, load any existing offer for this candidate
@@ -182,7 +182,7 @@ export default function AgencyProfilePage() {
                       <p className="text-[11px] text-muted">{new Date(r.created_at).toLocaleDateString()}</p>
                     </div>
                     {r.criteria_scores && <div className="my-2"><ReviewBreakdown criteriaScores={r.criteria_scores} /></div>}
-                    {r.comment && <p className="text-[13px] text-secondary">{r.comment}</p>}
+                    {(r.text || r.comment) && <p className="text-[13px] text-secondary">{r.text || r.comment}</p>}
                   </div>
                 ))}</div>
               </div>

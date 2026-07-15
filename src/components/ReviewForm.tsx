@@ -27,8 +27,10 @@ function StarSelector({ value, onChange }: { value: number; onChange: (v: number
   )
 }
 
-export default function ReviewForm({ reviewerId, reviewedId, reviewedName, type = 'candidate', onComplete }: {
-  reviewerId: string; reviewedId: string; reviewedName?: string; type?: 'candidate' | 'employer'; onComplete?: () => void
+// The reviewer is ALWAYS the logged-in session on the server — reviewerId is
+// no longer sent (or needed). reviewedId is the reviewee's auth user id.
+export default function ReviewForm({ reviewedId, reviewedName, type = 'candidate', onComplete }: {
+  reviewedId: string; reviewedName?: string; type?: 'candidate' | 'employer'; onComplete?: () => void
 }) {
   const [scores, setScores] = useState<Record<string, number>>({})
   const [comment, setComment] = useState('')
@@ -46,7 +48,7 @@ export default function ReviewForm({ reviewerId, reviewedId, reviewedName, type 
     const res = await fetch('/api/reviews', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        reviewer_id: reviewerId, reviewed_id: reviewedId,
+        reviewed_id: reviewedId,
         criteria_scores: scores, comment: comment || null, type,
       }),
     })

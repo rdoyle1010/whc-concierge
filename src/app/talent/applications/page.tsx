@@ -3,9 +3,10 @@
 import { useEffect, useState } from 'react'
 import DashboardShell from '@/components/DashboardShell'
 import { createClient } from '@/lib/supabase/client'
-import { FileText, Clock, CheckCircle, XCircle, Star, Eye, MessageSquare, Briefcase, ArrowRight } from 'lucide-react'
+import { FileText, Clock, CheckCircle, XCircle, Star, Eye, MessageSquare, Briefcase, ArrowRight, X } from 'lucide-react'
 import Pagination from '@/components/Pagination'
 import Link from 'next/link'
+import ReviewForm from '@/components/ReviewForm'
 
 const STATUS_FLOW = ['pending', 'reviewed', 'shortlisted', 'interview', 'offered', 'accepted', 'rejected']
 
@@ -27,6 +28,7 @@ export default function TalentApplicationsPage() {
   const [page, setPage] = useState(1)
   const [perPage, setPerPage] = useState(25)
   const [statusFilter, setStatusFilter] = useState('all')
+  const [reviewing, setReviewing] = useState<{ userId: string; name: string } | null>(null)
 
   useEffect(() => {
     async function load() {
@@ -56,7 +58,7 @@ export default function TalentApplicationsPage() {
       if (employerIds.length > 0) {
         const { data: emps } = await supabase
           .from('employer_profiles')
-          .select('id, company_name, property_name')
+          .select('id, user_id, company_name, property_name')
           .in('id', employerIds)
         const empMap = new Map((emps || []).map((e: any) => [e.id, e]))
         apps = apps.map((a: any) => a.job_listings
@@ -162,11 +164,34 @@ export default function TalentApplicationsPage() {
                     <span>· Updated {new Date(app.updated_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
                   )}
                   {app.match_score && <span>· {app.match_score}% match</span>}
+                  {app.status === 'accepted' && app.job_listings?.employer_profiles?.user_id && (
+                    <button type="button"
+                      onClick={() => setReviewing({
+                        userId: app.job_listings.employer_profiles.user_id,
+                        name: app.job_listings.employer_profiles.property_name || app.job_listings.employer_profiles.company_name || 'this employer',
+                      })}
+                      className="inline-flex items-center gap-1 font-medium text-amber-500 hover:underline">
+                      <Star size={11} /> Review employer
+                    </button>
+                  )}
                 </div>
               </div>
             )
           })}
           <Pagination page={page} perPage={perPage} total={filtered.length} onPageChange={setPage} onPerPageChange={setPerPage} />
+        </div>
+      )}
+
+      {/* Review modal — only offered on accepted placements */}
+      {reviewing && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setReviewing(null)}>
+          <div className="bg-white rounded-2xl max-w-md w-full max-h-[90vh] overflow-y-auto p-6" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="font-serif text-lg font-bold text-ink">Review {reviewing.name}</h2>
+              <button type="button" onClick={() => setReviewing(null)} className="text-gray-300 hover:text-ink"><X size={20} /></button>
+            </div>
+            <ReviewForm reviewedId={reviewing.userId} reviewedName={reviewing.name} type="employer" />
+          </div>
         </div>
       )}
     </DashboardShell>

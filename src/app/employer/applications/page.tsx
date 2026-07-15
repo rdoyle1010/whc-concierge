@@ -5,6 +5,7 @@ import DashboardShell from '@/components/DashboardShell'
 import { createClient } from '@/lib/supabase/client'
 import { CheckCircle, XCircle, Star, FileText, X } from 'lucide-react'
 import Pagination from '@/components/Pagination'
+import ReviewForm from '@/components/ReviewForm'
 
 export default function EmployerApplicationsPage() {
   const supabase = createClient()
@@ -16,6 +17,7 @@ export default function EmployerApplicationsPage() {
   const [perPage, setPerPage] = useState(25)
   const [shortlistedIds, setShortlistedIds] = useState<Set<string>>(new Set())
   const [viewing, setViewing] = useState<any>(null)
+  const [reviewing, setReviewing] = useState<{ userId: string; name: string } | null>(null)
 
   useEffect(() => {
     async function load() {
@@ -157,6 +159,12 @@ export default function EmployerApplicationsPage() {
                         {cand?.user_id && (
                           <a href={`/employer/messages?to=${cand.user_id}`} className="text-[12px] font-medium text-gray-600 hover:underline">Message</a>
                         )}
+                        {app.status === 'accepted' && cand?.user_id && (
+                          <button type="button" onClick={() => setReviewing({ userId: cand.user_id, name: cand.full_name || 'this candidate' })}
+                            className="inline-flex items-center gap-1 text-[12px] font-medium text-amber-500 hover:underline">
+                            <Star size={12} /> Leave a review
+                          </button>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -179,6 +187,19 @@ export default function EmployerApplicationsPage() {
             )
           })}
           <Pagination page={page} perPage={perPage} total={applications.length} onPageChange={setPage} onPerPageChange={setPerPage} />
+        </div>
+      )}
+
+      {/* Review modal — only offered on accepted placements */}
+      {reviewing && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setReviewing(null)}>
+          <div className="bg-white rounded-2xl max-w-md w-full max-h-[90vh] overflow-y-auto p-6" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="font-serif text-lg font-bold text-ink">Review {reviewing.name}</h2>
+              <button type="button" onClick={() => setReviewing(null)} className="text-gray-300 hover:text-ink"><X size={20} /></button>
+            </div>
+            <ReviewForm reviewedId={reviewing.userId} reviewedName={reviewing.name} type="candidate" />
+          </div>
         </div>
       )}
 

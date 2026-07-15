@@ -67,7 +67,7 @@ export async function GET(req: NextRequest) {
     }
 
     // Reviews received
-    const { data: reviewsReceived } = await admin.from('reviews').select('*').eq('reviewed_id', user.id).order('created_at', { ascending: false })
+    const { data: reviewsReceived } = await admin.from('reviews').select('*').eq('reviewee_id', user.id).order('created_at', { ascending: false })
     exportData.reviews_received = reviewsReceived || []
 
     // Reviews given

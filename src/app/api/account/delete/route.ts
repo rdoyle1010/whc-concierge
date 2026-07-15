@@ -84,7 +84,7 @@ export async function POST(req: NextRequest) {
 
     // Clean shared tables
     await admin.from('messages').delete().or(`sender_id.eq.${user.id},recipient_id.eq.${user.id}`)
-    await admin.from('reviews').delete().or(`reviewer_id.eq.${user.id},reviewed_id.eq.${user.id}`)
+    await admin.from('reviews').delete().or(`reviewer_id.eq.${user.id},reviewee_id.eq.${user.id}`)
 
     // Remove profiles row
     await admin.from('profiles').delete().eq('id', user.id)

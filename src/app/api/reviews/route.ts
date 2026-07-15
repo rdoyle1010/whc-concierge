@@ -22,6 +22,46 @@ function getAuthedUser() {
 
 const ACCEPTED_BOOKING_STATUSES = ['accepted', 'confirmed'] // confirmed = legacy
 
+// The live reviews table may have drifted (reviewed_id vs reviewee_id, and
+// criteria_scores may not exist). Insert writes BOTH reviewee columns and
+// strips whichever the live table lacks (max 6 strips).
+async function insertReviewDefensively(admin: any, row: Record<string, any>) {
+  const attempt: Record<string, any> = { ...row }
+  let lastError: any = null
+  for (let strips = 0; strips <= 6; strips++) {
+    const { error } = await admin.from('reviews').insert(attempt)
+    if (!error) return { error: null }
+    lastError = error
+    const m = /Could not find the '([^']+)' column/.exec(error.message || '')
+    if (m && Object.prototype.hasOwnProperty.call(attempt, m[1])) {
+      delete attempt[m[1]]
+      continue
+    }
+    break
+  }
+  return { error: lastError }
+}
+
+// Query helpers that tolerate either reviewee column name.
+async function findExistingReview(admin: any, reviewerId: string, reviewedId: string) {
+  for (const col of ['reviewed_id', 'reviewee_id']) {
+    const { data, error } = await admin
+      .from('reviews').select('id')
+      .eq('reviewer_id', reviewerId).eq(col, reviewedId)
+      .limit(1).maybeSingle()
+    if (!error && data) return data
+  }
+  return null
+}
+
+async function fetchRatingsFor(admin: any, reviewedId: string) {
+  for (const col of ['reviewed_id', 'reviewee_id']) {
+    const { data, error } = await admin.from('reviews').select('rating').eq(col, reviewedId)
+    if (!error) return data
+  }
+  return null
+}
+
 async function hasWorkedTogether(
   admin: ReturnType<typeof createAdminClient>,
   employerProfileId: string,
@@ -113,51 +153,55 @@ export async function POST(req: NextRequest) {
     }
 
     // -- One review per reviewer per reviewee --
-    const { data: existing } = await supabase
-      .from('reviews')
-      .select('id')
-      .eq('reviewer_id', reviewer_id)
-      .eq('reviewed_id', reviewed_id)
-      .limit(1)
-      .maybeSingle()
+    const existing = await findExistingReview(supabase, reviewer_id, reviewed_id)
     if (existing) {
       return NextResponse.json({ error: 'You have already reviewed this profile' }, { status: 409 })
     }
 
-    // Calculate overall rating from criteria if provided
+    // Calculate overall rating from criteria if provided.
+    // Live column is INTEGER with CHECK 1..5 — round and clamp.
     let finalRating = rating
     if (criteria_scores) {
       const values = Object.values(criteria_scores) as number[]
       if (values.length > 0) {
-        finalRating = Math.round((values.reduce((a, b) => a + b, 0) / values.length) * 10) / 10
+        finalRating = values.reduce((a, b) => a + b, 0) / values.length
       }
     }
+    const ratingInt = Math.min(5, Math.max(1, Math.round(finalRating || 1)))
 
-    // Insert review with criteria_scores
-    const { error: reviewError } = await supabase.from('reviews').insert({
-      reviewer_id, reviewed_id,
-      rating: finalRating,
+    // Insert review — writes both column-name generations, strips what's missing.
+    // Live table (verified 15 Jul): reviewer_id, reviewee_id, rating (int 1-5),
+    // text (NOT NULL), property_name, criteria_scores jsonb. No comment/type/reviewed_id.
+    const { error: reviewError } = await insertReviewDefensively(supabase, {
+      reviewer_id,
+      reviewed_id, // stripped on live schema
+      reviewee_id: reviewed_id,
+      rating: ratingInt,
       criteria_scores: criteria_scores || null,
-      comment: comment || null,
-      type: type || 'candidate',
+      text: comment || '', // live column, NOT NULL
+      comment: comment || null, // stripped on live schema
+      type: type || 'candidate', // stripped on live schema
     })
 
-    if (reviewError) return NextResponse.json({ error: reviewError.message }, { status: 500 })
+    if (reviewError) {
+      console.error('Review insert failed:', reviewError.message)
+      return NextResponse.json({ error: 'Your review could not be saved. Please try again.' }, { status: 500 })
+    }
 
     // Update aggregate score on the reviewed profile (keyed on auth user_id)
-    const { data: reviews } = await supabase
-      .from('reviews')
-      .select('rating')
-      .eq('reviewed_id', reviewed_id)
+    const reviews = await fetchRatingsFor(supabase, reviewed_id)
 
-    if (reviews && reviews.length > 0) {
-      const avgScore = reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length
+    const rated = (reviews || []).filter((r: any) => typeof r.rating === 'number')
+    if (rated.length > 0) {
+      const avgScore = rated.reduce((sum: number, r: any) => sum + r.rating, 0) / rated.length
       const table = type === 'employer' ? 'employer_profiles' : 'candidate_profiles'
 
-      await supabase.from(table).update({
+      // Non-fatal if review_score/review_count don't exist on the live table
+      const { error: aggError } = await supabase.from(table).update({
         review_score: Math.round(avgScore * 10) / 10,
-        review_count: reviews.length,
+        review_count: rated.length,
       }).eq('user_id', reviewed_id)
+      if (aggError) console.error('Review aggregate update failed (non-fatal):', aggError.message)
     }
 
     return NextResponse.json({ success: true })
