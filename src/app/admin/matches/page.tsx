@@ -16,12 +16,10 @@ export default function AdminMatchesPage() {
 
   useEffect(() => {
     async function load() {
-      const { data } = await supabase
-        .from('matches')
-        .select('*, candidate_profiles(full_name, email, headline), employer_profiles(company_name, email), job_listings(title)')
-        .order('created_at', { ascending: false })
-
-      setMatches(data || [])
+      // Service-role API: RLS hides other users' matches from the browser client
+      const res = await fetch('/api/admin/matches').catch(() => null)
+      const data = res && res.ok ? await res.json().catch(() => null) : null
+      setMatches(data?.matches || [])
       setLoading(false)
     }
     load()

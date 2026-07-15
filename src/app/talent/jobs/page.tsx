@@ -38,8 +38,8 @@ export default function TalentJobsPage() {
         const { data } = await supabase.from('candidate_profiles').select('*').eq('user_id', user.id).single()
         cp = data
         setProfile(data)
-        // Load existing applications
-        const { data: apps } = await supabase.from('applications').select('role_id').eq('candidate_id', user.id)
+        // Load existing applications (linked by candidate PROFILE id)
+        const { data: apps } = await supabase.from('applications').select('role_id').eq('candidate_id', cp?.id || user.id)
         if (apps) setApplied(new Set(apps.map(a => a.role_id)))
         // Load saved jobs
         const savedRes = await fetch('/api/saved-jobs')
@@ -53,7 +53,7 @@ export default function TalentJobsPage() {
         .from('job_listings')
         .select('*, employer_profiles(company_name, property_name)')
         .eq('is_live', true)
-        .order('created_at', { ascending: false })
+        .order('posted_date', { ascending: false })
 
       const normalized = (rawData || []).map((j: any) => {
         const title = j.job_title || j.title
@@ -102,14 +102,13 @@ export default function TalentJobsPage() {
 
   const handleApply = async (jobId: string, matchScore: number) => {
     if (!userId) return
-    await supabase.from('applications').insert({ candidate_id: userId, role_id: jobId, status: 'pending', match_score: matchScore })
+    // Server-side: creates the application (correct profile id) + mutual-match detection + employer notification
+    await fetch('/api/swipe', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ targetId: jobId, targetType: 'job', action: 'right', matchScore }),
+    }).catch(() => {})
     setApplied(new Set(Array.from(applied).concat(jobId)))
-    // Notify employer
     const job = jobs.find((j: any) => j.id === jobId)
-    const employerUserId = job?.employer_id || job?.employer_user_id
-    if (employerUserId) {
-      notify(employerUserId, 'job_application', 'New application received', `A candidate has applied for ${job?.title || 'your role'}`, '/employer/applications')
-    }
     // Send application confirmation emails (fire-and-forget)
     const { data: { user } } = await supabase.auth.getUser()
     if (user?.email && job) {

@@ -65,7 +65,7 @@ export function calculateMatchScore(candidate: any, job: any): {
 
   // ── 2. Treatment Skills (10%) ──
   const requiredSkills: string[] = job.required_skills || []
-  const candidateSkills: string[] = candidate.treatment_skills || candidate.skills || []
+  const candidateSkills: string[] = candidate.treatment_skills || candidate.skills || candidate.services_offered || []
   const treatmentResult = overlapScore(candidateSkills, requiredSkills)
 
   // ── 3. Product House / Brand (8%) ──

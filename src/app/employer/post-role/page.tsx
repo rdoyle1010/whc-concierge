@@ -209,13 +209,21 @@ export default function PostRolePage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          type: 'job_posting',
           jobId: insertedJob.id,
+          employerId: profile.id,
           tier: selectedTier,
         }),
       })
 
-      const { url } = await res.json()
-      window.location.href = url
+      const data = await res.json()
+      if (!res.ok || !data.url) {
+        setError(data.error || 'Could not start checkout - please try again.')
+        setSaving(false)
+        setCheckoutLoading(false)
+        return
+      }
+      window.location.href = data.url
     } catch (err: any) {
       setError(err.message)
       setSaving(false)

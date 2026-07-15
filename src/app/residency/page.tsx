@@ -7,12 +7,6 @@ import Footer from '@/components/Footer'
 import Link from 'next/link'
 import { Clock, MapPin, X, Star, Award, Briefcase, ArrowRight } from 'lucide-react'
 
-const avatarPhotos = [
-  'https://images.pexels.com/photos/6187430/pexels-photo-6187430.jpeg?auto=compress&cs=tinysrgb&w=200&h=200&dpr=1',
-  'https://images.pexels.com/photos/19641835/pexels-photo-19641835.jpeg?auto=compress&cs=tinysrgb&w=200&h=200&dpr=1',
-  'https://images.pexels.com/photos/6724313/pexels-photo-6724313.jpeg?auto=compress&cs=tinysrgb&w=200&h=200&dpr=1',
-  'https://images.pexels.com/photos/19695969/pexels-photo-19695969.jpeg?auto=compress&cs=tinysrgb&w=200&h=200&dpr=1',
-]
 
 export default function ResidencyPage() {
   const supabase = createClient()
@@ -117,8 +111,10 @@ export default function ResidencyPage() {
                   <div className="flex flex-col md:flex-row gap-6">
                     {/* Avatar */}
                     <div className="shrink-0 flex flex-col items-center">
-                      <div className="w-24 h-24 rounded-full overflow-hidden bg-surface border-2 border-white shadow-md">
-                        <img src={r.profile_photo_url || r.photo_url || r.photos?.[0] || avatarPhotos[i % avatarPhotos.length]} alt={name} className="w-full h-full object-cover" />
+                      <div className="w-24 h-24 rounded-full overflow-hidden bg-surface border-2 border-white shadow-md flex items-center justify-center" style={{ background: '#FDF6EC' }}>
+                        {(r.profile_photo_url || r.photo_url || r.photos?.[0])
+                          ? <img src={r.profile_photo_url || r.photo_url || r.photos?.[0]} alt={name} className="w-full h-full object-cover" />
+                          : <span className="text-[28px] font-serif font-semibold" style={{ color: '#C9A96E' }}>{name.trim().charAt(0).toUpperCase()}</span>}
                       </div>
                       {r.is_featured && <span className="mt-2 text-[9px] font-semibold px-2.5 py-0.5 rounded-full" style={{ backgroundColor: '#FDF6EC', color: '#C9A96E' }}>Featured</span>}
                       {r.years_experience && <p className="mt-2 text-[11px] text-muted text-center">{r.years_experience} years exp.</p>}

@@ -85,8 +85,8 @@ export default function Navbar() {
                   <div className="absolute right-0 mt-2 w-[200px] bg-white border border-border rounded-lg shadow-lg py-1 animate-fade-in">
                     <Link href={dashboardHref} className="flex items-center gap-2.5 px-4 py-2 text-[13px] text-secondary hover:bg-surface hover:text-ink" onClick={() => setProfileOpen(false)}><LayoutDashboard size={13} />Dashboard</Link>
                     {!isAdmin && <Link href={profileHref} className="flex items-center gap-2.5 px-4 py-2 text-[13px] text-secondary hover:bg-surface hover:text-ink" onClick={() => setProfileOpen(false)}><User size={13} />My Profile</Link>}
-                    <Link href="/messages" className="flex items-center gap-2.5 px-4 py-2 text-[13px] text-secondary hover:bg-surface hover:text-ink" onClick={() => setProfileOpen(false)}><MessageSquare size={13} />Messages</Link>
-                    <Link href="/talent/settings" className="flex items-center gap-2.5 px-4 py-2 text-[13px] text-secondary hover:bg-surface hover:text-ink" onClick={() => setProfileOpen(false)}><Settings size={13} />Settings</Link>
+                    <Link href={isEmployer ? '/employer/messages' : isAdmin ? '/admin/messages' : '/talent/messages'} className="flex items-center gap-2.5 px-4 py-2 text-[13px] text-secondary hover:bg-surface hover:text-ink" onClick={() => setProfileOpen(false)}><MessageSquare size={13} />Messages</Link>
+                    <Link href={isEmployer ? '/employer/settings' : isAdmin ? '/admin/settings' : '/talent/settings'} className="flex items-center gap-2.5 px-4 py-2 text-[13px] text-secondary hover:bg-surface hover:text-ink" onClick={() => setProfileOpen(false)}><Settings size={13} />Settings</Link>
                     <div className="border-t border-border my-1" />
                     <button type="button" onClick={handleSignOut} className="flex items-center gap-2.5 px-4 py-2 text-[13px] text-secondary hover:bg-surface hover:text-ink w-full"><LogOut size={13} />Sign Out</button>
                   </div>
@@ -114,7 +114,7 @@ export default function Navbar() {
               {user ? (
                 <>
                   <Link href={dashboardHref} className="block py-2 text-[14px] text-ink font-medium" onClick={() => setMobileOpen(false)}>Dashboard</Link>
-                  <Link href="/messages" className="block py-2 text-[14px] text-secondary" onClick={() => setMobileOpen(false)}>Messages</Link>
+                  <Link href={isEmployer ? '/employer/messages' : isAdmin ? '/admin/messages' : '/talent/messages'} className="block py-2 text-[14px] text-secondary" onClick={() => setMobileOpen(false)}>Messages</Link>
                   <button type="button" onClick={handleSignOut} className="block py-2 text-[14px] text-muted w-full text-left">Sign Out</button>
                 </>
               ) : (

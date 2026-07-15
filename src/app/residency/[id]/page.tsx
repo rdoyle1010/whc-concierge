@@ -8,12 +8,6 @@ import type { Metadata } from 'next'
 
 export const revalidate = 120
 
-const galleryFallback = [
-  'https://images.pexels.com/photos/6187430/pexels-photo-6187430.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&dpr=1',
-  'https://images.pexels.com/photos/7587466/pexels-photo-7587466.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&dpr=1',
-  'https://images.pexels.com/photos/19641835/pexels-photo-19641835.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&dpr=1',
-  'https://images.pexels.com/photos/6724313/pexels-photo-6724313.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&dpr=1',
-]
 
 export async function generateMetadata({ params }: { params: { id: string } }): Promise<Metadata> {
   const supabase = createServerSupabaseClient()
@@ -36,7 +30,7 @@ export default async function ResidencyDetailPage({ params }: { params: { id: st
   const travelTo = r.will_travel_to || r.travel_availability || ''
   const travelLabel = travelTo === 'worldwide' ? 'Worldwide' : travelTo === 'uk_only' ? 'UK Only' : travelTo === 'uk_and_europe' ? 'UK & Europe' : travelTo.replace('_', ' ')
   const duration = r.preferred_duration || r.duration || ''
-  const gallery = r.gallery_urls?.length > 0 ? r.gallery_urls : galleryFallback
+  const gallery: string[] = r.gallery_urls?.length > 0 ? r.gallery_urls : []
 
   return (
     <div className="min-h-screen bg-white">
@@ -58,8 +52,10 @@ export default async function ResidencyDetailPage({ params }: { params: { id: st
         <div className="flex flex-col md:flex-row gap-8 items-start">
           {/* Photo */}
           <div className="shrink-0 text-center">
-            <div className="w-32 h-32 rounded-full overflow-hidden bg-surface border-2 border-white shadow-lg">
-              <img src={r.profile_photo_url || r.photo_url || r.photos?.[0] || galleryFallback[0]} alt={name} className="w-full h-full object-cover" />
+            <div className="w-32 h-32 rounded-full overflow-hidden border-2 border-white shadow-lg flex items-center justify-center" style={{ background: '#FDF6EC' }}>
+              {(r.profile_photo_url || r.photo_url || r.photos?.[0])
+                ? <img src={r.profile_photo_url || r.photo_url || r.photos?.[0]} alt={name} className="w-full h-full object-cover" />
+                : <span className="text-[40px] font-serif font-semibold" style={{ color: '#C9A96E' }}>{name.trim().charAt(0).toUpperCase()}</span>}
             </div>
             {r.years_experience && <p className="mt-3 text-[13px] font-medium text-ink">{r.years_experience} years</p>}
             {r.years_experience && <p className="text-[11px] text-muted">experience</p>}
@@ -139,17 +135,19 @@ export default async function ResidencyDetailPage({ params }: { params: { id: st
               </div>
             )}
 
-            {/* Gallery */}
-            <div className="bg-white border border-border rounded-xl p-6">
-              <h2 className="text-[16px] font-medium text-ink mb-4">Gallery</h2>
-              <div className="grid grid-cols-2 gap-3">
-                {gallery.slice(0, 4).map((url: string, i: number) => (
-                  <div key={i} className="aspect-[4/3] rounded-lg overflow-hidden bg-surface">
-                    <img src={url} alt="" className="w-full h-full object-cover hover:scale-105 transition-transform duration-500" />
-                  </div>
-                ))}
+            {/* Gallery (only real portfolio images - never stock) */}
+            {gallery.length > 0 && (
+              <div className="bg-white border border-border rounded-xl p-6">
+                <h2 className="text-[16px] font-medium text-ink mb-4">Gallery</h2>
+                <div className="grid grid-cols-2 gap-3">
+                  {gallery.slice(0, 4).map((url: string, i: number) => (
+                    <div key={i} className="aspect-[4/3] rounded-lg overflow-hidden bg-surface">
+                      <img src={url} alt="" className="w-full h-full object-cover hover:scale-105 transition-transform duration-500" />
+                    </div>
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
           </div>
 
           {/* Sidebar */}

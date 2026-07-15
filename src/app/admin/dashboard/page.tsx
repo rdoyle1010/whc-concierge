@@ -139,8 +139,12 @@ export default function AdminDashboard() {
   }, [])
 
   const handleApprove = async (type: string, id: string) => {
-    const table = type === 'talent' ? 'candidate_profiles' : 'employer_profiles'
-    await supabase.from(table).update({ approval_status: 'approved' }).eq('id', id)
+    // Must go through the service-role API - direct client writes are blocked by RLS
+    const res = await fetch('/api/admin/users', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type: type === 'talent' ? 'candidate' : 'employer', id, action: 'approve' }),
+    })
+    if (!res.ok) { alert('Could not approve - please try again.'); return }
     setRecent(recent.map(r => r.id === id ? { ...r, approval_status: 'approved' } : r))
     setStats({ ...stats, pending: Math.max(0, (stats.pending || 0) - 1) })
     const profile = recent.find(r => r.id === id)
@@ -151,8 +155,11 @@ export default function AdminDashboard() {
   }
 
   const handleReject = async (type: string, id: string) => {
-    const table = type === 'talent' ? 'candidate_profiles' : 'employer_profiles'
-    await supabase.from(table).update({ approval_status: 'rejected' }).eq('id', id)
+    const res = await fetch('/api/admin/users', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type: type === 'talent' ? 'candidate' : 'employer', id, action: 'reject' }),
+    })
+    if (!res.ok) { alert('Could not reject - please try again.'); return }
     setRecent(recent.map(r => r.id === id ? { ...r, approval_status: 'rejected' } : r))
     setStats({ ...stats, pending: Math.max(0, (stats.pending || 0) - 1) })
   }

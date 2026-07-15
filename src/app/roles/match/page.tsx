@@ -8,17 +8,6 @@ import { MapPin, X, Heart, ArrowLeft, ChevronDown, Sparkles, Check } from 'lucid
 import { notify } from '@/lib/notify'
 import MatchBreakdown from '@/components/MatchBreakdown'
 
-const photos = [
-  'https://images.pexels.com/photos/6187430/pexels-photo-6187430.jpeg?auto=compress&cs=tinysrgb&w=600&h=400&dpr=1', // luxury massage treatment
-  'https://images.pexels.com/photos/7587466/pexels-photo-7587466.jpeg?auto=compress&cs=tinysrgb&w=600&h=400&dpr=1', // wooden sauna interior
-  'https://images.pexels.com/photos/19641835/pexels-photo-19641835.jpeg?auto=compress&cs=tinysrgb&w=600&h=400&dpr=1', // spa therapist at work
-  'https://images.pexels.com/photos/6724313/pexels-photo-6724313.jpeg?auto=compress&cs=tinysrgb&w=600&h=400&dpr=1', // aromatherapy candles & oils
-  'https://images.pexels.com/photos/4041391/pexels-photo-4041391.jpeg?auto=compress&cs=tinysrgb&w=600&h=400&dpr=1', // luxury skincare products
-  'https://images.pexels.com/photos/19695969/pexels-photo-19695969.jpeg?auto=compress&cs=tinysrgb&w=600&h=400&dpr=1', // spa massage session
-  'https://images.pexels.com/photos/16249146/pexels-photo-16249146.jpeg?auto=compress&cs=tinysrgb&w=600&h=400&dpr=1', // marble bathroom luxury
-  'https://images.pexels.com/photos/5563472/pexels-photo-5563472.jpeg?auto=compress&cs=tinysrgb&w=600&h=400&dpr=1', // contemporary resort design
-]
-
 const tierClass = (t: string) => t === 'Platinum' ? 'badge-platinum' : t === 'Gold' ? 'badge-gold' : t === 'Silver' ? 'badge-silver' : 'badge-bronze'
 
 export default function SwipeMatchPage() {
@@ -149,14 +138,14 @@ export default function SwipeMatchPage() {
         <div className="w-20 h-20 bg-match-perfect-bg rounded-2xl flex items-center justify-center mx-auto mb-6"><Heart size={32} className="text-match-perfect-text" fill="currentColor" /></div>
         <h2 className="text-[28px] font-medium text-ink mb-1">It&apos;s a match!</h2>
         <p className="text-[14px] text-muted mb-8">{job?.employer_profiles?.company_name} &middot; {job?.title} - you both said yes.</p>
-        <div className="space-y-2 max-w-[280px] mx-auto"><Link href="/messages" className="btn-primary block text-center">Send a message</Link>
+        <div className="space-y-2 max-w-[280px] mx-auto"><Link href="/talent/messages" className="btn-primary block text-center">Send a message</Link>
         <button onClick={() => { setShowMatch(false); setDir(null); setIdx(p=>p+1); setExpanded(false) }} className="btn-secondary block w-full text-center">Keep browsing</button></div>
       </div>
     </div>
   )
 
-  const photo = photos[idx % photos.length]
   const score = job?.matchScore || 75
+  const propertyInitial = (job?.employer_profiles?.company_name || 'W').trim().charAt(0).toUpperCase()
 
   return (
     <div className="min-h-screen bg-surface flex flex-col">
@@ -170,9 +159,14 @@ export default function SwipeMatchPage() {
       {/* Card */}
       <div className="flex-1 flex items-center justify-center px-4 py-6">
         <div className={`swipe-card w-full max-w-[440px] bg-white border border-border rounded-xl shadow-sm overflow-hidden ${dir==='left'?'swipe-left':dir==='right'?'swipe-right':''}`}>
-          {/* Image */}
-          <div className="h-[180px] relative overflow-hidden bg-surface">
-            <img src={photo} alt="" className="w-full h-full object-cover" />
+          {/* Branded header (no stock photos - honest, on-brand) */}
+          <div className="h-[180px] relative overflow-hidden" style={{ background: 'linear-gradient(135deg, #1a1a1a 0%, #2d2a25 55%, #4a3f2f 100%)' }}>
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="w-20 h-20 rounded-2xl flex items-center justify-center border" style={{ background: 'rgba(201, 169, 110, 0.12)', borderColor: 'rgba(201, 169, 110, 0.4)' }}>
+                <span className="text-[32px] font-serif font-semibold" style={{ color: '#C9A96E' }}>{propertyInitial}</span>
+              </div>
+            </div>
+            <p className="absolute bottom-3 left-0 right-0 text-center text-[11px] tracking-[0.2em] uppercase" style={{ color: 'rgba(201, 169, 110, 0.7)' }}>{job?.employer_profiles?.company_name || 'WHC Concierge'}</p>
             <span className={`absolute top-3 left-3 ${tierClass(job?.tier||'Standard')}`}>{job?.tier||'Standard'}</span>
             <div className="absolute top-3 right-3 flex items-center gap-1.5">
               <span className="text-[11px] font-semibold px-2.5 py-1 rounded-full" style={{ backgroundColor: job?.matchBg || '#DBEAFE', color: job?.matchColour || '#1D4ED8' }}>{score}%</span>

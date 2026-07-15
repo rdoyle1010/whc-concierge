@@ -36,7 +36,7 @@ export default function PropertyDetailPage() {
         .select('*')
         .eq('employer_id', id)
         .eq('is_live', true)
-        .order('created_at', { ascending: false })
+        .order('posted_date', { ascending: false })
 
       setJobs(jobsData || [])
       setLoading(false)

@@ -104,10 +104,16 @@ export async function POST(req: NextRequest) {
             })
           }
           const employerName = employer.property_name || employer.company_name || 'An employer'
+          // Open the conversation so neither side hits an empty inbox
+          await admin.from('messages').insert({
+            sender_id: employer.user_id, recipient_id: user.id,
+            content: `It's a match! You both said yes to ${job.job_title} at ${employerName}. Say hello and take it from here.`,
+            read: false,
+          })
           await createNotification(user.id, 'new_match', "It's a match!",
-            `You and ${employerName} both said yes to ${job.job_title}. Start the conversation.`, '/messages')
+            `You and ${employerName} both said yes to ${job.job_title}. Start the conversation.`, '/talent/messages')
           await createNotification(employer.user_id, 'new_match', "It's a match!",
-            `${cand.full_name || 'A candidate'} you shortlisted has applied for ${job.job_title}.`, '/employer/applications')
+            `${cand.full_name || 'A candidate'} you shortlisted has applied for ${job.job_title}.`, '/employer/messages')
           return NextResponse.json({ matched: true, jobTitle: job.job_title, employerName })
         }
       }
@@ -174,11 +180,17 @@ export async function POST(req: NextRequest) {
     }
 
     if (cand.user_id) {
+      // Open the conversation so neither side hits an empty inbox
+      await admin.from('messages').insert({
+        sender_id: user.id, recipient_id: cand.user_id,
+        content: `It's a match! You both said yes to ${firstJobTitle} at ${employerName}. Say hello and take it from here.`,
+        read: false,
+      })
       await createNotification(cand.user_id, 'new_match', "It's a match!",
-        `${employerName} wants to talk about ${firstJobTitle}. Start the conversation.`, '/messages')
+        `${employerName} wants to talk about ${firstJobTitle}. Start the conversation.`, '/talent/messages')
     }
     await createNotification(user.id, 'new_match', "It's a match!",
-      `${cand.full_name || 'A candidate'} already liked ${firstJobTitle}. Start the conversation.`, '/employer/candidates')
+      `${cand.full_name || 'A candidate'} already liked ${firstJobTitle}. Start the conversation.`, '/employer/messages')
 
     return NextResponse.json({ matched: true, candidateName: cand.full_name, jobTitle: firstJobTitle })
   } catch (e: any) {

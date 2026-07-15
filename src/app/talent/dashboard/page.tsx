@@ -27,7 +27,7 @@ export default function TalentDashboard() {
 
       // Real stats
       const [apps, msgs] = await Promise.all([
-        supabase.from('applications').select('id', { count: 'exact', head: true }).eq('candidate_id', user.id),
+        supabase.from('applications').select('id', { count: 'exact', head: true }).eq('candidate_id', prof?.id || user.id),
         supabase.from('messages').select('id', { count: 'exact', head: true }).eq('recipient_id', user.id).eq('read', false),
       ])
 

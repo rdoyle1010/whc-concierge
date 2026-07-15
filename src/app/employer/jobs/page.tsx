@@ -42,6 +42,10 @@ export default function EmployerJobsPage() {
     if (!profile) return
     setSaving(true)
 
+    // Going live requires payment: only a job that is ALREADY live (paid) may stay live.
+    // New or draft jobs must go through Post a Role -> checkout.
+    const wasLive = !!editing?.is_live
+    const wantsActive = form.status === 'active'
     const payload = {
       employer_id: profile.id,
       job_title: form.title,
@@ -53,8 +57,11 @@ export default function EmployerJobsPage() {
       tier: form.tier,
       benefits: form.benefits ? (form.benefits as string).split('\n').filter(Boolean) : null,
       requirements: form.requirements ? (form.requirements as string).split('\n').filter(Boolean) : null,
-      status: form.status,
-      is_live: form.status === 'active',
+      status: wantsActive && !wasLive ? 'draft' : form.status,
+      is_live: wantsActive && wasLive,
+    }
+    if (wantsActive && !wasLive) {
+      alert('Saved as a draft. To take a role live, use Post a Role and complete payment - your details carry over.')
     }
 
     if (editing) {

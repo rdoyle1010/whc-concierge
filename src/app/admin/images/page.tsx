@@ -129,7 +129,8 @@ export default function AdminImagesPage() {
 
   /* ── Add a new hero slot ── */
   const handleAddSlot = async (prefix: string, currentCount: number) => {
-    const slot = `${prefix}${currentCount + 1}`
+    // The homepage reads fixed slot names for single-slot groups
+    const slot = prefix === 'cta_' ? 'cta_bg' : prefix === 'howitworks_' ? 'howitworks_1' : `${prefix}${currentCount + 1}`
     await supabase.from('site_images').insert({
       slot,
       label: `${prefix === 'hero_' ? 'Hero Slide' : 'Featured Card'} ${currentCount + 1}`,
@@ -137,6 +138,7 @@ export default function AdminImagesPage() {
       heading: prefix === 'hero_' ? 'New Slide' : null,
       subtext: prefix === 'hero_' ? 'Add your description here.' : null,
       sort_order: currentCount + 1,
+      active: true,
     })
     flash('success', `Added new ${prefix === 'hero_' ? 'hero slide' : 'card'}`)
     load()

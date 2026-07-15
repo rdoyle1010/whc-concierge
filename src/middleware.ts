@@ -62,11 +62,13 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(loginUrl)
   }
 
-  // Auth pages: redirect logged-in users to their dashboard
+  // Auth pages: redirect logged-in users to the dashboard for their role
   const isAuthPage = AUTH_PAGES.some(page => pathname.startsWith(page))
   if (isAuthPage && user) {
+    const { data: prof } = await supabase.from('profiles').select('role').eq('id', user.id).single()
+    const role = prof?.role || user.user_metadata?.role || 'talent'
     const dashUrl = request.nextUrl.clone()
-    dashUrl.pathname = '/talent/dashboard'
+    dashUrl.pathname = role === 'admin' ? '/admin/dashboard' : role === 'employer' ? '/employer/dashboard' : '/talent/dashboard'
     return NextResponse.redirect(dashUrl)
   }
 
