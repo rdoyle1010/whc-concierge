@@ -5,7 +5,7 @@ import { rateLimit, getClientIp } from '@/lib/rate-limit'
 const limiter = rateLimit('welcome-email', { windowMs: 60 * 60 * 1000, maxRequests: 3 })
 
 const RESEND_API_KEY = process.env.RESEND_API_KEY
-const FROM_EMAIL = 'WHC Concierge <noreply@wellnesshousecollective.co.uk>'
+const FROM_EMAIL = 'WHC Concierge <noreply@mail.wellnesshousecollective.co.uk>'
 
 export async function POST(req: NextRequest) {
   const { success } = limiter.check(getClientIp(req))

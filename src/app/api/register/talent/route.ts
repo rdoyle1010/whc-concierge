@@ -3,7 +3,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { welcomeEmailHtml } from '@/lib/welcome-email-template'
 
 const RESEND_API_KEY = process.env.RESEND_API_KEY
-const FROM_EMAIL = 'WHC Concierge <noreply@wellnesshousecollective.co.uk>'
+const FROM_EMAIL = 'WHC Concierge <noreply@mail.wellnesshousecollective.co.uk>'
 
 async function sleep(ms: number) {
   return new Promise(resolve => setTimeout(resolve, ms))

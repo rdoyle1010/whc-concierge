@@ -5,7 +5,7 @@ import { rateLimit, getClientIp } from '@/lib/rate-limit'
 const limiter = rateLimit('application-email', { windowMs: 60 * 60 * 1000, maxRequests: 10 })
 
 const RESEND_API_KEY = process.env.RESEND_API_KEY
-const FROM_EMAIL = 'WHC Concierge <noreply@wellnesshousecollective.co.uk>'
+const FROM_EMAIL = 'WHC Concierge <noreply@mail.wellnesshousecollective.co.uk>'
 
 async function send(to: string, subject: string, html: string) {
   if (!RESEND_API_KEY) {

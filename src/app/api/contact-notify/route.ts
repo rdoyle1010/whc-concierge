@@ -5,7 +5,7 @@ import { contactFormSchema, validateRequest } from '@/lib/validations'
 const limiter = rateLimit('contact-notify', { windowMs: 15 * 60 * 1000, maxRequests: 5 })
 
 const RESEND_API_KEY = process.env.RESEND_API_KEY
-const FROM_EMAIL = 'WHC Concierge <noreply@wellnesshousecollective.co.uk>'
+const FROM_EMAIL = 'WHC Concierge <noreply@mail.wellnesshousecollective.co.uk>'
 const ADMIN_EMAIL = 'rebecca.whc@outlook.com'
 
 export async function POST(req: NextRequest) {

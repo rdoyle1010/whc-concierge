@@ -18,7 +18,7 @@ import { applicantConfirmationHtml, employerNotificationHtml } from '@/lib/appli
 // every apply path gets them (the job detail page previously sent none).
 
 const RESEND_API_KEY = process.env.RESEND_API_KEY
-const FROM_EMAIL = 'WHC Concierge <noreply@wellnesshousecollective.co.uk>'
+const FROM_EMAIL = 'WHC Concierge <noreply@mail.wellnesshousecollective.co.uk>'
 
 async function sendEmail(to: string, subject: string, html: string) {
   if (!RESEND_API_KEY) {
