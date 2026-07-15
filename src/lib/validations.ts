@@ -67,15 +67,12 @@ export const applicationSchema = z.object({
 export const reviewSchema = z.object({
   reviewed_id: z.string().uuid(),
   rating: z.number().min(1).max(5).optional(),
-  criteria_scores: z.object({
-    professionalism: reviewDimension,
-    punctuality: reviewDimension,
-    communication: reviewDimension,
-    skillLevel: reviewDimension,
-    reliability: reviewDimension,
-    overallExperience: reviewDimension,
-  }).optional(),
-  comment: z.string().max(2000, 'Comment must be under 2000 characters').optional(),
+  // Criteria differ by review type (candidate vs employer), so accept any
+  // sensible set of criterion keys with 1-5 integer scores.
+  criteria_scores: z.record(z.string().max(40), reviewDimension)
+    .refine(d => Object.keys(d).length >= 1 && Object.keys(d).length <= 12, 'Between 1 and 12 criteria')
+    .optional(),
+  comment: z.string().max(2000, 'Comment must be under 2000 characters').nullish(), // form sends null when empty
   type: z.enum(['candidate', 'employer']).default('candidate'),
 }).refine(data => data.rating || data.criteria_scores, {
   message: 'Either rating or criteria_scores is required',

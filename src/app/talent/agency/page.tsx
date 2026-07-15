@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from 'react'
 import DashboardShell from '@/components/DashboardShell'
-import { Calendar, Clock, Banknote } from 'lucide-react'
+import { Calendar, Clock, Banknote, Star, X } from 'lucide-react'
+import ReviewForm from '@/components/ReviewForm'
 
 export default function TalentAgencyPage() {
   const [bookings, setBookings] = useState<any[]>([])
@@ -11,6 +12,7 @@ export default function TalentAgencyPage() {
   const [counterRate, setCounterRate] = useState('')
   const [busyId, setBusyId] = useState<string | null>(null)
   const [actionError, setActionError] = useState('')
+  const [reviewing, setReviewing] = useState<{ userId: string; name: string } | null>(null)
 
   async function load() {
     try {
@@ -150,16 +152,39 @@ export default function TalentAgencyPage() {
                       {b.shift_type && <span className="flex items-center space-x-1"><Clock size={14} /><span>{b.shift_type}</span></span>}
                       {b.hours && <span>{b.hours}h</span>}
                     </div>
+                    {(b.status === 'accepted' || b.status === 'confirmed') && (
+                      <p className="text-[11px] text-green-700 mt-1.5">Agreed at £{b.rate}/day — this agreement is on record; payment is settled directly with the property for now.</p>
+                    )}
                   </div>
                   <div className="text-right">
                     {b.rate && <p className="font-medium text-ink">£{b.rate}/day</p>}
                     <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${statusColors[b.status] || ''}`}>{b.status}</span>
+                    {(b.status === 'accepted' || b.status === 'confirmed' || b.status === 'completed') && b.employer_user_id && (
+                      <button type="button"
+                        onClick={() => setReviewing({ userId: b.employer_user_id, name: b.employer_name || 'this property' })}
+                        className="block ml-auto mt-2 text-[12px] font-medium text-amber-500 hover:underline">
+                        <span className="inline-flex items-center gap-1"><Star size={11} /> Review property</span>
+                      </button>
+                    )}
                   </div>
                 </div>
               ))}
             </div>
           )}
         </>
+      )}
+
+      {/* Review modal — offered on agreed shifts */}
+      {reviewing && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setReviewing(null)}>
+          <div className="bg-white rounded-2xl max-w-md w-full max-h-[90vh] overflow-y-auto p-6" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="font-serif text-lg font-bold text-ink">Review {reviewing.name}</h2>
+              <button type="button" onClick={() => setReviewing(null)} className="text-gray-300 hover:text-ink"><X size={20} /></button>
+            </div>
+            <ReviewForm reviewedId={reviewing.userId} reviewedName={reviewing.name} type="employer" />
+          </div>
+        </div>
       )}
     </DashboardShell>
   )

@@ -6,8 +6,9 @@ import { createClient } from '@/lib/supabase/client'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
 import Link from 'next/link'
-import { MapPin, Star, Shield, Clock, Check, ArrowLeft } from 'lucide-react'
+import { MapPin, Star, Shield, Clock, Check, ArrowLeft, X } from 'lucide-react'
 import ReviewBreakdown from '@/components/ReviewBreakdown'
+import ReviewForm from '@/components/ReviewForm'
 
 export default function AgencyProfilePage() {
   const { id } = useParams()
@@ -22,6 +23,7 @@ export default function AgencyProfilePage() {
   const [showOfferForm, setShowOfferForm] = useState(false)
   const [offerBusy, setOfferBusy] = useState(false)
   const [offerError, setOfferError] = useState('')
+  const [showReview, setShowReview] = useState(false)
 
   useEffect(() => {
     async function load() {
@@ -62,7 +64,8 @@ export default function AgencyProfilePage() {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           action: 'create', candidateId: profileId,
-          rate: fd.get('rate'), shiftDate: fd.get('shiftDate'), hours: fd.get('hours') || undefined,
+          rate: fd.get('rate'), shiftDate: fd.get('shiftDate'),
+          shiftType: fd.get('shiftType') || undefined, hours: fd.get('hours') || undefined,
         }),
       })
       const j = await res.json()
@@ -228,7 +231,24 @@ export default function AgencyProfilePage() {
                         </div>
                       </div>
                     )}
-                    {offer.status === 'accepted' && <p className="text-[13px] text-success flex items-center gap-1"><Check size={13} />Shift confirmed at £{offer.rate} per day.</p>}
+                    {offer.status === 'accepted' && (
+                      <div>
+                        <div className="bg-green-50 border border-green-100 rounded-lg p-3 mb-3">
+                          <p className="text-[13px] font-medium text-green-800 flex items-center gap-1 mb-1"><Check size={13} />Shift agreed</p>
+                          <p className="text-[12px] text-green-800">
+                            {offer.shift_date ? new Date(offer.shift_date).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' }) : 'Date TBC'}
+                            {offer.shift_type ? ` · ${offer.shift_type}` : ''}{offer.hours ? ` · ${offer.hours} hours` : ''} · £{offer.rate}/day
+                          </p>
+                          <p className="text-[11px] text-green-700 mt-1.5">This agreement is on record for both of you. Payment is settled directly between you and {profile.full_name?.split(' ')[0] || 'the candidate'} for now.</p>
+                        </div>
+                        {profile.user_id && (
+                          <button type="button" onClick={() => setShowReview(true)}
+                            className="inline-flex items-center gap-1 text-[12px] font-medium text-amber-500 hover:underline">
+                            <Star size={12} /> Review {profile.full_name?.split(' ')[0] || 'this candidate'} after the shift
+                          </button>
+                        )}
+                      </div>
+                    )}
                     {offer.status === 'declined' && (
                       <div>
                         <p className="text-[13px] text-muted mb-3">This offer was declined.</p>
@@ -246,6 +266,16 @@ export default function AgencyProfilePage() {
                     <div>
                       <label className="text-[12px] text-muted block mb-1">Shift date</label>
                       <input name="shiftDate" type="date" required className="input-field text-[13px]" />
+                    </div>
+                    <div>
+                      <label className="text-[12px] text-muted block mb-1">Shift type</label>
+                      <select name="shiftType" className="input-field text-[13px]" defaultValue="Full Day">
+                        <option>Full Day</option>
+                        <option>Half Day (AM)</option>
+                        <option>Half Day (PM)</option>
+                        <option>Evening</option>
+                        <option>Event Cover</option>
+                      </select>
                     </div>
                     <div>
                       <label className="text-[12px] text-muted block mb-1">Hours</label>
@@ -288,6 +318,19 @@ export default function AgencyProfilePage() {
           </div>
         </div>
       </div>
+
+      {/* Review modal — offered once a shift is agreed */}
+      {showReview && profile?.user_id && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setShowReview(false)}>
+          <div className="bg-white rounded-2xl max-w-md w-full max-h-[90vh] overflow-y-auto p-6" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="font-serif text-lg font-bold text-ink">Review {profile.full_name}</h2>
+              <button type="button" onClick={() => setShowReview(false)} className="text-gray-300 hover:text-ink"><X size={20} /></button>
+            </div>
+            <ReviewForm reviewedId={profile.user_id} reviewedName={profile.full_name} type="candidate" />
+          </div>
+        </div>
+      )}
       <Footer />
     </div>
   )

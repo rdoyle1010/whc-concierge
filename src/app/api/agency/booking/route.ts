@@ -94,8 +94,8 @@ export async function GET() {
     const empIds = Array.from(new Set(bookings.map(b => b.employer_id).filter(Boolean)))
     const candIds = Array.from(new Set(bookings.map(b => b.candidate_id).filter(Boolean)))
     const [empsRes, candsRes] = await Promise.all([
-      empIds.length ? admin.from('employer_profiles').select('id, company_name, property_name, location').in('id', empIds) : Promise.resolve({ data: [] as any[] }),
-      candIds.length ? admin.from('candidate_profiles').select('id, full_name').in('id', candIds) : Promise.resolve({ data: [] as any[] }),
+      empIds.length ? admin.from('employer_profiles').select('id, user_id, company_name, property_name, location').in('id', empIds) : Promise.resolve({ data: [] as any[] }),
+      candIds.length ? admin.from('candidate_profiles').select('id, user_id, full_name').in('id', candIds) : Promise.resolve({ data: [] as any[] }),
     ])
     const empMap = new Map((empsRes.data || []).map((e: any) => [e.id, e]))
     const candMap = new Map((candsRes.data || []).map((c: any) => [c.id, c]))
@@ -104,7 +104,9 @@ export async function GET() {
       .map(b => ({
         ...b,
         employer_name: employerDisplayName(empMap.get(b.employer_id)),
+        employer_user_id: empMap.get(b.employer_id)?.user_id || null, // for reviews
         candidate_name: candMap.get(b.candidate_id)?.full_name || 'Candidate',
+        candidate_user_id: candMap.get(b.candidate_id)?.user_id || null, // for reviews
         viewer_role: emp && b.employer_id === emp.id ? 'employer' : 'candidate',
       }))
       .sort((a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime())

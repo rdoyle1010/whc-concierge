@@ -5,9 +5,15 @@ import { Star } from 'lucide-react'
 const CRITERIA_LABELS: Record<string, string> = {
   professionalism: 'Professionalism',
   punctuality: 'Punctuality',
-  communication: 'Communication',
-  skillLevel: 'Skill Level',
+  communication: 'Communication', // legacy reviews
+  skillLevel: 'Skill Level', // legacy reviews
+  treatmentQuality: 'Treatment Quality',
+  retailSales: 'Retail Sales',
   reliability: 'Reliability',
+  organisation: 'Organisation',
+  facilities: 'Facilities & Products',
+  teamSupport: 'Team Support',
+  paymentPromptness: 'Payment Promptness',
   overallExperience: 'Overall Experience',
 }
 

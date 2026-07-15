@@ -3,12 +3,23 @@
 import { useState } from 'react'
 import { Star } from 'lucide-react'
 
-const CRITERIA = [
+// Tailored criteria: candidates are judged on the work (including retail
+// sales — the number a spa director actually cares about); employers are
+// judged on what it's like to work a shift for them.
+const CANDIDATE_CRITERIA = [
   { key: 'professionalism', label: 'Professionalism' },
   { key: 'punctuality', label: 'Punctuality / Timekeeping' },
-  { key: 'communication', label: 'Communication' },
-  { key: 'skillLevel', label: 'Skill Level' },
+  { key: 'treatmentQuality', label: 'Treatment Quality' },
+  { key: 'retailSales', label: 'Retail Sales' },
   { key: 'reliability', label: 'Reliability' },
+  { key: 'overallExperience', label: 'Overall Experience' },
+] as const
+
+const EMPLOYER_CRITERIA = [
+  { key: 'organisation', label: 'Organisation' },
+  { key: 'facilities', label: 'Facilities & Products' },
+  { key: 'teamSupport', label: 'Team Support' },
+  { key: 'paymentPromptness', label: 'Payment Promptness' },
   { key: 'overallExperience', label: 'Overall Experience' },
 ] as const
 
@@ -38,8 +49,9 @@ export default function ReviewForm({ reviewedId, reviewedName, type = 'candidate
   const [submitted, setSubmitted] = useState(false)
   const [error, setError] = useState('')
 
-  const allRated = CRITERIA.every(c => scores[c.key] > 0)
-  const avgScore = allRated ? (Object.values(scores).reduce((a, b) => a + b, 0) / CRITERIA.length) : 0
+  const criteria = type === 'employer' ? EMPLOYER_CRITERIA : CANDIDATE_CRITERIA
+  const allRated = criteria.every(c => scores[c.key] > 0)
+  const avgScore = allRated ? (Object.values(scores).reduce((a, b) => a + b, 0) / criteria.length) : 0
 
   const handleSubmit = async () => {
     if (!allRated) { setError('Please rate all categories'); return }
@@ -81,7 +93,7 @@ export default function ReviewForm({ reviewedId, reviewedName, type = 'candidate
 
       {/* Criteria ratings */}
       <div className="space-y-3">
-        {CRITERIA.map(c => (
+        {criteria.map(c => (
           <div key={c.key} className="flex items-center justify-between p-3 bg-surface rounded-lg">
             <span className="text-[13px] text-ink font-medium">{c.label}</span>
             <StarSelector value={scores[c.key] || 0} onChange={v => setScores({ ...scores, [c.key]: v })} />
