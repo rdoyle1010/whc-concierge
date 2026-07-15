@@ -5,6 +5,7 @@ import DashboardShell from '@/components/DashboardShell'
 import { createClient } from '@/lib/supabase/client'
 import { Search, MapPin, Star, X, MessageSquare } from 'lucide-react'
 import { notify } from '@/lib/notify'
+import { calculateMatchScore } from '@/lib/matching'
 
 export default function EmployerCandidatesPage() {
   const supabase = createClient()
@@ -33,7 +34,24 @@ export default function EmployerCandidatesPage() {
       const blockedIds = new Set((blocksRes.data || []).map((b: any) => b.candidate_id))
       const visible = (candidateRes.data || []).filter((c: any) => !blockedIds.has(c.id))
 
-      setCandidates(visible)
+      // Score every candidate against this employer's live roles - best fit first
+      let scored = visible
+      if (prof) {
+        const { data: myJobs } = await supabase.from('job_listings').select('*').eq('employer_id', prof.id).eq('is_live', true)
+        const jobs = (myJobs || []).map((j: any) => ({ ...j, title: j.job_title || j.title, required_product_houses: j.required_brands || j.required_product_houses }))
+        if (jobs.length > 0) {
+          scored = visible.map((c: any) => {
+            let best: any = null
+            for (const j of jobs) {
+              const r = calculateMatchScore(c, j)
+              const score = r.hardStop ? 0 : r.score
+              if (!best || score > best.matchScore) best = { matchScore: score, matchLabel: r.hardStop ? 'Not suitable' : r.label, matchColour: r.hardStop ? '#9CA3AF' : r.colour, matchBg: r.hardStop ? '#F3F4F6' : r.bgColour, bestJob: j.title }
+            }
+            return { ...c, ...best }
+          }).sort((a: any, b: any) => (b.matchScore || 0) - (a.matchScore || 0))
+        }
+      }
+      setCandidates(scored)
 
       // Load shortlisted candidates
       const slRes = await fetch('/api/shortlist')
@@ -129,11 +147,18 @@ export default function EmployerCandidatesPage() {
                     <span className="font-serif font-bold text-gray-300 text-lg">{c.full_name?.[0]}</span>
                   )}
                 </div>
-                <div className="min-w-0 cursor-pointer" onClick={() => setViewing(c)}>
+                <div className="min-w-0 cursor-pointer flex-1" onClick={() => setViewing(c)}>
                   <h3 className="font-semibold text-ink truncate hover:underline">{c.full_name}</h3>
                   <p className="text-sm text-gray-500 truncate">{c.headline}</p>
                 </div>
               </div>
+
+              {typeof c.matchScore === 'number' && (
+                <div className="flex items-center gap-1.5 mb-3">
+                  <span className="text-[11px] font-semibold px-2.5 py-1 rounded-full" style={{ backgroundColor: c.matchBg, color: c.matchColour }}>{c.matchScore}% - {c.matchLabel}</span>
+                  {c.bestJob && <span className="text-[10px] text-gray-400 truncate">for {c.bestJob}</span>}
+                </div>
+              )}
 
               {c.location && (
                 <p className="text-sm text-gray-500 flex items-center space-x-1 mb-2">
