@@ -3,11 +3,69 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { createNotification } from '@/lib/notifications'
+import { applicantConfirmationHtml, employerNotificationHtml } from '@/lib/application-email-templates'
 
 // Records a swipe server-side (swipes has unreliable RLS), creates the
 // application on a candidate right-swipe, and detects MUTUAL matches:
 // candidate right-swiped the job AND its employer right-swiped the candidate.
 // On a mutual match a row is written to `matches` and both sides are notified.
+//
+// The application insert writes BOTH role_id and job_id (live schema and the
+// RLS policies disagree on which one is canonical) and strips columns the live
+// table doesn't have. If the application cannot be created the route returns
+// 500 — the UI must never say "Application sent" when nothing was saved.
+// Confirmation emails to the applicant and employer are sent from HERE, so
+// every apply path gets them (the job detail page previously sent none).
+
+const RESEND_API_KEY = process.env.RESEND_API_KEY
+const FROM_EMAIL = 'WHC Concierge <noreply@wellnesshousecollective.co.uk>'
+
+async function sendEmail(to: string, subject: string, html: string) {
+  if (!RESEND_API_KEY) {
+    console.log(`[Application email skipped - no API key] To: ${to}, Subject: ${subject}`)
+    return
+  }
+  await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: { 'Authorization': `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ from: FROM_EMAIL, to, subject, html }),
+  })
+}
+
+// The live table may have drifted from migration 004. If an insert fails
+// because a column does not exist, strip that key and retry (max 6 strips).
+async function insertApplicationDefensively(admin: any, row: Record<string, any>) {
+  const attempt: Record<string, any> = { ...row }
+  let lastError: any = null
+  for (let strips = 0; strips <= 6; strips++) {
+    const { data, error } = await admin.from('applications').insert(attempt).select('id').single()
+    if (!error) return { data, error: null }
+    lastError = error
+    const m = /Could not find the '([^']+)' column/.exec(error.message || '')
+    if (m && Object.prototype.hasOwnProperty.call(attempt, m[1])) {
+      delete attempt[m[1]]
+      continue
+    }
+    break
+  }
+  return { data: null, error: lastError }
+}
+
+// Dedupe across schema drift: the job link column is role_id and/or job_id.
+async function findExistingApplication(admin: any, candidateId: string, jobId: string) {
+  const byRole = await admin
+    .from('applications').select('id')
+    .eq('candidate_id', candidateId).eq('role_id', jobId)
+    .limit(1).maybeSingle()
+  if (!byRole.error && byRole.data) return byRole.data
+  const byJob = await admin
+    .from('applications').select('id')
+    .eq('candidate_id', candidateId).eq('job_id', jobId)
+    .limit(1).maybeSingle()
+  if (!byJob.error && byJob.data) return byJob.data
+  return null
+}
+
 export async function POST(req: NextRequest) {
   try {
     const cookieStore = cookies()
@@ -36,7 +94,7 @@ export async function POST(req: NextRequest) {
     if (targetType === 'job') {
       const { data: cand } = await admin
         .from('candidate_profiles')
-        .select('id, full_name')
+        .select('*')
         .eq('user_id', user.id)
         .maybeSingle()
       if (!cand) return NextResponse.json({ error: 'Candidate profile not found' }, { status: 404 })
@@ -54,28 +112,74 @@ export async function POST(req: NextRequest) {
         .maybeSingle()
       if (!job) return NextResponse.json({ matched: false })
 
-      // Create the application (linked by candidate PROFILE id, deduped)
-      const { data: existingApp } = await admin
-        .from('applications')
-        .select('id')
-        .eq('candidate_id', cand.id)
-        .eq('role_id', job.id)
-        .maybeSingle()
-      if (!existingApp) {
-        await admin.from('applications').insert({
-          candidate_id: cand.id, role_id: job.id, status: 'pending', match_score: matchScore ?? null,
-        })
-      }
-
       const { data: employer } = await admin
         .from('employer_profiles')
-        .select('id, user_id, property_name, company_name')
+        .select('*')
         .eq('id', job.employer_id)
         .maybeSingle()
+      const employerName = employer?.property_name || employer?.company_name || 'the employer'
 
-      if (employer?.user_id) {
-        await createNotification(employer.user_id, 'job_application', 'New application received',
-          `A candidate has applied for ${job.job_title}`, '/employer/applications')
+      // Create the application (linked by candidate PROFILE id, deduped)
+      const existingApp = await findExistingApplication(admin, cand.id, job.id)
+      if (!existingApp) {
+        const { error: appError } = await insertApplicationDefensively(admin, {
+          candidate_id: cand.id,
+          role_id: job.id,
+          job_id: job.id, // 022 RLS keys employer visibility on job_id — set both
+          status: 'pending',
+          match_score: matchScore ?? null,
+        })
+        if (appError) {
+          // Do NOT pretend the application was sent
+          console.error('Application insert failed:', appError.message)
+          return NextResponse.json(
+            { error: 'Your application could not be saved. Please try again.' },
+            { status: 500 }
+          )
+        }
+
+        // In-app notification to the employer (new applications only)
+        if (employer?.user_id) {
+          await createNotification(employer.user_id, 'job_application', 'New application received',
+            `A candidate has applied for ${job.job_title}`, '/employer/applications')
+        }
+
+        // Emails: confirmation to the applicant, notification to the employer.
+        // Never fail the apply over an email problem.
+        try {
+          const emailJobs: Promise<void>[] = []
+          if (user.email) {
+            emailJobs.push(sendEmail(
+              user.email,
+              `Application Received — ${job.job_title}`,
+              applicantConfirmationHtml({
+                applicantName: cand.full_name || 'there',
+                jobTitle: job.job_title,
+                propertyName: employerName,
+              }),
+            ))
+          }
+          let employerEmail: string | null = employer?.contact_email || null
+          if (!employerEmail && employer?.user_id) {
+            const { data: empUser } = await admin.auth.admin.getUserById(employer.user_id)
+            employerEmail = empUser?.user?.email || null
+          }
+          if (employerEmail) {
+            emailJobs.push(sendEmail(
+              employerEmail,
+              `New Application — ${job.job_title}`,
+              employerNotificationHtml({
+                applicantName: cand.full_name || 'A candidate',
+                jobTitle: job.job_title,
+                propertyName: employerName,
+                roleLevel: cand.role_level || undefined,
+              }),
+            ))
+          }
+          await Promise.allSettled(emailJobs)
+        } catch (e: any) {
+          console.error('Application emails failed:', e?.message)
+        }
       }
 
       // Mutual? Employer previously right-swiped this candidate
@@ -103,7 +207,6 @@ export async function POST(req: NextRequest) {
               score: matchScore ?? null, status: 'active',
             })
           }
-          const employerName = employer.property_name || employer.company_name || 'An employer'
           // Open the conversation so neither side hits an empty inbox
           await admin.from('messages').insert({
             sender_id: employer.user_id, recipient_id: user.id,

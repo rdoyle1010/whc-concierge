@@ -20,7 +20,8 @@ export default function NotificationBell({ userId }: { userId: string }) {
   const ref = useRef<HTMLDivElement>(null)
 
   const load = async () => {
-    const res = await fetch(`/api/notifications?userId=${userId}`)
+    // The API derives the user from the session — no userId param needed
+    const res = await fetch('/api/notifications')
     if (res.ok) {
       const data = await res.json()
       setNotifications(data.notifications || [])
@@ -54,7 +55,7 @@ export default function NotificationBell({ userId }: { userId: string }) {
   const markAllAsRead = async () => {
     await fetch('/api/notifications', {
       method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ markAll: true, userId }),
+      body: JSON.stringify({ markAll: true }),
     })
     setNotifications(notifications.map(n => ({ ...n, is_read: true })))
     setUnreadCount(0)

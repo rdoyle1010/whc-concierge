@@ -62,8 +62,9 @@ export const applicationSchema = z.object({
 })
 
 // ── Review ──
+// reviewer_id is intentionally NOT part of the schema — the API derives the
+// reviewer from the authenticated session, never from the request body.
 export const reviewSchema = z.object({
-  reviewer_id: z.string().uuid(),
   reviewed_id: z.string().uuid(),
   rating: z.number().min(1).max(5).optional(),
   criteria_scores: z.object({

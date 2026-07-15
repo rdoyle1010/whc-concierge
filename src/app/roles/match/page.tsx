@@ -79,25 +79,16 @@ export default function SwipeMatchPage() {
       }).catch(() => null)
       const result = res && res.ok ? await res.json().catch(() => null) : null
       if (d === 'right') {
+        // /api/swipe now sends both confirmation emails server-side,
+        // so no client-side /api/application-email call is needed here.
         if (result?.matched) {
           matched = true
           setDir(null)
           setShowMatch(true)
         }
-        // Send application confirmation emails (fire-and-forget)
-        if (userEmail) {
-          fetch('/api/application-email', {
-            method: 'POST', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              applicantEmail: userEmail,
-              applicantName: candidateData?.full_name || '',
-              employerEmail: job.employer_email || '',
-              employerName: job.employer_profiles?.company_name || '',
-              jobTitle: job.title || '',
-              propertyName: job.employer_profiles?.company_name || '',
-              roleLevel: candidateData?.role_level || '',
-            }),
-          }).catch(() => {})
+        if (res && !res.ok) {
+          const d2 = await res.json().catch(() => ({} as any))
+          alert(d2.error || 'Could not submit application - please try again.')
         }
       }
     }

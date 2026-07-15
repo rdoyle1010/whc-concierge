@@ -23,6 +23,7 @@ export default function TalentApplicationsPage() {
   const supabase = createClient()
   const [applications, setApplications] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState('')
   const [page, setPage] = useState(1)
   const [perPage, setPerPage] = useState(25)
   const [statusFilter, setStatusFilter] = useState('all')
@@ -35,12 +36,19 @@ export default function TalentApplicationsPage() {
       const { data: profile } = await supabase.from('candidate_profiles').select('id').eq('user_id', user.id).single()
       if (!profile) { setLoading(false); return }
 
-      const { data } = await supabase
+      // NOTE: order by created_at — the applications table has no updated_at
+      // column, and ordering by a missing column errors the whole query
+      // (which made this page show "No applications yet" forever).
+      const { data, error } = await supabase
         .from('applications')
         .select('*, job_listings(job_title, title, location, salary_min, salary_max, employer_profiles(company_name, property_name))')
         .eq('candidate_id', profile.id)
-        .order('updated_at', { ascending: false })
+        .order('created_at', { ascending: false })
 
+      if (error) {
+        console.error('Applications load failed:', error.message)
+        setLoadError('We could not load your applications just now. Please refresh the page - if it keeps happening, contact us.')
+      }
       setApplications(data || [])
       setLoading(false)
     }
@@ -80,6 +88,10 @@ export default function TalentApplicationsPage() {
 
       {loading ? (
         <div className="flex items-center justify-center h-64"><div className="animate-spin w-8 h-8 border-2 border-ink border-t-transparent rounded-full" /></div>
+      ) : loadError ? (
+        <div className="dashboard-card text-center py-12">
+          <p className="text-[13px] text-red-600">{loadError}</p>
+        </div>
       ) : applications.length === 0 ? (
         <div className="dashboard-card text-center py-16">
           <FileText size={40} className="mx-auto mb-3 text-muted/40" />

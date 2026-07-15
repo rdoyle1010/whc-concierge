@@ -16,6 +16,7 @@ const BLOCKED_API_ROUTES = [
   '/api/fix-employer-columns',
   '/api/fix-taxonomy-rls',
   '/api/fix-null-live',
+  '/api/update-jobs',
 ]
 
 export async function middleware(request: NextRequest) {

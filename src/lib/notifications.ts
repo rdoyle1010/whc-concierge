@@ -32,12 +32,13 @@ export async function getUnreadCount(userId: string) {
   return count || 0
 }
 
-export async function markAsRead(notificationId: string) {
+export async function markAsRead(notificationId: string, userId: string) {
   const supabase = createAdminClient()
   const { error } = await supabase
     .from('notifications')
     .update({ is_read: true })
     .eq('id', notificationId)
+    .eq('user_id', userId) // only the owner can mark their notification read
   return { error }
 }
 

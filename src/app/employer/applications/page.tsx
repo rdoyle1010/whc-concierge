@@ -28,7 +28,7 @@ export default function EmployerApplicationsPage() {
 
       const { data } = await supabase
         .from('applications')
-        .select('*, job_listings(job_title, title), candidate_profiles(full_name, headline, email, location, services_offered)')
+        .select('*, job_listings(job_title, title), candidate_profiles(id, full_name, headline, location, services_offered)')
         .in('role_id', jobIds.map(j => j.id))
         .order('created_at', { ascending: false })
 
@@ -56,14 +56,17 @@ export default function EmployerApplicationsPage() {
     await supabase.from('applications').update({ status }).eq('id', appId)
     setApplications(applications.map(a => a.id === appId ? { ...a, status } : a))
 
-    // Send decision email for shortlisted/accepted/rejected (fire-and-forget)
+    // Send decision email for shortlisted/accepted/rejected (fire-and-forget).
+    // NOTE: candidate_profiles has no email column (emails live in auth.users),
+    // so this only fires if an email is present — the decision-email route
+    // needs a server-side auth.users lookup before this can send. (Follow-up.)
     if (status === 'shortlisted' || status === 'accepted' || status === 'rejected') {
       const app = applications.find(a => a.id === appId)
-      if (app?.candidate_profiles?.email || app?.candidate_profiles?.full_name) {
+      if (app?.candidate_profiles?.email) {
         fetch('/api/application-decision-email', {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            applicantEmail: app.candidate_profiles?.email || '',
+            applicantEmail: app.candidate_profiles.email,
             applicantName: app.candidate_profiles?.full_name || '',
             jobTitle: app.job_listings?.job_title || app.job_listings?.title || '',
             propertyName: profile?.property_name || profile?.company_name || '',

@@ -101,6 +101,19 @@ export default function EmployerJobsPage() {
   const toggleStatus = async (job: any) => {
     const isCurrentlyActive = job.status === 'active'
     const newIsLive = !isCurrentlyActive
+
+    // Reactivation is only free while the paid term is still running.
+    // Once expires_at has passed (or was never set — unpaid/legacy), the
+    // listing must go back through Post a Role -> checkout via Repost.
+    if (newIsLive) {
+      const paidUntil = job.expires_at ? new Date(job.expires_at).getTime() : 0
+      if (!paidUntil || paidUntil <= Date.now()) {
+        alert('This listing’s paid term has ended. Use Repost to relist it - your details carry over and payment is taken at checkout.')
+        router.push(`/employer/post-role?repost=${job.id}`)
+        return
+      }
+    }
+
     const newStatus = newIsLive ? 'active' : 'closed'
     await supabase.from('job_listings').update({ is_live: newIsLive, status: newStatus }).eq('id', job.id)
     setJobs(jobs.map(j => j.id === job.id ? { ...j, status: newStatus, is_live: newIsLive } : j))

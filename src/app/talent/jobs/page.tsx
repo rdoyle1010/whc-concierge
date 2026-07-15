@@ -102,28 +102,22 @@ export default function TalentJobsPage() {
 
   const handleApply = async (jobId: string, matchScore: number) => {
     if (!userId) return
-    // Server-side: creates the application (correct profile id) + mutual-match detection + employer notification
-    await fetch('/api/swipe', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ targetId: jobId, targetType: 'job', action: 'right', matchScore }),
-    }).catch(() => {})
-    setApplied(new Set(Array.from(applied).concat(jobId)))
-    const job = jobs.find((j: any) => j.id === jobId)
-    // Send application confirmation emails (fire-and-forget)
-    const { data: { user } } = await supabase.auth.getUser()
-    if (user?.email && job) {
-      fetch('/api/application-email', {
+    // Server-side: /api/swipe creates the application, detects mutual matches,
+    // notifies the employer AND sends both confirmation emails. Only mark the
+    // job as applied if the server actually saved the application.
+    try {
+      const res = await fetch('/api/swipe', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          applicantEmail: user.email,
-          applicantName: profile?.full_name || '',
-          employerEmail: job.employer_email || '',
-          employerName: job.employer_profiles?.company_name || '',
-          jobTitle: job.title || job.job_title || '',
-          propertyName: job.employer_profiles?.company_name || '',
-          roleLevel: profile?.role_level || '',
-        }),
-      }).catch(() => {})
+        body: JSON.stringify({ targetId: jobId, targetType: 'job', action: 'right', matchScore }),
+      })
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}))
+        alert(d.error || 'Could not submit application - please try again.')
+        return
+      }
+      setApplied(new Set(Array.from(applied).concat(jobId)))
+    } catch {
+      alert('Could not submit application - please try again.')
     }
   }
 
