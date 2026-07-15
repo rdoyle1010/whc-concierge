@@ -494,33 +494,42 @@ export default function PostRolePage() {
             <div>
               <h3 className="text-lg font-bold text-black mb-6">Select your package</h3>
               <div className="space-y-3">
-                {tierCards.map((tier) => (
-                  <label
-                    key={tier.name}
-                    className={`dashboard-card p-4 cursor-pointer transition-all ${selectedTier === tier.name ? 'ring-2 ring-black' : ''}`}
-                  >
-                    <input
-                      type="radio"
-                      name="tier"
-                      value={tier.name}
-                      checked={selectedTier === tier.name}
-                      onChange={(e) => setSelectedTier(e.target.value)}
-                      className="w-4 h-4 cursor-pointer"
-                    />
-                    <div className="inline-block ml-3">
-                      <p className="font-bold text-black">{tier.name}</p>
-                      <p className="text-sm text-gray-600">£{tier.price}</p>
-                    </div>
-                    <ul className="mt-3 space-y-1 text-xs text-gray-600 ml-7">
-                      {tier.features.map((feature, i) => (
-                        <li key={i} className="flex items-center gap-2">
-                          <Check size={12} className="text-green-600" />
-                          {feature}
-                        </li>
-                      ))}
-                    </ul>
-                  </label>
-                ))}
+                {tierCards.map((tier) => {
+                  const selected = selectedTier === tier.name
+                  return (
+                    <button
+                      type="button"
+                      key={tier.name}
+                      onClick={() => setSelectedTier(tier.name)}
+                      className="block w-full text-left bg-white rounded-xl p-5 transition-all"
+                      style={{
+                        border: selected ? '2px solid #C9A96E' : '1px solid #E5E5E3',
+                        boxShadow: selected ? '0 4px 14px rgba(201, 169, 110, 0.18)' : 'none',
+                      }}
+                    >
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center gap-2.5">
+                          <span
+                            className="w-4 h-4 rounded-full border flex items-center justify-center shrink-0"
+                            style={{ borderColor: selected ? '#C9A96E' : '#D1D5DB' }}
+                          >
+                            {selected && <span className="w-2 h-2 rounded-full" style={{ background: '#C9A96E' }} />}
+                          </span>
+                          <span className="text-[15px] font-semibold text-ink">{tier.name}</span>
+                        </div>
+                        <span className="text-[17px] font-semibold" style={{ color: selected ? '#C9A96E' : '#1a1a1a' }}>£{tier.price}</span>
+                      </div>
+                      <ul className="space-y-1.5 text-[12px] text-gray-600">
+                        {tier.features.map((feature, i) => (
+                          <li key={i} className="flex items-center gap-2">
+                            <Check size={12} style={{ color: '#C9A96E' }} className="shrink-0" />
+                            {feature}
+                          </li>
+                        ))}
+                      </ul>
+                    </button>
+                  )
+                })}
               </div>
             </div>
           </div>
