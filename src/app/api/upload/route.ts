@@ -16,6 +16,7 @@ const ALLOWED_BUCKETS = new Set([
   'site-images',
   'profile-photos',
   'talent-documents',
+  'property-photos',
 ])
 
 // File validation

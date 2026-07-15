@@ -76,9 +76,57 @@ export default function EmployerProfilePage() {
       })
       .eq('id', profile.id)
 
+    // If a column doesn't exist in the DB, strip just that field and retry
+    let finalError = error
+    if (error) {
+      const payload: Record<string, any> = {
+        company_name: profile.company_name, property_name: profile.property_name, contact_name: profile.contact_name,
+        contact_phone: profile.contact_phone, contact_email: profile.contact_email, website: profile.website,
+        location: profile.location, postcode: profile.postcode, company_type: profile.company_type,
+        property_type: profile.property_type, star_rating: profile.star_rating, about_text: profile.about_text,
+        tagline: profile.tagline, product_houses_used: profile.product_houses_used, systems_used: profile.systems_used,
+        services_offered: profile.services_offered, brand_partners: profile.brand_partners,
+        num_treatment_rooms: profile.num_treatment_rooms ? parseInt(profile.num_treatment_rooms) : null,
+        team_size: profile.team_size ? parseInt(profile.team_size) : null,
+        culture_points: profile.culture_points, highlights: profile.highlights,
+        agency_available: profile.agency_available, agency_note: profile.agency_note,
+      }
+      for (let i = 0; i < 10 && finalError; i++) {
+        const m = finalError.message.match(/Could not find the '([^']+)' column/) || finalError.message.match(/column "([^"]+)" of relation/)
+        if (!m || !(m[1] in payload)) break
+        delete payload[m[1]]
+        const { error: retryErr } = await supabase.from('employer_profiles').update(payload).eq('id', profile.id)
+        finalError = retryErr || null
+      }
+    }
+
     setSaving(false)
-    setMessage(error ? error.message : 'Profile saved successfully!')
+    setMessage(finalError ? finalError.message : 'Profile saved successfully!')
     setTimeout(() => setMessage(''), 3000)
+  }
+
+  const handleGalleryUpload = async (file: File) => {
+    const current: string[] = profile.property_photos || []
+    if (current.length >= 6) { setMessage('Maximum 6 photos - remove one first.'); return }
+    const ext = file.name.split('.').pop()
+    const formData = new FormData()
+    formData.append('file', file)
+    formData.append('bucket', 'property-photos')
+    formData.append('path', `${profile.id}-${Date.now()}.${ext}`)
+    const res = await fetch('/api/upload', { method: 'POST', body: formData })
+    const data = await res.json()
+    if (!res.ok) { setMessage(`Upload failed: ${data.error}`); return }
+    const next = [...current, data.url]
+    const { error } = await supabase.from('employer_profiles').update({ property_photos: next }).eq('id', profile.id)
+    if (error) { setMessage(error.message); return }
+    update('property_photos', next)
+    setMessage('Photo added!')
+  }
+
+  const removeGalleryPhoto = async (url: string) => {
+    const next = (profile.property_photos || []).filter((u: string) => u !== url)
+    await supabase.from('employer_profiles').update({ property_photos: next }).eq('id', profile.id)
+    update('property_photos', next)
   }
 
   const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -93,6 +141,7 @@ export default function EmployerProfilePage() {
     const data = await res.json()
     if (!res.ok) { setMessage(`Upload failed: ${data.error}`); return }
     await supabase.from('employer_profiles').update({ logo_url: data.url }).eq('id', profile.id)
+
     update('logo_url', data.url)
     setMessage('Logo updated!')
     setTimeout(() => setMessage(''), 3000)
@@ -273,7 +322,28 @@ export default function EmployerProfilePage() {
         </div>
 
         {/* Save */}
-        <div className="flex justify-end pb-8">
+                {/* Property Gallery */}
+        <div className="dashboard-card mb-6">
+          <h2 className="text-[15px] font-medium text-ink mb-1">Property Photos</h2>
+          <p className="text-[12px] text-muted mb-4">Show candidates where they could be working - spa, treatment rooms, grounds. Up to 6 photos, shown on your role listings.</p>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+            {(profile.property_photos || []).map((url: string) => (
+              <div key={url} className="relative aspect-[4/3] rounded-lg overflow-hidden bg-surface group">
+                <img src={url} alt="" className="w-full h-full object-cover" />
+                <button type="button" onClick={() => removeGalleryPhoto(url)} className="absolute top-2 right-2 bg-white/90 rounded-full w-6 h-6 text-[11px] font-bold text-red-500 opacity-0 group-hover:opacity-100 transition-opacity">✕</button>
+              </div>
+            ))}
+            {(profile.property_photos || []).length < 6 && (
+              <label className="aspect-[4/3] rounded-lg border-2 border-dashed border-border flex flex-col items-center justify-center cursor-pointer hover:border-ink/30 transition-colors text-muted">
+                <span className="text-[22px] leading-none mb-1" style={{ color: '#C9A96E' }}>+</span>
+                <span className="text-[11px]">Add photo</span>
+                <input type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) handleGalleryUpload(f); e.target.value = '' }} />
+              </label>
+            )}
+          </div>
+        </div>
+
+<div className="flex justify-end pb-8">
           <button onClick={handleSave} disabled={saving} className="btn-primary flex items-center space-x-2 disabled:opacity-50">
             <Save size={16} /><span>{saving ? 'Saving...' : 'Save Changes'}</span>
           </button>
