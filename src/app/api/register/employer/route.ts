@@ -61,6 +61,24 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'User not found in auth — please try again' }, { status: 400 })
     }
 
+    // Ensure the shared profiles row exists — messaging FKs, role routing and
+    // notifications all key on it. Live check constraint allows 'employer'.
+    // ignoreDuplicates keeps this idempotent and never overwrites an existing row.
+    try {
+      const { error: profErr } = await supabase.from('profiles').upsert(
+        {
+          id: userId,
+          email: userEmail,
+          role: 'employer',
+          full_name: profileData.property_name || profileData.company_name || null,
+        },
+        { onConflict: 'id', ignoreDuplicates: true }
+      )
+      if (profErr) console.error('profiles upsert failed (employer register):', profErr.message)
+    } catch (e: any) {
+      console.error('profiles upsert failed (employer register):', e?.message)
+    }
+
     // Insert employer profile with retry loop
     let lastError: string | null = null
     for (let attempt = 0; attempt < 3; attempt++) {
