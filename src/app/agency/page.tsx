@@ -64,7 +64,6 @@ export default function AgencyPage() {
   const [insuredOnly, setInsuredOnly] = useState(false)
   const [availNow, setAvailNow] = useState(false)
   const [sortBy, setSortBy] = useState('match')
-  const [showEnquiry, setShowEnquiry] = useState<any>(null)
   const [visible, setVisible] = useState(12)
   const [appliedSearch, setAppliedSearch] = useState<{ outward: string; area: string; radius: string } | null>(null)
   const [postcodeError, setPostcodeError] = useState('')
@@ -120,8 +119,8 @@ export default function AgencyPage() {
 
   const sorted = [...filtered].sort((a, b) => {
     if (sortBy === 'rated') return (b.review_score || 0) - (a.review_score || 0)
-    if (sortBy === 'rate_high') return (b.day_rate_max || b.day_rate_min || 0) - (a.day_rate_max || a.day_rate_min || 0)
-    if (sortBy === 'rate_low') return (a.day_rate_min || 999) - (b.day_rate_min || 999)
+    if (sortBy === 'rate_high') return (b.hourly_rate || (b.day_rate_max || b.day_rate_min || 0) / 8) - (a.hourly_rate || (a.day_rate_max || a.day_rate_min || 0) / 8)
+    if (sortBy === 'rate_low') return (a.hourly_rate || (a.day_rate_min || 7992) / 8) - (b.hourly_rate || (b.day_rate_min || 7992) / 8)
     if (sortBy === 'recent') return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
     // Default: featured first, then rating
     if (a.is_featured && !b.is_featured) return -1
@@ -275,8 +274,12 @@ export default function AgencyPage() {
                           </div>
                         )}
 
-                        {/* Day rate */}
-                        {(c.day_rate_min || c.day_rate_max) && (
+                        {/* Rate — hourly is the agency standard; day rate shown for older profiles */}
+                        {c.hourly_rate ? (
+                          <p className="text-[14px] font-semibold text-accent mb-2">
+                            £{c.hourly_rate} <span className="text-[11px] font-normal text-muted">/ hour</span>
+                          </p>
+                        ) : (c.day_rate_min || c.day_rate_max) && (
                           <p className="text-[14px] font-semibold text-accent mb-2">
                             £{c.day_rate_min || c.day_rate_max}{c.day_rate_max && c.day_rate_min ? ` – £${c.day_rate_max}` : ''} <span className="text-[11px] font-normal text-muted">/ day</span>
                           </p>
@@ -289,11 +292,8 @@ export default function AgencyPage() {
                           : <span className="text-[11px] text-muted flex items-center gap-1"><span className="w-1.5 h-1.5 bg-gray-300 rounded-full" />Unavailable</span>}
                         </div>
 
-                        {/* CTAs */}
-                        <div className="flex gap-2">
-                          <Link href={`/agency/${c.id}`} className="btn-secondary flex-1 text-center text-[12px]">View Profile</Link>
-                          <button type="button" onClick={() => setShowEnquiry(c)} className="btn-primary flex-1 text-[12px]">Enquire</button>
-                        </div>
+                        {/* CTA — one clear action: the offer lives on the profile */}
+                        <Link href={`/agency/${c.id}`} className="btn-primary block w-full text-center text-[12px]">View Profile &amp; Make an Offer</Link>
                       </div>
                     </div>
                   ))}
@@ -306,35 +306,6 @@ export default function AgencyPage() {
           </div>
         </div>
       </div>
-
-      {/* Enquiry modal */}
-      {showEnquiry && (
-        <div className="fixed inset-0 bg-black/30 z-50 flex items-center justify-center p-4" onClick={() => setShowEnquiry(null)}>
-          <div className="bg-white border border-border rounded-xl max-w-md w-full p-6 animate-fade-in-up" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between mb-5"><h3 className="text-[18px] font-medium text-ink">Enquire — {showEnquiry.full_name}</h3><button type="button" onClick={() => setShowEnquiry(null)} className="text-muted hover:text-ink"><X size={18} /></button></div>
-            <form onSubmit={async (e) => {
-              e.preventDefault()
-              const fd = new FormData(e.currentTarget)
-              const { data: { user } } = await supabase.auth.getUser()
-              if (!user) { alert('Please sign in to send an enquiry.'); window.location.href = '/login?role=employer'; return }
-              if (!showEnquiry.user_id) { alert('This profile cannot receive messages yet - please contact us via the Contact page.'); return }
-              const res = await fetch('/api/messages/send', {
-                method: 'POST', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ recipientId: showEnquiry.user_id, content: `Enquiry from ${fd.get('name')} at ${fd.get('property')}${fd.get('dates') ? ` (dates: ${fd.get('dates')})` : ''}: ${fd.get('message')}` }),
-              })
-              if (!res.ok) { alert('Could not send enquiry - please try again.'); return }
-              alert('Enquiry sent! You can follow the conversation in Messages.')
-              setShowEnquiry(null)
-            }} className="space-y-4">
-              <div><label className="eyebrow block mb-1.5">Your Name</label><input name="name" required className="input-field" /></div>
-              <div><label className="eyebrow block mb-1.5">Property</label><input name="property" required className="input-field" /></div>
-              <div><label className="eyebrow block mb-1.5">Dates Needed</label><input name="dates" className="input-field" placeholder="e.g. 15-20 June" /></div>
-              <div><label className="eyebrow block mb-1.5">Message</label><textarea name="message" rows={3} required className="input-field" /></div>
-              <button type="submit" className="btn-primary w-full">Send Enquiry</button>
-            </form>
-          </div>
-        </div>
-      )}
 
       <Footer />
     </div>

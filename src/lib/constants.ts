@@ -94,3 +94,7 @@ export type TierName = keyof typeof JOB_TIERS
 
 export const FEATURED_PROFILE_PRICE = 1000 // £10/month in pence
 export const AGENCY_COMMISSION_RATE = 0.10 // 10%
+
+// Agency platform fee: charged to the property on top of the therapist's
+// hourly rate. The therapist receives their full rate; WHC earns the fee.
+export const AGENCY_PLATFORM_FEE_PCT = 0.05

@@ -97,7 +97,7 @@ export default function TalentAgencyPage() {
                           <span className="flex items-center space-x-1"><Calendar size={14} /><span>{b.shift_date ? new Date(b.shift_date).toLocaleDateString() : 'Date TBC'}</span></span>
                           {b.shift_type && <span className="flex items-center space-x-1"><Clock size={14} /><span>{b.shift_type}</span></span>}
                           {b.hours && <span>{b.hours}h</span>}
-                          <span className="flex items-center space-x-1 font-medium text-ink"><Banknote size={14} className="text-accent" /><span>£{b.rate}/day</span></span>
+                          <span className="flex items-center space-x-1 font-medium text-ink"><Banknote size={14} className="text-accent" /><span>£{b.rate}/hr{b.hours ? ` · £${b.rate * b.hours} total` : ''}</span></span>
                         </div>
                       </div>
 
@@ -107,7 +107,7 @@ export default function TalentAgencyPage() {
                             <input
                               type="number" min={1} value={counterRate}
                               onChange={(e) => setCounterRate(e.target.value)}
-                              placeholder="Your rate (£/day)"
+                              placeholder="Your rate (£/hour)"
                               className="input-field text-[13px] w-36"
                             />
                             <button onClick={() => act(b.id, 'counter', counterRate)} disabled={busyId === b.id} className="btn-primary text-[12px] disabled:opacity-50">Send</button>
@@ -153,11 +153,11 @@ export default function TalentAgencyPage() {
                       {b.hours && <span>{b.hours}h</span>}
                     </div>
                     {(b.status === 'accepted' || b.status === 'confirmed') && (
-                      <p className="text-[11px] text-green-700 mt-1.5">Agreed at £{b.rate}/day — this agreement is on record; payment is settled directly with the property for now.</p>
+                      <p className="text-[11px] text-green-700 mt-1.5">Agreed at £{b.rate}/hour{b.hours ? ` — you earn £${b.rate * b.hours} for ${b.hours} hours` : ''}. This agreement is on record; payment is settled directly with the property for now.</p>
                     )}
                   </div>
                   <div className="text-right">
-                    {b.rate && <p className="font-medium text-ink">£{b.rate}/day</p>}
+                    {b.rate && <p className="font-medium text-ink">£{b.rate}/hr</p>}
                     <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${statusColors[b.status] || ''}`}>{b.status}</span>
                     {(b.status === 'accepted' || b.status === 'confirmed' || b.status === 'completed') && b.employer_user_id && (
                       <button type="button"

@@ -19,6 +19,7 @@ const ALLOWED_COLUMNS = new Set([
   'experience_years',
   'day_rate_min',
   'day_rate_max',
+  'hourly_rate',
   'willing_to_relocate',
   'availability_status',
   'services_offered',

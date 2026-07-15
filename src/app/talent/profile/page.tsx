@@ -71,6 +71,7 @@ export default function TalentProfilePage() {
       experience_years: profile.experience_years ? parseInt(profile.experience_years) : null,
       day_rate_min: profile.day_rate_min ? parseInt(profile.day_rate_min) : null,
       day_rate_max: profile.day_rate_max ? parseInt(profile.day_rate_max) : null,
+      hourly_rate: profile.hourly_rate ? parseInt(profile.hourly_rate) : null,
       availability_status: profile.availability_status || null,
       services_offered: (profile.services_offered?.length || 0) > 0 ? profile.services_offered : null,
       product_houses: (profile.product_houses?.length || 0) > 0 ? profile.product_houses : null,
@@ -201,6 +202,7 @@ export default function TalentProfilePage() {
             <div><label className="eyebrow block mb-1.5">Bio</label><textarea rows={4} value={profile.bio||''} onChange={e=>u('bio',e.target.value)} className="input-field" /></div>
             <div className="grid grid-cols-3 gap-4">
               <div><label className="eyebrow block mb-1.5">Experience (years)</label><input type="number" value={profile.experience_years||''} onChange={e=>u('experience_years',e.target.value)} className="input-field" /></div>
+              <div><label className="eyebrow block mb-1.5">Hourly Rate (£) — shown for agency shifts</label><input type="number" value={profile.hourly_rate||''} onChange={e=>u('hourly_rate',e.target.value)} className="input-field" placeholder="e.g. 25" /></div>
               <div><label className="eyebrow block mb-1.5">Day Rate Min (£)</label><input type="number" value={profile.day_rate_min||''} onChange={e=>u('day_rate_min',e.target.value)} className="input-field" /></div>
               <div><label className="eyebrow block mb-1.5">Day Rate Max (£)</label><input type="number" value={profile.day_rate_max||''} onChange={e=>u('day_rate_max',e.target.value)} className="input-field" /></div>
             </div>

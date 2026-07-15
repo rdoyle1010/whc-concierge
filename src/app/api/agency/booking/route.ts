@@ -3,6 +3,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { createNotification } from '@/lib/notifications'
+import { AGENCY_PLATFORM_FEE_PCT } from '@/lib/constants'
 
 // Agency offer / counter-offer flow.
 // All writes use the service-role client because client-side RLS on
@@ -135,11 +136,13 @@ export async function POST(req: NextRequest) {
     ])
 
     // ── create: employer sends an offer to a candidate ──
+    // Rates are HOURLY. The therapist receives rate × hours in full; WHC's
+    // platform fee is calculated on top and payable by the property.
     if (action === 'create') {
       if (!emp) return NextResponse.json({ error: 'Only employers can make offers' }, { status: 403 })
       const rate = parseInt(String(body.rate), 10)
       if (!body.candidateId || !rate || rate <= 0) {
-        return NextResponse.json({ error: 'A candidate and a valid day rate are required' }, { status: 400 })
+        return NextResponse.json({ error: 'A candidate and a valid hourly rate are required' }, { status: 400 })
       }
       if (!body.shiftDate) {
         return NextResponse.json({ error: 'A shift date is required' }, { status: 400 })
@@ -153,6 +156,8 @@ export async function POST(req: NextRequest) {
       if (!targetCand) return NextResponse.json({ error: 'Candidate not found' }, { status: 404 })
 
       const hours = body.hours ? parseInt(String(body.hours), 10) : null
+      const effectiveHours = hours && hours > 0 ? hours : 8
+      const platformFee = Math.ceil(rate * effectiveHours * AGENCY_PLATFORM_FEE_PCT)
       const row: Record<string, any> = {
         candidate_id: targetCand.id,
         employer_id: emp.id,
@@ -160,6 +165,7 @@ export async function POST(req: NextRequest) {
         shift_type: body.shiftType || null,
         hours: hours && hours > 0 ? hours : null,
         rate,
+        platform_fee: platformFee,
         status: 'pending',
       }
 
@@ -170,7 +176,7 @@ export async function POST(req: NextRequest) {
       await notifyOtherParty(
         admin, targetCand.user_id, user.id,
         'New agency offer',
-        `${empName} has offered you an agency shift on ${body.shiftDate} at £${rate} per day${hours ? ` (${hours} hours)` : ''}. You can accept, decline or counter from your Agency page.`,
+        `${empName} has offered you an agency shift on ${body.shiftDate} at £${rate} per hour${hours ? ` (${hours} hours — £${rate * hours} total)` : ''}. You can accept, decline or counter from your Agency page.`,
         '/talent/agency',
       )
       return NextResponse.json({ success: true, booking })
@@ -209,9 +215,11 @@ export async function POST(req: NextRequest) {
       const rate = parseInt(String(body.rate), 10)
       if (!rate || rate <= 0) return NextResponse.json({ error: 'A valid counter rate is required' }, { status: 400 })
 
+      // Recalculate the platform fee against the countered hourly rate
+      const counterFee = Math.ceil(rate * (booking.hours && booking.hours > 0 ? booking.hours : 8) * AGENCY_PLATFORM_FEE_PCT)
       const { data: updated, error } = await admin
         .from('agency_bookings')
-        .update({ rate, status: 'countered' })
+        .update({ rate, platform_fee: counterFee, status: 'countered' })
         .eq('id', booking.id)
         .select('*')
         .single()
@@ -220,7 +228,7 @@ export async function POST(req: NextRequest) {
       await notifyOtherParty(
         admin, otherUserId, user.id,
         'Counter-offer received',
-        `${actorName} has countered your agency offer for ${shiftDate} with a rate of £${rate} per day. You can accept or decline from their profile page.`,
+        `${actorName} has countered your agency offer for ${shiftDate} with a rate of £${rate} per hour. You can accept or decline from their profile page.`,
         otherLink,
       )
       return NextResponse.json({ success: true, booking: updated })
@@ -238,7 +246,7 @@ export async function POST(req: NextRequest) {
       await notifyOtherParty(
         admin, otherUserId, user.id,
         'Agency offer accepted',
-        `${actorName} has accepted the agency offer for ${shiftDate} at £${booking.rate} per day. The shift is now confirmed.`,
+        `${actorName} has accepted the agency offer for ${shiftDate} at £${booking.rate} per hour. The shift is now confirmed.`,
         otherLink,
       )
       return NextResponse.json({ success: true, booking: updated })

@@ -9,6 +9,7 @@ import Link from 'next/link'
 import { MapPin, Star, Shield, Clock, Check, ArrowLeft, X } from 'lucide-react'
 import ReviewBreakdown from '@/components/ReviewBreakdown'
 import ReviewForm from '@/components/ReviewForm'
+import { AGENCY_PLATFORM_FEE_PCT } from '@/lib/constants'
 
 export default function AgencyProfilePage() {
   const { id } = useParams()
@@ -17,18 +18,27 @@ export default function AgencyProfilePage() {
   const [profile, setProfile] = useState<any>(null)
   const [reviews, setReviews] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
-  const [enquirySent, setEnquirySent] = useState(false)
   const [isEmployer, setIsEmployer] = useState(false)
   const [offer, setOffer] = useState<any>(null)
   const [showOfferForm, setShowOfferForm] = useState(false)
   const [offerBusy, setOfferBusy] = useState(false)
   const [offerError, setOfferError] = useState('')
   const [showReview, setShowReview] = useState(false)
+  const [offerRate, setOfferRate] = useState('')
+  const [offerHours, setOfferHours] = useState('8')
+
+  // Live cost preview: therapist receives rate × hours; WHC fee is on top, paid by the property
+  const previewRate = parseInt(offerRate, 10) || 0
+  const previewHours = parseInt(offerHours, 10) || 0
+  const previewSubtotal = previewRate * previewHours
+  const previewFee = Math.ceil(previewSubtotal * AGENCY_PLATFORM_FEE_PCT)
+  const previewTotal = previewSubtotal + previewFee
 
   useEffect(() => {
     async function load() {
       const { data } = await supabase.from('candidate_profiles').select('*').eq('id', id).single()
       setProfile(data)
+      if (data?.hourly_rate) setOfferRate(String(data.hourly_rate))
       if (data) {
         const { data: revs } = await supabase.from('reviews').select('*').eq('reviewee_id', data.user_id || data.id).order('created_at', { ascending: false }).limit(10)
         setReviews(revs || [])
@@ -64,8 +74,8 @@ export default function AgencyProfilePage() {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           action: 'create', candidateId: profileId,
-          rate: fd.get('rate'), shiftDate: fd.get('shiftDate'),
-          shiftType: fd.get('shiftType') || undefined, hours: fd.get('hours') || undefined,
+          rate: offerRate, shiftDate: fd.get('shiftDate'),
+          shiftType: fd.get('shiftType') || undefined, hours: offerHours || undefined,
         }),
       })
       const j = await res.json()
@@ -130,7 +140,9 @@ export default function AgencyProfilePage() {
               </div>
             </div>
             <div className="shrink-0">
-              {(profile.day_rate_min || profile.day_rate_max) && <p className="text-[20px] font-semibold text-accent mb-1">£{profile.day_rate_min}{profile.day_rate_max ? `–£${profile.day_rate_max}` : ''}<span className="text-[12px] font-normal text-muted"> /day</span></p>}
+              {profile.hourly_rate
+                ? <p className="text-[20px] font-semibold text-accent mb-1">£{profile.hourly_rate}<span className="text-[12px] font-normal text-muted"> /hour</span></p>
+                : (profile.day_rate_min || profile.day_rate_max) && <p className="text-[20px] font-semibold text-accent mb-1">£{profile.day_rate_min}{profile.day_rate_max ? `–£${profile.day_rate_max}` : ''}<span className="text-[12px] font-normal text-muted"> /day</span></p>}
               <a href="#enquire" className="btn-primary block text-center mt-2">Enquire Now</a>
             </div>
           </div>
@@ -210,7 +222,7 @@ export default function AgencyProfilePage() {
                 {offer && !showOfferForm ? (
                   <div>
                     <div className="flex items-center justify-between mb-2">
-                      <p className="text-[18px] font-semibold text-accent">£{offer.rate}<span className="text-[12px] font-normal text-muted"> /day</span></p>
+                      <p className="text-[18px] font-semibold text-accent">£{offer.rate}<span className="text-[12px] font-normal text-muted"> /hour</span></p>
                       <span className={`text-[11px] font-medium px-2.5 py-1 rounded-full ${
                         offer.status === 'pending' ? 'bg-amber-50 text-amber-700'
                         : offer.status === 'countered' ? 'bg-[#FDF6EC] text-accent'
@@ -224,7 +236,7 @@ export default function AgencyProfilePage() {
                     {offer.status === 'pending' && <p className="text-[13px] text-muted">Offer sent - awaiting a response.</p>}
                     {offer.status === 'countered' && (
                       <div>
-                        <p className="text-[13px] text-secondary mb-3">{profile.full_name?.split(' ')[0] || 'The candidate'} has countered with £{offer.rate} per day.</p>
+                        <p className="text-[13px] text-secondary mb-3">{profile.full_name?.split(' ')[0] || 'The candidate'} has countered with £{offer.rate} per hour{offer.hours ? ` (£${offer.rate * offer.hours} for ${offer.hours} hours + £${offer.platform_fee || Math.ceil(offer.rate * offer.hours * AGENCY_PLATFORM_FEE_PCT)} WHC fee)` : ''}.</p>
                         <div className="flex gap-2">
                           <button onClick={() => actOnOffer('accept')} disabled={offerBusy} className="btn-primary flex-1 text-[12px] disabled:opacity-50">Accept Counter</button>
                           <button onClick={() => actOnOffer('decline')} disabled={offerBusy} className="btn-secondary flex-1 text-[12px] disabled:opacity-50">Decline</button>
@@ -237,8 +249,15 @@ export default function AgencyProfilePage() {
                           <p className="text-[13px] font-medium text-green-800 flex items-center gap-1 mb-1"><Check size={13} />Shift agreed</p>
                           <p className="text-[12px] text-green-800">
                             {offer.shift_date ? new Date(offer.shift_date).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' }) : 'Date TBC'}
-                            {offer.shift_type ? ` · ${offer.shift_type}` : ''}{offer.hours ? ` · ${offer.hours} hours` : ''} · £{offer.rate}/day
+                            {offer.shift_type ? ` · ${offer.shift_type}` : ''}{offer.hours ? ` · ${offer.hours} hours` : ''} · £{offer.rate}/hour
                           </p>
+                          {offer.hours ? (
+                            <div className="text-[11px] text-green-800 mt-1.5 space-y-0.5">
+                              <div className="flex justify-between"><span>{offer.hours} hours × £{offer.rate}/hr</span><span>£{offer.rate * offer.hours}</span></div>
+                              <div className="flex justify-between"><span>WHC fee ({Math.round(AGENCY_PLATFORM_FEE_PCT * 100)}%)</span><span>£{offer.platform_fee || Math.ceil(offer.rate * offer.hours * AGENCY_PLATFORM_FEE_PCT)}</span></div>
+                              <div className="flex justify-between font-semibold border-t border-green-200 pt-0.5"><span>Total payable</span><span>£{offer.rate * offer.hours + (offer.platform_fee || Math.ceil(offer.rate * offer.hours * AGENCY_PLATFORM_FEE_PCT))}</span></div>
+                            </div>
+                          ) : null}
                           <p className="text-[11px] text-green-700 mt-1.5">This agreement is on record for both of you. Payment is settled directly between you and {profile.full_name?.split(' ')[0] || 'the candidate'} for now.</p>
                         </div>
                         {profile.user_id && (
@@ -260,8 +279,12 @@ export default function AgencyProfilePage() {
                 ) : (
                   <form onSubmit={submitOffer} className="space-y-3">
                     <div>
-                      <label className="text-[12px] text-muted block mb-1">Day rate (£)</label>
-                      <input name="rate" type="number" min={1} required defaultValue={profile.day_rate_min || ''} placeholder="e.g. 250" className="input-field text-[13px]" />
+                      <label className="text-[12px] text-muted block mb-1">Hourly rate (£)</label>
+                      <input name="rate" type="number" min={1} required value={offerRate}
+                        onChange={(e) => setOfferRate(e.target.value)}
+                        placeholder={profile.hourly_rate ? `Their usual rate: £${profile.hourly_rate}/hr` : 'e.g. 25'}
+                        className="input-field text-[13px]" />
+                      {profile.hourly_rate ? <p className="text-[11px] text-muted mt-1">{profile.full_name?.split(' ')[0] || 'They'} usually charges £{profile.hourly_rate}/hour.</p> : null}
                     </div>
                     <div>
                       <label className="text-[12px] text-muted block mb-1">Shift date</label>
@@ -279,8 +302,16 @@ export default function AgencyProfilePage() {
                     </div>
                     <div>
                       <label className="text-[12px] text-muted block mb-1">Hours</label>
-                      <input name="hours" type="number" min={1} max={24} defaultValue={8} className="input-field text-[13px]" />
+                      <input name="hours" type="number" min={1} max={24} value={offerHours}
+                        onChange={(e) => setOfferHours(e.target.value)} className="input-field text-[13px]" />
                     </div>
+                    {previewSubtotal > 0 && (
+                      <div className="bg-surface rounded-lg p-3 text-[12px] space-y-1">
+                        <div className="flex justify-between text-secondary"><span>{previewHours} hours × £{previewRate}/hr</span><span>£{previewSubtotal}</span></div>
+                        <div className="flex justify-between text-secondary"><span>WHC fee ({Math.round(AGENCY_PLATFORM_FEE_PCT * 100)}%)</span><span>£{previewFee}</span></div>
+                        <div className="flex justify-between font-semibold text-ink pt-1 border-t border-border"><span>You pay</span><span>£{previewTotal}</span></div>
+                      </div>
+                    )}
                     {offerError && <p className="text-[12px] text-red-600">{offerError}</p>}
                     <button type="submit" disabled={offerBusy} className="btn-primary w-full text-[12px] disabled:opacity-50">{offerBusy ? 'Sending...' : 'Send Offer'}</button>
                   </form>
@@ -288,33 +319,14 @@ export default function AgencyProfilePage() {
               </div>
             )}
 
-            {/* Enquire form */}
-            <div id="enquire" className="bg-white border border-border rounded-xl p-6">
-              <h3 className="text-[14px] font-medium text-ink mb-4">Send an Enquiry</h3>
-              {enquirySent ? (
-                <div className="text-center py-4"><Check size={20} className="mx-auto text-success mb-2" /><p className="text-[13px] text-ink">Enquiry sent!</p></div>
-              ) : (
-                <form onSubmit={async (e) => {
-                  e.preventDefault()
-                  const fd = new FormData(e.currentTarget)
-                  const { data: { user } } = await supabase.auth.getUser()
-                  if (!user) { alert('Please sign in to send an enquiry.'); window.location.href = '/login?role=employer'; return }
-                  if (!profile.user_id) { alert('This profile cannot receive messages yet - please contact us via the Contact page.'); return }
-                  const res = await fetch('/api/messages/send', {
-                    method: 'POST', headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ recipientId: profile.user_id, content: `Enquiry from ${fd.get('name')} (${fd.get('property')})${fd.get('dates') ? ` (dates: ${fd.get('dates')})` : ''}: ${fd.get('message')}` }),
-                  })
-                  if (!res.ok) { alert('Could not send enquiry - please try again.'); return }
-                  setEnquirySent(true)
-                }} className="space-y-3">
-                  <input name="name" required placeholder="Your name" className="input-field text-[13px]" />
-                  <input name="property" required placeholder="Property name" className="input-field text-[13px]" />
-                  <input name="dates" placeholder="Dates needed" className="input-field text-[13px]" />
-                  <textarea name="message" rows={3} required placeholder="Your message..." className="input-field text-[13px]" />
-                  <button type="submit" className="btn-primary w-full text-[12px]">Send Enquiry</button>
-                </form>
-              )}
-            </div>
+            {/* Non-employers: point them at the offer flow */}
+            {!isEmployer && (
+              <div className="bg-white border border-border rounded-xl p-6">
+                <h3 className="text-[14px] font-medium text-ink mb-2">Book {profile.full_name?.split(' ')[0] || 'this therapist'} for a shift</h3>
+                <p className="text-[12px] text-muted mb-4">Sign in as an employer to make a shift offer with your date, hours and hourly rate.</p>
+                <a href="/login?role=employer" className="btn-primary block w-full text-center text-[12px]">Employer Sign In</a>
+              </div>
+            )}
           </div>
         </div>
       </div>
