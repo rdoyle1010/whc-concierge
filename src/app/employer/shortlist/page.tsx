@@ -99,7 +99,7 @@ export default function EmployerShortlistPage() {
                           </div>
                         </div>
                         <div className="flex items-center gap-1">
-                          <Link href="/employer/messages" className="p-1.5 rounded-lg hover:bg-surface text-muted hover:text-ink transition-colors" title="Message">
+                          <Link href={c?.user_id ? `/employer/messages?to=${c.user_id}` : '/employer/messages'} className="p-1.5 rounded-lg hover:bg-surface text-muted hover:text-ink transition-colors" title="Message">
                             <MessageSquare size={14} />
                           </Link>
                           <button type="button" onClick={() => { setEditingNote(s.id); setNoteText(s.notes || '') }}

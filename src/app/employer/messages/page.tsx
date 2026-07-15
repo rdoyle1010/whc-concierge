@@ -95,7 +95,25 @@ export default function EmployerMessagesPage() {
         }
       }
 
-      setConversations(Array.from(partners.values()))
+      const convoList = Array.from(partners.values())
+
+      // ?to=<user_id> opens (or starts) a conversation with that person
+      const to = typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('to') : null
+      if (to && to !== user.id) {
+        if (!partners.has(to)) {
+          let partnerName: string | null = null
+          const { data: cp } = await supabase.from('candidate_profiles').select('full_name').eq('user_id', to).maybeSingle()
+          partnerName = cp?.full_name || null
+          if (!partnerName) {
+            const { data: ep } = await supabase.from('employer_profiles').select('property_name, company_name').eq('user_id', to).maybeSingle()
+            partnerName = ep?.property_name || ep?.company_name || null
+          }
+          convoList.unshift({ partnerId: to, lastMessage: null, unread: 0, partnerName: partnerName || 'New conversation' })
+        }
+        setActiveConvo(to)
+      }
+
+      setConversations(convoList)
       setLoading(false)
     }
     load()
@@ -143,15 +161,22 @@ export default function EmployerMessagesPage() {
         attachmentType = attachmentFile.type
       }
 
-      await supabase.from('messages').insert({
-        sender_id: userId,
-        recipient_id: activeConvo,
-        content: newMsg.trim() || null,
-        attachment_url: attachmentUrl,
-        attachment_name: attachmentName,
-        attachment_type: attachmentType,
-        read: false,
+      const sendRes = await fetch('/api/messages/send', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          recipientId: activeConvo,
+          content: newMsg.trim() || null,
+          attachmentUrl,
+          attachmentName,
+          attachmentType,
+        }),
       })
+      if (!sendRes.ok) {
+        const d = await sendRes.json().catch(() => ({}))
+        alert(d.error || 'Message failed to send - please try again.')
+        setAttachmentUploading(false)
+        return
+      }
 
       setMessages([...messages, {
         sender_id: userId,

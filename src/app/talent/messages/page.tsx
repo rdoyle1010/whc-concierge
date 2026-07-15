@@ -148,15 +148,21 @@ export default function TalentMessagesPage() {
         attachmentType = attachmentFile.type
       }
 
-      await supabase.from('messages').insert({
-        sender_id: userId,
-        recipient_id: activeConvo,
-        content: newMsg.trim() || null,
-        attachment_url: attachmentUrl,
-        attachment_name: attachmentName,
-        attachment_type: attachmentType,
-        read: false,
+      const sendRes = await fetch('/api/messages/send', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          recipientId: activeConvo,
+          content: newMsg.trim() || null,
+          attachmentUrl,
+          attachmentName,
+          attachmentType,
+        }),
       })
+      if (!sendRes.ok) {
+        const d = await sendRes.json().catch(() => ({}))
+        alert(d.error || 'Message failed to send - please try again.')
+        return
+      }
 
       setMessages([...messages, {
         sender_id: userId,
