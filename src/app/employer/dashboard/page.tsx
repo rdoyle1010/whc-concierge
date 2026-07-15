@@ -87,6 +87,13 @@ export default function EmployerDashboard() {
   )
   return (
     <DashboardShell role="employer" userName={profile?.contact_name || profile?.company_name}>
+      {/* Approval banner */}
+      {(!profile?.approval_status || profile?.approval_status === 'pending') && (
+        <div className="flex items-center gap-3 bg-amber-50 border border-amber-200 rounded-xl p-4 mb-6">
+          <Clock size={18} className="text-amber-600 shrink-0" />
+          <div><p className="text-[13px] font-medium text-amber-800">Your property is under review</p><p className="text-[12px] text-amber-600">You can set everything up now - post roles, browse talent - and we&apos;ll confirm your approval within 24 hours.</p></div>
+        </div>
+      )}
       <div className="mb-8">
         <h1 className="text-[24px] font-medium text-ink">{profile?.property_name || profile?.company_name || 'Dashboard'}</h1>
         <p className="text-[13px] text-muted mt-1">{new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</p>

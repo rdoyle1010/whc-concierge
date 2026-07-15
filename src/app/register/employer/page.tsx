@@ -52,6 +52,10 @@ export default function EmployerRegisterPage() {
       about_text: form.description || null,
       product_houses_used: form.product_houses_used.length > 0 ? form.product_houses_used : null,
       systems_used: form.systems_used.length > 0 ? form.systems_used : null,
+      num_treatment_rooms: form.treatment_rooms ? parseInt(form.treatment_rooms) : null,
+      team_size: form.team_size ? parseInt(form.team_size) : null,
+      work_email: form.work_email || null,
+      agreed_terms: form.agreed_terms || false,
       approval_status: 'pending',
     }
 

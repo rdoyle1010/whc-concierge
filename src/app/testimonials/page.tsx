@@ -73,46 +73,47 @@ export default function TestimonialsPage() {
   return (
     <>
       <Navbar />
-      <main className="pt-[60px]">
+      <main className="pt-[60px] bg-surface">
         {/* Hero */}
-        <section className="bg-gradient-to-b from-surface to-white py-16 px-6">
-          <div className="max-w-3xl mx-auto text-center">
-            <h1 className="text-4xl md:text-5xl font-serif text-ink mb-4">
+        <section className="bg-white border-b border-border">
+          <div className="max-w-3xl mx-auto px-6 lg:px-8 py-16 text-center">
+            <p className="text-[11px] tracking-[0.15em] uppercase font-medium mb-4" style={{ color: '#C9A96E' }}>Testimonials</p>
+            <h1 className="text-[36px] md:text-[48px] font-medium text-ink tracking-tight leading-[1.08] mb-4">
               What Our Users Say
             </h1>
-            <p className="text-lg text-secondary leading-relaxed">
+            <p className="text-[15px] text-secondary leading-relaxed max-w-xl mx-auto">
               Hear from the spa professionals and hospitality leaders who&apos;ve found success on WHC Concierge.
             </p>
           </div>
         </section>
 
         {/* Testimonials Grid */}
-        <section className="py-20 px-6">
+        <section className="py-14 px-6">
           <div className="max-w-6xl mx-auto">
-            <p className="text-sm italic text-muted mb-8 text-center">
+            <p className="text-[13px] italic text-muted mb-8 text-center">
               Composite testimonials representative of early platform feedback. Named case studies coming soon as our first cohort completes their hires.
             </p>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {testimonials.map((testimonial) => (
                 <div
                   key={testimonial.id}
-                  className="card relative"
+                  className="bg-white border border-border rounded-xl p-6 relative"
                 >
                   {/* Gold quotation mark */}
-                  <div className="absolute -top-2 -left-1 text-6xl text-accent/30 font-serif leading-none">
-                    "
+                  <div className="absolute top-2 left-4 text-5xl leading-none select-none" style={{ color: 'rgba(201, 169, 110, 0.3)' }} aria-hidden="true">
+                    &ldquo;
                   </div>
 
                   {/* Quote */}
-                  <p className="text-ink leading-relaxed mb-6 relative z-10 pt-2">
+                  <p className="text-[15px] text-ink leading-relaxed mb-6 relative z-10 pt-4">
                     {testimonial.quote}
                   </p>
 
                   {/* Role & Company */}
                   <div className="border-t border-border pt-4 mb-3">
-                    <p className="text-ink font-medium">{testimonial.role}</p>
+                    <p className="text-[14px] text-ink font-medium">{testimonial.role}</p>
                     {testimonial.company && (
-                      <p className="text-muted text-xs mt-1">{testimonial.company}</p>
+                      <p className="text-muted text-[12px] mt-1">{testimonial.company}</p>
                     )}
                   </div>
 
@@ -133,16 +134,17 @@ export default function TestimonialsPage() {
         </section>
 
         {/* CTA */}
-        <section className="bg-surface py-16 px-6">
+        <section className="bg-white border-t border-border py-16 px-6">
           <div className="max-w-3xl mx-auto text-center">
-            <h2 className="text-2xl font-serif text-ink mb-4">
+            <p className="text-[11px] tracking-[0.15em] uppercase font-medium mb-4" style={{ color: '#C9A96E' }}>Get Started</p>
+            <h2 className="text-[24px] md:text-[28px] font-medium text-ink tracking-tight mb-3">
               Ready to find your next opportunity?
             </h2>
-            <p className="text-secondary mb-6">
+            <p className="text-[14px] text-secondary mb-8">
               Join hundreds of spa and wellness professionals on WHC Concierge.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-              <Link href="/jobs" className="btn-primary">
+              <Link href="/jobs" className="px-6 py-2.5 rounded-lg text-[13px] font-semibold text-white transition-all hover:shadow-lg" style={{ backgroundColor: '#C9A96E' }}>
                 Browse Roles
               </Link>
               <Link href="/login?role=talent" className="btn-secondary">

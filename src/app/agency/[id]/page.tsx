@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type FormEvent } from 'react'
 import { useParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import Navbar from '@/components/Navbar'
@@ -11,11 +11,17 @@ import ReviewBreakdown from '@/components/ReviewBreakdown'
 
 export default function AgencyProfilePage() {
   const { id } = useParams()
+  const profileId = Array.isArray(id) ? id[0] : (id as string)
   const supabase = createClient()
   const [profile, setProfile] = useState<any>(null)
   const [reviews, setReviews] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [enquirySent, setEnquirySent] = useState(false)
+  const [isEmployer, setIsEmployer] = useState(false)
+  const [offer, setOffer] = useState<any>(null)
+  const [showOfferForm, setShowOfferForm] = useState(false)
+  const [offerBusy, setOfferBusy] = useState(false)
+  const [offerError, setOfferError] = useState('')
 
   useEffect(() => {
     async function load() {
@@ -25,10 +31,69 @@ export default function AgencyProfilePage() {
         const { data: revs } = await supabase.from('reviews').select('*').eq('reviewed_id', data.user_id || data.id).order('created_at', { ascending: false }).limit(10)
         setReviews(revs || [])
       }
+      // If the viewer is a logged-in employer, load any existing offer for this candidate
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) {
+        const { data: emp } = await supabase.from('employer_profiles').select('id').eq('user_id', user.id).maybeSingle()
+        if (emp) {
+          setIsEmployer(true)
+          try {
+            const res = await fetch('/api/agency/booking')
+            if (res.ok) {
+              const j = await res.json()
+              const existing = (j.bookings || []).find((b: any) => b.candidate_id === profileId && b.viewer_role === 'employer')
+              if (existing) setOffer(existing)
+            }
+          } catch { /* offer card still renders as a fresh form */ }
+        }
+      }
       setLoading(false)
     }
     load()
   }, [id])
+
+  async function submitOffer(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault()
+    setOfferError('')
+    const fd = new FormData(e.currentTarget)
+    setOfferBusy(true)
+    try {
+      const res = await fetch('/api/agency/booking', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'create', candidateId: profileId,
+          rate: fd.get('rate'), shiftDate: fd.get('shiftDate'), hours: fd.get('hours') || undefined,
+        }),
+      })
+      const j = await res.json()
+      if (!res.ok) { setOfferError(j.error || 'Could not send the offer - please try again.'); return }
+      setOffer(j.booking)
+      setShowOfferForm(false)
+    } catch {
+      setOfferError('Could not send the offer - please try again.')
+    } finally {
+      setOfferBusy(false)
+    }
+  }
+
+  async function actOnOffer(action: 'accept' | 'decline') {
+    if (!offer) return
+    setOfferError('')
+    setOfferBusy(true)
+    try {
+      const res = await fetch('/api/agency/booking', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action, bookingId: offer.id }),
+      })
+      const j = await res.json()
+      if (!res.ok) { setOfferError(j.error || 'Something went wrong - please try again.'); return }
+      setOffer(j.booking)
+    } catch {
+      setOfferError('Something went wrong - please try again.')
+    } finally {
+      setOfferBusy(false)
+    }
+  }
 
   if (loading) return <div className="min-h-screen bg-white"><Navbar /><div className="pt-20 max-w-4xl mx-auto px-6"><div className="skeleton h-48 rounded-xl mb-6" /><div className="skeleton h-8 w-1/3 mb-3" /><div className="skeleton h-4 w-1/2 mb-6" /><div className="skeleton h-32" /></div></div>
   if (!profile) return <div className="min-h-screen bg-white"><Navbar /><div className="pt-20 max-w-4xl mx-auto px-6 text-center py-24"><p className="text-muted">Profile not found.</p><Link href="/agency" className="btn-primary inline-block mt-4">Back to Agency</Link></div></div>
@@ -133,6 +198,66 @@ export default function AgencyProfilePage() {
               {profile.has_car && <p className="text-[12px] text-muted mt-2">Has own transport</p>}
             </div>
 
+            {/* Make an offer (employers only) */}
+            {isEmployer && (
+              <div className="bg-white border border-border rounded-xl p-6">
+                <h3 className="text-[14px] font-medium text-ink mb-1">Make an Offer</h3>
+                <p className="text-[12px] text-muted mb-4">Offer a day rate for an agency shift. {profile.full_name?.split(' ')[0] || 'The candidate'} can accept, decline or counter.</p>
+
+                {offer && !showOfferForm ? (
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <p className="text-[18px] font-semibold text-accent">£{offer.rate}<span className="text-[12px] font-normal text-muted"> /day</span></p>
+                      <span className={`text-[11px] font-medium px-2.5 py-1 rounded-full ${
+                        offer.status === 'pending' ? 'bg-amber-50 text-amber-700'
+                        : offer.status === 'countered' ? 'bg-[#FDF6EC] text-accent'
+                        : offer.status === 'accepted' ? 'bg-green-50 text-green-700'
+                        : 'bg-red-50 text-red-700'}`}>{offer.status}</span>
+                    </div>
+                    <p className="text-[13px] text-secondary mb-3">
+                      {offer.shift_date ? new Date(offer.shift_date).toLocaleDateString() : ''}{offer.hours ? ` · ${offer.hours} hours` : ''}
+                    </p>
+
+                    {offer.status === 'pending' && <p className="text-[13px] text-muted">Offer sent - awaiting a response.</p>}
+                    {offer.status === 'countered' && (
+                      <div>
+                        <p className="text-[13px] text-secondary mb-3">{profile.full_name?.split(' ')[0] || 'The candidate'} has countered with £{offer.rate} per day.</p>
+                        <div className="flex gap-2">
+                          <button onClick={() => actOnOffer('accept')} disabled={offerBusy} className="btn-primary flex-1 text-[12px] disabled:opacity-50">Accept Counter</button>
+                          <button onClick={() => actOnOffer('decline')} disabled={offerBusy} className="btn-secondary flex-1 text-[12px] disabled:opacity-50">Decline</button>
+                        </div>
+                      </div>
+                    )}
+                    {offer.status === 'accepted' && <p className="text-[13px] text-success flex items-center gap-1"><Check size={13} />Shift confirmed at £{offer.rate} per day.</p>}
+                    {offer.status === 'declined' && (
+                      <div>
+                        <p className="text-[13px] text-muted mb-3">This offer was declined.</p>
+                        <button onClick={() => setShowOfferForm(true)} className="btn-secondary w-full text-[12px]">Make a New Offer</button>
+                      </div>
+                    )}
+                    {offerError && <p className="text-[12px] text-red-600 mt-3">{offerError}</p>}
+                  </div>
+                ) : (
+                  <form onSubmit={submitOffer} className="space-y-3">
+                    <div>
+                      <label className="text-[12px] text-muted block mb-1">Day rate (£)</label>
+                      <input name="rate" type="number" min={1} required defaultValue={profile.day_rate_min || ''} placeholder="e.g. 250" className="input-field text-[13px]" />
+                    </div>
+                    <div>
+                      <label className="text-[12px] text-muted block mb-1">Shift date</label>
+                      <input name="shiftDate" type="date" required className="input-field text-[13px]" />
+                    </div>
+                    <div>
+                      <label className="text-[12px] text-muted block mb-1">Hours</label>
+                      <input name="hours" type="number" min={1} max={24} defaultValue={8} className="input-field text-[13px]" />
+                    </div>
+                    {offerError && <p className="text-[12px] text-red-600">{offerError}</p>}
+                    <button type="submit" disabled={offerBusy} className="btn-primary w-full text-[12px] disabled:opacity-50">{offerBusy ? 'Sending...' : 'Send Offer'}</button>
+                  </form>
+                )}
+              </div>
+            )}
+
             {/* Enquire form */}
             <div id="enquire" className="bg-white border border-border rounded-xl p-6">
               <h3 className="text-[14px] font-medium text-ink mb-4">Send an Enquiry</h3>
@@ -143,9 +268,13 @@ export default function AgencyProfilePage() {
                   e.preventDefault()
                   const fd = new FormData(e.currentTarget)
                   const { data: { user } } = await supabase.auth.getUser()
-                  if (user) {
-                    await supabase.from('messages').insert({ sender_id: user.id, recipient_id: profile.user_id || profile.id, content: `Enquiry from ${fd.get('name')} (${fd.get('property')}): ${fd.get('message')}`, read: false })
-                  }
+                  if (!user) { alert('Please sign in to send an enquiry.'); window.location.href = '/login?role=employer'; return }
+                  if (!profile.user_id) { alert('This profile cannot receive messages yet - please contact us via the Contact page.'); return }
+                  const res = await fetch('/api/messages/send', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ recipientId: profile.user_id, content: `Enquiry from ${fd.get('name')} (${fd.get('property')})${fd.get('dates') ? ` (dates: ${fd.get('dates')})` : ''}: ${fd.get('message')}` }),
+                  })
+                  if (!res.ok) { alert('Could not send enquiry - please try again.'); return }
                   setEnquirySent(true)
                 }} className="space-y-3">
                   <input name="name" required placeholder="Your name" className="input-field text-[13px]" />

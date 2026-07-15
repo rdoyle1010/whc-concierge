@@ -49,7 +49,13 @@ const LOCATION_PREF_OPTIONS = ['London', 'South East', 'South West', 'Midlands',
 export default function OnboardingWizard() {
   const supabase = createClient()
   const router = useRouter()
-  const [step, setStep] = useState(1)
+  const [step, setStep] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const s = parseInt(new URLSearchParams(window.location.search).get('step') || '1')
+      if (s >= 1 && s <= 9) return s
+    }
+    return 1
+  })
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [userId, setUserId] = useState<string | null>(null)

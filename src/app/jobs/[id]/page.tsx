@@ -43,11 +43,11 @@ function hasAny(values: unknown[]): boolean {
   })
 }
 
-const TIER_STYLES: Record<string, { bg: string; color: string; label: string }> = {
-  Platinum: { bg: '#1a1a1a', color: '#FFFFFF', label: 'Platinum' },
-  Gold: { bg: '#FDF6EC', color: '#C9A96E', label: 'Gold' },
-  Silver: { bg: '#F1F1F1', color: '#6B7280', label: 'Silver' },
-  Bronze: { bg: '#F8F7F5', color: '#6B7280', label: 'Bronze' },
+const TIER_BADGES: Record<string, { className: string; label: string }> = {
+  Platinum: { className: 'badge-platinum', label: 'Platinum' },
+  Gold: { className: 'badge-gold', label: 'Gold' },
+  Silver: { className: 'badge-silver', label: 'Silver' },
+  Bronze: { className: 'badge-bronze', label: 'Bronze' },
 }
 
 const EMPLOYMENT_TYPE_MAP: Record<string, string> = {
@@ -72,7 +72,7 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
   const propertyName =
     job.employer_profiles?.property_name || job.employer_profiles?.company_name || 'WHC Concierge'
   const titleText = job.job_title || job.title || 'Role'
-  const fullTitle = `${titleText} — ${propertyName} | WHC Concierge`
+  const fullTitle = `${titleText} - ${propertyName} | WHC Concierge`
   const description = stripPlain(String(job.job_description || job.description || '')).slice(0, 160)
   const url = `${SITE}/jobs/${params.id}`
 
@@ -93,14 +93,14 @@ export default async function RoleDetailPage({ params }: { params: { id: string 
   const propertyName = employer.property_name || employer.company_name || 'Premium Property'
   const titleText = job.job_title || job.title || 'Role'
   const description: string = String(job.job_description || job.description || '')
-  const tier = TIER_STYLES[job.tier as string] || TIER_STYLES.Bronze
+  const tier = TIER_BADGES[job.tier as string] || TIER_BADGES.Bronze
 
   const salaryRange =
     job.salary_min && job.salary_max
       ? `£${Number(job.salary_min).toLocaleString()} – £${Number(job.salary_max).toLocaleString()}`
       : null
 
-  // JobPosting structured data — Google Jobs eligibility
+  // JobPosting structured data for Google Jobs eligibility
   const jobPostingLd: Record<string, unknown> = {
     '@context': 'https://schema.org/',
     '@type': 'JobPosting',
@@ -171,16 +171,10 @@ export default async function RoleDetailPage({ params }: { params: { id: string 
             </Link>
             <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-8 mt-4 items-start">
               <div>
-                <span
-                  className="text-[10px] font-semibold tracking-[0.12em] uppercase px-2.5 py-1 rounded-full inline-block"
-                  style={{ background: tier.bg, color: tier.color }}
-                >
+                <span className={`${tier.className} inline-block`}>
                   {tier.label}
                 </span>
-                <h1
-                  className="text-[32px] md:text-[44px] font-medium tracking-tight leading-[1.08] mt-4 mb-3"
-                  style={{ color: '#1a1a1a' }}
-                >
+                <h1 className="text-[36px] md:text-[48px] font-medium text-ink tracking-tight leading-[1.08] mt-4 mb-3">
                   {titleText}
                 </h1>
                 <p className="text-[16px]">
@@ -325,7 +319,7 @@ export default async function RoleDetailPage({ params }: { params: { id: string 
               Ready to apply?
             </h2>
             <p className="text-[14px] mb-8 max-w-xl mx-auto" style={{ color: '#6B7280' }}>
-              Application sent directly to the property — they review your full profile.
+              Your application goes directly to the property, where your full profile is reviewed.
             </p>
             <div className="flex justify-center">
               <JobApplyButtons roleId={String(job.id)} />

@@ -55,69 +55,73 @@ export default function PublicJobsPage() {
   })
   const paginatedJobs = filtered.slice((page - 1) * perPage, page * perPage)
 
+  const tierClass = (t: string) => t === 'Platinum' ? 'badge-platinum' : t === 'Gold' ? 'badge-gold' : t === 'Silver' ? 'badge-silver' : 'badge-bronze'
+
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-surface">
       <Navbar />
-      <section className="bg-ink pt-32 pb-16">
-        <div className="max-w-7xl mx-auto px-4 text-center">
-          <h1 className="text-4xl md:text-5xl font-serif font-bold text-white mb-4">Browse Roles</h1>
-          <p className="text-white/60 max-w-xl mx-auto mb-10">Discover your next position at the world&apos;s finest wellness destinations.</p>
+
+      {/* Hero */}
+      <section className="pt-16 bg-white border-b border-border">
+        <div className="max-w-5xl mx-auto px-6 lg:px-8 py-16 text-center">
+          <p className="text-[11px] tracking-[0.15em] uppercase font-medium mb-4" style={{ color: '#C9A96E' }}>Open Positions</p>
+          <h1 className="text-[36px] md:text-[48px] font-medium text-ink tracking-tight leading-[1.08] mb-4">Browse Roles</h1>
+          <p className="text-[15px] text-secondary max-w-xl mx-auto mb-8">Discover your next position at the world&apos;s finest wellness destinations.</p>
           <div className="max-w-2xl mx-auto flex flex-col sm:flex-row gap-3">
             <div className="relative flex-1">
-              <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-              <input type="text" placeholder="Job title or property..." value={search} onChange={(e) => { setSearch(e.target.value); setPage(1) }} className="input-field pl-10 bg-white" />
+              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
+              <input type="text" placeholder="Job title or property..." value={search} onChange={(e) => { setSearch(e.target.value); setPage(1) }} className="input-field pl-9" />
             </div>
             <div className="relative flex-1">
-              <MapPin size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-              <input type="text" placeholder="Location..." value={location} onChange={(e) => { setLocation(e.target.value); setPage(1) }} className="input-field pl-10 bg-white" />
+              <MapPin size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
+              <input type="text" placeholder="Location..." value={location} onChange={(e) => { setLocation(e.target.value); setPage(1) }} className="input-field pl-9" />
             </div>
           </div>
         </div>
       </section>
 
-      <section className="py-16 bg-parchment">
-        <div className="max-w-7xl mx-auto px-4">
+      <section className="py-12">
+        <div className="max-w-7xl mx-auto px-6 lg:px-8">
           {loading ? (
-            <div className="flex items-center justify-center h-64"><div className="animate-spin w-8 h-8 border-2 border-gold border-t-transparent rounded-full" /></div>
+            <div className="flex items-center justify-center h-64"><div className="animate-spin w-8 h-8 border-2 border-t-transparent rounded-full" style={{ borderColor: '#C9A96E', borderTopColor: 'transparent' }} /></div>
           ) : filtered.length === 0 ? (
-            <p className="text-center text-gray-400 py-16">No roles found. Try adjusting your search.</p>
+            <div className="bg-white border border-border rounded-xl p-16 text-center">
+              <Briefcase size={32} className="mx-auto text-muted mb-3" />
+              <p className="text-[15px] font-medium text-ink mb-2">No roles found</p>
+              <p className="text-[13px] text-muted">Try adjusting your search.</p>
+            </div>
           ) : (
             <>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {paginatedJobs.map((job) => (
-                <div key={job.id} className="card hover:shadow-lg transition-all group border-t-4 border-t-gold/20 hover:border-t-gold relative">
+                <div key={job.id} className="bg-white border border-border rounded-xl p-5 hover:shadow-md hover:-translate-y-0.5 transition-all group relative">
                   <Link
                     href={`/jobs/${job.id}`}
                     aria-label={`View role: ${job.title}`}
                     className="absolute inset-0 rounded-xl z-0"
                   />
                   <div className="flex items-center justify-between mb-3">
-                    {job.tier && (
-                      <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${
-                        job.tier === 'Platinum' ? 'bg-purple-100 text-purple-700' :
-                        job.tier === 'Gold' ? 'bg-amber-100 text-amber-700' : 'bg-gray-100 text-gray-600'
-                      }`}>{job.tier}</span>
-                    )}
-                    <span className="text-xs text-gray-400">{job.job_type}</span>
+                    {job.tier && <span className={tierClass(job.tier)}>{job.tier}</span>}
+                    <span className="text-[12px] text-muted">{job.job_type}</span>
                   </div>
-                  <h3 className="font-serif text-lg font-semibold text-ink group-hover:text-gold transition-colors">{job.title}</h3>
-                  <p className="text-gold text-sm font-medium">{job.employer_profiles?.company_name}</p>
-                  <div className="flex items-center space-x-3 text-sm text-gray-500 mt-2">
-                    <span className="flex items-center space-x-1"><MapPin size={14} /><span>{job.location}</span></span>
+                  <h3 className="text-[16px] font-medium text-ink mb-1">{job.title}</h3>
+                  <p className="text-[13px] font-medium" style={{ color: '#C9A96E' }}>{job.employer_profiles?.company_name}</p>
+                  <div className="flex items-center gap-3 text-[12px] text-muted mt-2">
+                    <span className="flex items-center gap-1"><MapPin size={11} /><span>{job.location}</span></span>
                   </div>
-                  <p className="font-medium text-ink mt-3">
+                  <p className="text-[14px] font-medium text-ink mt-3">
                     {job.salary_min && job.salary_max ? `£${job.salary_min.toLocaleString()} – £${job.salary_max.toLocaleString()}` : 'Competitive salary'}
                   </p>
-                  <div className="flex items-center justify-between mt-4 relative z-10">
-                    <Link href={`/jobs/${job.id}`} className="flex items-center text-gold text-sm font-medium">
-                      Apply Now <ArrowRight size={16} className="ml-1" />
+                  <div className="flex items-center justify-between mt-4 pt-4 border-t border-border relative z-10">
+                    <Link href={`/jobs/${job.id}`} className="flex items-center text-[13px] font-medium" style={{ color: '#C9A96E' }}>
+                      Apply Now <ArrowRight size={14} className="ml-1" />
                     </Link>
                     <div className="flex items-center gap-3">
-                      <Link href={`/jobs/${job.id}`} className="text-xs text-gray-400 hover:text-ink transition-colors">
+                      <Link href={`/jobs/${job.id}`} className="text-[12px] text-muted hover:text-ink transition-colors">
                         View role →
                       </Link>
                       {isLoggedIn && (
-                        <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggleSave(job.id) }} className={`p-1.5 rounded-lg transition-colors ${saved.has(job.id) ? 'text-accent' : 'text-gray-300 hover:text-accent'}`} title={saved.has(job.id) ? 'Unsave' : 'Save'}>
+                        <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggleSave(job.id) }} className={`p-1.5 rounded-lg transition-colors ${saved.has(job.id) ? 'text-accent' : 'text-muted hover:text-accent'}`} title={saved.has(job.id) ? 'Unsave' : 'Save'}>
                           <Bookmark size={16} fill={saved.has(job.id) ? 'currentColor' : 'none'} />
                         </button>
                       )}

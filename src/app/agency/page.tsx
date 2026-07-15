@@ -11,6 +11,34 @@ const SERVICE_FILTERS = ['Swedish Massage','Deep Tissue','Hot Stone','Aromathera
 const BRAND_FILTERS = ['ESPA','Elemis','Dermalogica','Comfort Zone','Aromatherapy Associates','Bamford','Sodashi','Thalgo','Germaine de Capuccini','Decleor','La Mer']
 const ROLE_FILTERS = ['Apprentice','Therapist','Senior Therapist','Lead Therapist','Spa Manager','Receptionist']
 
+// Normalise a raw postcode entry to its outward code, e.g. 'SW1A 1AA' -> 'SW1A', 'bs1' -> 'BS1', 'BS' -> 'BS'.
+// Returns null when the input does not look like the start of a UK postcode.
+function normaliseOutward(raw: string): string | null {
+  const compact = (raw || '').toUpperCase().replace(/[^A-Z0-9]/g, '')
+  if (!compact) return null
+  // A full postcode always ends with digit + two letters (the inward code) - strip it if present
+  const outward = compact.length > 4 && /\d[A-Z]{2}$/.test(compact) ? compact.slice(0, -3) : compact.slice(0, 4)
+  // Valid shapes: area letters only ('BS', 'SW') or letters followed by a district ('BS1', 'SW1A')
+  if (/^[A-Z]{1,2}$/.test(outward) || /^[A-Z]{1,2}\d[A-Z0-9]?$/.test(outward)) return outward
+  return null
+}
+
+// Leading letters of an outward code, e.g. 'SW1A' -> 'SW'
+const areaOf = (outward: string) => outward.match(/^[A-Z]{1,2}/)?.[0] || outward
+
+// Best-effort outward code for a candidate: prefer their postcode field, then any postcode-like token in their location text
+function candidateOutward(c: any): string | null {
+  if (c.postcode) {
+    const o = normaliseOutward(String(c.postcode))
+    if (o) return o
+  }
+  if (typeof c.location === 'string') {
+    const m = c.location.toUpperCase().match(/\b[A-Z]{1,2}\d[A-Z0-9]?(?:\s*\d[A-Z]{2})?\b/)
+    if (m) return normaliseOutward(m[0])
+  }
+  return null
+}
+
 function FilterSection({ title, children, defaultOpen = false }: { title: string; children: React.ReactNode; defaultOpen?: boolean }) {
   const [open, setOpen] = useState(defaultOpen)
   return (
@@ -38,6 +66,8 @@ export default function AgencyPage() {
   const [sortBy, setSortBy] = useState('match')
   const [showEnquiry, setShowEnquiry] = useState<any>(null)
   const [visible, setVisible] = useState(12)
+  const [appliedSearch, setAppliedSearch] = useState<{ outward: string; area: string; radius: string } | null>(null)
+  const [postcodeError, setPostcodeError] = useState('')
 
   useEffect(() => {
     supabase.from('candidate_profiles').select('*')
@@ -51,7 +81,32 @@ export default function AgencyPage() {
     set(arr.includes(val) ? arr.filter(v => v !== val) : [...arr, val])
   }
 
-  const clearFilters = () => { setServices([]); setBrands([]); setRoles([]); setInsuredOnly(false); setAvailNow(false); setPostcode('') }
+  const clearFilters = () => { setServices([]); setBrands([]); setRoles([]); setInsuredOnly(false); setAvailNow(false); setPostcode(''); setAppliedSearch(null); setPostcodeError('') }
+
+  const handleSearch = () => {
+    const outward = normaliseOutward(postcode)
+    if (!outward) { setPostcodeError('Please enter a valid UK postcode, e.g. BS1 or SW1A 1AA'); return }
+    setPostcodeError('')
+    setAppliedSearch({ outward, area: areaOf(outward), radius })
+    setVisible(12)
+  }
+
+  // Tiered postcode matching (no external geocoding):
+  // 5/10 miles -> same outward code (district); 25/50 miles -> same postcode area letters;
+  // 100 miles -> same area letters, but candidates with no usable location are also shown; UK-wide -> everyone.
+  const matchesLocation = (c: any): boolean => {
+    if (!appliedSearch || appliedSearch.radius === 'UK-wide') return true
+    const co = candidateOutward(c)
+    const { outward, area, radius: r } = appliedSearch
+    if (r === '5 miles' || r === '10 miles') {
+      if (!co) return false
+      // If only area letters were entered, match any district in that area; otherwise require the exact district
+      return /\d/.test(outward) ? co === outward : co.startsWith(outward)
+    }
+    if (r === '25 miles' || r === '50 miles') return !!co && areaOf(co) === area
+    // 100 miles: widest tier - include candidates whose location is unknown
+    return !co || areaOf(co) === area
+  }
 
   const filtered = candidates.filter(c => {
     if (insuredOnly && !c.has_insurance) return false
@@ -59,6 +114,7 @@ export default function AgencyPage() {
     if (services.length > 0 && !services.some(s => (c.services_offered || []).some((sp: string) => sp.toLowerCase().includes(s.toLowerCase())))) return false
     if (brands.length > 0 && !brands.some(b => (c.product_houses || []).some((ph: string) => ph.toLowerCase().includes(b.toLowerCase())))) return false
     if (roles.length > 0 && !roles.includes(c.role_level)) return false
+    if (!matchesLocation(c)) return false
     return true
   })
 
@@ -84,13 +140,23 @@ export default function AgencyPage() {
         <div className="max-w-7xl mx-auto px-6 lg:px-8 py-14">
           <h1 className="text-[36px] md:text-[44px] font-medium text-ink tracking-tight leading-[1.1] mb-3">Find Exceptional Spa Talent</h1>
           <p className="text-[15px] text-secondary max-w-xl mb-8">Search our network of verified, insured spa professionals available for agency work, seasonal cover and specialist treatments.</p>
-          <div className="flex flex-col sm:flex-row gap-3 max-w-2xl">
-            <input type="text" placeholder="Enter postcode" value={postcode} onChange={e => setPostcode(e.target.value)} className="input-field flex-1" />
+          <form onSubmit={e => { e.preventDefault(); handleSearch() }} className="flex flex-col sm:flex-row gap-3 max-w-2xl">
+            <input type="text" placeholder="Enter postcode" value={postcode} onChange={e => { setPostcode(e.target.value); if (postcodeError) setPostcodeError('') }} className="input-field flex-1" />
             <select value={radius} onChange={e => setRadius(e.target.value)} className="input-field sm:w-40">
               <option>UK-wide</option><option>5 miles</option><option>10 miles</option><option>25 miles</option><option>50 miles</option><option>100 miles</option>
             </select>
-            <button type="button" className="btn-primary flex items-center gap-2"><Search size={14} />Search</button>
-          </div>
+            <button type="submit" className="btn-primary flex items-center gap-2"><Search size={14} />Search</button>
+          </form>
+          {postcodeError && <p className="text-[12px] text-red-600 mt-2">{postcodeError}</p>}
+          {appliedSearch && (
+            <div className="mt-3">
+              <span className="inline-flex items-center gap-1.5 text-[12px] font-medium bg-[#FDF6EC] text-accent border border-accent/20 px-3 py-1 rounded-full">
+                <MapPin size={11} />
+                Near {appliedSearch.outward}{appliedSearch.radius === 'UK-wide' ? ' (UK-wide)' : ` (within ~${appliedSearch.radius})`}
+                <button type="button" onClick={() => setAppliedSearch(null)} aria-label="Clear location filter" className="hover:text-ink transition-colors"><X size={12} /></button>
+              </span>
+            </div>
+          )}
         </div>
       </section>
 
@@ -146,8 +212,23 @@ export default function AgencyPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">{Array.from({length:6}).map((_,i) => <div key={i} className="skeleton h-72 rounded-xl" />)}</div>
             ) : sorted.length === 0 ? (
               <div className="bg-white border border-border rounded-xl p-12 text-center">
-                <p className="text-[15px] text-ink font-medium mb-2">No therapists found</p>
-                <p className="text-[13px] text-muted">Try widening your radius or adjusting your filters.</p>
+                <p className="text-[15px] text-ink font-medium mb-2">
+                  {appliedSearch && appliedSearch.radius !== 'UK-wide' ? `No therapists found near ${appliedSearch.outward}` : 'No therapists found'}
+                </p>
+                <p className="text-[13px] text-muted mb-4">
+                  {appliedSearch && appliedSearch.radius !== 'UK-wide'
+                    ? `We could not find anyone within ~${appliedSearch.radius} of ${appliedSearch.outward}. Try widening your radius or searching UK-wide.`
+                    : 'Try adjusting your filters.'}
+                </p>
+                {appliedSearch && appliedSearch.radius !== 'UK-wide' && (
+                  <button
+                    type="button"
+                    onClick={() => { setRadius('UK-wide'); setAppliedSearch({ ...appliedSearch, radius: 'UK-wide' }); setVisible(12) }}
+                    className="btn-secondary text-[12px]"
+                  >
+                    Search UK-wide instead
+                  </button>
+                )}
               </div>
             ) : (
               <>
@@ -235,9 +316,14 @@ export default function AgencyPage() {
               e.preventDefault()
               const fd = new FormData(e.currentTarget)
               const { data: { user } } = await supabase.auth.getUser()
-              if (user) {
-                await supabase.from('messages').insert({ sender_id: user.id, recipient_id: showEnquiry.user_id || showEnquiry.id, content: `Enquiry from ${fd.get('name')} at ${fd.get('property')}: ${fd.get('message')}`, read: false })
-              }
+              if (!user) { alert('Please sign in to send an enquiry.'); window.location.href = '/login?role=employer'; return }
+              if (!showEnquiry.user_id) { alert('This profile cannot receive messages yet - please contact us via the Contact page.'); return }
+              const res = await fetch('/api/messages/send', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ recipientId: showEnquiry.user_id, content: `Enquiry from ${fd.get('name')} at ${fd.get('property')}${fd.get('dates') ? ` (dates: ${fd.get('dates')})` : ''}: ${fd.get('message')}` }),
+              })
+              if (!res.ok) { alert('Could not send enquiry - please try again.'); return }
+              alert('Enquiry sent! You can follow the conversation in Messages.')
               setShowEnquiry(null)
             }} className="space-y-4">
               <div><label className="eyebrow block mb-1.5">Your Name</label><input name="name" required className="input-field" /></div>

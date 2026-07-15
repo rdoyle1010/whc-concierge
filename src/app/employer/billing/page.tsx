@@ -3,7 +3,15 @@
 import { useEffect, useState } from 'react'
 import DashboardShell from '@/components/DashboardShell'
 import { createClient } from '@/lib/supabase/client'
+import { JOB_TIERS } from '@/lib/constants'
 import { CreditCard, ExternalLink, Briefcase } from 'lucide-react'
+
+function jobAmount(job: any): string {
+  if (!job.is_live || job.status !== 'active') return '-'
+  const tier = JOB_TIERS[job.tier as keyof typeof JOB_TIERS]
+  if (!tier) return '-'
+  return `£${tier.price / 100}`
+}
 
 export default function EmployerBillingPage() {
   const supabase = createClient()
@@ -102,14 +110,20 @@ export default function EmployerBillingPage() {
                 <p className="text-[12px] text-muted mt-0.5">Manage your stored payment methods</p>
               </div>
             </div>
-            <button
-              onClick={handleManagePayment}
-              disabled={redirecting}
-              className="btn-secondary text-[12px] flex items-center gap-1"
-            >
-              {redirecting ? 'Redirecting...' : 'Manage'}
-              <ExternalLink size={12} />
-            </button>
+            {profile?.stripe_customer_id ? (
+              <button
+                onClick={handleManagePayment}
+                disabled={redirecting}
+                className="btn-secondary text-[12px] flex items-center gap-1"
+              >
+                {redirecting ? 'Redirecting...' : 'Manage'}
+                <ExternalLink size={12} />
+              </button>
+            ) : (
+              <p className="text-[12px] text-muted text-right max-w-[200px]">
+                Billing portal becomes available after your first payment.
+              </p>
+            )}
           </div>
         </div>
 
@@ -137,6 +151,7 @@ export default function EmployerBillingPage() {
                   <th className="text-left text-[12px] font-medium text-muted py-3">Job Title</th>
                   <th className="text-left text-[12px] font-medium text-muted py-3">Tier</th>
                   <th className="text-left text-[12px] font-medium text-muted py-3">Posted Date</th>
+                  <th className="text-left text-[12px] font-medium text-muted py-3">Amount</th>
                   <th className="text-left text-[12px] font-medium text-muted py-3">Status</th>
                 </tr>
               </thead>
@@ -152,6 +167,7 @@ export default function EmployerBillingPage() {
                     <td className="text-[13px] text-muted py-3">
                       {job.posted_date ? new Date(job.posted_date).toLocaleDateString('en-GB', { year: 'numeric', month: 'short', day: 'numeric' }) : '—'}
                     </td>
+                    <td className="text-[13px] font-medium text-ink py-3">{jobAmount(job)}</td>
                     <td className="text-[13px] py-3">
                       <span className={`text-[11px] font-medium px-2 py-1 rounded-full ${job.is_live ? 'bg-emerald-50 text-emerald-700' : 'bg-neutral-100 text-muted'}`}>
                         {job.is_live ? 'Live' : 'Closed'}

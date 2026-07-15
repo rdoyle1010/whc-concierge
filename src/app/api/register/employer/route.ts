@@ -19,6 +19,20 @@ function sendWelcomeEmail(email: string, firstName: string) {
   }).catch(err => console.error('Welcome email failed:', err))
 }
 
+
+// Insert, stripping ONLY columns the DB reports as unknown (keeps all other data).
+async function insertStrippingUnknownColumns(supabase: any, table: string, row: Record<string, any>, maxStrips = 8) {
+  const data = { ...row }
+  for (let i = 0; i <= maxStrips; i++) {
+    const { error } = await supabase.from(table).insert(data)
+    if (!error) return { ok: true as const, stripped: i }
+    const m = error.message.match(/Could not find the '([^']+)' column/) || error.message.match(/column "([^"]+)" of relation/)
+    if (m && m[1] && m[1] in data) { delete data[m[1]]; continue }
+    return { ok: false as const, error: error.message }
+  }
+  return { ok: false as const, error: 'Too many unknown columns' }
+}
+
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
@@ -66,17 +80,13 @@ export async function POST(req: NextRequest) {
         continue
       }
 
-      // Retry with only user_id — absolute minimum
-      const { error: retryError } = await supabase
-        .from('employer_profiles')
-        .insert({ user_id: userId })
-
-      if (!retryError) {
-        if (userEmail) sendWelcomeEmail(userEmail, 'there')
+      // Column mismatch: strip only the offending columns, keep the rest of the data
+      const result = await insertStrippingUnknownColumns(supabase, 'employer_profiles', { user_id: userId, ...profileData })
+      if (result.ok) {
+        if (userEmail) sendWelcomeEmail(userEmail, profileData.company_name?.split(' ')[0] || profileData.contact_name?.split(' ')[0] || 'there')
         return NextResponse.json({ success: true })
       }
-
-      lastError = retryError.message
+      lastError = result.error
       await sleep(1000)
     }
 

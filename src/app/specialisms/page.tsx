@@ -1,6 +1,7 @@
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
 import Link from 'next/link'
+import { ArrowRight } from 'lucide-react'
 
 const specialisms = [
   { name: 'Massage Therapy', desc: 'Swedish, deep tissue, hot stone, sports massage, and specialist bodywork techniques.' },
@@ -19,22 +20,26 @@ const specialisms = [
 
 export default function SpecialismsPage() {
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-surface">
       <Navbar />
-      <section className="bg-ink pt-32 pb-20">
-        <div className="max-w-7xl mx-auto px-4 text-center">
-          <h1 className="text-4xl md:text-5xl font-serif font-bold text-white mb-4">Specialisms</h1>
-          <p className="text-white/60 max-w-xl mx-auto">We cover every discipline within luxury spa, wellness and hospitality.</p>
+
+      {/* Hero */}
+      <section className="pt-16 bg-white border-b border-border">
+        <div className="max-w-5xl mx-auto px-6 lg:px-8 py-16 text-center">
+          <p className="text-[11px] tracking-[0.15em] uppercase font-medium mb-4" style={{ color: '#C9A96E' }}>Every Discipline</p>
+          <h1 className="text-[36px] md:text-[48px] font-medium text-ink tracking-tight leading-[1.08] mb-4">Specialisms</h1>
+          <p className="text-[15px] text-secondary max-w-xl mx-auto">We cover every discipline within luxury spa, wellness and hospitality.</p>
         </div>
       </section>
-      <section className="py-16 bg-parchment">
-        <div className="max-w-7xl mx-auto px-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+
+      <section className="py-12">
+        <div className="max-w-7xl mx-auto px-6 lg:px-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {specialisms.map((s) => (
-            <div key={s.name} className="card hover:shadow-md transition-shadow group">
-              <h3 className="font-serif text-xl font-semibold text-ink group-hover:text-gold transition-colors">{s.name}</h3>
-              <p className="text-gray-500 text-sm mt-2">{s.desc}</p>
-              <Link href={`/jobs?specialism=${encodeURIComponent(s.name)}`} className="text-gold text-sm font-medium mt-4 inline-block">
-                View Roles &rarr;
+            <div key={s.name} className="bg-white border border-border rounded-xl p-6 hover:shadow-md hover:-translate-y-0.5 transition-all">
+              <h3 className="text-[16px] font-medium text-ink">{s.name}</h3>
+              <p className="text-[13px] text-secondary leading-[1.7] mt-2">{s.desc}</p>
+              <Link href={`/jobs?specialism=${encodeURIComponent(s.name)}`} className="inline-flex items-center gap-1.5 text-[13px] font-medium mt-4" style={{ color: '#C9A96E' }}>
+                View Roles <ArrowRight size={13} />
               </Link>
             </div>
           ))}

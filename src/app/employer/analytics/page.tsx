@@ -11,11 +11,11 @@ type JobRow = {
 }
 
 const STATUS_LABELS: Record<string, string> = {
-  total: 'Total Applicants', pending: 'Submitted', reviewed: 'Reviewed',
-  shortlisted: 'Shortlisted', interview: 'Interviewed', offered: 'Offered', accepted: 'Hired',
+  total: 'Applications received', pending: 'Pending review',
+  shortlisted: 'Shortlisted', accepted: 'Accepted',
 }
-const FUNNEL_ORDER = ['total', 'pending', 'reviewed', 'shortlisted', 'interview', 'offered', 'accepted']
-const FUNNEL_COLOURS = ['#1a1a1a', '#D97706', '#2563EB', '#16A34A', '#7C3AED', '#C9A96E', '#059669']
+const FUNNEL_ORDER = ['total', 'pending', 'shortlisted', 'accepted']
+const FUNNEL_COLOURS = ['#1a1a1a', '#D97706', '#C9A96E', '#16A34A']
 
 export default function EmployerAnalyticsPage() {
   const supabase = createClient()
@@ -174,8 +174,8 @@ export default function EmployerAnalyticsPage() {
         </div>
         <div className="dashboard-card">
           <div className="text-muted mb-2"><TrendingUp size={16} /></div>
-          <p className="text-[28px] font-semibold" style={{ color: '#C9A96E' }}>{stats.avgMatch}%</p>
-          <p className="text-[11px] text-muted">Avg match score</p>
+          <p className="text-[28px] font-semibold" style={{ color: '#C9A96E' }}>{stats.avgMatch > 0 ? `${stats.avgMatch}%` : '-'}</p>
+          <p className="text-[11px] text-muted">{stats.avgMatch > 0 ? 'Avg match score' : 'Avg match score (no scored applications yet)'}</p>
         </div>
         <div className="dashboard-card">
           <div className="text-muted mb-2"><Clock size={16} /></div>
@@ -195,7 +195,7 @@ export default function EmployerAnalyticsPage() {
               const pct = Math.round((count / maxCount) * 100)
               return (
                 <div key={key} className="flex items-center gap-3">
-                  <span className="text-[12px] text-muted w-28 shrink-0 text-right">{STATUS_LABELS[key]}</span>
+                  <span className="text-[12px] text-muted w-36 shrink-0 text-right">{STATUS_LABELS[key]}</span>
                   <div className="flex-1 h-7 bg-surface rounded-lg overflow-hidden relative">
                     <div className="h-full rounded-lg transition-all duration-500" style={{ width: `${Math.max(pct, 2)}%`, backgroundColor: FUNNEL_COLOURS[i] }} />
                     <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[11px] font-medium text-ink">{count}</span>
@@ -204,6 +204,10 @@ export default function EmployerAnalyticsPage() {
                 </div>
               )
             })}
+          </div>
+          <div className="mt-4 pt-3 border-t border-border flex items-center justify-between">
+            <span className="text-[12px] text-muted">Rejected</span>
+            <span className="text-[13px] font-medium text-ink">{funnel.rejected || 0}</span>
           </div>
         </div>
 

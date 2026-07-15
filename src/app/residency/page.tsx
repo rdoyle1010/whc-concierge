@@ -191,9 +191,14 @@ export default function ResidencyPage() {
               e.preventDefault()
               const fd = new FormData(e.currentTarget)
               const { data: { user } } = await supabase.auth.getUser()
-              if (user) {
-                await supabase.from('messages').insert({ sender_id: user.id, recipient_id: showEnquiry.user_id, content: `Residency enquiry from ${fd.get('name')} (${fd.get('property')}): ${fd.get('message')}`, read: false })
-              }
+              if (!user) { alert('Please sign in to send an enquiry.'); window.location.href = '/login?role=employer'; return }
+              if (!showEnquiry.user_id) { alert('This specialist cannot receive messages yet - please contact us via the Contact page.'); return }
+              const res = await fetch('/api/messages/send', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ recipientId: showEnquiry.user_id, content: `Residency enquiry from ${fd.get('name')} (${fd.get('property')}): ${fd.get('message')}` }),
+              })
+              if (!res.ok) { alert('Could not send enquiry - please try again.'); return }
+              alert('Enquiry sent! You can follow the conversation in Messages.')
               setShowEnquiry(null)
             }} className="space-y-4">
               <div><label className="eyebrow block mb-1.5">Your Name</label><input name="name" required className="input-field" /></div>

@@ -25,10 +25,12 @@ export default function BrowseRolesPage() {
 
   useEffect(() => {
     async function load() {
+      let loadedProfile: any = null
       const { data: { user } } = await supabase.auth.getUser()
       if (user) {
         const { data: cp } = await supabase.from('candidate_profiles').select('*').eq('user_id', user.id).single()
         setProfile(cp)
+        loadedProfile = cp
       }
 
       const { data: rawJobs } = await supabase
@@ -44,10 +46,10 @@ export default function BrowseRolesPage() {
         return { ...j, title, description, companyName }
       })
 
-      // Score if user has profile
+      // Score if user has profile (use the freshly loaded profile, not stale state)
       const scored = normalized.map((job: any) => {
-        if (profile && profile.role_level) {
-          const result = calculateMatchScore(profile, job)
+        if (loadedProfile && loadedProfile.role_level) {
+          const result = calculateMatchScore(loadedProfile, job)
           if (result.hardStop) return { ...job, matchScore: 0 }
           return { ...job, matchScore: result.score, matchLabel: result.label, matchColour: result.colour, matchBg: result.bgColour }
         }
