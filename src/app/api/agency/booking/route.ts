@@ -4,6 +4,21 @@ import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { createNotification } from '@/lib/notifications'
 import { AGENCY_PLATFORM_FEE_PCT } from '@/lib/constants'
+import { sendSms } from '@/lib/sms'
+import { sendAgencyOfferEmail } from '@/lib/emails'
+
+// Offers expire so urgent cover doesn't sit unanswered while the property
+// waits: 4 hours for same-day (urgent) shifts, 48 hours otherwise.
+const URGENT_EXPIRY_MS = 4 * 60 * 60 * 1000
+const STANDARD_EXPIRY_MS = 48 * 60 * 60 * 1000
+
+function todayInLondon(): string {
+  return new Date().toLocaleDateString('en-CA', { timeZone: 'Europe/London' })
+}
+
+function isExpired(booking: any): boolean {
+  return Boolean(booking.expires_at && new Date(booking.expires_at).getTime() < Date.now())
+}
 
 // Agency offer / counter-offer flow.
 // All writes use the service-role client because client-side RLS on
@@ -94,8 +109,19 @@ export async function GET() {
     // Enrich with the other party's display name via separate lookups (no FK embeds)
     const empIds = Array.from(new Set(bookings.map(b => b.employer_id).filter(Boolean)))
     const candIds = Array.from(new Set(bookings.map(b => b.candidate_id).filter(Boolean)))
+    // Employer select includes commute info; if those columns haven't been
+    // added to the live DB yet, PostgREST rejects the WHOLE query, so fall
+    // back to the base column set rather than blanking the page.
+    const fetchEmployers = async (): Promise<{ data: any[] | null }> => {
+      if (!empIds.length) return { data: [] as any[] }
+      const full = await admin.from('employer_profiles')
+        .select('id, user_id, company_name, property_name, location, postcode, commute_car_required, nearest_transport')
+        .in('id', empIds)
+      if (!full.error) return full
+      return admin.from('employer_profiles').select('id, user_id, company_name, property_name, location').in('id', empIds)
+    }
     const [empsRes, candsRes] = await Promise.all([
-      empIds.length ? admin.from('employer_profiles').select('id, user_id, company_name, property_name, location').in('id', empIds) : Promise.resolve({ data: [] as any[] }),
+      fetchEmployers(),
       candIds.length ? admin.from('candidate_profiles').select('id, user_id, full_name').in('id', candIds) : Promise.resolve({ data: [] as any[] }),
     ])
     const empMap = new Map((empsRes.data || []).map((e: any) => [e.id, e]))
@@ -106,6 +132,10 @@ export async function GET() {
         ...b,
         employer_name: employerDisplayName(empMap.get(b.employer_id)),
         employer_user_id: empMap.get(b.employer_id)?.user_id || null, // for reviews
+        employer_location: empMap.get(b.employer_id)?.location || null,
+        employer_postcode: empMap.get(b.employer_id)?.postcode || null,
+        commute_car_required: empMap.get(b.employer_id)?.commute_car_required ?? null,
+        nearest_transport: empMap.get(b.employer_id)?.nearest_transport || null,
         candidate_name: candMap.get(b.candidate_id)?.full_name || 'Candidate',
         candidate_user_id: candMap.get(b.candidate_id)?.user_id || null, // for reviews
         viewer_role: emp && b.employer_id === emp.id ? 'employer' : 'candidate',
@@ -150,7 +180,7 @@ export async function POST(req: NextRequest) {
 
       const { data: targetCand } = await admin
         .from('candidate_profiles')
-        .select('id, full_name, user_id')
+        .select('id, full_name, user_id, phone')
         .eq('id', body.candidateId)
         .maybeSingle()
       if (!targetCand) return NextResponse.json({ error: 'Candidate not found' }, { status: 404 })
@@ -158,6 +188,11 @@ export async function POST(req: NextRequest) {
       const hours = body.hours ? parseInt(String(body.hours), 10) : null
       const effectiveHours = hours && hours > 0 ? hours : 8
       const platformFee = Math.ceil(rate * effectiveHours * AGENCY_PLATFORM_FEE_PCT)
+
+      // Same-day offers are URGENT (sickness cover): tighter expiry + SMS.
+      const urgent = String(body.shiftDate) === todayInLondon()
+      const expiresAt = new Date(Date.now() + (urgent ? URGENT_EXPIRY_MS : STANDARD_EXPIRY_MS)).toISOString()
+
       const row: Record<string, any> = {
         candidate_id: targetCand.id,
         employer_id: emp.id,
@@ -167,18 +202,55 @@ export async function POST(req: NextRequest) {
         rate,
         platform_fee: platformFee,
         status: 'pending',
+        urgent,
+        expires_at: expiresAt,
       }
 
       const { data: booking, error } = await insertBookingDefensively(admin, row)
       if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
       const empName = employerDisplayName(emp)
+      const offerBody = urgent
+        ? `URGENT: ${empName} needs cover TODAY and has offered you a shift at £${rate} per hour${hours ? ` (${hours} hours - £${rate * hours} total)` : ''}. This offer expires in 4 hours - accept, decline or counter from your Agency page now.`
+        : `${empName} has offered you an agency shift on ${body.shiftDate} at £${rate} per hour${hours ? ` (${hours} hours - £${rate * hours} total)` : ''}. You can accept, decline or counter from your Agency page.`
+
+      // Bell + inbox
       await notifyOtherParty(
         admin, targetCand.user_id, user.id,
-        'New agency offer',
-        `${empName} has offered you an agency shift on ${body.shiftDate} at £${rate} per hour${hours ? ` (${hours} hours — £${rate * hours} total)` : ''}. You can accept, decline or counter from your Agency page.`,
+        urgent ? 'URGENT: shift offer for today' : 'New agency offer',
+        offerBody,
         '/talent/agency',
       )
+
+      // Email + (for urgent offers) SMS — all awaited: fire-and-forget dies
+      // on serverless. None of these may fail the offer itself.
+      try {
+        const jobs: Promise<unknown>[] = []
+        if (targetCand.user_id) {
+          const { data: candUser } = await admin.auth.admin.getUserById(targetCand.user_id)
+          const candEmail = candUser?.user?.email
+          if (candEmail) {
+            jobs.push(sendAgencyOfferEmail(candEmail, targetCand.full_name || 'there', {
+              propertyName: empName,
+              shiftDate: body.shiftDate,
+              rate,
+              hours,
+              urgent,
+              expiresAt,
+            }))
+          }
+        }
+        if (urgent) {
+          jobs.push(sendSms(
+            targetCand.phone,
+            `WHC Concierge: ${empName} needs cover TODAY - £${rate}/hr${hours ? ` for ${hours}h` : ''}. Offer expires in 4 hrs. Accept or counter: https://talent.wellnesshousecollective.co.uk/talent/agency`,
+          ))
+        }
+        await Promise.allSettled(jobs)
+      } catch (e: any) {
+        console.error('Agency offer alerts failed:', e?.message)
+      }
+
       return NextResponse.json({ success: true, booking })
     }
 
@@ -194,6 +266,12 @@ export async function POST(req: NextRequest) {
     }
     if (!OPEN_STATUSES.includes(booking.status)) {
       return NextResponse.json({ error: `This offer has already been ${booking.status}` }, { status: 400 })
+    }
+
+    // Expired offers can no longer be actioned — mark them so both sides see it.
+    if (isExpired(booking)) {
+      await admin.from('agency_bookings').update({ status: 'expired' }).eq('id', booking.id).in('status', OPEN_STATUSES)
+      return NextResponse.json({ error: 'This offer has expired. Ask the property to send a new one if the shift is still available.' }, { status: 400 })
     }
 
     // Work out who to notify (the other party's auth user id and display name)
@@ -235,13 +313,17 @@ export async function POST(req: NextRequest) {
     }
 
     if (action === 'accept') {
+      // Conditional update: only flips an offer that is still open, so two
+      // simultaneous accepts (or an accept racing a decline) can't both win.
       const { data: updated, error } = await admin
         .from('agency_bookings')
         .update({ status: 'accepted' })
         .eq('id', booking.id)
+        .in('status', OPEN_STATUSES)
         .select('*')
-        .single()
+        .maybeSingle()
       if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+      if (!updated) return NextResponse.json({ error: 'This offer is no longer open - it may have just been actioned elsewhere.' }, { status: 409 })
 
       await notifyOtherParty(
         admin, otherUserId, user.id,

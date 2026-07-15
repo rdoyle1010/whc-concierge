@@ -91,6 +91,26 @@ export async function sendReviewRequestEmail(email: string, name: string, otherN
   `))
 }
 
+export async function sendAgencyOfferEmail(
+  email: string,
+  name: string,
+  opts: { propertyName: string; shiftDate: string; rate: number; hours?: number | null; urgent?: boolean; expiresAt?: string | null }
+) {
+  const totalLine = opts.hours ? ` (${opts.hours} hours - £${opts.rate * opts.hours} total)` : ''
+  const subject = opts.urgent
+    ? `URGENT: shift offer for TODAY from ${opts.propertyName}`
+    : `New agency shift offer from ${opts.propertyName}`
+  const expiryLine = opts.expiresAt
+    ? `<p style="color: #B45309; font-weight: 500;">This offer expires at ${new Date(opts.expiresAt).toLocaleString('en-GB', { timeZone: 'Europe/London', hour: '2-digit', minute: '2-digit', day: 'numeric', month: 'short' })} - respond quickly to secure it.</p>`
+    : ''
+  await sendEmail(email, subject, wrapper(`
+    <p style="font-size: 24px; font-weight: 700; margin-bottom: 16px;">${opts.urgent ? 'Urgent cover needed today' : 'New shift offer'}</p>
+    <p style="color: #6B7280;">Hi ${name}, <strong>${opts.propertyName}</strong> has offered you an agency shift on <strong>${opts.shiftDate}</strong> at <strong>£${opts.rate}/hour</strong>${totalLine}.</p>
+    ${expiryLine}
+    <p style="margin-top: 24px;"><a href="https://talent.wellnesshousecollective.co.uk/talent/agency" style="display: inline-block; background: #111; color: #fff; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600;">View &amp; respond</a></p>
+  `))
+}
+
 export async function sendFeaturedExpiringEmail(email: string, name: string) {
   await sendEmail(email, 'Your featured profile expires in 3 days', wrapper(`
     <p style="font-size: 24px; font-weight: 700; margin-bottom: 16px;">Featured expiring soon</p>

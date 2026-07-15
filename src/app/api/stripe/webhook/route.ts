@@ -30,6 +30,15 @@ export async function POST(req: NextRequest) {
         }).eq('id', meta.candidate_id)
       }
 
+      if (meta?.type === 'agency_listing' && meta?.candidate_id) {
+        await supabase.from('candidate_profiles').update({
+          agency_available: true,
+          agency_tier: meta.tier || 'basic',
+          agency_listed_until: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+          stripe_customer_id: session.customer as string,
+        }).eq('id', meta.candidate_id)
+      }
+
       if (meta?.type === 'job_posting' && meta?.job_id) {
         const days = meta.days ? parseInt(meta.days) : 30
         const expiresAt = new Date(Date.now() + days * 24 * 60 * 60 * 1000).toISOString()
@@ -95,15 +104,34 @@ export async function POST(req: NextRequest) {
     case 'customer.subscription.updated': {
       const subscription = event.data.object as Stripe.Subscription
       const customerId = subscription.customer as string
+      const subType = subscription.metadata?.type // set via subscription_data.metadata at checkout
+      const lapsed = subscription.status === 'past_due' || subscription.status === 'unpaid'
+      const active = subscription.status === 'active'
 
-      if (subscription.status === 'past_due' || subscription.status === 'unpaid') {
+      // Agency register listing
+      if (subType === 'agency_listing') {
+        const target = subscription.metadata?.candidate_id
+          ? supabase.from('candidate_profiles').update(
+              lapsed
+                ? { agency_available: false, agency_listed_until: null }
+                : active
+                  ? { agency_available: true, agency_tier: subscription.metadata?.tier || 'basic', agency_listed_until: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString() }
+                  : {}
+            ).eq('id', subscription.metadata.candidate_id)
+          : null
+        if (target && (lapsed || active)) await target
+        break
+      }
+
+      // Featured profile — including legacy subscriptions with no metadata,
+      // which were only ever created for featured profiles.
+      if (lapsed) {
         await supabase.from('candidate_profiles').update({
           is_featured: false,
           featured_until: null,
         }).eq('stripe_customer_id', customerId)
       }
-
-      if (subscription.status === 'active') {
+      if (active) {
         await supabase.from('candidate_profiles').update({
           is_featured: true,
           featured_until: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
@@ -115,6 +143,17 @@ export async function POST(req: NextRequest) {
     case 'customer.subscription.deleted': {
       const subscription = event.data.object as Stripe.Subscription
       const customerId = subscription.customer as string
+      const subType = subscription.metadata?.type
+
+      if (subType === 'agency_listing') {
+        if (subscription.metadata?.candidate_id) {
+          await supabase.from('candidate_profiles')
+            .update({ agency_available: false, agency_listed_until: null })
+            .eq('id', subscription.metadata.candidate_id)
+        }
+        break
+      }
+
       await supabase.from('candidate_profiles').update({ is_featured: false, featured_until: null }).eq('stripe_customer_id', customerId)
       break
     }

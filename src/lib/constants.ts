@@ -98,3 +98,12 @@ export const AGENCY_COMMISSION_RATE = 0.10 // 10%
 // Agency platform fee: charged to the property on top of the therapist's
 // hourly rate. The therapist receives their full rate; WHC earns the fee.
 export const AGENCY_PLATFORM_FEE_PCT = 0.10
+
+// Monthly subscription for candidates to appear on the agency register.
+// Prices in pence. Featured tier appears first in the directory.
+export const AGENCY_LISTING_TIERS = {
+  basic: { price: 1000, label: 'Basic', display: '£10/month', features: ['Listed on the agency register', 'Receive shift offers', 'SMS alerts for urgent cover'] },
+  featured: { price: 2000, label: 'Featured', display: '£20/month', features: ['Everything in Basic', 'Top placement in the register', 'Featured badge on your profile'] },
+} as const
+
+export type AgencyTier = keyof typeof AGENCY_LISTING_TIERS

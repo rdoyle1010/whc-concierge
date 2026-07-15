@@ -4,7 +4,8 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import DashboardShell from '@/components/DashboardShell'
-import { Check, Upload, ArrowRight, ArrowLeft, Search } from 'lucide-react'
+import { Check, Upload, ArrowRight, ArrowLeft, Search, Zap } from 'lucide-react'
+import { AGENCY_LISTING_TIERS } from '@/lib/constants'
 
 // ── Chip selector component ──
 function ChipGrid({ items, selected, onToggle, search }: { items: any[]; selected: Map<string, any>; onToggle: (id: string, name: string) => void; search?: string }) {
@@ -39,7 +40,7 @@ function ProficiencySelect({ value, onChange }: { value: string; onChange: (v: s
 }
 
 // ── Step labels ──
-const STEPS = ['Basic Info', 'Logistics & Preferences', 'Treatment Skills', 'Business Skills', 'Systems', 'Product Houses', 'Qualifications', 'Brand Experience', 'Review']
+const STEPS = ['Basic Info', 'Logistics & Preferences', 'Treatment Skills', 'Business Skills', 'Systems', 'Product Houses', 'Qualifications', 'Brand Experience', 'Agency Work', 'Review']
 
 const TRANSPORT_OPTIONS = ['Own car', 'Public transport', 'Bicycle', 'Walking', 'Relocating for role']
 const COMMUTE_OPTIONS = ['15 min', '30 min', '45 min', '1 hour', '1.5 hours', 'Willing to relocate']
@@ -52,7 +53,7 @@ export default function OnboardingWizard() {
   const [step, setStep] = useState(() => {
     if (typeof window !== 'undefined') {
       const s = parseInt(new URLSearchParams(window.location.search).get('step') || '1')
-      if (s >= 1 && s <= 9) return s
+      if (s >= 1 && s <= STEPS.length) return s
     }
     return 1
   })
@@ -71,6 +72,15 @@ export default function OnboardingWizard() {
     transport_method: '', max_commute: '', shift_preferences: [] as string[],
     location_preferences: [] as string[], needs_accommodation: false,
   })
+
+  // Agency register — opt-in captured here; listing only activates once the
+  // monthly subscription is paid (the Stripe webhook flips agency_available).
+  const [agency, setAgency] = useState({
+    optIn: false, hourly_rate: '', phone: '', postcode: '', travel_radius_miles: '', tier: 'basic' as 'basic' | 'featured',
+  })
+  const [agencyLive, setAgencyLive] = useState<{ available: boolean; tier: string | null; until: string | null }>({ available: false, tier: null, until: null })
+  const [payBusy, setPayBusy] = useState(false)
+  const [payError, setPayError] = useState('')
 
   // Taxonomy data loaded from DB
   const [treatmentSkills, setTreatmentSkills] = useState<any[]>([])
@@ -109,6 +119,20 @@ export default function OnboardingWizard() {
           transport_method: profile.transport_method || '', max_commute: profile.max_commute || '',
           shift_preferences: profile.shift_preferences || [], location_preferences: profile.location_preferences || [],
           needs_accommodation: profile.needs_accommodation || false,
+        })
+
+        setAgency({
+          optIn: Boolean(profile.agency_available),
+          hourly_rate: profile.hourly_rate?.toString() || '',
+          phone: profile.phone || '',
+          postcode: profile.postcode || '',
+          travel_radius_miles: profile.travel_radius_miles?.toString() || '',
+          tier: profile.agency_tier === 'featured' ? 'featured' : 'basic',
+        })
+        setAgencyLive({
+          available: Boolean(profile.agency_available),
+          tier: profile.agency_tier || null,
+          until: profile.agency_listed_until || null,
         })
 
         // Load existing selections
@@ -252,7 +276,49 @@ export default function OnboardingWizard() {
       if (rows.length > 0) await supabase.from('candidate_hotel_brands').insert(rows)
     }
 
+    if (step === 9) {
+      await saveAgencyFields()
+    }
+
     setSaving(false)
+  }
+
+  // Persist the agency-work details (rate, mobile, postcode, radius).
+  // agency_available itself is NOT saved here — only the Stripe webhook may
+  // set it, after a successful subscription payment.
+  const saveAgencyFields = async () => {
+    if (!profileId) return
+    await fetch('/api/profile/update', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ profileId, data: {
+        hourly_rate: agency.hourly_rate ? parseInt(agency.hourly_rate) : null,
+        phone: agency.phone || null,
+        postcode: agency.postcode || null,
+        travel_radius_miles: agency.travel_radius_miles ? parseInt(agency.travel_radius_miles) : null,
+      }}),
+    })
+  }
+
+  // Save details, then hand over to Stripe Checkout for the monthly listing.
+  const startAgencyCheckout = async () => {
+    if (!profileId) return
+    setPayError('')
+    if (!agency.hourly_rate || parseInt(agency.hourly_rate) <= 0) { setPayError('Please set your hourly rate first - properties need to see what you charge.'); return }
+    if (!agency.phone) { setPayError('Please add your mobile number - urgent same-day offers are sent by text.'); return }
+    setPayBusy(true)
+    try {
+      await saveAgencyFields()
+      const res = await fetch('/api/stripe/checkout', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: 'agency_listing', candidateId: profileId, tier: agency.tier, returnUrl: window.location.origin }),
+      })
+      const j = await res.json()
+      if (!res.ok || !j.url) { setPayError(j.error || 'Could not start the payment - please try again.'); setPayBusy(false); return }
+      window.location.href = j.url
+    } catch {
+      setPayError('Something went wrong - please try again.')
+      setPayBusy(false)
+    }
   }
 
   const goNext = async () => { await saveStep(); setStep(s => s + 1); setSearchTerm(''); window.scrollTo(0, 0) }
@@ -541,8 +607,94 @@ export default function OnboardingWizard() {
           </div>
         )}
 
-        {/* ═══ STEP 9: Review ═══ */}
+        {/* ═══ STEP 9: Agency Work ═══ */}
         {step === 9 && (
+          <div className="space-y-5">
+            <div className="flex items-start gap-3 p-4 bg-[#FDF6EC] rounded-xl">
+              <Zap size={18} className="text-accent mt-0.5 shrink-0" />
+              <div>
+                <p className="text-[14px] font-medium text-ink">Join the agency register</p>
+                <p className="text-[13px] text-secondary mt-1">Properties book agency cover when someone calls in sick or they need extra hands. Set your hourly rate, tell us where you can work, and you&apos;ll receive shift offers - urgent same-day offers arrive by text so you never miss one. You keep 100% of your rate; the property pays our fee on top.</p>
+              </div>
+            </div>
+
+            {agencyLive.available ? (
+              <div className="p-4 border border-green-200 bg-green-50 rounded-xl">
+                <p className="text-[14px] font-medium text-green-800">You&apos;re on the agency register</p>
+                <p className="text-[13px] text-green-700 mt-1">
+                  {AGENCY_LISTING_TIERS[(agencyLive.tier === 'featured' ? 'featured' : 'basic')].label} plan
+                  {agencyLive.until ? ` - renews ${new Date(agencyLive.until).toLocaleDateString('en-GB')}` : ''}. Keep your rate and contact details below up to date.
+                </p>
+              </div>
+            ) : (
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input type="checkbox" checked={agency.optIn} onChange={e => { setAgency({ ...agency, optIn: e.target.checked }); setPayError('') }} className="w-3.5 h-3.5 border-border rounded text-ink" />
+                <span className="text-[13px] text-secondary">Yes - I want to be available for agency shifts</span>
+              </label>
+            )}
+
+            {(agency.optIn || agencyLive.available) && (
+              <>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="eyebrow block mb-1.5">Hourly Rate (£) *</label>
+                    <input type="number" min={1} value={agency.hourly_rate} onChange={e => setAgency({ ...agency, hourly_rate: e.target.value })} className="input-field" placeholder="e.g. 25" />
+                    <p className="text-[11px] text-muted mt-1">What properties see when they make you an offer. You receive this in full.</p>
+                  </div>
+                  <div>
+                    <label className="eyebrow block mb-1.5">Mobile Number *</label>
+                    <input type="tel" value={agency.phone} onChange={e => setAgency({ ...agency, phone: e.target.value })} className="input-field" placeholder="07700 900123" />
+                    <p className="text-[11px] text-muted mt-1">Urgent same-day offers are sent by text.</p>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="eyebrow block mb-1.5">Postcode</label>
+                    <input type="text" value={agency.postcode} onChange={e => setAgency({ ...agency, postcode: e.target.value })} className="input-field" placeholder="SW1A 1AA" />
+                  </div>
+                  <div>
+                    <label className="eyebrow block mb-1.5">Travel Radius (miles)</label>
+                    <input type="number" min={1} value={agency.travel_radius_miles} onChange={e => setAgency({ ...agency, travel_radius_miles: e.target.value })} className="input-field" placeholder="e.g. 15" />
+                    <p className="text-[11px] text-muted mt-1">How far you&apos;ll travel for a shift.</p>
+                  </div>
+                </div>
+
+                {!agencyLive.available && (
+                  <>
+                    <div className="grid grid-cols-2 gap-3">
+                      {(Object.keys(AGENCY_LISTING_TIERS) as Array<keyof typeof AGENCY_LISTING_TIERS>).map(t => {
+                        const cfg = AGENCY_LISTING_TIERS[t]
+                        const active = agency.tier === t
+                        return (
+                          <button key={t} type="button" onClick={() => setAgency({ ...agency, tier: t })}
+                            className={`text-left p-4 rounded-xl border transition-all ${active ? 'border-ink ring-1 ring-ink' : 'border-border hover:border-ink/30'}`}>
+                            <div className="flex items-center justify-between mb-1">
+                              <p className="text-[14px] font-medium text-ink">{cfg.label}</p>
+                              {active && <Check size={14} className="text-ink" />}
+                            </div>
+                            <p className="text-[16px] font-semibold text-ink mb-2">{cfg.display}</p>
+                            <ul className="space-y-1">
+                              {cfg.features.map(f => <li key={f} className="text-[11px] text-muted">{f}</li>)}
+                            </ul>
+                          </button>
+                        )
+                      })}
+                    </div>
+                    {payError && <p className="text-[13px] text-red-600">{payError}</p>}
+                    <button type="button" onClick={startAgencyCheckout} disabled={payBusy}
+                      className="btn-primary w-full disabled:opacity-50">
+                      {payBusy ? 'Taking you to payment...' : `Subscribe - ${AGENCY_LISTING_TIERS[agency.tier].display}`}
+                    </button>
+                    <p className="text-[11px] text-muted text-center">Secure payment via Stripe. Cancel any time. Your listing goes live as soon as payment is confirmed.</p>
+                  </>
+                )}
+              </>
+            )}
+          </div>
+        )}
+
+        {/* ═══ STEP 10: Review ═══ */}
+        {step === 10 && (
           <div className="space-y-6">
             <p className="text-[14px] text-secondary">Review your profile before submitting.</p>
 
@@ -575,7 +727,7 @@ export default function OnboardingWizard() {
         {/* ═══ Navigation ═══ */}
         <div className="flex gap-3 mt-8 pt-6 border-t border-border">
           {step > 1 && <button type="button" onClick={goBack} className="btn-secondary flex items-center gap-2 flex-1"><ArrowLeft size={14} />Back</button>}
-          {step < 9 ? (
+          {step < STEPS.length ? (
             <button type="button" onClick={goNext} disabled={saving} className="btn-primary flex items-center justify-center gap-2 flex-1 disabled:opacity-50">
               {saving ? 'Saving...' : 'Continue'}<ArrowRight size={14} />
             </button>

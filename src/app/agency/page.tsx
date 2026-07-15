@@ -108,6 +108,10 @@ export default function AgencyPage() {
   }
 
   const filtered = candidates.filter(c => {
+    // Agency register gating: only candidates with an active listing appear.
+    // `undefined` (column not yet migrated on the live DB) passes through so
+    // the directory never blanks out mid-deploy; `false` (not subscribed) hides.
+    if (c.agency_available === false) return false
     if (insuredOnly && !c.has_insurance) return false
     if (availNow && c.availability_status !== 'immediately') return false
     if (services.length > 0 && !services.some(s => (c.services_offered || []).some((sp: string) => sp.toLowerCase().includes(s.toLowerCase())))) return false
@@ -118,6 +122,10 @@ export default function AgencyPage() {
   })
 
   const sorted = [...filtered].sort((a, b) => {
+    // Featured-tier agency subscribers always rise to the top
+    const aFeat = a.agency_tier === 'featured' ? 1 : 0
+    const bFeat = b.agency_tier === 'featured' ? 1 : 0
+    if (aFeat !== bFeat) return bFeat - aFeat
     if (sortBy === 'rated') return (b.review_score || 0) - (a.review_score || 0)
     if (sortBy === 'rate_high') return (b.hourly_rate || (b.day_rate_max || b.day_rate_min || 0) / 8) - (a.hourly_rate || (a.day_rate_max || a.day_rate_min || 0) / 8)
     if (sortBy === 'rate_low') return (a.hourly_rate || (a.day_rate_min || 7992) / 8) - (b.hourly_rate || (b.day_rate_min || 7992) / 8)

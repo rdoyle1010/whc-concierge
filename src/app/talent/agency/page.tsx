@@ -1,11 +1,26 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import Link from 'next/link'
 import DashboardShell from '@/components/DashboardShell'
-import { Calendar, Clock, Banknote, Star, X } from 'lucide-react'
+import { Calendar, Clock, Banknote, Star, X, Zap, Car, TrainFront, MapPin } from 'lucide-react'
 import ReviewForm from '@/components/ReviewForm'
+import { createClient } from '@/lib/supabase/client'
+import { AGENCY_LISTING_TIERS } from '@/lib/constants'
+
+function expiryLabel(expiresAt: string | null | undefined): string | null {
+  if (!expiresAt) return null
+  const ms = new Date(expiresAt).getTime() - Date.now()
+  if (ms <= 0) return 'Expired'
+  const mins = Math.floor(ms / 60000)
+  if (mins < 60) return `Expires in ${mins} min`
+  const hrs = Math.floor(mins / 60)
+  if (hrs < 48) return `Expires in ${hrs}h ${mins % 60}m`
+  return `Expires ${new Date(expiresAt).toLocaleDateString('en-GB')}`
+}
 
 export default function TalentAgencyPage() {
+  const supabase = createClient()
   const [bookings, setBookings] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [counteringId, setCounteringId] = useState<string | null>(null)
@@ -13,6 +28,7 @@ export default function TalentAgencyPage() {
   const [busyId, setBusyId] = useState<string | null>(null)
   const [actionError, setActionError] = useState('')
   const [reviewing, setReviewing] = useState<{ userId: string; name: string } | null>(null)
+  const [listing, setListing] = useState<{ available: boolean; tier: string | null; until: string | null } | null>(null)
 
   async function load() {
     try {
@@ -29,7 +45,19 @@ export default function TalentAgencyPage() {
     setLoading(false)
   }
 
-  useEffect(() => { load() }, [])
+  useEffect(() => {
+    load()
+    // Listing status — select * so a not-yet-migrated live table can't 400 the query
+    async function loadListing() {
+      try {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) return
+        const { data } = await supabase.from('candidate_profiles').select('*').eq('user_id', user.id).maybeSingle()
+        if (data) setListing({ available: Boolean(data.agency_available), tier: data.agency_tier || null, until: data.agency_listed_until || null })
+      } catch { /* card simply not shown */ }
+    }
+    loadListing()
+  }, [])
 
   async function act(bookingId: string, action: 'accept' | 'decline' | 'counter', rate?: string) {
     setActionError('')
@@ -63,6 +91,7 @@ export default function TalentAgencyPage() {
     completed: 'bg-blue-50 text-blue-700',
     declined: 'bg-red-50 text-red-700',
     cancelled: 'bg-red-50 text-red-700',
+    expired: 'bg-gray-100 text-gray-500',
   }
 
   const offers = bookings.filter((b) => b.status === 'pending' || b.status === 'countered')
@@ -71,6 +100,33 @@ export default function TalentAgencyPage() {
   return (
     <DashboardShell role="talent">
       <h1 className="text-2xl font-serif font-bold text-ink mb-6">Agency Shifts</h1>
+
+      {/* Listing status */}
+      {listing && (
+        listing.available ? (
+          <div className="flex items-center justify-between bg-green-50 border border-green-200 rounded-xl px-5 py-4 mb-6">
+            <div>
+              <p className="text-[14px] font-medium text-green-800">
+                You&apos;re on the agency register
+                {listing.tier === 'featured' && <span className="ml-2 text-[11px] font-semibold uppercase tracking-wide bg-green-600 text-white px-2 py-0.5 rounded-full">Featured</span>}
+              </p>
+              <p className="text-[12px] text-green-700 mt-0.5">
+                {AGENCY_LISTING_TIERS[(listing.tier === 'featured' ? 'featured' : 'basic')].label} plan
+                {listing.until ? ` - renews ${new Date(listing.until).toLocaleDateString('en-GB')}` : ''}. Properties can find you and send shift offers.
+              </p>
+            </div>
+            <Link href="/talent/onboarding?step=9" className="text-[12px] font-medium text-green-800 underline shrink-0 ml-4">Manage</Link>
+          </div>
+        ) : (
+          <div className="flex items-center justify-between bg-[#FDF6EC] border border-border rounded-xl px-5 py-4 mb-6">
+            <div>
+              <p className="text-[14px] font-medium text-ink">You&apos;re not on the agency register yet</p>
+              <p className="text-[12px] text-gray-500 mt-0.5">Join from {AGENCY_LISTING_TIERS.basic.display} to appear in the directory and receive shift offers - urgent same-day offers arrive by text.</p>
+            </div>
+            <Link href="/talent/onboarding?step=9" className="btn-primary text-[12px] shrink-0 ml-4">Join now</Link>
+          </div>
+        )
+      )}
 
       {loading ? (
         <div className="flex items-center justify-center h-64"><div className="animate-spin w-8 h-8 border-2 border-gold border-t-transparent rounded-full" /></div>
@@ -84,14 +140,22 @@ export default function TalentAgencyPage() {
               {actionError && <p className="text-[13px] text-red-600 mb-3">{actionError}</p>}
               <div className="space-y-4">
                 {offers.map((b) => (
-                  <div key={b.id} className="bg-white border border-border rounded-xl p-5">
+                  <div key={b.id} className={`bg-white border rounded-xl p-5 ${b.urgent ? 'border-red-300 ring-1 ring-red-200' : 'border-border'}`}>
                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                       <div>
-                        <div className="flex items-center gap-2 mb-1">
+                        <div className="flex items-center gap-2 mb-1 flex-wrap">
                           <h3 className="font-medium text-ink">{b.employer_name || 'Property'}</h3>
+                          {b.urgent && (
+                            <span className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full bg-red-50 text-red-700">
+                              <Zap size={11} /> URGENT - TODAY
+                            </span>
+                          )}
                           <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${statusColors[b.status] || ''}`}>
                             {b.status === 'countered' ? 'counter sent' : b.status}
                           </span>
+                          {b.expires_at && (
+                            <span className={`text-[11px] font-medium ${b.urgent ? 'text-red-600' : 'text-amber-600'}`}>{expiryLabel(b.expires_at)}</span>
+                          )}
                         </div>
                         <div className="flex items-center space-x-4 text-sm text-gray-500">
                           <span className="flex items-center space-x-1"><Calendar size={14} /><span>{b.shift_date ? new Date(b.shift_date).toLocaleDateString() : 'Date TBC'}</span></span>
@@ -99,6 +163,14 @@ export default function TalentAgencyPage() {
                           {b.hours && <span>{b.hours}h</span>}
                           <span className="flex items-center space-x-1 font-medium text-ink"><Banknote size={14} className="text-accent" /><span>£{b.rate}/hr{b.hours ? ` · £${b.rate * b.hours} total` : ''}</span></span>
                         </div>
+                        {(b.employer_location || b.commute_car_required !== null || b.nearest_transport) && (
+                          <div className="flex items-center flex-wrap gap-x-4 gap-y-1 text-[12px] text-gray-500 mt-2">
+                            {b.employer_location && <span className="flex items-center gap-1"><MapPin size={12} />{b.employer_location}{b.employer_postcode ? ` (${b.employer_postcode})` : ''}</span>}
+                            {b.commute_car_required === true && <span className="flex items-center gap-1 text-amber-700"><Car size={12} /> Car required</span>}
+                            {b.commute_car_required === false && <span className="flex items-center gap-1"><TrainFront size={12} /> Reachable by public transport</span>}
+                            {b.nearest_transport && <span className="flex items-center gap-1"><TrainFront size={12} />{b.nearest_transport}</span>}
+                          </div>
+                        )}
                       </div>
 
                       {b.status === 'pending' ? (

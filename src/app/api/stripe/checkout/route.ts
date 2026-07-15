@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { stripe } from '@/lib/stripe'
-import { JOB_TIERS, FEATURED_PROFILE_PRICE } from '@/lib/constants'
+import { JOB_TIERS, FEATURED_PROFILE_PRICE, AGENCY_LISTING_TIERS } from '@/lib/constants'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 
@@ -59,6 +59,51 @@ export async function POST(req: NextRequest) {
         success_url: `${origin}/talent/upgrade?success=true`,
         cancel_url: `${origin}/talent/upgrade?cancelled=true`,
         metadata: { type: 'featured_profile', candidate_id: candidateId, user_id: user.id },
+        subscription_data: { metadata: { type: 'featured_profile', candidate_id: candidateId, user_id: user.id } },
+      })
+      return NextResponse.json({ url: session.url })
+    }
+
+    // Agency register listing — candidate pays a monthly subscription to be
+    // discoverable for agency shifts. The webhook flips agency_available on
+    // successful payment; nothing is granted before Stripe confirms.
+    if (type === 'agency_listing') {
+      const { candidateId, tier } = body
+      if (!candidateId) return NextResponse.json({ error: 'Missing candidateId' }, { status: 400 })
+      const tierConfig = AGENCY_LISTING_TIERS[tier as keyof typeof AGENCY_LISTING_TIERS]
+      if (!tierConfig) return NextResponse.json({ error: 'Invalid tier' }, { status: 400 })
+
+      // The candidate must own the profile they are listing
+      const { createAdminClient } = await import('@/lib/supabase/admin')
+      const admin = createAdminClient()
+      const { data: cand } = await admin.from('candidate_profiles').select('id, user_id').eq('id', candidateId).maybeSingle()
+      if (!cand || cand.user_id !== user.id) {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+      }
+
+      const meta = { type: 'agency_listing', candidate_id: candidateId, tier, user_id: user.id }
+      const session = await stripe.checkout.sessions.create({
+        payment_method_types: ['card'],
+        line_items: [{
+          price_data: {
+            currency: 'gbp',
+            product_data: {
+              name: `WHC Concierge — Agency Register (${tierConfig.label})`,
+              description: `Monthly agency listing subscription — ${tierConfig.display}`,
+            },
+            unit_amount: tierConfig.price,
+            recurring: { interval: 'month' },
+          },
+          quantity: 1,
+        }],
+        mode: 'subscription',
+        allow_promotion_codes: true,
+        success_url: `${origin}/talent/agency?subscribed=true`,
+        cancel_url: `${origin}/talent/onboarding?step=9&cancelled=true`,
+        metadata: meta,
+        // Also stamp the subscription itself, so customer.subscription.*
+        // webhook events can be routed without guessing.
+        subscription_data: { metadata: meta },
       })
       return NextResponse.json({ url: session.url })
     }

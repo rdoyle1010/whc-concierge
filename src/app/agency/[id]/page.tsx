@@ -289,6 +289,7 @@ export default function AgencyProfilePage() {
                     <div>
                       <label className="text-[12px] text-muted block mb-1">Shift date</label>
                       <input name="shiftDate" type="date" required className="input-field text-[13px]" />
+                      <p className="text-[11px] text-muted mt-1">Pick today for urgent cover - the candidate is alerted instantly by text and email, and the offer expires after 4 hours.</p>
                     </div>
                     <div>
                       <label className="text-[12px] text-muted block mb-1">Shift type</label>
