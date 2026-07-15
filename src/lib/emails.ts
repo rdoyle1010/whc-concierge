@@ -11,11 +11,17 @@ async function sendEmail(to: string, subject: string, html: string) {
   }
 
   try {
-    await fetch('https://api.resend.com/emails', {
+    // Log failures loudly — Resend rejections (bad key, unverified domain)
+    // otherwise fail in silence and nobody notices for months.
+    const res = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({ from: FROM_EMAIL, to, subject, html }),
     })
+    if (!res.ok) {
+      const detail = await res.text().catch(() => '')
+      console.error(`[Email FAILED ${res.status}] To: ${to}, Subject: ${subject} — ${detail.slice(0, 300)}`)
+    }
   } catch (err) {
     console.error('Email send failed:', err)
   }

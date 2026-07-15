@@ -9,14 +9,23 @@ async function sleep(ms: number) {
   return new Promise(resolve => setTimeout(resolve, ms))
 }
 
-function sendWelcomeEmail(email: string, firstName: string) {
+async function sendWelcomeEmail(email: string, firstName: string) {
   const html = welcomeEmailHtml({ firstName, userType: 'talent', dashboardUrl: 'https://talent.wellnesshousecollective.co.uk/talent/dashboard' })
   if (!RESEND_API_KEY) { console.log(`[Welcome email skipped] To: ${email}`); return }
-  fetch('https://api.resend.com/emails', {
-    method: 'POST',
-    headers: { 'Authorization': `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ from: FROM_EMAIL, to: email, subject: 'Welcome to WHC Concierge', html }),
-  }).catch(err => console.error('Welcome email failed:', err))
+  // Awaited by callers (fire-and-forget dies on serverless) and failures logged loudly.
+  try {
+    const res = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ from: FROM_EMAIL, to: email, subject: 'Welcome to WHC Concierge', html }),
+    })
+    if (!res.ok) {
+      const detail = await res.text().catch(() => '')
+      console.error(`[Welcome email FAILED ${res.status}] To: ${email} — ${detail.slice(0, 300)}`)
+    }
+  } catch (err) {
+    console.error('Welcome email failed:', err)
+  }
 }
 
 
@@ -89,7 +98,7 @@ export async function POST(req: NextRequest) {
         .insert({ user_id: userId, ...profileData })
 
       if (!profileError) {
-        if (userEmail) sendWelcomeEmail(userEmail, profileData.full_name?.split(' ')[0] || 'there')
+        if (userEmail) await sendWelcomeEmail(userEmail, profileData.full_name?.split(' ')[0] || 'there')
         return NextResponse.json({ success: true })
       }
 
@@ -104,7 +113,7 @@ export async function POST(req: NextRequest) {
       // Column mismatch: strip only the offending columns, keep the rest of the data
       const result = await insertStrippingUnknownColumns(supabase, 'candidate_profiles', { user_id: userId, ...profileData })
       if (result.ok) {
-        if (userEmail) sendWelcomeEmail(userEmail, profileData.full_name?.split(' ')[0] || 'there')
+        if (userEmail) await sendWelcomeEmail(userEmail, profileData.full_name?.split(' ')[0] || 'there')
         return NextResponse.json({ success: true })
       }
       lastError = result.error
