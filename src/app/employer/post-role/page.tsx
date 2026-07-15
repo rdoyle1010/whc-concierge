@@ -8,7 +8,6 @@ import { ROLE_LEVELS, CONTRACT_TYPES, JOB_TIERS } from '@/lib/constants'
 import { SERVICES_CATEGORIES, PRODUCT_HOUSES_FULL, QUALS_CATEGORIES, SYSTEMS_FULL } from '@/lib/taxonomy'
 import CollapsibleCheckboxSection from '@/components/CollapsibleCheckboxSection'
 import { Check } from 'lucide-react'
-import { jobListingSchema } from '@/lib/validations'
 
 const TIER_KEYS = ['Bronze', 'Silver', 'Gold', 'Platinum'] as const
 const tierCards = TIER_KEYS.map(k => ({
@@ -162,29 +161,20 @@ export default function PostRolePage() {
     setError('')
     setFieldErrors({})
 
-    try {
-      const payload = {
-        job_title: form.title,
-        job_description: form.description,
-        location: form.location,
-      }
+    const newErrors: Record<string, string> = {}
+    if (!form.title || form.title.trim().length < 5) newErrors.job_title = 'Title must be at least 5 characters'
+    if (!form.description || form.description.trim().length < 10) newErrors.job_description = 'Description must be at least 10 characters'
+    if (!form.location || !form.location.trim()) newErrors.location = 'Location is required'
 
-      jobListingSchema.pick({ job_title: true, job_description: true, location: true }).parse(payload)
-      setPhase('tier')
-      window.scrollTo({ top: 0, behavior: 'smooth' })
-    } catch (err: any) {
-      const newErrors: Record<string, string> = {}
-      if (err.errors) {
-        err.errors.forEach((e: any) => {
-          newErrors[e.path?.[0] || 'general'] = e.message
-        })
-      }
+    if (Object.keys(newErrors).length > 0) {
       setFieldErrors(newErrors)
       const FIELD_LABELS: Record<string, string> = { job_title: 'Job Title', job_description: 'Description', location: 'Location' }
-      const missing = Object.keys(newErrors).map(k => FIELD_LABELS[k] || k).join(', ')
-      setError(`Please check these fields before continuing: ${missing}`)
+      setError(`Please check these fields before continuing: ${Object.keys(newErrors).map(k => FIELD_LABELS[k]).join(', ')}`)
       window.scrollTo({ top: 0, behavior: 'smooth' })
+      return
     }
+    setPhase('tier')
+    window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
   const handlePostLive = async () => {
@@ -300,7 +290,7 @@ export default function PostRolePage() {
           <div className="space-y-6">
             <div className="border-b border-neutral-100 pb-2">
               <p className="text-xs font-medium text-neutral-400 uppercase tracking-widest">Matching Criteria</p>
-              <p className="text-xs text-neutral-400 mt-1">These fields power the matching algorithm — the more you fill in, the better your candidate matches.</p>
+              <p className="text-xs text-neutral-400 mt-1">These fields power the matching algorithm - only tick what the role genuinely requires. Hiring a manager? Leave treatments unticked and candidates won't be filtered on them.</p>
             </div>
 
             <CollapsibleCheckboxSection
