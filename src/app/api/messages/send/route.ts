@@ -36,11 +36,19 @@ export async function POST(req: NextRequest) {
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-    // Notify the recipient, linking to the inbox for their role
-    const { data: recipProfile } = await admin.from('profiles').select('role').eq('id', recipientId).maybeSingle()
+    // Notify the recipient, linking to the inbox for their role.
+    // MUST be awaited: on serverless the function freezes the moment the
+    // response returns, so a fire-and-forget insert almost never lands.
+    const [{ data: recipProfile }, { data: senderProfile }] = await Promise.all([
+      admin.from('profiles').select('role').eq('id', recipientId).maybeSingle(),
+      admin.from('profiles').select('full_name').eq('id', user.id).maybeSingle(),
+    ])
     const inbox = recipProfile?.role === 'employer' ? '/employer/messages' : '/talent/messages'
-    createNotification(recipientId, 'new_message', 'New message',
-      'You have a new message waiting.', inbox).catch(() => {})
+    const senderName = senderProfile?.full_name || 'Someone'
+    const preview = content ? (content.length > 80 ? content.slice(0, 80) + '…' : content) : 'Sent you an attachment'
+    try {
+      await createNotification(recipientId, 'new_message', `New message from ${senderName}`, preview, inbox)
+    } catch { /* non-fatal — the message itself was saved */ }
 
     return NextResponse.json({ success: true, id: data.id })
   } catch (e: any) {
