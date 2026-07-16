@@ -44,7 +44,7 @@ export default function EmployerDashboard() {
           .from('applications')
           .select('*, candidate_profiles(full_name, headline)')
           .in('role_id', jobIds)
-          .order('posted_date', { ascending: false })
+          .order('created_at', { ascending: false })
           .limit(5)
         setRecentApps((apps || []).map((a: any) => {
           const job = normalizedJobs.find(j => j.id === a.role_id)

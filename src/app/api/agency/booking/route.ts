@@ -83,12 +83,28 @@ async function notifyOtherParty(
   } catch { /* non-fatal */ }
 }
 
+// Lazy maintenance sweep, run whenever agency data loads. Belt-and-braces
+// behind the Stripe webhooks: expires stale offers, and lapses register
+// listings / Preferred Employer status whose renewal date passed more than
+// 3 days ago (grace window for webhook timing). Grandfathered accounts have
+// NULL dates and are never touched. All best-effort.
+async function maintenanceSweep(admin: any) {
+  const now = new Date().toISOString()
+  const grace = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString()
+  await Promise.allSettled([
+    admin.from('agency_bookings').update({ status: 'expired' }).in('status', OPEN_STATUSES).lt('expires_at', now),
+    admin.from('candidate_profiles').update({ agency_available: false }).eq('agency_available', true).not('agency_listed_until', 'is', null).lt('agency_listed_until', grace),
+    admin.from('employer_profiles').update({ preferred_employer: false }).eq('preferred_employer', true).not('preferred_until', 'is', null).lt('preferred_until', grace),
+  ])
+}
+
 export async function GET() {
   try {
     const { data: { user } } = await getAuthedUser()
     if (!user) return NextResponse.json({ error: 'Please log in' }, { status: 401 })
 
     const admin = createAdminClient()
+    await maintenanceSweep(admin)
     const [{ data: cand }, { data: emp }] = await Promise.all([
       admin.from('candidate_profiles').select('id, full_name, user_id').eq('user_id', user.id).maybeSingle(),
       admin.from('employer_profiles').select('id, company_name, property_name, user_id').eq('user_id', user.id).maybeSingle(),

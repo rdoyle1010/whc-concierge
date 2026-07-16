@@ -79,17 +79,16 @@ export default function EmployerApplicationsPage() {
     if (error) { alert('Could not update this application - please try again.'); return }
     setApplications(applications.map(a => a.id === appId ? { ...a, status } : a))
 
-    // Send decision email for shortlisted/accepted/rejected (fire-and-forget).
-    // NOTE: candidate_profiles has no email column (emails live in auth.users),
-    // so this only fires if an email is present — the decision-email route
-    // needs a server-side auth.users lookup before this can send. (Follow-up.)
+    // Send decision email for shortlisted/accepted/rejected. The route looks
+    // the address up server-side from the candidate's auth user id.
     if (status === 'shortlisted' || status === 'accepted' || status === 'rejected') {
       const app = applications.find(a => a.id === appId)
-      if (app?.candidate_profiles?.email) {
+      if (app?.candidate_profiles?.user_id || app?.candidate_profiles?.email) {
         fetch('/api/application-decision-email', {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            applicantEmail: app.candidate_profiles.email,
+            candidateUserId: app.candidate_profiles?.user_id || null,
+            applicantEmail: app.candidate_profiles?.email || null,
             applicantName: app.candidate_profiles?.full_name || '',
             jobTitle: app.job_listings?.job_title || '',
             propertyName: profile?.property_name || profile?.company_name || '',

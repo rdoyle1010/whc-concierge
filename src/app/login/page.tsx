@@ -49,6 +49,14 @@ function LoginForm() {
       // Also check user_metadata
       const metaRole = user.user_metadata?.role
 
+      // Deep links: honour a same-site ?redirect= target (set by middleware
+      // when a logged-out user hits a protected page)
+      const redirectTo = searchParams.get('redirect')
+      if (redirectTo && redirectTo.startsWith('/') && !redirectTo.startsWith('//')) {
+        router.push(redirectTo)
+        return
+      }
+
       // 4. Route — admin
       if (userRole === 'admin' || metaRole === 'admin') {
         router.push('/admin/dashboard')

@@ -11,6 +11,13 @@ import { Clock, MapPin, X, Star, Award, Briefcase, ArrowRight } from 'lucide-rea
 export default function ResidencyPage() {
   const supabase = createClient()
   const [residencies, setResidencies] = useState<any[]>([])
+  const [justSubmitted, setJustSubmitted] = useState(false)
+
+  useEffect(() => {
+    if (typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('submitted') === 'true') {
+      setJustSubmitted(true)
+    }
+  }, [])
   const [loading, setLoading] = useState(true)
   const [showEnquiry, setShowEnquiry] = useState<any>(null)
   const [specFilter, setSpecFilter] = useState('')
@@ -41,6 +48,14 @@ export default function ResidencyPage() {
   return (
     <div className="min-h-screen bg-white">
       <Navbar />
+
+      {justSubmitted && (
+        <div className="max-w-7xl mx-auto px-6 lg:px-8 pt-20">
+          <div className="bg-green-50 border border-green-200 text-green-800 text-sm px-4 py-3 rounded-xl">
+            Listing submitted - it goes live once the WHC team approves it, usually within 24 hours. We&apos;ll notify you.
+          </div>
+        </div>
+      )}
 
       {/* Hero */}
       <section className="pt-16 bg-white border-b border-border">

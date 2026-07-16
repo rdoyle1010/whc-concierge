@@ -6,11 +6,13 @@ import { createClient } from '@/lib/supabase/client'
 import { AlertTriangle, Eye, X } from 'lucide-react'
 
 export default function AdminComplaintsPage() {
-  const supabase = createClient()
   const [complaints, setComplaints] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [selected, setSelected] = useState<any>(null)
   const [filter, setFilter] = useState('all')
+  const [reply, setReply] = useState('')
+  const [sendingReply, setSendingReply] = useState(false)
+  const [replyMsg, setReplyMsg] = useState('')
 
   useEffect(() => {
     async function load() {
@@ -101,6 +103,34 @@ export default function AdminComplaintsPage() {
             <div className="mt-4 text-sm text-gray-400">
               <p>From: {selected.name} ({selected.email})</p>
               <p>Filed: {new Date(selected.created_at).toLocaleString()}</p>
+            </div>
+
+            {/* Real reply - emails the complainant directly */}
+            <div className="mt-5 pt-5 border-t border-gray-100">
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">Reply by email to {selected.email}</label>
+              <textarea rows={4} value={reply} onChange={(e) => setReply(e.target.value)} className="input-field mb-2"
+                placeholder={`Hi ${selected.name?.split(' ')[0] || 'there'}, thank you for raising this...`} />
+              {replyMsg && <p className={`text-xs mb-2 ${replyMsg.includes('sent') ? 'text-green-600' : 'text-red-600'}`}>{replyMsg}</p>}
+              <button
+                onClick={async () => {
+                  setSendingReply(true); setReplyMsg('')
+                  try {
+                    const res = await fetch('/api/admin/content', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'query_reply', id: selected.id, message: reply, markStatus: 'investigating' }) })
+                    const j = await res.json()
+                    if (!res.ok) { setReplyMsg(j.error || 'Could not send.') }
+                    else {
+                      setReplyMsg('Reply sent.')
+                      setReply('')
+                      setComplaints(cs => cs.map(c => c.id === selected.id ? { ...c, status: 'investigating' } : c))
+                      setSelected({ ...selected, status: 'investigating' })
+                    }
+                  } catch { setReplyMsg('Could not send - please try again.') }
+                  setSendingReply(false)
+                }}
+                disabled={sendingReply || !reply.trim()}
+                className="btn-primary text-sm disabled:opacity-50">
+                {sendingReply ? 'Sending...' : 'Send Reply'}
+              </button>
             </div>
           </div>
         </div>

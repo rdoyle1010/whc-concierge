@@ -31,8 +31,9 @@ export default function TaxonomyManagement() {
 
   async function loadItems() {
     setLoading(true)
-    const { data } = await supabase.from(activeTable).select('*').order('sort_order').order('name')
-    setItems(data || [])
+    const res = await fetch(`/api/admin/taxonomy?table=${activeTable}`)
+    const j = res.ok ? await res.json() : { rows: [] }
+    setItems(j.rows || [])
     setLoading(false)
   }
 
@@ -48,9 +49,9 @@ export default function TaxonomyManagement() {
     if (!formName.trim()) return
     setSaving(true)
     if (editing) {
-      await supabase.from(activeTable).update({ name: formName, [catField]: formCategory || null }).eq('id', editing.id)
+      await fetch('/api/admin/taxonomy', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'save', table: activeTable, id: editing.id, data: { name: formName, [catField]: formCategory || null } }) })
     } else {
-      await supabase.from(activeTable).insert({ name: formName, [catField]: formCategory || null, is_active: true, sort_order: items.length + 1 })
+      await fetch('/api/admin/taxonomy', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'save', table: activeTable, data: { name: formName, [catField]: formCategory || null, is_active: true, sort_order: items.length + 1 } }) })
     }
     setSaving(false)
     setShowForm(false)
@@ -61,7 +62,7 @@ export default function TaxonomyManagement() {
   }
 
   const toggleActive = async (id: string, current: boolean) => {
-    await supabase.from(activeTable).update({ is_active: !current }).eq('id', id)
+    await fetch('/api/admin/taxonomy', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'save', table: activeTable, id, data: { is_active: !current } }) })
     setItems(items.map(i => i.id === id ? { ...i, is_active: !current } : i))
   }
 

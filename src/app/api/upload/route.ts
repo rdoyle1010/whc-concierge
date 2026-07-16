@@ -15,6 +15,7 @@ const ALLOWED_COLUMNS = new Set([
 const ALLOWED_BUCKETS = new Set([
   'site-images',
   'profile-photos',
+  'message-attachments',
   'talent-documents',
   'property-photos',
 ])

@@ -67,7 +67,7 @@ export default function SavedJobsPage() {
                   {job.salary_min && job.salary_max && <span>£{(job.salary_min/1000).toFixed(0)}k–£{(job.salary_max/1000).toFixed(0)}k</span>}
                 </div>
                 <div className="flex gap-2">
-                  <Link href="/roles/match" className="btn-primary flex-1 text-center text-[12px]">View & Apply</Link>
+                  <Link href={`/jobs/${saved.job_id || job.id}`} className="btn-primary flex-1 text-center text-[12px]">View & Apply</Link>
                 </div>
                 {!job.is_live && <p className="text-[11px] text-red-400 mt-2">This role is no longer active</p>}
               </div>

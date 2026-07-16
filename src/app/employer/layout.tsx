@@ -1,10 +1,8 @@
 import { redirect } from 'next/navigation'
 import { createServerSupabaseClient } from '@/lib/supabase/server'
 
-// This orphaned inbox predates the role-specific messaging pages; its send
-// path silently failed (RLS-blocked client insert). It now just routes the
-// visitor to the right inbox.
-export default async function MessagesRedirect() {
+// Role gate: the employer area is for properties (admins may pass for support).
+export default async function EmployerLayout({ children }: { children: React.ReactNode }) {
   const supabase = createServerSupabaseClient()
   const { data: { session } } = await supabase.auth.getSession()
   if (!session) redirect('/login')
@@ -15,7 +13,8 @@ export default async function MessagesRedirect() {
     .eq('id', session.user.id)
     .single()
 
-  if (profile?.role === 'employer') redirect('/employer/messages')
-  if (profile?.role === 'admin') redirect('/admin/messages')
-  redirect('/talent/messages')
+  if (profile?.role === 'candidate') redirect('/talent/dashboard')
+  if (!profile || (profile.role !== 'employer' && profile.role !== 'admin')) redirect('/login?error=unauthorised')
+
+  return children
 }

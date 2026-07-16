@@ -73,7 +73,7 @@ export default function EmployerJobsPage() {
     }
 
     const { data } = await supabase.from('job_listings').select('*').eq('employer_id', profile.id).order('posted_date', { ascending: false })
-    setJobs(data || [])
+    setJobs((data || []).map((j: any) => ({ ...j, title: j.job_title || j.title, description: j.job_description || j.description })))
     setShowForm(false)
     setEditing(null)
     setForm(emptyJob)

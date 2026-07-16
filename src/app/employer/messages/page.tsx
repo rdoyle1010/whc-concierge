@@ -128,7 +128,7 @@ export default function EmployerMessagesPage() {
         .or(`and(sender_id.eq.${userId},recipient_id.eq.${activeConvo}),and(sender_id.eq.${activeConvo},recipient_id.eq.${userId})`)
         .order('created_at', { ascending: true })
       setMessages(data || [])
-      await supabase.from('messages').update({ read: true }).eq('sender_id', activeConvo).eq('recipient_id', userId).eq('read', false)
+      await fetch('/api/messages/mark-read', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ partnerId: activeConvo }) }).catch(() => {})
       setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 100)
     }
     loadMessages()
@@ -146,17 +146,15 @@ export default function EmployerMessagesPage() {
       if (attachmentFile) {
         const fileExt = attachmentFile.name.split('.').pop()
         const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`
-        const { error: uploadError } = await supabase.storage
-          .from('message-attachments')
-          .upload(fileName, attachmentFile)
+        const fd = new FormData()
+        fd.append('file', attachmentFile)
+        fd.append('bucket', 'message-attachments')
+        fd.append('path', fileName)
+        const upRes = await fetch('/api/upload', { method: 'POST', body: fd })
+        const upJson = await upRes.json().catch(() => ({}))
+        if (!upRes.ok || !upJson.url) throw new Error(upJson.error || 'Attachment upload failed')
 
-        if (uploadError) throw uploadError
-
-        const { data: { publicUrl } } = supabase.storage
-          .from('message-attachments')
-          .getPublicUrl(fileName)
-
-        attachmentUrl = publicUrl
+        attachmentUrl = upJson.url
         attachmentName = attachmentFile.name
         attachmentType = attachmentFile.type
       }

@@ -43,11 +43,19 @@ export default function EmployerAnalyticsPage() {
       const jobIds = jobs.map(j => j.id)
       const activeJobs = jobs.filter(j => j.is_live)
 
-      // Load all applications for this employer's jobs
-      const { data: allApps } = await supabase
+      // Load all applications for this employer's jobs.
+      // Two-step fetch: an embed naming a missing column 400s the WHOLE query
+      // on the drifted live schema, which blanked this page to zeros.
+      const { data: rawApps } = await supabase
         .from('applications')
-        .select('*, candidate_profiles(services_offered, treatment_skills)')
+        .select('*')
         .in('role_id', jobIds)
+      const candIdsForApps = Array.from(new Set((rawApps || []).map((a: any) => a.candidate_id).filter(Boolean)))
+      const { data: appCands } = candIdsForApps.length
+        ? await supabase.from('candidate_profiles').select('*').in('id', candIdsForApps)
+        : { data: [] as any[] }
+      const candByIdForApps = new Map((appCands || []).map((c: any) => [c.id, c]))
+      const allApps = (rawApps || []).map((a: any) => ({ ...a, candidate_profiles: candByIdForApps.get(a.candidate_id) || null }))
 
       const apps = allApps || []
       const now = new Date()

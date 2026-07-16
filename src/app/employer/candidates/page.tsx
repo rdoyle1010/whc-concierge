@@ -25,14 +25,17 @@ export default function EmployerCandidatesPage() {
       const { data: prof } = await supabase.from('employer_profiles').select('*').eq('user_id', user.id).single()
       setProfile(prof)
 
-      // Fetch candidates and blocked list in parallel
-      const [candidateRes, blocksRes] = await Promise.all([
+      // Fetch candidates, blocked list and my past passes in parallel
+      // (blocks + swipes come from service-role routes - the tables are RLS-locked)
+      const [candidateRes, blocksRes, swipesRes] = await Promise.all([
         supabase.from('candidate_profiles').select('*').order('created_at', { ascending: false }),
-        prof ? supabase.from('profile_blocks').select('candidate_id').eq('blocked_employer_id', prof.id) : Promise.resolve({ data: [] }),
+        fetch('/api/profile/blocks').then(r => r.ok ? r.json() : { blocked_candidate_ids: [] }).catch(() => ({ blocked_candidate_ids: [] })),
+        fetch('/api/swipe').then(r => r.ok ? r.json() : { passed_ids: [] }).catch(() => ({ passed_ids: [] })),
       ])
 
-      const blockedIds = new Set((blocksRes.data || []).map((b: any) => b.candidate_id))
-      const visible = (candidateRes.data || []).filter((c: any) => !blockedIds.has(c.id))
+      const blockedIds = new Set(blocksRes.blocked_candidate_ids || [])
+      const passedIds = new Set(swipesRes.passed_ids || [])
+      const visible = (candidateRes.data || []).filter((c: any) => !blockedIds.has(c.id) && !passedIds.has(c.id))
 
       // Score every candidate against this employer's live roles - best fit first
       let scored = visible
@@ -86,8 +89,14 @@ export default function EmployerCandidatesPage() {
         if (entry) await fetch('/api/shortlist', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: entry.id }) })
       }
     } else {
+      const res = await fetch('/api/shortlist', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ candidateId }) })
+      const j = res.ok ? await res.json().catch(() => ({})) : null
+      if (!j) { alert('Could not shortlist - please try again.'); return }
       next.add(candidateId)
-      await fetch('/api/shortlist', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ candidateId }) })
+      // Shortlisting can complete a mutual match server-side - celebrate it
+      if (j.matched) {
+        setMatchInfo({ name: j.candidateName || 'This candidate', job: j.jobTitle || 'your role' })
+      }
       const candidate = candidates.find(c => c.id === candidateId)
       if (candidate?.user_id) {
         notify(candidate.user_id, 'new_match', 'You\'ve been shortlisted', 'An employer has shortlisted your profile. Check your matches for details.', '/talent/dashboard')

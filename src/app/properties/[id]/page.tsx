@@ -177,7 +177,7 @@ export default function PropertyDetailPage() {
           {jobs.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
               {jobs.map((job) => (
-                <Link key={job.id} href="/jobs">
+                <Link key={job.id} href={`/jobs/${job.id}`}>
                   <div className="card hover:shadow-lg transition-all group cursor-pointer h-full">
                     <div className="flex items-start justify-between mb-4">
                       <div>
@@ -202,9 +202,9 @@ export default function PropertyDetailPage() {
                       </div>
                     )}
 
-                    {job.description && (
+                    {(job.job_description || job.description) && (
                       <p className="text-secondary text-sm line-clamp-2">
-                        {job.description}
+                        {job.job_description || job.description}
                       </p>
                     )}
                   </div>

@@ -47,12 +47,9 @@ export default function TalentSettingsPage() {
         setAlertsFrequency(profile.job_alerts_frequency || 'instant')
         setAlertsMinScore(profile.job_alerts_min_score || 60)
 
-        const { data: blocks } = await supabase
-          .from('profile_blocks')
-          .select('blocked_employer_id')
-          .eq('candidate_id', profile.id)
-
-        const blockedIds = new Set((blocks || []).map((b: any) => b.blocked_employer_id))
+        const blocksRes = await fetch('/api/profile/blocks')
+        const blocksJson = blocksRes.ok ? await blocksRes.json() : { blocks: [] }
+        const blockedIds = new Set((blocksJson.blocks || []).map((b: any) => b.blocked_employer_id))
         setBlockedEmployers((employersRes.data || []).filter((e: any) => blockedIds.has(e.id)))
       }
 
@@ -74,7 +71,13 @@ export default function TalentSettingsPage() {
 
   const blockEmployer = async (employer: any) => {
     if (!candidateId || blockedEmployers.some(e => e.id === employer.id)) return
-    await supabase.from('profile_blocks').insert({ candidate_id: candidateId, blocked_employer_id: employer.id })
+    // Service-role route - the old client-side insert was RLS-blocked and
+    // silently failed, so blocked employers could still see the profile
+    const res = await fetch('/api/profile/blocks', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ employerId: employer.id, action: 'block' }),
+    })
+    if (!res.ok) { alert('Could not block this employer - please try again.'); return }
     setBlockedEmployers([...blockedEmployers, employer])
     setEmployerSearch('')
     if (!stealthEnabled) toggleStealth(true)
@@ -82,7 +85,11 @@ export default function TalentSettingsPage() {
 
   const unblockEmployer = async (employerId: string) => {
     if (!candidateId) return
-    await supabase.from('profile_blocks').delete().eq('candidate_id', candidateId).eq('blocked_employer_id', employerId)
+    const res = await fetch('/api/profile/blocks', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ employerId, action: 'unblock' }),
+    })
+    if (!res.ok) { alert('Could not unblock - please try again.'); return }
     setBlockedEmployers(blockedEmployers.filter(e => e.id !== employerId))
   }
 

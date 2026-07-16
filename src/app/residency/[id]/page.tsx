@@ -1,6 +1,7 @@
 import { createServerSupabaseClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
+import ResidencyEnquiryForm from '@/components/ResidencyEnquiryForm'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
 import { ArrowLeft, MapPin, Clock, Briefcase, Calendar, Award } from 'lucide-react'
@@ -168,13 +169,7 @@ export default async function ResidencyDetailPage({ params }: { params: { id: st
             {/* Enquiry form */}
             <div id="enquire" className="bg-white border border-border rounded-xl p-6">
               <h3 className="text-[14px] font-medium text-ink mb-4">Enquire About This Specialist</h3>
-              <form className="space-y-3">
-                <input name="name" required placeholder="Your name" className="input-field text-[13px]" />
-                <input name="property" required placeholder="Property name" className="input-field text-[13px]" />
-                <input name="dates" placeholder="Dates needed" className="input-field text-[13px]" />
-                <textarea name="message" rows={3} required placeholder="Tell us what you're looking for..." className="input-field text-[13px]" />
-                <button type="submit" className="w-full py-2.5 rounded-lg text-[13px] font-semibold text-white" style={{ backgroundColor: '#C9A96E' }}>Send Enquiry</button>
-              </form>
+              <ResidencyEnquiryForm specialistName={r.full_name || r.primary_specialism || 'Specialist'} listingId={r.id} />
             </div>
           </div>
         </div>

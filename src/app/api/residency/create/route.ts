@@ -51,6 +51,9 @@ export async function POST(req: NextRequest) {
       will_travel_to: travel,
       preferred_duration: duration,
       weekly_rate: body.weekly_rate ? parseInt(String(body.weekly_rate), 10) : null,
+      day_rate: body.day_rate ? parseInt(String(body.day_rate), 10) : null,
+      monthly_rate: body.monthly_rate ? parseInt(String(body.monthly_rate), 10) : null,
+      negotiable: body.negotiable === true,
       available_from: body.availability_start || null,
       approval_status: 'pending',
     }

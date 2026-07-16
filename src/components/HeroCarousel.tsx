@@ -133,7 +133,7 @@ export default function HeroCarousel() {
               >
                 Post a Role
               </Link>
-              <Link href="/register/professional"
+              <Link href="/register/talent"
                 className="px-8 py-3.5 rounded-lg text-[14px] font-semibold text-white bg-black/50 backdrop-blur-sm border border-white/20 transition-all hover:bg-black/70"
               >
                 Join as Professional <ArrowRight size={16} className="inline ml-2" />

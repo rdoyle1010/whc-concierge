@@ -72,6 +72,32 @@ async function findExistingApplication(admin: any, candidateId: string, jobId: s
   return null
 }
 
+// GET: the caller's own left-swipes (employer passing candidates), so Browse
+// Candidates can keep passed profiles hidden across visits.
+export async function GET() {
+  try {
+    const cookieStore = cookies()
+    const supabaseAuth = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      { cookies: { getAll() { return cookieStore.getAll() }, setAll() {} } }
+    )
+    const { data: { user } } = await supabaseAuth.auth.getUser()
+    if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+    const admin = createAdminClient()
+    const { data } = await admin
+      .from('swipes')
+      .select('target_id')
+      .eq('swiper_id', user.id)
+      .eq('swiper_type', 'employer')
+      .eq('target_type', 'candidate')
+      .eq('action', 'left')
+    return NextResponse.json({ passed_ids: Array.from(new Set((data || []).map((r: any) => r.target_id))) })
+  } catch (e: any) {
+    return NextResponse.json({ error: e.message }, { status: 500 })
+  }
+}
+
 export async function POST(req: NextRequest) {
   try {
     const cookieStore = cookies()

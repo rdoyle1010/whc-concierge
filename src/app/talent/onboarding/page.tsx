@@ -104,8 +104,19 @@ export default function OnboardingWizard() {
       if (!user) { router.push('/login'); return }
       setUserId(user.id)
 
-      // Load profile
-      const { data: profile } = await supabase.from('candidate_profiles').select('*').eq('user_id', user.id).single()
+      // Load profile - and if the row is missing (failed registration insert),
+      // create it server-side so the wizard never silently discards answers
+      let { data: profile } = await supabase.from('candidate_profiles').select('*').eq('user_id', user.id).maybeSingle()
+      if (!profile) {
+        try {
+          const res = await fetch('/api/profile/ensure', { method: 'POST' })
+          const j = await res.json().catch(() => ({}))
+          if (res.ok && j.profileId) {
+            const { data: fresh } = await supabase.from('candidate_profiles').select('*').eq('id', j.profileId).maybeSingle()
+            profile = fresh
+          }
+        } catch { /* handled below */ }
+      }
       if (profile) {
         setProfileId(profile.id)
         setBasic({
@@ -217,7 +228,10 @@ export default function OnboardingWizard() {
           day_rate_min: basic.salary_min ? parseInt(basic.salary_min) : null,
           day_rate_max: basic.salary_max ? parseInt(basic.salary_max) : null,
           willing_to_relocate: basic.willing_to_relocate,
-          availability_status: basic.availability_date ? 'immediately' : null,
+          right_to_work: basic.right_to_work || null,
+          employment_types_wanted: basic.employment_types_wanted.length > 0 ? basic.employment_types_wanted : null,
+          languages: basic.languages ? basic.languages.split(',').map(l => l.trim()).filter(Boolean) : null,
+          availability_date: basic.availability_date || null,
         }}),
       })
     }

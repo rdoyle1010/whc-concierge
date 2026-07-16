@@ -113,8 +113,9 @@ export default function TalentMessagesPage() {
 
       setMessages(data || [])
 
-      await supabase.from('messages').update({ read: true })
-        .eq('sender_id', activeConvo).eq('recipient_id', userId).eq('read', false)
+      // Service-role route - the client-side update was RLS-blocked, so
+      // unread badges never cleared
+      await fetch('/api/messages/mark-read', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ partnerId: activeConvo }) }).catch(() => {})
 
       setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 100)
     }
@@ -131,19 +132,20 @@ export default function TalentMessagesPage() {
       let attachmentType = null
 
       if (attachmentFile) {
+        // Upload through the authenticated API route into the
+        // message-attachments bucket (created 16 Jul; direct client upload
+        // previously failed because the bucket never existed)
         const fileExt = attachmentFile.name.split('.').pop()
         const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`
-        const { error: uploadError } = await supabase.storage
-          .from('message-attachments')
-          .upload(fileName, attachmentFile)
+        const fd = new FormData()
+        fd.append('file', attachmentFile)
+        fd.append('bucket', 'message-attachments')
+        fd.append('path', fileName)
+        const upRes = await fetch('/api/upload', { method: 'POST', body: fd })
+        const upJson = await upRes.json().catch(() => ({}))
+        if (!upRes.ok || !upJson.url) throw new Error(upJson.error || 'Attachment upload failed')
 
-        if (uploadError) throw uploadError
-
-        const { data: { publicUrl } } = supabase.storage
-          .from('message-attachments')
-          .getPublicUrl(fileName)
-
-        attachmentUrl = publicUrl
+        attachmentUrl = upJson.url
         attachmentName = attachmentFile.name
         attachmentType = attachmentFile.type
       }
@@ -161,6 +163,7 @@ export default function TalentMessagesPage() {
       if (!sendRes.ok) {
         const d = await sendRes.json().catch(() => ({}))
         alert(d.error || 'Message failed to send - please try again.')
+        setAttachmentUploading(false) // never leave the composer locked
         return
       }
 
