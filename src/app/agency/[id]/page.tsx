@@ -19,8 +19,8 @@ export default function AgencyProfilePage() {
   const [reviews, setReviews] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [isEmployer, setIsEmployer] = useState(false)
-  const [offer, setOffer] = useState<any>(null)
-  const [showOfferForm, setShowOfferForm] = useState(false)
+  const [offer, setOffer] = useState<any>(null) // the OPEN offer (pending/countered) — only this blocks a new one
+  const [history, setHistory] = useState<any[]>([]) // resolved bookings: agreed, paid, declined, expired
   const [offerBusy, setOfferBusy] = useState(false)
   const [offerError, setOfferError] = useState('')
   const [showReview, setShowReview] = useState(false)
@@ -53,8 +53,12 @@ export default function AgencyProfilePage() {
             const res = await fetch('/api/agency/booking')
             if (res.ok) {
               const j = await res.json()
-              const existing = (j.bookings || []).find((b: any) => b.candidate_id === profileId && b.viewer_role === 'employer')
-              if (existing) setOffer(existing)
+              const mine = (j.bookings || []).filter((b: any) => b.candidate_id === profileId && b.viewer_role === 'employer')
+              // Only an OPEN offer blocks sending another; everything else is history,
+              // so a therapist can be booked again and again.
+              const open = mine.find((b: any) => b.status === 'pending' || b.status === 'countered')
+              setOffer(open || null)
+              setHistory(mine.filter((b: any) => b.id !== open?.id))
             }
           } catch { /* offer card still renders as a fresh form */ }
         }
@@ -81,7 +85,6 @@ export default function AgencyProfilePage() {
       const j = await res.json()
       if (!res.ok) { setOfferError(j.error || 'Could not send the offer - please try again.'); return }
       setOffer(j.booking)
-      setShowOfferForm(false)
     } catch {
       setOfferError('Could not send the offer - please try again.')
     } finally {
@@ -100,7 +103,10 @@ export default function AgencyProfilePage() {
       })
       const j = await res.json()
       if (!res.ok) { setOfferError(j.error || 'Something went wrong - please try again.'); return }
-      setOffer(j.booking)
+      // Accepting/declining resolves the open offer - it moves to history and
+      // the form frees up so the therapist can be booked again.
+      setOffer(null)
+      setHistory((h) => [j.booking, ...h])
     } catch {
       setOfferError('Something went wrong - please try again.')
     } finally {
@@ -219,15 +225,12 @@ export default function AgencyProfilePage() {
                 <h3 className="text-[14px] font-medium text-ink mb-1">Make an Offer</h3>
                 <p className="text-[12px] text-muted mb-4">Offer a day rate for an agency shift. {profile.full_name?.split(' ')[0] || 'The candidate'} can accept, decline or counter.</p>
 
-                {offer && !showOfferForm ? (
+                {offer ? (
                   <div>
                     <div className="flex items-center justify-between mb-2">
                       <p className="text-[18px] font-semibold text-accent">£{offer.rate}<span className="text-[12px] font-normal text-muted"> /hour</span></p>
                       <span className={`text-[11px] font-medium px-2.5 py-1 rounded-full ${
-                        offer.status === 'pending' ? 'bg-amber-50 text-amber-700'
-                        : offer.status === 'countered' ? 'bg-[#FDF6EC] text-accent'
-                        : offer.status === 'accepted' ? 'bg-green-50 text-green-700'
-                        : 'bg-red-50 text-red-700'}`}>{offer.status}</span>
+                        offer.status === 'pending' ? 'bg-amber-50 text-amber-700' : 'bg-[#FDF6EC] text-accent'}`}>{offer.status}</span>
                     </div>
                     <p className="text-[13px] text-secondary mb-3">
                       {offer.shift_date ? new Date(offer.shift_date).toLocaleDateString() : ''}{offer.hours ? ` · ${offer.hours} hours` : ''}
@@ -241,38 +244,6 @@ export default function AgencyProfilePage() {
                           <button onClick={() => actOnOffer('accept')} disabled={offerBusy} className="btn-primary flex-1 text-[12px] disabled:opacity-50">Accept Counter</button>
                           <button onClick={() => actOnOffer('decline')} disabled={offerBusy} className="btn-secondary flex-1 text-[12px] disabled:opacity-50">Decline</button>
                         </div>
-                      </div>
-                    )}
-                    {offer.status === 'accepted' && (
-                      <div>
-                        <div className="bg-green-50 border border-green-100 rounded-lg p-3 mb-3">
-                          <p className="text-[13px] font-medium text-green-800 flex items-center gap-1 mb-1"><Check size={13} />Shift agreed</p>
-                          <p className="text-[12px] text-green-800">
-                            {offer.shift_date ? new Date(offer.shift_date).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' }) : 'Date TBC'}
-                            {offer.shift_type ? ` · ${offer.shift_type}` : ''}{offer.hours ? ` · ${offer.hours} hours` : ''} · £{offer.rate}/hour
-                          </p>
-                          {offer.hours ? (
-                            <div className="text-[11px] text-green-800 mt-1.5 space-y-0.5">
-                              <div className="flex justify-between"><span>{offer.hours} hours × £{offer.rate}/hr</span><span>£{offer.rate * offer.hours}</span></div>
-                              <div className="flex justify-between"><span>WHC fee ({Math.round(AGENCY_PLATFORM_FEE_PCT * 100)}%)</span><span>£{offer.platform_fee || Math.ceil(offer.rate * offer.hours * AGENCY_PLATFORM_FEE_PCT)}</span></div>
-                              <div className="flex justify-between font-semibold border-t border-green-200 pt-0.5"><span>Total payable</span><span>£{offer.rate * offer.hours + (offer.platform_fee || Math.ceil(offer.rate * offer.hours * AGENCY_PLATFORM_FEE_PCT))}</span></div>
-                            </div>
-                          ) : null}
-                          <p className="text-[11px] text-green-700 mt-1.5">Pay the total to Wellness House Collective to confirm the booking - WHC pays {profile.full_name?.split(' ')[0] || 'the candidate'} after the shift.</p>
-                        </div>
-                        <a href="/employer/agency" className="btn-primary text-[12px] inline-block mb-3">Pay &amp; confirm in Agency Bookings</a>
-                        {profile.user_id && (
-                          <button type="button" onClick={() => setShowReview(true)}
-                            className="inline-flex items-center gap-1 text-[12px] font-medium text-amber-500 hover:underline">
-                            <Star size={12} /> Review {profile.full_name?.split(' ')[0] || 'this candidate'} after the shift
-                          </button>
-                        )}
-                      </div>
-                    )}
-                    {offer.status === 'declined' && (
-                      <div>
-                        <p className="text-[13px] text-muted mb-3">This offer was declined.</p>
-                        <button onClick={() => setShowOfferForm(true)} className="btn-secondary w-full text-[12px]">Make a New Offer</button>
                       </div>
                     )}
                     {offerError && <p className="text-[12px] text-red-600 mt-3">{offerError}</p>}
@@ -315,8 +286,44 @@ export default function AgencyProfilePage() {
                       </div>
                     )}
                     {offerError && <p className="text-[12px] text-red-600">{offerError}</p>}
-                    <button type="submit" disabled={offerBusy} className="btn-primary w-full text-[12px] disabled:opacity-50">{offerBusy ? 'Sending...' : 'Send Offer'}</button>
+                    <button type="submit" disabled={offerBusy} className="btn-primary w-full text-[12px] disabled:opacity-50">{offerBusy ? 'Sending...' : history.length > 0 ? 'Book Again - Send Offer' : 'Send Offer'}</button>
                   </form>
+                )}
+              </div>
+            )}
+
+            {/* Booking history with this therapist (employers only) */}
+            {isEmployer && history.length > 0 && (
+              <div className="bg-white border border-border rounded-xl p-6">
+                <h3 className="text-[14px] font-medium text-ink mb-3">Your bookings with {profile.full_name?.split(' ')[0] || 'this therapist'}</h3>
+                <div className="space-y-3">
+                  {history.map((b) => (
+                    <div key={b.id} className="border border-border rounded-lg p-3">
+                      <div className="flex items-center justify-between mb-1">
+                        <p className="text-[12px] font-medium text-ink">
+                          {b.shift_date ? new Date(b.shift_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Date TBC'}
+                          {b.shift_type ? ` · ${b.shift_type}` : ''}{b.hours ? ` · ${b.hours}h` : ''}
+                        </p>
+                        <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${
+                          b.status === 'accepted' ? 'bg-blue-50 text-blue-700'
+                          : b.status === 'confirmed' || b.status === 'completed' ? 'bg-green-50 text-green-700'
+                          : 'bg-gray-100 text-gray-500'}`}>{b.status}</span>
+                      </div>
+                      <p className="text-[11px] text-muted">£{b.rate}/hour{b.hours ? ` · £${b.rate * b.hours + (b.platform_fee || Math.ceil(b.rate * b.hours * AGENCY_PLATFORM_FEE_PCT))} total incl. WHC fee` : ''}</p>
+                      {b.status === 'accepted' && (
+                        <a href="/employer/agency" className="text-[11px] font-medium text-accent underline">Awaiting payment - pay &amp; confirm in Agency Bookings</a>
+                      )}
+                      {b.status === 'confirmed' && (
+                        <p className="text-[11px] text-green-700">Paid - WHC pays {profile.full_name?.split(' ')[0] || 'the therapist'} after the shift.</p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+                {profile.user_id && history.some((b) => ['accepted', 'confirmed', 'completed'].includes(b.status)) && (
+                  <button type="button" onClick={() => setShowReview(true)}
+                    className="mt-3 inline-flex items-center gap-1 text-[12px] font-medium text-amber-500 hover:underline">
+                    <Star size={12} /> Review {profile.full_name?.split(' ')[0] || 'this candidate'}
+                  </button>
                 )}
               </div>
             )}
