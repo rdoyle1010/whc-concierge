@@ -3,8 +3,9 @@
 import { useEffect, useState } from 'react'
 import DashboardShell from '@/components/DashboardShell'
 import { createClient } from '@/lib/supabase/client'
-import { CreditCard, ExternalLink, AlertCircle } from 'lucide-react'
+import { CreditCard, ExternalLink, AlertCircle, Zap } from 'lucide-react'
 import Link from 'next/link'
+import { AGENCY_LISTING_TIERS } from '@/lib/constants'
 
 export default function TalentBillingPage() {
   const supabase = createClient()
@@ -135,6 +136,52 @@ export default function TalentBillingPage() {
               <p className="text-[12px] text-muted">Newsletter inclusion</p>
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* Agency Register listing */}
+      <div className="dashboard-card mb-8">
+        <div className="flex items-start justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-accent/10 flex items-center justify-center text-accent">
+              <Zap size={20} />
+            </div>
+            <div>
+              <p className="text-[14px] font-medium text-ink">
+                {profile?.agency_available
+                  ? `Agency Register — ${profile?.agency_tier === 'featured' ? AGENCY_LISTING_TIERS.featured.label : AGENCY_LISTING_TIERS.basic.label} plan`
+                  : 'Agency Register — Not listed'}
+              </p>
+              <p className="text-[12px] text-muted mt-0.5">
+                {profile?.agency_available
+                  ? profile?.agency_listed_until
+                    ? `${profile?.agency_tier === 'featured' ? AGENCY_LISTING_TIERS.featured.display : AGENCY_LISTING_TIERS.basic.display} · renews ${new Date(profile.agency_listed_until).toLocaleDateString('en-GB', { year: 'numeric', month: 'long', day: 'numeric' })}`
+                    : 'Complimentary listing during launch - no charge, nothing to manage.'
+                  : `Join from ${AGENCY_LISTING_TIERS.basic.display} to receive agency shift offers.`}
+              </p>
+            </div>
+          </div>
+          {profile?.agency_available && <div className="w-2 h-2 rounded-full bg-emerald-500 mt-1" />}
+        </div>
+        <div className="pt-5">
+          {profile?.agency_available ? (
+            profile?.agency_listed_until ? (
+              <button onClick={handleManageSubscription} disabled={redirecting}
+                className="btn-secondary w-full flex items-center justify-center gap-2">
+                <ExternalLink size={14} />
+                {redirecting ? 'Redirecting...' : 'Manage Agency Subscription'}
+              </button>
+            ) : (
+              <Link href="/talent/agency/settings" className="btn-secondary w-full flex items-center justify-center gap-2">
+                Agency Settings
+              </Link>
+            )
+          ) : (
+            <Link href="/talent/agency/settings" className="btn-primary w-full flex items-center justify-center gap-2">
+              <Zap size={14} />
+              Join the Agency Register
+            </Link>
+          )}
         </div>
       </div>
 
