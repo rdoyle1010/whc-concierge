@@ -2,13 +2,14 @@
 
 import { useEffect, useState } from 'react'
 import DashboardShell from '@/components/DashboardShell'
-import { createClient } from '@/lib/supabase/client'
-import { MessageSquare, Mail, Eye, Trash2, Check } from 'lucide-react'
+import { MessageSquare, Mail, Eye, Trash2, Check, Send } from 'lucide-react'
 import Pagination from '@/components/Pagination'
 
 export default function AdminMessagesPage() {
-  const supabase = createClient()
   const [queries, setQueries] = useState<any[]>([])
+  const [reply, setReply] = useState('')
+  const [sendingReply, setSendingReply] = useState(false)
+  const [replyMsg, setReplyMsg] = useState('')
   const [loading, setLoading] = useState(true)
   const [selected, setSelected] = useState<any>(null)
   const [filter, setFilter] = useState('all')
@@ -17,24 +18,22 @@ export default function AdminMessagesPage() {
 
   useEffect(() => {
     async function load() {
-      const { data } = await supabase
-        .from('contact_queries')
-        .select('*')
-        .order('created_at', { ascending: false })
-      setQueries(data || [])
+      const res = await fetch('/api/admin/content?kind=contact_queries')
+      const j = res.ok ? await res.json() : { rows: [] }
+      setQueries(j.rows || [])
       setLoading(false)
     }
     load()
   }, [])
 
   const updateStatus = async (id: string, status: string) => {
-    await supabase.from('contact_queries').update({ status }).eq('id', id)
+    await fetch('/api/admin/content', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'query_status', id, status }) })
     setQueries(queries.map(q => q.id === id ? { ...q, status } : q))
   }
 
   const deleteQuery = async (id: string) => {
     if (!confirm('Delete this message?')) return
-    await supabase.from('contact_queries').delete().eq('id', id)
+    await fetch('/api/admin/content', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'query_delete', id }) })
     setQueries(queries.filter(q => q.id !== id))
     if (selected?.id === id) setSelected(null)
   }
@@ -106,6 +105,29 @@ export default function AdminMessagesPage() {
               </div>
               <div className="p-6 bg-gray-50 rounded-xl">
                 <p className="text-gray-600 whitespace-pre-wrap leading-relaxed">{selected.message}</p>
+              </div>
+
+              {/* Real reply - emails the enquirer directly */}
+              <div className="mt-4">
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">Reply by email to {selected.email}</label>
+                <textarea rows={4} value={reply} onChange={(e) => setReply(e.target.value)} className="input-field mb-2"
+                  placeholder={`Hi ${selected.name?.split(' ')[0] || 'there'},`} />
+                {replyMsg && <p className={`text-xs mb-2 ${replyMsg.includes('sent') ? 'text-green-600' : 'text-red-600'}`}>{replyMsg}</p>}
+                <button
+                  onClick={async () => {
+                    setSendingReply(true); setReplyMsg('')
+                    try {
+                      const res = await fetch('/api/admin/content', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'query_reply', id: selected.id, message: reply }) })
+                      const j = await res.json()
+                      if (!res.ok) { setReplyMsg(j.error || 'Could not send.') }
+                      else { setReplyMsg('Reply sent.'); setReply(''); setQueries(qs => qs.map(q => q.id === selected.id ? { ...q, status: 'replied' } : q)); setSelected({ ...selected, status: 'replied' }) }
+                    } catch { setReplyMsg('Could not send - please try again.') }
+                    setSendingReply(false)
+                  }}
+                  disabled={sendingReply || !reply.trim()}
+                  className="btn-primary text-sm flex items-center gap-2 disabled:opacity-50">
+                  <Send size={14} /> {sendingReply ? 'Sending...' : 'Send Reply'}
+                </button>
               </div>
               <div className="flex space-x-2 mt-4">
                 {['open', 'replied', 'closed'].map((s) => (

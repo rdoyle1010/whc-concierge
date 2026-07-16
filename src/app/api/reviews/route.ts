@@ -108,7 +108,7 @@ export async function POST(req: NextRequest) {
     if (!validation.success) {
       return NextResponse.json({ error: 'Validation failed', errors: validation.errors }, { status: 400 })
     }
-    const { reviewed_id, rating, criteria_scores, comment, type } = validation.data!
+    const { reviewed_id, rating, criteria_scores, comment, type, booking_id } = validation.data!
     const reviewer_id = user.id
 
     // Prevent self-reviews
@@ -152,10 +152,23 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // -- One review per reviewer per reviewee --
-    const existing = await findExistingReview(supabase, reviewer_id, reviewed_id)
-    if (existing) {
-      return NextResponse.json({ error: 'You have already reviewed this profile' }, { status: 409 })
+    // -- Uniqueness --
+    // Every booking is a different experience, so reviews are per SHIFT when a
+    // booking_id is supplied: one review per reviewer per booking. Without a
+    // booking_id (e.g. permanent placements) the old one-per-pair rule holds.
+    if (booking_id) {
+      const { data: existingForBooking } = await supabase
+        .from('reviews').select('id')
+        .eq('reviewer_id', reviewer_id).eq('booking_id', booking_id)
+        .limit(1).maybeSingle()
+      if (existingForBooking) {
+        return NextResponse.json({ error: 'You have already reviewed this shift' }, { status: 409 })
+      }
+    } else {
+      const existing = await findExistingReview(supabase, reviewer_id, reviewed_id)
+      if (existing) {
+        return NextResponse.json({ error: 'You have already reviewed this profile' }, { status: 409 })
+      }
     }
 
     // Calculate overall rating from criteria if provided.
@@ -181,6 +194,7 @@ export async function POST(req: NextRequest) {
       text: comment || '', // live column, NOT NULL
       comment: comment || null, // stripped on live schema
       type: type || 'candidate', // stripped on live schema
+      booking_id: booking_id || null, // per-shift reviews; stripped if column missing
     })
 
     if (reviewError) {

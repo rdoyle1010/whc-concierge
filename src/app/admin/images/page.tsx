@@ -57,11 +57,9 @@ export default function AdminImagesPage() {
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
 
   const load = useCallback(async () => {
-    const { data } = await supabase
-      .from('site_images')
-      .select('*')
-      .order('sort_order', { ascending: true })
-    setImages(data || [])
+    const res = await fetch('/api/admin/content?kind=site_images')
+    const j = res.ok ? await res.json() : { rows: [] }
+    setImages(j.rows || [])
     setLoading(false)
   }, [])
 
@@ -99,9 +97,9 @@ export default function AdminImagesPage() {
     // Check if slot already exists
     const existing = images.find(img => img.slot === slot)
     if (existing) {
-      await supabase.from('site_images').update({ image_url: url, updated_at: new Date().toISOString() }).eq('slot', slot)
+      await fetch('/api/admin/content', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'image_update', slot, data: { image_url: url, updated_at: new Date().toISOString() } }) })
     } else {
-      await supabase.from('site_images').insert({ slot, image_url: url, label: slot })
+      await fetch('/api/admin/content', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'image_insert', data: { slot, image_url: url, label: slot } }) })
     }
 
     flash('success', `Image updated for ${slot}`)
@@ -115,11 +113,7 @@ export default function AdminImagesPage() {
     const fields = editFields[slot]
     if (!fields) { setSaving(null); return }
 
-    await supabase.from('site_images').update({
-      heading: fields.heading,
-      subtext: fields.subtext,
-      updated_at: new Date().toISOString(),
-    }).eq('slot', slot)
+    await fetch('/api/admin/content', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'image_update', slot, data: { heading: fields.heading, subtext: fields.subtext, updated_at: new Date().toISOString() } }) })
 
     flash('success', `Text updated for ${slot}`)
     setSaving(null)
@@ -131,7 +125,7 @@ export default function AdminImagesPage() {
   const handleAddSlot = async (prefix: string, currentCount: number) => {
     // The homepage reads fixed slot names for single-slot groups
     const slot = prefix === 'cta_' ? 'cta_bg' : prefix === 'howitworks_' ? 'howitworks_1' : `${prefix}${currentCount + 1}`
-    await supabase.from('site_images').insert({
+    await fetch('/api/admin/content', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'image_insert', data: {
       slot,
       label: `${prefix === 'hero_' ? 'Hero Slide' : 'Featured Card'} ${currentCount + 1}`,
       image_url: 'https://placehold.co/1920x1080/f5f5f5/cccccc?text=Upload+Image',
@@ -139,7 +133,7 @@ export default function AdminImagesPage() {
       subtext: prefix === 'hero_' ? 'Add your description here.' : null,
       sort_order: currentCount + 1,
       active: true,
-    })
+    } }) })
     flash('success', `Added new ${prefix === 'hero_' ? 'hero slide' : 'card'}`)
     load()
   }
@@ -147,7 +141,7 @@ export default function AdminImagesPage() {
   /* ── Remove a slot ── */
   const handleRemoveSlot = async (slot: string) => {
     if (!confirm(`Remove ${slot}? This will delete the image from the site.`)) return
-    await supabase.from('site_images').delete().eq('slot', slot)
+    await fetch('/api/admin/content', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'image_delete', slot }) })
     flash('success', `Removed ${slot}`)
     load()
   }

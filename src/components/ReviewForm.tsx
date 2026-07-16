@@ -40,8 +40,8 @@ function StarSelector({ value, onChange }: { value: number; onChange: (v: number
 
 // The reviewer is ALWAYS the logged-in session on the server — reviewerId is
 // no longer sent (or needed). reviewedId is the reviewee's auth user id.
-export default function ReviewForm({ reviewedId, reviewedName, type = 'candidate', onComplete }: {
-  reviewedId: string; reviewedName?: string; type?: 'candidate' | 'employer'; onComplete?: () => void
+export default function ReviewForm({ reviewedId, reviewedName, type = 'candidate', bookingId, onComplete }: {
+  reviewedId: string; reviewedName?: string; type?: 'candidate' | 'employer'; bookingId?: string; onComplete?: () => void
 }) {
   const [scores, setScores] = useState<Record<string, number>>({})
   const [comment, setComment] = useState('')
@@ -62,6 +62,7 @@ export default function ReviewForm({ reviewedId, reviewedName, type = 'candidate
       body: JSON.stringify({
         reviewed_id: reviewedId,
         criteria_scores: scores, comment: comment || null, type,
+        booking_id: bookingId || null,
       }),
     })
 

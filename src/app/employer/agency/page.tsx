@@ -18,7 +18,7 @@ export default function EmployerAgencyPage() {
   const [busyId, setBusyId] = useState<string | null>(null)
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
-  const [reviewing, setReviewing] = useState<{ userId: string; name: string } | null>(null)
+  const [reviewing, setReviewing] = useState<{ userId: string; name: string; bookingId?: string } | null>(null)
   const [disputing, setDisputing] = useState<any>(null)
   const [disputeReason, setDisputeReason] = useState('')
   const [disputeRequested, setDisputeRequested] = useState('Refund minus the WHC admin fee')
@@ -150,7 +150,7 @@ export default function EmployerAgencyPage() {
           <div className="flex items-center gap-3">
             <Link href="/employer/messages" className="text-[12px] font-medium text-gray-500 hover:text-ink inline-flex items-center gap-1"><MessageSquare size={12} /> Messages</Link>
             {(b.status === 'confirmed' || b.status === 'completed') && b.candidate_user_id && (
-              <button type="button" onClick={() => setReviewing({ userId: b.candidate_user_id, name: b.candidate_name || 'this candidate' })}
+              <button type="button" onClick={() => setReviewing({ userId: b.candidate_user_id, name: b.candidate_name || 'this candidate', bookingId: b.id })}
                 className="text-[12px] font-medium text-amber-500 hover:underline inline-flex items-center gap-1"><Star size={11} /> Review</button>
             )}
             {(b.status === 'confirmed' || b.status === 'completed') && b.paid_at && !b.dispute_status && (
@@ -274,7 +274,7 @@ export default function EmployerAgencyPage() {
               <h2 className="font-serif text-lg font-bold text-ink">Review {reviewing.name}</h2>
               <button type="button" onClick={() => setReviewing(null)} className="text-gray-300 hover:text-ink"><X size={20} /></button>
             </div>
-            <ReviewForm reviewedId={reviewing.userId} reviewedName={reviewing.name} type="candidate" />
+            <ReviewForm reviewedId={reviewing.userId} reviewedName={reviewing.name} type="candidate" bookingId={reviewing.bookingId} />
           </div>
         </div>
       )}

@@ -27,7 +27,7 @@ export default function TalentAgencyPage() {
   const [counterRate, setCounterRate] = useState('')
   const [busyId, setBusyId] = useState<string | null>(null)
   const [actionError, setActionError] = useState('')
-  const [reviewing, setReviewing] = useState<{ userId: string; name: string } | null>(null)
+  const [reviewing, setReviewing] = useState<{ userId: string; name: string; bookingId?: string } | null>(null)
   const [listing, setListing] = useState<{ available: boolean; tier: string | null; until: string | null } | null>(null)
 
   async function load() {
@@ -163,6 +163,9 @@ export default function TalentAgencyPage() {
                       <div>
                         <div className="flex items-center gap-2 mb-1 flex-wrap">
                           <h3 className="font-medium text-ink">{b.employer_name || 'Property'}</h3>
+                          {b.employer_review_score > 0 && (
+                            <span className="inline-flex items-center gap-0.5 text-[11px] font-medium text-amber-500"><Star size={10} className="fill-amber-400 text-amber-400" />{Number(b.employer_review_score).toFixed(1)}{b.employer_review_count ? ` (${b.employer_review_count})` : ''}</span>
+                          )}
                           {b.urgent && (
                             <span className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full bg-red-50 text-red-700">
                               <Zap size={11} /> URGENT - TODAY
@@ -241,7 +244,7 @@ export default function TalentAgencyPage() {
               {shifts.map((b) => (
                 <div key={b.id} className="dashboard-card flex items-center justify-between">
                   <div>
-                    <h3 className="font-medium text-ink">{b.employer_name || 'Property'}</h3>
+                    <h3 className="font-medium text-ink">{b.employer_name || 'Property'}{b.employer_review_score > 0 ? <span className="ml-2 inline-flex items-center gap-0.5 text-[11px] font-medium text-amber-500 align-middle"><Star size={10} className="fill-amber-400 text-amber-400" />{Number(b.employer_review_score).toFixed(1)}</span> : null}</h3>
                     <div className="flex items-center space-x-4 text-sm text-gray-500 mt-1">
                       <span className="flex items-center space-x-1"><Calendar size={14} /><span>{b.shift_date ? new Date(b.shift_date).toLocaleDateString() : 'Date TBC'}</span></span>
                       {b.shift_type && <span className="flex items-center space-x-1"><Clock size={14} /><span>{b.shift_type}</span></span>}
@@ -268,7 +271,7 @@ export default function TalentAgencyPage() {
                     <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${statusColors[b.status] || ''}`}>{b.status}</span>
                     {(b.status === 'accepted' || b.status === 'confirmed' || b.status === 'completed') && b.employer_user_id && (
                       <button type="button"
-                        onClick={() => setReviewing({ userId: b.employer_user_id, name: b.employer_name || 'this property' })}
+                        onClick={() => setReviewing({ userId: b.employer_user_id, name: b.employer_name || 'this property', bookingId: b.id })}
                         className="block ml-auto mt-2 text-[12px] font-medium text-amber-500 hover:underline">
                         <span className="inline-flex items-center gap-1"><Star size={11} /> Review property</span>
                       </button>
@@ -289,7 +292,7 @@ export default function TalentAgencyPage() {
               <h2 className="font-serif text-lg font-bold text-ink">Review {reviewing.name}</h2>
               <button type="button" onClick={() => setReviewing(null)} className="text-gray-300 hover:text-ink"><X size={20} /></button>
             </div>
-            <ReviewForm reviewedId={reviewing.userId} reviewedName={reviewing.name} type="employer" />
+            <ReviewForm reviewedId={reviewing.userId} reviewedName={reviewing.name} type="employer" bookingId={reviewing.bookingId} />
           </div>
         </div>
       )}

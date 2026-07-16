@@ -13,6 +13,7 @@ const links = [
   { href: '/contact', label: 'Contact' },
   { href: '/privacy', label: 'Privacy Policy' },
   { href: '/terms', label: 'Terms' },
+  { href: '/login', label: 'Admin' },
 ]
 
 export default function Footer() {

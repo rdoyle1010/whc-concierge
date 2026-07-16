@@ -28,8 +28,9 @@ export default function AdminBlogPage() {
 
   useEffect(() => {
     async function load() {
-      const { data } = await supabase.from('blog_posts').select('*').order('created_at', { ascending: false })
-      setPosts(data || [])
+      const res = await fetch('/api/admin/blog?per_page=200')
+      const j = res.ok ? await res.json() : { posts: [] }
+      setPosts(j.posts || [])
       setLoading(false)
     }
     load()
@@ -48,18 +49,21 @@ export default function AdminBlogPage() {
       image_url: form.image_url || null,
       author: form.author,
       category: form.category || null,
+      tags: form.tags ? form.tags.split(',').map((t: string) => t.trim()).filter(Boolean) : null,
       status: form.status,
       published_at: form.status === 'published' ? (form.published_at || new Date().toISOString()) : null,
     }
 
+    // Writes go through the service-role admin API - direct writes are blocked by RLS
     if (editing) {
-      await supabase.from('blog_posts').update(payload).eq('id', editing.id)
+      await fetch('/api/admin/blog', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: editing.id, ...payload }) })
     } else {
-      await supabase.from('blog_posts').insert(payload)
+      await fetch('/api/admin/blog', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
     }
 
-    const { data } = await supabase.from('blog_posts').select('*').order('created_at', { ascending: false })
-    setPosts(data || [])
+    const res = await fetch('/api/admin/blog?per_page=200')
+    const j = res.ok ? await res.json() : { posts: [] }
+    setPosts(j.posts || [])
     setShowForm(false)
     setEditing(null)
     setForm(emptyPost)
@@ -80,7 +84,7 @@ export default function AdminBlogPage() {
 
   const confirmDelete = async () => {
     if (!showDelete) return
-    await supabase.from('blog_posts').delete().eq('id', showDelete)
+    await fetch('/api/admin/blog', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: showDelete }) })
     setPosts(posts.filter(p => p.id !== showDelete))
     setShowDelete(null)
   }
@@ -89,7 +93,7 @@ export default function AdminBlogPage() {
     const newStatus = post.status === 'published' ? 'draft' : 'published'
     const updates: any = { status: newStatus }
     if (newStatus === 'published' && !post.published_at) updates.published_at = new Date().toISOString()
-    await supabase.from('blog_posts').update(updates).eq('id', post.id)
+    await fetch('/api/admin/blog', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: post.id, ...updates }) })
     setPosts(posts.map(p => p.id === post.id ? { ...p, ...updates } : p))
   }
 

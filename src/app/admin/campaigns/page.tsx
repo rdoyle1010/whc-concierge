@@ -2,28 +2,54 @@
 
 import { useEffect, useState } from 'react'
 import DashboardShell from '@/components/DashboardShell'
-import { createClient } from '@/lib/supabase/client'
-import { Plus, Edit2, Trash2, Play, Pause } from 'lucide-react'
+import { Plus, Edit2, Trash2, Play, Pause, Send } from 'lucide-react'
 
 export default function AdminCampaignsPage() {
-  const supabase = createClient()
   const [campaigns, setCampaigns] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
   const [editing, setEditing] = useState<any>(null)
   const [saving, setSaving] = useState(false)
+  const [sendingId, setSendingId] = useState<string | null>(null)
+  const [banner, setBanner] = useState('')
 
   const empty = { name: '', description: '', type: '', status: 'draft', start_date: '', end_date: '', target_audience: '', content: '' }
   const [form, setForm] = useState(empty)
 
   useEffect(() => {
     async function load() {
-      const { data } = await supabase.from('campaigns').select('*').order('created_at', { ascending: false })
-      setCampaigns(data || [])
+      const res = await fetch('/api/admin/campaigns')
+      const j = res.ok ? await res.json() : { campaigns: [] }
+      setCampaigns(j.campaigns || [])
       setLoading(false)
     }
     load()
   }, [])
+
+  const reload = async () => {
+    const res = await fetch('/api/admin/campaigns')
+    const j = res.ok ? await res.json() : { campaigns: [] }
+    setCampaigns(j.campaigns || [])
+  }
+
+  // REAL sending: emails the chosen audience through the platform's
+  // email service. Draft first, send when ready - a sent campaign is final.
+  const handleSend = async (c: any) => {
+    if (!confirm(`Send "${c.name}" by email to ${c.target_audience || 'everyone'} now? This cannot be undone.`)) return
+    setSendingId(c.id)
+    setBanner('')
+    try {
+      const res = await fetch('/api/admin/campaigns', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'send', id: c.id }) })
+      const j = await res.json()
+      if (!res.ok) { setBanner(j.error || 'Send failed.'); return }
+      setBanner(`Sent to ${j.sent} recipient${j.sent === 1 ? '' : 's'}${j.failed ? ` (${j.failed} failed - check resend.com/logs)` : ''}.`)
+      await reload()
+    } catch {
+      setBanner('Send failed - please try again.')
+    } finally {
+      setSendingId(null)
+    }
+  }
 
   const handleSave = async () => {
     setSaving(true)
@@ -32,13 +58,8 @@ export default function AdminCampaignsPage() {
       status: form.status, start_date: form.start_date || null, end_date: form.end_date || null,
       target_audience: form.target_audience || null, content: form.content || null,
     }
-    if (editing) {
-      await supabase.from('campaigns').update(payload).eq('id', editing.id)
-    } else {
-      await supabase.from('campaigns').insert(payload)
-    }
-    const { data } = await supabase.from('campaigns').select('*').order('created_at', { ascending: false })
-    setCampaigns(data || [])
+    await fetch('/api/admin/campaigns', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'save', id: editing?.id, data: payload }) })
+    await reload()
     setShowForm(false); setEditing(null); setForm(empty); setSaving(false)
   }
 
@@ -53,19 +74,20 @@ export default function AdminCampaignsPage() {
 
   const handleDelete = async (id: string) => {
     if (!confirm('Delete this campaign?')) return
-    await supabase.from('campaigns').delete().eq('id', id)
+    await fetch('/api/admin/campaigns', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'delete', id }) })
     setCampaigns(campaigns.filter(c => c.id !== id))
   }
 
   const toggleStatus = async (c: any) => {
     const newStatus = c.status === 'active' ? 'paused' : 'active'
-    await supabase.from('campaigns').update({ status: newStatus }).eq('id', c.id)
+    await fetch('/api/admin/campaigns', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'save', id: c.id, data: { ...c, status: newStatus } }) })
     setCampaigns(campaigns.map(x => x.id === c.id ? { ...x, status: newStatus } : x))
   }
 
   const statusColors: Record<string, string> = {
     draft: 'bg-gray-100 text-gray-600', active: 'bg-green-50 text-green-700',
     paused: 'bg-amber-50 text-amber-700', completed: 'bg-blue-50 text-blue-700',
+    sent: 'bg-green-50 text-green-700',
   }
 
   return (
@@ -75,6 +97,8 @@ export default function AdminCampaignsPage() {
         <button onClick={() => { setForm(empty); setEditing(null); setShowForm(true) }}
           className="btn-primary flex items-center space-x-2"><Plus size={16} /><span>New Campaign</span></button>
       </div>
+
+      {banner && <div className={`text-sm px-4 py-3 rounded-lg mb-6 ${banner.startsWith('Sent') ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-600'}`}>{banner}</div>}
 
       {showForm && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setShowForm(false)}>
@@ -128,8 +152,15 @@ export default function AdminCampaignsPage() {
                 </div>
                 <p className="text-sm text-gray-500 mt-1">{c.description}</p>
                 {c.start_date && <p className="text-xs text-gray-400 mt-1">{c.start_date}{c.end_date ? ` — ${c.end_date}` : ''}</p>}
+                {c.status === 'sent' && <p className="text-xs text-green-700 mt-1">Sent{c.recipients_count ? ` to ${c.recipients_count} recipients` : ''}{c.sent_at ? ` on ${new Date(c.sent_at).toLocaleString('en-GB')}` : ''}.</p>}
               </div>
               <div className="flex items-center space-x-2">
+                {String(c.type || '').toLowerCase() === 'email' && c.status !== 'sent' && (
+                  <button onClick={() => handleSend(c)} disabled={sendingId === c.id}
+                    className="btn-primary !py-2 text-[12px] flex items-center gap-1.5 disabled:opacity-50">
+                    <Send size={13} /> {sendingId === c.id ? 'Sending...' : 'Send Now'}
+                  </button>
+                )}
                 <button onClick={() => toggleStatus(c)} className="p-2 rounded-lg hover:bg-gray-100 text-gray-400">
                   {c.status === 'active' ? <Pause size={18} /> : <Play size={18} />}
                 </button>

@@ -14,20 +14,18 @@ export default function AdminComplaintsPage() {
 
   useEffect(() => {
     async function load() {
-      // Complaints come from contact_queries with type='complaint'
-      const { data } = await supabase
-        .from('contact_queries')
-        .select('*')
-        .eq('type', 'complaint')
-        .order('created_at', { ascending: false })
-      setComplaints(data || [])
+      // Complaints come from contact_queries with type='complaint' -
+      // fetched through the service-role admin API (table is RLS-locked)
+      const res = await fetch('/api/admin/content?kind=contact_queries')
+      const j = res.ok ? await res.json() : { rows: [] }
+      setComplaints((j.rows || []).filter((q: any) => q.type === 'complaint'))
       setLoading(false)
     }
     load()
   }, [])
 
   const updateStatus = async (id: string, status: string) => {
-    await supabase.from('contact_queries').update({ status }).eq('id', id)
+    await fetch('/api/admin/content', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'query_status', id, status }) })
     setComplaints(complaints.map(c => c.id === id ? { ...c, status } : c))
     if (selected?.id === id) setSelected({ ...selected, status })
   }

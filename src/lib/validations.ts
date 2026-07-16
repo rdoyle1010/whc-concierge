@@ -74,6 +74,7 @@ export const reviewSchema = z.object({
     .optional(),
   comment: z.string().max(2000, 'Comment must be under 2000 characters').nullish(), // form sends null when empty
   type: z.enum(['candidate', 'employer']).default('candidate'),
+  booking_id: z.string().uuid().nullish(), // present = review of one specific shift
 }).refine(data => data.rating || data.criteria_scores, {
   message: 'Either rating or criteria_scores is required',
 })

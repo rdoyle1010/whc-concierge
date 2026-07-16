@@ -40,7 +40,7 @@ export default function AgencyProfilePage() {
       setProfile(data)
       if (data?.hourly_rate) setOfferRate(String(data.hourly_rate))
       if (data) {
-        const { data: revs } = await supabase.from('reviews').select('*').eq('reviewee_id', data.user_id || data.id).order('created_at', { ascending: false }).limit(10)
+        const { data: revs } = await supabase.from('reviews').select('*').eq('reviewee_id', data.user_id || data.id).order('created_at', { ascending: false }).limit(100)
         setReviews(revs || [])
       }
       // If the viewer is a logged-in employer, load any existing offer for this candidate
@@ -193,6 +193,29 @@ export default function AgencyProfilePage() {
             {reviews.length > 0 && (
               <div className="bg-white border border-border rounded-xl p-6">
                 <h2 className="text-[16px] font-medium text-ink mb-4">Reviews</h2>
+
+                {/* Score summary - per-criterion averages across every review,
+                    so a glance shows organisation, retail, reliability etc. */}
+                {(() => {
+                  const sums: Record<string, { total: number; n: number }> = {}
+                  for (const r of reviews) {
+                    if (!r.criteria_scores) continue
+                    for (const [k, v] of Object.entries(r.criteria_scores)) {
+                      if (typeof v !== 'number') continue
+                      if (!sums[k]) sums[k] = { total: 0, n: 0 }
+                      sums[k].total += v; sums[k].n += 1
+                    }
+                  }
+                  const avgs: Record<string, number> = {}
+                  for (const [k, { total, n }] of Object.entries(sums)) avgs[k] = Math.round((total / n) * 10) / 10
+                  if (Object.keys(avgs).length === 0) return null
+                  return (
+                    <div className="bg-surface rounded-lg p-4 mb-5">
+                      <p className="text-[11px] uppercase tracking-wide text-muted mb-2">Score summary ({reviews.length} review{reviews.length === 1 ? '' : 's'})</p>
+                      <ReviewBreakdown criteriaScores={avgs} />
+                    </div>
+                  )
+                })()}
                 <div className="space-y-4">{reviews.map(r => (
                   <div key={r.id} className="border-b border-border pb-4 last:border-0 last:pb-0">
                     <div className="flex items-center justify-between mb-1">

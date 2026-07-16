@@ -116,7 +116,7 @@ export async function GET() {
     const fetchEmployers = async (): Promise<{ data: any[] | null }> => {
       if (!empIds.length) return { data: [] as any[] }
       const full = await admin.from('employer_profiles')
-        .select('id, user_id, company_name, property_name, location, postcode, commute_car_required, nearest_transport, latitude, longitude')
+        .select('id, user_id, company_name, property_name, location, postcode, commute_car_required, nearest_transport, latitude, longitude, review_score, review_count')
         .in('id', empIds)
       if (!full.error) return full
       return admin.from('employer_profiles').select('id, user_id, company_name, property_name, location').in('id', empIds)
@@ -147,6 +147,8 @@ export async function GET() {
         employer_name: employerDisplayName(empMap.get(b.employer_id)),
         employer_user_id: empMap.get(b.employer_id)?.user_id || null, // for reviews
         employer_location: empMap.get(b.employer_id)?.location || null,
+        employer_review_score: empMap.get(b.employer_id)?.review_score ?? null,
+        employer_review_count: empMap.get(b.employer_id)?.review_count ?? null,
         employer_postcode: empMap.get(b.employer_id)?.postcode || null,
         commute_car_required: empMap.get(b.employer_id)?.commute_car_required ?? null,
         nearest_transport: empMap.get(b.employer_id)?.nearest_transport || null,

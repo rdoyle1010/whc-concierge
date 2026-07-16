@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
+import { sendApprovalEmail, sendRejectionEmail } from '@/lib/emails'
 
 async function requireAdmin() {
   const cookieStore = cookies()
@@ -45,9 +46,27 @@ export async function POST(req: NextRequest) {
     .from(table)
     .update(update)
     .eq('id', id)
-    .select('id, user_id, approval_status')
+    .select('*')
     .single()
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+  // Tell the person - approval decisions matter to them. Awaited (serverless
+  // kills fire-and-forget) but never fatal to the decision itself.
+  try {
+    let email: string | null = data.contact_email || null
+    if (!email && data.user_id) {
+      const { data: authUser } = await admin.auth.admin.getUserById(data.user_id)
+      email = authUser?.user?.email || null
+    }
+    const name = data.full_name || data.contact_name || data.company_name || 'there'
+    if (email) {
+      if (action === 'approve') await sendApprovalEmail(email, name)
+      else await sendRejectionEmail(email, name, reason || 'Please review your profile details and resubmit.')
+    }
+  } catch (e: any) {
+    console.error('Approval email failed:', e?.message)
+  }
+
   return NextResponse.json({ success: true, profile: data })
 }

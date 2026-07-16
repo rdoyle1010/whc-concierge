@@ -14,7 +14,8 @@ export default function AdminSettingsPage() {
 
   useEffect(() => {
     async function load() {
-      const { data } = await supabase.from('platform_config').select('*')
+      const res = await fetch('/api/admin/content?kind=platform_config')
+      const { rows: data } = res.ok ? await res.json() : { rows: [] }
       const configMap: Record<string, any> = {}
       for (const row of data || []) {
         configMap[row.key] = row.value
@@ -29,13 +30,12 @@ export default function AdminSettingsPage() {
     setSaving(true)
     setMessage('')
 
-    // Upsert into platform_config
-    const { error } = await supabase
-      .from('platform_config')
-      .upsert({ key, value }, { onConflict: 'key' })
+    // Upsert via the service-role admin API (table is RLS-locked)
+    const res = await fetch('/api/admin/content', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'config_upsert', key, value }) })
+    const j = await res.json().catch(() => ({}))
 
-    if (error) {
-      setMessage(`Error: ${error.message}`)
+    if (!res.ok) {
+      setMessage(`Error: ${j.error || 'could not save'}`)
     } else {
       setConfig({ ...config, [key]: value })
       setMessage('Settings saved!')
