@@ -258,8 +258,9 @@ export default function AgencyProfilePage() {
                               <div className="flex justify-between font-semibold border-t border-green-200 pt-0.5"><span>Total payable</span><span>£{offer.rate * offer.hours + (offer.platform_fee || Math.ceil(offer.rate * offer.hours * AGENCY_PLATFORM_FEE_PCT))}</span></div>
                             </div>
                           ) : null}
-                          <p className="text-[11px] text-green-700 mt-1.5">This agreement is on record for both of you. Payment is settled directly between you and {profile.full_name?.split(' ')[0] || 'the candidate'} for now.</p>
+                          <p className="text-[11px] text-green-700 mt-1.5">Pay the total to Wellness House Collective to confirm the booking - WHC pays {profile.full_name?.split(' ')[0] || 'the candidate'} after the shift.</p>
                         </div>
+                        <a href="/employer/agency" className="btn-primary text-[12px] inline-block mb-3">Pay &amp; confirm in Agency Bookings</a>
                         {profile.user_id && (
                           <button type="button" onClick={() => setShowReview(true)}
                             className="inline-flex items-center gap-1 text-[12px] font-medium text-amber-500 hover:underline">

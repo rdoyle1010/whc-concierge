@@ -115,7 +115,7 @@ export default function TalentAgencyPage() {
                 {listing.until ? ` - renews ${new Date(listing.until).toLocaleDateString('en-GB')}` : ''}. Properties can find you and send shift offers.
               </p>
             </div>
-            <Link href="/talent/onboarding?step=9" className="text-[12px] font-medium text-green-800 underline shrink-0 ml-4">Manage</Link>
+            <Link href="/talent/agency/settings" className="text-[12px] font-medium text-green-800 underline shrink-0 ml-4">Manage</Link>
           </div>
         ) : (
           <div className="flex items-center justify-between bg-[#FDF6EC] border border-border rounded-xl px-5 py-4 mb-6">
@@ -123,7 +123,7 @@ export default function TalentAgencyPage() {
               <p className="text-[14px] font-medium text-ink">You&apos;re not on the agency register yet</p>
               <p className="text-[12px] text-gray-500 mt-0.5">Join from {AGENCY_LISTING_TIERS.basic.display} to appear in the directory and receive shift offers - urgent same-day offers arrive by text.</p>
             </div>
-            <Link href="/talent/onboarding?step=9" className="btn-primary text-[12px] shrink-0 ml-4">Join now</Link>
+            <Link href="/talent/agency/settings" className="btn-primary text-[12px] shrink-0 ml-4">Join now</Link>
           </div>
         )
       )}
@@ -163,9 +163,14 @@ export default function TalentAgencyPage() {
                           {b.hours && <span>{b.hours}h</span>}
                           <span className="flex items-center space-x-1 font-medium text-ink"><Banknote size={14} className="text-accent" /><span>£{b.rate}/hr{b.hours ? ` · £${b.rate * b.hours} total` : ''}</span></span>
                         </div>
-                        {(b.employer_location || b.commute_car_required !== null || b.nearest_transport) && (
+                        {(b.employer_location || b.commute_car_required !== null || b.nearest_transport || b.distance_miles != null) && (
                           <div className="flex items-center flex-wrap gap-x-4 gap-y-1 text-[12px] text-gray-500 mt-2">
                             {b.employer_location && <span className="flex items-center gap-1"><MapPin size={12} />{b.employer_location}{b.employer_postcode ? ` (${b.employer_postcode})` : ''}</span>}
+                            {b.distance_miles != null && (
+                              <span className={`flex items-center gap-1 font-medium ${b.within_radius === false ? 'text-amber-700' : 'text-green-700'}`}>
+                                {b.distance_miles} miles from you{b.within_radius === false ? ` - outside your ${b.candidate_travel_radius}-mile radius` : b.within_radius === true ? ' - within your radius' : ''}
+                              </span>
+                            )}
                             {b.commute_car_required === true && <span className="flex items-center gap-1 text-amber-700"><Car size={12} /> Car required</span>}
                             {b.commute_car_required === false && <span className="flex items-center gap-1"><TrainFront size={12} /> Reachable by public transport</span>}
                             {b.nearest_transport && <span className="flex items-center gap-1"><TrainFront size={12} />{b.nearest_transport}</span>}
@@ -224,8 +229,13 @@ export default function TalentAgencyPage() {
                       {b.shift_type && <span className="flex items-center space-x-1"><Clock size={14} /><span>{b.shift_type}</span></span>}
                       {b.hours && <span>{b.hours}h</span>}
                     </div>
-                    {(b.status === 'accepted' || b.status === 'confirmed') && (
-                      <p className="text-[11px] text-green-700 mt-1.5">Agreed at £{b.rate}/hour{b.hours ? ` — you earn £${b.rate * b.hours} for ${b.hours} hours` : ''}. This agreement is on record; payment is settled directly with the property for now.</p>
+                    {b.status === 'accepted' && (
+                      <p className="text-[11px] text-blue-700 mt-1.5">Agreed at £{b.rate}/hour - awaiting the property&apos;s payment to WHC. Once paid, your payout of £{Math.max(0, b.rate * (b.hours && b.hours > 0 ? b.hours : 8) - Math.ceil(b.rate * (b.hours && b.hours > 0 ? b.hours : 8) * 0.05))} (after the 5% WHC fee) is confirmed.</p>
+                    )}
+                    {(b.status === 'confirmed' || b.status === 'completed') && (
+                      <p className="text-[11px] text-green-700 mt-1.5">
+                        Paid &amp; confirmed - WHC pays you £{b.payout_amount || Math.max(0, b.rate * (b.hours && b.hours > 0 ? b.hours : 8) - Math.ceil(b.rate * (b.hours && b.hours > 0 ? b.hours : 8) * 0.05))} after the shift{b.payout_status === 'paid' ? ' (payout sent)' : ''}.
+                      </p>
                     )}
                   </div>
                   <div className="text-right">

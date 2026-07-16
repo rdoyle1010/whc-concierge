@@ -103,6 +103,11 @@ export default function EmployerProfilePage() {
       }
     }
 
+    // Refresh cached coordinates from the postcode (best-effort, non-blocking UX)
+    if (!finalError && profile.postcode) {
+      try { await fetch('/api/employer/geocode', { method: 'POST' }) } catch { /* non-fatal */ }
+    }
+
     setSaving(false)
     setMessage(finalError ? finalError.message : 'Profile saved successfully!')
     setTimeout(() => setMessage(''), 3000)

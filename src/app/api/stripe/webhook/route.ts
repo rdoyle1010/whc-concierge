@@ -30,6 +30,23 @@ export async function POST(req: NextRequest) {
         }).eq('id', meta.candidate_id)
       }
 
+      // Agency booking paid in full by the property → confirmed, and the
+      // therapist's payout (gross minus 5%) is queued for after the shift.
+      if (meta?.type === 'agency_booking' && meta?.booking_id) {
+        const gross = meta.gross ? parseInt(meta.gross) : 0
+        const fee = meta.fee ? parseInt(meta.fee) : 0
+        const candidateFee = Math.ceil(gross * 0.05)
+        await supabase.from('agency_bookings').update({
+          status: 'confirmed',
+          paid_at: new Date().toISOString(),
+          fee_paid_at: new Date().toISOString(),
+          amount_paid: gross + fee,
+          payout_amount: gross - candidateFee,
+          payout_status: 'pending',
+        }).eq('id', meta.booking_id)
+      }
+
+      // Therapist's monthly register listing → live.
       if (meta?.type === 'agency_listing' && meta?.candidate_id) {
         await supabase.from('candidate_profiles').update({
           agency_available: true,
@@ -37,6 +54,15 @@ export async function POST(req: NextRequest) {
           agency_listed_until: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
           stripe_customer_id: session.customer as string,
         }).eq('id', meta.candidate_id)
+      }
+
+      // Hotel's annual Preferred Employer registration → active.
+      if (meta?.type === 'employer_registration' && meta?.employer_id) {
+        await supabase.from('employer_profiles').update({
+          preferred_employer: true,
+          preferred_until: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
+          stripe_customer_id: session.customer as string,
+        }).eq('id', meta.employer_id)
       }
 
       if (meta?.type === 'job_posting' && meta?.job_id) {
@@ -104,27 +130,36 @@ export async function POST(req: NextRequest) {
     case 'customer.subscription.updated': {
       const subscription = event.data.object as Stripe.Subscription
       const customerId = subscription.customer as string
-      const subType = subscription.metadata?.type // set via subscription_data.metadata at checkout
+      const subType = subscription.metadata?.type // stamped via subscription_data.metadata
       const lapsed = subscription.status === 'past_due' || subscription.status === 'unpaid'
       const active = subscription.status === 'active'
 
-      // Agency register listing
+      // Therapist register listing (£10/£20 monthly)
       if (subType === 'agency_listing') {
-        const target = subscription.metadata?.candidate_id
-          ? supabase.from('candidate_profiles').update(
-              lapsed
-                ? { agency_available: false, agency_listed_until: null }
-                : active
-                  ? { agency_available: true, agency_tier: subscription.metadata?.tier || 'basic', agency_listed_until: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString() }
-                  : {}
-            ).eq('id', subscription.metadata.candidate_id)
-          : null
-        if (target && (lapsed || active)) await target
+        if (subscription.metadata?.candidate_id && (lapsed || active)) {
+          await supabase.from('candidate_profiles').update(
+            lapsed
+              ? { agency_available: false, agency_listed_until: null }
+              : { agency_available: true, agency_tier: subscription.metadata?.tier || 'basic', agency_listed_until: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString() }
+          ).eq('id', subscription.metadata.candidate_id)
+        }
         break
       }
 
-      // Featured profile — including legacy subscriptions with no metadata,
-      // which were only ever created for featured profiles.
+      // Preferred Employer registration (£150 yearly)
+      if (subType === 'employer_registration') {
+        if (subscription.metadata?.employer_id && (lapsed || active)) {
+          await supabase.from('employer_profiles').update(
+            lapsed
+              ? { preferred_employer: false, preferred_until: null }
+              : { preferred_employer: true, preferred_until: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString() }
+          ).eq('id', subscription.metadata.employer_id)
+        }
+        break
+      }
+
+      // Featured profile — legacy subscriptions carry no metadata, and were
+      // only ever created for featured profiles.
       if (lapsed) {
         await supabase.from('candidate_profiles').update({
           is_featured: false,
@@ -150,6 +185,14 @@ export async function POST(req: NextRequest) {
           await supabase.from('candidate_profiles')
             .update({ agency_available: false, agency_listed_until: null })
             .eq('id', subscription.metadata.candidate_id)
+        }
+        break
+      }
+      if (subType === 'employer_registration') {
+        if (subscription.metadata?.employer_id) {
+          await supabase.from('employer_profiles')
+            .update({ preferred_employer: false, preferred_until: null })
+            .eq('id', subscription.metadata.employer_id)
         }
         break
       }

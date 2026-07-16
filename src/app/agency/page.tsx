@@ -26,6 +26,41 @@ function normaliseOutward(raw: string): string | null {
 // Leading letters of an outward code, e.g. 'SW1A' -> 'SW'
 const areaOf = (outward: string) => outward.match(/^[A-Z]{1,2}/)?.[0] || outward
 
+// Geocode the searcher's postcode (or district) via postcodes.io - free,
+// no key, CORS-friendly. Returns null when the lookup fails; the search then
+// falls back to district matching rather than erroring.
+async function geocodeSearch(raw: string): Promise<{ lat: number; lng: number } | null> {
+  const compact = (raw || '').toUpperCase().replace(/[^A-Z0-9]/g, '')
+  if (!compact) return null
+  try {
+    if (compact.length > 4 && /\d[A-Z]{2}$/.test(compact)) {
+      const res = await fetch(`https://api.postcodes.io/postcodes/${compact}`)
+      if (res.ok) {
+        const j = await res.json()
+        if (j?.result?.latitude != null) return { lat: j.result.latitude, lng: j.result.longitude }
+      }
+    }
+    const outward = normaliseOutward(raw)
+    if (outward && /\d/.test(outward)) {
+      const res = await fetch(`https://api.postcodes.io/outcodes/${outward}`)
+      if (res.ok) {
+        const j = await res.json()
+        if (j?.result?.latitude != null) return { lat: j.result.latitude, lng: j.result.longitude }
+      }
+    }
+  } catch { /* fall back to district matching */ }
+  return null
+}
+
+// Great-circle miles between two points (haversine)
+function milesBetween(lat1: number, lng1: number, lat2: number, lng2: number): number {
+  const R = 3958.761
+  const toRad = (d: number) => (d * Math.PI) / 180
+  const dLat = toRad(lat2 - lat1), dLng = toRad(lng2 - lng1)
+  const h = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) ** 2
+  return 2 * R * Math.asin(Math.sqrt(h))
+}
+
 // Best-effort outward code for a candidate: prefer their postcode field, then any postcode-like token in their location text
 function candidateOutward(c: any): string | null {
   if (c.postcode) {
@@ -65,7 +100,7 @@ export default function AgencyPage() {
   const [availNow, setAvailNow] = useState(false)
   const [sortBy, setSortBy] = useState('match')
   const [visible, setVisible] = useState(12)
-  const [appliedSearch, setAppliedSearch] = useState<{ outward: string; area: string; radius: string } | null>(null)
+  const [appliedSearch, setAppliedSearch] = useState<{ outward: string; area: string; radius: string; lat?: number | null; lng?: number | null } | null>(null)
   const [postcodeError, setPostcodeError] = useState('')
 
   useEffect(() => {
@@ -82,24 +117,39 @@ export default function AgencyPage() {
 
   const clearFilters = () => { setServices([]); setBrands([]); setRoles([]); setInsuredOnly(false); setAvailNow(false); setPostcode(''); setAppliedSearch(null); setPostcodeError('') }
 
-  const handleSearch = () => {
+  const handleSearch = async () => {
     const outward = normaliseOutward(postcode)
     if (!outward) { setPostcodeError('Please enter a valid UK postcode, e.g. BS1 or SW1A 1AA'); return }
     setPostcodeError('')
-    setAppliedSearch({ outward, area: areaOf(outward), radius })
+    // Real coordinates for true mileage; falls back to district matching if the lookup fails
+    const coords = await geocodeSearch(postcode)
+    setAppliedSearch({ outward, area: areaOf(outward), radius, lat: coords?.lat ?? null, lng: coords?.lng ?? null })
     setVisible(12)
   }
 
-  // Tiered postcode matching (no external geocoding):
-  // 5/10 miles -> same outward code (district); 25/50 miles -> same postcode area letters;
-  // 100 miles -> same area letters, but candidates with no usable location are also shown; UK-wide -> everyone.
+  // Real miles from the search point to a candidate, when both are geocoded
+  const candidateMiles = (c: any): number | null => {
+    if (!appliedSearch || appliedSearch.lat == null || appliedSearch.lng == null) return null
+    if (c.latitude == null || c.longitude == null) return null
+    return milesBetween(appliedSearch.lat, appliedSearch.lng, c.latitude, c.longitude)
+  }
+
+  // Location matching: TRUE mileage when both sides are geocoded; otherwise
+  // tiered postcode matching (district / area letters) as a fallback.
   const matchesLocation = (c: any): boolean => {
     if (!appliedSearch || appliedSearch.radius === 'UK-wide') return true
-    const co = candidateOutward(c)
     const { outward, area, radius: r } = appliedSearch
+
+    const dist = candidateMiles(c)
+    if (dist != null) {
+      const radiusMiles = parseInt(r, 10) // '25 miles' -> 25
+      return !isNaN(radiusMiles) ? dist <= radiusMiles : true
+    }
+
+    // Fallback: district/area approximation
+    const co = candidateOutward(c)
     if (r === '5 miles' || r === '10 miles') {
       if (!co) return false
-      // If only area letters were entered, match any district in that area; otherwise require the exact district
       return /\d/.test(outward) ? co === outward : co.startsWith(outward)
     }
     if (r === '25 miles' || r === '50 miles') return !!co && areaOf(co) === area
@@ -262,7 +312,7 @@ export default function AgencyPage() {
                           {c.review_score > 0 ? (
                             <span className="flex items-center gap-1 text-[12px]"><Star size={11} className="text-amber-400" fill="currentColor" /><span className="text-ink font-medium">{c.review_score}</span><span className="text-muted">({c.review_count})</span></span>
                           ) : <span className="text-[11px] text-muted">New</span>}
-                          {c.postcode && <span className="text-[11px] text-muted flex items-center gap-1"><MapPin size={10} />{pc(c.postcode)}</span>}
+                          {c.postcode && <span className="text-[11px] text-muted flex items-center gap-1"><MapPin size={10} />{pc(c.postcode)}{(() => { const d = candidateMiles(c); return d != null ? ` · ${Math.round(d * 10) / 10} mi away` : '' })()}</span>}
                           {c.has_insurance && <span className="text-[10px] text-success flex items-center gap-0.5"><Shield size={10} />Insured</span>}
                         </div>
 

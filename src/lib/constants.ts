@@ -95,9 +95,14 @@ export type TierName = keyof typeof JOB_TIERS
 export const FEATURED_PROFILE_PRICE = 1000 // £10/month in pence
 export const AGENCY_COMMISSION_RATE = 0.10 // 10%
 
-// Agency platform fee: charged to the property on top of the therapist's
-// hourly rate. The therapist receives their full rate; WHC earns the fee.
-export const AGENCY_PLATFORM_FEE_PCT = 0.10
+// Agency money flow (decided 15 Jul): ALL booking money goes through WHC.
+// The property pays rate × hours + 10% at acceptance; WHC pays the therapist
+// out after the shift, minus 5%. Both sides also subscribe (below).
+export const AGENCY_PLATFORM_FEE_PCT = 0.10   // charged to the property, on top
+export const AGENCY_CANDIDATE_FEE_PCT = 0.05  // deducted from the therapist's payout
+
+// Hotels must register as a Preferred Employer to book agency cover.
+export const PREFERRED_EMPLOYER_PRICE = 15000 // £150/year in pence
 
 // Monthly subscription for candidates to appear on the agency register.
 // Prices in pence. Featured tier appears first in the directory.

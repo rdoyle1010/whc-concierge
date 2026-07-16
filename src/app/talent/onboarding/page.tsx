@@ -4,8 +4,8 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import DashboardShell from '@/components/DashboardShell'
+import Link from 'next/link'
 import { Check, Upload, ArrowRight, ArrowLeft, Search, Zap } from 'lucide-react'
-import { AGENCY_LISTING_TIERS } from '@/lib/constants'
 
 // ── Chip selector component ──
 function ChipGrid({ items, selected, onToggle, search }: { items: any[]; selected: Map<string, any>; onToggle: (id: string, name: string) => void; search?: string }) {
@@ -283,42 +283,28 @@ export default function OnboardingWizard() {
     setSaving(false)
   }
 
-  // Persist the agency-work details (rate, mobile, postcode, radius).
+  // Persist the agency-work details (rate, mobile, postcode, radius) via the
+  // agency settings API, which also geocodes the postcode to real coordinates.
   // agency_available itself is NOT saved here — only the Stripe webhook may
-  // set it, after a successful subscription payment.
+  // set it, after the £10/mo listing subscription is paid.
   const saveAgencyFields = async () => {
     if (!profileId) return
-    await fetch('/api/profile/update', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ profileId, data: {
-        hourly_rate: agency.hourly_rate ? parseInt(agency.hourly_rate) : null,
-        phone: agency.phone || null,
-        postcode: agency.postcode || null,
-        travel_radius_miles: agency.travel_radius_miles ? parseInt(agency.travel_radius_miles) : null,
-      }}),
-    })
-  }
-
-  // Save details, then hand over to Stripe Checkout for the monthly listing.
-  const startAgencyCheckout = async () => {
-    if (!profileId) return
-    setPayError('')
-    if (!agency.hourly_rate || parseInt(agency.hourly_rate) <= 0) { setPayError('Please set your hourly rate first - properties need to see what you charge.'); return }
-    if (!agency.phone) { setPayError('Please add your mobile number - urgent same-day offers are sent by text.'); return }
-    setPayBusy(true)
     try {
-      await saveAgencyFields()
-      const res = await fetch('/api/stripe/checkout', {
+      const res = await fetch('/api/agency/settings', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ type: 'agency_listing', candidateId: profileId, tier: agency.tier, returnUrl: window.location.origin }),
+        body: JSON.stringify({
+          hourly_rate: agency.hourly_rate || null,
+          phone: agency.phone || null,
+          postcode: agency.postcode || null,
+          travel_radius_miles: agency.travel_radius_miles || null,
+          joining: false,
+        }),
       })
-      const j = await res.json()
-      if (!res.ok || !j.url) { setPayError(j.error || 'Could not start the payment - please try again.'); setPayBusy(false); return }
-      window.location.href = j.url
-    } catch {
-      setPayError('Something went wrong - please try again.')
-      setPayBusy(false)
-    }
+      if (!res.ok) {
+        const j = await res.json().catch(() => ({}))
+        setPayError(j.error || '')
+      }
+    } catch { /* details can be completed later in Agency Settings */ }
   }
 
   const goNext = async () => { await saveStep(); setStep(s => s + 1); setSearchTerm(''); window.scrollTo(0, 0) }
@@ -614,7 +600,7 @@ export default function OnboardingWizard() {
               <Zap size={18} className="text-accent mt-0.5 shrink-0" />
               <div>
                 <p className="text-[14px] font-medium text-ink">Join the agency register</p>
-                <p className="text-[13px] text-secondary mt-1">Properties book agency cover when someone calls in sick or they need extra hands. Set your hourly rate, tell us where you can work, and you&apos;ll receive shift offers - urgent same-day offers arrive by text so you never miss one. You keep 100% of your rate; the property pays our fee on top.</p>
+                <p className="text-[13px] text-secondary mt-1">Properties book agency cover when someone calls in sick or they need extra hands. Set your hourly rate, tell us where you can work, and you&apos;ll receive shift offers - urgent same-day offers arrive by text so you never miss one. Hotels pay Wellness House Collective and WHC pays you after the shift, so you never have to chase a property for money.</p>
               </div>
             </div>
 
@@ -622,14 +608,13 @@ export default function OnboardingWizard() {
               <div className="p-4 border border-green-200 bg-green-50 rounded-xl">
                 <p className="text-[14px] font-medium text-green-800">You&apos;re on the agency register</p>
                 <p className="text-[13px] text-green-700 mt-1">
-                  {AGENCY_LISTING_TIERS[(agencyLive.tier === 'featured' ? 'featured' : 'basic')].label} plan
-                  {agencyLive.until ? ` - renews ${new Date(agencyLive.until).toLocaleDateString('en-GB')}` : ''}. Keep your rate and contact details below up to date.
+                  Keep your rate and contact details up to date in <Link href="/talent/agency/settings" className="underline">Agency Settings</Link>.
                 </p>
               </div>
             ) : (
               <label className="flex items-center gap-2 cursor-pointer">
                 <input type="checkbox" checked={agency.optIn} onChange={e => { setAgency({ ...agency, optIn: e.target.checked }); setPayError('') }} className="w-3.5 h-3.5 border-border rounded text-ink" />
-                <span className="text-[13px] text-secondary">Yes - I want to be available for agency shifts</span>
+                <span className="text-[13px] text-secondary">Yes - I&apos;m interested in agency shifts</span>
               </label>
             )}
 
@@ -659,34 +644,11 @@ export default function OnboardingWizard() {
                   </div>
                 </div>
 
+                {payError && <p className="text-[13px] text-red-600">{payError}</p>}
                 {!agencyLive.available && (
-                  <>
-                    <div className="grid grid-cols-2 gap-3">
-                      {(Object.keys(AGENCY_LISTING_TIERS) as Array<keyof typeof AGENCY_LISTING_TIERS>).map(t => {
-                        const cfg = AGENCY_LISTING_TIERS[t]
-                        const active = agency.tier === t
-                        return (
-                          <button key={t} type="button" onClick={() => setAgency({ ...agency, tier: t })}
-                            className={`text-left p-4 rounded-xl border transition-all ${active ? 'border-ink ring-1 ring-ink' : 'border-border hover:border-ink/30'}`}>
-                            <div className="flex items-center justify-between mb-1">
-                              <p className="text-[14px] font-medium text-ink">{cfg.label}</p>
-                              {active && <Check size={14} className="text-ink" />}
-                            </div>
-                            <p className="text-[16px] font-semibold text-ink mb-2">{cfg.display}</p>
-                            <ul className="space-y-1">
-                              {cfg.features.map(f => <li key={f} className="text-[11px] text-muted">{f}</li>)}
-                            </ul>
-                          </button>
-                        )
-                      })}
-                    </div>
-                    {payError && <p className="text-[13px] text-red-600">{payError}</p>}
-                    <button type="button" onClick={startAgencyCheckout} disabled={payBusy}
-                      className="btn-primary w-full disabled:opacity-50">
-                      {payBusy ? 'Taking you to payment...' : `Subscribe - ${AGENCY_LISTING_TIERS[agency.tier].display}`}
-                    </button>
-                    <p className="text-[11px] text-muted text-center">Secure payment via Stripe. Cancel any time. Your listing goes live as soon as payment is confirmed.</p>
-                  </>
+                  <div className="p-4 bg-surface rounded-xl">
+                    <p className="text-[13px] text-secondary">Your details save when you continue. To go live on the register (from £10/month), finish up in <Link href="/talent/agency/settings" className="font-medium text-ink underline">Agency Settings</Link> - you can do it any time.</p>
+                  </div>
                 )}
               </>
             )}

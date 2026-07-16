@@ -6,6 +6,7 @@ import { createNotification } from '@/lib/notifications'
 import { AGENCY_PLATFORM_FEE_PCT } from '@/lib/constants'
 import { sendSms } from '@/lib/sms'
 import { sendAgencyOfferEmail } from '@/lib/emails'
+import { profileDistanceMiles } from '@/lib/geo'
 
 // Offers expire so urgent cover doesn't sit unanswered while the property
 // waits: 4 hours for same-day (urgent) shifts, 48 hours otherwise.
@@ -115,21 +116,34 @@ export async function GET() {
     const fetchEmployers = async (): Promise<{ data: any[] | null }> => {
       if (!empIds.length) return { data: [] as any[] }
       const full = await admin.from('employer_profiles')
-        .select('id, user_id, company_name, property_name, location, postcode, commute_car_required, nearest_transport')
+        .select('id, user_id, company_name, property_name, location, postcode, commute_car_required, nearest_transport, latitude, longitude')
         .in('id', empIds)
       if (!full.error) return full
       return admin.from('employer_profiles').select('id, user_id, company_name, property_name, location').in('id', empIds)
     }
-    const [empsRes, candsRes] = await Promise.all([
-      fetchEmployers(),
-      candIds.length ? admin.from('candidate_profiles').select('id, user_id, full_name').in('id', candIds) : Promise.resolve({ data: [] as any[] }),
-    ])
+    const fetchCandidates = async (): Promise<{ data: any[] | null }> => {
+      if (!candIds.length) return { data: [] as any[] }
+      const full = await admin.from('candidate_profiles')
+        .select('id, user_id, full_name, latitude, longitude, travel_radius_miles')
+        .in('id', candIds)
+      if (!full.error) return full
+      return admin.from('candidate_profiles').select('id, user_id, full_name').in('id', candIds)
+    }
+    const [empsRes, candsRes] = await Promise.all([fetchEmployers(), fetchCandidates()])
     const empMap = new Map((empsRes.data || []).map((e: any) => [e.id, e]))
     const candMap = new Map((candsRes.data || []).map((c: any) => [c.id, c]))
 
     const enriched = bookings
-      .map(b => ({
+      .map(b => {
+        // Real miles between the candidate's home and the property, when both
+        // postcodes have been geocoded. Null = unknown, shown as such.
+        const dist = profileDistanceMiles(candMap.get(b.candidate_id) || {}, empMap.get(b.employer_id) || {})
+        const radius = candMap.get(b.candidate_id)?.travel_radius_miles ?? null
+        return {
         ...b,
+        distance_miles: dist != null ? Math.round(dist * 10) / 10 : null,
+        candidate_travel_radius: radius,
+        within_radius: dist != null && radius ? dist <= radius : null,
         employer_name: employerDisplayName(empMap.get(b.employer_id)),
         employer_user_id: empMap.get(b.employer_id)?.user_id || null, // for reviews
         employer_location: empMap.get(b.employer_id)?.location || null,
@@ -139,7 +153,7 @@ export async function GET() {
         candidate_name: candMap.get(b.candidate_id)?.full_name || 'Candidate',
         candidate_user_id: candMap.get(b.candidate_id)?.user_id || null, // for reviews
         viewer_role: emp && b.employer_id === emp.id ? 'employer' : 'candidate',
-      }))
+      }})
       .sort((a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime())
 
     return NextResponse.json({ bookings: enriched })
@@ -162,7 +176,7 @@ export async function POST(req: NextRequest) {
     const admin = createAdminClient()
     const [{ data: cand }, { data: emp }] = await Promise.all([
       admin.from('candidate_profiles').select('id, full_name, user_id').eq('user_id', user.id).maybeSingle(),
-      admin.from('employer_profiles').select('id, company_name, property_name, user_id').eq('user_id', user.id).maybeSingle(),
+      admin.from('employer_profiles').select('*').eq('user_id', user.id).maybeSingle(),
     ])
 
     // ── create: employer sends an offer to a candidate ──
@@ -170,6 +184,10 @@ export async function POST(req: NextRequest) {
     // platform fee is calculated on top and payable by the property.
     if (action === 'create') {
       if (!emp) return NextResponse.json({ error: 'Only employers can make offers' }, { status: 403 })
+      // Agency cover is a Preferred Employer benefit (£150/year registration)
+      if (!emp.preferred_employer) {
+        return NextResponse.json({ error: 'Agency bookings are for registered Preferred Employers. Register from your Agency Bookings page (£150/year) to book cover.' }, { status: 403 })
+      }
       const rate = parseInt(String(body.rate), 10)
       if (!body.candidateId || !rate || rate <= 0) {
         return NextResponse.json({ error: 'A candidate and a valid hourly rate are required' }, { status: 400 })
@@ -325,11 +343,17 @@ export async function POST(req: NextRequest) {
       if (error) return NextResponse.json({ error: error.message }, { status: 500 })
       if (!updated) return NextResponse.json({ error: 'This offer is no longer open - it may have just been actioned elsewhere.' }, { status: 409 })
 
+      const effHours = booking.hours && booking.hours > 0 ? booking.hours : 8
+      const totalDue = booking.rate * effHours + (updated.platform_fee || Math.ceil(booking.rate * effHours * AGENCY_PLATFORM_FEE_PCT))
+      const acceptBody = isCandidateParty
+        // Candidate accepted → the property now pays WHC in full to confirm
+        ? `${actorName} has accepted the agency offer for ${shiftDate} at £${booking.rate} per hour. To confirm the booking, pay £${totalDue} (rate plus the 10% WHC fee) from your Agency Bookings page. WHC pays the therapist after the shift.`
+        : `${actorName} has accepted the agency offer for ${shiftDate} at £${booking.rate} per hour. The booking is confirmed once payment is made.`
       await notifyOtherParty(
         admin, otherUserId, user.id,
         'Agency offer accepted',
-        `${actorName} has accepted the agency offer for ${shiftDate} at £${booking.rate} per hour. The shift is now confirmed.`,
-        otherLink,
+        acceptBody,
+        isCandidateParty ? '/employer/agency' : otherLink,
       )
       return NextResponse.json({ success: true, booking: updated })
     }
