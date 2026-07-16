@@ -43,6 +43,9 @@ export async function POST(req: NextRequest) {
           amount_paid: gross + fee,
           payout_amount: gross - candidateFee,
           payout_status: 'pending',
+          // Kept so refunds (no-show, left early, dispute) can be issued
+          // against the exact Stripe payment later.
+          stripe_payment_intent: (session.payment_intent as string) || null,
         }).eq('id', meta.booking_id)
       }
 

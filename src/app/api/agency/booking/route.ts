@@ -169,7 +169,7 @@ export async function POST(req: NextRequest) {
 
     const body = await req.json()
     const action = body.action
-    if (!['create', 'counter', 'accept', 'decline'].includes(action)) {
+    if (!['create', 'counter', 'accept', 'decline', 'dispute'].includes(action)) {
       return NextResponse.json({ error: 'Invalid action' }, { status: 400 })
     }
 
@@ -282,16 +282,6 @@ export async function POST(req: NextRequest) {
     if (!isCandidateParty && !isEmployerParty) {
       return NextResponse.json({ error: 'You are not part of this booking' }, { status: 403 })
     }
-    if (!OPEN_STATUSES.includes(booking.status)) {
-      return NextResponse.json({ error: `This offer has already been ${booking.status}` }, { status: 400 })
-    }
-
-    // Expired offers can no longer be actioned — mark them so both sides see it.
-    if (isExpired(booking)) {
-      await admin.from('agency_bookings').update({ status: 'expired' }).eq('id', booking.id).in('status', OPEN_STATUSES)
-      return NextResponse.json({ error: 'This offer has expired. Ask the property to send a new one if the shift is still available.' }, { status: 400 })
-    }
-
     // Work out who to notify (the other party's auth user id and display name)
     const [{ data: bookingEmp }, { data: bookingCand }] = await Promise.all([
       admin.from('employer_profiles').select('id, company_name, property_name, user_id').eq('id', booking.employer_id).maybeSingle(),
@@ -303,6 +293,53 @@ export async function POST(req: NextRequest) {
       ? (bookingCand?.full_name || 'The candidate')
       : employerDisplayName(bookingEmp)
     const shiftDate = booking.shift_date || 'the agreed date'
+
+    // ── dispute: the property reports a problem with a PAID booking ──
+    // (no-show, left early, quality). Payout freezes until WHC resolves it;
+    // any refund is minus the 10% admin fee, decided case-by-case in Admin.
+    if (action === 'dispute') {
+      if (!isEmployerParty) {
+        return NextResponse.json({ error: 'Only the property can report an issue with a booking' }, { status: 403 })
+      }
+      if (!['confirmed', 'completed'].includes(booking.status) || !booking.paid_at) {
+        return NextResponse.json({ error: 'Issues can be reported on paid bookings only.' }, { status: 400 })
+      }
+      if (booking.dispute_status === 'open') {
+        return NextResponse.json({ error: 'An issue is already open on this booking - WHC is reviewing it.' }, { status: 400 })
+      }
+      const reason = String(body.reason || '').trim()
+      if (!reason) return NextResponse.json({ error: 'Please describe what happened.' }, { status: 400 })
+
+      const { data: updated, error } = await admin
+        .from('agency_bookings')
+        .update({
+          dispute_status: 'open',
+          dispute_reason: reason.slice(0, 1000),
+          dispute_requested: String(body.requested || '').slice(0, 200) || null,
+        })
+        .eq('id', booking.id)
+        .select('*')
+        .single()
+      if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+      await notifyOtherParty(
+        admin, otherUserId, user.id,
+        'Issue reported on a booking',
+        `${actorName} has reported an issue with the shift on ${shiftDate}. Your payout for this booking is on hold while Wellness House Collective reviews it - you'll be notified of the outcome.`,
+        otherLink,
+      )
+      return NextResponse.json({ success: true, booking: updated })
+    }
+
+    if (!OPEN_STATUSES.includes(booking.status)) {
+      return NextResponse.json({ error: `This offer has already been ${booking.status}` }, { status: 400 })
+    }
+
+    // Expired offers can no longer be actioned — mark them so both sides see it.
+    if (isExpired(booking)) {
+      await admin.from('agency_bookings').update({ status: 'expired' }).eq('id', booking.id).in('status', OPEN_STATUSES)
+      return NextResponse.json({ error: 'This offer has expired. Ask the property to send a new one if the shift is still available.' }, { status: 400 })
+    }
 
     if (action === 'counter') {
       if (!isCandidateParty) {

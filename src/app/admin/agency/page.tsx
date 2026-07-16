@@ -13,6 +13,7 @@ export default function AdminAgencyPage() {
   const [loading, setLoading] = useState(true)
   const [busyId, setBusyId] = useState<string | null>(null)
   const [error, setError] = useState('')
+  const [resolveInputs, setResolveInputs] = useState<Record<string, { refund: string; payout: string }>>({})
 
   async function load() {
     try {
@@ -45,11 +46,36 @@ export default function AdminAgencyPage() {
     }
   }
 
+  async function resolveDispute(bookingId: string) {
+    setError('')
+    setBusyId(bookingId)
+    try {
+      const inputs = resolveInputs[bookingId] || { refund: '0', payout: '' }
+      const res = await fetch('/api/admin/agency', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'resolve_dispute', bookingId,
+          refundAmount: inputs.refund === '' ? 0 : parseInt(inputs.refund, 10) || 0,
+          payoutAmount: inputs.payout === '' ? undefined : parseInt(inputs.payout, 10) || 0,
+        }),
+      })
+      const j = await res.json()
+      if (!res.ok) { setError(j.error || 'Could not resolve.'); return }
+      await load()
+    } catch {
+      setError('Something went wrong - please try again.')
+    } finally {
+      setBusyId(null)
+    }
+  }
+
   const paidIn = bookings.filter(b => b.paid_at)
-  const owed = paidIn.filter(b => b.payout_status !== 'paid')
+  const owed = paidIn.filter(b => b.payout_status === 'pending' && b.dispute_status !== 'open')
+  const disputes = bookings.filter(b => b.dispute_status === 'open')
   const totalCollected = paidIn.reduce((s, b) => s + (b.amount_paid || 0), 0)
+  const totalRefunded = bookings.reduce((s, b) => s + (b.refund_amount || 0), 0)
   const totalOwed = owed.reduce((s, b) => s + (b.payout_amount || 0), 0)
-  const margin = paidIn.reduce((s, b) => s + ((b.amount_paid || 0) - (b.payout_amount || 0)), 0)
+  const margin = paidIn.reduce((s, b) => s + ((b.amount_paid || 0) - (b.payout_status === 'cancelled' ? 0 : (b.payout_amount || 0)) - (b.refund_amount || 0)), 0)
 
   return (
     <DashboardShell role="admin">
@@ -62,11 +88,49 @@ export default function AdminAgencyPage() {
       ) : (
         <>
           {/* Totals */}
-          <div className="grid grid-cols-3 gap-3 mb-8">
+          <div className="grid grid-cols-4 gap-3 mb-8">
             <div className="dashboard-card"><p className="eyebrow mb-1">Collected from properties</p><p className="text-[22px] font-semibold text-ink">£{totalCollected}</p></div>
             <div className="dashboard-card"><p className="eyebrow mb-1">Owed to therapists</p><p className="text-[22px] font-semibold text-amber-600">£{totalOwed}</p></div>
-            <div className="dashboard-card"><p className="eyebrow mb-1">WHC margin (paid bookings)</p><p className="text-[22px] font-semibold text-green-700">£{margin}</p></div>
+            <div className="dashboard-card"><p className="eyebrow mb-1">Refunded</p><p className="text-[22px] font-semibold text-gray-600">£{totalRefunded}</p></div>
+            <div className="dashboard-card"><p className="eyebrow mb-1">WHC margin</p><p className="text-[22px] font-semibold text-green-700">£{margin}</p></div>
           </div>
+
+          {/* Open disputes - resolve before paying out */}
+          {disputes.length > 0 && (
+            <div className="mb-8">
+              <h2 className="text-[16px] font-medium text-ink mb-3">Open disputes ({disputes.length})</h2>
+              <div className="space-y-4">
+                {disputes.map(b => {
+                  const inputs = resolveInputs[b.id] || { refund: '', payout: String(b.payout_amount ?? '') }
+                  const setInputs = (patch: Partial<{ refund: string; payout: string }>) =>
+                    setResolveInputs(prev => ({ ...prev, [b.id]: { ...inputs, ...patch } }))
+                  return (
+                    <div key={b.id} className="bg-white border border-red-200 ring-1 ring-red-100 rounded-xl p-5">
+                      <div className="flex items-center justify-between mb-2 flex-wrap gap-2">
+                        <p className="text-[14px] font-medium text-ink">{b.employer_name} vs {b.candidate_name} - {b.shift_date ? new Date(b.shift_date).toLocaleDateString('en-GB') : 'date TBC'}</p>
+                        <p className="text-[12px] text-gray-500">Paid in £{b.amount_paid || '-'} · payout was £{b.payout_amount || '-'}{b.stripe_payment_intent ? ` · Stripe PI ${b.stripe_payment_intent}` : ''}</p>
+                      </div>
+                      <p className="text-[13px] text-secondary mb-1"><span className="font-medium">What happened:</span> {b.dispute_reason}</p>
+                      {b.dispute_requested && <p className="text-[13px] text-secondary mb-3"><span className="font-medium">Property asked for:</span> {b.dispute_requested}</p>}
+                      <div className="flex items-end flex-wrap gap-3">
+                        <div>
+                          <label className="text-[11px] text-gray-500 block mb-1">Refund to property (£)</label>
+                          <input type="number" min={0} value={inputs.refund} onChange={e => setInputs({ refund: e.target.value })} className="input-field !py-1.5 text-[13px] w-36" placeholder="0" />
+                        </div>
+                        <div>
+                          <label className="text-[11px] text-gray-500 block mb-1">Adjusted payout to therapist (£)</label>
+                          <input type="number" min={0} value={inputs.payout} onChange={e => setInputs({ payout: e.target.value })} className="input-field !py-1.5 text-[13px] w-36" />
+                        </div>
+                        <button onClick={() => resolveDispute(b.id)} disabled={busyId === b.id}
+                          className="btn-primary text-[12px] disabled:opacity-50">{busyId === b.id ? 'Resolving...' : 'Resolve'}</button>
+                      </div>
+                      <p className="text-[11px] text-gray-400 mt-2">Issue any actual refund in the Stripe dashboard against the payment intent above - the 10% admin fee is normally retained. Set payout to 0 for a no-show.</p>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )}
 
           {bookings.length === 0 ? (
             <div className="dashboard-card text-center py-16 text-gray-400">
@@ -95,7 +159,11 @@ export default function AdminAgencyPage() {
                       <td className="py-2.5 pr-4">{b.employer_name}</td>
                       <td className="py-2.5 pr-4">{b.candidate_name}{b.candidate_phone ? <span className="block text-[11px] text-gray-400">{b.candidate_phone}</span> : null}</td>
                       <td className="py-2.5 pr-4 whitespace-nowrap">£{b.rate}/hr{b.hours ? ` × ${b.hours}h` : ''}</td>
-                      <td className="py-2.5 pr-4 capitalize">{b.status}</td>
+                      <td className="py-2.5 pr-4 capitalize">
+                        {b.status}
+                        {b.dispute_status === 'open' && <span className="ml-1.5 text-[10px] font-semibold uppercase bg-red-50 text-red-700 px-1.5 py-0.5 rounded-full">dispute</span>}
+                        {b.dispute_status === 'resolved' && <span className="ml-1.5 text-[10px] font-medium uppercase bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded-full">resolved</span>}
+                      </td>
                       <td className="py-2.5 pr-4">{b.paid_at ? `£${b.amount_paid || '-'} on ${new Date(b.paid_at).toLocaleDateString('en-GB')}` : <span className="text-gray-400">not paid</span>}</td>
                       <td className="py-2.5 pr-4">{b.payout_amount ? `£${b.payout_amount}` : '-'}</td>
                       <td className="py-2.5 text-right">

@@ -19,6 +19,9 @@ export default function EmployerAgencyPage() {
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
   const [reviewing, setReviewing] = useState<{ userId: string; name: string } | null>(null)
+  const [disputing, setDisputing] = useState<any>(null)
+  const [disputeReason, setDisputeReason] = useState('')
+  const [disputeRequested, setDisputeRequested] = useState('Refund minus the WHC admin fee')
 
   async function load() {
     try {
@@ -60,6 +63,28 @@ export default function EmployerAgencyPage() {
     }
   }
 
+  async function submitDispute() {
+    if (!disputing) return
+    setError('')
+    setBusyId(disputing.id)
+    try {
+      const res = await fetch('/api/agency/booking', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'dispute', bookingId: disputing.id, reason: disputeReason, requested: disputeRequested }),
+      })
+      const j = await res.json()
+      if (!res.ok) { setError(j.error || 'Could not report the issue - please try again.'); return }
+      setDisputing(null)
+      setDisputeReason('')
+      setNotice('Issue reported - Wellness House Collective will review it and confirm the outcome. The therapist payout is on hold in the meantime.')
+      await load()
+    } catch {
+      setError('Something went wrong - please try again.')
+    } finally {
+      setBusyId(null)
+    }
+  }
+
   const statusColors: Record<string, string> = {
     pending: 'bg-amber-50 text-amber-700',
     countered: 'bg-[#FDF6EC] text-accent',
@@ -77,6 +102,12 @@ export default function EmployerAgencyPage() {
   const needsAction = bookings.filter(b => b.status === 'accepted')
   const open = bookings.filter(b => b.status === 'pending' || b.status === 'countered')
   const rest = bookings.filter(b => !['accepted', 'pending', 'countered'].includes(b.status))
+
+  // ── Payment history summary ──
+  const totalPaid = bookings.filter(b => b.paid_at).reduce((s, b) => s + (b.amount_paid || 0), 0)
+  const awaitingPayment = needsAction.reduce((s, b) => s + totalDue(b), 0)
+  const refunded = bookings.reduce((s, b) => s + (b.refund_amount || 0), 0)
+  const hasMoney = totalPaid > 0 || awaitingPayment > 0 || refunded > 0
 
   const renderCard = (b: any) => (
     <div key={b.id} className={`bg-white border rounded-xl p-5 ${b.urgent && (b.status === 'pending' || b.status === 'countered') ? 'border-red-300 ring-1 ring-red-200' : 'border-border'}`}>
@@ -99,8 +130,14 @@ export default function EmployerAgencyPage() {
           {b.status === 'accepted' && (
             <p className="text-[12px] text-blue-700 mt-1.5">Accepted - pay £{totalDue(b)} to confirm ({effHours(b)}h × £{b.rate} + 10% WHC fee). WHC pays the therapist after the shift.</p>
           )}
-          {b.status === 'confirmed' && (
-            <p className="text-[12px] text-green-700 mt-1.5">Paid{b.amount_paid ? ` £${b.amount_paid}` : ''} - booking confirmed. The therapist is paid by WHC after the shift; nothing more to do.</p>
+          {b.status === 'confirmed' && b.dispute_status === 'open' && (
+            <p className="text-[12px] text-amber-700 mt-1.5">Issue reported - WHC is reviewing it and will confirm the outcome. The therapist&apos;s payout is on hold.</p>
+          )}
+          {b.status === 'confirmed' && b.dispute_status === 'resolved' && (
+            <p className="text-[12px] text-gray-600 mt-1.5">Issue resolved{b.refund_amount ? ` - £${b.refund_amount} refund agreed (admin fee retained)` : ' - no refund agreed'}.</p>
+          )}
+          {b.status === 'confirmed' && !b.dispute_status && (
+            <p className="text-[12px] text-green-700 mt-1.5">Paid{b.amount_paid ? ` £${b.amount_paid}` : ''}{b.paid_at ? ` on ${new Date(b.paid_at).toLocaleDateString('en-GB')}` : ''} - booking confirmed. The therapist is paid by WHC after the shift; nothing more to do.</p>
           )}
         </div>
         <div className="flex flex-col items-end gap-2 shrink-0">
@@ -115,6 +152,10 @@ export default function EmployerAgencyPage() {
             {(b.status === 'confirmed' || b.status === 'completed') && b.candidate_user_id && (
               <button type="button" onClick={() => setReviewing({ userId: b.candidate_user_id, name: b.candidate_name || 'this candidate' })}
                 className="text-[12px] font-medium text-amber-500 hover:underline inline-flex items-center gap-1"><Star size={11} /> Review</button>
+            )}
+            {(b.status === 'confirmed' || b.status === 'completed') && b.paid_at && !b.dispute_status && (
+              <button type="button" onClick={() => { setDisputing(b); setDisputeReason(''); setError('') }}
+                className="text-[12px] font-medium text-red-500 hover:underline">Report an issue</button>
             )}
           </div>
         </div>
@@ -156,6 +197,15 @@ export default function EmployerAgencyPage() {
             )
           )}
 
+          {/* Payment history summary */}
+          {hasMoney && (
+            <div className="grid grid-cols-3 gap-3 mb-8">
+              <div className="dashboard-card !py-4"><p className="text-[11px] uppercase tracking-wide text-gray-400 mb-1">Paid to WHC</p><p className="text-[20px] font-semibold text-ink">£{totalPaid}</p></div>
+              <div className="dashboard-card !py-4"><p className="text-[11px] uppercase tracking-wide text-gray-400 mb-1">Awaiting your payment</p><p className="text-[20px] font-semibold text-amber-600">£{awaitingPayment}</p></div>
+              <div className="dashboard-card !py-4"><p className="text-[11px] uppercase tracking-wide text-gray-400 mb-1">Refunds agreed</p><p className="text-[20px] font-semibold text-green-700">£{refunded}</p></div>
+            </div>
+          )}
+
           {bookings.length === 0 ? (
             <div className="dashboard-card text-center py-16 text-gray-400">
               <Calendar size={48} className="mx-auto mb-4 opacity-50" />
@@ -185,6 +235,35 @@ export default function EmployerAgencyPage() {
             </>
           )}
         </>
+      )}
+
+      {/* Report an issue modal */}
+      {disputing && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setDisputing(null)}>
+          <div className="bg-white rounded-2xl max-w-md w-full max-h-[90vh] overflow-y-auto p-6" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-2">
+              <h2 className="font-serif text-lg font-bold text-ink">Report an issue</h2>
+              <button type="button" onClick={() => setDisputing(null)} className="text-gray-300 hover:text-ink"><X size={20} /></button>
+            </div>
+            <p className="text-[12px] text-gray-500 mb-4">
+              Shift on {disputing.shift_date ? new Date(disputing.shift_date).toLocaleDateString('en-GB') : 'the agreed date'} with {disputing.candidate_name}. Wellness House Collective will review this and confirm the outcome with both of you - the therapist&apos;s payout is held in the meantime. Any refund is minus the 10% admin fee.
+            </p>
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">What happened?</label>
+            <textarea rows={4} value={disputeReason} onChange={(e) => setDisputeReason(e.target.value)} className="input-field mb-4"
+              placeholder="e.g. Left at 2pm having been booked until 6pm; did not attend; arrived unprepared..." />
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">What outcome are you asking for?</label>
+            <select value={disputeRequested} onChange={(e) => setDisputeRequested(e.target.value)} className="input-field mb-4">
+              <option>Refund minus the WHC admin fee</option>
+              <option>Partial refund (e.g. hours not worked)</option>
+              <option>No refund - just noting the issue</option>
+            </select>
+            {error && <p className="text-[12px] text-red-600 mb-3">{error}</p>}
+            <button onClick={submitDispute} disabled={busyId === disputing.id || !disputeReason.trim()}
+              className="btn-primary w-full disabled:opacity-50">
+              {busyId === disputing.id ? 'Sending...' : 'Submit to WHC'}
+            </button>
+          </div>
+        </div>
       )}
 
       {/* Review modal */}

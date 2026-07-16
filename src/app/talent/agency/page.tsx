@@ -97,6 +97,14 @@ export default function TalentAgencyPage() {
   const offers = bookings.filter((b) => b.status === 'pending' || b.status === 'countered')
   const shifts = bookings.filter((b) => b.status !== 'pending' && b.status !== 'countered')
 
+  // ── Earnings across every property you work with ──
+  const expectedPayout = (b: any) => b.payout_amount ?? Math.max(0, b.rate * (b.hours && b.hours > 0 ? b.hours : 8) - Math.ceil(b.rate * (b.hours && b.hours > 0 ? b.hours : 8) * 0.05))
+  const paidOut = shifts.filter((b) => b.payout_status === 'paid').reduce((s, b) => s + expectedPayout(b), 0)
+  const awaitingPayout = shifts.filter((b) => b.paid_at && b.payout_status === 'pending' && b.dispute_status !== 'open').reduce((s, b) => s + expectedPayout(b), 0)
+  const onHold = shifts.filter((b) => b.dispute_status === 'open').reduce((s, b) => s + expectedPayout(b), 0)
+  const awaitingProperty = shifts.filter((b) => b.status === 'accepted').reduce((s, b) => s + expectedPayout(b), 0)
+  const hasEarnings = shifts.some((b) => ['accepted', 'confirmed', 'completed'].includes(b.status))
+
   return (
     <DashboardShell role="talent">
       <h1 className="text-2xl font-serif font-bold text-ink mb-6">Agency Shifts</h1>
@@ -132,6 +140,16 @@ export default function TalentAgencyPage() {
         <div className="flex items-center justify-center h-64"><div className="animate-spin w-8 h-8 border-2 border-gold border-t-transparent rounded-full" /></div>
       ) : (
         <>
+          {/* Earnings across all properties */}
+          {hasEarnings && (
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8">
+              <div className="dashboard-card !py-4"><p className="text-[11px] uppercase tracking-wide text-gray-400 mb-1">Paid to you</p><p className="text-[20px] font-semibold text-green-700">£{paidOut}</p></div>
+              <div className="dashboard-card !py-4"><p className="text-[11px] uppercase tracking-wide text-gray-400 mb-1">Awaiting payout</p><p className="text-[20px] font-semibold text-ink">£{awaitingPayout}</p><p className="text-[10px] text-gray-400">Property has paid - WHC pays you after the shift</p></div>
+              <div className="dashboard-card !py-4"><p className="text-[11px] uppercase tracking-wide text-gray-400 mb-1">Awaiting property payment</p><p className="text-[20px] font-semibold text-amber-600">£{awaitingProperty}</p></div>
+              <div className="dashboard-card !py-4"><p className="text-[11px] uppercase tracking-wide text-gray-400 mb-1">On hold</p><p className="text-[20px] font-semibold text-gray-500">£{onHold}</p><p className="text-[10px] text-gray-400">{onHold > 0 ? 'An issue is being reviewed by WHC' : 'No open issues'}</p></div>
+            </div>
+          )}
+
           {/* Offers awaiting a response */}
           {offers.length > 0 && (
             <div className="mb-8">
@@ -232,10 +250,17 @@ export default function TalentAgencyPage() {
                     {b.status === 'accepted' && (
                       <p className="text-[11px] text-blue-700 mt-1.5">Agreed at £{b.rate}/hour - awaiting the property&apos;s payment to WHC. Once paid, your payout of £{Math.max(0, b.rate * (b.hours && b.hours > 0 ? b.hours : 8) - Math.ceil(b.rate * (b.hours && b.hours > 0 ? b.hours : 8) * 0.05))} (after the 5% WHC fee) is confirmed.</p>
                     )}
-                    {(b.status === 'confirmed' || b.status === 'completed') && (
-                      <p className="text-[11px] text-green-700 mt-1.5">
-                        Paid &amp; confirmed - WHC pays you £{b.payout_amount || Math.max(0, b.rate * (b.hours && b.hours > 0 ? b.hours : 8) - Math.ceil(b.rate * (b.hours && b.hours > 0 ? b.hours : 8) * 0.05))} after the shift{b.payout_status === 'paid' ? ' (payout sent)' : ''}.
-                      </p>
+                    {(b.status === 'confirmed' || b.status === 'completed') && b.dispute_status === 'open' && (
+                      <p className="text-[11px] text-amber-700 mt-1.5">The property has raised an issue with this shift - your payout of £{expectedPayout(b)} is on hold while WHC reviews it.</p>
+                    )}
+                    {(b.status === 'confirmed' || b.status === 'completed') && b.dispute_status !== 'open' && (
+                      b.payout_status === 'cancelled' ? (
+                        <p className="text-[11px] text-gray-500 mt-1.5">Issue resolved - no payout is due for this booking.</p>
+                      ) : (
+                        <p className="text-[11px] text-green-700 mt-1.5">
+                          Paid &amp; confirmed - WHC pays you £{expectedPayout(b)} after the shift{b.payout_status === 'paid' ? ` (payout sent${b.payout_at ? ` ${new Date(b.payout_at).toLocaleDateString('en-GB')}` : ''})` : ''}.
+                        </p>
+                      )
                     )}
                   </div>
                   <div className="text-right">
