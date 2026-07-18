@@ -125,3 +125,6 @@ ALTER TABLE residency_profiles ADD COLUMN IF NOT EXISTS day_rate integer;
 ALTER TABLE residency_profiles ADD COLUMN IF NOT EXISTS monthly_rate integer;
 ALTER TABLE residency_profiles ADD COLUMN IF NOT EXISTS negotiable boolean;
 INSERT INTO storage.buckets (id, name, public) VALUES ('message-attachments','message-attachments', true) ON CONFLICT (id) DO NOTHING;
+
+-- Legacy messaging remnant (zero code references)
+DROP TABLE IF EXISTS message_threads CASCADE;

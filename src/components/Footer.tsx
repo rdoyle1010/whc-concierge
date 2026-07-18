@@ -13,7 +13,6 @@ const links = [
   { href: '/contact', label: 'Contact' },
   { href: '/privacy', label: 'Privacy Policy' },
   { href: '/terms', label: 'Terms' },
-  { href: '/login', label: 'Admin' },
 ]
 
 export default function Footer() {
@@ -27,7 +26,10 @@ export default function Footer() {
             </Link>
           ))}
         </div>
-        <p className="text-neutral-300 text-xs">&copy; 2026 Wellness House Collective</p>
+        <p className="text-neutral-300 text-xs">
+          &copy; 2026 Wellness House Collective
+          <Link href="/login" className="ml-3 text-neutral-200 hover:text-neutral-400 text-[10px] transition-colors" aria-label="Staff sign in">Staff</Link>
+        </p>
       </div>
     </footer>
   )

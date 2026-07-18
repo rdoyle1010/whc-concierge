@@ -143,6 +143,22 @@ export default function PropertyDetailPage() {
         </section>
       )}
 
+      {/* Property Gallery - photos uploaded on the employer profile */}
+      {Array.isArray(property.property_photos) && property.property_photos.length > 0 && (
+        <section className="py-16">
+          <div className="max-w-7xl mx-auto px-4">
+            <h2 className="font-serif text-2xl font-bold text-ink mb-6">The Property</h2>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+              {property.property_photos.slice(0, 6).map((url: string) => (
+                <div key={url} className="aspect-[4/3] rounded-xl overflow-hidden bg-gray-100">
+                  <img src={url} alt={property.property_name || property.company_name || 'Property photo'} className="w-full h-full object-cover" />
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
       {/* Key Info */}
       <section className="bg-white py-16">
         <div className="max-w-7xl mx-auto px-4">
