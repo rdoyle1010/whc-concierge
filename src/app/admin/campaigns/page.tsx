@@ -156,10 +156,20 @@ export default function AdminCampaignsPage() {
               </div>
               <div className="flex items-center space-x-2">
                 {String(c.type || '').toLowerCase() === 'email' && c.status !== 'sent' && (
-                  <button onClick={() => handleSend(c)} disabled={sendingId === c.id}
-                    className="btn-primary !py-2 text-[12px] flex items-center gap-1.5 disabled:opacity-50">
-                    <Send size={13} /> {sendingId === c.id ? 'Sending...' : 'Send Now'}
-                  </button>
+                  <>
+                    <button
+                      onClick={async () => {
+                        setBanner('')
+                        const res = await fetch('/api/admin/campaigns', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'send_test', id: c.id }) })
+                        const j = await res.json().catch(() => ({}))
+                        setBanner(res.ok ? 'Sent a test copy to your own inbox - check it before Send Now.' : (j.error || 'Test send failed.'))
+                      }}
+                      className="btn-secondary !py-2 text-[12px]">Test to me</button>
+                    <button onClick={() => handleSend(c)} disabled={sendingId === c.id}
+                      className="btn-primary !py-2 text-[12px] flex items-center gap-1.5 disabled:opacity-50">
+                      <Send size={13} /> {sendingId === c.id ? 'Sending...' : 'Send Now'}
+                    </button>
+                  </>
                 )}
                 <button onClick={() => toggleStatus(c)} className="p-2 rounded-lg hover:bg-gray-100 text-gray-400">
                   {c.status === 'active' ? <Pause size={18} /> : <Play size={18} />}

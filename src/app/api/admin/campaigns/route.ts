@@ -79,6 +79,22 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true })
     }
 
+    // Send a test copy to the admin only - see exactly what recipients get
+    if (action === 'send_test') {
+      if (!RESEND_API_KEY) return NextResponse.json({ error: 'Email is not configured (RESEND_API_KEY missing).' }, { status: 500 })
+      const { data: campaign } = await admin.from('campaigns').select('*').eq('id', body.id).maybeSingle()
+      if (!campaign) return NextResponse.json({ error: 'Campaign not found' }, { status: 404 })
+      if (!campaign.content || !String(campaign.content).trim()) return NextResponse.json({ error: 'The campaign has no content to send.' }, { status: 400 })
+      if (!user.email) return NextResponse.json({ error: 'Your admin account has no email address.' }, { status: 400 })
+      const res = await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ from: FROM_EMAIL, to: user.email, subject: `[TEST] ${campaign.name || 'Campaign'}`, html: wrapper(String(campaign.content).replace(/</g, '&lt;')) }),
+      })
+      if (!res.ok) return NextResponse.json({ error: 'Test send failed - check resend.com/logs.' }, { status: 502 })
+      return NextResponse.json({ success: true })
+    }
+
     if (action === 'send') {
       if (!RESEND_API_KEY) return NextResponse.json({ error: 'Email is not configured (RESEND_API_KEY missing).' }, { status: 500 })
       const { data: campaign } = await admin.from('campaigns').select('*').eq('id', body.id).maybeSingle()
