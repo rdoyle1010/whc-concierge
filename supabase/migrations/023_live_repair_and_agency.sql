@@ -128,3 +128,6 @@ INSERT INTO storage.buckets (id, name, public) VALUES ('message-attachments','me
 
 -- Legacy messaging remnant (zero code references)
 DROP TABLE IF EXISTS message_threads CASCADE;
+
+-- Campaign featured-member showcase
+ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS featured_ids jsonb;

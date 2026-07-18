@@ -12,6 +12,9 @@ export default function AdminCampaignsPage() {
   const [saving, setSaving] = useState(false)
   const [sendingId, setSendingId] = useState<string | null>(null)
   const [banner, setBanner] = useState('')
+  const [promotion, setPromotion] = useState<any>(null)
+  const [audiences, setAudiences] = useState<any>(null)
+  const [featuredSel, setFeaturedSel] = useState<Array<{ type: string; id: string; label: string }>>([])
 
   const empty = { name: '', description: '', type: '', status: 'draft', start_date: '', end_date: '', target_audience: '', content: '' }
   const [form, setForm] = useState(empty)
@@ -21,6 +24,8 @@ export default function AdminCampaignsPage() {
       const res = await fetch('/api/admin/campaigns')
       const j = res.ok ? await res.json() : { campaigns: [] }
       setCampaigns(j.campaigns || [])
+      setPromotion(j.promotion || null)
+      setAudiences(j.audiences || null)
       setLoading(false)
     }
     load()
@@ -58,7 +63,7 @@ export default function AdminCampaignsPage() {
       status: form.status, start_date: form.start_date || null, end_date: form.end_date || null,
       target_audience: form.target_audience || null, content: form.content || null,
     }
-    await fetch('/api/admin/campaigns', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'save', id: editing?.id, data: payload }) })
+    await fetch('/api/admin/campaigns', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'save', id: editing?.id, data: { ...payload, featured_ids: featuredSel.map(f => ({ type: f.type, id: f.id })) } }) })
     await reload()
     setShowForm(false); setEditing(null); setForm(empty); setSaving(false)
   }
@@ -69,6 +74,15 @@ export default function AdminCampaignsPage() {
       status: c.status, start_date: c.start_date || '', end_date: c.end_date || '',
       target_audience: c.target_audience || '', content: c.content || '',
     })
+    const sel: Array<{ type: string; id: string; label: string }> = []
+    for (const f of (c.featured_ids || [])) {
+      const pool = f.type === 'candidate'
+        ? [...(promotion?.featured_candidates || []), ...(promotion?.agency_featured || [])]
+        : (promotion?.preferred_employers || [])
+      const m = pool.find((x: any) => x.id === f.id)
+      sel.push({ type: f.type, id: f.id, label: m?.full_name || m?.property_name || m?.company_name || 'Member' })
+    }
+    setFeaturedSel(sel)
     setEditing(c); setShowForm(true)
   }
 
@@ -94,11 +108,41 @@ export default function AdminCampaignsPage() {
     <DashboardShell role="admin" userName="Admin">
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-serif font-bold text-ink">Campaign Management</h1>
-        <button onClick={() => { setForm(empty); setEditing(null); setShowForm(true) }}
+        <button onClick={() => { setForm(empty); setEditing(null); setFeaturedSel([]); setShowForm(true) }}
           className="btn-primary flex items-center space-x-2"><Plus size={16} /><span>New Campaign</span></button>
       </div>
 
       {banner && <div className={`text-sm px-4 py-3 rounded-lg mb-6 ${banner.startsWith('Sent') ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-600'}`}>{banner}</div>}
+
+      {/* Command-centre overview */}
+      {audiences && (
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
+          <div className="dashboard-card !py-4"><p className="text-[11px] uppercase tracking-wide text-gray-400 mb-1">Reachable inboxes</p><p className="text-[20px] font-semibold text-ink">{audiences.all}</p><p className="text-[10px] text-gray-400">{audiences.candidates} talent · {audiences.employers} properties</p></div>
+          <div className="dashboard-card !py-4"><p className="text-[11px] uppercase tracking-wide text-gray-400 mb-1">Featured profiles</p><p className="text-[20px] font-semibold text-amber-600">{promotion?.featured_candidates?.length || 0}</p><p className="text-[10px] text-gray-400">Paying for premium visibility</p></div>
+          <div className="dashboard-card !py-4"><p className="text-[11px] uppercase tracking-wide text-gray-400 mb-1">Agency featured</p><p className="text-[20px] font-semibold text-amber-600">{promotion?.agency_featured?.length || 0}</p><p className="text-[10px] text-gray-400">Top of the agency register</p></div>
+          <div className="dashboard-card !py-4"><p className="text-[11px] uppercase tracking-wide text-gray-400 mb-1">Preferred employers</p><p className="text-[20px] font-semibold text-ink">{promotion?.preferred_employers?.length || 0}</p><p className="text-[10px] text-gray-400">£150/yr registered</p></div>
+          <div className="dashboard-card !py-4"><p className="text-[11px] uppercase tracking-wide text-gray-400 mb-1">Campaigns sent</p><p className="text-[20px] font-semibold text-green-700">{campaigns.filter(c => c.status === 'sent').length}</p><p className="text-[10px] text-gray-400">{campaigns.filter(c => c.status === 'sent').reduce((s, c) => s + (c.recipients_count || 0), 0)} emails delivered</p></div>
+        </div>
+      )}
+
+      {/* Promotion roster - the people paying to be seen */}
+      {promotion && ((promotion.featured_candidates?.length || 0) + (promotion.agency_featured?.length || 0) + (promotion.preferred_employers?.length || 0)) > 0 && (
+        <div className="dashboard-card mb-8">
+          <p className="text-[14px] font-medium text-ink mb-1">Promotion roster</p>
+          <p className="text-[12px] text-gray-400 mb-4">Members paying for premium placement - showcase them in the newsletter with the selector inside each campaign.</p>
+          <div className="flex flex-wrap gap-2">
+            {(promotion.featured_candidates || []).map((c: any) => (
+              <span key={`fc-${c.id}`} className="text-[12px] bg-amber-50 text-amber-700 px-3 py-1.5 rounded-full">★ {c.full_name}{c.featured_until ? ` · until ${new Date(c.featured_until).toLocaleDateString('en-GB')}` : ''}</span>
+            ))}
+            {(promotion.agency_featured || []).map((c: any) => (
+              <span key={`af-${c.id}`} className="text-[12px] bg-[#FDF6EC] text-accent px-3 py-1.5 rounded-full">⚡ {c.full_name} · agency featured</span>
+            ))}
+            {(promotion.preferred_employers || []).map((e: any) => (
+              <span key={`pe-${e.id}`} className="text-[12px] bg-green-50 text-green-700 px-3 py-1.5 rounded-full">{e.property_name || e.company_name} · preferred</span>
+            ))}
+          </div>
+        </div>
+      )}
 
       {showForm && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setShowForm(false)}>
@@ -127,6 +171,30 @@ export default function AdminCampaignsPage() {
                 <textarea rows={2} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} className="input-field" /></div>
               <div><label className="block text-sm font-medium text-gray-700 mb-1.5">Content</label>
                 <textarea rows={6} value={form.content} onChange={(e) => setForm({ ...form, content: e.target.value })} className="input-field" /></div>
+
+              {/* Showcase paying members - rendered as styled cards in the email */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">Feature paying members in this email</label>
+                <p className="text-xs text-gray-400 mb-2">They appear as "Featured this week" cards with photo, headline and a link to their profile - the premium visibility they pay for.</p>
+                <div className="flex flex-wrap gap-2">
+                  {[...(promotion?.featured_candidates || []).map((c: any) => ({ type: 'candidate', id: c.id, label: c.full_name || 'Professional' })),
+                    ...(promotion?.agency_featured || []).filter((c: any) => !(promotion?.featured_candidates || []).some((f: any) => f.id === c.id)).map((c: any) => ({ type: 'candidate', id: c.id, label: c.full_name || 'Professional' })),
+                    ...(promotion?.preferred_employers || []).map((e: any) => ({ type: 'employer', id: e.id, label: e.property_name || e.company_name || 'Property' })),
+                  ].map((opt) => {
+                    const on = featuredSel.some(f => f.id === opt.id && f.type === opt.type)
+                    return (
+                      <button key={`${opt.type}-${opt.id}`} type="button"
+                        onClick={() => setFeaturedSel(on ? featuredSel.filter(f => !(f.id === opt.id && f.type === opt.type)) : [...featuredSel, opt])}
+                        className={`text-[12px] px-3 py-1.5 rounded-full border transition-all ${on ? 'bg-ink text-white border-ink' : 'bg-white text-gray-600 border-gray-200 hover:border-ink/40'}`}>
+                        {on ? '✓ ' : ''}{opt.label}
+                      </button>
+                    )
+                  })}
+                  {((promotion?.featured_candidates?.length || 0) + (promotion?.agency_featured?.length || 0) + (promotion?.preferred_employers?.length || 0)) === 0 && (
+                    <p className="text-xs text-gray-400">No paying members yet - featured profiles and preferred employers appear here automatically.</p>
+                  )}
+                </div>
+              </div>
               <div className="flex gap-4 pt-2">
                 <button onClick={() => setShowForm(false)} className="btn-secondary flex-1">Cancel</button>
                 <button onClick={handleSave} disabled={saving} className="btn-primary flex-1 disabled:opacity-50">{saving ? 'Saving...' : editing ? 'Update' : 'Create'}</button>

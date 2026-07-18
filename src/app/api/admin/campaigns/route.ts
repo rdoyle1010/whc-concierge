@@ -38,8 +38,57 @@ export async function GET() {
   const user = await requireAdmin()
   if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
   const admin = createAdminClient()
-  const { data } = await admin.from('campaigns').select('*').order('created_at', { ascending: false })
-  return NextResponse.json({ campaigns: data || [] })
+
+  // The command-centre view: campaigns + the paying-promotion roster +
+  // audience sizes, in one call.
+  const [{ data: campaigns }, { data: cands }, { data: emps }, { data: audience }] = await Promise.all([
+    admin.from('campaigns').select('*').order('created_at', { ascending: false }),
+    admin.from('candidate_profiles').select('id, full_name, headline, hourly_rate, profile_image_url, is_featured, featured_until, agency_tier, agency_available, agency_listed_until').or('is_featured.eq.true,agency_tier.eq.featured'),
+    admin.from('employer_profiles').select('id, company_name, property_name, preferred_employer, preferred_until, logo_url').eq('preferred_employer', true),
+    admin.from('profiles').select('role').not('email', 'is', null),
+  ])
+
+  const roles = (audience || []).map((r: any) => r.role)
+  return NextResponse.json({
+    campaigns: campaigns || [],
+    promotion: {
+      featured_candidates: (cands || []).filter((c: any) => c.is_featured),
+      agency_featured: (cands || []).filter((c: any) => c.agency_tier === 'featured'),
+      preferred_employers: emps || [],
+    },
+    audiences: {
+      all: roles.length,
+      candidates: roles.filter((r: string) => r === 'candidate').length,
+      employers: roles.filter((r: string) => r === 'employer').length,
+    },
+  })
+}
+
+// Render paying members as showcase cards inside the email - this is the
+// product they pay for: premium visibility in the newsletter.
+async function featuredCardsHtml(admin: any, featuredIds: any[]): Promise<string> {
+  if (!Array.isArray(featuredIds) || featuredIds.length === 0) return ''
+  const candIds = featuredIds.filter((f: any) => f?.type === 'candidate').map((f: any) => f.id)
+  const empIds = featuredIds.filter((f: any) => f?.type === 'employer').map((f: any) => f.id)
+  const [{ data: cands }, { data: emps }] = await Promise.all([
+    candIds.length ? admin.from('candidate_profiles').select('id, full_name, headline, hourly_rate, role_level, profile_image_url').in('id', candIds) : Promise.resolve({ data: [] }),
+    empIds.length ? admin.from('employer_profiles').select('id, company_name, property_name, tagline, logo_url').in('id', empIds) : Promise.resolve({ data: [] }),
+  ])
+  const site = 'https://talent.wellnesshousecollective.co.uk'
+  const esc = (t: any) => String(t || '').replace(/</g, '&lt;')
+  const card = (img: string | null, title: string, sub: string, href: string) => `
+    <a href="${href}" style="display:flex;align-items:center;gap:14px;padding:14px;border:1px solid #EEE9E0;border-radius:12px;text-decoration:none;margin-bottom:10px;background:#FDFBF7;">
+      ${img ? `<img src="${img}" width="52" height="52" style="border-radius:50%;object-fit:cover;" alt="" />` : `<div style="width:52px;height:52px;border-radius:50%;background:#1A1A1A;color:#C9A96E;text-align:center;line-height:52px;font-weight:600;">${esc(title)[0] || 'W'}</div>`}
+      <span>
+        <span style="display:block;font-weight:600;color:#1A1A1A;">${esc(title)}</span>
+        <span style="display:block;font-size:12px;color:#6B7280;margin-top:2px;">${esc(sub)}</span>
+      </span>
+    </a>`
+  let html = ''
+  for (const c of cands || []) html += card(c.profile_image_url, c.full_name || 'Professional', `${c.headline || c.role_level || 'Wellness professional'}${c.hourly_rate ? ` · £${c.hourly_rate}/hr agency` : ''}`, `${site}/agency/${c.id}`)
+  for (const e of emps || []) html += card(e.logo_url, e.property_name || e.company_name || 'Property', e.tagline || 'Preferred Employer', `${site}/properties/${e.id}`)
+  if (!html) return ''
+  return `<div style="margin:28px 0;"><p style="font-size:11px;letter-spacing:1px;text-transform:uppercase;color:#C9A96E;font-weight:600;margin-bottom:12px;">Featured this week</p>${html}</div>`
 }
 
 export async function POST(req: NextRequest) {
@@ -53,7 +102,7 @@ export async function POST(req: NextRequest) {
 
     if (action === 'save') {
       const { id, data } = body
-      const clean = {
+      const clean: Record<string, any> = {
         name: data?.name || 'Untitled campaign',
         description: data?.description || null,
         type: data?.type || null,
@@ -62,15 +111,16 @@ export async function POST(req: NextRequest) {
         end_date: data?.end_date || null,
         target_audience: data?.target_audience || null,
         content: data?.content || null,
+        featured_ids: Array.isArray(data?.featured_ids) ? data.featured_ids : null,
       }
-      if (id) {
-        const { error } = await admin.from('campaigns').update(clean).eq('id', id)
-        if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-        return NextResponse.json({ success: true, id })
-      }
-      const { data: row, error } = await admin.from('campaigns').insert(clean).select('id').single()
-      if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-      return NextResponse.json({ success: true, id: row.id })
+      // Drift-safe: strip featured_ids if the live column is missing
+      const write = async () => id
+        ? admin.from('campaigns').update(clean).eq('id', id)
+        : admin.from('campaigns').insert(clean).select('id').single()
+      let res: any = await write()
+      if (res.error && /featured_ids/.test(res.error.message || '')) { delete clean.featured_ids; res = await write() }
+      if (res.error) return NextResponse.json({ error: res.error.message }, { status: 500 })
+      return NextResponse.json({ success: true, id: id || res.data?.id })
     }
 
     if (action === 'delete') {
@@ -86,10 +136,11 @@ export async function POST(req: NextRequest) {
       if (!campaign) return NextResponse.json({ error: 'Campaign not found' }, { status: 404 })
       if (!campaign.content || !String(campaign.content).trim()) return NextResponse.json({ error: 'The campaign has no content to send.' }, { status: 400 })
       if (!user.email) return NextResponse.json({ error: 'Your admin account has no email address.' }, { status: 400 })
+      const testCards = await featuredCardsHtml(admin, campaign.featured_ids)
       const res = await fetch('https://api.resend.com/emails', {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ from: FROM_EMAIL, to: user.email, subject: `[TEST] ${campaign.name || 'Campaign'}`, html: wrapper(String(campaign.content).replace(/</g, '&lt;')) }),
+        body: JSON.stringify({ from: FROM_EMAIL, to: user.email, subject: `[TEST] ${campaign.name || 'Campaign'}`, html: wrapper(String(campaign.content).replace(/</g, '&lt;') + testCards) }),
       })
       if (!res.ok) return NextResponse.json({ error: 'Test send failed - check resend.com/logs.' }, { status: 502 })
       return NextResponse.json({ success: true })
@@ -121,7 +172,8 @@ export async function POST(req: NextRequest) {
       }
 
       const subject = campaign.name || 'News from WHC Concierge'
-      const html = wrapper(String(campaign.content).replace(/</g, '&lt;'))
+      const cards = await featuredCardsHtml(admin, campaign.featured_ids)
+      const html = wrapper(String(campaign.content).replace(/</g, '&lt;') + cards)
 
       let sent = 0
       let failed = 0
