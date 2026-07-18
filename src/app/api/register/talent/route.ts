@@ -29,6 +29,28 @@ async function sendWelcomeEmail(email: string, firstName: string) {
 }
 
 
+// Referral link credit: tie the new candidate to their referrer. Best-effort -
+// never blocks registration, and no-ops until migration 025 is live.
+async function recordReferral(supabase: any, userId: string, refCode: string) {
+  try {
+    const code = String(refCode || '').trim().toUpperCase()
+    if (!code) return
+    const { data: referrer } = await supabase.from('candidate_profiles')
+      .select('id, user_id, full_name').eq('referral_code', code).maybeSingle()
+    if (!referrer) return
+    const { data: newCand } = await supabase.from('candidate_profiles')
+      .select('id').eq('user_id', userId).maybeSingle()
+    if (!newCand || newCand.id === referrer.id) return
+    await supabase.from('candidate_profiles').update({ referred_by: referrer.id }).eq('id', newCand.id)
+    await supabase.from('referrals').upsert(
+      { referrer_candidate_id: referrer.id, referred_candidate_id: newCand.id, status: 'pending' },
+      { onConflict: 'referred_candidate_id', ignoreDuplicates: true }
+    )
+  } catch (e: any) {
+    console.error('Referral record failed (non-fatal):', e?.message)
+  }
+}
+
 // Insert, stripping ONLY columns the DB reports as unknown (keeps all other data).
 async function insertStrippingUnknownColumns(supabase: any, table: string, row: Record<string, any>, maxStrips = 8) {
   const data = { ...row }
@@ -98,6 +120,7 @@ export async function POST(req: NextRequest) {
         .insert({ user_id: userId, ...profileData })
 
       if (!profileError) {
+        if (body.refCode) await recordReferral(supabase, userId, body.refCode)
         if (userEmail) await sendWelcomeEmail(userEmail, profileData.full_name?.split(' ')[0] || 'there')
         return NextResponse.json({ success: true })
       }
@@ -113,6 +136,7 @@ export async function POST(req: NextRequest) {
       // Column mismatch: strip only the offending columns, keep the rest of the data
       const result = await insertStrippingUnknownColumns(supabase, 'candidate_profiles', { user_id: userId, ...profileData })
       if (result.ok) {
+        if (body.refCode) await recordReferral(supabase, userId, body.refCode)
         if (userEmail) await sendWelcomeEmail(userEmail, profileData.full_name?.split(' ')[0] || 'there')
         return NextResponse.json({ success: true })
       }

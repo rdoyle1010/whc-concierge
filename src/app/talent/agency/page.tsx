@@ -59,7 +59,7 @@ export default function TalentAgencyPage() {
     loadListing()
   }, [])
 
-  async function act(bookingId: string, action: 'accept' | 'decline' | 'counter', rate?: string) {
+  async function act(bookingId: string, action: 'accept' | 'accept_group' | 'decline' | 'counter', rate?: string) {
     setActionError('')
     if (action === 'counter') {
       const parsed = parseInt(String(rate), 10)
@@ -149,6 +149,9 @@ export default function TalentAgencyPage() {
               <div className="dashboard-card !py-4"><p className="text-[11px] uppercase tracking-wide text-gray-400 mb-1">On hold</p><p className="text-[20px] font-semibold text-gray-500">£{onHold}</p><p className="text-[10px] text-gray-400">{onHold > 0 ? 'An issue is being reviewed by WHC' : 'No open issues'}</p></div>
             </div>
           )}
+          {hasEarnings && (
+            <p className="-mt-5 mb-8 text-right"><Link href="/talent/agency/statement" className="text-[12px] font-medium text-accent hover:underline">View monthly payout statement →</Link></p>
+          )}
 
           {/* Offers awaiting a response */}
           {offers.length > 0 && (
@@ -171,6 +174,9 @@ export default function TalentAgencyPage() {
                               <Zap size={11} /> URGENT - TODAY
                             </span>
                           )}
+                          {b.booking_group && (
+                            <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-blue-50 text-blue-700">Weekly booking</span>
+                          )}
                           <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${statusColors[b.status] || ''}`}>
                             {b.status === 'countered' ? 'counter sent' : b.status}
                           </span>
@@ -184,6 +190,9 @@ export default function TalentAgencyPage() {
                           {b.hours && <span>{b.hours}h</span>}
                           <span className="flex items-center space-x-1 font-medium text-ink"><Banknote size={14} className="text-accent" /><span>£{b.rate}/hr{b.hours ? ` · £${b.rate * b.hours} total` : ''}</span></span>
                         </div>
+                        {b.cascade_notes && (
+                          <p className="text-[12px] text-gray-600 mt-1.5 italic">&ldquo;{b.cascade_notes}&rdquo;</p>
+                        )}
                         {(b.employer_location || b.commute_car_required !== null || b.nearest_transport || b.distance_miles != null) && (
                           <div className="flex items-center flex-wrap gap-x-4 gap-y-1 text-[12px] text-gray-500 mt-2">
                             {b.employer_location && <span className="flex items-center gap-1"><MapPin size={12} />{b.employer_location}{b.employer_postcode ? ` (${b.employer_postcode})` : ''}</span>}
@@ -212,10 +221,18 @@ export default function TalentAgencyPage() {
                             <button onClick={() => { setCounteringId(null); setCounterRate(''); setActionError('') }} className="btn-secondary text-[12px]">Cancel</button>
                           </div>
                         ) : (
-                          <div className="flex items-center gap-2">
-                            <button onClick={() => act(b.id, 'accept')} disabled={busyId === b.id} className="btn-primary text-[12px] disabled:opacity-50">Accept</button>
-                            <button onClick={() => { setCounteringId(b.id); setCounterRate(String(b.rate || '')); setActionError('') }} disabled={busyId === b.id} className="btn-secondary text-[12px] disabled:opacity-50">Counter</button>
-                            <button onClick={() => act(b.id, 'decline')} disabled={busyId === b.id} className="text-[12px] font-medium text-red-600 hover:text-red-700 px-3 py-2.5 disabled:opacity-50">Decline</button>
+                          <div className="flex flex-col items-end gap-1.5">
+                            <div className="flex items-center gap-2">
+                              <button onClick={() => act(b.id, 'accept')} disabled={busyId === b.id} className="btn-primary text-[12px] disabled:opacity-50">Accept</button>
+                              <button onClick={() => { setCounteringId(b.id); setCounterRate(String(b.rate || '')); setActionError('') }} disabled={busyId === b.id} className="btn-secondary text-[12px] disabled:opacity-50">Counter</button>
+                              <button onClick={() => act(b.id, 'decline')} disabled={busyId === b.id} className="text-[12px] font-medium text-red-600 hover:text-red-700 px-3 py-2.5 disabled:opacity-50">Decline</button>
+                            </div>
+                            {b.booking_group && offers.filter(o => o.booking_group === b.booking_group).length > 1 && (
+                              <button onClick={() => act(b.id, 'accept_group')} disabled={busyId === b.id}
+                                className="text-[12px] font-semibold text-green-700 hover:underline disabled:opacity-50">
+                                Accept all {offers.filter(o => o.booking_group === b.booking_group).length} weekly shifts
+                              </button>
+                            )}
                           </div>
                         )
                       ) : (

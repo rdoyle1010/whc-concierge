@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
@@ -70,6 +70,16 @@ export default function TalentRegisterPage() {
   const [cvFile, setCvFile] = useState<File | null>(null)
   const [certFiles, setCertFiles] = useState<File[]>([])
   const [insuranceFile, setInsuranceFile] = useState<File | null>(null)
+  const [refCode, setRefCode] = useState('')
+
+  // Referral link capture: /register/talent?ref=CODE credits the referring
+  // therapist with a free month when this signup joins the register.
+  useEffect(() => {
+    try {
+      const r = new URLSearchParams(window.location.search).get('ref')
+      if (r) setRefCode(r.slice(0, 30))
+    } catch { /* no referral */ }
+  }, [])
 
   const update = (field: string, value: any) => setForm({ ...form, [field]: value })
 
@@ -161,7 +171,7 @@ export default function TalentRegisterPage() {
     const res = await fetch('/api/register/talent', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ userId, profileData }),
+      body: JSON.stringify({ userId, profileData, refCode: refCode || undefined }),
     })
     const result = await res.json()
 

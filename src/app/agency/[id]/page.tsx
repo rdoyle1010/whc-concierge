@@ -80,6 +80,7 @@ export default function AgencyProfilePage() {
           action: 'create', candidateId: profileId,
           rate: offerRate, shiftDate: fd.get('shiftDate'),
           shiftType: fd.get('shiftType') || undefined, hours: offerHours || undefined,
+          repeatWeeks: fd.get('repeatWeeks') || undefined,
         }),
       })
       const j = await res.json()
@@ -141,7 +142,8 @@ export default function AgencyProfilePage() {
               <div className="flex flex-wrap items-center gap-4 text-[13px]">
                 {profile.review_score > 0 && <span className="flex items-center gap-1"><Star size={13} className="text-amber-400" fill="currentColor" /><span className="font-medium text-ink">{profile.review_score}</span><span className="text-muted">({profile.review_count} reviews)</span></span>}
                 {pc && <span className="flex items-center gap-1 text-muted"><MapPin size={13} />{pc}</span>}
-                {profile.has_insurance && <span className="flex items-center gap-1 text-success"><Shield size={13} />Insured</span>}
+                {profile.whc_verified ? <span className="flex items-center gap-1 font-semibold text-green-700"><Shield size={13} />WHC Verified</span>
+                : profile.has_insurance && <span className="flex items-center gap-1 text-success"><Shield size={13} />Insured</span>}
                 {profile.availability_status === 'immediately' && <span className="flex items-center gap-1 text-success"><span className="w-2 h-2 bg-success rounded-full" />Available Now</span>}
               </div>
             </div>
@@ -300,6 +302,18 @@ export default function AgencyProfilePage() {
                       <label className="text-[12px] text-muted block mb-1">Hours</label>
                       <input name="hours" type="number" min={1} max={24} value={offerHours}
                         onChange={(e) => setOfferHours(e.target.value)} className="input-field text-[13px]" />
+                    </div>
+                    <div>
+                      <label className="text-[12px] text-muted block mb-1">Repeat</label>
+                      <select name="repeatWeeks" className="input-field text-[13px]" defaultValue="1">
+                        <option value="1">Just this shift</option>
+                        <option value="2">Weekly for 2 weeks</option>
+                        <option value="3">Weekly for 3 weeks</option>
+                        <option value="4">Weekly for 4 weeks</option>
+                        <option value="6">Weekly for 6 weeks</option>
+                        <option value="8">Weekly for 8 weeks</option>
+                      </select>
+                      <p className="text-[11px] text-muted mt-1">A standing booking sends one offer per week on the same weekday - they can accept the lot in one tap.</p>
                     </div>
                     {previewSubtotal > 0 && (
                       <div className="bg-surface rounded-lg p-3 text-[12px] space-y-1">

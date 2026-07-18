@@ -14,6 +14,7 @@ export default function AdminAgencyPage() {
   const [busyId, setBusyId] = useState<string | null>(null)
   const [error, setError] = useState('')
   const [resolveInputs, setResolveInputs] = useState<Record<string, { refund: string; payout: string }>>({})
+  const [credits, setCredits] = useState<any[]>([])
 
   async function load() {
     try {
@@ -21,9 +22,24 @@ export default function AdminAgencyPage() {
       if (res.ok) {
         const j = await res.json()
         setBookings(j.bookings || [])
+        setCredits(j.referral_credits || [])
       }
     } catch { /* empty state */ }
     setLoading(false)
+  }
+
+  async function creditApplied(referralId: string) {
+    setError('')
+    setBusyId(referralId)
+    try {
+      const res = await fetch('/api/admin/agency', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'referral_credit_applied', referralId }),
+      })
+      const j = await res.json()
+      if (!res.ok) { setError(j.error || 'Could not update.'); return }
+      await load()
+    } catch { setError('Something went wrong - please try again.') } finally { setBusyId(null) }
   }
 
   useEffect(() => { load() }, [])
@@ -87,6 +103,25 @@ export default function AdminAgencyPage() {
         <div className="flex items-center justify-center h-64"><div className="animate-spin w-8 h-8 border-2 border-gold border-t-transparent rounded-full" /></div>
       ) : (
         <>
+          {/* Referral credits to apply in Stripe */}
+          {credits.length > 0 && (
+            <div className="dashboard-card border-amber-200 ring-1 ring-amber-100 mb-6">
+              <h2 className="text-[16px] font-medium text-ink mb-1">Referral credits to apply ({credits.length})</h2>
+              <p className="text-[12px] text-gray-500 mb-3">Each referrer below is owed a free month on their register listing - apply a one-month coupon to their subscription in Stripe, then mark it done.</p>
+              <div className="space-y-2">
+                {credits.map(c => (
+                  <div key={c.id} className="flex items-center justify-between gap-3 text-[13px]">
+                    <span><span className="font-medium text-ink">{c.referrer_name}</span> referred {c.referred_name}{c.converted_at ? ` · joined ${new Date(c.converted_at).toLocaleDateString('en-GB')}` : ''}</span>
+                    <button onClick={() => creditApplied(c.id)} disabled={busyId === c.id}
+                      className="text-[12px] font-medium text-green-700 hover:underline disabled:opacity-50 shrink-0">
+                      {busyId === c.id ? '...' : 'Credit applied'}
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Totals */}
           <div className="grid grid-cols-4 gap-3 mb-8">
             <div className="dashboard-card"><p className="eyebrow mb-1">Collected from properties</p><p className="text-[22px] font-semibold text-ink">£{totalCollected}</p></div>

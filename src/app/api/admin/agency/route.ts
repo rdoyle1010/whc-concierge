@@ -46,7 +46,27 @@ export async function GET() {
       candidate_phone: candMap.get(b.candidate_id)?.phone || null,
     }))
 
-    return NextResponse.json({ bookings: rows })
+    // Referral credits owed: converted referrals where WHC hasn't yet applied
+    // the referrer's free month in Stripe. Best-effort until 025 is live.
+    let referralCredits: any[] = []
+    try {
+      const { data: refs } = await admin.from('referrals')
+        .select('id, referrer_candidate_id, referred_candidate_id, converted_at')
+        .eq('status', 'converted').eq('credit_applied', false)
+      if (refs && refs.length) {
+        const ids = Array.from(new Set(refs.flatMap((r: any) => [r.referrer_candidate_id, r.referred_candidate_id])))
+        const { data: names } = await admin.from('candidate_profiles').select('id, full_name').in('id', ids)
+        const nameMap = new Map((names || []).map((n: any) => [n.id, n.full_name]))
+        referralCredits = refs.map((r: any) => ({
+          id: r.id,
+          referrer_name: nameMap.get(r.referrer_candidate_id) || 'Therapist',
+          referred_name: nameMap.get(r.referred_candidate_id) || 'Therapist',
+          converted_at: r.converted_at,
+        }))
+      }
+    } catch { /* table not live yet */ }
+
+    return NextResponse.json({ bookings: rows, referral_credits: referralCredits })
   } catch (e: any) {
     return NextResponse.json({ error: e.message }, { status: 500 })
   }
@@ -58,6 +78,17 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json()
+
+    // ── referral_credit_applied: admin has applied the free month in Stripe ──
+    if (body.action === 'referral_credit_applied' && body.referralId) {
+      const adminC = createAdminClient()
+      const { error } = await adminC.from('referrals')
+        .update({ credit_applied: true })
+        .eq('id', body.referralId).eq('status', 'converted')
+      if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+      return NextResponse.json({ success: true })
+    }
+
     if (!['mark_paid_out', 'resolve_dispute'].includes(body.action) || !body.bookingId) {
       return NextResponse.json({ error: 'Invalid request' }, { status: 400 })
     }

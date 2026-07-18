@@ -1,7 +1,36 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { stripe } from '@/lib/stripe'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { createNotification } from '@/lib/notifications'
 import Stripe from 'stripe'
+
+// Referral credit: when a referred therapist pays for their first register
+// listing, mark the referral converted and tell the referrer their free
+// month is coming (WHC applies it to the referrer's Stripe subscription).
+// Best-effort - never fails the webhook.
+async function convertReferral(supabase: any, candidateId: string) {
+  try {
+    const { data: cand } = await supabase.from('candidate_profiles')
+      .select('id, full_name, referred_by').eq('id', candidateId).maybeSingle()
+    if (!cand?.referred_by) return
+    const { data: ref } = await supabase.from('referrals')
+      .update({ status: 'converted', converted_at: new Date().toISOString() })
+      .eq('referred_candidate_id', cand.id)
+      .eq('status', 'pending')
+      .select('referrer_candidate_id')
+      .maybeSingle()
+    if (!ref) return
+    const { data: referrer } = await supabase.from('candidate_profiles')
+      .select('user_id, full_name').eq('id', ref.referrer_candidate_id).maybeSingle()
+    if (referrer?.user_id) {
+      await createNotification(referrer.user_id, 'general', 'You’ve earned a free month',
+        `${cand.full_name || 'Your friend'} just joined the agency register with your link - a free month will be applied to your listing. Thank you for growing the collective.`,
+        '/talent/agency/settings')
+    }
+  } catch (e: any) {
+    console.error('Referral conversion failed (non-fatal):', e?.message)
+  }
+}
 
 export async function POST(req: NextRequest) {
   const body = await req.text()
@@ -57,6 +86,7 @@ export async function POST(req: NextRequest) {
           agency_listed_until: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
           stripe_customer_id: session.customer as string,
         }).eq('id', meta.candidate_id)
+        await convertReferral(supabase, meta.candidate_id)
       }
 
       // Hotel's annual Preferred Employer registration → active.

@@ -3,8 +3,30 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import DashboardShell from '@/components/DashboardShell'
-import { Check, Zap, MapPin } from 'lucide-react'
+import { Check, Zap, MapPin, CalendarDays } from 'lucide-react'
 import { AGENCY_LISTING_TIERS } from '@/lib/constants'
+
+// ── Availability calendar helpers ──
+const dayKey = (d: Date) => d.toLocaleDateString('en-CA') // YYYY-MM-DD, local
+const WEEKDAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+
+// Six weeks of dates starting from this week's Monday
+function calendarWeeks(): Date[][] {
+  const today = new Date()
+  const monday = new Date(today)
+  monday.setDate(today.getDate() - ((today.getDay() + 6) % 7))
+  const weeks: Date[][] = []
+  for (let w = 0; w < 6; w++) {
+    const week: Date[] = []
+    for (let d = 0; d < 7; d++) {
+      const day = new Date(monday)
+      day.setDate(monday.getDate() + w * 7 + d)
+      week.push(day)
+    }
+    weeks.push(week)
+  }
+  return weeks
+}
 
 // The therapist's agency home: everything needed to be on the register in
 // one place - rate, mobile, location, radius, and the £10/mo subscription.
@@ -19,6 +41,10 @@ export default function AgencySettingsPage() {
   const [live, setLive] = useState<{ available: boolean; tier: string | null; until: string | null }>({ available: false, tier: null, until: null })
   const [form, setForm] = useState({ hourly_rate: '', phone: '', postcode: '', travel_radius_miles: '', tier: 'basic' as 'basic' | 'featured' })
   const [hasCoords, setHasCoords] = useState(false)
+  const [days, setDays] = useState<Record<string, 'available' | 'unavailable'>>({})
+  const [dayBusy, setDayBusy] = useState<string | null>(null)
+  const [referral, setReferral] = useState<{ code: string | null; total: number; converted: number }>({ code: null, total: 0, converted: 0 })
+  const [copied, setCopied] = useState(false)
 
   useEffect(() => {
     async function load() {
@@ -37,12 +63,43 @@ export default function AgencySettingsPage() {
             tier: s.agency_tier === 'featured' ? 'featured' : 'basic',
           })
           setHasCoords(Boolean(s.has_coords))
+          setReferral({ code: s.referral_code || null, total: s.referral_stats?.total || 0, converted: s.referral_stats?.converted || 0 })
+        }
+        const avRes = await fetch('/api/agency/availability')
+        if (avRes.ok) {
+          const av = await avRes.json()
+          const map: Record<string, 'available' | 'unavailable'> = {}
+          for (const d of av.days || []) map[d.date] = d.available ? 'available' : 'unavailable'
+          setDays(map)
         }
       } catch { /* form stays blank */ }
       setLoading(false)
     }
     load()
   }, [])
+
+  // Tap a day to cycle: unset → available → unavailable → unset.
+  // Optimistic update; reverts on failure.
+  async function cycleDay(key: string) {
+    if (dayBusy) return
+    const current = days[key]
+    const next = current === 'available' ? 'unavailable' : current === 'unavailable' ? 'clear' : 'available'
+    const previous = { ...days }
+    setDays(d => {
+      const copy = { ...d }
+      if (next === 'clear') delete copy[key]
+      else copy[key] = next
+      return copy
+    })
+    setDayBusy(key)
+    try {
+      const res = await fetch('/api/agency/availability', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ date: key, state: next }),
+      })
+      if (!res.ok) setDays(previous)
+    } catch { setDays(previous) } finally { setDayBusy(null) }
+  }
 
   async function saveDetails(joining: boolean): Promise<boolean> {
     setError('')
@@ -142,6 +199,75 @@ export default function AgencySettingsPage() {
           </div>
           <button onClick={handleSave} disabled={saving} className="btn-secondary text-[13px] disabled:opacity-50">{saving ? 'Saving...' : 'Save Details'}</button>
         </div>
+
+        {/* Availability calendar */}
+        <div className="dashboard-card mb-6">
+          <div className="flex items-center gap-2 mb-1">
+            <CalendarDays size={17} className="text-accent" />
+            <h3 className="font-serif text-lg font-semibold">Your Availability</h3>
+          </div>
+          <p className="text-[12px] text-gray-500 mb-4">
+            Tap a day to mark yourself <span className="text-green-700 font-medium">available</span> (you go to the front of the queue when a property needs urgent cover) or <span className="text-red-600 font-medium">unavailable</span> (you&apos;ll never be offered that day). Days you leave blank can still receive offers.
+          </p>
+          <div className="grid grid-cols-7 gap-1.5 mb-1.5">
+            {WEEKDAY_LABELS.map(l => <div key={l} className="text-center text-[10px] uppercase tracking-wide text-gray-400">{l}</div>)}
+          </div>
+          {calendarWeeks().map((week, wi) => (
+            <div key={wi} className="grid grid-cols-7 gap-1.5 mb-1.5">
+              {week.map(day => {
+                const key = dayKey(day)
+                const isPast = key < dayKey(new Date())
+                const isToday = key === dayKey(new Date())
+                const state = days[key]
+                const firstOfMonth = day.getDate() === 1 || (wi === 0 && day === week[0])
+                return (
+                  <button
+                    key={key}
+                    type="button"
+                    disabled={isPast || dayBusy === key}
+                    onClick={() => cycleDay(key)}
+                    title={state === 'available' ? 'Available - tap for unavailable' : state === 'unavailable' ? 'Unavailable - tap to clear' : 'Tap to mark available'}
+                    className={`relative h-11 rounded-lg text-[12px] font-medium border transition-colors ${
+                      isPast ? 'bg-gray-50 text-gray-300 border-transparent cursor-default'
+                      : state === 'available' ? 'bg-green-50 text-green-800 border-green-300'
+                      : state === 'unavailable' ? 'bg-red-50 text-red-600 border-red-200 line-through'
+                      : 'bg-white text-ink border-border hover:border-ink/30'
+                    } ${isToday ? 'ring-1 ring-gold' : ''}`}
+                  >
+                    <span className="block leading-none">{day.getDate()}</span>
+                    {(firstOfMonth || day.getDate() === 1) && (
+                      <span className="block text-[8px] uppercase text-gray-400 leading-none mt-0.5">{day.toLocaleDateString('en-GB', { month: 'short' })}</span>
+                    )}
+                  </button>
+                )
+              })}
+            </div>
+          ))}
+          <div className="flex items-center gap-4 mt-3 text-[11px] text-gray-500">
+            <span className="inline-flex items-center gap-1.5"><span className="w-3 h-3 rounded bg-green-50 border border-green-300 inline-block" /> Available</span>
+            <span className="inline-flex items-center gap-1.5"><span className="w-3 h-3 rounded bg-red-50 border border-red-200 inline-block" /> Unavailable</span>
+            <span className="inline-flex items-center gap-1.5"><span className="w-3 h-3 rounded bg-white border border-border inline-block" /> Not set</span>
+          </div>
+        </div>
+
+        {/* Refer a friend */}
+        {referral.code && (
+          <div className="dashboard-card mb-6">
+            <h3 className="font-serif text-lg font-semibold mb-1">Refer a Friend</h3>
+            <p className="text-[12px] text-gray-500 mb-3">Know a brilliant therapist? When they join the register with your link and subscribe, you get a <span className="font-medium text-ink">free month</span> on your listing. No limit.</p>
+            <div className="flex items-center gap-2">
+              <input readOnly value={`https://talent.wellnesshousecollective.co.uk/register/talent?ref=${referral.code}`} className="input-field text-[12px] flex-1"
+                onFocus={e => e.currentTarget.select()} />
+              <button type="button" className="btn-secondary text-[12px] shrink-0"
+                onClick={() => { navigator.clipboard?.writeText(`https://talent.wellnesshousecollective.co.uk/register/talent?ref=${referral.code}`); setCopied(true); setTimeout(() => setCopied(false), 2000) }}>
+                {copied ? 'Copied' : 'Copy link'}
+              </button>
+            </div>
+            {referral.total > 0 && (
+              <p className="text-[12px] text-gray-500 mt-2">{referral.total} friend{referral.total > 1 ? 's' : ''} signed up · {referral.converted} joined the register{referral.converted > 0 ? ' - free months on their way' : ''}.</p>
+            )}
+          </div>
+        )}
 
         {/* Subscription */}
         {!live.available && (

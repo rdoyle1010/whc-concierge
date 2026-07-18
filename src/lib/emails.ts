@@ -91,6 +91,31 @@ export async function sendReviewRequestEmail(email: string, name: string, otherN
   `))
 }
 
+export async function sendVerificationResultEmail(email: string, name: string, verified: boolean, reason: string | null) {
+  await sendEmail(email, verified ? 'You are WHC Verified' : 'Your verification needs attention', wrapper(verified ? `
+    <p style="font-size: 24px; font-weight: 700; margin-bottom: 16px;">Congratulations, ${name}</p>
+    <p style="color: #6B7280;">Your insurance and qualifications checked out. The <strong>WHC Verified</strong> badge now shows on your profile and in the agency directory - properties consistently choose verified therapists first.</p>
+    <p style="color: #6B7280;">We'll remind you before your insurance expires so the badge never lapses.</p>
+  ` : `
+    <p style="font-size: 24px; font-weight: 700; margin-bottom: 16px;">Hi ${name}</p>
+    <p style="color: #6B7280;">We couldn't verify your documents this time.</p>
+    ${reason ? `<p style="color: #6B7280; font-weight: 500;">Reason: ${reason}</p>` : ''}
+    <p style="color: #6B7280;">Update your documents and resubmit from your Verification page - it only takes a minute.</p>
+  `))
+}
+
+export async function sendInsuranceExpiryEmail(email: string, name: string, expiryDate: string, lapsed: boolean) {
+  await sendEmail(email, lapsed ? 'Your WHC Verified badge has lapsed' : 'Your insurance is about to expire', wrapper(lapsed ? `
+    <p style="font-size: 24px; font-weight: 700; margin-bottom: 16px;">Hi ${name}</p>
+    <p style="color: #6B7280;">Your insurance expired on <strong>${expiryDate}</strong>, so your WHC Verified badge has been paused. Properties can still book you, but the badge is a real edge - especially for urgent cover.</p>
+    <p style="margin-top: 24px;"><a href="https://talent.wellnesshousecollective.co.uk/talent/verification" style="display: inline-block; background: #111; color: #fff; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600;">Upload your new certificate</a></p>
+  ` : `
+    <p style="font-size: 24px; font-weight: 700; margin-bottom: 16px;">Hi ${name}</p>
+    <p style="color: #6B7280;">Your insurance certificate expires on <strong>${expiryDate}</strong>. Upload your renewal now and your WHC Verified badge carries straight on - no gap, no fuss.</p>
+    <p style="margin-top: 24px;"><a href="https://talent.wellnesshousecollective.co.uk/talent/verification" style="display: inline-block; background: #111; color: #fff; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600;">Upload renewal</a></p>
+  `))
+}
+
 export async function sendAgencyOfferEmail(
   email: string,
   name: string,

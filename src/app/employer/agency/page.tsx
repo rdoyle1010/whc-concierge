@@ -22,6 +22,12 @@ export default function EmployerAgencyPage() {
   const [disputing, setDisputing] = useState<any>(null)
   const [disputeReason, setDisputeReason] = useState('')
   const [disputeRequested, setDisputeRequested] = useState('Refund minus the WHC admin fee')
+  const [urgentOpen, setUrgentOpen] = useState(false)
+  const [urgentBusy, setUrgentBusy] = useState(false)
+  const [urgentForm, setUrgentForm] = useState({
+    shiftDate: new Date().toLocaleDateString('en-CA'),
+    hours: '8', maxRate: '', shiftType: '', notes: '',
+  })
 
   async function load() {
     try {
@@ -60,6 +66,33 @@ export default function EmployerAgencyPage() {
       window.location.href = j.url
     } catch {
       setError('Something went wrong - please try again.')
+    }
+  }
+
+  async function submitUrgent() {
+    setError('')
+    setUrgentBusy(true)
+    try {
+      const res = await fetch('/api/agency/booking', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'urgent_cascade',
+          shiftDate: urgentForm.shiftDate,
+          hours: urgentForm.hours,
+          maxRate: urgentForm.maxRate || undefined,
+          shiftType: urgentForm.shiftType || undefined,
+          notes: urgentForm.notes || undefined,
+        }),
+      })
+      const j = await res.json()
+      if (!res.ok) { setError(j.error || 'Could not send the request - please try again.'); return }
+      setUrgentOpen(false)
+      setNotice(`Done - the shift has been offered to ${j.first_name} (nearest available match). ${j.queue_size > 1 ? `If they can't take it, it moves automatically through ${j.queue_size - 1} more therapist${j.queue_size > 2 ? 's' : ''}, 30 minutes each.` : 'They are the only match right now.'} You'll be notified the moment someone accepts.`)
+      await load()
+    } catch {
+      setError('Something went wrong - please try again.')
+    } finally {
+      setUrgentBusy(false)
     }
   }
 
@@ -115,6 +148,12 @@ export default function EmployerAgencyPage() {
         <div>
           <div className="flex items-center gap-2 mb-1 flex-wrap">
             <Link href={`/agency/${b.candidate_id}`} className="font-medium text-ink hover:underline">{b.candidate_name || 'Candidate'}</Link>
+            {b.cascade_total != null && (
+              <span className="text-[10px] font-semibold uppercase tracking-wide bg-ink text-gold px-2 py-0.5 rounded-full">Auto-match</span>
+            )}
+            {b.booking_group && (
+              <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-blue-50 text-blue-700">Weekly booking</span>
+            )}
             {b.urgent && (b.status === 'pending' || b.status === 'countered') && (
               <span className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full bg-red-50 text-red-700"><Zap size={11} /> URGENT</span>
             )}
@@ -127,6 +166,15 @@ export default function EmployerAgencyPage() {
             <span className="flex items-center space-x-1 font-medium text-ink"><Banknote size={14} className="text-accent" /><span>£{b.rate}/hr</span></span>
             {b.distance_miles != null && <span>{b.distance_miles} miles from them</span>}
           </div>
+          {b.cascade_total != null && (b.status === 'pending' || b.status === 'countered') && (
+            <p className="text-[12px] text-ink mt-1.5">
+              Offered to <span className="font-medium">{b.candidate_name}</span> ({b.cascade_position} of {b.cascade_total} in the queue)
+              {b.expires_at ? ` - they have until ${new Date(b.expires_at).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })} before it moves to the next therapist` : ''}.
+            </p>
+          )}
+          {b.cascade_total != null && b.status === 'expired' && (
+            <p className="text-[12px] text-gray-500 mt-1.5">Not filled - all {b.cascade_total} matching therapist{b.cascade_total > 1 ? 's were' : ' was'} offered it. Try again with a higher rate cap, or book directly from the directory.</p>
+          )}
           {b.status === 'accepted' && (
             <p className="text-[12px] text-blue-700 mt-1.5">Accepted - pay £{totalDue(b)} to confirm ({effHours(b)}h × £{b.rate} + 10% WHC fee). WHC pays the therapist after the shift.</p>
           )}
@@ -149,6 +197,9 @@ export default function EmployerAgencyPage() {
           )}
           <div className="flex items-center gap-3">
             <Link href="/employer/messages" className="text-[12px] font-medium text-gray-500 hover:text-ink inline-flex items-center gap-1"><MessageSquare size={12} /> Messages</Link>
+            {b.paid_at && (
+              <Link href={`/employer/agency/receipt/${b.id}`} className="text-[12px] font-medium text-gray-500 hover:text-ink">Receipt</Link>
+            )}
             {(b.status === 'confirmed' || b.status === 'completed') && b.candidate_user_id && (
               <button type="button" onClick={() => setReviewing({ userId: b.candidate_user_id, name: b.candidate_name || 'this candidate', bookingId: b.id })}
                 className="text-[12px] font-medium text-amber-500 hover:underline inline-flex items-center gap-1"><Star size={11} /> Review</button>
@@ -197,6 +248,17 @@ export default function EmployerAgencyPage() {
             )
           )}
 
+          {/* Urgent cover - the cascade */}
+          {profile?.preferred_employer && (
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-ink rounded-xl px-5 py-4 mb-6">
+              <div>
+                <p className="text-[14px] font-medium text-white flex items-center gap-2"><Zap size={15} className="text-gold" /> Need cover today?</p>
+                <p className="text-[12px] text-white/60 mt-0.5">Tell us the shift and we&apos;ll offer it to the nearest available therapists one by one - by text, 30 minutes each - until someone accepts. No ringing round.</p>
+              </div>
+              <button onClick={() => { setUrgentOpen(true); setError('') }} className="btn-primary !bg-gold !text-ink text-[12px] shrink-0">Find me someone</button>
+            </div>
+          )}
+
           {/* Payment history summary */}
           {hasMoney && (
             <div className="grid grid-cols-3 gap-3 mb-8">
@@ -235,6 +297,51 @@ export default function EmployerAgencyPage() {
             </>
           )}
         </>
+      )}
+
+      {/* Urgent cover modal */}
+      {urgentOpen && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setUrgentOpen(false)}>
+          <div className="bg-white rounded-2xl max-w-md w-full max-h-[90vh] overflow-y-auto p-6" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-2">
+              <h2 className="font-serif text-lg font-bold text-ink flex items-center gap-2"><Zap size={16} className="text-accent" /> Urgent cover</h2>
+              <button type="button" onClick={() => setUrgentOpen(false)} className="text-gray-300 hover:text-ink"><X size={20} /></button>
+            </div>
+            <p className="text-[12px] text-gray-500 mb-4">We&apos;ll offer this shift to the nearest available therapists in turn - each gets 30 minutes to accept before it moves on. You pay their hourly rate plus the 10% WHC fee once someone accepts.</p>
+            <div className="grid grid-cols-2 gap-3 mb-3">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">Shift date</label>
+                <input type="date" value={urgentForm.shiftDate} min={new Date().toLocaleDateString('en-CA')}
+                  onChange={(e) => setUrgentForm({ ...urgentForm, shiftDate: e.target.value })} className="input-field" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">Hours</label>
+                <input type="number" min={1} max={12} value={urgentForm.hours}
+                  onChange={(e) => setUrgentForm({ ...urgentForm, hours: e.target.value })} className="input-field" />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3 mb-3">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">Max rate (£/hr, optional)</label>
+                <input type="number" min={1} value={urgentForm.maxRate} placeholder="No cap"
+                  onChange={(e) => setUrgentForm({ ...urgentForm, maxRate: e.target.value })} className="input-field" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">Treatment / role</label>
+                <input type="text" value={urgentForm.shiftType} placeholder="e.g. Massage, Facials"
+                  onChange={(e) => setUrgentForm({ ...urgentForm, shiftType: e.target.value })} className="input-field" />
+              </div>
+            </div>
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">Notes for the therapist (optional)</label>
+            <textarea rows={2} value={urgentForm.notes} onChange={(e) => setUrgentForm({ ...urgentForm, notes: e.target.value })}
+              className="input-field mb-4" placeholder="e.g. 10am start, ESPA treatments, parking on site..." />
+            {error && <p className="text-[12px] text-red-600 mb-3">{error}</p>}
+            <button onClick={submitUrgent} disabled={urgentBusy || !urgentForm.shiftDate}
+              className="btn-primary w-full disabled:opacity-50">
+              {urgentBusy ? 'Finding the nearest available...' : 'Send it out'}
+            </button>
+          </div>
+        </div>
       )}
 
       {/* Report an issue modal */}

@@ -28,8 +28,31 @@ export async function GET() {
     const { data: cand } = await admin.from('candidate_profiles').select('*').eq('user_id', user.id).maybeSingle()
     if (!cand) return NextResponse.json({ error: 'No candidate profile found' }, { status: 404 })
 
+    // Ensure a referral code exists (short, readable, unique). Best-effort -
+    // the column may not exist until migration 025 runs live.
+    let referralCode: string | null = cand.referral_code ?? null
+    let referralStats: { total: number; converted: number } | null = null
+    try {
+      if (!referralCode) {
+        const base = (cand.full_name || 'WHC').split(' ')[0].replace(/[^A-Za-z]/g, '').toUpperCase().slice(0, 8) || 'WHC'
+        for (let i = 0; i < 4 && !referralCode; i++) {
+          const attempt = `${base}${String(Math.floor(1000 + Math.random() * 9000))}`
+          const { error } = await admin.from('candidate_profiles').update({ referral_code: attempt }).eq('id', cand.id).is('referral_code', null)
+          if (!error) referralCode = attempt
+        }
+        if (!referralCode) {
+          const { data: fresh } = await admin.from('candidate_profiles').select('referral_code').eq('id', cand.id).maybeSingle()
+          referralCode = fresh?.referral_code ?? null
+        }
+      }
+      const { data: refs } = await admin.from('referrals').select('status').eq('referrer_candidate_id', cand.id)
+      if (refs) referralStats = { total: refs.length, converted: refs.filter((r: any) => r.status === 'converted').length }
+    } catch { /* referral columns not live yet - card simply not shown */ }
+
     return NextResponse.json({
       settings: {
+        referral_code: referralCode,
+        referral_stats: referralStats,
         profile_id: cand.id,
         agency_available: Boolean(cand.agency_available),
         agency_tier: cand.agency_tier ?? null,
