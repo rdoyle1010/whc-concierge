@@ -5,7 +5,8 @@ import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import DashboardShell from '@/components/DashboardShell'
 import { courseBySlug, PASS_MARK } from '@/lib/academy'
-import { ArrowLeft, Check, ChevronDown, Award, RotateCcw } from 'lucide-react'
+import { courseImage, lessonExtras } from '@/lib/academy-extras'
+import { ArrowLeft, Check, ChevronDown, Award, RotateCcw, Quote, TrendingUp, Lightbulb } from 'lucide-react'
 
 // The course player: read the lessons (each ticked as you go), then sit the
 // final quiz. Graded server-side; 80% earns the certificate and the badge.
@@ -102,8 +103,16 @@ export default function CoursePlayerPage() {
     <DashboardShell role="talent">
       <div className="max-w-3xl">
         <Link href="/talent/academy" className="text-[13px] text-muted hover:text-ink flex items-center gap-1 mb-4"><ArrowLeft size={14} /> Academy</Link>
-        <h1 className="text-2xl font-serif font-bold text-ink mb-1">{course.title}</h1>
-        <p className="text-[13px] text-gray-500 mb-6">{course.tagline}</p>
+        {/* Course hero */}
+        <div className="relative rounded-2xl overflow-hidden mb-6 h-44 md:h-56">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={courseImage(slug)} alt="" className="absolute inset-0 w-full h-full object-cover" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
+          <div className="absolute bottom-0 left-0 p-6">
+            <h1 className="text-2xl md:text-3xl font-serif font-bold text-white mb-1">{course.title}</h1>
+            <p className="text-[13px] text-white/80">{course.tagline}</p>
+          </div>
+        </div>
 
         {completedAt && (
           <div className="flex items-center justify-between gap-3 bg-green-50 border border-green-200 rounded-xl px-5 py-4 mb-6">
@@ -137,6 +146,33 @@ export default function CoursePlayerPage() {
                     {open && (
                       <div className="px-5 pb-5">
                         <div className="text-[14px] text-gray-700 leading-[1.8] whitespace-pre-line border-t border-border/60 pt-4 mb-4">{lesson.content}</div>
+                        {(() => {
+                          const extra = lessonExtras(slug, i)
+                          if (!extra) return null
+                          return (
+                            <div className="space-y-3 mb-4">
+                              {/* Through the guest's eyes */}
+                              <div className="bg-[#FDF6EC] border border-accent/20 rounded-xl p-4">
+                                <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-accent mb-1.5 inline-flex items-center gap-1.5"><Quote size={12} /> Through the guest&apos;s eyes</p>
+                                <p className="text-[13px] text-gray-700 italic leading-[1.7]">{extra.guestView}</p>
+                              </div>
+                              {/* What this does for you */}
+                              <div className="bg-surface rounded-xl p-4">
+                                <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-gray-500 mb-1.5 inline-flex items-center gap-1.5"><TrendingUp size={12} /> What this does for your career</p>
+                                <p className="text-[13px] text-gray-700 leading-[1.7]">{extra.helpsYou}</p>
+                              </div>
+                              {/* Quick tips */}
+                              <div className="border border-border rounded-xl p-4">
+                                <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-gray-500 mb-2 inline-flex items-center gap-1.5"><Lightbulb size={12} className="text-amber-500" /> Quick tips</p>
+                                <ul className="space-y-1.5">
+                                  {extra.tips.map((t, ti) => (
+                                    <li key={ti} className="text-[13px] text-gray-700 flex items-start gap-2"><Check size={13} className="text-green-600 mt-0.5 shrink-0" />{t}</li>
+                                  ))}
+                                </ul>
+                              </div>
+                            </div>
+                          )
+                        })()}
                         {!done && (
                           <button onClick={() => { markLesson(i); if (i + 1 < course.lessons.length) setOpenLesson(i + 1) }}
                             className="btn-primary text-[12px]">Mark as read {i + 1 < course.lessons.length ? '& continue' : ''}</button>

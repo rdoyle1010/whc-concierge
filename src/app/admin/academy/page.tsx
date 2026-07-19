@@ -1,8 +1,9 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { Fragment, useEffect, useState } from 'react'
 import DashboardShell from '@/components/DashboardShell'
 import { ACADEMY, COURSE_PRICE, BUNDLE_PRICE } from '@/lib/academy'
+import { lessonExtras } from '@/lib/academy-extras'
 import { GraduationCap, ChevronDown, Award, UserPlus } from 'lucide-react'
 
 // The Academy back office: every course, every learner, revenue, and full
@@ -53,7 +54,6 @@ export default function AdminAcademyPage() {
   const totalRevenue = rows.filter(r => r.paid_at).reduce((s, r) => s + (r.amount_paid || 0), 0)
   const totalEnrolments = rows.filter(r => r.paid_at).length
   const totalCerts = rows.filter(r => r.completed_at).length
-  const preview = previewSlug ? ACADEMY.find(c => c.slug === previewSlug) : null
 
   return (
     <DashboardShell role="admin" userName="Admin">
@@ -111,50 +111,66 @@ export default function AdminAcademyPage() {
                 </tr>
               </thead>
               <tbody>
-                {courses.map(c => (
-                  <tr key={c.slug} className="border-b border-border/60">
-                    <td className="py-2.5 pr-4 font-medium text-ink">{c.title}</td>
-                    <td className="py-2.5 pr-4 text-gray-500">{c.category}</td>
-                    <td className="py-2.5 pr-4 text-right">{c.enrolments}</td>
-                    <td className="py-2.5 pr-4 text-right">{c.completions}</td>
-                    <td className="py-2.5 pr-4 text-right">£{(c.revenue / 100).toFixed(2)}</td>
-                    <td className="py-2.5 text-right">
-                      <button onClick={() => setPreviewSlug(previewSlug === c.slug ? null : c.slug)}
-                        className="text-[11px] font-medium text-accent hover:underline">{previewSlug === c.slug ? 'Close' : 'View content'}</button>
-                    </td>
-                  </tr>
-                ))}
+                {courses.map(c => {
+                  const full = ACADEMY.find(a => a.slug === c.slug)
+                  const open = previewSlug === c.slug
+                  return (
+                    <Fragment key={c.slug}>
+                      <tr className="border-b border-border/60">
+                        <td className="py-2.5 pr-4 font-medium text-ink">{c.title}</td>
+                        <td className="py-2.5 pr-4 text-gray-500">{c.category}</td>
+                        <td className="py-2.5 pr-4 text-right">{c.enrolments}</td>
+                        <td className="py-2.5 pr-4 text-right">{c.completions}</td>
+                        <td className="py-2.5 pr-4 text-right">£{(c.revenue / 100).toFixed(2)}</td>
+                        <td className="py-2.5 text-right">
+                          <button onClick={() => setPreviewSlug(open ? null : c.slug)}
+                            className={`text-[11px] font-medium hover:underline ${open ? 'text-ink' : 'text-accent'}`}>{open ? 'Close' : 'View content'}</button>
+                        </td>
+                      </tr>
+                      {open && full && (
+                        <tr className="border-b border-border/60 bg-surface/60">
+                          <td colSpan={6} className="py-4 px-2">
+                            <p className="text-[12px] text-gray-500 mb-3">{full.tagline} · ~{full.minutes} min · {full.lessons.length} lessons · {full.quiz.length}-question quiz (80% to pass)</p>
+                            <div className="space-y-2">
+                              {full.lessons.map((l, i) => (
+                                <details key={i} className="border border-border rounded-lg bg-white">
+                                  <summary className="px-4 py-2.5 text-[13px] font-medium text-ink cursor-pointer flex items-center justify-between">Lesson {i + 1}: {l.title}<ChevronDown size={14} className="text-gray-400" /></summary>
+                                  <div className="px-4 pb-4 text-[13px] text-gray-600 leading-[1.8] whitespace-pre-line border-t border-border/60 pt-3">{l.content}</div>
+                                  {(() => {
+                                    const ex = lessonExtras(full.slug, i)
+                                    if (!ex) return null
+                                    return (
+                                      <div className="px-4 pb-4 space-y-2">
+                                        <p className="text-[12px] italic text-gray-500 bg-[#FDF6EC] border border-accent/20 rounded-lg p-3">Guest&apos;s view: {ex.guestView}</p>
+                                        <p className="text-[12px] text-gray-500">Career benefit: {ex.helpsYou}</p>
+                                        <p className="text-[12px] text-gray-500">Quick tips: {ex.tips.join(' · ')}</p>
+                                      </div>
+                                    )
+                                  })()}
+                                </details>
+                              ))}
+                              <details className="border border-border rounded-lg bg-white">
+                                <summary className="px-4 py-2.5 text-[13px] font-medium text-ink cursor-pointer flex items-center justify-between">Final quiz ({full.quiz.length} questions)<ChevronDown size={14} className="text-gray-400" /></summary>
+                                <div className="px-4 pb-4 pt-3 border-t border-border/60 space-y-3">
+                                  {full.quiz.map((q, i) => (
+                                    <div key={i}>
+                                      <p className="text-[13px] font-medium text-ink">{i + 1}. {q.q}</p>
+                                      <p className="text-[12px] text-gray-500">{q.options.join(' · ')}</p>
+                                    </div>
+                                  ))}
+                                  <p className="text-[11px] text-gray-400">Answer keys are held server-side only and are never shown here or in the browser.</p>
+                                </div>
+                              </details>
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                    </Fragment>
+                  )
+                })}
               </tbody>
             </table>
           </div>
-
-          {/* Content preview */}
-          {preview && (
-            <div className="dashboard-card mb-8">
-              <h3 className="font-serif text-lg font-semibold text-ink mb-1">{preview.title}</h3>
-              <p className="text-[12px] text-gray-500 mb-4">{preview.tagline} · ~{preview.minutes} min · {preview.lessons.length} lessons · {preview.quiz.length}-question quiz (80% to pass)</p>
-              <div className="space-y-2 mb-4">
-                {preview.lessons.map((l, i) => (
-                  <details key={i} className="border border-border rounded-lg">
-                    <summary className="px-4 py-2.5 text-[13px] font-medium text-ink cursor-pointer flex items-center justify-between">Lesson {i + 1}: {l.title}<ChevronDown size={14} className="text-gray-400" /></summary>
-                    <div className="px-4 pb-4 text-[13px] text-gray-600 leading-[1.8] whitespace-pre-line border-t border-border/60 pt-3">{l.content}</div>
-                  </details>
-                ))}
-                <details className="border border-border rounded-lg">
-                  <summary className="px-4 py-2.5 text-[13px] font-medium text-ink cursor-pointer flex items-center justify-between">Final quiz ({preview.quiz.length} questions)<ChevronDown size={14} className="text-gray-400" /></summary>
-                  <div className="px-4 pb-4 pt-3 border-t border-border/60 space-y-3">
-                    {preview.quiz.map((q, i) => (
-                      <div key={i}>
-                        <p className="text-[13px] font-medium text-ink">{i + 1}. {q.q}</p>
-                        <p className="text-[12px] text-gray-500">{q.options.join(' · ')}</p>
-                      </div>
-                    ))}
-                    <p className="text-[11px] text-gray-400">Answer keys are held server-side only and are never shown here or in the browser.</p>
-                  </div>
-                </details>
-              </div>
-            </div>
-          )}
 
           {/* Learners */}
           <h2 className="text-[16px] font-medium text-ink mb-3">Learners ({rows.filter(r => r.paid_at).length})</h2>

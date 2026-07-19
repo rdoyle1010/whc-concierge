@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import DashboardShell from '@/components/DashboardShell'
 import { ACADEMY, COURSE_PRICE, BUNDLE_PRICE } from '@/lib/academy'
+import { courseImage } from '@/lib/academy-extras'
 import { GraduationCap, Award, Clock, Check } from 'lucide-react'
 
 // WHC Academy catalogue - £10 courses, certificate + profile badge on
@@ -129,7 +130,13 @@ export default function AcademyPage() {
                   const done = Boolean(enr?.completed_at)
                   const lessonsDone = enr ? Object.keys(enr.progress || {}).length : 0
                   return (
-                    <div key={course.slug} className={`dashboard-card flex flex-col ${done ? 'border-green-200 ring-1 ring-green-100' : ''}`}>
+                    <div key={course.slug} className={`dashboard-card !p-0 overflow-hidden flex flex-col ${done ? 'border-green-200 ring-1 ring-green-100' : ''}`}>
+                      <div className="relative h-28 shrink-0">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={courseImage(course.slug)} alt="" className="absolute inset-0 w-full h-full object-cover" />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
+                      </div>
+                      <div className="p-5 flex flex-col flex-1">
                       <div className="flex items-start justify-between gap-2 mb-1">
                         <h3 className="font-serif text-[17px] font-semibold text-ink leading-snug">{course.title}</h3>
                         {done && <span className="inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide bg-green-600 text-white px-2 py-0.5 rounded-full shrink-0"><Check size={10} /> Certified</span>}
@@ -152,6 +159,7 @@ export default function AcademyPage() {
                             {busySlug === course.slug ? 'Taking you to payment...' : `Enrol - £${(COURSE_PRICE / 100).toFixed(0)}`}
                           </button>
                         )}
+                      </div>
                       </div>
                     </div>
                   )

@@ -6,6 +6,7 @@ import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
 import { createClient } from '@/lib/supabase/client'
 import { ACADEMY, COURSE_PRICE, PUBLIC_COURSE_PRICE } from '@/lib/academy'
+import { courseImage } from '@/lib/academy-extras'
 import { GraduationCap, Clock, ShieldCheck, X } from 'lucide-react'
 
 // The PUBLIC Academy - anyone in the industry can buy a course and earn a
@@ -83,7 +84,13 @@ export default function PublicAcademyPage() {
             <h2 className="text-[11px] uppercase tracking-[0.14em] text-gray-400 mb-3">{cat}</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
               {ACADEMY.filter(c => c.category === cat).map(course => (
-                <div key={course.slug} className="bg-white border border-border rounded-xl p-6 flex flex-col hover:shadow-md transition-shadow">
+                <div key={course.slug} className="bg-white border border-border rounded-xl overflow-hidden flex flex-col hover:shadow-md transition-shadow">
+                  <div className="relative h-32 shrink-0">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={courseImage(course.slug)} alt="" className="absolute inset-0 w-full h-full object-cover" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
+                  </div>
+                  <div className="p-6 flex flex-col flex-1">
                   <h3 className="font-serif text-[17px] font-semibold text-ink leading-snug mb-1">{course.title}</h3>
                   <p className="text-[12px] text-gray-500 mb-2">{course.tagline}</p>
                   <p className="text-[11px] text-gray-400 mb-4 inline-flex items-center gap-1"><Clock size={11} /> ~{course.minutes} min · {course.lessons.length} lessons · final quiz · certificate</p>
@@ -94,6 +101,7 @@ export default function PublicAcademyPage() {
                     ) : (
                       <button onClick={() => { setBuying({ slug: course.slug, title: course.title }); setError('') }} className="btn-primary text-[12px]">Get this course</button>
                     )}
+                  </div>
                   </div>
                 </div>
               ))}
