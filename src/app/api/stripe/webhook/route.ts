@@ -78,6 +78,19 @@ export async function POST(req: NextRequest) {
         }).eq('id', meta.booking_id)
       }
 
+      // WHC Academy course purchase → enrolment live.
+      if (meta?.type === 'course' && meta?.candidate_id && meta?.course_slug) {
+        await supabase.from('course_enrollments').upsert(
+          {
+            candidate_id: meta.candidate_id,
+            course_slug: meta.course_slug,
+            paid_at: new Date().toISOString(),
+            amount_paid: session.amount_total ?? 1000,
+          },
+          { onConflict: 'candidate_id,course_slug' }
+        )
+      }
+
       // Therapist's monthly register listing → live.
       if (meta?.type === 'agency_listing' && meta?.candidate_id) {
         await supabase.from('candidate_profiles').update({

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { stripe } from '@/lib/stripe'
 import { JOB_TIERS, FEATURED_PROFILE_PRICE, AGENCY_LISTING_TIERS, AGENCY_PLATFORM_FEE_PCT, PREFERRED_EMPLOYER_PRICE } from '@/lib/constants'
+import { COURSE_PRICE } from '@/lib/academy'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 
@@ -38,6 +39,33 @@ export async function POST(req: NextRequest) {
     const body = await req.json()
     const { type, returnUrl } = body
     const origin = getSafeOrigin(returnUrl)
+
+    // ── WHC Academy course - £10 one-off, certificate on completion ──
+    if (type === 'course') {
+      const { candidateId, courseSlug, courseTitle } = body
+      if (!candidateId || !courseSlug) return NextResponse.json({ error: 'Missing candidateId or courseSlug' }, { status: 400 })
+
+      const session = await stripe.checkout.sessions.create({
+        payment_method_types: ['card'],
+        line_items: [{
+          price_data: {
+            currency: 'gbp',
+            product_data: {
+              name: `WHC Academy - ${String(courseTitle || courseSlug).slice(0, 80)}`,
+              description: 'Online course with certificate and profile badge on completion',
+            },
+            unit_amount: COURSE_PRICE,
+          },
+          quantity: 1,
+        }],
+        mode: 'payment',
+        allow_promotion_codes: true,
+        success_url: `${origin}/talent/academy?enrolled=${encodeURIComponent(courseSlug)}`,
+        cancel_url: `${origin}/talent/academy?cancelled=true`,
+        metadata: { type: 'course', candidate_id: candidateId, course_slug: courseSlug, user_id: user.id },
+      })
+      return NextResponse.json({ url: session.url })
+    }
 
     if (type === 'featured_profile') {
       const { candidateId } = body

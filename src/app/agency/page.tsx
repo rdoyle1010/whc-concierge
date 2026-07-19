@@ -5,7 +5,8 @@ import { createClient } from '@/lib/supabase/client'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
 import Link from 'next/link'
-import { Search, MapPin, Star, Clock, Shield, ShieldCheck, ChevronDown, X, SlidersHorizontal } from 'lucide-react'
+import { Search, MapPin, Star, Clock, Shield, ShieldCheck, ChevronDown, X, SlidersHorizontal, GraduationCap } from 'lucide-react'
+import { ACADEMY, courseTitle } from '@/lib/academy'
 
 const SERVICE_FILTERS = ['Swedish Massage','Deep Tissue','Hot Stone','Aromatherapy','ESPA Facial','Elemis Facial','Dermalogica Facial','Body Wraps','Reflexology','Reiki','Prenatal Massage','Sports Massage','Laser','Injectables','Lashes','Nails','Waxing']
 const BRAND_FILTERS = ['ESPA','Elemis','Dermalogica','Comfort Zone','Aromatherapy Associates','Bamford','Sodashi','Thalgo','Germaine de Capuccini','Decleor','La Mer']
@@ -105,6 +106,8 @@ export default function AgencyPage() {
 
   const [availToday, setAvailToday] = useState<Set<string>>(new Set())
   const [filtersOpen, setFiltersOpen] = useState(false)
+  const [academySel, setAcademySel] = useState<string[]>([])
+  const [academyMap, setAcademyMap] = useState<Map<string, string[]>>(new Map())
 
   useEffect(() => {
     supabase.from('candidate_profiles').select('*')
@@ -118,13 +121,22 @@ export default function AgencyPage() {
     supabase.from('agency_availability').select('candidate_id')
       .eq('date', today).eq('available', true)
       .then(({ data }) => { if (data) setAvailToday(new Set(data.map((d: any) => d.candidate_id))) })
+    // WHC Academy badges - RLS only exposes COMPLETED enrolments publicly
+    supabase.from('course_enrollments').select('candidate_id, course_slug')
+      .not('completed_at', 'is', null)
+      .then(({ data }) => {
+        if (!data) return
+        const m = new Map<string, string[]>()
+        for (const r of data) m.set(r.candidate_id, [...(m.get(r.candidate_id) || []), r.course_slug])
+        setAcademyMap(m)
+      })
   }, [])
 
   const toggleFilter = (arr: string[], set: (v: string[]) => void, val: string) => {
     set(arr.includes(val) ? arr.filter(v => v !== val) : [...arr, val])
   }
 
-  const clearFilters = () => { setServices([]); setBrands([]); setRoles([]); setInsuredOnly(false); setAvailNow(false); setPostcode(''); setAppliedSearch(null); setPostcodeError('') }
+  const clearFilters = () => { setServices([]); setBrands([]); setRoles([]); setInsuredOnly(false); setAvailNow(false); setAcademySel([]); setPostcode(''); setAppliedSearch(null); setPostcodeError('') }
 
   const handleSearch = async () => {
     const outward = normaliseOutward(postcode)
@@ -176,6 +188,9 @@ export default function AgencyPage() {
     if (services.length > 0 && !services.some(s => (c.services_offered || []).some((sp: string) => sp.toLowerCase().includes(s.toLowerCase())))) return false
     if (brands.length > 0 && !brands.some(b => (c.product_houses || []).some((ph: string) => ph.toLowerCase().includes(b.toLowerCase())))) return false
     if (roles.length > 0 && !roles.includes(c.role_level)) return false
+    // Academy filter: the candidate must hold EVERY selected certificate -
+    // "retail trained AND Elemis trained" is how a hotel actually hires.
+    if (academySel.length > 0 && !academySel.every(s => (academyMap.get(c.id) || []).includes(s))) return false
     if (!matchesLocation(c)) return false
     return true
   })
@@ -259,6 +274,12 @@ export default function AgencyPage() {
 
               <FilterSection title="Insurance">
                 <label className="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked={insuredOnly} onChange={() => setInsuredOnly(!insuredOnly)} className="w-3.5 h-3.5 border-border rounded text-ink" /><span className="text-[12px] text-secondary">Insured only</span></label>
+              </FilterSection>
+
+              <FilterSection title="WHC Academy">
+                {ACADEMY.map(course => (
+                  <label key={course.slug} className="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked={academySel.includes(course.slug)} onChange={() => toggleFilter(academySel, setAcademySel, course.slug)} className="w-3.5 h-3.5 border-border rounded text-ink" /><span className="text-[12px] text-secondary">{course.title}</span></label>
+                ))}
               </FilterSection>
           </div>
         )
@@ -354,6 +375,11 @@ export default function AgencyPage() {
                           {c.postcode && <span className="text-[11px] text-muted flex items-center gap-1"><MapPin size={10} />{pc(c.postcode)}{(() => { const d = candidateMiles(c); return d != null ? ` · ${Math.round(d * 10) / 10} mi away` : '' })()}</span>}
                           {c.whc_verified ? <span className="text-[10px] font-semibold text-green-700 flex items-center gap-0.5"><ShieldCheck size={10} />WHC Verified</span>
                           : c.has_insurance && <span className="text-[10px] text-success flex items-center gap-0.5"><Shield size={10} />Insured</span>}
+                          {(academyMap.get(c.id)?.length || 0) > 0 && (
+                            <span className="text-[10px] font-medium text-accent flex items-center gap-0.5" title={(academyMap.get(c.id) || []).map(courseTitle).join(', ')}>
+                              <GraduationCap size={11} />{academyMap.get(c.id)!.length} Academy
+                            </span>
+                          )}
                         </div>
 
                         {/* Services */}

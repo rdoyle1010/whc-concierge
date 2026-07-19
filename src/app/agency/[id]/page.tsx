@@ -6,7 +6,8 @@ import { createClient } from '@/lib/supabase/client'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
 import Link from 'next/link'
-import { MapPin, Star, Shield, Clock, Check, ArrowLeft, X } from 'lucide-react'
+import { MapPin, Star, Shield, Clock, Check, ArrowLeft, X, GraduationCap } from 'lucide-react'
+import { courseTitle } from '@/lib/academy'
 import ReviewBreakdown from '@/components/ReviewBreakdown'
 import ReviewForm from '@/components/ReviewForm'
 import { AGENCY_PLATFORM_FEE_PCT } from '@/lib/constants'
@@ -26,6 +27,7 @@ export default function AgencyProfilePage() {
   const [showReview, setShowReview] = useState(false)
   const [offerRate, setOfferRate] = useState('')
   const [offerHours, setOfferHours] = useState('8')
+  const [academyBadges, setAcademyBadges] = useState<{ course_slug: string; completed_at: string }[]>([])
 
   // Live cost preview: therapist receives rate × hours; WHC fee is on top, paid by the property
   const previewRate = parseInt(offerRate, 10) || 0
@@ -42,6 +44,10 @@ export default function AgencyProfilePage() {
       if (data) {
         const { data: revs } = await supabase.from('reviews').select('*').eq('reviewee_id', data.user_id || data.id).order('created_at', { ascending: false }).limit(100)
         setReviews(revs || [])
+        // WHC Academy certificates - public read of completed enrolments only
+        const { data: courses } = await supabase.from('course_enrollments')
+          .select('course_slug, completed_at').eq('candidate_id', data.id).not('completed_at', 'is', null)
+        setAcademyBadges(courses || [])
       }
       // If the viewer is a logged-in employer, load any existing offer for this candidate
       const { data: { user } } = await supabase.auth.getUser()
@@ -146,6 +152,17 @@ export default function AgencyProfilePage() {
                 : profile.has_insurance && <span className="flex items-center gap-1 text-success"><Shield size={13} />Insured</span>}
                 {profile.availability_status === 'immediately' && <span className="flex items-center gap-1 text-success"><span className="w-2 h-2 bg-success rounded-full" />Available Now</span>}
               </div>
+              {/* WHC Academy certificates - earned, verified, employer-visible */}
+              {academyBadges.length > 0 && (
+                <div className="flex flex-wrap items-center gap-1.5 mt-3">
+                  <span className="text-[11px] font-semibold uppercase tracking-wide text-accent inline-flex items-center gap-1"><GraduationCap size={13} /> WHC Academy:</span>
+                  {academyBadges.map(b => (
+                    <span key={b.course_slug} className="text-[11px] font-medium bg-[#FDF6EC] text-accent border border-accent/20 px-2.5 py-1 rounded-full">
+                      {courseTitle(b.course_slug)}
+                    </span>
+                  ))}
+                </div>
+              )}
             </div>
             <div className="shrink-0">
               {profile.hourly_rate
