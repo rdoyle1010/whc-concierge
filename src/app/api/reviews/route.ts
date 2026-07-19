@@ -6,7 +6,7 @@ import { reviewSchema, validateRequest } from '@/lib/validations'
 
 // Reviews are trust-critical: the reviewer is ALWAYS the authenticated user
 // (never taken from the request body), and a review is only accepted where a
-// real working relationship exists — an accepted application to one of the
+// real working relationship exists - an accepted application to one of the
 // employer's roles, or an accepted agency booking between the two parties.
 // `reviewed_id` is the reviewee's auth user id (profiles are updated via user_id).
 
@@ -172,7 +172,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Calculate overall rating from criteria if provided.
-    // Live column is INTEGER with CHECK 1..5 — round and clamp.
+    // Live column is INTEGER with CHECK 1..5 - round and clamp.
     let finalRating = rating
     if (criteria_scores) {
       const values = Object.values(criteria_scores) as number[]
@@ -182,7 +182,7 @@ export async function POST(req: NextRequest) {
     }
     const ratingInt = Math.min(5, Math.max(1, Math.round(finalRating || 1)))
 
-    // Insert review — writes both column-name generations, strips what's missing.
+    // Insert review - writes both column-name generations, strips what's missing.
     // Live table (verified 15 Jul): reviewer_id, reviewee_id, rating (int 1-5),
     // text (NOT NULL), property_name, criteria_scores jsonb. No comment/type/reviewed_id.
     const { error: reviewError } = await insertReviewDefensively(supabase, {

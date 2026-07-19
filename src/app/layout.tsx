@@ -1,6 +1,15 @@
 import type { Metadata } from 'next'
+import { Playfair_Display } from 'next/font/google'
 import './globals.css'
 import CookieConsent from '@/components/CookieConsent'
+
+// The display serif for every headline - self-hosted by next/font (no
+// external requests, no layout shift). font-serif in Tailwind maps to this.
+const playfair = Playfair_Display({
+  subsets: ['latin'],
+  variable: '--font-playfair',
+  display: 'swap',
+})
 
 export const metadata: Metadata = {
   title: {
@@ -24,7 +33,7 @@ export const metadata: Metadata = {
     title: 'WHC Concierge | Luxury Wellness Careers Platform',
     description: 'The UK\'s premier recruitment platform for luxury spa, wellness and hospitality professionals. Connecting elite therapists with five-star properties.',
     url: 'https://talent.wellnesshousecollective.co.uk',
-    images: [{ url: '/opengraph-image', width: 1200, height: 630, alt: 'WHC Concierge — Luxury Wellness Careers Platform' }],
+    images: [{ url: '/opengraph-image', width: 1200, height: 630, alt: 'WHC Concierge - Luxury Wellness Careers Platform' }],
   },
   twitter: {
     card: 'summary_large_image',
@@ -50,7 +59,7 @@ const organizationJsonLd = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" className={playfair.variable}>
       <body>
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }} />
         {children}

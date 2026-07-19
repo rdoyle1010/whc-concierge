@@ -16,7 +16,7 @@ export const revalidate = 60
 
 export const metadata: Metadata = {
   title: { absolute: 'WHC Concierge | Luxury Wellness Careers Platform' },
-  description: 'The UK\'s specialist recruitment platform for luxury spa, wellness and hospitality — connecting elite therapists with five-star properties.',
+  description: 'The UK\'s specialist recruitment platform for luxury spa, wellness and hospitality - connecting elite therapists with five-star properties.',
   alternates: { canonical: 'https://talent.wellnesshousecollective.co.uk' },
 }
 
@@ -65,7 +65,9 @@ async function getFeaturedRoles() {
       title: j.job_title || 'Untitled Role',
       property: j.employer_profiles?.property_name || j.employer_profiles?.company_name || '',
       location: j.location || '',
-      salary: j.salary_min && j.salary_max ? `£${Math.round(j.salary_min / 1000)}k–£${Math.round(j.salary_max / 1000)}k` : 'Competitive',
+      // Only show a range when both figures are real annual salaries -
+      // "£0k-£0k" reads as broken, and broken reads as cheap.
+      salary: j.salary_min >= 1000 && j.salary_max >= 1000 ? `£${Math.round(j.salary_min / 1000)}k-£${Math.round(j.salary_max / 1000)}k` : 'Competitive',
       type: j.contract_type?.replace('_', ' ') || '',
       tier: j.tier || 'Standard',
     }))
@@ -103,7 +105,8 @@ async function getSiteImages() {
   }
 }
 
-const TRUST_BRANDS = ['Champneys', 'Pennyhill Park', 'The Lanesborough', 'Mandarin Oriental', 'Gleneagles', 'Corinthia', 'Four Seasons', 'Rosewood', 'ESPA', 'Fairmont']
+// Property types, not named brands - aspiration without implied endorsement.
+const TRUST_BRANDS = ['Country House Spas', 'Five-Star City Hotels', 'Destination Retreats', 'Private Estates', 'Boutique Wellness Clubs', 'Championship Golf Resorts']
 
 export default async function HomePage() {
   const [stats, featuredRoles, siteImages] = await Promise.all([getStats(), getFeaturedRoles(), getSiteImages()])
@@ -112,7 +115,7 @@ export default async function HomePage() {
     <div className="min-h-screen bg-white">
       <Navbar />
 
-      {/* ═══ HERO CAROUSEL — Single unified hero ═══ */}
+      {/* ═══ HERO CAROUSEL - Single unified hero ═══ */}
       <div className="pt-[60px]">
         <HeroCarousel />
       </div>
@@ -123,8 +126,22 @@ export default async function HomePage() {
           { value: stats.professionals, label: 'Vetted Professionals' },
           { value: stats.roles, label: 'Live Roles' },
           { value: stats.properties, label: 'Verified Properties' },
-        ].filter((s): s is { value: number; label: string } => typeof s.value === 'number' && s.value > 0)
-        if (items.length === 0) return null
+        // Counters only earn their place once the numbers flatter the brand.
+        // Below that, a qualitative strip does the same job with more grace.
+        ].filter((s): s is { value: number; label: string } => typeof s.value === 'number' && s.value >= 50)
+        if (items.length === 0) {
+          return (
+            <section className="border-y" style={{ background: '#F8F7F5', borderColor: '#E8E5E0' }}>
+              <div className="max-w-5xl mx-auto px-6 lg:px-8 py-7">
+                <div className="flex flex-wrap items-center justify-center gap-x-10 gap-y-2 text-center">
+                  {['Hand-picked professionals', 'Insurance verified', 'Five-star properties only'].map(t => (
+                    <p key={t} className="text-[12px] tracking-[0.14em] uppercase" style={{ color: '#8A8A8A' }}>{t}</p>
+                  ))}
+                </div>
+              </div>
+            </section>
+          )
+        }
         return (
           <section className="border-y" style={{ background: '#F8F7F5', borderColor: '#E8E5E0' }}>
             <div className="max-w-5xl mx-auto px-6 lg:px-8 py-8">
@@ -149,7 +166,7 @@ export default async function HomePage() {
             <div className="lg:col-span-5">
               <div className="mb-10">
                 <p className="text-[11px] tracking-[0.15em] uppercase font-medium mb-3" style={{ color: '#C9A96E' }}>How it works</p>
-                <h2 className="text-[32px] md:text-[40px] font-medium tracking-tight leading-[1.1]" style={{ color: '#1a1a1a' }}>Three steps to your next chapter</h2>
+                <h2 className="font-serif text-[32px] md:text-[40px] font-medium tracking-tight leading-[1.1]" style={{ color: '#1a1a1a' }}>Three steps to your next chapter</h2>
               </div>
               <HomepageHowItWorks />
             </div>
@@ -172,7 +189,7 @@ export default async function HomePage() {
         <div className="max-w-7xl mx-auto px-6 lg:px-8">
           <div className="text-center mb-14">
             <p className="text-[11px] tracking-[0.15em] uppercase font-medium mb-3" style={{ color: '#C9A96E' }}>Tools built for the industry</p>
-            <h2 className="text-[32px] md:text-[40px] font-medium tracking-tight leading-[1.1] mb-4" style={{ color: '#1a1a1a' }}>
+            <h2 className="font-serif text-[32px] md:text-[40px] font-medium tracking-tight leading-[1.1] mb-4" style={{ color: '#1a1a1a' }}>
               See the product, not just the promise.
             </h2>
             <p className="text-[15px] md:text-[16px] leading-[1.7] max-w-2xl mx-auto" style={{ color: '#6B7280' }}>
@@ -218,9 +235,6 @@ export default async function HomePage() {
               <span key={name} className="text-[15px] font-medium" style={{ color: '#2D2D2D', opacity: 0.55, letterSpacing: '0.08em' }}>{name}</span>
             ))}
           </div>
-          <p className="text-[11px] italic text-center mt-6 max-w-2xl mx-auto" style={{ color: '#9CA3AF' }}>
-            Property names shown are representative of the calibre WHC Concierge is built to serve. Active partnerships are listed under the relevant role on Browse Roles.
-          </p>
         </div>
       </section>
 
@@ -231,7 +245,7 @@ export default async function HomePage() {
             <div className="flex items-end justify-between mb-10">
               <div>
                 <p className="text-[11px] tracking-[0.15em] uppercase font-medium mb-3" style={{ color: '#C9A96E' }}>Latest opportunities</p>
-                <h2 className="text-[32px] md:text-[40px] font-medium tracking-tight leading-[1.1]" style={{ color: '#1a1a1a' }}>Featured roles</h2>
+                <h2 className="font-serif text-[32px] md:text-[40px] font-medium tracking-tight leading-[1.1]" style={{ color: '#1a1a1a' }}>Featured roles</h2>
               </div>
               <Link href="/roles" className="hidden md:flex items-center gap-1.5 text-[13px] font-medium transition-colors" style={{ color: '#6B7280' }}>View all roles <ArrowRight size={13} /></Link>
             </div>
@@ -267,7 +281,7 @@ export default async function HomePage() {
         </section>
       )}
 
-      {/* ═══ FINAL CTA — Luxury imagery with white overlay ═══ */}
+      {/* ═══ FINAL CTA - Luxury imagery with white overlay ═══ */}
       <section className="relative overflow-hidden">
         <img
           src={siteImages.ctaBg}
@@ -279,13 +293,13 @@ export default async function HomePage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div className="rounded-xl p-8 md:p-10 bg-white/90 backdrop-blur-sm" style={{ border: '1px solid #E5E5E5' }}>
               <p className="text-[11px] tracking-[0.15em] uppercase font-medium mb-4" style={{ color: '#C9A96E' }}>For talent</p>
-              <h3 className="text-[24px] md:text-[28px] font-medium leading-[1.15] mb-4" style={{ color: '#1a1a1a' }}>Ready to elevate your wellness career?</h3>
+              <h3 className="font-serif text-[24px] md:text-[28px] font-medium leading-[1.15] mb-4" style={{ color: '#1a1a1a' }}>Ready to elevate your wellness career?</h3>
               <p className="text-[14px] leading-[1.7] mb-8" style={{ color: '#6B7280' }}>Create your free profile, get matched with premium roles, and take the next step in your career.</p>
               <Link href="/register/talent" className="btn-primary inline-block">Create free profile</Link>
             </div>
             <div className="rounded-xl p-8 md:p-10 bg-white/90 backdrop-blur-sm" style={{ border: '1px solid rgba(201, 169, 110, 0.35)' }}>
               <p className="text-[11px] tracking-[0.15em] uppercase font-medium mb-4" style={{ color: '#C9A96E' }}>For employers</p>
-              <h3 className="text-[24px] md:text-[28px] font-medium leading-[1.15] mb-4" style={{ color: '#1a1a1a' }}>Ready to find exceptional talent?</h3>
+              <h3 className="font-serif text-[24px] md:text-[28px] font-medium leading-[1.15] mb-4" style={{ color: '#1a1a1a' }}>Ready to find exceptional talent?</h3>
               <p className="text-[14px] leading-[1.7] mb-8" style={{ color: '#6B7280' }}>Post your roles, search verified candidates, and hire with confidence using intelligent matching.</p>
               <Link href="/register/employer"
                 className="inline-block px-6 py-2.5 rounded-lg text-[13px] font-semibold text-white transition-all hover:shadow-lg hover:shadow-[#C9A96E]/25"
@@ -302,13 +316,13 @@ export default async function HomePage() {
         <div className="max-w-7xl mx-auto px-6 lg:px-8 grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="card-hover p-8">
             <p className="eyebrow mb-3">Agency marketplace</p>
-            <h3 className="text-[24px] font-medium text-ink leading-tight mb-3">Fill shifts instantly.<br />No agency fees.</h3>
-            <p className="text-secondary text-[14px] mb-6">Find verified practitioners in your area, book directly, confirm instantly. Radius search by postcode. 10% platform fee only on confirmed bookings.</p>
+            <h3 className="font-serif text-[24px] font-medium text-ink leading-tight mb-3">Fill shifts fast.<br />One transparent fee.</h3>
+            <p className="text-secondary text-[14px] mb-6">Find verified practitioners near you and book by the hour - including urgent same-day cover. One 10% fee on confirmed bookings, payments handled end to end by WHC. No mark-ups, no surprises.</p>
             <Link href="/agency" className="btn-primary inline-block">Browse practitioners</Link>
           </div>
           <div className="card-hover p-8">
             <p className="eyebrow mb-3">Residency programme</p>
-            <h3 className="text-[24px] font-medium text-ink leading-tight mb-3">Discover visiting<br />specialists.</h3>
+            <h3 className="font-serif text-[24px] font-medium text-ink leading-tight mb-3">Discover visiting<br />specialists.</h3>
             <p className="text-secondary text-[14px] mb-6">Browse the residency talent pool, contact practitioners directly, agree terms. Elite 1-6 month placements at iconic properties worldwide.</p>
             <Link href="/residency" className="btn-primary inline-block">Explore residencies</Link>
           </div>
@@ -320,7 +334,7 @@ export default async function HomePage() {
         <div className="max-w-7xl mx-auto px-6 lg:px-8">
           <div className="text-center mb-12">
             <p className="eyebrow mb-3">What people say</p>
-            <h2 className="text-[36px] md:text-[42px] font-medium text-ink leading-[1.12] tracking-tight">Trusted by the industry.</h2>
+            <h2 className="font-serif text-[36px] md:text-[42px] font-medium text-ink leading-[1.12] tracking-tight">Trusted by the industry.</h2>
           </div>
           <TestimonialCarousel />
           <div className="text-center mt-8">

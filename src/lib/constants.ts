@@ -65,25 +65,25 @@ export const RESIDENCY_DURATIONS = [
 
 export const JOB_TIERS = {
   Bronze: {
-    price: 15000, days: 30, label: 'Bronze — £150',
+    price: 15000, days: 30, label: 'Bronze - £150',
     display: '£150', visibility: 'Standard', matchNotifs: 'Basic',
     badge: null, shortlisting: null, analytics: null, support: 'Email',
     features: ['30-day listing', 'Basic matching', 'Applicant tracking'],
   },
   Silver: {
-    price: 17500, days: 45, label: 'Silver — £175',
+    price: 17500, days: 45, label: 'Silver - £175',
     display: '£175', visibility: 'Enhanced', matchNotifs: 'Priority',
     badge: 'Silver badge', shortlisting: 'Basic', analytics: 'Basic', support: 'Email',
     features: ['45-day listing', 'Enhanced matching', 'Priority support', 'Applicant tracking'],
   },
   Gold: {
-    price: 20000, days: 60, label: 'Gold — £200', popular: true,
+    price: 20000, days: 60, label: 'Gold - £200', popular: true,
     display: '£200', visibility: 'Premium', matchNotifs: 'Instant',
     badge: 'Gold badge', shortlisting: 'Full', analytics: 'Full', support: 'Priority',
     features: ['60-day listing', 'Advanced matching', 'Featured placement', 'Direct messaging'],
   },
   Platinum: {
-    price: 25000, days: 90, label: 'Platinum — £250',
+    price: 25000, days: 90, label: 'Platinum - £250',
     display: '£250', visibility: 'Maximum', matchNotifs: 'Instant + Featured',
     badge: 'Platinum badge', shortlisting: 'Full + Notes', analytics: 'Full + Export', support: 'Dedicated',
     features: ['90-day listing', 'Priority matching', 'Homepage featuring', 'Social promotion', 'Full analytics'],

@@ -48,7 +48,7 @@ export async function POST(req: NextRequest) {
     const preview = content ? (content.length > 80 ? content.slice(0, 80) + '…' : content) : 'Sent you an attachment'
     try {
       await createNotification(recipientId, 'new_message', `New message from ${senderName}`, preview, inbox)
-    } catch { /* non-fatal — the message itself was saved */ }
+    } catch { /* non-fatal - the message itself was saved */ }
 
     return NextResponse.json({ success: true, id: data.id })
   } catch (e: any) {

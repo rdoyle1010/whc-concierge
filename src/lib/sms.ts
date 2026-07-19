@@ -1,9 +1,9 @@
-// SMS sending via Twilio's REST API (plain fetch — no SDK dependency).
+// SMS sending via Twilio's REST API (plain fetch - no SDK dependency).
 //
 // Requires three environment variables in Netlify:
-//   TWILIO_ACCOUNT_SID   — starts "AC..."
-//   TWILIO_AUTH_TOKEN    — secret; paste directly into Netlify, never commit
-//   TWILIO_FROM_NUMBER   — E.164 format, e.g. +447700900123
+//   TWILIO_ACCOUNT_SID   - starts "AC..."
+//   TWILIO_AUTH_TOKEN    - secret; paste directly into Netlify, never commit
+//   TWILIO_FROM_NUMBER   - E.164 format, e.g. +447700900123
 //
 // Without them, sendSms is a safe no-op that logs and returns false, so the
 // rest of the platform (offers, emails, bell notifications) works unchanged.
@@ -26,19 +26,19 @@ export function normaliseUkMobile(raw: string | null | undefined): string | null
   if (digits.startsWith('00')) return `+${digits.slice(2)}`
   if (digits.startsWith('07') && digits.length === 11) return `+44${digits.slice(1)}`
   if (digits.startsWith('447') && digits.length === 12) return `+${digits}`
-  return null // not a recognisable mobile — skip rather than send to a wrong number
+  return null // not a recognisable mobile - skip rather than send to a wrong number
 }
 
 // Send a text. Returns true on acceptance by Twilio, false otherwise.
-// Never throws — SMS is best-effort and must not break the calling flow.
+// Never throws - SMS is best-effort and must not break the calling flow.
 export async function sendSms(to: string | null | undefined, body: string): Promise<boolean> {
   const number = normaliseUkMobile(to)
   if (!number) {
-    console.log(`[SMS skipped — no valid mobile] body: ${body.slice(0, 60)}`)
+    console.log(`[SMS skipped - no valid mobile] body: ${body.slice(0, 60)}`)
     return false
   }
   if (!smsConfigured()) {
-    console.log(`[SMS skipped — Twilio not configured] To: ${number}, body: ${body.slice(0, 60)}`)
+    console.log(`[SMS skipped - Twilio not configured] To: ${number}, body: ${body.slice(0, 60)}`)
     return false
   }
   try {
@@ -56,7 +56,7 @@ export async function sendSms(to: string | null | undefined, body: string): Prom
     )
     if (!res.ok) {
       const detail = await res.text().catch(() => '')
-      console.error(`[SMS FAILED ${res.status}] To: ${number} — ${detail.slice(0, 300)}`)
+      console.error(`[SMS FAILED ${res.status}] To: ${number} - ${detail.slice(0, 300)}`)
       return false
     }
     return true

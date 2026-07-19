@@ -171,7 +171,7 @@ export default function AgencySettingsPage() {
         {/* Details */}
         <div className="dashboard-card mb-6 space-y-5">
           <h3 className="font-serif text-lg font-semibold">Your Details</h3>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="eyebrow block mb-1.5">Hourly Rate (£) *</label>
               <input type="number" min={1} value={form.hourly_rate} onChange={e => setForm({ ...form, hourly_rate: e.target.value })} className="input-field" placeholder="e.g. 25" />
@@ -183,7 +183,7 @@ export default function AgencySettingsPage() {
               <p className="text-[11px] text-muted mt-1">Urgent same-day offers are sent by text.</p>
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="eyebrow block mb-1.5">Postcode *</label>
               <input type="text" value={form.postcode} onChange={e => setForm({ ...form, postcode: e.target.value })} className="input-field" placeholder="SW1A 1AA" />
@@ -273,7 +273,7 @@ export default function AgencySettingsPage() {
         {!live.available && (
           <div className="dashboard-card mb-6 space-y-4">
             <h3 className="font-serif text-lg font-semibold">Join the Register</h3>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {(Object.keys(AGENCY_LISTING_TIERS) as Array<keyof typeof AGENCY_LISTING_TIERS>).map(t => {
                 const cfg = AGENCY_LISTING_TIERS[t]
                 const active = form.tier === t

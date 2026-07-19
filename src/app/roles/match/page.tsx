@@ -116,7 +116,7 @@ export default function SwipeMatchPage() {
       <div className="text-center max-w-sm animate-fade-in-up">
         <div className="w-16 h-16 bg-surface rounded-2xl flex items-center justify-center mx-auto mb-6"><Sparkles size={24} className="text-muted" /></div>
         <h2 className="text-[24px] font-medium text-ink mb-2">{jobs.length === 0 ? 'No active roles right now' : 'You\u2019ve reviewed all matches'}</h2>
-        <p className="text-[14px] text-muted mb-8">{jobs.length === 0 ? 'Check back soon — new roles are added regularly.' : 'New roles are added daily. Check back soon.'}</p>
+        <p className="text-[14px] text-muted mb-8">{jobs.length === 0 ? 'Check back soon - new roles are added regularly.' : 'New roles are added daily. Check back soon.'}</p>
         <div className="space-y-2"><Link href="/talent/dashboard" className="btn-primary block text-center">Dashboard</Link><Link href="/" className="btn-ghost block text-center">Home</Link></div>
       </div>
     </div>
@@ -177,7 +177,7 @@ export default function SwipeMatchPage() {
             <div className="flex flex-wrap gap-3 text-[13px] text-muted mb-3">
               <span className="flex items-center gap-1"><MapPin size={12} />{job?.location}</span>
               <span>{job?.contract_type?.replace('_', ' ') || job?.job_type}</span>
-              <span>{job?.salary_min && job?.salary_max ? `£${(job.salary_min/1000).toFixed(0)}k–£${(job.salary_max/1000).toFixed(0)}k` : 'Competitive'}</span>
+              <span>{job?.salary_min && job?.salary_max ? `£${(job.salary_min/1000).toFixed(0)}k-£${(job.salary_max/1000).toFixed(0)}k` : 'Competitive'}</span>
             </div>
 
             {/* Matching skills highlighted */}

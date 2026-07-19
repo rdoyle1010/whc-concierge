@@ -102,22 +102,28 @@ export default function TalentJobsPage() {
 
   const handleApply = async (jobId: string, matchScore: number) => {
     if (!userId) return
-    // Server-side: /api/swipe creates the application, detects mutual matches,
-    // notifies the employer AND sends both confirmation emails. Only mark the
-    // job as applied if the server actually saved the application.
-    try {
-      const res = await fetch('/api/swipe', {
+    // Server-side: creates the application (correct profile id) + mutual-match detection + employer notification
+    await fetch('/api/swipe', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ targetId: jobId, targetType: 'job', action: 'right', matchScore }),
+    }).catch(() => {})
+    setApplied(new Set(Array.from(applied).concat(jobId)))
+    const job = jobs.find((j: any) => j.id === jobId)
+    // Send application confirmation emails (fire-and-forget)
+    const { data: { user } } = await supabase.auth.getUser()
+    if (user?.email && job) {
+      fetch('/api/application-email', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ targetId: jobId, targetType: 'job', action: 'right', matchScore }),
-      })
-      if (!res.ok) {
-        const d = await res.json().catch(() => ({}))
-        alert(d.error || 'Could not submit application - please try again.')
-        return
-      }
-      setApplied(new Set(Array.from(applied).concat(jobId)))
-    } catch {
-      alert('Could not submit application - please try again.')
+        body: JSON.stringify({
+          applicantEmail: user.email,
+          applicantName: profile?.full_name || '',
+          employerEmail: job.employer_email || '',
+          employerName: job.employer_profiles?.company_name || '',
+          jobTitle: job.title || job.job_title || '',
+          propertyName: job.employer_profiles?.company_name || '',
+          roleLevel: profile?.role_level || '',
+        }),
+      }).catch(() => {})
     }
   }
 
@@ -149,8 +155,8 @@ export default function TalentJobsPage() {
         <select value={sortBy} onChange={e => setSortBy(e.target.value)} className="input-field !py-2 text-[13px]">
           <option value="match">Best match</option>
           <option value="newest">Newest</option>
-          <option value="salary_high">Salary: high–low</option>
-          <option value="salary_low">Salary: low–high</option>
+          <option value="salary_high">Salary: high-low</option>
+          <option value="salary_low">Salary: low-high</option>
         </select>
       </div>
 
@@ -171,7 +177,7 @@ export default function TalentJobsPage() {
                 <div className="flex flex-wrap gap-2 text-[12px] text-muted mb-3">
                   <span className="flex items-center gap-1"><MapPin size={11} />{job.location}</span>
                   <span>{job.contract_type?.replace('_', ' ') || job.job_type}</span>
-                  {job.salary_min && job.salary_max && <span>£{(job.salary_min/1000).toFixed(0)}k–£{(job.salary_max/1000).toFixed(0)}k</span>}
+                  {job.salary_min && job.salary_max && <span>£{(job.salary_min/1000).toFixed(0)}k-£{(job.salary_max/1000).toFixed(0)}k</span>}
                 </div>
                 {(job.required_brands || job.required_product_houses || []).length > 0 && (
                   <div className="flex flex-wrap gap-1 mb-4">

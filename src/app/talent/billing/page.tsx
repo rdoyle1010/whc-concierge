@@ -65,7 +65,7 @@ export default function TalentBillingPage() {
               </div>
               <div>
                 <p className="text-[14px] font-medium text-ink">
-                  {hasSubscription ? 'Featured Profile — Active' : 'Free Plan'}
+                  {hasSubscription ? 'Featured Profile - Active' : 'Free Plan'}
                 </p>
                 <p className="text-[12px] text-muted mt-0.5">
                   {hasSubscription ? 'Your profile has premium visibility' : 'No active subscription'}
@@ -86,7 +86,7 @@ export default function TalentBillingPage() {
               <div className="flex justify-between items-baseline text-sm">
                 <span className="text-muted">Next billing date</span>
                 <span className="text-ink font-medium">
-                  {profile.featured_until ? new Date(profile.featured_until).toLocaleDateString('en-GB', { year: 'numeric', month: 'long', day: 'numeric' }) : '—'}
+                  {profile.featured_until ? new Date(profile.featured_until).toLocaleDateString('en-GB', { year: 'numeric', month: 'long', day: 'numeric' }) : '-'}
                 </span>
               </div>
               <div className="flex justify-between items-baseline text-sm">
@@ -149,8 +149,8 @@ export default function TalentBillingPage() {
             <div>
               <p className="text-[14px] font-medium text-ink">
                 {profile?.agency_available
-                  ? `Agency Register — ${profile?.agency_tier === 'featured' ? AGENCY_LISTING_TIERS.featured.label : AGENCY_LISTING_TIERS.basic.label} plan`
-                  : 'Agency Register — Not listed'}
+                  ? `Agency Register - ${profile?.agency_tier === 'featured' ? AGENCY_LISTING_TIERS.featured.label : AGENCY_LISTING_TIERS.basic.label} plan`
+                  : 'Agency Register - Not listed'}
               </p>
               <p className="text-[12px] text-muted mt-0.5">
                 {profile?.agency_available

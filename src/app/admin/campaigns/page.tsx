@@ -219,7 +219,7 @@ export default function AdminCampaignsPage() {
                   {c.type && <span className="text-xs bg-gray-50 text-gray-500 px-2 py-1 rounded">{c.type}</span>}
                 </div>
                 <p className="text-sm text-gray-500 mt-1">{c.description}</p>
-                {c.start_date && <p className="text-xs text-gray-400 mt-1">{c.start_date}{c.end_date ? ` — ${c.end_date}` : ''}</p>}
+                {c.start_date && <p className="text-xs text-gray-400 mt-1">{c.start_date}{c.end_date ? ` - ${c.end_date}` : ''}</p>}
                 {c.status === 'sent' && <p className="text-xs text-green-700 mt-1">Sent{c.recipients_count ? ` to ${c.recipients_count} recipients` : ''}{c.sent_at ? ` on ${new Date(c.sent_at).toLocaleString('en-GB')}` : ''}.</p>}
               </div>
               <div className="flex items-center space-x-2">

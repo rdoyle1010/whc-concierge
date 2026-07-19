@@ -47,7 +47,7 @@ export default function TalentAgencyPage() {
 
   useEffect(() => {
     load()
-    // Listing status — select * so a not-yet-migrated live table can't 400 the query
+    // Listing status - select * so a not-yet-migrated live table can't 400 the query
     async function loadListing() {
       try {
         const { data: { user } } = await supabase.auth.getUser()
@@ -301,7 +301,7 @@ export default function TalentAgencyPage() {
         </>
       )}
 
-      {/* Review modal — offered on agreed shifts */}
+      {/* Review modal - offered on agreed shifts */}
       {reviewing && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setReviewing(null)}>
           <div className="bg-white rounded-2xl max-w-md w-full max-h-[90vh] overflow-y-auto p-6" onClick={(e) => e.stopPropagation()}>

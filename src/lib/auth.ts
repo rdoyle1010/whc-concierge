@@ -45,7 +45,7 @@ export async function getUserRole(): Promise<UserRole | null> {
 
   if (employer) return 'employer'
 
-  // Default to talent — never return null for a logged-in user
+  // Default to talent - never return null for a logged-in user
   return 'talent'
 }
 

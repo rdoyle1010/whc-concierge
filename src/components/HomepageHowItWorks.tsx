@@ -4,13 +4,13 @@ import { useState } from 'react'
 
 const TALENT_STEPS = [
   { num: '01', title: 'Create Your Profile', desc: 'Build a detailed profile with your skills, qualifications, product house experience, and career preferences.' },
-  { num: '02', title: 'Get Matched', desc: 'Our intelligent algorithm scores you against live roles — weighted by role level, brand knowledge, location, and more.' },
+  { num: '02', title: 'Get Matched', desc: 'Our intelligent algorithm scores you against live roles - weighted by role level, brand knowledge, location, and more.' },
   { num: '03', title: 'Land Your Role', desc: 'Apply with a single tap, message employers directly, and secure your next position at a prestigious property.' },
 ]
 
 const EMPLOYER_STEPS = [
   { num: '01', title: 'Post a Role', desc: 'Create a detailed listing with required skills, product houses, qualifications, and location. Set your tier for maximum visibility.' },
-  { num: '02', title: 'Review Matches', desc: 'Our matching engine surfaces the best candidates — ranked by fit, with full breakdowns so you can compare with confidence.' },
+  { num: '02', title: 'Review Matches', desc: 'Our matching engine surfaces the best candidates - ranked by fit, with full breakdowns so you can compare with confidence.' },
   { num: '03', title: 'Hire with Confidence', desc: 'Shortlist, message, and connect with verified professionals. Every candidate profile is reviewed before going live.' },
 ]
 
@@ -32,7 +32,7 @@ export default function HomepageHowItWorks() {
         </button>
       </div>
 
-      {/* Steps — vertically stacked */}
+      {/* Steps - vertically stacked */}
       <div className="flex flex-col gap-8">
         {steps.map((step) => (
           <div key={step.num} className="flex items-start gap-5">

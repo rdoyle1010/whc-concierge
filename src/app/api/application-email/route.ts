@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
     promises.push(
       send(
         applicantEmail,
-        `Application Received — ${jobTitle}`,
+        `Application Received - ${jobTitle}`,
         applicantConfirmationHtml({ applicantName: applicantName || 'there', jobTitle, propertyName: property }),
       )
     )
@@ -49,7 +49,7 @@ export async function POST(req: NextRequest) {
       promises.push(
         send(
           employerEmail,
-          `New Application — ${jobTitle}`,
+          `New Application - ${jobTitle}`,
           employerNotificationHtml({ applicantName: applicantName || 'A candidate', jobTitle, propertyName: property, roleLevel }),
         )
       )

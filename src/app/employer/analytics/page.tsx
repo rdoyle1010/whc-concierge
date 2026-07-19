@@ -279,7 +279,7 @@ export default function EmployerAnalyticsPage() {
                     <td className="px-5 py-3">
                       {row.avgScore > 0 ? (
                         <span className="text-[13px] font-medium" style={{ color: row.avgScore >= 80 ? '#16A34A' : row.avgScore >= 60 ? '#C9A96E' : '#6B7280' }}>{row.avgScore}%</span>
-                      ) : <span className="text-[11px] text-muted">—</span>}
+                      ) : <span className="text-[11px] text-muted">-</span>}
                     </td>
                   </tr>
                 ))}

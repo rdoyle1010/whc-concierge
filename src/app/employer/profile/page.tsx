@@ -60,7 +60,7 @@ export default function EmployerProfilePage() {
         // About
         about_text: profile.about_text,
         tagline: profile.tagline,
-        // Operational — these feed the matching algorithm
+        // Operational - these feed the matching algorithm
         product_houses_used: profile.product_houses_used,
         systems_used: profile.systems_used,
         services_offered: profile.services_offered,
@@ -73,8 +73,6 @@ export default function EmployerProfilePage() {
         // Agency
         agency_available: profile.agency_available,
         agency_note: profile.agency_note,
-        commute_car_required: profile.commute_car_required,
-        nearest_transport: profile.nearest_transport,
       })
       .eq('id', profile.id)
 
@@ -92,7 +90,6 @@ export default function EmployerProfilePage() {
         team_size: profile.team_size ? parseInt(profile.team_size) : null,
         culture_points: profile.culture_points, highlights: profile.highlights,
         agency_available: profile.agency_available, agency_note: profile.agency_note,
-        commute_car_required: profile.commute_car_required, nearest_transport: profile.nearest_transport,
       }
       for (let i = 0; i < 10 && finalError; i++) {
         const m = finalError.message.match(/Could not find the '([^']+)' column/) || finalError.message.match(/column "([^"]+)" of relation/)
@@ -101,11 +98,6 @@ export default function EmployerProfilePage() {
         const { error: retryErr } = await supabase.from('employer_profiles').update(payload).eq('id', profile.id)
         finalError = retryErr || null
       }
-    }
-
-    // Refresh cached coordinates from the postcode (best-effort, non-blocking UX)
-    if (!finalError && profile.postcode) {
-      try { await fetch('/api/employer/geocode', { method: 'POST' }) } catch { /* non-fatal */ }
     }
 
     setSaving(false)
@@ -191,7 +183,7 @@ export default function EmployerProfilePage() {
         {/* Company Details */}
         <div className="dashboard-card mb-6 space-y-5">
           <h3 className="font-serif text-lg font-semibold">Company Details</h3>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1.5">Company / Brand Name</label>
               <input type="text" value={profile.company_name || ''} onChange={(e) => update('company_name', e.target.value)} className="input-field" />
@@ -201,7 +193,7 @@ export default function EmployerProfilePage() {
               <input type="text" value={profile.property_name || ''} onChange={(e) => update('property_name', e.target.value)} className="input-field" placeholder="e.g. The Lanesborough Spa" />
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1.5">Contact Name</label>
               <input type="text" value={profile.contact_name || ''} onChange={(e) => update('contact_name', e.target.value)} className="input-field" />
@@ -211,7 +203,7 @@ export default function EmployerProfilePage() {
               <input type="email" value={profile.contact_email || ''} onChange={(e) => update('contact_email', e.target.value)} className="input-field" />
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1.5">Phone</label>
               <input type="tel" value={profile.contact_phone || ''} onChange={(e) => update('contact_phone', e.target.value)} className="input-field" />
@@ -238,7 +230,7 @@ export default function EmployerProfilePage() {
               </select>
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1.5">Company Type</label>
               <select value={profile.company_type || ''} onChange={(e) => update('company_type', e.target.value)} className="input-field">
@@ -266,14 +258,14 @@ export default function EmployerProfilePage() {
           </div>
         </div>
 
-        {/* Spa Operations — critical for matching */}
+        {/* Spa Operations - critical for matching */}
         <div className="dashboard-card mb-6 space-y-5">
           <div>
             <h3 className="font-serif text-lg font-semibold">Spa Operations</h3>
             <p className="text-sm text-gray-500 mt-1">This information is used to match candidates to your roles. The more you complete, the better your matches.</p>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1.5">Treatment Rooms</label>
               <input type="number" value={profile.num_treatment_rooms || ''} onChange={(e) => update('num_treatment_rooms', e.target.value)} className="input-field" placeholder="e.g. 12" />
@@ -327,25 +319,6 @@ export default function EmployerProfilePage() {
               <textarea rows={3} value={profile.agency_note || ''} onChange={(e) => update('agency_note', e.target.value)} className="input-field" placeholder="Any specific requirements for temporary staff..." />
             </div>
           )}
-
-          {/* Commute — shown to candidates on every shift offer, so they can
-              judge whether they can actually get to you before accepting. */}
-          <div className="pt-2 border-t border-border space-y-4">
-            <div>
-              <h4 className="text-sm font-medium text-gray-700">Getting to your property</h4>
-              <p className="text-xs text-gray-500 mt-0.5">Candidates see this on every shift offer - it helps them accept faster, especially for same-day cover.</p>
-            </div>
-            <label className="flex items-center space-x-3 cursor-pointer">
-              <input type="checkbox" checked={profile.commute_car_required || false} onChange={(e) => update('commute_car_required', e.target.checked)}
-                className="w-4 h-4 border-gray-300 text-black focus:ring-black rounded-sm" />
-              <span className="text-sm text-gray-700">A car is required to reach us (no practical public transport)</span>
-            </label>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">Nearest Public Transport</label>
-              <input type="text" value={profile.nearest_transport || ''} onChange={(e) => update('nearest_transport', e.target.value)} className="input-field"
-                placeholder="e.g. Bath Spa station 10 min walk; bus 271 stops outside" />
-            </div>
-          </div>
         </div>
 
         {/* Save */}
@@ -353,7 +326,7 @@ export default function EmployerProfilePage() {
         <div className="dashboard-card mb-6">
           <h2 className="text-[15px] font-medium text-ink mb-1">Property Photos</h2>
           <p className="text-[12px] text-muted mb-4">Show candidates where they could be working - spa, treatment rooms, grounds. Up to 6 photos, shown on your role listings.</p>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
             {(profile.property_photos || []).map((url: string) => (
               <div key={url} className="relative aspect-[4/3] rounded-lg overflow-hidden bg-surface group">
                 <img src={url} alt="" className="w-full h-full object-cover" />

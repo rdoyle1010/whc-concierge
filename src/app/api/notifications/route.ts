@@ -4,7 +4,7 @@ import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { markAsRead, markAllRead } from '@/lib/notifications'
 
-// The user id is ALWAYS derived from the authenticated session — never from
+// The user id is ALWAYS derived from the authenticated session - never from
 // a query param or the request body. Any userId passed by the client is ignored.
 
 function getAuthedUser() {
@@ -56,7 +56,7 @@ export async function PATCH(req: NextRequest) {
     }
 
     if (notificationId) {
-      // Scoped to the caller's own notifications — cannot mark anyone else's read
+      // Scoped to the caller's own notifications - cannot mark anyone else's read
       const { error } = await markAsRead(notificationId, user.id)
       if (error) return NextResponse.json({ error: error.message }, { status: 500 })
       return NextResponse.json({ success: true })

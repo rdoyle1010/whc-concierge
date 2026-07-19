@@ -108,7 +108,7 @@ export default function BrowseRolesPage() {
           <div className="bg-white border border-border rounded-xl p-16 text-center">
             <Briefcase size={32} className="mx-auto text-muted mb-3" />
             <p className="text-[15px] font-medium text-ink mb-2">No roles listed yet</p>
-            <p className="text-[13px] text-muted">Check back soon — new roles are added regularly.</p>
+            <p className="text-[13px] text-muted">Check back soon - new roles are added regularly.</p>
           </div>
         ) : (
           <>
@@ -128,7 +128,7 @@ export default function BrowseRolesPage() {
                   {(job.contract_type || job.job_type) && <span className="flex items-center gap-1"><Briefcase size={11} />{(job.contract_type || job.job_type || '').replace('_', ' ')}</span>}
                 </div>
                 {job.salary_min && job.salary_max && (
-                  <p className="text-[14px] font-medium text-accent">£{(job.salary_min/1000).toFixed(0)}k – £{(job.salary_max/1000).toFixed(0)}k</p>
+                  <p className="text-[14px] font-medium text-accent">£{(job.salary_min/1000).toFixed(0)}k - £{(job.salary_max/1000).toFixed(0)}k</p>
                 )}
                 {(job.required_brands || []).length > 0 && (
                   <div className="flex flex-wrap gap-1 mt-3">{(job.required_brands || []).slice(0, 3).map((b: string) => <span key={b} className="text-[10px] font-medium bg-[#FDF6EC] text-accent border border-accent/20 px-2 py-0.5 rounded-full">{b}</span>)}</div>

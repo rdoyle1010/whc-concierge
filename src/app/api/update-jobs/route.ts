@@ -55,7 +55,7 @@ export async function GET() {
     .eq('job_title', 'Beauty Therapist')
   results.push({ job: 'Beauty Therapist → Spa Attendant', error: e3?.message || null })
 
-  // 4. Spa Receptionist — update description
+  // 4. Spa Receptionist - update description
   const { error: e4 } = await supabase.from('job_listings')
     .update({
       job_description: 'The Spa Receptionist delivers a warm, seamless and luxurious welcome to all guests at Fairmont Cheshire, The Mere. Manage arrivals and departures, operate telephones professionally, maintain full knowledge of spa services, handle guest concerns, and maximise value by promoting spa services. 1-2 years experience in a spa or luxury front-of-house role preferred.',

@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
     const propertyName = job.employer_profiles?.property_name || job.employer_profiles?.company_name || ''
     const jobTitle = job.job_title || job.title || ''
     const salary = job.salary_min && job.salary_max
-      ? `£${Math.round(job.salary_min / 1000)}k–£${Math.round(job.salary_max / 1000)}k`
+      ? `£${Math.round(job.salary_min / 1000)}k-£${Math.round(job.salary_max / 1000)}k`
       : undefined
 
     // Get all candidates with job alerts enabled
@@ -84,7 +84,7 @@ export async function POST(req: NextRequest) {
           headers: { 'Authorization': `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' },
           body: JSON.stringify({
             from: FROM_EMAIL, to: email,
-            subject: `New role matching your profile — ${jobTitle} at ${propertyName}, ${result.score}% match`,
+            subject: `New role matching your profile - ${jobTitle} at ${propertyName}, ${result.score}% match`,
             html,
           }),
         })

@@ -73,7 +73,7 @@ export default function OnboardingWizard() {
     location_preferences: [] as string[], needs_accommodation: false,
   })
 
-  // Agency register — opt-in captured here; listing only activates once the
+  // Agency register - opt-in captured here; listing only activates once the
   // monthly subscription is paid (the Stripe webhook flips agency_available).
   const [agency, setAgency] = useState({
     optIn: false, hourly_rate: '', phone: '', postcode: '', travel_radius_miles: '', tier: 'basic' as 'basic' | 'featured',
@@ -299,7 +299,7 @@ export default function OnboardingWizard() {
 
   // Persist the agency-work details (rate, mobile, postcode, radius) via the
   // agency settings API, which also geocodes the postcode to real coordinates.
-  // agency_available itself is NOT saved here — only the Stripe webhook may
+  // agency_available itself is NOT saved here - only the Stripe webhook may
   // set it, after the £10/mo listing subscription is paid.
   const saveAgencyFields = async () => {
     if (!profileId) return
@@ -379,7 +379,7 @@ export default function OnboardingWizard() {
         {/* ═══ STEP 1: Basic Info ═══ */}
         {step === 1 && (
           <div className="space-y-5">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="col-span-2"><label className="eyebrow block mb-1.5">Full Name *</label><input type="text" value={basic.full_name} onChange={e => setBasic({ ...basic, full_name: e.target.value })} className="input-field" /></div>
               <div><label className="eyebrow block mb-1.5">City / Location *</label><input type="text" value={basic.location_city} onChange={e => setBasic({ ...basic, location_city: e.target.value })} className="input-field" /></div>
               <div><label className="eyebrow block mb-1.5">Country</label><input type="text" value={basic.location_country} onChange={e => setBasic({ ...basic, location_country: e.target.value })} className="input-field" /></div>
@@ -400,7 +400,7 @@ export default function OnboardingWizard() {
                 ))}
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div><label className="eyebrow block mb-1.5">Years of Experience</label><input type="number" value={basic.years_experience} onChange={e => setBasic({ ...basic, years_experience: e.target.value })} className="input-field" /></div>
               <div><label className="eyebrow block mb-1.5">Current Job Title</label><input type="text" value={basic.current_job_title} onChange={e => setBasic({ ...basic, current_job_title: e.target.value })} className="input-field" /></div>
             </div>
@@ -541,7 +541,7 @@ export default function OnboardingWizard() {
             })}
             {selectedPH.size > 0 && (
               <div className="space-y-2 pt-4 border-t border-border">
-                <p className="eyebrow">Selected ({selectedPH.size}) — set proficiency &amp; years</p>
+                <p className="eyebrow">Selected ({selectedPH.size}) - set proficiency &amp; years</p>
                 {Array.from(selectedPH.entries()).map(([id, data]) => (
                   <div key={id} className="flex items-center gap-3 p-2 bg-surface rounded-lg">
                     <span className="text-[13px] text-ink flex-1">{data.name}</span>
@@ -634,7 +634,7 @@ export default function OnboardingWizard() {
 
             {(agency.optIn || agencyLive.available) && (
               <>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="eyebrow block mb-1.5">Hourly Rate (£) *</label>
                     <input type="number" min={1} value={agency.hourly_rate} onChange={e => setAgency({ ...agency, hourly_rate: e.target.value })} className="input-field" placeholder="e.g. 25" />
@@ -646,7 +646,7 @@ export default function OnboardingWizard() {
                     <p className="text-[11px] text-muted mt-1">Urgent same-day offers are sent by text.</p>
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="eyebrow block mb-1.5">Postcode</label>
                     <input type="text" value={agency.postcode} onChange={e => setAgency({ ...agency, postcode: e.target.value })} className="input-field" placeholder="SW1A 1AA" />
@@ -687,7 +687,7 @@ export default function OnboardingWizard() {
             </div>
 
             {/* Summary cards */}
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="p-3 bg-surface rounded-lg"><p className="eyebrow mb-1">Treatment Skills</p><p className="text-[18px] font-semibold text-ink">{Array.from(selectedSkills.keys()).filter(id => treatmentSkills.some(s => s.id === id)).length}</p></div>
               <div className="p-3 bg-surface rounded-lg"><p className="eyebrow mb-1">Business Skills</p><p className="text-[18px] font-semibold text-ink">{Array.from(selectedSkills.keys()).filter(id => businessSkills.some(s => s.id === id)).length}</p></div>
               <div className="p-3 bg-surface rounded-lg"><p className="eyebrow mb-1">Systems</p><p className="text-[18px] font-semibold text-ink">{selectedSystems.size}</p></div>

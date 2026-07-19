@@ -22,11 +22,11 @@ const ROWS: { label: string; key: string; boolean?: boolean }[] = [
 ]
 
 const FAQS = [
-  { q: 'Can I upgrade my listing?', a: 'Yes — contact us to upgrade during the listing period. We\'ll apply the price difference to the higher tier.' },
+  { q: 'Can I upgrade my listing?', a: 'Yes - contact us to upgrade during the listing period. We\'ll apply the price difference to the higher tier.' },
   { q: 'What payment methods do you accept?', a: 'All major credit and debit cards via Stripe. We also accept Apple Pay and Google Pay.' },
   { q: 'Do you charge commission on permanent hires?', a: 'No, never. You pay for the listing, not the hire. Once you\'ve found your candidate, there are no additional fees.' },
   { q: 'Can I get a refund?', a: 'Within 48 hours if no applications have been received. Contact us and we\'ll process it promptly.' },
-  { q: 'Do you offer bulk discounts?', a: 'Yes — contact us for volume pricing on multiple listings. We offer packages for hotel groups and multi-property employers.' },
+  { q: 'Do you offer bulk discounts?', a: 'Yes - contact us for volume pricing on multiple listings. We offer packages for hotel groups and multi-property employers.' },
 ]
 
 export default function PricingPage() {
@@ -49,7 +49,7 @@ export default function PricingPage() {
         </div>
       </section>
 
-      {/* Talent — Free */}
+      {/* Talent - Free */}
       <section className="pb-12 px-6" style={{ background: '#F8F7F5' }}>
         <div className="max-w-5xl mx-auto -mt-4 pt-12">
           <div className="bg-white rounded-xl p-8 md:p-10" style={{ border: '1px solid #E5E5E5' }}>
@@ -57,9 +57,9 @@ export default function PricingPage() {
               <div>
                 <p className="text-[11px] tracking-[0.15em] uppercase font-medium mb-2" style={{ color: '#C9A96E' }}>For Therapists &amp; Professionals</p>
                 <h2 className="text-[28px] font-medium mb-2" style={{ color: '#1a1a1a' }}>Free to join</h2>
-                <p className="text-[14px] mb-4" style={{ color: '#6B7280' }}>Create your profile, get matched, apply for roles — always free.</p>
+                <p className="text-[14px] mb-4" style={{ color: '#6B7280' }}>Create your profile, get matched, apply for roles - always free.</p>
                 <div className="bg-white rounded-lg p-4 mb-4" style={{ border: '1px solid rgba(201, 169, 110, 0.25)', background: '#FDFBF7' }}>
-                  <p className="text-[13px] font-medium mb-1" style={{ color: '#1a1a1a' }}>Go Featured — £10/month</p>
+                  <p className="text-[13px] font-medium mb-1" style={{ color: '#1a1a1a' }}>Go Featured - £10/month</p>
                   <p className="text-[12px]" style={{ color: '#6B7280' }}>Priority visibility, featured badge, appear at the top of search results.</p>
                 </div>
               </div>

@@ -31,7 +31,7 @@ export default function RoleListingMockup() {
         <span className="inline-flex items-center gap-1" style={{ color: '#6B7280' }}>
           <MapPin size={12} /> South West England
         </span>
-        <span className="font-medium" style={{ color: '#C9A96E' }}>£32,000 – £38,000</span>
+        <span className="font-medium" style={{ color: '#C9A96E' }}>£32,000 - £38,000</span>
       </div>
 
       <div className="mt-3 flex flex-wrap gap-1.5">

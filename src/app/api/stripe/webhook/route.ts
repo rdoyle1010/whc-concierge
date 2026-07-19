@@ -191,7 +191,7 @@ export async function POST(req: NextRequest) {
         break
       }
 
-      // Featured profile — legacy subscriptions carry no metadata, and were
+      // Featured profile - legacy subscriptions carry no metadata, and were
       // only ever created for featured profiles.
       if (lapsed) {
         await supabase.from('candidate_profiles').update({

@@ -22,12 +22,12 @@ const DEFAULT_SLIDES = [
   {
     image: 'https://plus.unsplash.com/premium_photo-1723514505301-682c69fc8edd?w=1920&q=80&auto=format&fit=crop',
     heading: 'Every Profile, Personally Vetted',
-    text: 'Only qualified wellness professionals make it onto the platform. CIDESCO, CIBTAC, VTCT — we verify credentials so you don\'t have to.',
+    text: 'Only qualified wellness professionals make it onto the platform. CIDESCO, CIBTAC, VTCT - we verify credentials so you don\'t have to.',
   },
   {
     image: 'https://images.unsplash.com/photo-1774175927603-129481b459c6?w=1920&q=80&auto=format&fit=crop',
     heading: 'Access the UK\'s Finest Properties',
-    text: 'From five-star London hotels to country estate spas — exclusive roles at properties that set the standard.',
+    text: 'From five-star London hotels to country estate spas - exclusive roles at properties that set the standard.',
   },
   {
     image: 'https://images.unsplash.com/photo-1566520528415-5dba36001e10?w=1920&q=80&auto=format&fit=crop',
@@ -66,7 +66,7 @@ export default function HeroCarousel() {
           )
         }
       } catch {
-        // Table doesn't exist yet — keep defaults
+        // Table doesn't exist yet - keep defaults
       }
     }
     fetchSlides()
@@ -112,7 +112,7 @@ export default function HeroCarousel() {
             {slides[current]?.cta ? 'WHC Concierge' : 'Why WHC Concierge'}
           </p>
           <h2
-            className="text-[32px] md:text-[44px] lg:text-[56px] font-medium leading-[1.08] tracking-tight mb-6 whitespace-pre-line"
+            className="font-serif text-[32px] md:text-[44px] lg:text-[56px] font-medium leading-[1.08] tracking-tight mb-6 whitespace-pre-line"
             style={{ color: '#FFFFFF', textShadow: '0 2px 16px rgba(0,0,0,0.5)' }}
             key={`h-${current}`}
           >

@@ -37,13 +37,13 @@ function LoginForm() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { setError('Login failed'); setLoading(false); return }
 
-      // 3. Check role from profiles table (may not exist — that's OK)
+      // 3. Check role from profiles table (may not exist - that's OK)
       let userRole: string | null = null
       try {
         const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
         userRole = profile?.role || null
       } catch {
-        // profiles table may not exist or query may fail — continue
+        // profiles table may not exist or query may fail - continue
       }
 
       // Also check user_metadata
@@ -57,25 +57,25 @@ function LoginForm() {
         return
       }
 
-      // 4. Route — admin
+      // 4. Route - admin
       if (userRole === 'admin' || metaRole === 'admin') {
         router.push('/admin/dashboard')
         return
       }
 
-      // 5. Route — talent: redirect immediately, never touch employer_profiles
+      // 5. Route - talent: redirect immediately, never touch employer_profiles
       if (userRole === 'talent' || userRole === 'candidate' || metaRole === 'talent' || metaRole === 'candidate') {
         router.push('/talent/dashboard')
         return
       }
 
-      // 6. Route — employer
+      // 6. Route - employer
       if (userRole === 'employer' || metaRole === 'employer') {
         router.push('/employer/dashboard')
         return
       }
 
-      // 7. Role unknown — only check employer_profiles if user selected employer tab
+      // 7. Role unknown - only check employer_profiles if user selected employer tab
       if (role === 'employer') {
         try {
           const { data: emp } = await supabase.from('employer_profiles').select('id').eq('user_id', user.id).single()
@@ -85,7 +85,7 @@ function LoginForm() {
         }
       }
 
-      // 8. Default — talent dashboard
+      // 8. Default - talent dashboard
       router.push('/talent/dashboard')
     } catch (err: any) {
       setError(err.message || 'An unexpected error occurred')
@@ -102,7 +102,7 @@ function LoginForm() {
           <h1 className="text-[28px] font-medium text-ink mt-10 mb-1 leading-tight">Welcome back</h1>
           <p className="text-[14px] text-muted mb-8">Sign in to your account</p>
 
-          {/* Tabs — outside the form to prevent accidental submission */}
+          {/* Tabs - outside the form to prevent accidental submission */}
           <div className="flex bg-surface rounded-lg p-1 mb-7">
             <button type="button" onClick={() => setRole('talent')} className={`flex-1 py-2 rounded-md text-[13px] font-medium transition-colors ${role === 'talent' ? 'bg-white text-ink shadow-sm' : 'text-muted'}`}>Talent</button>
             <button type="button" onClick={() => setRole('employer')} className={`flex-1 py-2 rounded-md text-[13px] font-medium transition-colors ${role === 'employer' ? 'bg-white text-ink shadow-sm' : 'text-muted'}`}>Hotel / Employer</button>

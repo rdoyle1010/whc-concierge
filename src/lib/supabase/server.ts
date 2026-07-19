@@ -18,7 +18,7 @@ export function createServerSupabaseClient() {
               cookieStore.set(name, value, options)
             )
           } catch {
-            // Called from Server Component — ignore
+            // Called from Server Component - ignore
           }
         },
       },

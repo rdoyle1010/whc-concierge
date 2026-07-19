@@ -500,7 +500,7 @@ export async function POST(req: NextRequest) {
         '/talent/agency',
       )
 
-      // Email + (for urgent offers) SMS — all awaited: fire-and-forget dies
+      // Email + (for urgent offers) SMS - all awaited: fire-and-forget dies
       // on serverless. None of these may fail the offer itself.
       try {
         const jobs: Promise<unknown>[] = []
@@ -719,7 +719,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: `This offer has already been ${booking.status}` }, { status: 400 })
     }
 
-    // Expired offers can no longer be actioned — mark them so both sides see
+    // Expired offers can no longer be actioned - mark them so both sides see
     // it. A lapsed CASCADE offer moves to the next therapist instead of dying.
     if (isExpired(booking)) {
       if (Array.isArray(booking.cascade_queue)) {

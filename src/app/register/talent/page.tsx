@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import Image from 'next/image'
+import Wordmark from '@/components/Wordmark'
 import { createClient } from '@/lib/supabase/client'
 import { ROLE_LEVELS, TRAVEL_OPTIONS, AVAILABILITY_STATUSES } from '@/lib/constants'
 import CollapsibleCheckboxSection from '@/components/CollapsibleCheckboxSection'
@@ -138,7 +138,7 @@ export default function TalentRegisterPage() {
     const systems_experience = form.qualifications.filter(q => systemsList.includes(q))
     const qualifications_only = form.qualifications.filter(q => !systemsList.includes(q))
 
-    // Insert profile — NO email column (email lives in auth.users)
+    // Insert profile - NO email column (email lives in auth.users)
     const profileData: Record<string, any> = {
       user_id: userId,
       full_name: form.full_name,
@@ -193,7 +193,7 @@ export default function TalentRegisterPage() {
   return (
     <div className="min-h-screen bg-white">
       <div className="border-b border-neutral-100 px-4 py-4 flex items-center justify-between max-w-3xl mx-auto">
-        <Link href="/"><Image src="/images/whc-logo.jpg" alt="Wellness House Collective" width={130} height={42} className="object-contain mix-blend-multiply" /></Link>
+        <Wordmark />
         <Link href="/login?role=talent" className="text-sm text-neutral-400 hover:text-black">Already have an account?</Link>
       </div>
 
@@ -218,8 +218,8 @@ export default function TalentRegisterPage() {
         {/* ── Step 1: Account & Personal ── */}
         {step === 1 && (
           <div className="space-y-5">
-            <p className="text-xs font-medium text-neutral-400 uppercase tracking-widest mb-6">Step 1 — Account & Personal Details</p>
-            <div className="grid grid-cols-2 gap-4">
+            <p className="text-xs font-medium text-neutral-400 uppercase tracking-widest mb-6">Step 1 - Account & Personal Details</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="col-span-2"><label className="block text-xs font-medium text-neutral-500 uppercase tracking-wider mb-1.5">Full Name *</label><input type="text" value={form.full_name} onChange={(e) => update('full_name', e.target.value)} className="input-field" /></div>
               <div className="col-span-2"><label className="block text-xs font-medium text-neutral-500 uppercase tracking-wider mb-1.5">Email *</label><input type="email" value={form.email} onChange={(e) => update('email', e.target.value)} className="input-field" /></div>
               <div><label className="block text-xs font-medium text-neutral-500 uppercase tracking-wider mb-1.5">Password *</label><input type="password" value={form.password} onChange={(e) => update('password', e.target.value)} className="input-field" /></div>
@@ -238,7 +238,7 @@ export default function TalentRegisterPage() {
         {/* ── Step 2: Professional Profile ── */}
         {step === 2 && (
           <div className="space-y-5">
-            <p className="text-xs font-medium text-neutral-400 uppercase tracking-widest mb-6">Step 2 — Professional Profile</p>
+            <p className="text-xs font-medium text-neutral-400 uppercase tracking-widest mb-6">Step 2 - Professional Profile</p>
             <div>
               <label className="block text-xs font-medium text-neutral-500 uppercase tracking-wider mb-1.5">Role Level *</label>
               <select value={form.role_level} onChange={(e) => update('role_level', e.target.value)} className="input-field">
@@ -266,11 +266,11 @@ export default function TalentRegisterPage() {
         {/* ── Step 3: Services, Product Houses, Qualifications ── */}
         {step === 3 && (
           <div className="space-y-4">
-            <p className="text-xs font-medium text-neutral-400 uppercase tracking-widest mb-4">Step 3 — Skills & Qualifications</p>
+            <p className="text-xs font-medium text-neutral-400 uppercase tracking-widest mb-4">Step 3 - Skills & Qualifications</p>
 
             {/* Section A: Services Offered */}
             <CollapsibleCheckboxSection
-              title="A — Services Offered"
+              title="A - Services Offered"
               categories={SERVICES_CATEGORIES}
               selected={form.services_offered}
               onChange={(v) => update('services_offered', v)}
@@ -278,7 +278,7 @@ export default function TalentRegisterPage() {
 
             {/* Section B: Product Houses */}
             <CollapsibleCheckboxSection
-              title="B — Product Houses"
+              title="B - Product Houses"
               flatItems={PRODUCT_HOUSES_FULL}
               selected={form.product_houses}
               onChange={(v) => update('product_houses', v)}
@@ -286,7 +286,7 @@ export default function TalentRegisterPage() {
 
             {/* Section C: Qualifications & Certifications */}
             <CollapsibleCheckboxSection
-              title="C — Qualifications & Certifications"
+              title="C - Qualifications & Certifications"
               categories={QUALIFICATIONS_CATEGORIES}
               selected={form.qualifications}
               onChange={(v) => update('qualifications', v)}
@@ -304,7 +304,7 @@ export default function TalentRegisterPage() {
                 ))}
               </div>
               {form.travel_availability === 'radius' && (
-                <div className="grid grid-cols-2 gap-4 mt-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-3">
                   <div><label className="block text-xs text-neutral-500 mb-1">Miles</label><input type="number" value={form.travel_radius_miles} onChange={(e) => update('travel_radius_miles', e.target.value)} className="input-field" placeholder="25" /></div>
                   <div><label className="block text-xs text-neutral-500 mb-1">From Postcode</label><input type="text" value={form.travel_postcode} onChange={(e) => update('travel_postcode', e.target.value)} className="input-field" /></div>
                 </div>
@@ -318,7 +318,7 @@ export default function TalentRegisterPage() {
         {/* ── Step 4: Documents ── */}
         {step === 4 && (
           <div className="space-y-6">
-            <p className="text-xs font-medium text-neutral-400 uppercase tracking-widest mb-2">Step 4 — Documents & Verification</p>
+            <p className="text-xs font-medium text-neutral-400 uppercase tracking-widest mb-2">Step 4 - Documents & Verification</p>
 
             <div>
               <label className="block text-xs font-medium text-neutral-500 uppercase tracking-wider mb-1.5">CV (PDF or Word)</label>

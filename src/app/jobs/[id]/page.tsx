@@ -97,7 +97,7 @@ export default async function RoleDetailPage({ params }: { params: { id: string 
 
   const salaryRange =
     job.salary_min && job.salary_max
-      ? `£${Number(job.salary_min).toLocaleString()} – £${Number(job.salary_max).toLocaleString()}`
+      ? `£${Number(job.salary_min).toLocaleString()} - £${Number(job.salary_max).toLocaleString()}`
       : null
 
   // JobPosting structured data for Google Jobs eligibility

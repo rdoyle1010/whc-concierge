@@ -20,7 +20,7 @@ export default function NotificationBell({ userId }: { userId: string }) {
   const ref = useRef<HTMLDivElement>(null)
 
   const load = async () => {
-    // The API derives the user from the session — no userId param needed
+    // The API derives the user from the session - no userId param needed
     const res = await fetch('/api/notifications')
     if (res.ok) {
       const data = await res.json()

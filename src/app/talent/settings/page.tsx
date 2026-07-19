@@ -186,7 +186,7 @@ export default function TalentSettingsPage() {
     if (!user) return
     await fetch('/api/contact-notify', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: 'Account Deletion Request', email: user.email, subject: `Account Deletion Request — ${user.id}`, message: `User ${user.email} (ID: ${user.id}) has requested account deletion via the settings page.`, type: 'general' }),
+      body: JSON.stringify({ name: 'Account Deletion Request', email: user.email, subject: `Account Deletion Request - ${user.id}`, message: `User ${user.email} (ID: ${user.id}) has requested account deletion via the settings page.`, type: 'general' }),
     }).catch(() => {})
     setDeleteRequested(true)
     setShowDeleteRequest(false)

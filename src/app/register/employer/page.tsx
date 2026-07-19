@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import Image from 'next/image'
+import Wordmark from '@/components/Wordmark'
 import { createClient } from '@/lib/supabase/client'
 import { PRODUCT_HOUSES, SYSTEMS, COMPANY_TYPES } from '@/lib/constants'
 import CheckboxGroup from '@/components/CheckboxGroup'
@@ -79,7 +79,7 @@ export default function EmployerRegisterPage() {
   return (
     <div className="min-h-screen bg-white">
       <div className="border-b border-neutral-100 px-4 py-4 flex items-center justify-between max-w-3xl mx-auto">
-        <Link href="/"><Image src="/images/whc-logo.jpg" alt="Wellness House Collective" width={130} height={42} className="object-contain mix-blend-multiply" /></Link>
+        <Wordmark />
         <Link href="/login?role=employer" className="text-sm text-neutral-400 hover:text-black">Already registered?</Link>
       </div>
 
@@ -104,7 +104,7 @@ export default function EmployerRegisterPage() {
         {/* Step 1: Company Details */}
         {step === 1 && (
           <div className="space-y-5">
-            <p className="text-xs font-medium text-neutral-400 uppercase tracking-widest mb-6">Step 1 — Company Details</p>
+            <p className="text-xs font-medium text-neutral-400 uppercase tracking-widest mb-6">Step 1 - Company Details</p>
             <div className="grid grid-cols-2 gap-4">
               <div className="col-span-2"><label className="block text-xs font-medium text-neutral-500 uppercase tracking-wider mb-1.5">Company / Property Name *</label><input type="text" value={form.company_name} onChange={(e) => update('company_name', e.target.value)} className="input-field" /></div>
               <div><label className="block text-xs font-medium text-neutral-500 uppercase tracking-wider mb-1.5">Contact Name *</label><input type="text" value={form.contact_name} onChange={(e) => update('contact_name', e.target.value)} className="input-field" /></div>
@@ -125,7 +125,7 @@ export default function EmployerRegisterPage() {
         {/* Step 2: Spa Operations */}
         {step === 2 && (
           <div className="space-y-8">
-            <p className="text-xs font-medium text-neutral-400 uppercase tracking-widest mb-2">Step 2 — Spa Operations</p>
+            <p className="text-xs font-medium text-neutral-400 uppercase tracking-widest mb-2">Step 2 - Spa Operations</p>
             <CheckboxGroup label="Product Houses Used" options={PRODUCT_HOUSES} selected={form.product_houses_used} onChange={(v) => update('product_houses_used', v)} />
             <CheckboxGroup label="Systems Used" options={SYSTEMS} selected={form.systems_used} onChange={(v) => update('systems_used', v)} columns={2} />
             <div className="grid grid-cols-2 gap-4">
@@ -139,11 +139,11 @@ export default function EmployerRegisterPage() {
         {/* Step 3: Verification */}
         {step === 3 && (
           <div className="space-y-6">
-            <p className="text-xs font-medium text-neutral-400 uppercase tracking-widest mb-2">Step 3 — Verification</p>
+            <p className="text-xs font-medium text-neutral-400 uppercase tracking-widest mb-2">Step 3 - Verification</p>
             <div><label className="block text-xs font-medium text-neutral-500 uppercase tracking-wider mb-1.5">Work Email (for verification)</label><input type="email" value={form.work_email} onChange={(e) => update('work_email', e.target.value)} className="input-field" placeholder="name@property.com" /></div>
             {/* Terms & Conditions */}
             <div className="border border-border rounded-lg p-4 max-h-48 overflow-y-auto text-[12px] text-secondary leading-relaxed">
-              <p className="font-medium text-ink mb-2">Terms & Conditions — Employer</p>
+              <p className="font-medium text-ink mb-2">Terms & Conditions - Employer</p>
               <p className="mb-2">By registering a property on WHC Concierge, you agree to the following:</p>
               <p className="mb-2">1. <strong>Accuracy of listings:</strong> All job listings and company information must be accurate and represent genuine vacancies. WHC Concierge reserves the right to remove misleading listings.</p>
               <p className="mb-2">2. <strong>Account review:</strong> All employer accounts are subject to review and approval by the WHC Concierge team before listings become visible to candidates.</p>

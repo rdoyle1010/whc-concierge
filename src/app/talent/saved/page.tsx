@@ -64,7 +64,7 @@ export default function SavedJobsPage() {
                 <div className="flex flex-wrap gap-2 text-[12px] text-muted mb-4">
                   {job.location && <span className="flex items-center gap-1"><MapPin size={11} />{job.location}</span>}
                   {job.contract_type && <span>{job.contract_type.replace('_', ' ')}</span>}
-                  {job.salary_min && job.salary_max && <span>£{(job.salary_min/1000).toFixed(0)}k–£{(job.salary_max/1000).toFixed(0)}k</span>}
+                  {job.salary_min && job.salary_max && <span>£{(job.salary_min/1000).toFixed(0)}k-£{(job.salary_max/1000).toFixed(0)}k</span>}
                 </div>
                 <div className="flex gap-2">
                   <Link href={`/jobs/${saved.job_id || job.id}`} className="btn-primary flex-1 text-center text-[12px]">View & Apply</Link>

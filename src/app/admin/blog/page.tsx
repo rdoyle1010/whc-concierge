@@ -236,7 +236,7 @@ export default function AdminBlogPage() {
                     <td className="px-5 py-3.5">
                       {post.category ? (
                         <span className="text-[11px] font-medium bg-[#FDF6EC] text-accent border border-accent/20 px-2 py-0.5 rounded-full">{post.category}</span>
-                      ) : <span className="text-[11px] text-muted">—</span>}
+                      ) : <span className="text-[11px] text-muted">-</span>}
                     </td>
                     <td className="px-5 py-3.5">
                       <span className={`text-[11px] font-medium px-2 py-0.5 rounded-full ${post.status === 'published' ? 'bg-emerald-50 text-emerald-700' : 'bg-neutral-100 text-neutral-500'}`}>

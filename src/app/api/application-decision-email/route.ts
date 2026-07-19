@@ -41,7 +41,7 @@ export async function POST(req: NextRequest) {
     let html: string
 
     if (decision === 'approved' || decision === 'shortlisted' || decision === 'accepted') {
-      subject = `Great News — Your Application for ${jobTitle} Has Been Shortlisted`
+      subject = `Great News - Your Application for ${jobTitle} Has Been Shortlisted`
       html = approvalEmailHtml({ applicantName: name, jobTitle, propertyName: property })
     } else {
       subject = `Update on Your Application for ${jobTitle}`
@@ -60,7 +60,7 @@ export async function POST(req: NextRequest) {
     })
     if (!res.ok) {
       const detail = await res.text().catch(() => '')
-      console.error(`[Decision email FAILED ${res.status}] To: ${toEmail} — ${detail.slice(0, 300)}`)
+      console.error(`[Decision email FAILED ${res.status}] To: ${toEmail} - ${detail.slice(0, 300)}`)
     }
 
     return NextResponse.json({ success: true })

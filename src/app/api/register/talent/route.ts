@@ -21,7 +21,7 @@ async function sendWelcomeEmail(email: string, firstName: string) {
     })
     if (!res.ok) {
       const detail = await res.text().catch(() => '')
-      console.error(`[Welcome email FAILED ${res.status}] To: ${email} — ${detail.slice(0, 300)}`)
+      console.error(`[Welcome email FAILED ${res.status}] To: ${email} - ${detail.slice(0, 300)}`)
     }
   } catch (err) {
     console.error('Welcome email failed:', err)
@@ -90,10 +90,10 @@ export async function POST(req: NextRequest) {
     }
 
     if (!userVerified) {
-      return NextResponse.json({ error: 'User not found in auth — please try again' }, { status: 400 })
+      return NextResponse.json({ error: 'User not found in auth - please try again' }, { status: 400 })
     }
 
-    // Ensure the shared profiles row exists — messaging FKs, role routing and
+    // Ensure the shared profiles row exists - messaging FKs, role routing and
     // notifications all key on it. Live check constraint requires 'candidate'
     // (not 'talent'); the app's auth helpers recognise both.
     // ignoreDuplicates keeps this idempotent and never overwrites an existing row.

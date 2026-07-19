@@ -13,7 +13,7 @@ import FounderImage from '@/components/FounderImage'
 
 export const metadata: Metadata = {
   title: { absolute: 'About WHC Concierge | The UK\'s Specialist Luxury Wellness Recruitment Platform' },
-  description: 'WHC Concierge is the UK\'s specialist recruitment platform for luxury spa and wellness — built by someone who has lived inside it.',
+  description: 'WHC Concierge is the UK\'s specialist recruitment platform for luxury spa and wellness - built by someone who has lived inside it.',
   alternates: { canonical: 'https://talent.wellnesshousecollective.co.uk/about' },
   openGraph: {
     title: 'About WHC Concierge | The UK\'s Specialist Luxury Wellness Recruitment Platform',
@@ -26,7 +26,7 @@ export default function AboutPage() {
     <>
       <Navbar />
       <main className="pt-[60px]">
-        {/* Hero — typography matches /pricing and /faq */}
+        {/* Hero - typography matches /pricing and /faq */}
         <section className="pt-28 pb-16 px-6 bg-white">
           <div className="max-w-4xl mx-auto text-center">
             <p className="text-[11px] tracking-[0.15em] uppercase font-medium mb-4" style={{ color: '#C9A96E' }}>About</p>
@@ -34,7 +34,7 @@ export default function AboutPage() {
               Built for an industry that deserves better.
             </h1>
             <p className="text-[16px] md:text-[18px] leading-[1.7] max-w-2xl mx-auto" style={{ color: '#6B7280' }}>
-              WHC Concierge is the UK&apos;s specialist recruitment platform for luxury spa and wellness — built by someone who has lived inside it.
+              WHC Concierge is the UK&apos;s specialist recruitment platform for luxury spa and wellness - built by someone who has lived inside it.
             </p>
           </div>
         </section>
@@ -46,7 +46,7 @@ export default function AboutPage() {
               Recruitment in luxury wellness has been broken for years. Generic job boards do not understand what a CIDESCO qualification means, or why ESPA training is not interchangeable with Dermalogica. Talented therapists vanish into stacks of unsuitable applicants. Five-star properties settle for whoever applied first. Everyone loses.
             </p>
             <p className="text-[16px] md:text-[17px] leading-[1.8]" style={{ color: '#374151' }}>
-              WHC Concierge exists to change that. Every profile is vetted. Every property is verified. Our matching engine scores candidates across fifteen weighted categories — treatment skills, product house expertise, brand experience, location, availability, role level — so the right people surface first.
+              WHC Concierge exists to change that. Every profile is vetted. Every property is verified. Our matching engine scores candidates across fifteen weighted categories - treatment skills, product house expertise, brand experience, location, availability, role level - so the right people surface first.
             </p>
             <p className="text-[16px] md:text-[17px] leading-[1.8]" style={{ color: '#374151' }}>
               No commission on hires. No spam. No generic filters built for office workers. Just the tools the wellness industry should always have had.
@@ -58,7 +58,7 @@ export default function AboutPage() {
         <section className="py-20 px-6" style={{ background: '#F8F7F5', borderTop: '1px solid #E8E5E0', borderBottom: '1px solid #E8E5E0' }}>
           <div className="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-[380px_1fr] gap-10 md:gap-14 items-center">
             <div>
-              {/* Rebecca will upload founder-rebecca.jpg to /public/images/ — until then this will fall back to the placeholder */}
+              {/* Rebecca will upload founder-rebecca.jpg to /public/images/ - until then this will fall back to the placeholder */}
               <FounderImage />
             </div>
             <div>
@@ -67,7 +67,7 @@ export default function AboutPage() {
                 Founded by Rebecca Doyle
               </h2>
               <p className="text-[15px] md:text-[16px] leading-[1.8] mb-5" style={{ color: '#374151' }}>
-                Rebecca built her career inside the luxury spa and wellness sector — watching firsthand how poorly the industry was served by mainstream recruitment. Properties she admired struggled to find the right people. Therapists with extraordinary CVs were stuck in the wrong roles. The disconnect was costing the entire sector its standards.
+                Rebecca built her career inside the luxury spa and wellness sector - watching firsthand how poorly the industry was served by mainstream recruitment. Properties she admired struggled to find the right people. Therapists with extraordinary CVs were stuck in the wrong roles. The disconnect was costing the entire sector its standards.
               </p>
               <p className="text-[15px] md:text-[16px] leading-[1.8] mb-8" style={{ color: '#374151' }}>
                 WHC Concierge is the platform she wished had existed when she was hiring. Built with industry knowledge, not algorithms designed for office workers. Designed to elevate the people who make luxury wellness what it is.
@@ -104,7 +104,7 @@ export default function AboutPage() {
                 <Users className="w-10 h-10 mb-4" style={{ color: '#C9A96E' }} />
                 <h3 className="text-xl font-serif text-ink mb-3">Industry expertise</h3>
                 <p className="text-secondary leading-relaxed">
-                  Built by someone who has lived inside luxury wellness — not by generalists guessing at the sector.
+                  Built by someone who has lived inside luxury wellness - not by generalists guessing at the sector.
                 </p>
               </div>
 
@@ -120,7 +120,7 @@ export default function AboutPage() {
                 <Shield className="w-10 h-10 mb-4" style={{ color: '#C9A96E' }} />
                 <h3 className="text-xl font-serif text-ink mb-3">Confidentiality</h3>
                 <p className="text-secondary leading-relaxed">
-                  Stealth mode for candidates. Encrypted profiles. Discretion built in — because reputation matters in this industry.
+                  Stealth mode for candidates. Encrypted profiles. Discretion built in - because reputation matters in this industry.
                 </p>
               </div>
             </div>

@@ -1,5 +1,5 @@
 // Email notification templates for WHC Concierge
-// Uses Resend API — set RESEND_API_KEY in environment
+// Uses Resend API - set RESEND_API_KEY in environment
 
 const RESEND_API_KEY = process.env.RESEND_API_KEY
 const FROM_EMAIL = 'WHC Concierge <noreply@mail.wellnesshousecollective.co.uk>'
@@ -11,7 +11,7 @@ async function sendEmail(to: string, subject: string, html: string) {
   }
 
   try {
-    // Log failures loudly — Resend rejections (bad key, unverified domain)
+    // Log failures loudly - Resend rejections (bad key, unverified domain)
     // otherwise fail in silence and nobody notices for months.
     const res = await fetch('https://api.resend.com/emails', {
       method: 'POST',
@@ -20,7 +20,7 @@ async function sendEmail(to: string, subject: string, html: string) {
     })
     if (!res.ok) {
       const detail = await res.text().catch(() => '')
-      console.error(`[Email FAILED ${res.status}] To: ${to}, Subject: ${subject} — ${detail.slice(0, 300)}`)
+      console.error(`[Email FAILED ${res.status}] To: ${to}, Subject: ${subject} - ${detail.slice(0, 300)}`)
     }
   } catch (err) {
     console.error('Email send failed:', err)

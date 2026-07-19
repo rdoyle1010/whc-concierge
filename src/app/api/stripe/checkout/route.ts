@@ -48,7 +48,7 @@ export async function POST(req: NextRequest) {
         line_items: [{
           price_data: {
             currency: 'gbp',
-            product_data: { name: 'WHC Concierge — Featured Profile', description: 'Monthly featured profile subscription' },
+            product_data: { name: 'WHC Concierge - Featured Profile', description: 'Monthly featured profile subscription' },
             unit_amount: FEATURED_PROFILE_PRICE,
             recurring: { interval: 'month' },
           },
@@ -64,7 +64,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ url: session.url })
     }
 
-    // ── Agency booking payment — the PROPERTY pays the FULL amount through
+    // ── Agency booking payment - the PROPERTY pays the FULL amount through
     // WHC at acceptance: rate × hours + 10% platform fee. WHC pays the
     // therapist out after the shift, minus 5% (handled in Admin → Agency).
     if (type === 'agency_booking') {
@@ -104,7 +104,7 @@ export async function POST(req: NextRequest) {
           price_data: {
             currency: 'gbp',
             product_data: {
-              name: 'WHC Concierge — Agency Shift Booking',
+              name: 'WHC Concierge - Agency Shift Booking',
               description: `${booking.shift_date || 'Agreed date'}: £${booking.rate}/hr × ${effHours}h (£${gross}) + 10% WHC fee (£${fee}). The therapist is paid by WHC after the shift.`,
             },
             unit_amount: totalPounds * 100, // pounds → pence
@@ -120,7 +120,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ url: session.url })
     }
 
-    // ── Agency register listing — therapists pay £10/mo (basic) or £20/mo
+    // ── Agency register listing - therapists pay £10/mo (basic) or £20/mo
     // (featured) to appear on the register. Webhook flips agency_available.
     if (type === 'agency_listing') {
       const { candidateId, tier } = body
@@ -142,8 +142,8 @@ export async function POST(req: NextRequest) {
           price_data: {
             currency: 'gbp',
             product_data: {
-              name: `WHC Concierge — Agency Register (${tierConfig.label})`,
-              description: `Monthly agency listing subscription — ${tierConfig.display}`,
+              name: `WHC Concierge - Agency Register (${tierConfig.label})`,
+              description: `Monthly agency listing subscription - ${tierConfig.display}`,
             },
             unit_amount: tierConfig.price,
             recurring: { interval: 'month' },
@@ -160,7 +160,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ url: session.url })
     }
 
-    // ── Preferred Employer registration — hotels pay £150/year to book
+    // ── Preferred Employer registration - hotels pay £150/year to book
     // agency cover. Webhook flips preferred_employer on payment.
     if (type === 'employer_registration') {
       const { employerId } = body
@@ -180,7 +180,7 @@ export async function POST(req: NextRequest) {
           price_data: {
             currency: 'gbp',
             product_data: {
-              name: 'WHC Concierge — Preferred Employer Registration',
+              name: 'WHC Concierge - Preferred Employer Registration',
               description: 'Annual registration. Book agency cover, carry the Preferred Employer badge.',
             },
             unit_amount: PREFERRED_EMPLOYER_PRICE,
@@ -210,7 +210,7 @@ export async function POST(req: NextRequest) {
         line_items: [{
           price_data: {
             currency: 'gbp',
-            product_data: { name: `WHC Concierge — ${tier} Job Posting`, description: `${tierConfig.days}-day listing` },
+            product_data: { name: `WHC Concierge - ${tier} Job Posting`, description: `${tierConfig.days}-day listing` },
             unit_amount: tierConfig.price,
           },
           quantity: 1,

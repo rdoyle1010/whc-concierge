@@ -110,7 +110,7 @@ export default function PublicJobsPage() {
                     <span className="flex items-center gap-1"><MapPin size={11} /><span>{job.location}</span></span>
                   </div>
                   <p className="text-[14px] font-medium text-ink mt-3">
-                    {job.salary_min && job.salary_max ? `£${job.salary_min.toLocaleString()} – £${job.salary_max.toLocaleString()}` : 'Competitive salary'}
+                    {job.salary_min && job.salary_max ? `£${job.salary_min.toLocaleString()} - £${job.salary_max.toLocaleString()}` : 'Competitive salary'}
                   </p>
                   <div className="flex items-center justify-between mt-4 pt-4 border-t border-border relative z-10">
                     <Link href={`/jobs/${job.id}`} className="flex items-center text-[13px] font-medium" style={{ color: '#C9A96E' }}>

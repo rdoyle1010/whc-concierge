@@ -19,7 +19,7 @@ export default function AgencyProfilePage() {
   const [reviews, setReviews] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [isEmployer, setIsEmployer] = useState(false)
-  const [offer, setOffer] = useState<any>(null) // the OPEN offer (pending/countered) — only this blocks a new one
+  const [offer, setOffer] = useState<any>(null) // the OPEN offer (pending/countered) - only this blocks a new one
   const [history, setHistory] = useState<any[]>([]) // resolved bookings: agreed, paid, declined, expired
   const [offerBusy, setOfferBusy] = useState(false)
   const [offerError, setOfferError] = useState('')
@@ -135,7 +135,7 @@ export default function AgencyProfilePage() {
             </div>
             <div className="flex-1">
               <div className="flex flex-wrap items-center gap-3 mb-2">
-                <h1 className="text-[28px] font-medium text-ink">{profile.full_name}</h1>
+                <h1 className="font-serif text-[28px] font-medium text-ink capitalize">{profile.full_name}</h1>
                 {profile.role_level && <span className="text-[11px] font-medium bg-surface text-secondary px-3 py-1 rounded-full">{profile.role_level}</span>}
               </div>
               {profile.headline && <p className="text-[14px] text-secondary mb-3">{profile.headline}</p>}
@@ -150,7 +150,7 @@ export default function AgencyProfilePage() {
             <div className="shrink-0">
               {profile.hourly_rate
                 ? <p className="text-[20px] font-semibold text-accent mb-1">£{profile.hourly_rate}<span className="text-[12px] font-normal text-muted"> /hour</span></p>
-                : (profile.day_rate_min || profile.day_rate_max) && <p className="text-[20px] font-semibold text-accent mb-1">£{profile.day_rate_min}{profile.day_rate_max ? `–£${profile.day_rate_max}` : ''}<span className="text-[12px] font-normal text-muted"> /day</span></p>}
+                : (profile.day_rate_min || profile.day_rate_max) && <p className="text-[20px] font-semibold text-accent mb-1">£{profile.day_rate_min}{profile.day_rate_max ? `-£${profile.day_rate_max}` : ''}<span className="text-[12px] font-normal text-muted"> /day</span></p>}
               <a href="#enquire" className="btn-primary block text-center mt-2">Enquire Now</a>
             </div>
           </div>
@@ -377,7 +377,7 @@ export default function AgencyProfilePage() {
         </div>
       </div>
 
-      {/* Review modal — offered once a shift is agreed */}
+      {/* Review modal - offered once a shift is agreed */}
       {showReview && profile?.user_id && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setShowReview(false)}>
           <div className="bg-white rounded-2xl max-w-md w-full max-h-[90vh] overflow-y-auto p-6" onClick={(e) => e.stopPropagation()}>

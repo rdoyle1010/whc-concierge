@@ -189,7 +189,7 @@ export default function EmployerApplicationsPage() {
         </div>
       )}
 
-      {/* Review modal — only offered on accepted placements */}
+      {/* Review modal - only offered on accepted placements */}
       {reviewing && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setReviewing(null)}>
           <div className="bg-white rounded-2xl max-w-md w-full max-h-[90vh] overflow-y-auto p-6" onClick={(e) => e.stopPropagation()}>

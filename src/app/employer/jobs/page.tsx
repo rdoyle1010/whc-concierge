@@ -103,7 +103,7 @@ export default function EmployerJobsPage() {
     const newIsLive = !isCurrentlyActive
 
     // Reactivation is only free while the paid term is still running.
-    // Once expires_at has passed (or was never set — unpaid/legacy), the
+    // Once expires_at has passed (or was never set - unpaid/legacy), the
     // listing must go back through Post a Role -> checkout via Repost.
     if (newIsLive) {
       const paidUntil = job.expires_at ? new Date(job.expires_at).getTime() : 0
@@ -137,7 +137,7 @@ export default function EmployerJobsPage() {
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">Job Title *</label>
                 <input type="text" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} className="input-field" placeholder="e.g. Senior Spa Therapist" />
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1.5">Location *</label>
                   <input type="text" value={form.location} onChange={(e) => setForm({ ...form, location: e.target.value })} className="input-field" />

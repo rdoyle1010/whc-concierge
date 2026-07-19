@@ -214,7 +214,7 @@ export default function PropertyDetailPage() {
 
                     {job.salary_min && job.salary_max && (
                       <div className="text-gold font-semibold text-sm mb-3">
-                        £{Math.round(job.salary_min / 1000)}k–£{Math.round(job.salary_max / 1000)}k
+                        £{Math.round(job.salary_min / 1000)}k-£{Math.round(job.salary_max / 1000)}k
                       </div>
                     )}
 

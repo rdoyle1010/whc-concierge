@@ -79,7 +79,7 @@ export default function EmployerCandidatesPage() {
     const isShortlisted = shortlistedIds.has(candidateId)
     const next = new Set(shortlistedIds)
     if (isShortlisted) {
-      // Need to find the shortlist ID to delete — for simplicity, use the POST/DELETE by candidateId approach
+      // Need to find the shortlist ID to delete - for simplicity, use the POST/DELETE by candidateId approach
       // We'll refetch after toggle
       next.delete(candidateId)
       const slRes = await fetch('/api/shortlist')

@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import Image from 'next/image'
+import Wordmark from '@/components/Wordmark'
 import { usePathname } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import {
@@ -90,7 +90,7 @@ export default function DashboardShell({ children, role, userName }: DashboardSh
           <Menu size={24} />
         </button>
         <div className="flex items-center space-x-2">
-          <div className="bg-white px-2 py-1.5 rounded"><Image src="/images/whc-logo.jpg" alt="WHC" width={90} height={28} className="h-7 w-auto object-contain" /></div>
+          <Wordmark dark compact href={null} />
         </div>
         <div className="w-6" />
       </div>
@@ -106,9 +106,7 @@ export default function DashboardShell({ children, role, userName }: DashboardSh
       }`}>
         <div className="p-6">
           <div className="flex items-center justify-between">
-            <Link href="/">
-              <div className="bg-white px-2 py-1.5 rounded"><Image src="/images/whc-logo.jpg" alt="Wellness House Collective" width={110} height={36} className="h-8 w-auto object-contain" /></div>
-            </Link>
+            <Wordmark dark />
             <button onClick={() => setSidebarOpen(false)} className="lg:hidden text-white/60 hover:text-white">
               <X size={20} />
             </button>

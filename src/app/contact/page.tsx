@@ -64,7 +64,7 @@ export default function ContactPage() {
     <div className="min-h-screen bg-white">
       <Navbar />
       <main className="pt-[60px]">
-        {/* Hero — matches /pricing and /faq */}
+        {/* Hero - matches /pricing and /faq */}
         <section className="pt-28 pb-16 px-6 bg-white">
           <div className="max-w-4xl mx-auto text-center">
             <p className="text-[11px] tracking-[0.15em] uppercase font-medium mb-4" style={{ color: '#C9A96E' }}>Contact</p>
@@ -72,7 +72,7 @@ export default function ContactPage() {
               Get in touch.
             </h1>
             <p className="text-[16px] md:text-[18px] leading-[1.7] max-w-2xl mx-auto" style={{ color: '#6B7280' }}>
-              Questions, partnerships, or feedback — we read every message.
+              Questions, partnerships, or feedback - we read every message.
             </p>
           </div>
         </section>
@@ -124,7 +124,7 @@ export default function ContactPage() {
                     <div className="bg-red-50 text-red-600 text-[13px] px-4 py-3 rounded-lg mb-6">{error}</div>
                   )}
 
-                  {/* Type selector — pill buttons, gold active */}
+                  {/* Type selector - pill buttons, gold active */}
                   <div className="flex flex-wrap gap-2 mb-7">
                     {TYPES.map((t) => {
                       const active = form.type === t.value

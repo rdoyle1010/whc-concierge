@@ -24,7 +24,9 @@ module.exports = {
       },
       fontFamily: {
         sans: ['-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'sans-serif'],
-        serif: ['-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'sans-serif'],
+        // Playfair Display, loaded in app/layout.tsx via next/font. Every
+        // font-serif heading site-wide picks this up - the luxury register.
+        serif: ['var(--font-playfair)', 'Playfair Display', 'Georgia', 'serif'],
       },
       fontSize: { eyebrow: ['11px', { letterSpacing: '0.08em', lineHeight: '1.4' }] },
     },

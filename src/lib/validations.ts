@@ -62,7 +62,7 @@ export const applicationSchema = z.object({
 })
 
 // ── Review ──
-// reviewer_id is intentionally NOT part of the schema — the API derives the
+// reviewer_id is intentionally NOT part of the schema - the API derives the
 // reviewer from the authenticated session, never from the request body.
 export const reviewSchema = z.object({
   reviewed_id: z.string().uuid(),

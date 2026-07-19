@@ -84,7 +84,7 @@ export default function TaxonomyManagement() {
       <div className="flex gap-1 mb-6 overflow-x-auto">
         {TABLES.map(t => (
           <button key={t.key} type="button" onClick={() => setActiveTable(t.key)}
-            className={`px-4 py-2 rounded-lg text-[13px] font-medium whitespace-nowrap transition-colors ${activeTable === t.key ? 'bg-ink text-white' : 'text-muted hover:text-ink'}`}>{t.label} ({items.length > 0 && activeTable === t.key ? filtered.length : '—'})</button>
+            className={`px-4 py-2 rounded-lg text-[13px] font-medium whitespace-nowrap transition-colors ${activeTable === t.key ? 'bg-ink text-white' : 'text-muted hover:text-ink'}`}>{t.label} ({items.length > 0 && activeTable === t.key ? filtered.length : '-'})</button>
         ))}
       </div>
 

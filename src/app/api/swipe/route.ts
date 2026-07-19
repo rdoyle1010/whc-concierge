@@ -13,7 +13,7 @@ import { applicantConfirmationHtml, employerNotificationHtml } from '@/lib/appli
 // The application insert writes BOTH role_id and job_id (live schema and the
 // RLS policies disagree on which one is canonical) and strips columns the live
 // table doesn't have. If the application cannot be created the route returns
-// 500 — the UI must never say "Application sent" when nothing was saved.
+// 500 - the UI must never say "Application sent" when nothing was saved.
 // Confirmation emails to the applicant and employer are sent from HERE, so
 // every apply path gets them (the job detail page previously sent none).
 
@@ -25,7 +25,7 @@ async function sendEmail(to: string, subject: string, html: string) {
     console.log(`[Application email skipped - no API key] To: ${to}, Subject: ${subject}`)
     return
   }
-  // Log failures loudly — Resend rejections (bad key, unverified domain)
+  // Log failures loudly - Resend rejections (bad key, unverified domain)
   // otherwise fail in silence and nobody notices for months.
   const res = await fetch('https://api.resend.com/emails', {
     method: 'POST',
@@ -34,7 +34,7 @@ async function sendEmail(to: string, subject: string, html: string) {
   })
   if (!res.ok) {
     const detail = await res.text().catch(() => '')
-    console.error(`[Email FAILED ${res.status}] To: ${to}, Subject: ${subject} — ${detail.slice(0, 300)}`)
+    console.error(`[Email FAILED ${res.status}] To: ${to}, Subject: ${subject} - ${detail.slice(0, 300)}`)
   }
 }
 
@@ -157,7 +157,7 @@ export async function POST(req: NextRequest) {
         const { error: appError } = await insertApplicationDefensively(admin, {
           candidate_id: cand.id,
           role_id: job.id,
-          job_id: job.id, // 022 RLS keys employer visibility on job_id — set both
+          job_id: job.id, // 022 RLS keys employer visibility on job_id - set both
           status: 'pending',
           match_score: matchScore ?? null,
         })
@@ -183,7 +183,7 @@ export async function POST(req: NextRequest) {
           if (user.email) {
             emailJobs.push(sendEmail(
               user.email,
-              `Application Received — ${job.job_title}`,
+              `Application Received - ${job.job_title}`,
               applicantConfirmationHtml({
                 applicantName: cand.full_name || 'there',
                 jobTitle: job.job_title,
@@ -199,7 +199,7 @@ export async function POST(req: NextRequest) {
           if (employerEmail) {
             emailJobs.push(sendEmail(
               employerEmail,
-              `New Application — ${job.job_title}`,
+              `New Application - ${job.job_title}`,
               employerNotificationHtml({
                 applicantName: cand.full_name || 'A candidate',
                 jobTitle: job.job_title,

@@ -5,7 +5,7 @@ import { createClient } from '@/lib/supabase/client'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
 import Link from 'next/link'
-import { Search, MapPin, Star, Clock, Shield, ShieldCheck, ChevronDown, X } from 'lucide-react'
+import { Search, MapPin, Star, Clock, Shield, ShieldCheck, ChevronDown, X, SlidersHorizontal } from 'lucide-react'
 
 const SERVICE_FILTERS = ['Swedish Massage','Deep Tissue','Hot Stone','Aromatherapy','ESPA Facial','Elemis Facial','Dermalogica Facial','Body Wraps','Reflexology','Reiki','Prenatal Massage','Sports Massage','Laser','Injectables','Lashes','Nails','Waxing']
 const BRAND_FILTERS = ['ESPA','Elemis','Dermalogica','Comfort Zone','Aromatherapy Associates','Bamford','Sodashi','Thalgo','Germaine de Capuccini','Decleor','La Mer']
@@ -104,6 +104,7 @@ export default function AgencyPage() {
   const [postcodeError, setPostcodeError] = useState('')
 
   const [availToday, setAvailToday] = useState<Set<string>>(new Set())
+  const [filtersOpen, setFiltersOpen] = useState(false)
 
   useEffect(() => {
     supabase.from('candidate_profiles').select('*')
@@ -225,11 +226,10 @@ export default function AgencyPage() {
         </div>
       </section>
 
-      <div className="max-w-7xl mx-auto px-6 lg:px-8 py-8">
-        <div className="flex gap-8">
-          {/* Sidebar filters */}
-          <aside className="hidden lg:block w-[260px] shrink-0 sticky top-[76px] self-start max-h-[calc(100vh-100px)] overflow-y-auto">
-            <div className="bg-white border border-border rounded-xl p-5">
+      {(() => {
+        const activeFilterCount = services.length + brands.length + roles.length + (insuredOnly ? 1 : 0) + (availNow ? 1 : 0)
+        const filterPanel = (
+          <div className="bg-white border border-border rounded-xl p-5">
               <div className="flex items-center justify-between mb-4">
                 <p className="text-[14px] font-medium text-ink">Filters</p>
                 <button type="button" onClick={clearFilters} className="text-[11px] text-muted hover:text-ink">Clear all</button>
@@ -260,14 +260,45 @@ export default function AgencyPage() {
               <FilterSection title="Insurance">
                 <label className="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked={insuredOnly} onChange={() => setInsuredOnly(!insuredOnly)} className="w-3.5 h-3.5 border-border rounded text-ink" /><span className="text-[12px] text-secondary">Insured only</span></label>
               </FilterSection>
-            </div>
+          </div>
+        )
+        return (
+      <div className="max-w-7xl mx-auto px-6 lg:px-8 py-8">
+        <div className="flex gap-8">
+          {/* Sidebar filters (desktop) */}
+          <aside className="hidden lg:block w-[260px] shrink-0 sticky top-[76px] self-start max-h-[calc(100vh-100px)] overflow-y-auto">
+            {filterPanel}
           </aside>
+
+          {/* Filter drawer (mobile) - the spa manager on a phone at 7am can
+              filter by treatment and brand just like on desktop */}
+          {filtersOpen && (
+            <div className="fixed inset-0 z-50 lg:hidden">
+              <div className="absolute inset-0 bg-black/50" onClick={() => setFiltersOpen(false)} />
+              <div className="absolute inset-y-0 left-0 w-[300px] max-w-[85vw] bg-surface overflow-y-auto p-4">
+                <div className="flex items-center justify-between mb-3">
+                  <p className="text-[14px] font-semibold text-ink">Refine search</p>
+                  <button type="button" onClick={() => setFiltersOpen(false)} className="text-gray-400 hover:text-ink p-1"><X size={18} /></button>
+                </div>
+                {filterPanel}
+                <button type="button" onClick={() => setFiltersOpen(false)} className="btn-primary w-full mt-4 text-[13px]">
+                  Show {sorted.length} therapist{sorted.length !== 1 ? 's' : ''}
+                </button>
+              </div>
+            </div>
+          )}
 
           {/* Results */}
           <div className="flex-1 min-w-0">
             {/* Sort bar */}
-            <div className="flex items-center justify-between mb-5">
-              <p className="text-[13px] text-muted">{sorted.length} therapist{sorted.length !== 1 ? 's' : ''}</p>
+            <div className="flex items-center justify-between mb-5 gap-3">
+              <div className="flex items-center gap-3">
+                <button type="button" onClick={() => setFiltersOpen(true)}
+                  className="lg:hidden inline-flex items-center gap-1.5 text-[12px] font-medium border border-border bg-white rounded-lg px-3 py-1.5 text-ink">
+                  <SlidersHorizontal size={13} /> Filters{activeFilterCount > 0 ? ` (${activeFilterCount})` : ''}
+                </button>
+                <p className="text-[13px] text-muted">{sorted.length} therapist{sorted.length !== 1 ? 's' : ''}</p>
+              </div>
               <select value={sortBy} onChange={e => setSortBy(e.target.value)} className="input-field !w-auto !py-1.5 text-[12px]">
                 <option value="match">Best Match</option><option value="rated">Highest Rated</option><option value="rate_low">Day Rate ↑</option><option value="rate_high">Day Rate ↓</option><option value="recent">Most Recent</option>
               </select>
@@ -308,7 +339,7 @@ export default function AgencyPage() {
                             : <span className="text-[20px] font-semibold text-accent">{c.full_name?.[0]}</span>}
                           </div>
                           <div className="min-w-0 flex-1">
-                            <h3 className="text-[16px] font-medium text-ink truncate">{c.full_name}</h3>
+                            <h3 className="text-[16px] font-medium text-ink truncate capitalize">{c.full_name}</h3>
                             {c.role_level && <span className="inline-block text-[10px] font-medium bg-surface text-secondary px-2 py-0.5 rounded-full mt-0.5">{c.role_level}</span>}
                             {c.headline && <p className="text-[12px] text-muted truncate mt-1">{c.headline}</p>}
                           </div>
@@ -341,14 +372,14 @@ export default function AgencyPage() {
                           </div>
                         )}
 
-                        {/* Rate — hourly is the agency standard; day rate shown for older profiles */}
+                        {/* Rate - hourly is the agency standard; day rate shown for older profiles */}
                         {c.hourly_rate ? (
                           <p className="text-[14px] font-semibold text-accent mb-2">
                             £{c.hourly_rate} <span className="text-[11px] font-normal text-muted">/ hour</span>
                           </p>
                         ) : (c.day_rate_min || c.day_rate_max) && (
                           <p className="text-[14px] font-semibold text-accent mb-2">
-                            £{c.day_rate_min || c.day_rate_max}{c.day_rate_max && c.day_rate_min ? ` – £${c.day_rate_max}` : ''} <span className="text-[11px] font-normal text-muted">/ day</span>
+                            £{c.day_rate_min || c.day_rate_max}{c.day_rate_max && c.day_rate_min ? ` - £${c.day_rate_max}` : ''} <span className="text-[11px] font-normal text-muted">/ day</span>
                           </p>
                         )}
 
@@ -360,7 +391,7 @@ export default function AgencyPage() {
                           : <span className="text-[11px] text-muted flex items-center gap-1"><span className="w-1.5 h-1.5 bg-gray-300 rounded-full" />Unavailable</span>}
                         </div>
 
-                        {/* CTA — one clear action: the offer lives on the profile */}
+                        {/* CTA - one clear action: the offer lives on the profile */}
                         <Link href={`/agency/${c.id}`} className="btn-primary block w-full text-center text-[12px]">View Profile &amp; Make an Offer</Link>
                       </div>
                     </div>
@@ -374,6 +405,8 @@ export default function AgencyPage() {
           </div>
         </div>
       </div>
+        )
+      })()}
 
       <Footer />
     </div>

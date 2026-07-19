@@ -71,7 +71,6 @@ export default function TalentProfilePage() {
       experience_years: profile.experience_years ? parseInt(profile.experience_years) : null,
       day_rate_min: profile.day_rate_min ? parseInt(profile.day_rate_min) : null,
       day_rate_max: profile.day_rate_max ? parseInt(profile.day_rate_max) : null,
-      hourly_rate: profile.hourly_rate ? parseInt(profile.hourly_rate) : null,
       availability_status: profile.availability_status || null,
       services_offered: (profile.services_offered?.length || 0) > 0 ? profile.services_offered : null,
       product_houses: (profile.product_houses?.length || 0) > 0 ? profile.product_houses : null,
@@ -181,11 +180,11 @@ export default function TalentProfilePage() {
               </div>
               <label className="btn-secondary cursor-pointer flex items-center gap-2 text-[12px]"><Upload size={13} />Upload Photo<input type="file" accept="image/*" onChange={handlePhotoUpload} className="hidden" /></label>
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div><label className="eyebrow block mb-1.5">Full Name</label><input type="text" value={profile.full_name||''} onChange={e=>u('full_name',e.target.value)} className="input-field" /></div>
               <div><label className="eyebrow block mb-1.5">Phone</label><input type="tel" value={profile.phone||''} onChange={e=>u('phone',e.target.value)} className="input-field" /></div>
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div><label className="eyebrow block mb-1.5">Postcode</label><input type="text" value={profile.postcode||''} onChange={e=>u('postcode',e.target.value)} className="input-field" /></div>
               <div className="flex items-end pb-1"><label className="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked={profile.has_car||false} onChange={e=>u('has_car',e.target.checked)} className="w-3.5 h-3.5 border-border rounded text-ink" /><span className="text-[13px] text-secondary">I have access to a car</span></label></div>
             </div>
@@ -202,7 +201,6 @@ export default function TalentProfilePage() {
             <div><label className="eyebrow block mb-1.5">Bio</label><textarea rows={4} value={profile.bio||''} onChange={e=>u('bio',e.target.value)} className="input-field" /></div>
             <div className="grid grid-cols-3 gap-4">
               <div><label className="eyebrow block mb-1.5">Experience (years)</label><input type="number" value={profile.experience_years||''} onChange={e=>u('experience_years',e.target.value)} className="input-field" /></div>
-              <div><label className="eyebrow block mb-1.5">Hourly Rate (£) — shown for agency shifts</label><input type="number" value={profile.hourly_rate||''} onChange={e=>u('hourly_rate',e.target.value)} className="input-field" placeholder="e.g. 25" /></div>
               <div><label className="eyebrow block mb-1.5">Day Rate Min (£)</label><input type="number" value={profile.day_rate_min||''} onChange={e=>u('day_rate_min',e.target.value)} className="input-field" /></div>
               <div><label className="eyebrow block mb-1.5">Day Rate Max (£)</label><input type="number" value={profile.day_rate_max||''} onChange={e=>u('day_rate_max',e.target.value)} className="input-field" /></div>
             </div>
@@ -288,7 +286,7 @@ export default function TalentProfilePage() {
               </div>
             </div>
             {profile.travel_availability === 'radius' && (
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div><label className="eyebrow block mb-1.5">Miles</label><input type="number" value={profile.travel_radius_miles||''} onChange={e=>u('travel_radius_miles',e.target.value)} className="input-field" placeholder="25" /></div>
                 <div><label className="eyebrow block mb-1.5">From Postcode</label><input type="text" value={profile.postcode||''} onChange={e=>u('postcode',e.target.value)} className="input-field" /></div>
               </div>

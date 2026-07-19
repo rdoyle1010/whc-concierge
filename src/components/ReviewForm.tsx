@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { Star } from 'lucide-react'
 
 // Tailored criteria: candidates are judged on the work (including retail
-// sales — the number a spa director actually cares about); employers are
+// sales - the number a spa director actually cares about); employers are
 // judged on what it's like to work a shift for them.
 const CANDIDATE_CRITERIA = [
   { key: 'professionalism', label: 'Professionalism' },
@@ -38,7 +38,7 @@ function StarSelector({ value, onChange }: { value: number; onChange: (v: number
   )
 }
 
-// The reviewer is ALWAYS the logged-in session on the server — reviewerId is
+// The reviewer is ALWAYS the logged-in session on the server - reviewerId is
 // no longer sent (or needed). reviewedId is the reviewee's auth user id.
 export default function ReviewForm({ reviewedId, reviewedName, type = 'candidate', bookingId, onComplete }: {
   reviewedId: string; reviewedName?: string; type?: 'candidate' | 'employer'; bookingId?: string; onComplete?: () => void

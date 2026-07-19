@@ -38,7 +38,7 @@ export async function POST(req: NextRequest) {
     if (typeof title !== 'string' || title.length > 200 || typeof message !== 'string' || message.length > 1000) {
       return NextResponse.json({ error: 'Title or message too long' }, { status: 400 })
     }
-    // Internal links only — no external URLs in notifications
+    // Internal links only - no external URLs in notifications
     if (link && (typeof link !== 'string' || !link.startsWith('/') || link.startsWith('//'))) {
       return NextResponse.json({ error: 'Link must be an internal path' }, { status: 400 })
     }

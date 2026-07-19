@@ -261,7 +261,7 @@ export default function EmployerAgencyPage() {
 
           {/* Payment history summary */}
           {hasMoney && (
-            <div className="grid grid-cols-3 gap-3 mb-8">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-8">
               <div className="dashboard-card !py-4"><p className="text-[11px] uppercase tracking-wide text-gray-400 mb-1">Paid to WHC</p><p className="text-[20px] font-semibold text-ink">£{totalPaid}</p></div>
               <div className="dashboard-card !py-4"><p className="text-[11px] uppercase tracking-wide text-gray-400 mb-1">Awaiting your payment</p><p className="text-[20px] font-semibold text-amber-600">£{awaitingPayment}</p></div>
               <div className="dashboard-card !py-4"><p className="text-[11px] uppercase tracking-wide text-gray-400 mb-1">Refunds agreed</p><p className="text-[20px] font-semibold text-green-700">£{refunded}</p></div>

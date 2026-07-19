@@ -14,7 +14,7 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
   const supabase = createServerSupabaseClient()
   const { data } = await supabase.from('residency_profiles').select('full_name, primary_specialism').eq('id', params.id).single()
   const name = data?.full_name || data?.primary_specialism || 'Specialist'
-  return { title: `${name} — Residency Specialist` }
+  return { title: `${name} - Residency Specialist` }
 }
 
 export default async function ResidencyDetailPage({ params }: { params: { id: string } }) {

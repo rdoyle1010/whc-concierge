@@ -10,7 +10,7 @@ import { ArrowLeft, Check, Upload } from 'lucide-react'
 
 const SERVICES_FLAT = ['Swedish Massage','Deep Tissue','Hot Stone','Aromatherapy','Reflexology','Reiki','Sound Healing','Breathwork','Yoga','Pilates','Meditation','Acupuncture','Ayurvedic Treatments','Facials','Body Wraps','Holistic Therapy','Beauty Therapy','Nail Services','Hair Styling','Personal Training','Nutrition Consultation']
 const QUALS_FLAT = ['CIDESCO','CIBTAC','ITEC','VTCT','NVQ Level 2','NVQ Level 3','NVQ Level 4','First Aid','Hot Stone Certified','Reiki Master','Yoga Teacher 200hr','Yoga Teacher 500hr','Pilates Instructor']
-// These match the database's allowed values exactly — do not change without a matching DB migration
+// These match the database's allowed values exactly - do not change without a matching DB migration
 const DURATION_OPTIONS = ['1-2 months','3-4 months','5-6 months','Flexible']
 const RESIDENCY_TRAVEL_OPTIONS = ['UK Only','Europe','Middle East','Asia Pacific','Global']
 
@@ -62,7 +62,7 @@ export default function ResidencyCreatePage() {
 
     if (!res.ok) {
       const data = await res.json().catch(() => ({}))
-      setError(data.error || 'Something went wrong — please try again.')
+      setError(data.error || 'Something went wrong - please try again.')
       setLoading(false)
       return
     }
@@ -92,7 +92,7 @@ export default function ResidencyCreatePage() {
         {/* Step 1: About */}
         {step === 1 && (
           <div className="space-y-5">
-            <p className="eyebrow mb-4">Step 1 — About Your Residency</p>
+            <p className="eyebrow mb-4">Step 1 - About Your Residency</p>
             <div><label className="eyebrow block mb-1.5">Title *</label><input type="text" value={form.title} onChange={e => u('title', e.target.value)} className="input-field" placeholder="e.g. ESPA Specialist Available for Luxury Hotel Residency" /></div>
             <div><label className="eyebrow block mb-1.5">Description</label><textarea rows={5} value={form.description} onChange={e => u('description', e.target.value)} className="input-field" placeholder="Describe your offering, approach, and what makes your residency unique..." maxLength={500} /><p className="text-[11px] text-muted mt-1">{form.description.length}/500</p></div>
             <button type="button" onClick={() => setStep(2)} disabled={!form.title} className="btn-primary w-full disabled:opacity-40">Continue</button>
@@ -102,7 +102,7 @@ export default function ResidencyCreatePage() {
         {/* Step 2: Services & Skills */}
         {step === 2 && (
           <div className="space-y-5">
-            <p className="eyebrow mb-4">Step 2 — Services & Skills</p>
+            <p className="eyebrow mb-4">Step 2 - Services & Skills</p>
             <CollapsibleCheckboxSection title="Services Offered" flatItems={SERVICES_FLAT} selected={form.services_offered} onChange={v => u('services_offered', v)} />
             <CollapsibleCheckboxSection title="Product Houses" flatItems={[...PRODUCT_HOUSES]} selected={form.product_houses} onChange={v => u('product_houses', v)} />
             <CollapsibleCheckboxSection title="Qualifications" flatItems={QUALS_FLAT} selected={form.qualifications} onChange={v => u('qualifications', v)} />
@@ -113,7 +113,7 @@ export default function ResidencyCreatePage() {
         {/* Step 3: Availability & Rates */}
         {step === 3 && (
           <div className="space-y-5">
-            <p className="eyebrow mb-4">Step 3 — Availability & Rates</p>
+            <p className="eyebrow mb-4">Step 3 - Availability & Rates</p>
             <div><label className="eyebrow block mb-1.5">Available From</label><input type="date" value={form.availability_start} onChange={e => u('availability_start', e.target.value)} className="input-field" /></div>
             <div><label className="eyebrow block mb-1.5">Preferred Duration</label><select value={form.preferred_duration} onChange={e => u('preferred_duration', e.target.value)} className="input-field"><option value="">Select</option>{DURATION_OPTIONS.map(d => <option key={d} value={d}>{d}</option>)}</select></div>
             <div className="grid grid-cols-3 gap-4">
@@ -129,7 +129,7 @@ export default function ResidencyCreatePage() {
         {/* Step 4: Location & Travel */}
         {step === 4 && (
           <div className="space-y-5">
-            <p className="eyebrow mb-4">Step 4 — Location & Travel</p>
+            <p className="eyebrow mb-4">Step 4 - Location & Travel</p>
             <div><label className="eyebrow block mb-1.5">Based In (Postcode)</label><input type="text" value={form.postcode} onChange={e => u('postcode', e.target.value)} className="input-field" /></div>
             <div>
               <label className="eyebrow block mb-2">Travel Availability</label>
@@ -144,7 +144,7 @@ export default function ResidencyCreatePage() {
         {/* Step 5: Review & Submit */}
         {step === 5 && (
           <div className="space-y-5">
-            <p className="eyebrow mb-4">Step 5 — Review & Submit</p>
+            <p className="eyebrow mb-4">Step 5 - Review & Submit</p>
 
             <div className="bg-white border border-border rounded-xl p-6 space-y-3">
               <h3 className="text-[17px] font-medium text-ink">{form.title}</h3>

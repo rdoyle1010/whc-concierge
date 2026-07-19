@@ -59,11 +59,11 @@ const faqSections: FAQSection[] = [
       },
       {
         question: 'What are the job posting tiers?',
-        answer: 'Bronze (7 days, £49), Silver (14 days, £89), Gold (30 days, £149), Platinum (60 days, £249) — each with increasing visibility and features.',
+        answer: 'Bronze (7 days, £49), Silver (14 days, £89), Gold (30 days, £149), Platinum (60 days, £249) - each with increasing visibility and features.',
       },
       {
         question: 'How long does approval take?',
-        answer: 'We review employer accounts within 24–48 hours to maintain platform quality.',
+        answer: 'We review employer accounts within 24-48 hours to maintain platform quality.',
       },
       {
         question: 'Can I search for candidates?',
