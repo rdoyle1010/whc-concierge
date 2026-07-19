@@ -66,7 +66,35 @@ export async function GET() {
       }
     } catch { /* table not live yet */ }
 
-    return NextResponse.json({ bookings: rows, referral_credits: referralCredits })
+    // WHC Academy money - best-effort until 026 is live
+    let academy: any = null
+    try {
+      const { data: enrols } = await admin.from('course_enrollments')
+        .select('course_slug, amount_paid, paid_at, completed_at, candidate_id')
+        .not('paid_at', 'is', null)
+        .order('paid_at', { ascending: false })
+      if (enrols) {
+        const candIds2 = Array.from(new Set(enrols.slice(0, 12).map((e: any) => e.candidate_id)))
+        const { data: names } = candIds2.length
+          ? await admin.from('candidate_profiles').select('id, full_name').in('id', candIds2)
+          : { data: [] as any[] }
+        const nameMap = new Map((names || []).map((n: any) => [n.id, n.full_name]))
+        academy = {
+          revenue: enrols.reduce((s: number, e: any) => s + (e.amount_paid || 0), 0),
+          enrolments: enrols.length,
+          completions: enrols.filter((e: any) => e.completed_at).length,
+          recent: enrols.slice(0, 12).map((e: any) => ({
+            name: nameMap.get(e.candidate_id) || 'Therapist',
+            course_slug: e.course_slug,
+            amount_paid: e.amount_paid,
+            paid_at: e.paid_at,
+            completed: Boolean(e.completed_at),
+          })),
+        }
+      }
+    } catch { /* table not live yet */ }
+
+    return NextResponse.json({ bookings: rows, referral_credits: referralCredits, academy })
   } catch (e: any) {
     return NextResponse.json({ error: e.message }, { status: 500 })
   }

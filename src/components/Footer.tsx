@@ -3,6 +3,8 @@ import Link from 'next/link'
 const links = [
   { href: '/jobs', label: 'Browse Roles' },
   { href: '/agency', label: 'Agency' },
+  { href: '/academy', label: 'Academy' },
+  { href: '/verify', label: 'Verify a Certificate' },
   { href: '/residency', label: 'Residency' },
   { href: '/properties', label: 'Properties' },
   { href: '/pricing', label: 'Pricing' },

@@ -4,6 +4,8 @@
 // academy-answers.ts, which is only ever imported server-side.
 
 export const COURSE_PRICE = 1000 // pence - £10 per course
+export const BUNDLE_PRICE = 7900 // pence - all 11 courses for £79 (save £31)
+export const PUBLIC_COURSE_PRICE = 1500 // pence - £15 for non-members buying from the public page
 export const PASS_MARK = 80 // percent required on the final quiz
 
 export type AcademyLesson = { title: string; content: string }

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { stripe } from '@/lib/stripe'
 import { JOB_TIERS, FEATURED_PROFILE_PRICE, AGENCY_LISTING_TIERS, AGENCY_PLATFORM_FEE_PCT, PREFERRED_EMPLOYER_PRICE } from '@/lib/constants'
-import { COURSE_PRICE } from '@/lib/academy'
+import { COURSE_PRICE, BUNDLE_PRICE, PUBLIC_COURSE_PRICE, ACADEMY } from '@/lib/academy'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 
@@ -32,13 +32,76 @@ export async function POST(req: NextRequest) {
       }
     )
     const { data: { user } } = await supabase.auth.getUser()
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
-    }
 
     const body = await req.json()
     const { type, returnUrl } = body
     const origin = getSafeOrigin(returnUrl)
+
+    // ── PUBLIC Academy purchase - no account needed. The guest pays £15 by
+    // email; the webhook creates their learner account and emails access. ──
+    if (type === 'course_public') {
+      const { courseSlug, email } = body
+      const course = ACADEMY.find(c => c.slug === String(courseSlug || ''))
+      if (!course) return NextResponse.json({ error: 'Unknown course' }, { status: 400 })
+      const cleanEmail = String(email || '').trim().toLowerCase()
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) {
+        return NextResponse.json({ error: 'Please enter a valid email address - your course access is sent there.' }, { status: 400 })
+      }
+
+      const session = await stripe.checkout.sessions.create({
+        payment_method_types: ['card'],
+        customer_email: cleanEmail,
+        line_items: [{
+          price_data: {
+            currency: 'gbp',
+            product_data: {
+              name: `WHC Academy - ${course.title}`,
+              description: 'Online course with certificate. Access details are emailed after payment.',
+            },
+            unit_amount: PUBLIC_COURSE_PRICE,
+          },
+          quantity: 1,
+        }],
+        mode: 'payment',
+        allow_promotion_codes: true,
+        success_url: `${origin}/academy?purchased=true`,
+        cancel_url: `${origin}/academy?cancelled=true`,
+        metadata: { type: 'course_public', course_slug: course.slug, buyer_email: cleanEmail },
+      })
+      return NextResponse.json({ url: session.url })
+    }
+
+    // Everything below requires a signed-in user.
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+    }
+
+    // ── WHC Academy bundle - every course for £79 ──
+    if (type === 'course_bundle') {
+      const { candidateId } = body
+      if (!candidateId) return NextResponse.json({ error: 'Missing candidateId' }, { status: 400 })
+
+      const session = await stripe.checkout.sessions.create({
+        payment_method_types: ['card'],
+        line_items: [{
+          price_data: {
+            currency: 'gbp',
+            product_data: {
+              name: `WHC Academy - Complete Bundle (${ACADEMY.length} courses)`,
+              description: 'Every WHC Academy course, with a certificate and profile badge for each on completion',
+            },
+            unit_amount: BUNDLE_PRICE,
+          },
+          quantity: 1,
+        }],
+        mode: 'payment',
+        allow_promotion_codes: true,
+        success_url: `${origin}/talent/academy?enrolled=bundle`,
+        cancel_url: `${origin}/talent/academy?cancelled=true`,
+        metadata: { type: 'course_bundle', candidate_id: candidateId, user_id: user.id },
+      })
+      return NextResponse.json({ url: session.url })
+    }
 
     // ── WHC Academy course - £10 one-off, certificate on completion ──
     if (type === 'course') {

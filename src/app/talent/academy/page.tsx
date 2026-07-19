@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import DashboardShell from '@/components/DashboardShell'
-import { ACADEMY, COURSE_PRICE } from '@/lib/academy'
+import { ACADEMY, COURSE_PRICE, BUNDLE_PRICE } from '@/lib/academy'
 import { GraduationCap, Award, Clock, Check } from 'lucide-react'
 
 // WHC Academy catalogue - £10 courses, certificate + profile badge on
@@ -41,6 +41,24 @@ export default function AcademyPage() {
     if (params.get('enrolled')) setNotice('Payment received - you are enrolled. Your course is ready below.')
   }, [])
 
+  async function buyBundle() {
+    if (!profileId) { setError('Complete your profile first, then enrol.'); return }
+    setError('')
+    setBusySlug('__bundle__')
+    try {
+      const res = await fetch('/api/stripe/checkout', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: 'course_bundle', candidateId: profileId, returnUrl: window.location.origin }),
+      })
+      const j = await res.json()
+      if (!res.ok || !j.url) { setError(j.error || 'Could not start the payment - please try again.'); setBusySlug(null); return }
+      window.location.href = j.url
+    } catch {
+      setError('Something went wrong - please try again.')
+      setBusySlug(null)
+    }
+  }
+
   async function buy(slug: string, title: string) {
     if (!profileId) { setError('Complete your profile first, then enrol.'); return }
     setError('')
@@ -77,6 +95,20 @@ export default function AcademyPage() {
 
         {notice && <div className="bg-green-50 text-green-700 text-sm px-4 py-3 rounded-lg mb-4">{notice}</div>}
         {error && <div className="bg-red-50 text-red-600 text-sm px-4 py-3 rounded-lg mb-4">{error}</div>}
+
+        {/* Bundle - shown until they own every course */}
+        {!loading && enrollments.filter(e => e.paid_at).length < ACADEMY.length && (
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-ink rounded-xl px-5 py-4 mb-6">
+            <div>
+              <p className="text-[14px] font-medium text-white">The Complete Academy - all {ACADEMY.length} courses for £{(BUNDLE_PRICE / 100).toFixed(0)}</p>
+              <p className="text-[12px] text-white/60 mt-0.5">Save £{((ACADEMY.length * COURSE_PRICE - BUNDLE_PRICE) / 100).toFixed(0)} against buying individually. Eleven certificates, eleven badges - a profile that hires itself.</p>
+            </div>
+            <button onClick={buyBundle} disabled={busySlug === '__bundle__'}
+              className="btn-primary !bg-gold !text-ink text-[12px] shrink-0 disabled:opacity-50">
+              {busySlug === '__bundle__' ? 'Taking you to payment...' : `Get the bundle - £${(BUNDLE_PRICE / 100).toFixed(0)}`}
+            </button>
+          </div>
+        )}
 
         {completedCount > 0 && (
           <div className="flex items-center gap-3 bg-green-50 border border-green-200 rounded-xl px-5 py-4 mb-6">

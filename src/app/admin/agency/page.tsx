@@ -15,6 +15,7 @@ export default function AdminAgencyPage() {
   const [error, setError] = useState('')
   const [resolveInputs, setResolveInputs] = useState<Record<string, { refund: string; payout: string }>>({})
   const [credits, setCredits] = useState<any[]>([])
+  const [academy, setAcademy] = useState<any>(null)
 
   async function load() {
     try {
@@ -23,6 +24,7 @@ export default function AdminAgencyPage() {
         const j = await res.json()
         setBookings(j.bookings || [])
         setCredits(j.referral_credits || [])
+        setAcademy(j.academy || null)
       }
     } catch { /* empty state */ }
     setLoading(false)
@@ -103,6 +105,28 @@ export default function AdminAgencyPage() {
         <div className="flex items-center justify-center h-64"><div className="animate-spin w-8 h-8 border-2 border-gold border-t-transparent rounded-full" /></div>
       ) : (
         <>
+          {/* WHC Academy revenue */}
+          {academy && academy.enrolments > 0 && (
+            <div className="dashboard-card mb-6">
+              <h2 className="text-[16px] font-medium text-ink mb-3">WHC Academy</h2>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
+                <div className="bg-surface rounded-xl px-4 py-3"><p className="text-[11px] uppercase tracking-wide text-gray-400 mb-1">Course revenue</p><p className="text-[20px] font-semibold text-ink">£{(academy.revenue / 100).toFixed(2)}</p></div>
+                <div className="bg-surface rounded-xl px-4 py-3"><p className="text-[11px] uppercase tracking-wide text-gray-400 mb-1">Enrolments</p><p className="text-[20px] font-semibold text-ink">{academy.enrolments}</p></div>
+                <div className="bg-surface rounded-xl px-4 py-3"><p className="text-[11px] uppercase tracking-wide text-gray-400 mb-1">Certificates earned</p><p className="text-[20px] font-semibold text-green-700">{academy.completions}</p></div>
+              </div>
+              {academy.recent?.length > 0 && (
+                <div className="space-y-1.5">
+                  {academy.recent.map((r: any, i: number) => (
+                    <div key={i} className="flex items-center justify-between text-[12px] text-gray-600">
+                      <span><span className="font-medium text-ink capitalize">{r.name}</span> · {r.course_slug.replace(/-/g, ' ')}{r.completed ? ' · certified' : ''}</span>
+                      <span className="shrink-0">£{((r.amount_paid || 0) / 100).toFixed(2)} · {r.paid_at ? new Date(r.paid_at).toLocaleDateString('en-GB') : ''}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Referral credits to apply in Stripe */}
           {credits.length > 0 && (
             <div className="dashboard-card border-amber-200 ring-1 ring-amber-100 mb-6">

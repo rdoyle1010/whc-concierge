@@ -7,7 +7,7 @@ import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
 import Link from 'next/link'
 import { MapPin, Star, Shield, Clock, Check, ArrowLeft, X, GraduationCap } from 'lucide-react'
-import { courseTitle } from '@/lib/academy'
+import { courseTitle, ACADEMY } from '@/lib/academy'
 import ReviewBreakdown from '@/components/ReviewBreakdown'
 import ReviewForm from '@/components/ReviewForm'
 import { AGENCY_PLATFORM_FEE_PCT } from '@/lib/constants'
@@ -28,6 +28,9 @@ export default function AgencyProfilePage() {
   const [offerRate, setOfferRate] = useState('')
   const [offerHours, setOfferHours] = useState('8')
   const [academyBadges, setAcademyBadges] = useState<{ course_slug: string; completed_at: string }[]>([])
+  const [suggestSlug, setSuggestSlug] = useState('')
+  const [suggestBusy, setSuggestBusy] = useState(false)
+  const [suggestNotice, setSuggestNotice] = useState('')
 
   // Live cost preview: therapist receives rate × hours; WHC fee is on top, paid by the property
   const previewRate = parseInt(offerRate, 10) || 0
@@ -162,6 +165,37 @@ export default function AgencyProfilePage() {
                     </span>
                   ))}
                 </div>
+              )}
+              {/* Employer nudge: suggest a course this candidate hasn't completed */}
+              {isEmployer && (
+                suggestNotice ? (
+                  <p className="text-[12px] text-green-700 mt-3">{suggestNotice}</p>
+                ) : (
+                  <div className="flex flex-wrap items-center gap-2 mt-3">
+                    <select value={suggestSlug} onChange={e => setSuggestSlug(e.target.value)} className="input-field !w-auto !py-1.5 text-[12px]">
+                      <option value="">Suggest a course...</option>
+                      {ACADEMY.filter(c => !academyBadges.some(b => b.course_slug === c.slug)).map(c => (
+                        <option key={c.slug} value={c.slug}>{c.title}</option>
+                      ))}
+                    </select>
+                    {suggestSlug && (
+                      <button type="button" disabled={suggestBusy}
+                        onClick={async () => {
+                          setSuggestBusy(true)
+                          try {
+                            const res = await fetch('/api/academy/suggest', {
+                              method: 'POST', headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({ candidateId: profileId, courseSlug: suggestSlug }),
+                            })
+                            if (res.ok) setSuggestNotice(`Suggested - ${profile.full_name?.split(' ')[0] || 'they'} will be told your property would value this training.`)
+                          } catch { /* quiet */ } finally { setSuggestBusy(false) }
+                        }}
+                        className="btn-secondary !py-1.5 text-[12px] disabled:opacity-50">
+                        {suggestBusy ? 'Sending...' : 'Send suggestion'}
+                      </button>
+                    )}
+                  </div>
+                )
               )}
             </div>
             <div className="shrink-0">

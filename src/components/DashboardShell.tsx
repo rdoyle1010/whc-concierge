@@ -61,6 +61,7 @@ const navItems: Record<string, NavItem[]> = {
     { label: 'Matches', href: '/admin/matches', icon: <Heart size={20} /> },
     { label: 'Agency Money', href: '/admin/agency', icon: <CreditCard size={20} /> },
     { label: 'Verification', href: '/admin/verification', icon: <Users size={20} /> },
+    { label: 'Academy', href: '/admin/academy', icon: <GraduationCap size={20} /> },
     { label: 'Residency Listings', href: '/admin/residency', icon: <Calendar size={20} /> },
     { label: 'Job Listings', href: '/admin/jobs', icon: <Briefcase size={20} /> },
     { label: 'Blog', href: '/admin/blog', icon: <FileText size={20} /> },

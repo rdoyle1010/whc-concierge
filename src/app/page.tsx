@@ -311,14 +311,20 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* AGENCY & RESIDENCY */}
+      {/* AGENCY, ACADEMY & RESIDENCY */}
       <section className="py-24 bg-surface">
-        <div className="max-w-7xl mx-auto px-6 lg:px-8 grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="max-w-7xl mx-auto px-6 lg:px-8 grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="card-hover p-8">
             <p className="eyebrow mb-3">Agency marketplace</p>
             <h3 className="font-serif text-[24px] font-medium text-ink leading-tight mb-3">Fill shifts fast.<br />One transparent fee.</h3>
             <p className="text-secondary text-[14px] mb-6">Find verified practitioners near you and book by the hour - including urgent same-day cover. One 10% fee on confirmed bookings, payments handled end to end by WHC. No mark-ups, no surprises.</p>
             <Link href="/agency" className="btn-primary inline-block">Browse practitioners</Link>
+          </div>
+          <div className="card-hover p-8">
+            <p className="eyebrow mb-3">WHC Academy</p>
+            <h3 className="font-serif text-[24px] font-medium text-ink leading-tight mb-3">Training that<br />gets you booked.</h3>
+            <p className="text-secondary text-[14px] mb-6">Short, serious courses in consultation, retail, Forbes standards, treatment craft and brand knowledge. Verifiable certificates - open to everyone in the industry, no membership needed.</p>
+            <Link href="/academy" className="btn-primary inline-block">Explore the Academy</Link>
           </div>
           <div className="card-hover p-8">
             <p className="eyebrow mb-3">Residency programme</p>

@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { stripe } from '@/lib/stripe'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createNotification } from '@/lib/notifications'
+import { ACADEMY, courseTitle } from '@/lib/academy'
+import { sendCourseAccessEmail } from '@/lib/emails'
 import Stripe from 'stripe'
 
 // Referral credit: when a referred therapist pays for their first register
@@ -76,6 +78,85 @@ export async function POST(req: NextRequest) {
           // against the exact Stripe payment later.
           stripe_payment_intent: (session.payment_intent as string) || null,
         }).eq('id', meta.booking_id)
+      }
+
+      // PUBLIC Academy purchase → create (or find) the buyer's learner
+      // account, enrol them, and email a sign-in link. No membership needed;
+      // the account is the vessel the certificate lives in.
+      if (meta?.type === 'course_public' && meta?.course_slug && meta?.buyer_email) {
+        try {
+          const email = String(meta.buyer_email).toLowerCase()
+          const buyerName = session.customer_details?.name || email.split('@')[0]
+
+          // Existing user? profiles.email is kept in sync at registration.
+          let userId: string | null = null
+          const { data: prof } = await supabase.from('profiles').select('id').eq('email', email).maybeSingle()
+          if (prof) userId = prof.id
+          if (!userId) {
+            const { data: created, error: cErr } = await supabase.auth.admin.createUser({
+              email, email_confirm: true, user_metadata: { role: 'talent', full_name: buyerName },
+            })
+            if (created?.user) userId = created.user.id
+            else if (cErr) console.error('[Academy public] createUser failed:', cErr.message)
+          }
+
+          if (userId) {
+            await supabase.from('profiles').upsert(
+              { id: userId, email, role: 'candidate', full_name: buyerName },
+              { onConflict: 'id', ignoreDuplicates: true }
+            )
+            let { data: cand } = await supabase.from('candidate_profiles').select('id').eq('user_id', userId).maybeSingle()
+            if (!cand) {
+              const { data: newCand } = await supabase.from('candidate_profiles')
+                .insert({ user_id: userId, full_name: buyerName, approval_status: 'pending' })
+                .select('id').single()
+              cand = newCand
+            }
+            if (cand) {
+              await supabase.from('course_enrollments').upsert(
+                {
+                  candidate_id: cand.id,
+                  course_slug: meta.course_slug,
+                  paid_at: new Date().toISOString(),
+                  amount_paid: session.amount_total ?? 1500,
+                },
+                { onConflict: 'candidate_id,course_slug', ignoreDuplicates: true }
+              )
+            }
+            // Emailed access - a one-tap sign-in link straight to the course
+            try {
+              const { data: link } = await supabase.auth.admin.generateLink({
+                type: 'magiclink', email,
+                options: { redirectTo: 'https://talent.wellnesshousecollective.co.uk/talent/academy' },
+              })
+              const action = (link as any)?.properties?.action_link || 'https://talent.wellnesshousecollective.co.uk/login'
+              await sendCourseAccessEmail(email, buyerName, courseTitle(meta.course_slug), action)
+            } catch (e: any) {
+              console.error('[Academy public] access email failed:', e?.message)
+            }
+          }
+        } catch (e: any) {
+          console.error('[Academy public] fulfilment failed:', e?.message)
+        }
+      }
+
+      // WHC Academy bundle → every course enrolled at once. The per-course
+      // share of the bundle price is recorded so revenue totals stay honest.
+      if (meta?.type === 'course_bundle' && meta?.candidate_id) {
+        const per = Math.round((session.amount_total ?? 7900) / ACADEMY.length)
+        for (const course of ACADEMY) {
+          await supabase.from('course_enrollments').upsert(
+            {
+              candidate_id: meta.candidate_id,
+              course_slug: course.slug,
+              paid_at: new Date().toISOString(),
+              amount_paid: per,
+            },
+            // ignoreDuplicates: a course already bought individually keeps
+            // its original purchase record untouched
+            { onConflict: 'candidate_id,course_slug', ignoreDuplicates: true }
+          )
+        }
       }
 
       // WHC Academy course purchase → enrolment live.
