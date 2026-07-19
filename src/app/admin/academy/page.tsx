@@ -4,6 +4,7 @@ import { Fragment, useEffect, useState } from 'react'
 import DashboardShell from '@/components/DashboardShell'
 import { ACADEMY, COURSE_PRICE, BUNDLE_PRICE } from '@/lib/academy'
 import { lessonExtras } from '@/lib/academy-extras'
+import { getCourseContent } from '@/lib/academy-content'
 import { GraduationCap, ChevronDown, Award, UserPlus } from 'lucide-react'
 
 // The Academy back office: every course, every learner, revenue, and full
@@ -130,12 +131,40 @@ export default function AdminAcademyPage() {
                       {open && full && (
                         <tr className="border-b border-border/60 bg-surface/60">
                           <td colSpan={6} className="py-4 px-2">
-                            <p className="text-[12px] text-gray-500 mb-3">{full.tagline} · ~{full.minutes} min · {full.lessons.length} lessons · {full.quiz.length}-question quiz (80% to pass)</p>
+                            {(() => { const richCourse = getCourseContent(full.slug); return richCourse ? (
+                              <div className="bg-white border border-border rounded-lg p-4 mb-3">
+                                <p className="text-[10px] uppercase tracking-[0.14em] text-accent font-semibold mb-1">Course overview (as students see it)</p>
+                                <p className="text-[13px] text-gray-700 leading-[1.7] mb-2">{richCourse.aims}</p>
+                                <p className="text-[12px] text-gray-500">Outcomes: {richCourse.outcomes.join(' · ')}</p>
+                              </div>
+                            ) : null })()}
+                            <p className="text-[12px] text-gray-500 mb-3">{full.tagline} · ~{full.minutes} min · {full.lessons.length} modules · {full.quiz.length}-question assessment (80% to pass)</p>
                             <div className="space-y-2">
-                              {full.lessons.map((l, i) => (
+                              {full.lessons.map((l, i) => {
+                                const richL = getCourseContent(full.slug)?.lessons[i]
+                                return (
                                 <details key={i} className="border border-border rounded-lg bg-white">
-                                  <summary className="px-4 py-2.5 text-[13px] font-medium text-ink cursor-pointer flex items-center justify-between">Lesson {i + 1}: {l.title}<ChevronDown size={14} className="text-gray-400" /></summary>
-                                  <div className="px-4 pb-4 text-[13px] text-gray-600 leading-[1.8] whitespace-pre-line border-t border-border/60 pt-3">{l.content}</div>
+                                  <summary className="px-4 py-2.5 text-[13px] font-medium text-ink cursor-pointer flex items-center justify-between">Module {i + 1}: {l.title}<ChevronDown size={14} className="text-gray-400" /></summary>
+                                  {richL ? (
+                                    <div className="px-4 pb-4 border-t border-border/60 pt-3 space-y-3">
+                                      <p className="text-[12px] text-gray-500"><span className="font-semibold text-ink">Objectives:</span> {richL.objectives.join(' · ')}</p>
+                                      {richL.sections.map((s, si) => (
+                                        <div key={si}>
+                                          <p className="text-[13px] font-semibold text-ink mb-1">{s.heading}</p>
+                                          <p className="text-[13px] text-gray-600 leading-[1.8] whitespace-pre-line">{s.body}</p>
+                                        </div>
+                                      ))}
+                                      <p className="text-[12px] text-gray-500"><span className="font-semibold text-ink">Key terms:</span> {richL.keyTerms.map(k => k.term).join(' · ')}</p>
+                                      <div className="bg-ink rounded-lg p-3">
+                                        <p className="text-[11px] uppercase tracking-wide text-gold font-semibold mb-1">Case study · {richL.caseStudy.title}</p>
+                                        <p className="text-[12px] text-white/85 leading-[1.7] mb-2">{richL.caseStudy.scenario}</p>
+                                        <p className="text-[12px] text-white/70 leading-[1.7]">{richL.caseStudy.insight}</p>
+                                      </div>
+                                      <p className="text-[12px] text-gray-600 leading-[1.7]"><span className="font-semibold text-ink">Summary:</span> {richL.summary}</p>
+                                    </div>
+                                  ) : (
+                                    <div className="px-4 pb-4 text-[13px] text-gray-600 leading-[1.8] whitespace-pre-line border-t border-border/60 pt-3">{l.content}</div>
+                                  )}
                                   {(() => {
                                     const ex = lessonExtras(full.slug, i)
                                     if (!ex) return null
@@ -148,7 +177,7 @@ export default function AdminAcademyPage() {
                                     )
                                   })()}
                                 </details>
-                              ))}
+                              )})}
                               <details className="border border-border rounded-lg bg-white">
                                 <summary className="px-4 py-2.5 text-[13px] font-medium text-ink cursor-pointer flex items-center justify-between">Final quiz ({full.quiz.length} questions)<ChevronDown size={14} className="text-gray-400" /></summary>
                                 <div className="px-4 pb-4 pt-3 border-t border-border/60 space-y-3">
