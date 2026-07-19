@@ -142,7 +142,7 @@ export default function AcademyPage() {
                         {done && <span className="inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide bg-green-600 text-white px-2 py-0.5 rounded-full shrink-0"><Check size={10} /> Certified</span>}
                       </div>
                       <p className="text-[12px] text-gray-500 mb-2">{course.tagline}</p>
-                      <p className="text-[11px] text-gray-400 mb-4 inline-flex items-center gap-1"><Clock size={11} /> ~{course.minutes} min · {course.lessons.length} lessons · final quiz</p>
+                      <p className="text-[11px] text-gray-400 mb-4 inline-flex items-center gap-1"><Clock size={11} /> {course.lessons.length} modules · objectives, case studies &amp; assessment · ~{course.minutes} min</p>
                       <div className="mt-auto">
                         {done ? (
                           <div className="flex items-center gap-3">

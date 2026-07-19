@@ -93,7 +93,7 @@ export default function PublicAcademyPage() {
                   <div className="p-6 flex flex-col flex-1">
                   <h3 className="font-serif text-[17px] font-semibold text-ink leading-snug mb-1">{course.title}</h3>
                   <p className="text-[12px] text-gray-500 mb-2">{course.tagline}</p>
-                  <p className="text-[11px] text-gray-400 mb-4 inline-flex items-center gap-1"><Clock size={11} /> ~{course.minutes} min · {course.lessons.length} lessons · final quiz · certificate</p>
+                  <p className="text-[11px] text-gray-400 mb-4 inline-flex items-center gap-1"><Clock size={11} /> {course.lessons.length} modules · case studies &amp; assessment · ~{course.minutes} min · certificate</p>
                   <div className="mt-auto flex items-center justify-between gap-3">
                     <p className="text-[16px] font-semibold text-ink">£{(PUBLIC_COURSE_PRICE / 100).toFixed(0)}</p>
                     {isCandidate ? (
