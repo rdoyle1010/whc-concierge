@@ -1,0 +1,2 @@
+const answers: number[] = [2, 0, 1, 3, 1, 0, 2, 3]
+export default answers

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { stripe } from '@/lib/stripe'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createNotification } from '@/lib/notifications'
-import { ACADEMY, courseTitle } from '@/lib/academy'
+import { ACADEMY, CORE_SLUGS, courseTitle } from '@/lib/academy'
 import { sendCourseAccessEmail } from '@/lib/emails'
 import Stripe from 'stripe'
 
@@ -143,8 +143,9 @@ export async function POST(req: NextRequest) {
       // WHC Academy bundle → every course enrolled at once. The per-course
       // share of the bundle price is recorded so revenue totals stay honest.
       if (meta?.type === 'course_bundle' && meta?.candidate_id) {
-        const per = Math.round((session.amount_total ?? 7900) / ACADEMY.length)
-        for (const course of ACADEMY) {
+        const coreCourses = ACADEMY.filter(c => CORE_SLUGS.includes(c.slug))
+        const per = Math.round((session.amount_total ?? 7900) / coreCourses.length)
+        for (const course of coreCourses) {
           await supabase.from('course_enrollments').upsert(
             {
               candidate_id: meta.candidate_id,

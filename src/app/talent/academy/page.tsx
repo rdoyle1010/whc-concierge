@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import DashboardShell from '@/components/DashboardShell'
-import { ACADEMY, COURSE_PRICE, BUNDLE_PRICE } from '@/lib/academy'
+import { ACADEMY, COURSE_PRICE, BUNDLE_PRICE, CORE_SLUGS, coursePrice } from '@/lib/academy'
 import { courseImage } from '@/lib/academy-extras'
 import { GraduationCap, Award, Clock, Check } from 'lucide-react'
 
@@ -91,18 +91,18 @@ export default function AcademyPage() {
           <h1 className="text-2xl font-serif font-bold text-ink">WHC Academy</h1>
         </div>
         <p className="text-[13px] text-gray-500 mb-6 max-w-2xl">
-          Short, serious courses written for luxury spa professionals. £{(COURSE_PRICE / 100).toFixed(0)} each. Pass the final quiz (80%) and you earn a certificate - and the badge appears on your profile, where properties can see exactly what you&apos;ve trained in before they book you.
+          Serious courses for luxury spa professionals - core curriculum £{(COURSE_PRICE / 100).toFixed(0)}, brand masterclasses £5, specialist care £{(COURSE_PRICE / 100).toFixed(0)}. Pass the final quiz (80%) and you earn a certificate - and the badge appears on your profile, where properties can see exactly what you&apos;ve trained in before they book you.
         </p>
 
         {notice && <div className="bg-green-50 text-green-700 text-sm px-4 py-3 rounded-lg mb-4">{notice}</div>}
         {error && <div className="bg-red-50 text-red-600 text-sm px-4 py-3 rounded-lg mb-4">{error}</div>}
 
         {/* Bundle - shown until they own every course */}
-        {!loading && enrollments.filter(e => e.paid_at).length < ACADEMY.length && (
+        {!loading && enrollments.filter(e => e.paid_at && CORE_SLUGS.includes(e.course_slug)).length < CORE_SLUGS.length && (
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-ink rounded-xl px-5 py-4 mb-6">
             <div>
-              <p className="text-[14px] font-medium text-white">The Complete Academy - all {ACADEMY.length} courses for £{(BUNDLE_PRICE / 100).toFixed(0)}</p>
-              <p className="text-[12px] text-white/60 mt-0.5">Save £{((ACADEMY.length * COURSE_PRICE - BUNDLE_PRICE) / 100).toFixed(0)} against buying individually. Eleven certificates, eleven badges - a profile that hires itself.</p>
+              <p className="text-[14px] font-medium text-white">The Core Curriculum - all {CORE_SLUGS.length} core courses for £{(BUNDLE_PRICE / 100).toFixed(0)}</p>
+              <p className="text-[12px] text-white/60 mt-0.5">Save £{((CORE_SLUGS.length * COURSE_PRICE - BUNDLE_PRICE) / 100).toFixed(0)} against buying individually. Eleven certificates, eleven badges - a profile that hires itself. Brand masterclasses and specialist care priced separately.</p>
             </div>
             <button onClick={buyBundle} disabled={busySlug === '__bundle__'}
               className="btn-primary !bg-gold !text-ink text-[12px] shrink-0 disabled:opacity-50">
@@ -156,7 +156,7 @@ export default function AcademyPage() {
                         ) : (
                           <button onClick={() => buy(course.slug, course.title)} disabled={busySlug === course.slug}
                             className="btn-primary text-[12px] w-full disabled:opacity-50">
-                            {busySlug === course.slug ? 'Taking you to payment...' : `Enrol - £${(COURSE_PRICE / 100).toFixed(0)}`}
+                            {busySlug === course.slug ? 'Taking you to payment...' : `Enrol - £${(coursePrice(course) / 100).toFixed(0)}`}
                           </button>
                         )}
                       </div>

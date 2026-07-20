@@ -3,6 +3,8 @@
 // IMPORTANT: quiz answer keys are NOT in this file - they live in
 // academy-answers.ts, which is only ever imported server-side.
 
+import { MORE_COURSES } from './academy-more'
+
 export const COURSE_PRICE = 1000 // pence - £10 per course
 export const BUNDLE_PRICE = 7900 // pence - all 11 courses for £79 (save £31)
 export const PUBLIC_COURSE_PRICE = 1500 // pence - £15 for non-members buying from the public page
@@ -14,8 +16,9 @@ export type AcademyCourse = {
   slug: string
   title: string
   tagline: string
-  category: 'Guest Experience' | 'Standards' | 'Treatments' | 'Commercial' | 'Brands'
+  category: 'Guest Experience' | 'Standards' | 'Treatments' | 'Commercial' | 'Brands' | 'Specialist Care'
   minutes: number
+  price?: number // pence; defaults to COURSE_PRICE (brand masterclasses are 500)
   lessons: AcademyLesson[]
   quiz: AcademyQuestion[]
 }
@@ -466,6 +469,15 @@ The universal rule across all houses: never blag a brand. "I trained with Elemis
     ],
   },
 ]
+
+// The original core curriculum - the £79 bundle covers exactly these.
+export const CORE_SLUGS = ACADEMY.map(c => c.slug)
+
+// Additional courses (brand masterclasses, specialist care) register here.
+ACADEMY.push(...MORE_COURSES)
+
+export const coursePrice = (c: { price?: number }) => c.price ?? COURSE_PRICE
+export const publicCoursePrice = (c: { price?: number }) => (c.price ?? COURSE_PRICE) + 500
 
 export const courseBySlug = (slug: string) => ACADEMY.find(c => c.slug === slug)
 export const courseTitle = (slug: string) => courseBySlug(slug)?.title || slug

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { stripe } from '@/lib/stripe'
 import { JOB_TIERS, FEATURED_PROFILE_PRICE, AGENCY_LISTING_TIERS, AGENCY_PLATFORM_FEE_PCT, PREFERRED_EMPLOYER_PRICE } from '@/lib/constants'
-import { COURSE_PRICE, BUNDLE_PRICE, PUBLIC_COURSE_PRICE, ACADEMY } from '@/lib/academy'
+import { COURSE_PRICE, BUNDLE_PRICE, PUBLIC_COURSE_PRICE, ACADEMY, CORE_SLUGS, coursePrice, publicCoursePrice } from '@/lib/academy'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 
@@ -58,7 +58,7 @@ export async function POST(req: NextRequest) {
               name: `WHC Academy - ${course.title}`,
               description: 'Online course with certificate. Access details are emailed after payment.',
             },
-            unit_amount: PUBLIC_COURSE_PRICE,
+            unit_amount: publicCoursePrice(course),
           },
           quantity: 1,
         }],
@@ -87,7 +87,7 @@ export async function POST(req: NextRequest) {
           price_data: {
             currency: 'gbp',
             product_data: {
-              name: `WHC Academy - Complete Bundle (${ACADEMY.length} courses)`,
+              name: `WHC Academy - Core Curriculum Bundle (${CORE_SLUGS.length} courses)`,
               description: 'Every WHC Academy course, with a certificate and profile badge for each on completion',
             },
             unit_amount: BUNDLE_PRICE,
@@ -103,10 +103,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ url: session.url })
     }
 
-    // ── WHC Academy course - £10 one-off, certificate on completion ──
+    // ── WHC Academy course - one-off, certificate on completion ──
     if (type === 'course') {
       const { candidateId, courseSlug, courseTitle } = body
       if (!candidateId || !courseSlug) return NextResponse.json({ error: 'Missing candidateId or courseSlug' }, { status: 400 })
+      const courseDef = ACADEMY.find(c => c.slug === String(courseSlug))
+      if (!courseDef) return NextResponse.json({ error: 'Unknown course' }, { status: 400 })
 
       const session = await stripe.checkout.sessions.create({
         payment_method_types: ['card'],
@@ -117,7 +119,7 @@ export async function POST(req: NextRequest) {
               name: `WHC Academy - ${String(courseTitle || courseSlug).slice(0, 80)}`,
               description: 'Online course with certificate and profile badge on completion',
             },
-            unit_amount: COURSE_PRICE,
+            unit_amount: coursePrice(courseDef),
           },
           quantity: 1,
         }],

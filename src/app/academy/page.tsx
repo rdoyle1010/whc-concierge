@@ -5,7 +5,7 @@ import Link from 'next/link'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
 import { createClient } from '@/lib/supabase/client'
-import { ACADEMY, COURSE_PRICE, PUBLIC_COURSE_PRICE } from '@/lib/academy'
+import { ACADEMY, COURSE_PRICE, PUBLIC_COURSE_PRICE, coursePrice, publicCoursePrice } from '@/lib/academy'
 import { courseImage } from '@/lib/academy-extras'
 import { GraduationCap, Clock, ShieldCheck, X } from 'lucide-react'
 
@@ -66,7 +66,7 @@ export default function PublicAcademyPage() {
             Short, serious courses written for luxury spa and wellness professionals - consultation, retail, Forbes standards, treatment craft and brand knowledge. Pass the final quiz and earn a verifiable certificate. No membership required.
           </p>
           <p className="text-[13px] text-muted">
-            £{(PUBLIC_COURSE_PRICE / 100).toFixed(0)} per course · WHC members pay £{(COURSE_PRICE / 100).toFixed(0)} from their <Link href={isCandidate ? '/talent/academy' : '/register/talent'} className="text-accent underline">dashboard</Link>, where certificates also appear as profile badges properties can search.
+            From £10 per course · WHC members pay from £5 in their <Link href={isCandidate ? '/talent/academy' : '/register/talent'} className="text-accent underline">dashboard</Link>, where certificates also appear as profile badges properties can search.
           </p>
         </div>
       </section>
@@ -95,9 +95,9 @@ export default function PublicAcademyPage() {
                   <p className="text-[12px] text-gray-500 mb-2">{course.tagline}</p>
                   <p className="text-[11px] text-gray-400 mb-4 inline-flex items-center gap-1"><Clock size={11} /> {course.lessons.length} modules · case studies &amp; assessment · ~{course.minutes} min · certificate</p>
                   <div className="mt-auto flex items-center justify-between gap-3">
-                    <p className="text-[16px] font-semibold text-ink">£{(PUBLIC_COURSE_PRICE / 100).toFixed(0)}</p>
+                    <p className="text-[16px] font-semibold text-ink">£{(publicCoursePrice(course) / 100).toFixed(0)}</p>
                     {isCandidate ? (
-                      <Link href="/talent/academy" className="btn-primary text-[12px]">£{(COURSE_PRICE / 100).toFixed(0)} in your dashboard</Link>
+                      <Link href="/talent/academy" className="btn-primary text-[12px]">£{(coursePrice(course) / 100).toFixed(0)} in your dashboard</Link>
                     ) : (
                       <button onClick={() => { setBuying({ slug: course.slug, title: course.title }); setError('') }} className="btn-primary text-[12px]">Get this course</button>
                     )}
@@ -123,14 +123,14 @@ export default function PublicAcademyPage() {
               <h2 className="font-serif text-lg font-bold text-ink flex items-center gap-2"><GraduationCap size={17} className="text-accent" /> {buying.title}</h2>
               <button onClick={() => setBuying(null)} className="text-gray-300 hover:text-ink"><X size={20} /></button>
             </div>
-            <p className="text-[12px] text-gray-500 mb-4">£{(PUBLIC_COURSE_PRICE / 100).toFixed(0)} one-off. After payment your access link arrives by email - one tap and you&apos;re in, no password to set. Certificate issued the moment you pass.</p>
+            <p className="text-[12px] text-gray-500 mb-4">£{(publicCoursePrice(ACADEMY.find(c => c.slug === buying.slug) || { price: undefined }) / 100).toFixed(0)} one-off. After payment your access link arrives by email - one tap and you&apos;re in, no password to set. Certificate issued the moment you pass.</p>
             <label className="block text-sm font-medium text-gray-700 mb-1.5">Your email</label>
             <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="you@example.com" className="input-field mb-3" />
             {error && <p className="text-[12px] text-red-600 mb-3">{error}</p>}
             <button onClick={buyAsGuest} disabled={busy || !email.trim()} className="btn-primary w-full disabled:opacity-50">
-              {busy ? 'Taking you to payment...' : `Pay £${(PUBLIC_COURSE_PRICE / 100).toFixed(0)} & start`}
+              {busy ? 'Taking you to payment...' : `Pay £${(publicCoursePrice(ACADEMY.find(c => c.slug === buying.slug) || { price: undefined }) / 100).toFixed(0)} & start`}
             </button>
-            <p className="text-[11px] text-muted text-center mt-3">Already a WHC member? <Link href="/login" className="underline">Sign in</Link> and pay £{(COURSE_PRICE / 100).toFixed(0)} instead.</p>
+            <p className="text-[11px] text-muted text-center mt-3">Already a WHC member? <Link href="/login" className="underline">Sign in</Link> and pay the member price instead.</p>
           </div>
         </div>
       )}

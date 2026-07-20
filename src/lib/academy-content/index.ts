@@ -30,4 +30,6 @@ const CONTENT: Record<string, CourseContent> = {
   'brand-knowledge': brandKnowledge,
 }
 
-export const getCourseContent = (slug: string): CourseContent | null => CONTENT[slug] || null
+import { MORE_CONTENT } from '../academy-more'
+
+export const getCourseContent = (slug: string): CourseContent | null => CONTENT[slug] || MORE_CONTENT[slug] || null

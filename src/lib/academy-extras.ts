@@ -4,6 +4,8 @@
 // Lessons are matched by index; images are the same licence-free Unsplash
 // sources used on the homepage.
 
+import { MORE_EXTRAS } from './academy-more'
+
 export type LessonExtras = { guestView: string; helpsYou: string; tips: string[] }
 export type CourseExtras = { image: string; lessons: LessonExtras[] }
 
@@ -182,7 +184,7 @@ export const ACADEMY_EXTRAS: Record<string, CourseExtras> = {
 }
 
 export const courseImage = (slug: string) =>
-  ACADEMY_EXTRAS[slug]?.image || 'https://images.unsplash.com/photo-1540555700478-4be289fbecef?w=1200&q=80&auto=format&fit=crop'
+  ACADEMY_EXTRAS[slug]?.image || MORE_EXTRAS[slug]?.image || 'https://images.unsplash.com/photo-1540555700478-4be289fbecef?w=1200&q=80&auto=format&fit=crop'
 
 export const lessonExtras = (slug: string, index: number): LessonExtras | null =>
-  ACADEMY_EXTRAS[slug]?.lessons[index] || null
+  ACADEMY_EXTRAS[slug]?.lessons[index] || MORE_EXTRAS[slug]?.lessons[index] || null
