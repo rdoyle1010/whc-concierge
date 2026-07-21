@@ -25,6 +25,7 @@ export default function TalentJobsPage() {
   const [sortBy, setSortBy] = useState('match')
   const [applied, setApplied] = useState<Set<string>>(new Set())
   const [saved, setSaved] = useState<Set<string>>(new Set())
+  const [applyError, setApplyError] = useState('')
   const [page, setPage] = useState(1)
   const perPage = 12
 
@@ -103,10 +104,21 @@ export default function TalentJobsPage() {
   const handleApply = async (jobId: string, matchScore: number) => {
     if (!userId) return
     // Server-side: creates the application (correct profile id) + mutual-match detection + employer notification
-    await fetch('/api/swipe', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ targetId: jobId, targetType: 'job', action: 'right', matchScore }),
-    }).catch(() => {})
+    let res: Response
+    try {
+      res = await fetch('/api/swipe', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ targetId: jobId, targetType: 'job', action: 'right', matchScore }),
+      })
+    } catch {
+      setApplyError('Application failed - please check your connection and try again.')
+      return
+    }
+    if (!res.ok) {
+      setApplyError('Application could not be submitted. Please try again.')
+      return
+    }
+    setApplyError('')
     setApplied(new Set(Array.from(applied).concat(jobId)))
     const job = jobs.find((j: any) => j.id === jobId)
     // Send application confirmation emails (fire-and-forget)
@@ -137,6 +149,8 @@ export default function TalentJobsPage() {
         <h1 className="text-[24px] font-medium text-ink">Browse Roles</h1>
         <p className="text-[13px] text-muted">{sorted.length} role{sorted.length !== 1 ? 's' : ''}</p>
       </div>
+
+      {applyError && <div className="bg-red-50 text-red-600 text-sm px-4 py-3 rounded-lg mb-6">{applyError}</div>}
 
       {/* Filters */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">

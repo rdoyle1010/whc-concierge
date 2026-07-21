@@ -12,6 +12,7 @@ const ALLOWED_COLUMNS = new Set([
   'phone',
   'postcode',
   'location',
+  'location_country',
   'has_car',
   'role_level',
   'headline',
@@ -103,14 +104,26 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'No valid fields provided' }, { status: 400 })
     }
 
-    const { error } = await admin
-      .from('candidate_profiles')
-      .update(safeData)
-      .eq('id', profileId)
-
+    // Strip-and-retry: if the live table lacks a column, drop ONLY that key
+    // and keep saving the rest. One missing column must never cost the user
+    // their whole form (this exact failure silently ate wizard step 1).
+    const attempt = { ...safeData }
+    const skipped: string[] = []
+    let { error } = await admin.from('candidate_profiles').update(attempt).eq('id', profileId)
+    for (let i = 0; i < 8 && error; i++) {
+      const m = /Could not find the '([^']+)' column/.exec(error.message || '')
+        || /column "([^"]+)" of relation/.exec(error.message || '')
+      if (!m || !(m[1] in attempt)) break
+      skipped.push(m[1])
+      delete attempt[m[1]]
+      if (Object.keys(attempt).length === 0) break
+      const retry = await admin.from('candidate_profiles').update(attempt).eq('id', profileId)
+      error = retry.error
+    }
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    if (skipped.length) console.error('[profile/update] columns missing in live DB, values dropped:', skipped.join(', '))
 
-    return NextResponse.json({ success: true })
+    return NextResponse.json({ success: true, skipped })
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 })
   }

@@ -27,6 +27,19 @@ function makeCertificateCode() {
   return code
 }
 
+// Random codes can collide; check the table before accepting one so the
+// /verify lookup (maybeSingle) never finds two rows for the same code.
+async function makeUniqueCertificateCode(admin: any) {
+  let code = makeCertificateCode()
+  for (let i = 0; i < 5; i++) {
+    const { data: clash } = await admin.from('course_enrollments')
+      .select('id').eq('certificate_code', code).maybeSingle()
+    if (!clash) break
+    code = makeCertificateCode()
+  }
+  return code
+}
+
 export async function GET() {
   try {
     const { data: { user } } = await getAuthedUser()
@@ -81,6 +94,13 @@ export async function POST(req: NextRequest) {
 
     // ── quiz: grade server-side, award the certificate at 80%+ ──
     if (action === 'quiz') {
+      // The UI locks the assessment until every module is done - enforce the
+      // same gate here so a direct POST cannot earn a certificate unread.
+      // (JSONB keys deserialize as strings; progressMap[i] coerces the index.)
+      const progressMap = enrolment.progress || {}
+      if (!course.lessons.every((_: any, i: number) => progressMap[i])) {
+        return NextResponse.json({ error: 'Complete all modules before the assessment.' }, { status: 400 })
+      }
       const key = ACADEMY_ANSWERS[slug]
       if (!key) return NextResponse.json({ error: 'Quiz unavailable' }, { status: 500 })
       const answers = Array.isArray(body.answers) ? body.answers.map((a: any) => parseInt(String(a), 10)) : []
@@ -96,7 +116,7 @@ export async function POST(req: NextRequest) {
       }
       if (passed && !enrolment.completed_at) {
         update.completed_at = new Date().toISOString()
-        update.certificate_code = makeCertificateCode()
+        update.certificate_code = await makeUniqueCertificateCode(admin)
       }
       const { data: updated, error } = await admin.from('course_enrollments')
         .update(update).eq('id', enrolment.id).select('*').single()

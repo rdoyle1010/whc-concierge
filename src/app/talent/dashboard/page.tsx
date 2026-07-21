@@ -3,103 +3,104 @@
 import { useEffect, useState } from 'react'
 import DashboardShell from '@/components/DashboardShell'
 import { createClient } from '@/lib/supabase/client'
-import { calculateMatchScore } from '@/lib/matching'
-import { Briefcase, FileText, MessageSquare, Star, ArrowRight, AlertCircle, CheckCircle, Clock } from 'lucide-react'
-import SkeletonProfile from '@/components/SkeletonProfile'
-import SkeletonTable from '@/components/SkeletonTable'
 import Link from 'next/link'
-import ProfileStrength from '@/components/ProfileStrength'
+import {
+  Briefcase, FileText, MessageSquare, GraduationCap, User, Star, ArrowRight, Search,
+} from 'lucide-react'
+
+// Talent home - the landing page after login. Greeting, a few live counts
+// (best-effort - failures are silent) and quick links into the main areas.
 
 export default function TalentDashboard() {
   const supabase = createClient()
   const [profile, setProfile] = useState<any>(null)
-  const [stats, setStats] = useState({ matches: 0, applications: 0, messages: 0, reviewScore: '—' })
-  const [matchedJobs, setMatchedJobs] = useState<any[]>([])
+  const [stats, setStats] = useState({ applications: 0, messages: 0 })
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     async function load() {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) { setLoading(false); return }
+      try {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) { setLoading(false); return }
 
-      const { data: prof } = await supabase.from('candidate_profiles').select('*').eq('user_id', user.id).single()
-      setProfile(prof)
+        const { data: prof } = await supabase
+          .from('candidate_profiles')
+          .select('id, full_name, headline, approval_status, is_featured')
+          .eq('user_id', user.id)
+          .maybeSingle()
+        setProfile(prof)
 
-      // Real stats
-      const [apps, msgs] = await Promise.all([
-        supabase.from('applications').select('id', { count: 'exact', head: true }).eq('candidate_id', prof?.id || user.id),
-        supabase.from('messages').select('id', { count: 'exact', head: true }).eq('recipient_id', user.id).eq('read', false),
-      ])
-
-      // Load jobs and calculate real match scores
-      const { data: rawJobs } = await supabase.from('job_listings').select('*, employer_profiles(company_name, property_name)').eq('is_live', true).order('posted_date', { ascending: false }).limit(20)
-
-      const jobs = (rawJobs || []).map((j: any) => ({
-        ...j,
-        title: j.job_title || j.title,
-        employer_profiles: { ...j.employer_profiles, company_name: j.employer_profiles?.property_name || j.employer_profiles?.company_name },
-      }))
-
-      let scored: any[] = []
-      if (prof && jobs.length > 0) {
-        scored = jobs.map((job: any) => {
-          const result = calculateMatchScore(prof, job)
-          if (result.hardStop) return null
-          return { ...job, matchScore: result.score, matchLabel: result.label, matchColour: result.colour, matchBg: result.bgColour }
-        }).filter(Boolean).sort((a: any, b: any) => b.matchScore - a.matchScore)
-      } else {
-        scored = jobs.map((job: any) => ({ ...job, matchScore: 75, matchLabel: 'Strong Match', matchColour: '#1D4ED8', matchBg: '#DBEAFE' }))
-      }
-
-      setMatchedJobs(scored.slice(0, 3))
-      setStats({
-        matches: scored.filter((j: any) => j.matchScore >= 45).length,
-        applications: apps.count || 0,
-        messages: msgs.count || 0,
-        reviewScore: prof?.review_score ? `${prof.review_score}` : '—',
-      })
+        // Counts are decoration - never let them break the page
+        try {
+          const [appsRes, msgsRes] = await Promise.all([
+            prof?.id
+              ? supabase.from('applications').select('id', { count: 'exact', head: true }).eq('candidate_id', prof.id)
+              : Promise.resolve({ count: 0 } as any),
+            supabase.from('messages').select('id', { count: 'exact', head: true }).eq('recipient_id', user.id).eq('read', false),
+          ])
+          setStats({
+            applications: appsRes?.count || 0,
+            messages: msgsRes?.count || 0,
+          })
+        } catch { /* counts stay at zero */ }
+      } catch { /* show the page regardless */ }
       setLoading(false)
     }
     load()
   }, [])
 
+  const quickLinks = [
+    { label: 'Browse Jobs', desc: 'Find your next role at the world’s finest wellness destinations.', href: '/talent/jobs', icon: <Briefcase size={18} /> },
+    { label: 'Applications', desc: 'Track every role you have applied for.', href: '/talent/applications', icon: <FileText size={18} /> },
+    { label: 'Messages', desc: 'Conversations with properties and matches.', href: '/talent/messages', icon: <MessageSquare size={18} /> },
+    { label: 'Academy', desc: 'Courses, certificates and profile badges.', href: '/talent/academy', icon: <GraduationCap size={18} /> },
+    { label: 'My Profile', desc: 'Keep your profile polished and up to date.', href: '/talent/profile', icon: <User size={18} /> },
+    { label: 'Get Verified', desc: 'Verified profiles earn more employer trust.', href: '/talent/verification', icon: <Star size={18} /> },
+  ]
 
-  if (loading) return <DashboardShell role="talent"><SkeletonProfile /><div className="mt-6"><SkeletonTable rows={3} /></div></DashboardShell>
+  if (loading) return (
+    <DashboardShell role="talent">
+      <div className="animate-pulse space-y-6">
+        <div className="h-6 w-48 bg-surface rounded" />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {[1, 2, 3, 4, 5, 6].map(i => (
+            <div key={i} className="bg-white border border-border rounded-xl p-5">
+              <div className="h-4 w-24 bg-surface rounded mb-3" />
+              <div className="h-3 w-40 bg-surface rounded" />
+            </div>
+          ))}
+        </div>
+      </div>
+    </DashboardShell>
+  )
 
   return (
     <DashboardShell role="talent" userName={profile?.full_name}>
-      {/* Approval banner */}
-      {(!profile?.approval_status || profile?.approval_status === 'pending') && (
-        <div className="flex items-center gap-3 bg-amber-50 border border-amber-200 rounded-xl p-4 mb-6">
-          <Clock size={18} className="text-amber-600 shrink-0" />
-          <div><p className="text-[13px] font-medium text-amber-800">Your profile is under review</p><p className="text-[12px] text-amber-600">We&apos;ll notify you within 24 hours.</p></div>
-        </div>
-      )}
-      {profile?.approval_status === 'approved' && (
-        <div className="flex items-center gap-3 bg-emerald-50 border border-emerald-200 rounded-xl p-4 mb-6">
-          <CheckCircle size={18} className="text-emerald-600 shrink-0" />
-          <p className="text-[13px] font-medium text-emerald-800">Your profile is live — employers can find you</p>
-        </div>
-      )}
-      {profile?.approval_status === 'rejected' && (
-        <div className="flex items-center gap-3 bg-red-50 border border-red-200 rounded-xl p-4 mb-6">
-          <AlertCircle size={18} className="text-red-600 shrink-0" />
-          <div><p className="text-[13px] font-medium text-red-800">Profile needs attention</p><p className="text-[12px] text-red-600">{profile.approval_notes || 'Please update and resubmit.'}</p></div>
-        </div>
-      )}
-
       <div className="mb-8">
-        <h1 className="text-[24px] font-medium text-ink">Welcome back{profile?.full_name ? `, ${profile.full_name.split(' ')[0]}` : ''}.</h1>
-        <p className="text-[13px] text-muted mt-1">{new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</p>
+        <h1 className="text-[24px] font-medium text-ink">
+          {profile?.full_name ? `Welcome back, ${profile.full_name.split(' ')[0]}` : 'Welcome back'}
+        </h1>
+        <p className="text-[13px] text-muted mt-1">
+          {new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+        </p>
       </div>
 
-      {/* Stats */}
+      {profile && profile.approval_status && profile.approval_status !== 'approved' && (
+        <div className="flex items-center gap-3 bg-amber-50 border border-amber-200 rounded-xl p-4 mb-6">
+          <Star size={18} className="text-amber-600 shrink-0" />
+          <div>
+            <p className="text-[13px] font-medium text-amber-800">Your profile is under review</p>
+            <p className="text-[12px] text-amber-600">You can browse roles and complete your profile now - we confirm approval shortly.</p>
+          </div>
+        </div>
+      )}
+
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         {[
-          { label: 'Matches', value: stats.matches, icon: <Briefcase size={16}/> },
-          { label: 'Applications', value: stats.applications, icon: <FileText size={16}/> },
-          { label: 'Messages', value: stats.messages, icon: <MessageSquare size={16}/> },
-          { label: 'Reviews', value: stats.reviewScore, icon: <Star size={16}/> },
+          { label: 'Applications', value: stats.applications, icon: <FileText size={16} /> },
+          { label: 'Unread messages', value: stats.messages, icon: <MessageSquare size={16} /> },
+          { label: 'Profile status', value: profile?.approval_status === 'approved' ? 'Approved' : 'In review', icon: <User size={16} /> },
+          { label: 'Featured', value: profile?.is_featured ? 'Active' : 'Off', icon: <Star size={16} /> },
         ].map(s => (
           <div key={s.label} className="dashboard-card">
             <div className="text-muted mb-2">{s.icon}</div>
@@ -109,43 +110,25 @@ export default function TalentDashboard() {
         ))}
       </div>
 
-      {/* Quick links */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8">
-        {[
-          { href: '/talent/profile', label: 'Edit Profile' },
-          { href: '/jobs', label: 'Browse Roles' },
-          { href: '/roles/match', label: 'Go to Match' },
-          { href: '/talent/agency', label: 'Agency Shifts' },
-        ].map(l => (
-          <Link key={l.href} href={l.href} className="border border-border rounded-xl p-3 text-center hover:border-ink/20 hover:shadow-sm transition-all">
-            <p className="text-[13px] font-medium text-ink">{l.label}</p>
-          </Link>
-        ))}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-8">
+        <Link href="/talent/jobs" className="btn-primary flex items-center justify-center gap-2 py-3"><Search size={14} />Browse roles</Link>
+        <Link href="/talent/profile" className="btn-secondary flex items-center justify-center gap-2 py-3">Update profile</Link>
+        <Link href="/talent/academy" className="btn-secondary flex items-center justify-center gap-2 py-3">Visit the Academy</Link>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Profile strength */}
-        <ProfileStrength profile={profile} />
-
-        {/* Top matches */}
-        <div className="dashboard-card lg:col-span-2">
-          <div className="flex items-center justify-between mb-4">
-            <p className="text-[14px] font-medium text-ink">Your top matches</p>
-            <Link href="/roles/match" className="text-[12px] text-muted hover:text-ink flex items-center gap-1">View all <ArrowRight size={12}/></Link>
-          </div>
-          <div className="space-y-2">
-            {matchedJobs.map((job) => (
-              <div key={job.id} className="flex items-center justify-between p-3 border border-border rounded-xl hover:border-ink/20 hover:shadow-sm transition-all">
-                <div>
-                  <p className="text-[13px] font-medium text-ink">{job.title}</p>
-                  <p className="text-[11px] text-muted">{job.employer_profiles?.company_name} &middot; {job.location} &middot; {job.salary_min && job.salary_max ? `£${(job.salary_min/1000).toFixed(0)}k–£${(job.salary_max/1000).toFixed(0)}k` : ''}</p>
-                </div>
-                <span className="text-[11px] font-semibold px-2.5 py-1 rounded-full" style={{ backgroundColor: job.matchBg || '#DBEAFE', color: job.matchColour || '#1D4ED8' }}>{job.matchScore}%</span>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {quickLinks.map(link => (
+          <Link key={link.href} href={link.href} className="dashboard-card hover:shadow-md hover:-translate-y-0.5 transition-all group">
+            <div className="flex items-center justify-between mb-3">
+              <div className="w-10 h-10 rounded-lg bg-accent/10 flex items-center justify-center text-accent">
+                {link.icon}
               </div>
-            ))}
-            {matchedJobs.length === 0 && <p className="text-[13px] text-muted text-center py-8">No active roles right now — check back soon.</p>}
-          </div>
-        </div>
+              <ArrowRight size={14} className="text-muted group-hover:text-ink transition-colors" />
+            </div>
+            <p className="text-[14px] font-medium text-ink mb-1">{link.label}</p>
+            <p className="text-[12px] text-muted">{link.desc}</p>
+          </Link>
+        ))}
       </div>
     </DashboardShell>
   )

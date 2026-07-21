@@ -16,6 +16,8 @@ export default function AdminBlogPage() {
   const [editing, setEditing] = useState<any>(null)
   const [saving, setSaving] = useState(false)
   const [showDelete, setShowDelete] = useState<string | null>(null)
+  const [formError, setFormError] = useState('')
+  const [pageError, setPageError] = useState('')
   const [page, setPage] = useState(1)
   const [perPage, setPerPage] = useState(20)
 
@@ -41,6 +43,7 @@ export default function AdminBlogPage() {
   const handleSave = async () => {
     if (!form.title || !form.content) return
     setSaving(true)
+    setFormError('')
     const payload = {
       title: form.title,
       slug: form.slug || generateSlug(form.title),
@@ -55,10 +58,18 @@ export default function AdminBlogPage() {
     }
 
     // Writes go through the service-role admin API - direct writes are blocked by RLS
+    let saveRes: Response
     if (editing) {
-      await fetch('/api/admin/blog', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: editing.id, ...payload }) })
+      saveRes = await fetch('/api/admin/blog', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: editing.id, ...payload }) })
     } else {
-      await fetch('/api/admin/blog', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
+      saveRes = await fetch('/api/admin/blog', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
+    }
+
+    if (!saveRes.ok) {
+      const err = await saveRes.json().catch(() => ({}))
+      setFormError(err.error || 'Save failed - please try again.')
+      setSaving(false)
+      return
     }
 
     const res = await fetch('/api/admin/blog?per_page=200')
@@ -79,12 +90,20 @@ export default function AdminBlogPage() {
       published_at: post.published_at ? post.published_at.slice(0, 10) : '',
     })
     setEditing(post)
+    setFormError('')
     setShowForm(true)
   }
 
   const confirmDelete = async () => {
     if (!showDelete) return
-    await fetch('/api/admin/blog', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: showDelete }) })
+    setPageError('')
+    const res = await fetch('/api/admin/blog', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: showDelete }) })
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}))
+      setPageError(err.error || 'Failed to delete post - please try again.')
+      setShowDelete(null)
+      return
+    }
     setPosts(posts.filter(p => p.id !== showDelete))
     setShowDelete(null)
   }
@@ -93,7 +112,13 @@ export default function AdminBlogPage() {
     const newStatus = post.status === 'published' ? 'draft' : 'published'
     const updates: any = { status: newStatus }
     if (newStatus === 'published' && !post.published_at) updates.published_at = new Date().toISOString()
-    await fetch('/api/admin/blog', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: post.id, ...updates }) })
+    setPageError('')
+    const res = await fetch('/api/admin/blog', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: post.id, ...updates }) })
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}))
+      setPageError(err.error || `Failed to ${newStatus === 'published' ? 'publish' : 'unpublish'} post - please try again.`)
+      return
+    }
     setPosts(posts.map(p => p.id === post.id ? { ...p, ...updates } : p))
   }
 
@@ -108,9 +133,13 @@ export default function AdminBlogPage() {
           <h1 className="text-2xl font-serif font-bold text-ink">Blog Management</h1>
           <p className="text-[12px] text-muted mt-1">{publishedCount} published &middot; {draftCount} drafts</p>
         </div>
-        <button type="button" onClick={() => { setForm(emptyPost); setEditing(null); setShowForm(true) }}
+        <button type="button" onClick={() => { setForm(emptyPost); setEditing(null); setFormError(''); setShowForm(true) }}
           className="btn-primary flex items-center space-x-2"><Plus size={16} /><span>New Post</span></button>
       </div>
+
+      {pageError && (
+        <div className="mb-6 px-4 py-3 rounded-lg text-[13px] font-medium bg-red-50 text-red-600">{pageError}</div>
+      )}
 
       {/* ── Form Modal ── */}
       {showForm && (
@@ -176,6 +205,9 @@ export default function AdminBlogPage() {
                   <span className="text-sm font-medium text-ink">{form.status === 'published' ? 'Published' : 'Draft'}</span>
                 </label>
               </div>
+              {formError && (
+                <div className="px-4 py-3 rounded-lg text-[13px] font-medium bg-red-50 text-red-600">{formError}</div>
+              )}
               <div className="flex gap-3 pt-2">
                 <button type="button" onClick={() => setShowForm(false)} className="btn-secondary flex-1">Cancel</button>
                 <button type="button" onClick={handleSave} disabled={saving || !form.title || !form.content} className="btn-primary flex-1 disabled:opacity-40">

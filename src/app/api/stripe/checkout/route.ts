@@ -13,7 +13,15 @@ const ALLOWED_ORIGINS = [
 ].filter(Boolean) as string[]
 
 function getSafeOrigin(untrusted?: string): string {
-  if (untrusted && ALLOWED_ORIGINS.some(o => untrusted.startsWith(o))) return untrusted
+  // Exact origin match only - a startsWith prefix check would accept
+  // 'https://whc-concierge.netlify.app.attacker.com' and hand Stripe an
+  // attacker-controlled success/cancel URL.
+  if (untrusted) {
+    try {
+      const o = new URL(untrusted).origin
+      if (ALLOWED_ORIGINS.includes(o)) return o
+    } catch { /* fall through to the safe default */ }
+  }
   return ALLOWED_ORIGINS[0] || 'https://talent.wellnesshousecollective.co.uk'
 }
 
@@ -81,6 +89,22 @@ export async function POST(req: NextRequest) {
       const { candidateId } = body
       if (!candidateId) return NextResponse.json({ error: 'Missing candidateId' }, { status: 400 })
 
+      // The paying user must own the candidate profile being enrolled
+      const { createAdminClient } = await import('@/lib/supabase/admin')
+      const admin = createAdminClient()
+      const { data: cand } = await admin.from('candidate_profiles').select('id, user_id').eq('id', candidateId).maybeSingle()
+      if (!cand || cand.user_id !== user.id) {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+      }
+
+      // Nothing to buy if every core course is already owned
+      const { data: owned } = await admin.from('course_enrollments')
+        .select('course_slug').eq('candidate_id', cand.id).not('paid_at', 'is', null)
+      const ownedCore = new Set((owned || []).map((r: any) => r.course_slug).filter((s: string) => CORE_SLUGS.includes(s)))
+      if (ownedCore.size >= CORE_SLUGS.length) {
+        return NextResponse.json({ error: 'You already own every course in the core curriculum bundle.' }, { status: 400 })
+      }
+
       const session = await stripe.checkout.sessions.create({
         payment_method_types: ['card'],
         line_items: [{
@@ -88,7 +112,7 @@ export async function POST(req: NextRequest) {
             currency: 'gbp',
             product_data: {
               name: `WHC Academy - Core Curriculum Bundle (${CORE_SLUGS.length} courses)`,
-              description: 'Every WHC Academy course, with a certificate and profile badge for each on completion',
+              description: `All ${CORE_SLUGS.length} core curriculum courses, with a certificate and profile badge for each on completion. Brand masterclasses and specialist care courses sold separately.`,
             },
             unit_amount: BUNDLE_PRICE,
           },
@@ -109,6 +133,14 @@ export async function POST(req: NextRequest) {
       if (!candidateId || !courseSlug) return NextResponse.json({ error: 'Missing candidateId or courseSlug' }, { status: 400 })
       const courseDef = ACADEMY.find(c => c.slug === String(courseSlug))
       if (!courseDef) return NextResponse.json({ error: 'Unknown course' }, { status: 400 })
+
+      // The paying user must own the candidate profile being enrolled
+      const { createAdminClient } = await import('@/lib/supabase/admin')
+      const admin = createAdminClient()
+      const { data: cand } = await admin.from('candidate_profiles').select('id, user_id').eq('id', candidateId).maybeSingle()
+      if (!cand || cand.user_id !== user.id) {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+      }
 
       const session = await stripe.checkout.sessions.create({
         payment_method_types: ['card'],

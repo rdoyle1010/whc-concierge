@@ -106,12 +106,19 @@ export default function EmployerCandidatesPage() {
   }
 
   const handleSwipe = async (candidateId: string, direction: 'left' | 'right') => {
+    const removed = candidates.find(c => c.id === candidateId)
     if (direction === 'left') setCandidates(prev => prev.filter(c => c.id !== candidateId))
     // Swipe + mutual-match detection, all server-side
     const res = await fetch('/api/swipe', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ targetId: candidateId, targetType: 'candidate', action: direction }),
     }).catch(() => null)
+    if (direction === 'left' && !(res && res.ok)) {
+      // Roll back the optimistic removal so the card isn't silently lost
+      if (removed) setCandidates(prev => prev.some(c => c.id === candidateId) ? prev : [removed, ...prev])
+      alert('Could not record your pass - please try again.')
+      return
+    }
     const result = res && res.ok ? await res.json().catch(() => null) : null
     if (direction === 'right') {
       if (result?.matched) {

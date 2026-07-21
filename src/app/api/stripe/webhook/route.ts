@@ -3,7 +3,7 @@ import { stripe } from '@/lib/stripe'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createNotification } from '@/lib/notifications'
 import { ACADEMY, CORE_SLUGS, courseTitle } from '@/lib/academy'
-import { sendCourseAccessEmail } from '@/lib/emails'
+import { sendCourseAccessEmail, sendBookingConfirmedEmail, sendReferralRewardEmail } from '@/lib/emails'
 import Stripe from 'stripe'
 
 // Referral credit: when a referred therapist pays for their first register
@@ -28,6 +28,10 @@ async function convertReferral(supabase: any, candidateId: string) {
       await createNotification(referrer.user_id, 'general', 'You’ve earned a free month',
         `${cand.full_name || 'Your friend'} just joined the agency register with your link - a free month will be applied to your listing. Thank you for growing the collective.`,
         '/talent/agency/settings')
+      const { data: u } = await supabase.auth.admin.getUserById(referrer.user_id)
+      if (u?.user?.email) {
+        await sendReferralRewardEmail(u.user.email, referrer.full_name || 'there')
+      }
     }
   } catch (e: any) {
     console.error('Referral conversion failed (non-fatal):', e?.message)
@@ -78,6 +82,47 @@ export async function POST(req: NextRequest) {
           // against the exact Stripe payment later.
           stripe_payment_intent: (session.payment_intent as string) || null,
         }).eq('id', meta.booking_id)
+
+        // Tell both parties the shift is now confirmed - the therapist is
+        // expected to turn up, the property has paid. Best-effort: a failed
+        // notification or email must never fail the webhook.
+        try {
+          const { data: booking } = await supabase.from('agency_bookings')
+            .select('candidate_id, employer_id, shift_date, rate')
+            .eq('id', meta.booking_id).maybeSingle()
+          if (booking) {
+            const { data: cand } = await supabase.from('candidate_profiles')
+              .select('user_id, full_name').eq('id', booking.candidate_id).maybeSingle()
+            const { data: emp } = await supabase.from('employer_profiles')
+              .select('user_id, company_name, property_name').eq('id', booking.employer_id).maybeSingle()
+            const propertyName = emp?.property_name || emp?.company_name || 'the property'
+            const therapistName = cand?.full_name || 'The therapist'
+            const shiftDate = booking.shift_date || 'the agreed date'
+
+            if (cand?.user_id) {
+              await createNotification(cand.user_id, 'general', 'Booking confirmed - payment received',
+                `Your shift at ${propertyName} on ${shiftDate} at £${booking.rate}/hr is confirmed. WHC pays you after the shift.`,
+                '/talent/agency')
+              const { data: u } = await supabase.auth.admin.getUserById(cand.user_id)
+              if (u?.user?.email) {
+                await sendBookingConfirmedEmail(u.user.email, cand.full_name || 'there',
+                  `shift at ${propertyName} on ${shiftDate} at £${booking.rate}/hr. WHC pays you after the shift.`)
+              }
+            }
+            if (emp?.user_id) {
+              await createNotification(emp.user_id, 'general', 'Payment received - booking confirmed',
+                `${therapistName}'s shift on ${shiftDate} is confirmed.`,
+                '/employer/agency')
+              const { data: u } = await supabase.auth.admin.getUserById(emp.user_id)
+              if (u?.user?.email) {
+                await sendBookingConfirmedEmail(u.user.email, propertyName,
+                  `${therapistName}'s shift on ${shiftDate} is confirmed. Payment received.`)
+              }
+            }
+          }
+        } catch (e: any) {
+          console.error('Booking confirmation notify failed (non-fatal):', e?.message)
+        }
       }
 
       // PUBLIC Academy purchase → create (or find) the buyer's learner
@@ -97,7 +142,15 @@ export async function POST(req: NextRequest) {
               email, email_confirm: true, user_metadata: { role: 'talent', full_name: buyerName },
             })
             if (created?.user) userId = created.user.id
-            else if (cErr) console.error('[Academy public] createUser failed:', cErr.message)
+            else {
+              // The email may already exist in auth.users without a matching
+              // profiles row (or with a stale one) - generateLink resolves
+              // the existing user so the paid order still fulfils, and the
+              // profiles upsert below self-heals the missing row.
+              const { data: link, error: lErr } = await supabase.auth.admin.generateLink({ type: 'magiclink', email })
+              if (link?.user) userId = link.user.id
+              else console.error('[Academy public] createUser failed:', cErr?.message, lErr?.message)
+            }
           }
 
           if (userId) {
@@ -135,8 +188,13 @@ export async function POST(req: NextRequest) {
               console.error('[Academy public] access email failed:', e?.message)
             }
           }
+          if (!userId) throw new Error('course_public fulfilment: no user for ' + email)
         } catch (e: any) {
           console.error('[Academy public] fulfilment failed:', e?.message)
+          // A 500 makes Stripe retry the webhook - all fulfilment writes are
+          // idempotent upserts, so retries are safe. Silence here would mean
+          // a paid customer who receives nothing.
+          return NextResponse.json({ error: 'course_public fulfilment failed' }, { status: 500 })
         }
       }
 
@@ -144,19 +202,29 @@ export async function POST(req: NextRequest) {
       // share of the bundle price is recorded so revenue totals stay honest.
       if (meta?.type === 'course_bundle' && meta?.candidate_id) {
         const coreCourses = ACADEMY.filter(c => CORE_SLUGS.includes(c.slug))
-        const per = Math.round((session.amount_total ?? 7900) / coreCourses.length)
-        for (const course of coreCourses) {
-          await supabase.from('course_enrollments').upsert(
-            {
-              candidate_id: meta.candidate_id,
-              course_slug: course.slug,
-              paid_at: new Date().toISOString(),
-              amount_paid: per,
-            },
-            // ignoreDuplicates: a course already bought individually keeps
-            // its original purchase record untouched
-            { onConflict: 'candidate_id,course_slug', ignoreDuplicates: true }
-          )
+        const total = session.amount_total ?? 7900
+        // Split the full bundle price across only the courses NOT already
+        // owned - an already-bought course keeps its original record, so
+        // giving it a share of the £79 would silently vanish from revenue.
+        const { data: owned } = await supabase.from('course_enrollments')
+          .select('course_slug').eq('candidate_id', meta.candidate_id)
+        const ownedSet = new Set((owned ?? []).map((r: any) => r.course_slug))
+        const newCourses = coreCourses.filter(c => !ownedSet.has(c.slug))
+        if (newCourses.length > 0) {
+          const per = Math.floor(total / newCourses.length)
+          let remainder = total - per * newCourses.length
+          for (const course of newCourses) {
+            await supabase.from('course_enrollments').upsert(
+              {
+                candidate_id: meta.candidate_id,
+                course_slug: course.slug,
+                paid_at: new Date().toISOString(),
+                amount_paid: per + (remainder-- > 0 ? 1 : 0),
+              },
+              // ignoreDuplicates kept as a race-safety net
+              { onConflict: 'candidate_id,course_slug', ignoreDuplicates: true }
+            )
+          }
         }
       }
 

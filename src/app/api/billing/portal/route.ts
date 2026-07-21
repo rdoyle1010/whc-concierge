@@ -1,70 +1,75 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { stripe } from '@/lib/stripe'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
-import { stripe } from '@/lib/stripe'
+
+// Stripe customer portal for subscription management. Called (with no body)
+// by /talent/billing, which redirects to the returned { url }.
+
+// Only allow return redirects back to our own domain
+const ALLOWED_ORIGINS = [
+  process.env.NEXT_PUBLIC_SITE_URL,
+  'https://talent.wellnesshousecollective.co.uk',
+  'https://whc-concierge.netlify.app',
+].filter(Boolean) as string[]
+
+function getSafeOrigin(untrusted?: string | null): string {
+  if (untrusted) {
+    try {
+      const o = new URL(untrusted).origin
+      if (ALLOWED_ORIGINS.includes(o)) return o
+    } catch { /* fall through to the default */ }
+  }
+  return ALLOWED_ORIGINS[0] || 'https://talent.wellnesshousecollective.co.uk'
+}
 
 export async function POST(req: NextRequest) {
   try {
     // ── Auth: caller must be logged in ──
     const cookieStore = cookies()
-    const supabaseAuth = createServerClient(
+    const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          getAll() { return cookieStore.getAll() },
-          setAll() { /* read-only in Route Handlers */ },
-        },
-      }
+      { cookies: { getAll() { return cookieStore.getAll() }, setAll() {} } }
     )
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
 
-    const { data: { user } } = await supabaseAuth.auth.getUser()
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
-    }
-
-    // ── Get Stripe customer ID from talent or employer profile ──
-    const { data: { user: authUser } } = await supabaseAuth.auth.getUser()
-    if (!authUser) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
-
-    // Check candidate_profiles first
-    const { data: candidateProfile } = await supabaseAuth
+    // ── Find the caller's Stripe customer id (candidate first, employer as
+    // a fallback so the handler can serve both sides later) ──
+    const admin = createAdminClient()
+    const { data: cand } = await admin
       .from('candidate_profiles')
       .select('stripe_customer_id')
-      .eq('user_id', authUser.id)
-      .single()
+      .eq('user_id', user.id)
+      .maybeSingle()
 
-    // Check employer_profiles if no candidate profile
-    const { data: employerProfile } = await supabaseAuth
-      .from('employer_profiles')
-      .select('stripe_customer_id')
-      .eq('user_id', authUser.id)
-      .single()
+    let customerId: string | null = cand?.stripe_customer_id || null
+    if (!customerId) {
+      const { data: emp } = await admin
+        .from('employer_profiles')
+        .select('stripe_customer_id')
+        .eq('user_id', user.id)
+        .maybeSingle()
+      customerId = emp?.stripe_customer_id || null
+    }
 
-    const stripeCustomerId = candidateProfile?.stripe_customer_id || employerProfile?.stripe_customer_id
-
-    if (!stripeCustomerId) {
+    if (!customerId) {
       return NextResponse.json(
-        { error: 'No subscription found. Please create a subscription first.' },
+        { error: 'No billing account found for your profile yet - it is created with your first subscription payment.' },
         { status: 400 }
       )
     }
 
-    // ── Create Stripe billing portal session ──
-    const referrer = req.headers.get('referer') || ''
-    let returnUrl = '/talent/billing'
-    if (referrer.includes('/employer')) {
-      returnUrl = '/employer/billing'
-    }
-
+    const origin = getSafeOrigin(req.headers.get('origin'))
     const session = await stripe.billingPortal.sessions.create({
-      customer: stripeCustomerId,
-      return_url: `${req.headers.get('origin') || process.env.NEXT_PUBLIC_APP_URL}${returnUrl}`,
+      customer: customerId,
+      return_url: `${origin}/talent/billing`,
     })
 
     return NextResponse.json({ url: session.url })
   } catch (error: any) {
-    console.error('Billing portal error:', error)
-    return NextResponse.json({ error: error.message || 'Failed to create billing portal session' }, { status: 500 })
+    return NextResponse.json({ error: error.message }, { status: 500 })
   }
 }

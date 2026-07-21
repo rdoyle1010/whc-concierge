@@ -5,7 +5,7 @@ import { cookies } from 'next/headers'
 import { createNotification } from '@/lib/notifications'
 import { AGENCY_PLATFORM_FEE_PCT } from '@/lib/constants'
 import { sendSms } from '@/lib/sms'
-import { sendAgencyOfferEmail, sendReviewRequestEmail, sendInsuranceExpiryEmail } from '@/lib/emails'
+import { sendAgencyOfferEmail, sendReviewRequestEmail, sendInsuranceExpiryEmail, sendAgencyUpdateEmail, sendFeaturedExpiringEmail } from '@/lib/emails'
 import { profileDistanceMiles } from '@/lib/geo'
 
 // Offers expire so urgent cover doesn't sit unanswered while the property
@@ -67,7 +67,9 @@ function employerDisplayName(emp: any) {
   return emp?.property_name || emp?.company_name || 'A property'
 }
 
-// Notify the other party in-app and drop the same note into their inbox.
+// Notify the other party in-app, drop the same note into their inbox, and
+// (unless the caller sends its own richer email) email them too - offers
+// expire, so a party who isn't watching the dashboard must still hear.
 async function notifyOtherParty(
   admin: any,
   recipientUserId: string | null | undefined,
@@ -75,6 +77,7 @@ async function notifyOtherParty(
   title: string,
   body: string,
   link: string,
+  sendEmailToo = true,
 ) {
   if (!recipientUserId) return
   try {
@@ -88,6 +91,13 @@ async function notifyOtherParty(
       read: false,
     })
   } catch { /* non-fatal */ }
+  if (sendEmailToo) {
+    try {
+      const { data: u } = await admin.auth.admin.getUserById(recipientUserId)
+      const em = u?.user?.email
+      if (em) await sendAgencyUpdateEmail(em, 'there', title, body, link)
+    } catch { /* non-fatal */ }
+  }
 }
 
 // Tell a candidate they now hold an urgent cascade offer: bell + inbox +
@@ -101,7 +111,8 @@ async function alertCascadeHolder(
 ) {
   const mins = Math.max(1, Math.round((new Date(b.expires_at).getTime() - Date.now()) / 60000))
   const body = `URGENT: ${empName} needs cover TODAY and has offered you a shift at £${b.rate} per hour${b.hours ? ` (${b.hours} hours - £${b.rate * b.hours} total)` : ''}. You have ${mins} minutes before the offer moves to the next therapist - accept now from your Agency page.`
-  await notifyOtherParty(admin, candidate.user_id, empUserId, 'URGENT: shift offer for today', body, '/talent/agency')
+  // sendEmailToo=false: the richer offer email (+ SMS) is sent just below
+  await notifyOtherParty(admin, candidate.user_id, empUserId, 'URGENT: shift offer for today', body, '/talent/agency', false)
   try {
     const jobs: Promise<unknown>[] = []
     if (candidate.user_id) {
@@ -143,10 +154,13 @@ async function advanceCascade(admin: any, booking: any): Promise<any | null> {
       .select('id')
       .maybeSingle()
     if (ended && bookingEmp?.user_id) {
+      const giveUpBody = `We couldn't fill your urgent shift on ${booking.shift_date} - ${why}. You can send a new request, widen the rate, or book someone directly from the agency directory.`
       try {
-        await createNotification(bookingEmp.user_id, 'general', 'Urgent cover not filled',
-          `We couldn't fill your urgent shift on ${booking.shift_date} - ${why}. You can send a new request, widen the rate, or book someone directly from the agency directory.`,
-          '/employer/agency')
+        await createNotification(bookingEmp.user_id, 'general', 'Urgent cover not filled', giveUpBody, '/employer/agency')
+      } catch { /* non-fatal */ }
+      try {
+        const { data: u } = await admin.auth.admin.getUserById(bookingEmp.user_id)
+        if (u?.user?.email) await sendAgencyUpdateEmail(u.user.email, 'there', 'Urgent cover not filled', giveUpBody, '/employer/agency')
       } catch { /* non-fatal */ }
     }
     return null
@@ -307,6 +321,39 @@ async function maintenanceSweep(admin: any) {
       }
     }
   } catch { /* chasing is never fatal */ }
+
+  // ── Featured profile expiry warning ──
+  // 3-day heads-up before a paid featured slot lapses, so the renewal nudge
+  // actually happens (the webhook only ever revokes). Deduped through the
+  // notifications table - at most one nudge per profile per week, and the
+  // matching window is only 3 days wide - so no new column is needed.
+  try {
+    const inThreeDays = new Date(Date.now() + 3 * 86400000).toISOString()
+    const { data: expiringFeatured } = await admin.from('candidate_profiles')
+      .select('id, user_id, full_name, featured_until')
+      .eq('is_featured', true)
+      .not('featured_until', 'is', null)
+      .gte('featured_until', now)
+      .lte('featured_until', inThreeDays)
+      .limit(10)
+    for (const c of expiringFeatured || []) {
+      if (!c.user_id) continue
+      const { data: alreadySent } = await admin.from('notifications')
+        .select('id')
+        .eq('user_id', c.user_id)
+        .eq('title', 'Your featured profile expires soon')
+        .gte('created_at', new Date(Date.now() - 7 * 86400000).toISOString())
+        .limit(1)
+        .maybeSingle()
+      if (alreadySent) continue
+      try {
+        await createNotification(c.user_id, 'general', 'Your featured profile expires soon',
+          `Your featured profile expires on ${String(c.featured_until).slice(0, 10)}. Renew from your Billing page to keep your premium visibility.`, '/talent/billing')
+        const { data: u } = await admin.auth.admin.getUserById(c.user_id)
+        if (u?.user?.email) await sendFeaturedExpiringEmail(u.user.email, c.full_name || 'there')
+      } catch { /* non-fatal */ }
+    }
+  } catch { /* featured nudges are never fatal */ }
 }
 
 export async function GET() {
@@ -492,12 +539,13 @@ export async function POST(req: NextRequest) {
         ? `URGENT: ${empName} needs cover TODAY and has offered you a shift at £${rate} per hour${hours ? ` (${hours} hours - £${rate * hours} total)` : ''}. This offer expires in 4 hours - accept, decline or counter from your Agency page now.${standingLine}`
         : `${empName} has offered you an agency shift on ${body.shiftDate} at £${rate} per hour${hours ? ` (${hours} hours - £${rate * hours} total)` : ''}. You can accept, decline or counter from your Agency page.${standingLine}`
 
-      // Bell + inbox
+      // Bell + inbox (sendEmailToo=false: the richer offer email is sent below)
       await notifyOtherParty(
         admin, targetCand.user_id, user.id,
         urgent ? 'URGENT: shift offer for today' : 'New agency offer',
         offerBody,
         '/talent/agency',
+        false,
       )
 
       // Email + (for urgent offers) SMS - all awaited: fire-and-forget dies

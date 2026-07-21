@@ -61,11 +61,16 @@ export default function TalentSettingsPage() {
 
   const toggleStealth = async (enabled: boolean) => {
     setStealthEnabled(enabled)
-    if (candidateId) {
-      await fetch('/api/profile/update', {
+    if (!candidateId) return
+    try {
+      const res = await fetch('/api/profile/update', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ profileId: candidateId, data: { stealth_mode: enabled } }),
       })
+      if (!res.ok) throw new Error('save failed')
+    } catch {
+      setStealthEnabled(!enabled)
+      alert('Could not update stealth mode - please try again.')
     }
   }
 
@@ -93,12 +98,26 @@ export default function TalentSettingsPage() {
     setBlockedEmployers(blockedEmployers.filter(e => e.id !== employerId))
   }
 
-  const saveAlertPref = (field: string, value: any) => {
+  const saveAlertPref = async (field: string, value: any) => {
     if (!candidateId) return
-    fetch('/api/profile/update', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ profileId: candidateId, data: { [field]: value } }),
-    }).catch(() => {})
+    try {
+      const res = await fetch('/api/profile/update', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ profileId: candidateId, data: { [field]: value } }),
+      })
+      if (!res.ok) throw new Error('save failed')
+    } catch {
+      alert('Could not save your alert preference - please try again.')
+      // Re-sync from the database so the UI reflects what actually persisted
+      const { data } = await supabase.from('candidate_profiles')
+        .select('job_alerts_enabled, job_alerts_frequency, job_alerts_min_score')
+        .eq('id', candidateId).single()
+      if (data) {
+        setAlertsEnabled(data.job_alerts_enabled !== false)
+        setAlertsFrequency(data.job_alerts_frequency || 'instant')
+        setAlertsMinScore(data.job_alerts_min_score || 60)
+      }
+    }
   }
 
   const filteredEmployers = employerSearch.length >= 2

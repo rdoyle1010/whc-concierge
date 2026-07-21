@@ -58,14 +58,23 @@ export default function AdminCampaignsPage() {
 
   const handleSave = async () => {
     setSaving(true)
+    setBanner('')
     const payload = {
       name: form.name, description: form.description || null, type: form.type || null,
       status: form.status, start_date: form.start_date || null, end_date: form.end_date || null,
       target_audience: form.target_audience || null, content: form.content || null,
     }
-    await fetch('/api/admin/campaigns', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'save', id: editing?.id, data: { ...payload, featured_ids: featuredSel.map(f => ({ type: f.type, id: f.id })) } }) })
-    await reload()
-    setShowForm(false); setEditing(null); setForm(empty); setSaving(false)
+    try {
+      const res = await fetch('/api/admin/campaigns', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'save', id: editing?.id, data: { ...payload, featured_ids: featuredSel.map(f => ({ type: f.type, id: f.id })) } }) })
+      const j = await res.json().catch(() => ({}))
+      if (!res.ok) { setBanner(j.error || 'Save failed.'); return }
+      await reload()
+      setShowForm(false); setEditing(null); setForm(empty)
+    } catch {
+      setBanner('Save failed - please try again.')
+    } finally {
+      setSaving(false)
+    }
   }
 
   const handleEdit = (c: any) => {
@@ -83,18 +92,31 @@ export default function AdminCampaignsPage() {
       sel.push({ type: f.type, id: f.id, label: m?.full_name || m?.property_name || m?.company_name || 'Member' })
     }
     setFeaturedSel(sel)
+    setBanner('')
     setEditing(c); setShowForm(true)
   }
 
   const handleDelete = async (id: string) => {
     if (!confirm('Delete this campaign?')) return
-    await fetch('/api/admin/campaigns', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'delete', id }) })
+    setBanner('')
+    const res = await fetch('/api/admin/campaigns', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'delete', id }) })
+    if (!res.ok) {
+      const j = await res.json().catch(() => ({}))
+      setBanner(j.error || 'Delete failed.')
+      return
+    }
     setCampaigns(campaigns.filter(c => c.id !== id))
   }
 
   const toggleStatus = async (c: any) => {
     const newStatus = c.status === 'active' ? 'paused' : 'active'
-    await fetch('/api/admin/campaigns', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'save', id: c.id, data: { ...c, status: newStatus } }) })
+    setBanner('')
+    const res = await fetch('/api/admin/campaigns', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'save', id: c.id, data: { ...c, status: newStatus } }) })
+    if (!res.ok) {
+      const j = await res.json().catch(() => ({}))
+      setBanner(j.error || 'Status update failed.')
+      return
+    }
     setCampaigns(campaigns.map(x => x.id === c.id ? { ...x, status: newStatus } : x))
   }
 
@@ -108,7 +130,7 @@ export default function AdminCampaignsPage() {
     <DashboardShell role="admin" userName="Admin">
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-serif font-bold text-ink">Campaign Management</h1>
-        <button onClick={() => { setForm(empty); setEditing(null); setFeaturedSel([]); setShowForm(true) }}
+        <button onClick={() => { setForm(empty); setEditing(null); setFeaturedSel([]); setBanner(''); setShowForm(true) }}
           className="btn-primary flex items-center space-x-2"><Plus size={16} /><span>New Campaign</span></button>
       </div>
 
@@ -195,6 +217,7 @@ export default function AdminCampaignsPage() {
                   )}
                 </div>
               </div>
+              {banner && !banner.startsWith('Sent') && <div className="text-sm px-4 py-3 rounded-lg bg-red-50 text-red-600">{banner}</div>}
               <div className="flex gap-4 pt-2">
                 <button onClick={() => setShowForm(false)} className="btn-secondary flex-1">Cancel</button>
                 <button onClick={handleSave} disabled={saving} className="btn-primary flex-1 disabled:opacity-50">{saving ? 'Saving...' : editing ? 'Update' : 'Create'}</button>

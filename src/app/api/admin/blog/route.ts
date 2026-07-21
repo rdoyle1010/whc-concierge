@@ -3,6 +3,11 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 
+// Admin blog management - the blog_posts table is RLS-locked to public reads
+// of published posts only (migration 023), so all writes come through this
+// service-role route. The admin page expects GET to return { posts } and
+// sends POST (create), PATCH ({ id, ...updates }) and DELETE ({ id }).
+
 async function requireAdmin() {
   const cookieStore = cookies()
   const supabase = createServerClient(
@@ -12,88 +17,86 @@ async function requireAdmin() {
   )
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return null
-
   const admin = createAdminClient()
   const { data: profile } = await admin.from('profiles').select('role').eq('id', user.id).single()
   if (profile?.role !== 'admin') return null
   return user
 }
 
-export async function GET(req: NextRequest) {
+// Columns the admin page may set - everything else is dropped.
+const EDITABLE_FIELDS = [
+  'title', 'slug', 'content', 'excerpt', 'image_url',
+  'author', 'category', 'tags', 'status', 'published_at',
+] as const
+
+function pickEditable(body: Record<string, unknown>) {
+  const out: Record<string, unknown> = {}
+  for (const key of EDITABLE_FIELDS) {
+    if (key in body) out[key] = body[key]
+  }
+  return out
+}
+
+export async function GET() {
   const user = await requireAdmin()
   if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
 
-  const page = parseInt(req.nextUrl.searchParams.get('page') || '1')
-  const perPage = parseInt(req.nextUrl.searchParams.get('per_page') || '20')
-  const from = (page - 1) * perPage
-  const to = from + perPage - 1
-
-  const supabase = createAdminClient()
-  const { data, count, error } = await supabase
+  const admin = createAdminClient()
+  const { data, error } = await admin
     .from('blog_posts')
-    .select('*', { count: 'exact' })
+    .select('*')
     .order('created_at', { ascending: false })
-    .range(from, to)
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-  return NextResponse.json({ posts: data || [], total: count || 0, page, perPage })
+  return NextResponse.json({ posts: data || [] })
 }
 
 export async function POST(req: NextRequest) {
   const user = await requireAdmin()
   if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
 
-  const body = await req.json()
-  if (!body.title || !body.content) {
-    return NextResponse.json({ error: 'Title and content are required' }, { status: 400 })
+  const body = await req.json().catch(() => ({}))
+  const post = pickEditable(body)
+  if (!post.title || !post.content) {
+    return NextResponse.json({ error: 'title and content are required' }, { status: 400 })
   }
 
-  const supabase = createAdminClient()
-  const { data, error } = await supabase.from('blog_posts').insert({
-    title: body.title,
-    slug: body.slug,
-    content: body.content,
-    excerpt: body.excerpt || null,
-    image_url: body.image_url || null,
-    author: body.author || 'WHC Concierge',
-    category: body.category || null,
-    tags: body.tags || null,
-    status: body.status || 'draft',
-    published_at: body.status === 'published' ? (body.published_at || new Date().toISOString()) : null,
-  }).select('*').single()
+  const admin = createAdminClient()
+  const { data, error } = await admin.from('blog_posts').insert(post).select().single()
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-  return NextResponse.json({ post: data })
+  return NextResponse.json({ success: true, post: data })
 }
 
 export async function PATCH(req: NextRequest) {
   const user = await requireAdmin()
   if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
 
-  const { id, ...updates } = await req.json()
-  if (!id) return NextResponse.json({ error: 'Post ID required' }, { status: 400 })
+  const body = await req.json().catch(() => ({}))
+  const { id } = body
+  if (!id) return NextResponse.json({ error: 'id required' }, { status: 400 })
+  const updates = pickEditable(body)
+  if (Object.keys(updates).length === 0) {
+    return NextResponse.json({ error: 'No fields to update' }, { status: 400 })
+  }
 
-  const supabase = createAdminClient()
-  const { data, error } = await supabase
-    .from('blog_posts')
-    .update(updates)
-    .eq('id', id)
-    .select('*')
-    .single()
+  const admin = createAdminClient()
+  const { data, error } = await admin.from('blog_posts').update(updates).eq('id', id).select().single()
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-  return NextResponse.json({ post: data })
+  return NextResponse.json({ success: true, post: data })
 }
 
 export async function DELETE(req: NextRequest) {
   const user = await requireAdmin()
   if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
 
-  const { id } = await req.json()
-  if (!id) return NextResponse.json({ error: 'Post ID required' }, { status: 400 })
+  const body = await req.json().catch(() => ({}))
+  const { id } = body
+  if (!id) return NextResponse.json({ error: 'id required' }, { status: 400 })
 
-  const supabase = createAdminClient()
-  const { error } = await supabase.from('blog_posts').delete().eq('id', id)
+  const admin = createAdminClient()
+  const { error } = await admin.from('blog_posts').delete().eq('id', id)
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   return NextResponse.json({ success: true })

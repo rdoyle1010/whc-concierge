@@ -16,6 +16,7 @@ export default function EmployerApplicationsPage() {
   const [page, setPage] = useState(1)
   const [perPage, setPerPage] = useState(25)
   const [shortlistedIds, setShortlistedIds] = useState<Set<string>>(new Set())
+  const [updatingId, setUpdatingId] = useState<string | null>(null)
   const [viewing, setViewing] = useState<any>(null)
   const [reviewing, setReviewing] = useState<{ userId: string; name: string } | null>(null)
 
@@ -70,32 +71,44 @@ export default function EmployerApplicationsPage() {
 
   const addToShortlist = async (candidateId: string, jobId: string) => {
     if (!candidateId || shortlistedIds.has(candidateId)) return
-    await fetch('/api/shortlist', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ candidateId, jobId }) })
-    setShortlistedIds(new Set(Array.from(shortlistedIds).concat(candidateId)))
+    try {
+      const res = await fetch('/api/shortlist', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ candidateId, jobId }) })
+      if (!res.ok) { alert('Could not add this candidate to your shortlist - please try again.'); return }
+      setShortlistedIds(prev => new Set(Array.from(prev).concat(candidateId)))
+    } catch {
+      alert('Could not add this candidate to your shortlist - please try again.')
+    }
   }
 
   const updateStatus = async (appId: string, status: string) => {
-    const { error } = await supabase.from('applications').update({ status }).eq('id', appId)
-    if (error) { alert('Could not update this application - please try again.'); return }
-    setApplications(applications.map(a => a.id === appId ? { ...a, status } : a))
+    const current = applications.find(a => a.id === appId)
+    if (updatingId === appId || current?.status === status) return
+    setUpdatingId(appId)
+    try {
+      const { error } = await supabase.from('applications').update({ status }).eq('id', appId)
+      if (error) { alert('Could not update this application - please try again.'); return }
+      setApplications(applications.map(a => a.id === appId ? { ...a, status } : a))
 
-    // Send decision email for shortlisted/accepted/rejected. The route looks
-    // the address up server-side from the candidate's auth user id.
-    if (status === 'shortlisted' || status === 'accepted' || status === 'rejected') {
-      const app = applications.find(a => a.id === appId)
-      if (app?.candidate_profiles?.user_id || app?.candidate_profiles?.email) {
-        fetch('/api/application-decision-email', {
-          method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            candidateUserId: app.candidate_profiles?.user_id || null,
-            applicantEmail: app.candidate_profiles?.email || null,
-            applicantName: app.candidate_profiles?.full_name || '',
-            jobTitle: app.job_listings?.job_title || '',
-            propertyName: profile?.property_name || profile?.company_name || '',
-            decision: status === 'shortlisted' || status === 'accepted' ? 'approved' : 'rejected',
-          }),
-        }).catch(() => {})
+      // Send decision email for shortlisted/accepted/rejected. The route looks
+      // the address up server-side from the candidate's auth user id.
+      if (status === 'shortlisted' || status === 'accepted' || status === 'rejected') {
+        const app = applications.find(a => a.id === appId)
+        if (app?.candidate_profiles?.user_id || app?.candidate_profiles?.email) {
+          fetch('/api/application-decision-email', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              candidateUserId: app.candidate_profiles?.user_id || null,
+              applicantEmail: app.candidate_profiles?.email || null,
+              applicantName: app.candidate_profiles?.full_name || '',
+              jobTitle: app.job_listings?.job_title || '',
+              propertyName: profile?.property_name || profile?.company_name || '',
+              decision: status === 'shortlisted' || status === 'accepted' ? 'approved' : 'rejected',
+            }),
+          }).catch(() => {})
+        }
       }
+    } finally {
+      setUpdatingId(null)
     }
   }
 
@@ -168,16 +181,16 @@ export default function EmployerApplicationsPage() {
                     </div>
                   </div>
                   <div className="flex items-center space-x-2 shrink-0">
-                    <button type="button" onClick={() => { updateStatus(app.id, 'shortlisted'); addToShortlist(cand?.id || app.candidate_id, app.role_id) }} title="Shortlist"
-                      className={`p-2 rounded-lg ${app.status === 'shortlisted' || shortlistedIds.has(cand?.id || app.candidate_id) ? 'bg-[#FDF6EC] text-accent' : 'hover:bg-green-50 text-gray-400'}`}>
+                    <button type="button" onClick={() => { updateStatus(app.id, 'shortlisted'); addToShortlist(cand?.id || app.candidate_id, app.role_id) }} title="Shortlist" disabled={updatingId === app.id}
+                      className={`p-2 rounded-lg disabled:opacity-50 ${app.status === 'shortlisted' || shortlistedIds.has(cand?.id || app.candidate_id) ? 'bg-[#FDF6EC] text-accent' : 'hover:bg-green-50 text-gray-400'}`}>
                       <Star size={18} fill={app.status === 'shortlisted' || shortlistedIds.has(cand?.id || app.candidate_id) ? 'currentColor' : 'none'} />
                     </button>
-                    <button type="button" onClick={() => updateStatus(app.id, 'accepted')} title="Accept"
-                      className={`p-2 rounded-lg ${app.status === 'accepted' ? 'bg-emerald-100 text-emerald-700' : 'hover:bg-emerald-50 text-gray-400'}`}>
+                    <button type="button" onClick={() => updateStatus(app.id, 'accepted')} title="Accept" disabled={updatingId === app.id}
+                      className={`p-2 rounded-lg disabled:opacity-50 ${app.status === 'accepted' ? 'bg-emerald-100 text-emerald-700' : 'hover:bg-emerald-50 text-gray-400'}`}>
                       <CheckCircle size={18} />
                     </button>
-                    <button type="button" onClick={() => updateStatus(app.id, 'rejected')} title="Reject"
-                      className={`p-2 rounded-lg ${app.status === 'rejected' ? 'bg-red-100 text-red-700' : 'hover:bg-red-50 text-gray-400'}`}>
+                    <button type="button" onClick={() => updateStatus(app.id, 'rejected')} title="Reject" disabled={updatingId === app.id}
+                      className={`p-2 rounded-lg disabled:opacity-50 ${app.status === 'rejected' ? 'bg-red-100 text-red-700' : 'hover:bg-red-50 text-gray-400'}`}>
                       <XCircle size={18} />
                     </button>
                   </div>

@@ -91,6 +91,18 @@ export async function sendReviewRequestEmail(email: string, name: string, otherN
   `))
 }
 
+export async function sendCourseGiftEmail(email: string, name: string, course: string, awarded: boolean) {
+  await sendEmail(email, awarded ? `Certificate awarded - ${course}` : `A course has been unlocked for you - ${course}`, wrapper(awarded ? `
+    <p style="font-size: 24px; font-weight: 700; margin-bottom: 16px;">Congratulations, ${name}</p>
+    <p style="color: #6B7280;">Wellness House Collective has awarded you the certificate for <strong>${course}</strong>. It is live on your profile now, visible to every property searching the directory.</p>
+    <p style="margin-top: 24px;"><a href="https://talent.wellnesshousecollective.co.uk/talent/academy" style="display: inline-block; background: #111; color: #fff; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600;">View your certificate</a></p>
+  ` : `
+    <p style="font-size: 24px; font-weight: 700; margin-bottom: 16px;">A gift from WHC, ${name}</p>
+    <p style="color: #6B7280;">Wellness House Collective has enrolled you on <strong>${course}</strong>, with our compliments. Complete the modules, pass the assessment, and the certificate and profile badge are yours.</p>
+    <p style="margin-top: 24px;"><a href="https://talent.wellnesshousecollective.co.uk/talent/academy" style="display: inline-block; background: #111; color: #fff; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600;">Start your course</a></p>
+  `))
+}
+
 export async function sendCourseAccessEmail(email: string, name: string, course: string, link: string) {
   await sendEmail(email, `Your WHC Academy course is ready - ${course}`, wrapper(`
     <p style="font-size: 24px; font-weight: 700; margin-bottom: 16px;">Welcome to the Academy, ${name}</p>
@@ -150,5 +162,25 @@ export async function sendFeaturedExpiringEmail(email: string, name: string) {
     <p style="font-size: 24px; font-weight: 700; margin-bottom: 16px;">Featured expiring soon</p>
     <p style="color: #6B7280;">Hi ${name}, your featured profile on WHC Concierge expires in 3 days.</p>
     <p style="color: #6B7280;">Renew now to keep your premium visibility.</p>
+  `))
+}
+
+// Generic agency booking update (accept / counter / decline / cover not
+// filled) - the outbound offer itself has its own richer sender above.
+export async function sendAgencyUpdateEmail(email: string, name: string, subject: string, line: string, link = '/') {
+  await sendEmail(email, subject, wrapper(`
+    <p style="font-size: 24px; font-weight: 700; margin-bottom: 16px;">${subject}</p>
+    <p style="color: #6B7280;">Hi ${name},</p>
+    <p style="color: #6B7280;">${line}</p>
+    <p style="margin-top: 24px;"><a href="https://talent.wellnesshousecollective.co.uk${link}" style="display: inline-block; background: #111; color: #fff; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600;">View &amp; respond</a></p>
+  `))
+}
+
+export async function sendReferralRewardEmail(email: string, name: string) {
+  await sendEmail(email, 'You have earned a free month', wrapper(`
+    <p style="font-size: 24px; font-weight: 700; margin-bottom: 16px;">Thank you, ${name}</p>
+    <p style="color: #6B7280;">Someone you referred has just joined WHC Concierge, so you have earned a referral reward.</p>
+    <p style="color: #6B7280;">A free month will be applied to your next paid listing automatically - nothing to do on your end.</p>
+    <p style="margin-top: 24px;"><a href="https://talent.wellnesshousecollective.co.uk/employer/dashboard" style="display: inline-block; background: #111; color: #fff; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600;">View your dashboard</a></p>
   `))
 }

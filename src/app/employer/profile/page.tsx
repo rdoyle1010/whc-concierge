@@ -78,6 +78,7 @@ export default function EmployerProfilePage() {
 
     // If a column doesn't exist in the DB, strip just that field and retry
     let finalError = error
+    const stripped: string[] = []
     if (error) {
       const payload: Record<string, any> = {
         company_name: profile.company_name, property_name: profile.property_name, contact_name: profile.contact_name,
@@ -94,6 +95,7 @@ export default function EmployerProfilePage() {
       for (let i = 0; i < 10 && finalError; i++) {
         const m = finalError.message.match(/Could not find the '([^']+)' column/) || finalError.message.match(/column "([^"]+)" of relation/)
         if (!m || !(m[1] in payload)) break
+        stripped.push(m[1])
         delete payload[m[1]]
         const { error: retryErr } = await supabase.from('employer_profiles').update(payload).eq('id', profile.id)
         finalError = retryErr || null
@@ -101,8 +103,18 @@ export default function EmployerProfilePage() {
     }
 
     setSaving(false)
-    setMessage(finalError ? finalError.message : 'Profile saved successfully!')
-    setTimeout(() => setMessage(''), 3000)
+    if (finalError) {
+      setMessage(finalError.message)
+    } else {
+      // Best-effort: geocode the postcode so distance features work
+      fetch('/api/employer/geocode', { method: 'POST' }).catch(() => {})
+      if (stripped.length > 0) {
+        setMessage(`Profile saved, but these fields could not be stored yet: ${stripped.join(', ')}. Please contact support.`)
+      } else {
+        setMessage('Profile saved successfully!')
+      }
+    }
+    setTimeout(() => setMessage(''), stripped.length > 0 ? 8000 : 3000)
   }
 
   const handleGalleryUpload = async (file: File) => {
@@ -125,7 +137,8 @@ export default function EmployerProfilePage() {
 
   const removeGalleryPhoto = async (url: string) => {
     const next = (profile.property_photos || []).filter((u: string) => u !== url)
-    await supabase.from('employer_profiles').update({ property_photos: next }).eq('id', profile.id)
+    const { error } = await supabase.from('employer_profiles').update({ property_photos: next }).eq('id', profile.id)
+    if (error) { setMessage(`Could not remove photo: ${error.message}`); return }
     update('property_photos', next)
   }
 

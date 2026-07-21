@@ -62,10 +62,11 @@ export default function EmployerAgencyPage() {
         body: JSON.stringify({ type, returnUrl: window.location.origin, ...extra }),
       })
       const j = await res.json()
-      if (!res.ok || !j.url) { setError(j.error || 'Could not start the payment - please try again.'); return }
+      if (!res.ok || !j.url) { setError(j.error || 'Could not start the payment - please try again.'); setBusyId(null); return }
       window.location.href = j.url
     } catch {
       setError('Something went wrong - please try again.')
+      setBusyId(null)
     }
   }
 
@@ -243,7 +244,8 @@ export default function EmployerAgencyPage() {
                   <p className="text-[14px] font-medium text-ink">Register as a Preferred Employer</p>
                   <p className="text-[12px] text-gray-500 mt-0.5">£150/year. Book vetted agency cover by the hour - including urgent same-day sickness cover - with all payments handled by Wellness House Collective.</p>
                 </div>
-                <button onClick={() => startCheckout('employer_registration', { employerId: profile.id })} className="btn-primary text-[12px] shrink-0">Register - £150/year</button>
+                <button onClick={() => { setBusyId('register'); startCheckout('employer_registration', { employerId: profile.id }) }} disabled={busyId === 'register'}
+                  className="btn-primary text-[12px] shrink-0 disabled:opacity-50">{busyId === 'register' ? 'Opening payment...' : 'Register - £150/year'}</button>
               </div>
             )
           )}

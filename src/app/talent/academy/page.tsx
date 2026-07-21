@@ -130,7 +130,7 @@ export default function AcademyPage() {
                   const done = Boolean(enr?.completed_at)
                   const lessonsDone = enr ? Object.keys(enr.progress || {}).length : 0
                   return (
-                    <div key={course.slug} className={`dashboard-card !p-0 overflow-hidden flex flex-col ${done ? 'border-green-200 ring-1 ring-green-100' : ''}`}>
+                    <div key={course.slug} className={`dashboard-card !p-0 overflow-hidden flex flex-col ${done ? 'border-green-300 ring-2 ring-green-200' : enr ? 'border-gold ring-2 ring-gold shadow-lg shadow-gold/20' : ''}`}>
                       <div className="relative h-28 shrink-0">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img src={courseImage(course.slug)} alt="" className="absolute inset-0 w-full h-full object-cover" />
@@ -139,7 +139,7 @@ export default function AcademyPage() {
                       <div className="p-5 flex flex-col flex-1">
                       <div className="flex items-start justify-between gap-2 mb-1">
                         <h3 className="font-serif text-[17px] font-semibold text-ink leading-snug">{course.title}</h3>
-                        {done && <span className="inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide bg-green-600 text-white px-2 py-0.5 rounded-full shrink-0"><Check size={10} /> Certified</span>}
+                        {done ? <span className="inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide bg-green-600 text-white px-2 py-0.5 rounded-full shrink-0"><Check size={10} /> Certified</span> : enr ? <span className="inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide bg-gold text-ink px-2 py-0.5 rounded-full shrink-0">Yours - in progress</span> : null}
                       </div>
                       <p className="text-[12px] text-gray-500 mb-2">{course.tagline}</p>
                       <p className="text-[11px] text-gray-400 mb-4 inline-flex items-center gap-1"><Clock size={11} /> {course.lessons.length} modules · objectives, case studies &amp; assessment · ~{course.minutes} min</p>

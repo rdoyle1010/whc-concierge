@@ -48,21 +48,35 @@ export default function TaxonomyManagement() {
   const handleSave = async () => {
     if (!formName.trim()) return
     setSaving(true)
-    if (editing) {
-      await fetch('/api/admin/taxonomy', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'save', table: activeTable, id: editing.id, data: { name: formName, [catField]: formCategory || null } }) })
-    } else {
-      await fetch('/api/admin/taxonomy', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'save', table: activeTable, data: { name: formName, [catField]: formCategory || null, is_active: true, sort_order: items.length + 1 } }) })
+    try {
+      let res: Response
+      if (editing) {
+        res = await fetch('/api/admin/taxonomy', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'save', table: activeTable, id: editing.id, data: { name: formName, [catField]: formCategory || null } }) })
+      } else {
+        res = await fetch('/api/admin/taxonomy', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'save', table: activeTable, data: { name: formName, [catField]: formCategory || null, is_active: true, sort_order: items.length + 1 } }) })
+      }
+      if (!res.ok) {
+        const j = await res.json().catch(() => ({}))
+        alert(`Save failed: ${j.error || res.status}`)
+        return
+      }
+      setShowForm(false)
+      setEditing(null)
+      setFormName('')
+      setFormCategory('')
+      loadItems()
+    } finally {
+      setSaving(false)
     }
-    setSaving(false)
-    setShowForm(false)
-    setEditing(null)
-    setFormName('')
-    setFormCategory('')
-    loadItems()
   }
 
   const toggleActive = async (id: string, current: boolean) => {
-    await fetch('/api/admin/taxonomy', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'save', table: activeTable, id, data: { is_active: !current } }) })
+    const res = await fetch('/api/admin/taxonomy', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'save', table: activeTable, id, data: { is_active: !current } }) })
+    if (!res.ok) {
+      const j = await res.json().catch(() => ({}))
+      alert(`Failed to update: ${j.error || res.status}`)
+      return
+    }
     setItems(items.map(i => i.id === id ? { ...i, is_active: !current } : i))
   }
 

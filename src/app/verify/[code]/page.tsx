@@ -24,7 +24,7 @@ export default function VerifyResultPage() {
     async function load() {
       try {
         const { data } = await supabase.from('course_enrollments')
-          .select('course_slug, completed_at, quiz_score, candidate_id, certificate_code')
+          .select('course_slug, completed_at, candidate_id, certificate_code')
           .eq('certificate_code', code)
           .not('completed_at', 'is', null)
           .maybeSingle()
@@ -54,7 +54,7 @@ export default function VerifyResultPage() {
               <p className="font-serif text-[22px] font-bold text-ink capitalize mb-1">{name || 'WHC Professional'}</p>
               <p className="text-[14px] text-gray-600 mb-1">{courseTitle(cert.course_slug)}</p>
               <p className="text-[12px] text-gray-500 mb-4">
-                Passed at {cert.quiz_score}% · {new Date(cert.completed_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}
+                Completed {new Date(cert.completed_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}
               </p>
               <p className="text-[11px] text-gray-400 font-mono mb-6">{cert.certificate_code}</p>
               <p className="text-[11px] text-gray-400">Issued by Wellness House Collective. This certificate evidences completion of a WHC Academy course and its assessment.</p>

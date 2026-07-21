@@ -96,10 +96,18 @@ export default function AdminImagesPage() {
 
     // Check if slot already exists
     const existing = images.find(img => img.slot === slot)
+    let saveRes: Response
     if (existing) {
-      await fetch('/api/admin/content', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'image_update', slot, data: { image_url: url, updated_at: new Date().toISOString() } }) })
+      saveRes = await fetch('/api/admin/content', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'image_update', slot, data: { image_url: url, updated_at: new Date().toISOString() } }) })
     } else {
-      await fetch('/api/admin/content', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'image_insert', data: { slot, image_url: url, label: slot } }) })
+      saveRes = await fetch('/api/admin/content', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'image_insert', data: { slot, image_url: url, label: slot } }) })
+    }
+
+    if (!saveRes.ok) {
+      const err = await saveRes.json().catch(() => ({}))
+      flash('error', err.error || `Failed to save image for ${slot}`)
+      setUploading(null)
+      return
     }
 
     flash('success', `Image updated for ${slot}`)
@@ -113,7 +121,14 @@ export default function AdminImagesPage() {
     const fields = editFields[slot]
     if (!fields) { setSaving(null); return }
 
-    await fetch('/api/admin/content', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'image_update', slot, data: { heading: fields.heading, subtext: fields.subtext, updated_at: new Date().toISOString() } }) })
+    const res = await fetch('/api/admin/content', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'image_update', slot, data: { heading: fields.heading, subtext: fields.subtext, updated_at: new Date().toISOString() } }) })
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}))
+      flash('error', err.error || `Failed to save text for ${slot}`)
+      setSaving(null)
+      return
+    }
 
     flash('success', `Text updated for ${slot}`)
     setSaving(null)
@@ -125,7 +140,7 @@ export default function AdminImagesPage() {
   const handleAddSlot = async (prefix: string, currentCount: number) => {
     // The homepage reads fixed slot names for single-slot groups
     const slot = prefix === 'cta_' ? 'cta_bg' : prefix === 'howitworks_' ? 'howitworks_1' : `${prefix}${currentCount + 1}`
-    await fetch('/api/admin/content', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'image_insert', data: {
+    const res = await fetch('/api/admin/content', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'image_insert', data: {
       slot,
       label: `${prefix === 'hero_' ? 'Hero Slide' : 'Featured Card'} ${currentCount + 1}`,
       image_url: 'https://placehold.co/1920x1080/f5f5f5/cccccc?text=Upload+Image',
@@ -134,6 +149,11 @@ export default function AdminImagesPage() {
       sort_order: currentCount + 1,
       active: true,
     } }) })
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}))
+      flash('error', err.error || `Failed to add new ${prefix === 'hero_' ? 'hero slide' : 'card'}`)
+      return
+    }
     flash('success', `Added new ${prefix === 'hero_' ? 'hero slide' : 'card'}`)
     load()
   }
@@ -141,7 +161,12 @@ export default function AdminImagesPage() {
   /* ── Remove a slot ── */
   const handleRemoveSlot = async (slot: string) => {
     if (!confirm(`Remove ${slot}? This will delete the image from the site.`)) return
-    await fetch('/api/admin/content', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'image_delete', slot }) })
+    const res = await fetch('/api/admin/content', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'image_delete', slot }) })
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}))
+      flash('error', err.error || `Failed to remove ${slot}`)
+      return
+    }
     flash('success', `Removed ${slot}`)
     load()
   }

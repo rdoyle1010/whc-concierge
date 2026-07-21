@@ -11,7 +11,7 @@ export const ACADEMY_ANSWERS: Record<string, number[]> = {
   'five-star-service': [1, 1, 1, 1, 1, 0, 1, 1],
   'lqa-forbes-standards': [1, 1, 1, 1, 0, 1, 1, 1],
   'health-safety-hygiene': [1, 1, 1, 1, 1, 1, 1, 1, 1],
-  'room-standards': [1, 1, 1, 1, 2, 1, 1, 1],
+  'room-standards': [1, 1, 1, 1, 1, 1, 1, 1],
   'upgrading-treatments': [1, 1, 1, 1, 1, 1, 1, 1],
   'personal-presentation': [1, 1, 1, 1, 1, 1, 1, 1],
   'perfect-massage': [1, 1, 1, 1, 1, 0, 1, 1],

@@ -4,6 +4,7 @@ import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { createNotification } from '@/lib/notifications'
 import { applicantConfirmationHtml, employerNotificationHtml } from '@/lib/application-email-templates'
+import { sendNewMatchEmail } from '@/lib/emails'
 
 // Records a swipe server-side (swipes has unreliable RLS), creates the
 // application on a candidate right-swipe, and detects MUTUAL matches:
@@ -249,6 +250,22 @@ export async function POST(req: NextRequest) {
             `You and ${employerName} both said yes to ${job.job_title}. Start the conversation.`, '/talent/messages')
           await createNotification(employer.user_id, 'new_match', "It's a match!",
             `${cand.full_name || 'A candidate'} you shortlisted has applied for ${job.job_title}.`, '/employer/messages')
+          // Email both sides - a match is the core conversion event and a user
+          // who isn't logged in must still learn it happened. Never let an
+          // email problem break the match itself.
+          try {
+            let employerEmail: string | null = employer?.contact_email || null
+            if (!employerEmail && employer?.user_id) {
+              const { data: empUser } = await admin.auth.admin.getUserById(employer.user_id)
+              employerEmail = empUser?.user?.email || null
+            }
+            await Promise.allSettled([
+              user.email ? sendNewMatchEmail(user.email, cand.full_name || 'there', employerName) : null,
+              employerEmail ? sendNewMatchEmail(employerEmail, employerName, cand.full_name || 'A candidate') : null,
+            ].filter(Boolean) as Promise<void>[])
+          } catch (e: any) {
+            console.error('Match emails failed:', e?.message)
+          }
           return NextResponse.json({ matched: true, jobTitle: job.job_title, employerName })
         }
       }
@@ -326,6 +343,21 @@ export async function POST(req: NextRequest) {
     }
     await createNotification(user.id, 'new_match', "It's a match!",
       `${cand.full_name || 'A candidate'} already liked ${firstJobTitle}. Start the conversation.`, '/employer/messages')
+
+    // Email both sides - never let an email problem break the match itself.
+    try {
+      let candEmail: string | null = null
+      if (cand.user_id) {
+        const { data: candUser } = await admin.auth.admin.getUserById(cand.user_id)
+        candEmail = candUser?.user?.email || null
+      }
+      await Promise.allSettled([
+        candEmail ? sendNewMatchEmail(candEmail, cand.full_name || 'there', employerName) : null,
+        user.email ? sendNewMatchEmail(user.email, employerName, cand.full_name || 'A candidate') : null,
+      ].filter(Boolean) as Promise<void>[])
+    } catch (e: any) {
+      console.error('Match emails failed:', e?.message)
+    }
 
     return NextResponse.json({ matched: true, candidateName: cand.full_name, jobTitle: firstJobTitle })
   } catch (e: any) {

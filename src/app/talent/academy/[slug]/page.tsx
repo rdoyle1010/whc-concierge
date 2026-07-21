@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import DashboardShell from '@/components/DashboardShell'
-import { courseBySlug, PASS_MARK } from '@/lib/academy'
+import { courseBySlug, coursePrice, PASS_MARK } from '@/lib/academy'
 import { courseImage, lessonExtras } from '@/lib/academy-extras'
 import { getCourseContent } from '@/lib/academy-content'
 import {
@@ -103,7 +103,7 @@ export default function CoursePlayerPage() {
       <DashboardShell role="talent">
         <div className="max-w-2xl dashboard-card text-center py-12">
           <p className="text-[15px] text-ink font-medium mb-2">You&apos;re not enrolled on this course yet</p>
-          <p className="text-[13px] text-gray-500 mb-4">{course.title} - £10 with certificate and profile badge on completion.</p>
+          <p className="text-[13px] text-gray-500 mb-4">{course.title} - £{(coursePrice(course) / 100).toFixed(0)} with certificate and profile badge on completion.</p>
           <Link href="/talent/academy" className="btn-primary inline-block text-[13px]">Enrol from the Academy</Link>
         </div>
       </DashboardShell>

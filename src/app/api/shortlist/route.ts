@@ -3,6 +3,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { createNotification } from '@/lib/notifications'
+import { sendNewMatchEmail } from '@/lib/emails'
 
 async function getEmployerProfile() {
   const cookieStore = cookies()
@@ -111,6 +112,20 @@ export async function POST(req: NextRequest) {
               `${employerName} wants to talk about ${matchedJobTitle}. Start the conversation.`, '/talent/messages')
             await createNotification(profile.user_id, 'new_match', "It's a match!",
               `${cand.full_name || 'A candidate'} already liked ${matchedJobTitle}. Start the conversation.`, '/employer/messages')
+
+            // Email both sides - a match is the core conversion event and a
+            // user who isn't logged in must still learn it happened. Email
+            // failure never breaks the match (outer catch + allSettled).
+            const [{ data: candUser }, { data: empUser }] = await Promise.all([
+              admin.auth.admin.getUserById(cand.user_id),
+              admin.auth.admin.getUserById(profile.user_id),
+            ])
+            const candEmail = candUser?.user?.email
+            const employerEmail = empUser?.user?.email
+            await Promise.allSettled([
+              candEmail ? sendNewMatchEmail(candEmail, cand.full_name || 'there', employerName) : null,
+              employerEmail ? sendNewMatchEmail(employerEmail, employerName, cand.full_name || 'A candidate') : null,
+            ].filter(Boolean) as Promise<void>[])
           }
         }
       }

@@ -3,6 +3,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { createNotification } from '@/lib/notifications'
+import { sendCourseGiftEmail } from '@/lib/emails'
 import { ACADEMY, courseBySlug } from '@/lib/academy'
 
 // Admin command of the WHC Academy: every learner, every course, revenue,
@@ -28,6 +29,19 @@ function makeCertificateCode() {
   const alphabet = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'
   let code = 'WHC-'
   for (let i = 0; i < 8; i++) code += alphabet[Math.floor(Math.random() * alphabet.length)]
+  return code
+}
+
+// Random codes can collide; check the table before accepting one so the
+// /verify lookup (maybeSingle) never finds two rows for the same code.
+async function makeUniqueCertificateCode(admin: any) {
+  let code = makeCertificateCode()
+  for (let i = 0; i < 5; i++) {
+    const { data: clash } = await admin.from('course_enrollments')
+      .select('id').eq('certificate_code', code).maybeSingle()
+    if (!clash) break
+    code = makeCertificateCode()
+  }
   return code
 }
 
@@ -98,8 +112,12 @@ export async function POST(req: NextRequest) {
       )
       if (error) return NextResponse.json({ error: error.message }, { status: 500 })
       try {
-        if (cand.user_id) await createNotification(cand.user_id, 'general', 'A course has been unlocked for you',
-          `Wellness House Collective has enrolled you on ${course.title}, with our compliments. Find it under Academy - complete it to earn the certificate and profile badge.`, '/talent/academy')
+        if (cand.user_id) {
+          await createNotification(cand.user_id, 'general', 'A course has been unlocked for you',
+            `Wellness House Collective has enrolled you on ${course.title}, with our compliments. Find it under Academy - complete it to earn the certificate and profile badge.`, '/talent/academy')
+          const { data: u } = await admin.auth.admin.getUserById(cand.user_id)
+          if (u?.user?.email) await sendCourseGiftEmail(u.user.email, cand.full_name || 'there', course.title, false)
+        }
       } catch { /* non-fatal */ }
       return NextResponse.json({ success: true })
     }
@@ -116,12 +134,16 @@ export async function POST(req: NextRequest) {
     if (action === 'award') {
       if (enr.completed_at) return NextResponse.json({ error: 'Already certified.' }, { status: 400 })
       const { error } = await admin.from('course_enrollments')
-        .update({ completed_at: new Date().toISOString(), certificate_code: makeCertificateCode(), quiz_score: enr.quiz_score ?? 100 })
+        .update({ completed_at: new Date().toISOString(), certificate_code: await makeUniqueCertificateCode(admin), quiz_score: enr.quiz_score ?? 100 })
         .eq('id', enr.id)
       if (error) return NextResponse.json({ error: error.message }, { status: 500 })
       try {
-        if (cand?.user_id) await createNotification(cand.user_id, 'general', 'Certificate awarded',
-          `Wellness House Collective has awarded you the certificate for ${course?.title || enr.course_slug}. It is live on your profile now.`, '/talent/academy')
+        if (cand?.user_id) {
+          await createNotification(cand.user_id, 'general', 'Certificate awarded',
+            `Wellness House Collective has awarded you the certificate for ${course?.title || enr.course_slug}. It is live on your profile now.`, '/talent/academy')
+          const { data: u } = await admin.auth.admin.getUserById(cand.user_id)
+          if (u?.user?.email) await sendCourseGiftEmail(u.user.email, cand.full_name || 'there', course?.title || enr.course_slug, true)
+        }
       } catch { /* non-fatal */ }
       return NextResponse.json({ success: true })
     }

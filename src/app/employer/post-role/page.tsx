@@ -179,6 +179,7 @@ export default function PostRolePage() {
 
   const handlePostLive = async () => {
     if (!profile) return
+    if (saving || checkoutLoading) return
     setSaving(true)
     setError('')
 
@@ -538,8 +539,8 @@ export default function PostRolePage() {
             <button onClick={() => setPhase('form')} className="btn-secondary flex-1">
               ← Back to edit
             </button>
-            <button onClick={handlePostLive} disabled={checkoutLoading} className="btn-primary flex-1 disabled:opacity-40">
-              {checkoutLoading ? 'Redirecting...' : 'Post role & pay'}
+            <button onClick={handlePostLive} disabled={saving || checkoutLoading} className="btn-primary flex-1 disabled:opacity-40">
+              {checkoutLoading ? 'Redirecting...' : saving ? 'Processing...' : 'Post role & pay'}
             </button>
           </div>
         </div>

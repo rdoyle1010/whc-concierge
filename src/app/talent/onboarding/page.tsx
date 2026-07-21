@@ -59,6 +59,7 @@ export default function OnboardingWizard() {
   })
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [saveError, setSaveError] = useState('')
   const [userId, setUserId] = useState<string | null>(null)
   const [profileId, setProfileId] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
@@ -120,7 +121,7 @@ export default function OnboardingWizard() {
       if (profile) {
         setProfileId(profile.id)
         setBasic({
-          full_name: profile.full_name || '', location_city: profile.location || '', location_country: 'United Kingdom',
+          full_name: profile.full_name || '', location_city: profile.location || '', location_country: profile.location_country || 'United Kingdom',
           right_to_work: profile.right_to_work || 'citizen', employment_types_wanted: profile.employment_types_wanted || [],
           years_experience: profile.experience_years?.toString() || profile.years_experience?.toString() || '',
           current_job_title: profile.role_level || '', headline: profile.headline || '', bio: profile.bio || '',
@@ -212,16 +213,36 @@ export default function OnboardingWizard() {
     setMap(next)
   }
 
+  // Delete-then-insert for a selections table, checking both results so a
+  // failed write can never silently wipe previously saved rows.
+  const replaceRows = async (table: string, rows: any[]) => {
+    const del = await supabase.from(table).delete().eq('candidate_id', profileId)
+    if (del.error) return false
+    if (rows.length > 0) {
+      const ins = await supabase.from(table).insert(rows)
+      if (ins.error) return false
+    }
+    return true
+  }
+
+  const STEP_SAVE_ERROR = 'This step could not be saved - please try again before continuing.'
+
   // ── Save step data ──
   const saveStep = async () => {
-    if (!profileId) return
+    if (!profileId) {
+      setSaveError('Your profile could not be loaded - please refresh the page and try again. Your answers have not been saved.')
+      return false
+    }
     setSaving(true)
 
+    setSaveError('')
+    setPayError('')
     if (step === 1) {
-      await fetch('/api/profile/update', {
+      const res1 = await fetch('/api/profile/update', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ profileId, data: {
           full_name: basic.full_name, location: basic.location_city,
+          location_country: basic.location_country || null,
           headline: basic.headline, bio: basic.bio,
           experience_years: basic.years_experience ? parseInt(basic.years_experience) : null,
           role_level: basic.current_job_title || null,
@@ -234,10 +255,16 @@ export default function OnboardingWizard() {
           availability_date: basic.availability_date || null,
         }}),
       })
+      if (!res1.ok) {
+        const j = await res1.json().catch(() => ({}))
+        setSaveError(j.error || 'This step could not be saved - please try again before continuing.')
+        setSaving(false)
+        return false
+      }
     }
 
     if (step === 2) {
-      await fetch('/api/profile/update', {
+      const res2 = await fetch('/api/profile/update', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ profileId, data: {
           transport_method: basic.transport_method || null,
@@ -247,6 +274,12 @@ export default function OnboardingWizard() {
           needs_accommodation: basic.needs_accommodation,
         }}),
       })
+      if (!res2.ok) {
+        const j = await res2.json().catch(() => ({}))
+        setSaveError(j.error || 'This step could not be saved - please try again before continuing.')
+        setSaving(false)
+        return false
+      }
     }
 
     if (step === 3 || step === 4) {
@@ -254,55 +287,78 @@ export default function OnboardingWizard() {
       const allSkills = Array.from(selectedSkills.entries()).map(([skill_id, data]) => ({
         candidate_id: profileId, skill_id, proficiency: data.proficiency || 'intermediate', years_using: data.years_using || null,
       }))
-      await supabase.from('candidate_skills').delete().eq('candidate_id', profileId)
-      if (allSkills.length > 0) await supabase.from('candidate_skills').insert(allSkills)
+      if (!(await replaceRows('candidate_skills', allSkills))) {
+        setSaveError(STEP_SAVE_ERROR)
+        setSaving(false)
+        return false
+      }
     }
 
     if (step === 5) {
       const rows = Array.from(selectedSystems.entries()).map(([system_id, data]) => ({
         candidate_id: profileId, system_id, proficiency: data.proficiency || 'intermediate',
       }))
-      await supabase.from('candidate_systems').delete().eq('candidate_id', profileId)
-      if (rows.length > 0) await supabase.from('candidate_systems').insert(rows)
+      if (!(await replaceRows('candidate_systems', rows))) {
+        setSaveError(STEP_SAVE_ERROR)
+        setSaving(false)
+        return false
+      }
     }
 
     if (step === 6) {
       const rows = Array.from(selectedPH.entries()).map(([product_house_id, data]) => ({
         candidate_id: profileId, product_house_id, years_using: data.years_using || null, proficiency: data.proficiency || 'intermediate',
       }))
-      await supabase.from('candidate_product_houses').delete().eq('candidate_id', profileId)
-      if (rows.length > 0) await supabase.from('candidate_product_houses').insert(rows)
+      if (!(await replaceRows('candidate_product_houses', rows))) {
+        setSaveError(STEP_SAVE_ERROR)
+        setSaving(false)
+        return false
+      }
     }
 
     if (step === 7) {
       const rows = Array.from(selectedCerts.entries()).map(([certification_id, data]) => ({
         candidate_id: profileId, certification_id, issued_date: data.issued_date || null, expiry_date: data.expiry_date || null, is_verified: false,
       }))
-      await supabase.from('candidate_certifications').delete().eq('candidate_id', profileId)
-      if (rows.length > 0) await supabase.from('candidate_certifications').insert(rows)
+      if (!(await replaceRows('candidate_certifications', rows))) {
+        setSaveError(STEP_SAVE_ERROR)
+        setSaving(false)
+        return false
+      }
     }
 
     if (step === 8) {
       const rows = Array.from(selectedBrands.entries()).map(([hotel_brand_id, data]) => ({
         candidate_id: profileId, hotel_brand_id, years_worked: data.years_worked || null, role_held: data.role_held || null,
       }))
-      await supabase.from('candidate_hotel_brands').delete().eq('candidate_id', profileId)
-      if (rows.length > 0) await supabase.from('candidate_hotel_brands').insert(rows)
+      if (!(await replaceRows('candidate_hotel_brands', rows))) {
+        setSaveError(STEP_SAVE_ERROR)
+        setSaving(false)
+        return false
+      }
     }
 
     if (step === 9) {
-      await saveAgencyFields()
+      const ok = await saveAgencyFields()
+      if (!ok) {
+        // The payError banner only renders inside the opt-in section - fall
+        // back to the general banner so the failure is always visible
+        if (!agency.optIn && !agencyLive.available) setSaveError(STEP_SAVE_ERROR)
+        setSaving(false)
+        return false
+      }
     }
 
     setSaving(false)
+    return true
   }
 
   // Persist the agency-work details (rate, mobile, postcode, radius) via the
   // agency settings API, which also geocodes the postcode to real coordinates.
   // agency_available itself is NOT saved here - only the Stripe webhook may
   // set it, after the £10/mo listing subscription is paid.
-  const saveAgencyFields = async () => {
-    if (!profileId) return
+  const saveAgencyFields = async (): Promise<boolean> => {
+    if (!profileId) return true
     try {
       const res = await fetch('/api/agency/settings', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -316,16 +372,22 @@ export default function OnboardingWizard() {
       })
       if (!res.ok) {
         const j = await res.json().catch(() => ({}))
-        setPayError(j.error || '')
+        setPayError(j.error || 'Your agency details could not be saved - please try again.')
+        return false
       }
-    } catch { /* details can be completed later in Agency Settings */ }
+      return true
+    } catch {
+      setPayError('Your agency details could not be saved - please check your connection and try again.')
+      return false
+    }
   }
 
-  const goNext = async () => { await saveStep(); setStep(s => s + 1); setSearchTerm(''); window.scrollTo(0, 0) }
+  const goNext = async () => { const ok = await saveStep(); if (ok === false) return; setStep(s => s + 1); setSearchTerm(''); window.scrollTo(0, 0) }
   const goBack = () => { setStep(s => s - 1); setSearchTerm(''); window.scrollTo(0, 0) }
 
   const handleSubmit = async () => {
-    await saveStep()
+    const ok = await saveStep()
+    if (ok === false) return
     // Update completion
     const filled = [basic.full_name, basic.location_city, basic.headline, basic.bio, selectedSkills.size > 0, selectedSystems.size > 0, selectedPH.size > 0, selectedCerts.size > 0, basic.years_experience].filter(Boolean).length
     const pct = Math.round((filled / 9) * 100)
@@ -701,6 +763,7 @@ export default function OnboardingWizard() {
         )}
 
         {/* ═══ Navigation ═══ */}
+        {saveError && <div className="bg-red-50 text-red-600 text-sm px-4 py-3 rounded-lg mt-6">{saveError}</div>}
         <div className="flex gap-3 mt-8 pt-6 border-t border-border">
           {step > 1 && <button type="button" onClick={goBack} className="btn-secondary flex items-center gap-2 flex-1"><ArrowLeft size={14} />Back</button>}
           {step < STEPS.length ? (

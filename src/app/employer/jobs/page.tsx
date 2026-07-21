@@ -94,7 +94,11 @@ export default function EmployerJobsPage() {
 
   const handleDelete = async (id: string) => {
     if (!confirm('Delete this listing?')) return
-    await supabase.from('job_listings').delete().eq('id', id)
+    const { data, error } = await supabase.from('job_listings').delete().eq('id', id).select('id')
+    if (error || !data?.length) {
+      alert('Could not delete listing' + (error ? ': ' + error.message : '. Please try again.'))
+      return
+    }
     setJobs(jobs.filter(j => j.id !== id))
   }
 
@@ -115,7 +119,11 @@ export default function EmployerJobsPage() {
     }
 
     const newStatus = newIsLive ? 'active' : 'closed'
-    await supabase.from('job_listings').update({ is_live: newIsLive, status: newStatus }).eq('id', job.id)
+    const { data: updated, error } = await supabase.from('job_listings').update({ is_live: newIsLive, status: newStatus }).eq('id', job.id).select('id')
+    if (error || !updated?.length) {
+      alert('Could not update listing status' + (error ? ': ' + error.message : '') + '. Please try again.')
+      return
+    }
     setJobs(jobs.map(j => j.id === job.id ? { ...j, status: newStatus, is_live: newIsLive } : j))
   }
   return (
