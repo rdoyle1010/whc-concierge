@@ -20,6 +20,8 @@ const ALLOWED_BUCKETS = new Set([
   'property-photos',
 ])
 
+const PRIVATE_BUCKETS = new Set(['talent-documents', 'message-attachments'])
+
 // File validation
 const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10 MB
 const ALLOWED_IMAGE_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif'])
@@ -81,6 +83,25 @@ export async function POST(req: NextRequest) {
 
     // ── Ownership: if updating a profile, it must belong to the caller ──
     const admin = createAdminClient()
+
+    // Paths are ownership boundaries. Service-role storage writes bypass RLS,
+    // so the route itself must never accept another user's path.
+    if (path.startsWith('/') || path.includes('..') || path.includes('\\')) {
+      return NextResponse.json({ error: 'Invalid upload path' }, { status: 400 })
+    }
+    const [{ data: callerProfile }, { data: employerProfile }] = await Promise.all([
+      admin.from('profiles').select('role').eq('id', user.id).maybeSingle(),
+      admin.from('employer_profiles').select('id').eq('user_id', user.id).maybeSingle(),
+    ])
+    const isAdmin = callerProfile?.role === 'admin'
+    const isOwnUserPath = path === user.id || path.startsWith(`${user.id}/`)
+    const isOwnEmployerAsset = Boolean(employerProfile && (
+      path.startsWith(`${employerProfile.id}-`) || path.startsWith(`logos/${employerProfile.id}.`)
+    ))
+    if (!isAdmin && !isOwnUserPath && !isOwnEmployerAsset) {
+      return NextResponse.json({ error: 'Upload path does not belong to this account' }, { status: 403 })
+    }
+
     if (profileId) {
       const { data: profile } = await admin
         .from('candidate_profiles')
@@ -106,35 +127,18 @@ export async function POST(req: NextRequest) {
         contentType: file.type || 'application/octet-stream',
       })
 
-    if (uploadError) {
-      // Try site-images as fallback if primary bucket fails
-      if (actualBucket !== 'site-images') {
-        const { error: fallbackError } = await admin.storage
-          .from('site-images')
-          .upload(path, buffer, { upsert: true, contentType: file.type || 'application/octet-stream' })
-        if (fallbackError) {
-          return NextResponse.json({ error: fallbackError.message }, { status: 500 })
-        }
-        const { data: { publicUrl } } = admin.storage.from('site-images').getPublicUrl(path)
+    if (uploadError) return NextResponse.json({ error: uploadError.message }, { status: 500 })
 
-        // Update profile if requested (column already validated)
-        if (profileId && column) {
-          await admin.from('candidate_profiles').update({ [column]: publicUrl }).eq('id', profileId)
-        }
-
-        return NextResponse.json({ url: publicUrl })
-      }
-      return NextResponse.json({ error: uploadError.message }, { status: 500 })
-    }
-
-    const { data: { publicUrl } } = admin.storage.from(actualBucket).getPublicUrl(path)
+    const url = PRIVATE_BUCKETS.has(actualBucket)
+      ? `/api/files?bucket=${encodeURIComponent(actualBucket)}&path=${encodeURIComponent(path)}`
+      : admin.storage.from(actualBucket).getPublicUrl(path).data.publicUrl
 
     // Update profile record if requested (column already validated)
     if (profileId && column) {
-      await admin.from('candidate_profiles').update({ [column]: publicUrl }).eq('id', profileId)
+      await admin.from('candidate_profiles').update({ [column]: url }).eq('id', profileId)
     }
 
-    return NextResponse.json({ url: publicUrl })
+    return NextResponse.json({ url })
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 })
   }

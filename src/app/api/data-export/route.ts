@@ -37,7 +37,7 @@ export async function GET(req: NextRequest) {
     },
   }
 
-  if (role === 'talent' || role === 'admin') {
+  if (role === 'candidate' || role === 'talent' || role === 'admin') {
     // Candidate profile
     const { data: cp } = await admin.from('candidate_profiles').select('*').eq('user_id', user.id).single()
     exportData.candidate_profile = cp || null
@@ -48,7 +48,7 @@ export async function GET(req: NextRequest) {
         .from('applications')
         .select('*, job_listings(job_title, location, employer_profiles(company_name))')
         .eq('candidate_id', cp.id)
-        .order('posted_date', { ascending: false })
+        .order('created_at', { ascending: false })
       exportData.applications = apps || []
 
       // Saved jobs
@@ -67,11 +67,11 @@ export async function GET(req: NextRequest) {
     }
 
     // Reviews received
-    const { data: reviewsReceived } = await admin.from('reviews').select('*').eq('reviewee_id', user.id).order('posted_date', { ascending: false })
+    const { data: reviewsReceived } = await admin.from('reviews').select('*').eq('reviewee_id', user.id).order('created_at', { ascending: false })
     exportData.reviews_received = reviewsReceived || []
 
     // Reviews given
-    const { data: reviewsGiven } = await admin.from('reviews').select('*').eq('reviewer_id', user.id).order('posted_date', { ascending: false })
+    const { data: reviewsGiven } = await admin.from('reviews').select('*').eq('reviewer_id', user.id).order('created_at', { ascending: false })
     exportData.reviews_given = reviewsGiven || []
   }
 
@@ -82,7 +82,7 @@ export async function GET(req: NextRequest) {
 
     if (ep) {
       // Job listings
-      const { data: jobs } = await admin.from('job_listings').select('*').eq('employer_id', ep.id).order('posted_date', { ascending: false })
+      const { data: jobs } = await admin.from('job_listings').select('*').eq('employer_id', ep.id).order('created_at', { ascending: false })
       exportData.job_listings = jobs || []
 
       // Applications received
@@ -92,7 +92,7 @@ export async function GET(req: NextRequest) {
           .from('applications')
           .select('*, candidate_profiles(full_name, headline)')
           .in('role_id', jobIds)
-          .order('posted_date', { ascending: false })
+          .order('created_at', { ascending: false })
         exportData.applications_received = apps || []
       }
 
@@ -110,14 +110,14 @@ export async function GET(req: NextRequest) {
   }
 
   // Messages (both roles)
-  const { data: messagesSent } = await admin.from('messages').select('*').eq('sender_id', user.id).order('posted_date', { ascending: false }).limit(500)
+  const { data: messagesSent } = await admin.from('messages').select('*').eq('sender_id', user.id).order('created_at', { ascending: false }).limit(500)
   exportData.messages_sent = messagesSent || []
 
-  const { data: messagesReceived } = await admin.from('messages').select('*').eq('recipient_id', user.id).order('posted_date', { ascending: false }).limit(500)
+  const { data: messagesReceived } = await admin.from('messages').select('*').eq('recipient_id', user.id).order('created_at', { ascending: false }).limit(500)
   exportData.messages_received = messagesReceived || []
 
   // Notifications
-  const { data: notifications } = await admin.from('notifications').select('*').eq('user_id', user.id).order('posted_date', { ascending: false }).limit(200)
+  const { data: notifications } = await admin.from('notifications').select('*').eq('user_id', user.id).order('created_at', { ascending: false }).limit(200)
   exportData.notifications = notifications || []
 
   const date = new Date().toISOString().split('T')[0]

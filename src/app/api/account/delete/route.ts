@@ -33,7 +33,7 @@ export async function POST(req: NextRequest) {
 
     const role = profile?.role
     // Delete user data based on role
-    if (role === 'talent') {
+    if (role === 'candidate' || role === 'talent') {
       const { data: candProfile } = await admin
         .from('candidate_profiles')
         .select('id')

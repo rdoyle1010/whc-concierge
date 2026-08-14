@@ -5,6 +5,7 @@ import { cookies } from 'next/headers'
 import { createNotification } from '@/lib/notifications'
 import { applicantConfirmationHtml, employerNotificationHtml } from '@/lib/application-email-templates'
 import { sendNewMatchEmail } from '@/lib/emails'
+import { calculateMatchScore } from '@/lib/matching'
 
 // Records a swipe server-side (swipes has unreliable RLS), creates the
 // application on a candidate right-swipe, and detects MUTUAL matches:
@@ -111,11 +112,10 @@ export async function POST(req: NextRequest) {
     if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
 
     const body = await req.json()
-    const { targetId, targetType, action, matchScore } = body as {
+    const { targetId, targetType, action } = body as {
       targetId: string
       targetType: 'job' | 'candidate'
       action: 'left' | 'right'
-      matchScore?: number
     }
     if (!targetId || (targetType !== 'job' && targetType !== 'candidate') || (action !== 'left' && action !== 'right')) {
       return NextResponse.json({ error: 'Invalid request' }, { status: 400 })
@@ -140,10 +140,21 @@ export async function POST(req: NextRequest) {
 
       const { data: job } = await admin
         .from('job_listings')
-        .select('id, job_title, employer_id')
+        .select('*')
         .eq('id', targetId)
         .maybeSingle()
       if (!job) return NextResponse.json({ matched: false })
+
+      // Never trust a percentage supplied by the browser. The server owns
+      // the score recorded against an application and a mutual match.
+      const calculatedMatch = calculateMatchScore(cand, job)
+      if (calculatedMatch.hardStop) {
+        return NextResponse.json(
+          { error: calculatedMatch.hardStopReason || 'This role is not compatible with your profile' },
+          { status: 400 },
+        )
+      }
+      const serverMatchScore = calculatedMatch.score
 
       const { data: employer } = await admin
         .from('employer_profiles')
@@ -160,7 +171,7 @@ export async function POST(req: NextRequest) {
           role_id: job.id,
           job_id: job.id, // 022 RLS keys employer visibility on job_id - set both
           status: 'pending',
-          match_score: matchScore ?? null,
+          match_score: serverMatchScore,
         })
         if (appError) {
           // Do NOT pretend the application was sent
@@ -237,7 +248,7 @@ export async function POST(req: NextRequest) {
           if (!existingMatch) {
             await admin.from('matches').insert({
               candidate_id: cand.id, employer_id: job.employer_id, job_id: job.id,
-              score: matchScore ?? null, status: 'active',
+              score: serverMatchScore, status: 'active',
             })
           }
           // Open the conversation so neither side hits an empty inbox
@@ -288,14 +299,24 @@ export async function POST(req: NextRequest) {
 
     const { data: cand } = await admin
       .from('candidate_profiles')
-      .select('id, user_id, full_name')
+      .select('*')
       .eq('id', targetId)
       .maybeSingle()
     if (!cand) return NextResponse.json({ matched: false })
 
+    if (cand.user_id) {
+      await createNotification(
+        cand.user_id,
+        'new_match',
+        'An employer is interested',
+        `${emp.property_name || emp.company_name || 'An employer'} has shortlisted your profile.`,
+        '/talent/dashboard',
+      )
+    }
+
     const { data: myJobs } = await admin
       .from('job_listings')
-      .select('id, job_title')
+      .select('*')
       .eq('employer_id', emp.id)
     const jobIds = (myJobs || []).map(j => j.id)
     if (jobIds.length === 0) return NextResponse.json({ matched: false })
@@ -325,8 +346,13 @@ export async function POST(req: NextRequest) {
         .eq('job_id', job.id)
         .maybeSingle()
       if (!existingMatch) {
+        const calculatedMatch = calculateMatchScore(cand, job)
         await admin.from('matches').insert({
-          candidate_id: cand.id, employer_id: emp.id, job_id: job.id, score: null, status: 'active',
+          candidate_id: cand.id,
+          employer_id: emp.id,
+          job_id: job.id,
+          score: calculatedMatch.hardStop ? 0 : calculatedMatch.score,
+          status: 'active',
         })
       }
     }

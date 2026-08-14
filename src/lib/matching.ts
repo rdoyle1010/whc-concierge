@@ -56,39 +56,41 @@ export function calculateMatchScore(candidate: any, job: any): {
   // ── Hard stop: insurance ──
   if (job.insurance_required && !candidate.has_insurance) return { ...empty, hardStopReason: 'Insurance required' }
 
-  // ── 1. Role Level (12%) ──
+  // Compatibility is deliberately separate from profile promotion and
+  // reputation. These twelve weights total exactly 100%.
+  // ── 1. Role Level (15%) ──
   const candLevel = ROLE_LEVELS[candidate.role_level] || 3
   const jobLevel = ROLE_LEVELS[job.required_role_level] || 3
   const diff = Math.abs(candLevel - jobLevel)
   if (diff >= 3) return { ...empty, hardStopReason: 'Role level mismatch' }
   const roleLevelScore = diff === 0 ? 100 : diff === 1 ? 60 : 20
 
-  // ── 2. Treatment Skills (10%) ──
+  // ── 2. Treatment Skills (18%) ──
   const requiredSkills: string[] = job.required_skills || []
   const candidateSkills: string[] = candidate.treatment_skills || candidate.skills || candidate.services_offered || []
   const treatmentResult = overlapScore(candidateSkills, requiredSkills)
 
-  // ── 3. Product House / Brand (8%) ──
+  // ── 3. Product House / Brand (10%) ──
   const requiredBrands: string[] = job.required_brands || job.required_product_houses || []
   const candidateBrands: string[] = candidate.product_houses || []
   const brandResult = overlapScore(candidateBrands, requiredBrands)
 
-  // ── 4. Qualifications (8%) ──
+  // ── 4. Qualifications (12%) ──
   const requiredQuals: string[] = job.required_qualifications || []
   const candidateQuals: string[] = candidate.qualifications || []
   const qualResult = overlapScore(candidateQuals, requiredQuals)
 
-  // ── 5. Experience Years (7%) ──
+  // ── 5. Experience Years (10%) ──
   const minYears = job.min_years_experience || 0
   const candYears = candidate.experience_years || candidate.years_experience || 0
   const expScore = minYears === 0 ? 100 : candYears >= minYears ? 100 : Math.round((candYears / minYears) * 80)
 
-  // ── 6. Business Skills (6%) ──
+  // ── 6. Business Skills (8%) ──
   const requiredBizSkills: string[] = job.preferred_business_skills || []
   const candidateBizSkills: string[] = candidate.business_skills || []
   const bizResult = overlapScore(candidateBizSkills, requiredBizSkills)
 
-  // ── 7. Systems Knowledge (5%) ──
+  // ── 7. Systems Knowledge (7%) ──
   const requiredSystems: string[] = job.required_systems || []
   const candidateSystems: string[] = candidate.systems_knowledge || candidate.systems_experience || []
   const sysResult = overlapScore(candidateSystems, requiredSystems)
@@ -112,7 +114,7 @@ export function calculateMatchScore(candidate: any, job: any): {
     shiftScore = isFlexible ? 100 : hasMatch ? 100 : 30
   }
 
-  // ── 10. Transport / Commute (4%) ──
+  // ── 10. Transport / Commute (3%) ──
   const candidateTransport = candidate.transport_method || ''
   const candidateCommute = candidate.max_commute || ''
   let transportScore = 70 // default neutral
@@ -123,12 +125,12 @@ export function calculateMatchScore(candidate: any, job: any): {
   else if (candidateCommute === '1.5 hours') transportScore = Math.max(transportScore, 90)
   else if (candidateCommute === '1 hour') transportScore = Math.max(transportScore, 80)
 
-  // ── 11. Accommodation (3%) ──
+  // ── 11. Accommodation (2%) ──
   let accommodationScore = 100
   if (candidate.needs_accommodation && !job.offers_accommodation) accommodationScore = 20
   else if (candidate.needs_accommodation && job.offers_accommodation) accommodationScore = 100
 
-  // ── 12. Proficiency Depth (8%) ──
+  // ── 12. Proficiency Depth (2%) ──
   const candidateProficiencies: Record<string, string> = candidate.skill_proficiencies || {}
   let proficiencyScore = 50 // default when no data
   if (requiredSkills.length > 0 && Object.keys(candidateProficiencies).length > 0) {
@@ -153,28 +155,22 @@ export function calculateMatchScore(candidate: any, job: any): {
   const reviewVal = candidate.review_score || 0
   const reviewScoreNorm = reviewVal >= 4.5 ? 100 : reviewVal >= 4.0 ? 85 : reviewVal >= 3.5 ? 65 : reviewVal > 0 ? 40 : 50
 
-  // ── Weighted total ──
-  let score =
-    (roleLevelScore * 0.12) +
-    (treatmentResult.score * 0.10) +
-    (brandResult.score * 0.08) +
-    (qualResult.score * 0.08) +
-    (expScore * 0.07) +
-    (bizResult.score * 0.06) +
-    (sysResult.score * 0.05) +
+  // ── Weighted total: exactly 100 compatibility points ──
+  // Profile completeness and reviews remain visible in the breakdown, but
+  // they do not alter whether somebody can actually do the role.
+  const score =
+    (roleLevelScore * 0.15) +
+    (treatmentResult.score * 0.18) +
+    (brandResult.score * 0.10) +
+    (qualResult.score * 0.12) +
+    (expScore * 0.10) +
+    (bizResult.score * 0.08) +
+    (sysResult.score * 0.07) +
     (locationScore * 0.08) +
     (shiftScore * 0.05) +
-    (transportScore * 0.04) +
-    (accommodationScore * 0.03) +
-    (proficiencyScore * 0.08) +
-    (profileScore * 0.03) +
-    (reviewScoreNorm * 0.03)
-
-  // ── Boosts ──
-  if (candidate.is_featured) score = Math.min(100, score + 3)
-  if (reviewVal >= 4.5) score = Math.min(100, score + 5)
-  else if (reviewVal >= 4.0) score = Math.min(100, score + 3)
-  if (completionPct >= 90) score = Math.min(100, score + 2)
+    (transportScore * 0.03) +
+    (accommodationScore * 0.02) +
+    (proficiencyScore * 0.02)
 
   const rounded = Math.round(score)
   const label = rounded >= 90 ? 'Perfect Match' : rounded >= 75 ? 'Strong Match' : rounded >= 60 ? 'Good Match' : rounded >= 45 ? 'Partial Match' : 'Low Match'

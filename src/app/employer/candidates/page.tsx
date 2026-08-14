@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react'
 import DashboardShell from '@/components/DashboardShell'
 import { createClient } from '@/lib/supabase/client'
 import { Search, MapPin, Star, X, MessageSquare } from 'lucide-react'
-import { notify } from '@/lib/notify'
 import { calculateMatchScore } from '@/lib/matching'
 
 export default function EmployerCandidatesPage() {
@@ -97,10 +96,6 @@ export default function EmployerCandidatesPage() {
       if (j.matched) {
         setMatchInfo({ name: j.candidateName || 'This candidate', job: j.jobTitle || 'your role' })
       }
-      const candidate = candidates.find(c => c.id === candidateId)
-      if (candidate?.user_id) {
-        notify(candidate.user_id, 'new_match', 'You\'ve been shortlisted', 'An employer has shortlisted your profile. Check your matches for details.', '/talent/dashboard')
-      }
     }
     setShortlistedIds(next)
   }
@@ -123,12 +118,6 @@ export default function EmployerCandidatesPage() {
     if (direction === 'right') {
       if (result?.matched) {
         setMatchInfo({ name: result.candidateName || 'This candidate', job: result.jobTitle || 'your role' })
-      } else {
-        // Notify candidate they were shortlisted
-        const candidate = candidates.find(c => c.id === candidateId)
-        if (candidate?.user_id) {
-          notify(candidate.user_id, 'new_match', 'You\'ve been shortlisted', `An employer has shortlisted your profile. Check your matches for details.`, '/talent/dashboard')
-        }
       }
     }
   }

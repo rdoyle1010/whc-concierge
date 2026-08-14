@@ -5,8 +5,47 @@ import { cookies } from 'next/headers'
 import { createNotification } from '@/lib/notifications'
 import { sendNewMessageEmail } from '@/lib/emails'
 
-// Sends a message from the logged-in user. Service-role write because the
-// messages table's client-side RLS policies are unreliable (column drift).
+async function hasMessagingRelationship(admin: ReturnType<typeof createAdminClient>, senderId: string, recipientId: string) {
+  const [{ data: senderRole }, { data: recipientRole }] = await Promise.all([
+    admin.from('profiles').select('role').eq('id', senderId).maybeSingle(),
+    admin.from('profiles').select('role').eq('id', recipientId).maybeSingle(),
+  ])
+  if (!recipientRole) return false
+  if (senderRole?.role === 'admin' || recipientRole.role === 'admin') return true
+
+  const [senderCand, senderEmp, recipientCand, recipientEmp] = await Promise.all([
+    admin.from('candidate_profiles').select('id').eq('user_id', senderId).maybeSingle(),
+    admin.from('employer_profiles').select('id').eq('user_id', senderId).maybeSingle(),
+    admin.from('candidate_profiles').select('id').eq('user_id', recipientId).maybeSingle(),
+    admin.from('employer_profiles').select('id').eq('user_id', recipientId).maybeSingle(),
+  ])
+
+  const candidateId = senderCand.data?.id || recipientCand.data?.id
+  const employerId = senderEmp.data?.id || recipientEmp.data?.id
+  if (!candidateId || !employerId) return false
+
+  const [{ data: match }, { data: booking }, { data: shortlist }] = await Promise.all([
+    admin.from('matches').select('id').eq('candidate_id', candidateId).eq('employer_id', employerId).limit(1).maybeSingle(),
+    admin.from('agency_bookings').select('id').eq('candidate_id', candidateId).eq('employer_id', employerId).limit(1).maybeSingle(),
+    admin.from('shortlisted_candidates').select('id').eq('candidate_id', candidateId).eq('employer_id', employerId).limit(1).maybeSingle(),
+  ])
+  if (match || booking || shortlist) return true
+
+  // An application is also a legitimate conversation. Tolerate the two job
+  // link column names found across the historical schema.
+  const { data: jobs } = await admin.from('job_listings').select('id').eq('employer_id', employerId)
+  const jobIds = (jobs || []).map(job => job.id)
+  if (jobIds.length === 0) return false
+  const byRole = await admin.from('applications').select('id')
+    .eq('candidate_id', candidateId).in('role_id', jobIds).limit(1).maybeSingle()
+  if (!byRole.error && byRole.data) return true
+  const byJob = await admin.from('applications').select('id')
+    .eq('candidate_id', candidateId).in('job_id', jobIds).limit(1).maybeSingle()
+  return Boolean(!byJob.error && byJob.data)
+}
+
+// Sends a message from the logged-in user. The service-role write is retained
+// for schema compatibility, but only after the relationship is verified.
 export async function POST(req: NextRequest) {
   try {
     const cookieStore = cookies()
@@ -23,8 +62,20 @@ export async function POST(req: NextRequest) {
     if (!recipientId || (!content && !attachmentUrl)) {
       return NextResponse.json({ error: 'Missing recipient or content' }, { status: 400 })
     }
+    if (recipientId === user.id) {
+      return NextResponse.json({ error: 'You cannot message yourself' }, { status: 400 })
+    }
+    if (typeof content === 'string' && content.length > 5000) {
+      return NextResponse.json({ error: 'Message is too long' }, { status: 400 })
+    }
 
     const admin = createAdminClient()
+    if (!(await hasMessagingRelationship(admin, user.id, recipientId))) {
+      return NextResponse.json(
+        { error: 'Messaging opens after an application, shortlist, match or agency booking.' },
+        { status: 403 },
+      )
+    }
     const { data, error } = await admin.from('messages').insert({
       sender_id: user.id,
       recipient_id: recipientId,

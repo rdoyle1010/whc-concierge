@@ -70,6 +70,15 @@ export async function POST(req: NextRequest) {
 
     if (cand) {
       candidateName = cand.full_name || ''
+      if (!error && cand.user_id) {
+        await createNotification(
+          cand.user_id,
+          'new_match',
+          'You have been shortlisted',
+          `${profile.property_name || profile.company_name || 'An employer'} has shortlisted your profile.`,
+          '/talent/dashboard',
+        )
+      }
       const { data: myJobs } = await admin.from('job_listings').select('id, job_title').eq('employer_id', profile.id)
       const jobIds = (myJobs || []).map((j: any) => j.id)
 

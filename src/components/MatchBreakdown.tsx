@@ -21,20 +21,18 @@ type BreakdownData = {
 }
 
 const CATEGORIES: { key: keyof BreakdownData; label: string; weight: number }[] = [
-  { key: 'roleLevel', label: 'Role Level', weight: 12 },
-  { key: 'treatmentSkills', label: 'Treatment Skills', weight: 10 },
-  { key: 'proficiencyDepth', label: 'Skill Depth', weight: 8 },
-  { key: 'brands', label: 'Product Houses', weight: 8 },
-  { key: 'qualifications', label: 'Qualifications', weight: 8 },
+  { key: 'roleLevel', label: 'Role Level', weight: 15 },
+  { key: 'treatmentSkills', label: 'Treatment Skills', weight: 18 },
+  { key: 'proficiencyDepth', label: 'Skill Depth', weight: 2 },
+  { key: 'brands', label: 'Product Houses', weight: 10 },
+  { key: 'qualifications', label: 'Qualifications', weight: 12 },
   { key: 'location', label: 'Location', weight: 8 },
-  { key: 'experience', label: 'Experience', weight: 7 },
-  { key: 'businessSkills', label: 'Business Skills', weight: 6 },
-  { key: 'systems', label: 'Systems', weight: 5 },
+  { key: 'experience', label: 'Experience', weight: 10 },
+  { key: 'businessSkills', label: 'Business Skills', weight: 8 },
+  { key: 'systems', label: 'Systems', weight: 7 },
   { key: 'shiftCompatibility', label: 'Shift Fit', weight: 5 },
-  { key: 'transport', label: 'Transport', weight: 4 },
-  { key: 'accommodation', label: 'Accommodation', weight: 3 },
-  { key: 'profileCompleteness', label: 'Profile', weight: 3 },
-  { key: 'reviewScore', label: 'Reviews', weight: 3 },
+  { key: 'transport', label: 'Transport', weight: 3 },
+  { key: 'accommodation', label: 'Accommodation', weight: 2 },
 ]
 
 function barColour(score: number): string {

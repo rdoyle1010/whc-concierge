@@ -4,9 +4,9 @@ import { cookies } from 'next/headers'
 import { createNotification } from '@/lib/notifications'
 import type { NotificationType } from '@/lib/notifications'
 
-// Creating a notification for another user (e.g. "you've been shortlisted")
-// is legitimate, but ONLY for logged-in users, with a whitelisted type,
-// bounded content, and internal links only. Anonymous callers are rejected.
+// User-to-user notifications are created inside the relevant server route
+// (shortlist, swipe, booking or message), where the relationship is checked.
+// This generic endpoint is reserved for administrators.
 
 const ALLOWED_TYPES: NotificationType[] = [
   'new_match', 'new_message', 'profile_approved', 'job_application', 'review_received', 'general',
@@ -27,6 +27,11 @@ export async function POST(req: NextRequest) {
     // -- Auth: caller must be logged in --
     const { data: { user } } = await getAuthedUser()
     if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+
+    const { createAdminClient } = await import('@/lib/supabase/admin')
+    const admin = createAdminClient()
+    const { data: caller } = await admin.from('profiles').select('role').eq('id', user.id).maybeSingle()
+    if (caller?.role !== 'admin') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
     const { userId, type, title, message, link } = await req.json()
     if (!userId || !type || !title || !message) {

@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { welcomeEmailHtml } from '@/lib/welcome-email-template'
+import { createServerClient } from '@supabase/ssr'
+import { cookies } from 'next/headers'
 
 const RESEND_API_KEY = process.env.RESEND_API_KEY
 const FROM_EMAIL = 'WHC Concierge <noreply@mail.wellnesshousecollective.co.uk>'
@@ -51,11 +53,24 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Missing userId or profileData' }, { status: 400 })
     }
 
+    // Bind the new profile to the authenticated session, never merely to a
+    // user id supplied in JSON.
+    const cookieStore = cookies()
+    const authClient = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      { cookies: { getAll() { return cookieStore.getAll() }, setAll() {} } },
+    )
+    const { data: { user: signedInUser } } = await authClient.auth.getUser()
+    if (!signedInUser || signedInUser.id !== userId) {
+      return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+    }
+
     const supabase = createAdminClient()
 
     // Wait for the user to be fully committed to auth.users
     let userVerified = false
-    let userEmail = ''
+    let userEmail = signedInUser.email || ''
     for (let attempt = 0; attempt < 5; attempt++) {
       const { data, error } = await supabase.auth.admin.getUserById(userId)
       if (data?.user && !error) {

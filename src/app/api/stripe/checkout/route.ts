@@ -168,6 +168,14 @@ export async function POST(req: NextRequest) {
       const { candidateId } = body
       if (!candidateId) return NextResponse.json({ error: 'Missing candidateId' }, { status: 400 })
 
+      const { createAdminClient } = await import('@/lib/supabase/admin')
+      const admin = createAdminClient()
+      const { data: cand } = await admin.from('candidate_profiles')
+        .select('id, user_id').eq('id', candidateId).maybeSingle()
+      if (!cand || cand.user_id !== user.id) {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+      }
+
       const session = await stripe.checkout.sessions.create({
         payment_method_types: ['card'],
         line_items: [{
@@ -330,6 +338,16 @@ export async function POST(req: NextRequest) {
       const tierConfig = JOB_TIERS[tier as keyof typeof JOB_TIERS]
       if (!tierConfig) return NextResponse.json({ error: 'Invalid tier' }, { status: 400 })
 
+      const { createAdminClient } = await import('@/lib/supabase/admin')
+      const admin = createAdminClient()
+      const [{ data: emp }, { data: job }] = await Promise.all([
+        admin.from('employer_profiles').select('id, user_id').eq('id', employerId).maybeSingle(),
+        admin.from('job_listings').select('id, employer_id').eq('id', jobId).maybeSingle(),
+      ])
+      if (!emp || emp.user_id !== user.id || !job || job.employer_id !== emp.id) {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+      }
+
       const session = await stripe.checkout.sessions.create({
         payment_method_types: ['card'],
         line_items: [{
@@ -354,4 +372,3 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 }
-
