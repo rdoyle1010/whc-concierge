@@ -10,8 +10,13 @@ const MAX_CV_SIZE = 10 * 1024 * 1024
 
 async function extractText(buffer: Buffer, extension: string): Promise<string> {
   if (extension === 'pdf') {
-    const pdf = (await import('pdf-parse')).default
-    return (await pdf(buffer)).text
+    const { PDFParse } = await import('pdf-parse')
+    const parser = new PDFParse({ data: new Uint8Array(buffer) })
+    try {
+      return (await parser.getText()).text
+    } finally {
+      await parser.destroy()
+    }
   }
   if (extension === 'docx') {
     const mammoth = await import('mammoth')
