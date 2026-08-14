@@ -6,7 +6,8 @@ import { createClient } from '@/lib/supabase/client'
 import CollapsibleCheckboxSection from '@/components/CollapsibleCheckboxSection'
 import { ROLE_LEVELS, TRAVEL_OPTIONS, AVAILABILITY_STATUSES } from '@/lib/constants'
 import { SERVICES_CATEGORIES, PRODUCT_HOUSES_FULL as PRODUCT_HOUSES, QUALS_CATEGORIES, SYSTEMS_FULL } from '@/lib/taxonomy'
-import { Save, Upload, FileText, X } from 'lucide-react'
+import type { CvSuggestions } from '@/lib/cv-analysis'
+import { Save, Upload, FileText, Sparkles, CheckCircle2 } from 'lucide-react'
 
 // Merge systems into quals for talent display (keeps existing UI behaviour)
 const QUALS_WITH_SYSTEMS = [
@@ -20,6 +21,8 @@ export default function TalentProfilePage() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState('')
+  const [analysingCv, setAnalysingCv] = useState(false)
+  const [cvSuggestions, setCvSuggestions] = useState<CvSuggestions | null>(null)
 
   useEffect(() => {
     async function load() {
@@ -124,7 +127,39 @@ export default function TalentProfilePage() {
     const file = e.target.files?.[0]; if (!file || !userId) return
     const ext = file.name.split('.').pop() || 'pdf'
     const url = await uploadViaApi(file, 'talent-documents', `${userId}/cv.${ext}`, 'cv_url')
-    if (url) { u('cv_url', url); setMessage('CV uploaded!'); setTimeout(() => setMessage(''), 3000) }
+    if (url) {
+      u('cv_url', url)
+      setCvSuggestions(null)
+      setMessage('CV uploaded. Select Analyse CV to review suggested profile details.')
+      setTimeout(() => setMessage(''), 5000)
+    }
+  }
+
+  const analyseCurrentCv = async () => {
+    if (!profile?.id || !profile?.cv_url) return
+    setAnalysingCv(true); setMessage('')
+    const res = await fetch('/api/cv/analyse', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ profileId: profile.id }),
+    })
+    const result = await res.json().catch(() => ({}))
+    setAnalysingCv(false)
+    if (!res.ok) { setMessage(result.error || 'CV analysis failed'); return }
+    setCvSuggestions(result.suggestions)
+  }
+
+  const applyCvSuggestions = () => {
+    if (!cvSuggestions) return
+    setProfile((current: any) => ({
+      ...current,
+      role_level: cvSuggestions.roleLevel || current.role_level,
+      experience_years: cvSuggestions.experienceYears || current.experience_years,
+      services_offered: Array.from(new Set([...(current.services_offered || []), ...(cvSuggestions.services || [])])),
+      product_houses: Array.from(new Set([...(current.product_houses || []), ...(cvSuggestions.productHouses || [])])),
+      qualifications: Array.from(new Set([...(current.qualifications || []), ...(current.systems_experience || []), ...(cvSuggestions.qualifications || []), ...(cvSuggestions.systems || [])])),
+    }))
+    setCvSuggestions(null)
+    setMessage('CV suggestions added successfully for review. Press Save Changes when you are satisfied they are accurate.')
   }
 
   const handleInsuranceUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -226,15 +261,55 @@ export default function TalentProfilePage() {
                 <div className="flex items-center gap-2 p-3 bg-surface rounded-lg border border-border">
                   <FileText size={14} className="text-muted" />
                   <a href={profile.cv_url} target="_blank" rel="noopener noreferrer" className="text-[13px] text-ink hover:underline flex-1 truncate">Current CV</a>
-                  <label className="text-[11px] text-muted hover:text-ink cursor-pointer">Replace<input type="file" accept=".pdf,.doc,.docx" onChange={handleCvUpload} className="hidden" /></label>
+                  <label className="text-[11px] text-muted hover:text-ink cursor-pointer">Replace<input type="file" accept=".pdf,.docx" onChange={handleCvUpload} className="hidden" /></label>
                 </div>
               ) : (
                 <label className="flex items-center justify-center border border-dashed border-border py-5 cursor-pointer hover:border-ink/30 transition-colors rounded-lg">
                   <div className="text-center"><Upload size={16} className="mx-auto text-muted mb-1" /><p className="text-[12px] text-muted">Click to upload CV</p></div>
-                  <input type="file" accept=".pdf,.doc,.docx" onChange={handleCvUpload} className="hidden" />
+                  <input type="file" accept=".pdf,.docx" onChange={handleCvUpload} className="hidden" />
                 </label>
               )}
+              {profile.cv_url && (
+                <button type="button" onClick={analyseCurrentCv} disabled={analysingCv}
+                  className="btn-secondary mt-2 w-full flex items-center justify-center gap-2 disabled:opacity-50">
+                  <Sparkles size={14} />{analysingCv ? 'Analysing CV privately...' : 'Analyse CV'}
+                </button>
+              )}
+              <p className="text-[10px] text-muted mt-2">PDF or .docx only. Suggestions never change your profile until you approve and save them.</p>
             </div>
+
+            {cvSuggestions && (
+              <div className="rounded-lg border border-accent/30 bg-[#FDF9F1] p-4 space-y-3">
+                <div className="flex items-start gap-2">
+                  <Sparkles size={15} className="text-accent mt-0.5" />
+                  <div><p className="text-[13px] font-medium text-ink">CV suggestions ready</p><p className="text-[11px] text-muted">Review these before adding them to your profile.</p></div>
+                </div>
+                <div className="grid grid-cols-2 gap-2 text-[11px]">
+                  <div className="bg-white/70 rounded p-2"><span className="text-muted">Role</span><p className="font-medium text-ink">{cvSuggestions.roleLevel || 'Not confidently detected'}</p></div>
+                  <div className="bg-white/70 rounded p-2"><span className="text-muted">Experience</span><p className="font-medium text-ink">{cvSuggestions.experienceYears ? `${cvSuggestions.experienceYears} years` : 'Not confidently detected'}</p></div>
+                  <div className="bg-white/70 rounded p-2"><span className="text-muted">Qualifications</span><p className="font-medium text-ink">{cvSuggestions.qualifications?.length || 0} found</p></div>
+                  <div className="bg-white/70 rounded p-2"><span className="text-muted">Product houses</span><p className="font-medium text-ink">{cvSuggestions.productHouses?.length || 0} found</p></div>
+                  <div className="bg-white/70 rounded p-2"><span className="text-muted">Services</span><p className="font-medium text-ink">{cvSuggestions.services?.length || 0} found</p></div>
+                  <div className="bg-white/70 rounded p-2"><span className="text-muted">Systems</span><p className="font-medium text-ink">{cvSuggestions.systems?.length || 0} found</p></div>
+                </div>
+                {[
+                  ['Qualifications', cvSuggestions.qualifications],
+                  ['Product houses', cvSuggestions.productHouses],
+                  ['Services', cvSuggestions.services],
+                  ['Systems', cvSuggestions.systems],
+                ].filter(([, items]) => (items as string[]).length > 0).map(([label, items]) => (
+                  <div key={label as string}>
+                    <p className="text-[10px] uppercase tracking-wide text-muted mb-1">{label as string}</p>
+                    <div className="flex flex-wrap gap-1">{(items as string[]).map(item => <span key={item} className="rounded-full border border-border bg-white px-2 py-1 text-[10px] text-secondary">{item}</span>)}</div>
+                  </div>
+                ))}
+                {cvSuggestions.evidence?.length > 0 && <div className="space-y-1">{cvSuggestions.evidence.map((item: string) => <p key={item} className="flex items-center gap-1.5 text-[11px] text-secondary"><CheckCircle2 size={11} className="text-emerald-600" />{item}</p>)}</div>}
+                <div className="flex gap-2">
+                  <button type="button" onClick={applyCvSuggestions} className="btn-primary flex-1">Use these suggestions</button>
+                  <button type="button" onClick={() => setCvSuggestions(null)} className="btn-secondary">Dismiss</button>
+                </div>
+              </div>
+            )}
 
             <div>
               <label className="eyebrow block mb-1.5">Certificates (PDFs)</label>
