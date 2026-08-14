@@ -50,8 +50,7 @@ export default function BrowseRolesPage() {
       const scored = normalized.map((job: any) => {
         if (loadedProfile && loadedProfile.role_level) {
           const result = calculateMatchScore(loadedProfile, job)
-          if (result.hardStop) return { ...job, matchScore: 0 }
-          return { ...job, matchScore: result.score, matchLabel: result.label, matchColour: result.colour, matchBg: result.bgColour }
+          return { ...job, matchScore: result.score, matchLabel: result.label, matchColour: result.colour, matchBg: result.bgColour, hardStop: result.hardStop, hardStopReason: result.hardStopReason }
         }
         return { ...job, matchScore: 0 }
       })

@@ -17,6 +17,8 @@ const BLOCKED_API_ROUTES = [
   '/api/fix-taxonomy-rls',
   '/api/fix-null-live',
   '/api/update-jobs',
+  '/api/application-email',
+  '/api/welcome-email',
 ]
 
 export async function middleware(request: NextRequest) {

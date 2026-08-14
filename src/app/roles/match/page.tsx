@@ -52,8 +52,7 @@ export default function SwipeMatchPage() {
       const scored = normalized.map((job: any) => {
         if (candidateProfile && candidateProfile.role_level) {
           const result = calculateMatchScore(candidateProfile, job)
-          if (result.hardStop) return null
-          return { ...job, matchScore: result.score, matchLabel: result.label, matchColour: result.colour, matchBg: result.bgColour, matchingSkills: result.matchingSkills || [], matchExplanation: result.matchExplanation || '', matchBreakdown: result.breakdown }
+          return { ...job, matchScore: result.score, matchLabel: result.label, matchColour: result.colour, matchBg: result.bgColour, matchingSkills: result.matchingSkills || [], matchExplanation: result.matchExplanation || '', matchBreakdown: result.breakdown, hardStop: result.hardStop, hardStopReason: result.hardStopReason }
         }
         return { ...job, matchScore: 75, matchLabel: 'Strong Match', matchColour: '#1D4ED8', matchBg: '#DBEAFE', matchingSkills: [], matchExplanation: '', matchBreakdown: null }
       }).filter(Boolean)
@@ -69,6 +68,10 @@ export default function SwipeMatchPage() {
 
   const swipe = useCallback(async (d:'left'|'right') => {
     if (!job || dir) return
+    if (d === 'right' && job.hardStop) {
+      alert(job.hardStopReason || 'A mandatory requirement is missing from your profile.')
+      return
+    }
     setDir(d)
     let matched = false
     if (userId) {
@@ -231,7 +234,7 @@ export default function SwipeMatchPage() {
           <button onClick={()=>swipe('left')} className="w-[52px] h-[52px] border border-border rounded-full flex items-center justify-center hover:bg-red-50 hover:border-red-200 transition-all group">
             <X size={22} className="text-muted group-hover:text-red-500" />
           </button>
-          <button onClick={()=>swipe('right')} className="w-[60px] h-[60px] bg-ink rounded-full flex items-center justify-center hover:bg-black/80 transition-colors shadow-sm">
+          <button onClick={()=>swipe('right')} disabled={job?.hardStop} title={job?.hardStopReason} className="w-[60px] h-[60px] bg-ink rounded-full flex items-center justify-center hover:bg-black/80 transition-colors shadow-sm disabled:opacity-35 disabled:cursor-not-allowed">
             <Heart size={24} className="text-white" />
           </button>
         </div>

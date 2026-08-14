@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { isAdminRequest } from '@/lib/admin-api-auth'
 
 export const dynamic = 'force-dynamic'
 
@@ -152,6 +153,7 @@ const HOTEL_BRANDS = [
 ]
 
 export async function GET() {
+  if (!(await isAdminRequest())) return NextResponse.json({ error: 'Not found' }, { status: 404 })
   const supabase = createAdminClient()
   const results: Record<string, any> = {}
 

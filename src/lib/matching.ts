@@ -48,7 +48,7 @@ export function calculateMatchScore(candidate: any, job: any): {
     proficiencyDepth: 0, profileCompleteness: 0, reviewScore: 0,
   }
   const empty = {
-    score: 0, label: 'Excluded', colour: '#6B7280', bgColour: '#F3F4F6',
+    score: 10, label: 'Requirement Missing', colour: '#6B7280', bgColour: '#F3F4F6',
     breakdown: emptyBreakdown, matchingSkills: [] as string[],
     hardStop: true, matchExplanation: '',
   }
@@ -62,8 +62,9 @@ export function calculateMatchScore(candidate: any, job: any): {
   const candLevel = ROLE_LEVELS[candidate.role_level] || 3
   const jobLevel = ROLE_LEVELS[job.required_role_level] || 3
   const diff = Math.abs(candLevel - jobLevel)
-  if (diff >= 3) return { ...empty, hardStopReason: 'Role level mismatch' }
-  const roleLevelScore = diff === 0 ? 100 : diff === 1 ? 60 : 20
+  // A large seniority gap lowers the compatibility score; it does not hide
+  // the opportunity. The platform promises a complete 100%-to-10% ranking.
+  const roleLevelScore = diff === 0 ? 100 : diff === 1 ? 60 : diff === 2 ? 20 : 0
 
   // ── 2. Treatment Skills (18%) ──
   const requiredSkills: string[] = job.required_skills || []
@@ -172,7 +173,7 @@ export function calculateMatchScore(candidate: any, job: any): {
     (accommodationScore * 0.02) +
     (proficiencyScore * 0.02)
 
-  const rounded = Math.round(score)
+  const rounded = Math.max(10, Math.round(score))
   const label = rounded >= 90 ? 'Perfect Match' : rounded >= 75 ? 'Strong Match' : rounded >= 60 ? 'Good Match' : rounded >= 45 ? 'Partial Match' : 'Low Match'
   const colour = rounded >= 90 ? '#16A34A' : rounded >= 75 ? '#1D4ED8' : rounded >= 60 ? '#D97706' : '#6B7280'
   const bgColour = rounded >= 90 ? '#DCFCE7' : rounded >= 75 ? '#DBEAFE' : rounded >= 60 ? '#FEF3C7' : '#F3F4F6'
@@ -216,7 +217,7 @@ export function calculateMatchScore(candidate: any, job: any): {
   }
 }
 
-export function rankCandidates(candidates: any[], job: any, minScore = 45, blockedEmployerIds?: string[]) {
+export function rankCandidates(candidates: any[], job: any, minScore = 10, blockedEmployerIds?: string[]) {
   const employerId = job.employer_id || job.employer_profile_id
   return candidates
     .filter(c => {
@@ -224,7 +225,7 @@ export function rankCandidates(candidates: any[], job: any, minScore = 45, block
       return true
     })
     .map(c => ({ ...calculateMatchScore(c, job), candidateId: c.id }))
-    .filter(r => !r.hardStop && r.score >= minScore)
+    .filter(r => r.score >= minScore)
     .sort((a, b) => b.score - a.score)
 }
 

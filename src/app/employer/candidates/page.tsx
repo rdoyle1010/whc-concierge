@@ -46,8 +46,8 @@ export default function EmployerCandidatesPage() {
             let best: any = null
             for (const j of jobs) {
               const r = calculateMatchScore(c, j)
-              const score = r.hardStop ? 0 : r.score
-              if (!best || score > best.matchScore) best = { matchScore: score, matchLabel: r.hardStop ? 'Not suitable' : r.label, matchColour: r.hardStop ? '#9CA3AF' : r.colour, matchBg: r.hardStop ? '#F3F4F6' : r.bgColour, bestJob: j.title }
+              const score = r.score
+              if (!best || score > best.matchScore) best = { matchScore: score, matchLabel: r.label, matchColour: r.colour, matchBg: r.bgColour, bestJob: j.title, hardStop: r.hardStop, hardStopReason: r.hardStopReason }
             }
             return { ...c, ...best }
           }).sort((a: any, b: any) => (b.matchScore || 0) - (a.matchScore || 0))

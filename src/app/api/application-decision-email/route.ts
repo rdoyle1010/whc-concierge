@@ -19,23 +19,47 @@ export async function POST(req: NextRequest) {
     const { data: { user } } = await supabaseAuth.auth.getUser()
     if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
 
-    const { applicantEmail, applicantName, jobTitle, propertyName, decision, candidateUserId } = await req.json()
-
-    // Candidate emails live in auth.users, not candidate_profiles - look the
-    // address up server-side (the old client-side email guard never passed).
-    let toEmail: string | null = applicantEmail || null
-    if (!toEmail && candidateUserId) {
-      const admin = createAdminClient()
-      const { data: authUser } = await admin.auth.admin.getUserById(candidateUserId)
-      toEmail = authUser?.user?.email || null
-    }
-
-    if (!toEmail || !jobTitle || !decision) {
+    const { applicationId, decision } = await req.json()
+    if (!applicationId || !['approved', 'rejected'].includes(decision)) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
     }
 
-    const property = propertyName || 'the employer'
-    const name = applicantName || 'there'
+    // Resolve the recipient, role and property from trusted database rows.
+    // A browser-supplied email address must never decide who receives mail.
+    const admin = createAdminClient()
+    const [{ data: application }, { data: callerProfile }] = await Promise.all([
+      admin.from('applications').select('candidate_id, role_id, job_id').eq('id', applicationId).maybeSingle(),
+      admin.from('profiles').select('role').eq('id', user.id).maybeSingle(),
+    ])
+    if (!application) return NextResponse.json({ error: 'Application not found' }, { status: 404 })
+
+    const jobId = application.role_id || application.job_id
+    const [{ data: candidate }, { data: job }] = await Promise.all([
+      admin.from('candidate_profiles').select('user_id, full_name').eq('id', application.candidate_id).maybeSingle(),
+      admin.from('job_listings').select('job_title, employer_id').eq('id', jobId).maybeSingle(),
+    ])
+    if (!candidate?.user_id || !job) return NextResponse.json({ error: 'Application data is incomplete' }, { status: 400 })
+
+    const { data: employer } = await admin
+      .from('employer_profiles')
+      .select('user_id, property_name, company_name')
+      .eq('id', job.employer_id)
+      .maybeSingle()
+    const isAdmin = callerProfile?.role === 'admin'
+    if (!isAdmin && employer?.user_id !== user.id) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+
+    const { data: authUser } = await admin.auth.admin.getUserById(candidate.user_id)
+    const toEmail = authUser?.user?.email || null
+    if (!toEmail) return NextResponse.json({ error: 'Candidate email not found' }, { status: 404 })
+
+    const jobTitle = job.job_title || 'this role'
+    const propertyName = employer?.property_name || employer?.company_name || 'the employer'
+    const applicantName = candidate.full_name || 'there'
+
+    const property = propertyName
+    const name = applicantName
 
     let subject: string
     let html: string

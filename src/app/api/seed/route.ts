@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { isAdminRequest } from '@/lib/admin-api-auth'
 
 export const dynamic = 'force-dynamic'
 
@@ -89,6 +90,7 @@ const SEED_JOBS = [
 
 export async function POST(req: NextRequest) {
   try {
+    if (!(await isAdminRequest())) return NextResponse.json({ error: 'Not found' }, { status: 404 })
     const supabase = createAdminClient()
 
     // Check if we already have seed data
