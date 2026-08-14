@@ -9,6 +9,25 @@ const ROLE_LEVELS: Record<string, number> = {
   'Nutritionist': 3, 'Nail Technician': 2, 'Hair Stylist': 3, 'Barber': 3,
 }
 
+function roleLevel(value: string): number {
+  const role = value.trim().toLowerCase()
+  if (!role) return 3
+
+  const exact = Object.entries(ROLE_LEVELS).find(([label]) => label.toLowerCase() === role)
+  if (exact) return exact[1]
+
+  // Real adverts rarely use one exact taxonomy label. Recognise common title
+  // variations without allowing capitalisation or word order to break a match.
+  if (/director|head of spa|head of wellness/.test(role)) return 7
+  if (/manager/.test(role)) return 6
+  if (/lead therapist|team lead|supervisor/.test(role)) return 5
+  if (/senior/.test(role)) return 4
+  if (/therapist|practitioner|instructor|trainer|nutritionist|stylist|barber/.test(role)) return 3
+  if (/junior|reception|nail technician/.test(role)) return 2
+  if (/apprentice|attendant/.test(role)) return 1
+  return 3
+}
+
 const PROFICIENCY_WEIGHT: Record<string, number> = {
   'beginner': 0.25, 'basic': 0.25, 'intermediate': 0.5, 'competent': 0.5,
   'advanced': 0.75, 'master': 1.0, 'expert': 1.0,
@@ -69,7 +88,10 @@ export function calculateMatchScore(candidate: any, job: any): {
   }
 
   const candidateRole = String(candidate.role_level || candidate.current_role || candidate.job_title || '')
-  const requiredRole = String(job.required_role_level || job.title || '')
+  // The public job title is the employer's actual promise to candidates and
+  // therefore takes precedence over a stale or conflicting hidden taxonomy
+  // value. The structured field remains a fallback for untitled records.
+  const requiredRole = String(job.title || job.required_role_level || '')
   const candidateFamily = roleFamily(candidateRole)
   const jobFamily = roleFamily(requiredRole)
   const comparableFamilies = candidateFamily !== 'other' && jobFamily !== 'other'
@@ -87,8 +109,8 @@ export function calculateMatchScore(candidate: any, job: any): {
   // Compatibility is deliberately separate from profile promotion and
   // reputation. These twelve weights total exactly 100%.
   // ── 1. Role Level (15%) ──
-  const candLevel = ROLE_LEVELS[candidateRole] || 3
-  const jobLevel = ROLE_LEVELS[requiredRole] || 3
+  const candLevel = roleLevel(candidateRole)
+  const jobLevel = roleLevel(requiredRole)
   const diff = Math.abs(candLevel - jobLevel)
   // A large seniority gap lowers the compatibility score; it does not hide
   // the opportunity. The platform promises a complete 100%-to-10% ranking.
