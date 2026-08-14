@@ -19,6 +19,18 @@ const PROFICIENCY_LABEL: Record<string, string> = {
   'competent': 'intermediate', 'advanced': 'advanced', 'master': 'master', 'expert': 'master',
 }
 
+type RoleFamily = 'leadership' | 'reception' | 'treatment' | 'fitness' | 'hair' | 'other'
+
+function roleFamily(value: string): RoleFamily {
+  const role = value.toLowerCase()
+  if (/director|manager|head of spa|operations lead/.test(role)) return 'leadership'
+  if (/reception|front desk|concierge|attendant/.test(role)) return 'reception'
+  if (/therapist|practitioner|nail|beauty|massage|aesthetic/.test(role)) return 'treatment'
+  if (/fitness|personal trainer|yoga|pilates|nutrition/.test(role)) return 'fitness'
+  if (/hair|stylist|barber/.test(role)) return 'hair'
+  return 'other'
+}
+
 function overlapScore(candidateArr: string[], requiredArr: string[]): { score: number; matches: string[] } {
   // -1 means the employer did not set this criterion. It is excluded from
   // both the percentage and the visible breakdown rather than becoming a
@@ -56,19 +68,32 @@ export function calculateMatchScore(candidate: any, job: any): {
     hardStop: true, matchExplanation: '',
   }
 
-  // ── Hard stop: insurance ──
-  if (job.insurance_required && !candidate.has_insurance) return { ...empty, hardStopReason: 'Insurance required' }
+  const candidateRole = String(candidate.role_level || candidate.current_role || candidate.job_title || '')
+  const requiredRole = String(job.required_role_level || job.title || '')
+  const candidateFamily = roleFamily(candidateRole)
+  const jobFamily = roleFamily(requiredRole)
+  const comparableFamilies = candidateFamily !== 'other' && jobFamily !== 'other'
+  const sameJobFamily = !comparableFamilies || candidateFamily === jobFamily
+
+  // Insurance is a hard requirement only for treatment-delivery work where
+  // the employer explicitly requests it. A bad checkbox on a director,
+  // manager or reception advert must never reject an otherwise valid match.
+  const insuranceApplies = job.insurance_required &&
+    (jobFamily === 'treatment' || (job.is_agency_role && jobFamily !== 'leadership'))
+  if (insuranceApplies && !candidate.has_insurance) {
+    return { ...empty, hardStopReason: 'Professional insurance required for treatment delivery' }
+  }
 
   // Compatibility is deliberately separate from profile promotion and
   // reputation. These twelve weights total exactly 100%.
   // ── 1. Role Level (15%) ──
-  const candLevel = ROLE_LEVELS[candidate.role_level] || 3
-  const jobLevel = ROLE_LEVELS[job.required_role_level] || 3
+  const candLevel = ROLE_LEVELS[candidateRole] || 3
+  const jobLevel = ROLE_LEVELS[requiredRole] || 3
   const diff = Math.abs(candLevel - jobLevel)
   // A large seniority gap lowers the compatibility score; it does not hide
   // the opportunity. The platform promises a complete 100%-to-10% ranking.
-  const roleLevelScore = job.required_role_level
-    ? (diff === 0 ? 100 : diff === 1 ? 60 : diff === 2 ? 20 : 0)
+  const roleLevelScore = requiredRole
+    ? (!sameJobFamily ? 0 : diff === 0 ? 100 : diff === 1 ? 70 : diff === 2 ? 35 : 10)
     : -1
 
   // ── 2. Treatment Skills (18%) ──
@@ -165,7 +190,9 @@ export function calculateMatchScore(candidate: any, job: any): {
   // Remaining weights are normalised so sparse job adverts cannot receive
   // free points for blank fields.
   const components = [
-    { value: roleLevelScore, weight: 15 },
+    // The actual job is the principal factor. Skills and logistics refine a
+    // suitable role; they cannot turn a different occupation into a match.
+    { value: roleLevelScore, weight: 40 },
     { value: treatmentResult.score, weight: 18 },
     { value: brandResult.score, weight: 10 },
     { value: qualResult.score, weight: 12 },
@@ -183,7 +210,11 @@ export function calculateMatchScore(candidate: any, job: any): {
     ? components.reduce((total, component) => total + (component.value * component.weight), 0) / activeWeight
     : 10
 
-  const rounded = Math.max(10, Math.round(score))
+  // A different job family (for example Spa Director versus Receptionist)
+  // is never presented as a meaningful match, even if generic experience,
+  // shift and transport answers happen to overlap.
+  const familyAdjustedScore = !sameJobFamily ? Math.min(score, 20) : score
+  const rounded = Math.max(10, Math.round(familyAdjustedScore))
   const label = rounded >= 90 ? 'Perfect Match' : rounded >= 75 ? 'Strong Match' : rounded >= 60 ? 'Good Match' : rounded >= 45 ? 'Partial Match' : 'Low Match'
   const colour = rounded >= 90 ? '#16A34A' : rounded >= 75 ? '#1D4ED8' : rounded >= 60 ? '#D97706' : '#6B7280'
   const bgColour = rounded >= 90 ? '#DCFCE7' : rounded >= 75 ? '#DBEAFE' : rounded >= 60 ? '#FEF3C7' : '#F3F4F6'

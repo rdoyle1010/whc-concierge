@@ -21,7 +21,7 @@ type BreakdownData = {
 }
 
 const CATEGORIES: { key: keyof BreakdownData; label: string; weight: number }[] = [
-  { key: 'roleLevel', label: 'Role Level', weight: 15 },
+  { key: 'roleLevel', label: 'Job Role & Level', weight: 40 },
   { key: 'treatmentSkills', label: 'Treatment Skills', weight: 18 },
   { key: 'proficiencyDepth', label: 'Skill Depth', weight: 2 },
   { key: 'brands', label: 'Product Houses', weight: 10 },
