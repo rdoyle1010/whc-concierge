@@ -40,6 +40,8 @@ check('swipes replace older decisions and remove blocked yeses', () => {
 check('all service-role API routes are protected or deliberately public', () => {
   const files = execFileSync('rg', ['-l', 'createAdminClient|SUPABASE_SERVICE_ROLE_KEY', 'src/app/api', '--glob', 'route.ts'], { encoding: 'utf8' }).trim().split('\n').filter(Boolean)
   const deliberatePublic = new Set([
+    'src/app/api/advertising/route.ts',
+    'src/app/api/advertising/click/route.ts',
     'src/app/api/agency/directory/route.ts',
     'src/app/api/fix-employer-columns/route.ts',
     'src/app/api/fix-null-live/route.ts',
@@ -53,6 +55,18 @@ check('all service-role API routes are protected or deliberately public', () => 
   const authMarkers = /getUser\(|requireAdmin|verifyAdmin|stripe-signature|isInternalApiRequest/
   const unguarded = files.filter(file => !authMarkers.test(read(file)) && !deliberatePublic.has(file))
   assert.deepEqual(unguarded, [])
+})
+check('public adverts require Stripe payment and admin approval', () => {
+  for (const file of ['src/app/api/advertising/route.ts', 'src/app/api/advertising/click/route.ts']) {
+    const source = read(file)
+    assert.match(source, /payment_status[^\n]*paid/)
+    assert.match(source, /review_status[^\n]*approved/)
+    assert.match(source, /status[^\n]*active/)
+  }
+})
+check('Academy catalogue never returns quiz answer keys', () => {
+  assert.match(read('src/app/api/academy/catalog/route.ts'), /publicCourse/)
+  assert.match(read('src/lib/academy-catalog-server.ts'), /answer_key: _answerKey/)
 })
 check('no literal production secrets are tracked', () => {
   const files = execFileSync('git', ['ls-files'], { encoding: 'utf8' }).trim().split('\n').filter(Boolean)

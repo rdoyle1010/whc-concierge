@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import DashboardShell from '@/components/DashboardShell'
-import { courseBySlug, coursePrice, PASS_MARK } from '@/lib/academy'
+import { courseBySlug, coursePrice, PASS_MARK, type AcademyCourse } from '@/lib/academy'
 import { courseImage, lessonExtras } from '@/lib/academy-extras'
 import { getCourseContent } from '@/lib/academy-content'
 import {
@@ -22,8 +22,9 @@ type View = 'overview' | number | 'quiz'
 export default function CoursePlayerPage() {
   const params = useParams()
   const slug = Array.isArray(params?.slug) ? params.slug[0] : (params?.slug as string)
-  const course = courseBySlug(slug)
-  const rich = getCourseContent(slug)
+  const fallbackCourse = courseBySlug(slug)
+  const [course, setCourse] = useState<(AcademyCourse & { image_url?: string; managed?: boolean }) | null>(fallbackCourse || null)
+  const rich = course?.managed ? null : getCourseContent(slug)
 
   const [loading, setLoading] = useState(true)
   const [enrolled, setEnrolled] = useState(false)
@@ -38,7 +39,14 @@ export default function CoursePlayerPage() {
   useEffect(() => {
     async function load() {
       try {
-        const res = await fetch('/api/academy')
+        const [res, catalogueResponse] = await Promise.all([
+          fetch('/api/academy'),
+          fetch(`/api/academy/catalog?slug=${encodeURIComponent(slug)}`),
+        ])
+        if (catalogueResponse.ok) {
+          const catalogue = await catalogueResponse.json()
+          if (catalogue.course) setCourse(catalogue.course)
+        }
         if (res.ok) {
           const j = await res.json()
           const enr = (j.enrollments || []).find((e: any) => e.course_slug === slug && e.paid_at)
@@ -53,6 +61,10 @@ export default function CoursePlayerPage() {
     }
     load()
   }, [slug])
+
+  if (!course && loading) {
+    return <DashboardShell role="talent"><div className="flex items-center justify-center h-64"><div className="animate-spin w-8 h-8 border-2 border-gold border-t-transparent rounded-full" /></div></DashboardShell>
+  }
 
   if (!course) {
     return <DashboardShell role="talent"><p className="text-gray-400">Course not found. <Link href="/talent/academy" className="underline">Back to the Academy</Link></p></DashboardShell>
@@ -130,7 +142,7 @@ export default function CoursePlayerPage() {
       {/* Course hero */}
       <div className="relative rounded-2xl overflow-hidden mb-5 h-44 md:h-52">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={courseImage(slug)} alt="" className="absolute inset-0 w-full h-full object-cover" />
+        <img src={course.image_url || courseImage(slug)} alt="" className="absolute inset-0 w-full h-full object-cover" />
         <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/35 to-transparent" />
         <div className="absolute bottom-0 left-0 right-0 p-6">
           <p className="text-[10px] uppercase tracking-[0.25em] text-gold font-semibold mb-1.5">WHC Academy · {course.category}</p>

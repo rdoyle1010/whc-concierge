@@ -11,6 +11,7 @@ import HeroCarousel from '@/components/HeroCarousel'
 import HomepageHowItWorks from '@/components/HomepageHowItWorks'
 import Navbar from '@/components/Navbar'
 import TestimonialCarousel from '@/components/TestimonialCarousel'
+import SponsoredAd from '@/components/SponsoredAd'
 import { getWebsiteContent } from '@/lib/site-content-server'
 import { websiteCssVariables, type WebsiteContent, type WebsiteSectionId } from '@/lib/site-content'
 import { createAdminClient } from '@/lib/supabase/admin'
@@ -226,6 +227,7 @@ export default async function HomePage(props: HomePageProps) {
     <main className="pt-[60px]">
       {previewingDraft && <div className="site-accent-bg px-5 py-2 text-center text-[12px] font-semibold text-white">Private draft preview — the public website has not changed.</div>}
       <HeroCarousel siteContent={content} />
+      <SponsoredAd placement="homepage_spotlight" />
       {content.sections.filter(section => section.visible).map(section => <div key={section.id}>{sections[section.id]}</div>)}
     </main>
     <Footer siteContent={content} />

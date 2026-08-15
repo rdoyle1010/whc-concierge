@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
-import { courseBySlug } from '@/lib/academy'
+import { courseBySlug, type AcademyCourse } from '@/lib/academy'
 import { Printer, ArrowLeft } from 'lucide-react'
 
 // The certificate - designed to be printed or saved as PDF and to look
@@ -12,7 +12,7 @@ import { Printer, ArrowLeft } from 'lucide-react'
 export default function CertificatePage() {
   const params = useParams()
   const slug = Array.isArray(params?.slug) ? params.slug[0] : (params?.slug as string)
-  const course = courseBySlug(slug)
+  const [course, setCourse] = useState<AcademyCourse | null>(courseBySlug(slug) || null)
   const [loading, setLoading] = useState(true)
   const [enr, setEnr] = useState<any>(null)
   const [name, setName] = useState('')
@@ -20,7 +20,14 @@ export default function CertificatePage() {
   useEffect(() => {
     async function load() {
       try {
-        const res = await fetch('/api/academy')
+        const [res, catalogueResponse] = await Promise.all([
+          fetch('/api/academy'),
+          fetch(`/api/academy/catalog?slug=${encodeURIComponent(slug)}`),
+        ])
+        if (catalogueResponse.ok) {
+          const catalogue = await catalogueResponse.json()
+          if (catalogue.course) setCourse(catalogue.course)
+        }
         if (res.ok) {
           const j = await res.json()
           setName(j.candidate_name || '')

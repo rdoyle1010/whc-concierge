@@ -11,6 +11,7 @@ export default function Footer({ siteContent }: { siteContent?: WebsiteContent }
     { href: '/residency', label: content.navigation.residency },
     { href: '/properties', label: 'Properties' },
     { href: '/pricing', label: 'Pricing' },
+    { href: '/advertise', label: 'Advertise' },
     { href: '/blog', label: content.navigation.blog },
     { href: '/testimonials', label: 'Testimonials' },
     { href: '/faq', label: 'FAQ' },

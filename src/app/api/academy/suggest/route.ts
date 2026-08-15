@@ -3,7 +3,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { createNotification } from '@/lib/notifications'
-import { courseBySlug } from '@/lib/academy'
+import { getAcademyCourseBySlug } from '@/lib/academy-catalog-server'
 
 // Employer nudge: "we'd book you more with this training". Sends the
 // candidate a notification and an inbox message naming the property and the
@@ -31,7 +31,7 @@ export async function POST(req: NextRequest) {
     if (!emp) return NextResponse.json({ error: 'Only employers can suggest training' }, { status: 403 })
 
     const body = await req.json()
-    const course = courseBySlug(String(body.courseSlug || ''))
+    const course = await getAcademyCourseBySlug(String(body.courseSlug || ''), false)
     if (!course) return NextResponse.json({ error: 'Unknown course' }, { status: 400 })
 
     const { data: cand } = await admin.from('candidate_profiles')

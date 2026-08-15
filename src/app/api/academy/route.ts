@@ -3,8 +3,8 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { createNotification } from '@/lib/notifications'
-import { courseBySlug, PASS_MARK } from '@/lib/academy'
-import { ACADEMY_ANSWERS } from '@/lib/academy-answers'
+import { PASS_MARK } from '@/lib/academy'
+import { getAcademyAnswerKey, getAcademyCourseBySlug } from '@/lib/academy-catalog-server'
 
 // WHC Academy - enrolments, lesson progress and the server-graded quiz.
 // Payment happens via /api/stripe/checkout (type 'course'); the webhook sets
@@ -70,7 +70,7 @@ export async function POST(req: NextRequest) {
     const body = await req.json()
     const action = String(body.action || '')
     const slug = String(body.courseSlug || '')
-    const course = courseBySlug(slug)
+    const course = await getAcademyCourseBySlug(slug, true)
     if (!course) return NextResponse.json({ error: 'Unknown course' }, { status: 400 })
 
     const { data: enrolment } = await admin.from('course_enrollments')
@@ -101,8 +101,8 @@ export async function POST(req: NextRequest) {
       if (!course.lessons.every((_: any, i: number) => progressMap[i])) {
         return NextResponse.json({ error: 'Complete all modules before the assessment.' }, { status: 400 })
       }
-      const key = ACADEMY_ANSWERS[slug]
-      if (!key) return NextResponse.json({ error: 'Quiz unavailable' }, { status: 500 })
+      const key = await getAcademyAnswerKey(slug)
+      if (!key.length || key.length !== course.quiz.length) return NextResponse.json({ error: 'Quiz unavailable' }, { status: 500 })
       const answers = Array.isArray(body.answers) ? body.answers.map((a: any) => parseInt(String(a), 10)) : []
       if (answers.length !== key.length) {
         return NextResponse.json({ error: 'Please answer every question.' }, { status: 400 })

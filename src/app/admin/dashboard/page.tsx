@@ -4,7 +4,7 @@ import DashboardShell from '@/components/DashboardShell'
 import Link from 'next/link'
 import {
   GraduationCap, CreditCard, FileText, Megaphone, AlertTriangle,
-  Image as ImageIcon, Briefcase, MessageSquare, Calendar, Settings,
+  Briefcase, MessageSquare, Calendar, Settings,
   Users, ArrowRight,
   Palette,
 } from 'lucide-react'
@@ -22,7 +22,7 @@ const SECTIONS = [
   { label: 'Messages', desc: 'Platform conversations overview.', href: '/admin/messages', icon: <MessageSquare size={18} /> },
   { label: 'Blog', desc: 'Write, edit and publish blog posts.', href: '/admin/blog', icon: <FileText size={18} /> },
   { label: 'Campaigns', desc: 'Email and marketing campaigns.', href: '/admin/campaigns', icon: <Megaphone size={18} /> },
-  { label: 'Legacy Images', desc: 'Older image-slot controls retained during the redesign.', href: '/admin/images', icon: <ImageIcon size={18} /> },
+  { label: 'Sponsored Ads', desc: 'Approve paid brand adverts and track impressions and clicks.', href: '/admin/advertising', icon: <Megaphone size={18} /> },
   { label: 'Taxonomy', desc: 'Skills, systems, brands and certifications.', href: '/admin/taxonomy', icon: <Briefcase size={18} /> },
   { label: 'Complaints', desc: 'Reported issues and their resolution.', href: '/admin/complaints', icon: <AlertTriangle size={18} /> },
   { label: 'Settings', desc: 'Platform configuration.', href: '/admin/settings', icon: <Settings size={18} /> },

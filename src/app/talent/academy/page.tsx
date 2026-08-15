@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import DashboardShell from '@/components/DashboardShell'
-import { ACADEMY, COURSE_PRICE, BUNDLE_PRICE, CORE_SLUGS, coursePrice } from '@/lib/academy'
+import { ACADEMY, COURSE_PRICE, BUNDLE_PRICE, CORE_SLUGS, coursePrice, type AcademyCourse } from '@/lib/academy'
 import { courseImage } from '@/lib/academy-extras'
 import { GraduationCap, Award, Clock, Check } from 'lucide-react'
 
@@ -11,6 +11,7 @@ import { GraduationCap, Award, Clock, Check } from 'lucide-react'
 // completion. Employers see earned badges in the directory and on profiles.
 
 export default function AcademyPage() {
+  const [courses, setCourses] = useState<(AcademyCourse & { image_url?: string; is_core?: boolean })[]>(ACADEMY)
   const [enrollments, setEnrollments] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [busySlug, setBusySlug] = useState<string | null>(null)
@@ -20,9 +21,10 @@ export default function AcademyPage() {
 
   async function load() {
     try {
-      const [aRes, sRes] = await Promise.all([
+      const [aRes, sRes, cRes] = await Promise.all([
         fetch('/api/academy'),
         fetch('/api/agency/settings'),
+        fetch('/api/academy/catalog'),
       ])
       if (aRes.ok) {
         const j = await aRes.json()
@@ -31,6 +33,10 @@ export default function AcademyPage() {
       if (sRes.ok) {
         const s = await sRes.json()
         setProfileId(s.settings?.profile_id || null)
+      }
+      if (cRes.ok) {
+        const c = await cRes.json()
+        if (c.courses?.length) setCourses(c.courses)
       }
     } catch { /* empty catalogue state */ }
     setLoading(false)
@@ -81,7 +87,9 @@ export default function AcademyPage() {
   const enrolmentFor = (slug: string) => enrollments.find(e => e.course_slug === slug && e.paid_at)
   const completedCount = enrollments.filter(e => e.completed_at).length
 
-  const categories = Array.from(new Set(ACADEMY.map(c => c.category)))
+  const categories = Array.from(new Set(courses.map(c => c.category)))
+  const coreCourses = courses.filter(course => course.is_core ?? CORE_SLUGS.includes(course.slug))
+  const activeCoreSlugs = coreCourses.map(course => course.slug)
 
   return (
     <DashboardShell role="talent">
@@ -98,11 +106,11 @@ export default function AcademyPage() {
         {error && <div className="bg-red-50 text-red-600 text-sm px-4 py-3 rounded-lg mb-4">{error}</div>}
 
         {/* Bundle - shown until they own every course */}
-        {!loading && enrollments.filter(e => e.paid_at && CORE_SLUGS.includes(e.course_slug)).length < CORE_SLUGS.length && (
+        {!loading && enrollments.filter(e => e.paid_at && activeCoreSlugs.includes(e.course_slug)).length < activeCoreSlugs.length && activeCoreSlugs.length > 0 && (
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-ink rounded-xl px-5 py-4 mb-6">
             <div>
-              <p className="text-[14px] font-medium text-white">The Core Curriculum - all {CORE_SLUGS.length} core courses for £{(BUNDLE_PRICE / 100).toFixed(0)}</p>
-              <p className="text-[12px] text-white/60 mt-0.5">Save £{((CORE_SLUGS.length * COURSE_PRICE - BUNDLE_PRICE) / 100).toFixed(0)} against buying individually. Eleven certificates, eleven badges - a profile that hires itself. Brand masterclasses and specialist care priced separately.</p>
+              <p className="text-[14px] font-medium text-white">The Core Curriculum - all {activeCoreSlugs.length} core courses for £{(BUNDLE_PRICE / 100).toFixed(0)}</p>
+              <p className="text-[12px] text-white/60 mt-0.5">Save £{Math.max(0, (coreCourses.reduce((sum, course) => sum + coursePrice(course), 0) - BUNDLE_PRICE) / 100).toFixed(0)} against buying individually. Certificates and profile badges are included. Brand masterclasses and specialist care are priced separately.</p>
             </div>
             <button onClick={buyBundle} disabled={busySlug === '__bundle__'}
               className="btn-primary !bg-gold !text-ink text-[12px] shrink-0 disabled:opacity-50">
@@ -125,7 +133,7 @@ export default function AcademyPage() {
             <div key={cat} className="mb-8">
               <h2 className="text-[11px] uppercase tracking-[0.14em] text-gray-400 mb-3">{cat}</h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {ACADEMY.filter(c => c.category === cat).map(course => {
+                {courses.filter(c => c.category === cat).map(course => {
                   const enr = enrolmentFor(course.slug)
                   const done = Boolean(enr?.completed_at)
                   const lessonsDone = enr ? Object.keys(enr.progress || {}).length : 0
@@ -133,7 +141,7 @@ export default function AcademyPage() {
                     <div key={course.slug} className={`dashboard-card !p-0 overflow-hidden flex flex-col ${done ? 'border-green-300 ring-2 ring-green-200' : enr ? 'border-gold ring-2 ring-gold shadow-lg shadow-gold/20' : ''}`}>
                       <div className="relative h-28 shrink-0">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={courseImage(course.slug)} alt="" className="absolute inset-0 w-full h-full object-cover" />
+                        <img src={course.image_url || courseImage(course.slug)} alt="" className="absolute inset-0 w-full h-full object-cover" />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
                       </div>
                       <div className="p-5 flex flex-col flex-1">

@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getStripe } from '@/lib/stripe'
 import { JOB_TIERS, FEATURED_PROFILE_PRICE, AGENCY_LISTING_TIERS, AGENCY_PLATFORM_FEE_PCT, PREFERRED_EMPLOYER_PRICE } from '@/lib/constants'
-import { COURSE_PRICE, BUNDLE_PRICE, PUBLIC_COURSE_PRICE, ACADEMY, CORE_SLUGS, coursePrice, publicCoursePrice } from '@/lib/academy'
+import { BUNDLE_PRICE, coursePrice, publicCoursePrice } from '@/lib/academy'
+import { getAcademyCatalog, getAcademyCourseBySlug } from '@/lib/academy-catalog-server'
+import { AD_PLACEMENTS, isAdPlacement } from '@/lib/advertising'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 
@@ -23,6 +25,15 @@ function getSafeOrigin(untrusted?: string): string {
     } catch { /* fall through to the safe default */ }
   }
   return ALLOWED_ORIGINS[0] || 'https://talent.wellnesshousecollective.co.uk'
+}
+
+function secureUrl(value: unknown) {
+  try {
+    const url = new URL(String(value || '').trim())
+    return url.protocol === 'https:' ? url.toString().slice(0, 500) : ''
+  } catch {
+    return ''
+  }
 }
 
 export async function POST(req: NextRequest) {
@@ -50,7 +61,7 @@ export async function POST(req: NextRequest) {
     // email; the webhook creates their learner account and emails access. ──
     if (type === 'course_public') {
       const { courseSlug, email } = body
-      const course = ACADEMY.find(c => c.slug === String(courseSlug || ''))
+      const course = await getAcademyCourseBySlug(String(courseSlug || ''), false)
       if (!course) return NextResponse.json({ error: 'Unknown course' }, { status: 400 })
       const cleanEmail = String(email || '').trim().toLowerCase()
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) {
@@ -80,6 +91,53 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ url: session.url })
     }
 
+    // Sponsored adverts are available to brands without a WHC member
+    // account. Payment starts the subscription; the advert remains pending
+    // until WHC approves the creative in Admin → Sponsored Ads.
+    if (type === 'sponsored_ad') {
+      const placement = body.placement
+      const brandName = String(body.brandName || '').trim().slice(0, 120)
+      const contactEmail = String(body.contactEmail || '').trim().toLowerCase().slice(0, 254)
+      const tagline = String(body.tagline || '').trim().slice(0, 220)
+      const websiteUrl = secureUrl(body.websiteUrl)
+      const logoUrl = secureUrl(body.logoUrl)
+      if (!isAdPlacement(placement)) return NextResponse.json({ error: 'Choose an advert location.' }, { status: 400 })
+      if (!brandName || !tagline || !websiteUrl || !logoUrl || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contactEmail)) {
+        return NextResponse.json({ error: 'Complete the brand, email, tagline and secure https:// website/logo links.' }, { status: 400 })
+      }
+      const config = AD_PLACEMENTS[placement]
+      const metadata = {
+        type: 'sponsored_ad',
+        placement,
+        brand_name: brandName,
+        contact_email: contactEmail,
+        tagline,
+        website_url: websiteUrl,
+        logo_url: logoUrl,
+        monthly_pence: String(config.monthlyPence),
+      }
+      const session = await stripe.checkout.sessions.create({
+        payment_method_types: ['card'],
+        customer_email: contactEmail,
+        line_items: [{
+          price_data: {
+            currency: 'gbp',
+            product_data: { name: `WHC Sponsored Advert - ${config.label}`, description: config.description },
+            unit_amount: config.monthlyPence,
+            recurring: { interval: 'month' },
+          },
+          quantity: 1,
+        }],
+        mode: 'subscription',
+        allow_promotion_codes: true,
+        success_url: `${origin}/advertise?paid=true`,
+        cancel_url: `${origin}/advertise?cancelled=true`,
+        metadata,
+        subscription_data: { metadata },
+      })
+      return NextResponse.json({ url: session.url })
+    }
+
     // Everything below requires a signed-in user.
     if (!user) {
       return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
@@ -101,8 +159,10 @@ export async function POST(req: NextRequest) {
       // Nothing to buy if every core course is already owned
       const { data: owned } = await admin.from('course_enrollments')
         .select('course_slug').eq('candidate_id', cand.id).not('paid_at', 'is', null)
-      const ownedCore = new Set((owned || []).map((r: any) => r.course_slug).filter((s: string) => CORE_SLUGS.includes(s)))
-      if (ownedCore.size >= CORE_SLUGS.length) {
+      const coreCourses = (await getAcademyCatalog(false)).filter(course => course.is_core)
+      const coreSlugs = coreCourses.map(course => course.slug)
+      const ownedCore = new Set((owned || []).map((r: any) => r.course_slug).filter((slug: string) => coreSlugs.includes(slug)))
+      if (!coreCourses.length || ownedCore.size >= coreCourses.length) {
         return NextResponse.json({ error: 'You already own every course in the core curriculum bundle.' }, { status: 400 })
       }
 
@@ -112,8 +172,8 @@ export async function POST(req: NextRequest) {
           price_data: {
             currency: 'gbp',
             product_data: {
-              name: `WHC Academy - Core Curriculum Bundle (${CORE_SLUGS.length} courses)`,
-              description: `All ${CORE_SLUGS.length} core curriculum courses, with a certificate and profile badge for each on completion. Brand masterclasses and specialist care courses sold separately.`,
+              name: `WHC Academy - Core Curriculum Bundle (${coreCourses.length} courses)`,
+              description: `All ${coreCourses.length} active core curriculum courses, with a certificate and profile badge for each on completion. Brand masterclasses and specialist care courses sold separately.`,
             },
             unit_amount: BUNDLE_PRICE,
           },
@@ -130,9 +190,9 @@ export async function POST(req: NextRequest) {
 
     // ── WHC Academy course - one-off, certificate on completion ──
     if (type === 'course') {
-      const { candidateId, courseSlug, courseTitle } = body
+      const { candidateId, courseSlug } = body
       if (!candidateId || !courseSlug) return NextResponse.json({ error: 'Missing candidateId or courseSlug' }, { status: 400 })
-      const courseDef = ACADEMY.find(c => c.slug === String(courseSlug))
+      const courseDef = await getAcademyCourseBySlug(String(courseSlug), false)
       if (!courseDef) return NextResponse.json({ error: 'Unknown course' }, { status: 400 })
 
       // The paying user must own the candidate profile being enrolled
@@ -149,7 +209,7 @@ export async function POST(req: NextRequest) {
           price_data: {
             currency: 'gbp',
             product_data: {
-              name: `WHC Academy - ${String(courseTitle || courseSlug).slice(0, 80)}`,
+              name: `WHC Academy - ${courseDef.title.slice(0, 80)}`,
               description: 'Online course with certificate and profile badge on completion',
             },
             unit_amount: coursePrice(courseDef),

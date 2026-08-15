@@ -4,8 +4,9 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
+import SponsoredAd from '@/components/SponsoredAd'
 import { createClient } from '@/lib/supabase/client'
-import { ACADEMY, COURSE_PRICE, PUBLIC_COURSE_PRICE, coursePrice, publicCoursePrice } from '@/lib/academy'
+import { ACADEMY, coursePrice, publicCoursePrice, type AcademyCourse } from '@/lib/academy'
 import { courseImage } from '@/lib/academy-extras'
 import { GraduationCap, Clock, ShieldCheck, X } from 'lucide-react'
 
@@ -17,7 +18,8 @@ import { GraduationCap, Clock, ShieldCheck, X } from 'lucide-react'
 export default function PublicAcademyPage() {
   const supabase = createClient()
   const [isCandidate, setIsCandidate] = useState(false)
-  const [buying, setBuying] = useState<{ slug: string; title: string } | null>(null)
+  const [courses, setCourses] = useState<(AcademyCourse & { image_url?: string })[]>(ACADEMY)
+  const [buying, setBuying] = useState<{ slug: string; title: string; price: number } | null>(null)
   const [email, setEmail] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
@@ -26,6 +28,9 @@ export default function PublicAcademyPage() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
     if (params.get('purchased') === 'true') setPurchased(true)
+    fetch('/api/academy/catalog').then(response => response.ok ? response.json() : null).then(json => {
+      if (json?.courses?.length) setCourses(json.courses)
+    }).catch(() => {})
     supabase.auth.getUser().then(async ({ data: { user } }) => {
       if (!user) return
       const { data } = await supabase.from('candidate_profiles').select('id').eq('user_id', user.id).maybeSingle()
@@ -51,7 +56,7 @@ export default function PublicAcademyPage() {
     }
   }
 
-  const categories = Array.from(new Set(ACADEMY.map(c => c.category)))
+  const categories = Array.from(new Set(courses.map(c => c.category)))
 
   return (
     <div className="min-h-screen bg-surface">
@@ -71,6 +76,8 @@ export default function PublicAcademyPage() {
         </div>
       </section>
 
+      <SponsoredAd placement="academy_sponsor" />
+
       <div className="max-w-7xl mx-auto px-6 lg:px-8 py-10">
         {purchased && (
           <div className="bg-green-50 border border-green-200 text-green-800 text-sm px-5 py-4 rounded-xl mb-8">
@@ -83,11 +90,11 @@ export default function PublicAcademyPage() {
           <div key={cat} className="mb-10">
             <h2 className="text-[11px] uppercase tracking-[0.14em] text-gray-400 mb-3">{cat}</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-              {ACADEMY.filter(c => c.category === cat).map(course => (
+              {courses.filter(c => c.category === cat).map(course => (
                 <div key={course.slug} className="bg-white border border-border rounded-xl overflow-hidden flex flex-col hover:shadow-md transition-shadow">
                   <div className="relative h-32 shrink-0">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={courseImage(course.slug)} alt="" className="absolute inset-0 w-full h-full object-cover" />
+                    <img src={course.image_url || courseImage(course.slug)} alt="" className="absolute inset-0 w-full h-full object-cover" />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
                   </div>
                   <div className="p-6 flex flex-col flex-1">
@@ -99,7 +106,7 @@ export default function PublicAcademyPage() {
                     {isCandidate ? (
                       <Link href="/talent/academy" className="btn-primary text-[12px]">£{(coursePrice(course) / 100).toFixed(0)} in your dashboard</Link>
                     ) : (
-                      <button onClick={() => { setBuying({ slug: course.slug, title: course.title }); setError('') }} className="btn-primary text-[12px]">Get this course</button>
+                      <button onClick={() => { setBuying({ slug: course.slug, title: course.title, price: publicCoursePrice(course) }); setError('') }} className="btn-primary text-[12px]">Get this course</button>
                     )}
                   </div>
                   </div>
@@ -123,12 +130,12 @@ export default function PublicAcademyPage() {
               <h2 className="font-serif text-lg font-bold text-ink flex items-center gap-2"><GraduationCap size={17} className="text-accent" /> {buying.title}</h2>
               <button onClick={() => setBuying(null)} className="text-gray-300 hover:text-ink"><X size={20} /></button>
             </div>
-            <p className="text-[12px] text-gray-500 mb-4">£{(publicCoursePrice(ACADEMY.find(c => c.slug === buying.slug) || { price: undefined }) / 100).toFixed(0)} one-off. After payment your access link arrives by email - one tap and you&apos;re in, no password to set. Certificate issued the moment you pass.</p>
+            <p className="text-[12px] text-gray-500 mb-4">£{(buying.price / 100).toFixed(0)} one-off. After payment your access link arrives by email - one tap and you&apos;re in, no password to set. Certificate issued the moment you pass.</p>
             <label className="block text-sm font-medium text-gray-700 mb-1.5">Your email</label>
             <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="you@example.com" className="input-field mb-3" />
             {error && <p className="text-[12px] text-red-600 mb-3">{error}</p>}
             <button onClick={buyAsGuest} disabled={busy || !email.trim()} className="btn-primary w-full disabled:opacity-50">
-              {busy ? 'Taking you to payment...' : `Pay £${(publicCoursePrice(ACADEMY.find(c => c.slug === buying.slug) || { price: undefined }) / 100).toFixed(0)} & start`}
+              {busy ? 'Taking you to payment...' : `Pay £${(buying.price / 100).toFixed(0)} & start`}
             </button>
             <p className="text-[11px] text-muted text-center mt-3">Already a WHC member? <Link href="/login" className="underline">Sign in</Link> and pay the member price instead.</p>
           </div>
