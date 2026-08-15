@@ -93,7 +93,7 @@ export default function TestimonialCarousel({ testimonials = defaultTestimonials
           {visibleTestimonials.map((testimonial) => (
             <div key={testimonial.id} className="card animate-fade-in">
               {/* Gold quotation mark */}
-              <div className="text-5xl text-accent/30 font-serif leading-none mb-2">
+              <div className="site-accent text-5xl font-serif leading-none mb-2 opacity-30">
                 "
               </div>
 
@@ -116,7 +116,8 @@ export default function TestimonialCarousel({ testimonials = defaultTestimonials
                   <Star
                     key={i}
                     size={14}
-                    className={i < testimonial.rating ? 'fill-accent text-accent' : 'text-border'}
+                    className={i < testimonial.rating ? 'site-accent' : 'text-border'}
+                    style={i < testimonial.rating ? { fill: 'var(--site-accent)' } : undefined}
                   />
                 ))}
               </div>

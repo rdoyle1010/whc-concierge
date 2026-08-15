@@ -2,6 +2,15 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
+import {
+  parseWebsiteContent,
+  WebsiteContentSchema,
+  WEBSITE_DRAFT_KEY,
+  WEBSITE_HISTORY_KEY,
+  WEBSITE_PUBLISHED_KEY,
+  type WebsiteHistoryEntry,
+} from '@/lib/site-content'
+import { getWebsiteContent } from '@/lib/site-content-server'
 
 // Admin content operations, service-role backed so RLS can be locked down on
 // the underlying tables: site_images (homepage imagery + hero copy),
@@ -40,6 +49,26 @@ export async function GET(req: NextRequest) {
     if (kind === 'platform_config') {
       const { data } = await admin.from('platform_config').select('*')
       return NextResponse.json({ rows: data || [] })
+    }
+    if (kind === 'website_editor') {
+      const { data } = await admin
+        .from('platform_config')
+        .select('key, value, updated_at')
+        .in('key', [WEBSITE_DRAFT_KEY, WEBSITE_PUBLISHED_KEY, WEBSITE_HISTORY_KEY])
+
+      const values = new Map((data || []).map(row => [row.key, row.value]))
+      const published = values.has(WEBSITE_PUBLISHED_KEY)
+        ? parseWebsiteContent(values.get(WEBSITE_PUBLISHED_KEY))
+        : await getWebsiteContent(false)
+      const draft = values.has(WEBSITE_DRAFT_KEY)
+        ? parseWebsiteContent(values.get(WEBSITE_DRAFT_KEY))
+        : values.has(WEBSITE_PUBLISHED_KEY) ? published : await getWebsiteContent(true)
+      let history: WebsiteHistoryEntry[] = []
+      try {
+        const parsed = JSON.parse(values.get(WEBSITE_HISTORY_KEY) || '[]')
+        if (Array.isArray(parsed)) history = parsed.slice(0, 10)
+      } catch {}
+      return NextResponse.json({ draft, published, history })
     }
     if (kind === 'contact_queries') {
       const { data } = await admin.from('contact_queries').select('*').order('created_at', { ascending: false })
@@ -84,6 +113,73 @@ export async function POST(req: NextRequest) {
       const { error } = await admin.from('platform_config').upsert({ key, value }, { onConflict: 'key' })
       if (error) return NextResponse.json({ error: error.message }, { status: 500 })
       return NextResponse.json({ success: true })
+    }
+
+    // ── Website & Brand editor ──
+    if (action === 'website_save_draft') {
+      const parsed = WebsiteContentSchema.safeParse(body.content)
+      if (!parsed.success) return NextResponse.json({ error: 'Some website fields are invalid.', details: parsed.error.flatten() }, { status: 400 })
+      const { error } = await admin.from('platform_config').upsert({
+        key: WEBSITE_DRAFT_KEY,
+        value: JSON.stringify(parsed.data),
+        updated_at: new Date().toISOString(),
+      }, { onConflict: 'key' })
+      if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+      return NextResponse.json({ success: true, content: parsed.data })
+    }
+
+    if (action === 'website_publish') {
+      const parsed = WebsiteContentSchema.safeParse(body.content)
+      if (!parsed.success) return NextResponse.json({ error: 'Some website fields are invalid.', details: parsed.error.flatten() }, { status: 400 })
+
+      const { data: rows } = await admin.from('platform_config')
+        .select('key, value')
+        .in('key', [WEBSITE_PUBLISHED_KEY, WEBSITE_HISTORY_KEY])
+      const values = new Map((rows || []).map(row => [row.key, row.value]))
+      let history: WebsiteHistoryEntry[] = []
+      try {
+        const storedHistory = JSON.parse(values.get(WEBSITE_HISTORY_KEY) || '[]')
+        if (Array.isArray(storedHistory)) history = storedHistory
+      } catch {}
+
+      const previousValue = values.get(WEBSITE_PUBLISHED_KEY)
+      if (previousValue) {
+        history.unshift({
+          id: crypto.randomUUID(),
+          publishedAt: new Date().toISOString(),
+          publishedBy: user.id,
+          content: parseWebsiteContent(previousValue),
+        })
+      }
+      history = history.slice(0, 10)
+      const now = new Date().toISOString()
+      const { error } = await admin.from('platform_config').upsert([
+        { key: WEBSITE_DRAFT_KEY, value: JSON.stringify(parsed.data), updated_at: now },
+        { key: WEBSITE_PUBLISHED_KEY, value: JSON.stringify(parsed.data), updated_at: now },
+        { key: WEBSITE_HISTORY_KEY, value: JSON.stringify(history), updated_at: now },
+      ], { onConflict: 'key' })
+      if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+      return NextResponse.json({ success: true, publishedAt: now, history })
+    }
+
+    if (action === 'website_restore_draft') {
+      const id = String(body.id || '')
+      const { data: row } = await admin.from('platform_config').select('value').eq('key', WEBSITE_HISTORY_KEY).maybeSingle()
+      let history: WebsiteHistoryEntry[] = []
+      try {
+        const parsed = JSON.parse(row?.value || '[]')
+        if (Array.isArray(parsed)) history = parsed
+      } catch {}
+      const version = history.find(item => item.id === id)
+      if (!version) return NextResponse.json({ error: 'Version not found.' }, { status: 404 })
+      const content = parseWebsiteContent(version.content)
+      const { error } = await admin.from('platform_config').upsert({
+        key: WEBSITE_DRAFT_KEY,
+        value: JSON.stringify(content),
+        updated_at: new Date().toISOString(),
+      }, { onConflict: 'key' })
+      if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+      return NextResponse.json({ success: true, content })
     }
 
     // ── contact_queries: status / delete / reply ──

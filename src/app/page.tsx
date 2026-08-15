@@ -1,356 +1,232 @@
 import type { Metadata } from 'next'
-import Link from 'next/link'
+import type { ReactNode } from 'react'
 import Image from 'next/image'
-import Navbar from '@/components/Navbar'
-import Footer from '@/components/Footer'
-import { MapPin, ArrowRight } from 'lucide-react'
-import { createServerSupabaseClient } from '@/lib/supabase/server'
-import HomepageHowItWorks from '@/components/HomepageHowItWorks'
-import HeroCarousel from '@/components/HeroCarousel'
-import TestimonialCarousel from '@/components/TestimonialCarousel'
+import Link from 'next/link'
+import { ArrowRight, MapPin } from 'lucide-react'
 import CandidateProfileMockup from '@/components/homepage-mockups/CandidateProfileMockup'
 import MatchScoreMockup from '@/components/homepage-mockups/MatchScoreMockup'
 import RoleListingMockup from '@/components/homepage-mockups/RoleListingMockup'
+import Footer from '@/components/Footer'
+import HeroCarousel from '@/components/HeroCarousel'
+import HomepageHowItWorks from '@/components/HomepageHowItWorks'
+import Navbar from '@/components/Navbar'
+import TestimonialCarousel from '@/components/TestimonialCarousel'
+import { getWebsiteContent } from '@/lib/site-content-server'
+import { websiteCssVariables, type WebsiteContent, type WebsiteSectionId } from '@/lib/site-content'
+import { createAdminClient } from '@/lib/supabase/admin'
+import { createServerSupabaseClient } from '@/lib/supabase/server'
 
 export const revalidate = 60
 
 export const metadata: Metadata = {
   title: { absolute: 'WHC Concierge | Luxury Wellness Careers Platform' },
-  description: 'The UK\'s specialist recruitment platform for luxury spa, wellness and hospitality - connecting elite therapists with five-star properties.',
+  description: 'The UK\'s specialist recruitment platform for luxury spa, wellness and hospitality — connecting exceptional professionals with five-star properties.',
   alternates: { canonical: 'https://talent.wellnesshousecollective.co.uk' },
 }
 
-type Stats = { professionals: number | null; roles: number | null; properties: number | null }
-
-async function getStats(): Promise<Stats> {
-  const today = new Date().toISOString().slice(0, 10)
-  try {
-    const supabase = createServerSupabaseClient()
-    const [talent, roles, properties] = await Promise.all([
-      supabase
-        .from('candidate_profiles')
-        .select('id', { count: 'exact', head: true })
-        .eq('profile_visible', true),
-      supabase
-        .from('job_listings')
-        .select('id', { count: 'exact', head: true })
-        .eq('is_live', true)
-        .or(`application_deadline.is.null,application_deadline.gte.${today}`),
-      supabase
-        .from('employer_profiles')
-        .select('id', { count: 'exact', head: true })
-        .eq('approval_status', 'approved'),
-    ])
-    return {
-      professionals: talent.error ? null : talent.count ?? null,
-      roles: roles.error ? null : roles.count ?? null,
-      properties: properties.error ? null : properties.count ?? null,
-    }
-  } catch {
-    return { professionals: null, roles: null, properties: null }
-  }
+type FeaturedRole = {
+  id: string
+  title: string
+  property: string
+  location: string
+  salary: string
+  type: string
+  tier: string
 }
 
-async function getFeaturedRoles() {
+async function getFeaturedRoles(): Promise<FeaturedRole[]> {
   try {
     const supabase = createServerSupabaseClient()
     const { data } = await supabase
       .from('job_listings')
-      .select('id, job_title, job_description, location, salary_min, salary_max, contract_type, tier, employer_profiles(company_name, property_name)')
+      .select('id, job_title, location, salary_min, salary_max, contract_type, tier, employer_profiles(company_name, property_name)')
       .eq('is_live', true)
       .order('posted_date', { ascending: false })
       .limit(3)
-    return (data || []).map((j: any) => ({
-      id: j.id,
-      title: j.job_title || 'Untitled Role',
-      property: j.employer_profiles?.property_name || j.employer_profiles?.company_name || '',
-      location: j.location || '',
-      // Only show a range when both figures are real annual salaries -
-      // "£0k-£0k" reads as broken, and broken reads as cheap.
-      salary: j.salary_min >= 1000 && j.salary_max >= 1000 ? `£${Math.round(j.salary_min / 1000)}k-£${Math.round(j.salary_max / 1000)}k` : 'Competitive',
-      type: j.contract_type?.replace('_', ' ') || '',
-      tier: j.tier || 'Standard',
+
+    return (data || []).map((job: any) => ({
+      id: job.id,
+      title: job.job_title || 'Untitled role',
+      property: job.employer_profiles?.property_name || job.employer_profiles?.company_name || '',
+      location: job.location || '',
+      salary: job.salary_min >= 1000 && job.salary_max >= 1000
+        ? `£${Math.round(job.salary_min / 1000)}k–£${Math.round(job.salary_max / 1000)}k`
+        : 'Competitive',
+      type: job.contract_type?.replaceAll('_', ' ') || '',
+      tier: job.tier || 'Standard',
     }))
-  } catch { return [] }
-}
-
-const DEFAULT_FEATURED = [
-  'https://plus.unsplash.com/premium_photo-1663100126765-1ad02ca4ff69?w=600&q=80&auto=format&fit=crop',
-  'https://images.unsplash.com/photo-1590490360836-2e3b067c082b?w=600&q=80&auto=format&fit=crop',
-  'https://images.unsplash.com/photo-1647960563439-0160d88ca2b7?w=600&q=80&auto=format&fit=crop',
-]
-const DEFAULT_CTA_BG = 'https://images.unsplash.com/photo-1551816646-d64cca8d3ba0?w=1920&q=80&auto=format&fit=crop'
-const DEFAULT_HOW_IT_WORKS = 'https://images.unsplash.com/photo-1540555700478-4be289fbecef?w=1600&q=80&auto=format&fit=crop'
-
-async function getSiteImages() {
-  try {
-    const supabase = createServerSupabaseClient()
-    const { data } = await supabase
-      .from('site_images')
-      .select('slot, image_url')
-      .in('slot', ['featured_1', 'featured_2', 'featured_3', 'cta_bg', 'howitworks_1'])
-    const map: Record<string, string> = {}
-    for (const row of data || []) map[row.slot] = row.image_url
-    return {
-      featured: [
-        map['featured_1'] || DEFAULT_FEATURED[0],
-        map['featured_2'] || DEFAULT_FEATURED[1],
-        map['featured_3'] || DEFAULT_FEATURED[2],
-      ],
-      ctaBg: map['cta_bg'] || DEFAULT_CTA_BG,
-      howItWorks: map['howitworks_1'] || DEFAULT_HOW_IT_WORKS,
-    }
   } catch {
-    return { featured: DEFAULT_FEATURED, ctaBg: DEFAULT_CTA_BG, howItWorks: DEFAULT_HOW_IT_WORKS }
+    return []
   }
 }
 
-// Property types, not named brands - aspiration without implied endorsement.
-const TRUST_BRANDS = ['Country House Spas', 'Five-Star City Hotels', 'Destination Retreats', 'Private Estates', 'Boutique Wellness Clubs', 'Championship Golf Resorts']
+async function canPreviewDraft() {
+  try {
+    const supabase = createServerSupabaseClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return false
+    const admin = createAdminClient()
+    const { data } = await admin.from('profiles').select('role').eq('id', user.id).maybeSingle()
+    return data?.role === 'admin'
+  } catch {
+    return false
+  }
+}
 
-export default async function HomePage() {
-  const [stats, featuredRoles, siteImages] = await Promise.all([getStats(), getFeaturedRoles(), getSiteImages()])
+function Eyebrow({ children }: { children: ReactNode }) {
+  return <p className="site-accent mb-4 text-[11px] font-semibold uppercase tracking-[0.18em]">{children}</p>
+}
 
-  return (
-    <div className="min-h-screen bg-white">
-      <Navbar />
-
-      {/* ═══ HERO CAROUSEL - Single unified hero ═══ */}
-      <div className="pt-[60px]">
-        <HeroCarousel />
-      </div>
-
-      {/* ═══ LIVE STATS BAR ═══ */}
-      {(() => {
-        const items = [
-          { value: stats.professionals, label: 'Vetted Professionals' },
-          { value: stats.roles, label: 'Live Roles' },
-          { value: stats.properties, label: 'Verified Properties' },
-        // Counters only earn their place once the numbers flatter the brand.
-        // Below that, a qualitative strip does the same job with more grace.
-        ].filter((s): s is { value: number; label: string } => typeof s.value === 'number' && s.value >= 50)
-        if (items.length === 0) {
-          return (
-            <section className="border-y" style={{ background: '#F8F7F5', borderColor: '#E8E5E0' }}>
-              <div className="max-w-5xl mx-auto px-6 lg:px-8 py-7">
-                <div className="flex flex-wrap items-center justify-center gap-x-10 gap-y-2 text-center">
-                  {['Hand-picked professionals', 'Insurance verified', 'Five-star properties only'].map(t => (
-                    <p key={t} className="text-[12px] tracking-[0.14em] uppercase" style={{ color: '#8A8A8A' }}>{t}</p>
-                  ))}
-                </div>
-              </div>
-            </section>
-          )
-        }
-        return (
-          <section className="border-y" style={{ background: '#F8F7F5', borderColor: '#E8E5E0' }}>
-            <div className="max-w-5xl mx-auto px-6 lg:px-8 py-8">
-              <div className="flex items-center justify-center gap-8 md:gap-16">
-                {items.map(s => (
-                  <div key={s.label} className="text-center">
-                    <p className="text-[24px] md:text-[32px] font-semibold" style={{ color: '#C9A96E' }}>{s.value}</p>
-                    <p className="text-[11px] md:text-[12px] tracking-wide uppercase" style={{ color: '#6B7280' }}>{s.label}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </section>
-        )
-      })()}
-
-      {/* ═══ HOW IT WORKS ═══ */}
-      <section className="py-24 bg-white">
-        <div className="max-w-7xl mx-auto px-6 lg:px-8">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-x-6 gap-y-12 items-stretch">
-            {/* Left: copy + steps */}
-            <div className="lg:col-span-5">
-              <div className="mb-10">
-                <p className="text-[11px] tracking-[0.15em] uppercase font-medium mb-3" style={{ color: '#C9A96E' }}>How it works</p>
-                <h2 className="font-serif text-[32px] md:text-[40px] font-medium tracking-tight leading-[1.1]" style={{ color: '#1a1a1a' }}>Three steps to your next chapter</h2>
-              </div>
-              <HomepageHowItWorks />
-            </div>
-
-            {/* Right: luxury imagery (decorative) */}
-            <div className="lg:col-span-7 hidden sm:block">
-              <img
-                src={siteImages.howItWorks}
-                alt=""
-                aria-hidden="true"
-                className="w-full h-full max-h-[600px] object-cover rounded-2xl shadow-xl"
-              />
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ═══ PRODUCT MOCKUPS ═══ */}
-      <section className="py-24" style={{ background: 'linear-gradient(180deg, #FAFAF8 0%, #FFFFFF 100%)' }}>
-        <div className="max-w-7xl mx-auto px-6 lg:px-8">
-          <div className="text-center mb-14">
-            <p className="text-[11px] tracking-[0.15em] uppercase font-medium mb-3" style={{ color: '#C9A96E' }}>Tools built for the industry</p>
-            <h2 className="font-serif text-[32px] md:text-[40px] font-medium tracking-tight leading-[1.1] mb-4" style={{ color: '#1a1a1a' }}>
-              See the product, not just the promise.
-            </h2>
-            <p className="text-[15px] md:text-[16px] leading-[1.7] max-w-2xl mx-auto" style={{ color: '#6B7280' }}>
-              Most recruitment platforms make you sign up before you can see what you&apos;re getting. We don&apos;t. Here&apos;s what therapists and employers actually use, every day.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10 lg:gap-8">
-            <div className="flex flex-col">
-              <p className="text-[11px] tracking-[0.15em] uppercase font-medium text-center mb-5" style={{ color: '#C9A96E' }}>For employers</p>
-              <CandidateProfileMockup />
-              <p className="text-[13px] leading-[1.7] text-center mt-5 max-w-xs mx-auto" style={{ color: '#6B7280' }}>
-                Browse vetted, agency-available therapists with full transparency on rates and skills.
-              </p>
-            </div>
-
-            <div className="flex flex-col">
-              <p className="text-[11px] tracking-[0.15em] uppercase font-medium text-center mb-5" style={{ color: '#C9A96E' }}>Our algorithm</p>
-              <MatchScoreMockup />
-              <p className="text-[13px] leading-[1.7] text-center mt-5 max-w-xs mx-auto" style={{ color: '#6B7280' }}>
-                Fifteen weighted categories. No keyword matching. Real fit, scored honestly.
-              </p>
-            </div>
-
-            <div className="flex flex-col">
-              <p className="text-[11px] tracking-[0.15em] uppercase font-medium text-center mb-5" style={{ color: '#C9A96E' }}>For talent</p>
-              <RoleListingMockup />
-              <p className="text-[13px] leading-[1.7] text-center mt-5 max-w-xs mx-auto" style={{ color: '#6B7280' }}>
-                See live roles at properties of genuine calibre. Apply with one tap.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ═══ TRUST SIGNALS ═══ */}
-      <section className="py-16" style={{ background: '#F8F7F5', borderTop: '1px solid #E8E5E0', borderBottom: '1px solid #E8E5E0' }}>
-        <div className="max-w-6xl mx-auto px-6 lg:px-8">
-          <div className="w-[60px] h-[1px] mx-auto mb-6" style={{ backgroundColor: '#C9A96E' }} />
-          <p className="text-[11px] tracking-[0.12em] uppercase text-center mb-8" style={{ color: '#6B7280' }}>Built for properties of this calibre.</p>
-          <div className="flex flex-wrap items-center justify-center gap-x-10 gap-y-4">
-            {TRUST_BRANDS.map(name => (
-              <span key={name} className="text-[15px] font-medium" style={{ color: '#2D2D2D', opacity: 0.55, letterSpacing: '0.08em' }}>{name}</span>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ═══ FEATURED ROLES ═══ */}
-      {featuredRoles.length > 0 && (
-        <section className="py-24 bg-white">
-          <div className="max-w-7xl mx-auto px-6 lg:px-8">
-            <div className="flex items-end justify-between mb-10">
-              <div>
-                <p className="text-[11px] tracking-[0.15em] uppercase font-medium mb-3" style={{ color: '#C9A96E' }}>Latest opportunities</p>
-                <h2 className="font-serif text-[32px] md:text-[40px] font-medium tracking-tight leading-[1.1]" style={{ color: '#1a1a1a' }}>Featured roles</h2>
-              </div>
-              <Link href="/roles" className="hidden md:flex items-center gap-1.5 text-[13px] font-medium transition-colors" style={{ color: '#6B7280' }}>View all roles <ArrowRight size={13} /></Link>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-              {featuredRoles.map((role: any, i: number) => (
-                <Link key={role.id} href="/roles" className="group rounded-xl overflow-hidden hover:shadow-lg hover:-translate-y-0.5 transition-all bg-white" style={{ border: '1px solid #E5E5E5' }}>
-                  <div className="relative h-36 overflow-hidden">
-                    <Image
-                      src={siteImages.featured[i % 3]}
-                      alt="" fill className="object-cover group-hover:scale-105 transition-transform duration-500" sizes="(max-width: 768px) 100vw, 33vw"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-white/60 to-transparent" />
-                  </div>
-                  <div className="p-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <span className={`text-[10px] font-semibold px-2.5 py-1 rounded-full ${role.tier === 'Platinum' ? 'bg-ink text-white' : role.tier === 'Gold' ? 'bg-[#FDF6EC] text-[#C9A96E]' : 'bg-surface text-muted'}`}>{role.tier}</span>
-                    {role.type && <span className="text-[11px] capitalize" style={{ color: '#6B7280' }}>{role.type}</span>}
-                  </div>
-                  <p className="text-[11px] uppercase tracking-wide mb-1" style={{ color: '#6B7280' }}>{role.property}</p>
-                  <h3 className="text-[18px] font-medium mb-3 transition-colors" style={{ color: '#1a1a1a' }}>{role.title}</h3>
-                  <div className="flex items-center gap-3 text-[12px]" style={{ color: '#6B7280' }}>
-                    {role.location && <span className="flex items-center gap-1"><MapPin size={11} />{role.location}</span>}
-                    <span className="font-medium" style={{ color: '#C9A96E' }}>{role.salary}</span>
-                  </div>
-                  </div>
-                </Link>
-              ))}
-            </div>
-            <div className="text-center mt-8 md:hidden">
-              <Link href="/roles" className="btn-secondary inline-flex items-center gap-1.5">View all roles <ArrowRight size={13} /></Link>
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* ═══ FINAL CTA - Luxury imagery with white overlay ═══ */}
-      <section className="relative overflow-hidden">
-        <img
-          src={siteImages.ctaBg}
-          alt="" className="absolute inset-0 w-full h-full object-cover"
-        />
-        <div className="absolute inset-0 bg-white/85" />
-
-        <div className="relative z-10 max-w-5xl mx-auto px-6 lg:px-8 py-24">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div className="rounded-xl p-8 md:p-10 bg-white/90 backdrop-blur-sm" style={{ border: '1px solid #E5E5E5' }}>
-              <p className="text-[11px] tracking-[0.15em] uppercase font-medium mb-4" style={{ color: '#C9A96E' }}>For talent</p>
-              <h3 className="font-serif text-[24px] md:text-[28px] font-medium leading-[1.15] mb-4" style={{ color: '#1a1a1a' }}>Ready to elevate your wellness career?</h3>
-              <p className="text-[14px] leading-[1.7] mb-8" style={{ color: '#6B7280' }}>Create your free profile, get matched with premium roles, and take the next step in your career.</p>
-              <Link href="/register/talent" className="btn-primary inline-block">Create free profile</Link>
-            </div>
-            <div className="rounded-xl p-8 md:p-10 bg-white/90 backdrop-blur-sm" style={{ border: '1px solid rgba(201, 169, 110, 0.35)' }}>
-              <p className="text-[11px] tracking-[0.15em] uppercase font-medium mb-4" style={{ color: '#C9A96E' }}>For employers</p>
-              <h3 className="font-serif text-[24px] md:text-[28px] font-medium leading-[1.15] mb-4" style={{ color: '#1a1a1a' }}>Ready to find exceptional talent?</h3>
-              <p className="text-[14px] leading-[1.7] mb-8" style={{ color: '#6B7280' }}>Post your roles, search verified candidates, and hire with confidence using intelligent matching.</p>
-              <Link href="/register/employer"
-                className="inline-block px-6 py-2.5 rounded-lg text-[13px] font-semibold text-white transition-all hover:shadow-lg hover:shadow-[#C9A96E]/25"
-                style={{ backgroundColor: '#C9A96E' }}>
-                Post a role
-              </Link>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* AGENCY, ACADEMY & RESIDENCY */}
-      <section className="py-24 bg-surface">
-        <div className="max-w-7xl mx-auto px-6 lg:px-8 grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="card-hover p-8">
-            <p className="eyebrow mb-3">Agency marketplace</p>
-            <h3 className="font-serif text-[24px] font-medium text-ink leading-tight mb-3">Fill shifts fast.<br />One transparent fee.</h3>
-            <p className="text-secondary text-[14px] mb-6">Find verified practitioners near you and book by the hour - including urgent same-day cover. One 10% fee on confirmed bookings, payments handled end to end by WHC. No mark-ups, no surprises.</p>
-            <Link href="/agency" className="btn-primary inline-block">Browse practitioners</Link>
-          </div>
-          <div className="card-hover p-8">
-            <p className="eyebrow mb-3">WHC Academy</p>
-            <h3 className="font-serif text-[24px] font-medium text-ink leading-tight mb-3">Training that<br />gets you booked.</h3>
-            <p className="text-secondary text-[14px] mb-6">Short, serious courses in consultation, retail, Forbes standards, treatment craft and brand knowledge. Verifiable certificates - open to everyone in the industry, no membership needed.</p>
-            <Link href="/academy" className="btn-primary inline-block">Explore the Academy</Link>
-          </div>
-          <div className="card-hover p-8">
-            <p className="eyebrow mb-3">Residency programme</p>
-            <h3 className="font-serif text-[24px] font-medium text-ink leading-tight mb-3">Discover visiting<br />specialists.</h3>
-            <p className="text-secondary text-[14px] mb-6">Browse the residency talent pool, contact practitioners directly, agree terms. Elite 1-6 month placements at iconic properties worldwide.</p>
-            <Link href="/residency" className="btn-primary inline-block">Explore residencies</Link>
-          </div>
-        </div>
-      </section>
-
-      {/* TESTIMONIALS */}
-      <section className="py-24">
-        <div className="max-w-7xl mx-auto px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <p className="eyebrow mb-3">What people say</p>
-            <h2 className="font-serif text-[36px] md:text-[42px] font-medium text-ink leading-[1.12] tracking-tight">Trusted by the industry.</h2>
-          </div>
-          <TestimonialCarousel />
-          <div className="text-center mt-8">
-            <Link href="/testimonials" className="text-[13px] text-muted hover:text-ink transition-colors underline underline-offset-4">Read all testimonials</Link>
-          </div>
-        </div>
-      </section>
-
-
-      <Footer />
+function ProofSection({ content }: { content: WebsiteContent }) {
+  return <section className="site-surface border-y border-black/10">
+    <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-center gap-x-12 gap-y-3 px-6 py-7 text-center">
+      {content.proof.items.map(item => <p key={item} className="text-[11px] font-medium uppercase tracking-[0.14em] opacity-60">{item}</p>)}
     </div>
-  )
+  </section>
+}
+
+function HowItWorksSection({ content }: { content: WebsiteContent }) {
+  return <section className="site-section" style={{ background: 'var(--site-background)' }}>
+    <div className="mx-auto grid max-w-7xl items-stretch gap-12 px-6 lg:grid-cols-12 lg:px-8">
+      <div className="lg:col-span-5">
+        <Eyebrow>{content.howItWorks.eyebrow}</Eyebrow>
+        <h2 className="site-heading mb-10 text-[34px] font-medium leading-[1.05] md:text-[48px]">{content.howItWorks.heading}</h2>
+        <HomepageHowItWorks />
+      </div>
+      <div className="hidden overflow-hidden sm:block lg:col-span-7">
+        <img src={content.howItWorks.image.url} alt={content.howItWorks.image.alt} className="h-full max-h-[650px] w-full object-cover"
+          style={{ objectPosition: `${content.howItWorks.image.focalX}% ${content.howItWorks.image.focalY}%` }} />
+      </div>
+    </div>
+  </section>
+}
+
+function ProductSection({ content }: { content: WebsiteContent }) {
+  const mockups = [<CandidateProfileMockup key="candidate" />, <MatchScoreMockup key="matching" />, <RoleListingMockup key="role" />]
+  return <section className="site-section site-surface">
+    <div className="mx-auto max-w-7xl px-6 lg:px-8">
+      <div className="mx-auto mb-14 max-w-3xl text-center">
+        <Eyebrow>{content.product.eyebrow}</Eyebrow>
+        <h2 className="site-heading mb-5 text-[34px] font-medium leading-[1.05] md:text-[48px]">{content.product.heading}</h2>
+        <p className="text-[15px] leading-[1.8] opacity-65 md:text-[17px]">{content.product.intro}</p>
+      </div>
+      <div className="grid gap-10 md:grid-cols-2 lg:grid-cols-3 lg:gap-8">
+        {content.product.cards.map((card, index) => <div key={card.label} className="flex flex-col">
+          <p className="site-accent mb-5 text-center text-[11px] font-semibold uppercase tracking-[0.15em]">{card.label}</p>
+          {mockups[index]}
+          <p className="mx-auto mt-5 max-w-xs text-center text-[13px] leading-[1.75] opacity-65">{card.text}</p>
+        </div>)}
+      </div>
+    </div>
+  </section>
+}
+
+function TrustSection({ content }: { content: WebsiteContent }) {
+  return <section className="border-y border-black/10 py-16" style={{ background: 'var(--site-background)' }}>
+    <div className="mx-auto max-w-6xl px-6 text-center lg:px-8">
+      <div className="site-accent-bg mx-auto mb-6 h-px w-14" />
+      <p className="mb-9 text-[11px] uppercase tracking-[0.16em] opacity-55">{content.trust.eyebrow}</p>
+      <div className="flex flex-wrap items-center justify-center gap-x-10 gap-y-5">
+        {content.trust.items.map(item => <span key={item} className="text-[14px] font-semibold tracking-[0.06em] opacity-50">{item}</span>)}
+      </div>
+    </div>
+  </section>
+}
+
+function RolesSection({ content, roles }: { content: WebsiteContent; roles: FeaturedRole[] }) {
+  if (!roles.length) return null
+  return <section className="site-section" style={{ background: 'var(--site-background)' }}>
+    <div className="mx-auto max-w-7xl px-6 lg:px-8">
+      <div className="mb-10 flex items-end justify-between">
+        <div><Eyebrow>{content.roles.eyebrow}</Eyebrow><h2 className="site-heading text-[34px] font-medium md:text-[48px]">{content.roles.heading}</h2></div>
+        <Link href="/roles" className="hidden items-center gap-2 text-[13px] font-medium opacity-60 transition-opacity hover:opacity-100 md:flex">{content.roles.linkLabel}<ArrowRight size={14} /></Link>
+      </div>
+      <div className="grid gap-5 md:grid-cols-3">
+        {roles.map((role, index) => {
+          const image = content.roles.images[index % content.roles.images.length]
+          return <Link key={role.id} href={`/jobs/${role.id}`} className="group overflow-hidden border border-black/10 bg-white transition-all hover:-translate-y-1 hover:shadow-xl">
+            <div className="relative h-44 overflow-hidden">
+              <Image src={image.url} alt={image.alt} fill sizes="(max-width: 768px) 100vw, 33vw" className="object-cover transition-transform duration-500 group-hover:scale-105"
+                style={{ objectPosition: `${image.focalX}% ${image.focalY}%` }} />
+            </div>
+            <div className="p-6">
+              <div className="mb-5 flex items-center justify-between"><span className="site-accent text-[10px] font-semibold uppercase tracking-[0.12em]">{role.tier}</span><span className="text-[11px] capitalize opacity-50">{role.type}</span></div>
+              <p className="mb-1 text-[10px] uppercase tracking-[0.12em] opacity-50">{role.property}</p>
+              <h3 className="site-heading mb-4 text-[19px]">{role.title}</h3>
+              <div className="flex items-center gap-3 text-[12px] opacity-60">{role.location && <span className="flex items-center gap-1"><MapPin size={12} />{role.location}</span>}<span>{role.salary}</span></div>
+            </div>
+          </Link>
+        })}
+      </div>
+      <Link href="/roles" className="site-button site-accent-bg mx-auto mt-8 flex w-fit items-center gap-2 px-6 py-3 text-[13px] font-semibold text-white md:hidden">{content.roles.linkLabel}<ArrowRight size={14} /></Link>
+    </div>
+  </section>
+}
+
+function CalloutSection({ content }: { content: WebsiteContent }) {
+  return <section className="relative overflow-hidden">
+    <img src={content.cta.background.url} alt={content.cta.background.alt} className="absolute inset-0 h-full w-full object-cover"
+      style={{ objectPosition: `${content.cta.background.focalX}% ${content.cta.background.focalY}%` }} />
+    <div className="absolute inset-0 bg-black/45" />
+    <div className="relative z-10 mx-auto grid max-w-6xl gap-px px-6 py-24 md:grid-cols-2 lg:px-8">
+      {([content.cta.talent, content.cta.employer] as const).map(card => <div key={card.eyebrow} className="bg-white p-8 md:p-12">
+        <Eyebrow>{card.eyebrow}</Eyebrow>
+        <h3 className="site-heading mb-5 text-[28px] font-medium leading-[1.08] md:text-[34px]">{card.heading}</h3>
+        <p className="mb-8 text-[14px] leading-[1.75] opacity-65">{card.text}</p>
+        <Link href={card.buttonHref} className="site-button site-accent-bg inline-block px-6 py-3 text-[13px] font-semibold text-white">{card.buttonLabel}</Link>
+      </div>)}
+    </div>
+  </section>
+}
+
+function ServicesSection({ content }: { content: WebsiteContent }) {
+  return <section className="site-section site-surface">
+    <div className="mx-auto grid max-w-7xl gap-px px-6 md:grid-cols-3 lg:px-8">
+      {content.services.cards.map(card => <article key={card.eyebrow} className="flex flex-col bg-white p-8 md:p-10">
+        <Eyebrow>{card.eyebrow}</Eyebrow>
+        <h3 className="site-heading mb-4 text-[26px] leading-[1.08]">{card.heading}</h3>
+        <p className="mb-8 flex-1 text-[14px] leading-[1.75] opacity-65">{card.text}</p>
+        <Link href={card.buttonHref} className="site-button site-accent-bg w-fit px-5 py-3 text-[12px] font-semibold text-white">{card.buttonLabel}</Link>
+      </article>)}
+    </div>
+  </section>
+}
+
+function TestimonialsSection({ content }: { content: WebsiteContent }) {
+  return <section className="site-section" style={{ background: 'var(--site-background)' }}>
+    <div className="mx-auto max-w-7xl px-6 lg:px-8">
+      <div className="mb-12 text-center"><Eyebrow>{content.testimonials.eyebrow}</Eyebrow><h2 className="site-heading text-[34px] font-medium md:text-[48px]">{content.testimonials.heading}</h2></div>
+      <TestimonialCarousel />
+      <div className="mt-9 text-center"><Link href="/testimonials" className="text-[13px] underline underline-offset-4 opacity-60 hover:opacity-100">{content.testimonials.linkLabel}</Link></div>
+    </div>
+  </section>
+}
+
+type HomePageProps = { searchParams?: { websitePreview?: string | string[] } }
+
+export default async function HomePage({ searchParams }: HomePageProps) {
+  const previewRequested = searchParams?.websitePreview === 'draft'
+  const previewingDraft = previewRequested && await canPreviewDraft()
+  const [content, featuredRoles] = await Promise.all([getWebsiteContent(previewingDraft), getFeaturedRoles()])
+
+  const sections: Record<WebsiteSectionId, ReactNode> = {
+    proof: <ProofSection content={content} />,
+    howItWorks: <HowItWorksSection content={content} />,
+    product: <ProductSection content={content} />,
+    trust: <TrustSection content={content} />,
+    roles: <RolesSection content={content} roles={featuredRoles} />,
+    cta: <CalloutSection content={content} />,
+    services: <ServicesSection content={content} />,
+    testimonials: <TestimonialsSection content={content} />,
+  }
+
+  return <div className="website-theme min-h-screen" style={websiteCssVariables(content)}>
+    <Navbar siteContent={content} />
+    <main className="pt-[60px]">
+      {previewingDraft && <div className="site-accent-bg px-5 py-2 text-center text-[12px] font-semibold text-white">Private draft preview — the public website has not changed.</div>}
+      <HeroCarousel siteContent={content} />
+      {content.sections.filter(section => section.visible).map(section => <div key={section.id}>{sections[section.id]}</div>)}
+    </main>
+    <Footer siteContent={content} />
+  </div>
 }

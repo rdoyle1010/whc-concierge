@@ -6,12 +6,14 @@ import {
   GraduationCap, CreditCard, FileText, Megaphone, AlertTriangle,
   Image as ImageIcon, Briefcase, MessageSquare, Calendar, Settings,
   Users, ArrowRight,
+  Palette,
 } from 'lucide-react'
 
 // Admin home - the landing page after admin login. Static quick links into
 // every admin section; deliberately no data fetching so it always renders.
 
 const SECTIONS = [
+  { label: 'Website & Brand', desc: 'Edit homepage wording, photos, fonts, colours and navigation.', href: '/admin/website', icon: <Palette size={18} /> },
   { label: 'Verification', desc: 'Review and approve talent and property accounts.', href: '/admin/verification', icon: <Users size={18} /> },
   { label: 'Agency Money', desc: 'Bookings, payments, payouts and disputes.', href: '/admin/agency', icon: <CreditCard size={18} /> },
   { label: 'Academy', desc: 'Learners, enrolments, revenue and certificates.', href: '/admin/academy', icon: <GraduationCap size={18} /> },
@@ -20,7 +22,7 @@ const SECTIONS = [
   { label: 'Messages', desc: 'Platform conversations overview.', href: '/admin/messages', icon: <MessageSquare size={18} /> },
   { label: 'Blog', desc: 'Write, edit and publish blog posts.', href: '/admin/blog', icon: <FileText size={18} /> },
   { label: 'Campaigns', desc: 'Email and marketing campaigns.', href: '/admin/campaigns', icon: <Megaphone size={18} /> },
-  { label: 'Images', desc: 'Site imagery slots and hero content.', href: '/admin/images', icon: <ImageIcon size={18} /> },
+  { label: 'Legacy Images', desc: 'Older image-slot controls retained during the redesign.', href: '/admin/images', icon: <ImageIcon size={18} /> },
   { label: 'Taxonomy', desc: 'Skills, systems, brands and certifications.', href: '/admin/taxonomy', icon: <Briefcase size={18} /> },
   { label: 'Complaints', desc: 'Reported issues and their resolution.', href: '/admin/complaints', icon: <AlertTriangle size={18} /> },
   { label: 'Settings', desc: 'Platform configuration.', href: '/admin/settings', icon: <Settings size={18} /> },

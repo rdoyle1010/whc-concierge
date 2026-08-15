@@ -56,3 +56,28 @@
 
 ::-webkit-scrollbar { width:4px; } ::-webkit-scrollbar-track { background:transparent; } ::-webkit-scrollbar-thumb { background:#d4d4d4; border-radius:2px; }
 html { scroll-behavior:smooth; }
+
+/* Website & Brand editor variables. These are intentionally scoped to the
+   public website wrapper so dashboard and matching screens remain stable. */
+.website-theme {
+  font-family: var(--site-body-font, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif);
+  color: var(--site-ink, #111111);
+  background: var(--site-background, #ffffff);
+}
+.website-theme .site-heading {
+  font-family: var(--site-heading-font, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif);
+  color: var(--site-ink, #111111);
+  letter-spacing: -0.025em;
+}
+.website-theme .site-accent { color: var(--site-accent, #111111); }
+.website-theme .site-accent-bg { background-color: var(--site-accent, #111111); }
+.website-theme .site-surface { background-color: var(--site-surface, #f5f4f2); }
+.website-theme .site-section {
+  padding-top: calc(5rem * var(--site-space, 1));
+  padding-bottom: calc(5rem * var(--site-space, 1));
+}
+.website-theme .site-button {
+  border-radius: var(--site-button-radius, 0px);
+  transition: transform 150ms ease, opacity 150ms ease;
+}
+.website-theme .site-button:hover { transform: translateY(-1px); opacity: .9; }
