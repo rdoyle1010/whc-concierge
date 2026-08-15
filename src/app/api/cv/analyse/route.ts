@@ -10,8 +10,12 @@ const MAX_CV_SIZE = 10 * 1024 * 1024
 
 async function extractText(buffer: Buffer, extension: string): Promise<string> {
   if (extension === 'pdf') {
+    const { CanvasFactory } = await import('pdf-parse/worker')
     const { PDFParse } = await import('pdf-parse')
-    const parser = new PDFParse({ data: new Uint8Array(buffer) })
+    const parser = new PDFParse({
+      data: new Uint8Array(buffer),
+      CanvasFactory,
+    })
     try {
       return (await parser.getText()).text
     } finally {
