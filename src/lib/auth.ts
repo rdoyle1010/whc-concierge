@@ -1,5 +1,6 @@
 import { createServerSupabaseClient } from './supabase/server'
 import { redirect } from 'next/navigation'
+import { normaliseAccountRole } from './role-access'
 
 export type UserRole = 'talent' | 'employer' | 'admin'
 
@@ -21,32 +22,8 @@ export async function getUserRole(): Promise<UserRole | null> {
     .eq('id', user.id)
     .single()
 
-  if (profile?.role === 'admin') return 'admin'
-  if (profile?.role === 'employer') return 'employer'
-  if (profile?.role === 'candidate' || profile?.role === 'talent') return 'talent'
-
-  // 2. Fallback: check user_metadata
-  if (user.user_metadata?.role === 'admin') return 'admin'
-
-  // 3. Fallback: check profile tables directly
-  const { data: candidate } = await supabase
-    .from('candidate_profiles')
-    .select('id')
-    .eq('user_id', user.id)
-    .single()
-
-  if (candidate) return 'talent'
-
-  const { data: employer } = await supabase
-    .from('employer_profiles')
-    .select('id')
-    .eq('user_id', user.id)
-    .single()
-
-  if (employer) return 'employer'
-
-  // Default to talent - never return null for a logged-in user
-  return 'talent'
+  const role = normaliseAccountRole(profile?.role)
+  return role === 'candidate' ? 'talent' : role
 }
 
 export async function requireAuth(allowedRoles?: UserRole[]) {

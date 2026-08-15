@@ -19,6 +19,26 @@ check('maintenance APIs are blocked', () => {
 check('registration starts through a server proof', () => assert.match(read('src/app/api/register/init/route.ts'), /createRegistrationProof/))
 check('talent registration uses a strict server allowlist', () => assert.match(read('src/app/api/register/talent/route.ts'), /sanitiseTalentRegistration/))
 check('employer registration uses a strict server allowlist', () => assert.match(read('src/app/api/register/employer/route.ts'), /sanitiseEmployerRegistration/))
+check('opposite account registrations are rejected server-side', () => {
+  assert.match(read('src/app/api/register/talent/route.ts'), /canCompleteRegistration/)
+  assert.match(read('src/app/api/register/employer/route.ts'), /canCompleteRegistration/)
+})
+check('every private portal has a server-side role gate', () => {
+  assert.equal(existsSync(`${root}/src/app/hotel/layout.tsx`), true)
+  for (const file of ['src/app/talent/layout.tsx', 'src/app/employer/layout.tsx', 'src/app/hotel/layout.tsx', 'src/app/admin/layout.tsx']) {
+    const source = read(file)
+    assert.match(source, /auth\.getUser\(\)/)
+    assert.match(source, /from\('profiles'\)/)
+  }
+})
+check('legacy hotel URLs are protected before rendering', () => {
+  assert.match(read('src/proxy.ts'), /PROTECTED_PREFIXES[^\n]*'\/hotel'/)
+})
+check('login routing never trusts editable auth metadata', () => {
+  assert.doesNotMatch(read('src/app/login/page.tsx'), /user_metadata\?\.role/)
+  assert.doesNotMatch(read('src/proxy.ts'), /user_metadata\?\.role/)
+  assert.doesNotMatch(read('src/lib/auth.ts'), /user_metadata\?\.role/)
+})
 check('registration uploads require proof and ownership', () => {
   const source = read('src/app/api/upload/route.ts')
   assert.match(source, /verifyRegistrationProof/)

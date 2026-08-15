@@ -4,6 +4,7 @@ import { welcomeEmailHtml } from '@/lib/welcome-email-template'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { sanitiseTalentRegistration, verifyRegistrationProof } from '@/lib/registration'
+import { canCompleteRegistration } from '@/lib/role-access'
 
 const RESEND_API_KEY = process.env.RESEND_API_KEY
 const FROM_EMAIL = 'WHC Concierge <noreply@mail.wellnesshousecollective.co.uk>'
@@ -108,6 +109,32 @@ export async function POST(req: NextRequest) {
 
     if (!userVerified) {
       return NextResponse.json({ error: 'User not found in auth - please try again' }, { status: 400 })
+    }
+
+    const { data: existingAccount, error: accountError } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', userId)
+      .maybeSingle()
+    if (accountError) {
+      console.error('profiles role check failed (talent register):', accountError.message)
+      return NextResponse.json({ error: 'We could not verify this account type. Please try again.' }, { status: 503 })
+    }
+    if (!canCompleteRegistration(existingAccount?.role, 'talent')) {
+      return NextResponse.json({ error: 'This email is already registered as a hotel or employer account. Please sign in through Hotel / Employer.' }, { status: 409 })
+    }
+
+    const { data: existingEmployer, error: employerCheckError } = await supabase
+      .from('employer_profiles')
+      .select('id')
+      .eq('user_id', userId)
+      .maybeSingle()
+    if (employerCheckError) {
+      console.error('employer profile check failed (talent register):', employerCheckError.message)
+      return NextResponse.json({ error: 'We could not verify this account type. Please try again.' }, { status: 503 })
+    }
+    if (existingEmployer && existingAccount?.role !== 'admin') {
+      return NextResponse.json({ error: 'This email is already registered as a hotel or employer account. Please sign in through Hotel / Employer.' }, { status: 409 })
     }
 
     const { data: existingCandidate } = await supabase

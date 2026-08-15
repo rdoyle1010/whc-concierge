@@ -15,7 +15,7 @@ export default async function TalentLayout({ children }: { children: React.React
     .single()
 
   if (profile?.role === 'employer') redirect('/employer/dashboard')
-  if (!profile || (profile.role !== 'candidate' && profile.role !== 'admin')) redirect('/login?error=unauthorised')
+  if (!profile || (profile.role !== 'candidate' && profile.role !== 'talent' && profile.role !== 'admin')) redirect('/login?error=unauthorised')
 
   return children
 }

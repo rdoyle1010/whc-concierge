@@ -22,7 +22,7 @@ export default function Navbar({ siteContent }: { siteContent?: WebsiteContent }
       if (data.user) {
         // Get role
         supabase.from('profiles').select('role').eq('id', data.user.id).single().then(({ data: p }) => {
-          setRole(p?.role || data.user?.user_metadata?.role || 'talent')
+          setRole(p?.role || null)
         })
       }
     })
