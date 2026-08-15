@@ -1,33 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { stripe } from '@/lib/stripe'
+import { getStripe } from '@/lib/stripe'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
+import { assertStripeModeMatchesOrigin, getSafeSiteOrigin } from '@/lib/site-origin'
 
 // Stripe customer portal for subscription management. Called (with no body)
 // by /talent/billing, which redirects to the returned { url }.
 
-// Only allow return redirects back to our own domain
-const ALLOWED_ORIGINS = [
-  process.env.NEXT_PUBLIC_SITE_URL,
-  'https://talent.wellnesshousecollective.co.uk',
-  'https://whc-concierge.netlify.app',
-].filter(Boolean) as string[]
-
-function getSafeOrigin(untrusted?: string | null): string {
-  if (untrusted) {
-    try {
-      const o = new URL(untrusted).origin
-      if (ALLOWED_ORIGINS.includes(o)) return o
-    } catch { /* fall through to the default */ }
-  }
-  return ALLOWED_ORIGINS[0] || 'https://talent.wellnesshousecollective.co.uk'
-}
-
 export async function POST(req: NextRequest) {
   try {
     // ── Auth: caller must be logged in ──
-    const cookieStore = cookies()
+    const cookieStore = await cookies()
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -62,7 +46,9 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    const origin = getSafeOrigin(req.headers.get('origin'))
+    const origin = getSafeSiteOrigin(req.headers.get('origin'))
+    assertStripeModeMatchesOrigin(origin)
+    const stripe = getStripe()
     const session = await stripe.billingPortal.sessions.create({
       customer: customerId,
       return_url: `${origin}/talent/billing`,

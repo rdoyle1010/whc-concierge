@@ -10,15 +10,17 @@ import type { Metadata } from 'next'
 export const revalidate = 120
 
 
-export async function generateMetadata({ params }: { params: { id: string } }): Promise<Metadata> {
-  const supabase = createServerSupabaseClient()
+export async function generateMetadata(props: { params: Promise<{ id: string }> }): Promise<Metadata> {
+  const params = await props.params;
+  const supabase = await createServerSupabaseClient()
   const { data } = await supabase.from('residency_profiles').select('full_name, primary_specialism').eq('id', params.id).single()
   const name = data?.full_name || data?.primary_specialism || 'Specialist'
   return { title: `${name} - Residency Specialist` }
 }
 
-export default async function ResidencyDetailPage({ params }: { params: { id: string } }) {
-  const supabase = createServerSupabaseClient()
+export default async function ResidencyDetailPage(props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
+  const supabase = await createServerSupabaseClient()
   const { data: r } = await supabase.from('residency_profiles').select('*').eq('id', params.id).single()
   if (!r) notFound()
 

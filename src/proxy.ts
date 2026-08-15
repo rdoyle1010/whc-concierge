@@ -1,8 +1,9 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
+import { dashboardForRole, normaliseAccountRole } from '@/lib/role-access'
 
 // Routes that require authentication
-const PROTECTED_PREFIXES = ['/talent', '/employer', '/admin']
+const PROTECTED_PREFIXES = ['/talent', '/employer', '/hotel', '/admin']
 
 // Routes that should redirect logged-in users away (to dashboard)
 const AUTH_PAGES = ['/login', '/register']
@@ -17,9 +18,11 @@ const BLOCKED_API_ROUTES = [
   '/api/fix-taxonomy-rls',
   '/api/fix-null-live',
   '/api/update-jobs',
+  '/api/application-email',
+  '/api/welcome-email',
 ]
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
 
   // Block maintenance API routes entirely
@@ -67,10 +70,12 @@ export async function middleware(request: NextRequest) {
   const isAuthPage = AUTH_PAGES.some(page => pathname.startsWith(page))
   if (isAuthPage && user) {
     const { data: prof } = await supabase.from('profiles').select('role').eq('id', user.id).single()
-    const role = prof?.role || user.user_metadata?.role || 'talent'
-    const dashUrl = request.nextUrl.clone()
-    dashUrl.pathname = role === 'admin' ? '/admin/dashboard' : role === 'employer' ? '/employer/dashboard' : '/talent/dashboard'
-    return NextResponse.redirect(dashUrl)
+    const role = normaliseAccountRole(prof?.role)
+    if (role) {
+      const dashUrl = request.nextUrl.clone()
+      dashUrl.pathname = dashboardForRole(role)
+      return NextResponse.redirect(dashUrl)
+    }
   }
 
   return response

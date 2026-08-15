@@ -75,7 +75,9 @@ export default function NotificationBell({ userId }: { userId: string }) {
   return (
     <div className="relative" ref={ref}>
       <button type="button" onClick={() => { setOpen(!open); if (!open) load() }}
-        className="relative p-2 text-muted hover:text-ink transition-colors">
+        aria-label={unreadCount ? `Notifications, ${unreadCount} unread` : 'Notifications'}
+        aria-expanded={open} aria-haspopup="menu"
+        className="relative p-2 text-secondary hover:text-ink transition-colors">
         <Bell size={17} />
         {unreadCount > 0 && (
           <span className="absolute top-0.5 right-0.5 w-[14px] h-[14px] bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center">

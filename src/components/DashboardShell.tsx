@@ -7,8 +7,9 @@ import { usePathname } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import {
   LayoutDashboard, User, Briefcase, MessageSquare, Star, Calendar,
-  Settings, LogOut, Menu, X, Users, FileText, Image as ImageIcon, Megaphone,
-  AlertTriangle, Heart, Building2, ChevronRight, BarChart3, CreditCard, GraduationCap
+  Settings, LogOut, Menu, X, Users, FileText, Megaphone,
+  AlertTriangle, Heart, Building2, ChevronRight, BarChart3, CreditCard, GraduationCap,
+  Palette,
 } from 'lucide-react'
 
 interface NavItem {
@@ -56,6 +57,7 @@ const navItems: Record<string, NavItem[]> = {
   ],
   admin: [
     { label: 'Dashboard', href: '/admin/dashboard', icon: <LayoutDashboard size={20} /> },
+    { label: 'Website & Brand', href: '/admin/website', icon: <Palette size={20} /> },
     { label: 'Users', href: '/admin/users', icon: <Users size={20} /> },
     { label: 'Messages', href: '/admin/messages', icon: <MessageSquare size={20} /> },
     { label: 'Matches', href: '/admin/matches', icon: <Heart size={20} /> },
@@ -66,7 +68,7 @@ const navItems: Record<string, NavItem[]> = {
     { label: 'Job Listings', href: '/admin/jobs', icon: <Briefcase size={20} /> },
     { label: 'Blog', href: '/admin/blog', icon: <FileText size={20} /> },
     { label: 'Campaigns', href: '/admin/campaigns', icon: <Megaphone size={20} /> },
-    { label: 'Images', href: '/admin/images', icon: <ImageIcon size={20} /> },
+    { label: 'Sponsored Ads', href: '/admin/advertising', icon: <Megaphone size={20} /> },
     { label: 'Taxonomy', href: '/admin/taxonomy', icon: <Briefcase size={20} /> },
     { label: 'Complaints', href: '/admin/complaints', icon: <AlertTriangle size={20} /> },
     { label: 'Settings', href: '/admin/settings', icon: <Settings size={20} /> },

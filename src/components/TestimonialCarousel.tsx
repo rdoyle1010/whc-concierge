@@ -93,7 +93,7 @@ export default function TestimonialCarousel({ testimonials = defaultTestimonials
           {visibleTestimonials.map((testimonial) => (
             <div key={testimonial.id} className="card animate-fade-in">
               {/* Gold quotation mark */}
-              <div className="text-5xl text-accent/30 font-serif leading-none mb-2">
+              <div className="site-accent text-5xl font-serif leading-none mb-2 opacity-30">
                 "
               </div>
 
@@ -116,7 +116,8 @@ export default function TestimonialCarousel({ testimonials = defaultTestimonials
                   <Star
                     key={i}
                     size={14}
-                    className={i < testimonial.rating ? 'fill-accent text-accent' : 'text-border'}
+                    className={i < testimonial.rating ? 'site-accent' : 'text-border'}
+                    style={i < testimonial.rating ? { fill: 'var(--site-accent)' } : undefined}
                   />
                 ))}
               </div>
@@ -128,6 +129,7 @@ export default function TestimonialCarousel({ testimonials = defaultTestimonials
         {testimonials.length > itemsPerPage && (
           <>
             <button
+              type="button"
               onClick={handlePrev}
               className="absolute -left-6 md:-left-12 top-1/2 -translate-y-1/2 p-2 rounded-full hover:bg-surface transition-colors text-secondary hover:text-accent"
               aria-label="Previous testimonial"
@@ -136,6 +138,7 @@ export default function TestimonialCarousel({ testimonials = defaultTestimonials
             </button>
 
             <button
+              type="button"
               onClick={handleNext}
               className="absolute -right-6 md:-right-12 top-1/2 -translate-y-1/2 p-2 rounded-full hover:bg-surface transition-colors text-secondary hover:text-accent"
               aria-label="Next testimonial"
@@ -152,6 +155,7 @@ export default function TestimonialCarousel({ testimonials = defaultTestimonials
           {Array.from({ length: totalSlides }).map((_, i) => (
             <button
               key={i}
+              type="button"
               onClick={() => setCurrentIndex(i)}
               className={`transition-all duration-200 rounded-full ${
                 i === currentIndex

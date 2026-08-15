@@ -10,8 +10,9 @@ import BlogImage from '@/components/BlogImage'
 
 export const revalidate = 60
 
-export default async function BlogPostPage({ params }: { params: { slug: string } }) {
-  const supabase = createServerSupabaseClient()
+export default async function BlogPostPage(props: { params: Promise<{ slug: string }> }) {
+  const params = await props.params;
+  const supabase = await createServerSupabaseClient()
   const { data: post } = await supabase
     .from('blog_posts')
     .select('*')

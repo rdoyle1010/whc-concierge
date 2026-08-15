@@ -9,6 +9,25 @@ const ROLE_LEVELS: Record<string, number> = {
   'Nutritionist': 3, 'Nail Technician': 2, 'Hair Stylist': 3, 'Barber': 3,
 }
 
+function roleLevel(value: string): number {
+  const role = value.trim().toLowerCase()
+  if (!role) return 3
+
+  const exact = Object.entries(ROLE_LEVELS).find(([label]) => label.toLowerCase() === role)
+  if (exact) return exact[1]
+
+  // Real adverts rarely use one exact taxonomy label. Recognise common title
+  // variations without allowing capitalisation or word order to break a match.
+  if (/director|head of spa|head of wellness/.test(role)) return 7
+  if (/manager/.test(role)) return 6
+  if (/lead therapist|team lead|supervisor/.test(role)) return 5
+  if (/senior/.test(role)) return 4
+  if (/therapist|practitioner|instructor|trainer|nutritionist|stylist|barber/.test(role)) return 3
+  if (/junior|reception|nail technician/.test(role)) return 2
+  if (/apprentice|attendant/.test(role)) return 1
+  return 3
+}
+
 const PROFICIENCY_WEIGHT: Record<string, number> = {
   'beginner': 0.25, 'basic': 0.25, 'intermediate': 0.5, 'competent': 0.5,
   'advanced': 0.75, 'master': 1.0, 'expert': 1.0,
@@ -19,8 +38,23 @@ const PROFICIENCY_LABEL: Record<string, string> = {
   'competent': 'intermediate', 'advanced': 'advanced', 'master': 'master', 'expert': 'master',
 }
 
+type RoleFamily = 'leadership' | 'reception' | 'treatment' | 'fitness' | 'hair' | 'other'
+
+function roleFamily(value: string): RoleFamily {
+  const role = value.toLowerCase()
+  if (/director|manager|head of spa|operations lead/.test(role)) return 'leadership'
+  if (/reception|front desk|concierge|attendant/.test(role)) return 'reception'
+  if (/therapist|practitioner|nail|beauty|massage|aesthetic/.test(role)) return 'treatment'
+  if (/fitness|personal trainer|yoga|pilates|nutrition/.test(role)) return 'fitness'
+  if (/hair|stylist|barber/.test(role)) return 'hair'
+  return 'other'
+}
+
 function overlapScore(candidateArr: string[], requiredArr: string[]): { score: number; matches: string[] } {
-  if (requiredArr.length === 0) return { score: 100, matches: [] }
+  // -1 means the employer did not set this criterion. It is excluded from
+  // both the percentage and the visible breakdown rather than becoming a
+  // free 100% match.
+  if (requiredArr.length === 0) return { score: -1, matches: [] }
   const matches = requiredArr.filter(r => candidateArr.some(c => c.toLowerCase() === r.toLowerCase()))
   return { score: Math.round((matches.length / requiredArr.length) * 100), matches }
 }
@@ -42,53 +76,74 @@ export function calculateMatchScore(candidate: any, job: any): {
   matchExplanation: string
 } {
   const emptyBreakdown = {
-    roleLevel: 0, treatmentSkills: 0, brands: 0, qualifications: 0,
-    experience: 0, businessSkills: 0, systems: 0, location: 0,
-    shiftCompatibility: 0, transport: 0, accommodation: 0,
-    proficiencyDepth: 0, profileCompleteness: 0, reviewScore: 0,
+    roleLevel: -1, treatmentSkills: -1, brands: -1, qualifications: -1,
+    experience: -1, businessSkills: -1, systems: -1, location: -1,
+    shiftCompatibility: -1, transport: -1, accommodation: -1,
+    proficiencyDepth: -1, profileCompleteness: 0, reviewScore: 0,
   }
   const empty = {
-    score: 0, label: 'Excluded', colour: '#6B7280', bgColour: '#F3F4F6',
+    score: 10, label: 'Requirement Missing', colour: '#6B7280', bgColour: '#F3F4F6',
     breakdown: emptyBreakdown, matchingSkills: [] as string[],
     hardStop: true, matchExplanation: '',
   }
 
-  // ── Hard stop: insurance ──
-  if (job.insurance_required && !candidate.has_insurance) return { ...empty, hardStopReason: 'Insurance required' }
+  const candidateRole = String(candidate.role_level || candidate.current_role || candidate.job_title || '')
+  // The public job title is the employer's actual promise to candidates and
+  // therefore takes precedence over a stale or conflicting hidden taxonomy
+  // value. The structured field remains a fallback for untitled records.
+  const requiredRole = String(job.job_title || job.title || job.required_role_level || '')
+  const candidateFamily = roleFamily(candidateRole)
+  const jobFamily = roleFamily(requiredRole)
+  const comparableFamilies = candidateFamily !== 'other' && jobFamily !== 'other'
+  const sameJobFamily = !comparableFamilies || candidateFamily === jobFamily
 
-  // ── 1. Role Level (12%) ──
-  const candLevel = ROLE_LEVELS[candidate.role_level] || 3
-  const jobLevel = ROLE_LEVELS[job.required_role_level] || 3
+  // Insurance is a hard requirement only for treatment-delivery work where
+  // the employer explicitly requests it. A bad checkbox on a director,
+  // manager or reception advert must never reject an otherwise valid match.
+  const insuranceApplies = job.insurance_required &&
+    (jobFamily === 'treatment' || (job.is_agency_role && jobFamily !== 'leadership'))
+  if (insuranceApplies && !candidate.has_insurance) {
+    return { ...empty, hardStopReason: 'Professional insurance required for treatment delivery' }
+  }
+
+  // Compatibility is deliberately separate from profile promotion and
+  // reputation. These twelve weights total exactly 100%.
+  // ── 1. Role Level (15%) ──
+  const candLevel = roleLevel(candidateRole)
+  const jobLevel = roleLevel(requiredRole)
   const diff = Math.abs(candLevel - jobLevel)
-  if (diff >= 3) return { ...empty, hardStopReason: 'Role level mismatch' }
-  const roleLevelScore = diff === 0 ? 100 : diff === 1 ? 60 : 20
+  // A large seniority gap lowers the compatibility score; it does not hide
+  // the opportunity. The platform promises a complete 100%-to-10% ranking.
+  const roleLevelScore = requiredRole
+    ? (!sameJobFamily ? 0 : diff === 0 ? 100 : diff === 1 ? 70 : diff === 2 ? 35 : 10)
+    : -1
 
-  // ── 2. Treatment Skills (10%) ──
+  // ── 2. Treatment Skills (18%) ──
   const requiredSkills: string[] = job.required_skills || []
   const candidateSkills: string[] = candidate.treatment_skills || candidate.skills || candidate.services_offered || []
   const treatmentResult = overlapScore(candidateSkills, requiredSkills)
 
-  // ── 3. Product House / Brand (8%) ──
+  // ── 3. Product House / Brand (10%) ──
   const requiredBrands: string[] = job.required_brands || job.required_product_houses || []
   const candidateBrands: string[] = candidate.product_houses || []
   const brandResult = overlapScore(candidateBrands, requiredBrands)
 
-  // ── 4. Qualifications (8%) ──
+  // ── 4. Qualifications (12%) ──
   const requiredQuals: string[] = job.required_qualifications || []
   const candidateQuals: string[] = candidate.qualifications || []
   const qualResult = overlapScore(candidateQuals, requiredQuals)
 
-  // ── 5. Experience Years (7%) ──
+  // ── 5. Experience Years (10%) ──
   const minYears = job.min_years_experience || 0
   const candYears = candidate.experience_years || candidate.years_experience || 0
-  const expScore = minYears === 0 ? 100 : candYears >= minYears ? 100 : Math.round((candYears / minYears) * 80)
+  const expScore = minYears === 0 ? -1 : candYears >= minYears ? 100 : Math.round((candYears / minYears) * 80)
 
-  // ── 6. Business Skills (6%) ──
+  // ── 6. Business Skills (8%) ──
   const requiredBizSkills: string[] = job.preferred_business_skills || []
   const candidateBizSkills: string[] = candidate.business_skills || []
   const bizResult = overlapScore(candidateBizSkills, requiredBizSkills)
 
-  // ── 7. Systems Knowledge (5%) ──
+  // ── 7. Systems Knowledge (7%) ──
   const requiredSystems: string[] = job.required_systems || []
   const candidateSystems: string[] = candidate.systems_knowledge || candidate.systems_experience || []
   const sysResult = overlapScore(candidateSystems, requiredSystems)
@@ -96,7 +151,7 @@ export function calculateMatchScore(candidate: any, job: any): {
   // ── 8. Location Match (8%) ──
   const jobLocation: string = (job.location || '').toLowerCase()
   const candidateLocPrefs: string[] = (candidate.location_preferences || []).map((l: string) => l.toLowerCase())
-  let locationScore = 100
+  let locationScore = jobLocation ? 50 : -1
   if (jobLocation && candidateLocPrefs.length > 0) {
     const hasMatch = candidateLocPrefs.some(l => jobLocation.includes(l) || l === 'worldwide')
     locationScore = hasMatch ? 100 : 30
@@ -105,17 +160,17 @@ export function calculateMatchScore(candidate: any, job: any): {
   // ── 9. Shift Compatibility (5%) ──
   const jobShift: string = (job.shift_pattern || '').toLowerCase()
   const candidateShifts: string[] = (candidate.shift_preferences || []).map((s: string) => s.toLowerCase())
-  let shiftScore = 100
+  let shiftScore = jobShift ? 50 : -1
   if (jobShift && candidateShifts.length > 0) {
     const isFlexible = candidateShifts.includes('flexible')
     const hasMatch = candidateShifts.some(s => jobShift.includes(s))
     shiftScore = isFlexible ? 100 : hasMatch ? 100 : 30
   }
 
-  // ── 10. Transport / Commute (4%) ──
+  // ── 10. Transport / Commute (3%) ──
   const candidateTransport = candidate.transport_method || ''
   const candidateCommute = candidate.max_commute || ''
-  let transportScore = 70 // default neutral
+  let transportScore = candidateTransport || candidateCommute ? 70 : -1
   if (candidateTransport === 'Own car') transportScore = 100
   else if (candidateTransport === 'Relocating for role') transportScore = 100
   else if (candidateTransport === 'Public transport') transportScore = 80
@@ -123,14 +178,14 @@ export function calculateMatchScore(candidate: any, job: any): {
   else if (candidateCommute === '1.5 hours') transportScore = Math.max(transportScore, 90)
   else if (candidateCommute === '1 hour') transportScore = Math.max(transportScore, 80)
 
-  // ── 11. Accommodation (3%) ──
-  let accommodationScore = 100
+  // ── 11. Accommodation (2%) ──
+  let accommodationScore = -1
   if (candidate.needs_accommodation && !job.offers_accommodation) accommodationScore = 20
   else if (candidate.needs_accommodation && job.offers_accommodation) accommodationScore = 100
 
-  // ── 12. Proficiency Depth (8%) ──
+  // ── 12. Proficiency Depth (2%) ──
   const candidateProficiencies: Record<string, string> = candidate.skill_proficiencies || {}
-  let proficiencyScore = 50 // default when no data
+  let proficiencyScore = requiredSkills.length > 0 ? 50 : -1 // neutral only when the job asks for skills
   if (requiredSkills.length > 0 && Object.keys(candidateProficiencies).length > 0) {
     let total = 0; let count = 0
     for (const skill of requiredSkills) {
@@ -153,30 +208,35 @@ export function calculateMatchScore(candidate: any, job: any): {
   const reviewVal = candidate.review_score || 0
   const reviewScoreNorm = reviewVal >= 4.5 ? 100 : reviewVal >= 4.0 ? 85 : reviewVal >= 3.5 ? 65 : reviewVal > 0 ? 40 : 50
 
-  // ── Weighted total ──
-  let score =
-    (roleLevelScore * 0.12) +
-    (treatmentResult.score * 0.10) +
-    (brandResult.score * 0.08) +
-    (qualResult.score * 0.08) +
-    (expScore * 0.07) +
-    (bizResult.score * 0.06) +
-    (sysResult.score * 0.05) +
-    (locationScore * 0.08) +
-    (shiftScore * 0.05) +
-    (transportScore * 0.04) +
-    (accommodationScore * 0.03) +
-    (proficiencyScore * 0.08) +
-    (profileScore * 0.03) +
-    (reviewScoreNorm * 0.03)
+  // Only criteria the employer actually supplied can influence the score.
+  // Remaining weights are normalised so sparse job adverts cannot receive
+  // free points for blank fields.
+  const components = [
+    // The actual job is the principal factor. Skills and logistics refine a
+    // suitable role; they cannot turn a different occupation into a match.
+    { value: roleLevelScore, weight: 40 },
+    { value: treatmentResult.score, weight: 18 },
+    { value: brandResult.score, weight: 10 },
+    { value: qualResult.score, weight: 12 },
+    { value: expScore, weight: 10 },
+    { value: bizResult.score, weight: 8 },
+    { value: sysResult.score, weight: 7 },
+    { value: locationScore, weight: 8 },
+    { value: shiftScore, weight: 5 },
+    { value: transportScore, weight: 3 },
+    { value: accommodationScore, weight: 2 },
+    { value: proficiencyScore, weight: 2 },
+  ].filter(component => component.value >= 0)
+  const activeWeight = components.reduce((total, component) => total + component.weight, 0)
+  const score = activeWeight > 0
+    ? components.reduce((total, component) => total + (component.value * component.weight), 0) / activeWeight
+    : 10
 
-  // ── Boosts ──
-  if (candidate.is_featured) score = Math.min(100, score + 3)
-  if (reviewVal >= 4.5) score = Math.min(100, score + 5)
-  else if (reviewVal >= 4.0) score = Math.min(100, score + 3)
-  if (completionPct >= 90) score = Math.min(100, score + 2)
-
-  const rounded = Math.round(score)
+  // A different job family (for example Spa Director versus Receptionist)
+  // is never presented as a meaningful match, even if generic experience,
+  // shift and transport answers happen to overlap.
+  const familyAdjustedScore = !sameJobFamily ? Math.min(score, 20) : score
+  const rounded = Math.max(10, Math.round(familyAdjustedScore))
   const label = rounded >= 90 ? 'Perfect Match' : rounded >= 75 ? 'Strong Match' : rounded >= 60 ? 'Good Match' : rounded >= 45 ? 'Partial Match' : 'Low Match'
   const colour = rounded >= 90 ? '#16A34A' : rounded >= 75 ? '#1D4ED8' : rounded >= 60 ? '#D97706' : '#6B7280'
   const bgColour = rounded >= 90 ? '#DCFCE7' : rounded >= 75 ? '#DBEAFE' : rounded >= 60 ? '#FEF3C7' : '#F3F4F6'
@@ -220,7 +280,7 @@ export function calculateMatchScore(candidate: any, job: any): {
   }
 }
 
-export function rankCandidates(candidates: any[], job: any, minScore = 45, blockedEmployerIds?: string[]) {
+export function rankCandidates(candidates: any[], job: any, minScore = 10, blockedEmployerIds?: string[]) {
   const employerId = job.employer_id || job.employer_profile_id
   return candidates
     .filter(c => {
@@ -228,7 +288,7 @@ export function rankCandidates(candidates: any[], job: any, minScore = 45, block
       return true
     })
     .map(c => ({ ...calculateMatchScore(c, job), candidateId: c.id }))
-    .filter(r => !r.hardStop && r.score >= minScore)
+    .filter(r => r.score >= minScore)
     .sort((a, b) => b.score - a.score)
 }
 

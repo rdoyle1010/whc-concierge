@@ -23,11 +23,11 @@ export default function HomepageHowItWorks() {
       {/* Toggle */}
       <div className="flex items-center gap-1 mb-10">
         <button type="button" onClick={() => setView('talent')}
-          className={`px-5 py-2 rounded-full text-[13px] font-medium transition-all ${view === 'talent' ? 'bg-ink text-white' : 'bg-surface text-muted hover:text-ink'}`}>
+          className={`site-button px-5 py-2 text-[13px] font-medium transition-all ${view === 'talent' ? 'site-accent-bg text-white' : 'site-surface opacity-60 hover:opacity-100'}`}>
           For Talent
         </button>
         <button type="button" onClick={() => setView('employer')}
-          className={`px-5 py-2 rounded-full text-[13px] font-medium transition-all ${view === 'employer' ? 'bg-ink text-white' : 'bg-surface text-muted hover:text-ink'}`}>
+          className={`site-button px-5 py-2 text-[13px] font-medium transition-all ${view === 'employer' ? 'site-accent-bg text-white' : 'site-surface opacity-60 hover:opacity-100'}`}>
           For Employers
         </button>
       </div>
@@ -36,8 +36,8 @@ export default function HomepageHowItWorks() {
       <div className="flex flex-col gap-8">
         {steps.map((step) => (
           <div key={step.num} className="flex items-start gap-5">
-            <div className="w-12 h-12 rounded-full border-2 flex items-center justify-center flex-shrink-0" style={{ borderColor: '#C9A96E' }}>
-              <span className="text-[14px] font-semibold" style={{ color: '#C9A96E' }}>{step.num}</span>
+            <div className="site-button w-12 h-12 border-2 flex items-center justify-center flex-shrink-0" style={{ borderColor: 'var(--site-accent)' }}>
+              <span className="site-accent text-[14px] font-semibold">{step.num}</span>
             </div>
             <div className="pt-2">
               <h3 className="text-[17px] font-medium text-ink mb-2">{step.title}</h3>

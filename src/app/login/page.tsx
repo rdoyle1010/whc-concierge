@@ -6,6 +6,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { createClient } from '@/lib/supabase/client'
 import { Eye, EyeOff } from 'lucide-react'
+import { canRoleAccessPath, dashboardForRole, normaliseAccountRole } from '@/lib/role-access'
 
 export default function LoginPage() {
   return <Suspense fallback={<div className="min-h-screen bg-white" />}><LoginForm /></Suspense>
@@ -16,6 +17,7 @@ function LoginForm() {
   const router = useRouter()
   const supabase = createClient()
   const initialRole = searchParams.get('role') || 'talent'
+  const confirmationPending = searchParams.get('registered') === '1' && searchParams.get('confirm') === '1'
   const [role, setRole] = useState<'talent' | 'employer'>(initialRole as any)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -46,47 +48,26 @@ function LoginForm() {
         // profiles table may not exist or query may fail - continue
       }
 
-      // Also check user_metadata
-      const metaRole = user.user_metadata?.role
+      const accountRole = normaliseAccountRole(userRole)
+
+      if (!accountRole) {
+        await supabase.auth.signOut()
+        setError('Your account role could not be verified. Please contact WHC support.')
+        setLoading(false)
+        return
+      }
 
       // Deep links: honour a same-site ?redirect= target (set by middleware
       // when a logged-out user hits a protected page)
       const redirectTo = searchParams.get('redirect')
-      if (redirectTo && redirectTo.startsWith('/') && !redirectTo.startsWith('//')) {
+      if (redirectTo && redirectTo.startsWith('/') && !redirectTo.startsWith('//') && canRoleAccessPath(accountRole, redirectTo)) {
         router.push(redirectTo)
         return
       }
 
-      // 4. Route - admin
-      if (userRole === 'admin' || metaRole === 'admin') {
-        router.push('/admin/dashboard')
-        return
-      }
-
-      // 5. Route - talent: redirect immediately, never touch employer_profiles
-      if (userRole === 'talent' || userRole === 'candidate' || metaRole === 'talent' || metaRole === 'candidate') {
-        router.push('/talent/dashboard')
-        return
-      }
-
-      // 6. Route - employer
-      if (userRole === 'employer' || metaRole === 'employer') {
-        router.push('/employer/dashboard')
-        return
-      }
-
-      // 7. Role unknown - only check employer_profiles if user selected employer tab
-      if (role === 'employer') {
-        try {
-          const { data: emp } = await supabase.from('employer_profiles').select('id').eq('user_id', user.id).single()
-          if (emp) { router.push('/employer/dashboard'); return }
-        } catch {
-          // No employer profile found
-        }
-      }
-
-      // 8. Default - talent dashboard
-      router.push('/talent/dashboard')
+      // Route exclusively from the server-controlled profiles table. The tab
+      // the visitor clicked and editable auth metadata are not permissions.
+      router.push(dashboardForRole(accountRole))
     } catch (err: any) {
       setError(err.message || 'An unexpected error occurred')
       setLoading(false)
@@ -108,6 +89,7 @@ function LoginForm() {
             <button type="button" onClick={() => setRole('employer')} className={`flex-1 py-2 rounded-md text-[13px] font-medium transition-colors ${role === 'employer' ? 'bg-white text-ink shadow-sm' : 'text-muted'}`}>Hotel / Employer</button>
           </div>
 
+          {confirmationPending && <div className="bg-emerald-50 text-emerald-700 text-[13px] px-3 py-2.5 rounded-lg mb-5">Your profile is saved. Check your email to confirm your account, then sign in here.</div>}
           {error && <div className="bg-red-50 text-red-600 text-[13px] px-3 py-2.5 rounded-lg mb-5">{error}</div>}
 
           <form onSubmit={handleLogin} className="space-y-4">

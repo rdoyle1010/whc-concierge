@@ -8,7 +8,7 @@ import { cookies } from 'next/headers'
 // per booking = 10% property fee + 5% therapist fee.
 
 async function requireAdmin() {
-  const cookieStore = cookies()
+  const cookieStore = await cookies()
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,

@@ -2,6 +2,15 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
+import {
+  parseWebsiteContent,
+  WebsiteContentSchema,
+  WEBSITE_DRAFT_KEY,
+  WEBSITE_HISTORY_KEY,
+  WEBSITE_PUBLISHED_KEY,
+  type WebsiteHistoryEntry,
+} from '@/lib/site-content'
+import { getWebsiteContent } from '@/lib/site-content-server'
 
 // Admin content operations, service-role backed so RLS can be locked down on
 // the underlying tables: site_images (homepage imagery + hero copy),
@@ -12,7 +21,7 @@ const RESEND_API_KEY = process.env.RESEND_API_KEY
 const FROM_EMAIL = 'WHC Concierge <noreply@mail.wellnesshousecollective.co.uk>'
 
 async function requireAdmin() {
-  const cookieStore = cookies()
+  const cookieStore = await cookies()
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -24,6 +33,37 @@ async function requireAdmin() {
   const { data: profile } = await admin.from('profiles').select('role').eq('id', user.id).single()
   if (profile?.role !== 'admin') return null
   return user
+}
+
+// The live platform_config table predates the current migration history and
+// does not expose a unique constraint on `key` to PostgREST. Update first and
+// insert only when missing, so saving works safely without a schema change.
+async function saveConfigValue(
+  admin: ReturnType<typeof createAdminClient>,
+  key: string,
+  value: string,
+  updatedAt = new Date().toISOString()
+) {
+  const { data: existing, error: lookupError } = await admin
+    .from('platform_config')
+    .select('key')
+    .eq('key', key)
+    .limit(1)
+  if (lookupError) throw lookupError
+
+  if (existing?.length) {
+    const { error } = await admin
+      .from('platform_config')
+      .update({ value, updated_at: updatedAt })
+      .eq('key', key)
+    if (error) throw error
+    return
+  }
+
+  const { error } = await admin
+    .from('platform_config')
+    .insert({ key, value, updated_at: updatedAt })
+  if (error) throw error
 }
 
 export async function GET(req: NextRequest) {
@@ -40,6 +80,26 @@ export async function GET(req: NextRequest) {
     if (kind === 'platform_config') {
       const { data } = await admin.from('platform_config').select('*')
       return NextResponse.json({ rows: data || [] })
+    }
+    if (kind === 'website_editor') {
+      const { data } = await admin
+        .from('platform_config')
+        .select('key, value, updated_at')
+        .in('key', [WEBSITE_DRAFT_KEY, WEBSITE_PUBLISHED_KEY, WEBSITE_HISTORY_KEY])
+
+      const values = new Map((data || []).map(row => [row.key, row.value]))
+      const published = values.has(WEBSITE_PUBLISHED_KEY)
+        ? parseWebsiteContent(values.get(WEBSITE_PUBLISHED_KEY))
+        : await getWebsiteContent(false)
+      const draft = values.has(WEBSITE_DRAFT_KEY)
+        ? parseWebsiteContent(values.get(WEBSITE_DRAFT_KEY))
+        : values.has(WEBSITE_PUBLISHED_KEY) ? published : await getWebsiteContent(true)
+      let history: WebsiteHistoryEntry[] = []
+      try {
+        const parsed = JSON.parse(values.get(WEBSITE_HISTORY_KEY) || '[]')
+        if (Array.isArray(parsed)) history = parsed.slice(0, 10)
+      } catch {}
+      return NextResponse.json({ draft, published, history })
     }
     if (kind === 'contact_queries') {
       const { data } = await admin.from('contact_queries').select('*').order('created_at', { ascending: false })
@@ -81,9 +141,65 @@ export async function POST(req: NextRequest) {
     if (action === 'config_upsert') {
       const { key, value } = body
       if (!key) return NextResponse.json({ error: 'Missing key' }, { status: 400 })
-      const { error } = await admin.from('platform_config').upsert({ key, value }, { onConflict: 'key' })
-      if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+      await saveConfigValue(admin, key, String(value ?? ''))
       return NextResponse.json({ success: true })
+    }
+
+    // ── Website & Brand editor ──
+    if (action === 'website_save_draft') {
+      const parsed = WebsiteContentSchema.safeParse(body.content)
+      if (!parsed.success) return NextResponse.json({ error: 'Some website fields are invalid.', details: parsed.error.flatten() }, { status: 400 })
+      await saveConfigValue(admin, WEBSITE_DRAFT_KEY, JSON.stringify(parsed.data))
+      return NextResponse.json({ success: true, content: parsed.data })
+    }
+
+    if (action === 'website_publish') {
+      const parsed = WebsiteContentSchema.safeParse(body.content)
+      if (!parsed.success) return NextResponse.json({ error: 'Some website fields are invalid.', details: parsed.error.flatten() }, { status: 400 })
+
+      const { data: rows } = await admin.from('platform_config')
+        .select('key, value')
+        .in('key', [WEBSITE_PUBLISHED_KEY, WEBSITE_HISTORY_KEY])
+      const values = new Map((rows || []).map(row => [row.key, row.value]))
+      let history: WebsiteHistoryEntry[] = []
+      try {
+        const storedHistory = JSON.parse(values.get(WEBSITE_HISTORY_KEY) || '[]')
+        if (Array.isArray(storedHistory)) history = storedHistory
+      } catch {}
+
+      const previousValue = values.get(WEBSITE_PUBLISHED_KEY)
+      if (previousValue) {
+        history.unshift({
+          id: crypto.randomUUID(),
+          publishedAt: new Date().toISOString(),
+          publishedBy: user.id,
+          content: parseWebsiteContent(previousValue),
+        })
+      }
+      history = history.slice(0, 10)
+      const now = new Date().toISOString()
+      await Promise.all([
+        saveConfigValue(admin, WEBSITE_DRAFT_KEY, JSON.stringify(parsed.data), now),
+        saveConfigValue(admin, WEBSITE_PUBLISHED_KEY, JSON.stringify(parsed.data), now),
+        saveConfigValue(admin, WEBSITE_HISTORY_KEY, JSON.stringify(history), now),
+      ])
+      return NextResponse.json({ success: true, publishedAt: now, history })
+    }
+
+    if (action === 'website_restore_draft') {
+      const id = String(body.id || '')
+      const { data: rows } = await admin.from('platform_config').select('value').eq('key', WEBSITE_HISTORY_KEY).limit(1)
+      const row = rows?.[0]
+      let history: WebsiteHistoryEntry[] = []
+      try {
+        const parsed = JSON.parse(row?.value || '[]')
+        if (Array.isArray(parsed)) history = parsed
+      } catch {}
+      const version = history.find(item => item.id === id)
+      if (!version) return NextResponse.json({ error: 'Version not found.' }, { status: 404 })
+      const content = parseWebsiteContent(version.content)
+      await saveConfigValue(admin, WEBSITE_DRAFT_KEY, JSON.stringify(content))
+      return NextResponse.json({ success: true, content })
     }
 
     // ── contact_queries: status / delete / reply ──

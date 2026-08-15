@@ -9,8 +9,8 @@ import { createNotification } from '@/lib/notifications'
 // in the admin desk and awards the badge. Docs upload via /api/upload to the
 // talent-documents bucket first; this route records the submission.
 
-function getAuthedUser() {
-  const cookieStore = cookies()
+async function getAuthedUser() {
+  const cookieStore = await cookies()
   const supabaseAuth = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,

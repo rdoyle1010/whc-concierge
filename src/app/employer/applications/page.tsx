@@ -92,20 +92,13 @@ export default function EmployerApplicationsPage() {
       // Send decision email for shortlisted/accepted/rejected. The route looks
       // the address up server-side from the candidate's auth user id.
       if (status === 'shortlisted' || status === 'accepted' || status === 'rejected') {
-        const app = applications.find(a => a.id === appId)
-        if (app?.candidate_profiles?.user_id || app?.candidate_profiles?.email) {
-          fetch('/api/application-decision-email', {
-            method: 'POST', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              candidateUserId: app.candidate_profiles?.user_id || null,
-              applicantEmail: app.candidate_profiles?.email || null,
-              applicantName: app.candidate_profiles?.full_name || '',
-              jobTitle: app.job_listings?.job_title || '',
-              propertyName: profile?.property_name || profile?.company_name || '',
-              decision: status === 'shortlisted' || status === 'accepted' ? 'approved' : 'rejected',
-            }),
-          }).catch(() => {})
-        }
+        fetch('/api/application-decision-email', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            applicationId: appId,
+            decision: status === 'shortlisted' || status === 'accepted' ? 'approved' : 'rejected',
+          }),
+        }).catch(() => {})
       }
     } finally {
       setUpdatingId(null)

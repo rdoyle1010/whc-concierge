@@ -41,7 +41,9 @@ export default function AgencyProfilePage() {
 
   useEffect(() => {
     async function load() {
-      const { data } = await supabase.from('candidate_profiles').select('*').eq('id', id).single()
+      const directoryRes = await fetch(`/api/agency/directory?id=${encodeURIComponent(profileId)}`)
+      const directoryJson = directoryRes.ok ? await directoryRes.json() : null
+      const data = directoryJson?.candidate || null
       setProfile(data)
       if (data?.hourly_rate) setOfferRate(String(data.hourly_rate))
       if (data) {

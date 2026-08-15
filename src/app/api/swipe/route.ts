@@ -5,6 +5,7 @@ import { cookies } from 'next/headers'
 import { createNotification } from '@/lib/notifications'
 import { applicantConfirmationHtml, employerNotificationHtml } from '@/lib/application-email-templates'
 import { sendNewMatchEmail } from '@/lib/emails'
+import { calculateMatchScore } from '@/lib/matching'
 
 // Records a swipe server-side (swipes has unreliable RLS), creates the
 // application on a candidate right-swipe, and detects MUTUAL matches:
@@ -73,11 +74,51 @@ async function findExistingApplication(admin: any, candidateId: string, jobId: s
   return null
 }
 
+type SwipeRow = {
+  swiper_id: string
+  swiper_type: 'candidate' | 'employer'
+  target_id: string
+  target_type: 'job' | 'candidate'
+  action: 'left' | 'right'
+}
+
+// The live database does not consistently have the unique constraint needed
+// for an upsert. Replace the caller's existing decision so repeated clicks are
+// idempotent and an old "right" cannot survive after the decision changes.
+async function replaceSwipe(admin: any, row: SwipeRow) {
+  const { data: existing } = await admin.from('swipes')
+    .select('id, action')
+    .eq('swiper_id', row.swiper_id)
+    .eq('swiper_type', row.swiper_type)
+    .eq('target_id', row.target_id)
+    .eq('target_type', row.target_type)
+    .limit(1)
+    .maybeSingle()
+
+  const { error: deleteError } = await admin.from('swipes').delete()
+    .eq('swiper_id', row.swiper_id)
+    .eq('swiper_type', row.swiper_type)
+    .eq('target_id', row.target_id)
+    .eq('target_type', row.target_type)
+  if (deleteError) return { error: deleteError, changed: false }
+
+  const { error } = await admin.from('swipes').insert(row)
+  return { error, changed: !existing || existing.action !== row.action }
+}
+
+async function removeSwipe(admin: any, row: Omit<SwipeRow, 'action'>) {
+  return admin.from('swipes').delete()
+    .eq('swiper_id', row.swiper_id)
+    .eq('swiper_type', row.swiper_type)
+    .eq('target_id', row.target_id)
+    .eq('target_type', row.target_type)
+}
+
 // GET: the caller's own left-swipes (employer passing candidates), so Browse
 // Candidates can keep passed profiles hidden across visits.
 export async function GET() {
   try {
-    const cookieStore = cookies()
+    const cookieStore = await cookies()
     const supabaseAuth = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -101,7 +142,7 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   try {
-    const cookieStore = cookies()
+    const cookieStore = await cookies()
     const supabaseAuth = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -111,11 +152,10 @@ export async function POST(req: NextRequest) {
     if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
 
     const body = await req.json()
-    const { targetId, targetType, action, matchScore } = body as {
+    const { targetId, targetType, action } = body as {
       targetId: string
       targetType: 'job' | 'candidate'
       action: 'left' | 'right'
-      matchScore?: number
     }
     if (!targetId || (targetType !== 'job' && targetType !== 'candidate') || (action !== 'left' && action !== 'right')) {
       return NextResponse.json({ error: 'Invalid request' }, { status: 400 })
@@ -132,18 +172,41 @@ export async function POST(req: NextRequest) {
         .maybeSingle()
       if (!cand) return NextResponse.json({ error: 'Candidate profile not found' }, { status: 404 })
 
-      await admin.from('swipes').insert({
-        swiper_id: user.id, swiper_type: 'candidate', target_id: targetId, target_type: 'job', action,
-      })
-
-      if (action !== 'right') return NextResponse.json({ matched: false })
+      if (action !== 'right') {
+        const recorded = await replaceSwipe(admin, {
+          swiper_id: user.id, swiper_type: 'candidate', target_id: targetId, target_type: 'job', action,
+        })
+        if (recorded.error) return NextResponse.json({ error: 'Your decision could not be saved. Please try again.' }, { status: 500 })
+        return NextResponse.json({ matched: false })
+      }
 
       const { data: job } = await admin
         .from('job_listings')
-        .select('id, job_title, employer_id')
+        .select('*')
         .eq('id', targetId)
         .maybeSingle()
       if (!job) return NextResponse.json({ matched: false })
+
+      // Never trust a percentage supplied by the browser. The server owns
+      // the score recorded against an application and a mutual match.
+      const calculatedMatch = calculateMatchScore(cand, job)
+      if (calculatedMatch.hardStop) {
+        // Remove any older positive swipe, for example when insurance has
+        // since expired. A blocked candidate must never remain mutually liked.
+        await removeSwipe(admin, {
+          swiper_id: user.id, swiper_type: 'candidate', target_id: targetId, target_type: 'job',
+        })
+        return NextResponse.json(
+          { error: calculatedMatch.hardStopReason || 'This role is not compatible with your profile' },
+          { status: 400 },
+        )
+      }
+      const serverMatchScore = calculatedMatch.score
+
+      const recorded = await replaceSwipe(admin, {
+        swiper_id: user.id, swiper_type: 'candidate', target_id: targetId, target_type: 'job', action: 'right',
+      })
+      if (recorded.error) return NextResponse.json({ error: 'Your decision could not be saved. Please try again.' }, { status: 500 })
 
       const { data: employer } = await admin
         .from('employer_profiles')
@@ -160,7 +223,7 @@ export async function POST(req: NextRequest) {
           role_id: job.id,
           job_id: job.id, // 022 RLS keys employer visibility on job_id - set both
           status: 'pending',
-          match_score: matchScore ?? null,
+          match_score: serverMatchScore,
         })
         if (appError) {
           // Do NOT pretend the application was sent
@@ -234,37 +297,40 @@ export async function POST(req: NextRequest) {
             .eq('candidate_id', cand.id)
             .eq('job_id', job.id)
             .maybeSingle()
+          let createdMatch = false
           if (!existingMatch) {
-            await admin.from('matches').insert({
+            const { error: matchError } = await admin.from('matches').insert({
               candidate_id: cand.id, employer_id: job.employer_id, job_id: job.id,
-              score: matchScore ?? null, status: 'active',
+              score: serverMatchScore, status: 'active',
             })
+            if (matchError) return NextResponse.json({ error: 'The match could not be saved. Please try again.' }, { status: 500 })
+            createdMatch = true
           }
-          // Open the conversation so neither side hits an empty inbox
-          await admin.from('messages').insert({
-            sender_id: employer.user_id, recipient_id: user.id,
-            content: `It's a match! You both said yes to ${job.job_title} at ${employerName}. Say hello and take it from here.`,
-            read: false,
-          })
-          await createNotification(user.id, 'new_match', "It's a match!",
-            `You and ${employerName} both said yes to ${job.job_title}. Start the conversation.`, '/talent/messages')
-          await createNotification(employer.user_id, 'new_match', "It's a match!",
-            `${cand.full_name || 'A candidate'} you shortlisted has applied for ${job.job_title}.`, '/employer/messages')
-          // Email both sides - a match is the core conversion event and a user
-          // who isn't logged in must still learn it happened. Never let an
-          // email problem break the match itself.
-          try {
-            let employerEmail: string | null = employer?.contact_email || null
-            if (!employerEmail && employer?.user_id) {
-              const { data: empUser } = await admin.auth.admin.getUserById(employer.user_id)
-              employerEmail = empUser?.user?.email || null
+          if (createdMatch) {
+            // Open and announce the conversation once, only when the match row
+            // is first created. Repeated clicks return the match without spam.
+            await admin.from('messages').insert({
+              sender_id: employer.user_id, recipient_id: user.id,
+              content: `It's a match! You both said yes to ${job.job_title} at ${employerName}. Say hello and take it from here.`,
+              read: false,
+            })
+            await createNotification(user.id, 'new_match', "It's a match!",
+              `You and ${employerName} both said yes to ${job.job_title}. Start the conversation.`, '/talent/messages')
+            await createNotification(employer.user_id, 'new_match', "It's a match!",
+              `${cand.full_name || 'A candidate'} you shortlisted has applied for ${job.job_title}.`, '/employer/messages')
+            try {
+              let employerEmail: string | null = employer?.contact_email || null
+              if (!employerEmail && employer?.user_id) {
+                const { data: empUser } = await admin.auth.admin.getUserById(employer.user_id)
+                employerEmail = empUser?.user?.email || null
+              }
+              await Promise.allSettled([
+                user.email ? sendNewMatchEmail(user.email, cand.full_name || 'there', employerName) : null,
+                employerEmail ? sendNewMatchEmail(employerEmail, employerName, cand.full_name || 'A candidate') : null,
+              ].filter(Boolean) as Promise<void>[])
+            } catch (e: any) {
+              console.error('Match emails failed:', e?.message)
             }
-            await Promise.allSettled([
-              user.email ? sendNewMatchEmail(user.email, cand.full_name || 'there', employerName) : null,
-              employerEmail ? sendNewMatchEmail(employerEmail, employerName, cand.full_name || 'A candidate') : null,
-            ].filter(Boolean) as Promise<void>[])
-          } catch (e: any) {
-            console.error('Match emails failed:', e?.message)
           }
           return NextResponse.json({ matched: true, jobTitle: job.job_title, employerName })
         }
@@ -280,22 +346,33 @@ export async function POST(req: NextRequest) {
       .maybeSingle()
     if (!emp) return NextResponse.json({ error: 'Employer profile not found' }, { status: 404 })
 
-    await admin.from('swipes').insert({
+    const recorded = await replaceSwipe(admin, {
       swiper_id: user.id, swiper_type: 'employer', target_id: targetId, target_type: 'candidate', action,
     })
+    if (recorded.error) return NextResponse.json({ error: 'Your decision could not be saved. Please try again.' }, { status: 500 })
 
     if (action !== 'right') return NextResponse.json({ matched: false })
 
     const { data: cand } = await admin
       .from('candidate_profiles')
-      .select('id, user_id, full_name')
+      .select('*')
       .eq('id', targetId)
       .maybeSingle()
     if (!cand) return NextResponse.json({ matched: false })
 
+    if (cand.user_id && recorded.changed) {
+      await createNotification(
+        cand.user_id,
+        'new_match',
+        'An employer is interested',
+        `${emp.property_name || emp.company_name || 'An employer'} has shortlisted your profile.`,
+        '/talent/dashboard',
+      )
+    }
+
     const { data: myJobs } = await admin
       .from('job_listings')
-      .select('id, job_title')
+      .select('*')
       .eq('employer_id', emp.id)
     const jobIds = (myJobs || []).map(j => j.id)
     if (jobIds.length === 0) return NextResponse.json({ matched: false })
@@ -314,10 +391,21 @@ export async function POST(req: NextRequest) {
 
     const employerName = emp.property_name || emp.company_name || 'An employer'
     let firstJobTitle = ''
+    let createdAnyMatch = false
+    let foundCompatibleMutual = false
     for (const s of theirSwipes) {
       const job = (myJobs || []).find(j => j.id === s.target_id)
       if (!job) continue
-      if (!firstJobTitle) firstJobTitle = job.job_title
+      const calculatedMatch = calculateMatchScore(cand, job)
+      if (calculatedMatch.hardStop) {
+        // The candidate's old "yes" is no longer valid (for example expired
+        // insurance), so remove it rather than creating a zero-score match.
+        await removeSwipe(admin, {
+          swiper_id: cand.user_id, swiper_type: 'candidate', target_id: job.id, target_type: 'job',
+        })
+        continue
+      }
+      foundCompatibleMutual = true
       const { data: existingMatch } = await admin
         .from('matches')
         .select('id')
@@ -325,11 +413,24 @@ export async function POST(req: NextRequest) {
         .eq('job_id', job.id)
         .maybeSingle()
       if (!existingMatch) {
-        await admin.from('matches').insert({
-          candidate_id: cand.id, employer_id: emp.id, job_id: job.id, score: null, status: 'active',
+        const { error: matchError } = await admin.from('matches').insert({
+          candidate_id: cand.id,
+          employer_id: emp.id,
+          job_id: job.id,
+          score: calculatedMatch.score,
+          status: 'active',
         })
+        if (matchError) return NextResponse.json({ error: 'The match could not be saved. Please try again.' }, { status: 500 })
+        createdAnyMatch = true
+        if (!firstJobTitle) firstJobTitle = job.job_title
       }
     }
+
+    if (!foundCompatibleMutual) return NextResponse.json({ matched: false })
+
+    // A repeat swipe may refer to an existing match. Report it to the UI but
+    // do not create another conversation, notification or email.
+    if (!createdAnyMatch) return NextResponse.json({ matched: true })
 
     if (cand.user_id) {
       // Open the conversation so neither side hits an empty inbox

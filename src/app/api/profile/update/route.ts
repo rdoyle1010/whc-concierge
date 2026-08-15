@@ -63,7 +63,7 @@ function stripToAllowed(data: Record<string, unknown>): Record<string, unknown> 
 export async function POST(req: NextRequest) {
   try {
     // -- Auth: caller must be logged in --
-    const cookieStore = cookies()
+    const cookieStore = await cookies()
     const supabaseAuth = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,

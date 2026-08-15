@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { stripe } from '@/lib/stripe'
+import { getStripe } from '@/lib/stripe'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createNotification } from '@/lib/notifications'
-import { ACADEMY, CORE_SLUGS, courseTitle } from '@/lib/academy'
+import { getAcademyCatalog, getAcademyCourseBySlug } from '@/lib/academy-catalog-server'
 import { sendCourseAccessEmail, sendBookingConfirmedEmail, sendReferralRewardEmail } from '@/lib/emails'
 import Stripe from 'stripe'
+import { getInternalApiSecret } from '@/lib/internal-request'
 
 // Referral credit: when a referred therapist pays for their first register
 // listing, mark the referral converted and tell the referrer their free
@@ -39,6 +40,7 @@ async function convertReferral(supabase: any, candidateId: string) {
 }
 
 export async function POST(req: NextRequest) {
+  const stripe = getStripe()
   const body = await req.text()
   const sig = req.headers.get('stripe-signature')
   if (!sig) return NextResponse.json({ error: 'Missing signature' }, { status: 400 })
@@ -56,6 +58,34 @@ export async function POST(req: NextRequest) {
     case 'checkout.session.completed': {
       const session = event.data.object as Stripe.Checkout.Session
       const meta = session.metadata
+
+      // A successful Stripe subscription creates a paid advert in the
+      // approval queue. It is never public until an admin approves it.
+      if (meta?.type === 'sponsored_ad' && meta?.placement && meta?.brand_name) {
+        const subscriptionId = typeof session.subscription === 'string' ? session.subscription : session.subscription?.id
+        const { error } = await supabase.from('ad_placements').upsert({
+          brand_name: meta.brand_name,
+          category: 'Sponsored',
+          placement: meta.placement,
+          website_url: meta.website_url || null,
+          tagline: meta.tagline || null,
+          logo_url: meta.logo_url || null,
+          contact_email: meta.contact_email || session.customer_details?.email || null,
+          monthly_rate: Number(meta.monthly_pence || session.amount_total || 0) / 100,
+          status: 'pending',
+          payment_status: 'paid',
+          review_status: 'pending',
+          start_date: new Date().toISOString().slice(0, 10),
+          stripe_customer_id: typeof session.customer === 'string' ? session.customer : session.customer?.id,
+          stripe_subscription_id: subscriptionId || null,
+          stripe_checkout_session_id: session.id,
+          updated_at: new Date().toISOString(),
+        }, { onConflict: 'stripe_checkout_session_id' })
+        if (error) {
+          console.error('[Sponsored advert] fulfilment failed:', error.message)
+          return NextResponse.json({ error: 'sponsored_ad fulfilment failed' }, { status: 500 })
+        }
+      }
 
       if (meta?.type === 'featured_profile' && meta?.candidate_id) {
         await supabase.from('candidate_profiles').update({
@@ -183,7 +213,8 @@ export async function POST(req: NextRequest) {
                 options: { redirectTo: 'https://talent.wellnesshousecollective.co.uk/talent/academy' },
               })
               const action = (link as any)?.properties?.action_link || 'https://talent.wellnesshousecollective.co.uk/login'
-              await sendCourseAccessEmail(email, buyerName, courseTitle(meta.course_slug), action)
+              const course = await getAcademyCourseBySlug(meta.course_slug, true)
+              await sendCourseAccessEmail(email, buyerName, course?.title || meta.course_slug, action)
             } catch (e: any) {
               console.error('[Academy public] access email failed:', e?.message)
             }
@@ -201,7 +232,7 @@ export async function POST(req: NextRequest) {
       // WHC Academy bundle → every course enrolled at once. The per-course
       // share of the bundle price is recorded so revenue totals stay honest.
       if (meta?.type === 'course_bundle' && meta?.candidate_id) {
-        const coreCourses = ACADEMY.filter(c => CORE_SLUGS.includes(c.slug))
+        const coreCourses = (await getAcademyCatalog(false)).filter(course => course.is_core)
         const total = session.amount_total ?? 7900
         // Split the full bundle price across only the courses NOT already
         // owned - an already-bought course keeps its original record, so
@@ -280,7 +311,10 @@ export async function POST(req: NextRequest) {
         // Fire job alerts for matching candidates (fire-and-forget)
         fetch(new URL('/api/job-alerts', req.url).toString(), {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            'x-whc-internal-secret': getInternalApiSecret(),
+          },
           body: JSON.stringify({ jobId: meta.job_id }),
         }).catch(() => {})
       }
@@ -303,6 +337,10 @@ export async function POST(req: NextRequest) {
       const invoice = event.data.object as Stripe.Invoice
       const customerId = invoice.customer as string
       if (!customerId) break
+
+      await supabase.from('ad_placements').update({
+        payment_status: 'past_due', status: 'paused', updated_at: new Date().toISOString(),
+      }).eq('stripe_customer_id', customerId)
 
       const { data: candidate } = await supabase
         .from('candidate_profiles')
@@ -329,6 +367,18 @@ export async function POST(req: NextRequest) {
       const subType = subscription.metadata?.type // stamped via subscription_data.metadata
       const lapsed = subscription.status === 'past_due' || subscription.status === 'unpaid'
       const active = subscription.status === 'active'
+
+      if (subType === 'sponsored_ad') {
+        const { data: advert } = await supabase.from('ad_placements')
+          .select('id, review_status').eq('stripe_subscription_id', subscription.id).maybeSingle()
+        if (advert && (lapsed || active)) {
+          await supabase.from('ad_placements').update(lapsed
+            ? { payment_status: subscription.status, status: 'paused', updated_at: new Date().toISOString() }
+            : { payment_status: 'paid', status: advert.review_status === 'approved' ? 'active' : 'pending', updated_at: new Date().toISOString() }
+          ).eq('id', advert.id)
+        }
+        break
+      }
 
       // Therapist register listing (£10/£20 monthly)
       if (subType === 'agency_listing') {
@@ -375,6 +425,13 @@ export async function POST(req: NextRequest) {
       const subscription = event.data.object as Stripe.Subscription
       const customerId = subscription.customer as string
       const subType = subscription.metadata?.type
+
+      if (subType === 'sponsored_ad') {
+        await supabase.from('ad_placements').update({
+          payment_status: 'cancelled', status: 'paused', updated_at: new Date().toISOString(),
+        }).eq('stripe_subscription_id', subscription.id)
+        break
+      }
 
       if (subType === 'agency_listing') {
         if (subscription.metadata?.candidate_id) {

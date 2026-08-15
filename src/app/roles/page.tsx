@@ -9,6 +9,7 @@ import Link from 'next/link'
 import { MapPin, Briefcase, Search, Clock } from 'lucide-react'
 import SkeletonCard from '@/components/SkeletonCard'
 import Pagination from '@/components/Pagination'
+import SponsoredAd from '@/components/SponsoredAd'
 
 const ROLE_TYPES = ['All', 'Permanent', 'Fixed Term', 'Freelance', 'Agency', 'Seasonal']
 
@@ -50,8 +51,7 @@ export default function BrowseRolesPage() {
       const scored = normalized.map((job: any) => {
         if (loadedProfile && loadedProfile.role_level) {
           const result = calculateMatchScore(loadedProfile, job)
-          if (result.hardStop) return { ...job, matchScore: 0 }
-          return { ...job, matchScore: result.score, matchLabel: result.label, matchColour: result.colour, matchBg: result.bgColour }
+          return { ...job, matchScore: result.score, matchLabel: result.label, matchColour: result.colour, matchBg: result.bgColour, hardStop: result.hardStop, hardStopReason: result.hardStopReason }
         }
         return { ...job, matchScore: 0 }
       })
@@ -82,6 +82,8 @@ export default function BrowseRolesPage() {
           <p className="text-[15px] text-secondary max-w-xl">Discover exceptional opportunities at the world&apos;s finest wellness properties.</p>
         </div>
       </section>
+
+      <SponsoredAd placement="jobs_talent_sponsor" />
 
       {/* Filters */}
       <section className="bg-white border-b border-border sticky top-[60px] z-40">

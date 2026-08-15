@@ -9,7 +9,7 @@ import { cookies } from 'next/headers'
 // sends POST (create), PATCH ({ id, ...updates }) and DELETE ({ id }).
 
 async function requireAdmin() {
-  const cookieStore = cookies()
+  const cookieStore = await cookies()
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,

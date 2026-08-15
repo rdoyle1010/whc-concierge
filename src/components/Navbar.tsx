@@ -6,8 +6,9 @@ import Wordmark from '@/components/Wordmark'
 import { createClient } from '@/lib/supabase/client'
 import { Menu, X, Flame, User, ChevronDown, LayoutDashboard, Settings, LogOut, MessageSquare, Briefcase } from 'lucide-react'
 import NotificationBell from '@/components/NotificationBell'
+import { DEFAULT_WEBSITE_CONTENT, type WebsiteContent } from '@/lib/site-content'
 
-export default function Navbar() {
+export default function Navbar({ siteContent }: { siteContent?: WebsiteContent }) {
   const [mobileOpen, setMobileOpen] = useState(false)
   const [profileOpen, setProfileOpen] = useState(false)
   const [user, setUser] = useState<any>(null)
@@ -21,7 +22,7 @@ export default function Navbar() {
       if (data.user) {
         // Get role
         supabase.from('profiles').select('role').eq('id', data.user.id).single().then(({ data: p }) => {
-          setRole(p?.role || data.user?.user_metadata?.role || 'talent')
+          setRole(p?.role || null)
         })
       }
     })
@@ -41,6 +42,7 @@ export default function Navbar() {
   const isAdmin = role === 'admin'
   const dashboardHref = isAdmin ? '/admin/dashboard' : isEmployer ? '/employer/dashboard' : '/talent/dashboard'
   const profileHref = isEmployer ? '/employer/profile' : '/talent/profile'
+  const labels = (siteContent || DEFAULT_WEBSITE_CONTENT).navigation
 
   // Nav links based on role
   const navLinks = user
@@ -49,7 +51,7 @@ export default function Navbar() {
       : isAdmin
         ? [{ href: '/admin/users', label: 'Users' }, { href: '/admin/blog', label: 'Blog' }, { href: '/admin/complaints', label: 'Complaints' }]
         : [{ href: '/jobs', label: 'Browse Roles' }, { href: '/roles/match', label: 'Match', icon: true }, { href: '/agency', label: 'Agency' }, { href: '/academy', label: 'Academy' }, { href: '/residency', label: 'Residency' }]
-    : [{ href: '/jobs', label: 'Browse Roles' }, { href: '/agency', label: 'Agency' }, { href: '/academy', label: 'Academy' }, { href: '/residency', label: 'Residency' }, { href: '/blog', label: 'Blog' }]
+    : [{ href: '/jobs', label: labels.jobs }, { href: '/agency', label: labels.agency }, { href: '/academy', label: labels.academy }, { href: '/residency', label: labels.residency }, { href: '/blog', label: labels.blog }]
 
   return (
     <nav className="fixed top-0 w-full z-50 bg-white border-b border-border h-[60px]">
@@ -60,7 +62,7 @@ export default function Navbar() {
         {/* Centre nav */}
         <div className="hidden lg:flex items-center gap-6">
           {navLinks.map(link => (
-            <Link key={link.href} href={link.href} className="text-[13px] text-muted hover:text-ink transition-colors flex items-center gap-1">
+            <Link key={link.href} href={link.href} className="text-[13px] text-secondary hover:text-ink transition-colors flex items-center gap-1">
               {(link as any).icon && <Flame size={11} className="text-accent" />}
               <span>{link.label}</span>
             </Link>
@@ -73,8 +75,9 @@ export default function Navbar() {
             <>
               <NotificationBell userId={user.id} />
               <div className="relative" ref={dropdownRef}>
-                <button onClick={() => setProfileOpen(!profileOpen)} className="flex items-center gap-1.5 text-muted hover:text-ink transition-colors">
-                  <div className="w-7 h-7 bg-surface border border-border rounded-full flex items-center justify-center text-[10px] font-semibold text-muted">{initials}</div>
+                <button type="button" onClick={() => setProfileOpen(!profileOpen)} aria-label="Open account menu"
+                  aria-expanded={profileOpen} aria-haspopup="menu" className="flex items-center gap-1.5 text-secondary hover:text-ink transition-colors">
+                  <div className="w-7 h-7 bg-surface border border-border rounded-full flex items-center justify-center text-[10px] font-semibold text-secondary">{initials}</div>
                   <ChevronDown size={11} className={`transition-transform ${profileOpen ? 'rotate-180' : ''}`} />
                 </button>
                 {profileOpen && (
@@ -91,17 +94,20 @@ export default function Navbar() {
             </>
           ) : (
             <>
-              <Link href="/login?role=talent" className="btn-secondary !py-2 !px-4">Talent Sign In</Link>
-              <Link href="/login?role=employer" className="btn-primary !py-2 !px-4">Hotel Sign In</Link>
+              <Link href="/login?role=talent" className="site-button btn-secondary !py-2 !px-4">{labels.talentSignIn}</Link>
+              <Link href="/login?role=employer" className="site-button site-accent-bg btn-primary !py-2 !px-4">{labels.employerSignIn}</Link>
             </>
           )}
         </div>
 
-        <button onClick={() => setMobileOpen(!mobileOpen)} className="lg:hidden text-ink">{mobileOpen ? <X size={20} /> : <Menu size={20} />}</button>
+        <button type="button" onClick={() => setMobileOpen(!mobileOpen)} className="lg:hidden text-ink"
+          aria-label={mobileOpen ? 'Close navigation menu' : 'Open navigation menu'} aria-expanded={mobileOpen} aria-controls="mobile-navigation">
+          {mobileOpen ? <X size={20} /> : <Menu size={20} />}
+        </button>
       </div>
 
       {mobileOpen && (
-        <div className="lg:hidden bg-white border-t border-border">
+        <div id="mobile-navigation" className="lg:hidden bg-white border-t border-border">
           <div className="px-6 py-5 space-y-1">
             {navLinks.map(link => (
               <Link key={link.href} href={link.href} className="block py-2.5 text-[14px] text-secondary hover:text-ink" onClick={() => setMobileOpen(false)}>{link.label}</Link>
@@ -111,11 +117,11 @@ export default function Navbar() {
                 <>
                   <Link href={dashboardHref} className="block py-2 text-[14px] text-ink font-medium" onClick={() => setMobileOpen(false)}>Dashboard</Link>
                   <Link href={isEmployer ? '/employer/messages' : isAdmin ? '/admin/messages' : '/talent/messages'} className="block py-2 text-[14px] text-secondary" onClick={() => setMobileOpen(false)}>Messages</Link>
-                  <button type="button" onClick={handleSignOut} className="block py-2 text-[14px] text-muted w-full text-left">Sign Out</button>
+                  <button type="button" onClick={handleSignOut} className="block py-2 text-[14px] text-secondary w-full text-left">Sign Out</button>
                 </>
               ) : (
-                <><Link href="/login?role=talent" className="btn-secondary block text-center" onClick={() => setMobileOpen(false)}>Talent Sign In</Link>
-                <Link href="/login?role=employer" className="btn-primary block text-center mt-2" onClick={() => setMobileOpen(false)}>Hotel Sign In</Link></>
+                <><Link href="/login?role=talent" className="site-button btn-secondary block text-center" onClick={() => setMobileOpen(false)}>{labels.talentSignIn}</Link>
+                <Link href="/login?role=employer" className="site-button site-accent-bg btn-primary block text-center mt-2" onClick={() => setMobileOpen(false)}>{labels.employerSignIn}</Link></>
               )}
             </div>
           </div>

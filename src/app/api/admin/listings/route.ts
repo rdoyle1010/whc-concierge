@@ -10,7 +10,7 @@ import { sendApprovalEmail, sendRejectionEmail } from '@/lib/emails'
 // UI) and job listings (no way to view or take one down).
 
 async function requireAdmin() {
-  const cookieStore = cookies()
+  const cookieStore = await cookies()
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,

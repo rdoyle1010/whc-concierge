@@ -110,11 +110,10 @@ export default function AgencyPage() {
   const [academyMap, setAcademyMap] = useState<Map<string, string[]>>(new Map())
 
   useEffect(() => {
-    supabase.from('candidate_profiles').select('*')
-      .eq('approval_status', 'approved')
-      .order('is_featured', { ascending: false })
-      .order('review_score', { ascending: false })
-      .then(({ data }) => { setCandidates(data || []); setLoading(false) })
+    fetch('/api/agency/directory')
+      .then(res => res.ok ? res.json() : { candidates: [] })
+      .then(data => { setCandidates(data.candidates || []); setLoading(false) })
+      .catch(() => { setCandidates([]); setLoading(false) })
     // Who has marked TODAY as available on their calendar? (public read is
     // available=true rows only; fails silently if the table isn't live yet)
     const today = new Date().toLocaleDateString('en-CA')

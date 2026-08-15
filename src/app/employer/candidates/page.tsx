@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react'
 import DashboardShell from '@/components/DashboardShell'
 import { createClient } from '@/lib/supabase/client'
 import { Search, MapPin, Star, X, MessageSquare } from 'lucide-react'
-import { notify } from '@/lib/notify'
 import { calculateMatchScore } from '@/lib/matching'
 
 export default function EmployerCandidatesPage() {
@@ -47,8 +46,8 @@ export default function EmployerCandidatesPage() {
             let best: any = null
             for (const j of jobs) {
               const r = calculateMatchScore(c, j)
-              const score = r.hardStop ? 0 : r.score
-              if (!best || score > best.matchScore) best = { matchScore: score, matchLabel: r.hardStop ? 'Not suitable' : r.label, matchColour: r.hardStop ? '#9CA3AF' : r.colour, matchBg: r.hardStop ? '#F3F4F6' : r.bgColour, bestJob: j.title }
+              const score = r.score
+              if (!best || score > best.matchScore) best = { matchScore: score, matchLabel: r.label, matchColour: r.colour, matchBg: r.bgColour, bestJob: j.title, hardStop: r.hardStop, hardStopReason: r.hardStopReason }
             }
             return { ...c, ...best }
           }).sort((a: any, b: any) => (b.matchScore || 0) - (a.matchScore || 0))
@@ -97,10 +96,6 @@ export default function EmployerCandidatesPage() {
       if (j.matched) {
         setMatchInfo({ name: j.candidateName || 'This candidate', job: j.jobTitle || 'your role' })
       }
-      const candidate = candidates.find(c => c.id === candidateId)
-      if (candidate?.user_id) {
-        notify(candidate.user_id, 'new_match', 'You\'ve been shortlisted', 'An employer has shortlisted your profile. Check your matches for details.', '/talent/dashboard')
-      }
     }
     setShortlistedIds(next)
   }
@@ -123,12 +118,6 @@ export default function EmployerCandidatesPage() {
     if (direction === 'right') {
       if (result?.matched) {
         setMatchInfo({ name: result.candidateName || 'This candidate', job: result.jobTitle || 'your role' })
-      } else {
-        // Notify candidate they were shortlisted
-        const candidate = candidates.find(c => c.id === candidateId)
-        if (candidate?.user_id) {
-          notify(candidate.user_id, 'new_match', 'You\'ve been shortlisted', `An employer has shortlisted your profile. Check your matches for details.`, '/talent/dashboard')
-        }
       }
     }
   }

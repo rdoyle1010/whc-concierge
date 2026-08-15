@@ -19,6 +19,7 @@ export default function VerifyResultPage() {
   const [loading, setLoading] = useState(true)
   const [cert, setCert] = useState<any>(null)
   const [name, setName] = useState('')
+  const [courseName, setCourseName] = useState('')
 
   useEffect(() => {
     async function load() {
@@ -30,6 +31,11 @@ export default function VerifyResultPage() {
           .maybeSingle()
         if (data) {
           setCert(data)
+          setCourseName(courseTitle(data.course_slug))
+          fetch(`/api/academy/catalog?slug=${encodeURIComponent(data.course_slug)}`)
+            .then(response => response.ok ? response.json() : null)
+            .then(json => { if (json?.course?.title) setCourseName(json.course.title) })
+            .catch(() => {})
           const { data: cand } = await supabase.from('candidate_profiles')
             .select('full_name').eq('id', data.candidate_id).maybeSingle()
           setName(cand?.full_name || '')
@@ -52,7 +58,7 @@ export default function VerifyResultPage() {
               <ShieldCheck size={36} className="mx-auto text-green-600 mb-4" />
               <p className="text-[11px] uppercase tracking-[0.25em] text-green-700 font-semibold mb-3">Certificate verified</p>
               <p className="font-serif text-[22px] font-bold text-ink capitalize mb-1">{name || 'WHC Professional'}</p>
-              <p className="text-[14px] text-gray-600 mb-1">{courseTitle(cert.course_slug)}</p>
+              <p className="text-[14px] text-gray-600 mb-1">{courseName || cert.course_slug}</p>
               <p className="text-[12px] text-gray-500 mb-4">
                 Completed {new Date(cert.completed_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}
               </p>

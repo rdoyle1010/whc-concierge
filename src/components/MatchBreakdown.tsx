@@ -21,20 +21,18 @@ type BreakdownData = {
 }
 
 const CATEGORIES: { key: keyof BreakdownData; label: string; weight: number }[] = [
-  { key: 'roleLevel', label: 'Role Level', weight: 12 },
-  { key: 'treatmentSkills', label: 'Treatment Skills', weight: 10 },
-  { key: 'proficiencyDepth', label: 'Skill Depth', weight: 8 },
-  { key: 'brands', label: 'Product Houses', weight: 8 },
-  { key: 'qualifications', label: 'Qualifications', weight: 8 },
+  { key: 'roleLevel', label: 'Job Role & Level', weight: 40 },
+  { key: 'treatmentSkills', label: 'Treatment Skills', weight: 18 },
+  { key: 'proficiencyDepth', label: 'Skill Depth', weight: 2 },
+  { key: 'brands', label: 'Product Houses', weight: 10 },
+  { key: 'qualifications', label: 'Qualifications', weight: 12 },
   { key: 'location', label: 'Location', weight: 8 },
-  { key: 'experience', label: 'Experience', weight: 7 },
-  { key: 'businessSkills', label: 'Business Skills', weight: 6 },
-  { key: 'systems', label: 'Systems', weight: 5 },
+  { key: 'experience', label: 'Experience', weight: 10 },
+  { key: 'businessSkills', label: 'Business Skills', weight: 8 },
+  { key: 'systems', label: 'Systems', weight: 7 },
   { key: 'shiftCompatibility', label: 'Shift Fit', weight: 5 },
-  { key: 'transport', label: 'Transport', weight: 4 },
-  { key: 'accommodation', label: 'Accommodation', weight: 3 },
-  { key: 'profileCompleteness', label: 'Profile', weight: 3 },
-  { key: 'reviewScore', label: 'Reviews', weight: 3 },
+  { key: 'transport', label: 'Transport', weight: 3 },
+  { key: 'accommodation', label: 'Accommodation', weight: 2 },
 ]
 
 function barColour(score: number): string {
@@ -67,8 +65,11 @@ export default function MatchBreakdown({
 }) {
   const [open, setOpen] = useState(!compact)
 
+  const specified = CATEGORIES.filter(cat => breakdown[cat.key] >= 0)
+  const notAssessedCount = CATEGORIES.length - specified.length
+
   // Sort categories by weighted contribution (score × weight), highest first
-  const sorted = [...CATEGORIES].sort((a, b) => {
+  const sorted = [...specified].sort((a, b) => {
     const aContrib = (breakdown[a.key] || 0) * a.weight
     const bContrib = (breakdown[b.key] || 0) * b.weight
     return bContrib - aContrib
@@ -76,7 +77,7 @@ export default function MatchBreakdown({
 
   // Top 3 strengths and weaknesses
   const strengths = sorted.filter(c => (breakdown[c.key] || 0) >= 70).slice(0, 3)
-  const gaps = [...CATEGORIES]
+  const gaps = [...specified]
     .filter(c => (breakdown[c.key] || 0) < 60)
     .sort((a, b) => (breakdown[a.key] || 0) - (breakdown[b.key] || 0))
     .slice(0, 3)
@@ -96,7 +97,7 @@ export default function MatchBreakdown({
         {open && (
           <div className="mt-3 space-y-1.5 animate-fade-in">
             {sorted.map(cat => {
-              const val = breakdown[cat.key] || 0
+              const val = breakdown[cat.key]
               return (
                 <div key={cat.key} className="flex items-center gap-2">
                   <span className="text-[10px] text-muted w-[80px] shrink-0 text-right">{cat.label}</span>
@@ -110,6 +111,11 @@ export default function MatchBreakdown({
                 </div>
               )
             })}
+            {notAssessedCount > 0 && (
+              <p className="text-[10px] text-muted pt-1">
+                {notAssessedCount} factor{notAssessedCount === 1 ? '' : 's'} not assessed because the employer did not provide enough information.
+              </p>
+            )}
           </div>
         )}
       </div>
@@ -143,7 +149,7 @@ export default function MatchBreakdown({
       {/* Category bars */}
       <div className="space-y-2">
         {sorted.map(cat => {
-          const val = breakdown[cat.key] || 0
+          const val = breakdown[cat.key]
           return (
             <div key={cat.key} className="flex items-center gap-2.5">
               <span className="text-[11px] text-muted w-[90px] shrink-0 text-right">{cat.label}</span>
@@ -161,7 +167,8 @@ export default function MatchBreakdown({
 
       {/* Weight hint */}
       <p className="text-[10px] text-muted pt-1 border-t border-border">
-        Weighted across {CATEGORIES.length} factors. Bars sorted by contribution to your overall score.
+        Calculated from {specified.length} specified factor{specified.length === 1 ? '' : 's'}.
+        {notAssessedCount > 0 && ` ${notAssessedCount} unassessed factor${notAssessedCount === 1 ? '' : 's'} did not affect the score.`}
       </p>
     </div>
   )

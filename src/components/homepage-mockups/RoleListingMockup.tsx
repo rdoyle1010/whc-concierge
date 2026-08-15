@@ -15,16 +15,16 @@ export default function RoleListingMockup() {
         >
           Gold
         </span>
-        <span className="text-[11px]" style={{ color: '#9CA3AF' }}>Posted 3 days ago</span>
+        <span className="text-[11px]" style={{ color: '#6B7280' }}>Posted 3 days ago</span>
       </div>
 
       <div className="mt-3">
         <p className="text-[11px] uppercase tracking-wide mb-1" style={{ color: '#6B7280' }}>
           5★ Country House Hotel
         </p>
-        <h4 className="text-[17px] font-medium leading-tight" style={{ color: '#1a1a1a' }}>
+        <h3 className="text-[17px] font-medium leading-tight" style={{ color: '#1a1a1a' }}>
           Senior Spa Therapist
-        </h4>
+        </h3>
       </div>
 
       <div className="mt-3 flex items-center justify-between text-[13px]">

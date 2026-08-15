@@ -136,7 +136,7 @@ export default function TalentMessagesPage() {
         // message-attachments bucket (created 16 Jul; direct client upload
         // previously failed because the bucket never existed)
         const fileExt = attachmentFile.name.split('.').pop()
-        const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`
+        const fileName = `${userId}/messages/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`
         const fd = new FormData()
         fd.append('file', attachmentFile)
         fd.append('bucket', 'message-attachments')

@@ -1,8 +1,9 @@
+import Image from 'next/image'
 import Link from 'next/link'
 
-// The brand wordmark - a typographic lockup that replaces the old boxed
-// image logo. Classic two-line arrangement: serif house name over a
-// letterspaced gold descriptor. `dark` flips it for ink backgrounds.
+// The official brand artwork is shared by public, registration and dashboard
+// navigation. The wide viewport crops only the artwork's decorative top and
+// bottom space, keeping the complete logo lockup visible at header size.
 
 export default function Wordmark({
   dark = false,
@@ -10,13 +11,17 @@ export default function Wordmark({
   compact = false,
 }: { dark?: boolean; href?: string | null; compact?: boolean }) {
   const mark = (
-    <span className="inline-flex flex-col leading-none select-none">
-      <span className={`font-serif font-semibold tracking-wide ${compact ? 'text-[15px]' : 'text-[17px]'} ${dark ? 'text-white' : 'text-ink'}`}>
-        Wellness House
-      </span>
-      <span className={`uppercase ${compact ? 'text-[7.5px]' : 'text-[8.5px]'} font-medium tracking-[0.42em] mt-1 text-gold`}>
-        Collective
-      </span>
+    <span
+      className={`relative block shrink-0 overflow-hidden bg-[#0b2f4d] ${compact ? 'h-[42px] w-[168px]' : 'h-[48px] w-[192px]'} ${dark ? '' : 'ring-1 ring-black/5'}`}
+    >
+      <Image
+        src="/images/whc-logo.jpg"
+        alt="Wellness House Collective"
+        fill
+        priority
+        sizes={compact ? '168px' : '192px'}
+        className="select-none object-cover object-center"
+      />
     </span>
   )
   if (!href) return mark

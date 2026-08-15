@@ -1,168 +1,96 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
-import Image from 'next/image'
+import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
 import { ArrowRight } from 'lucide-react'
-import { createClient } from '@/lib/supabase/client'
+import { DEFAULT_WEBSITE_CONTENT, type WebsiteContent } from '@/lib/site-content'
 
-/* ── Hardcoded fallbacks (used until DB is populated) ── */
-const DEFAULT_SLIDES = [
-  {
-    image: 'https://images.unsplash.com/photo-1720678418766-2628e52f4634?w=1920&q=80&auto=format&fit=crop',
-    heading: 'Where Luxury Wellness Meets\nExceptional Talent',
-    text: 'The UK\u2019s premier platform connecting elite spa and wellness professionals with prestigious employers.',
-    cta: true,
-  },
-  {
-    image: 'https://images.unsplash.com/photo-1770625468069-9393585d7113?w=1920&q=80&auto=format&fit=crop',
-    heading: 'Precision Matching, Not Guesswork',
-    text: 'Our 15-category algorithm matches therapists to roles based on skills, qualifications, brands, location, and availability.',
-  },
-  {
-    image: 'https://plus.unsplash.com/premium_photo-1723514505301-682c69fc8edd?w=1920&q=80&auto=format&fit=crop',
-    heading: 'Every Profile, Personally Vetted',
-    text: 'Only qualified wellness professionals make it onto the platform. CIDESCO, CIBTAC, VTCT - we verify credentials so you don\'t have to.',
-  },
-  {
-    image: 'https://images.unsplash.com/photo-1774175927603-129481b459c6?w=1920&q=80&auto=format&fit=crop',
-    heading: 'Access the UK\'s Finest Properties',
-    text: 'From five-star London hotels to country estate spas - exclusive roles at properties that set the standard.',
-  },
-  {
-    image: 'https://images.unsplash.com/photo-1566520528415-5dba36001e10?w=1920&q=80&auto=format&fit=crop',
-    heading: 'The Only Platform Built for Luxury Wellness',
-    text: 'Generic job boards don\'t understand our industry. WHC Concierge speaks the language of spa, wellness, and five-star hospitality.',
-  },
-]
-
-type Slide = { image: string; heading: string; text: string; cta?: boolean }
-
-export default function HeroCarousel() {
-  const [slides, setSlides] = useState<Slide[]>(DEFAULT_SLIDES)
+export default function HeroCarousel({ siteContent }: { siteContent?: WebsiteContent }) {
+  const content = siteContent || DEFAULT_WEBSITE_CONTENT
+  const slides = content.hero.slides
   const [current, setCurrent] = useState(0)
   const [paused, setPaused] = useState(false)
+  const [currentImageLoaded, setCurrentImageLoaded] = useState(false)
 
-  /* ── Fetch slides from Supabase on mount ── */
   useEffect(() => {
-    async function fetchSlides() {
-      try {
-        const supabase = createClient()
-        const { data } = await supabase
-          .from('site_images')
-          .select('slot, image_url, heading, subtext, sort_order')
-          .like('slot', 'hero_%')
-          .eq('active', true)
-          .order('sort_order', { ascending: true })
+    if (current >= slides.length) setCurrent(0)
+  }, [current, slides.length])
 
-        if (data && data.length > 0) {
-          setSlides(
-            data.map((row, i) => ({
-              image: row.image_url,
-              heading: row.heading || DEFAULT_SLIDES[i]?.heading || '',
-              text: row.subtext || DEFAULT_SLIDES[i]?.text || '',
-              cta: i === 0,
-            }))
-          )
-        }
-      } catch {
-        // Table doesn't exist yet - keep defaults
-      }
-    }
-    fetchSlides()
+  const showSlide = useCallback((index: number) => {
+    setCurrentImageLoaded(false)
+    setCurrent(index)
   }, [])
 
   const next = useCallback(() => {
-    setCurrent(c => (c + 1) % slides.length)
+    setCurrentImageLoaded(false)
+    setCurrent(value => (value + 1) % slides.length)
   }, [slides.length])
 
   useEffect(() => {
-    if (paused) return
-    const timer = setInterval(next, 6000)
-    return () => clearInterval(timer)
-  }, [paused, next])
+    if (paused || slides.length < 2) return
+    const timer = window.setInterval(next, 6500)
+    return () => window.clearInterval(timer)
+  }, [paused, next, slides.length])
+
+  // Loading every full-screen slide together made the hero image compete with
+  // hidden images and pushed Largest Contentful Paint beyond 30 seconds. Wait
+  // until the visible image has loaded, then quietly warm the next slide.
+  useEffect(() => {
+    if (!currentImageLoaded || slides.length < 2) return
+    const timer = window.setTimeout(() => {
+      const upcoming = slides[(current + 1) % slides.length]
+      const image = new window.Image()
+      image.decoding = 'async'
+      image.src = upcoming.image.url
+    }, 1200)
+    return () => window.clearTimeout(timer)
+  }, [current, currentImageLoaded, slides])
+
+  const slide = slides[current] || slides[0]
 
   return (
-    <div
-      className="relative w-full h-screen overflow-hidden bg-black"
-      onMouseEnter={() => setPaused(true)}
-      onMouseLeave={() => setPaused(false)}
-    >
-      {/* Slides */}
-      {slides.map((slide, i) => (
-        <div
-          key={i}
-          className="absolute inset-0 transition-opacity duration-1000 ease-in-out"
-          style={{ opacity: i === current ? 1 : 0, pointerEvents: i === current ? 'auto' : 'none' }}
-        >
-          <img
-            src={slide.image}
-            alt={slide.heading}
-            className="w-full h-full object-cover"
-          />
-          <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/20 to-black/70" />
-        </div>
-      ))}
+    <div className="relative w-full min-h-[680px] h-[calc(100vh-60px)] overflow-hidden bg-black"
+      onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)}>
+      <div key={current} className="absolute inset-0 animate-fade-in">
+        <img
+          src={slide.image.url}
+          alt={slide.image.alt}
+          width={1920}
+          height={1080}
+          loading="eager"
+          fetchPriority={current === 0 ? 'high' : 'auto'}
+          decoding="async"
+          onLoad={() => setCurrentImageLoaded(true)}
+          className="w-full h-full object-cover"
+          style={{ objectPosition: slide.image.focalX + '% ' + slide.image.focalY + '%' }}
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/45 via-black/20 to-black/65" />
+      </div>
 
-      {/* Text content */}
-      <div className="absolute inset-0 flex flex-col items-center justify-center text-white z-10">
-        <div className="max-w-3xl text-center">
-          <div className="w-10 h-[1px] mx-auto mb-8" style={{ backgroundColor: '#C9A96E' }} />
-          <p className="text-[11px] tracking-[0.2em] uppercase font-medium mb-5" style={{ color: '#C9A96E' }}>
-            {slides[current]?.cta ? 'WHC Concierge' : 'Why WHC Concierge'}
-          </p>
-          <h2
-            className="font-serif text-[32px] md:text-[44px] lg:text-[56px] font-medium leading-[1.08] tracking-tight mb-6 whitespace-pre-line"
-            style={{ color: '#FFFFFF', textShadow: '0 2px 16px rgba(0,0,0,0.5)' }}
-            key={`h-${current}`}
-          >
-            {slides[current]?.heading}
-          </h2>
-          <p
-            className="text-[16px] md:text-[18px] leading-[1.7] max-w-2xl mx-auto mb-10"
-            style={{ color: 'rgba(255,255,255,0.95)', textShadow: '0 1px 8px rgba(0,0,0,0.5)' }}
-            key={`p-${current}`}
-          >
-            {slides[current]?.text}
-          </p>
-          {slides[current]?.cta && (
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-              <Link href="/register/employer"
-                className="px-8 py-3.5 rounded-lg text-[14px] font-semibold text-white transition-all hover:shadow-lg hover:shadow-[#C9A96E]/25"
-                style={{ backgroundColor: '#C9A96E' }}
-              >
-                Post a Role
+      <div className="absolute inset-0 z-10 flex items-center">
+        <div className="w-full max-w-7xl mx-auto px-6 lg:px-8">
+          <div className="max-w-3xl text-white">
+            <p className="text-[11px] tracking-[0.22em] uppercase font-medium mb-6 site-accent">{slide.eyebrow}</p>
+            <h1 className="site-heading !text-white text-[44px] md:text-[64px] lg:text-[76px] font-medium leading-[0.98] mb-7"
+              style={{ textShadow: '0 2px 18px rgba(0,0,0,.28)' }}>{slide.heading}</h1>
+            <p className="text-[16px] md:text-[18px] leading-[1.7] max-w-2xl mb-10 text-white/90">{slide.text}</p>
+            {current === 0 && <div className="flex flex-col sm:flex-row items-start gap-3">
+              <Link href={content.hero.primaryHref} className="site-button site-accent-bg px-7 py-3.5 text-[13px] font-semibold text-white">
+                {content.hero.primaryLabel}
               </Link>
-              <Link href="/register/talent"
-                className="px-8 py-3.5 rounded-lg text-[14px] font-semibold text-white bg-black/50 backdrop-blur-sm border border-white/20 transition-all hover:bg-black/70"
-              >
-                Join as Professional <ArrowRight size={16} className="inline ml-2" />
+              <Link href={content.hero.secondaryHref} className="site-button px-7 py-3.5 text-[13px] font-semibold text-black bg-white">
+                {content.hero.secondaryLabel}<ArrowRight size={14} className="inline ml-2" />
               </Link>
-            </div>
-          )}
+            </div>}
+          </div>
         </div>
       </div>
 
-      {/* Navigation dots */}
-      <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2.5">
-        {slides.map((_, i) => (
-          <button
-            key={i}
-            type="button"
-            onClick={() => setCurrent(i)}
-            className="transition-all duration-300"
-            style={{
-              width: i === current ? '32px' : '8px',
-              height: '8px',
-              backgroundColor: i === current ? '#C9A96E' : 'rgba(255,255,255,0.4)',
-              borderRadius: '4px',
-              border: 'none',
-              cursor: 'pointer',
-            }}
-            aria-label={`Go to slide ${i + 1}`}
-          />
-        ))}
-      </div>
+      {slides.length > 1 && <div className="absolute bottom-8 left-6 lg:left-[calc((100vw-1280px)/2+2rem)] z-20 flex items-center gap-2">
+        {slides.map((_, index) => <button key={index} type="button" onClick={() => showSlide(index)}
+          className="h-[2px] transition-all duration-300" style={{ width: index === current ? 44 : 24, background: index === current ? 'var(--site-accent)' : 'rgba(255,255,255,.45)' }}
+          aria-label={'Go to hero slide ' + (index + 1)} aria-current={index === current ? 'true' : undefined} />)}
+      </div>}
     </div>
   )
 }

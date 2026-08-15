@@ -145,7 +145,7 @@ export default function EmployerMessagesPage() {
 
       if (attachmentFile) {
         const fileExt = attachmentFile.name.split('.').pop()
-        const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`
+        const fileName = `${userId}/messages/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`
         const fd = new FormData()
         fd.append('file', attachmentFile)
         fd.append('bucket', 'message-attachments')
