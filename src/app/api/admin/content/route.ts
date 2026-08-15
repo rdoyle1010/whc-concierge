@@ -35,6 +35,37 @@ async function requireAdmin() {
   return user
 }
 
+// The live platform_config table predates the current migration history and
+// does not expose a unique constraint on `key` to PostgREST. Update first and
+// insert only when missing, so saving works safely without a schema change.
+async function saveConfigValue(
+  admin: ReturnType<typeof createAdminClient>,
+  key: string,
+  value: string,
+  updatedAt = new Date().toISOString()
+) {
+  const { data: existing, error: lookupError } = await admin
+    .from('platform_config')
+    .select('key')
+    .eq('key', key)
+    .limit(1)
+  if (lookupError) throw lookupError
+
+  if (existing?.length) {
+    const { error } = await admin
+      .from('platform_config')
+      .update({ value, updated_at: updatedAt })
+      .eq('key', key)
+    if (error) throw error
+    return
+  }
+
+  const { error } = await admin
+    .from('platform_config')
+    .insert({ key, value, updated_at: updatedAt })
+  if (error) throw error
+}
+
 export async function GET(req: NextRequest) {
   const user = await requireAdmin()
   if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
@@ -110,8 +141,7 @@ export async function POST(req: NextRequest) {
     if (action === 'config_upsert') {
       const { key, value } = body
       if (!key) return NextResponse.json({ error: 'Missing key' }, { status: 400 })
-      const { error } = await admin.from('platform_config').upsert({ key, value }, { onConflict: 'key' })
-      if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+      await saveConfigValue(admin, key, String(value ?? ''))
       return NextResponse.json({ success: true })
     }
 
@@ -119,12 +149,7 @@ export async function POST(req: NextRequest) {
     if (action === 'website_save_draft') {
       const parsed = WebsiteContentSchema.safeParse(body.content)
       if (!parsed.success) return NextResponse.json({ error: 'Some website fields are invalid.', details: parsed.error.flatten() }, { status: 400 })
-      const { error } = await admin.from('platform_config').upsert({
-        key: WEBSITE_DRAFT_KEY,
-        value: JSON.stringify(parsed.data),
-        updated_at: new Date().toISOString(),
-      }, { onConflict: 'key' })
-      if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+      await saveConfigValue(admin, WEBSITE_DRAFT_KEY, JSON.stringify(parsed.data))
       return NextResponse.json({ success: true, content: parsed.data })
     }
 
@@ -153,18 +178,18 @@ export async function POST(req: NextRequest) {
       }
       history = history.slice(0, 10)
       const now = new Date().toISOString()
-      const { error } = await admin.from('platform_config').upsert([
-        { key: WEBSITE_DRAFT_KEY, value: JSON.stringify(parsed.data), updated_at: now },
-        { key: WEBSITE_PUBLISHED_KEY, value: JSON.stringify(parsed.data), updated_at: now },
-        { key: WEBSITE_HISTORY_KEY, value: JSON.stringify(history), updated_at: now },
-      ], { onConflict: 'key' })
-      if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+      await Promise.all([
+        saveConfigValue(admin, WEBSITE_DRAFT_KEY, JSON.stringify(parsed.data), now),
+        saveConfigValue(admin, WEBSITE_PUBLISHED_KEY, JSON.stringify(parsed.data), now),
+        saveConfigValue(admin, WEBSITE_HISTORY_KEY, JSON.stringify(history), now),
+      ])
       return NextResponse.json({ success: true, publishedAt: now, history })
     }
 
     if (action === 'website_restore_draft') {
       const id = String(body.id || '')
-      const { data: row } = await admin.from('platform_config').select('value').eq('key', WEBSITE_HISTORY_KEY).maybeSingle()
+      const { data: rows } = await admin.from('platform_config').select('value').eq('key', WEBSITE_HISTORY_KEY).limit(1)
+      const row = rows?.[0]
       let history: WebsiteHistoryEntry[] = []
       try {
         const parsed = JSON.parse(row?.value || '[]')
@@ -173,12 +198,7 @@ export async function POST(req: NextRequest) {
       const version = history.find(item => item.id === id)
       if (!version) return NextResponse.json({ error: 'Version not found.' }, { status: 404 })
       const content = parseWebsiteContent(version.content)
-      const { error } = await admin.from('platform_config').upsert({
-        key: WEBSITE_DRAFT_KEY,
-        value: JSON.stringify(content),
-        updated_at: new Date().toISOString(),
-      }, { onConflict: 'key' })
-      if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+      await saveConfigValue(admin, WEBSITE_DRAFT_KEY, JSON.stringify(content))
       return NextResponse.json({ success: true, content })
     }
 

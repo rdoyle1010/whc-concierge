@@ -51,11 +51,12 @@ export async function getWebsiteContent(useDraft = false): Promise<WebsiteConten
   try {
     const admin = createAdminClient()
     const key = useDraft ? WEBSITE_DRAFT_KEY : WEBSITE_PUBLISHED_KEY
-    const [{ data: stored }, { data: legacyRows }] = await Promise.all([
-      admin.from('platform_config').select('value').eq('key', key).maybeSingle(),
+    const [{ data: storedRows }, { data: legacyRows }] = await Promise.all([
+      admin.from('platform_config').select('value').eq('key', key).limit(1),
       admin.from('site_images').select('slot, image_url, heading, subtext, sort_order').order('sort_order'),
     ])
 
+    const stored = storedRows?.[0]
     if (stored?.value) return parseWebsiteContent(stored.value)
     return applyLegacyImages(cloneDefaultWebsiteContent(), (legacyRows || []) as LegacyImage[])
   } catch {

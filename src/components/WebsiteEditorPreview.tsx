@@ -30,7 +30,7 @@ export default function WebsiteEditorPreview({ content }: { content: WebsiteCont
         <div className="absolute inset-0 bg-black/45" />
         <div className="absolute inset-0 p-8 flex flex-col justify-center text-white">
           <p className="text-[7px] tracking-[0.2em] uppercase mb-3" style={{ color: 'var(--site-accent)' }}>{hero.eyebrow}</p>
-          <h2 className="site-heading text-[28px] leading-[1.05] max-w-sm mb-3">{hero.heading}</h2>
+          <h2 className="site-heading !text-white text-[28px] leading-[1.05] max-w-sm mb-3">{hero.heading}</h2>
           <p className="text-[9px] leading-relaxed max-w-sm text-white/85">{hero.text}</p>
           <div className="flex gap-2 mt-5">
             <span className="site-button text-[7px] px-3 py-2 text-white" style={{ background: 'var(--site-accent)' }}>{content.hero.primaryLabel}</span>
