@@ -38,7 +38,7 @@ export default function MatchScoreMockup() {
         ))}
       </div>
 
-      <p className="text-[11px] text-center mt-5 pt-4 border-t border-[#F0EEEA]" style={{ color: '#9CA3AF' }}>
+      <p className="text-[11px] text-center mt-5 pt-4 border-t border-[#F0EEEA]" style={{ color: '#6B7280' }}>
         +10 more categories
       </p>
     </div>

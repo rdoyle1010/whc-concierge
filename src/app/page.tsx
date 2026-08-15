@@ -128,7 +128,7 @@ function TrustSection({ content }: { content: WebsiteContent }) {
       <div className="site-accent-bg mx-auto mb-6 h-px w-14" />
       <p className="mb-9 text-[11px] uppercase tracking-[0.16em] opacity-55">{content.trust.eyebrow}</p>
       <div className="flex flex-wrap items-center justify-center gap-x-10 gap-y-5">
-        {content.trust.items.map(item => <span key={item} className="text-[14px] font-semibold tracking-[0.06em] opacity-50">{item}</span>)}
+        {content.trust.items.map(item => <span key={item} className="text-[14px] font-semibold tracking-[0.06em] opacity-70">{item}</span>)}
       </div>
     </div>
   </section>
@@ -151,8 +151,8 @@ function RolesSection({ content, roles }: { content: WebsiteContent; roles: Feat
                 style={{ objectPosition: `${image.focalX}% ${image.focalY}%` }} />
             </div>
             <div className="p-6">
-              <div className="mb-5 flex items-center justify-between"><span className="site-accent text-[10px] font-semibold uppercase tracking-[0.12em]">{role.tier}</span><span className="text-[11px] capitalize opacity-50">{role.type}</span></div>
-              <p className="mb-1 text-[10px] uppercase tracking-[0.12em] opacity-50">{role.property}</p>
+              <div className="mb-5 flex items-center justify-between"><span className="site-accent text-[10px] font-semibold uppercase tracking-[0.12em]">{role.tier}</span><span className="text-[11px] capitalize opacity-70">{role.type}</span></div>
+              <p className="mb-1 text-[10px] uppercase tracking-[0.12em] opacity-70">{role.property}</p>
               <h3 className="site-heading mb-4 text-[19px]">{role.title}</h3>
               <div className="flex items-center gap-3 text-[12px] opacity-60">{role.location && <span className="flex items-center gap-1"><MapPin size={12} />{role.location}</span>}<span>{role.salary}</span></div>
             </div>
@@ -172,7 +172,7 @@ function CalloutSection({ content }: { content: WebsiteContent }) {
     <div className="relative z-10 mx-auto grid max-w-6xl gap-px px-6 py-24 md:grid-cols-2 lg:px-8">
       {([content.cta.talent, content.cta.employer] as const).map(card => <div key={card.eyebrow} className="bg-white p-8 md:p-12">
         <Eyebrow>{card.eyebrow}</Eyebrow>
-        <h3 className="site-heading mb-5 text-[28px] font-medium leading-[1.08] md:text-[34px]">{card.heading}</h3>
+        <h2 className="site-heading mb-5 text-[28px] font-medium leading-[1.08] md:text-[34px]">{card.heading}</h2>
         <p className="mb-8 text-[14px] leading-[1.75] opacity-65">{card.text}</p>
         <Link href={card.buttonHref} className="site-button site-accent-bg inline-block px-6 py-3 text-[13px] font-semibold text-white">{card.buttonLabel}</Link>
       </div>)}
@@ -185,7 +185,7 @@ function ServicesSection({ content }: { content: WebsiteContent }) {
     <div className="mx-auto grid max-w-7xl gap-px px-6 md:grid-cols-3 lg:px-8">
       {content.services.cards.map(card => <article key={card.eyebrow} className="flex flex-col bg-white p-8 md:p-10">
         <Eyebrow>{card.eyebrow}</Eyebrow>
-        <h3 className="site-heading mb-4 text-[26px] leading-[1.08]">{card.heading}</h3>
+        <h2 className="site-heading mb-4 text-[26px] leading-[1.08]">{card.heading}</h2>
         <p className="mb-8 flex-1 text-[14px] leading-[1.75] opacity-65">{card.text}</p>
         <Link href={card.buttonHref} className="site-button site-accent-bg w-fit px-5 py-3 text-[12px] font-semibold text-white">{card.buttonLabel}</Link>
       </article>)}

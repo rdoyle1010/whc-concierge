@@ -25,14 +25,14 @@ export default function Footer({ siteContent }: { siteContent?: WebsiteContent }
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col sm:flex-row items-center justify-between gap-4">
         <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2">
           {links.map((link) => (
-            <Link key={link.href} href={link.href} className="text-neutral-400 hover:text-black text-xs tracking-wide transition-colors">
+            <Link key={link.href} href={link.href} className="text-neutral-600 hover:text-black text-xs tracking-wide transition-colors">
               {link.label}
             </Link>
           ))}
         </div>
-        <p className="text-neutral-300 text-xs">
+        <p className="text-neutral-600 text-xs">
           {content.footer.copyright}
-          <Link href="/login" className="ml-3 text-neutral-300 hover:text-neutral-500 text-[10px] transition-colors" aria-label="Staff sign in">{content.footer.staffLabel}</Link>
+          <Link href="/login" className="ml-3 text-neutral-600 hover:text-black text-[10px] transition-colors" aria-label="Staff sign in">{content.footer.staffLabel}</Link>
         </p>
       </div>
     </footer>

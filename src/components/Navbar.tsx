@@ -62,7 +62,7 @@ export default function Navbar({ siteContent }: { siteContent?: WebsiteContent }
         {/* Centre nav */}
         <div className="hidden lg:flex items-center gap-6">
           {navLinks.map(link => (
-            <Link key={link.href} href={link.href} className="text-[13px] text-muted hover:text-ink transition-colors flex items-center gap-1">
+            <Link key={link.href} href={link.href} className="text-[13px] text-secondary hover:text-ink transition-colors flex items-center gap-1">
               {(link as any).icon && <Flame size={11} className="text-accent" />}
               <span>{link.label}</span>
             </Link>
@@ -75,8 +75,9 @@ export default function Navbar({ siteContent }: { siteContent?: WebsiteContent }
             <>
               <NotificationBell userId={user.id} />
               <div className="relative" ref={dropdownRef}>
-                <button onClick={() => setProfileOpen(!profileOpen)} className="flex items-center gap-1.5 text-muted hover:text-ink transition-colors">
-                  <div className="w-7 h-7 bg-surface border border-border rounded-full flex items-center justify-center text-[10px] font-semibold text-muted">{initials}</div>
+                <button type="button" onClick={() => setProfileOpen(!profileOpen)} aria-label="Open account menu"
+                  aria-expanded={profileOpen} aria-haspopup="menu" className="flex items-center gap-1.5 text-secondary hover:text-ink transition-colors">
+                  <div className="w-7 h-7 bg-surface border border-border rounded-full flex items-center justify-center text-[10px] font-semibold text-secondary">{initials}</div>
                   <ChevronDown size={11} className={`transition-transform ${profileOpen ? 'rotate-180' : ''}`} />
                 </button>
                 {profileOpen && (
@@ -99,11 +100,14 @@ export default function Navbar({ siteContent }: { siteContent?: WebsiteContent }
           )}
         </div>
 
-        <button onClick={() => setMobileOpen(!mobileOpen)} className="lg:hidden text-ink">{mobileOpen ? <X size={20} /> : <Menu size={20} />}</button>
+        <button type="button" onClick={() => setMobileOpen(!mobileOpen)} className="lg:hidden text-ink"
+          aria-label={mobileOpen ? 'Close navigation menu' : 'Open navigation menu'} aria-expanded={mobileOpen} aria-controls="mobile-navigation">
+          {mobileOpen ? <X size={20} /> : <Menu size={20} />}
+        </button>
       </div>
 
       {mobileOpen && (
-        <div className="lg:hidden bg-white border-t border-border">
+        <div id="mobile-navigation" className="lg:hidden bg-white border-t border-border">
           <div className="px-6 py-5 space-y-1">
             {navLinks.map(link => (
               <Link key={link.href} href={link.href} className="block py-2.5 text-[14px] text-secondary hover:text-ink" onClick={() => setMobileOpen(false)}>{link.label}</Link>
@@ -113,7 +117,7 @@ export default function Navbar({ siteContent }: { siteContent?: WebsiteContent }
                 <>
                   <Link href={dashboardHref} className="block py-2 text-[14px] text-ink font-medium" onClick={() => setMobileOpen(false)}>Dashboard</Link>
                   <Link href={isEmployer ? '/employer/messages' : isAdmin ? '/admin/messages' : '/talent/messages'} className="block py-2 text-[14px] text-secondary" onClick={() => setMobileOpen(false)}>Messages</Link>
-                  <button type="button" onClick={handleSignOut} className="block py-2 text-[14px] text-muted w-full text-left">Sign Out</button>
+                  <button type="button" onClick={handleSignOut} className="block py-2 text-[14px] text-secondary w-full text-left">Sign Out</button>
                 </>
               ) : (
                 <><Link href="/login?role=talent" className="site-button btn-secondary block text-center" onClick={() => setMobileOpen(false)}>{labels.talentSignIn}</Link>

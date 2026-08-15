@@ -88,6 +88,16 @@ check('Academy catalogue never returns quiz answer keys', () => {
   assert.match(read('src/app/api/academy/catalog/route.ts'), /publicCourse/)
   assert.match(read('src/lib/academy-catalog-server.ts'), /answer_key: _answerKey/)
 })
+check('homepage hero is prioritised and public controls are accessible', () => {
+  const hero = read('src/components/HeroCarousel.tsx')
+  const navigation = read('src/components/Navbar.tsx')
+  assert.match(hero, /src=\{slide\.image\.url\}/)
+  assert.match(hero, /fetchPriority=\{current === 0 \? 'high' : 'auto'\}/)
+  assert.doesNotMatch(hero, /slides\.map\(\(item, index\)[\s\S]*?<img/)
+  assert.match(navigation, /aria-label=\{mobileOpen \? 'Close navigation menu' : 'Open navigation menu'\}/)
+  assert.match(navigation, /aria-label="Open account menu"/)
+  assert.match(read('src/app/layout.tsx'), /icon: '\/images\/whc-logo\.jpg'/)
+})
 check('no literal production secrets are tracked', () => {
   const files = execFileSync('git', ['ls-files'], { encoding: 'utf8' }).trim().split('\n').filter(Boolean)
   const secretPattern = /(?:SUPABASE_SERVICE_ROLE_KEY|STRIPE_SECRET_KEY|RESEND_API_KEY)\s*=\s*['"](?:eyJ|sk_(?:live|test)_|re_)[A-Za-z0-9._-]+/

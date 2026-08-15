@@ -42,7 +42,9 @@ export const metadata: Metadata = {
     images: ['/opengraph-image'],
   },
   icons: {
-    icon: '/favicon.ico',
+    // Reuse the verified brand asset instead of requesting the missing
+    // /favicon.ico, which was recorded as a browser-console error by Lighthouse.
+    icon: '/images/whc-logo.jpg',
     apple: '/images/whc-logo.jpg',
   },
 }

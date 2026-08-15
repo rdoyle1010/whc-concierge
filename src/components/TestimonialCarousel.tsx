@@ -129,6 +129,7 @@ export default function TestimonialCarousel({ testimonials = defaultTestimonials
         {testimonials.length > itemsPerPage && (
           <>
             <button
+              type="button"
               onClick={handlePrev}
               className="absolute -left-6 md:-left-12 top-1/2 -translate-y-1/2 p-2 rounded-full hover:bg-surface transition-colors text-secondary hover:text-accent"
               aria-label="Previous testimonial"
@@ -137,6 +138,7 @@ export default function TestimonialCarousel({ testimonials = defaultTestimonials
             </button>
 
             <button
+              type="button"
               onClick={handleNext}
               className="absolute -right-6 md:-right-12 top-1/2 -translate-y-1/2 p-2 rounded-full hover:bg-surface transition-colors text-secondary hover:text-accent"
               aria-label="Next testimonial"
@@ -153,6 +155,7 @@ export default function TestimonialCarousel({ testimonials = defaultTestimonials
           {Array.from({ length: totalSlides }).map((_, i) => (
             <button
               key={i}
+              type="button"
               onClick={() => setCurrentIndex(i)}
               className={`transition-all duration-200 rounded-full ${
                 i === currentIndex

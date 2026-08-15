@@ -10,12 +10,21 @@ export default function HeroCarousel({ siteContent }: { siteContent?: WebsiteCon
   const slides = content.hero.slides
   const [current, setCurrent] = useState(0)
   const [paused, setPaused] = useState(false)
+  const [currentImageLoaded, setCurrentImageLoaded] = useState(false)
 
   useEffect(() => {
     if (current >= slides.length) setCurrent(0)
   }, [current, slides.length])
 
-  const next = useCallback(() => setCurrent(value => (value + 1) % slides.length), [slides.length])
+  const showSlide = useCallback((index: number) => {
+    setCurrentImageLoaded(false)
+    setCurrent(index)
+  }, [])
+
+  const next = useCallback(() => {
+    setCurrentImageLoaded(false)
+    setCurrent(value => (value + 1) % slides.length)
+  }, [slides.length])
 
   useEffect(() => {
     if (paused || slides.length < 2) return
@@ -23,23 +32,40 @@ export default function HeroCarousel({ siteContent }: { siteContent?: WebsiteCon
     return () => window.clearInterval(timer)
   }, [paused, next, slides.length])
 
+  // Loading every full-screen slide together made the hero image compete with
+  // hidden images and pushed Largest Contentful Paint beyond 30 seconds. Wait
+  // until the visible image has loaded, then quietly warm the next slide.
+  useEffect(() => {
+    if (!currentImageLoaded || slides.length < 2) return
+    const timer = window.setTimeout(() => {
+      const upcoming = slides[(current + 1) % slides.length]
+      const image = new window.Image()
+      image.decoding = 'async'
+      image.src = upcoming.image.url
+    }, 1200)
+    return () => window.clearTimeout(timer)
+  }, [current, currentImageLoaded, slides])
+
   const slide = slides[current] || slides[0]
 
   return (
     <div className="relative w-full min-h-[680px] h-[calc(100vh-60px)] overflow-hidden bg-black"
       onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)}>
-      {slides.map((item, index) => (
-        <div key={index} className="absolute inset-0 transition-opacity duration-1000"
-          style={{ opacity: index === current ? 1 : 0, pointerEvents: index === current ? 'auto' : 'none' }}>
-          <img
-            src={item.image.url}
-            alt={item.image.alt}
-            className="w-full h-full object-cover"
-            style={{ objectPosition: item.image.focalX + '% ' + item.image.focalY + '%' }}
-          />
-          <div className="absolute inset-0 bg-gradient-to-b from-black/45 via-black/20 to-black/65" />
-        </div>
-      ))}
+      <div key={current} className="absolute inset-0 animate-fade-in">
+        <img
+          src={slide.image.url}
+          alt={slide.image.alt}
+          width={1920}
+          height={1080}
+          loading="eager"
+          fetchPriority={current === 0 ? 'high' : 'auto'}
+          decoding="async"
+          onLoad={() => setCurrentImageLoaded(true)}
+          className="w-full h-full object-cover"
+          style={{ objectPosition: slide.image.focalX + '% ' + slide.image.focalY + '%' }}
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/45 via-black/20 to-black/65" />
+      </div>
 
       <div className="absolute inset-0 z-10 flex items-center">
         <div className="w-full max-w-7xl mx-auto px-6 lg:px-8">
@@ -61,9 +87,9 @@ export default function HeroCarousel({ siteContent }: { siteContent?: WebsiteCon
       </div>
 
       {slides.length > 1 && <div className="absolute bottom-8 left-6 lg:left-[calc((100vw-1280px)/2+2rem)] z-20 flex items-center gap-2">
-        {slides.map((_, index) => <button key={index} type="button" onClick={() => setCurrent(index)}
+        {slides.map((_, index) => <button key={index} type="button" onClick={() => showSlide(index)}
           className="h-[2px] transition-all duration-300" style={{ width: index === current ? 44 : 24, background: index === current ? 'var(--site-accent)' : 'rgba(255,255,255,.45)' }}
-          aria-label={'Go to slide ' + (index + 1)} />)}
+          aria-label={'Go to hero slide ' + (index + 1)} aria-current={index === current ? 'true' : undefined} />)}
       </div>}
     </div>
   )
