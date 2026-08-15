@@ -16,6 +16,7 @@ function LoginForm() {
   const router = useRouter()
   const supabase = createClient()
   const initialRole = searchParams.get('role') || 'talent'
+  const confirmationPending = searchParams.get('registered') === '1' && searchParams.get('confirm') === '1'
   const [role, setRole] = useState<'talent' | 'employer'>(initialRole as any)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -108,6 +109,7 @@ function LoginForm() {
             <button type="button" onClick={() => setRole('employer')} className={`flex-1 py-2 rounded-md text-[13px] font-medium transition-colors ${role === 'employer' ? 'bg-white text-ink shadow-sm' : 'text-muted'}`}>Hotel / Employer</button>
           </div>
 
+          {confirmationPending && <div className="bg-emerald-50 text-emerald-700 text-[13px] px-3 py-2.5 rounded-lg mb-5">Your profile is saved. Check your email to confirm your account, then sign in here.</div>}
           {error && <div className="bg-red-50 text-red-600 text-[13px] px-3 py-2.5 rounded-lg mb-5">{error}</div>}
 
           <form onSubmit={handleLogin} className="space-y-4">

@@ -10,8 +10,8 @@ import { ACADEMY_ANSWERS } from '@/lib/academy-answers'
 // Payment happens via /api/stripe/checkout (type 'course'); the webhook sets
 // paid_at. Quizzes are graded HERE so answer keys never reach the browser.
 
-function getAuthedUser() {
-  const cookieStore = cookies()
+async function getAuthedUser() {
+  const cookieStore = await cookies()
   const supabaseAuth = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,

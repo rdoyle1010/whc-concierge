@@ -2,12 +2,19 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { calculateMatchScore } from '@/lib/matching'
 import { jobAlertEmailHtml } from '@/lib/job-alert-email-template'
+import { isInternalApiRequest } from '@/lib/internal-request'
 
 const RESEND_API_KEY = process.env.RESEND_API_KEY
 const FROM_EMAIL = 'WHC Concierge <noreply@mail.wellnesshousecollective.co.uk>'
 
 export async function POST(req: NextRequest) {
   try {
+    // This endpoint enumerates auth users and sends bulk email with the service
+    // role. It is callable only by a verified server-side workflow.
+    if (!isInternalApiRequest(req)) {
+      return NextResponse.json({ error: 'Not found' }, { status: 404 })
+    }
+
     const { jobId } = await req.json()
     if (!jobId) return NextResponse.json({ error: 'jobId required' }, { status: 400 })
 

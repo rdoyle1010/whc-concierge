@@ -119,7 +119,7 @@ export default function TalentProfilePage() {
     const file = e.target.files?.[0]; if (!file || !userId) return
     const ext = file.name.split('.').pop() || 'jpg'
     // Use site-images (public) so photos are accessible
-    const url = await uploadViaApi(file, 'site-images', `profiles/${userId}/photo.${ext}`, 'profile_image_url')
+    const url = await uploadViaApi(file, 'site-images', `${userId}/profile/photo.${ext}`, 'profile_image_url')
     if (url) { u('profile_image_url', url); setMessage('Photo updated!'); setTimeout(() => setMessage(''), 3000) }
   }
 

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
+import { verifyRegistrationProof } from '@/lib/registration'
 
 // ── Whitelists ────────────────────────────────────────────────────────────
 // Columns that may be written after an upload completes.
@@ -33,8 +34,20 @@ const ALLOWED_FILE_TYPES = new Set([
 
 export async function POST(req: NextRequest) {
   try {
+    const formData = await req.formData()
+    const file = formData.get('file') as File | null
+    const bucket = formData.get('bucket') as string | null
+    const path = formData.get('path') as string | null
+    const profileId = formData.get('profileId') as string | null
+    const column = formData.get('column') as string | null
+    const registrationUserId = formData.get('registrationUserId') as string | null
+    const registrationProof = verifyRegistrationProof(formData.get('registrationProof'), {
+      userId: registrationUserId || undefined,
+      role: 'talent',
+    })
+
     // ── Auth: caller must be logged in ──
-    const cookieStore = cookies()
+    const cookieStore = await cookies()
     const supabaseAuth = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -45,20 +58,20 @@ export async function POST(req: NextRequest) {
         },
       }
     )
-    const { data: { user } } = await supabaseAuth.auth.getUser()
-    if (!user) {
+    const { data: { user: sessionUser } } = await supabaseAuth.auth.getUser()
+    const effectiveUserId = sessionUser?.id || registrationProof?.sub
+    if (!effectiveUserId) {
       return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
     }
 
-    const formData = await req.formData()
-    const file = formData.get('file') as File | null
-    const bucket = formData.get('bucket') as string | null
-    const path = formData.get('path') as string | null
-    const profileId = formData.get('profileId') as string | null
-    const column = formData.get('column') as string | null
-
     if (!file || !bucket || !path) {
       return NextResponse.json({ error: 'Missing file, bucket, or path' }, { status: 400 })
+    }
+
+    // A short-lived registration proof can upload only the new talent user's
+    // own private documents. It cannot write profile columns or public assets.
+    if (!sessionUser && registrationProof && (bucket !== 'talent-documents' || profileId || column)) {
+      return NextResponse.json({ error: 'Registration uploads are limited to private talent documents.' }, { status: 403 })
     }
 
     // ── Validate file size ──
@@ -84,17 +97,28 @@ export async function POST(req: NextRequest) {
     // ── Ownership: if updating a profile, it must belong to the caller ──
     const admin = createAdminClient()
 
+    if (!sessionUser && registrationProof) {
+      const { data: completedRegistration } = await admin
+        .from('candidate_profiles')
+        .select('id')
+        .eq('user_id', effectiveUserId)
+        .maybeSingle()
+      if (completedRegistration) {
+        return NextResponse.json({ error: 'This registration proof has already been used.' }, { status: 409 })
+      }
+    }
+
     // Paths are ownership boundaries. Service-role storage writes bypass RLS,
     // so the route itself must never accept another user's path.
     if (path.startsWith('/') || path.includes('..') || path.includes('\\')) {
       return NextResponse.json({ error: 'Invalid upload path' }, { status: 400 })
     }
     const [{ data: callerProfile }, { data: employerProfile }] = await Promise.all([
-      admin.from('profiles').select('role').eq('id', user.id).maybeSingle(),
-      admin.from('employer_profiles').select('id').eq('user_id', user.id).maybeSingle(),
+      admin.from('profiles').select('role').eq('id', effectiveUserId).maybeSingle(),
+      admin.from('employer_profiles').select('id').eq('user_id', effectiveUserId).maybeSingle(),
     ])
     const isAdmin = callerProfile?.role === 'admin'
-    const isOwnUserPath = path === user.id || path.startsWith(`${user.id}/`)
+    const isOwnUserPath = path === effectiveUserId || path.startsWith(`${effectiveUserId}/`)
     const isOwnEmployerAsset = Boolean(employerProfile && (
       path.startsWith(`${employerProfile.id}-`) || path.startsWith(`logos/${employerProfile.id}.`)
     ))
@@ -109,7 +133,7 @@ export async function POST(req: NextRequest) {
         .eq('id', profileId)
         .single()
 
-      if (!profile || profile.user_id !== user.id) {
+      if (!profile || profile.user_id !== effectiveUserId) {
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
       }
     }

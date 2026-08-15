@@ -36,7 +36,7 @@ type FeaturedRole = {
 
 async function getFeaturedRoles(): Promise<FeaturedRole[]> {
   try {
-    const supabase = createServerSupabaseClient()
+    const supabase = await createServerSupabaseClient()
     const { data } = await supabase
       .from('job_listings')
       .select('id, job_title, location, salary_min, salary_max, contract_type, tier, employer_profiles(company_name, property_name)')
@@ -62,7 +62,7 @@ async function getFeaturedRoles(): Promise<FeaturedRole[]> {
 
 async function canPreviewDraft() {
   try {
-    const supabase = createServerSupabaseClient()
+    const supabase = await createServerSupabaseClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return false
     const admin = createAdminClient()
@@ -202,11 +202,12 @@ function TestimonialsSection({ content }: { content: WebsiteContent }) {
   </section>
 }
 
-type HomePageProps = { searchParams?: { websitePreview?: string | string[] } }
+type HomePageProps = { searchParams?: Promise<{ websitePreview?: string | string[] }> }
 
-export default async function HomePage({ searchParams }: HomePageProps) {
+export default async function HomePage(props: HomePageProps) {
+  const searchParams = await props.searchParams;
   const previewRequested = searchParams?.websitePreview === 'draft'
-  const previewingDraft = previewRequested && await canPreviewDraft()
+  const previewingDraft = previewRequested && (await canPreviewDraft())
   const [content, featuredRoles] = await Promise.all([getWebsiteContent(previewingDraft), getFeaturedRoles()])
 
   const sections: Record<WebsiteSectionId, ReactNode> = {

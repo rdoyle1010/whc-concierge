@@ -6,7 +6,7 @@ import { createNotification } from '@/lib/notifications'
 import { sendNewMatchEmail } from '@/lib/emails'
 
 async function getEmployerProfile() {
-  const cookieStore = cookies()
+  const cookieStore = await cookies()
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,

@@ -9,8 +9,8 @@ import { cookies } from 'next/headers'
 //   (no row)      → unspecified: still eligible, ranked after explicit yes
 // All writes via service role - RLS on agency_availability is locked down.
 
-function getAuthedUser() {
-  const cookieStore = cookies()
+async function getAuthedUser() {
+  const cookieStore = await cookies()
   const supabaseAuth = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,

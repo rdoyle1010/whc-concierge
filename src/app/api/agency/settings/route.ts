@@ -9,8 +9,8 @@ import { geocodePostcode } from '@/lib/geo'
 // This route owns everything the register needs: opt-in, rate, mobile,
 // postcode (geocoded to real coordinates) and travel radius.
 
-function getAuthedUser() {
-  const cookieStore = cookies()
+async function getAuthedUser() {
+  const cookieStore = await cookies()
   const supabaseAuth = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,

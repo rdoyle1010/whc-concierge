@@ -13,7 +13,7 @@ const SITE = 'https://talent.wellnesshousecollective.co.uk'
 type Job = Record<string, any>
 
 const getJob = cache(async (id: string): Promise<Job | null> => {
-  const supabase = createServerSupabaseClient()
+  const supabase = await createServerSupabaseClient()
   const { data, error } = await supabase
     .from('job_listings')
     .select('*, employer_profiles(*)')
@@ -25,11 +25,11 @@ const getJob = cache(async (id: string): Promise<Job | null> => {
 })
 
 function stripPlain(s: string): string {
-  return s.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim()
+  return s.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
 }
 
 function prettyChip(s: string): string {
-  return String(s).replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
+  return String(s).replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
 function hasAny(values: unknown[]): boolean {
@@ -60,7 +60,8 @@ const EMPLOYMENT_TYPE_MAP: Record<string, string> = {
   internship: 'INTERN',
 }
 
-export async function generateMetadata({ params }: { params: { id: string } }): Promise<Metadata> {
+export async function generateMetadata(props: { params: Promise<{ id: string }> }): Promise<Metadata> {
+  const params = await props.params;
   const job = await getJob(params.id)
   if (!job) {
     return {
@@ -85,7 +86,8 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
   }
 }
 
-export default async function RoleDetailPage({ params }: { params: { id: string } }) {
+export default async function RoleDetailPage(props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   const job = await getJob(params.id)
   if (!job) notFound()
 

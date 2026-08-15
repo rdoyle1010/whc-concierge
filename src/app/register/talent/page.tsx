@@ -83,11 +83,13 @@ export default function TalentRegisterPage() {
 
   const update = (field: string, value: any) => setForm({ ...form, [field]: value })
 
-  const uploadFile = async (file: File, path: string): Promise<string | null> => {
+  const uploadFile = async (file: File, path: string, registrationProof: string, userId: string): Promise<string | null> => {
     const formData = new FormData()
     formData.append('file', file)
     formData.append('bucket', 'talent-documents')
     formData.append('path', path)
+    formData.append('registrationProof', registrationProof)
+    formData.append('registrationUserId', userId)
     const res = await fetch('/api/upload', { method: 'POST', body: formData })
     const data = await res.json()
     return res.ok ? data.url : null
@@ -98,25 +100,47 @@ export default function TalentRegisterPage() {
     setLoading(true)
     setError('')
 
-    // Create auth user
-    const { data: authData, error: authError } = await supabase.auth.signUp({
-      email: form.email, password: form.password,
-      options: { data: { role: 'talent', full_name: form.full_name } }
+    // Create the auth user on the server so registration can complete safely
+    // even when Supabase email confirmation is enabled and no browser session
+    // exists yet.
+    const initResponse = await fetch('/api/register/init', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email: form.email,
+        password: form.password,
+        role: 'talent',
+        displayName: form.full_name,
+      }),
     })
-    if (authError) { setError(authError.message); setLoading(false); return }
-    if (!authData.user) { setError('Registration failed'); setLoading(false); return }
+    const init = await initResponse.json().catch(() => ({}))
+    if (!initResponse.ok || !init.userId || !init.registrationProof) {
+      setError(init.error || 'Registration failed')
+      setLoading(false)
+      return
+    }
 
-    const userId = authData.user.id
+    if (init.session?.access_token && init.session?.refresh_token) {
+      const { error: sessionError } = await supabase.auth.setSession(init.session)
+      if (sessionError) {
+        setError('Your account was created, but sign-in could not be completed. Please use the login page.')
+        setLoading(false)
+        return
+      }
+    }
+
+    const userId = init.userId as string
+    const registrationProof = init.registrationProof as string
 
     // Upload documents
     let cv_url: string | null = null
     let insurance_document_url: string | null = null
     let certificates_urls: string[] = []
 
-    if (cvFile) cv_url = await uploadFile(cvFile, `${userId}/cv.${cvFile.name.split('.').pop() || 'pdf'}`)
-    if (insuranceFile) insurance_document_url = await uploadFile(insuranceFile, `${userId}/insurance.${insuranceFile.name.split('.').pop() || 'pdf'}`)
+    if (cvFile) cv_url = await uploadFile(cvFile, `${userId}/cv.${cvFile.name.split('.').pop() || 'pdf'}`, registrationProof, userId)
+    if (insuranceFile) insurance_document_url = await uploadFile(insuranceFile, `${userId}/insurance.${insuranceFile.name.split('.').pop() || 'pdf'}`, registrationProof, userId)
     for (const cert of certFiles) {
-      const url = await uploadFile(cert, `${userId}/certificates/${Date.now()}-${cert.name}`)
+      const url = await uploadFile(cert, `${userId}/certificates/${Date.now()}-${cert.name}`, registrationProof, userId)
       if (url) certificates_urls.push(url)
     }
 
@@ -163,6 +187,7 @@ export default function TalentRegisterPage() {
       insurance_document_url,
       cv_url,
       certificates_urls: certificates_urls.length > 0 ? certificates_urls : null,
+      agreed_terms: form.agreed_terms,
       approval_status: 'pending',
       profile_completion_score: score,
     }
@@ -171,7 +196,7 @@ export default function TalentRegisterPage() {
     const res = await fetch('/api/register/talent', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ userId, profileData, refCode: refCode || undefined }),
+      body: JSON.stringify({ userId, profileData, registrationProof, refCode: refCode || undefined }),
     })
     const result = await res.json()
 
@@ -181,7 +206,7 @@ export default function TalentRegisterPage() {
       return
     }
 
-    router.push('/talent/dashboard')
+    router.push(init.requiresEmailConfirmation ? '/login?registered=1&confirm=1' : '/talent/dashboard')
   }
 
   const stepValid = (s: number) => {

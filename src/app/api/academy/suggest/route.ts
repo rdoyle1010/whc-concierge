@@ -10,8 +10,8 @@ import { courseBySlug } from '@/lib/academy'
 // course - warm demand generation for the Academy, useful signal for the
 // therapist.
 
-function getAuthedUser() {
-  const cookieStore = cookies()
+async function getAuthedUser() {
+  const cookieStore = await cookies()
   const supabaseAuth = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,

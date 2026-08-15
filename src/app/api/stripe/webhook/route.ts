@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { stripe } from '@/lib/stripe'
+import { getStripe } from '@/lib/stripe'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createNotification } from '@/lib/notifications'
 import { ACADEMY, CORE_SLUGS, courseTitle } from '@/lib/academy'
 import { sendCourseAccessEmail, sendBookingConfirmedEmail, sendReferralRewardEmail } from '@/lib/emails'
 import Stripe from 'stripe'
+import { getInternalApiSecret } from '@/lib/internal-request'
 
 // Referral credit: when a referred therapist pays for their first register
 // listing, mark the referral converted and tell the referrer their free
@@ -39,6 +40,7 @@ async function convertReferral(supabase: any, candidateId: string) {
 }
 
 export async function POST(req: NextRequest) {
+  const stripe = getStripe()
   const body = await req.text()
   const sig = req.headers.get('stripe-signature')
   if (!sig) return NextResponse.json({ error: 'Missing signature' }, { status: 400 })
@@ -280,7 +282,10 @@ export async function POST(req: NextRequest) {
         // Fire job alerts for matching candidates (fire-and-forget)
         fetch(new URL('/api/job-alerts', req.url).toString(), {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            'x-whc-internal-secret': getInternalApiSecret(),
+          },
           body: JSON.stringify({ jobId: meta.job_id }),
         }).catch(() => {})
       }

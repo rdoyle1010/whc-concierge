@@ -12,8 +12,8 @@ const ALLOWED_TYPES: NotificationType[] = [
   'new_match', 'new_message', 'profile_approved', 'job_application', 'review_received', 'general',
 ]
 
-function getAuthedUser() {
-  const cookieStore = cookies()
+async function getAuthedUser() {
+  const cookieStore = await cookies()
   const supabaseAuth = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,

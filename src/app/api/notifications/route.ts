@@ -7,8 +7,8 @@ import { markAsRead, markAllRead } from '@/lib/notifications'
 // The user id is ALWAYS derived from the authenticated session - never from
 // a query param or the request body. Any userId passed by the client is ignored.
 
-function getAuthedUser() {
-  const cookieStore = cookies()
+async function getAuthedUser() {
+  const cookieStore = await cookies()
   const supabaseAuth = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,

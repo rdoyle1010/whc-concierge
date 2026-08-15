@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { stripe } from '@/lib/stripe'
+import { getStripe } from '@/lib/stripe'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
@@ -27,7 +27,7 @@ function getSafeOrigin(untrusted?: string | null): string {
 export async function POST(req: NextRequest) {
   try {
     // ── Auth: caller must be logged in ──
-    const cookieStore = cookies()
+    const cookieStore = await cookies()
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -63,6 +63,7 @@ export async function POST(req: NextRequest) {
     }
 
     const origin = getSafeOrigin(req.headers.get('origin'))
+    const stripe = getStripe()
     const session = await stripe.billingPortal.sessions.create({
       customer: customerId,
       return_url: `${origin}/talent/billing`,

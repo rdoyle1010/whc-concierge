@@ -3,6 +3,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { welcomeEmailHtml } from '@/lib/welcome-email-template'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
+import { sanitiseTalentRegistration, verifyRegistrationProof } from '@/lib/registration'
 
 const RESEND_API_KEY = process.env.RESEND_API_KEY
 const FROM_EMAIL = 'WHC Concierge <noreply@mail.wellnesshousecollective.co.uk>'
@@ -69,7 +70,7 @@ async function insertStrippingUnknownColumns(supabase: any, table: string, row: 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
-    const { userId, profileData } = body
+    const { userId, profileData, registrationProof } = body
 
     if (!userId || !profileData) {
       return NextResponse.json({ error: 'Missing userId or profileData' }, { status: 400 })
@@ -77,14 +78,15 @@ export async function POST(req: NextRequest) {
 
     // The profile must belong to the signed-in browser session. Previously a
     // caller who learned another auth UUID could create a profile for it.
-    const cookieStore = cookies()
+    const cookieStore = await cookies()
     const authClient = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
       { cookies: { getAll() { return cookieStore.getAll() }, setAll() {} } },
     )
     const { data: { user: signedInUser } } = await authClient.auth.getUser()
-    if (!signedInUser || signedInUser.id !== userId) {
+    const proof = verifyRegistrationProof(registrationProof, { userId, role: 'talent' })
+    if (signedInUser?.id !== userId && !proof) {
       return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
     }
 
@@ -93,7 +95,7 @@ export async function POST(req: NextRequest) {
     // Wait for the user to be fully committed to auth.users
     // This resolves the foreign key timing issue after signUp()
     let userVerified = false
-    let userEmail = signedInUser.email || ''
+    let userEmail = signedInUser?.email || proof?.email || ''
     for (let attempt = 0; attempt < 5; attempt++) {
       const { data, error } = await supabase.auth.admin.getUserById(userId)
       if (data?.user && !error) {
@@ -108,6 +110,20 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'User not found in auth - please try again' }, { status: 400 })
     }
 
+    const { data: existingCandidate } = await supabase
+      .from('candidate_profiles')
+      .select('id')
+      .eq('user_id', userId)
+      .maybeSingle()
+    if (existingCandidate) {
+      return NextResponse.json({ error: 'This registration has already been completed.' }, { status: 409 })
+    }
+
+    const safeProfile = sanitiseTalentRegistration(profileData, userId)
+    if (!safeProfile.full_name || !safeProfile.role_level || safeProfile.agreed_terms !== true) {
+      return NextResponse.json({ error: 'Name, role level and acceptance of the terms are required.' }, { status: 400 })
+    }
+
     // Ensure the shared profiles row exists - messaging FKs, role routing and
     // notifications all key on it. Live check constraint requires 'candidate'
     // (not 'talent'); the app's auth helpers recognise both.
@@ -118,7 +134,7 @@ export async function POST(req: NextRequest) {
           id: userId,
           email: userEmail,
           role: 'candidate',
-          full_name: profileData.full_name || null,
+          full_name: safeProfile.full_name || null,
         },
         { onConflict: 'id', ignoreDuplicates: true }
       )
@@ -132,11 +148,11 @@ export async function POST(req: NextRequest) {
     for (let attempt = 0; attempt < 3; attempt++) {
       const { error: profileError } = await supabase
         .from('candidate_profiles')
-        .insert({ user_id: userId, ...profileData })
+        .insert(safeProfile)
 
       if (!profileError) {
         if (body.refCode) await recordReferral(supabase, userId, body.refCode)
-        if (userEmail) await sendWelcomeEmail(userEmail, profileData.full_name?.split(' ')[0] || 'there')
+        if (userEmail) await sendWelcomeEmail(userEmail, String(safeProfile.full_name).split(' ')[0] || 'there')
         return NextResponse.json({ success: true })
       }
 
@@ -149,10 +165,10 @@ export async function POST(req: NextRequest) {
       }
 
       // Column mismatch: strip only the offending columns, keep the rest of the data
-      const result = await insertStrippingUnknownColumns(supabase, 'candidate_profiles', { user_id: userId, ...profileData })
+      const result = await insertStrippingUnknownColumns(supabase, 'candidate_profiles', safeProfile)
       if (result.ok) {
         if (body.refCode) await recordReferral(supabase, userId, body.refCode)
-        if (userEmail) await sendWelcomeEmail(userEmail, profileData.full_name?.split(' ')[0] || 'there')
+        if (userEmail) await sendWelcomeEmail(userEmail, String(safeProfile.full_name).split(' ')[0] || 'there')
         return NextResponse.json({ success: true })
       }
       lastError = result.error

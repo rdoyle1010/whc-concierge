@@ -91,7 +91,7 @@ export function calculateMatchScore(candidate: any, job: any): {
   // The public job title is the employer's actual promise to candidates and
   // therefore takes precedence over a stale or conflicting hidden taxonomy
   // value. The structured field remains a fallback for untitled records.
-  const requiredRole = String(job.title || job.required_role_level || '')
+  const requiredRole = String(job.job_title || job.title || job.required_role_level || '')
   const candidateFamily = roleFamily(candidateRole)
   const jobFamily = roleFamily(requiredRole)
   const comparableFamilies = candidateFamily !== 'other' && jobFamily !== 'other'

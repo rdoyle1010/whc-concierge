@@ -8,8 +8,8 @@ import { rankCandidates } from '@/lib/matching'
 // so it requires an authenticated caller who either owns the job's employer
 // profile or is an admin.
 
-function getAuthedUser() {
-  const cookieStore = cookies()
+async function getAuthedUser() {
+  const cookieStore = await cookies()
   const supabaseAuth = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,

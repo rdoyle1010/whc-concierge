@@ -21,7 +21,7 @@ const BLOCKED_API_ROUTES = [
   '/api/welcome-email',
 ]
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
 
   // Block maintenance API routes entirely

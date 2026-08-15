@@ -31,15 +31,34 @@ export default function EmployerRegisterPage() {
     setLoading(true)
     setError('')
 
-    const { data: authData, error: authError } = await supabase.auth.signUp({
-      email: form.email, password: form.password,
-      options: { data: { role: 'employer', company_name: form.company_name } }
+    const initResponse = await fetch('/api/register/init', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email: form.email,
+        password: form.password,
+        role: 'employer',
+        displayName: form.company_name,
+      }),
     })
-    if (authError) { setError(authError.message); setLoading(false); return }
-    if (!authData.user) { setError('Registration failed'); setLoading(false); return }
+    const init = await initResponse.json().catch(() => ({}))
+    if (!initResponse.ok || !init.userId || !init.registrationProof) {
+      setError(init.error || 'Registration failed')
+      setLoading(false)
+      return
+    }
+
+    if (init.session?.access_token && init.session?.refresh_token) {
+      const { error: sessionError } = await supabase.auth.setSession(init.session)
+      if (sessionError) {
+        setError('Your account was created, but sign-in could not be completed. Please use the login page.')
+        setLoading(false)
+        return
+      }
+    }
 
     const profileData: Record<string, any> = {
-      user_id: authData.user.id,
+      user_id: init.userId,
       company_name: form.company_name,
       property_name: form.company_name,
       contact_name: form.contact_name,
@@ -63,7 +82,7 @@ export default function EmployerRegisterPage() {
     const res = await fetch('/api/register/employer', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ userId: authData.user.id, profileData }),
+      body: JSON.stringify({ userId: init.userId, profileData, registrationProof: init.registrationProof }),
     })
     const result = await res.json()
 
@@ -73,7 +92,7 @@ export default function EmployerRegisterPage() {
       return
     }
 
-    router.push('/employer/dashboard')
+    router.push(init.requiresEmailConfirmation ? '/login?registered=1&confirm=1' : '/employer/dashboard')
   }
 
   return (
@@ -174,4 +193,3 @@ export default function EmployerRegisterPage() {
     </div>
   )
 }
-

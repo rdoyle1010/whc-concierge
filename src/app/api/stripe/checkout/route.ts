@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { stripe } from '@/lib/stripe'
+import { getStripe } from '@/lib/stripe'
 import { JOB_TIERS, FEATURED_PROFILE_PRICE, AGENCY_LISTING_TIERS, AGENCY_PLATFORM_FEE_PCT, PREFERRED_EMPLOYER_PRICE } from '@/lib/constants'
 import { COURSE_PRICE, BUNDLE_PRICE, PUBLIC_COURSE_PRICE, ACADEMY, CORE_SLUGS, coursePrice, publicCoursePrice } from '@/lib/academy'
 import { createServerClient } from '@supabase/ssr'
@@ -27,8 +27,9 @@ function getSafeOrigin(untrusted?: string): string {
 
 export async function POST(req: NextRequest) {
   try {
+    const stripe = getStripe()
     // ── Auth: caller must be logged in ──
-    const cookieStore = cookies()
+    const cookieStore = await cookies()
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
