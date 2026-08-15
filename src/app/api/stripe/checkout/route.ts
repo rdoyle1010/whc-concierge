@@ -4,28 +4,9 @@ import { JOB_TIERS, FEATURED_PROFILE_PRICE, AGENCY_LISTING_TIERS, AGENCY_PLATFOR
 import { BUNDLE_PRICE, coursePrice, publicCoursePrice } from '@/lib/academy'
 import { getAcademyCatalog, getAcademyCourseBySlug } from '@/lib/academy-catalog-server'
 import { AD_PLACEMENTS, isAdPlacement } from '@/lib/advertising'
+import { assertStripeModeMatchesOrigin, getSafeSiteOrigin } from '@/lib/site-origin'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
-
-// Only allow redirects back to our own domain
-const ALLOWED_ORIGINS = [
-  process.env.NEXT_PUBLIC_SITE_URL,
-  'https://talent.wellnesshousecollective.co.uk',
-  'https://whc-concierge.netlify.app',
-].filter(Boolean) as string[]
-
-function getSafeOrigin(untrusted?: string): string {
-  // Exact origin match only - a startsWith prefix check would accept
-  // 'https://whc-concierge.netlify.app.attacker.com' and hand Stripe an
-  // attacker-controlled success/cancel URL.
-  if (untrusted) {
-    try {
-      const o = new URL(untrusted).origin
-      if (ALLOWED_ORIGINS.includes(o)) return o
-    } catch { /* fall through to the safe default */ }
-  }
-  return ALLOWED_ORIGINS[0] || 'https://talent.wellnesshousecollective.co.uk'
-}
 
 function secureUrl(value: unknown) {
   try {
@@ -38,7 +19,6 @@ function secureUrl(value: unknown) {
 
 export async function POST(req: NextRequest) {
   try {
-    const stripe = getStripe()
     // ── Auth: caller must be logged in ──
     const cookieStore = await cookies()
     const supabase = createServerClient(
@@ -55,7 +35,9 @@ export async function POST(req: NextRequest) {
 
     const body = await req.json()
     const { type, returnUrl } = body
-    const origin = getSafeOrigin(returnUrl)
+    const origin = getSafeSiteOrigin(returnUrl)
+    assertStripeModeMatchesOrigin(origin)
+    const stripe = getStripe()
 
     // ── PUBLIC Academy purchase - no account needed. The guest pays £15 by
     // email; the webhook creates their learner account and emails access. ──
