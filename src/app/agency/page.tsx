@@ -2,8 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import Navbar from '@/components/Navbar'
-import Footer from '@/components/Footer'
+import DashboardShell from '@/components/DashboardShell'
 import Link from 'next/link'
 import { Search, MapPin, Star, Clock, Shield, ShieldCheck, ChevronDown, X, SlidersHorizontal, GraduationCap } from 'lucide-react'
 import { ACADEMY, courseTitle } from '@/lib/academy'
@@ -230,15 +229,15 @@ export default function AgencyPage() {
   })
 
   return (
-    <div className="min-h-screen bg-surface">
-      <Navbar />
+    <DashboardShell role="employer">
 
       {/* Hero */}
-      <section className="pt-16 bg-white border-b border-border">
-        <div className="max-w-7xl mx-auto px-6 lg:px-8 py-14">
-          <h1 className="text-[36px] md:text-[44px] font-medium text-ink tracking-tight leading-[1.1] mb-3">Find Exceptional Spa Talent</h1>
-          <p className="text-[15px] text-secondary max-w-xl mb-8">Search our network of verified, insured spa professionals available for agency work, seasonal cover and specialist treatments.</p>
-          <form onSubmit={e => { e.preventDefault(); handleSearch() }} className="max-w-4xl space-y-3">
+      <section className="mb-8">
+        <div className="max-w-[1460px] mx-auto">
+          <p className="dashboard-eyebrow">Agency staffing</p>
+          <h1 className="dashboard-title">Find confirmed spa professionals</h1>
+          <p className="dashboard-intro">Search verified, insured professionals by the exact date and hours you need them.</p>
+          <form onSubmit={e => { e.preventDefault(); handleSearch() }} className="max-w-5xl space-y-4 mt-7 bg-white border border-border rounded-2xl p-5 md:p-6 shadow-sm">
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <label className="text-[11px] font-medium text-secondary">Shift date<input required type="date" min={new Date().toLocaleDateString('en-CA')} value={shiftDate} onChange={e => setShiftDate(e.target.value)} className="input-field mt-1 w-full" /></label>
               <label className="text-[11px] font-medium text-secondary">Starts<input required type="time" value={shiftStartTime} onChange={e => setShiftStartTime(e.target.value)} className="input-field mt-1 w-full" /></label>
@@ -269,7 +268,7 @@ export default function AgencyPage() {
       {(() => {
         const activeFilterCount = services.length + brands.length + roles.length + (insuredOnly ? 1 : 0) + (availNow ? 1 : 0)
         const filterPanel = (
-          <div className="bg-white border border-border rounded-xl p-5">
+          <div className="bg-white border border-border rounded-2xl p-5 shadow-sm">
               <div className="flex items-center justify-between mb-4">
                 <p className="text-[14px] font-medium text-ink">Filters</p>
                 <button type="button" onClick={clearFilters} className="text-[11px] text-muted hover:text-ink">Clear all</button>
@@ -309,7 +308,7 @@ export default function AgencyPage() {
           </div>
         )
         return (
-      <div className="max-w-7xl mx-auto px-6 lg:px-8 py-8">
+      <div className="max-w-[1460px] mx-auto pb-10">
         <div className="flex gap-8">
           {/* Sidebar filters (desktop) */}
           <aside className="hidden lg:block w-[260px] shrink-0 sticky top-[76px] self-start max-h-[calc(100vh-100px)] overflow-y-auto">
@@ -328,7 +327,7 @@ export default function AgencyPage() {
                 </div>
                 {filterPanel}
                 <button type="button" onClick={() => setFiltersOpen(false)} className="btn-primary w-full mt-4 text-[13px]">
-                  Show {sorted.length} therapist{sorted.length !== 1 ? 's' : ''}
+                  Show {sorted.length} professional{sorted.length !== 1 ? 's' : ''}
                 </button>
               </div>
             </div>
@@ -343,7 +342,7 @@ export default function AgencyPage() {
                   className="lg:hidden inline-flex items-center gap-1.5 text-[12px] font-medium border border-border bg-white rounded-lg px-3 py-1.5 text-ink">
                   <SlidersHorizontal size={13} /> Filters{activeFilterCount > 0 ? ` (${activeFilterCount})` : ''}
                 </button>
-                <p className="text-[13px] text-muted">{sorted.length} therapist{sorted.length !== 1 ? 's' : ''}</p>
+                <p className="text-[13px] text-muted">{sorted.length} professional{sorted.length !== 1 ? 's' : ''}</p>
               </div>
               <select value={sortBy} onChange={e => setSortBy(e.target.value)} className="input-field !w-auto !py-1.5 text-[12px]">
                 <option value="match">Best Match</option><option value="rated">Highest Rated</option><option value="rate_low">Day Rate ↑</option><option value="rate_high">Day Rate ↓</option><option value="recent">Most Recent</option>
@@ -351,10 +350,10 @@ export default function AgencyPage() {
             </div>
 
             {loading ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">{Array.from({length:6}).map((_,i) => <div key={i} className="skeleton h-72 rounded-xl" />)}</div>
+              <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">{Array.from({length:6}).map((_,i) => <div key={i} className="skeleton h-72 rounded-2xl" />)}</div>
             ) : requiresSignIn ? (
               <div className="bg-white border border-border p-10 text-center">
-                <h2 className="font-serif text-2xl text-ink mb-2">Agency profiles are private</h2>
+                <h2 className="text-2xl font-semibold tracking-tight text-ink mb-2">Agency profiles are private</h2>
                 <p className="text-[13px] text-muted max-w-lg mx-auto mb-5">Sign in with an approved hotel or spa account to search professionals. Stealth Mode and travel limits are checked before any profile is shown.</p>
                 <Link href="/login?account=employer" className="btn-primary inline-block">Hotel &amp; Spa Sign In</Link>
               </div>
@@ -365,7 +364,7 @@ export default function AgencyPage() {
                 <p className="text-[15px] text-ink font-medium mb-2">
                   {!originGeocoded && !appliedSearch
                     ? 'Add the property postcode to search by distance'
-                    : appliedSearch && appliedSearch.radius !== 'UK-wide' ? `No therapists found near ${appliedSearch.outward}` : 'No therapists found'}
+                    : appliedSearch && appliedSearch.radius !== 'UK-wide' ? `No professionals found near ${appliedSearch.outward}` : 'No professionals found'}
                 </p>
                 <p className="text-[13px] text-muted mb-4">
                   {!originGeocoded && !appliedSearch
@@ -389,18 +388,18 @@ export default function AgencyPage() {
               </div>
             ) : (
               <>
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
                   {sorted.slice(0, visible).map(c => (
-                    <div key={c.id} className={`bg-white border rounded-xl overflow-hidden hover:shadow-md hover:-translate-y-0.5 transition-all ${c.is_featured ? 'border-accent ring-1 ring-accent/20' : 'border-border'}`}>
-                      <div className="p-5">
+                    <div key={c.id} className={`bg-white border rounded-2xl overflow-hidden hover:shadow-lg hover:-translate-y-0.5 transition-all ${c.is_featured ? 'border-accent ring-1 ring-accent/20' : 'border-border'}`}>
+                      <div className="p-6">
                         {/* Top: photo + badges */}
                         <div className="flex items-start gap-3 mb-3 relative">
-                          <div className="w-16 h-16 rounded-full bg-ink flex items-center justify-center shrink-0 overflow-hidden">
+                          <div className="w-16 h-16 rounded-full bg-[#F1EBDD] border border-[#E2D8C5] flex items-center justify-center shrink-0 overflow-hidden">
                             {c.profile_image_url ? <img src={c.profile_image_url} alt="" className="w-full h-full object-cover" />
-                            : <span className="text-[20px] font-semibold text-accent">{c.full_name?.[0]}</span>}
+                            : <span className="text-[20px] font-semibold text-[#12354D]">{c.full_name?.[0]}</span>}
                           </div>
                           <div className="min-w-0 flex-1">
-                            <h3 className="text-[16px] font-medium text-ink truncate capitalize">{c.full_name}</h3>
+                            <h3 className="text-[18px] font-semibold tracking-[-0.01em] text-ink truncate capitalize">{c.full_name}</h3>
                             {c.role_level && <span className="inline-block text-[10px] font-medium bg-surface text-secondary px-2 py-0.5 rounded-full mt-0.5">{c.role_level}</span>}
                             {c.headline && <p className="text-[12px] text-muted truncate mt-1">{c.headline}</p>}
                           </div>
@@ -467,7 +466,7 @@ export default function AgencyPage() {
                   ))}
                 </div>
                 {visible < sorted.length && (
-                  <div className="text-center mt-8"><button type="button" onClick={() => setVisible(v => v + 12)} className="btn-secondary">Load more therapists</button></div>
+                  <div className="text-center mt-8"><button type="button" onClick={() => setVisible(v => v + 12)} className="btn-secondary">Load more professionals</button></div>
                 )}
               </>
             )}
@@ -477,7 +476,6 @@ export default function AgencyPage() {
         )
       })()}
 
-      <Footer />
-    </div>
+    </DashboardShell>
   )
 }
