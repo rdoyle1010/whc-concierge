@@ -67,6 +67,15 @@ export default function EmployerProfilePage() {
         brand_partners: profile.brand_partners,
         num_treatment_rooms: profile.num_treatment_rooms ? parseInt(profile.num_treatment_rooms) : null,
         team_size: profile.team_size ? parseInt(profile.team_size) : null,
+        // Travel information shown to professionals. It is supplied by the
+        // property and labelled as such; we do not invent journey times.
+        commute_car_required: profile.commute_car_required,
+        nearest_transport: profile.nearest_transport,
+        transport_walk_minutes: profile.transport_walk_minutes ? parseInt(profile.transport_walk_minutes) : null,
+        parking_available: profile.parking_available,
+        taxi_support: profile.taxi_support,
+        taxi_notes: profile.taxi_notes,
+        travel_notes: profile.travel_notes,
         // Culture
         culture_points: profile.culture_points,
         highlights: profile.highlights,
@@ -89,6 +98,10 @@ export default function EmployerProfilePage() {
         services_offered: profile.services_offered, brand_partners: profile.brand_partners,
         num_treatment_rooms: profile.num_treatment_rooms ? parseInt(profile.num_treatment_rooms) : null,
         team_size: profile.team_size ? parseInt(profile.team_size) : null,
+        commute_car_required: profile.commute_car_required, nearest_transport: profile.nearest_transport,
+        transport_walk_minutes: profile.transport_walk_minutes ? parseInt(profile.transport_walk_minutes) : null,
+        parking_available: profile.parking_available, taxi_support: profile.taxi_support,
+        taxi_notes: profile.taxi_notes, travel_notes: profile.travel_notes,
         culture_points: profile.culture_points, highlights: profile.highlights,
         agency_available: profile.agency_available, agency_note: profile.agency_note,
       }
@@ -255,6 +268,48 @@ export default function EmployerProfilePage() {
               <label className="block text-sm font-medium text-gray-700 mb-1.5">Property Type</label>
               <input type="text" value={profile.property_type || ''} onChange={(e) => update('property_type', e.target.value)} className="input-field" placeholder="e.g. hotel_spa, day_spa, resort" />
             </div>
+          </div>
+        </div>
+
+        {/* Travel and access */}
+        <div className="dashboard-card mb-6 space-y-5">
+          <div>
+            <h3 className="font-serif text-lg font-semibold">Travel &amp; Access for Staff</h3>
+            <p className="text-sm text-gray-500 mt-1">Give professionals practical, property-supplied information. Mileage is calculated separately; these details explain the real journey.</p>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">Nearest station, Tube or bus stop</label>
+              <input type="text" value={profile.nearest_transport || ''} onChange={(e) => update('nearest_transport', e.target.value)} className="input-field" placeholder="e.g. Green Park Underground" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">Approximate walk (minutes)</label>
+              <input type="number" min="0" max="240" value={profile.transport_walk_minutes || ''} onChange={(e) => update('transport_walk_minutes', e.target.value)} className="input-field" placeholder="e.g. 8" />
+            </div>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <label className="flex items-start gap-3 border border-border p-4 cursor-pointer">
+              <input type="checkbox" checked={profile.commute_car_required || false} onChange={(e) => update('commute_car_required', e.target.checked)} className="mt-0.5 w-4 h-4" />
+              <span><span className="block text-sm font-medium text-ink">Car required</span><span className="text-xs text-muted">Public transport is not practical</span></span>
+            </label>
+            <label className="flex items-start gap-3 border border-border p-4 cursor-pointer">
+              <input type="checkbox" checked={profile.parking_available || false} onChange={(e) => update('parking_available', e.target.checked)} className="mt-0.5 w-4 h-4" />
+              <span><span className="block text-sm font-medium text-ink">Staff parking</span><span className="text-xs text-muted">Parking is available on site</span></span>
+            </label>
+            <label className="flex items-start gap-3 border border-border p-4 cursor-pointer">
+              <input type="checkbox" checked={profile.taxi_support || false} onChange={(e) => update('taxi_support', e.target.checked)} className="mt-0.5 w-4 h-4" />
+              <span><span className="block text-sm font-medium text-ink">Taxi or shuttle help</span><span className="text-xs text-muted">The property can arrange or contribute</span></span>
+            </label>
+          </div>
+          {profile.taxi_support && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">Taxi / shuttle details</label>
+              <input type="text" value={profile.taxi_notes || ''} onChange={(e) => update('taxi_notes', e.target.value)} className="input-field" placeholder="e.g. Taxi from Skipton station reimbursed with receipt" />
+            </div>
+          )}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">Other access notes</label>
+            <textarea rows={3} value={profile.travel_notes || ''} onChange={(e) => update('travel_notes', e.target.value)} className="input-field" placeholder="e.g. Staff entrance on Park Lane; late-shift transport available by arrangement" />
           </div>
         </div>
 

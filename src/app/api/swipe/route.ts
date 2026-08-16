@@ -6,6 +6,7 @@ import { createNotification } from '@/lib/notifications'
 import { applicantConfirmationHtml, employerNotificationHtml } from '@/lib/application-email-templates'
 import { sendNewMatchEmail } from '@/lib/emails'
 import { calculateMatchScore } from '@/lib/matching'
+import { canEmployerDiscoverCandidate, mutualRadiusResult } from '@/lib/discovery'
 
 // Records a swipe server-side (swipes has unreliable RLS), creates the
 // application on a candidate right-swipe, and detects MUTUAL matches:
@@ -341,10 +342,38 @@ export async function POST(req: NextRequest) {
     /* ── Employer swiping on a candidate ── */
     const { data: emp } = await admin
       .from('employer_profiles')
-      .select('id, property_name, company_name')
+      .select('id, property_name, company_name, approval_status, latitude, longitude')
       .eq('user_id', user.id)
       .maybeSingle()
     if (!emp) return NextResponse.json({ error: 'Employer profile not found' }, { status: 404 })
+    if (emp.approval_status !== 'approved') {
+      return NextResponse.json({ error: 'Your employer account must be approved first' }, { status: 403 })
+    }
+
+    let candidateForRight: any = null
+    if (action === 'right') {
+      const [{ data: cand }, { data: blocked }] = await Promise.all([
+        admin.from('candidate_profiles').select('*').eq('id', targetId).maybeSingle(),
+        admin.from('profile_blocks').select('candidate_id')
+          .eq('candidate_id', targetId).eq('blocked_employer_id', emp.id).maybeSingle(),
+      ])
+      if (!cand) return NextResponse.json({ error: 'Candidate profile not found' }, { status: 404 })
+
+      const discoverable = canEmployerDiscoverCandidate(cand, new Set(blocked ? [targetId] : []))
+      const travel = mutualRadiusResult(emp, cand, null)
+      const locationMissing = Boolean(cand.travel_radius_miles) && travel.reason === 'location_required'
+      if (!discoverable || !travel.withinRadius || locationMissing) {
+        await removeSwipe(admin, {
+          swiper_id: user.id, swiper_type: 'employer', target_id: targetId, target_type: 'candidate',
+        })
+        return NextResponse.json({
+          error: locationMissing
+            ? 'Add your property location before approaching professionals with a travel radius.'
+            : 'This profile is not available to your account.',
+        }, { status: 403 })
+      }
+      candidateForRight = cand
+    }
 
     const recorded = await replaceSwipe(admin, {
       swiper_id: user.id, swiper_type: 'employer', target_id: targetId, target_type: 'candidate', action,
@@ -353,12 +382,7 @@ export async function POST(req: NextRequest) {
 
     if (action !== 'right') return NextResponse.json({ matched: false })
 
-    const { data: cand } = await admin
-      .from('candidate_profiles')
-      .select('*')
-      .eq('id', targetId)
-      .maybeSingle()
-    if (!cand) return NextResponse.json({ matched: false })
+    const cand = candidateForRight
 
     if (cand.user_id && recorded.changed) {
       await createNotification(

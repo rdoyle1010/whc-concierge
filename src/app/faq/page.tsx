@@ -30,11 +30,11 @@ const faqSections: FAQSection[] = [
       },
       {
         question: 'How does matching work?',
-        answer: 'Our algorithm scores you across 15 categories including treatment skills, qualifications, product house knowledge, location, and availability.',
+        answer: 'Matching considers role level, treatment skills, qualifications, product-house knowledge, availability and location. A score is a guide for both sides, not an automatic hiring decision.',
       },
       {
         question: 'Can I hide my profile from my current employer?',
-        answer: 'Yes. Stealth Mode lets you block specific employers from seeing your profile.',
+        answer: 'Yes. In Talent Settings, Stealth Mode lets you block a specific employer. That business will not receive your profile in new searches, matching results, agency results or shortlists. It cannot withdraw information you already chose to send in an application or message, and authorised WHC administrators can still access accounts when needed for safety and support.',
       },
       {
         question: 'What qualifications do you accept?',
@@ -59,11 +59,11 @@ const faqSections: FAQSection[] = [
       },
       {
         question: 'What are the job posting tiers?',
-        answer: 'Bronze (7 days, £49), Silver (14 days, £89), Gold (30 days, £149), Platinum (60 days, £249) - each with increasing visibility and features.',
+        answer: 'The current tiers are Bronze, Silver, Gold and Platinum, with different listing lengths and visibility. Please use the Pricing page for the live price and inclusions before purchasing, as offers may change.',
       },
       {
         question: 'How long does approval take?',
-        answer: 'We review employer accounts within 24-48 hours to maintain platform quality.',
+        answer: 'Employer accounts are reviewed before they can view private talent profiles. Timing depends on whether the information supplied can be verified; contact support if your review appears to be delayed.',
       },
       {
         question: 'Can I search for candidates?',
@@ -71,7 +71,11 @@ const faqSections: FAQSection[] = [
       },
       {
         question: "What's included in the match score?",
-        answer: '15 weighted categories including role level, treatment skills, product houses, qualifications, location, and availability.',
+        answer: 'The score compares relevant role requirements with the professional’s profile, including skills, product houses, qualifications, role level, availability and location. Employers should still review the full profile and speak with the person.',
+      },
+      {
+        question: 'How does location and travel matching work?',
+        answer: 'Distance searches use postcode coordinates and straight-line miles. A professional is only included when the distance fits both the employer’s chosen search radius and the professional’s own travel radius. This is not a journey-time promise, so properties can also provide the nearest station or Tube, approximate walk, whether a car is required, parking and any taxi or shuttle support.',
       },
       {
         question: 'Do you offer bulk pricing?',
@@ -88,15 +92,15 @@ const faqSections: FAQSection[] = [
       },
       {
         question: 'How do I delete my account?',
-        answer: "Go to Settings and click 'Request Account Deletion'. We process it within 72 hours.",
+        answer: "Go to Settings and click 'Request Account Deletion'. The request is sent for review; support will confirm the next steps and any records that must be retained for legal or safety reasons.",
       },
       {
         question: 'Is my data secure?',
-        answer: 'Yes. We use bank-grade encryption, secure hosting, and comply with UK GDPR.',
+        answer: 'We use authenticated accounts, role-based access controls and restricted database policies. Please use a unique password and report anything unexpected. Our Privacy Policy explains how personal data is handled under UK data-protection law.',
       },
       {
         question: 'Who can see my profile?',
-        answer: 'Only approved employers can view talent profiles. You control visibility via Stealth Mode.',
+        answer: 'Approved employers can view discoverable talent profiles. An employer blocked through Stealth Mode is excluded before profile data is sent to them. Authorised WHC administrators retain access for moderation, safety and support.',
       },
     ],
   },
@@ -109,7 +113,7 @@ const faqSections: FAQSection[] = [
       },
       {
         question: "Can I get a refund?",
-        answer: "Contact us within 48 hours of posting if the role hasn't received applications.",
+        answer: 'Please check the Terms and contact support with the payment details. A refund is not automatically guaranteed once a listing or paid service has been published or started.',
       },
       {
         question: 'Do you charge commission on hires?',

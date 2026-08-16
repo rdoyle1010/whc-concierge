@@ -53,28 +53,6 @@ async function geocodeSearch(raw: string): Promise<{ lat: number; lng: number } 
   return null
 }
 
-// Great-circle miles between two points (haversine)
-function milesBetween(lat1: number, lng1: number, lat2: number, lng2: number): number {
-  const R = 3958.761
-  const toRad = (d: number) => (d * Math.PI) / 180
-  const dLat = toRad(lat2 - lat1), dLng = toRad(lng2 - lng1)
-  const h = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) ** 2
-  return 2 * R * Math.asin(Math.sqrt(h))
-}
-
-// Best-effort outward code for a candidate: prefer their postcode field, then any postcode-like token in their location text
-function candidateOutward(c: any): string | null {
-  if (c.postcode) {
-    const o = normaliseOutward(String(c.postcode))
-    if (o) return o
-  }
-  if (typeof c.location === 'string') {
-    const m = c.location.toUpperCase().match(/\b[A-Z]{1,2}\d[A-Z0-9]?(?:\s*\d[A-Z]{2})?\b/)
-    if (m) return normaliseOutward(m[0])
-  }
-  return null
-}
-
 function FilterSection({ title, children, defaultOpen = false }: { title: string; children: React.ReactNode; defaultOpen?: boolean }) {
   const [open, setOpen] = useState(defaultOpen)
   return (
@@ -108,12 +86,21 @@ export default function AgencyPage() {
   const [filtersOpen, setFiltersOpen] = useState(false)
   const [academySel, setAcademySel] = useState<string[]>([])
   const [academyMap, setAcademyMap] = useState<Map<string, string[]>>(new Map())
+  const [requiresSignIn, setRequiresSignIn] = useState(false)
+  const [directoryError, setDirectoryError] = useState('')
+  const [originGeocoded, setOriginGeocoded] = useState(true)
 
   useEffect(() => {
     fetch('/api/agency/directory')
-      .then(res => res.ok ? res.json() : { candidates: [] })
-      .then(data => { setCandidates(data.candidates || []); setLoading(false) })
-      .catch(() => { setCandidates([]); setLoading(false) })
+      .then(async res => ({ ok: res.ok, status: res.status, body: await res.json().catch(() => ({})) }))
+      .then(({ ok, status, body }) => {
+        setRequiresSignIn(status === 401)
+        setDirectoryError(ok || status === 401 ? '' : (body.error || 'Directory unavailable'))
+        setOriginGeocoded(body.origin?.geocoded !== false)
+        setCandidates(ok ? (body.candidates || []) : [])
+        setLoading(false)
+      })
+      .catch(() => { setCandidates([]); setDirectoryError('Directory unavailable'); setLoading(false) })
     // Who has marked TODAY as available on their calendar? (public read is
     // available=true rows only; fails silently if the table isn't live yet)
     const today = new Date().toLocaleDateString('en-CA')
@@ -135,46 +122,80 @@ export default function AgencyPage() {
     set(arr.includes(val) ? arr.filter(v => v !== val) : [...arr, val])
   }
 
-  const clearFilters = () => { setServices([]); setBrands([]); setRoles([]); setInsuredOnly(false); setAvailNow(false); setAcademySel([]); setPostcode(''); setAppliedSearch(null); setPostcodeError('') }
+  const clearFilters = () => {
+    setServices([]); setBrands([]); setRoles([]); setInsuredOnly(false); setAvailNow(false); setAcademySel([]); setPostcode(''); setAppliedSearch(null); setPostcodeError(''); setDirectoryError('')
+    setLoading(true)
+    fetch('/api/agency/directory')
+      .then(async res => ({ ok: res.ok, status: res.status, body: await res.json().catch(() => ({})) }))
+      .then(({ ok, status, body }) => {
+        setRequiresSignIn(status === 401)
+        setOriginGeocoded(body.origin?.geocoded !== false)
+        setDirectoryError(ok || status === 401 ? '' : (body.error || 'Directory unavailable'))
+        setCandidates(ok ? (body.candidates || []) : [])
+        setLoading(false)
+      })
+      .catch(() => { setDirectoryError('Directory unavailable'); setLoading(false) })
+  }
 
   const handleSearch = async () => {
+    if (radius === 'UK-wide') {
+      setPostcodeError('')
+      setAppliedSearch(null)
+      setLoading(true)
+      const res = await fetch('/api/agency/directory')
+      const body = await res.json().catch(() => ({}))
+      setRequiresSignIn(res.status === 401)
+      setOriginGeocoded(body.origin?.geocoded !== false)
+      setCandidates(res.ok ? (body.candidates || []) : [])
+      setDirectoryError(res.ok || res.status === 401 ? '' : (body.error || 'Directory unavailable'))
+      setLoading(false)
+      return
+    }
     const outward = normaliseOutward(postcode)
     if (!outward) { setPostcodeError('Please enter a valid UK postcode, e.g. BS1 or SW1A 1AA'); return }
-    setPostcodeError('')
-    // Real coordinates for true mileage; falls back to district matching if the lookup fails
     const coords = await geocodeSearch(postcode)
+    if (!coords) { setPostcodeError('We could not locate that postcode. Please enter a full UK postcode for an accurate mileage search.'); return }
+    setPostcodeError('')
     setAppliedSearch({ outward, area: areaOf(outward), radius, lat: coords?.lat ?? null, lng: coords?.lng ?? null })
+    setLoading(true)
+    const radiusMiles = parseInt(radius, 10)
+    const params = new URLSearchParams({ lat: String(coords.lat), lng: String(coords.lng), radius: String(radiusMiles) })
+    const res = await fetch(`/api/agency/directory?${params}`)
+    const body = await res.json().catch(() => ({}))
+    setRequiresSignIn(res.status === 401)
+    setOriginGeocoded(body.origin?.geocoded !== false)
+    setCandidates(res.ok ? (body.candidates || []) : [])
+    setDirectoryError(res.ok || res.status === 401 ? '' : (body.error || 'Directory unavailable'))
+    setLoading(false)
+    setVisible(12)
+  }
+
+  const searchUkWide = async () => {
+    setRadius('UK-wide')
+    setAppliedSearch(null)
+    setPostcodeError('')
+    setLoading(true)
+    const res = await fetch('/api/agency/directory')
+    const body = await res.json().catch(() => ({}))
+    setRequiresSignIn(res.status === 401)
+    setOriginGeocoded(body.origin?.geocoded !== false)
+    setCandidates(res.ok ? (body.candidates || []) : [])
+    setDirectoryError(res.ok || res.status === 401 ? '' : (body.error || 'Directory unavailable'))
+    setLoading(false)
     setVisible(12)
   }
 
   // Real miles from the search point to a candidate, when both are geocoded
   const candidateMiles = (c: any): number | null => {
-    if (!appliedSearch || appliedSearch.lat == null || appliedSearch.lng == null) return null
-    if (c.latitude == null || c.longitude == null) return null
-    return milesBetween(appliedSearch.lat, appliedSearch.lng, c.latitude, c.longitude)
+    return typeof c.distance_miles === 'number' ? c.distance_miles : null
   }
 
   // Location matching: TRUE mileage when both sides are geocoded; otherwise
   // tiered postcode matching (district / area letters) as a fallback.
   const matchesLocation = (c: any): boolean => {
-    if (!appliedSearch || appliedSearch.radius === 'UK-wide') return true
-    const { outward, area, radius: r } = appliedSearch
-
-    const dist = candidateMiles(c)
-    if (dist != null) {
-      const radiusMiles = parseInt(r, 10) // '25 miles' -> 25
-      return !isNaN(radiusMiles) ? dist <= radiusMiles : true
-    }
-
-    // Fallback: district/area approximation
-    const co = candidateOutward(c)
-    if (r === '5 miles' || r === '10 miles') {
-      if (!co) return false
-      return /\d/.test(outward) ? co === outward : co.startsWith(outward)
-    }
-    if (r === '25 miles' || r === '50 miles') return !!co && areaOf(co) === area
-    // 100 miles: widest tier - include candidates whose location is unknown
-    return !co || areaOf(co) === area
+    // The API has already enforced the employer's chosen radius and the
+    // professional's own travel radius. This client filter is display-only.
+    return c.within_radius !== false
   }
 
   const filtered = candidates.filter(c => {
@@ -208,8 +229,6 @@ export default function AgencyPage() {
     if (!a.is_featured && b.is_featured) return 1
     return (b.review_score || 0) - (a.review_score || 0)
   })
-
-  const pc = (s: string) => s?.split(' ')[0] || s // First part of postcode
 
   return (
     <div className="min-h-screen bg-surface">
@@ -326,20 +345,35 @@ export default function AgencyPage() {
 
             {loading ? (
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">{Array.from({length:6}).map((_,i) => <div key={i} className="skeleton h-72 rounded-xl" />)}</div>
+            ) : requiresSignIn ? (
+              <div className="bg-white border border-border p-10 text-center">
+                <h2 className="font-serif text-2xl text-ink mb-2">Agency profiles are private</h2>
+                <p className="text-[13px] text-muted max-w-lg mx-auto mb-5">Sign in with an approved hotel or spa account to search professionals. Stealth Mode and travel limits are checked before any profile is shown.</p>
+                <Link href="/login?account=employer" className="btn-primary inline-block">Hotel &amp; Spa Sign In</Link>
+              </div>
+            ) : directoryError ? (
+              <div className="bg-white border border-border p-10 text-center text-sm text-red-600">{directoryError}</div>
             ) : sorted.length === 0 ? (
               <div className="bg-white border border-border rounded-xl p-12 text-center">
                 <p className="text-[15px] text-ink font-medium mb-2">
-                  {appliedSearch && appliedSearch.radius !== 'UK-wide' ? `No therapists found near ${appliedSearch.outward}` : 'No therapists found'}
+                  {!originGeocoded && !appliedSearch
+                    ? 'Add the property postcode to search by distance'
+                    : appliedSearch && appliedSearch.radius !== 'UK-wide' ? `No therapists found near ${appliedSearch.outward}` : 'No therapists found'}
                 </p>
                 <p className="text-[13px] text-muted mb-4">
-                  {appliedSearch && appliedSearch.radius !== 'UK-wide'
+                  {!originGeocoded && !appliedSearch
+                    ? 'Professionals can set their own travel limit, so we need the hotel or spa postcode before showing profiles that have a mileage boundary.'
+                    : appliedSearch && appliedSearch.radius !== 'UK-wide'
                     ? `We could not find anyone within ~${appliedSearch.radius} of ${appliedSearch.outward}. Try widening your radius or searching UK-wide.`
                     : 'Try adjusting your filters.'}
                 </p>
+                {!originGeocoded && !appliedSearch && (
+                  <Link href="/employer/profile" className="btn-primary inline-block text-[12px]">Add property postcode and travel details</Link>
+                )}
                 {appliedSearch && appliedSearch.radius !== 'UK-wide' && (
                   <button
                     type="button"
-                    onClick={() => { setRadius('UK-wide'); setAppliedSearch({ ...appliedSearch, radius: 'UK-wide' }); setVisible(12) }}
+                    onClick={searchUkWide}
                     className="btn-secondary text-[12px]"
                   >
                     Search UK-wide instead
@@ -371,7 +405,7 @@ export default function AgencyPage() {
                           {c.review_score > 0 ? (
                             <span className="flex items-center gap-1 text-[12px]"><Star size={11} className="text-amber-400" fill="currentColor" /><span className="text-ink font-medium">{c.review_score}</span><span className="text-muted">({c.review_count})</span></span>
                           ) : <span className="text-[11px] text-muted">New</span>}
-                          {c.postcode && <span className="text-[11px] text-muted flex items-center gap-1"><MapPin size={10} />{pc(c.postcode)}{(() => { const d = candidateMiles(c); return d != null ? ` · ${Math.round(d * 10) / 10} mi away` : '' })()}</span>}
+                          {(c.location || candidateMiles(c) != null) && <span className="text-[11px] text-muted flex items-center gap-1"><MapPin size={10} />{c.location || 'Location available'}{(() => { const d = candidateMiles(c); return d != null ? ` · ${d} mi away` : '' })()}</span>}
                           {c.whc_verified ? <span className="text-[10px] font-semibold text-green-700 flex items-center gap-0.5"><ShieldCheck size={10} />WHC Verified</span>
                           : c.has_insurance && <span className="text-[10px] text-success flex items-center gap-0.5"><Shield size={10} />Insured</span>}
                           {(academyMap.get(c.id)?.length || 0) > 0 && (

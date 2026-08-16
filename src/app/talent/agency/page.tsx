@@ -193,7 +193,7 @@ export default function TalentAgencyPage() {
                         {b.cascade_notes && (
                           <p className="text-[12px] text-gray-600 mt-1.5 italic">&ldquo;{b.cascade_notes}&rdquo;</p>
                         )}
-                        {(b.employer_location || b.commute_car_required !== null || b.nearest_transport || b.distance_miles != null) && (
+                        {(b.employer_location || b.commute_car_required !== null || b.nearest_transport || b.distance_miles != null || b.taxi_support || b.parking_available) && (
                           <div className="flex items-center flex-wrap gap-x-4 gap-y-1 text-[12px] text-gray-500 mt-2">
                             {b.employer_location && <span className="flex items-center gap-1"><MapPin size={12} />{b.employer_location}{b.employer_postcode ? ` (${b.employer_postcode})` : ''}</span>}
                             {b.distance_miles != null && (
@@ -202,8 +202,11 @@ export default function TalentAgencyPage() {
                               </span>
                             )}
                             {b.commute_car_required === true && <span className="flex items-center gap-1 text-amber-700"><Car size={12} /> Car required</span>}
-                            {b.commute_car_required === false && <span className="flex items-center gap-1"><TrainFront size={12} /> Reachable by public transport</span>}
-                            {b.nearest_transport && <span className="flex items-center gap-1"><TrainFront size={12} />{b.nearest_transport}</span>}
+                            {b.commute_car_required === false && <span className="flex items-center gap-1"><TrainFront size={12} /> Car not marked as required</span>}
+                            {b.nearest_transport && <span className="flex items-center gap-1"><TrainFront size={12} />{b.nearest_transport}{b.transport_walk_minutes ? ` · about ${b.transport_walk_minutes} min walk` : ''}</span>}
+                            {b.parking_available && <span className="flex items-center gap-1"><Car size={12} /> Staff parking</span>}
+                            {b.taxi_support && <span className="flex items-center gap-1">Taxi / shuttle help{b.taxi_notes ? ` · ${b.taxi_notes}` : ''}</span>}
+                            {b.travel_notes && <span className="w-full text-gray-500">Property-supplied access note: {b.travel_notes}</span>}
                           </div>
                         )}
                       </div>
