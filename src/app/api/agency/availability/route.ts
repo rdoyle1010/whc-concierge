@@ -2,11 +2,13 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
+import { DATE_RE, validShiftWindow } from '@/lib/agency-time'
 
-// Therapist availability calendar. Three states per date:
-//   'available'   → explicit yes: front of the urgent-cascade queue
+// Therapist availability calendar. Available dates now carry one or more
+// private time windows; employers only receive a derived match status.
+//   'available'   → explicit window(s)
 //   'unavailable' → explicit no: never offered that day
-//   (no row)      → unspecified: still eligible, ranked after explicit yes
+//   (no row)      → availability not confirmed
 // All writes via service role - RLS on agency_availability is locked down.
 
 async function getAuthedUser() {
@@ -19,8 +21,6 @@ async function getAuthedUser() {
   return supabaseAuth.auth.getUser()
 }
 
-const DATE_RE = /^\d{4}-\d{2}-\d{2}$/
-
 export async function GET() {
   try {
     const { data: { user } } = await getAuthedUser()
@@ -32,13 +32,12 @@ export async function GET() {
 
     // Everything from today forward (past rows are irrelevant to the queue)
     const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Europe/London' })
-    const { data, error } = await admin
-      .from('agency_availability')
-      .select('date, available')
-      .eq('candidate_id', cand.id)
-      .gte('date', today)
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-    return NextResponse.json({ days: data || [] })
+    const [{ data, error }, { data: windows, error: windowError }] = await Promise.all([
+      admin.from('agency_availability').select('date, available').eq('candidate_id', cand.id).gte('date', today),
+      admin.from('agency_availability_windows').select('id, date, start_time, end_time, timezone').eq('candidate_id', cand.id).gte('date', today).order('start_time'),
+    ])
+    if (error || windowError) return NextResponse.json({ error: (error || windowError)?.message }, { status: 500 })
+    return NextResponse.json({ days: data || [], windows: windows || [] })
   } catch (e: any) {
     return NextResponse.json({ error: e.message }, { status: 500 })
   }
@@ -62,9 +61,28 @@ export async function POST(req: NextRequest) {
     }
 
     if (state === 'clear') {
-      const { error } = await admin.from('agency_availability').delete().eq('candidate_id', cand.id).eq('date', date)
-      if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+      const [{ error }, { error: windowError }] = await Promise.all([
+        admin.from('agency_availability').delete().eq('candidate_id', cand.id).eq('date', date),
+        admin.from('agency_availability_windows').delete().eq('candidate_id', cand.id).eq('date', date),
+      ])
+      if (error || windowError) return NextResponse.json({ error: (error || windowError)?.message }, { status: 500 })
       return NextResponse.json({ success: true })
+    }
+
+    if (state === 'available') {
+      const startTime = String(body.startTime || '')
+      const endTime = String(body.endTime || '')
+      if (!validShiftWindow(date, startTime, endTime)) {
+        return NextResponse.json({ error: 'Choose a valid start and finish time' }, { status: 400 })
+      }
+      const { error: windowError } = await admin.from('agency_availability_windows').upsert({
+        candidate_id: cand.id, date, start_time: startTime, end_time: endTime,
+        timezone: 'Europe/London', updated_at: new Date().toISOString(),
+      }, { onConflict: 'candidate_id,date,start_time,end_time' })
+      if (windowError) return NextResponse.json({ error: windowError.message }, { status: 500 })
+    } else {
+      const { error: windowError } = await admin.from('agency_availability_windows').delete().eq('candidate_id', cand.id).eq('date', date)
+      if (windowError) return NextResponse.json({ error: windowError.message }, { status: 500 })
     }
 
     const { error } = await admin

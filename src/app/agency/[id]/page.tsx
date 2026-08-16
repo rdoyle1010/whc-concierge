@@ -11,6 +11,7 @@ import { courseTitle, ACADEMY } from '@/lib/academy'
 import ReviewBreakdown from '@/components/ReviewBreakdown'
 import ReviewForm from '@/components/ReviewForm'
 import { AGENCY_PLATFORM_FEE_PCT } from '@/lib/constants'
+import { shiftHours } from '@/lib/agency-time'
 
 export default function AgencyProfilePage() {
   const { id } = useParams()
@@ -26,7 +27,8 @@ export default function AgencyProfilePage() {
   const [offerError, setOfferError] = useState('')
   const [showReview, setShowReview] = useState(false)
   const [offerRate, setOfferRate] = useState('')
-  const [offerHours, setOfferHours] = useState('8')
+  const [offerStartTime, setOfferStartTime] = useState('09:00')
+  const [offerEndTime, setOfferEndTime] = useState('17:00')
   const [academyBadges, setAcademyBadges] = useState<{ course_slug: string; completed_at: string }[]>([])
   const [suggestSlug, setSuggestSlug] = useState('')
   const [suggestBusy, setSuggestBusy] = useState(false)
@@ -34,7 +36,7 @@ export default function AgencyProfilePage() {
 
   // Live cost preview: therapist receives rate × hours; WHC fee is on top, paid by the property
   const previewRate = parseInt(offerRate, 10) || 0
-  const previewHours = parseInt(offerHours, 10) || 0
+  const previewHours = shiftHours(offerStartTime, offerEndTime) || 0
   const previewSubtotal = previewRate * previewHours
   const previewFee = Math.ceil(previewSubtotal * AGENCY_PLATFORM_FEE_PCT)
   const previewTotal = previewSubtotal + previewFee
@@ -90,7 +92,8 @@ export default function AgencyProfilePage() {
         body: JSON.stringify({
           action: 'create', candidateId: profileId,
           rate: offerRate, shiftDate: fd.get('shiftDate'),
-          shiftType: fd.get('shiftType') || undefined, hours: offerHours || undefined,
+          shiftStartTime: offerStartTime, shiftEndTime: offerEndTime,
+          shiftType: fd.get('shiftType') || undefined,
           repeatWeeks: fd.get('repeatWeeks') || undefined,
         }),
       })
@@ -341,6 +344,11 @@ export default function AgencyProfilePage() {
                       <input name="shiftDate" type="date" required className="input-field text-[13px]" />
                       <p className="text-[11px] text-muted mt-1">Pick today for urgent cover - the candidate is alerted instantly by text and email, and the offer expires after 4 hours.</p>
                     </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div><label className="text-[12px] text-muted block mb-1">Starts</label><input name="shiftStartTime" type="time" required value={offerStartTime} onChange={(e) => setOfferStartTime(e.target.value)} className="input-field text-[13px]" /></div>
+                      <div><label className="text-[12px] text-muted block mb-1">Finishes</label><input name="shiftEndTime" type="time" required value={offerEndTime} onChange={(e) => setOfferEndTime(e.target.value)} className="input-field text-[13px]" /></div>
+                    </div>
+                    <p className="text-[11px] text-muted">The offer is accepted only if their confirmed availability covers this entire window.</p>
                     <div>
                       <label className="text-[12px] text-muted block mb-1">Shift type</label>
                       <select name="shiftType" className="input-field text-[13px]" defaultValue="Full Day">
@@ -350,11 +358,6 @@ export default function AgencyProfilePage() {
                         <option>Evening</option>
                         <option>Event Cover</option>
                       </select>
-                    </div>
-                    <div>
-                      <label className="text-[12px] text-muted block mb-1">Hours</label>
-                      <input name="hours" type="number" min={1} max={24} value={offerHours}
-                        onChange={(e) => setOfferHours(e.target.value)} className="input-field text-[13px]" />
                     </div>
                     <div>
                       <label className="text-[12px] text-muted block mb-1">Repeat</label>

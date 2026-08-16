@@ -72,6 +72,9 @@ export default function AgencyPage() {
   const [loading, setLoading] = useState(true)
   const [postcode, setPostcode] = useState('')
   const [radius, setRadius] = useState('UK-wide')
+  const [shiftDate, setShiftDate] = useState(() => new Date().toLocaleDateString('en-CA'))
+  const [shiftStartTime, setShiftStartTime] = useState('09:00')
+  const [shiftEndTime, setShiftEndTime] = useState('17:00')
   const [services, setServices] = useState<string[]>([])
   const [brands, setBrands] = useState<string[]>([])
   const [roles, setRoles] = useState<string[]>([])
@@ -82,7 +85,6 @@ export default function AgencyPage() {
   const [appliedSearch, setAppliedSearch] = useState<{ outward: string; area: string; radius: string; lat?: number | null; lng?: number | null } | null>(null)
   const [postcodeError, setPostcodeError] = useState('')
 
-  const [availToday, setAvailToday] = useState<Set<string>>(new Set())
   const [filtersOpen, setFiltersOpen] = useState(false)
   const [academySel, setAcademySel] = useState<string[]>([])
   const [academyMap, setAcademyMap] = useState<Map<string, string[]>>(new Map())
@@ -101,12 +103,6 @@ export default function AgencyPage() {
         setLoading(false)
       })
       .catch(() => { setCandidates([]); setDirectoryError('Directory unavailable'); setLoading(false) })
-    // Who has marked TODAY as available on their calendar? (public read is
-    // available=true rows only; fails silently if the table isn't live yet)
-    const today = new Date().toLocaleDateString('en-CA')
-    supabase.from('agency_availability').select('candidate_id')
-      .eq('date', today).eq('available', true)
-      .then(({ data }) => { if (data) setAvailToday(new Set(data.map((d: any) => d.candidate_id))) })
     // WHC Academy badges - RLS only exposes COMPLETED enrolments publicly
     supabase.from('course_enrollments').select('candidate_id, course_slug')
       .not('completed_at', 'is', null)
@@ -121,6 +117,8 @@ export default function AgencyPage() {
   const toggleFilter = (arr: string[], set: (v: string[]) => void, val: string) => {
     set(arr.includes(val) ? arr.filter(v => v !== val) : [...arr, val])
   }
+
+  const shiftParams = () => new URLSearchParams({ shiftDate, shiftStartTime, shiftEndTime })
 
   const clearFilters = () => {
     setServices([]); setBrands([]); setRoles([]); setInsuredOnly(false); setAvailNow(false); setAcademySel([]); setPostcode(''); setAppliedSearch(null); setPostcodeError(''); setDirectoryError('')
@@ -142,7 +140,7 @@ export default function AgencyPage() {
       setPostcodeError('')
       setAppliedSearch(null)
       setLoading(true)
-      const res = await fetch('/api/agency/directory')
+      const res = await fetch(`/api/agency/directory?${shiftParams()}`)
       const body = await res.json().catch(() => ({}))
       setRequiresSignIn(res.status === 401)
       setOriginGeocoded(body.origin?.geocoded !== false)
@@ -159,7 +157,8 @@ export default function AgencyPage() {
     setAppliedSearch({ outward, area: areaOf(outward), radius, lat: coords?.lat ?? null, lng: coords?.lng ?? null })
     setLoading(true)
     const radiusMiles = parseInt(radius, 10)
-    const params = new URLSearchParams({ lat: String(coords.lat), lng: String(coords.lng), radius: String(radiusMiles) })
+    const params = shiftParams()
+    params.set('lat', String(coords.lat)); params.set('lng', String(coords.lng)); params.set('radius', String(radiusMiles))
     const res = await fetch(`/api/agency/directory?${params}`)
     const body = await res.json().catch(() => ({}))
     setRequiresSignIn(res.status === 401)
@@ -175,7 +174,7 @@ export default function AgencyPage() {
     setAppliedSearch(null)
     setPostcodeError('')
     setLoading(true)
-    const res = await fetch('/api/agency/directory')
+    const res = await fetch(`/api/agency/directory?${shiftParams()}`)
     const body = await res.json().catch(() => ({}))
     setRequiresSignIn(res.status === 401)
     setOriginGeocoded(body.origin?.geocoded !== false)
@@ -204,7 +203,7 @@ export default function AgencyPage() {
     // the directory never blanks out mid-deploy; `false` (not subscribed) hides.
     if (c.agency_available === false) return false
     if (insuredOnly && !c.has_insurance) return false
-    if (availNow && c.availability_status !== 'immediately' && !availToday.has(c.id)) return false
+    if (availNow && c.availability_match !== 'confirmed') return false
     if (services.length > 0 && !services.some(s => (c.services_offered || []).some((sp: string) => sp.toLowerCase().includes(s.toLowerCase())))) return false
     if (brands.length > 0 && !brands.some(b => (c.product_houses || []).some((ph: string) => ph.toLowerCase().includes(b.toLowerCase())))) return false
     if (roles.length > 0 && !roles.includes(c.role_level)) return false
@@ -239,12 +238,20 @@ export default function AgencyPage() {
         <div className="max-w-7xl mx-auto px-6 lg:px-8 py-14">
           <h1 className="text-[36px] md:text-[44px] font-medium text-ink tracking-tight leading-[1.1] mb-3">Find Exceptional Spa Talent</h1>
           <p className="text-[15px] text-secondary max-w-xl mb-8">Search our network of verified, insured spa professionals available for agency work, seasonal cover and specialist treatments.</p>
-          <form onSubmit={e => { e.preventDefault(); handleSearch() }} className="flex flex-col sm:flex-row gap-3 max-w-2xl">
-            <input type="text" placeholder="Enter postcode" value={postcode} onChange={e => { setPostcode(e.target.value); if (postcodeError) setPostcodeError('') }} className="input-field flex-1" />
-            <select value={radius} onChange={e => setRadius(e.target.value)} className="input-field sm:w-40">
-              <option>UK-wide</option><option>5 miles</option><option>10 miles</option><option>25 miles</option><option>50 miles</option><option>100 miles</option>
-            </select>
-            <button type="submit" className="btn-primary flex items-center gap-2"><Search size={14} />Search</button>
+          <form onSubmit={e => { e.preventDefault(); handleSearch() }} className="max-w-4xl space-y-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <label className="text-[11px] font-medium text-secondary">Shift date<input required type="date" min={new Date().toLocaleDateString('en-CA')} value={shiftDate} onChange={e => setShiftDate(e.target.value)} className="input-field mt-1 w-full" /></label>
+              <label className="text-[11px] font-medium text-secondary">Starts<input required type="time" value={shiftStartTime} onChange={e => setShiftStartTime(e.target.value)} className="input-field mt-1 w-full" /></label>
+              <label className="text-[11px] font-medium text-secondary">Finishes<input required type="time" value={shiftEndTime} onChange={e => setShiftEndTime(e.target.value)} className="input-field mt-1 w-full" /></label>
+            </div>
+            <div className="flex flex-col sm:flex-row gap-3">
+              <input type="text" placeholder="Enter postcode" value={postcode} onChange={e => { setPostcode(e.target.value); if (postcodeError) setPostcodeError('') }} className="input-field flex-1" />
+              <select value={radius} onChange={e => setRadius(e.target.value)} className="input-field sm:w-40">
+                <option>UK-wide</option><option>5 miles</option><option>10 miles</option><option>25 miles</option><option>50 miles</option><option>100 miles</option>
+              </select>
+              <button type="submit" className="btn-primary flex items-center justify-center gap-2"><Search size={14} />Find confirmed talent</button>
+            </div>
+            <p className="text-[11px] text-muted">Only professionals who confirmed the whole shift and have no overlapping booking will appear.</p>
           </form>
           {postcodeError && <p className="text-[12px] text-red-600 mt-2">{postcodeError}</p>}
           {appliedSearch && (
@@ -269,7 +276,7 @@ export default function AgencyPage() {
               </div>
 
               <FilterSection title="Availability" defaultOpen>
-                <label className="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked={availNow} onChange={() => setAvailNow(!availNow)} className="w-3.5 h-3.5 border-border rounded text-ink" /><span className="text-[12px] text-secondary">Available Now</span></label>
+                <label className="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked={availNow} onChange={() => setAvailNow(!availNow)} className="w-3.5 h-3.5 border-border rounded text-ink" /><span className="text-[12px] text-secondary">Confirmed for selected shift</span></label>
               </FilterSection>
 
               <FilterSection title="Services Offered" defaultOpen>
@@ -444,10 +451,13 @@ export default function AgencyPage() {
 
                         {/* Availability */}
                         <div className="mb-4">
-                          {availToday.has(c.id) ? <span className="text-[11px] text-success font-semibold flex items-center gap-1"><span className="w-1.5 h-1.5 bg-success rounded-full animate-pulse" />Available Today</span>
+                          {c.availability_match === 'confirmed' ? <span className="text-[11px] text-success font-semibold flex items-center gap-1"><span className="w-1.5 h-1.5 bg-success rounded-full animate-pulse" />Confirmed for your shift</span>
+                          : c.availability_match === 'already_booked' ? <span className="text-[11px] text-red-600 font-medium flex items-center gap-1"><span className="w-1.5 h-1.5 bg-red-500 rounded-full" />Already booked</span>
+                          : c.availability_match === 'not_confirmed' ? <span className="text-[11px] text-amber-600 font-medium flex items-center gap-1"><span className="w-1.5 h-1.5 bg-amber-400 rounded-full" />Availability not confirmed</span>
                           : c.availability_status === 'immediately' ? <span className="text-[11px] text-success font-medium flex items-center gap-1"><span className="w-1.5 h-1.5 bg-success rounded-full" />Available Now</span>
                           : c.availability_status === '1_week' || c.availability_status === '2_weeks' ? <span className="text-[11px] text-amber-600 font-medium flex items-center gap-1"><span className="w-1.5 h-1.5 bg-amber-400 rounded-full" />Available Soon</span>
                           : <span className="text-[11px] text-muted flex items-center gap-1"><span className="w-1.5 h-1.5 bg-gray-300 rounded-full" />Unavailable</span>}
+                          {typeof c.completed_shift_count === 'number' && c.completed_shift_count > 0 && <span className="mt-1 block text-[10px] text-muted">{c.completed_shift_count} completed WHC agency shift{c.completed_shift_count === 1 ? '' : 's'}</span>}
                         </div>
 
                         {/* CTA - one clear action: the offer lives on the profile */}

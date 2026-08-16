@@ -26,7 +26,7 @@ export default function EmployerAgencyPage() {
   const [urgentBusy, setUrgentBusy] = useState(false)
   const [urgentForm, setUrgentForm] = useState({
     shiftDate: new Date().toLocaleDateString('en-CA'),
-    hours: '8', maxRate: '', shiftType: '', notes: '',
+    shiftStartTime: '09:00', shiftEndTime: '17:00', radius: '25', maxRate: '', shiftType: '', notes: '',
   })
 
   async function load() {
@@ -79,7 +79,9 @@ export default function EmployerAgencyPage() {
         body: JSON.stringify({
           action: 'urgent_cascade',
           shiftDate: urgentForm.shiftDate,
-          hours: urgentForm.hours,
+          shiftStartTime: urgentForm.shiftStartTime,
+          shiftEndTime: urgentForm.shiftEndTime,
+          radius: urgentForm.radius,
           maxRate: urgentForm.maxRate || undefined,
           shiftType: urgentForm.shiftType || undefined,
           notes: urgentForm.notes || undefined,
@@ -316,10 +318,15 @@ export default function EmployerAgencyPage() {
                 <input type="date" value={urgentForm.shiftDate} min={new Date().toLocaleDateString('en-CA')}
                   onChange={(e) => setUrgentForm({ ...urgentForm, shiftDate: e.target.value })} className="input-field" />
               </div>
+              <div><label className="block text-sm font-medium text-gray-700 mb-1.5">Starts</label><input type="time" value={urgentForm.shiftStartTime} onChange={(e) => setUrgentForm({ ...urgentForm, shiftStartTime: e.target.value })} className="input-field" /></div>
+            </div>
+            <div className="grid grid-cols-2 gap-3 mb-3">
+              <div><label className="block text-sm font-medium text-gray-700 mb-1.5">Finishes</label><input type="time" value={urgentForm.shiftEndTime} onChange={(e) => setUrgentForm({ ...urgentForm, shiftEndTime: e.target.value })} className="input-field" /></div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">Hours</label>
-                <input type="number" min={1} max={12} value={urgentForm.hours}
-                  onChange={(e) => setUrgentForm({ ...urgentForm, hours: e.target.value })} className="input-field" />
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">Search radius</label>
+                <select value={urgentForm.radius} onChange={(e) => setUrgentForm({ ...urgentForm, radius: e.target.value })} className="input-field">
+                  <option value="5">Within 5 miles</option><option value="10">Within 10 miles</option><option value="25">Within 25 miles</option><option value="50">Within 50 miles</option><option value="100">Within 100 miles</option>
+                </select>
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3 mb-3">
