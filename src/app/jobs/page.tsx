@@ -21,11 +21,24 @@ export default function PublicJobsPage() {
 
   useEffect(() => {
     async function load() {
-      const { data: rawData } = await supabase
+      let { data: rawData, error: jobsError } = await supabase
         .from('job_listings')
         .select('*, employer_profiles(company_name, property_name, logo_url, property_photos, tagline, review_score, review_count, star_rating)')
         .eq('is_live', true)
         .order('posted_date', { ascending: false })
+
+      // Some existing databases do not yet have every optional property field.
+      // Fall back to the established relationship so one missing column cannot hide all jobs.
+      if (jobsError) {
+        const fallback = await supabase
+          .from('job_listings')
+          .select('*, employer_profiles(company_name, property_name)')
+          .eq('is_live', true)
+          .order('posted_date', { ascending: false })
+        rawData = fallback.data
+        jobsError = fallback.error
+      }
+      if (jobsError) console.error('Unable to load public jobs:', jobsError.message)
       setJobs((rawData || []).map((j: any) => ({ ...j, title: j.job_title || j.title, description: j.job_description || j.description, employer_profiles: { ...j.employer_profiles, company_name: j.employer_profiles?.property_name || j.employer_profiles?.company_name } })))
       setLoading(false)
       // Check if logged in and load saved

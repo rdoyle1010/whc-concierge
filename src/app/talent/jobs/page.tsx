@@ -50,11 +50,23 @@ export default function TalentJobsPage() {
         }
       }
 
-      const { data: rawData } = await supabase
+      let { data: rawData, error: jobsError } = await supabase
         .from('job_listings')
         .select('*, employer_profiles(company_name, property_name, logo_url, property_photos, review_score, review_count, star_rating)')
         .eq('is_live', true)
         .order('posted_date', { ascending: false })
+
+      // Keep older databases working until all optional employer display fields exist.
+      if (jobsError) {
+        const fallback = await supabase
+          .from('job_listings')
+          .select('*, employer_profiles(company_name, property_name)')
+          .eq('is_live', true)
+          .order('posted_date', { ascending: false })
+        rawData = fallback.data
+        jobsError = fallback.error
+      }
+      if (jobsError) console.error('Unable to load talent jobs:', jobsError.message)
 
       const normalized = (rawData || []).map((j: any) => {
         const title = j.job_title || j.title
