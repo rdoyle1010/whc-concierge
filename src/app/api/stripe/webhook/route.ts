@@ -3,7 +3,7 @@ import { getStripe } from '@/lib/stripe'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createNotification } from '@/lib/notifications'
 import { getAcademyCatalog, getAcademyCourseBySlug } from '@/lib/academy-catalog-server'
-import { sendCourseAccessEmail, sendBookingConfirmedEmail, sendReferralRewardEmail } from '@/lib/emails'
+import { sendCourseAccessEmail, sendBookingConfirmedEmail, sendReferralRewardEmail, sendFeaturedTalentEmail } from '@/lib/emails'
 import Stripe from 'stripe'
 import { getInternalApiSecret } from '@/lib/internal-request'
 
@@ -88,11 +88,40 @@ export async function POST(req: NextRequest) {
       }
 
       if (meta?.type === 'featured_profile' && meta?.candidate_id) {
-        await supabase.from('candidate_profiles').update({
+        const { data: featuredCandidate } = await supabase.from('candidate_profiles').update({
           is_featured: true,
           featured_until: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
           stripe_customer_id: session.customer as string,
-        }).eq('id', meta.candidate_id)
+        }).eq('id', meta.candidate_id).select('full_name, headline').maybeSingle()
+
+        // One launch alert per new checkout. Subscription renewals do not run
+        // this block, so employers are not emailed every month.
+        try {
+          const { data: employers } = await supabase.from('employer_profiles')
+            .select('user_id, property_name, company_name')
+            .eq('approval_status', 'approved')
+          await Promise.allSettled((employers || []).map(async employer => {
+            if (!employer.user_id) return
+            await createNotification(
+              employer.user_id,
+              'general',
+              `Featured talent: ${featuredCandidate?.full_name || 'New professional'}`,
+              featuredCandidate?.headline || 'A featured professional is available to view and shortlist.',
+              '/employer/candidates',
+            )
+            const { data: employerUser } = await supabase.auth.admin.getUserById(employer.user_id)
+            if (employerUser.user?.email) {
+              await sendFeaturedTalentEmail(
+                employerUser.user.email,
+                employer.property_name || employer.company_name || '',
+                featuredCandidate?.full_name || 'A new professional',
+                featuredCandidate?.headline || '',
+              )
+            }
+          }))
+        } catch (e: any) {
+          console.error('Featured talent employer alert failed (non-fatal):', e?.message)
+        }
       }
 
       // Agency booking paid in full by the property → confirmed, and the

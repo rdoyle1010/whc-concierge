@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import type { ReactNode } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { ArrowRight, MapPin } from 'lucide-react'
+import { ArrowRight, MapPin, Star } from 'lucide-react'
 import CandidateProfileMockup from '@/components/homepage-mockups/CandidateProfileMockup'
 import MatchScoreMockup from '@/components/homepage-mockups/MatchScoreMockup'
 import RoleListingMockup from '@/components/homepage-mockups/RoleListingMockup'
@@ -33,6 +33,41 @@ type FeaturedRole = {
   salary: string
   type: string
   tier: string
+}
+
+type FeaturedTalent = {
+  id: string
+  name: string
+  headline: string
+  location: string
+  image: string | null
+  experience: number | null
+}
+
+async function getFeaturedTalent(): Promise<FeaturedTalent[]> {
+  try {
+    const admin = createAdminClient()
+    const now = new Date().toISOString()
+    const { data } = await admin.from('candidate_profiles')
+      .select('id, full_name, headline, location, profile_image_url, experience_years')
+      .eq('is_featured', true)
+      .eq('approval_status', 'approved')
+      .or('profile_visible.eq.true,profile_visible.is.null')
+      .or('stealth_mode.eq.false,stealth_mode.is.null')
+      .or(`featured_until.is.null,featured_until.gt.${now}`)
+      .order('featured_until', { ascending: false })
+      .limit(6)
+    return (data || []).map((candidate: any) => ({
+      id: candidate.id,
+      name: candidate.full_name || 'Wellness professional',
+      headline: candidate.headline || 'Luxury wellness professional',
+      location: candidate.location || '',
+      image: candidate.profile_image_url || null,
+      experience: candidate.experience_years || null,
+    }))
+  } catch {
+    return []
+  }
 }
 
 async function getFeaturedRoles(): Promise<FeaturedRole[]> {
@@ -164,6 +199,26 @@ function RolesSection({ content, roles }: { content: WebsiteContent; roles: Feat
   </section>
 }
 
+function FeaturedTalentSection({ talent }: { talent: FeaturedTalent[] }) {
+  if (!talent.length) return null
+  return <section className="border-b border-black/10 bg-[#F7F3EA] py-12">
+    <div className="mx-auto max-w-7xl px-6 lg:px-8">
+      <div className="mb-7 flex flex-col justify-between gap-4 md:flex-row md:items-end">
+        <div><Eyebrow>Featured talent</Eyebrow><h2 className="site-heading text-[30px] font-medium md:text-[40px]">Professionals ready to be discovered.</h2></div>
+        <Link href="/employer/candidates" className="site-button site-accent-bg w-fit px-5 py-3 text-[12px] font-semibold text-white">Employers: view all talent</Link>
+      </div>
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        {talent.map(candidate => <article key={candidate.id} className="flex items-center gap-4 rounded-2xl border border-black/10 bg-white p-5 shadow-sm">
+          <div className="h-16 w-16 shrink-0 overflow-hidden rounded-full bg-[#EEEAE2]">
+            {candidate.image ? <img src={candidate.image} alt={candidate.name} className="h-full w-full object-cover" /> : <div className="flex h-full w-full items-center justify-center text-xl font-semibold opacity-40">{candidate.name[0]}</div>}
+          </div>
+          <div className="min-w-0"><p className="site-accent mb-1 flex items-center gap-1 text-[10px] font-semibold uppercase tracking-[0.12em]"><Star size={11} fill="currentColor" /> Featured</p><h3 className="truncate text-[16px] font-semibold">{candidate.name}</h3><p className="truncate text-[12px] opacity-65">{candidate.headline}</p><p className="mt-1 text-[11px] opacity-50">{[candidate.location, candidate.experience ? `${candidate.experience} years experience` : ''].filter(Boolean).join(' · ')}</p></div>
+        </article>)}
+      </div>
+    </div>
+  </section>
+}
+
 function CalloutSection({ content }: { content: WebsiteContent }) {
   return <section className="relative overflow-hidden">
     <img src={content.cta.background.url} alt={content.cta.background.alt} className="absolute inset-0 h-full w-full object-cover"
@@ -209,7 +264,7 @@ export default async function HomePage(props: HomePageProps) {
   const searchParams = await props.searchParams;
   const previewRequested = searchParams?.websitePreview === 'draft'
   const previewingDraft = previewRequested && (await canPreviewDraft())
-  const [content, featuredRoles] = await Promise.all([getWebsiteContent(previewingDraft), getFeaturedRoles()])
+  const [content, featuredRoles, featuredTalent] = await Promise.all([getWebsiteContent(previewingDraft), getFeaturedRoles(), getFeaturedTalent()])
 
   const sections: Record<WebsiteSectionId, ReactNode> = {
     proof: <ProofSection content={content} />,
@@ -228,6 +283,7 @@ export default async function HomePage(props: HomePageProps) {
       {previewingDraft && <div className="site-accent-bg px-5 py-2 text-center text-[12px] font-semibold text-white">Private draft preview — the public website has not changed.</div>}
       <HeroCarousel siteContent={content} />
       <SponsoredAd placement="homepage_spotlight" />
+      <FeaturedTalentSection talent={featuredTalent} />
       {content.sections.filter(section => section.visible).map(section => <div key={section.id}>{sections[section.id]}</div>)}
     </main>
     <Footer siteContent={content} />

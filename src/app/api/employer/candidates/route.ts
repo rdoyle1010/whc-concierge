@@ -10,7 +10,7 @@ const EMPLOYER_CANDIDATE_FIELDS = [
   'experience_years', 'profile_image_url', 'review_score', 'bio', 'qualifications',
   'product_houses', 'systems_experience', 'cv_url', 'phone', 'has_insurance',
   'availability_status', 'travel_radius_miles', 'has_car', 'latitude', 'longitude',
-  'approval_status', 'profile_visible', 'created_at',
+  'approval_status', 'profile_visible', 'is_featured', 'featured_until', 'created_at',
 ].join(',')
 
 export async function GET(req: NextRequest) {
@@ -39,6 +39,7 @@ export async function GET(req: NextRequest) {
       .select(EMPLOYER_CANDIDATE_FIELDS)
       .eq('approval_status', 'approved')
       .or('profile_visible.eq.true,profile_visible.is.null')
+      .order('is_featured', { ascending: false })
       .order('created_at', { ascending: false }),
   ])
 

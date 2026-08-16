@@ -57,7 +57,10 @@ export default function EmployerCandidatesPage() {
               if (!best || score > best.matchScore) best = { matchScore: score, matchLabel: r.label, matchColour: r.colour, matchBg: r.bgColour, bestJob: j.title, hardStop: r.hardStop, hardStopReason: r.hardStopReason }
             }
             return { ...c, ...best }
-          }).sort((a: any, b: any) => (b.matchScore || 0) - (a.matchScore || 0))
+          }).sort((a: any, b: any) => {
+            if (!!a.is_featured !== !!b.is_featured) return a.is_featured ? -1 : 1
+            return (b.matchScore || 0) - (a.matchScore || 0)
+          })
         }
       }
       setCandidates(scored)
@@ -172,7 +175,8 @@ export default function EmployerCandidatesPage() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filtered.map((c) => (
-            <div key={c.id} className="dashboard-card">
+            <div key={c.id} className={`dashboard-card relative ${c.is_featured ? 'border-accent ring-1 ring-accent/20' : ''}`}>
+              {c.is_featured && <span className="absolute right-4 top-4 rounded-full bg-accent px-2.5 py-1 text-[10px] font-semibold text-white">★ Featured</span>}
               <div className="flex items-center space-x-3 mb-3">
                 <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden flex-shrink-0">
                   {c.profile_image_url ? (
@@ -181,7 +185,7 @@ export default function EmployerCandidatesPage() {
                     <span className="font-serif font-bold text-gray-300 text-lg">{c.full_name?.[0]}</span>
                   )}
                 </div>
-                <div className="min-w-0 cursor-pointer flex-1" onClick={() => setViewing(c)}>
+                <div className={`min-w-0 cursor-pointer flex-1 ${c.is_featured ? 'pr-20' : ''}`} onClick={() => setViewing(c)}>
                   <h3 className="font-semibold text-ink truncate hover:underline">{c.full_name}</h3>
                   <p className="text-sm text-gray-500 truncate">{c.headline}</p>
                 </div>
