@@ -83,28 +83,23 @@ type SwipeRow = {
   action: 'left' | 'right'
 }
 
-// The live database does not consistently have the unique constraint needed
-// for an upsert. Replace the caller's existing decision so repeated clicks are
-// idempotent and an old "right" cannot survive after the decision changes.
+// Migration 038 normalises the legacy swipes schema and adds the composite
+// unique key used here. An upsert is atomic: a failed write never deletes the
+// caller's previous decision, and repeated clicks remain idempotent.
 async function replaceSwipe(admin: any, row: SwipeRow) {
-  const { data: existing } = await admin.from('swipes')
-    .select('id, action')
-    .eq('swiper_id', row.swiper_id)
-    .eq('swiper_type', row.swiper_type)
-    .eq('target_id', row.target_id)
-    .eq('target_type', row.target_type)
-    .limit(1)
-    .maybeSingle()
+  const { data, error } = await admin
+    .from('swipes')
+    .upsert(row, {
+      onConflict: 'swiper_id,swiper_type,target_id,target_type',
+      ignoreDuplicates: false,
+    })
+    .select('action')
+    .single()
 
-  const { error: deleteError } = await admin.from('swipes').delete()
-    .eq('swiper_id', row.swiper_id)
-    .eq('swiper_type', row.swiper_type)
-    .eq('target_id', row.target_id)
-    .eq('target_type', row.target_type)
-  if (deleteError) return { error: deleteError, changed: false }
-
-  const { error } = await admin.from('swipes').insert(row)
-  return { error, changed: !existing || existing.action !== row.action }
+  return {
+    error,
+    changed: !error && data?.action === row.action,
+  }
 }
 
 async function removeSwipe(admin: any, row: Omit<SwipeRow, 'action'>) {
