@@ -48,7 +48,7 @@ ALTER TABLE public.swipes
   ADD CONSTRAINT swipes_swiper_type_check
     CHECK (swiper_type IS NULL OR swiper_type IN ('candidate', 'employer')),
   ADD CONSTRAINT swipes_target_type_check
-    CHECK (target_type IN ('job', 'candidate')),
+    CHECK (target_type IN ('job', 'job_listing', 'candidate')),
   ADD CONSTRAINT swipes_action_check
     CHECK (action IS NULL OR action IN ('left', 'right'));
 
