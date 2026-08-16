@@ -135,6 +135,9 @@ export default function BrowseRolesPage() {
                 {job.salary_min && job.salary_max && (
                   <p className="text-[14px] font-medium text-accent">£{(job.salary_min/1000).toFixed(0)}k - £{(job.salary_max/1000).toFixed(0)}k</p>
                 )}
+                {job.description && (
+                  <p className="mt-3 text-[13px] leading-6 text-secondary line-clamp-3">{job.description}</p>
+                )}
                 {(job.required_brands || []).length > 0 && (
                   <div className="flex flex-wrap gap-1 mt-3">{(job.required_brands || []).slice(0, 3).map((b: string) => <span key={b} className="text-[10px] font-medium bg-[#FDF6EC] text-accent border border-accent/20 px-2 py-0.5 rounded-full">{b}</span>)}</div>
                 )}

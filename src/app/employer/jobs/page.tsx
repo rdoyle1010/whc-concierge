@@ -232,6 +232,9 @@ export default function EmployerJobsPage() {
                   }`}>{job.tier}</span>}
                 </div>
                 <p className="text-sm text-gray-500 mt-1">{job.location} \u00b7 {job.job_type}</p>
+                {job.description && (
+                  <p className="text-[13px] leading-6 text-secondary mt-2 max-w-2xl line-clamp-2">{job.description}</p>
+                )}
               </div>
               <div className="flex items-center space-x-2">
                 {job.status === 'active' && <button onClick={() => markFilled(job)} className="btn-secondary !px-3 !py-2 inline-flex items-center gap-1.5 text-emerald-700" title="Take down this role and notify all applicants"><CheckCircle2 size={16} /> Mark filled</button>}

@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import DashboardShell from '@/components/DashboardShell'
 import { createClient } from '@/lib/supabase/client'
 import { calculateMatchScore } from '@/lib/matching'
-import { Search, MapPin, Briefcase, Bookmark, ArrowUpDown, Check } from 'lucide-react'
+import { Search, MapPin, Briefcase, Bookmark, Check, Star, Building2, ArrowRight } from 'lucide-react'
 import { notify } from '@/lib/notify'
 import MatchBreakdown from '@/components/MatchBreakdown'
 import Pagination from '@/components/Pagination'
@@ -52,7 +52,7 @@ export default function TalentJobsPage() {
 
       const { data: rawData } = await supabase
         .from('job_listings')
-        .select('*, employer_profiles(company_name, property_name)')
+        .select('*, employer_profiles(company_name, property_name, logo_url, property_photos, review_score, review_count, star_rating)')
         .eq('is_live', true)
         .order('posted_date', { ascending: false })
 
@@ -164,21 +164,26 @@ export default function TalentJobsPage() {
         <div className="text-center py-20"><Briefcase size={32} className="mx-auto text-muted mb-3" /><p className="text-[14px] text-muted">No roles match your filters.</p></div>
       ) : (
         <>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
           {paginatedSorted.map(job => (
             <div key={job.id} className="card p-0 overflow-hidden">
+              <div className="relative h-36 bg-[#e9e6df] overflow-hidden">
+                {job.employer_profiles?.property_photos?.[0] ? <img src={job.employer_profiles.property_photos[0]} alt={job.employer_profiles?.company_name || 'Property'} className="h-full w-full object-cover" /> : <div className="h-full w-full flex items-center justify-center"><Building2 size={30} className="text-muted/50" /></div>}
+                {job.employer_profiles?.logo_url && <div className="absolute bottom-3 left-5 h-12 w-12 overflow-hidden rounded-xl border-2 border-white bg-white shadow-sm"><img src={job.employer_profiles.logo_url} alt="" className="h-full w-full object-cover" /></div>}
+              </div>
               <div className="p-5">
                 <div className="flex items-center justify-between mb-3">
                   <span className={tierClass(job.tier || 'Standard')}>{job.tier || 'Standard'}</span>
                   <span className="text-[11px] font-semibold px-2.5 py-1 rounded-full" style={{ backgroundColor: job.matchBg, color: job.matchColour }}>{job.matchScore}%</span>
                 </div>
-                <p className="eyebrow mb-0.5">{job.employer_profiles?.company_name}</p>
+                <div className="flex flex-wrap items-center gap-2"><p className="eyebrow mb-0.5">{job.employer_profiles?.company_name}</p>{job.employer_profiles?.review_score ? <span className="inline-flex items-center gap-1 text-[11px] text-secondary"><Star size={11} className="fill-amber-400 text-amber-400" />{job.employer_profiles.review_score}</span> : null}</div>
                 <h3 className="text-[16px] font-medium text-ink mb-2">{job.title}</h3>
                 <div className="flex flex-wrap gap-2 text-[12px] text-muted mb-3">
                   <span className="flex items-center gap-1"><MapPin size={11} />{job.location}</span>
                   <span>{job.contract_type?.replace('_', ' ') || job.job_type}</span>
                   {job.salary_min && job.salary_max && <span>£{(job.salary_min/1000).toFixed(0)}k-£{(job.salary_max/1000).toFixed(0)}k</span>}
                 </div>
+                {job.description && <p className="text-[13px] leading-6 text-secondary line-clamp-3 mb-4">{job.description}</p>}
                 {(job.required_brands || job.required_product_houses || []).length > 0 && (
                   <div className="flex flex-wrap gap-1 mb-4">
                     {(job.required_brands || job.required_product_houses).slice(0, 3).map((b: string) => (
@@ -196,6 +201,7 @@ export default function TalentJobsPage() {
                   />
                 )}
                 <div className="flex gap-2">
+                  <a href={`/jobs/${job.id}`} className="btn-secondary inline-flex items-center gap-1">Details <ArrowRight size={12} /></a>
                   {applied.has(job.id) ? (
                     <div className="btn-secondary flex-1 text-center flex items-center justify-center gap-1 opacity-60 cursor-default"><Check size={12} />Applied</div>
                   ) : job.hardStop ? (
