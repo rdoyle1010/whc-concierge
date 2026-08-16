@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import DashboardShell from '@/components/DashboardShell'
 import { createClient } from '@/lib/supabase/client'
-import { Plus, Edit2, Trash2, Eye, EyeOff, Copy, RotateCcw } from 'lucide-react'
+import { Plus, Edit2, Trash2, Eye, EyeOff, Copy, RotateCcw, CheckCircle2 } from 'lucide-react'
 
 export default function EmployerJobsPage() {
   const router = useRouter()
@@ -126,6 +126,15 @@ export default function EmployerJobsPage() {
     }
     setJobs(jobs.map(j => j.id === job.id ? { ...j, status: newStatus, is_live: newIsLive } : j))
   }
+
+  const markFilled = async (job: any) => {
+    if (!confirm(`Mark ${job.title} as filled? The role will be taken down and every applicant will be emailed.`)) return
+    const res = await fetch('/api/employer/jobs/status', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ jobId: job.id, action: 'filled' }) })
+    const result = await res.json().catch(() => ({}))
+    if (!res.ok) { alert(result.error || 'Could not mark this role as filled.'); return }
+    setJobs(jobs.map(j => j.id === job.id ? { ...j, status: 'filled', is_live: false } : j))
+    alert(`Role marked as filled. ${result.notified || 0} applicant${result.notified === 1 ? '' : 's'} notified.`)
+  }
   return (
     <DashboardShell role="employer" userName={profile?.company_name}>
       <div className="flex items-center justify-between mb-6">
@@ -208,7 +217,7 @@ export default function EmployerJobsPage() {
       ) : (
         <div className="space-y-4">
           {jobs.map((job) => (
-            <div key={job.id} className="dashboard-card flex items-center justify-between">
+            <div key={job.id} className="dashboard-card flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
               <div>
                 <div className="flex items-center space-x-3">
                   <h3 className="font-serif text-lg font-semibold text-ink">{job.title}</h3>
@@ -225,9 +234,10 @@ export default function EmployerJobsPage() {
                 <p className="text-sm text-gray-500 mt-1">{job.location} \u00b7 {job.job_type}</p>
               </div>
               <div className="flex items-center space-x-2">
-                {job.status !== 'draft' && (
-                  <button onClick={() => toggleStatus(job)} className="p-2 rounded-lg hover:bg-gray-100 text-gray-400" title={job.status === 'active' ? 'Close' : 'Activate'}>
-                    {job.status === 'active' ? <EyeOff size={18} /> : <Eye size={18} />}
+                {job.status === 'active' && <button onClick={() => markFilled(job)} className="btn-secondary !px-3 !py-2 inline-flex items-center gap-1.5 text-emerald-700" title="Take down this role and notify all applicants"><CheckCircle2 size={16} /> Mark filled</button>}
+                {job.status !== 'draft' && job.status !== 'filled' && (
+                  <button onClick={() => toggleStatus(job)} className="btn-secondary !px-3 !py-2 inline-flex items-center gap-1.5" title={job.status === 'active' ? 'Take down without marking filled' : 'Activate'}>
+                    {job.status === 'active' ? <><EyeOff size={16} /> Take down</> : <><Eye size={16} /> Activate</>}
                   </button>
                 )}
                 <button onClick={() => router.push(`/employer/post-role?clone=${job.id}`)} className="p-2 rounded-lg hover:bg-gray-100 text-gray-400" title="Clone">
@@ -238,7 +248,7 @@ export default function EmployerJobsPage() {
                     <RotateCcw size={18} />
                   </button>
                 )}
-                <button onClick={() => handleEdit(job)} className="p-2 rounded-lg hover:bg-gray-100 text-gray-400"><Edit2 size={18} /></button>
+                <button onClick={() => handleEdit(job)} className="btn-secondary !px-3 !py-2 inline-flex items-center gap-1.5"><Edit2 size={16} /> Edit</button>
                 <button onClick={() => handleDelete(job.id)} className="p-2 rounded-lg hover:bg-red-50 text-gray-400 hover:text-red-500"><Trash2 size={18} /></button>
               </div>
             </div>
