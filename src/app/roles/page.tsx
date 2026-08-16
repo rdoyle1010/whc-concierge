@@ -6,7 +6,7 @@ import { calculateMatchScore } from '@/lib/matching'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
 import Link from 'next/link'
-import { MapPin, Briefcase, Search, Clock } from 'lucide-react'
+import { MapPin, Briefcase, Search, Sparkles, ArrowRight } from 'lucide-react'
 import SkeletonCard from '@/components/SkeletonCard'
 import Pagination from '@/components/Pagination'
 import SponsoredAd from '@/components/SponsoredAd'
@@ -77,9 +77,12 @@ export default function BrowseRolesPage() {
 
       {/* Hero */}
       <section className="pt-16 bg-white border-b border-border">
-        <div className="max-w-7xl mx-auto px-6 lg:px-8 py-14">
-          <h1 className="text-[36px] md:text-[44px] font-medium text-ink tracking-tight leading-[1.1] mb-3">Browse Roles</h1>
-          <p className="text-[15px] text-secondary max-w-xl">Discover exceptional opportunities at the world&apos;s finest wellness properties.</p>
+        <div className="max-w-[1440px] mx-auto px-6 lg:px-10 py-16">
+          <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
+            <div><p className="text-[11px] font-semibold tracking-[0.15em] uppercase text-accent mb-3">Luxury wellness careers</p><h1 className="text-[38px] md:text-[52px] font-semibold text-ink tracking-[-0.04em] leading-[1.05] mb-3">Find your next role.</h1>
+            <p className="text-[15px] text-secondary max-w-xl">Search every live opportunity directly, or use personalised matching to see which roles fit your experience.</p></div>
+            <Link href="/roles/match" className="btn-primary inline-flex items-center justify-center gap-2 shrink-0"><Sparkles size={15} /> See my best matches</Link>
+          </div>
         </div>
       </section>
 
@@ -87,7 +90,7 @@ export default function BrowseRolesPage() {
 
       {/* Filters */}
       <section className="bg-white border-b border-border sticky top-[60px] z-40">
-        <div className="max-w-7xl mx-auto px-6 lg:px-8 py-4">
+        <div className="max-w-[1440px] mx-auto px-6 lg:px-10 py-4">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
             <div className="md:col-span-2 relative">
               <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
@@ -103,7 +106,7 @@ export default function BrowseRolesPage() {
       </section>
 
       {/* Results */}
-      <section className="max-w-7xl mx-auto px-6 lg:px-8 py-10">
+      <section className="max-w-[1440px] mx-auto px-6 lg:px-10 py-12">
         {loading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">{[1,2,3,4,5,6].map(i => <SkeletonCard key={i} variant="role" />)}</div>
         ) : filtered.length === 0 ? (
@@ -114,9 +117,9 @@ export default function BrowseRolesPage() {
           </div>
         ) : (
           <>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {filtered.slice((page - 1) * perPage, page * perPage).map(job => (
-              <Link key={job.id} href="/roles/match" className="bg-white border border-border rounded-xl p-5 hover:shadow-md hover:-translate-y-0.5 transition-all">
+              <Link key={job.id} href={`/jobs/${job.id}`} className="group bg-white border border-border rounded-2xl p-6 hover:shadow-lg hover:-translate-y-0.5 transition-all">
                 <div className="flex items-center justify-between mb-3">
                   {job.tier && <span className={tierClass(job.tier)}>{job.tier}</span>}
                   {job.matchScore > 0 && (
@@ -132,9 +135,13 @@ export default function BrowseRolesPage() {
                 {job.salary_min && job.salary_max && (
                   <p className="text-[14px] font-medium text-accent">£{(job.salary_min/1000).toFixed(0)}k - £{(job.salary_max/1000).toFixed(0)}k</p>
                 )}
+                {job.description && (
+                  <p className="mt-3 text-[13px] leading-6 text-secondary line-clamp-3">{job.description}</p>
+                )}
                 {(job.required_brands || []).length > 0 && (
                   <div className="flex flex-wrap gap-1 mt-3">{(job.required_brands || []).slice(0, 3).map((b: string) => <span key={b} className="text-[10px] font-medium bg-[#FDF6EC] text-accent border border-accent/20 px-2 py-0.5 rounded-full">{b}</span>)}</div>
                 )}
+                <span className="mt-5 inline-flex items-center gap-1 text-[12px] font-semibold text-ink group-hover:text-accent">View role details <ArrowRight size={13} /></span>
               </Link>
             ))}
           </div>

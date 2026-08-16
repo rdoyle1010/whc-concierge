@@ -146,15 +146,19 @@ export default function SwipeMatchPage() {
       {/* Header */}
       <div className="bg-white border-b border-border h-[56px] px-6 flex items-center justify-between shrink-0">
         <Link href="/" className="text-muted hover:text-ink text-[13px] flex items-center gap-1.5"><ArrowLeft size={14} />Back</Link>
-        <span className="text-[14px] font-medium text-ink">Match</span>
+        <span className="text-[14px] font-semibold text-ink">Your role matches</span>
         <span className="text-[13px] text-muted">{idx+1} / {jobs.length}</span>
       </div>
 
+      <div className="px-6 pt-8 text-center">
+        <h1 className="text-[28px] font-semibold tracking-tight text-ink">Roles selected for your experience</h1>
+        <p className="mt-2 text-[13px] text-muted">Review why each role matches. Pass to hide it, or choose Interested to submit your interest.</p>
+      </div>
       {/* Card */}
-      <div className="flex-1 flex items-center justify-center px-4 py-6">
-        <div className={`swipe-card w-full max-w-[440px] bg-white border border-border rounded-xl shadow-sm overflow-hidden ${dir==='left'?'swipe-left':dir==='right'?'swipe-right':''}`}>
+      <div className="flex-1 flex items-center justify-center px-4 py-8">
+        <div className={`swipe-card w-full max-w-[820px] bg-white border border-border rounded-2xl shadow-lg overflow-hidden md:grid md:grid-cols-[300px_1fr] ${dir==='left'?'swipe-left':dir==='right'?'swipe-right':''}`}>
           {/* Branded header (no stock photos - honest, on-brand) */}
-          <div className="h-[180px] relative overflow-hidden" style={{ background: 'linear-gradient(135deg, #1a1a1a 0%, #2d2a25 55%, #4a3f2f 100%)' }}>
+          <div className="h-[210px] md:h-full md:min-h-[430px] relative overflow-hidden" style={{ background: 'linear-gradient(135deg, #0b2f4d 0%, #143f5e 55%, #8a7047 130%)' }}>
             <div className="absolute inset-0 flex items-center justify-center">
               <div className="w-20 h-20 rounded-2xl flex items-center justify-center border" style={{ background: 'rgba(201, 169, 110, 0.12)', borderColor: 'rgba(201, 169, 110, 0.4)' }}>
                 <span className="text-[32px] font-serif font-semibold" style={{ color: '#C9A96E' }}>{propertyInitial}</span>
@@ -171,7 +175,7 @@ export default function SwipeMatchPage() {
           </div>
 
           {/* Body */}
-          <div className="p-5">
+          <div className="p-6 md:p-8">
             <p className="eyebrow mb-0.5">{job?.employer_profiles?.company_name}</p>
             <h2 className="text-[20px] font-medium text-ink mb-1">{job?.title}</h2>
             {job?.matchExplanation && (
@@ -224,22 +228,17 @@ export default function SwipeMatchPage() {
                 )}
               </div>
             )}
+            <div className="mt-6 flex flex-wrap items-center gap-3 border-t border-border pt-5">
+              <button onClick={()=>swipe('left')} className="btn-secondary inline-flex items-center gap-2"><X size={15} /> Not for me</button>
+              <button onClick={()=>swipe('right')} disabled={job?.hardStop} title={job?.hardStopReason} className="btn-primary inline-flex items-center gap-2 disabled:opacity-35 disabled:cursor-not-allowed"><Heart size={15} /> I&apos;m interested</button>
+              <Link href={`/jobs/${job.id}`} className="ml-auto text-[12px] font-semibold text-secondary hover:text-ink">View full role</Link>
+            </div>
           </div>
         </div>
       </div>
 
       {/* Buttons */}
-      <div className="bg-white border-t border-border py-5 shrink-0">
-        <div className="flex items-center justify-center gap-8">
-          <button onClick={()=>swipe('left')} className="w-[52px] h-[52px] border border-border rounded-full flex items-center justify-center hover:bg-red-50 hover:border-red-200 transition-all group">
-            <X size={22} className="text-muted group-hover:text-red-500" />
-          </button>
-          <button onClick={()=>swipe('right')} disabled={job?.hardStop} title={job?.hardStopReason} className="w-[60px] h-[60px] bg-ink rounded-full flex items-center justify-center hover:bg-black/80 transition-colors shadow-sm disabled:opacity-35 disabled:cursor-not-allowed">
-            <Heart size={24} className="text-white" />
-          </button>
-        </div>
-        <p className="text-center text-[11px] text-muted mt-3">Arrow keys or buttons</p>
-      </div>
+      <div className="bg-white border-t border-border py-3 text-center text-[11px] text-muted shrink-0">You can also use the left and right arrow keys.</div>
     </div>
   )
 }

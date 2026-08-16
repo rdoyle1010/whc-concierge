@@ -80,6 +80,14 @@ export default function TalentApplicationsPage() {
 
   const getStatusIndex = (status: string) => STATUS_FLOW.indexOf(status)
 
+  const withdrawApplication = async (app: any) => {
+    if (!confirm(`Withdraw your application for ${app.job_listings?.job_title || 'this role'}? The employer will no longer see it.`)) return
+    const res = await fetch('/api/applications/withdraw', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ applicationId: app.id }) })
+    const result = await res.json().catch(() => ({}))
+    if (!res.ok) { alert(result.error || 'Could not withdraw this application.'); return }
+    setApplications(current => current.filter(item => item.id !== app.id))
+  }
+
   return (
     <DashboardShell role="talent">
       <div className="flex items-center justify-between mb-6">
@@ -174,6 +182,7 @@ export default function TalentApplicationsPage() {
                       <Star size={11} /> Review employer
                     </button>
                   )}
+                  {!isTerminal && <button type="button" onClick={() => withdrawApplication(app)} className="ml-auto inline-flex items-center gap-1 font-semibold text-red-500 hover:text-red-700"><X size={12} /> Withdraw application</button>}
                 </div>
               </div>
             )

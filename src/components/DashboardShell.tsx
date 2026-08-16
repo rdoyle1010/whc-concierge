@@ -120,7 +120,7 @@ export default function DashboardShell({ children, role, userName }: DashboardSh
           {userName && (
             <div className="mt-6 pb-6 border-b border-white/10">
               <p className="text-white/45 text-[9px] uppercase tracking-[0.2em]">{role} workspace</p>
-              <p className="font-serif text-white text-lg mt-1 truncate">{userName}</p>
+              <p className="font-sans font-semibold text-white text-lg mt-1 truncate">{userName}</p>
             </div>
           )}
         </div>
@@ -134,10 +134,10 @@ export default function DashboardShell({ children, role, userName }: DashboardSh
               <Link
                 href={item.href}
                 onClick={() => setSidebarOpen(false)}
-                className={`dashboard-nav-item flex items-center space-x-3 px-3 py-2 text-[13px] transition-colors border-l-2 ${
+                className={`dashboard-nav-item flex items-center space-x-3 px-3 py-2 text-[13px] transition-colors ${
                   active
-                    ? 'border-gold text-white bg-white/[0.06]'
-                    : 'border-transparent text-white/60 hover:text-white hover:border-white/25'
+                    ? 'text-white bg-white/[0.10]'
+                    : 'text-white/60 hover:text-white hover:bg-white/[0.06]'
                 }`}
               >
                 {item.icon}
@@ -152,7 +152,7 @@ export default function DashboardShell({ children, role, userName }: DashboardSh
         <div className="absolute bottom-0 left-0 right-0 p-4">
           <button
             onClick={handleSignOut}
-            className="flex items-center space-x-3 px-3 py-2.5 text-sm text-white/60 hover:text-white border-l-2 border-transparent hover:border-white/25 w-full transition-colors"
+            className="dashboard-nav-item flex items-center space-x-3 px-3 py-2.5 text-sm text-white/60 hover:text-white hover:bg-white/[0.06] w-full transition-colors"
           >
             <LogOut size={20} />
             <span>Sign Out</span>
