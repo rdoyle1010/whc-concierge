@@ -93,10 +93,10 @@ export default function AcademyPage() {
 
   return (
     <DashboardShell role="talent">
-      <div className="max-w-4xl">
+      <div className="max-w-6xl">
         <div className="flex items-center gap-2 mb-2">
           <GraduationCap size={22} className="text-accent" />
-          <h1 className="text-2xl font-serif font-bold text-ink">WHC Academy</h1>
+          <h1 className="text-3xl font-sans font-semibold tracking-tight text-ink">WHC Academy</h1>
         </div>
         <p className="text-[13px] text-gray-500 mb-6 max-w-2xl">
           Serious courses for luxury spa professionals - core curriculum £{(COURSE_PRICE / 100).toFixed(0)}, brand masterclasses £5, specialist care £{(COURSE_PRICE / 100).toFixed(0)}. Pass the final quiz (80%) and you earn a certificate - and the badge appears on your profile, where properties can see exactly what you&apos;ve trained in before they book you.
@@ -132,7 +132,7 @@ export default function AcademyPage() {
           categories.map(cat => (
             <div key={cat} className="mb-8">
               <h2 className="text-[11px] uppercase tracking-[0.14em] text-gray-400 mb-3">{cat}</h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
                 {courses.filter(c => c.category === cat).map(course => {
                   const enr = enrolmentFor(course.slug)
                   const done = Boolean(enr?.completed_at)
@@ -146,7 +146,7 @@ export default function AcademyPage() {
                       </div>
                       <div className="p-5 flex flex-col flex-1">
                       <div className="flex items-start justify-between gap-2 mb-1">
-                        <h3 className="font-serif text-[17px] font-semibold text-ink leading-snug">{course.title}</h3>
+                        <h3 className="font-sans text-[17px] font-semibold tracking-tight text-ink leading-snug">{course.title}</h3>
                         {done ? <span className="inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide bg-green-600 text-white px-2 py-0.5 rounded-full shrink-0"><Check size={10} /> Certified</span> : enr ? <span className="inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide bg-gold text-ink px-2 py-0.5 rounded-full shrink-0">Yours - in progress</span> : null}
                       </div>
                       <p className="text-[12px] text-gray-500 mb-2">{course.tagline}</p>
