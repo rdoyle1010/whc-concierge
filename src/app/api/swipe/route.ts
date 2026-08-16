@@ -202,7 +202,18 @@ export async function POST(req: NextRequest) {
       const recorded = await replaceSwipe(admin, {
         swiper_id: user.id, swiper_type: 'candidate', target_id: targetId, target_type: 'job', action: 'right',
       })
-      if (recorded.error) return NextResponse.json({ error: 'Your decision could not be saved. Please try again.' }, { status: 500 })
+      if (recorded.error) {
+        console.error('Candidate swipe save failed', {
+          code: recorded.error.code,
+          message: recorded.error.message,
+          details: recorded.error.details,
+          hint: recorded.error.hint,
+        })
+        return NextResponse.json(
+          { error: 'Your decision could not be saved. Please try again.' },
+          { status: 500 },
+        )
+      }
 
       const { data: employer } = await admin
         .from('employer_profiles')
@@ -373,7 +384,18 @@ export async function POST(req: NextRequest) {
     const recorded = await replaceSwipe(admin, {
       swiper_id: user.id, swiper_type: 'employer', target_id: targetId, target_type: 'candidate', action,
     })
-    if (recorded.error) return NextResponse.json({ error: 'Your decision could not be saved. Please try again.' }, { status: 500 })
+    if (recorded.error) {
+      console.error('Employer swipe save failed', {
+        code: recorded.error.code,
+        message: recorded.error.message,
+        details: recorded.error.details,
+        hint: recorded.error.hint,
+      })
+      return NextResponse.json(
+        { error: 'Your decision could not be saved. Please try again.' },
+        { status: 500 },
+      )
+    }
 
     if (action !== 'right') return NextResponse.json({ matched: false })
 

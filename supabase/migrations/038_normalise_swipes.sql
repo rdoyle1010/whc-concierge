@@ -23,7 +23,7 @@ WITH ranked AS (
   SELECT id,
     row_number() OVER (
       PARTITION BY swiper_id, swiper_type, target_id, target_type
-      ORDER BY created_at DESC NULLS LAST, id DESC
+      ORDER BY swiped_at DESC NULLS LAST, id DESC
     ) AS duplicate_number
   FROM public.swipes
   WHERE swiper_id IS NOT NULL
