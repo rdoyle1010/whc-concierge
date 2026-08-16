@@ -59,12 +59,12 @@ export default function ResidencyPage() {
 
       {/* Hero */}
       <section className="pt-16 bg-white border-b border-border">
-        <div className="max-w-5xl mx-auto px-6 lg:px-8 py-16 text-center">
+        <div className="max-w-[1440px] mx-auto px-6 lg:px-10 py-16 text-center">
           <p className="text-[11px] tracking-[0.15em] uppercase font-medium mb-4" style={{ color: '#C9A96E' }}>Residency Programme</p>
           <h1 className="text-[36px] md:text-[48px] font-medium text-ink tracking-tight leading-[1.08] mb-4">Residency Specialists</h1>
           <p className="text-[15px] text-secondary max-w-2xl mx-auto mb-8">Award-winning wellness professionals available for seasonal and short-term placements at your property</p>
           <div className="flex flex-wrap justify-center gap-3">
-            <Link href="/residency/create" className="px-6 py-2.5 rounded-lg text-[13px] font-semibold text-white transition-all hover:shadow-lg" style={{ backgroundColor: '#C9A96E' }}>List Your Availability</Link>
+            <Link href="/residency/create" className="px-6 py-2.5 rounded-xl text-[13px] font-semibold text-white transition-all hover:shadow-lg" style={{ backgroundColor: '#C9A96E' }}>List Your Availability</Link>
             <a href="#specialists" className="btn-secondary">Browse Specialists</a>
           </div>
         </div>
@@ -72,7 +72,7 @@ export default function ResidencyPage() {
 
       {/* Stats */}
       <section className="border-b border-border py-6" style={{ background: '#F8F7F5' }}>
-        <div className="max-w-5xl mx-auto px-6 lg:px-8 flex items-center justify-center gap-8 md:gap-16 text-center">
+        <div className="max-w-[1440px] mx-auto px-6 lg:px-10 flex items-center justify-center gap-8 md:gap-16 text-center">
           {[{ n: '15+', l: 'Years Average Experience' }, { n: 'UK & Europe', l: 'Placement Regions' }, { n: '5-Star', l: 'Property Partners' }].map(s => (
             <div key={s.l}><p className="text-[20px] font-semibold" style={{ color: '#C9A96E' }}>{s.n}</p><p className="text-[11px] text-muted">{s.l}</p></div>
           ))}
@@ -80,7 +80,7 @@ export default function ResidencyPage() {
       </section>
 
       {/* Filters */}
-      <section id="specialists" className="max-w-5xl mx-auto px-6 lg:px-8 pt-10 pb-4">
+      <section id="specialists" className="max-w-[1440px] mx-auto px-6 lg:px-10 pt-12 pb-4">
         <div className="flex flex-wrap gap-3">
           <input type="text" placeholder="Filter by specialism..." value={specFilter} onChange={e => setSpecFilter(e.target.value)}
             className="input-field !py-2 text-[13px] w-auto flex-1 min-w-[200px]" />
@@ -97,7 +97,7 @@ export default function ResidencyPage() {
       </section>
 
       {/* Listings */}
-      <section className="max-w-5xl mx-auto px-6 lg:px-8 py-6 pb-16">
+      <section className="max-w-[1440px] mx-auto px-6 lg:px-10 py-6 pb-16">
         {loading ? (
           <div className="space-y-6">{[1,2,3].map(i => <div key={i} className="skeleton h-56 rounded-xl" />)}</div>
         ) : filtered.length === 0 ? (
@@ -107,7 +107,7 @@ export default function ResidencyPage() {
             <Link href="/residency/create" className="btn-primary inline-block">Create a Listing</Link>
           </div>
         ) : (
-          <div className="space-y-6">
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
             {filtered.map((r, i) => {
               const name = r.full_name || r.title || 'Specialist'
               const bio = r.bio || r.description || ''
@@ -122,14 +122,14 @@ export default function ResidencyPage() {
               const rate = r.weekly_rate || r.day_rate
 
               return (
-                <div key={r.id} className={`bg-white border rounded-xl p-6 md:p-8 hover:shadow-md transition-all ${r.is_featured ? 'border-[#C9A96E]/30 ring-1 ring-[#C9A96E]/10' : 'border-border'}`}>
+                <div key={r.id} className={`bg-white border rounded-2xl p-6 hover:shadow-lg transition-all ${r.is_featured ? 'border-[#C9A96E]/30 ring-1 ring-[#C9A96E]/10' : 'border-border'}`}>
                   <div className="flex flex-col md:flex-row gap-6">
                     {/* Avatar */}
                     <div className="shrink-0 flex flex-col items-center">
                       <div className="w-24 h-24 rounded-full overflow-hidden bg-surface border-2 border-white shadow-md flex items-center justify-center" style={{ background: '#FDF6EC' }}>
                         {(r.profile_photo_url || r.photo_url || r.photos?.[0])
                           ? <img src={r.profile_photo_url || r.photo_url || r.photos?.[0]} alt={name} className="w-full h-full object-cover" />
-                          : <span className="text-[28px] font-serif font-semibold" style={{ color: '#C9A96E' }}>{name.trim().charAt(0).toUpperCase()}</span>}
+                          : <span className="text-[28px] font-sans font-semibold" style={{ color: '#C9A96E' }}>{name.trim().charAt(0).toUpperCase()}</span>}
                       </div>
                       {r.is_featured && <span className="mt-2 text-[9px] font-semibold px-2.5 py-0.5 rounded-full" style={{ backgroundColor: '#FDF6EC', color: '#C9A96E' }}>Featured</span>}
                       {r.years_experience && <p className="mt-2 text-[11px] text-muted text-center">{r.years_experience} years exp.</p>}
@@ -185,7 +185,7 @@ export default function ResidencyPage() {
                         </div>
                         <div className="flex gap-2">
                           <Link href={`/residency/${r.id}`} className="text-[12px] font-medium text-muted hover:text-ink flex items-center gap-1 transition-colors">View Profile <ArrowRight size={12} /></Link>
-                          <button type="button" onClick={() => setShowEnquiry(r)} className="px-4 py-2 rounded-lg text-[12px] font-semibold text-white" style={{ backgroundColor: '#C9A96E' }}>Enquire</button>
+                          <button type="button" onClick={() => setShowEnquiry(r)} className="px-4 py-2 rounded-xl text-[12px] font-semibold text-white" style={{ backgroundColor: '#C9A96E' }}>Enquire</button>
                         </div>
                       </div>
                     </div>
