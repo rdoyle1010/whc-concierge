@@ -64,9 +64,9 @@ export default function PublicAcademyPage() {
 
       {/* Hero */}
       <section className="pt-16 bg-white border-b border-border">
-        <div className="max-w-7xl mx-auto px-6 lg:px-8 py-14">
+        <div className="max-w-[1440px] mx-auto px-6 lg:px-10 py-16 lg:py-20">
           <p className="text-[11px] tracking-[0.15em] uppercase font-medium mb-3 text-accent">WHC Academy</p>
-          <h1 className="font-serif text-[36px] md:text-[44px] font-medium text-ink tracking-tight leading-[1.1] mb-3">Training that gets you booked.</h1>
+          <h1 className="font-sans text-[38px] md:text-[52px] font-semibold text-ink tracking-[-0.04em] leading-[1.05] mb-4">Training that gets you booked.</h1>
           <p className="text-[15px] text-secondary max-w-2xl mb-4">
             Short, serious courses written for luxury spa and wellness professionals - consultation, retail, Forbes standards, treatment craft and brand knowledge. Pass the final quiz and earn a verifiable certificate. No membership required.
           </p>
@@ -78,7 +78,7 @@ export default function PublicAcademyPage() {
 
       <SponsoredAd placement="academy_sponsor" />
 
-      <div className="max-w-7xl mx-auto px-6 lg:px-8 py-10">
+      <div className="max-w-[1440px] mx-auto px-6 lg:px-10 py-12 lg:py-16">
         {purchased && (
           <div className="bg-green-50 border border-green-200 text-green-800 text-sm px-5 py-4 rounded-xl mb-8">
             <p className="font-medium">Payment received - check your email.</p>
@@ -88,17 +88,17 @@ export default function PublicAcademyPage() {
 
         {categories.map(cat => (
           <div key={cat} className="mb-10">
-            <h2 className="text-[11px] uppercase tracking-[0.14em] text-gray-400 mb-3">{cat}</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+            <h2 className="text-[11px] font-semibold uppercase tracking-[0.14em] text-gray-400 mb-4">{cat}</h2>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {courses.filter(c => c.category === cat).map(course => (
-                <div key={course.slug} className="bg-white border border-border rounded-xl overflow-hidden flex flex-col hover:shadow-md transition-shadow">
-                  <div className="relative h-32 shrink-0">
+                <div key={course.slug} className="bg-white border border-border rounded-2xl overflow-hidden flex flex-col hover:shadow-lg transition-all duration-200">
+                  <div className="relative h-44 shrink-0">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={course.image_url || courseImage(course.slug)} alt="" className="absolute inset-0 w-full h-full object-cover" />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
                   </div>
                   <div className="p-6 flex flex-col flex-1">
-                  <h3 className="font-serif text-[17px] font-semibold text-ink leading-snug mb-1">{course.title}</h3>
+                  <h3 className="font-sans text-[19px] font-semibold tracking-tight text-ink leading-snug mb-1">{course.title}</h3>
                   <p className="text-[12px] text-gray-500 mb-2">{course.tagline}</p>
                   <p className="text-[11px] text-gray-400 mb-4 inline-flex items-center gap-1"><Clock size={11} /> {course.lessons.length} modules · case studies &amp; assessment · ~{course.minutes} min · certificate</p>
                   <div className="mt-auto flex items-center justify-between gap-3">
@@ -116,7 +116,7 @@ export default function PublicAcademyPage() {
           </div>
         ))}
 
-        <div className="bg-white border border-border rounded-xl p-6 flex items-start gap-3 max-w-2xl">
+        <div className="bg-white border border-border rounded-2xl p-6 flex items-start gap-3 max-w-3xl">
           <ShieldCheck size={18} className="text-accent mt-0.5 shrink-0" />
           <p className="text-[12px] text-gray-500">Every certificate carries a unique code that anyone can check at <Link href="/verify" className="text-accent underline">talent.wellnesshousecollective.co.uk/verify</Link>. Certificates evidence course completion and assessment; they are not a substitute for accredited qualifications or insurance requirements.</p>
         </div>
@@ -127,7 +127,7 @@ export default function PublicAcademyPage() {
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setBuying(null)}>
           <div className="bg-white rounded-2xl max-w-md w-full p-6" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-2">
-              <h2 className="font-serif text-lg font-bold text-ink flex items-center gap-2"><GraduationCap size={17} className="text-accent" /> {buying.title}</h2>
+              <h2 className="font-sans text-lg font-semibold tracking-tight text-ink flex items-center gap-2"><GraduationCap size={17} className="text-accent" /> {buying.title}</h2>
               <button onClick={() => setBuying(null)} className="text-gray-300 hover:text-ink"><X size={20} /></button>
             </div>
             <p className="text-[12px] text-gray-500 mb-4">£{(buying.price / 100).toFixed(0)} one-off. After payment your access link arrives by email - one tap and you&apos;re in, no password to set. Certificate issued the moment you pass.</p>
