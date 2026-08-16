@@ -143,13 +143,13 @@ export default function PostRolePage() {
     setError('')
 
     try {
-      const { error: insertError } = await supabase.from('job_listings').insert({
-        ...buildJobPayload(),
-        is_live: false,
-        status: 'draft',
+      const res = await fetch('/api/employer/jobs/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...buildJobPayload(), is_live: false, status: 'draft' }),
       })
-
-      if (insertError) throw insertError
+      const result = await res.json()
+      if (!res.ok) throw new Error(result.error || 'Error saving draft')
       router.push('/employer/dashboard?tab=drafts')
     } catch (err: any) {
       setError(err.message || 'Error saving draft')
@@ -187,13 +187,14 @@ export default function PostRolePage() {
       const tierConfig = JOB_TIERS[selectedTier as keyof typeof JOB_TIERS]
       const expiresAt = new Date(Date.now() + (tierConfig?.days || 30) * 24 * 60 * 60 * 1000).toISOString()
 
-      const { data: insertedJob, error: insertError } = await supabase.from('job_listings').insert({
-        ...buildJobPayload(),
-        is_live: false,
-        status: 'pending_payment',
-      }).select('id').single()
-
-      if (insertError || !insertedJob) { setError(insertError?.message || 'Failed to create listing'); setSaving(false); return }
+      const createRes = await fetch('/api/employer/jobs/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...buildJobPayload(), is_live: false, status: 'pending_payment' }),
+      })
+      const createData = await createRes.json()
+      const insertedJob = createData.job
+      if (!createRes.ok || !insertedJob) { setError(createData.error || 'Failed to create listing'); setSaving(false); return }
 
       setCheckoutLoading(true)
       const res = await fetch('/api/stripe/checkout', {
