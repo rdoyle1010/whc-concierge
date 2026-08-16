@@ -16,32 +16,54 @@ async function getEmployerProfile() {
   if (!user) return null
 
   const admin = createAdminClient()
-  const { data } = await admin.from('employer_profiles').select('id, user_id, property_name, company_name').eq('user_id', user.id).single()
+  const { data } = await admin.from('employer_profiles').select('id, user_id, property_name, company_name, approval_status').eq('user_id', user.id).single()
   return data
 }
 
 export async function GET() {
   const profile = await getEmployerProfile()
   if (!profile) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+  if (profile.approval_status !== 'approved') return NextResponse.json({ error: 'Employer approval required' }, { status: 403 })
 
   const admin = createAdminClient()
-  const { data } = await admin
-    .from('shortlisted_candidates')
-    .select('*, candidate_profiles(id, user_id, full_name, headline, role_level, location, services_offered, experience_years, profile_image_url, review_score), job_listings(id, job_title)')
-    .eq('employer_id', profile.id)
-    .order('created_at', { ascending: false })
+  const [{ data }, { data: blocks }] = await Promise.all([
+    admin
+      .from('shortlisted_candidates')
+      .select('*, candidate_profiles(id, user_id, full_name, headline, role_level, location, services_offered, experience_years, profile_image_url, review_score, profile_visible, approval_status), job_listings(id, job_title)')
+      .eq('employer_id', profile.id)
+      .order('created_at', { ascending: false }),
+    admin.from('profile_blocks').select('candidate_id').eq('blocked_employer_id', profile.id),
+  ])
 
-  return NextResponse.json({ shortlisted: data || [] })
+  const blockedIds = new Set((blocks || []).map((row: any) => row.candidate_id))
+  const visible = (data || []).filter((entry: any) => {
+    const candidate = Array.isArray(entry.candidate_profiles) ? entry.candidate_profiles[0] : entry.candidate_profiles
+    return candidate
+      && candidate.approval_status === 'approved'
+      && candidate.profile_visible !== false
+      && !blockedIds.has(entry.candidate_id)
+  })
+
+  return NextResponse.json({ shortlisted: visible })
 }
 
 export async function POST(req: NextRequest) {
   const profile = await getEmployerProfile()
   if (!profile) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+  if (profile.approval_status !== 'approved') return NextResponse.json({ error: 'Employer approval required' }, { status: 403 })
 
   const { candidateId, jobId, notes } = await req.json()
   if (!candidateId) return NextResponse.json({ error: 'candidateId required' }, { status: 400 })
 
   const admin = createAdminClient()
+  const [{ data: candidate }, { data: block }] = await Promise.all([
+    admin.from('candidate_profiles').select('id, approval_status, profile_visible').eq('id', candidateId).maybeSingle(),
+    admin.from('profile_blocks').select('id').eq('candidate_id', candidateId).eq('blocked_employer_id', profile.id).maybeSingle(),
+  ])
+  if (!candidate || candidate.approval_status !== 'approved' || candidate.profile_visible === false || block) {
+    return NextResponse.json({ error: 'This profile is not available to your business' }, { status: 403 })
+  }
+
   const { error } = await admin.from('shortlisted_candidates').insert({
     employer_id: profile.id,
     candidate_id: candidateId,
@@ -149,6 +171,7 @@ export async function POST(req: NextRequest) {
 export async function PATCH(req: NextRequest) {
   const profile = await getEmployerProfile()
   if (!profile) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+  if (profile.approval_status !== 'approved') return NextResponse.json({ error: 'Employer approval required' }, { status: 403 })
 
   const { id, notes } = await req.json()
   if (!id) return NextResponse.json({ error: 'id required' }, { status: 400 })
@@ -167,6 +190,7 @@ export async function PATCH(req: NextRequest) {
 export async function DELETE(req: NextRequest) {
   const profile = await getEmployerProfile()
   if (!profile) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+  if (profile.approval_status !== 'approved') return NextResponse.json({ error: 'Employer approval required' }, { status: 403 })
 
   const { id } = await req.json()
   if (!id) return NextResponse.json({ error: 'id required' }, { status: 400 })

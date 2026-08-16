@@ -16,25 +16,32 @@ export default function EmployerCandidatesPage() {
   const [shortlistedIds, setShortlistedIds] = useState<Set<string>>(new Set())
   const [matchInfo, setMatchInfo] = useState<{ name: string; job: string } | null>(null)
   const [viewing, setViewing] = useState<any>(null)
+  const [radius, setRadius] = useState('25')
+  const [originGeocoded, setOriginGeocoded] = useState(true)
+  const [directoryError, setDirectoryError] = useState('')
 
   useEffect(() => {
     async function load() {
+      setLoading(true)
+      setDirectoryError('')
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
       const { data: prof } = await supabase.from('employer_profiles').select('*').eq('user_id', user.id).single()
       setProfile(prof)
 
-      // Fetch candidates, blocked list and my past passes in parallel
-      // (blocks + swipes come from service-role routes - the tables are RLS-locked)
-      const [candidateRes, blocksRes, swipesRes] = await Promise.all([
-        supabase.from('candidate_profiles').select('*').order('created_at', { ascending: false }),
-        fetch('/api/profile/blocks').then(r => r.ok ? r.json() : { blocked_candidate_ids: [] }).catch(() => ({ blocked_candidate_ids: [] })),
+      // Privacy, Stealth Mode and both parties' mile limits are enforced by
+      // the server before any candidate data reaches this browser.
+      const [directoryRes, swipesRes] = await Promise.all([
+        fetch(`/api/employer/candidates${radius === 'all' ? '' : `?radius=${radius}`}`)
+          .then(async r => ({ ok: r.ok, body: await r.json().catch(() => ({})) }))
+          .catch(() => ({ ok: false, body: { error: 'Talent directory unavailable' } })),
         fetch('/api/swipe').then(r => r.ok ? r.json() : { passed_ids: [] }).catch(() => ({ passed_ids: [] })),
       ])
 
-      const blockedIds = new Set(blocksRes.blocked_candidate_ids || [])
+      if (!directoryRes.ok) setDirectoryError(directoryRes.body.error || 'Talent directory unavailable')
+      setOriginGeocoded(directoryRes.body.origin?.geocoded !== false)
       const passedIds = new Set(swipesRes.passed_ids || [])
-      const visible = (candidateRes.data || []).filter((c: any) => !blockedIds.has(c.id) && !passedIds.has(c.id))
+      const visible = (directoryRes.body.candidates || []).filter((c: any) => !passedIds.has(c.id))
 
       // Score every candidate against this employer's live roles - best fit first
       let scored = visible
@@ -65,7 +72,7 @@ export default function EmployerCandidatesPage() {
       setLoading(false)
     }
     load()
-  }, [])
+  }, [radius])
 
   const filtered = candidates.filter((c) => {
     if (search && !c.full_name?.toLowerCase().includes(search.toLowerCase()) &&
@@ -114,8 +121,16 @@ export default function EmployerCandidatesPage() {
       alert('Could not record your pass - please try again.')
       return
     }
-    const result = res && res.ok ? await res.json().catch(() => null) : null
+    const result = res ? await res.json().catch(() => null) : null
     if (direction === 'right') {
+      if (!(res && res.ok)) {
+        if (res?.status === 403) {
+          setCandidates(prev => prev.filter(c => c.id !== candidateId))
+          if (viewing?.id === candidateId) setViewing(null)
+        }
+        alert(result?.error || 'Could not save your interest - please try again.')
+        return
+      }
       if (result?.matched) {
         setMatchInfo({ name: result.candidateName || 'This candidate', job: result.jobTitle || 'your role' })
       }
@@ -124,10 +139,14 @@ export default function EmployerCandidatesPage() {
 
   return (
     <DashboardShell role="employer" userName={profile?.company_name}>
-      <h1 className="text-2xl font-serif font-bold text-ink mb-6">Browse Candidates</h1>
+      <div className="mb-7">
+        <p className="dashboard-eyebrow">Talent discovery</p>
+        <h1 className="dashboard-title">Browse candidates</h1>
+        <p className="dashboard-intro">Results respect your chosen search distance and each professional&apos;s own travel limit. Profiles hidden from your business never appear here.</p>
+      </div>
 
       <div className="dashboard-card mb-6">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div className="relative md:col-span-2">
             <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
             <input type="text" placeholder="Search by name or headline..." value={search}
@@ -135,7 +154,17 @@ export default function EmployerCandidatesPage() {
           </div>
           <input type="text" placeholder="Filter by specialism..." value={specFilter}
             onChange={(e) => setSpecFilter(e.target.value)} className="input-field" />
+          <select value={radius} onChange={(e) => setRadius(e.target.value)} className="input-field" aria-label="Search distance">
+            <option value="5">Within 5 miles</option>
+            <option value="10">Within 10 miles</option>
+            <option value="25">Within 25 miles</option>
+            <option value="50">Within 50 miles</option>
+            <option value="100">Within 100 miles</option>
+            <option value="all">All locations</option>
+          </select>
         </div>
+        {!originGeocoded && radius !== 'all' && <p className="mt-3 text-xs text-amber-700">Add a valid postcode to your Company Profile before using distance search.</p>}
+        {directoryError && <p className="mt-3 text-xs text-red-600">{directoryError}</p>}
       </div>
 
       {loading ? (
@@ -167,9 +196,11 @@ export default function EmployerCandidatesPage() {
 
               {c.location && (
                 <p className="text-sm text-gray-500 flex items-center space-x-1 mb-2">
-                  <MapPin size={14} /><span>{c.location}</span>
+                  <MapPin size={14} /><span>{c.location}{c.distance_miles != null ? ` · ${c.distance_miles} miles` : ''}</span>
                 </p>
               )}
+
+              {c.travel_radius_miles && <p className="text-xs text-gray-400 mb-3">Travels up to {c.travel_radius_miles} miles</p>}
 
               {c.services_offered?.length > 0 && (
                 <div className="flex flex-wrap gap-1 mb-3">

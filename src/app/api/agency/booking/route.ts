@@ -390,7 +390,7 @@ export async function GET() {
     const fetchEmployers = async (): Promise<{ data: any[] | null }> => {
       if (!empIds.length) return { data: [] as any[] }
       const full = await admin.from('employer_profiles')
-        .select('id, user_id, company_name, property_name, location, postcode, commute_car_required, nearest_transport, latitude, longitude, review_score, review_count')
+        .select('id, user_id, company_name, property_name, location, postcode, commute_car_required, nearest_transport, transport_walk_minutes, parking_available, taxi_support, taxi_notes, travel_notes, latitude, longitude, review_score, review_count')
         .in('id', empIds)
       if (!full.error) return full
       return admin.from('employer_profiles').select('id, user_id, company_name, property_name, location').in('id', empIds)
@@ -426,6 +426,11 @@ export async function GET() {
         employer_postcode: empMap.get(b.employer_id)?.postcode || null,
         commute_car_required: empMap.get(b.employer_id)?.commute_car_required ?? null,
         nearest_transport: empMap.get(b.employer_id)?.nearest_transport || null,
+        transport_walk_minutes: empMap.get(b.employer_id)?.transport_walk_minutes ?? null,
+        parking_available: empMap.get(b.employer_id)?.parking_available ?? null,
+        taxi_support: empMap.get(b.employer_id)?.taxi_support ?? null,
+        taxi_notes: empMap.get(b.employer_id)?.taxi_notes || null,
+        travel_notes: empMap.get(b.employer_id)?.travel_notes || null,
         candidate_name: candMap.get(b.candidate_id)?.full_name || 'Candidate',
         candidate_user_id: candMap.get(b.candidate_id)?.user_id || null, // for reviews
         cascade_total: Array.isArray(b.cascade_queue) ? b.cascade_queue.length : null,

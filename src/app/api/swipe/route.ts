@@ -6,6 +6,7 @@ import { createNotification } from '@/lib/notifications'
 import { applicantConfirmationHtml, employerNotificationHtml } from '@/lib/application-email-templates'
 import { sendNewMatchEmail } from '@/lib/emails'
 import { calculateMatchScore } from '@/lib/matching'
+import { canEmployerDiscoverCandidate, mutualRadiusResult } from '@/lib/discovery'
 
 // Records a swipe server-side (swipes has unreliable RLS), creates the
 // application on a candidate right-swipe, and detects MUTUAL matches:
@@ -82,28 +83,23 @@ type SwipeRow = {
   action: 'left' | 'right'
 }
 
-// The live database does not consistently have the unique constraint needed
-// for an upsert. Replace the caller's existing decision so repeated clicks are
-// idempotent and an old "right" cannot survive after the decision changes.
+// Migration 038 normalises the legacy swipes schema and adds the composite
+// unique key used here. An upsert is atomic: a failed write never deletes the
+// caller's previous decision, and repeated clicks remain idempotent.
 async function replaceSwipe(admin: any, row: SwipeRow) {
-  const { data: existing } = await admin.from('swipes')
-    .select('id, action')
-    .eq('swiper_id', row.swiper_id)
-    .eq('swiper_type', row.swiper_type)
-    .eq('target_id', row.target_id)
-    .eq('target_type', row.target_type)
-    .limit(1)
-    .maybeSingle()
+  const { data, error } = await admin
+    .from('swipes')
+    .upsert(row, {
+      onConflict: 'swiper_id,swiper_type,target_id,target_type',
+      ignoreDuplicates: false,
+    })
+    .select('action')
+    .single()
 
-  const { error: deleteError } = await admin.from('swipes').delete()
-    .eq('swiper_id', row.swiper_id)
-    .eq('swiper_type', row.swiper_type)
-    .eq('target_id', row.target_id)
-    .eq('target_type', row.target_type)
-  if (deleteError) return { error: deleteError, changed: false }
-
-  const { error } = await admin.from('swipes').insert(row)
-  return { error, changed: !existing || existing.action !== row.action }
+  return {
+    error,
+    changed: !error && data?.action === row.action,
+  }
 }
 
 async function removeSwipe(admin: any, row: Omit<SwipeRow, 'action'>) {
@@ -206,7 +202,18 @@ export async function POST(req: NextRequest) {
       const recorded = await replaceSwipe(admin, {
         swiper_id: user.id, swiper_type: 'candidate', target_id: targetId, target_type: 'job', action: 'right',
       })
-      if (recorded.error) return NextResponse.json({ error: 'Your decision could not be saved. Please try again.' }, { status: 500 })
+      if (recorded.error) {
+        console.error('Candidate swipe save failed', {
+          code: recorded.error.code,
+          message: recorded.error.message,
+          details: recorded.error.details,
+          hint: recorded.error.hint,
+        })
+        return NextResponse.json(
+          { error: 'Your decision could not be saved. Please try again.' },
+          { status: 500 },
+        )
+      }
 
       const { data: employer } = await admin
         .from('employer_profiles')
@@ -341,24 +348,58 @@ export async function POST(req: NextRequest) {
     /* ── Employer swiping on a candidate ── */
     const { data: emp } = await admin
       .from('employer_profiles')
-      .select('id, property_name, company_name')
+      .select('id, property_name, company_name, approval_status, latitude, longitude')
       .eq('user_id', user.id)
       .maybeSingle()
     if (!emp) return NextResponse.json({ error: 'Employer profile not found' }, { status: 404 })
+    if (emp.approval_status !== 'approved') {
+      return NextResponse.json({ error: 'Your employer account must be approved first' }, { status: 403 })
+    }
+
+    let candidateForRight: any = null
+    if (action === 'right') {
+      const [{ data: cand }, { data: blocked }] = await Promise.all([
+        admin.from('candidate_profiles').select('*').eq('id', targetId).maybeSingle(),
+        admin.from('profile_blocks').select('candidate_id')
+          .eq('candidate_id', targetId).eq('blocked_employer_id', emp.id).maybeSingle(),
+      ])
+      if (!cand) return NextResponse.json({ error: 'Candidate profile not found' }, { status: 404 })
+
+      const discoverable = canEmployerDiscoverCandidate(cand, new Set(blocked ? [targetId] : []))
+      const travel = mutualRadiusResult(emp, cand, null)
+      const locationMissing = Boolean(cand.travel_radius_miles) && travel.reason === 'location_required'
+      if (!discoverable || !travel.withinRadius || locationMissing) {
+        await removeSwipe(admin, {
+          swiper_id: user.id, swiper_type: 'employer', target_id: targetId, target_type: 'candidate',
+        })
+        return NextResponse.json({
+          error: locationMissing
+            ? 'Add your property location before approaching professionals with a travel radius.'
+            : 'This profile is not available to your account.',
+        }, { status: 403 })
+      }
+      candidateForRight = cand
+    }
 
     const recorded = await replaceSwipe(admin, {
       swiper_id: user.id, swiper_type: 'employer', target_id: targetId, target_type: 'candidate', action,
     })
-    if (recorded.error) return NextResponse.json({ error: 'Your decision could not be saved. Please try again.' }, { status: 500 })
+    if (recorded.error) {
+      console.error('Employer swipe save failed', {
+        code: recorded.error.code,
+        message: recorded.error.message,
+        details: recorded.error.details,
+        hint: recorded.error.hint,
+      })
+      return NextResponse.json(
+        { error: 'Your decision could not be saved. Please try again.' },
+        { status: 500 },
+      )
+    }
 
     if (action !== 'right') return NextResponse.json({ matched: false })
 
-    const { data: cand } = await admin
-      .from('candidate_profiles')
-      .select('*')
-      .eq('id', targetId)
-      .maybeSingle()
-    if (!cand) return NextResponse.json({ matched: false })
+    const cand = candidateForRight
 
     if (cand.user_id && recorded.changed) {
       await createNotification(

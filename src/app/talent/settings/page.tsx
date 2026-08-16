@@ -60,6 +60,10 @@ export default function TalentSettingsPage() {
   }, [])
 
   const toggleStealth = async (enabled: boolean) => {
+    if (!enabled && blockedEmployers.length > 0) {
+      alert('Unblock the employers listed below before turning Stealth Mode off. This prevents an accidental privacy change.')
+      return
+    }
     setStealthEnabled(enabled)
     if (!candidateId) return
     try {
@@ -265,9 +269,11 @@ export default function TalentSettingsPage() {
           <div className="flex items-start justify-between mb-4">
             <div>
               <h3 className="font-serif text-lg font-semibold flex items-center gap-2"><ShieldOff size={18} /> Stealth Mode</h3>
-              <p className="text-sm text-gray-500 mt-1">Hide your profile from specific employers. Your profile won&apos;t appear in their search results or matches.</p>
+              <p className="text-sm text-gray-500 mt-1">Hide from specific employers without hiding from everyone else. Blocked businesses are removed before your profile reaches search, matching, agency results or shortlists.</p>
+              <p className="text-xs text-gray-400 mt-2">This does not withdraw an application or message you already chose to send. WHC administrators retain access for safety and support.</p>
             </div>
             <button type="button" onClick={() => toggleStealth(!stealthEnabled)}
+              aria-label={stealthEnabled ? 'Turn Stealth Mode off' : 'Turn Stealth Mode on'}
               className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors shrink-0 ${stealthEnabled ? 'bg-ink' : 'bg-gray-200'}`}>
               <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${stealthEnabled ? 'translate-x-6' : 'translate-x-1'}`} />
             </button>
@@ -275,6 +281,11 @@ export default function TalentSettingsPage() {
 
           {stealthEnabled && (
             <div className="pt-4 border-t border-border space-y-4">
+              {blockedEmployers.length === 0 && (
+                <div className="border border-amber-300 bg-amber-50 px-4 py-3 text-[12px] leading-5 text-amber-900">
+                  Stealth Mode is on, but you are not hidden from anyone yet. Search for your current employer below and add them to the blocked list.
+                </div>
+              )}
               {/* Search employers */}
               <div className="relative">
                 <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
@@ -415,4 +426,3 @@ export default function TalentSettingsPage() {
     </DashboardShell>
   )
 }
-

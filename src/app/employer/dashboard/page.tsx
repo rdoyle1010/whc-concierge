@@ -94,22 +94,23 @@ export default function EmployerDashboard() {
           <div><p className="text-[13px] font-medium text-amber-800">Your property is under review</p><p className="text-[12px] text-amber-600">You can set everything up now - post roles, browse talent - and we&apos;ll confirm your approval within 24 hours.</p></div>
         </div>
       )}
-      <div className="mb-8">
-        <h1 className="text-[24px] font-medium text-ink">{profile?.property_name || profile?.company_name || 'Dashboard'}</h1>
-        <p className="text-[13px] text-muted mt-1">{new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</p>
+      <div className="mb-9">
+        <p className="dashboard-eyebrow">Recruitment desk</p>
+        <h1 className="dashboard-title">{profile?.property_name || profile?.company_name || 'Property dashboard'}</h1>
+        <p className="dashboard-intro">Manage permanent roles, agency cover and candidate conversations from one verified property workspace.</p>
       </div>
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      <div className="dashboard-metrics mb-8">
         {[
           { label: 'Active listings', value: stats.active, icon: <Briefcase size={16} /> },
           { label: 'Applications', value: stats.applications, icon: <FileText size={16} /> },
           { label: 'Candidates matched', value: stats.matches || '\u2014', icon: <Users size={16} /> },
           { label: 'Messages', value: stats.messages, icon: <MessageSquare size={16} /> },
         ].map(s => (
-          <div key={s.label} className="dashboard-card">
-            <div className="text-muted mb-2">{s.icon}</div>
-            <p className="text-[24px] font-semibold text-ink">{s.value}</p>
-            <p className="text-[11px] text-muted">{s.label}</p>
+          <div key={s.label} className="dashboard-metric">
+            <div className="text-accent mb-3">{s.icon}</div>
+            <p className="dashboard-metric-value">{s.value}</p>
+            <p className="dashboard-metric-label">{s.label}</p>
           </div>
         ))}
       </div>
@@ -119,6 +120,13 @@ export default function EmployerDashboard() {
         <Link href="/agency" className="btn-secondary flex items-center justify-center gap-2 py-3">Find agency cover</Link>
         <Link href="/employer/candidates" className="btn-secondary flex items-center justify-center gap-2 py-3">Browse candidates</Link>
       </div>
+
+      {(!profile?.nearest_transport && !profile?.commute_car_required && !profile?.parking_available) && (
+        <div className="mb-8 border-l-2 border-accent bg-white/70 px-5 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div><p className="text-[13px] font-medium text-ink">Help professionals plan the journey</p><p className="text-[12px] text-muted mt-0.5">Add the nearest transport, walking time, parking and taxi support to your Company Profile.</p></div>
+          <Link href="/employer/profile" className="text-[12px] font-medium text-accent whitespace-nowrap">Add travel details →</Link>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="dashboard-card">
@@ -135,7 +143,7 @@ export default function EmployerDashboard() {
           ) : (
             <div className="space-y-2">
               {listings.slice(0, 5).map(job => (
-                <div key={job.id} className="flex items-center justify-between p-3 border border-border rounded-xl">
+                <div key={job.id} className="dashboard-list-row">
                   <div>
                     <div className="flex items-center gap-2 mb-0.5">
                       <p className="text-[13px] font-medium text-ink">{job.title}</p>
@@ -159,7 +167,7 @@ export default function EmployerDashboard() {
           ) : (
             <div className="space-y-2">
               {recentApps.map(app => (
-                <div key={app.id} className="flex items-center justify-between p-3 border border-border rounded-xl">
+                <div key={app.id} className="dashboard-list-row">
                   <div>
                     <p className="text-[13px] font-medium text-ink">{app.candidate_profiles?.full_name || 'Candidate'}</p>
                     <p className="text-[11px] text-muted">For: {app.jobTitle} \u00b7 {app.match_score ? `${app.match_score}% match` : ''}</p>

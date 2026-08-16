@@ -5,7 +5,7 @@ import DashboardShell from '@/components/DashboardShell'
 import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
 import {
-  Briefcase, FileText, MessageSquare, GraduationCap, User, Star, ArrowRight, Search,
+  Briefcase, FileText, MessageSquare, GraduationCap, User, Star, ArrowRight, Search, EyeOff,
 } from 'lucide-react'
 
 // Talent home - the landing page after login. Greeting, a few live counts
@@ -25,7 +25,7 @@ export default function TalentDashboard() {
 
         const { data: prof } = await supabase
           .from('candidate_profiles')
-          .select('id, full_name, headline, approval_status, is_featured')
+          .select('id, full_name, headline, approval_status, is_featured, stealth_mode, profile_visible, travel_radius_miles')
           .eq('user_id', user.id)
           .maybeSingle()
         setProfile(prof)
@@ -76,13 +76,12 @@ export default function TalentDashboard() {
 
   return (
     <DashboardShell role="talent" userName={profile?.full_name}>
-      <div className="mb-8">
-        <h1 className="text-[24px] font-medium text-ink">
+      <div className="mb-9">
+        <p className="dashboard-eyebrow">Your career</p>
+        <h1 className="dashboard-title">
           {profile?.full_name ? `Welcome back, ${profile.full_name.split(' ')[0]}` : 'Welcome back'}
         </h1>
-        <p className="text-[13px] text-muted mt-1">
-          {new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
-        </p>
+        <p className="dashboard-intro">Your opportunities, conversations and professional profile in one private workspace.</p>
       </div>
 
       {profile && profile.approval_status && profile.approval_status !== 'approved' && (
@@ -95,40 +94,56 @@ export default function TalentDashboard() {
         </div>
       )}
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      <div className="dashboard-metrics mb-8">
         {[
           { label: 'Applications', value: stats.applications, icon: <FileText size={16} /> },
           { label: 'Unread messages', value: stats.messages, icon: <MessageSquare size={16} /> },
           { label: 'Profile status', value: profile?.approval_status === 'approved' ? 'Approved' : 'In review', icon: <User size={16} /> },
           { label: 'Featured', value: profile?.is_featured ? 'Active' : 'Off', icon: <Star size={16} /> },
         ].map(s => (
-          <div key={s.label} className="dashboard-card">
-            <div className="text-muted mb-2">{s.icon}</div>
-            <p className="text-[24px] font-semibold text-ink">{s.value}</p>
-            <p className="text-[11px] text-muted">{s.label}</p>
+          <div key={s.label} className="dashboard-metric">
+            <div className="text-accent mb-3">{s.icon}</div>
+            <p className="dashboard-metric-value">{s.value}</p>
+            <p className="dashboard-metric-label">{s.label}</p>
           </div>
         ))}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-9">
         <Link href="/talent/jobs" className="btn-primary flex items-center justify-center gap-2 py-3"><Search size={14} />Browse roles</Link>
         <Link href="/talent/profile" className="btn-secondary flex items-center justify-center gap-2 py-3">Update profile</Link>
         <Link href="/talent/academy" className="btn-secondary flex items-center justify-center gap-2 py-3">Visit the Academy</Link>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {quickLinks.map(link => (
-          <Link key={link.href} href={link.href} className="dashboard-card hover:shadow-md hover:-translate-y-0.5 transition-all group">
-            <div className="flex items-center justify-between mb-3">
-              <div className="w-10 h-10 rounded-lg bg-accent/10 flex items-center justify-center text-accent">
-                {link.icon}
-              </div>
-              <ArrowRight size={14} className="text-muted group-hover:text-ink transition-colors" />
-            </div>
-            <p className="text-[14px] font-medium text-ink mb-1">{link.label}</p>
-            <p className="text-[12px] text-muted">{link.desc}</p>
-          </Link>
-        ))}
+      <div className="grid grid-cols-1 lg:grid-cols-[1.55fr_.85fr] gap-6">
+        <section className="dashboard-panel">
+          <p className="dashboard-eyebrow">Continue your journey</p>
+          <h2 className="text-2xl text-ink mb-4">Career workspace</h2>
+          <div>
+            {quickLinks.map(link => (
+              <Link key={link.href} href={link.href} className="dashboard-list-row group">
+                <div className="flex items-start gap-3">
+                  <span className="text-accent mt-0.5">{link.icon}</span>
+                  <span><span className="block text-[13px] font-medium text-ink">{link.label}</span><span className="block text-[12px] text-muted mt-0.5">{link.desc}</span></span>
+                </div>
+                <ArrowRight size={14} className="text-muted group-hover:text-accent" />
+              </Link>
+            ))}
+          </div>
+        </section>
+
+        <aside className="dashboard-panel bg-[#0b2f4d] !border-[#0b2f4d] text-white">
+          <EyeOff size={20} className="text-gold mb-5" />
+          <p className="text-[9px] uppercase tracking-[.2em] text-white/50 mb-2">Profile privacy</p>
+          <h2 className="text-2xl !text-white mb-3">{profile?.stealth_mode ? 'Stealth Mode is on' : 'Control who sees you'}</h2>
+          <p className="text-[12px] leading-6 text-white/65 mb-5">
+            {profile?.stealth_mode
+              ? 'Employers you block are removed before your profile reaches their searches, matches or agency directory.'
+              : 'Hide from a current employer without disappearing from suitable opportunities elsewhere.'}
+          </p>
+          {profile?.travel_radius_miles && <p className="text-[11px] text-white/55 mb-5">Agency travel limit: {profile.travel_radius_miles} miles</p>}
+          <Link href="/talent/settings" className="inline-flex items-center gap-2 text-[12px] font-medium text-gold">Review privacy settings <ArrowRight size={13} /></Link>
+        </aside>
       </div>
     </DashboardShell>
   )

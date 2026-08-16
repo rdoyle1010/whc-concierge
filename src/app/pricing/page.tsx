@@ -25,7 +25,7 @@ const FAQS = [
   { q: 'Can I upgrade my listing?', a: 'Yes - contact us to upgrade during the listing period. We\'ll apply the price difference to the higher tier.' },
   { q: 'What payment methods do you accept?', a: 'All major credit and debit cards via Stripe. We also accept Apple Pay and Google Pay.' },
   { q: 'Do you charge commission on permanent hires?', a: 'No, never. You pay for the listing, not the hire. Once you\'ve found your candidate, there are no additional fees.' },
-  { q: 'Can I get a refund?', a: 'Within 48 hours if no applications have been received. Contact us and we\'ll process it promptly.' },
+  { q: 'Can I get a refund?', a: 'Contact support before publication if there is a payment problem. Under the Terms, fees are not automatically refundable once a listing or paid service has been published or started.' },
   { q: 'Do you offer bulk discounts?', a: 'Yes - contact us for volume pricing on multiple listings. We offer packages for hotel groups and multi-property employers.' },
 ]
 
