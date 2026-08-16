@@ -1,13 +1,15 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import Link from 'next/link'
 import DashboardShell from '@/components/DashboardShell'
 import { createClient } from '@/lib/supabase/client'
 import CollapsibleCheckboxSection from '@/components/CollapsibleCheckboxSection'
 import { ROLE_LEVELS, TRAVEL_OPTIONS, AVAILABILITY_STATUSES } from '@/lib/constants'
 import { SERVICES_CATEGORIES, PRODUCT_HOUSES_FULL as PRODUCT_HOUSES, QUALS_CATEGORIES, SYSTEMS_FULL } from '@/lib/taxonomy'
 import type { CvSuggestions } from '@/lib/cv-analysis'
-import { Save, Upload, FileText, Sparkles, CheckCircle2 } from 'lucide-react'
+import { Save, Upload, FileText, Sparkles, CheckCircle2, Eye, Award } from 'lucide-react'
+import { courseTitle } from '@/lib/academy'
 
 // Merge systems into quals for talent display (keeps existing UI behaviour)
 const QUALS_WITH_SYSTEMS = [
@@ -23,6 +25,7 @@ export default function TalentProfilePage() {
   const [message, setMessage] = useState('')
   const [analysingCv, setAnalysingCv] = useState(false)
   const [cvSuggestions, setCvSuggestions] = useState<CvSuggestions | null>(null)
+  const [academyBadges, setAcademyBadges] = useState<{ course_slug: string; completed_at: string; certificate_code?: string }[]>([])
 
   useEffect(() => {
     async function load() {
@@ -30,6 +33,14 @@ export default function TalentProfilePage() {
       if (!user) return
       const { data } = await supabase.from('candidate_profiles').select('*').eq('user_id', user.id).single()
       setProfile(data || {})
+      if (data?.id) {
+        const { data: completed } = await supabase.from('course_enrollments')
+          .select('course_slug, completed_at, certificate_code')
+          .eq('candidate_id', data.id)
+          .not('completed_at', 'is', null)
+          .order('completed_at', { ascending: false })
+        setAcademyBadges(completed || [])
+      }
       setLoading(false)
     }
     load()
@@ -191,9 +202,14 @@ export default function TalentProfilePage() {
         {/* Header + save */}
         <div className="flex items-center justify-between mb-2">
           <h1 className="text-[24px] font-medium text-ink">Edit Profile</h1>
-          <button type="button" onClick={handleSave} disabled={saving} className="btn-primary flex items-center gap-2 disabled:opacity-50">
-            <Save size={14} />{saving ? 'Saving...' : 'Save Changes'}
-          </button>
+          <div className="flex items-center gap-2">
+            <Link href="/talent/profile/preview" className="btn-secondary flex items-center gap-2">
+              <Eye size={14} />Preview my profile
+            </Link>
+            <button type="button" onClick={handleSave} disabled={saving} className="btn-primary flex items-center gap-2 disabled:opacity-50">
+              <Save size={14} />{saving ? 'Saving...' : 'Save Changes'}
+            </button>
+          </div>
         </div>
 
         {/* Completion bar */}
@@ -205,6 +221,35 @@ export default function TalentProfilePage() {
         {message && <div className={`text-[13px] px-4 py-3 rounded-lg mb-6 ${message.includes('success') || message.includes('updated') || message.includes('uploaded') ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-600'}`}>{message}</div>}
 
         <div className="space-y-6">
+
+          <div className="dashboard-card space-y-3">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="eyebrow">WHC Academy achievements</p>
+                <p className="text-[12px] text-muted mt-1">Completed courses stay on your profile and are visible to approved employers.</p>
+              </div>
+              <Award size={18} className="text-accent shrink-0" />
+            </div>
+            {academyBadges.length > 0 ? (
+              <div className="space-y-2">
+                {academyBadges.map(badge => (
+                  <div key={badge.course_slug} className="flex items-center justify-between gap-3 rounded-lg border border-border bg-surface px-3 py-2.5">
+                    <div>
+                      <p className="text-[13px] font-medium text-ink">{courseTitle(badge.course_slug)}</p>
+                      <p className="text-[10px] text-muted">Completed {new Date(badge.completed_at).toLocaleDateString('en-GB')}</p>
+                    </div>
+                    <Link href={`/talent/academy/certificate/${badge.course_slug}`} className="text-[11px] font-medium text-accent hover:underline">View certificate</Link>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="rounded-lg border border-dashed border-border px-4 py-4 text-center">
+                <p className="text-[12px] text-muted">Complete an Academy course to display its verified certificate here.</p>
+                <Link href="/talent/academy" className="text-[12px] font-medium text-accent hover:underline">Browse Academy courses</Link>
+              </div>
+            )}
+          </div>
+
 
           {/* ── S1: Personal Details ── */}
           <div className="dashboard-card space-y-4">
