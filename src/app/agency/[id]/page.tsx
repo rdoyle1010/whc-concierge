@@ -3,14 +3,14 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { useParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import Navbar from '@/components/Navbar'
-import Footer from '@/components/Footer'
+import DashboardShell from '@/components/DashboardShell'
 import Link from 'next/link'
 import { MapPin, Star, Shield, Clock, Check, ArrowLeft, X, GraduationCap } from 'lucide-react'
 import { courseTitle, ACADEMY } from '@/lib/academy'
 import ReviewBreakdown from '@/components/ReviewBreakdown'
 import ReviewForm from '@/components/ReviewForm'
 import { AGENCY_PLATFORM_FEE_PCT } from '@/lib/constants'
+import { shiftHours } from '@/lib/agency-time'
 
 export default function AgencyProfilePage() {
   const { id } = useParams()
@@ -26,7 +26,8 @@ export default function AgencyProfilePage() {
   const [offerError, setOfferError] = useState('')
   const [showReview, setShowReview] = useState(false)
   const [offerRate, setOfferRate] = useState('')
-  const [offerHours, setOfferHours] = useState('8')
+  const [offerStartTime, setOfferStartTime] = useState('09:00')
+  const [offerEndTime, setOfferEndTime] = useState('17:00')
   const [academyBadges, setAcademyBadges] = useState<{ course_slug: string; completed_at: string }[]>([])
   const [suggestSlug, setSuggestSlug] = useState('')
   const [suggestBusy, setSuggestBusy] = useState(false)
@@ -34,7 +35,7 @@ export default function AgencyProfilePage() {
 
   // Live cost preview: therapist receives rate × hours; WHC fee is on top, paid by the property
   const previewRate = parseInt(offerRate, 10) || 0
-  const previewHours = parseInt(offerHours, 10) || 0
+  const previewHours = shiftHours(offerStartTime, offerEndTime) || 0
   const previewSubtotal = previewRate * previewHours
   const previewFee = Math.ceil(previewSubtotal * AGENCY_PLATFORM_FEE_PCT)
   const previewTotal = previewSubtotal + previewFee
@@ -90,7 +91,8 @@ export default function AgencyProfilePage() {
         body: JSON.stringify({
           action: 'create', candidateId: profileId,
           rate: offerRate, shiftDate: fd.get('shiftDate'),
-          shiftType: fd.get('shiftType') || undefined, hours: offerHours || undefined,
+          shiftStartTime: offerStartTime, shiftEndTime: offerEndTime,
+          shiftType: fd.get('shiftType') || undefined,
           repeatWeeks: fd.get('repeatWeeks') || undefined,
         }),
       })
@@ -126,27 +128,27 @@ export default function AgencyProfilePage() {
     }
   }
 
-  if (loading) return <div className="min-h-screen bg-white"><Navbar /><div className="pt-20 max-w-4xl mx-auto px-6"><div className="skeleton h-48 rounded-xl mb-6" /><div className="skeleton h-8 w-1/3 mb-3" /><div className="skeleton h-4 w-1/2 mb-6" /><div className="skeleton h-32" /></div></div>
-  if (!profile) return <div className="min-h-screen bg-white"><Navbar /><div className="pt-20 max-w-4xl mx-auto px-6 text-center py-24"><p className="text-muted">Profile not found.</p><Link href="/agency" className="btn-primary inline-block mt-4">Back to Agency</Link></div></div>
+  if (loading) return <DashboardShell role="employer"><div className="max-w-6xl mx-auto"><div className="skeleton h-48 rounded-2xl mb-6" /><div className="skeleton h-8 w-1/3 mb-3" /><div className="skeleton h-4 w-1/2 mb-6" /><div className="skeleton h-32" /></div></DashboardShell>
+  if (!profile) return <DashboardShell role="employer"><div className="max-w-6xl mx-auto text-center py-24"><p className="text-muted">Profile not found.</p><Link href="/agency" className="btn-primary inline-block mt-4">Back to Agency</Link></div></DashboardShell>
 
   const pc = profile.postcode?.split(' ')[0] || profile.location || ''
 
   return (
-    <div className="min-h-screen bg-surface">
-      <Navbar />
-      <div className="pt-16 max-w-4xl mx-auto px-6 lg:px-8 py-8">
+    <DashboardShell role="employer">
+      <div className="max-w-6xl mx-auto pb-10">
+        <p className="dashboard-eyebrow mb-2">Agency professional</p>
         <Link href="/agency" className="text-[13px] text-muted hover:text-ink flex items-center gap-1 mb-6"><ArrowLeft size={14} />Back to Agency</Link>
 
         {/* Hero card */}
-        <div className="bg-white border border-border rounded-xl p-8 mb-6">
+        <div className="bg-white border border-border rounded-2xl p-8 mb-6 shadow-sm">
           <div className="flex flex-col md:flex-row gap-6">
-            <div className="w-24 h-24 rounded-full bg-ink flex items-center justify-center shrink-0 overflow-hidden">
+            <div className="w-24 h-24 rounded-full bg-[#F1EBDD] border border-[#E2D8C5] flex items-center justify-center shrink-0 overflow-hidden">
               {profile.profile_image_url ? <img src={profile.profile_image_url} alt="" className="w-full h-full object-cover" />
-              : <span className="text-[32px] font-semibold text-accent">{profile.full_name?.[0]}</span>}
+              : <span className="text-[32px] font-semibold text-[#12344D]">{profile.full_name?.[0]}</span>}
             </div>
             <div className="flex-1">
               <div className="flex flex-wrap items-center gap-3 mb-2">
-                <h1 className="font-serif text-[28px] font-medium text-ink capitalize">{profile.full_name}</h1>
+                <h1 className="text-[32px] md:text-[38px] font-semibold tracking-tight text-ink capitalize">{profile.full_name}</h1>
                 {profile.role_level && <span className="text-[11px] font-medium bg-surface text-secondary px-3 py-1 rounded-full">{profile.role_level}</span>}
               </div>
               {profile.headline && <p className="text-[14px] text-secondary mb-3">{profile.headline}</p>}
@@ -209,8 +211,8 @@ export default function AgencyProfilePage() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2 space-y-6">
+        <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_360px] gap-6">
+          <div className="space-y-6">
             {/* About */}
             {profile.bio && (
               <div className="bg-white border border-border rounded-xl p-6">
@@ -341,6 +343,11 @@ export default function AgencyProfilePage() {
                       <input name="shiftDate" type="date" required className="input-field text-[13px]" />
                       <p className="text-[11px] text-muted mt-1">Pick today for urgent cover - the candidate is alerted instantly by text and email, and the offer expires after 4 hours.</p>
                     </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div><label className="text-[12px] text-muted block mb-1">Starts</label><input name="shiftStartTime" type="time" required value={offerStartTime} onChange={(e) => setOfferStartTime(e.target.value)} className="input-field text-[13px]" /></div>
+                      <div><label className="text-[12px] text-muted block mb-1">Finishes</label><input name="shiftEndTime" type="time" required value={offerEndTime} onChange={(e) => setOfferEndTime(e.target.value)} className="input-field text-[13px]" /></div>
+                    </div>
+                    <p className="text-[11px] text-muted">The offer is accepted only if their confirmed availability covers this entire window.</p>
                     <div>
                       <label className="text-[12px] text-muted block mb-1">Shift type</label>
                       <select name="shiftType" className="input-field text-[13px]" defaultValue="Full Day">
@@ -350,11 +357,6 @@ export default function AgencyProfilePage() {
                         <option>Evening</option>
                         <option>Event Cover</option>
                       </select>
-                    </div>
-                    <div>
-                      <label className="text-[12px] text-muted block mb-1">Hours</label>
-                      <input name="hours" type="number" min={1} max={24} value={offerHours}
-                        onChange={(e) => setOfferHours(e.target.value)} className="input-field text-[13px]" />
                     </div>
                     <div>
                       <label className="text-[12px] text-muted block mb-1">Repeat</label>
@@ -435,14 +437,13 @@ export default function AgencyProfilePage() {
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setShowReview(false)}>
           <div className="bg-white rounded-2xl max-w-md w-full max-h-[90vh] overflow-y-auto p-6" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
-              <h2 className="font-serif text-lg font-bold text-ink">Review {profile.full_name}</h2>
+              <h2 className="text-lg font-semibold text-ink">Review {profile.full_name}</h2>
               <button type="button" onClick={() => setShowReview(false)} className="text-gray-300 hover:text-ink"><X size={20} /></button>
             </div>
             <ReviewForm reviewedId={profile.user_id} reviewedName={profile.full_name} type="candidate" />
           </div>
         </div>
       )}
-      <Footer />
-    </div>
+    </DashboardShell>
   )
 }

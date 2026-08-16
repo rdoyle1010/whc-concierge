@@ -7,6 +7,7 @@ import { AGENCY_PLATFORM_FEE_PCT } from '@/lib/constants'
 import { sendSms } from '@/lib/sms'
 import { sendAgencyOfferEmail, sendReviewRequestEmail, sendInsuranceExpiryEmail, sendAgencyUpdateEmail, sendFeaturedExpiringEmail } from '@/lib/emails'
 import { profileDistanceMiles } from '@/lib/geo'
+import { shiftHours, validShiftWindow, windowCovers, windowsOverlap } from '@/lib/agency-time'
 
 // Offers expire so urgent cover doesn't sit unanswered while the property
 // waits: 4 hours for same-day (urgent) shifts, 48 hours otherwise.
@@ -55,6 +56,9 @@ async function insertBookingDefensively(admin: any, row: Record<string, any>) {
     lastError = error
     const m = /Could not find the '([^']+)' column/.exec(error.message || '')
     if (m && Object.prototype.hasOwnProperty.call(attempt, m[1])) {
+      // Timed shifts must fail closed. Silently dropping these fields would
+      // create a booking that cannot be protected from overlaps.
+      if (m[1] === 'shift_start_time' || m[1] === 'shift_end_time') break
       delete attempt[m[1]]
       continue
     }
@@ -65,6 +69,23 @@ async function insertBookingDefensively(admin: any, row: Record<string, any>) {
 
 function employerDisplayName(emp: any) {
   return emp?.property_name || emp?.company_name || 'A property'
+}
+
+async function candidateCanWork(admin: any, candidateId: string, date: string, start: string, end: string) {
+  const { data: windows, error } = await admin.from('agency_availability_windows')
+    .select('start_time, end_time').eq('candidate_id', candidateId).eq('date', date)
+  if (error) return { ok: false, error: 'Availability could not be checked' }
+  const covered = (windows || []).some((w: any) => windowCovers(String(w.start_time).slice(0, 5), String(w.end_time).slice(0, 5), start, end))
+  if (!covered) return { ok: false, error: 'This professional has not confirmed availability for the full shift.' }
+
+  const { data: bookings, error: bookingError } = await admin.from('agency_bookings')
+    .select('shift_start_time, shift_end_time').eq('candidate_id', candidateId).eq('shift_date', date)
+    .in('status', ['pending', 'countered', 'accepted', 'confirmed'])
+  if (bookingError) return { ok: false, error: 'Existing bookings could not be checked' }
+  const busy = (bookings || []).some((b: any) => !b.shift_start_time || !b.shift_end_time || windowsOverlap(
+    String(b.shift_start_time).slice(0, 5), String(b.shift_end_time).slice(0, 5), start, end,
+  ))
+  return busy ? { ok: false, error: 'This professional is already booked or considering an overlapping shift.' } : { ok: true }
 }
 
 // Notify the other party in-app, drop the same note into their inbox, and
@@ -478,16 +499,35 @@ export async function POST(req: NextRequest) {
       if (!body.shiftDate) {
         return NextResponse.json({ error: 'A shift date is required' }, { status: 400 })
       }
+      const shiftStartTime = String(body.shiftStartTime || '')
+      const shiftEndTime = String(body.shiftEndTime || '')
+      if (!validShiftWindow(String(body.shiftDate), shiftStartTime, shiftEndTime)) {
+        return NextResponse.json({ error: 'A valid shift start and finish time are required' }, { status: 400 })
+      }
 
       const { data: targetCand } = await admin
         .from('candidate_profiles')
-        .select('id, full_name, user_id, phone')
+        .select('id, full_name, user_id, phone, approval_status, profile_visible, agency_available, agency_listed_until, latitude, longitude, travel_radius_miles')
         .eq('id', body.candidateId)
         .maybeSingle()
       if (!targetCand) return NextResponse.json({ error: 'Candidate not found' }, { status: 404 })
+      if (targetCand.approval_status !== 'approved' || targetCand.profile_visible === false || !targetCand.agency_available) {
+        return NextResponse.json({ error: 'This professional is not currently bookable on the agency register.' }, { status: 403 })
+      }
+      if (targetCand.agency_listed_until && new Date(targetCand.agency_listed_until).getTime() < Date.now()) {
+        return NextResponse.json({ error: 'This professional’s agency registration has expired.' }, { status: 403 })
+      }
+      const { data: block } = await admin.from('profile_blocks').select('id').eq('candidate_id', targetCand.id).eq('blocked_employer_id', emp.id).maybeSingle()
+      if (block) return NextResponse.json({ error: 'This profile is not available to your property.' }, { status: 403 })
+      const distance = profileDistanceMiles(targetCand, emp)
+      if (targetCand.travel_radius_miles && (distance == null || distance > targetCand.travel_radius_miles)) {
+        return NextResponse.json({ error: 'This shift is outside the professional’s travel radius.' }, { status: 400 })
+      }
+      const workCheck = await candidateCanWork(admin, targetCand.id, String(body.shiftDate), shiftStartTime, shiftEndTime)
+      if (!workCheck.ok) return NextResponse.json({ error: workCheck.error }, { status: 409 })
 
-      const hours = body.hours ? parseInt(String(body.hours), 10) : null
-      const effectiveHours = hours && hours > 0 ? hours : 8
+      const hours = shiftHours(shiftStartTime, shiftEndTime) || 0
+      const effectiveHours = hours || 8
       const platformFee = Math.ceil(rate * effectiveHours * AGENCY_PLATFORM_FEE_PCT)
 
       // Same-day offers are URGENT (sickness cover): tighter expiry + SMS.
@@ -497,6 +537,15 @@ export async function POST(req: NextRequest) {
       // Standing bookings: the same offer repeated weekly on the same weekday,
       // tied together by booking_group so the therapist can accept the lot.
       const repeatWeeks = Math.min(8, Math.max(1, parseInt(String(body.repeatWeeks || '1'), 10) || 1))
+      const repeatDates: string[] = []
+      for (let w = 1; w < repeatWeeks; w++) {
+        const d = new Date(`${body.shiftDate}T12:00:00Z`)
+        d.setUTCDate(d.getUTCDate() + 7 * w)
+        const repeatDate = d.toISOString().slice(0, 10)
+        const repeatCheck = await candidateCanWork(admin, targetCand.id, repeatDate, shiftStartTime, shiftEndTime)
+        if (!repeatCheck.ok) return NextResponse.json({ error: `Week ${w + 1}: ${repeatCheck.error}` }, { status: 409 })
+        repeatDates.push(repeatDate)
+      }
       const groupId = repeatWeeks > 1
         ? (globalThis.crypto?.randomUUID ? globalThis.crypto.randomUUID() : null)
         : null
@@ -505,6 +554,8 @@ export async function POST(req: NextRequest) {
         candidate_id: targetCand.id,
         employer_id: emp.id,
         shift_date: body.shiftDate,
+        shift_start_time: shiftStartTime,
+        shift_end_time: shiftEndTime,
         shift_type: body.shiftType || null,
         hours: hours && hours > 0 ? hours : null,
         rate,
@@ -522,12 +573,10 @@ export async function POST(req: NextRequest) {
       // here don't kill the first offer; they're just logged.
       let createdCount = 1
       if (groupId && booking?.booking_group) {
-        for (let w = 1; w < repeatWeeks; w++) {
-          const d = new Date(`${body.shiftDate}T12:00:00Z`)
-          d.setUTCDate(d.getUTCDate() + 7 * w)
+        for (const repeatDate of repeatDates) {
           const { error: repErr } = await insertBookingDefensively(admin, {
             ...baseRow,
-            shift_date: d.toISOString().slice(0, 10),
+            shift_date: repeatDate,
             urgent: false,
             expires_at: new Date(Date.now() + STANDARD_EXPIRY_MS).toISOString(),
           })
@@ -594,33 +643,49 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: 'Urgent cover is for registered Preferred Employers. Register from your Agency Bookings page (£150/year).' }, { status: 403 })
       }
       const shiftDate = String(body.shiftDate || todayInLondon())
-      const hours = body.hours ? parseInt(String(body.hours), 10) : null
-      const effHours = hours && hours > 0 ? hours : 8
+      const shiftStartTime = String(body.shiftStartTime || '')
+      const shiftEndTime = String(body.shiftEndTime || '')
+      if (!validShiftWindow(shiftDate, shiftStartTime, shiftEndTime)) {
+        return NextResponse.json({ error: 'Choose a valid shift start and finish time' }, { status: 400 })
+      }
+      const hours = shiftHours(shiftStartTime, shiftEndTime) || 0
+      const effHours = hours || 8
       const maxRate = body.maxRate ? parseInt(String(body.maxRate), 10) : null
+      const requestedRadius = body.radius ? Math.min(250, Math.max(1, parseInt(String(body.radius), 10) || 0)) : null
 
       // Everyone on the register with a rate set (and within the cap, if any)
       const { data: pool } = await admin.from('candidate_profiles')
-        .select('id, full_name, user_id, phone, hourly_rate, latitude, longitude, travel_radius_miles, review_score')
+        .select('id, full_name, user_id, phone, hourly_rate, latitude, longitude, travel_radius_miles, review_score, approval_status, profile_visible, agency_listed_until')
         .eq('agency_available', true)
         .not('hourly_rate', 'is', null)
-      let eligible = (pool || []).filter((c: any) => c.hourly_rate > 0 && (!maxRate || c.hourly_rate <= maxRate))
+      let eligible = (pool || []).filter((c: any) => c.hourly_rate > 0
+        && c.approval_status === 'approved'
+        && c.profile_visible !== false
+        && (!c.agency_listed_until || new Date(c.agency_listed_until).getTime() >= Date.now())
+        && (!maxRate || c.hourly_rate <= maxRate))
 
-      // Respect explicit calendar answers for that date
-      const availMap = new Map<string, boolean>()
-      try {
-        const { data: days } = await admin.from('agency_availability')
-          .select('candidate_id, available').eq('date', shiftDate)
-        for (const d of days || []) availMap.set(d.candidate_id, d.available)
-      } catch { /* table may not exist yet - treat everyone as unspecified */ }
-      eligible = eligible.filter((c: any) => availMap.get(c.id) !== false)
+      const { data: blocked } = await admin.from('profile_blocks').select('candidate_id').eq('blocked_employer_id', emp.id)
+      const blockedIds = new Set((blocked || []).map((row: any) => row.candidate_id))
+      eligible = eligible.filter((c: any) => !blockedIds.has(c.id))
+
+      // Exact confirmed windows only; blank dates are never called available.
+      const { data: availabilityWindows, error: availabilityError } = await admin.from('agency_availability_windows')
+        .select('candidate_id, start_time, end_time').eq('date', shiftDate)
+      if (availabilityError) return NextResponse.json({ error: 'Timed availability is unavailable' }, { status: 500 })
+      const availableIds = new Set((availabilityWindows || []).filter((w: any) => windowCovers(
+        String(w.start_time).slice(0, 5), String(w.end_time).slice(0, 5), shiftStartTime, shiftEndTime,
+      )).map((w: any) => w.candidate_id))
+      eligible = eligible.filter((c: any) => availableIds.has(c.id))
 
       // Skip anyone already holding an offer or booked that day
       try {
         const { data: busy } = await admin.from('agency_bookings')
-          .select('candidate_id')
+          .select('candidate_id, shift_start_time, shift_end_time')
           .eq('shift_date', shiftDate)
           .in('status', ['pending', 'countered', 'accepted', 'confirmed'])
-        const busyIds = new Set((busy || []).map((b: any) => b.candidate_id))
+        const busyIds = new Set((busy || []).filter((b: any) => !b.shift_start_time || !b.shift_end_time || windowsOverlap(
+          String(b.shift_start_time).slice(0, 5), String(b.shift_end_time).slice(0, 5), shiftStartTime, shiftEndTime,
+        )).map((b: any) => b.candidate_id))
         eligible = eligible.filter((c: any) => !busyIds.has(c.id))
       } catch { /* non-fatal */ }
 
@@ -628,9 +693,14 @@ export async function POST(req: NextRequest) {
       const ranked = eligible
         .map((c: any) => {
           const dist = profileDistanceMiles(c, emp)
-          return { c, dist, avail: availMap.get(c.id) === true }
+          return { c, dist, avail: true }
         })
-        .filter(({ c, dist }: any) => !(dist != null && c.travel_radius_miles && dist > c.travel_radius_miles))
+        .filter(({ c, dist }: any) => {
+          const effectiveRadius = requestedRadius && c.travel_radius_miles
+            ? Math.min(requestedRadius, c.travel_radius_miles)
+            : requestedRadius || c.travel_radius_miles || null
+          return !effectiveRadius || (dist != null && dist <= effectiveRadius)
+        })
         .sort((a: any, b: any) => {
           if (a.avail !== b.avail) return a.avail ? -1 : 1
           const ad = a.dist ?? Infinity, bd = b.dist ?? Infinity
@@ -658,6 +728,8 @@ export async function POST(req: NextRequest) {
         candidate_id: first.id,
         employer_id: emp.id,
         shift_date: shiftDate,
+        shift_start_time: shiftStartTime,
+        shift_end_time: shiftEndTime,
         shift_type: body.shiftType || null,
         hours: hours && hours > 0 ? hours : null,
         rate: first.hourly_rate,

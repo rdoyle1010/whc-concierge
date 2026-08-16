@@ -42,6 +42,10 @@ export default function AgencySettingsPage() {
   const [form, setForm] = useState({ hourly_rate: '', phone: '', postcode: '', travel_radius_miles: '', tier: 'basic' as 'basic' | 'featured' })
   const [hasCoords, setHasCoords] = useState(false)
   const [days, setDays] = useState<Record<string, 'available' | 'unavailable'>>({})
+  const [windows, setWindows] = useState<Record<string, Array<{ start_time: string; end_time: string }>>>({})
+  const [selectedDate, setSelectedDate] = useState(dayKey(new Date()))
+  const [startTime, setStartTime] = useState('09:00')
+  const [endTime, setEndTime] = useState('17:00')
   const [dayBusy, setDayBusy] = useState<string | null>(null)
   const [referral, setReferral] = useState<{ code: string | null; total: number; converted: number }>({ code: null, total: 0, converted: 0 })
   const [copied, setCopied] = useState(false)
@@ -71,6 +75,9 @@ export default function AgencySettingsPage() {
           const map: Record<string, 'available' | 'unavailable'> = {}
           for (const d of av.days || []) map[d.date] = d.available ? 'available' : 'unavailable'
           setDays(map)
+          const windowMap: Record<string, Array<{ start_time: string; end_time: string }>> = {}
+          for (const w of av.windows || []) (windowMap[w.date] ||= []).push(w)
+          setWindows(windowMap)
         }
       } catch { /* form stays blank */ }
       setLoading(false)
@@ -78,27 +85,33 @@ export default function AgencySettingsPage() {
     load()
   }, [])
 
-  // Tap a day to cycle: unset → available → unavailable → unset.
-  // Optimistic update; reverts on failure.
-  async function cycleDay(key: string) {
+  async function saveDay(state: 'available' | 'unavailable' | 'clear') {
+    const key = selectedDate
     if (dayBusy) return
-    const current = days[key]
-    const next = current === 'available' ? 'unavailable' : current === 'unavailable' ? 'clear' : 'available'
-    const previous = { ...days }
-    setDays(d => {
-      const copy = { ...d }
-      if (next === 'clear') delete copy[key]
-      else copy[key] = next
-      return copy
-    })
     setDayBusy(key)
+    setError('')
     try {
       const res = await fetch('/api/agency/availability', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ date: key, state: next }),
+        body: JSON.stringify({ date: key, state, startTime, endTime }),
       })
-      if (!res.ok) setDays(previous)
-    } catch { setDays(previous) } finally { setDayBusy(null) }
+      const json = await res.json()
+      if (!res.ok) { setError(json.error || 'Could not save availability.'); return }
+      setDays(current => {
+        const copy = { ...current }
+        if (state === 'clear') delete copy[key]
+        else copy[key] = state
+        return copy
+      })
+      setWindows(current => {
+        if (state !== 'available') return { ...current, [key]: [] }
+        const prior = current[key] || []
+        const nextWindow = { start_time: startTime, end_time: endTime }
+        const alreadyShown = prior.some(w => w.start_time.slice(0, 5) === startTime && w.end_time.slice(0, 5) === endTime)
+        return { ...current, [key]: alreadyShown ? prior : [...prior, nextWindow] }
+      })
+      setNotice(state === 'available' ? `Available ${startTime}–${endTime} saved.` : state === 'unavailable' ? 'Unavailable day saved.' : 'Availability cleared.')
+    } catch { setError('Could not save availability.') } finally { setDayBusy(null) }
   }
 
   async function saveDetails(joining: boolean): Promise<boolean> {
@@ -207,8 +220,19 @@ export default function AgencySettingsPage() {
             <h3 className="font-serif text-lg font-semibold">Your Availability</h3>
           </div>
           <p className="text-[12px] text-gray-500 mb-4">
-            Tap a day to mark yourself <span className="text-green-700 font-medium">available</span> (you go to the front of the queue when a property needs urgent cover) or <span className="text-red-600 font-medium">unavailable</span> (you&apos;ll never be offered that day). Days you leave blank can still receive offers.
+            Pick a day, then enter the exact hours you can work. Hotels searching that full time window will see you as confirmed available. Blank days are shown as not confirmed.
           </p>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4 rounded-xl bg-surface p-4">
+            <div><label className="eyebrow block mb-1">Selected date</label><input type="date" value={selectedDate} min={dayKey(new Date())} onChange={e => setSelectedDate(e.target.value)} className="input-field" /></div>
+            <div><label className="eyebrow block mb-1">From</label><input type="time" value={startTime} onChange={e => setStartTime(e.target.value)} className="input-field" /></div>
+            <div><label className="eyebrow block mb-1">Until</label><input type="time" value={endTime} onChange={e => setEndTime(e.target.value)} className="input-field" /></div>
+            <div className="sm:col-span-3 flex flex-wrap gap-2">
+              <button type="button" onClick={() => saveDay('available')} disabled={!!dayBusy} className="btn-primary text-[12px]">Save available hours</button>
+              <button type="button" onClick={() => saveDay('unavailable')} disabled={!!dayBusy} className="btn-secondary text-[12px]">Mark unavailable</button>
+              <button type="button" onClick={() => saveDay('clear')} disabled={!!dayBusy} className="text-[12px] underline text-muted">Clear day</button>
+            </div>
+            {(windows[selectedDate] || []).map((w, i) => <p key={i} className="sm:col-span-3 text-[12px] text-green-700">Confirmed: {w.start_time.slice(0,5)}–{w.end_time.slice(0,5)} (Europe/London)</p>)}
+          </div>
           <div className="grid grid-cols-7 gap-1.5 mb-1.5">
             {WEEKDAY_LABELS.map(l => <div key={l} className="text-center text-[10px] uppercase tracking-wide text-gray-400">{l}</div>)}
           </div>
@@ -225,8 +249,8 @@ export default function AgencySettingsPage() {
                     key={key}
                     type="button"
                     disabled={isPast || dayBusy === key}
-                    onClick={() => cycleDay(key)}
-                    title={state === 'available' ? 'Available - tap for unavailable' : state === 'unavailable' ? 'Unavailable - tap to clear' : 'Tap to mark available'}
+                    onClick={() => { setSelectedDate(key); const w = windows[key]?.[0]; if (w) { setStartTime(w.start_time.slice(0,5)); setEndTime(w.end_time.slice(0,5)) } }}
+                    title={state === 'available' ? 'Confirmed availability saved - tap to edit' : state === 'unavailable' ? 'Unavailable - tap to edit' : 'Availability not confirmed - tap to set hours'}
                     className={`relative h-11 rounded-lg text-[12px] font-medium border transition-colors ${
                       isPast ? 'bg-gray-50 text-gray-300 border-transparent cursor-default'
                       : state === 'available' ? 'bg-green-50 text-green-800 border-green-300'
