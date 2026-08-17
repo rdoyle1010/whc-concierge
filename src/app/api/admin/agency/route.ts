@@ -4,9 +4,16 @@ import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { getStripe } from '@/lib/stripe'
 
-// Admin view of the agency money: every booking with its payment state
-// (property paid in?) and payout state (therapist paid out?). WHC's margin
-// per booking = 10% property fee + 5% therapist fee.
+const ADMIN_BOOKING_FIELDS = [
+  'id', 'employer_id', 'candidate_id', 'shift_date', 'rate', 'hours', 'status', 'created_at',
+  'paid_at', 'amount_paid', 'payout_amount', 'payout_status', 'payout_at', 'dispute_status',
+  'dispute_reason', 'dispute_requested', 'refund_amount', 'stripe_payment_intent',
+].join(',')
+
+const ADMIN_BOOKING_ACTION_FIELDS = [
+  'id', 'employer_id', 'candidate_id', 'shift_date', 'paid_at', 'amount_paid',
+  'payout_amount', 'payout_status', 'dispute_status', 'stripe_payment_intent',
+].join(',')
 
 async function requireAdmin() {
   const cookieStore = await cookies()
@@ -29,7 +36,10 @@ export async function GET() {
 
   try {
     const admin = createAdminClient()
-    const { data: bookings } = await admin.from('agency_bookings').select('*').order('created_at', { ascending: false })
+    const { data: bookings, error: bookingsError } = await admin.from('agency_bookings')
+      .select(ADMIN_BOOKING_FIELDS)
+      .order('created_at', { ascending: false })
+    if (bookingsError) return NextResponse.json({ error: bookingsError.message }, { status: 500 })
 
     const empIds = Array.from(new Set((bookings || []).map(b => b.employer_id).filter(Boolean)))
     const candIds = Array.from(new Set((bookings || []).map(b => b.candidate_id).filter(Boolean)))
@@ -119,7 +129,11 @@ export async function POST(req: NextRequest) {
     }
 
     const admin = createAdminClient()
-    const { data: booking } = await admin.from('agency_bookings').select('*').eq('id', body.bookingId).maybeSingle()
+    const { data: booking, error: bookingError } = await admin.from('agency_bookings')
+      .select(ADMIN_BOOKING_ACTION_FIELDS)
+      .eq('id', body.bookingId)
+      .maybeSingle()
+    if (bookingError) return NextResponse.json({ error: bookingError.message }, { status: 500 })
     if (!booking) return NextResponse.json({ error: 'Booking not found' }, { status: 404 })
 
     if (body.action === 'mark_paid_out') {
