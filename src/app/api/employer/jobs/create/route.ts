@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerSupabaseClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { geocodePostcode } from '@/lib/geo'
 
 const ALLOWED_FIELDS = [
   'job_title', 'job_description', 'location', 'location_postcode', 'radius_miles',
@@ -20,7 +21,7 @@ export async function POST(req: NextRequest) {
   const admin = createAdminClient()
   const { data: employer } = await admin
     .from('employer_profiles')
-    .select('id')
+    .select('id, postcode, latitude, longitude')
     .eq('user_id', user.id)
     .maybeSingle()
 
@@ -39,6 +40,21 @@ export async function POST(req: NextRequest) {
   }
   // New roles cannot be made public by bypassing checkout.
   payload.is_live = false
+
+  // Permanent-role matching uses the same real distance model as Agency.
+  // Prefer the role postcode; if it is omitted, inherit the property's cached
+  // coordinates rather than making every role at that property location-blind.
+  const rolePostcode = String(payload.location_postcode || '').trim()
+  let coords: { latitude: number; longitude: number } | null = null
+  if (rolePostcode) coords = await geocodePostcode(rolePostcode)
+  if (!coords && employer.latitude != null && employer.longitude != null) {
+    coords = { latitude: employer.latitude, longitude: employer.longitude }
+  }
+  if (!coords && employer.postcode) coords = await geocodePostcode(employer.postcode)
+  if (coords) {
+    payload.latitude = coords.latitude
+    payload.longitude = coords.longitude
+  }
 
   const { data: job, error } = await admin
     .from('job_listings')
