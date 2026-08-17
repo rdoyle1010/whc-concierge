@@ -68,7 +68,7 @@ export default function Navbar({ siteContent }: { siteContent?: WebsiteContent }
           ]
     : [
         { href: '/jobs', label: labels.jobs },
-        { href: '/login?role=talent&next=%2Froles%2Fmatch', label: 'Match', icon: true },
+        { href: '/roles/match', label: 'Match', icon: true },
         { href: '/properties', label: 'Properties' },
         { href: '/agency', label: labels.agency },
         { href: '/academy', label: labels.academy },
