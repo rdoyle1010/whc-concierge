@@ -18,26 +18,38 @@ export default function NotificationBell({ userId }: { userId: string }) {
   const [notifications, setNotifications] = useState<any[]>([])
   const [unreadCount, setUnreadCount] = useState(0)
   const ref = useRef<HTMLDivElement>(null)
+  const loadedOnce = useRef(false)
 
   const load = async () => {
-    // The API derives the user from the session - no userId param needed
-    const res = await fetch('/api/notifications')
+    if (document.visibilityState === 'hidden') return
+    const res = await fetch('/api/notifications', { cache: 'no-store' })
     if (res.ok) {
       const data = await res.json()
       setNotifications(data.notifications || [])
       setUnreadCount(data.unreadCount || 0)
+      loadedOnce.current = true
     }
   }
 
+  // One lightweight load when the bell first appears. After that, refresh far
+  // less aggressively and only while the tab is visible. Opening the bell always
+  // refreshes immediately, so users still see current notifications on demand.
   useEffect(() => { load() }, [userId])
 
-  // Poll every 30s
   useEffect(() => {
-    const interval = setInterval(load, 30000)
-    return () => clearInterval(interval)
+    const interval = setInterval(() => {
+      if (loadedOnce.current && document.visibilityState === 'visible') load()
+    }, 120000)
+    const onVisible = () => {
+      if (document.visibilityState === 'visible' && loadedOnce.current) load()
+    }
+    document.addEventListener('visibilitychange', onVisible)
+    return () => {
+      clearInterval(interval)
+      document.removeEventListener('visibilitychange', onVisible)
+    }
   }, [userId])
 
-  // Close on outside click
   useEffect(() => {
     const h = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false) }
     document.addEventListener('mousedown', h); return () => document.removeEventListener('mousedown', h)
@@ -88,7 +100,6 @@ export default function NotificationBell({ userId }: { userId: string }) {
 
       {open && (
         <div className="absolute right-0 mt-2 w-[340px] bg-white border border-border rounded-xl shadow-lg animate-fade-in overflow-hidden z-50">
-          {/* Header */}
           <div className="flex items-center justify-between px-4 py-3 border-b border-border">
             <p className="text-[13px] font-medium text-ink">Notifications</p>
             {unreadCount > 0 && (
@@ -99,7 +110,6 @@ export default function NotificationBell({ userId }: { userId: string }) {
             )}
           </div>
 
-          {/* List */}
           <div className="max-h-[360px] overflow-y-auto">
             {notifications.length === 0 ? (
               <div className="px-4 py-10 text-center">
