@@ -7,19 +7,26 @@ import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
 import { Building2, MapPin, Star } from 'lucide-react'
 
+const PUBLIC_PROPERTIES_LIMIT = 120
+const PROPERTY_FIELDS = 'id,company_name,property_name,location,description,logo_url,property_photos,review_score,featured_employer,featured_until,created_at,is_verified'
+
 export default function PropertiesPage() {
   const supabase = createClient()
   const [properties, setProperties] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    let active = true
     async function load() {
       const { data } = await supabase
         .from('employer_profiles')
-        .select('*')
+        .select(PROPERTY_FIELDS)
         .eq('is_verified', true)
+        .order('featured_employer', { ascending: false })
         .order('created_at', { ascending: false })
+        .limit(PUBLIC_PROPERTIES_LIMIT)
 
+      if (!active) return
       const now = Date.now()
       const sorted = [...(data || [])].sort((a: any, b: any) => {
         const aFeatured = a.featured_employer && (!a.featured_until || new Date(a.featured_until).getTime() > now)
@@ -31,6 +38,7 @@ export default function PropertiesPage() {
       setLoading(false)
     }
     load()
+    return () => { active = false }
   }, [])
 
   return (
