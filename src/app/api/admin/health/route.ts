@@ -32,6 +32,12 @@ export async function GET() {
     bookings,
     expiredJobs,
     openDisputes,
+    users,
+    applications,
+    messages,
+    liveJobs,
+    candidates,
+    employers,
   ] = await Promise.all([
     admin.from('candidate_profiles').select('id, stripe_customer_id, featured_payment_source', { count: 'exact' }).eq('is_featured', true).gt('featured_until', now),
     admin.from('candidate_profiles').select('id, stripe_customer_id, agency_payment_source', { count: 'exact' }).eq('agency_available', true).eq('approval_status', 'approved'),
@@ -40,6 +46,12 @@ export async function GET() {
     admin.from('agency_bookings').select('id, amount_paid, payout_amount, payout_status, refund_amount, paid_at, dispute_status').not('paid_at', 'is', null),
     admin.from('job_listings').select('id', { count: 'exact', head: true }).eq('is_live', true).lt('expires_at', now),
     admin.from('agency_bookings').select('id', { count: 'exact', head: true }).eq('dispute_status', 'open'),
+    admin.from('profiles').select('id', { count: 'exact', head: true }),
+    admin.from('applications').select('id', { count: 'exact', head: true }),
+    admin.from('messages').select('id', { count: 'exact', head: true }),
+    admin.from('job_listings').select('id', { count: 'exact', head: true }).eq('is_live', true).or(`expires_at.is.null,expires_at.gt.${now}`),
+    admin.from('candidate_profiles').select('id', { count: 'exact', head: true }),
+    admin.from('employer_profiles').select('id', { count: 'exact', head: true }),
   ])
 
   const featuredRows = featured.data || []
@@ -92,6 +104,15 @@ export async function GET() {
       manual: paymentSources.manual || 0,
       legacy: paymentSources.legacy || 0,
       unknown: paymentSources.unknown || 0,
+    },
+    scale: {
+      users: Number(users.count || 0),
+      candidates: Number(candidates.count || 0),
+      employers: Number(employers.count || 0),
+      live_jobs: Number(liveJobs.count || 0),
+      applications: Number(applications.count || 0),
+      messages: Number(messages.count || 0),
+      notification_poll_seconds: 120,
     },
     expired_live_jobs: Number(expiredJobs.count || 0),
   })
