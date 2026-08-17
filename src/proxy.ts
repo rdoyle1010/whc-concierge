@@ -25,12 +25,25 @@ const BLOCKED_API_ROUTES = [
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
 
-  // Block maintenance API routes entirely
+  // Block maintenance API routes entirely.
   if (BLOCKED_API_ROUTES.some(route => pathname.startsWith(route))) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 })
   }
 
-  // Create Supabase client with request/response cookie handling
+  const isProtected = PROTECTED_PREFIXES.some(prefix => pathname.startsWith(prefix))
+  const isAuthPage = AUTH_PAGES.some(page => pathname.startsWith(page))
+
+  // Critical performance guard: do NOT call Supabase Auth for every request.
+  // Previously this middleware ran auth.getUser() for public pages, RSC requests
+  // and every API call (including /api/auth/login itself). That created a large
+  // burst of /auth/v1/user calls and could make password sign-in wait for minutes.
+  // Public/API routes already perform their own auth where required, so they can
+  // pass straight through here.
+  if (!isProtected && !isAuthPage) {
+    return NextResponse.next({ request: { headers: request.headers } })
+  }
+
+  // Only protected pages and login/register need middleware session inspection.
   let response = NextResponse.next({ request: { headers: request.headers } })
 
   const supabase = createServerClient(
@@ -42,24 +55,18 @@ export async function proxy(request: NextRequest) {
           return request.cookies.getAll()
         },
         setAll(cookiesToSet: { name: string; value: string; options?: any }[]) {
-          cookiesToSet.forEach(({ name, value, options }) =>
-            request.cookies.set(name, value)
-          )
+          cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
           response = NextResponse.next({ request: { headers: request.headers } })
-          cookiesToSet.forEach(({ name, value, options }) =>
-            response.cookies.set(name, value, options)
-          )
+          cookiesToSet.forEach(({ name, value, options }) => response.cookies.set(name, value, options))
         },
       },
     }
   )
 
-  // Refresh the session (important for token refresh)
   const { data: { user } } = await supabase.auth.getUser()
 
   // Protected routes: redirect to login if no session. Preserve the complete
   // destination (including query string) so featured-profile deep links survive sign-in.
-  const isProtected = PROTECTED_PREFIXES.some(prefix => pathname.startsWith(prefix))
   if (isProtected && !user) {
     const loginUrl = request.nextUrl.clone()
     const destination = `${request.nextUrl.pathname}${request.nextUrl.search}`
@@ -73,7 +80,6 @@ export async function proxy(request: NextRequest) {
 
   // Auth pages: a signed-in user should continue to a valid requested destination,
   // rather than being bounced to their dashboard and losing context.
-  const isAuthPage = AUTH_PAGES.some(page => pathname.startsWith(page))
   if (isAuthPage && user) {
     const { data: prof } = await supabase.from('profiles').select('role').eq('id', user.id).single()
     const role = normaliseAccountRole(prof?.role)
@@ -95,18 +101,12 @@ export async function proxy(request: NextRequest) {
     }
   }
 
+  response.headers.set('Cache-Control', 'private, no-store')
   return response
 }
 
 export const config = {
   matcher: [
-    /*
-     * Match all request paths except:
-     * - _next/static (static files)
-     * - _next/image (image optimisation)
-     * - favicon.ico
-     * - public files (images, etc.)
-     */
     '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)',
   ],
 }
