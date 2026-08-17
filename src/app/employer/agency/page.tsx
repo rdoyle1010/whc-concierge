@@ -3,15 +3,10 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import DashboardShell from '@/components/DashboardShell'
-import { createClient } from '@/lib/supabase/client'
-import { Calendar, Clock, Banknote, Star, X, Zap, ShieldCheck, MessageSquare } from 'lucide-react'
+import { Calendar, Clock, Banknote, Star, X, Zap, ShieldCheck, MessageSquare, Check } from 'lucide-react'
 import ReviewForm from '@/components/ReviewForm'
 
-// The property's home for agency cover: register as a Preferred Employer,
-// see every offer you've made, pay for accepted shifts, track what's booked.
-
 export default function EmployerAgencyPage() {
-  const supabase = createClient()
   const [profile, setProfile] = useState<any>(null)
   const [bookings, setBookings] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
@@ -31,19 +26,19 @@ export default function EmployerAgencyPage() {
 
   async function load() {
     try {
-      const [{ data: { user } }, bookingsRes] = await Promise.all([
-        supabase.auth.getUser(),
-        fetch('/api/agency/booking'),
-      ])
-      if (user) {
-        const { data: emp } = await supabase.from('employer_profiles').select('*').eq('user_id', user.id).maybeSingle()
-        setProfile(emp)
-      }
+      const bookingsRes = await fetch('/api/agency/booking')
       if (bookingsRes.ok) {
         const j = await bookingsRes.json()
+        setProfile(j.viewer?.employer || null)
         setBookings((j.bookings || []).filter((b: any) => b.viewer_role === 'employer'))
+      } else {
+        setProfile(null)
+        setBookings([])
       }
-    } catch { /* shown as empty */ }
+    } catch {
+      setProfile(null)
+      setBookings([])
+    }
     setLoading(false)
   }
 
@@ -139,7 +134,6 @@ export default function EmployerAgencyPage() {
   const open = bookings.filter(b => b.status === 'pending' || b.status === 'countered')
   const rest = bookings.filter(b => !['accepted', 'pending', 'countered'].includes(b.status))
 
-  // ── Payment history summary ──
   const totalPaid = bookings.filter(b => b.paid_at).reduce((s, b) => s + (b.amount_paid || 0), 0)
   const awaitingPayment = needsAction.reduce((s, b) => s + totalDue(b), 0)
   const refunded = bookings.reduce((s, b) => s + (b.refund_amount || 0), 0)
@@ -151,15 +145,9 @@ export default function EmployerAgencyPage() {
         <div>
           <div className="flex items-center gap-2 mb-1 flex-wrap">
             <Link href={`/agency/${b.candidate_id}`} className="font-medium text-ink hover:underline">{b.candidate_name || 'Candidate'}</Link>
-            {b.cascade_total != null && (
-              <span className="text-[10px] font-semibold uppercase tracking-wide bg-ink text-gold px-2 py-0.5 rounded-full">Auto-match</span>
-            )}
-            {b.booking_group && (
-              <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-blue-50 text-blue-700">Weekly booking</span>
-            )}
-            {b.urgent && (b.status === 'pending' || b.status === 'countered') && (
-              <span className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full bg-red-50 text-red-700"><Zap size={11} /> URGENT</span>
-            )}
+            {b.cascade_total != null && <span className="text-[10px] font-semibold uppercase tracking-wide bg-ink text-gold px-2 py-0.5 rounded-full">Auto-match</span>}
+            {b.booking_group && <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-blue-50 text-blue-700">Weekly booking</span>}
+            {b.urgent && (b.status === 'pending' || b.status === 'countered') && <span className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full bg-red-50 text-red-700"><Zap size={11} /> URGENT</span>}
             <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${statusColors[b.status] || ''}`}>{b.status === 'countered' ? 'countered - respond on their profile' : b.status}</span>
           </div>
           <div className="flex items-center flex-wrap gap-x-4 gap-y-1 text-sm text-gray-500">
@@ -169,48 +157,26 @@ export default function EmployerAgencyPage() {
             <span className="flex items-center space-x-1 font-medium text-ink"><Banknote size={14} className="text-accent" /><span>£{b.rate}/hr</span></span>
             {b.distance_miles != null && <span>{b.distance_miles} miles from them</span>}
           </div>
-          {b.cascade_total != null && (b.status === 'pending' || b.status === 'countered') && (
-            <p className="text-[12px] text-ink mt-1.5">
-              Offered to <span className="font-medium">{b.candidate_name}</span> ({b.cascade_position} of {b.cascade_total} in the queue)
-              {b.expires_at ? ` - they have until ${new Date(b.expires_at).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })} before it moves to the next therapist` : ''}.
-            </p>
-          )}
-          {b.cascade_total != null && b.status === 'expired' && (
-            <p className="text-[12px] text-gray-500 mt-1.5">Not filled - all {b.cascade_total} matching therapist{b.cascade_total > 1 ? 's were' : ' was'} offered it. Try again with a higher rate cap, or book directly from the directory.</p>
-          )}
-          {b.status === 'accepted' && (
-            <p className="text-[12px] text-blue-700 mt-1.5">Accepted - pay £{totalDue(b)} to confirm ({effHours(b)}h × £{b.rate} + 10% WHC fee). WHC pays the therapist after the shift.</p>
-          )}
-          {b.status === 'confirmed' && b.dispute_status === 'open' && (
-            <p className="text-[12px] text-amber-700 mt-1.5">Issue reported - WHC is reviewing it and will confirm the outcome. The therapist&apos;s payout is on hold.</p>
-          )}
-          {b.status === 'confirmed' && b.dispute_status === 'resolved' && (
-            <p className="text-[12px] text-gray-600 mt-1.5">Issue resolved{b.refund_amount ? ` - £${b.refund_amount} refund agreed (admin fee retained)` : ' - no refund agreed'}.</p>
-          )}
-          {b.status === 'confirmed' && !b.dispute_status && (
-            <p className="text-[12px] text-green-700 mt-1.5">Paid{b.amount_paid ? ` £${b.amount_paid}` : ''}{b.paid_at ? ` on ${new Date(b.paid_at).toLocaleDateString('en-GB')}` : ''} - booking confirmed. The therapist is paid by WHC after the shift; nothing more to do.</p>
-          )}
+          {b.cascade_total != null && (b.status === 'pending' || b.status === 'countered') && <p className="text-[12px] text-ink mt-1.5">Offered to <span className="font-medium">{b.candidate_name}</span> ({b.cascade_position} of {b.cascade_total} in the queue){b.expires_at ? ` - they have until ${new Date(b.expires_at).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })} before it moves to the next therapist` : ''}.</p>}
+          {b.cascade_total != null && b.status === 'expired' && <p className="text-[12px] text-gray-500 mt-1.5">Not filled - all {b.cascade_total} matching therapist{b.cascade_total > 1 ? 's were' : ' was'} offered it. Try again with a higher rate cap, or book directly from the directory.</p>}
+          {b.status === 'accepted' && <p className="text-[12px] text-blue-700 mt-1.5">Accepted - pay £{totalDue(b)} to confirm ({effHours(b)}h × £{b.rate} + 10% WHC fee). WHC pays the therapist after the shift.</p>}
+          {b.status === 'confirmed' && b.dispute_status === 'open' && <p className="text-[12px] text-amber-700 mt-1.5">Issue reported - WHC is reviewing it and will confirm the outcome. The therapist&apos;s payout is on hold.</p>}
+          {b.status === 'confirmed' && b.dispute_status === 'resolved' && <p className="text-[12px] text-gray-600 mt-1.5">Issue resolved{b.refund_amount ? ` - £${b.refund_amount} refund agreed (admin fee retained)` : ' - no refund agreed'}.</p>}
+          {b.status === 'confirmed' && !b.dispute_status && <p className="text-[12px] text-green-700 mt-1.5">Paid{b.amount_paid ? ` £${b.amount_paid}` : ''}{b.paid_at ? ` on ${new Date(b.paid_at).toLocaleDateString('en-GB')}` : ''} - booking confirmed. The therapist is paid by WHC after the shift; nothing more to do.</p>}
         </div>
         <div className="flex flex-col items-end gap-2 shrink-0">
-          {b.status === 'accepted' && (
-            <button onClick={() => { setBusyId(b.id); startCheckout('agency_booking', { bookingId: b.id }) }} disabled={busyId === b.id}
-              className="btn-primary text-[12px] disabled:opacity-50">
-              {busyId === b.id ? 'Opening payment...' : `Pay £${totalDue(b)} now`}
-            </button>
-          )}
+          {b.status === 'accepted' && <button type="button" onClick={() => { setBusyId(b.id); startCheckout('agency_booking', { bookingId: b.id }) }} disabled={busyId === b.id} className="btn-primary text-[12px] disabled:opacity-50">{busyId === b.id ? 'Opening payment...' : `Pay £${totalDue(b)} now`}</button>}
           <div className="flex items-center gap-3">
             <Link href="/employer/messages" className="text-[12px] font-medium text-gray-500 hover:text-ink inline-flex items-center gap-1"><MessageSquare size={12} /> Messages</Link>
-            {b.paid_at && (
-              <Link href={`/employer/agency/receipt/${b.id}`} className="text-[12px] font-medium text-gray-500 hover:text-ink">Receipt</Link>
-            )}
+            {b.paid_at && <Link href={`/employer/agency/receipt/${b.id}`} className="text-[12px] font-medium text-gray-500 hover:text-ink">Receipt</Link>}
             {(b.status === 'confirmed' || b.status === 'completed') && b.candidate_user_id && (
-              <button type="button" onClick={() => setReviewing({ userId: b.candidate_user_id, name: b.candidate_name || 'this candidate', bookingId: b.id })}
-                className="text-[12px] font-medium text-amber-500 hover:underline inline-flex items-center gap-1"><Star size={11} /> Review</button>
+              b.reviewed_by_viewer ? (
+                <span className="text-[12px] font-medium text-green-700 inline-flex items-center gap-1"><Check size={12} /> Reviewed</span>
+              ) : (
+                <button type="button" onClick={() => setReviewing({ userId: b.candidate_user_id, name: b.candidate_name || 'this candidate', bookingId: b.id })} className="text-[12px] font-medium text-amber-500 hover:underline inline-flex items-center gap-1"><Star size={11} /> Review</button>
+              )
             )}
-            {(b.status === 'confirmed' || b.status === 'completed') && b.paid_at && !b.dispute_status && (
-              <button type="button" onClick={() => { setDisputing(b); setDisputeReason(''); setError('') }}
-                className="text-[12px] font-medium text-red-500 hover:underline">Report an issue</button>
-            )}
+            {(b.status === 'confirmed' || b.status === 'completed') && b.paid_at && !b.dispute_status && <button type="button" onClick={() => { setDisputing(b); setDisputeReason(''); setError('') }} className="text-[12px] font-medium text-red-500 hover:underline">Report an issue</button>}
           </div>
         </div>
       </div>
@@ -228,16 +194,13 @@ export default function EmployerAgencyPage() {
         <div className="flex items-center justify-center h-64"><div className="animate-spin w-8 h-8 border-2 border-gold border-t-transparent rounded-full" /></div>
       ) : (
         <>
-          {/* Preferred Employer status */}
           {profile && (
             profile.preferred_employer ? (
               <div className="flex items-center gap-3 bg-green-50 border border-green-200 rounded-xl px-5 py-4 mb-6">
                 <ShieldCheck size={18} className="text-green-700 shrink-0" />
                 <div>
                   <p className="text-[14px] font-medium text-green-800">Registered Preferred Employer</p>
-                  <p className="text-[12px] text-green-700 mt-0.5">
-                    {profile.preferred_until ? `Registration renews ${new Date(profile.preferred_until).toLocaleDateString('en-GB')}. ` : ''}You can book agency cover - find talent in the <Link href="/agency" className="underline">agency directory</Link>.
-                  </p>
+                  <p className="text-[12px] text-green-700 mt-0.5">{profile.preferred_until ? `Registration renews ${new Date(profile.preferred_until).toLocaleDateString('en-GB')}. ` : ''}You can book agency cover - find talent in the <Link href="/agency" className="underline">agency directory</Link>.</p>
                 </div>
               </div>
             ) : (
@@ -246,24 +209,21 @@ export default function EmployerAgencyPage() {
                   <p className="text-[14px] font-medium text-ink">Register as a Preferred Employer</p>
                   <p className="text-[12px] text-gray-500 mt-0.5">£150/year. Book vetted agency cover by the hour - including urgent same-day sickness cover - with all payments handled by Wellness House Collective.</p>
                 </div>
-                <button onClick={() => { setBusyId('register'); startCheckout('employer_registration', { employerId: profile.id }) }} disabled={busyId === 'register'}
-                  className="btn-primary text-[12px] shrink-0 disabled:opacity-50">{busyId === 'register' ? 'Opening payment...' : 'Register - £150/year'}</button>
+                <button type="button" onClick={() => { setBusyId('register'); startCheckout('employer_registration', { employerId: profile.id }) }} disabled={busyId === 'register'} className="btn-primary text-[12px] shrink-0 disabled:opacity-50">{busyId === 'register' ? 'Opening payment...' : 'Register - £150/year'}</button>
               </div>
             )
           )}
 
-          {/* Urgent cover - the cascade */}
           {profile?.preferred_employer && (
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-ink rounded-xl px-5 py-4 mb-6">
               <div>
                 <p className="text-[14px] font-medium text-white flex items-center gap-2"><Zap size={15} className="text-gold" /> Need cover today?</p>
                 <p className="text-[12px] text-white/60 mt-0.5">Tell us the shift and we&apos;ll offer it to the nearest available therapists one by one - by text, 30 minutes each - until someone accepts. No ringing round.</p>
               </div>
-              <button onClick={() => { setUrgentOpen(true); setError('') }} className="btn-primary !bg-gold !text-ink text-[12px] shrink-0">Find me someone</button>
+              <button type="button" onClick={() => { setUrgentOpen(true); setError('') }} className="btn-primary !bg-gold !text-ink text-[12px] shrink-0">Find me someone</button>
             </div>
           )}
 
-          {/* Payment history summary */}
           {hasMoney && (
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-8">
               <div className="dashboard-card !py-4"><p className="text-[11px] uppercase tracking-wide text-gray-400 mb-1">Paid to WHC</p><p className="text-[20px] font-semibold text-ink">£{totalPaid}</p></div>
@@ -273,124 +233,70 @@ export default function EmployerAgencyPage() {
           )}
 
           {bookings.length === 0 ? (
-            <div className="dashboard-card text-center py-16 text-gray-400">
-              <Calendar size={48} className="mx-auto mb-4 opacity-50" />
-              <p>No agency bookings yet.</p>
-              <Link href="/agency" className="text-[13px] text-accent underline mt-2 inline-block">Browse the agency directory</Link>
-            </div>
+            <div className="dashboard-card text-center py-16 text-gray-400"><Calendar size={48} className="mx-auto mb-4 opacity-50" /><p>No agency bookings yet.</p><Link href="/agency" className="text-[13px] text-accent underline mt-2 inline-block">Browse the agency directory</Link></div>
           ) : (
             <>
-              {needsAction.length > 0 && (
-                <div className="mb-8">
-                  <h2 className="text-[16px] font-medium text-ink mb-3">Awaiting your payment</h2>
-                  <div className="space-y-4">{needsAction.map(renderCard)}</div>
-                </div>
-              )}
-              {open.length > 0 && (
-                <div className="mb-8">
-                  <h2 className="text-[16px] font-medium text-ink mb-3">Offers awaiting the candidate</h2>
-                  <div className="space-y-4">{open.map(renderCard)}</div>
-                </div>
-              )}
-              {rest.length > 0 && (
-                <div className="mb-8">
-                  <h2 className="text-[16px] font-medium text-ink mb-3">Booked &amp; past</h2>
-                  <div className="space-y-4">{rest.map(renderCard)}</div>
-                </div>
-              )}
+              {needsAction.length > 0 && <div className="mb-8"><h2 className="text-[16px] font-medium text-ink mb-3">Awaiting your payment</h2><div className="space-y-4">{needsAction.map(renderCard)}</div></div>}
+              {open.length > 0 && <div className="mb-8"><h2 className="text-[16px] font-medium text-ink mb-3">Offers awaiting the candidate</h2><div className="space-y-4">{open.map(renderCard)}</div></div>}
+              {rest.length > 0 && <div className="mb-8"><h2 className="text-[16px] font-medium text-ink mb-3">Booked &amp; past</h2><div className="space-y-4">{rest.map(renderCard)}</div></div>}
             </>
           )}
         </>
       )}
 
-      {/* Urgent cover modal */}
       {urgentOpen && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setUrgentOpen(false)}>
           <div className="bg-white rounded-2xl max-w-md w-full max-h-[90vh] overflow-y-auto p-6" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between mb-2">
-              <h2 className="font-serif text-lg font-bold text-ink flex items-center gap-2"><Zap size={16} className="text-accent" /> Urgent cover</h2>
-              <button type="button" onClick={() => setUrgentOpen(false)} className="text-gray-300 hover:text-ink"><X size={20} /></button>
-            </div>
+            <div className="flex items-center justify-between mb-2"><h2 className="font-serif text-lg font-bold text-ink flex items-center gap-2"><Zap size={16} className="text-accent" /> Urgent cover</h2><button type="button" onClick={() => setUrgentOpen(false)} className="text-gray-300 hover:text-ink"><X size={20} /></button></div>
             <p className="text-[12px] text-gray-500 mb-4">We&apos;ll offer this shift to the nearest available therapists in turn - each gets 30 minutes to accept before it moves on. You pay their hourly rate plus the 10% WHC fee once someone accepts.</p>
             <div className="grid grid-cols-2 gap-3 mb-3">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">Shift date</label>
-                <input type="date" value={urgentForm.shiftDate} min={new Date().toLocaleDateString('en-CA')}
-                  onChange={(e) => setUrgentForm({ ...urgentForm, shiftDate: e.target.value })} className="input-field" />
-              </div>
+              <div><label className="block text-sm font-medium text-gray-700 mb-1.5">Shift date</label><input type="date" value={urgentForm.shiftDate} min={new Date().toLocaleDateString('en-CA')} onChange={(e) => setUrgentForm({ ...urgentForm, shiftDate: e.target.value })} className="input-field" /></div>
               <div><label className="block text-sm font-medium text-gray-700 mb-1.5">Starts</label><input type="time" value={urgentForm.shiftStartTime} onChange={(e) => setUrgentForm({ ...urgentForm, shiftStartTime: e.target.value })} className="input-field" /></div>
             </div>
             <div className="grid grid-cols-2 gap-3 mb-3">
               <div><label className="block text-sm font-medium text-gray-700 mb-1.5">Finishes</label><input type="time" value={urgentForm.shiftEndTime} onChange={(e) => setUrgentForm({ ...urgentForm, shiftEndTime: e.target.value })} className="input-field" /></div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">Search radius</label>
-                <select value={urgentForm.radius} onChange={(e) => setUrgentForm({ ...urgentForm, radius: e.target.value })} className="input-field">
-                  <option value="5">Within 5 miles</option><option value="10">Within 10 miles</option><option value="25">Within 25 miles</option><option value="50">Within 50 miles</option><option value="100">Within 100 miles</option>
-                </select>
-              </div>
+              <div><label className="block text-sm font-medium text-gray-700 mb-1.5">Search radius</label><select value={urgentForm.radius} onChange={(e) => setUrgentForm({ ...urgentForm, radius: e.target.value })} className="input-field"><option value="5">Within 5 miles</option><option value="10">Within 10 miles</option><option value="25">Within 25 miles</option><option value="50">Within 50 miles</option><option value="100">Within 100 miles</option></select></div>
             </div>
             <div className="grid grid-cols-2 gap-3 mb-3">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">Max rate (£/hr, optional)</label>
-                <input type="number" min={1} value={urgentForm.maxRate} placeholder="No cap"
-                  onChange={(e) => setUrgentForm({ ...urgentForm, maxRate: e.target.value })} className="input-field" />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">Treatment / role</label>
-                <input type="text" value={urgentForm.shiftType} placeholder="e.g. Massage, Facials"
-                  onChange={(e) => setUrgentForm({ ...urgentForm, shiftType: e.target.value })} className="input-field" />
-              </div>
+              <div><label className="block text-sm font-medium text-gray-700 mb-1.5">Max rate (£/hr, optional)</label><input type="number" min={1} value={urgentForm.maxRate} placeholder="No cap" onChange={(e) => setUrgentForm({ ...urgentForm, maxRate: e.target.value })} className="input-field" /></div>
+              <div><label className="block text-sm font-medium text-gray-700 mb-1.5">Treatment / role</label><input type="text" value={urgentForm.shiftType} placeholder="e.g. Massage, Facials" onChange={(e) => setUrgentForm({ ...urgentForm, shiftType: e.target.value })} className="input-field" /></div>
             </div>
             <label className="block text-sm font-medium text-gray-700 mb-1.5">Notes for the therapist (optional)</label>
-            <textarea rows={2} value={urgentForm.notes} onChange={(e) => setUrgentForm({ ...urgentForm, notes: e.target.value })}
-              className="input-field mb-4" placeholder="e.g. 10am start, ESPA treatments, parking on site..." />
+            <textarea rows={2} value={urgentForm.notes} onChange={(e) => setUrgentForm({ ...urgentForm, notes: e.target.value })} className="input-field mb-4" placeholder="e.g. 10am start, ESPA treatments, parking on site..." />
             {error && <p className="text-[12px] text-red-600 mb-3">{error}</p>}
-            <button onClick={submitUrgent} disabled={urgentBusy || !urgentForm.shiftDate}
-              className="btn-primary w-full disabled:opacity-50">
-              {urgentBusy ? 'Finding the nearest available...' : 'Send it out'}
-            </button>
+            <button type="button" onClick={submitUrgent} disabled={urgentBusy || !urgentForm.shiftDate} className="btn-primary w-full disabled:opacity-50">{urgentBusy ? 'Finding the nearest available...' : 'Send it out'}</button>
           </div>
         </div>
       )}
 
-      {/* Report an issue modal */}
       {disputing && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setDisputing(null)}>
           <div className="bg-white rounded-2xl max-w-md w-full max-h-[90vh] overflow-y-auto p-6" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between mb-2">
-              <h2 className="font-serif text-lg font-bold text-ink">Report an issue</h2>
-              <button type="button" onClick={() => setDisputing(null)} className="text-gray-300 hover:text-ink"><X size={20} /></button>
-            </div>
-            <p className="text-[12px] text-gray-500 mb-4">
-              Shift on {disputing.shift_date ? new Date(disputing.shift_date).toLocaleDateString('en-GB') : 'the agreed date'} with {disputing.candidate_name}. Wellness House Collective will review this and confirm the outcome with both of you - the therapist&apos;s payout is held in the meantime. Any refund is minus the 10% admin fee.
-            </p>
+            <div className="flex items-center justify-between mb-2"><h2 className="font-serif text-lg font-bold text-ink">Report an issue</h2><button type="button" onClick={() => setDisputing(null)} className="text-gray-300 hover:text-ink"><X size={20} /></button></div>
+            <p className="text-[12px] text-gray-500 mb-4">Shift on {disputing.shift_date ? new Date(disputing.shift_date).toLocaleDateString('en-GB') : 'the agreed date'} with {disputing.candidate_name}. Wellness House Collective will review this and confirm the outcome with both of you - the therapist&apos;s payout is held in the meantime. Any refund is minus the 10% admin fee.</p>
             <label className="block text-sm font-medium text-gray-700 mb-1.5">What happened?</label>
-            <textarea rows={4} value={disputeReason} onChange={(e) => setDisputeReason(e.target.value)} className="input-field mb-4"
-              placeholder="e.g. Left at 2pm having been booked until 6pm; did not attend; arrived unprepared..." />
+            <textarea rows={4} value={disputeReason} onChange={(e) => setDisputeReason(e.target.value)} className="input-field mb-4" placeholder="e.g. Left at 2pm having been booked until 6pm; did not attend; arrived unprepared..." />
             <label className="block text-sm font-medium text-gray-700 mb-1.5">What outcome are you asking for?</label>
-            <select value={disputeRequested} onChange={(e) => setDisputeRequested(e.target.value)} className="input-field mb-4">
-              <option>Refund minus the WHC admin fee</option>
-              <option>Partial refund (e.g. hours not worked)</option>
-              <option>No refund - just noting the issue</option>
-            </select>
+            <select value={disputeRequested} onChange={(e) => setDisputeRequested(e.target.value)} className="input-field mb-4"><option>Refund minus the WHC admin fee</option><option>Partial refund (e.g. hours not worked)</option><option>No refund - just noting the issue</option></select>
             {error && <p className="text-[12px] text-red-600 mb-3">{error}</p>}
-            <button onClick={submitDispute} disabled={busyId === disputing.id || !disputeReason.trim()}
-              className="btn-primary w-full disabled:opacity-50">
-              {busyId === disputing.id ? 'Sending...' : 'Submit to WHC'}
-            </button>
+            <button type="button" onClick={submitDispute} disabled={busyId === disputing.id || !disputeReason.trim()} className="btn-primary w-full disabled:opacity-50">{busyId === disputing.id ? 'Sending...' : 'Submit to WHC'}</button>
           </div>
         </div>
       )}
 
-      {/* Review modal */}
       {reviewing && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setReviewing(null)}>
           <div className="bg-white rounded-2xl max-w-md w-full max-h-[90vh] overflow-y-auto p-6" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="font-serif text-lg font-bold text-ink">Review {reviewing.name}</h2>
-              <button type="button" onClick={() => setReviewing(null)} className="text-gray-300 hover:text-ink"><X size={20} /></button>
-            </div>
-            <ReviewForm reviewedId={reviewing.userId} reviewedName={reviewing.name} type="candidate" bookingId={reviewing.bookingId} />
+            <div className="flex items-center justify-between mb-4"><h2 className="font-serif text-lg font-bold text-ink">Review {reviewing.name}</h2><button type="button" onClick={() => setReviewing(null)} className="text-gray-300 hover:text-ink"><X size={20} /></button></div>
+            <ReviewForm
+              reviewedId={reviewing.userId}
+              reviewedName={reviewing.name}
+              type="candidate"
+              bookingId={reviewing.bookingId}
+              onComplete={() => {
+                setBookings(current => current.map(b => b.id === reviewing.bookingId ? { ...b, reviewed_by_viewer: true } : b))
+              }}
+            />
           </div>
         </div>
       )}
