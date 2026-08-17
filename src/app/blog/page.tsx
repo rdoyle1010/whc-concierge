@@ -5,7 +5,7 @@ import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
-import { ArrowRight, Clock } from 'lucide-react'
+import { Clock, ArrowRight } from 'lucide-react'
 import SkeletonCard from '@/components/SkeletonCard'
 import Pagination from '@/components/Pagination'
 import BlogImage from '@/components/BlogImage'
@@ -36,24 +36,24 @@ export default function BlogPage() {
   const readTime = (content: string) => Math.max(1, Math.ceil((content?.length || 0) / 1200))
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-[#f3f1ec]">
       <Navbar />
 
-      <section className="pt-28 pb-16 px-4">
-        <div className="max-w-7xl mx-auto">
-          <p className="text-neutral-400 text-xs tracking-widest uppercase mb-3">Insights & Industry</p>
-          <h1 className="text-5xl md:text-6xl font-bold text-black tracking-tight">The Journal</h1>
+      <section className="pt-16 bg-white border-b border-border">
+        <div className="max-w-[1440px] mx-auto px-6 lg:px-10 py-16 text-center">
+          <p className="dashboard-eyebrow">Insights &amp; Industry</p>
+          <h1 className="dashboard-title">The Journal</h1>
+          <p className="dashboard-intro mx-auto">Ideas, leadership, careers and industry perspective from across luxury wellness and hospitality.</p>
         </div>
       </section>
 
-      {/* Filters */}
       {categories.length > 1 && (
-        <section className="pb-8 px-4 border-b border-neutral-100">
-          <div className="max-w-7xl mx-auto flex items-center space-x-3 overflow-x-auto">
+        <section className="bg-white border-b border-border">
+          <div className="max-w-[1440px] mx-auto px-6 lg:px-10 py-5 flex items-center gap-2 overflow-x-auto">
             {categories.map((cat) => (
-              <button key={cat} onClick={() => setFilter(cat)}
-                className={`px-4 py-2 text-sm font-medium whitespace-nowrap transition-colors ${
-                  filter === cat ? 'bg-black text-white' : 'text-neutral-400 hover:text-black'
+              <button key={cat} onClick={() => { setFilter(cat); setPage(1) }}
+                className={`px-4 py-2 rounded-xl text-[12px] font-semibold whitespace-nowrap transition-colors ${
+                  filter === cat ? 'bg-[#0b2f4d] text-white' : 'bg-[#f3f1ec] text-secondary hover:text-[#0b2f4d]'
                 }`}>{cat}</button>
             ))}
           </div>
@@ -61,53 +61,52 @@ export default function BlogPage() {
       )}
 
       <section className="py-12">
-        <div className="max-w-7xl mx-auto px-4">
+        <div className="max-w-[1440px] mx-auto px-6 lg:px-10">
           {loading ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">{[1,2,3,4,5,6].map(i => <SkeletonCard key={i} variant="blog" />)}</div>
           ) : posts.length === 0 ? (
-            <div className="text-center py-24">
-              <h3 className="text-2xl font-bold text-black mb-2">Coming Soon</h3>
-              <p className="text-neutral-400">Our first articles are in the works.</p>
+            <div className="dashboard-card text-center py-20">
+              <h3 className="text-[22px] font-semibold text-[#10283b] mb-2">Coming Soon</h3>
+              <p className="text-[13px] text-muted">Our first articles are in the works.</p>
             </div>
           ) : (
             <>
-              {/* Hero article */}
               {heroPost && (
-                <Link href={`/blog/${heroPost.slug}`} className="block mb-16 group">
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
-                    <div className="aspect-[4/3] bg-neutral-100 overflow-hidden">
+                <Link href={`/blog/${heroPost.slug}`} className="dashboard-card block mb-10 group !p-0 overflow-hidden">
+                  <div className="grid grid-cols-1 lg:grid-cols-2 items-stretch">
+                    <div className="aspect-[4/3] lg:aspect-auto min-h-[340px] bg-[#e9e6df] overflow-hidden">
                       <BlogImage src={heroPost.image_url} alt={heroPost.title} className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-700" />
                     </div>
-                    <div className="py-4">
-                      {heroPost.category && <p className="text-neutral-400 text-xs tracking-widest uppercase mb-3">{heroPost.category}</p>}
-                      <h2 className="text-3xl lg:text-4xl font-bold text-black leading-tight mb-4 group-hover:underline">{heroPost.title}</h2>
-                      <p className="text-neutral-400 leading-relaxed mb-6 line-clamp-3">{heroPost.excerpt || heroPost.content?.slice(0, 200)}</p>
-                      <div className="flex items-center space-x-3 text-sm text-neutral-300">
-                        <span>{heroPost.author}</span>
-                        <span>&middot;</span>
-                        <span>{new Date(heroPost.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
-                        <span>&middot;</span>
-                        <span className="flex items-center space-x-1"><Clock size={12} /><span>{readTime(heroPost.content)} min</span></span>
+                    <div className="p-7 lg:p-10 flex flex-col justify-center">
+                      {heroPost.category && <p className="dashboard-eyebrow">{heroPost.category}</p>}
+                      <h2 className="text-[30px] lg:text-[38px] font-semibold text-[#10283b] leading-[1.1] tracking-[-0.035em] mb-4">{heroPost.title}</h2>
+                      <p className="text-[14px] text-secondary leading-7 mb-6 line-clamp-3">{heroPost.excerpt || heroPost.content?.slice(0, 200)}</p>
+                      <div className="flex flex-wrap items-center gap-3 text-[11px] text-muted">
+                        <span>{heroPost.author}</span><span>&middot;</span>
+                        <span>{new Date(heroPost.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</span><span>&middot;</span>
+                        <span className="flex items-center gap-1"><Clock size={12} />{readTime(heroPost.content)} min</span>
                       </div>
+                      <span className="mt-6 inline-flex items-center gap-1 text-[12px] font-semibold text-[#9c7a42]">Read article <ArrowRight size={13} /></span>
                     </div>
                   </div>
                 </Link>
               )}
 
-              {/* Grid */}
               {gridPosts.length > 0 && (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 stagger-children">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 stagger-children">
                   {gridPosts.map((post) => (
-                    <Link key={post.id} href={`/blog/${post.slug}`} className="group">
-                      <div className="aspect-[16/10] bg-neutral-100 overflow-hidden mb-4">
+                    <Link key={post.id} href={`/blog/${post.slug}`} className="dashboard-card group !p-0 overflow-hidden">
+                      <div className="aspect-[16/10] bg-[#e9e6df] overflow-hidden">
                         <BlogImage src={post.image_url} alt={post.title} className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-500" />
                       </div>
-                      <div className="flex items-center space-x-3 text-xs text-neutral-300 mb-2">
-                        {post.category && <span className="text-neutral-400 uppercase tracking-wider">{post.category}</span>}
-                        <span className="flex items-center space-x-1"><Clock size={10} /><span>{readTime(post.content)} min</span></span>
+                      <div className="p-5">
+                        <div className="flex items-center gap-3 text-[10px] text-muted mb-2">
+                          {post.category && <span className="uppercase tracking-[0.12em] text-[#9c7a42] font-semibold">{post.category}</span>}
+                          <span className="flex items-center gap-1"><Clock size={10} />{readTime(post.content)} min</span>
+                        </div>
+                        <h3 className="text-[18px] font-semibold text-[#10283b] mb-2 leading-snug">{post.title}</h3>
+                        <p className="text-secondary text-[13px] leading-6 line-clamp-2">{post.excerpt || post.content?.slice(0, 120)}</p>
                       </div>
-                      <h3 className="text-lg font-semibold text-black mb-2 group-hover:underline leading-snug">{post.title}</h3>
-                      <p className="text-neutral-400 text-sm line-clamp-2">{post.excerpt || post.content?.slice(0, 120)}</p>
                     </Link>
                   ))}
                 </div>
