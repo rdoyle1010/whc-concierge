@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
+import { getStripe } from '@/lib/stripe'
 
 // Admin view of the agency money: every booking with its payment state
 // (property paid in?) and payout state (therapist paid out?). WHC's margin
@@ -46,8 +47,6 @@ export async function GET() {
       candidate_phone: candMap.get(b.candidate_id)?.phone || null,
     }))
 
-    // Referral credits owed: converted referrals where WHC hasn't yet applied
-    // the referrer's free month in Stripe. Best-effort until 025 is live.
     let referralCredits: any[] = []
     try {
       const { data: refs } = await admin.from('referrals')
@@ -66,7 +65,6 @@ export async function GET() {
       }
     } catch { /* table not live yet */ }
 
-    // WHC Academy money - best-effort until 026 is live
     let academy: any = null
     try {
       const { data: enrols } = await admin.from('course_enrollments')
@@ -107,7 +105,6 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
 
-    // ── referral_credit_applied: admin has applied the free month in Stripe ──
     if (body.action === 'referral_credit_applied' && body.referralId) {
       const adminC = createAdminClient()
       const { error } = await adminC.from('referrals')
@@ -137,28 +134,70 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true })
     }
 
-    // ── resolve_dispute: WHC decides the outcome ──
-    // refundAmount (£, to the property - issue the actual refund in Stripe
-    // against the stored payment intent; the 10% admin fee is normally kept)
-    // and payoutAmount (£, the therapist's adjusted payout; 0 = no payout).
     if (booking.dispute_status !== 'open') {
       return NextResponse.json({ error: 'No open dispute on this booking.' }, { status: 400 })
     }
+
     const refundAmount = Math.max(0, parseInt(String(body.refundAmount ?? 0), 10) || 0)
     const payoutAmount = Math.max(0, parseInt(String(body.payoutAmount ?? booking.payout_amount ?? 0), 10) || 0)
+    const amountPaid = Math.max(0, Number(booking.amount_paid || 0))
+
+    if (refundAmount > amountPaid) {
+      return NextResponse.json({ error: `Refund cannot exceed the £${amountPaid} collected for this booking.` }, { status: 400 })
+    }
+
+    // If a refund is agreed, issue it through Stripe before changing our
+    // database. This prevents Admin from showing money as refunded when no
+    // refund actually left Stripe. The idempotency key prevents duplicates
+    // if a request is retried after a network interruption.
+    let stripeRefundId: string | null = null
+    if (refundAmount > 0) {
+      if (!booking.stripe_payment_intent) {
+        return NextResponse.json({ error: 'This booking has no Stripe payment reference, so an automatic refund cannot be issued.' }, { status: 400 })
+      }
+      try {
+        const stripe = getStripe()
+        const refund = await stripe.refunds.create({
+          payment_intent: booking.stripe_payment_intent,
+          amount: refundAmount * 100,
+          reason: 'requested_by_customer',
+          metadata: {
+            whc_booking_id: booking.id,
+            whc_dispute_resolution: 'true',
+          },
+        }, {
+          idempotencyKey: `agency-dispute-${booking.id}-${refundAmount}`,
+        })
+        stripeRefundId = refund.id
+      } catch (e: any) {
+        console.error('Stripe agency refund failed:', e?.message)
+        return NextResponse.json({ error: 'Stripe could not issue the refund. Nothing has been marked refunded - please try again.' }, { status: 502 })
+      }
+    }
+
+    const resolutionNote = [
+      booking.dispute_resolution || '',
+      refundAmount > 0 ? `Stripe refund ${stripeRefundId || 'issued'}: £${refundAmount}.` : 'No property refund.',
+      `Therapist payout set to £${payoutAmount}.`,
+    ].filter(Boolean).join(' ').slice(0, 2000)
 
     const { error } = await admin.from('agency_bookings')
       .update({
         dispute_status: 'resolved',
+        dispute_resolution: resolutionNote,
         refund_amount: refundAmount > 0 ? refundAmount : null,
         refunded_at: refundAmount > 0 ? new Date().toISOString() : null,
         payout_amount: payoutAmount,
         payout_status: payoutAmount > 0 ? (booking.payout_status === 'paid' ? 'paid' : 'pending') : 'cancelled',
       })
       .eq('id', booking.id)
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    if (error) {
+      // At this point a Stripe refund may already exist. Surface a strong
+      // error rather than pretending the whole operation failed cleanly.
+      console.error('Agency dispute DB update failed after Stripe action:', error.message, stripeRefundId)
+      return NextResponse.json({ error: 'The Stripe refund may have been issued, but the booking record could not be updated. Check Stripe before retrying.' }, { status: 500 })
+    }
 
-    // Tell both parties the outcome (best-effort)
     try {
       const [{ data: bEmp }, { data: bCand }] = await Promise.all([
         admin.from('employer_profiles').select('user_id, property_name, company_name').eq('id', booking.employer_id).maybeSingle(),
@@ -169,7 +208,7 @@ export async function POST(req: NextRequest) {
       if (bEmp?.user_id) {
         await createNotification(bEmp.user_id, 'general', 'Booking issue resolved',
           refundAmount > 0
-            ? `WHC has resolved the issue on the ${when} shift. A refund of £${refundAmount} has been agreed (the admin fee is retained).`
+            ? `WHC has resolved the issue on the ${when} shift. A refund of £${refundAmount} has been issued.`
             : `WHC has resolved the issue on the ${when} shift. No refund was agreed on this occasion.`,
           '/employer/agency')
       }
@@ -182,7 +221,7 @@ export async function POST(req: NextRequest) {
       }
     } catch { /* non-fatal */ }
 
-    return NextResponse.json({ success: true })
+    return NextResponse.json({ success: true, refundId: stripeRefundId })
   } catch (e: any) {
     return NextResponse.json({ error: e.message }, { status: 500 })
   }
