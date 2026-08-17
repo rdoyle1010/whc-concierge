@@ -66,6 +66,8 @@ export async function proxy(request: NextRequest) {
     loginUrl.pathname = '/login'
     loginUrl.search = ''
     loginUrl.searchParams.set('redirect', destination)
+    if (pathname.startsWith('/employer') || pathname.startsWith('/hotel')) loginUrl.searchParams.set('role', 'employer')
+    if (pathname.startsWith('/talent')) loginUrl.searchParams.set('role', 'talent')
     return NextResponse.redirect(loginUrl)
   }
 
