@@ -5,9 +5,8 @@ import { cookies } from 'next/headers'
 import { createNotification } from '@/lib/notifications'
 import { sendApprovalEmail, sendRejectionEmail } from '@/lib/emails'
 
-// Admin oversight of the two listing types the console previously could not
-// see at all: residency profiles (which sat pending FOREVER with no approval
-// UI) and job listings (no way to view or take one down).
+const DEFAULT_LIMIT = 250
+const MAX_LIMIT = 500
 
 async function requireAdmin() {
   const cookieStore = await cookies()
@@ -29,14 +28,26 @@ export async function GET(req: NextRequest) {
   if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
 
   const kind = req.nextUrl.searchParams.get('kind')
+  const requestedLimit = Number(req.nextUrl.searchParams.get('limit'))
+  const limit = Number.isFinite(requestedLimit) && requestedLimit > 0
+    ? Math.min(Math.floor(requestedLimit), MAX_LIMIT)
+    : DEFAULT_LIMIT
   const admin = createAdminClient()
+
   try {
     if (kind === 'residency') {
-      const { data } = await admin.from('residency_profiles').select('*').order('created_at', { ascending: false })
-      return NextResponse.json({ rows: data || [] })
+      const { data } = await admin.from('residency_profiles')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(limit)
+      return NextResponse.json({ rows: data || [], pagination: { limit, returned: data?.length || 0, capped: (data?.length || 0) >= limit } })
     }
+
     if (kind === 'jobs') {
-      const { data: jobs } = await admin.from('job_listings').select('*').order('posted_date', { ascending: false })
+      const { data: jobs } = await admin.from('job_listings')
+        .select('id,job_title,title,employer_id,tier,posted_date,expires_at,is_live,status')
+        .order('posted_date', { ascending: false })
+        .limit(limit)
       const empIds = Array.from(new Set((jobs || []).map((j: any) => j.employer_id).filter(Boolean)))
       const { data: emps } = empIds.length
         ? await admin.from('employer_profiles').select('id, company_name, property_name').in('id', empIds)
@@ -47,8 +58,10 @@ export async function GET(req: NextRequest) {
           ...j,
           employer_name: empMap.get(j.employer_id)?.property_name || empMap.get(j.employer_id)?.company_name || 'Employer',
         })),
+        pagination: { limit, returned: jobs?.length || 0, capped: (jobs?.length || 0) >= limit },
       })
     }
+
     return NextResponse.json({ error: 'Unknown kind' }, { status: 400 })
   } catch (e: any) {
     return NextResponse.json({ error: e.message }, { status: 500 })
@@ -74,7 +87,6 @@ export async function POST(req: NextRequest) {
         .single()
       if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-      // Tell the specialist - awaited, never fatal
       try {
         if (row?.user_id) {
           await createNotification(row.user_id, 'general',
