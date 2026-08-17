@@ -14,7 +14,7 @@ function LoginForm() {
   const searchParams = useSearchParams()
   const initialRole = searchParams.get('role') || 'talent'
   const confirmationPending = searchParams.get('registered') === '1' && searchParams.get('confirm') === '1'
-  const [role, setRole] = useState<'talent' | 'employer'>(initialRole as any)
+  const [role, setRole] = useState<'talent' | 'employer'>(initialRole === 'employer' ? 'employer' : 'talent')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [show, setShow] = useState(false)
@@ -32,7 +32,7 @@ function LoginForm() {
       const timeout = window.setTimeout(() => controller.abort(), 15000)
       const response = await fetch('/api/auth/login', {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, cache: 'no-store', signal: controller.signal,
-        body: JSON.stringify({ email, password, redirect: searchParams.get('redirect') || '' }),
+        body: JSON.stringify({ email, password, role, redirect: searchParams.get('redirect') || '' }),
       })
       window.clearTimeout(timeout)
       const result = await response.json().catch(() => ({}))
@@ -56,11 +56,11 @@ function LoginForm() {
           <div className="mt-10 dashboard-card !p-7 lg:!p-8">
             <p className="dashboard-eyebrow">WHC Concierge</p>
             <h1 className="dashboard-title !text-[34px]">Welcome back</h1>
-            <p className="dashboard-intro !mt-2 mb-7">Sign in to continue to your talent or employer workspace.</p>
+            <p className="dashboard-intro !mt-2 mb-7">Choose the workspace linked to your account, then sign in.</p>
 
             <div className="grid grid-cols-2 gap-2 bg-[#f3f1ec] rounded-xl p-1.5 mb-7">
-              <button type="button" onClick={() => setRole('talent')} className={`flex items-center justify-center gap-2 py-2.5 rounded-lg text-[12px] font-semibold transition-all ${role === 'talent' ? 'bg-[#0b2f4d] text-white shadow-sm' : 'text-secondary hover:text-[#0b2f4d]'}`}><Sparkles size={13} />Talent</button>
-              <button type="button" onClick={() => setRole('employer')} className={`flex items-center justify-center gap-2 py-2.5 rounded-lg text-[12px] font-semibold transition-all ${role === 'employer' ? 'bg-[#0b2f4d] text-white shadow-sm' : 'text-secondary hover:text-[#0b2f4d]'}`}><BriefcaseBusiness size={13} />Hotel / Employer</button>
+              <button type="button" onClick={() => { setRole('talent'); setError('') }} className={`flex items-center justify-center gap-2 py-2.5 rounded-lg text-[12px] font-semibold transition-all ${role === 'talent' ? 'bg-[#0b2f4d] text-white shadow-sm' : 'text-secondary hover:text-[#0b2f4d]'}`}><Sparkles size={13} />Talent</button>
+              <button type="button" onClick={() => { setRole('employer'); setError('') }} className={`flex items-center justify-center gap-2 py-2.5 rounded-lg text-[12px] font-semibold transition-all ${role === 'employer' ? 'bg-[#0b2f4d] text-white shadow-sm' : 'text-secondary hover:text-[#0b2f4d]'}`}><BriefcaseBusiness size={13} />Hotel / Employer</button>
             </div>
 
             {confirmationPending && <div className="bg-emerald-50 border border-emerald-100 text-emerald-700 text-[13px] px-3 py-2.5 rounded-xl mb-5">Your profile is saved. Check your email to confirm your account, then sign in here.</div>}
@@ -79,7 +79,7 @@ function LoginForm() {
                 <label className="flex items-center gap-2 cursor-pointer"><input type="checkbox" className="w-3.5 h-3.5 border-border rounded text-[#0b2f4d] focus:ring-[#0b2f4d]" /><span className="text-[12px] text-muted">Remember me</span></label>
                 <Link href="/forgot-password" className="text-[12px] text-[#9c7a42] hover:underline">Forgot password?</Link>
               </div>
-              <button type="submit" disabled={loading} className="w-full rounded-xl bg-[#0b2f4d] hover:bg-[#123f64] text-white px-5 py-3 text-[13px] font-semibold transition-colors disabled:opacity-50">{loading ? 'Signing in...' : 'Sign in'}</button>
+              <button type="submit" disabled={loading} className="w-full rounded-xl bg-[#0b2f4d] hover:bg-[#123f64] text-white px-5 py-3 text-[13px] font-semibold transition-colors disabled:opacity-50">{loading ? 'Signing in...' : `Sign in as ${role === 'employer' ? 'Hotel / Employer' : 'Talent'}`}</button>
             </form>
 
             <p className="text-[13px] text-muted mt-7">New to WHC Concierge? <Link href={`/register/${role}`} className="text-[#0b2f4d] font-semibold hover:underline">Create an account →</Link></p>
