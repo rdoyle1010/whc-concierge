@@ -3,7 +3,7 @@
 import { useState, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
-import { Eye, EyeOff, BriefcaseBusiness, Sparkles, ShieldCheck } from 'lucide-react'
+import { Eye, EyeOff, BriefcaseBusiness, Sparkles } from 'lucide-react'
 import Wordmark from '@/components/Wordmark'
 
 export default function LoginPage() {
@@ -83,11 +83,6 @@ function LoginForm() {
             </form>
 
             <p className="text-[13px] text-muted mt-7">New to WHC Concierge? <Link href={`/register/${role}`} className="text-[#0b2f4d] font-semibold hover:underline">Create an account →</Link></p>
-            <div className="mt-6 border-t border-border pt-5">
-              <Link href="/admin/login" className="flex items-center justify-center gap-2 text-[12px] font-semibold text-[#0b2f4d] hover:underline">
-                <ShieldCheck size={14} /> WHC Admin sign in
-              </Link>
-            </div>
           </div>
         </div>
       </div>
