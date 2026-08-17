@@ -5,8 +5,7 @@ import { createClient } from '@/lib/supabase/client'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
 import Link from 'next/link'
-import { Clock, MapPin, X, Star, Award, Briefcase, ArrowRight } from 'lucide-react'
-
+import { Clock, MapPin, X, ArrowRight } from 'lucide-react'
 
 export default function ResidencyPage() {
   const supabase = createClient()
@@ -46,42 +45,44 @@ export default function ResidencyPage() {
   })
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="public-page">
       <Navbar />
 
       {justSubmitted && (
         <div className="max-w-7xl mx-auto px-6 lg:px-8 pt-20">
-          <div className="bg-green-50 border border-green-200 text-green-800 text-sm px-4 py-3 rounded-xl">
+          <div className="bg-green-50 border border-green-200 text-green-800 text-sm px-4 py-3 rounded-2xl shadow-sm">
             Listing submitted - it goes live once the WHC team approves it, usually within 24 hours. We&apos;ll notify you.
           </div>
         </div>
       )}
 
-      {/* Hero */}
-      <section className="pt-16 bg-white border-b border-border">
-        <div className="max-w-[1440px] mx-auto px-6 lg:px-10 py-16 text-center">
-          <p className="text-[11px] tracking-[0.15em] uppercase font-medium mb-4" style={{ color: '#C9A96E' }}>Residency Programme</p>
-          <h1 className="text-[36px] md:text-[48px] font-medium text-ink tracking-tight leading-[1.08] mb-4">Residency Specialists</h1>
-          <p className="text-[15px] text-secondary max-w-2xl mx-auto mb-8">Award-winning wellness professionals available for seasonal and short-term placements at your property</p>
-          <div className="flex flex-wrap justify-center gap-3">
-            <Link href="/residency/create" className="px-6 py-2.5 rounded-xl text-[13px] font-semibold text-white transition-all hover:shadow-lg" style={{ backgroundColor: '#C9A96E' }}>List Your Availability</Link>
-            <a href="#specialists" className="btn-secondary">Browse Specialists</a>
+      <section className="pt-16 public-hero">
+        <div className="max-w-[1440px] mx-auto px-6 lg:px-10 py-16 lg:py-20">
+          <div className="max-w-3xl">
+            <p className="public-eyebrow mb-4">Residency Programme</p>
+            <h1 className="public-title mb-5">Exceptional specialists for exceptional properties.</h1>
+            <p className="public-intro max-w-2xl mb-8">Discover experienced wellness professionals available for seasonal, short-term and specialist residencies across luxury properties.</p>
+            <div className="flex flex-wrap gap-3">
+              <Link href="/residency/create" className="btn-primary">List Your Availability</Link>
+              <a href="#specialists" className="btn-secondary">Browse Specialists</a>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* Stats */}
-      <section className="border-b border-border py-6" style={{ background: '#F8F7F5' }}>
-        <div className="max-w-[1440px] mx-auto px-6 lg:px-10 flex items-center justify-center gap-8 md:gap-16 text-center">
-          {[{ n: '15+', l: 'Years Average Experience' }, { n: 'UK & Europe', l: 'Placement Regions' }, { n: '5-Star', l: 'Property Partners' }].map(s => (
-            <div key={s.l}><p className="text-[20px] font-semibold" style={{ color: '#C9A96E' }}>{s.n}</p><p className="text-[11px] text-muted">{s.l}</p></div>
+      <section className="border-b border-border bg-white/70">
+        <div className="max-w-[1440px] mx-auto px-6 lg:px-10 py-7 grid grid-cols-1 sm:grid-cols-3 gap-5">
+          {[{ n: '15+', l: 'Years average experience' }, { n: 'UK & Europe', l: 'Placement regions' }, { n: '5-Star', l: 'Property partners' }].map(s => (
+            <div key={s.l} className="public-panel px-5 py-4 text-center">
+              <p className="text-[22px] font-semibold text-ink">{s.n}</p>
+              <p className="text-[10px] uppercase tracking-[0.12em] text-muted mt-1">{s.l}</p>
+            </div>
           ))}
         </div>
       </section>
 
-      {/* Filters */}
       <section id="specialists" className="max-w-[1440px] mx-auto px-6 lg:px-10 pt-12 pb-4">
-        <div className="flex flex-wrap gap-3">
+        <div className="public-panel p-4 flex flex-wrap gap-3">
           <input type="text" placeholder="Filter by specialism..." value={specFilter} onChange={e => setSpecFilter(e.target.value)}
             className="input-field !py-2 text-[13px] w-auto flex-1 min-w-[200px]" />
           <select value={regionFilter} onChange={e => setRegionFilter(e.target.value)} className="input-field !py-2 text-[13px] w-auto">
@@ -96,19 +97,18 @@ export default function ResidencyPage() {
         <p className="text-[12px] text-muted mt-3">{filtered.length} specialist{filtered.length !== 1 ? 's' : ''} available</p>
       </section>
 
-      {/* Listings */}
       <section className="max-w-[1440px] mx-auto px-6 lg:px-10 py-6 pb-16">
         {loading ? (
-          <div className="space-y-6">{[1,2,3].map(i => <div key={i} className="skeleton h-56 rounded-xl" />)}</div>
+          <div className="space-y-6">{[1,2,3].map(i => <div key={i} className="skeleton h-56 rounded-2xl" />)}</div>
         ) : filtered.length === 0 ? (
-          <div className="bg-white border border-border rounded-xl p-16 text-center">
+          <div className="public-panel p-16 text-center">
             <p className="text-[15px] font-medium text-ink mb-2">No specialists available yet</p>
             <p className="text-[13px] text-muted mb-6">Be the first to list your residency availability.</p>
             <Link href="/residency/create" className="btn-primary inline-block">Create a Listing</Link>
           </div>
         ) : (
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-            {filtered.map((r, i) => {
+            {filtered.map((r) => {
               const name = r.full_name || r.title || 'Specialist'
               const bio = r.bio || r.description || ''
               const bioExcerpt = bio.length > 180 ? bio.slice(0, 180) + '...' : bio
@@ -122,32 +122,27 @@ export default function ResidencyPage() {
               const rate = r.weekly_rate || r.day_rate
 
               return (
-                <div key={r.id} className={`bg-white border rounded-2xl p-6 hover:shadow-lg transition-all ${r.is_featured ? 'border-[#C9A96E]/30 ring-1 ring-[#C9A96E]/10' : 'border-border'}`}>
+                <div key={r.id} className={`public-panel p-6 hover:shadow-lg hover:-translate-y-0.5 transition-all ${r.is_featured ? 'ring-1 ring-accent/30' : ''}`}>
                   <div className="flex flex-col md:flex-row gap-6">
-                    {/* Avatar */}
                     <div className="shrink-0 flex flex-col items-center">
-                      <div className="w-24 h-24 rounded-full overflow-hidden bg-surface border-2 border-white shadow-md flex items-center justify-center" style={{ background: '#FDF6EC' }}>
+                      <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-white shadow-md flex items-center justify-center bg-parchment">
                         {(r.profile_photo_url || r.photo_url || r.photos?.[0])
                           ? <img src={r.profile_photo_url || r.photo_url || r.photos?.[0]} alt={name} className="w-full h-full object-cover" />
-                          : <span className="text-[28px] font-sans font-semibold" style={{ color: '#C9A96E' }}>{name.trim().charAt(0).toUpperCase()}</span>}
+                          : <span className="text-[28px] font-semibold text-accent">{name.trim().charAt(0).toUpperCase()}</span>}
                       </div>
-                      {r.is_featured && <span className="mt-2 text-[9px] font-semibold px-2.5 py-0.5 rounded-full" style={{ backgroundColor: '#FDF6EC', color: '#C9A96E' }}>Featured</span>}
+                      {r.is_featured && <span className="mt-2 badge-gold">Featured</span>}
                       {r.years_experience && <p className="mt-2 text-[11px] text-muted text-center">{r.years_experience} years exp.</p>}
                     </div>
 
-                    {/* Content */}
                     <div className="flex-1 min-w-0">
                       <h3 className="text-[22px] font-semibold text-ink mb-1 leading-snug">{name}</h3>
 
-                      {/* Primary specialism */}
                       {r.primary_specialism && (
-                        <span className="inline-block text-[11px] font-medium px-3 py-0.5 rounded-full mb-3" style={{ backgroundColor: '#FDF6EC', color: '#C9A96E', border: '1px solid rgba(201, 169, 110, 0.3)' }}>{r.primary_specialism}</span>
+                        <span className="inline-block text-[11px] font-medium px-3 py-1 rounded-full mb-3 bg-parchment text-accent border border-accent/25">{r.primary_specialism}</span>
                       )}
 
-                      {/* Bio */}
                       {bioExcerpt && <p className="text-[14px] text-secondary leading-[1.7] mb-3">{bioExcerpt}</p>}
 
-                      {/* Secondary specialisms */}
                       {secondarySpecs.length > 0 && (
                         <div className="flex flex-wrap gap-1.5 mb-3">
                           {secondarySpecs.slice(0, 4).map((s: string) => (
@@ -157,7 +152,6 @@ export default function ResidencyPage() {
                         </div>
                       )}
 
-                      {/* Qualifications */}
                       {quals.length > 0 && (
                         <div className="flex flex-wrap gap-1.5 mb-3">
                           {quals.slice(0, 3).map((q: string) => (
@@ -166,26 +160,23 @@ export default function ResidencyPage() {
                         </div>
                       )}
 
-                      {/* Info row */}
                       <div className="flex flex-wrap items-center gap-3 text-[12px] text-muted mb-3">
                         {location && <span className="flex items-center gap-1"><MapPin size={11} />{location}</span>}
                         {travelTo && <span>Travels: {travelLabel}</span>}
                         {duration && <span className="flex items-center gap-1"><Clock size={11} />{duration}</span>}
                       </div>
 
-                      {/* Brands */}
                       {brands.length > 0 && (
                         <p className="text-[11px] text-muted mb-3">Brands: {brands.slice(0, 3).join(', ')}{brands.length > 3 ? ` +${brands.length - 3} more` : ''}</p>
                       )}
 
-                      {/* Rate + CTA */}
-                      <div className="flex items-center justify-between pt-4 border-t border-border">
+                      <div className="flex items-center justify-between gap-4 pt-4 border-t border-border">
                         <div className="text-[13px]">
                           {rate && <span className="font-medium text-ink">From £{rate}/{r.weekly_rate ? 'week' : 'day'}</span>}
                         </div>
-                        <div className="flex gap-2">
-                          <Link href={`/residency/${r.id}`} className="text-[12px] font-medium text-muted hover:text-ink flex items-center gap-1 transition-colors">View Profile <ArrowRight size={12} /></Link>
-                          <button type="button" onClick={() => setShowEnquiry(r)} className="px-4 py-2 rounded-xl text-[12px] font-semibold text-white" style={{ backgroundColor: '#C9A96E' }}>Enquire</button>
+                        <div className="flex gap-2 items-center">
+                          <Link href={`/residency/${r.id}`} className="text-[12px] font-medium text-secondary hover:text-ink flex items-center gap-1 transition-colors">View Profile <ArrowRight size={12} /></Link>
+                          <button type="button" onClick={() => setShowEnquiry(r)} className="btn-primary !py-2 !px-4 text-[12px]">Enquire</button>
                         </div>
                       </div>
                     </div>
@@ -197,11 +188,10 @@ export default function ResidencyPage() {
         )}
       </section>
 
-      {/* Enquiry modal */}
       {showEnquiry && (
-        <div className="fixed inset-0 bg-black/30 z-50 flex items-center justify-center p-4" onClick={() => setShowEnquiry(null)}>
-          <div className="bg-white border border-border rounded-xl max-w-md w-full p-6 animate-fade-in-up" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between mb-5"><h3 className="text-[18px] font-medium text-ink">Enquire - {showEnquiry.full_name || showEnquiry.primary_specialism || showEnquiry.title}</h3><button type="button" onClick={() => setShowEnquiry(null)} className="text-muted hover:text-ink"><X size={18} /></button></div>
+        <div className="fixed inset-0 bg-navy/45 z-50 flex items-center justify-center p-4" onClick={() => setShowEnquiry(null)}>
+          <div className="bg-white border border-border rounded-2xl max-w-md w-full p-6 animate-fade-in-up shadow-2xl" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-5"><h3 className="text-[18px] font-semibold text-ink">Enquire - {showEnquiry.full_name || showEnquiry.primary_specialism || showEnquiry.title}</h3><button type="button" onClick={() => setShowEnquiry(null)} className="text-muted hover:text-ink"><X size={18} /></button></div>
             <form onSubmit={async (e) => {
               e.preventDefault()
               const fd = new FormData(e.currentTarget)
