@@ -12,6 +12,7 @@ import HomepageHowItWorks from '@/components/HomepageHowItWorks'
 import Navbar from '@/components/Navbar'
 import TestimonialCarousel from '@/components/TestimonialCarousel'
 import SponsoredAd from '@/components/SponsoredAd'
+import FeaturedPropertiesSection from '@/components/FeaturedPropertiesSection'
 import { getWebsiteContent } from '@/lib/site-content-server'
 import { websiteCssVariables, type WebsiteContent, type WebsiteSectionId } from '@/lib/site-content'
 import { createAdminClient } from '@/lib/supabase/admin'
@@ -290,6 +291,7 @@ export default async function HomePage(props: HomePageProps) {
       <HeroCarousel siteContent={content} />
       <SponsoredAd placement="homepage_spotlight" />
       <FeaturedTalentSection talent={featuredTalent} />
+      <FeaturedPropertiesSection />
       {content.sections.filter(section => section.visible).map(section => <div key={section.id}>{sections[section.id]}</div>)}
     </main>
     <Footer siteContent={content} />
