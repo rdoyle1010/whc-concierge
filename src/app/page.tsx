@@ -208,12 +208,18 @@ function FeaturedTalentSection({ talent }: { talent: FeaturedTalent[] }) {
         <Link href="/employer/candidates" className="site-button site-accent-bg w-fit px-5 py-3 text-[12px] font-semibold text-white">Employers: view all talent</Link>
       </div>
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {talent.map(candidate => <article key={candidate.id} className="flex items-center gap-4 rounded-2xl border border-black/10 bg-white p-5 shadow-sm">
+        {talent.map(candidate => <Link key={candidate.id} href={`/employer/candidates?candidate=${encodeURIComponent(candidate.id)}`} aria-label={`View featured profile for ${candidate.name}`} className="group flex items-center gap-4 rounded-2xl border border-black/10 bg-white p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:border-black/20 hover:shadow-md">
           <div className="h-16 w-16 shrink-0 overflow-hidden rounded-full bg-[#EEEAE2]">
             {candidate.image ? <img src={candidate.image} alt={candidate.name} className="h-full w-full object-cover" /> : <div className="flex h-full w-full items-center justify-center text-xl font-semibold opacity-40">{candidate.name[0]}</div>}
           </div>
-          <div className="min-w-0"><p className="site-accent mb-1 flex items-center gap-1 text-[10px] font-semibold uppercase tracking-[0.12em]"><Star size={11} fill="currentColor" /> Featured</p><h3 className="truncate text-[16px] font-semibold">{candidate.name}</h3><p className="truncate text-[12px] opacity-65">{candidate.headline}</p><p className="mt-1 text-[11px] opacity-50">{[candidate.location, candidate.experience ? `${candidate.experience} years experience` : ''].filter(Boolean).join(' · ')}</p></div>
-        </article>)}
+          <div className="min-w-0 flex-1">
+            <p className="site-accent mb-1 flex items-center gap-1 text-[10px] font-semibold uppercase tracking-[0.12em]"><Star size={11} fill="currentColor" /> Featured</p>
+            <h3 className="truncate text-[16px] font-semibold">{candidate.name}</h3>
+            <p className="truncate text-[12px] opacity-65">{candidate.headline}</p>
+            <p className="mt-1 text-[11px] opacity-50">{[candidate.location, candidate.experience ? `${candidate.experience} years experience` : ''].filter(Boolean).join(' · ')}</p>
+            <span className="site-accent mt-2 inline-flex items-center gap-1 text-[11px] font-semibold">View profile <ArrowRight size={11} className="transition-transform group-hover:translate-x-0.5" /></span>
+          </div>
+        </Link>)}
       </div>
     </div>
   </section>
