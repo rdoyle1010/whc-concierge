@@ -44,8 +44,8 @@ export default function TalentMessagesPage() {
 
   useEffect(() => {
     async function load() {
-      const { data: { user } } = await supabase.auth.getSession()
-      const sessionUser = user || null
+      const { data: { session } } = await supabase.auth.getSession()
+      const sessionUser = session?.user || null
       if (!sessionUser) { setLoading(false); return }
       setUserId(sessionUser.id)
 
