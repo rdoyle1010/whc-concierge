@@ -5,10 +5,9 @@ import Link from 'next/link'
 import DashboardShell from '@/components/DashboardShell'
 import { ACADEMY, COURSE_PRICE, BUNDLE_PRICE, CORE_SLUGS, coursePrice, type AcademyCourse } from '@/lib/academy'
 import { courseImage } from '@/lib/academy-extras'
-import { GraduationCap, Award, Clock, Check } from 'lucide-react'
+import { GraduationCap, Award, Clock, Check, Download } from 'lucide-react'
 
-// WHC Academy catalogue - £10 courses, certificate + profile badge on
-// completion. Employers see earned badges in the directory and on profiles.
+const MANAGEMENT_PROGRAMMES = new Set(['spa-manager-programme', 'spa-director-programme'])
 
 export default function AcademyPage() {
   const [courses, setCourses] = useState<(AcademyCourse & { image_url?: string; is_core?: boolean })[]>(ACADEMY)
@@ -86,7 +85,6 @@ export default function AcademyPage() {
 
   const enrolmentFor = (slug: string) => enrollments.find(e => e.course_slug === slug && e.paid_at)
   const completedCount = enrollments.filter(e => e.completed_at).length
-
   const categories = Array.from(new Set(courses.map(c => c.category)))
   const coreCourses = courses.filter(course => course.is_core ?? CORE_SLUGS.includes(course.slug))
   const activeCoreSlugs = coreCourses.map(course => course.slug)
@@ -105,15 +103,13 @@ export default function AcademyPage() {
         {notice && <div className="bg-green-50 text-green-700 text-sm px-4 py-3 rounded-lg mb-4">{notice}</div>}
         {error && <div className="bg-red-50 text-red-600 text-sm px-4 py-3 rounded-lg mb-4">{error}</div>}
 
-        {/* Bundle - shown until they own every course */}
         {!loading && enrollments.filter(e => e.paid_at && activeCoreSlugs.includes(e.course_slug)).length < activeCoreSlugs.length && activeCoreSlugs.length > 0 && (
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-ink rounded-xl px-5 py-4 mb-6">
             <div>
               <p className="text-[14px] font-medium text-white">The Core Curriculum - all {activeCoreSlugs.length} core courses for £{(BUNDLE_PRICE / 100).toFixed(0)}</p>
               <p className="text-[12px] text-white/60 mt-0.5">Save £{Math.max(0, (coreCourses.reduce((sum, course) => sum + coursePrice(course), 0) - BUNDLE_PRICE) / 100).toFixed(0)} against buying individually. Certificates and profile badges are included. Brand masterclasses and specialist care are priced separately.</p>
             </div>
-            <button onClick={buyBundle} disabled={busySlug === '__bundle__'}
-              className="btn-primary !bg-gold !text-ink text-[12px] shrink-0 disabled:opacity-50">
+            <button type="button" onClick={buyBundle} disabled={busySlug === '__bundle__'} className="btn-primary !bg-gold !text-ink text-[12px] shrink-0 disabled:opacity-50">
               {busySlug === '__bundle__' ? 'Taking you to payment...' : `Get the bundle - £${(BUNDLE_PRICE / 100).toFixed(0)}`}
             </button>
           </div>
@@ -137,37 +133,42 @@ export default function AcademyPage() {
                   const enr = enrolmentFor(course.slug)
                   const done = Boolean(enr?.completed_at)
                   const lessonsDone = enr ? Object.keys(enr.progress || {}).length : 0
+                  const isManagement = MANAGEMENT_PROGRAMMES.has(course.slug)
                   return (
                     <div key={course.slug} className={`dashboard-card !p-0 overflow-hidden flex flex-col ${done ? 'border-green-300 ring-2 ring-green-200' : enr ? 'border-gold ring-2 ring-gold shadow-lg shadow-gold/20' : ''}`}>
                       <div className="relative h-28 shrink-0">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img src={course.image_url || courseImage(course.slug)} alt="" className="absolute inset-0 w-full h-full object-cover" />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
+                        {isManagement && <span className="absolute left-3 top-3 rounded-full bg-ink/90 px-2.5 py-1 text-[9px] font-semibold uppercase tracking-[0.14em] text-gold">Leadership programme</span>}
                       </div>
                       <div className="p-5 flex flex-col flex-1">
-                      <div className="flex items-start justify-between gap-2 mb-1">
-                        <h3 className="font-sans text-[17px] font-semibold tracking-tight text-ink leading-snug">{course.title}</h3>
-                        {done ? <span className="inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide bg-green-600 text-white px-2 py-0.5 rounded-full shrink-0"><Check size={10} /> Certified</span> : enr ? <span className="inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide bg-gold text-ink px-2 py-0.5 rounded-full shrink-0">Yours - in progress</span> : null}
-                      </div>
-                      <p className="text-[12px] text-gray-500 mb-2">{course.tagline}</p>
-                      <p className="text-[11px] text-gray-400 mb-4 inline-flex items-center gap-1"><Clock size={11} /> {course.lessons.length} modules · objectives, case studies &amp; assessment · ~{course.minutes} min</p>
-                      <div className="mt-auto">
-                        {done ? (
-                          <div className="flex items-center gap-3">
-                            <Link href={`/talent/academy/${course.slug}`} className="btn-secondary text-[12px] flex-1 text-center">Review course</Link>
-                            <Link href={`/talent/academy/certificate/${course.slug}`} className="btn-primary text-[12px] flex-1 text-center">Certificate</Link>
-                          </div>
-                        ) : enr ? (
-                          <Link href={`/talent/academy/${course.slug}`} className="btn-primary text-[12px] block text-center">
-                            {lessonsDone > 0 ? `Continue (${lessonsDone}/${course.lessons.length} lessons)` : 'Start course'}
-                          </Link>
-                        ) : (
-                          <button onClick={() => buy(course.slug, course.title)} disabled={busySlug === course.slug}
-                            className="btn-primary text-[12px] w-full disabled:opacity-50">
-                            {busySlug === course.slug ? 'Taking you to payment...' : `Enrol - £${(coursePrice(course) / 100).toFixed(0)}`}
-                          </button>
-                        )}
-                      </div>
+                        <div className="flex items-start justify-between gap-2 mb-1">
+                          <h3 className="font-sans text-[17px] font-semibold tracking-tight text-ink leading-snug">{course.title}</h3>
+                          {done ? <span className="inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide bg-green-600 text-white px-2 py-0.5 rounded-full shrink-0"><Check size={10} /> Certified</span> : enr ? <span className="inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide bg-gold text-ink px-2 py-0.5 rounded-full shrink-0">Yours - in progress</span> : null}
+                        </div>
+                        <p className="text-[12px] text-gray-500 mb-2">{course.tagline}</p>
+                        <p className="text-[11px] text-gray-400 mb-4 inline-flex items-center gap-1"><Clock size={11} /> {course.lessons.length} modules · objectives, case studies &amp; assessment · ~{course.minutes} min</p>
+                        {isManagement && <div className="mb-4 rounded-xl border border-gold/20 bg-[#f7f5f0] p-3"><p className="text-[11px] font-semibold text-ink">Includes practical management labs + downloadable toolkit</p><p className="mt-1 text-[10px] leading-4 text-muted">Work with rota, payroll, profitability, P&amp;L, forecasting and planning templates rather than just reading theory.</p></div>}
+                        <div className="mt-auto">
+                          {done ? (
+                            <div className="grid grid-cols-1 gap-2">
+                              <div className="flex items-center gap-3">
+                                <Link href={`/talent/academy/${course.slug}`} className="btn-secondary text-[12px] flex-1 text-center">Review course</Link>
+                                <Link href={`/talent/academy/certificate/${course.slug}`} className="btn-primary text-[12px] flex-1 text-center">Certificate</Link>
+                              </div>
+                              {isManagement && <Link href={`/talent/academy/${course.slug}/toolkit`} className="btn-secondary text-[12px] inline-flex items-center justify-center gap-2"><Download size={13} /> Open toolkit</Link>}
+                            </div>
+                          ) : enr ? (
+                            <div className="grid gap-2">
+                              <Link href={`/talent/academy/${course.slug}`} className="btn-primary text-[12px] block text-center">{lessonsDone > 0 ? `Continue (${lessonsDone}/${course.lessons.length} lessons)` : 'Start course'}</Link>
+                              {isManagement && <Link href={`/talent/academy/${course.slug}/toolkit`} className="btn-secondary text-[12px] inline-flex items-center justify-center gap-2"><Download size={13} /> Open toolkit</Link>}
+                            </div>
+                          ) : (
+                            <button type="button" onClick={() => buy(course.slug, course.title)} disabled={busySlug === course.slug} className="btn-primary text-[12px] w-full disabled:opacity-50">
+                              {busySlug === course.slug ? 'Taking you to payment...' : `Enrol - £${(coursePrice(course) / 100).toFixed(0)}`}
+                            </button>
+                          )}
+                        </div>
                       </div>
                     </div>
                   )
