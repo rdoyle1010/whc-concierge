@@ -241,43 +241,47 @@ export default function EmployerCandidatesPage() {
       {/* Candidate full profile */}
       {viewing && (
         <div className="fixed inset-0 bg-black/50 z-50 flex justify-end" onClick={() => setViewing(null)}>
-          <div className="bg-white w-full max-w-lg h-full overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-            <div className="p-6 border-b border-gray-100 flex items-center justify-between sticky top-0 bg-white z-10">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden">
+          <div className="bg-white w-full max-w-xl h-full overflow-y-auto shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="p-6 border-b border-gray-100 flex items-start justify-between sticky top-0 bg-white z-10">
+              <div className="flex items-start gap-4 min-w-0 pr-4">
+                <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden flex-shrink-0 ring-1 ring-gray-100">
                   {viewing.profile_image_url
                     ? <img src={viewing.profile_image_url} alt="" className="w-full h-full object-cover" />
-                    : <span className="font-serif font-bold text-lg" style={{ color: '#C9A96E' }}>{viewing.full_name?.[0]}</span>}
+                    : <span className="font-serif font-bold text-xl" style={{ color: '#C9A96E' }}>{viewing.full_name?.[0]}</span>}
                 </div>
-                <div>
-                  <h3 className="text-lg font-bold text-ink">{viewing.full_name}</h3>
-                  <p className="text-[12px] text-gray-500">{viewing.headline}</p>
+                <div className="min-w-0 pt-0.5">
+                  <div className="flex flex-wrap items-center gap-2 mb-1">
+                    <h3 className="text-xl font-semibold text-ink leading-tight">{viewing.full_name}</h3>
+                    {viewing.is_featured && <span className="rounded-full bg-accent px-2.5 py-1 text-[10px] font-semibold text-white">★ Featured</span>}
+                  </div>
+                  {viewing.headline && <p className="text-[13px] leading-relaxed text-gray-500 max-w-md">{viewing.headline}</p>}
                 </div>
               </div>
-              <button onClick={() => setViewing(null)} className="text-gray-300 hover:text-ink"><X size={20} /></button>
+              <button type="button" onClick={() => setViewing(null)} className="text-gray-300 hover:text-ink flex-shrink-0" aria-label="Close candidate profile"><X size={20} /></button>
             </div>
-            <div className="p-6 space-y-5 text-sm">
-              <div className="grid grid-cols-2 gap-4">
-                {viewing.role_level && <div><p className="text-[10px] text-gray-400 uppercase tracking-wider mb-0.5">Role Level</p><p className="text-ink">{viewing.role_level}</p></div>}
-                {viewing.location && <div><p className="text-[10px] text-gray-400 uppercase tracking-wider mb-0.5">Location</p><p className="text-ink">{viewing.location}</p></div>}
-                {viewing.experience_years && <div><p className="text-[10px] text-gray-400 uppercase tracking-wider mb-0.5">Experience</p><p className="text-ink">{viewing.experience_years} years</p></div>}
-                {viewing.phone && <div><p className="text-[10px] text-gray-400 uppercase tracking-wider mb-0.5">Phone</p><p className="text-ink">{viewing.phone}</p></div>}
+            <div className="p-6 space-y-6 text-sm">
+              <div className="grid grid-cols-2 gap-x-6 gap-y-5 rounded-xl bg-gray-50/70 p-4">
+                {viewing.role_level && <div><p className="text-[10px] text-gray-400 uppercase tracking-wider mb-1">Role Level</p><p className="text-ink font-medium">{viewing.role_level}</p></div>}
+                {viewing.location && <div><p className="text-[10px] text-gray-400 uppercase tracking-wider mb-1">Location</p><p className="text-ink font-medium">{viewing.location}</p></div>}
+                {viewing.experience_years && <div><p className="text-[10px] text-gray-400 uppercase tracking-wider mb-1">Experience</p><p className="text-ink font-medium">{viewing.experience_years} years</p></div>}
+                <div><p className="text-[10px] text-gray-400 uppercase tracking-wider mb-1">Contact</p><p className="text-ink font-medium">Via WHC Messages</p></div>
               </div>
-              {viewing.bio && <div><p className="text-[10px] text-gray-400 uppercase tracking-wider mb-1">About</p><p className="text-ink leading-relaxed whitespace-pre-wrap text-[13px]">{viewing.bio}</p></div>}
-              {viewing.services_offered?.length > 0 && <div><p className="text-[10px] text-gray-400 uppercase tracking-wider mb-1.5">Treatments & Services</p><div className="flex flex-wrap gap-1.5">{viewing.services_offered.map((x: string) => <span key={x} className="text-[11px] bg-gray-100 text-gray-700 px-2 py-0.5 rounded-full">{x}</span>)}</div></div>}
-              {viewing.qualifications?.length > 0 && <div><p className="text-[10px] text-gray-400 uppercase tracking-wider mb-1.5">Qualifications</p><div className="flex flex-wrap gap-1.5">{viewing.qualifications.map((x: string) => <span key={x} className="text-[11px] bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full">{x}</span>)}</div></div>}
-              {viewing.product_houses?.length > 0 && <div><p className="text-[10px] text-gray-400 uppercase tracking-wider mb-1.5">Product Houses</p><div className="flex flex-wrap gap-1.5">{viewing.product_houses.map((x: string) => <span key={x} className="text-[11px] px-2 py-0.5 rounded-full" style={{ background: '#FDF6EC', color: '#C9A96E' }}>{x}</span>)}</div></div>}
-              {viewing.systems_experience?.length > 0 && <div><p className="text-[10px] text-gray-400 uppercase tracking-wider mb-1.5">Systems</p><div className="flex flex-wrap gap-1.5">{viewing.systems_experience.map((x: string) => <span key={x} className="text-[11px] bg-gray-100 text-gray-700 px-2 py-0.5 rounded-full">{x}</span>)}</div></div>}
-              <div>
-                <p className="text-[10px] text-gray-400 uppercase tracking-wider mb-1.5">Documents</p>
+              <p className="text-[12px] leading-relaxed text-gray-500 -mt-2">Personal phone and email details remain private. Use Messages to contact this professional.</p>
+              {viewing.bio && <div><p className="text-[10px] text-gray-400 uppercase tracking-wider mb-2">About</p><p className="text-ink leading-relaxed whitespace-pre-wrap text-[13px]">{viewing.bio}</p></div>}
+              {viewing.services_offered?.length > 0 && <div><p className="text-[10px] text-gray-400 uppercase tracking-wider mb-2">Treatments & Services</p><div className="flex flex-wrap gap-1.5">{viewing.services_offered.map((x: string) => <span key={x} className="text-[11px] bg-gray-100 text-gray-700 px-2 py-0.5 rounded-full">{x}</span>)}</div></div>}
+              {viewing.qualifications?.length > 0 && <div><p className="text-[10px] text-gray-400 uppercase tracking-wider mb-2">Qualifications</p><div className="flex flex-wrap gap-1.5">{viewing.qualifications.map((x: string) => <span key={x} className="text-[11px] bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full">{x}</span>)}</div></div>}
+              {viewing.product_houses?.length > 0 && <div><p className="text-[10px] text-gray-400 uppercase tracking-wider mb-2">Product Houses</p><div className="flex flex-wrap gap-1.5">{viewing.product_houses.map((x: string) => <span key={x} className="text-[11px] px-2 py-0.5 rounded-full" style={{ background: '#FDF6EC', color: '#C9A96E' }}>{x}</span>)}</div></div>}
+              {viewing.systems_experience?.length > 0 && <div><p className="text-[10px] text-gray-400 uppercase tracking-wider mb-2">Systems</p><div className="flex flex-wrap gap-1.5">{viewing.systems_experience.map((x: string) => <span key={x} className="text-[11px] bg-gray-100 text-gray-700 px-2 py-0.5 rounded-full">{x}</span>)}</div></div>}
+              <div className="pt-1">
+                <p className="text-[10px] text-gray-400 uppercase tracking-wider mb-2">Documents</p>
                 {viewing.cv_url
                   ? <a href={viewing.cv_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-[13px] font-medium hover:underline" style={{ color: '#C9A96E' }}>View CV</a>
                   : <p className="text-gray-400 text-[12px]">No CV uploaded yet</p>}
               </div>
             </div>
-            <div className="p-6 border-t border-gray-100 sticky bottom-0 bg-white flex gap-2">
-              <button onClick={() => { toggleShortlist(viewing.id); }} className="btn-primary flex-1">{shortlistedIds.has(viewing.id) ? 'Shortlisted' : 'Shortlist'}</button>
-              {viewing.user_id && <a href={`/employer/messages?to=${viewing.user_id}`} className="btn-secondary flex-1 text-center">Message</a>}
+            <div className="p-6 border-t border-gray-100 sticky bottom-0 bg-white/95 backdrop-blur flex gap-2">
+              <button type="button" onClick={() => { toggleShortlist(viewing.id); }} className="btn-primary flex-1">{shortlistedIds.has(viewing.id) ? 'Shortlisted' : 'Shortlist'}</button>
+              {viewing.user_id && <a href={`/employer/messages?to=${viewing.user_id}`} className="btn-secondary flex-1 text-center inline-flex items-center justify-center gap-2"><MessageSquare size={15} />Message</a>}
             </div>
           </div>
         </div>
@@ -294,7 +298,7 @@ export default function EmployerCandidatesPage() {
             <p className="text-[14px] text-gray-500 mb-6">{matchInfo.name} already applied for {matchInfo.job}. They&apos;re waiting to hear from you.</p>
             <div className="space-y-2">
               <a href="/employer/applications" className="btn-primary block w-full text-center">View application</a>
-              <button onClick={() => setMatchInfo(null)} className="btn-secondary block w-full">Keep browsing</button>
+              <button type="button" onClick={() => setMatchInfo(null)} className="btn-secondary block w-full">Keep browsing</button>
             </div>
           </div>
         </div>
