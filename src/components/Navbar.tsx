@@ -19,14 +19,18 @@ export default function Navbar({ siteContent }: { siteContent?: WebsiteContent }
   const supabase = createClient()
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
-      setUser(data.user)
-      if (data.user) {
-        supabase.from('profiles').select('role').eq('id', data.user.id).single().then(({ data: p }) => {
-          setRole(p?.role || null)
+    let active = true
+    supabase.auth.getSession().then(({ data }) => {
+      if (!active) return
+      const sessionUser = data.session?.user || null
+      setUser(sessionUser)
+      if (sessionUser) {
+        supabase.from('profiles').select('role').eq('id', sessionUser.id).single().then(({ data: p }) => {
+          if (active) setRole(p?.role || null)
         })
       }
     })
+    return () => { active = false }
   }, [])
 
   useEffect(() => {
