@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import Wordmark from '@/components/Wordmark'
 import { createClient } from '@/lib/supabase/client'
-import { Menu, X, Flame, User, ChevronDown, LayoutDashboard, Settings, LogOut, MessageSquare } from 'lucide-react'
+import { Menu, X, Flame, User, ChevronDown, LayoutDashboard, Settings, LogOut, MessageSquare, Building2, ShieldCheck } from 'lucide-react'
 import NotificationBell from '@/components/NotificationBell'
 import { DEFAULT_WEBSITE_CONTENT, type WebsiteContent } from '@/lib/site-content'
 
@@ -38,7 +38,8 @@ export default function Navbar({ siteContent }: { siteContent?: WebsiteContent }
   const handleSignOut = async () => { await supabase.auth.signOut(); window.location.href = '/' }
 
   const initials = user?.user_metadata?.full_name
-    ? user.user_metadata.full_name.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase() : '?'
+    ? user.user_metadata.full_name.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase()
+    : ''
 
   const isEmployer = role === 'employer'
   const isAdmin = role === 'admin'
@@ -85,7 +86,9 @@ export default function Navbar({ siteContent }: { siteContent?: WebsiteContent }
               <div className="relative" ref={dropdownRef}>
                 <button type="button" onClick={() => setProfileOpen(!profileOpen)} aria-label="Open account menu"
                   aria-expanded={profileOpen} aria-haspopup="menu" className="flex items-center gap-2 rounded-xl px-2 py-1.5 text-white/75 transition-colors hover:bg-white/8 hover:text-white">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-full border border-white/15 bg-white/10 text-[10px] font-semibold text-white">{initials}</div>
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full border border-white/15 bg-white/10 text-[10px] font-semibold text-white">
+                    {initials || (isAdmin ? <ShieldCheck size={15} /> : isEmployer ? <Building2 size={15} /> : <User size={15} />)}
+                  </div>
                   <ChevronDown size={12} className={`transition-transform ${profileOpen ? 'rotate-180' : ''}`} />
                 </button>
                 {profileOpen && (
