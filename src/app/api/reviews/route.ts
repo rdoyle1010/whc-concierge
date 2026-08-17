@@ -4,12 +4,6 @@ import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { reviewSchema, validateRequest } from '@/lib/validations'
 
-// Reviews are trust-critical: the reviewer is ALWAYS the authenticated user
-// (never taken from the request body), and a review is only accepted where a
-// real working relationship exists - an accepted application to one of the
-// employer's roles, or an accepted agency booking between the two parties.
-// `reviewed_id` is the reviewee's auth user id (profiles are updated via user_id).
-
 async function getAuthedUser() {
   const cookieStore = await cookies()
   const supabaseAuth = createServerClient(
@@ -20,11 +14,8 @@ async function getAuthedUser() {
   return supabaseAuth.auth.getUser()
 }
 
-const ACCEPTED_BOOKING_STATUSES = ['accepted', 'confirmed'] // confirmed = legacy
+const ACCEPTED_BOOKING_STATUSES = ['accepted', 'confirmed', 'completed']
 
-// The live reviews table may have drifted (reviewed_id vs reviewee_id, and
-// criteria_scores may not exist). Insert writes BOTH reviewee columns and
-// strips whichever the live table lacks (max 6 strips).
 async function insertReviewDefensively(admin: any, row: Record<string, any>) {
   const attempt: Record<string, any> = { ...row }
   let lastError: any = null
@@ -42,7 +33,6 @@ async function insertReviewDefensively(admin: any, row: Record<string, any>) {
   return { error: lastError }
 }
 
-// Query helpers that tolerate either reviewee column name.
 async function findExistingReview(admin: any, reviewerId: string, reviewedId: string) {
   for (const col of ['reviewed_id', 'reviewee_id']) {
     const { data, error } = await admin
@@ -66,8 +56,20 @@ async function hasWorkedTogether(
   admin: ReturnType<typeof createAdminClient>,
   employerProfileId: string,
   candidateProfileId: string,
+  bookingId?: string | null,
 ): Promise<boolean> {
-  // 1. Accepted agency booking between the two parties
+  if (bookingId) {
+    const { data: booking } = await admin
+      .from('agency_bookings')
+      .select('id')
+      .eq('id', bookingId)
+      .eq('employer_id', employerProfileId)
+      .eq('candidate_id', candidateProfileId)
+      .in('status', ACCEPTED_BOOKING_STATUSES)
+      .maybeSingle()
+    return !!booking
+  }
+
   const { data: booking } = await admin
     .from('agency_bookings')
     .select('id')
@@ -78,7 +80,6 @@ async function hasWorkedTogether(
     .maybeSingle()
   if (booking) return true
 
-  // 2. Accepted application to one of the employer's roles
   const { data: jobs } = await admin
     .from('job_listings')
     .select('id')
@@ -99,7 +100,6 @@ async function hasWorkedTogether(
 
 export async function POST(req: NextRequest) {
   try {
-    // -- Auth: reviewer is the logged-in user, full stop --
     const { data: { user } } = await getAuthedUser()
     if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
 
@@ -111,19 +111,15 @@ export async function POST(req: NextRequest) {
     const { reviewed_id, rating, criteria_scores, comment, type, booking_id } = validation.data!
     const reviewer_id = user.id
 
-    // Prevent self-reviews
     if (reviewer_id === reviewed_id) {
       return NextResponse.json({ error: 'Cannot review yourself' }, { status: 400 })
     }
 
     const supabase = createAdminClient()
-
-    // -- Relationship: reviewer and reviewee must have actually worked together --
     let employerProfileId: string | null = null
     let candidateProfileId: string | null = null
 
     if (type === 'employer') {
-      // A candidate reviewing an employer
       const [{ data: cand }, { data: emp }] = await Promise.all([
         supabase.from('candidate_profiles').select('id').eq('user_id', reviewer_id).maybeSingle(),
         supabase.from('employer_profiles').select('id').eq('user_id', reviewed_id).maybeSingle(),
@@ -131,7 +127,6 @@ export async function POST(req: NextRequest) {
       candidateProfileId = cand?.id || null
       employerProfileId = emp?.id || null
     } else {
-      // An employer reviewing a candidate
       const [{ data: emp }, { data: cand }] = await Promise.all([
         supabase.from('employer_profiles').select('id').eq('user_id', reviewer_id).maybeSingle(),
         supabase.from('candidate_profiles').select('id').eq('user_id', reviewed_id).maybeSingle(),
@@ -144,18 +139,21 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Review not permitted for this profile' }, { status: 403 })
     }
 
-    const workedTogether = await hasWorkedTogether(supabase, employerProfileId, candidateProfileId)
+    const workedTogether = await hasWorkedTogether(
+      supabase,
+      employerProfileId,
+      candidateProfileId,
+      booking_id || null,
+    )
     if (!workedTogether) {
       return NextResponse.json(
-        { error: 'You can only review someone you have worked with through a placement or agency booking' },
+        { error: booking_id
+          ? 'You can only review this completed or agreed agency shift.'
+          : 'You can only review someone you have worked with through a placement or agency booking' },
         { status: 403 }
       )
     }
 
-    // -- Uniqueness --
-    // Every booking is a different experience, so reviews are per SHIFT when a
-    // booking_id is supplied: one review per reviewer per booking. Without a
-    // booking_id (e.g. permanent placements) the old one-per-pair rule holds.
     if (booking_id) {
       const { data: existingForBooking } = await supabase
         .from('reviews').select('id')
@@ -171,30 +169,23 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Calculate overall rating from criteria if provided.
-    // Live column is INTEGER with CHECK 1..5 - round and clamp.
     let finalRating = rating
     if (criteria_scores) {
       const values = Object.values(criteria_scores) as number[]
-      if (values.length > 0) {
-        finalRating = values.reduce((a, b) => a + b, 0) / values.length
-      }
+      if (values.length > 0) finalRating = values.reduce((a, b) => a + b, 0) / values.length
     }
     const ratingInt = Math.min(5, Math.max(1, Math.round(finalRating || 1)))
 
-    // Insert review - writes both column-name generations, strips what's missing.
-    // Live table (verified 15 Jul): reviewer_id, reviewee_id, rating (int 1-5),
-    // text (NOT NULL), property_name, criteria_scores jsonb. No comment/type/reviewed_id.
     const { error: reviewError } = await insertReviewDefensively(supabase, {
       reviewer_id,
-      reviewed_id, // stripped on live schema
+      reviewed_id,
       reviewee_id: reviewed_id,
       rating: ratingInt,
       criteria_scores: criteria_scores || null,
-      text: comment || '', // live column, NOT NULL
-      comment: comment || null, // stripped on live schema
-      type: type || 'candidate', // stripped on live schema
-      booking_id: booking_id || null, // per-shift reviews; stripped if column missing
+      text: comment || '',
+      comment: comment || null,
+      type: type || 'candidate',
+      booking_id: booking_id || null,
     })
 
     if (reviewError) {
@@ -202,15 +193,11 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Your review could not be saved. Please try again.' }, { status: 500 })
     }
 
-    // Update aggregate score on the reviewed profile (keyed on auth user_id)
     const reviews = await fetchRatingsFor(supabase, reviewed_id)
-
     const rated = (reviews || []).filter((r: any) => typeof r.rating === 'number')
     if (rated.length > 0) {
       const avgScore = rated.reduce((sum: number, r: any) => sum + r.rating, 0) / rated.length
       const table = type === 'employer' ? 'employer_profiles' : 'candidate_profiles'
-
-      // Non-fatal if review_score/review_count don't exist on the live table
       const { error: aggError } = await supabase.from(table).update({
         review_score: Math.round(avgScore * 10) / 10,
         review_count: rated.length,
