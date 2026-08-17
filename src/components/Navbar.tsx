@@ -49,27 +49,51 @@ export default function Navbar({ siteContent }: { siteContent?: WebsiteContent }
 
   const navLinks = user
     ? isEmployer
-      ? [{ href: '/employer/post-role', label: 'Post a Role' }, { href: '/employer/jobs', label: 'My Listings' }, { href: '/agency', label: 'Agency' }, { href: '/residency', label: 'Residency' }]
+      ? [
+          { href: '/employer/post-role', label: 'Post a Role' },
+          { href: '/employer/jobs', label: 'My Listings' },
+          { href: '/properties', label: 'Properties' },
+          { href: '/agency', label: 'Agency' },
+          { href: '/residency', label: 'Residency' },
+        ]
       : isAdmin
         ? [{ href: '/admin/users', label: 'Users' }, { href: '/admin/blog', label: 'Blog' }, { href: '/admin/complaints', label: 'Complaints' }]
-        : [{ href: '/jobs', label: 'Browse Roles' }, { href: '/roles/match', label: 'Match', icon: true }, { href: '/agency', label: 'Agency' }, { href: '/academy', label: 'Academy' }, { href: '/residency', label: 'Residency' }]
-    : [{ href: '/jobs', label: labels.jobs }, { href: '/agency', label: labels.agency }, { href: '/academy', label: labels.academy }, { href: '/residency', label: labels.residency }, { href: '/blog', label: labels.blog }]
+        : [
+            { href: '/jobs', label: 'Browse Roles' },
+            { href: '/roles/match', label: 'Match', icon: true },
+            { href: '/properties', label: 'Properties' },
+            { href: '/agency', label: 'Agency' },
+            { href: '/academy', label: 'Academy' },
+            { href: '/residency', label: 'Residency' },
+          ]
+    : [
+        { href: '/jobs', label: labels.jobs },
+        { href: '/login?role=talent&next=%2Froles%2Fmatch', label: 'Match', icon: true },
+        { href: '/properties', label: 'Properties' },
+        { href: '/agency', label: labels.agency },
+        { href: '/academy', label: labels.academy },
+        { href: '/residency', label: labels.residency },
+        { href: '/blog', label: labels.blog },
+      ]
 
-  const isActive = (href: string) => pathname === href || (href !== '/' && pathname.startsWith(`${href}/`))
+  const isActive = (href: string) => {
+    const path = href.split('?')[0]
+    return pathname === path || (path !== '/' && pathname.startsWith(`${path}/`))
+  }
 
   return (
     <nav className="fixed top-0 z-50 h-[68px] w-full border-b border-white/10 bg-[#0b2f4d] text-white shadow-[0_8px_24px_rgba(7,36,59,0.12)]">
       <div className="mx-auto flex h-full max-w-7xl items-center justify-between px-6 lg:px-8">
         <Wordmark dark compact />
 
-        <div className="hidden items-center gap-1 lg:flex">
+        <div className="hidden items-center gap-0.5 lg:flex">
           {navLinks.map(link => {
             const active = isActive(link.href)
             return (
               <Link
                 key={link.href}
                 href={link.href}
-                className={`relative flex items-center gap-1 rounded-xl px-3.5 py-2 text-[12px] font-medium transition-all ${active ? 'bg-white/10 text-white' : 'text-white/68 hover:bg-white/7 hover:text-white'}`}
+                className={`relative flex items-center gap-1 rounded-xl px-3 py-2 text-[12px] font-medium transition-all ${active ? 'bg-white/10 text-white' : 'text-white/70 hover:bg-white/10 hover:text-white'}`}
               >
                 {(link as any).icon && <Flame size={11} className="text-[#d4b477]" />}
                 <span>{link.label}</span>
@@ -82,10 +106,10 @@ export default function Navbar({ siteContent }: { siteContent?: WebsiteContent }
         <div className="hidden items-center gap-2.5 lg:flex">
           {user ? (
             <>
-              <div className="rounded-xl bg-white/8 p-1 text-white"><NotificationBell userId={user.id} /></div>
+              <div className="rounded-xl bg-white/10 p-1 text-white"><NotificationBell userId={user.id} /></div>
               <div className="relative" ref={dropdownRef}>
                 <button type="button" onClick={() => setProfileOpen(!profileOpen)} aria-label="Open account menu"
-                  aria-expanded={profileOpen} aria-haspopup="menu" className="flex items-center gap-2 rounded-xl px-2 py-1.5 text-white/75 transition-colors hover:bg-white/8 hover:text-white">
+                  aria-expanded={profileOpen} aria-haspopup="menu" className="flex items-center gap-2 rounded-xl px-2 py-1.5 text-white/75 transition-colors hover:bg-white/10 hover:text-white">
                   <div className="flex h-8 w-8 items-center justify-center rounded-full border border-white/15 bg-white/10 text-[10px] font-semibold text-white">
                     {initials || (isAdmin ? <ShieldCheck size={15} /> : isEmployer ? <Building2 size={15} /> : <User size={15} />)}
                   </div>
@@ -121,7 +145,7 @@ export default function Navbar({ siteContent }: { siteContent?: WebsiteContent }
         <div id="mobile-navigation" className="border-t border-white/10 bg-[#0b2f4d] lg:hidden">
           <div className="space-y-1 px-6 py-5">
             {navLinks.map(link => (
-              <Link key={link.href} href={link.href} className={`block rounded-xl px-3 py-2.5 text-[14px] ${isActive(link.href) ? 'bg-white/10 text-white' : 'text-white/70 hover:bg-white/8 hover:text-white'}`} onClick={() => setMobileOpen(false)}>{link.label}</Link>
+              <Link key={link.href} href={link.href} className={`block rounded-xl px-3 py-2.5 text-[14px] ${isActive(link.href) ? 'bg-white/10 text-white' : 'text-white/70 hover:bg-white/10 hover:text-white'}`} onClick={() => setMobileOpen(false)}>{link.label}</Link>
             ))}
             <div className="mt-4 space-y-2 border-t border-white/10 pt-4">
               {user ? (
