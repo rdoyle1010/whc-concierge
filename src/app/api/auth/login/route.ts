@@ -1,0 +1,56 @@
+import { NextRequest, NextResponse } from 'next/server'
+import { createServerSupabaseClient } from '@/lib/supabase/server'
+import { canRoleAccessPath, dashboardForRole, normaliseAccountRole } from '@/lib/role-access'
+
+export const dynamic = 'force-dynamic'
+
+export async function POST(request: NextRequest) {
+  try {
+    const body = await request.json().catch(() => null)
+    const email = typeof body?.email === 'string' ? body.email.trim() : ''
+    const password = typeof body?.password === 'string' ? body.password : ''
+    const requested = typeof body?.redirect === 'string' ? body.redirect : ''
+
+    if (!email || !password) {
+      return NextResponse.json({ error: 'Enter your email and password.' }, { status: 400 })
+    }
+
+    const supabase = await createServerSupabaseClient()
+    const { data: authData, error: authError } = await supabase.auth.signInWithPassword({ email, password })
+
+    if (authError || !authData.user) {
+      return NextResponse.json({ error: authError?.message || 'Sign in failed.' }, { status: 401 })
+    }
+
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', authData.user.id)
+      .maybeSingle()
+
+    if (profileError) {
+      await supabase.auth.signOut()
+      return NextResponse.json({ error: 'Your account could not be verified. Please try again.' }, { status: 500 })
+    }
+
+    const accountRole = normaliseAccountRole(profile?.role)
+    if (!accountRole) {
+      await supabase.auth.signOut()
+      return NextResponse.json({ error: 'Your account role could not be verified. Please contact WHC support.' }, { status: 403 })
+    }
+
+    const safeRequested = requested
+      && requested.startsWith('/')
+      && !requested.startsWith('//')
+      && canRoleAccessPath(accountRole, requested)
+      ? requested
+      : null
+
+    return NextResponse.json({ ok: true, redirect: safeRequested || dashboardForRole(accountRole) }, {
+      headers: { 'Cache-Control': 'private, no-store' },
+    })
+  } catch (error) {
+    console.error('Login route failed:', error)
+    return NextResponse.json({ error: 'Sign in failed. Please try again.' }, { status: 500 })
+  }
+}
