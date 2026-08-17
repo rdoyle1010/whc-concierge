@@ -8,12 +8,9 @@ import SponsoredAd from '@/components/SponsoredAd'
 import { createClient } from '@/lib/supabase/client'
 import { ACADEMY, coursePrice, publicCoursePrice, type AcademyCourse } from '@/lib/academy'
 import { courseImage } from '@/lib/academy-extras'
-import { GraduationCap, Clock, ShieldCheck, X } from 'lucide-react'
+import { GraduationCap, Clock, ShieldCheck, X, ArrowRight, BriefcaseBusiness, ChartNoAxesCombined, CheckCircle2 } from 'lucide-react'
 
-// The PUBLIC Academy - anyone in the industry can buy a course and earn a
-// certificate without being a member. £15 for guests; members pay £10 (their
-// catalogue lives in the dashboard). Guest purchase needs only an email -
-// the access link arrives by email after payment.
+const MANAGEMENT_PROGRAMMES = new Set(['spa-manager-programme', 'spa-director-programme'])
 
 export default function PublicAcademyPage() {
   const supabase = createClient()
@@ -56,88 +53,141 @@ export default function PublicAcademyPage() {
     }
   }
 
-  const categories = Array.from(new Set(courses.map(c => c.category)))
+  const managementCourses = courses.filter(course => MANAGEMENT_PROGRAMMES.has(course.slug))
+  const standardCourses = courses.filter(course => !MANAGEMENT_PROGRAMMES.has(course.slug))
+  const categories = Array.from(new Set(standardCourses.map(c => c.category)))
+
+  const purchaseButton = (course: AcademyCourse) => isCandidate ? (
+    <Link href="/talent/academy" className="btn-primary text-[12px] inline-flex items-center justify-center gap-1.5">Member enrolment <ArrowRight size={12} /></Link>
+  ) : (
+    <button type="button" onClick={() => { setBuying({ slug: course.slug, title: course.title, price: publicCoursePrice(course) }); setError('') }} className="btn-primary text-[12px] inline-flex items-center justify-center gap-1.5">Get this course <ArrowRight size={12} /></button>
+  )
 
   return (
-    <div className="min-h-screen bg-surface">
+    <div className="min-h-screen bg-[#f3f1ec]">
       <Navbar />
 
-      {/* Hero */}
-      <section className="pt-16 bg-white border-b border-border">
-        <div className="max-w-[1440px] mx-auto px-6 lg:px-10 py-16 lg:py-20">
-          <p className="text-[11px] tracking-[0.15em] uppercase font-medium mb-3 text-accent">WHC Academy</p>
-          <h1 className="font-sans text-[38px] md:text-[52px] font-semibold text-ink tracking-[-0.04em] leading-[1.05] mb-4">Training that gets you booked.</h1>
-          <p className="text-[15px] text-secondary max-w-2xl mb-4">
-            Short, serious courses written for luxury spa and wellness professionals - consultation, retail, Forbes standards, treatment craft and brand knowledge. Pass the final quiz and earn a verifiable certificate. No membership required.
-          </p>
-          <p className="text-[13px] text-muted">
-            From £10 per course · WHC members pay from £5 in their <Link href={isCandidate ? '/talent/academy' : '/register/talent'} className="text-accent underline">dashboard</Link>, where certificates also appear as profile badges properties can search.
-          </p>
+      <section className="border-b border-[#ddd9d1] bg-white pt-16">
+        <div className="mx-auto max-w-[1440px] px-6 py-16 lg:px-10 lg:py-20">
+          <div className="max-w-4xl">
+            <p className="mb-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-[#9c7a42]">WHC Academy</p>
+            <h1 className="mb-5 max-w-3xl text-[40px] font-semibold leading-[1.02] tracking-[-0.045em] text-[#10283b] md:text-[58px]">Training you can use in the treatment room, on the spa floor and in the boardroom.</h1>
+            <p className="mb-6 max-w-3xl text-[15px] leading-7 text-[#61707c] md:text-[16px]">
+              Professional development for luxury spa and wellness careers. Learn the theory, understand why it matters, see how it works in practice, work through real spa scenarios and prove your knowledge in a formal assessment.
+            </p>
+            <div className="grid max-w-3xl gap-3 sm:grid-cols-3">
+              {[
+                ['Practical', 'Real situations, management decisions and treatment-room application.'],
+                ['Structured', 'Objectives, key terms, case studies, visual frameworks and assessment.'],
+                ['Career-led', 'Verifiable certificates and profile badges visible to WHC properties.'],
+              ].map(([title, text]) => <div key={title} className="rounded-2xl border border-[#e4e0d8] bg-[#faf9f6] p-4"><p className="mb-1 text-[12px] font-semibold text-[#10283b]">{title}</p><p className="text-[11px] leading-5 text-[#6b7780]">{text}</p></div>)}
+            </div>
+            <p className="mt-6 text-[12px] text-[#7c878f]">
+              No membership required. WHC members receive member pricing in their <Link href={isCandidate ? '/talent/academy' : '/register/talent'} className="font-medium text-[#9c7a42] underline underline-offset-2">dashboard</Link>.
+            </p>
+          </div>
         </div>
       </section>
 
       <SponsoredAd placement="academy_sponsor" />
 
-      <div className="max-w-[1440px] mx-auto px-6 lg:px-10 py-12 lg:py-16">
+      <main className="mx-auto max-w-[1440px] px-6 py-12 lg:px-10 lg:py-16">
         {purchased && (
-          <div className="bg-green-50 border border-green-200 text-green-800 text-sm px-5 py-4 rounded-xl mb-8">
+          <div className="mb-8 rounded-xl border border-green-200 bg-green-50 px-5 py-4 text-sm text-green-800">
             <p className="font-medium">Payment received - check your email.</p>
-            <p className="text-[13px] mt-0.5">Your course access link is on its way to your inbox (check spam if it hasn&apos;t landed within a few minutes). One tap signs you in - no password needed.</p>
+            <p className="mt-0.5 text-[13px]">Your course access link is on its way. Check spam if it has not landed within a few minutes.</p>
           </div>
         )}
 
-        {categories.map(cat => (
-          <div key={cat} className="mb-10">
-            <h2 className="text-[11px] font-semibold uppercase tracking-[0.14em] text-gray-400 mb-4">{cat}</h2>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {courses.filter(c => c.category === cat).map(course => (
-                <div key={course.slug} className="bg-white border border-border rounded-2xl overflow-hidden flex flex-col hover:shadow-lg transition-all duration-200">
-                  <div className="relative h-44 shrink-0">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={course.image_url || courseImage(course.slug)} alt="" className="absolute inset-0 w-full h-full object-cover" />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
+        {managementCourses.length > 0 && (
+          <section className="mb-14">
+            <div className="mb-6 flex flex-col justify-between gap-3 md:flex-row md:items-end">
+              <div>
+                <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-[#9c7a42]">Leadership programmes</p>
+                <h2 className="text-[30px] font-semibold tracking-[-0.03em] text-[#10283b] md:text-[38px]">Move from excellent practitioner to confident spa leader.</h2>
+                <p className="mt-2 max-w-3xl text-[13px] leading-6 text-[#687681]">Longer, applied programmes built around real management work: people, rotas, payroll, KPIs, profitability, P&amp;L, forecasting, marketing and strategy.</p>
+              </div>
+            </div>
+            <div className="grid gap-6 lg:grid-cols-2">
+              {managementCourses.map((course, index) => (
+                <article key={course.slug} className="overflow-hidden rounded-2xl border border-[#d8d3c9] bg-white shadow-sm">
+                  <div className="relative h-56">
+                    <img src={course.image_url || courseImage(course.slug)} alt="" className="absolute inset-0 h-full w-full object-cover" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-[#0b2f4d]/90 via-[#0b2f4d]/30 to-transparent" />
+                    <div className="absolute bottom-5 left-5 right-5 text-white">
+                      <div className="mb-2 flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-[#e6c98e]">{index === 0 ? <BriefcaseBusiness size={13} /> : <ChartNoAxesCombined size={13} />} WHC Leadership Programme</div>
+                      <h3 className="text-[25px] font-semibold tracking-[-0.025em]">{course.title}</h3>
+                    </div>
                   </div>
-                  <div className="p-6 flex flex-col flex-1">
-                  <h3 className="font-sans text-[19px] font-semibold tracking-tight text-ink leading-snug mb-1">{course.title}</h3>
-                  <p className="text-[12px] text-gray-500 mb-2">{course.tagline}</p>
-                  <p className="text-[11px] text-gray-400 mb-4 inline-flex items-center gap-1"><Clock size={11} /> {course.lessons.length} modules · case studies &amp; assessment · ~{course.minutes} min · certificate</p>
-                  <div className="mt-auto flex items-center justify-between gap-3">
-                    <p className="text-[16px] font-semibold text-ink">£{(publicCoursePrice(course) / 100).toFixed(0)}</p>
-                    {isCandidate ? (
-                      <Link href="/talent/academy" className="btn-primary text-[12px]">£{(coursePrice(course) / 100).toFixed(0)} in your dashboard</Link>
-                    ) : (
-                      <button onClick={() => { setBuying({ slug: course.slug, title: course.title, price: publicCoursePrice(course) }); setError('') }} className="btn-primary text-[12px]">Get this course</button>
-                    )}
+                  <div className="p-6">
+                    <p className="mb-4 text-[13px] leading-6 text-[#687681]">{course.tagline}</p>
+                    <div className="mb-5 grid gap-2 sm:grid-cols-3">
+                      <span className="inline-flex items-center gap-1.5 text-[11px] text-[#65727c]"><CheckCircle2 size={13} className="text-[#9c7a42]" /> {course.lessons.length} applied modules</span>
+                      <span className="inline-flex items-center gap-1.5 text-[11px] text-[#65727c]"><CheckCircle2 size={13} className="text-[#9c7a42]" /> Real spa case studies</span>
+                      <span className="inline-flex items-center gap-1.5 text-[11px] text-[#65727c]"><CheckCircle2 size={13} className="text-[#9c7a42]" /> Formal assessment</span>
+                    </div>
+                    <div className="flex items-center justify-between gap-4 border-t border-[#ece8e1] pt-5">
+                      <div><p className="text-[10px] uppercase tracking-[0.12em] text-[#8a949b]">Guest price</p><p className="text-[20px] font-semibold text-[#10283b]">£{(publicCoursePrice(course) / 100).toFixed(0)}</p></div>
+                      {purchaseButton(course)}
+                    </div>
                   </div>
-                  </div>
-                </div>
+                </article>
               ))}
             </div>
+          </section>
+        )}
+
+        <section>
+          <div className="mb-7">
+            <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-[#9c7a42]">Professional course library</p>
+            <h2 className="text-[28px] font-semibold tracking-[-0.03em] text-[#10283b]">Build the skills luxury spas actually use.</h2>
           </div>
-        ))}
 
-        <div className="bg-white border border-border rounded-2xl p-6 flex items-start gap-3 max-w-3xl">
-          <ShieldCheck size={18} className="text-accent mt-0.5 shrink-0" />
-          <p className="text-[12px] text-gray-500">Every certificate carries a unique code that anyone can check at <Link href="/verify" className="text-accent underline">talent.wellnesshousecollective.co.uk/verify</Link>. Certificates evidence course completion and assessment; they are not a substitute for accredited qualifications or insurance requirements.</p>
-        </div>
-      </div>
-
-      {/* Guest purchase modal */}
-      {buying && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setBuying(null)}>
-          <div className="bg-white rounded-2xl max-w-md w-full p-6" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between mb-2">
-              <h2 className="font-sans text-lg font-semibold tracking-tight text-ink flex items-center gap-2"><GraduationCap size={17} className="text-accent" /> {buying.title}</h2>
-              <button onClick={() => setBuying(null)} className="text-gray-300 hover:text-ink"><X size={20} /></button>
+          {categories.map(cat => (
+            <div key={cat} className="mb-10">
+              <h3 className="mb-4 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#8a949b]">{cat}</h3>
+              <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+                {standardCourses.filter(c => c.category === cat).map(course => (
+                  <article key={course.slug} className="flex flex-col overflow-hidden rounded-2xl border border-[#ddd9d1] bg-white transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg">
+                    <div className="relative h-44 shrink-0">
+                      <img src={course.image_url || courseImage(course.slug)} alt="" className="absolute inset-0 h-full w-full object-cover" />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/45 to-transparent" />
+                    </div>
+                    <div className="flex flex-1 flex-col p-6">
+                      <h3 className="mb-1 text-[19px] font-semibold leading-snug tracking-tight text-[#10283b]">{course.title}</h3>
+                      <p className="mb-2 text-[12px] text-[#697681]">{course.tagline}</p>
+                      <p className="mb-4 inline-flex items-center gap-1 text-[11px] text-[#8a949b]"><Clock size={11} /> {course.lessons.length} modules · practical case studies · assessment · ~{course.minutes} min</p>
+                      <div className="mt-auto flex items-center justify-between gap-3">
+                        <p className="text-[16px] font-semibold text-[#10283b]">£{(publicCoursePrice(course) / 100).toFixed(0)}</p>
+                        {isCandidate ? <Link href="/talent/academy" className="btn-primary text-[12px]">£{(coursePrice(course) / 100).toFixed(0)} member price</Link> : <button type="button" onClick={() => { setBuying({ slug: course.slug, title: course.title, price: publicCoursePrice(course) }); setError('') }} className="btn-primary text-[12px]">Get this course</button>}
+                      </div>
+                    </div>
+                  </article>
+                ))}
+              </div>
             </div>
-            <p className="text-[12px] text-gray-500 mb-4">£{(buying.price / 100).toFixed(0)} one-off. After payment your access link arrives by email - one tap and you&apos;re in, no password to set. Certificate issued the moment you pass.</p>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">Your email</label>
+          ))}
+        </section>
+
+        <div className="flex max-w-3xl items-start gap-3 rounded-2xl border border-[#ddd9d1] bg-white p-6">
+          <ShieldCheck size={18} className="mt-0.5 shrink-0 text-[#9c7a42]" />
+          <p className="text-[12px] leading-5 text-[#687681]">Every certificate carries a unique code that can be checked at <Link href="/verify" className="text-[#9c7a42] underline">talent.wellnesshousecollective.co.uk/verify</Link>. Certificates evidence course completion and assessment; they are not a substitute for accredited qualifications or insurance requirements.</p>
+        </div>
+      </main>
+
+      {buying && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setBuying(null)}>
+          <div className="w-full max-w-md rounded-2xl bg-white p-6" onClick={e => e.stopPropagation()}>
+            <div className="mb-2 flex items-center justify-between">
+              <h2 className="flex items-center gap-2 text-lg font-semibold tracking-tight text-[#10283b]"><GraduationCap size={17} className="text-[#9c7a42]" /> {buying.title}</h2>
+              <button type="button" onClick={() => setBuying(null)} className="text-gray-300 hover:text-[#10283b]"><X size={20} /></button>
+            </div>
+            <p className="mb-4 text-[12px] leading-5 text-[#697681]">£{(buying.price / 100).toFixed(0)} one-off. After payment your access link arrives by email. Your certificate is issued when you complete the learning and pass the assessment.</p>
+            <label className="mb-1.5 block text-sm font-medium text-gray-700">Your email</label>
             <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="you@example.com" className="input-field mb-3" />
-            {error && <p className="text-[12px] text-red-600 mb-3">{error}</p>}
-            <button onClick={buyAsGuest} disabled={busy || !email.trim()} className="btn-primary w-full disabled:opacity-50">
-              {busy ? 'Taking you to payment...' : `Pay £${(buying.price / 100).toFixed(0)} & start`}
-            </button>
-            <p className="text-[11px] text-muted text-center mt-3">Already a WHC member? <Link href="/login" className="underline">Sign in</Link> and pay the member price instead.</p>
+            {error && <p className="mb-3 text-[12px] text-red-600">{error}</p>}
+            <button type="button" onClick={buyAsGuest} disabled={busy || !email.trim()} className="btn-primary w-full disabled:opacity-50">{busy ? 'Taking you to payment...' : `Pay £${(buying.price / 100).toFixed(0)} & start`}</button>
+            <p className="mt-3 text-center text-[11px] text-muted">Already a WHC member? <Link href="/login" className="underline">Sign in</Link> and pay the member price instead.</p>
           </div>
         </div>
       )}
