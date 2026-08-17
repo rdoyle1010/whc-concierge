@@ -3,7 +3,10 @@
 import { useEffect, useState, useRef } from 'react'
 import DashboardShell from '@/components/DashboardShell'
 import { createClient } from '@/lib/supabase/client'
-import { Send, MessageSquare, Paperclip, FileText, Image as ImageIcon, Download } from 'lucide-react'
+import { Send, MessageSquare, Paperclip, FileText } from 'lucide-react'
+
+const INBOX_SCAN_LIMIT = 500
+const THREAD_LIMIT = 100
 
 export default function TalentMessagesPage() {
   const supabase = createClient()
@@ -23,77 +26,51 @@ export default function TalentMessagesPage() {
     const now = new Date()
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
     const msgDay = new Date(msgDate.getFullYear(), msgDate.getMonth(), msgDate.getDate())
-    const daysAgo = Math.floor((today.getTime() - msgDay.getTime()) / (1000 * 60 * 60 * 24))
-
-    const timeStr = msgDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
-
+    const daysAgo = Math.floor((today.getTime() - msgDay.getTime()) / 86400000)
+    const timeStr = msgDate.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
     if (daysAgo === 0) return timeStr
-    if (daysAgo < 7) return msgDate.toLocaleDateString('en-US', { weekday: 'short' }) + ' ' + timeStr
-    return msgDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + ' ' + timeStr
+    if (daysAgo < 7) return msgDate.toLocaleDateString('en-GB', { weekday: 'short' }) + ' ' + timeStr
+    return msgDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) + ' ' + timeStr
   }
 
-  const handleAttachmentClick = () => {
-    fileInputRef.current?.click()
-  }
-
+  const handleAttachmentClick = () => fileInputRef.current?.click()
   const handleFileSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
-    if (file.size > 5 * 1024 * 1024) {
-      alert('File size must be less than 5MB')
-      return
-    }
+    if (file.size > 5 * 1024 * 1024) { alert('File size must be less than 5MB'); return }
     setAttachmentFile(file)
   }
-
-  const removeAttachment = () => {
-    setAttachmentFile(null)
-    if (fileInputRef.current) fileInputRef.current.value = ''
-  }
+  const removeAttachment = () => { setAttachmentFile(null); if (fileInputRef.current) fileInputRef.current.value = '' }
 
   useEffect(() => {
     async function load() {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return
-      setUserId(user.id)
+      const { data: { user } } = await supabase.auth.getSession()
+      const sessionUser = user || null
+      if (!sessionUser) { setLoading(false); return }
+      setUserId(sessionUser.id)
 
       const { data: allMsgs } = await supabase
         .from('messages')
-        .select('*')
-        .or(`sender_id.eq.${user.id},recipient_id.eq.${user.id}`)
+        .select('id,sender_id,recipient_id,content,created_at,read')
+        .or(`sender_id.eq.${sessionUser.id},recipient_id.eq.${sessionUser.id}`)
         .order('created_at', { ascending: false })
+        .limit(INBOX_SCAN_LIMIT)
 
       const partners = new Map<string, any>()
       for (const msg of allMsgs || []) {
-        const partnerId = msg.sender_id === user.id ? msg.recipient_id : msg.sender_id
-        if (!partners.has(partnerId)) {
-          partners.set(partnerId, { partnerId, lastMessage: msg, unread: 0, partnerName: null })
-        }
-        if (msg.recipient_id === user.id && !msg.read) {
-          const p = partners.get(partnerId)!
-          p.unread++
-        }
+        const partnerId = msg.sender_id === sessionUser.id ? msg.recipient_id : msg.sender_id
+        if (!partners.has(partnerId)) partners.set(partnerId, { partnerId, lastMessage: msg, unread: 0, partnerName: null })
+        if (msg.recipient_id === sessionUser.id && !msg.read) partners.get(partnerId)!.unread++
       }
 
       const partnerIds = Array.from(partners.keys())
       if (partnerIds.length > 0) {
-        const { data: empProfiles } = await supabase
-          .from('employer_profiles')
-          .select('user_id, company_name, contact_name, property_name')
-          .in('user_id', partnerIds)
-        for (const ep of empProfiles || []) {
-          const p = partners.get(ep.user_id)
-          if (p) p.partnerName = ep.property_name || ep.company_name || ep.contact_name
-        }
-
-        const { data: candProfiles } = await supabase
-          .from('candidate_profiles')
-          .select('user_id, full_name')
-          .in('user_id', partnerIds)
-        for (const cp of candProfiles || []) {
-          const p = partners.get(cp.user_id)
-          if (p && !p.partnerName) p.partnerName = cp.full_name
-        }
+        const [{ data: empProfiles }, { data: candProfiles }] = await Promise.all([
+          supabase.from('employer_profiles').select('user_id,company_name,contact_name,property_name').in('user_id', partnerIds),
+          supabase.from('candidate_profiles').select('user_id,full_name').in('user_id', partnerIds),
+        ])
+        for (const ep of empProfiles || []) { const p = partners.get(ep.user_id); if (p) p.partnerName = ep.property_name || ep.company_name || ep.contact_name }
+        for (const cp of candProfiles || []) { const p = partners.get(cp.user_id); if (p && !p.partnerName) p.partnerName = cp.full_name }
       }
 
       setConversations(Array.from(partners.values()))
@@ -101,22 +78,18 @@ export default function TalentMessagesPage() {
     }
     load()
   }, [])
+
   useEffect(() => {
     if (!activeConvo || !userId) return
-
     async function loadMessages() {
       const { data } = await supabase
         .from('messages')
-        .select('*')
+        .select('id,sender_id,recipient_id,content,attachment_url,attachment_name,attachment_type,created_at,read')
         .or(`and(sender_id.eq.${userId},recipient_id.eq.${activeConvo}),and(sender_id.eq.${activeConvo},recipient_id.eq.${userId})`)
-        .order('created_at', { ascending: true })
-
-      setMessages(data || [])
-
-      // Service-role route - the client-side update was RLS-blocked, so
-      // unread badges never cleared
+        .order('created_at', { ascending: false })
+        .limit(THREAD_LIMIT)
+      setMessages([...(data || [])].reverse())
       await fetch('/api/messages/mark-read', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ partnerId: activeConvo }) }).catch(() => {})
-
       setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 100)
     }
     loadMessages()
@@ -124,170 +97,31 @@ export default function TalentMessagesPage() {
 
   const sendMessage = async () => {
     if ((!newMsg.trim() && !attachmentFile) || !activeConvo) return
-
     try {
       setAttachmentUploading(true)
-      let attachmentUrl = null
-      let attachmentName = null
-      let attachmentType = null
-
+      let attachmentUrl = null, attachmentName = null, attachmentType = null
       if (attachmentFile) {
-        // Upload through the authenticated API route into the
-        // message-attachments bucket (created 16 Jul; direct client upload
-        // previously failed because the bucket never existed)
         const fileExt = attachmentFile.name.split('.').pop()
         const fileName = `${userId}/messages/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`
-        const fd = new FormData()
-        fd.append('file', attachmentFile)
-        fd.append('bucket', 'message-attachments')
-        fd.append('path', fileName)
+        const fd = new FormData(); fd.append('file', attachmentFile); fd.append('bucket', 'message-attachments'); fd.append('path', fileName)
         const upRes = await fetch('/api/upload', { method: 'POST', body: fd })
         const upJson = await upRes.json().catch(() => ({}))
         if (!upRes.ok || !upJson.url) throw new Error(upJson.error || 'Attachment upload failed')
-
-        attachmentUrl = upJson.url
-        attachmentName = attachmentFile.name
-        attachmentType = attachmentFile.type
+        attachmentUrl = upJson.url; attachmentName = attachmentFile.name; attachmentType = attachmentFile.type
       }
-
-      const sendRes = await fetch('/api/messages/send', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          recipientId: activeConvo,
-          content: newMsg.trim() || null,
-          attachmentUrl,
-          attachmentName,
-          attachmentType,
-        }),
-      })
-      if (!sendRes.ok) {
-        const d = await sendRes.json().catch(() => ({}))
-        alert(d.error || 'Message failed to send - please try again.')
-        setAttachmentUploading(false) // never leave the composer locked
-        return
-      }
-
-      setMessages([...messages, {
-        sender_id: userId,
-        recipient_id: activeConvo,
-        content: newMsg.trim() || null,
-        attachment_url: attachmentUrl,
-        attachment_name: attachmentName,
-        attachment_type: attachmentType,
-        created_at: new Date().toISOString(),
-        read: false
-      }])
-
-      setNewMsg('')
-      removeAttachment()
-      setAttachmentUploading(false)
-      setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 100)
-    } catch (error) {
-      console.error('Error sending message:', error)
-      alert('Failed to send message')
-      setAttachmentUploading(false)
-    }
+      const sendRes = await fetch('/api/messages/send', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ recipientId: activeConvo, content: newMsg.trim() || null, attachmentUrl, attachmentName, attachmentType }) })
+      if (!sendRes.ok) { const d = await sendRes.json().catch(() => ({})); alert(d.error || 'Message failed to send - please try again.'); setAttachmentUploading(false); return }
+      setMessages(prev => [...prev, { sender_id: userId, recipient_id: activeConvo, content: newMsg.trim() || null, attachment_url: attachmentUrl, attachment_name: attachmentName, attachment_type: attachmentType, created_at: new Date().toISOString(), read: false }].slice(-THREAD_LIMIT))
+      setNewMsg(''); removeAttachment(); setAttachmentUploading(false); setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 100)
+    } catch (error) { console.error('Error sending message:', error); alert('Failed to send message'); setAttachmentUploading(false) }
   }
 
   const activePartner = conversations.find(c => c.partnerId === activeConvo)
-  return (
-    <DashboardShell role="talent">
-      <h1 className="text-2xl font-serif font-bold text-ink mb-6">Messages</h1>
-
-      <div className="dashboard-card p-0 overflow-hidden" style={{ height: 'calc(100vh - 200px)' }}>
-        <div className="flex h-full">
-          <div className="w-80 border-r border-gray-100 overflow-y-auto">
-            {conversations.length === 0 ? (
-              <div className="p-8 text-center text-gray-400">
-                <MessageSquare size={32} className="mx-auto mb-2" />
-                <p className="text-sm">No messages yet</p>
-              </div>
-            ) : conversations.map((convo) => (
-              <button key={convo.partnerId}
-                onClick={() => setActiveConvo(convo.partnerId)}
-                className={`w-full p-4 text-left border-b border-gray-50 hover:bg-gray-50 transition-colors ${
-                  activeConvo === convo.partnerId ? 'bg-gold/5 border-l-2 border-l-gold' : ''
-                }`}>
-                <div className="flex items-center justify-between">
-                  <p className="font-medium text-ink text-sm truncate">{convo.partnerName || 'Unknown User'}</p>
-                  {convo.unread > 0 && (
-                    <span className="w-5 h-5 bg-gold text-white text-xs rounded-full flex items-center justify-center">{convo.unread}</span>
-                  )}
-                </div>
-                <p className="text-xs text-gray-400 truncate mt-1">{convo.lastMessage?.content}</p>
-              </button>
-            ))}
-          </div>
-
-          <div className="flex-1 flex flex-col">
-            {!activeConvo ? (
-              <div className="flex-1 flex items-center justify-center text-gray-400">
-                <p>Select a conversation to start messaging</p>
-              </div>
-            ) : (
-              <>
-                <div className="px-6 py-3 border-b border-gray-100">
-                  <p className="font-medium text-ink text-sm">{activePartner?.partnerName || 'Unknown User'}</p>
-                </div>
-                <div className="flex-1 overflow-y-auto p-6 space-y-3">
-                  {messages.map((msg, i) => (
-                    <div key={i} className={`flex ${msg.sender_id === userId ? 'justify-end' : 'justify-start'}`}>
-                      <div className="flex flex-col">
-                        <div className={`max-w-xs px-4 py-2.5 rounded-2xl text-sm ${
-                          msg.sender_id === userId ? 'bg-gold text-white rounded-br-sm' : 'bg-gray-100 text-ink rounded-bl-sm'
-                        }`}>
-                          {msg.content && <p>{msg.content}</p>}
-                          {msg.attachment_url && (
-                            <div className="mt-2">
-                              {(msg.attachment_type?.startsWith('image/')) ? (
-                                <a href={msg.attachment_url} target="_blank" rel="noopener noreferrer">
-                                  <img src={msg.attachment_url} alt={msg.attachment_name} className="max-w-[200px] rounded" />
-                                </a>
-                              ) : (
-                                <div className="flex items-center gap-2 text-xs">
-                                  <FileText size={14} />
-                                  <a href={msg.attachment_url} download={msg.attachment_name} className="underline hover:opacity-80">
-                                    {msg.attachment_name}
-                                  </a>
-                                </div>
-                              )}
-                            </div>
-                          )}
-                        </div>
-                        <p className="text-xs text-gray-400 mt-1 px-2">{formatTimestamp(msg.created_at)}</p>
-                      </div>
-                    </div>
-                  ))}
-                  <div ref={bottomRef} />
-                </div>
-                <div className="p-4 border-t border-gray-100">
-                  {attachmentFile && (
-                    <div className="mb-3 p-3 bg-gray-50 rounded flex items-center justify-between">
-                      <div className="flex items-center gap-2 text-sm text-ink">
-                        <FileText size={16} />
-                        <span className="truncate">{attachmentFile.name}</span>
-                      </div>
-                      <button onClick={removeAttachment} className="text-gray-400 hover:text-ink transition-colors">×</button>
-                    </div>
-                  )}
-                  <div className="flex space-x-3">
-                    <input type="text" value={newMsg} onChange={(e) => setNewMsg(e.target.value)}
-                      onKeyDown={(e) => e.key === 'Enter' && !attachmentUploading && sendMessage()}
-                      className="input-field flex-1" placeholder="Type a message..." disabled={attachmentUploading} />
-                    <input ref={fileInputRef} type="file" onChange={handleFileSelected} accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" style={{ display: 'none' }} />
-                    <button onClick={handleAttachmentClick} className="btn-secondary !px-4" disabled={attachmentUploading} title="Attach file">
-                      <Paperclip size={18} />
-                    </button>
-                    <button onClick={sendMessage} className="btn-primary !px-4" disabled={attachmentUploading}>
-                      <Send size={18} />
-                    </button>
-                  </div>
-                </div>
-              </>
-            )}
-          </div>
-        </div>
-      </div>
-    </DashboardShell>
-  )
+  return <DashboardShell role="talent">
+    <h1 className="text-2xl font-semibold text-ink mb-6">Messages</h1>
+    <div className="dashboard-card p-0 overflow-hidden" style={{ height: 'calc(100vh - 200px)' }}><div className="flex h-full">
+      <div className="w-80 border-r border-gray-100 overflow-y-auto">{loading ? <div className="p-8 text-center text-gray-400">Loading…</div> : conversations.length === 0 ? <div className="p-8 text-center text-gray-400"><MessageSquare size={32} className="mx-auto mb-2" /><p className="text-sm">No messages yet</p></div> : conversations.map(convo => <button type="button" key={convo.partnerId} onClick={() => setActiveConvo(convo.partnerId)} className={`w-full p-4 text-left border-b border-gray-50 hover:bg-gray-50 transition-colors ${activeConvo === convo.partnerId ? 'bg-gold/5 border-l-2 border-l-gold' : ''}`}><div className="flex items-center justify-between"><p className="font-medium text-ink text-sm truncate">{convo.partnerName || 'Unknown User'}</p>{convo.unread > 0 && <span className="w-5 h-5 bg-gold text-white text-xs rounded-full flex items-center justify-center">{convo.unread}</span>}</div><p className="text-xs text-gray-400 truncate mt-1">{convo.lastMessage?.content}</p></button>)}</div>
+      <div className="flex-1 flex flex-col">{!activeConvo ? <div className="flex-1 flex items-center justify-center text-gray-400"><p>Select a conversation to start messaging</p></div> : <><div className="px-6 py-3 border-b border-gray-100"><p className="font-medium text-ink text-sm">{activePartner?.partnerName || 'Unknown User'}</p><p className="text-[10px] text-muted mt-0.5">Showing latest {THREAD_LIMIT} messages</p></div><div className="flex-1 overflow-y-auto p-6 space-y-3">{messages.map((msg, i) => <div key={msg.id || i} className={`flex ${msg.sender_id === userId ? 'justify-end' : 'justify-start'}`}><div className="flex flex-col"><div className={`max-w-xs px-4 py-2.5 rounded-2xl text-sm ${msg.sender_id === userId ? 'bg-gold text-white rounded-br-sm' : 'bg-gray-100 text-ink rounded-bl-sm'}`}>{msg.content && <p>{msg.content}</p>}{msg.attachment_url && <div className="mt-2">{msg.attachment_type?.startsWith('image/') ? <a href={msg.attachment_url} target="_blank" rel="noopener noreferrer"><img src={msg.attachment_url} alt={msg.attachment_name} className="max-w-[200px] rounded" /></a> : <div className="flex items-center gap-2 text-xs"><FileText size={14} /><a href={msg.attachment_url} download={msg.attachment_name} className="underline hover:opacity-80">{msg.attachment_name}</a></div>}</div>}</div><p className="text-xs text-gray-400 mt-1 px-2">{formatTimestamp(msg.created_at)}</p></div></div>)}<div ref={bottomRef} /></div><div className="p-4 border-t border-gray-100">{attachmentFile && <div className="mb-3 p-3 bg-gray-50 rounded flex items-center justify-between"><div className="flex items-center gap-2 text-sm text-ink"><FileText size={16} /><span className="truncate">{attachmentFile.name}</span></div><button type="button" onClick={removeAttachment} className="text-gray-400 hover:text-ink">×</button></div>}<div className="flex space-x-3"><input type="text" value={newMsg} onChange={e => setNewMsg(e.target.value)} onKeyDown={e => e.key === 'Enter' && !attachmentUploading && sendMessage()} className="input-field flex-1" placeholder="Type a message..." disabled={attachmentUploading} /><input ref={fileInputRef} type="file" onChange={handleFileSelected} accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" style={{ display: 'none' }} /><button type="button" onClick={handleAttachmentClick} className="btn-secondary !px-4" disabled={attachmentUploading} title="Attach file"><Paperclip size={18} /></button><button type="button" onClick={sendMessage} className="btn-primary !px-4" disabled={attachmentUploading}><Send size={18} /></button></div></div></>}</div>
+    </div></div>
+  </DashboardShell>
 }
