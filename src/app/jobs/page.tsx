@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
+import SponsoredAd from '@/components/SponsoredAd'
 import Link from 'next/link'
 import { Search, MapPin, Briefcase, ArrowRight, Bookmark, Star, Building2 } from 'lucide-react'
 import Pagination from '@/components/Pagination'
@@ -92,6 +93,8 @@ export default function PublicJobsPage() {
           </div>
         </div>
       </section>
+
+      <SponsoredAd placement="jobs_talent_sponsor" />
 
       <section className="py-12">
         <div className="max-w-[1440px] mx-auto px-6 lg:px-10">
