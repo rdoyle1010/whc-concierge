@@ -32,6 +32,8 @@ import murad from './murad-masterclass'
 import cancerCare from './cancer-care-awareness'
 import menopause from './menopause-aware-spa'
 import pregnancy from './pregnancy-postnatal-spa'
+import spaManager from './spa-manager-programme'
+import spaDirector from './spa-director-programme'
 
 export const MORE_ANSWERS: Record<string, number[]> = {
   'espa-masterclass': espa,
@@ -65,4 +67,6 @@ export const MORE_ANSWERS: Record<string, number[]> = {
   'cancer-care-awareness': cancerCare,
   'menopause-aware-spa': menopause,
   'pregnancy-postnatal-spa': pregnancy,
+  'spa-manager-programme': spaManager,
+  'spa-director-programme': spaDirector,
 }
