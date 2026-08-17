@@ -13,6 +13,9 @@ const EMPLOYER_CANDIDATE_FIELDS = [
   'approval_status', 'profile_visible', 'is_featured', 'featured_until', 'created_at',
 ].join(',')
 
+const DEFAULT_LIMIT = 60
+const MAX_LIMIT = 100
+
 export async function GET(req: NextRequest) {
   const auth = await createServerSupabaseClient()
   const { data: { user } } = await auth.auth.getUser()
@@ -32,6 +35,8 @@ export async function GET(req: NextRequest) {
 
   const requestedRadius = Number(req.nextUrl.searchParams.get('radius'))
   const radius = Number.isFinite(requestedRadius) && requestedRadius > 0 ? Math.min(requestedRadius, 250) : null
+  const requestedLimit = Number(req.nextUrl.searchParams.get('limit'))
+  const limit = Number.isFinite(requestedLimit) && requestedLimit > 0 ? Math.min(Math.floor(requestedLimit), MAX_LIMIT) : DEFAULT_LIMIT
 
   const [{ data: blocks }, { data: rows, error }] = await Promise.all([
     admin.from('profile_blocks').select('candidate_id').eq('blocked_employer_id', employer.id),
@@ -40,13 +45,14 @@ export async function GET(req: NextRequest) {
       .eq('approval_status', 'approved')
       .or('profile_visible.eq.true,profile_visible.is.null')
       .order('is_featured', { ascending: false })
-      .order('created_at', { ascending: false }),
+      .order('created_at', { ascending: false })
+      .limit(limit + 1),
   ])
 
   if (error) return NextResponse.json({ error: 'Talent directory unavailable' }, { status: 500 })
   const blocked = new Set((blocks || []).map((row: any) => row.candidate_id))
   const origin = { latitude: employer.latitude, longitude: employer.longitude }
-  const candidates = (rows || [])
+  const discoverable = (rows || [])
     .filter((candidate: any) => canEmployerDiscoverCandidate(candidate, blocked))
     .map((candidate: any) => {
       const radiusResult = mutualRadiusResult(origin, candidate, radius)
@@ -59,12 +65,18 @@ export async function GET(req: NextRequest) {
         within_radius: radiusResult.withinRadius,
       }
     })
-    // "All distances" removes the employer's own search limit, but it must
-    // never override the professional's stated travel radius.
     .filter((candidate: any) => candidate.within_radius)
+
+  const hasMore = discoverable.length > limit || (rows || []).length > limit
+  const candidates = discoverable.slice(0, limit)
 
   return NextResponse.json({
     candidates,
+    pagination: {
+      limit,
+      returned: candidates.length,
+      has_more: hasMore,
+    },
     origin: {
       postcode: employer.postcode || null,
       geocoded: employer.latitude != null && employer.longitude != null,
