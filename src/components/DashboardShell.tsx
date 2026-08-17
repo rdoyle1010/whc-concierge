@@ -10,7 +10,7 @@ import {
   LayoutDashboard, User, Briefcase, MessageSquare, Star, Calendar,
   Settings, LogOut, Menu, X, Users, FileText, Megaphone,
   AlertTriangle, Heart, Building2, ChevronRight, BarChart3, CreditCard, GraduationCap,
-  Palette, Banknote,
+  Palette, Banknote, Download,
 } from 'lucide-react'
 
 interface NavItem {
@@ -68,6 +68,7 @@ const navItems: Record<string, NavItem[]> = {
     { label: 'Agency Money', href: '/admin/agency', icon: <CreditCard size={20} /> },
     { label: 'Verification', href: '/admin/verification', icon: <Users size={20} /> },
     { label: 'Academy', href: '/admin/academy', icon: <GraduationCap size={20} />, section: 'Content & revenue' },
+    { label: 'Academy Downloads', href: '/admin/academy/downloads', icon: <Download size={20} /> },
     { label: 'Residency Listings', href: '/admin/residency', icon: <Calendar size={20} /> },
     { label: 'Job Listings', href: '/admin/jobs', icon: <Briefcase size={20} /> },
     { label: 'Blog', href: '/admin/blog', icon: <FileText size={20} /> },
