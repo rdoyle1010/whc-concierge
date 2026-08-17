@@ -35,6 +35,7 @@ type Health = {
   academy: { enrolments: number; revenue_pence: number; legacy_records: number }
   agency_money: { collected_pounds: number; refunded_pounds: number; payout_pending_pounds: number; open_disputes: number }
   payment_sources: { stripe: number; manual: number; legacy: number; unknown: number }
+  scale?: { users: number; candidates: number; employers: number; live_jobs: number; applications: number; messages: number; notification_poll_seconds: number }
   expired_live_jobs: number
 }
 
@@ -79,7 +80,7 @@ export default function AdminDashboard() {
           </button>
           {showHelp && (
             <div className="absolute right-0 top-12 z-20 w-[320px] rounded-2xl border border-border bg-white p-4 text-[12px] leading-5 text-secondary shadow-xl">
-              This panel checks live WHC platform data. Stripe means a paid entitlement is linked to Stripe. Manual means access was granted outside Stripe. Legacy means an older record needs review. Items needing attention are shown in amber or red.
+              This panel checks live WHC platform data. Stripe means a paid entitlement is linked to Stripe. Manual means access was granted outside Stripe. Legacy means an older record needs review. The scale row shows how much data the platform is carrying so growth is visible before it becomes a performance problem.
             </div>
           )}
         </div>
@@ -93,7 +94,7 @@ export default function AdminDashboard() {
             </span>
             <div>
               <p className="text-[13px] font-semibold text-ink">Platform & payments health</p>
-              <p className="text-[11px] text-muted">Live status across Stripe, Agency, Featured Talent, Preferred Employers and Academy.</p>
+              <p className="text-[11px] text-muted">Live status across payments, entitlements and platform scale.</p>
             </div>
           </div>
           {!healthLoading && health && (
@@ -134,6 +135,21 @@ export default function AdminDashboard() {
                 <p className={`text-[12px] ${health.expired_live_jobs || health.academy.legacy_records ? 'text-amber-700' : 'text-secondary'}`}>Expired live jobs {health.expired_live_jobs} · Legacy Academy records {health.academy.legacy_records}</p>
               </div>
             </div>
+
+            {health.scale && (
+              <div className="border-t border-border bg-[#faf9f6] px-5 py-4">
+                <p className="dashboard-eyebrow !mb-2">Platform scale</p>
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-7">
+                  <ScaleCell label="Users" value={health.scale.users} />
+                  <ScaleCell label="Talent" value={health.scale.candidates} />
+                  <ScaleCell label="Employers" value={health.scale.employers} />
+                  <ScaleCell label="Live jobs" value={health.scale.live_jobs} />
+                  <ScaleCell label="Applications" value={health.scale.applications} />
+                  <ScaleCell label="Messages" value={health.scale.messages} />
+                  <ScaleCell label="Notif. poll" value={`${health.scale.notification_poll_seconds}s`} />
+                </div>
+              </div>
+            )}
           </>
         )}
       </section>
@@ -168,4 +184,8 @@ function HealthCell({ label, value, detail, alert = false }: { label: string; va
       <p className="mt-1 text-[11px] text-muted">{detail}</p>
     </div>
   )
+}
+
+function ScaleCell({ label, value }: { label: string; value: number | string }) {
+  return <div><p className="text-[10px] uppercase tracking-[0.12em] text-muted">{label}</p><p className="mt-1 text-[18px] font-semibold text-ink">{value}</p></div>
 }
