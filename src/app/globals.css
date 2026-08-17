@@ -35,7 +35,6 @@
   .gradient-text-gold { color: #C9A96E; }
   .animate-pulse-gold {}
 
-  /* Shared public-site presentation, intentionally visual only. */
   .public-page { @apply min-h-screen bg-surface text-body; }
   .public-hero { @apply bg-parchment border-b border-border; }
   .public-eyebrow { @apply text-[10px] uppercase tracking-[0.18em] font-semibold text-accent; }
@@ -43,9 +42,19 @@
   .public-intro { @apply text-secondary text-[15px] leading-7; }
   .public-panel { @apply bg-white border border-border rounded-2xl; box-shadow: 0 10px 28px rgba(16,40,59,.045); }
 
-  /* Skeleton */
   .skeleton { @apply bg-surface rounded animate-pulse; }
 }
+
+/* Legacy public utilities now inherit the WHC design language. This lets older
+   pages visually match the newer dashboards without touching their business logic. */
+.text-black { color: #10283b !important; }
+.bg-black { background-color: #0b2f4d !important; }
+.hover\:text-black:hover { color: #10283b !important; }
+.hover\:bg-black:hover { background-color: #123f64 !important; }
+.border-neutral-100 { border-color: #e5e1da !important; }
+.text-neutral-400 { color: #7f8a91 !important; }
+.text-neutral-600 { color: #65717a !important; }
+.bg-neutral-100 { background-color: #f3f1ec !important; }
 
 /* One modern, premium workspace system shared by Talent, Employer and Admin. */
 .dashboard-shell { background: #f3f1ec; color: #17202a; font-family: var(--font-manrope), "Segoe UI", sans-serif; }
@@ -104,27 +113,26 @@
 ::-webkit-scrollbar { width:4px; } ::-webkit-scrollbar-track { background:transparent; } ::-webkit-scrollbar-thumb { background:#d4d4d4; border-radius:2px; }
 html { scroll-behavior:smooth; }
 
-/* Website & Brand editor variables. These are intentionally scoped to the
-   public website wrapper so dashboard and matching screens remain stable. */
+/* Website & Brand editor variables. Defaults now match the dashboard system. */
 .website-theme {
-  font-family: var(--site-body-font, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif);
-  color: var(--site-ink, #111111);
-  background: var(--site-background, #ffffff);
+  font-family: var(--site-body-font, var(--font-manrope), "Segoe UI", sans-serif);
+  color: var(--site-ink, #10283b);
+  background: var(--site-background, #f3f1ec);
 }
 .website-theme .site-heading {
-  font-family: var(--site-heading-font, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif);
-  color: var(--site-ink, #111111);
-  letter-spacing: -0.025em;
+  font-family: var(--site-heading-font, var(--font-manrope), "Segoe UI", sans-serif);
+  color: var(--site-ink, #10283b);
+  letter-spacing: -0.035em;
 }
-.website-theme .site-accent { color: var(--site-accent, #111111); }
-.website-theme .site-accent-bg { background-color: var(--site-accent, #111111); }
-.website-theme .site-surface { background-color: var(--site-surface, #f5f4f2); }
+.website-theme .site-accent { color: var(--site-accent, #C9A96E); }
+.website-theme .site-accent-bg { background-color: var(--site-accent, #0b2f4d); }
+.website-theme .site-surface { background-color: var(--site-surface, #f3f1ec); }
 .website-theme .site-section {
   padding-top: calc(5rem * var(--site-space, 1));
   padding-bottom: calc(5rem * var(--site-space, 1));
 }
 .website-theme .site-button {
-  border-radius: var(--site-button-radius, 0px);
+  border-radius: var(--site-button-radius, 12px);
   transition: transform 150ms ease, opacity 150ms ease;
 }
-.website-theme .site-button:hover { transform: translateY(-1px); opacity: .9; }
+.website-theme .site-button:hover { transform: translateY(-1px); opacity: .92; }
