@@ -1,11 +1,11 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
-import { dashboardForRole, normaliseAccountRole } from '@/lib/role-access'
+import { canRoleAccessPath, dashboardForRole, normaliseAccountRole } from '@/lib/role-access'
 
 // Routes that require authentication
 const PROTECTED_PREFIXES = ['/talent', '/employer', '/hotel', '/admin']
 
-// Routes that should redirect logged-in users away (to dashboard)
+// Routes that should redirect logged-in users away (to dashboard or requested destination)
 const AUTH_PAGES = ['/login', '/register']
 
 // Maintenance / dev-only API routes that should be blocked in production
@@ -57,24 +57,39 @@ export async function proxy(request: NextRequest) {
   // Refresh the session (important for token refresh)
   const { data: { user } } = await supabase.auth.getUser()
 
-  // Protected routes: redirect to login if no session
+  // Protected routes: redirect to login if no session. Preserve the complete
+  // destination (including query string) so featured-profile deep links survive sign-in.
   const isProtected = PROTECTED_PREFIXES.some(prefix => pathname.startsWith(prefix))
   if (isProtected && !user) {
     const loginUrl = request.nextUrl.clone()
+    const destination = `${request.nextUrl.pathname}${request.nextUrl.search}`
     loginUrl.pathname = '/login'
-    loginUrl.searchParams.set('redirect', pathname)
+    loginUrl.search = ''
+    loginUrl.searchParams.set('redirect', destination)
     return NextResponse.redirect(loginUrl)
   }
 
-  // Auth pages: redirect logged-in users to the dashboard for their role
+  // Auth pages: a signed-in user should continue to a valid requested destination,
+  // rather than being bounced to their dashboard and losing context.
   const isAuthPage = AUTH_PAGES.some(page => pathname.startsWith(page))
   if (isAuthPage && user) {
     const { data: prof } = await supabase.from('profiles').select('role').eq('id', user.id).single()
     const role = normaliseAccountRole(prof?.role)
     if (role) {
-      const dashUrl = request.nextUrl.clone()
-      dashUrl.pathname = dashboardForRole(role)
-      return NextResponse.redirect(dashUrl)
+      const requested = request.nextUrl.searchParams.get('redirect')
+      const safeRequested = requested
+        && requested.startsWith('/')
+        && !requested.startsWith('//')
+        && canRoleAccessPath(role, requested)
+        ? requested
+        : null
+
+      const destination = safeRequested || dashboardForRole(role)
+      const nextUrl = request.nextUrl.clone()
+      const [nextPath, query = ''] = destination.split('?')
+      nextUrl.pathname = nextPath
+      nextUrl.search = query ? `?${query}` : ''
+      return NextResponse.redirect(nextUrl)
     }
   }
 
