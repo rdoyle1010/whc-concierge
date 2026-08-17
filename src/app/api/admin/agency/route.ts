@@ -4,17 +4,6 @@ import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { getStripe } from '@/lib/stripe'
 
-const ADMIN_BOOKING_FIELDS = [
-  'id', 'employer_id', 'candidate_id', 'shift_date', 'rate', 'hours', 'status', 'created_at',
-  'paid_at', 'amount_paid', 'payout_amount', 'payout_status', 'payout_at', 'dispute_status',
-  'dispute_reason', 'dispute_requested', 'refund_amount', 'stripe_payment_intent',
-].join(',')
-
-const ADMIN_BOOKING_ACTION_FIELDS = [
-  'id', 'employer_id', 'candidate_id', 'shift_date', 'paid_at', 'amount_paid',
-  'payout_amount', 'payout_status', 'dispute_status', 'stripe_payment_intent',
-].join(',')
-
 async function requireAdmin() {
   const cookieStore = await cookies()
   const supabase = createServerClient(
@@ -37,7 +26,7 @@ export async function GET() {
   try {
     const admin = createAdminClient()
     const { data: bookings, error: bookingsError } = await admin.from('agency_bookings')
-      .select(ADMIN_BOOKING_FIELDS)
+      .select('id,employer_id,candidate_id,shift_date,rate,hours,status,created_at,paid_at,amount_paid,payout_amount,payout_status,payout_at,dispute_status,dispute_reason,dispute_requested,refund_amount,stripe_payment_intent')
       .order('created_at', { ascending: false })
     if (bookingsError) return NextResponse.json({ error: bookingsError.message }, { status: 500 })
 
@@ -130,7 +119,7 @@ export async function POST(req: NextRequest) {
 
     const admin = createAdminClient()
     const { data: booking, error: bookingError } = await admin.from('agency_bookings')
-      .select(ADMIN_BOOKING_ACTION_FIELDS)
+      .select('id,employer_id,candidate_id,shift_date,paid_at,amount_paid,payout_amount,payout_status,dispute_status,stripe_payment_intent')
       .eq('id', body.bookingId)
       .maybeSingle()
     if (bookingError) return NextResponse.json({ error: bookingError.message }, { status: 500 })
