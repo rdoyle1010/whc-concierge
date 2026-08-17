@@ -8,7 +8,7 @@ export const dynamic = 'force-dynamic'
 const EMPLOYER_CANDIDATE_FIELDS = [
   'id', 'user_id', 'full_name', 'headline', 'role_level', 'location', 'services_offered',
   'experience_years', 'profile_image_url', 'review_score', 'bio', 'qualifications',
-  'product_houses', 'systems_experience', 'cv_url', 'phone', 'has_insurance',
+  'product_houses', 'systems_experience', 'cv_url', 'has_insurance',
   'availability_status', 'travel_radius_miles', 'has_car', 'latitude', 'longitude',
   'approval_status', 'profile_visible', 'is_featured', 'featured_until', 'created_at',
 ].join(',')
