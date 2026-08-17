@@ -7,6 +7,11 @@ import { sendApprovalEmail, sendRejectionEmail } from '@/lib/emails'
 
 const DEFAULT_LIMIT = 250
 const MAX_LIMIT = 500
+const RESIDENCY_FIELDS = [
+  'id', 'user_id', 'full_name', 'primary_specialism', 'secondary_specialisms', 'qualifications',
+  'current_location', 'weekly_rate', 'day_rate', 'monthly_rate', 'negotiable', 'bio',
+  'available_from', 'approval_status', 'created_at',
+].join(',')
 
 async function requireAdmin() {
   const cookieStore = await cookies()
@@ -36,10 +41,11 @@ export async function GET(req: NextRequest) {
 
   try {
     if (kind === 'residency') {
-      const { data } = await admin.from('residency_profiles')
-        .select('*')
+      const { data, error } = await admin.from('residency_profiles')
+        .select(RESIDENCY_FIELDS)
         .order('created_at', { ascending: false })
         .limit(limit)
+      if (error) return NextResponse.json({ error: error.message }, { status: 500 })
       return NextResponse.json({ rows: data || [], pagination: { limit, returned: data?.length || 0, capped: (data?.length || 0) >= limit } })
     }
 
@@ -88,7 +94,7 @@ export async function POST(req: NextRequest) {
       const { data: row, error } = await admin.from('residency_profiles')
         .update({ approval_status: decision })
         .eq('id', id)
-        .select('*')
+        .select('id,user_id,full_name,primary_specialism,approval_status')
         .single()
       if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
