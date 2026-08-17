@@ -19,31 +19,52 @@ export default function EmployerCandidatesPage() {
   const [radius, setRadius] = useState('25')
   const [originGeocoded, setOriginGeocoded] = useState(true)
   const [directoryError, setDirectoryError] = useState('')
+  const [requestedCandidateId, setRequestedCandidateId] = useState<string | null>(null)
+  const [requestedProfileError, setRequestedProfileError] = useState('')
+  const [urlReady, setUrlReady] = useState(false)
+
+  // Read a homepage featured-profile deep link after hydration. Starting these
+  // visits on "All locations" avoids the generic 25-mile browse filter hiding
+  // the exact profile the employer clicked, while the API still enforces the
+  // professional's own travel radius, privacy settings and employer blocks.
+  useEffect(() => {
+    const candidateId = new URLSearchParams(window.location.search).get('candidate')
+    setRequestedCandidateId(candidateId)
+    if (candidateId) setRadius('all')
+    setUrlReady(true)
+  }, [])
 
   useEffect(() => {
+    if (!urlReady) return
+
     async function load() {
       setLoading(true)
       setDirectoryError('')
+      setRequestedProfileError('')
+
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
-      const { data: prof } = await supabase.from('employer_profiles').select('*').eq('user_id', user.id).single()
-      setProfile(prof)
 
-      // Privacy, Stealth Mode and both parties' mile limits are enforced by
-      // the server before any candidate data reaches this browser.
-      const [directoryRes, swipesRes] = await Promise.all([
+      // Load the independent pieces together so this page feels quicker after
+      // sign-in instead of waiting for each request one-by-one.
+      const [profileRes, directoryRes, swipesRes, shortlistRes] = await Promise.all([
+        supabase.from('employer_profiles').select('*').eq('user_id', user.id).single(),
         fetch(`/api/employer/candidates${radius === 'all' ? '' : `?radius=${radius}`}`)
           .then(async r => ({ ok: r.ok, body: await r.json().catch(() => ({})) }))
           .catch(() => ({ ok: false, body: { error: 'Talent directory unavailable' } })),
         fetch('/api/swipe').then(r => r.ok ? r.json() : { passed_ids: [] }).catch(() => ({ passed_ids: [] })),
+        fetch('/api/shortlist').then(async r => ({ ok: r.ok, body: r.ok ? await r.json().catch(() => ({})) : {} })).catch(() => ({ ok: false, body: {} })),
       ])
+
+      const prof = profileRes.data
+      setProfile(prof)
 
       if (!directoryRes.ok) setDirectoryError(directoryRes.body.error || 'Talent directory unavailable')
       setOriginGeocoded(directoryRes.body.origin?.geocoded !== false)
       const passedIds = new Set(swipesRes.passed_ids || [])
-      const visible = (directoryRes.body.candidates || []).filter((c: any) => !passedIds.has(c.id))
+      const visible = (directoryRes.body.candidates || []).filter((c: any) => !passedIds.has(c.id) || c.id === requestedCandidateId)
 
-      // Score every candidate against this employer's live roles - best fit first
+      // Score every candidate against this employer's live roles - best fit first.
       let scored = visible
       if (prof) {
         const { data: myJobs } = await supabase.from('job_listings').select('*').eq('employer_id', prof.id).eq('is_live', true)
@@ -63,19 +84,26 @@ export default function EmployerCandidatesPage() {
           })
         }
       }
+
       setCandidates(scored)
 
-      // Load shortlisted candidates
-      const slRes = await fetch('/api/shortlist')
-      if (slRes.ok) {
-        const slData = await slRes.json()
-        setShortlistedIds(new Set((slData.shortlisted || []).map((s: any) => s.candidate_id)))
+      if (requestedCandidateId) {
+        const requested = scored.find((candidate: any) => candidate.id === requestedCandidateId)
+        if (requested) {
+          setViewing(requested)
+        } else if (directoryRes.ok) {
+          setRequestedProfileError('That featured professional is not currently available to this property based on their privacy or travel settings.')
+        }
+      }
+
+      if (shortlistRes.ok) {
+        setShortlistedIds(new Set((shortlistRes.body.shortlisted || []).map((s: any) => s.candidate_id)))
       }
 
       setLoading(false)
     }
     load()
-  }, [radius])
+  }, [radius, requestedCandidateId, urlReady])
 
   const filtered = candidates.filter((c) => {
     if (search && !c.full_name?.toLowerCase().includes(search.toLowerCase()) &&
@@ -88,8 +116,6 @@ export default function EmployerCandidatesPage() {
     const isShortlisted = shortlistedIds.has(candidateId)
     const next = new Set(shortlistedIds)
     if (isShortlisted) {
-      // Need to find the shortlist ID to delete - for simplicity, use the POST/DELETE by candidateId approach
-      // We'll refetch after toggle
       next.delete(candidateId)
       const slRes = await fetch('/api/shortlist')
       if (slRes.ok) {
@@ -102,7 +128,6 @@ export default function EmployerCandidatesPage() {
       const j = res.ok ? await res.json().catch(() => ({})) : null
       if (!j) { alert('Could not shortlist - please try again.'); return }
       next.add(candidateId)
-      // Shortlisting can complete a mutual match server-side - celebrate it
       if (j.matched) {
         setMatchInfo({ name: j.candidateName || 'This candidate', job: j.jobTitle || 'your role' })
       }
@@ -113,13 +138,11 @@ export default function EmployerCandidatesPage() {
   const handleSwipe = async (candidateId: string, direction: 'left' | 'right') => {
     const removed = candidates.find(c => c.id === candidateId)
     if (direction === 'left') setCandidates(prev => prev.filter(c => c.id !== candidateId))
-    // Swipe + mutual-match detection, all server-side
     const res = await fetch('/api/swipe', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ targetId: candidateId, targetType: 'candidate', action: direction }),
     }).catch(() => null)
     if (direction === 'left' && !(res && res.ok)) {
-      // Roll back the optimistic removal so the card isn't silently lost
       if (removed) setCandidates(prev => prev.some(c => c.id === candidateId) ? prev : [removed, ...prev])
       alert('Could not record your pass - please try again.')
       return
@@ -168,6 +191,7 @@ export default function EmployerCandidatesPage() {
         </div>
         {!originGeocoded && radius !== 'all' && <p className="mt-3 text-xs text-amber-700">Add a valid postcode to your Company Profile before using distance search.</p>}
         {directoryError && <p className="mt-3 text-xs text-red-600">{directoryError}</p>}
+        {requestedProfileError && <p className="mt-3 text-xs text-amber-700">{requestedProfileError}</p>}
       </div>
 
       {loading ? (
@@ -217,15 +241,15 @@ export default function EmployerCandidatesPage() {
 
               {c.experience_years && <p className="text-xs text-gray-400 mb-3">{c.experience_years} years experience</p>}
 
-              <button onClick={() => setViewing(c)} className="w-full mb-2 py-2 rounded-lg text-[12px] font-medium transition-colors" style={{ background: '#FDF6EC', color: '#C9A96E', border: '1px solid rgba(201,169,110,0.35)' }}>
+              <button type="button" onClick={() => setViewing(c)} className="w-full mb-2 py-2 rounded-lg text-[12px] font-medium transition-colors" style={{ background: '#FDF6EC', color: '#C9A96E', border: '1px solid rgba(201,169,110,0.35)' }}>
                 View Full Profile
               </button>
               <div className="flex items-center space-x-2 pt-3 border-t border-gray-100">
-                <button onClick={() => handleSwipe(c.id, 'left')}
+                <button type="button" onClick={() => handleSwipe(c.id, 'left')}
                   className="flex-1 py-2 rounded-lg bg-gray-50 hover:bg-gray-100 text-gray-400 flex items-center justify-center space-x-1 text-sm">
                   <X size={14} /><span>Pass</span>
                 </button>
-                <button onClick={() => toggleShortlist(c.id)}
+                <button type="button" onClick={() => toggleShortlist(c.id)}
                   className={`flex-1 py-2 rounded-lg flex items-center justify-center space-x-1 text-sm transition-colors ${shortlistedIds.has(c.id) ? 'bg-[#FDF6EC] text-accent' : 'bg-gold/10 hover:bg-gold/20 text-gold'}`}>
                   <Star size={14} fill={shortlistedIds.has(c.id) ? 'currentColor' : 'none'} /><span>{shortlistedIds.has(c.id) ? 'Shortlisted' : 'Shortlist'}</span>
                 </button>
