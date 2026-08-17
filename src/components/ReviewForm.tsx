@@ -1,11 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Star } from 'lucide-react'
 
-// Tailored criteria: candidates are judged on the work (including retail
-// sales - the number a spa director actually cares about); employers are
-// judged on what it's like to work a shift for them.
 const CANDIDATE_CRITERIA = [
   { key: 'professionalism', label: 'Professionalism' },
   { key: 'punctuality', label: 'Punctuality / Timekeeping' },
@@ -38,8 +35,6 @@ function StarSelector({ value, onChange }: { value: number; onChange: (v: number
   )
 }
 
-// The reviewer is ALWAYS the logged-in session on the server - reviewerId is
-// no longer sent (or needed). reviewedId is the reviewee's auth user id.
 export default function ReviewForm({ reviewedId, reviewedName, type = 'candidate', bookingId, onComplete }: {
   reviewedId: string; reviewedName?: string; type?: 'candidate' | 'employer'; bookingId?: string; onComplete?: () => void
 }) {
@@ -47,7 +42,25 @@ export default function ReviewForm({ reviewedId, reviewedName, type = 'candidate
   const [comment, setComment] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [submitted, setSubmitted] = useState(false)
+  const [checking, setChecking] = useState(Boolean(bookingId))
+  const [alreadyReviewed, setAlreadyReviewed] = useState(false)
+  const [reviewedAt, setReviewedAt] = useState<string | null>(null)
   const [error, setError] = useState('')
+
+  useEffect(() => {
+    if (!bookingId) return
+    let cancelled = false
+    fetch(`/api/reviews/status?bookingId=${encodeURIComponent(bookingId)}`)
+      .then(async res => res.ok ? res.json() : null)
+      .then(data => {
+        if (cancelled || !data) return
+        setAlreadyReviewed(Boolean(data.reviewed))
+        setReviewedAt(data.reviewedAt || null)
+      })
+      .catch(() => {})
+      .finally(() => { if (!cancelled) setChecking(false) })
+    return () => { cancelled = true }
+  }, [bookingId])
 
   const criteria = type === 'employer' ? EMPLOYER_CRITERIA : CANDIDATE_CRITERIA
   const allRated = criteria.every(c => scores[c.key] > 0)
@@ -69,9 +82,33 @@ export default function ReviewForm({ reviewedId, reviewedName, type = 'candidate
     const data = await res.json()
     setSubmitting(false)
 
-    if (!res.ok) { setError(data.error || 'Failed to submit review'); return }
+    if (!res.ok) {
+      if (res.status === 409 && bookingId) {
+        setAlreadyReviewed(true)
+        setError('')
+        return
+      }
+      setError(data.error || 'Failed to submit review')
+      return
+    }
     setSubmitted(true)
     onComplete?.()
+  }
+
+  if (checking) {
+    return <div className="py-10 text-center text-[13px] text-muted">Checking review status...</div>
+  }
+
+  if (alreadyReviewed) {
+    return (
+      <div className="text-center py-8">
+        <div className="w-12 h-12 bg-emerald-50 rounded-full flex items-center justify-center mx-auto mb-3">
+          <Star size={20} className="text-emerald-500 fill-emerald-500" />
+        </div>
+        <p className="text-[15px] font-medium text-ink mb-1">Review already completed</p>
+        <p className="text-[13px] text-muted">You&apos;ve already reviewed this shift{reviewedAt ? ` on ${new Date(reviewedAt).toLocaleDateString('en-GB')}` : ''}. There&apos;s nothing else you need to do.</p>
+      </div>
+    )
   }
 
   if (submitted) {
@@ -92,7 +129,6 @@ export default function ReviewForm({ reviewedId, reviewedName, type = 'candidate
 
       {error && <div className="bg-red-50 text-red-600 text-[13px] px-4 py-3 rounded-lg">{error}</div>}
 
-      {/* Criteria ratings */}
       <div className="space-y-3">
         {criteria.map(c => (
           <div key={c.key} className="flex items-center justify-between p-3 bg-surface rounded-lg">
@@ -102,7 +138,6 @@ export default function ReviewForm({ reviewedId, reviewedName, type = 'candidate
         ))}
       </div>
 
-      {/* Average preview */}
       {allRated && (
         <div className="flex items-center gap-3 p-3 bg-[#FDF6EC] border border-accent/20 rounded-lg">
           <span className="text-[20px] font-semibold text-accent">{avgScore.toFixed(1)}</span>
@@ -115,7 +150,6 @@ export default function ReviewForm({ reviewedId, reviewedName, type = 'candidate
         </div>
       )}
 
-      {/* Comment */}
       <div>
         <label className="eyebrow block mb-1.5">Comment (optional)</label>
         <textarea rows={3} value={comment} onChange={e => setComment(e.target.value)}
