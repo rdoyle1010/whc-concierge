@@ -10,7 +10,7 @@ export async function POST(request: NextRequest) {
     const email = typeof body?.email === 'string' ? body.email.trim() : ''
     const password = typeof body?.password === 'string' ? body.password : ''
     const requested = typeof body?.redirect === 'string' ? body.redirect : ''
-    const expectedRole = body?.role === 'employer' || body?.role === 'talent' ? body.role : null
+    const expectedRole = ['employer', 'talent', 'admin'].includes(body?.role) ? body.role : null
 
     if (!email || !password) {
       return NextResponse.json({ error: 'Enter your email and password.' }, { status: 400 })
@@ -43,7 +43,9 @@ export async function POST(request: NextRequest) {
     if (expectedRole) {
       const matchesSelectedLogin = expectedRole === 'employer'
         ? accountRole === 'employer'
-        : accountRole === 'candidate'
+        : expectedRole === 'talent'
+          ? accountRole === 'candidate'
+          : accountRole === 'admin'
 
       if (!matchesSelectedLogin) {
         await supabase.auth.signOut()
