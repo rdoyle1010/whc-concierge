@@ -10,6 +10,7 @@ export async function POST(request: NextRequest) {
     const email = typeof body?.email === 'string' ? body.email.trim() : ''
     const password = typeof body?.password === 'string' ? body.password : ''
     const requested = typeof body?.redirect === 'string' ? body.redirect : ''
+    const expectedRole = body?.role === 'employer' || body?.role === 'talent' ? body.role : null
 
     if (!email || !password) {
       return NextResponse.json({ error: 'Enter your email and password.' }, { status: 400 })
@@ -37,6 +38,25 @@ export async function POST(request: NextRequest) {
     if (!accountRole) {
       await supabase.auth.signOut()
       return NextResponse.json({ error: 'Your account role could not be verified. Please contact WHC support.' }, { status: 403 })
+    }
+
+    if (expectedRole) {
+      const matchesSelectedLogin = expectedRole === 'employer'
+        ? accountRole === 'employer'
+        : accountRole === 'candidate'
+
+      if (!matchesSelectedLogin) {
+        await supabase.auth.signOut()
+        const correctArea = accountRole === 'employer'
+          ? 'Hotel / Employer'
+          : accountRole === 'candidate'
+            ? 'Talent'
+            : 'Admin'
+        return NextResponse.json({
+          error: `This is a ${correctArea} account. Please use the ${correctArea} sign in.`,
+          accountRole,
+        }, { status: 403 })
+      }
     }
 
     const safeRequested = requested
