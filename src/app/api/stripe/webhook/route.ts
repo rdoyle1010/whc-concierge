@@ -39,6 +39,14 @@ async function convertReferral(supabase: any, candidateId: string) {
   }
 }
 
+function subscriptionPeriodEnd(subscription: Stripe.Subscription, fallbackDays: number) {
+  const itemEnd = (subscription.items?.data?.[0] as any)?.current_period_end
+  const subscriptionEnd = (subscription as any)?.current_period_end
+  const unix = Number(itemEnd || subscriptionEnd || 0)
+  if (unix > 0) return new Date(unix * 1000).toISOString()
+  return new Date(Date.now() + fallbackDays * 24 * 60 * 60 * 1000).toISOString()
+}
+
 export async function POST(req: NextRequest) {
   const stripe = getStripe()
   const body = await req.text()
@@ -137,14 +145,9 @@ export async function POST(req: NextRequest) {
           amount_paid: gross + fee,
           payout_amount: gross - candidateFee,
           payout_status: 'pending',
-          // Kept so refunds (no-show, left early, dispute) can be issued
-          // against the exact Stripe payment later.
           stripe_payment_intent: (session.payment_intent as string) || null,
         }).eq('id', meta.booking_id)
 
-        // Tell both parties the shift is now confirmed - the therapist is
-        // expected to turn up, the property has paid. Best-effort: a failed
-        // notification or email must never fail the webhook.
         try {
           const { data: booking } = await supabase.from('agency_bookings')
             .select('candidate_id, employer_id, shift_date, rate')
@@ -192,7 +195,6 @@ export async function POST(req: NextRequest) {
           const email = String(meta.buyer_email).toLowerCase()
           const buyerName = session.customer_details?.name || email.split('@')[0]
 
-          // Existing user? profiles.email is kept in sync at registration.
           let userId: string | null = null
           const { data: prof } = await supabase.from('profiles').select('id').eq('email', email).maybeSingle()
           if (prof) userId = prof.id
@@ -202,10 +204,6 @@ export async function POST(req: NextRequest) {
             })
             if (created?.user) userId = created.user.id
             else {
-              // The email may already exist in auth.users without a matching
-              // profiles row (or with a stale one) - generateLink resolves
-              // the existing user so the paid order still fulfils, and the
-              // profiles upsert below self-heals the missing row.
               const { data: link, error: lErr } = await supabase.auth.admin.generateLink({ type: 'magiclink', email })
               if (link?.user) userId = link.user.id
               else console.error('[Academy public] createUser failed:', cErr?.message, lErr?.message)
@@ -235,7 +233,6 @@ export async function POST(req: NextRequest) {
                 { onConflict: 'candidate_id,course_slug', ignoreDuplicates: true }
               )
             }
-            // Emailed access - a one-tap sign-in link straight to the course
             try {
               const { data: link } = await supabase.auth.admin.generateLink({
                 type: 'magiclink', email,
@@ -251,21 +248,13 @@ export async function POST(req: NextRequest) {
           if (!userId) throw new Error('course_public fulfilment: no user for ' + email)
         } catch (e: any) {
           console.error('[Academy public] fulfilment failed:', e?.message)
-          // A 500 makes Stripe retry the webhook - all fulfilment writes are
-          // idempotent upserts, so retries are safe. Silence here would mean
-          // a paid customer who receives nothing.
           return NextResponse.json({ error: 'course_public fulfilment failed' }, { status: 500 })
         }
       }
 
-      // WHC Academy bundle → every course enrolled at once. The per-course
-      // share of the bundle price is recorded so revenue totals stay honest.
       if (meta?.type === 'course_bundle' && meta?.candidate_id) {
         const coreCourses = (await getAcademyCatalog(false)).filter(course => course.is_core)
         const total = session.amount_total ?? 7900
-        // Split the full bundle price across only the courses NOT already
-        // owned - an already-bought course keeps its original record, so
-        // giving it a share of the £79 would silently vanish from revenue.
         const { data: owned } = await supabase.from('course_enrollments')
           .select('course_slug').eq('candidate_id', meta.candidate_id)
         const ownedSet = new Set((owned ?? []).map((r: any) => r.course_slug))
@@ -281,14 +270,12 @@ export async function POST(req: NextRequest) {
                 paid_at: new Date().toISOString(),
                 amount_paid: per + (remainder-- > 0 ? 1 : 0),
               },
-              // ignoreDuplicates kept as a race-safety net
               { onConflict: 'candidate_id,course_slug', ignoreDuplicates: true }
             )
           }
         }
       }
 
-      // WHC Academy course purchase → enrolment live.
       if (meta?.type === 'course' && meta?.candidate_id && meta?.course_slug) {
         await supabase.from('course_enrollments').upsert(
           {
@@ -301,7 +288,6 @@ export async function POST(req: NextRequest) {
         )
       }
 
-      // Therapist's monthly register listing → live.
       if (meta?.type === 'agency_listing' && meta?.candidate_id) {
         await supabase.from('candidate_profiles').update({
           agency_available: true,
@@ -312,7 +298,6 @@ export async function POST(req: NextRequest) {
         await convertReferral(supabase, meta.candidate_id)
       }
 
-      // Hotel's annual Preferred Employer registration → active.
       if (meta?.type === 'employer_registration' && meta?.employer_id) {
         await supabase.from('employer_profiles').update({
           preferred_employer: true,
@@ -337,7 +322,6 @@ export async function POST(req: NextRequest) {
           }).eq('id', meta.employer_id)
         }
 
-        // Fire job alerts for matching candidates (fire-and-forget)
         fetch(new URL('/api/job-alerts', req.url).toString(), {
           method: 'POST',
           headers: {
@@ -349,8 +333,8 @@ export async function POST(req: NextRequest) {
       }
       break
     }
+
     case 'checkout.session.expired': {
-      // Clean up orphaned pending-payment jobs when checkout expires
       const session = event.data.object as Stripe.Checkout.Session
       const meta = session.metadata
       if (meta?.type === 'job_posting' && meta?.job_id) {
@@ -359,6 +343,73 @@ export async function POST(req: NextRequest) {
           .eq('status', 'pending_payment')
           .eq('is_live', false)
       }
+      break
+    }
+
+    // Successful recurring invoices are the authoritative renewal signal.
+    // Subscription status often remains `active` for months, so relying on
+    // customer.subscription.updated alone can let entitlement dates expire
+    // even though Stripe has successfully charged the customer.
+    case 'invoice.paid': {
+      const invoice = event.data.object as Stripe.Invoice
+      const rawSubscription = (invoice as any).subscription
+        || (invoice as any).parent?.subscription_details?.subscription
+      const subscriptionId = typeof rawSubscription === 'string' ? rawSubscription : rawSubscription?.id
+      if (!subscriptionId) break
+
+      const subscription = await stripe.subscriptions.retrieve(subscriptionId)
+      const meta = subscription.metadata || {}
+      const customerId = typeof subscription.customer === 'string' ? subscription.customer : subscription.customer.id
+      const monthEnd = subscriptionPeriodEnd(subscription, 30)
+      const yearEnd = subscriptionPeriodEnd(subscription, 365)
+
+      if (meta.type === 'sponsored_ad') {
+        const { data: advert } = await supabase.from('ad_placements')
+          .select('id, review_status').eq('stripe_subscription_id', subscription.id).maybeSingle()
+        if (advert) {
+          await supabase.from('ad_placements').update({
+            payment_status: 'paid',
+            status: advert.review_status === 'approved' ? 'active' : 'pending',
+            updated_at: new Date().toISOString(),
+          }).eq('id', advert.id)
+        }
+        break
+      }
+
+      if (meta.type === 'agency_listing' && meta.candidate_id) {
+        await supabase.from('candidate_profiles').update({
+          agency_available: true,
+          agency_tier: meta.tier || 'basic',
+          agency_listed_until: monthEnd,
+          stripe_customer_id: customerId,
+        }).eq('id', meta.candidate_id)
+        break
+      }
+
+      if (meta.type === 'employer_registration' && meta.employer_id) {
+        await supabase.from('employer_profiles').update({
+          preferred_employer: true,
+          preferred_until: yearEnd,
+          stripe_customer_id: customerId,
+        }).eq('id', meta.employer_id)
+        break
+      }
+
+      if (meta.type === 'featured_profile' && meta.candidate_id) {
+        await supabase.from('candidate_profiles').update({
+          is_featured: true,
+          featured_until: monthEnd,
+          stripe_customer_id: customerId,
+        }).eq('id', meta.candidate_id)
+        break
+      }
+
+      // Backwards compatibility for older featured subscriptions created
+      // before subscription metadata was stamped.
+      await supabase.from('candidate_profiles').update({
+        is_featured: true,
+        featured_until: monthEnd,
+      }).eq('stripe_customer_id', customerId).eq('is_featured', true)
       break
     }
 
@@ -393,7 +444,7 @@ export async function POST(req: NextRequest) {
     case 'customer.subscription.updated': {
       const subscription = event.data.object as Stripe.Subscription
       const customerId = subscription.customer as string
-      const subType = subscription.metadata?.type // stamped via subscription_data.metadata
+      const subType = subscription.metadata?.type
       const lapsed = subscription.status === 'past_due' || subscription.status === 'unpaid'
       const active = subscription.status === 'active'
 
@@ -409,32 +460,28 @@ export async function POST(req: NextRequest) {
         break
       }
 
-      // Therapist register listing (£10/£20 monthly)
       if (subType === 'agency_listing') {
         if (subscription.metadata?.candidate_id && (lapsed || active)) {
           await supabase.from('candidate_profiles').update(
             lapsed
               ? { agency_available: false, agency_listed_until: null }
-              : { agency_available: true, agency_tier: subscription.metadata?.tier || 'basic', agency_listed_until: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString() }
+              : { agency_available: true, agency_tier: subscription.metadata?.tier || 'basic', agency_listed_until: subscriptionPeriodEnd(subscription, 30) }
           ).eq('id', subscription.metadata.candidate_id)
         }
         break
       }
 
-      // Preferred Employer registration (£150 yearly)
       if (subType === 'employer_registration') {
         if (subscription.metadata?.employer_id && (lapsed || active)) {
           await supabase.from('employer_profiles').update(
             lapsed
               ? { preferred_employer: false, preferred_until: null }
-              : { preferred_employer: true, preferred_until: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString() }
+              : { preferred_employer: true, preferred_until: subscriptionPeriodEnd(subscription, 365) }
           ).eq('id', subscription.metadata.employer_id)
         }
         break
       }
 
-      // Featured profile - legacy subscriptions carry no metadata, and were
-      // only ever created for featured profiles.
       if (lapsed) {
         await supabase.from('candidate_profiles').update({
           is_featured: false,
@@ -444,7 +491,7 @@ export async function POST(req: NextRequest) {
       if (active) {
         await supabase.from('candidate_profiles').update({
           is_featured: true,
-          featured_until: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+          featured_until: subscriptionPeriodEnd(subscription, 30),
         }).eq('stripe_customer_id', customerId)
       }
       break
