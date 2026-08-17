@@ -10,7 +10,7 @@ import {
   LayoutDashboard, User, Briefcase, MessageSquare, Star, Calendar,
   Settings, LogOut, Menu, X, Users, FileText, Megaphone,
   AlertTriangle, Heart, Building2, ChevronRight, BarChart3, CreditCard, GraduationCap,
-  Palette,
+  Palette, Banknote,
 } from 'lucide-react'
 
 interface NavItem {
@@ -60,6 +60,7 @@ const navItems: Record<string, NavItem[]> = {
   ],
   admin: [
     { label: 'Dashboard', href: '/admin/dashboard', icon: <LayoutDashboard size={18} />, section: 'Overview' },
+    { label: 'Revenue', href: '/admin/revenue', icon: <Banknote size={20} /> },
     { label: 'Website & Brand', href: '/admin/website', icon: <Palette size={18} />, section: 'People & platform' },
     { label: 'Users', href: '/admin/users', icon: <Users size={20} /> },
     { label: 'Messages', href: '/admin/messages', icon: <MessageSquare size={20} /> },
