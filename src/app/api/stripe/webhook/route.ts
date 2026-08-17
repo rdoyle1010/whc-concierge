@@ -4,13 +4,10 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { createNotification } from '@/lib/notifications'
 import { getAcademyCatalog, getAcademyCourseBySlug } from '@/lib/academy-catalog-server'
 import { sendCourseAccessEmail, sendBookingConfirmedEmail, sendReferralRewardEmail, sendFeaturedTalentEmail } from '@/lib/emails'
+import { sendFeaturedEmployerEmail } from '@/lib/featured-employer-email'
 import Stripe from 'stripe'
 import { getInternalApiSecret } from '@/lib/internal-request'
 
-// Referral credit: when a referred therapist pays for their first register
-// listing, mark the referral converted and tell the referrer their free
-// month is coming (WHC applies it to the referrer's Stripe subscription).
-// Best-effort - never fails the webhook.
 async function convertReferral(supabase: any, candidateId: string) {
   try {
     const { data: cand } = await supabase.from('candidate_profiles')
@@ -47,6 +44,42 @@ function subscriptionPeriodEnd(subscription: Stripe.Subscription, fallbackDays: 
   return new Date(Date.now() + fallbackDays * 24 * 60 * 60 * 1000).toISOString()
 }
 
+async function announceFeaturedEmployer(supabase: any, employerId: string) {
+  try {
+    const { data: employer } = await supabase.from('employer_profiles')
+      .select('property_name,company_name,location')
+      .eq('id', employerId).maybeSingle()
+    if (!employer) return
+    const propertyName = employer.property_name || employer.company_name || 'A WHC property'
+    const { data: talent } = await supabase.from('candidate_profiles')
+      .select('user_id,full_name')
+      .eq('approval_status', 'approved')
+      .or('profile_visible.eq.true,profile_visible.is.null')
+
+    await Promise.allSettled((talent || []).map(async (candidate: any) => {
+      if (!candidate.user_id) return
+      await createNotification(
+        candidate.user_id,
+        'general',
+        `Featured property: ${propertyName}`,
+        `${propertyName}${employer.location ? ` in ${employer.location}` : ''} is now featured on WHC Concierge.`,
+        '/properties',
+      )
+      const { data: talentUser } = await supabase.auth.admin.getUserById(candidate.user_id)
+      if (talentUser.user?.email) {
+        await sendFeaturedEmployerEmail(
+          talentUser.user.email,
+          candidate.full_name || 'there',
+          propertyName,
+          employer.location || '',
+        )
+      }
+    }))
+  } catch (e: any) {
+    console.error('Featured employer talent alert failed (non-fatal):', e?.message)
+  }
+}
+
 export async function POST(req: NextRequest) {
   const stripe = getStripe()
   const body = await req.text()
@@ -67,8 +100,6 @@ export async function POST(req: NextRequest) {
       const session = event.data.object as Stripe.Checkout.Session
       const meta = session.metadata
 
-      // A successful Stripe subscription creates a paid advert in the
-      // approval queue. It is never public until an admin approves it.
       if (meta?.type === 'sponsored_ad' && meta?.placement && meta?.brand_name) {
         const subscriptionId = typeof session.subscription === 'string' ? session.subscription : session.subscription?.id
         const { error } = await supabase.from('ad_placements').upsert({
@@ -102,8 +133,6 @@ export async function POST(req: NextRequest) {
           stripe_customer_id: session.customer as string,
         }).eq('id', meta.candidate_id).select('full_name, headline').maybeSingle()
 
-        // One launch alert per new checkout. Subscription renewals do not run
-        // this block, so employers are not emailed every month.
         try {
           const { data: employers } = await supabase.from('employer_profiles')
             .select('user_id, property_name, company_name')
@@ -132,8 +161,28 @@ export async function POST(req: NextRequest) {
         }
       }
 
-      // Agency booking paid in full by the property → confirmed, and the
-      // therapist's payout (gross minus 5%) is queued for after the shift.
+      if (meta?.type === 'featured_employer' && meta?.employer_id) {
+        let featuredUntil = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+        const subscriptionId = typeof session.subscription === 'string' ? session.subscription : session.subscription?.id
+        if (subscriptionId) {
+          try {
+            const subscription = await stripe.subscriptions.retrieve(subscriptionId)
+            featuredUntil = subscriptionPeriodEnd(subscription, subscription.items?.data?.[0]?.price?.recurring?.interval === 'year' ? 365 : 30)
+          } catch {}
+        }
+        const { error } = await supabase.from('employer_profiles').update({
+          featured_employer: true,
+          featured_until: featuredUntil,
+          featured_payment_source: 'stripe',
+          stripe_customer_id: typeof session.customer === 'string' ? session.customer : session.customer?.id,
+        }).eq('id', meta.employer_id)
+        if (error) {
+          console.error('[Featured employer] fulfilment failed:', error.message)
+          return NextResponse.json({ error: 'featured_employer fulfilment failed' }, { status: 500 })
+        }
+        await announceFeaturedEmployer(supabase, meta.employer_id)
+      }
+
       if (meta?.type === 'agency_booking' && meta?.booking_id) {
         const gross = meta.gross ? parseInt(meta.gross) : 0
         const fee = meta.fee ? parseInt(meta.fee) : 0
@@ -187,9 +236,6 @@ export async function POST(req: NextRequest) {
         }
       }
 
-      // PUBLIC Academy purchase → create (or find) the buyer's learner
-      // account, enrol them, and email a sign-in link. No membership needed;
-      // the account is the vessel the certificate lives in.
       if (meta?.type === 'course_public' && meta?.course_slug && meta?.buyer_email) {
         try {
           const email = String(meta.buyer_email).toLowerCase()
@@ -346,10 +392,6 @@ export async function POST(req: NextRequest) {
       break
     }
 
-    // Successful recurring invoices are the authoritative renewal signal.
-    // Subscription status often remains `active` for months, so relying on
-    // customer.subscription.updated alone can let entitlement dates expire
-    // even though Stripe has successfully charged the customer.
     case 'invoice.paid': {
       const invoice = event.data.object as Stripe.Invoice
       const rawSubscription = (invoice as any).subscription
@@ -395,6 +437,17 @@ export async function POST(req: NextRequest) {
         break
       }
 
+      if (meta.type === 'featured_employer' && meta.employer_id) {
+        const interval = subscription.items?.data?.[0]?.price?.recurring?.interval
+        await supabase.from('employer_profiles').update({
+          featured_employer: true,
+          featured_until: subscriptionPeriodEnd(subscription, interval === 'year' ? 365 : 30),
+          featured_payment_source: 'stripe',
+          stripe_customer_id: customerId,
+        }).eq('id', meta.employer_id)
+        break
+      }
+
       if (meta.type === 'featured_profile' && meta.candidate_id) {
         await supabase.from('candidate_profiles').update({
           is_featured: true,
@@ -404,8 +457,6 @@ export async function POST(req: NextRequest) {
         break
       }
 
-      // Backwards compatibility for older featured subscriptions created
-      // before subscription metadata was stamped.
       await supabase.from('candidate_profiles').update({
         is_featured: true,
         featured_until: monthEnd,
@@ -422,21 +473,16 @@ export async function POST(req: NextRequest) {
         payment_status: 'past_due', status: 'paused', updated_at: new Date().toISOString(),
       }).eq('stripe_customer_id', customerId)
 
-      const { data: candidate } = await supabase
-        .from('candidate_profiles')
-        .select('id, is_featured')
-        .eq('stripe_customer_id', customerId)
-        .eq('is_featured', true)
-        .single()
-
-      if (candidate) {
-        const attemptCount = invoice.attempt_count || 0
-        if (attemptCount >= 2) {
-          await supabase.from('candidate_profiles').update({
-            is_featured: false,
-            featured_until: null,
-          }).eq('id', candidate.id)
-        }
+      const attemptCount = invoice.attempt_count || 0
+      if (attemptCount >= 2) {
+        await supabase.from('candidate_profiles').update({
+          is_featured: false,
+          featured_until: null,
+        }).eq('stripe_customer_id', customerId).eq('is_featured', true)
+        await supabase.from('employer_profiles').update({
+          featured_employer: false,
+          featured_until: null,
+        }).eq('stripe_customer_id', customerId).eq('featured_employer', true)
       }
       break
     }
@@ -482,6 +528,18 @@ export async function POST(req: NextRequest) {
         break
       }
 
+      if (subType === 'featured_employer') {
+        if (subscription.metadata?.employer_id && (lapsed || active)) {
+          const interval = subscription.items?.data?.[0]?.price?.recurring?.interval
+          await supabase.from('employer_profiles').update(
+            lapsed
+              ? { featured_employer: false, featured_until: null }
+              : { featured_employer: true, featured_until: subscriptionPeriodEnd(subscription, interval === 'year' ? 365 : 30), featured_payment_source: 'stripe' }
+          ).eq('id', subscription.metadata.employer_id)
+        }
+        break
+      }
+
       if (lapsed) {
         await supabase.from('candidate_profiles').update({
           is_featured: false,
@@ -521,6 +579,14 @@ export async function POST(req: NextRequest) {
         if (subscription.metadata?.employer_id) {
           await supabase.from('employer_profiles')
             .update({ preferred_employer: false, preferred_until: null })
+            .eq('id', subscription.metadata.employer_id)
+        }
+        break
+      }
+      if (subType === 'featured_employer') {
+        if (subscription.metadata?.employer_id) {
+          await supabase.from('employer_profiles')
+            .update({ featured_employer: false, featured_until: null })
             .eq('id', subscription.metadata.employer_id)
         }
         break
