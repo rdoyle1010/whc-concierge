@@ -4,17 +4,17 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        ink: '#0A0A0A',
-        body: '#4a4a4a',
-        muted: '#999999',
-        secondary: '#666666',
-        surface: '#F5F4F2',
-        border: '#e5e5e5',
-        parchment: '#ffffff',
+        ink: '#10283b',
+        body: '#4f5d67',
+        muted: '#8a949b',
+        secondary: '#65717a',
+        surface: '#f3f1ec',
+        border: '#ddd9d1',
+        parchment: '#f8f6f1',
         accent: '#C9A96E',
         success: '#22C55E',
         gold: { DEFAULT: '#C9A96E', light: '#D4B87E', dark: '#B8945A' },
-        navy: { DEFAULT: '#0A0A0A', light: '#1a1a1a', dark: '#000000' },
+        navy: { DEFAULT: '#0b2f4d', light: '#123f64', dark: '#07243b' },
         match: {
           perfect: { bg: '#dcfce7', text: '#166534' },
           strong: { bg: '#dbeafe', text: '#1e40af' },
