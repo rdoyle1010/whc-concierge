@@ -6,7 +6,7 @@ import { canRoleAccessPath, dashboardForRole, normaliseAccountRole } from '@/lib
 const PROTECTED_PREFIXES = ['/talent', '/employer', '/hotel', '/admin']
 
 // Routes that should redirect logged-in users away (to dashboard or requested destination)
-const AUTH_PAGES = ['/login', '/register']
+const AUTH_PAGES = ['/login', '/register', '/admin/login']
 
 // Maintenance / dev-only API routes that should be blocked in production
 const BLOCKED_API_ROUTES = [
@@ -30,8 +30,11 @@ export async function proxy(request: NextRequest) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 })
   }
 
-  const isProtected = PROTECTED_PREFIXES.some(prefix => pathname.startsWith(prefix))
-  const isAuthPage = AUTH_PAGES.some(page => pathname.startsWith(page))
+  // /admin/login must stay public so an administrator can actually establish
+  // a session. All other /admin routes remain protected.
+  const isAdminLogin = pathname === '/admin/login'
+  const isProtected = !isAdminLogin && PROTECTED_PREFIXES.some(prefix => pathname.startsWith(prefix))
+  const isAuthPage = AUTH_PAGES.some(page => pathname === page || pathname.startsWith(`${page}/`))
 
   // Critical performance guard: do NOT call Supabase Auth for every request.
   // Previously this middleware ran auth.getUser() for public pages, RSC requests
