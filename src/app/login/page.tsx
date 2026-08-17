@@ -31,21 +31,21 @@ function LoginForm() {
     setError('')
 
     try {
-      // 1. Sign in
-      const { error: authError } = await supabase.auth.signInWithPassword({ email, password })
+      // Sign in once and reuse the authenticated user returned by Supabase.
+      // This removes an unnecessary second auth round-trip before navigation.
+      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({ email, password })
       if (authError) { setError(authError.message); setLoading(false); return }
 
-      // 2. Get user
-      const { data: { user } } = await supabase.auth.getUser()
+      const user = authData.user
       if (!user) { setError('Login failed'); setLoading(false); return }
 
-      // 3. Check role from profiles table (may not exist - that's OK)
+      // Check the authoritative role from the profiles table.
       let userRole: string | null = null
       try {
         const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
         userRole = profile?.role || null
       } catch {
-        // profiles table may not exist or query may fail - continue
+        // If role lookup fails we fail closed below rather than guessing from the tab.
       }
 
       const accountRole = normaliseAccountRole(userRole)
@@ -58,7 +58,8 @@ function LoginForm() {
       }
 
       // Deep links: honour a same-site ?redirect= target (set by middleware
-      // when a logged-out user hits a protected page)
+      // when a logged-out user hits a protected page). This includes the
+      // selected Featured Talent candidate id, so login cannot lose the profile.
       const redirectTo = searchParams.get('redirect')
       if (redirectTo && redirectTo.startsWith('/') && !redirectTo.startsWith('//') && canRoleAccessPath(accountRole, redirectTo)) {
         router.push(redirectTo)
