@@ -50,7 +50,7 @@ export default function Footer({ siteContent }: { siteContent?: WebsiteContent }
         </div>
         <div className="border-t border-white/10 pt-5 flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
           <p className="text-[11px] text-white/45">{content.footer.copyright}</p>
-          <Link href="/login" className="text-[11px] text-white/45 hover:text-white transition-colors" aria-label="Staff sign in">{content.footer.staffLabel}</Link>
+          <Link href="/admin/login" className="text-[11px] text-white/45 hover:text-white transition-colors" aria-label="Admin sign in">Admin</Link>
         </div>
       </div>
     </footer>
