@@ -44,18 +44,23 @@ export async function GET(req: NextRequest) {
     }
 
     if (kind === 'jobs') {
-      const { data: jobs } = await admin.from('job_listings')
-        .select('id,job_title,title,employer_id,tier,posted_date,expires_at,is_live,status')
+      const { data: jobs, error: jobsError } = await admin.from('job_listings')
+        .select('id,job_title,employer_id,tier,posted_date,expires_at,is_live,status')
         .order('posted_date', { ascending: false })
         .limit(limit)
+      if (jobsError) return NextResponse.json({ error: jobsError.message }, { status: 500 })
+
       const empIds = Array.from(new Set((jobs || []).map((j: any) => j.employer_id).filter(Boolean)))
-      const { data: emps } = empIds.length
+      const { data: emps, error: empsError } = empIds.length
         ? await admin.from('employer_profiles').select('id, company_name, property_name').in('id', empIds)
-        : { data: [] as any[] }
+        : { data: [] as any[], error: null }
+      if (empsError) return NextResponse.json({ error: empsError.message }, { status: 500 })
+
       const empMap = new Map((emps || []).map((e: any) => [e.id, e]))
       return NextResponse.json({
         rows: (jobs || []).map((j: any) => ({
           ...j,
+          title: j.job_title,
           employer_name: empMap.get(j.employer_id)?.property_name || empMap.get(j.employer_id)?.company_name || 'Employer',
         })),
         pagination: { limit, returned: jobs?.length || 0, capped: (jobs?.length || 0) >= limit },
