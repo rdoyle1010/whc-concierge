@@ -9,6 +9,12 @@ export { POST }
 
 const BOOKING_LIMIT = 100
 const MAINTENANCE_INTERVAL_SECONDS = 300
+const BOOKING_FIELDS = [
+  'id', 'candidate_id', 'employer_id', 'shift_date', 'shift_start_time', 'shift_end_time',
+  'shift_type', 'hours', 'rate', 'status', 'platform_fee', 'created_at', 'urgent', 'expires_at',
+  'paid_at', 'amount_paid', 'payout_amount', 'payout_status', 'payout_at', 'dispute_status',
+  'refund_amount', 'cascade_queue', 'cascade_index', 'cascade_deadline', 'cascade_notes', 'booking_group',
+].join(',')
 
 async function getAuthedUser() {
   const cookieStore = await cookies()
@@ -31,9 +37,6 @@ export async function GET() {
 
     const admin = createAdminClient()
 
-    // Only one Agency request across the whole platform may run the legacy
-    // maintenance sweep inside a five-minute window. Ordinary page loads skip
-    // it completely, which removes expiry/email housekeeping from the hot path.
     try {
       const { data: shouldSweep } = await admin.rpc('claim_maintenance_job', {
         p_job_key: 'agency_sweep',
@@ -45,14 +48,20 @@ export async function GET() {
     }
 
     const [{ data: cand }, { data: emp }] = await Promise.all([
-      admin.from('candidate_profiles').select('id, full_name, user_id').eq('user_id', user.id).maybeSingle(),
-      admin.from('employer_profiles').select('id, company_name, property_name, user_id').eq('user_id', user.id).maybeSingle(),
+      admin.from('candidate_profiles')
+        .select('id, full_name, user_id, agency_available, agency_tier, agency_listed_until')
+        .eq('user_id', user.id)
+        .maybeSingle(),
+      admin.from('employer_profiles')
+        .select('id, company_name, property_name, user_id, preferred_employer, preferred_until')
+        .eq('user_id', user.id)
+        .maybeSingle(),
     ])
 
     const rows: any[] = []
     if (cand) {
       const { data } = await admin.from('agency_bookings')
-        .select('*')
+        .select(BOOKING_FIELDS)
         .eq('candidate_id', cand.id)
         .order('created_at', { ascending: false })
         .limit(BOOKING_LIMIT)
@@ -60,7 +69,7 @@ export async function GET() {
     }
     if (emp) {
       const { data } = await admin.from('agency_bookings')
-        .select('*')
+        .select(BOOKING_FIELDS)
         .eq('employer_id', emp.id)
         .order('created_at', { ascending: false })
         .limit(BOOKING_LIMIT)
@@ -94,12 +103,25 @@ export async function GET() {
     const empMap = new Map((empsRes.data || []).map((e: any) => [e.id, e]))
     const candMap = new Map((candsRes.data || []).map((c: any) => [c.id, c]))
 
+    const bookingIds = bookings.map(b => b.id).filter(Boolean)
+    let reviewedBookingIds = new Set<string>()
+    if (bookingIds.length) {
+      try {
+        const { data: reviews } = await admin.from('reviews')
+          .select('booking_id')
+          .eq('reviewer_id', user.id)
+          .in('booking_id', bookingIds)
+        reviewedBookingIds = new Set((reviews || []).map((r: any) => r.booking_id).filter(Boolean))
+      } catch { /* review state is optional; never block booking load */ }
+    }
+
     const enriched = bookings
       .map(b => {
         const dist = profileDistanceMiles(candMap.get(b.candidate_id) || {}, empMap.get(b.employer_id) || {})
         const radius = candMap.get(b.candidate_id)?.travel_radius_miles ?? null
         return {
           ...b,
+          reviewed_by_viewer: reviewedBookingIds.has(b.id),
           distance_miles: dist != null ? Math.round(dist * 10) / 10 : null,
           candidate_travel_radius: radius,
           within_radius: dist != null && radius ? dist <= radius : null,
@@ -127,6 +149,22 @@ export async function GET() {
 
     return NextResponse.json({
       bookings: enriched,
+      viewer: {
+        candidate: cand ? {
+          id: cand.id,
+          full_name: cand.full_name,
+          agency_available: Boolean(cand.agency_available),
+          agency_tier: cand.agency_tier || null,
+          agency_listed_until: cand.agency_listed_until || null,
+        } : null,
+        employer: emp ? {
+          id: emp.id,
+          company_name: emp.company_name,
+          property_name: emp.property_name,
+          preferred_employer: Boolean(emp.preferred_employer),
+          preferred_until: emp.preferred_until || null,
+        } : null,
+      },
       pagination: {
         limit_per_profile: BOOKING_LIMIT,
         returned: enriched.length,
