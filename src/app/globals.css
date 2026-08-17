@@ -10,7 +10,7 @@
 }
 
 @layer components {
-  .btn-primary { @apply bg-ink text-white px-5 py-2.5 rounded-xl text-[13px] font-semibold hover:bg-black/80 transition-all duration-150; }
+  .btn-primary { @apply bg-ink text-white px-5 py-2.5 rounded-xl text-[13px] font-semibold hover:bg-navy-light transition-all duration-150; }
   .btn-secondary { @apply bg-white text-ink border border-border px-5 py-2.5 rounded-xl text-[13px] font-semibold hover:bg-surface transition-all duration-150; }
   .btn-accent { @apply bg-accent text-white px-5 py-2.5 rounded-xl text-[13px] font-semibold hover:bg-gold-dark transition-all duration-150; }
   .btn-ghost { @apply text-secondary text-[13px] font-medium hover:text-ink transition-colors; }
@@ -34,6 +34,14 @@
   .gold-gradient { @apply bg-accent; }
   .gradient-text-gold { color: #C9A96E; }
   .animate-pulse-gold {}
+
+  /* Shared public-site presentation, intentionally visual only. */
+  .public-page { @apply min-h-screen bg-surface text-body; }
+  .public-hero { @apply bg-parchment border-b border-border; }
+  .public-eyebrow { @apply text-[10px] uppercase tracking-[0.18em] font-semibold text-accent; }
+  .public-title { @apply text-ink font-semibold tracking-[-0.04em] leading-[1.05]; font-size: clamp(2.25rem, 4vw, 3.5rem); }
+  .public-intro { @apply text-secondary text-[15px] leading-7; }
+  .public-panel { @apply bg-white border border-border rounded-2xl; box-shadow: 0 10px 28px rgba(16,40,59,.045); }
 
   /* Skeleton */
   .skeleton { @apply bg-surface rounded animate-pulse; }
