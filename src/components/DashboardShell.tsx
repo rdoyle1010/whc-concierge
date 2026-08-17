@@ -50,6 +50,7 @@ const navItems: Record<string, NavItem[]> = {
     { label: 'Job Listings', href: '/employer/jobs', icon: <Briefcase size={20} /> },
     { label: 'Candidates', href: '/employer/candidates', icon: <Users size={20} /> },
     { label: 'Applications', href: '/employer/applications', icon: <FileText size={20} /> },
+    { label: 'Get Featured', href: '/employer/featured', icon: <Star size={20} /> },
     { label: 'Agency Bookings', href: '/employer/agency', icon: <Calendar size={20} />, section: 'Agency' },
     { label: 'Shortlist', href: '/employer/shortlist', icon: <Star size={20} /> },
     { label: 'Analytics', href: '/employer/analytics', icon: <BarChart3 size={20} /> },
