@@ -12,13 +12,10 @@ import {
 } from '@/lib/site-content'
 import { getWebsiteContent } from '@/lib/site-content-server'
 
-// Admin content operations, service-role backed so RLS can be locked down on
-// the underlying tables: site_images (homepage imagery + hero copy),
-// platform_config (site settings), contact_queries (enquiries/complaints:
-// status, delete, and REAL email replies via Resend).
-
 const RESEND_API_KEY = process.env.RESEND_API_KEY
 const FROM_EMAIL = 'WHC Concierge <noreply@mail.wellnesshousecollective.co.uk>'
+const DEFAULT_CONTACT_LIMIT = 250
+const MAX_CONTACT_LIMIT = 500
 
 async function requireAdmin() {
   const cookieStore = await cookies()
@@ -35,9 +32,6 @@ async function requireAdmin() {
   return user
 }
 
-// The live platform_config table predates the current migration history and
-// does not expose a unique constraint on `key` to PostgREST. Update first and
-// insert only when missing, so saving works safely without a schema change.
 async function saveConfigValue(
   admin: ReturnType<typeof createAdminClient>,
   key: string,
@@ -102,8 +96,18 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ draft, published, history })
     }
     if (kind === 'contact_queries') {
-      const { data } = await admin.from('contact_queries').select('*').order('created_at', { ascending: false })
-      return NextResponse.json({ rows: data || [] })
+      const requestedLimit = Number(req.nextUrl.searchParams.get('limit'))
+      const limit = Number.isFinite(requestedLimit) && requestedLimit > 0
+        ? Math.min(Math.floor(requestedLimit), MAX_CONTACT_LIMIT)
+        : DEFAULT_CONTACT_LIMIT
+      const { data } = await admin.from('contact_queries')
+        .select('id,name,email,subject,message,status,type,created_at')
+        .order('created_at', { ascending: false })
+        .limit(limit)
+      return NextResponse.json({
+        rows: data || [],
+        pagination: { limit, returned: data?.length || 0, capped: (data?.length || 0) >= limit },
+      })
     }
     return NextResponse.json({ error: 'Unknown kind' }, { status: 400 })
   } catch (e: any) {
@@ -120,7 +124,6 @@ export async function POST(req: NextRequest) {
     const body = await req.json()
     const { action } = body
 
-    // ── site_images (slots are the natural key on this table) ──
     if (action === 'image_update') {
       const { error } = await admin.from('site_images').update(body.data).eq('slot', body.slot)
       if (error) return NextResponse.json({ error: error.message }, { status: 500 })
@@ -137,7 +140,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true })
     }
 
-    // ── platform_config ──
     if (action === 'config_upsert') {
       const { key, value } = body
       if (!key) return NextResponse.json({ error: 'Missing key' }, { status: 400 })
@@ -145,7 +147,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true })
     }
 
-    // ── Website & Brand editor ──
     if (action === 'website_save_draft') {
       const parsed = WebsiteContentSchema.safeParse(body.content)
       if (!parsed.success) return NextResponse.json({ error: 'Some website fields are invalid.', details: parsed.error.flatten() }, { status: 400 })
@@ -202,7 +203,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true, content })
     }
 
-    // ── contact_queries: status / delete / reply ──
     if (action === 'query_status') {
       const { error } = await admin.from('contact_queries').update({ status: body.status }).eq('id', body.id)
       if (error) return NextResponse.json({ error: error.message }, { status: 500 })
@@ -214,8 +214,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true })
     }
     if (action === 'query_reply') {
-      // A REAL reply: emails the enquirer via Resend, then marks replied.
-      const { data: q } = await admin.from('contact_queries').select('*').eq('id', body.id).maybeSingle()
+      const { data: q } = await admin.from('contact_queries')
+        .select('id,email,message')
+        .eq('id', body.id)
+        .maybeSingle()
       if (!q) return NextResponse.json({ error: 'Enquiry not found' }, { status: 404 })
       if (!q.email) return NextResponse.json({ error: 'This enquiry has no email address to reply to.' }, { status: 400 })
       const replyText = String(body.message || '').trim()
