@@ -1,12 +1,10 @@
 'use client'
 
 import { useState, Suspense } from 'react'
-import { useSearchParams, useRouter } from 'next/navigation'
+import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
-import { createClient } from '@/lib/supabase/client'
 import { Eye, EyeOff } from 'lucide-react'
-import { canRoleAccessPath, dashboardForRole, normaliseAccountRole } from '@/lib/role-access'
 
 export default function LoginPage() {
   return <Suspense fallback={<div className="min-h-screen bg-white" />}><LoginForm /></Suspense>
@@ -14,8 +12,6 @@ export default function LoginPage() {
 
 function LoginForm() {
   const searchParams = useSearchParams()
-  const router = useRouter()
-  const supabase = createClient()
   const initialRole = searchParams.get('role') || 'talent'
   const confirmationPending = searchParams.get('registered') === '1' && searchParams.get('confirm') === '1'
   const [role, setRole] = useState<'talent' | 'employer'>(initialRole as any)
@@ -27,64 +23,56 @@ function LoginForm() {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (loading) return
     setLoading(true)
     setError('')
 
     try {
-      // Sign in once and reuse the authenticated user returned by Supabase.
-      // This removes an unnecessary second auth round-trip before navigation.
-      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({ email, password })
-      if (authError) { setError(authError.message); setLoading(false); return }
+      const controller = new AbortController()
+      const timeout = window.setTimeout(() => controller.abort(), 15000)
 
-      const user = authData.user
-      if (!user) { setError('Login failed'); setLoading(false); return }
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        cache: 'no-store',
+        signal: controller.signal,
+        body: JSON.stringify({
+          email,
+          password,
+          redirect: searchParams.get('redirect') || '',
+        }),
+      })
+      window.clearTimeout(timeout)
 
-      // Check the authoritative role from the profiles table.
-      let userRole: string | null = null
-      try {
-        const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
-        userRole = profile?.role || null
-      } catch {
-        // If role lookup fails we fail closed below rather than guessing from the tab.
-      }
-
-      const accountRole = normaliseAccountRole(userRole)
-
-      if (!accountRole) {
-        await supabase.auth.signOut()
-        setError('Your account role could not be verified. Please contact WHC support.')
+      const result = await response.json().catch(() => ({}))
+      if (!response.ok || !result?.redirect) {
+        setError(result?.error || 'Sign in failed. Please try again.')
         setLoading(false)
         return
       }
 
-      // Deep links: honour a same-site ?redirect= target (set by middleware
-      // when a logged-out user hits a protected page). This includes the
-      // selected Featured Talent candidate id, so login cannot lose the profile.
-      const redirectTo = searchParams.get('redirect')
-      if (redirectTo && redirectTo.startsWith('/') && !redirectTo.startsWith('//') && canRoleAccessPath(accountRole, redirectTo)) {
-        router.push(redirectTo)
-        return
-      }
-
-      // Route exclusively from the server-controlled profiles table. The tab
-      // the visitor clicked and editable auth metadata are not permissions.
-      router.push(dashboardForRole(accountRole))
+      // A hard navigation is intentional here. Password auth is now completed
+      // server-side and the response sets the Supabase cookies; a full request
+      // guarantees the protected destination sees those cookies immediately.
+      window.location.assign(result.redirect)
     } catch (err: any) {
-      setError(err.message || 'An unexpected error occurred')
+      if (err?.name === 'AbortError') {
+        setError('Sign in is taking too long. Please try again.')
+      } else {
+        setError('We could not sign you in. Please try again.')
+      }
       setLoading(false)
     }
   }
 
   return (
     <div className="min-h-screen bg-white flex">
-      {/* Left: form */}
       <div className="flex-1 flex items-center justify-center px-6 py-12">
         <div className="w-full max-w-[360px]">
           <Link href="/"><Image src="/images/whc-logo.jpg" alt="Wellness House Collective" width={140} height={46} className="object-contain mix-blend-multiply" /></Link>
           <h1 className="text-[28px] font-medium text-ink mt-10 mb-1 leading-tight">Welcome back</h1>
           <p className="text-[14px] text-muted mb-8">Sign in to your account</p>
 
-          {/* Tabs - outside the form to prevent accidental submission */}
           <div className="flex bg-surface rounded-lg p-1 mb-7">
             <button type="button" onClick={() => setRole('talent')} className={`flex-1 py-2 rounded-md text-[13px] font-medium transition-colors ${role === 'talent' ? 'bg-white text-ink shadow-sm' : 'text-muted'}`}>Talent</button>
             <button type="button" onClick={() => setRole('employer')} className={`flex-1 py-2 rounded-md text-[13px] font-medium transition-colors ${role === 'employer' ? 'bg-white text-ink shadow-sm' : 'text-muted'}`}>Hotel / Employer</button>
@@ -116,7 +104,6 @@ function LoginForm() {
         </div>
       </div>
 
-      {/* Right: image */}
       <div className="hidden lg:block w-[45%] relative bg-surface">
         <img src="https://images.pexels.com/photos/7587466/pexels-photo-7587466.jpeg?auto=compress&cs=tinysrgb&w=1200&h=900&dpr=1" alt="" className="absolute inset-0 w-full h-full object-cover" />
         <div className="absolute inset-0 bg-black/30" />
