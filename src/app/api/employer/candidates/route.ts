@@ -16,6 +16,7 @@ const EMPLOYER_CANDIDATE_FIELDS = [
 
 const DEFAULT_LIMIT = 60
 const MAX_LIMIT = 100
+const MAX_SCAN = 500
 
 export async function GET(req: NextRequest) {
   const auth = await createServerSupabaseClient()
@@ -38,6 +39,7 @@ export async function GET(req: NextRequest) {
   const radius = Number.isFinite(requestedRadius) && requestedRadius > 0 ? Math.min(requestedRadius, 250) : null
   const requestedLimit = Number(req.nextUrl.searchParams.get('limit'))
   const limit = Number.isFinite(requestedLimit) && requestedLimit > 0 ? Math.min(Math.floor(requestedLimit), MAX_LIMIT) : DEFAULT_LIMIT
+  const scanLimit = Math.min(MAX_SCAN, Math.max(100, limit * 5))
   const now = new Date().toISOString()
 
   const [{ data: blocks }, { data: rows, error }, { data: liveJobs }] = await Promise.all([
@@ -48,7 +50,7 @@ export async function GET(req: NextRequest) {
       .or('profile_visible.eq.true,profile_visible.is.null')
       .order('is_featured', { ascending: false })
       .order('created_at', { ascending: false })
-      .limit(limit + 1),
+      .limit(scanLimit + 1),
     admin.from('job_listings')
       .select('*')
       .eq('employer_id', employer.id)
@@ -104,12 +106,19 @@ export async function GET(req: NextRequest) {
       return (b.matchScore ?? -1) - (a.matchScore ?? -1)
     })
 
-  const hasMore = discoverable.length > limit || (rows || []).length > limit
+  const scannedAll = (rows || []).length <= scanLimit
+  const hasMore = discoverable.length > limit || !scannedAll
   const candidates = discoverable.slice(0, limit)
 
   return NextResponse.json({
     candidates,
-    pagination: { limit, returned: candidates.length, has_more: hasMore },
+    pagination: {
+      limit,
+      returned: candidates.length,
+      has_more: hasMore,
+      scanned: Math.min((rows || []).length, scanLimit),
+      scan_capped: !scannedAll,
+    },
     employer: { id: employer.id, company_name: employer.company_name, property_name: employer.property_name },
     origin: {
       postcode: employer.postcode || null,
