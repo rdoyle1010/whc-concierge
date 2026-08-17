@@ -146,10 +146,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: `Refund cannot exceed the £${amountPaid} collected for this booking.` }, { status: 400 })
     }
 
-    // If a refund is agreed, issue it through Stripe before changing our
-    // database. This prevents Admin from showing money as refunded when no
-    // refund actually left Stripe. The idempotency key prevents duplicates
-    // if a request is retried after a network interruption.
     let stripeRefundId: string | null = null
     if (refundAmount > 0) {
       if (!booking.stripe_payment_intent) {
@@ -175,16 +171,9 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    const resolutionNote = [
-      booking.dispute_resolution || '',
-      refundAmount > 0 ? `Stripe refund ${stripeRefundId || 'issued'}: £${refundAmount}.` : 'No property refund.',
-      `Therapist payout set to £${payoutAmount}.`,
-    ].filter(Boolean).join(' ').slice(0, 2000)
-
     const { error } = await admin.from('agency_bookings')
       .update({
         dispute_status: 'resolved',
-        dispute_resolution: resolutionNote,
         refund_amount: refundAmount > 0 ? refundAmount : null,
         refunded_at: refundAmount > 0 ? new Date().toISOString() : null,
         payout_amount: payoutAmount,
@@ -192,8 +181,6 @@ export async function POST(req: NextRequest) {
       })
       .eq('id', booking.id)
     if (error) {
-      // At this point a Stripe refund may already exist. Surface a strong
-      // error rather than pretending the whole operation failed cleanly.
       console.error('Agency dispute DB update failed after Stripe action:', error.message, stripeRefundId)
       return NextResponse.json({ error: 'The Stripe refund may have been issued, but the booking record could not be updated. Check Stripe before retrying.' }, { status: 500 })
     }
