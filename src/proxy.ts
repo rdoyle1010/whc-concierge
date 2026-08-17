@@ -6,7 +6,7 @@ import { canRoleAccessPath, dashboardForRole, normaliseAccountRole } from '@/lib
 const PROTECTED_PREFIXES = ['/talent', '/employer', '/hotel', '/admin']
 
 // Routes that should redirect logged-in users away (to dashboard or requested destination)
-const AUTH_PAGES = ['/login', '/register', '/admin/login']
+const AUTH_PAGES = ['/login', '/register']
 
 // Maintenance / dev-only API routes that should be blocked in production
 const BLOCKED_API_ROUTES = [
@@ -22,31 +22,28 @@ const BLOCKED_API_ROUTES = [
   '/api/welcome-email',
 ]
 
+function matchesRoutePrefix(pathname: string, prefix: string) {
+  return pathname === prefix || pathname.startsWith(`${prefix}/`)
+}
+
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
 
   // Block maintenance API routes entirely.
-  if (BLOCKED_API_ROUTES.some(route => pathname.startsWith(route))) {
+  if (BLOCKED_API_ROUTES.some(route => matchesRoutePrefix(pathname, route))) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 })
   }
 
-  // /admin/login must stay public so an administrator can actually establish
-  // a session. All other /admin routes remain protected.
-  const isAdminLogin = pathname === '/admin/login'
-  const isProtected = !isAdminLogin && PROTECTED_PREFIXES.some(prefix => pathname.startsWith(prefix))
-  const isAuthPage = AUTH_PAGES.some(page => pathname === page || pathname.startsWith(`${page}/`))
+  // Match route boundaries, not raw string prefixes. Without this,
+  // `/admin-sign-in` was incorrectly treated as a protected `/admin` route.
+  const isProtected = PROTECTED_PREFIXES.some(prefix => matchesRoutePrefix(pathname, prefix))
+  const isAuthPage = AUTH_PAGES.some(page => matchesRoutePrefix(pathname, page))
 
   // Critical performance guard: do NOT call Supabase Auth for every request.
-  // Previously this middleware ran auth.getUser() for public pages, RSC requests
-  // and every API call (including /api/auth/login itself). That created a large
-  // burst of /auth/v1/user calls and could make password sign-in wait for minutes.
-  // Public/API routes already perform their own auth where required, so they can
-  // pass straight through here.
   if (!isProtected && !isAuthPage) {
     return NextResponse.next({ request: { headers: request.headers } })
   }
 
-  // Only protected pages and login/register need middleware session inspection.
   let response = NextResponse.next({ request: { headers: request.headers } })
 
   const supabase = createServerClient(
@@ -76,8 +73,8 @@ export async function proxy(request: NextRequest) {
     loginUrl.pathname = '/login'
     loginUrl.search = ''
     loginUrl.searchParams.set('redirect', destination)
-    if (pathname.startsWith('/employer') || pathname.startsWith('/hotel')) loginUrl.searchParams.set('role', 'employer')
-    if (pathname.startsWith('/talent')) loginUrl.searchParams.set('role', 'talent')
+    if (matchesRoutePrefix(pathname, '/employer') || matchesRoutePrefix(pathname, '/hotel')) loginUrl.searchParams.set('role', 'employer')
+    if (matchesRoutePrefix(pathname, '/talent')) loginUrl.searchParams.set('role', 'talent')
     return NextResponse.redirect(loginUrl)
   }
 
