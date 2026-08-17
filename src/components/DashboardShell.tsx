@@ -1,8 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import Wordmark from '@/components/Wordmark'
+import Navbar from '@/components/Navbar'
 import { usePathname } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import {
@@ -78,20 +79,54 @@ const navItems: Record<string, NavItem[]> = {
 
 export default function DashboardShell({ children, role, userName }: DashboardShellProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [agencyShell, setAgencyShell] = useState<'checking' | 'employer' | 'public'>('checking')
   const pathname = usePathname()
   const supabase = createClient()
   const items = navItems[role]
+  const isPublicAgencyRoute = pathname === '/agency'
+
+  useEffect(() => {
+    if (!isPublicAgencyRoute) return
+    let active = true
+    supabase.auth.getUser().then(async ({ data }) => {
+      if (!active) return
+      if (!data.user) {
+        setAgencyShell('public')
+        return
+      }
+      const { data: profile } = await supabase.from('profiles').select('role').eq('id', data.user.id).maybeSingle()
+      if (!active) return
+      setAgencyShell(profile?.role === 'employer' ? 'employer' : 'public')
+    }).catch(() => { if (active) setAgencyShell('public') })
+    return () => { active = false }
+  }, [isPublicAgencyRoute])
 
   const handleSignOut = async () => {
     await supabase.auth.signOut()
     window.location.href = '/'
   }
 
+  if (isPublicAgencyRoute && agencyShell !== 'employer') {
+    return (
+      <div className="min-h-screen bg-[#f3f1ec]">
+        <Navbar />
+        <main className="pt-[68px]">
+          <div className="p-5 md:p-8 lg:p-10 xl:p-12 max-w-[1560px] mx-auto">
+            {agencyShell === 'checking' ? (
+              <div className="flex min-h-[55vh] items-center justify-center">
+                <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#9c7a42] border-t-transparent" />
+              </div>
+            ) : children}
+          </div>
+        </main>
+      </div>
+    )
+  }
+
   return (
     <div className="dashboard-shell min-h-screen">
-      {/* Mobile header */}
       <div className="lg:hidden bg-ink text-white px-4 py-3 flex items-center justify-between">
-        <button onClick={() => setSidebarOpen(true)}>
+        <button type="button" onClick={() => setSidebarOpen(true)} aria-label="Open dashboard navigation">
           <Menu size={24} />
         </button>
         <div className="flex items-center space-x-2">
@@ -100,19 +135,17 @@ export default function DashboardShell({ children, role, userName }: DashboardSh
         <div className="w-6" />
       </div>
 
-      {/* Sidebar overlay */}
       {sidebarOpen && (
         <div className="fixed inset-0 bg-black/50 z-40 lg:hidden" onClick={() => setSidebarOpen(false)} />
       )}
 
-      {/* Sidebar */}
       <aside className={`dashboard-sidebar fixed top-0 left-0 h-full w-[248px] text-white z-50 transform transition-transform lg:translate-x-0 ${
         sidebarOpen ? 'translate-x-0' : '-translate-x-full'
       }`}>
         <div className="px-6 pt-6 pb-4">
           <div className="flex items-center justify-between">
             <Wordmark dark />
-            <button onClick={() => setSidebarOpen(false)} className="lg:hidden text-white/60 hover:text-white">
+            <button type="button" onClick={() => setSidebarOpen(false)} className="lg:hidden text-white/60 hover:text-white" aria-label="Close dashboard navigation">
               <X size={20} />
             </button>
           </div>
@@ -151,6 +184,7 @@ export default function DashboardShell({ children, role, userName }: DashboardSh
 
         <div className="absolute bottom-0 left-0 right-0 p-4">
           <button
+            type="button"
             onClick={handleSignOut}
             className="dashboard-nav-item flex items-center space-x-3 px-3 py-2.5 text-sm text-white/60 hover:text-white hover:bg-white/[0.06] w-full transition-colors"
           >
@@ -160,7 +194,6 @@ export default function DashboardShell({ children, role, userName }: DashboardSh
         </div>
       </aside>
 
-      {/* Main content */}
       <main className="lg:ml-[248px] min-h-screen">
         <div className="p-5 md:p-8 lg:p-10 xl:p-12 max-w-[1560px] mx-auto">
           {children}
