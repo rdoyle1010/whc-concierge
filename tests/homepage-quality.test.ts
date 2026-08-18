@@ -30,8 +30,10 @@ test('homepage mockup heading does not skip a heading level', () => {
 
 test('footer copy uses readable public-site contrast', () => {
   const source = read('src/components/Footer.tsx')
-  assert.match(source, /text-neutral-600/)
-  assert.doesNotMatch(source, /text-neutral-300/)
+  assert.match(source, /bg-\[#0b2f4d\]/)
+  assert.match(source, /text-white\/65/)
+  assert.match(source, /text-white\/60/)
+  assert.doesNotMatch(source, /text-white\/20/)
 })
 
 test('site icon points to a real brand asset', () => {
