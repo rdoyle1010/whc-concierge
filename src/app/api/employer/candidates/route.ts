@@ -16,7 +16,6 @@ const EMPLOYER_CANDIDATE_FIELDS = [
 
 const DEFAULT_LIMIT = 60
 const MAX_LIMIT = 100
-const MAX_SCAN = 500
 
 export async function GET(req: NextRequest) {
   const auth = await createServerSupabaseClient()
@@ -39,20 +38,34 @@ export async function GET(req: NextRequest) {
   const radius = Number.isFinite(requestedRadius) && requestedRadius > 0 ? Math.min(requestedRadius, 250) : null
   const requestedLimit = Number(req.nextUrl.searchParams.get('limit'))
   const limit = Number.isFinite(requestedLimit) && requestedLimit > 0 ? Math.min(Math.floor(requestedLimit), MAX_LIMIT) : DEFAULT_LIMIT
-  const scanLimit = Math.min(MAX_SCAN, Math.max(100, limit * 5))
+  const requestedOffset = Number(req.nextUrl.searchParams.get('offset'))
+  const offset = Number.isFinite(requestedOffset) && requestedOffset > 0 ? Math.floor(requestedOffset) : 0
+  const requestedCandidateId = req.nextUrl.searchParams.get('candidate')
   const now = new Date().toISOString()
 
-  const [{ data: blocks }, { data: rows, error }, { data: liveJobs }] = await Promise.all([
+  const candidatePageQuery = admin.from('candidate_profiles')
+    .select(EMPLOYER_CANDIDATE_FIELDS)
+    .eq('approval_status', 'approved')
+    .or('profile_visible.eq.true,profile_visible.is.null')
+    .order('is_featured', { ascending: false })
+    .order('created_at', { ascending: false })
+    .range(offset, offset + limit - 1)
+
+  const requestedCandidatePromise = requestedCandidateId
+    ? admin.from('candidate_profiles')
+        .select(EMPLOYER_CANDIDATE_FIELDS)
+        .eq('id', requestedCandidateId)
+        .eq('approval_status', 'approved')
+        .or('profile_visible.eq.true,profile_visible.is.null')
+        .maybeSingle()
+    : Promise.resolve({ data: null, error: null })
+
+  const [{ data: blocks }, { data: pageRows, error }, { data: requestedCandidate }, { data: liveJobs }] = await Promise.all([
     admin.from('profile_blocks').select('candidate_id').eq('blocked_employer_id', employer.id),
-    admin.from('candidate_profiles')
-      .select(EMPLOYER_CANDIDATE_FIELDS)
-      .eq('approval_status', 'approved')
-      .or('profile_visible.eq.true,profile_visible.is.null')
-      .order('is_featured', { ascending: false })
-      .order('created_at', { ascending: false })
-      .limit(scanLimit + 1),
+    candidatePageQuery,
+    requestedCandidatePromise,
     admin.from('job_listings')
-      .select('*')
+      .select('id,job_title,required_skills,required_brands,required_qualifications,salary_min,salary_max,job_type,work_setting,sector,location,min_years_experience,required_systems,required_management_skills,required_role_level,location_postcode,radius_miles,contract_type,insurance_required,preferred_business_skills,shift_pattern,offers_accommodation,latitude,longitude')
       .eq('employer_id', employer.id)
       .eq('is_live', true)
       .or(`expires_at.is.null,expires_at.gt.${now}`)
@@ -63,61 +76,71 @@ export async function GET(req: NextRequest) {
 
   const jobs = (liveJobs || []).map((job: any) => ({
     ...job,
-    title: job.job_title || job.title,
-    required_product_houses: job.required_brands || job.required_product_houses,
+    title: job.job_title,
+    required_product_houses: job.required_brands,
   }))
   const blocked = new Set((blocks || []).map((row: any) => row.candidate_id))
   const origin = { latitude: employer.latitude, longitude: employer.longitude }
 
-  const discoverable = (rows || [])
-    .filter((candidate: any) => canEmployerDiscoverCandidate(candidate, blocked))
-    .map((candidate: any) => {
-      const radiusResult = mutualRadiusResult(origin, candidate, radius)
-      let best: any = null
-      for (const job of jobs) {
-        const result = calculateMatchScore(candidate, job)
-        if (result.hardStop) continue
-        if (!best || result.score > best.matchScore) {
-          best = {
-            matchScore: result.score,
-            matchLabel: result.label,
-            matchColour: result.colour,
-            matchBg: result.bgColour,
-            matchExplanation: result.matchExplanation,
-            bestJob: job.title,
-            bestJobId: job.id,
-            roleDistanceMiles: result.distanceMiles,
-          }
+  const scoreCandidate = (candidate: any) => {
+    if (!canEmployerDiscoverCandidate(candidate, blocked)) return null
+    const radiusResult = mutualRadiusResult(origin, candidate, radius)
+    if (!radiusResult.withinRadius) return null
+
+    let best: any = null
+    for (const job of jobs) {
+      const result = calculateMatchScore(candidate, job)
+      if (result.hardStop) continue
+      if (!best || result.score > best.matchScore) {
+        best = {
+          matchScore: result.score,
+          matchLabel: result.label,
+          matchColour: result.colour,
+          matchBg: result.bgColour,
+          matchExplanation: result.matchExplanation,
+          bestJob: job.title,
+          bestJobId: job.id,
+          roleDistanceMiles: result.distanceMiles,
         }
       }
-      return {
-        ...candidate,
-        ...(best || {}),
-        latitude: undefined,
-        longitude: undefined,
-        distance_miles: radiusResult.distanceMiles,
-        distance_status: radiusResult.reason,
-        within_radius: radiusResult.withinRadius,
-      }
-    })
-    .filter((candidate: any) => candidate.within_radius)
+    }
+
+    return {
+      ...candidate,
+      ...(best || {}),
+      latitude: undefined,
+      longitude: undefined,
+      distance_miles: radiusResult.distanceMiles,
+      distance_status: radiusResult.reason,
+      within_radius: radiusResult.withinRadius,
+    }
+  }
+
+  const pageCandidates = (pageRows || [])
+    .map(scoreCandidate)
+    .filter(Boolean)
     .sort((a: any, b: any) => {
       if (!!a.is_featured !== !!b.is_featured) return a.is_featured ? -1 : 1
       return (b.matchScore ?? -1) - (a.matchScore ?? -1)
     })
 
-  const scannedAll = (rows || []).length <= scanLimit
-  const hasMore = discoverable.length > limit || !scannedAll
-  const candidates = discoverable.slice(0, limit)
+  const requestedScored = requestedCandidate ? scoreCandidate(requestedCandidate) : null
+  const candidates = requestedScored && !pageCandidates.some((candidate: any) => candidate.id === requestedScored.id)
+    ? [requestedScored, ...pageCandidates]
+    : pageCandidates
+
+  const scanned = (pageRows || []).length
+  const hasMore = scanned === limit
 
   return NextResponse.json({
     candidates,
     pagination: {
       limit,
+      offset,
       returned: candidates.length,
+      scanned,
       has_more: hasMore,
-      scanned: Math.min((rows || []).length, scanLimit),
-      scan_capped: !scannedAll,
+      next_offset: hasMore ? offset + scanned : null,
     },
     employer: { id: employer.id, company_name: employer.company_name, property_name: employer.property_name },
     origin: {
