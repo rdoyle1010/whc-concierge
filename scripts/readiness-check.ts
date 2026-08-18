@@ -1,10 +1,23 @@
 import assert from 'node:assert/strict'
-import { existsSync, readFileSync } from 'node:fs'
+import { existsSync, readFileSync, readdirSync } from 'node:fs'
 import { execFileSync } from 'node:child_process'
+import { join, relative } from 'node:path'
 
 const root = process.cwd()
 const read = (path: string) => readFileSync(`${root}/${path}`, 'utf8')
 const checks: Array<[string, () => void]> = []
+
+function listFiles(dir: string, fileName?: string): string[] {
+  const absolute = join(root, dir)
+  if (!existsSync(absolute)) return []
+  const out: string[] = []
+  for (const entry of readdirSync(absolute, { withFileTypes: true })) {
+    const full = join(absolute, entry.name)
+    if (entry.isDirectory()) out.push(...listFiles(relative(root, full), fileName))
+    else if (!fileName || entry.name === fileName) out.push(relative(root, full).replaceAll('\\', '/'))
+  }
+  return out
+}
 
 function check(name: string, fn: () => void) {
   checks.push([name, fn])
@@ -72,6 +85,26 @@ check('Residency payments are fulfilled by the signed Stripe webhook', () => {
   assert.match(residency, /customer\.subscription\.deleted/)
   assert.match(residency, /alreadyFulfilled/)
 })
+check('public Residency data is sanitised and membership-gated', () => {
+  const route = read('src/app/api/residency/public/route.ts')
+  const mapper = read('src/lib/residency-public.ts')
+  assert.match(route, /residency_member/)
+  assert.match(route, /residency_subscription_status/)
+  assert.match(route, /toPublicResidencyProfile/)
+  assert.doesNotMatch(route, /select\('\*'\)/)
+  assert.match(mapper, /scrubContactText/)
+  assert.match(mapper, /residencyReference/)
+  assert.doesNotMatch(mapper, /profile_photo_url:/)
+  assert.doesNotMatch(mapper, /full_name:/)
+})
+check('Residency money has payout and dispute controls', () => {
+  const admin = read('src/app/api/admin/residency-money/route.ts')
+  assert.match(admin, /mark_paid_out/)
+  assert.match(admin, /resolve_dispute/)
+  assert.match(admin, /payout_ready/)
+  assert.match(admin, /stripe\.refunds\.create/)
+  assert.equal(existsSync(`${root}/supabase/migrations/042_residency_payout_controls.sql`), true)
+})
 check('swipes replace older decisions and remove blocked yeses', () => {
   const source = read('src/app/api/swipe/route.ts')
   assert.match(source, /replaceSwipe/)
@@ -92,7 +125,10 @@ check('match page ranks roles instead of hiding low scores', () => {
   assert.match(source, /sort\(\(a:any,b:any\) => b\.matchScore - a\.matchScore\)/)
 })
 check('all service-role API routes are protected or deliberately public', () => {
-  const files = execFileSync('rg', ['-l', 'createAdminClient|SUPABASE_SERVICE_ROLE_KEY', 'src/app/api', '--glob', 'route.ts'], { encoding: 'utf8' }).trim().split('\n').filter(Boolean)
+  const files = listFiles('src/app/api', 'route.ts').filter(file => {
+    const source = read(file)
+    return /createAdminClient|SUPABASE_SERVICE_ROLE_KEY/.test(source)
+  })
   const deliberatePublic = new Set([
     'src/app/api/advertising/route.ts',
     'src/app/api/advertising/click/route.ts',
@@ -105,6 +141,7 @@ check('all service-role API routes are protected or deliberately public', () => 
     'src/app/api/seed-taxonomy/route.ts',
     'src/app/api/seed/route.ts',
     'src/app/api/update-jobs/route.ts',
+    'src/app/api/residency/public/route.ts',
   ])
   const authMarkers = /getUser\(|requireAdmin|verifyAdmin|stripe-signature|isInternalApiRequest/
   const unguarded = files.filter(file => !authMarkers.test(read(file)) && !deliberatePublic.has(file))
