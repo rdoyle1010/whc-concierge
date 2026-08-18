@@ -7,6 +7,7 @@ import { sendCourseAccessEmail, sendBookingConfirmedEmail, sendReferralRewardEma
 import { sendFeaturedEmployerEmail } from '@/lib/featured-employer-email'
 import Stripe from 'stripe'
 import { getInternalApiSecret } from '@/lib/internal-request'
+import { handleResidencyStripeEvent } from '@/lib/residency-stripe-webhook'
 
 async function convertReferral(supabase: any, candidateId: string) {
   try {
@@ -94,6 +95,8 @@ export async function POST(req: NextRequest) {
   }
 
   const supabase = createAdminClient()
+  const residencyHandled = await handleResidencyStripeEvent(event, stripe, supabase)
+  if (residencyHandled) return NextResponse.json({ received: true })
 
   switch (event.type) {
     case 'checkout.session.completed': {
