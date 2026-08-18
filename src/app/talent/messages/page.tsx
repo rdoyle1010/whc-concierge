@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/client'
 import { Send, MessageSquare, Paperclip, FileText } from 'lucide-react'
 
 const THREAD_LIMIT = 100
+const MESSAGE_FIELDS = 'id,sender_id,recipient_id,content,attachment_url,attachment_name,attachment_type,created_at,read'
 
 export default function TalentMessagesPage() {
   const supabase = createClient()
@@ -41,6 +42,13 @@ export default function TalentMessagesPage() {
   }
   const removeAttachment = () => { setAttachmentFile(null); if (fileInputRef.current) fileInputRef.current.value = '' }
 
+  async function refreshConversations() {
+    const res = await fetch('/api/messages/conversations', { cache: 'no-store' })
+    if (!res.ok) return
+    const body = await res.json().catch(() => ({ conversations: [] }))
+    setConversations(body.conversations || [])
+  }
+
   useEffect(() => {
     let active = true
     async function load() {
@@ -49,10 +57,12 @@ export default function TalentMessagesPage() {
       if (!sessionUser || !active) { setLoading(false); return }
       setUserId(sessionUser.id)
 
-      const res = await fetch('/api/messages/conversations')
+      const res = await fetch('/api/messages/conversations', { cache: 'no-store' })
       const body = res.ok ? await res.json().catch(() => ({ conversations: [] })) : { conversations: [] }
       if (!active) return
       setConversations(body.conversations || [])
+      const to = typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('to') : null
+      if (to && to !== sessionUser.id) setActiveConvo(to)
       setLoading(false)
     }
     load()
@@ -61,20 +71,40 @@ export default function TalentMessagesPage() {
 
   useEffect(() => {
     if (!activeConvo || !userId) return
+    let active = true
     async function loadMessages() {
       const { data } = await supabase
         .from('messages')
-        .select('id,sender_id,recipient_id,content,attachment_url,attachment_name,attachment_type,created_at,read')
+        .select(MESSAGE_FIELDS)
         .or(`and(sender_id.eq.${userId},recipient_id.eq.${activeConvo}),and(sender_id.eq.${activeConvo},recipient_id.eq.${userId})`)
         .order('created_at', { ascending: false })
         .limit(THREAD_LIMIT)
+      if (!active) return
       setMessages([...(data || [])].reverse())
       await fetch('/api/messages/mark-read', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ partnerId: activeConvo }) }).catch(() => {})
       setConversations(current => current.map(c => c.partnerId === activeConvo ? { ...c, unread: 0 } : c))
       setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 100)
     }
     loadMessages()
+    return () => { active = false }
   }, [activeConvo, userId])
+
+  useEffect(() => {
+    if (!userId) return
+    const channel = supabase
+      .channel(`talent-messages-${userId}`)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: `recipient_id=eq.${userId}` }, payload => {
+        const msg = payload.new as any
+        if (msg.sender_id === activeConvo) {
+          setMessages(current => current.some(item => item.id === msg.id) ? current : [...current, msg].slice(-THREAD_LIMIT))
+          fetch('/api/messages/mark-read', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ partnerId: msg.sender_id }) }).catch(() => {})
+          setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 50)
+        }
+        refreshConversations().catch(() => {})
+      })
+      .subscribe()
+    return () => { supabase.removeChannel(channel) }
+  }, [userId, activeConvo])
 
   const sendMessage = async () => {
     if ((!newMsg.trim() && !attachmentFile) || !activeConvo) return
@@ -93,7 +123,8 @@ export default function TalentMessagesPage() {
       const content = newMsg.trim() || null
       const sendRes = await fetch('/api/messages/send', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ recipientId: activeConvo, content, attachmentUrl, attachmentName, attachmentType }) })
       if (!sendRes.ok) { const d = await sendRes.json().catch(() => ({})); alert(d.error || 'Message failed to send - please try again.'); setAttachmentUploading(false); return }
-      const optimistic = { sender_id: userId, recipient_id: activeConvo, content, attachment_url: attachmentUrl, attachment_name: attachmentName, attachment_type: attachmentType, created_at: new Date().toISOString(), read: false }
+      const sentBody = await sendRes.json().catch(() => ({}))
+      const optimistic = { id: sentBody.message?.id || `local-${Date.now()}`, sender_id: userId, recipient_id: activeConvo, content, attachment_url: attachmentUrl, attachment_name: attachmentName, attachment_type: attachmentType, created_at: new Date().toISOString(), read: false }
       setMessages(prev => [...prev, optimistic].slice(-THREAD_LIMIT))
       setConversations(current => current.map(c => c.partnerId === activeConvo ? { ...c, lastMessage: optimistic } : c))
       setNewMsg(''); removeAttachment(); setAttachmentUploading(false); setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 100)
