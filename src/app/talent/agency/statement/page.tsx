@@ -4,8 +4,8 @@ import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { Printer, ArrowLeft } from 'lucide-react'
 
-// Monthly payout statement for therapists - every shift, what WHC was paid,
-// the 5% fee, and what lands (or will land) in their pocket. Print-safe.
+// Monthly payout statement for therapists - every paid shift and the full
+// agreed earnings that land (or will land) in their pocket. Print-safe.
 
 export default function PayoutStatementPage() {
   const [bookings, setBookings] = useState<any[]>([])
@@ -37,15 +37,14 @@ export default function PayoutStatementPage() {
   const rows = bookings.filter(b => String(b.shift_date || '').slice(0, 7) === month)
   const effHours = (b: any) => (b.hours && b.hours > 0 ? b.hours : 8)
   const gross = (b: any) => b.rate * effHours(b)
-  const feeOf = (b: any) => gross(b) - netOf(b)
-  const netOf = (b: any) => b.payout_amount ?? Math.max(0, gross(b) - Math.ceil(gross(b) * 0.05))
+  const payoutOf = (b: any) => b.payout_amount ?? gross(b)
   const statusOf = (b: any) => b.dispute_status === 'open' ? 'On hold' : b.payout_status === 'paid' ? 'Paid' : 'Pending'
 
   const totals = rows.reduce((t, b) => ({
-    gross: t.gross + gross(b), fee: t.fee + feeOf(b), net: t.net + netOf(b),
-    paid: t.paid + (statusOf(b) === 'Paid' ? netOf(b) : 0),
-    pending: t.pending + (statusOf(b) === 'Pending' ? netOf(b) : 0),
-  }), { gross: 0, fee: 0, net: 0, paid: 0, pending: 0 })
+    earned: t.earned + gross(b), payout: t.payout + payoutOf(b),
+    paid: t.paid + (statusOf(b) === 'Paid' ? payoutOf(b) : 0),
+    pending: t.pending + (statusOf(b) === 'Pending' ? payoutOf(b) : 0),
+  }), { earned: 0, payout: 0, paid: 0, pending: 0 })
 
   const monthLabel = month ? new Date(`${month}-01T12:00:00Z`).toLocaleDateString('en-GB', { month: 'long', year: 'numeric' }) : ''
 
@@ -87,8 +86,7 @@ export default function PayoutStatementPage() {
                   <th className="py-2 pr-3">Date</th>
                   <th className="py-2 pr-3">Property</th>
                   <th className="py-2 pr-3 text-right">Hours</th>
-                  <th className="py-2 pr-3 text-right">Gross</th>
-                  <th className="py-2 pr-3 text-right">WHC fee (5%)</th>
+                  <th className="py-2 pr-3 text-right">Agreed earnings</th>
                   <th className="py-2 pr-3 text-right">Your payout</th>
                   <th className="py-2 text-right">Status</th>
                 </tr>
@@ -100,8 +98,7 @@ export default function PayoutStatementPage() {
                     <td className="py-2.5 pr-3">{b.employer_name}</td>
                     <td className="py-2.5 pr-3 text-right">{effHours(b)}</td>
                     <td className="py-2.5 pr-3 text-right">£{gross(b).toFixed(2)}</td>
-                    <td className="py-2.5 pr-3 text-right">£{feeOf(b).toFixed(2)}</td>
-                    <td className="py-2.5 pr-3 text-right font-medium text-black">£{netOf(b).toFixed(2)}</td>
+                    <td className="py-2.5 pr-3 text-right font-medium text-black">£{payoutOf(b).toFixed(2)}</td>
                     <td className="py-2.5 text-right">
                       <span className={`text-[11px] font-medium ${statusOf(b) === 'Paid' ? 'text-green-700' : statusOf(b) === 'On hold' ? 'text-amber-600' : 'text-gray-500'}`}>{statusOf(b)}</span>
                     </td>
@@ -111,9 +108,8 @@ export default function PayoutStatementPage() {
               <tfoot>
                 <tr className="font-semibold text-black">
                   <td className="py-3 pr-3" colSpan={3}>Totals</td>
-                  <td className="py-3 pr-3 text-right">£{totals.gross.toFixed(2)}</td>
-                  <td className="py-3 pr-3 text-right">£{totals.fee.toFixed(2)}</td>
-                  <td className="py-3 pr-3 text-right">£{totals.net.toFixed(2)}</td>
+                  <td className="py-3 pr-3 text-right">£{totals.earned.toFixed(2)}</td>
+                  <td className="py-3 pr-3 text-right">£{totals.payout.toFixed(2)}</td>
                   <td className="py-3"></td>
                 </tr>
               </tfoot>
@@ -125,7 +121,7 @@ export default function PayoutStatementPage() {
             </div>
 
             <div className="text-[11px] text-gray-400 space-y-1 border-t border-gray-100 pt-6">
-              <p>Gross = your hourly rate × hours, paid by the property to Wellness House Collective. WHC pays you the gross minus the 5% service fee after each shift. You are responsible for your own tax and National Insurance as a self-employed professional.</p>
+              <p>Your agreed earnings are your hourly rate × hours. Properties pay Wellness House Collective, and WHC pays you 100% of that agreed shift amount after each completed shift. You are responsible for your own tax and National Insurance as a self-employed professional.</p>
             </div>
           </>
         )}
