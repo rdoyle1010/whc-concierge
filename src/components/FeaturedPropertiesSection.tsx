@@ -33,7 +33,7 @@ export default async function FeaturedPropertiesSection() {
               return (
                 <Link key={property.id} href={`/properties/${property.id}`} className="group overflow-hidden rounded-2xl border border-[#c9a96e]/60 bg-[#f7f5f0] shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md">
                   <div className="relative h-36 overflow-hidden bg-[#e9e6df]">
-                    {image ? <img src={image} alt={name} width={640} height={288} loading="lazy" decoding="async" className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.02]" /> : <div className="flex h-full items-center justify-center"><Building2 size={32} className="opacity-30" /></div>}
+                    {image ? <img src={image} alt={name} className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.02]" /> : <div className="flex h-full items-center justify-center"><Building2 size={32} className="opacity-30" /></div>}
                     <span className="absolute left-4 top-4 inline-flex items-center gap-1 rounded-full bg-[#0b2f4d] px-3 py-1.5 text-[9px] font-semibold uppercase tracking-[0.12em] text-white"><Star size={10} fill="#d4b477" className="text-[#d4b477]" /> Featured</span>
                   </div>
                   <div className="p-5">
