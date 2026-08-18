@@ -8,7 +8,7 @@ const JOB_FIELDS = `
   tier,posted_date,expires_at,is_live,required_skills,required_brands,required_qualifications,min_years_experience,
   required_systems,required_management_skills,required_role_level,location_postcode,radius_miles,insurance_required,
   preferred_business_skills,shift_pattern,offers_accommodation,is_agency_role,latitude,longitude,employer_id,
-  employer_profiles(company_name,property_name,logo_url,property_photos,tagline,review_score,review_count,star_rating)
+  employer_profiles(company_name,property_name,property_photos,tagline,review_score,review_count,star_rating)
 `
 
 export async function GET() {
@@ -39,6 +39,9 @@ export async function GET() {
     .order('posted_date', { ascending: false })
     .limit(100)
 
-  if (error) return NextResponse.json({ error: 'Could not load live roles.' }, { status: 500 })
+  if (error) {
+    console.error('Match roles query failed:', error.message)
+    return NextResponse.json({ error: 'Could not load live roles.' }, { status: 500 })
+  }
   return NextResponse.json({ rows: data || [] })
 }
