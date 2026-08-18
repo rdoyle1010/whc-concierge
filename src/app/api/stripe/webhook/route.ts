@@ -189,13 +189,12 @@ export async function POST(req: NextRequest) {
       if (meta?.type === 'agency_booking' && meta?.booking_id) {
         const gross = meta.gross ? parseInt(meta.gross) : 0
         const fee = meta.fee ? parseInt(meta.fee) : 0
-        const candidateFee = Math.ceil(gross * 0.05)
         await supabase.from('agency_bookings').update({
           status: 'confirmed',
           paid_at: new Date().toISOString(),
           fee_paid_at: new Date().toISOString(),
           amount_paid: gross + fee,
-          payout_amount: gross - candidateFee,
+          payout_amount: gross,
           payout_status: 'pending',
           stripe_payment_intent: (session.payment_intent as string) || null,
         }).eq('id', meta.booking_id)
