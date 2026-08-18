@@ -107,7 +107,7 @@ export default function SwipeMatchPage() {
             hardStopReason: result.hardStopReason,
           }
         })
-        .filter((job:any) => !job.hardStop && job.matchScore >= 45)
+        .filter((job:any) => !job.hardStop)
         .sort((a:any,b:any) => b.matchScore - a.matchScore)
 
       setJobs(normalized)
@@ -143,6 +143,10 @@ export default function SwipeMatchPage() {
 
   async function saveInterest() {
     if (!job || saving || !userId) return
+    if (job.matchScore < 45) {
+      setError('This role is below the minimum match level for an application. You can still review the role, but you cannot apply unless your profile becomes a stronger match.')
+      return
+    }
     setSaving(true)
     setError('')
     const res = await fetch('/api/applications/draft', {
@@ -180,8 +184,8 @@ export default function SwipeMatchPage() {
     <div className="min-h-screen bg-surface flex items-center justify-center px-6">
       <div className="max-w-md text-center">
         <div className="w-16 h-16 bg-white border border-border rounded-2xl flex items-center justify-center mx-auto mb-5"><Sparkles size={24} className="text-[#9c7a42]" /></div>
-        <h1 className="text-[28px] font-semibold text-ink mb-2">{jobs.length ? 'You’ve reviewed all current matches' : 'No strong role matches right now'}</h1>
-        <p className="text-[14px] leading-6 text-muted mb-7">We only show roles that pass mandatory requirements and score at least 45% against your profile. Saved roles stay in My Applications until you choose to send them.</p>
+        <h1 className="text-[28px] font-semibold text-ink mb-2">{jobs.length ? 'You’ve reviewed all current matches' : 'No eligible roles right now'}</h1>
+        <p className="text-[14px] leading-6 text-muted mb-7">All roles that pass mandatory requirements are ranked here, strongest to weakest. Roles under 45% stay visible for comparison but cannot be applied to.</p>
         <div className="flex justify-center gap-2"><Link href="/talent/applications" className="btn-primary">My Applications</Link><Link href="/jobs" className="btn-secondary">Browse all roles</Link></div>
       </div>
     </div>
@@ -211,6 +215,7 @@ export default function SwipeMatchPage() {
   const photo = job.employer_profiles?.property_photos?.[0]
   const logo = job.employer_profiles?.logo_url
   const reviewScore = job.employer_profiles?.review_score
+  const canApply = score >= 45
 
   return (
     <div className="min-h-screen bg-surface text-body">
@@ -268,6 +273,8 @@ export default function SwipeMatchPage() {
               {job.matchingSkills?.length > 0 && <div className="flex flex-wrap gap-1.5 mt-3">{job.matchingSkills.slice(0,5).map((skill:string)=><span key={skill} className="text-[10px] border border-[#dfd5c2] bg-white text-[#765d34] px-2.5 py-1 rounded-full inline-flex items-center gap-1"><Check size={9}/>{skill}</span>)}</div>}
             </div>
 
+            {!canApply && <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-[12px] text-amber-800 mb-4">This role is below the 45% application threshold. You can review or pass it, but you cannot apply unless your profile becomes a stronger match.</div>}
+
             <button type="button" onClick={() => setExpanded(!expanded)} className="w-fit text-[12px] font-semibold text-[#0b2f4d] inline-flex items-center gap-1.5"><ChevronDown size={13} className={expanded ? 'rotate-180 transition-transform' : 'transition-transform'}/>{expanded ? 'Hide detailed match' : 'See detailed match & role'}</button>
             {expanded && <div className="mt-5 space-y-5 border-t border-border pt-5">{job.matchBreakdown && <MatchBreakdown breakdown={job.matchBreakdown} score={job.matchScore} label={job.matchLabel} colour={job.matchColour}/>}<div><p className="text-[10px] uppercase tracking-[.14em] text-muted font-semibold mb-2">Role overview</p><p className="text-[13px] leading-6 text-secondary whitespace-pre-line line-clamp-[12]">{job.description || 'The property has not added a full role description yet.'}</p></div></div>}
 
@@ -276,7 +283,7 @@ export default function SwipeMatchPage() {
             <div className="mt-auto pt-7">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <button type="button" onClick={passRole} disabled={saving} className="btn-secondary !py-3.5 inline-flex items-center justify-center gap-2 disabled:opacity-50"><X size={15}/> Not for me</button>
-                <button type="button" onClick={saveInterest} disabled={saving} className="btn-primary !py-3.5 inline-flex items-center justify-center gap-2 disabled:opacity-50"><Heart size={15}/>{saving ? 'Saving…' : 'Save to My Applications'}</button>
+                <button type="button" onClick={saveInterest} disabled={saving || !canApply} className="btn-primary !py-3.5 inline-flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"><Heart size={15}/>{saving ? 'Saving…' : canApply ? 'Save to My Applications' : 'Below match threshold'}</button>
               </div>
               <div className="mt-4 flex items-center justify-between gap-4 text-[11px] text-muted">
                 <span>Saving is private. The employer sees nothing until you submit.</span>
