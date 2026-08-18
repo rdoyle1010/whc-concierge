@@ -48,6 +48,21 @@ export async function POST(req: NextRequest) {
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
+    const { data: existingMessage } = await admin.from('messages')
+      .select('id')
+      .or(`and(sender_id.eq.${user.id},recipient_id.eq.${listing.user_id}),and(sender_id.eq.${listing.user_id},recipient_id.eq.${user.id})`)
+      .limit(1)
+      .maybeSingle()
+
+    if (!existingMessage) {
+      await admin.from('messages').insert({
+        sender_id: user.id,
+        recipient_id: listing.user_id,
+        content: `I'd like to discuss a possible ${listing.primary_specialism || 'wellness'} residency.`,
+        read: false,
+      })
+    }
+
     try {
       await createNotification(
         listing.user_id,
@@ -56,7 +71,7 @@ export async function POST(req: NextRequest) {
         'A property would like to discuss a possible residency with you.',
         '/talent/messages'
       )
-    } catch { /* non-fatal */ }
+    } catch { }
 
     return NextResponse.json({
       success: true,
