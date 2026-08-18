@@ -4,6 +4,10 @@ import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { getStripe } from '@/lib/stripe'
 
+const BOOKING_LIMIT = 250
+const REFERRAL_LIMIT = 100
+const RECENT_ENROLMENT_LIMIT = 12
+
 async function requireAdmin() {
   const cookieStore = await cookies()
   const supabase = createServerClient(
@@ -28,6 +32,7 @@ export async function GET() {
     const { data: bookings, error: bookingsError } = await admin.from('agency_bookings')
       .select('id,employer_id,candidate_id,shift_date,rate,hours,status,created_at,paid_at,amount_paid,payout_amount,payout_status,payout_at,dispute_status,dispute_reason,dispute_requested,refund_amount,stripe_payment_intent')
       .order('created_at', { ascending: false })
+      .limit(BOOKING_LIMIT)
     if (bookingsError) return NextResponse.json({ error: bookingsError.message }, { status: 500 })
 
     const empIds = Array.from(new Set((bookings || []).map(b => b.employer_id).filter(Boolean)))
@@ -50,7 +55,10 @@ export async function GET() {
     try {
       const { data: refs } = await admin.from('referrals')
         .select('id, referrer_candidate_id, referred_candidate_id, converted_at')
-        .eq('status', 'converted').eq('credit_applied', false)
+        .eq('status', 'converted')
+        .eq('credit_applied', false)
+        .order('converted_at', { ascending: false })
+        .limit(REFERRAL_LIMIT)
       if (refs && refs.length) {
         const ids = Array.from(new Set(refs.flatMap((r: any) => [r.referrer_candidate_id, r.referred_candidate_id])))
         const { data: names } = await admin.from('candidate_profiles').select('id, full_name').in('id', ids)
@@ -66,32 +74,49 @@ export async function GET() {
 
     let academy: any = null
     try {
-      const { data: enrols } = await admin.from('course_enrollments')
-        .select('course_slug, amount_paid, paid_at, completed_at, candidate_id')
-        .not('paid_at', 'is', null)
-        .order('paid_at', { ascending: false })
-      if (enrols) {
-        const candIds2 = Array.from(new Set(enrols.slice(0, 12).map((e: any) => e.candidate_id)))
-        const { data: names } = candIds2.length
-          ? await admin.from('candidate_profiles').select('id, full_name').in('id', candIds2)
-          : { data: [] as any[] }
-        const nameMap = new Map((names || []).map((n: any) => [n.id, n.full_name]))
-        academy = {
-          revenue: enrols.reduce((s: number, e: any) => s + (e.amount_paid || 0), 0),
-          enrolments: enrols.length,
-          completions: enrols.filter((e: any) => e.completed_at).length,
-          recent: enrols.slice(0, 12).map((e: any) => ({
-            name: nameMap.get(e.candidate_id) || 'Therapist',
-            course_slug: e.course_slug,
-            amount_paid: e.amount_paid,
-            paid_at: e.paid_at,
-            completed: Boolean(e.completed_at),
-          })),
-        }
-      }
-    } catch { /* table not live yet */ }
+      const [{ data: summaryRows }, { data: recentEnrols }] = await Promise.all([
+        admin.rpc('get_academy_revenue_summary'),
+        admin.from('course_enrollments')
+          .select('course_slug, amount_paid, paid_at, completed_at, candidate_id')
+          .not('paid_at', 'is', null)
+          .order('paid_at', { ascending: false })
+          .limit(RECENT_ENROLMENT_LIMIT),
+      ])
 
-    return NextResponse.json({ bookings: rows, referral_credits: referralCredits, academy })
+      const summary = Array.isArray(summaryRows) ? summaryRows[0] : null
+      const candIds2 = Array.from(new Set((recentEnrols || []).map((e: any) => e.candidate_id).filter(Boolean)))
+      const { data: names } = candIds2.length
+        ? await admin.from('candidate_profiles').select('id, full_name').in('id', candIds2)
+        : { data: [] as any[] }
+      const nameMap = new Map((names || []).map((n: any) => [n.id, n.full_name]))
+
+      academy = {
+        revenue: Number(summary?.revenue || 0),
+        enrolments: Number(summary?.enrolments || 0),
+        completions: Number(summary?.completions || 0),
+        recent: (recentEnrols || []).map((e: any) => ({
+          name: nameMap.get(e.candidate_id) || 'Therapist',
+          course_slug: e.course_slug,
+          amount_paid: e.amount_paid,
+          paid_at: e.paid_at,
+          completed: Boolean(e.completed_at),
+        })),
+      }
+    } catch { /* table/function not live yet */ }
+
+    return NextResponse.json({
+      bookings: rows,
+      referral_credits: referralCredits,
+      academy,
+      pagination: {
+        bookings_limit: BOOKING_LIMIT,
+        bookings_returned: rows.length,
+        bookings_capped: rows.length >= BOOKING_LIMIT,
+        referrals_limit: REFERRAL_LIMIT,
+        referrals_returned: referralCredits.length,
+        referrals_capped: referralCredits.length >= REFERRAL_LIMIT,
+      },
+    })
   } catch (e: any) {
     return NextResponse.json({ error: e.message }, { status: 500 })
   }
