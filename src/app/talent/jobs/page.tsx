@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import DashboardShell from '@/components/DashboardShell'
 import { createClient } from '@/lib/supabase/client'
 import { calculateMatchScore } from '@/lib/matching'
-import { Search, MapPin, Briefcase, Bookmark, Check, Star, Building2, ArrowRight, X } from 'lucide-react'
+import { Search, MapPin, Briefcase, Bookmark, Check, Star, Building2, ArrowRight, X, CheckCircle2, AlertTriangle } from 'lucide-react'
 import MatchBreakdown from '@/components/MatchBreakdown'
 import Pagination from '@/components/Pagination'
 import { ROLE_LEVELS, CONTRACT_TYPES } from '@/lib/constants'
@@ -19,7 +19,7 @@ export default function TalentJobsPage() {
   const [search, setSearch] = useState('')
   const [roleFilter, setRoleFilter] = useState('')
   const [contractFilter, setContractFilter] = useState('')
-  const [minMatch, setMinMatch] = useState(0)
+  const [minMatch] = useState(0)
   const [sortBy, setSortBy] = useState('match')
   const [applied, setApplied] = useState<Set<string>>(new Set())
   const [saved, setSaved] = useState<Set<string>>(new Set())
@@ -129,8 +129,13 @@ export default function TalentJobsPage() {
   const toggleSave = async (jobId: string) => {
     const isSaved = saved.has(jobId)
     const next = new Set(saved)
-    if (isSaved) { next.delete(jobId); await fetch('/api/saved-jobs', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ jobId }) }) }
-    else { next.add(jobId); await fetch('/api/saved-jobs', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ jobId }) }) }
+    if (isSaved) {
+      next.delete(jobId)
+      await fetch('/api/saved-jobs', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ jobId }) })
+    } else {
+      next.add(jobId)
+      await fetch('/api/saved-jobs', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ jobId }) })
+    }
     setSaved(next)
   }
 
@@ -170,22 +175,22 @@ export default function TalentJobsPage() {
 
   const tierClass = (t: string) => t === 'Platinum' ? 'badge-platinum' : t === 'Gold' ? 'badge-gold' : t === 'Silver' ? 'badge-silver' : 'badge-bronze'
 
-  if (loading) return <DashboardShell role="talent"><div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">{[1,2,3,4,5,6].map(i => <div key={i} className="skeleton h-64 rounded-xl" />)}</div></DashboardShell>
+  if (loading) return <DashboardShell role="talent"><div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">{[1,2,3,4,5,6].map(i => <div key={i} className="skeleton h-64 rounded-md" />)}</div></DashboardShell>
 
   return (
     <DashboardShell role="talent" userName={profile?.full_name}>
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between mb-7">
         <div>
           <p className="dashboard-eyebrow">Your matches</p>
           <h1 className="dashboard-title">Browse Roles</h1>
-          <p className="dashboard-intro">Roles are ranked from your real skills, experience, location and working preferences. Passes stay hidden.</p>
+          <p className="dashboard-intro">Roles are ranked from your skills, experience, location and working preferences. Each card shows whether your current profile is eligible to apply.</p>
         </div>
-        <p className="text-[13px] text-muted">{sorted.length} role{sorted.length !== 1 ? 's' : ''}</p>
+        <p className="text-[12px] text-muted whitespace-nowrap">{sorted.length} role{sorted.length !== 1 ? 's' : ''}</p>
       </div>
 
-      {applyError && <div className="bg-red-50 text-red-600 text-sm px-4 py-3 rounded-lg mb-6">{applyError}</div>}
+      {applyError && <div className="border-l-2 border-red-500 bg-white/70 text-red-700 text-[13px] px-4 py-3 mb-6">{applyError}</div>}
 
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-7">
         <div className="md:col-span-2 relative">
           <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
           <input type="text" placeholder="Search roles or properties..." value={search} onChange={e => setSearch(e.target.value)} className="input-field pl-9 !py-2 text-[13px]" />
@@ -210,60 +215,105 @@ export default function TalentJobsPage() {
         <div className="text-center py-20"><Briefcase size={32} className="mx-auto text-muted mb-3" /><p className="text-[14px] text-muted">No roles match your filters.</p></div>
       ) : (
         <>
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-          {paginatedSorted.map(job => (
-            <div key={job.id} className="card p-0 overflow-hidden">
-              <div className="relative h-36 bg-[#e9e6df] overflow-hidden">
-                {job.employer_profiles?.property_photos?.[0] ? <img src={job.employer_profiles.property_photos[0]} alt={job.employer_profiles?.company_name || 'Property'} className="h-full w-full object-cover" /> : <div className="h-full w-full flex items-center justify-center"><Building2 size={30} className="text-muted/50" /></div>}
-                {job.employer_profiles?.logo_url && <div className="absolute bottom-3 left-5 h-12 w-12 overflow-hidden rounded-xl border-2 border-white bg-white shadow-sm"><img src={job.employer_profiles.logo_url} alt="" className="h-full w-full object-cover" /></div>}
-              </div>
-              <div className="p-5">
-                <div className="flex items-center justify-between mb-3">
-                  <span className={tierClass(job.tier || 'Standard')}>{job.tier || 'Standard'}</span>
-                  {job.matchScore != null ? (
-                    <span className="text-[11px] font-semibold px-2.5 py-1 rounded-full" style={{ backgroundColor: job.matchBg, color: job.matchColour }}>{job.matchScore}% · {job.matchLabel}</span>
-                  ) : (
-                    <span className="text-[11px] font-medium px-2.5 py-1 rounded-full bg-neutral-100 text-muted">Complete profile to match</span>
-                  )}
-                </div>
-                <div className="flex flex-wrap items-center gap-2"><p className="eyebrow mb-0.5">{job.employer_profiles?.company_name}</p>{job.employer_profiles?.review_score ? <span className="inline-flex items-center gap-1 text-[11px] text-secondary"><Star size={11} className="fill-amber-400 text-amber-400" />{job.employer_profiles.review_score}</span> : null}</div>
-                <h3 className="text-[16px] font-medium text-ink mb-2">{job.title}</h3>
-                <div className="flex flex-wrap gap-2 text-[12px] text-muted mb-3">
-                  <span className="flex items-center gap-1"><MapPin size={11} />{job.location}{job.distanceMiles != null ? ` · ${job.distanceMiles.toFixed(1)} miles` : ''}</span>
-                  <span>{job.contract_type?.replace('_', ' ') || job.job_type}</span>
-                  {job.salary_min && job.salary_max && <span>£{(job.salary_min/1000).toFixed(0)}k-£{(job.salary_max/1000).toFixed(0)}k</span>}
-                </div>
-                {job.description && <p className="text-[13px] leading-6 text-secondary line-clamp-3 mb-4">{job.description}</p>}
-                {(job.required_brands || job.required_product_houses || []).length > 0 && (
-                  <div className="flex flex-wrap gap-1 mb-4">
-                    {(job.required_brands || job.required_product_houses).slice(0, 3).map((b: string) => (
-                      <span key={b} className="text-[10px] border border-border text-muted px-2 py-0.5 rounded-full">{b}</span>
-                    ))}
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+            {paginatedSorted.map(job => {
+              const eligible = job.matchScore != null && job.matchScore >= 45 && !job.hardStop
+              const needsProfile = job.matchScore == null
+              const belowThreshold = job.matchScore != null && job.matchScore < 45 && !job.hardStop
+
+              return (
+                <article key={job.id} className="card p-0 overflow-hidden">
+                  <div className="relative h-36 bg-[#e9e6df] overflow-hidden">
+                    {job.employer_profiles?.property_photos?.[0]
+                      ? <img src={job.employer_profiles.property_photos[0]} alt={job.employer_profiles?.company_name || 'Property'} className="h-full w-full object-cover" />
+                      : <div className="h-full w-full flex items-center justify-center"><Building2 size={30} className="text-muted/50" /></div>}
+                    {job.employer_profiles?.logo_url && (
+                      <div className="absolute bottom-3 left-5 h-12 w-12 overflow-hidden rounded-md border-2 border-white bg-white shadow-sm">
+                        <img src={job.employer_profiles.logo_url} alt="" className="h-full w-full object-cover" />
+                      </div>
+                    )}
                   </div>
-                )}
-                {job.matchExplanation && <p className="text-[12px] text-secondary mb-3">{job.matchExplanation}</p>}
-                {job.matchBreakdown && job.matchScore != null && (
-                  <MatchBreakdown breakdown={job.matchBreakdown} score={job.matchScore} label={job.matchLabel} colour={job.matchColour} compact />
-                )}
-                <div className="flex gap-2">
-                  <a href={`/jobs/${job.id}`} className="btn-secondary inline-flex items-center gap-1">Details <ArrowRight size={12} /></a>
-                  <button type="button" onClick={() => handlePass(job.id)} className="btn-secondary inline-flex items-center gap-1" title="Pass and hide this role"><X size={12} />Pass</button>
-                  {applied.has(job.id) ? (
-                    <div className="btn-secondary flex-1 text-center flex items-center justify-center gap-1 opacity-60 cursor-default"><Check size={12} />Interested</div>
-                  ) : job.hardStop ? (
-                    <button type="button" disabled className="btn-secondary flex-1 opacity-60 cursor-not-allowed" title={job.hardStopReason}>Requirement missing</button>
-                  ) : (
-                    <button type="button" onClick={() => handleApply(job.id)} className="btn-primary flex-1">Interested</button>
-                  )}
-                  <button type="button" onClick={() => toggleSave(job.id)} className={`p-2 rounded-lg border transition-colors ${saved.has(job.id) ? 'bg-[#FDF6EC] border-accent/30 text-accent' : 'border-border text-muted hover:text-accent hover:border-accent/30'}`} title={saved.has(job.id) ? 'Unsave' : 'Save'}>
-                    <Bookmark size={14} fill={saved.has(job.id) ? 'currentColor' : 'none'} />
-                  </button>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-        <Pagination page={page} perPage={perPage} total={sorted.length} showPerPage={false} onPageChange={setPage} />
+
+                  <div className="p-5">
+                    <div className="flex items-center justify-between gap-3 mb-3">
+                      <span className={tierClass(job.tier || 'Standard')}>{job.tier || 'Standard'}</span>
+                      {job.matchScore != null ? (
+                        <span className="text-[11px] font-semibold px-2.5 py-1 rounded-full" style={{ backgroundColor: job.matchBg, color: job.matchColour }}>{job.matchScore}% · {job.matchLabel}</span>
+                      ) : (
+                        <span className="text-[11px] font-medium px-2.5 py-1 rounded-full bg-neutral-100 text-muted">Complete profile to match</span>
+                      )}
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="eyebrow mb-0.5">{job.employer_profiles?.company_name}</p>
+                      {job.employer_profiles?.review_score ? <span className="inline-flex items-center gap-1 text-[11px] text-secondary"><Star size={11} className="fill-amber-400 text-amber-400" />{job.employer_profiles.review_score}</span> : null}
+                    </div>
+                    <h3 className="text-[24px] text-ink mb-2">{job.title}</h3>
+                    <div className="flex flex-wrap gap-2 text-[12px] text-muted mb-3">
+                      <span className="flex items-center gap-1"><MapPin size={11} />{job.location}{job.distanceMiles != null ? ` · ${job.distanceMiles.toFixed(1)} miles` : ''}</span>
+                      <span>{job.contract_type?.replace('_', ' ') || job.job_type}</span>
+                      {job.salary_min && job.salary_max && <span>£{(job.salary_min/1000).toFixed(0)}k-£{(job.salary_max/1000).toFixed(0)}k</span>}
+                    </div>
+
+                    {job.description && <p className="text-[13px] leading-6 text-secondary line-clamp-3 mb-4">{job.description}</p>}
+
+                    {(job.required_brands || job.required_product_houses || []).length > 0 && (
+                      <div className="flex flex-wrap gap-1 mb-4">
+                        {(job.required_brands || job.required_product_houses).slice(0, 3).map((b: string) => (
+                          <span key={b} className="text-[10px] border border-border text-muted px-2 py-0.5 rounded-full">{b}</span>
+                        ))}
+                      </div>
+                    )}
+
+                    <div className={`mb-4 border-l-2 px-3 py-2.5 ${
+                      eligible ? 'border-emerald-500 bg-emerald-50/60' : job.hardStop ? 'border-red-500 bg-red-50/60' : belowThreshold ? 'border-amber-500 bg-amber-50/60' : 'border-border bg-surface/60'
+                    }`}>
+                      <div className="flex items-start gap-2">
+                        {eligible ? <CheckCircle2 size={14} className="text-emerald-700 mt-0.5 shrink-0" /> : <AlertTriangle size={14} className={`${job.hardStop ? 'text-red-600' : belowThreshold ? 'text-amber-700' : 'text-muted'} mt-0.5 shrink-0`} />}
+                        <div>
+                          <p className={`text-[11px] font-semibold ${eligible ? 'text-emerald-800' : job.hardStop ? 'text-red-700' : belowThreshold ? 'text-amber-800' : 'text-secondary'}`}>
+                            {eligible ? 'Eligible to apply' : job.hardStop ? 'Mandatory requirement missing' : belowThreshold ? 'Below match threshold' : 'Eligibility not yet available'}
+                          </p>
+                          <p className="text-[11px] leading-5 text-secondary mt-0.5">
+                            {eligible
+                              ? 'Your profile clears the 45% match threshold and mandatory requirements.'
+                              : job.hardStop
+                                ? (job.hardStopReason || 'Your profile does not currently meet one of this role’s mandatory requirements.')
+                                : belowThreshold
+                                  ? `Your current match is ${job.matchScore}%. Applications open at 45%; update your profile or skills if something is missing.`
+                                  : 'Complete your profile so we can calculate the match and application eligibility.'}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {job.matchExplanation && <p className="text-[12px] text-secondary mb-3">{job.matchExplanation}</p>}
+                    {job.matchBreakdown && job.matchScore != null && (
+                      <MatchBreakdown breakdown={job.matchBreakdown} score={job.matchScore} label={job.matchLabel} colour={job.matchColour} compact />
+                    )}
+
+                    <div className="flex flex-wrap gap-2 mt-4">
+                      <a href={`/jobs/${job.id}`} className="btn-secondary inline-flex items-center gap-1">Details <ArrowRight size={12} /></a>
+                      <button type="button" onClick={() => handlePass(job.id)} className="btn-secondary inline-flex items-center gap-1" title="Pass and hide this role"><X size={12} />Pass</button>
+                      {applied.has(job.id) ? (
+                        <div className="btn-secondary min-w-[130px] flex-1 text-center flex items-center justify-center gap-1 opacity-60 cursor-default"><Check size={12} />Interested</div>
+                      ) : eligible ? (
+                        <button type="button" onClick={() => handleApply(job.id)} className="btn-primary min-w-[130px] flex-1">Interested</button>
+                      ) : (
+                        <button type="button" disabled className="btn-secondary min-w-[130px] flex-1 opacity-55 cursor-not-allowed" title={job.hardStopReason || undefined}>
+                          {job.hardStop ? 'Requirement missing' : belowThreshold ? 'Below 45% match' : needsProfile ? 'Complete profile' : 'Not eligible'}
+                        </button>
+                      )}
+                      <button type="button" onClick={() => toggleSave(job.id)} className={`p-2 border rounded-md transition-colors ${saved.has(job.id) ? 'bg-[#FDF6EC] border-accent/30 text-accent' : 'border-border text-muted hover:text-accent hover:border-accent/30'}`} title={saved.has(job.id) ? 'Unsave' : 'Save'}>
+                        <Bookmark size={14} fill={saved.has(job.id) ? 'currentColor' : 'none'} />
+                      </button>
+                    </div>
+                  </div>
+                </article>
+              )
+            })}
+          </div>
+          <Pagination page={page} perPage={perPage} total={sorted.length} showPerPage={false} onPageChange={setPage} />
         </>
       )}
     </DashboardShell>
