@@ -49,15 +49,15 @@ export async function POST(req: NextRequest) {
   if (!employer) return NextResponse.json({ error: 'Employer profile not found.' }, { status: 404 })
 
   const now = new Date().toISOString()
-  const { error: updateError } = await admin.from('applications').update({
+  const { data: updatedApplication, error: updateError } = await admin.from('applications').update({
     status: 'pending',
     cover_letter: letter,
     cover_note: letter || null,
     submitted_at: now,
     updated_at: now,
-  }).eq('id', application.id).eq('status', 'draft')
+  }).eq('id', application.id).eq('status', 'draft').select('id,status,submitted_at,updated_at').maybeSingle()
 
-  if (updateError) return NextResponse.json({ error: 'Could not send your application.' }, { status: 500 })
+  if (updateError || !updatedApplication) return NextResponse.json({ error: 'Could not send your application.' }, { status: 500 })
 
   const employerName = employer.property_name || employer.company_name || 'the employer'
   if (employer.user_id) {
@@ -76,5 +76,13 @@ export async function POST(req: NextRequest) {
     await Promise.allSettled(jobs)
   } catch (e: any) { console.error('Application email failed:', e?.message) }
 
-  return NextResponse.json({ success: true })
+  return NextResponse.json({
+    success: true,
+    application: updatedApplication,
+    progress: {
+      current: 'submitted',
+      next: 'under_review',
+      message: 'Application submitted. The property can now review it.',
+    },
+  })
 }
