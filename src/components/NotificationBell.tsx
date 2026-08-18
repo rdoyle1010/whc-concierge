@@ -31,12 +31,15 @@ export default function NotificationBell({ userId }: { userId: string }) {
     }
   }
 
-  useEffect(() => { load() }, [userId])
+  useEffect(() => {
+    const timer = window.setTimeout(() => load(), 1800)
+    return () => window.clearTimeout(timer)
+  }, [userId])
 
   useEffect(() => {
     const interval = setInterval(() => {
       if (loadedOnce.current && document.visibilityState === 'visible') load()
-    }, 120000)
+    }, 180000)
     const onVisible = () => {
       if (document.visibilityState === 'visible' && loadedOnce.current) load()
     }
