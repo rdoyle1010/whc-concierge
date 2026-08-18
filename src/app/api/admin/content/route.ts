@@ -14,8 +14,9 @@ import { getWebsiteContent } from '@/lib/site-content-server'
 
 const RESEND_API_KEY = process.env.RESEND_API_KEY
 const FROM_EMAIL = 'WHC Concierge <noreply@mail.wellnesshousecollective.co.uk>'
-const DEFAULT_CONTACT_LIMIT = 250
-const MAX_CONTACT_LIMIT = 500
+const DEFAULT_CONTACT_PAGE_SIZE = 25
+const MAX_CONTACT_PAGE_SIZE = 100
+const CONTACT_STATUSES = new Set(['open', 'replied', 'closed'])
 
 async function requireAdmin() {
   const cookieStore = await cookies()
@@ -96,17 +97,38 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ draft, published, history })
     }
     if (kind === 'contact_queries') {
-      const requestedLimit = Number(req.nextUrl.searchParams.get('limit'))
-      const limit = Number.isFinite(requestedLimit) && requestedLimit > 0
-        ? Math.min(Math.floor(requestedLimit), MAX_CONTACT_LIMIT)
-        : DEFAULT_CONTACT_LIMIT
-      const { data } = await admin.from('contact_queries')
-        .select('id,name,email,subject,message,status,type,created_at')
+      const requestedPage = Number(req.nextUrl.searchParams.get('page'))
+      const requestedPerPage = Number(req.nextUrl.searchParams.get('per_page'))
+      const page = Number.isFinite(requestedPage) && requestedPage > 0 ? Math.floor(requestedPage) : 1
+      const perPage = Number.isFinite(requestedPerPage) && requestedPerPage > 0
+        ? Math.min(Math.floor(requestedPerPage), MAX_CONTACT_PAGE_SIZE)
+        : DEFAULT_CONTACT_PAGE_SIZE
+      const statusParam = req.nextUrl.searchParams.get('status') || 'all'
+      const status = CONTACT_STATUSES.has(statusParam) ? statusParam : 'all'
+      const from = (page - 1) * perPage
+      const to = from + perPage - 1
+
+      let query = admin.from('contact_queries')
+        .select('id,name,email,subject,message,status,type,created_at', { count: 'exact' })
+        .neq('type', 'complaint')
         .order('created_at', { ascending: false })
-        .limit(limit)
+        .range(from, to)
+
+      if (status !== 'all') query = query.eq('status', status)
+
+      const { data, count, error } = await query
+      if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+      const total = count || 0
       return NextResponse.json({
         rows: data || [],
-        pagination: { limit, returned: data?.length || 0, capped: (data?.length || 0) >= limit },
+        pagination: {
+          page,
+          per_page: perPage,
+          total,
+          total_pages: Math.max(1, Math.ceil(total / perPage)),
+          has_more: to + 1 < total,
+        },
       })
     }
     return NextResponse.json({ error: 'Unknown kind' }, { status: 400 })
