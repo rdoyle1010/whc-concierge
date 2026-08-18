@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef } from 'react'
 import DashboardShell from '@/components/DashboardShell'
 import { createClient } from '@/lib/supabase/client'
-import { Send, MessageSquare, Paperclip, FileText } from 'lucide-react'
+import { Send, MessageSquare, Paperclip, FileText, ShieldCheck } from 'lucide-react'
 
 const THREAD_LIMIT = 100
 const MESSAGE_FIELDS = 'id,sender_id,recipient_id,content,attachment_url,attachment_name,attachment_type,created_at,read'
@@ -50,6 +50,13 @@ export default function EmployerMessagesPage() {
     if (fileInputRef.current) fileInputRef.current.value = ''
   }
 
+  async function refreshConversations() {
+    const res = await fetch('/api/messages/conversations', { cache: 'no-store' })
+    if (!res.ok) return
+    const body = await res.json().catch(() => ({ conversations: [] }))
+    setConversations(body.conversations || [])
+  }
+
   useEffect(() => {
     let active = true
     async function load() {
@@ -58,21 +65,15 @@ export default function EmployerMessagesPage() {
       if (!user || !active) { setLoading(false); return }
       setUserId(user.id)
 
-      const res = await fetch('/api/messages/conversations')
+      const res = await fetch('/api/messages/conversations', { cache: 'no-store' })
       const body = res.ok ? await res.json().catch(() => ({ conversations: [] })) : { conversations: [] }
       if (!active) return
       const convoList = [...(body.conversations || [])]
       const to = typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('to') : null
       if (to && to !== user.id) {
         if (!convoList.some((conversation: any) => conversation.partnerId === to)) {
-          let partnerName: string | null = null
-          const { data: cp } = await supabase.from('candidate_profiles').select('full_name').eq('user_id', to).maybeSingle()
-          partnerName = cp?.full_name || null
-          if (!partnerName) {
-            const { data: ep } = await supabase.from('employer_profiles').select('property_name,company_name').eq('user_id', to).maybeSingle()
-            partnerName = ep?.property_name || ep?.company_name || null
-          }
-          convoList.unshift({ partnerId: to, lastMessage: null, unread: 0, partnerName: partnerName || 'New conversation' })
+          // Do not look up a candidate's real name here. Residency conversations may be anonymous.
+          convoList.unshift({ partnerId: to, lastMessage: null, unread: 0, partnerName: 'New conversation', residencyPrivate: false })
         }
         setActiveConvo(to)
       }
@@ -106,8 +107,32 @@ export default function EmployerMessagesPage() {
     return () => { active = false }
   }, [activeConvo, userId])
 
+  useEffect(() => {
+    if (!userId) return
+    const channel = supabase
+      .channel(`employer-messages-${userId}`)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: `recipient_id=eq.${userId}` }, payload => {
+        const msg = payload.new as any
+        if (msg.sender_id === activeConvo) {
+          setMessages(current => current.some(item => item.id === msg.id) ? current : [...current, msg].slice(-THREAD_LIMIT))
+          fetch('/api/messages/mark-read', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ partnerId: msg.sender_id }) }).catch(() => {})
+          setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 50)
+        }
+        refreshConversations().catch(() => {})
+      })
+      .subscribe()
+
+    return () => { supabase.removeChannel(channel) }
+  }, [userId, activeConvo])
+
   const sendMessage = async () => {
+    const activePartner = conversations.find(c => c.partnerId === activeConvo)
+    const residencyPrivate = Boolean(activePartner?.residencyPrivate)
     if ((!newMsg.trim() && !attachmentFile) || !activeConvo || attachmentUploading) return
+    if (residencyPrivate && attachmentFile) {
+      alert('Attachments are available after the Residency booking is confirmed.')
+      return
+    }
     try {
       setAttachmentUploading(true)
       let attachmentUrl = null
@@ -141,7 +166,8 @@ export default function EmployerMessagesPage() {
         return
       }
 
-      const optimistic = { sender_id: userId, recipient_id: activeConvo, content, attachment_url: attachmentUrl, attachment_name: attachmentName, attachment_type: attachmentType, created_at: new Date().toISOString(), read: false }
+      const sentBody = await sendRes.json().catch(() => ({}))
+      const optimistic = { id: sentBody.message?.id || `local-${Date.now()}`, sender_id: userId, recipient_id: activeConvo, content, attachment_url: attachmentUrl, attachment_name: attachmentName, attachment_type: attachmentType, created_at: new Date().toISOString(), read: false }
       setMessages(current => [...current, optimistic].slice(-THREAD_LIMIT))
       setConversations(current => current.map(c => c.partnerId === activeConvo ? { ...c, lastMessage: optimistic } : c))
       setNewMsg('')
@@ -156,6 +182,8 @@ export default function EmployerMessagesPage() {
   }
 
   const activePartner = conversations.find(c => c.partnerId === activeConvo)
+  const residencyPrivate = Boolean(activePartner?.residencyPrivate)
+
   return (
     <DashboardShell role="employer">
       <h1 className="text-2xl font-semibold text-ink mb-6">Messages</h1>
@@ -171,6 +199,7 @@ export default function EmployerMessagesPage() {
                   <p className="font-medium text-ink text-sm truncate">{convo.partnerName || 'Unknown User'}</p>
                   {convo.unread > 0 && <span className="w-5 h-5 bg-gold text-white text-xs rounded-full flex items-center justify-center">{convo.unread > 9 ? '9+' : convo.unread}</span>}
                 </div>
+                {convo.residencyPrivate && <p className="text-[10px] text-[#9c7a42] mt-1">Private Residency discussion</p>}
                 <p className="text-xs text-gray-400 truncate mt-1">{convo.lastMessage?.content || (convo.lastMessage?.attachment_name ? `Attachment: ${convo.lastMessage.attachment_name}` : '')}</p>
               </button>
             ))}
@@ -180,7 +209,16 @@ export default function EmployerMessagesPage() {
               <div className="flex-1 flex items-center justify-center text-gray-400">Select a conversation</div>
             ) : (
               <>
-                <div className="px-6 py-3 border-b border-gray-100"><p className="font-medium text-ink text-sm">{activePartner?.partnerName || 'Unknown User'}</p></div>
+                <div className="px-6 py-3 border-b border-gray-100">
+                  <p className="font-medium text-ink text-sm">{activePartner?.partnerName || 'Unknown User'}</p>
+                  {residencyPrivate && <p className="text-[10px] text-[#9c7a42] mt-0.5">Identity and direct contact details stay private until the Residency booking is confirmed.</p>}
+                </div>
+                {residencyPrivate && (
+                  <div className="mx-5 mt-4 rounded-xl border border-[#eadfc9] bg-[#faf6ed] px-4 py-3 flex items-start gap-2.5">
+                    <ShieldCheck size={15} className="text-[#9c7a42] mt-0.5 shrink-0" />
+                    <p className="text-[11px] leading-5 text-[#6d6559]">Discuss dates, treatments, hours and rate here. Email addresses, phone numbers, links and attachments are restricted until the booking is confirmed through Spa Platform.</p>
+                  </div>
+                )}
                 <div className="flex-1 overflow-y-auto p-6 space-y-3">
                   {messages.map((msg, i) => (
                     <div key={msg.id || `${msg.created_at}-${i}`} className={`flex ${msg.sender_id === userId ? 'justify-end' : 'justify-start'}`}>
@@ -196,11 +234,10 @@ export default function EmployerMessagesPage() {
                   <div ref={bottomRef} />
                 </div>
                 <div className="p-4 border-t border-gray-100">
-                  {attachmentFile && <div className="mb-3 p-3 bg-gray-50 rounded flex items-center justify-between"><div className="flex items-center gap-2 text-sm text-ink"><FileText size={16} /><span className="truncate">{attachmentFile.name}</span></div><button type="button" onClick={removeAttachment} className="text-gray-400 hover:text-ink transition-colors">×</button></div>}
+                  {!residencyPrivate && attachmentFile && <div className="mb-3 p-3 bg-gray-50 rounded flex items-center justify-between"><div className="flex items-center gap-2 text-sm text-ink"><FileText size={16} /><span className="truncate">{attachmentFile.name}</span></div><button type="button" onClick={removeAttachment} className="text-gray-400 hover:text-ink transition-colors">×</button></div>}
                   <div className="flex space-x-3">
-                    <input type="text" value={newMsg} onChange={(e) => setNewMsg(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && !attachmentUploading && sendMessage()} className="input-field flex-1" placeholder="Type a message..." disabled={attachmentUploading} />
-                    <input ref={fileInputRef} type="file" onChange={handleFileSelected} accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" style={{ display: 'none' }} />
-                    <button type="button" onClick={handleAttachmentClick} className="btn-secondary !px-4" disabled={attachmentUploading} title="Attach file"><Paperclip size={18} /></button>
+                    <input type="text" value={newMsg} onChange={(e) => setNewMsg(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && !attachmentUploading && sendMessage()} className="input-field flex-1" placeholder={residencyPrivate ? 'Discuss the Residency without sharing contact details…' : 'Type a message...'} disabled={attachmentUploading} />
+                    {!residencyPrivate && <><input ref={fileInputRef} type="file" onChange={handleFileSelected} accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" style={{ display: 'none' }} /><button type="button" onClick={handleAttachmentClick} className="btn-secondary !px-4" disabled={attachmentUploading} title="Attach file"><Paperclip size={18} /></button></>}
                     <button type="button" onClick={sendMessage} className="btn-primary !px-4" disabled={attachmentUploading}><Send size={18} /></button>
                   </div>
                 </div>
