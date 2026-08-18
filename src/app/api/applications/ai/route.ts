@@ -41,8 +41,7 @@ async function generateJson(input: string) {
   const payload = await response.json()
   const text = extractResponseText(payload).trim()
   const cleaned = text.replace(/^```json\s*/i, '').replace(/```$/i, '').trim()
-  const parsed = JSON.parse(cleaned)
-  return parsed
+  return JSON.parse(cleaned)
 }
 
 export async function POST(req: NextRequest) {
@@ -81,10 +80,11 @@ export async function POST(req: NextRequest) {
       .maybeSingle()
 
     const propertyName = employer?.property_name || employer?.company_name || 'the property'
+    const candidateName = candidate.full_name || 'Candidate'
     const task = mode === 'draft'
-      ? 'Write a polished covering letter tailored to this role.'
+      ? 'Write a complete polished covering letter tailored to this role.'
       : mode === 'improve'
-        ? 'Improve the candidate\'s current covering letter while preserving their meaning and factual accuracy.'
+        ? 'Improve the candidate\'s current covering letter while preserving their meaning and factual accuracy. Return a complete letter, not just the body.'
         : 'Analyse the application and identify its strongest evidence and any genuine gaps the candidate should consider addressing.'
 
     const prompt = `You are the WHC Concierge AI Application Assistant for luxury spa, wellness and hospitality professionals in the UK.
@@ -98,7 +98,7 @@ Return ONLY valid JSON in this exact shape:
   "summary": "1-2 sentence factual application assessment",
   "strengths": ["up to 4 concise strengths grounded in supplied data"],
   "gaps": ["up to 3 factual gaps or profile items not evidenced; phrase constructively"],
-  "covering_letter": "a UK English covering letter of around 180-260 words, or an empty string when mode is analyse and no letter is requested"
+  "covering_letter": "a complete UK English covering letter of around 180-260 words, or an empty string when mode is analyse and no letter is requested"
 }
 
 Candidate profile:
@@ -113,6 +113,12 @@ ${JSON.stringify({ name: propertyName, tagline: employer?.tagline || '' })}
 Saved match score: ${application.match_score ?? 'not recorded'}
 Current covering letter: ${JSON.stringify(currentLetter || application.cover_letter || application.cover_note || '')}
 Mode: ${mode}
+
+Covering-letter format rules when mode is draft or improve:
+- Begin with a greeting on its own line. If no named hiring contact is supplied, use "Dear Hiring Team,". Never invent a person's name.
+- Use 3-5 short, natural paragraphs.
+- End with a courteous closing such as "Kind regards," followed on the next line by the candidate's real name: ${JSON.stringify(candidateName)}.
+- The returned covering_letter must include the greeting and sign-off, not only the middle paragraphs.
 
 Style rules: sophisticated but natural UK English; no clichés such as 'I am writing to express my interest'; no exaggerated claims; do not mention AI; do not mention a match percentage in the letter; keep the candidate's voice professional and human.`
 
