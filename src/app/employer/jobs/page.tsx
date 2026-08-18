@@ -42,8 +42,6 @@ export default function EmployerJobsPage() {
     if (!profile) return
     setSaving(true)
 
-    // Going live requires payment: only a job that is ALREADY live (paid) may stay live.
-    // New or draft jobs must go through Post a Role -> checkout.
     const wasLive = !!editing?.is_live
     const wantsActive = form.status === 'active'
     const payload = {
@@ -106,9 +104,6 @@ export default function EmployerJobsPage() {
     const isCurrentlyActive = job.status === 'active'
     const newIsLive = !isCurrentlyActive
 
-    // Reactivation is only free while the paid term is still running.
-    // Once expires_at has passed (or was never set - unpaid/legacy), the
-    // listing must go back through Post a Role -> checkout via Repost.
     if (newIsLive) {
       const paidUntil = job.expires_at ? new Date(job.expires_at).getTime() : 0
       if (!paidUntil || paidUntil <= Date.now()) {
@@ -135,124 +130,105 @@ export default function EmployerJobsPage() {
     setJobs(jobs.map(j => j.id === job.id ? { ...j, status: 'filled', is_live: false } : j))
     alert(`Role marked as filled. ${result.notified || 0} applicant${result.notified === 1 ? '' : 's'} notified.`)
   }
+
+  const activeCount = jobs.filter(job => job.status === 'active').length
+  const draftCount = jobs.filter(job => job.status === 'draft').length
+  const filledCount = jobs.filter(job => job.status === 'filled').length
+
   return (
     <DashboardShell role="employer" userName={profile?.company_name}>
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-serif font-bold text-ink">Job Listings</h1>
-        <button onClick={() => router.push('/employer/post-role')}
-          className="btn-primary flex items-center space-x-2">
-          <Plus size={16} /><span>Post New Role</span>
+      <div className="mb-8 flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
+        <div>
+          <p className="dashboard-eyebrow">Recruitment inventory</p>
+          <h1 className="dashboard-title">Job listings</h1>
+          <p className="dashboard-intro">Create, edit and close permanent roles. Marking a role filled removes it from the site and notifies every applicant automatically.</p>
+        </div>
+        <button onClick={() => router.push('/employer/post-role')} className="btn-primary inline-flex items-center justify-center gap-2 self-start md:self-auto">
+          <Plus size={15} /><span>Post a new role</span>
         </button>
       </div>
 
+      {!loading && jobs.length > 0 && (
+        <div className="dashboard-metrics mb-8">
+          <div className="dashboard-metric"><p className="dashboard-metric-value">{activeCount}</p><p className="dashboard-metric-label">Live roles</p></div>
+          <div className="dashboard-metric"><p className="dashboard-metric-value">{draftCount}</p><p className="dashboard-metric-label">Drafts</p></div>
+          <div className="dashboard-metric"><p className="dashboard-metric-value">{filledCount}</p><p className="dashboard-metric-label">Filled</p></div>
+          <div className="dashboard-metric"><p className="dashboard-metric-value">{jobs.length}</p><p className="dashboard-metric-label">Total listings</p></div>
+        </div>
+      )}
+
       {showForm && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setShowForm(false)}>
-          <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-8" onClick={(e) => e.stopPropagation()}>
-            <h2 className="font-serif text-xl font-bold mb-6">{editing ? 'Edit Role' : 'Post New Role'}</h2>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#071c2d]/55 p-4" onClick={() => setShowForm(false)}>
+          <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto border border-border bg-[#fffdf9] p-6 md:p-8 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <p className="dashboard-eyebrow">Listing editor</p>
+            <h2 className="dashboard-section-title mb-2">{editing ? 'Edit role' : 'Create role draft'}</h2>
+            <p className="mb-6 text-[12px] leading-5 text-muted">Publishing a new paid listing still happens through Post a Role checkout. Edits to an existing paid listing remain here.</p>
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">Job Title *</label>
+                <label className="mb-1.5 block text-[12px] font-semibold text-secondary">Job title *</label>
                 <input type="text" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} className="input-field" placeholder="e.g. Senior Spa Therapist" />
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Location *</label>
+                  <label className="mb-1.5 block text-[12px] font-semibold text-secondary">Location *</label>
                   <input type="text" value={form.location} onChange={(e) => setForm({ ...form, location: e.target.value })} className="input-field" />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Job Type</label>
+                  <label className="mb-1.5 block text-[12px] font-semibold text-secondary">Job type</label>
                   <select value={form.job_type} onChange={(e) => setForm({ ...form, job_type: e.target.value })} className="input-field">
                     <option>Full-time</option><option>Part-time</option><option>Contract</option><option>Temporary</option><option>Freelance</option>
                   </select>
                 </div>
               </div>
-              <div className="grid grid-cols-3 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Min Salary (\u00a3)</label>
-                  <input type="number" value={form.salary_min} onChange={(e) => setForm({ ...form, salary_min: e.target.value })} className="input-field" />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Max Salary (\u00a3)</label>
-                  <input type="number" value={form.salary_max} onChange={(e) => setForm({ ...form, salary_max: e.target.value })} className="input-field" />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Tier</label>
-                  <select value={form.tier} onChange={(e) => setForm({ ...form, tier: e.target.value })} className="input-field">
-                    <option>Silver</option><option>Gold</option><option>Platinum</option>
-                  </select>
-                </div>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                <div><label className="mb-1.5 block text-[12px] font-semibold text-secondary">Min salary (£)</label><input type="number" value={form.salary_min} onChange={(e) => setForm({ ...form, salary_min: e.target.value })} className="input-field" /></div>
+                <div><label className="mb-1.5 block text-[12px] font-semibold text-secondary">Max salary (£)</label><input type="number" value={form.salary_max} onChange={(e) => setForm({ ...form, salary_max: e.target.value })} className="input-field" /></div>
+                <div><label className="mb-1.5 block text-[12px] font-semibold text-secondary">Tier</label><select value={form.tier} onChange={(e) => setForm({ ...form, tier: e.target.value })} className="input-field"><option>Silver</option><option>Gold</option><option>Platinum</option></select></div>
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">Specialism</label>
-                <input type="text" value={form.specialism} onChange={(e) => setForm({ ...form, specialism: e.target.value })} className="input-field" placeholder="e.g. Massage Therapy" />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">Description *</label>
-                <textarea rows={5} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} className="input-field" />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">Requirements (one per line)</label>
-                <textarea rows={3} value={form.requirements} onChange={(e) => setForm({ ...form, requirements: e.target.value })} className="input-field" />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">Benefits (one per line)</label>
-                <textarea rows={3} value={form.benefits} onChange={(e) => setForm({ ...form, benefits: e.target.value })} className="input-field" />
-              </div>
-              <div className="flex gap-4 pt-2">
-                <button onClick={() => setShowForm(false)} className="btn-secondary flex-1">Cancel</button>
-                <button onClick={handleSave} disabled={saving} className="btn-primary flex-1 disabled:opacity-50">
-                  {saving ? 'Saving...' : editing ? 'Update Role' : 'Publish Role'}
-                </button>
+              <div><label className="mb-1.5 block text-[12px] font-semibold text-secondary">Specialism</label><input type="text" value={form.specialism} onChange={(e) => setForm({ ...form, specialism: e.target.value })} className="input-field" placeholder="e.g. Massage Therapy" /></div>
+              <div><label className="mb-1.5 block text-[12px] font-semibold text-secondary">Description *</label><textarea rows={5} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} className="input-field" /></div>
+              <div><label className="mb-1.5 block text-[12px] font-semibold text-secondary">Requirements <span className="font-normal text-muted">— one per line</span></label><textarea rows={3} value={form.requirements} onChange={(e) => setForm({ ...form, requirements: e.target.value })} className="input-field" /></div>
+              <div><label className="mb-1.5 block text-[12px] font-semibold text-secondary">Benefits <span className="font-normal text-muted">— one per line</span></label><textarea rows={3} value={form.benefits} onChange={(e) => setForm({ ...form, benefits: e.target.value })} className="input-field" /></div>
+              <div className="flex flex-col-reverse gap-3 border-t border-border pt-5 sm:flex-row sm:justify-end">
+                <button onClick={() => setShowForm(false)} className="btn-secondary sm:min-w-28">Cancel</button>
+                <button onClick={handleSave} disabled={saving} className="btn-primary disabled:opacity-50 sm:min-w-36">{saving ? 'Saving...' : editing ? 'Save changes' : 'Save draft'}</button>
               </div>
             </div>
           </div>
         </div>
       )}
+
       {loading ? (
-        <div className="flex items-center justify-center h-64"><div className="animate-spin w-8 h-8 border-2 border-gold border-t-transparent rounded-full" /></div>
+        <div className="flex h-64 items-center justify-center"><div className="h-8 w-8 animate-spin rounded-full border-2 border-gold border-t-transparent" /></div>
       ) : jobs.length === 0 ? (
-        <div className="dashboard-card text-center py-16 text-gray-400">
-          <p>No job listings yet. Post your first role to start attracting talent.</p>
+        <div className="dashboard-panel py-16 text-center">
+          <p className="dashboard-eyebrow">No listings yet</p>
+          <h2 className="dashboard-section-title">Start with your first permanent role</h2>
+          <p className="mx-auto mt-2 max-w-lg text-[13px] leading-6 text-muted">Your full job description, property details and requirements will appear to suitable talent once the listing is live.</p>
+          <button onClick={() => router.push('/employer/post-role')} className="btn-primary mt-5 inline-flex items-center gap-2"><Plus size={14} />Post a role</button>
         </div>
       ) : (
-        <div className="space-y-4">
-          {jobs.map((job) => (
-            <div key={job.id} className="dashboard-card flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-              <div>
-                <div className="flex items-center space-x-3">
-                  <h3 className="font-serif text-lg font-semibold text-ink">{job.title}</h3>
-                  <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${
-                    job.status === 'active' ? 'bg-green-50 text-green-700' :
-                    job.status === 'draft' ? 'bg-amber-50 text-amber-700' :
-                    'bg-gray-100 text-gray-500'
-                  }`}>{job.status}</span>
-                  {job.tier && <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${
-                    job.tier === 'Platinum' ? 'bg-purple-100 text-purple-700' :
-                    job.tier === 'Gold' ? 'bg-amber-100 text-amber-700' : 'bg-gray-100 text-gray-600'
-                  }`}>{job.tier}</span>}
+        <div className="border-y border-[#cfc8bb] bg-white/45">
+          {jobs.map((job, index) => (
+            <div key={job.id} className={`grid gap-5 px-4 py-5 md:px-5 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-center ${index > 0 ? 'border-t border-[#ded8cc]' : ''}`}>
+              <div className="min-w-0">
+                <div className="mb-2 flex flex-wrap items-center gap-2.5">
+                  <h3 className="text-[22px] text-ink">{job.title}</h3>
+                  <span className={`rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[.1em] ${job.status === 'active' ? 'bg-green-50 text-green-700' : job.status === 'draft' ? 'bg-amber-50 text-amber-700' : job.status === 'filled' ? 'bg-[#edf4ef] text-[#42634b]' : 'bg-gray-100 text-gray-500'}`}>{job.status}</span>
+                  {job.tier && <span className={job.tier === 'Platinum' ? 'badge-platinum' : job.tier === 'Gold' ? 'badge-gold' : 'badge-silver'}>{job.tier}</span>}
                 </div>
-                <p className="text-sm text-gray-500 mt-1">{job.location} \u00b7 {job.job_type}</p>
-                {job.description && (
-                  <p className="text-[13px] leading-6 text-secondary mt-2 max-w-2xl line-clamp-2">{job.description}</p>
-                )}
+                <p className="text-[12px] font-medium text-secondary">{job.location} · {job.job_type}</p>
+                {job.description && <p className="mt-2 max-w-3xl text-[13px] leading-6 text-secondary line-clamp-2">{job.description}</p>}
+                {job.expires_at && <p className="mt-2 text-[11px] text-muted">Paid listing term: {new Date(job.expires_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</p>}
               </div>
-              <div className="flex items-center space-x-2">
-                {job.status === 'active' && <button onClick={() => markFilled(job)} className="btn-secondary !px-3 !py-2 inline-flex items-center gap-1.5 text-emerald-700" title="Take down this role and notify all applicants"><CheckCircle2 size={16} /> Mark filled</button>}
-                {job.status !== 'draft' && job.status !== 'filled' && (
-                  <button onClick={() => toggleStatus(job)} className="btn-secondary !px-3 !py-2 inline-flex items-center gap-1.5" title={job.status === 'active' ? 'Take down without marking filled' : 'Activate'}>
-                    {job.status === 'active' ? <><EyeOff size={16} /> Take down</> : <><Eye size={16} /> Activate</>}
-                  </button>
-                )}
-                <button onClick={() => router.push(`/employer/post-role?clone=${job.id}`)} className="p-2 rounded-lg hover:bg-gray-100 text-gray-400" title="Clone">
-                  <Copy size={18} />
-                </button>
-                {(job.status === 'closed' || job.status === 'expired') && (
-                  <button onClick={() => router.push(`/employer/post-role?repost=${job.id}`)} className="p-2 rounded-lg hover:bg-gray-100 text-gray-400" title="Repost">
-                    <RotateCcw size={18} />
-                  </button>
-                )}
-                <button onClick={() => handleEdit(job)} className="btn-secondary !px-3 !py-2 inline-flex items-center gap-1.5"><Edit2 size={16} /> Edit</button>
-                <button onClick={() => handleDelete(job.id)} className="p-2 rounded-lg hover:bg-red-50 text-gray-400 hover:text-red-500"><Trash2 size={18} /></button>
+
+              <div className="flex flex-wrap items-center gap-2 xl:justify-end">
+                {job.status === 'active' && <button onClick={() => markFilled(job)} className="btn-secondary !px-3 !py-2 inline-flex items-center gap-1.5 text-emerald-700" title="Take down this role and notify all applicants"><CheckCircle2 size={15} />Mark filled</button>}
+                {job.status !== 'draft' && job.status !== 'filled' && <button onClick={() => toggleStatus(job)} className="btn-secondary !px-3 !py-2 inline-flex items-center gap-1.5" title={job.status === 'active' ? 'Take down without marking filled' : 'Activate'}>{job.status === 'active' ? <><EyeOff size={15} />Take down</> : <><Eye size={15} />Activate</>}</button>}
+                <button onClick={() => handleEdit(job)} className="btn-secondary !px-3 !py-2 inline-flex items-center gap-1.5"><Edit2 size={15} />Edit</button>
+                <button onClick={() => router.push(`/employer/post-role?clone=${job.id}`)} className="inline-flex h-9 w-9 items-center justify-center border border-border text-muted hover:bg-[#faf8f3] hover:text-ink" title="Clone"><Copy size={15} /></button>
+                {(job.status === 'closed' || job.status === 'expired') && <button onClick={() => router.push(`/employer/post-role?repost=${job.id}`)} className="inline-flex h-9 w-9 items-center justify-center border border-border text-muted hover:bg-[#faf8f3] hover:text-ink" title="Repost"><RotateCcw size={15} /></button>}
+                <button onClick={() => handleDelete(job.id)} className="inline-flex h-9 w-9 items-center justify-center border border-border text-muted hover:border-red-200 hover:bg-red-50 hover:text-red-600" title="Delete"><Trash2 size={15} /></button>
               </div>
             </div>
           ))}
