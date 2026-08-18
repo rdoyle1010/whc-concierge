@@ -176,7 +176,6 @@ export async function POST(req: NextRequest) {
       if (!candidateId || !courseSlug) return NextResponse.json({ error: 'Missing candidateId or courseSlug' }, { status: 400 })
       const courseDef = await getAcademyCourseBySlug(String(courseSlug), false)
       if (!courseDef) return NextResponse.json({ error: 'Unknown course' }, { status: 400 })
-
       // The paying user must own the candidate profile being enrolled
       const { createAdminClient } = await import('@/lib/supabase/admin')
       const admin = createAdminClient()
@@ -242,7 +241,7 @@ export async function POST(req: NextRequest) {
 
     // ── Agency booking payment - the PROPERTY pays the FULL amount through
     // WHC at acceptance: rate × hours + 10% platform fee. WHC pays the
-    // therapist out after the shift, minus 5% (handled in Admin → Agency).
+    // therapist 100% of the agreed shift amount after the completed shift.
     if (type === 'agency_booking') {
       const { bookingId } = body
       if (!bookingId) return NextResponse.json({ error: 'Missing bookingId' }, { status: 400 })
@@ -281,7 +280,7 @@ export async function POST(req: NextRequest) {
             currency: 'gbp',
             product_data: {
               name: 'WHC Concierge - Agency Shift Booking',
-              description: `${booking.shift_date || 'Agreed date'}: £${booking.rate}/hr × ${effHours}h (£${gross}) + 10% WHC fee (£${fee}). The therapist is paid by WHC after the shift.`,
+              description: `${booking.shift_date || 'Agreed date'}: £${booking.rate}/hr × ${effHours}h (£${gross}) + 10% WHC fee (£${fee}). The therapist receives the full £${gross} agreed shift amount after the completed shift.`,
             },
             unit_amount: totalPounds * 100, // pounds → pence
           },
