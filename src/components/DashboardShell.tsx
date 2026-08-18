@@ -10,7 +10,7 @@ import {
   LayoutDashboard, User, Briefcase, MessageSquare, Star, Calendar,
   Settings, LogOut, Menu, X, Users, FileText, Megaphone,
   AlertTriangle, Heart, Building2, ChevronRight, BarChart3, CreditCard, GraduationCap,
-  Palette, Banknote, Download,
+  Palette, Banknote, Download, MapPin,
 } from 'lucide-react'
 
 interface NavItem {
@@ -28,57 +28,65 @@ interface DashboardShellProps {
 
 const navItems: Record<string, NavItem[]> = {
   talent: [
-    { label: 'Dashboard', href: '/talent/dashboard', icon: <LayoutDashboard size={18} />, section: 'Overview' },
-    { label: 'My Profile', href: '/talent/profile', icon: <User size={18} />, section: 'Career' },
-    { label: 'Skills Wizard', href: '/talent/onboarding', icon: <Star size={20} /> },
-    { label: 'Browse Jobs', href: '/talent/jobs', icon: <Briefcase size={20} /> },
-    { label: 'Saved Roles', href: '/talent/saved', icon: <Heart size={20} /> },
-    { label: 'Applications', href: '/talent/applications', icon: <FileText size={20} /> },
-    { label: 'Messages', href: '/talent/messages', icon: <MessageSquare size={20} /> },
-    { label: 'Reviews', href: '/talent/reviews', icon: <Star size={20} /> },
-    { label: 'Agency Shifts', href: '/talent/agency', icon: <Calendar size={20} />, section: 'Agency & learning' },
-    { label: 'Agency Settings', href: '/talent/agency/settings', icon: <Settings size={20} /> },
-    { label: 'Get Verified', href: '/talent/verification', icon: <Star size={20} /> },
-    { label: 'Academy', href: '/talent/academy', icon: <GraduationCap size={20} /> },
-    { label: 'Go Featured', href: '/talent/upgrade', icon: <Heart size={20} /> },
-    { label: 'Billing', href: '/talent/billing', icon: <CreditCard size={20} />, section: 'Account' },
-    { label: 'Settings', href: '/talent/settings', icon: <Settings size={20} /> },
+    { label: 'Dashboard', href: '/talent/dashboard', icon: <LayoutDashboard size={17} />, section: 'Overview' },
+    { label: 'My Profile', href: '/talent/profile', icon: <User size={17} />, section: 'Career' },
+    { label: 'Skills Wizard', href: '/talent/onboarding', icon: <Star size={17} /> },
+    { label: 'Browse Jobs', href: '/talent/jobs', icon: <Briefcase size={17} /> },
+    { label: 'Saved Roles', href: '/talent/saved', icon: <Heart size={17} /> },
+    { label: 'Applications', href: '/talent/applications', icon: <FileText size={17} /> },
+    { label: 'Messages', href: '/talent/messages', icon: <MessageSquare size={17} /> },
+    { label: 'Reviews', href: '/talent/reviews', icon: <Star size={17} /> },
+    { label: 'Agency Shifts', href: '/talent/agency', icon: <Calendar size={17} />, section: 'Flexible work' },
+    { label: 'Agency Settings', href: '/talent/agency/settings', icon: <Settings size={17} /> },
+    { label: 'Residency', href: '/talent/residency', icon: <MapPin size={17} /> },
+    { label: 'Get Verified', href: '/talent/verification', icon: <Star size={17} />, section: 'Development' },
+    { label: 'Academy', href: '/talent/academy', icon: <GraduationCap size={17} /> },
+    { label: 'Go Featured', href: '/talent/upgrade', icon: <Heart size={17} /> },
+    { label: 'Billing', href: '/talent/billing', icon: <CreditCard size={17} />, section: 'Account' },
+    { label: 'Settings', href: '/talent/settings', icon: <Settings size={17} /> },
   ],
   employer: [
-    { label: 'Dashboard', href: '/employer/dashboard', icon: <LayoutDashboard size={18} />, section: 'Overview' },
-    { label: 'Company Profile', href: '/employer/profile', icon: <Building2 size={18} />, section: 'Recruitment' },
-    { label: 'Job Listings', href: '/employer/jobs', icon: <Briefcase size={20} /> },
-    { label: 'Candidates', href: '/employer/candidates', icon: <Users size={20} /> },
-    { label: 'Applications', href: '/employer/applications', icon: <FileText size={20} /> },
-    { label: 'Get Featured', href: '/employer/featured', icon: <Star size={20} /> },
-    { label: 'Agency Bookings', href: '/employer/agency', icon: <Calendar size={20} />, section: 'Agency' },
-    { label: 'Shortlist', href: '/employer/shortlist', icon: <Star size={20} /> },
-    { label: 'Analytics', href: '/employer/analytics', icon: <BarChart3 size={20} /> },
-    { label: 'Messages', href: '/employer/messages', icon: <MessageSquare size={20} /> },
-    { label: 'Billing', href: '/employer/billing', icon: <CreditCard size={20} />, section: 'Account' },
-    { label: 'Settings', href: '/employer/settings', icon: <Settings size={20} /> },
+    { label: 'Dashboard', href: '/employer/dashboard', icon: <LayoutDashboard size={17} />, section: 'Overview' },
+    { label: 'Company Profile', href: '/employer/profile', icon: <Building2 size={17} />, section: 'Recruitment' },
+    { label: 'Job Listings', href: '/employer/jobs', icon: <Briefcase size={17} /> },
+    { label: 'Candidates', href: '/employer/candidates', icon: <Users size={17} /> },
+    { label: 'Applications', href: '/employer/applications', icon: <FileText size={17} /> },
+    { label: 'Shortlist', href: '/employer/shortlist', icon: <Star size={17} /> },
+    { label: 'Messages', href: '/employer/messages', icon: <MessageSquare size={17} /> },
+    { label: 'Agency Bookings', href: '/employer/agency', icon: <Calendar size={17} />, section: 'Flexible staffing' },
+    { label: 'Residency', href: '/employer/residency', icon: <MapPin size={17} /> },
+    { label: 'Analytics', href: '/employer/analytics', icon: <BarChart3 size={17} />, section: 'Visibility' },
+    { label: 'Get Featured', href: '/employer/featured', icon: <Star size={17} /> },
+    { label: 'Billing', href: '/employer/billing', icon: <CreditCard size={17} />, section: 'Account' },
+    { label: 'Settings', href: '/employer/settings', icon: <Settings size={17} /> },
   ],
   admin: [
-    { label: 'Dashboard', href: '/admin/dashboard', icon: <LayoutDashboard size={18} />, section: 'Overview' },
-    { label: 'Revenue', href: '/admin/revenue', icon: <Banknote size={20} /> },
-    { label: 'Website & Brand', href: '/admin/website', icon: <Palette size={18} />, section: 'People & platform' },
-    { label: 'Users', href: '/admin/users', icon: <Users size={20} /> },
-    { label: 'Messages', href: '/admin/messages', icon: <MessageSquare size={20} /> },
-    { label: 'Matches', href: '/admin/matches', icon: <Heart size={20} /> },
-    { label: 'Agency Money', href: '/admin/agency', icon: <CreditCard size={20} /> },
-    { label: 'Verification', href: '/admin/verification', icon: <Users size={20} /> },
-    { label: 'Academy', href: '/admin/academy', icon: <GraduationCap size={20} />, section: 'Content & revenue' },
-    { label: 'Academy Downloads', href: '/admin/academy/downloads', icon: <Download size={20} /> },
-    { label: 'Residency Listings', href: '/admin/residency', icon: <Calendar size={20} /> },
-    { label: 'Job Listings', href: '/admin/jobs', icon: <Briefcase size={20} /> },
-    { label: 'Blog', href: '/admin/blog', icon: <FileText size={20} /> },
-    { label: 'Campaigns', href: '/admin/campaigns', icon: <Megaphone size={20} /> },
-    { label: 'Sponsored Ads', href: '/admin/advertising', icon: <Megaphone size={20} /> },
-    { label: 'Taxonomy', href: '/admin/taxonomy', icon: <Briefcase size={20} />, section: 'Controls' },
-    { label: 'Complaints', href: '/admin/complaints', icon: <AlertTriangle size={20} /> },
-    { label: 'Settings', href: '/admin/settings', icon: <Settings size={20} /> },
+    { label: 'Dashboard', href: '/admin/dashboard', icon: <LayoutDashboard size={17} />, section: 'Overview' },
+    { label: 'Revenue', href: '/admin/revenue', icon: <Banknote size={17} /> },
+    { label: 'Website & Brand', href: '/admin/website', icon: <Palette size={17} />, section: 'People & platform' },
+    { label: 'Users', href: '/admin/users', icon: <Users size={17} /> },
+    { label: 'Messages', href: '/admin/messages', icon: <MessageSquare size={17} /> },
+    { label: 'Matches', href: '/admin/matches', icon: <Heart size={17} /> },
+    { label: 'Agency Money', href: '/admin/agency', icon: <CreditCard size={17} /> },
+    { label: 'Verification', href: '/admin/verification', icon: <Users size={17} /> },
+    { label: 'Academy', href: '/admin/academy', icon: <GraduationCap size={17} />, section: 'Content & revenue' },
+    { label: 'Academy Downloads', href: '/admin/academy/downloads', icon: <Download size={17} /> },
+    { label: 'Residency Listings', href: '/admin/residency', icon: <Calendar size={17} /> },
+    { label: 'Job Listings', href: '/admin/jobs', icon: <Briefcase size={17} /> },
+    { label: 'Blog', href: '/admin/blog', icon: <FileText size={17} /> },
+    { label: 'Campaigns', href: '/admin/campaigns', icon: <Megaphone size={17} /> },
+    { label: 'Sponsored Ads', href: '/admin/advertising', icon: <Megaphone size={17} /> },
+    { label: 'Taxonomy', href: '/admin/taxonomy', icon: <Briefcase size={17} />, section: 'Controls' },
+    { label: 'Complaints', href: '/admin/complaints', icon: <AlertTriangle size={17} /> },
+    { label: 'Settings', href: '/admin/settings', icon: <Settings size={17} /> },
   ],
 }
+
+const workspaceLabel = {
+  talent: 'Talent workspace',
+  employer: 'Property workspace',
+  admin: 'Platform control',
+} as const
 
 export default function DashboardShell({ children, role, userName }: DashboardShellProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
@@ -109,9 +117,11 @@ export default function DashboardShell({ children, role, userName }: DashboardSh
     window.location.href = '/'
   }
 
+  const isActive = (href: string) => pathname === href || (href.split('/').length > 3 && pathname.startsWith(`${href}/`))
+
   if (isPublicAgencyRoute && agencyShell !== 'employer') {
     return (
-      <div className="min-h-screen bg-[#f3f1ec]">
+      <div className="min-h-screen bg-[#f5f2eb]">
         <Navbar />
         <main className="pt-[68px]">
           <div className="p-5 md:p-8 lg:p-10 xl:p-12 max-w-[1560px] mx-auto">
@@ -128,77 +138,80 @@ export default function DashboardShell({ children, role, userName }: DashboardSh
 
   return (
     <div className="dashboard-shell min-h-screen">
-      <div className="lg:hidden bg-ink text-white px-4 py-3 flex items-center justify-between">
-        <button type="button" onClick={() => setSidebarOpen(true)} aria-label="Open dashboard navigation">
-          <Menu size={24} />
+      <header className="lg:hidden sticky top-0 z-30 bg-[#092b45] text-white px-4 py-3.5 flex items-center justify-between border-b border-white/10">
+        <button type="button" onClick={() => setSidebarOpen(true)} aria-label="Open dashboard navigation" className="p-1 -ml-1 text-white/85">
+          <Menu size={22} />
         </button>
-        <div className="flex items-center space-x-2">
+        <div className="text-center leading-none">
           <Wordmark dark compact href={null} />
+          <p className="mt-1.5 text-[8px] uppercase tracking-[0.2em] text-[#d8bf8a]">{workspaceLabel[role]}</p>
         </div>
         <div className="w-6" />
-      </div>
+      </header>
 
       {sidebarOpen && (
-        <div className="fixed inset-0 bg-black/50 z-40 lg:hidden" onClick={() => setSidebarOpen(false)} />
+        <div className="fixed inset-0 bg-[#071d2d]/60 backdrop-blur-[1px] z-40 lg:hidden" onClick={() => setSidebarOpen(false)} />
       )}
 
-      <aside className={`dashboard-sidebar fixed top-0 left-0 h-full w-[248px] text-white z-50 transform transition-transform lg:translate-x-0 ${
+      <aside className={`dashboard-sidebar fixed top-0 left-0 h-full w-[264px] text-white z-50 transform transition-transform duration-200 lg:translate-x-0 ${
         sidebarOpen ? 'translate-x-0' : '-translate-x-full'
       }`}>
-        <div className="px-6 pt-6 pb-4">
+        <div className="px-7 pt-7 pb-4">
           <div className="flex items-center justify-between">
             <Wordmark dark />
-            <button type="button" onClick={() => setSidebarOpen(false)} className="lg:hidden text-white/60 hover:text-white" aria-label="Close dashboard navigation">
-              <X size={20} />
+            <button type="button" onClick={() => setSidebarOpen(false)} className="lg:hidden text-white/55 hover:text-white p-1" aria-label="Close dashboard navigation">
+              <X size={19} />
             </button>
           </div>
 
-          {userName && (
-            <div className="mt-6 pb-6 border-b border-white/10">
-              <p className="text-white/45 text-[9px] uppercase tracking-[0.2em]">{role} workspace</p>
-              <p className="font-sans font-semibold text-white text-lg mt-1 truncate">{userName}</p>
-            </div>
-          )}
+          <div className="mt-7 pb-5 border-b border-white/10">
+            <p className="text-[#d8bf8a] text-[8px] uppercase tracking-[0.22em] font-semibold">{workspaceLabel[role]}</p>
+            {userName && <p className="font-serif text-white text-[22px] leading-tight mt-2 truncate">{userName}</p>}
+          </div>
         </div>
 
-        <nav className="px-4 pb-20 overflow-y-auto h-[calc(100vh-154px)]">
+        <nav className="px-4 pb-20 overflow-y-auto h-[calc(100vh-156px)]">
           {items.map((item, index) => {
-            const active = pathname === item.href
+            const active = isActive(item.href)
             return (
               <div key={item.href}>
-              {item.section && <p className={`${index === 0 ? 'mt-1' : 'mt-5'} mb-1.5 px-3 text-[9px] uppercase tracking-[0.18em] text-white/35`}>{item.section}</p>}
-              <Link
-                href={item.href}
-                onClick={() => setSidebarOpen(false)}
-                className={`dashboard-nav-item flex items-center space-x-3 px-3 py-2 text-[13px] transition-colors ${
-                  active
-                    ? 'text-white bg-white/[0.10]'
-                    : 'text-white/60 hover:text-white hover:bg-white/[0.06]'
-                }`}
-              >
-                {item.icon}
-                <span>{item.label}</span>
-                {active && <ChevronRight size={13} className="ml-auto text-gold" />}
-              </Link>
+                {item.section && (
+                  <p className={`${index === 0 ? 'mt-1' : 'mt-5'} mb-1.5 px-3 text-[8px] font-semibold uppercase tracking-[0.2em] text-white/32`}>
+                    {item.section}
+                  </p>
+                )}
+                <Link
+                  href={item.href}
+                  onClick={() => setSidebarOpen(false)}
+                  className={`dashboard-nav-item relative flex items-center gap-3 px-3 py-2 text-[12.5px] transition-colors border-l ${
+                    active
+                      ? 'text-white bg-white/[0.055] border-[#c9a96e]'
+                      : 'text-white/58 hover:text-white hover:bg-white/[0.035] border-transparent'
+                  }`}
+                >
+                  <span className={active ? 'text-[#d8bf8a]' : 'text-white/44'}>{item.icon}</span>
+                  <span className="tracking-[-0.01em]">{item.label}</span>
+                  {active && <ChevronRight size={12} className="ml-auto text-[#d8bf8a]" />}
+                </Link>
               </div>
             )
           })}
         </nav>
 
-        <div className="absolute bottom-0 left-0 right-0 p-4">
+        <div className="absolute bottom-0 left-0 right-0 px-4 py-4 bg-[#092b45] border-t border-white/[0.07]">
           <button
             type="button"
             onClick={handleSignOut}
-            className="dashboard-nav-item flex items-center space-x-3 px-3 py-2.5 text-sm text-white/60 hover:text-white hover:bg-white/[0.06] w-full transition-colors"
+            className="dashboard-nav-item flex items-center gap-3 px-3 py-2.5 text-[12.5px] text-white/48 hover:text-white hover:bg-white/[0.035] w-full transition-colors"
           >
-            <LogOut size={20} />
-            <span>Sign Out</span>
+            <LogOut size={17} />
+            <span>Sign out</span>
           </button>
         </div>
       </aside>
 
-      <main className="lg:ml-[248px] min-h-screen">
-        <div className="p-5 md:p-8 lg:p-10 xl:p-12 max-w-[1560px] mx-auto">
+      <main className="lg:ml-[264px] min-h-screen">
+        <div className="p-5 sm:p-6 md:p-8 lg:p-10 xl:p-12 max-w-[1540px] mx-auto">
           {children}
         </div>
       </main>
