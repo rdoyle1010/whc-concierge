@@ -35,11 +35,12 @@ export default function HeroCarousel({ siteContent }: { siteContent?: WebsiteCon
   useEffect(() => {
     if (!currentImageLoaded || slides.length < 2) return
     const timer = window.setTimeout(() => {
+      if (document.visibilityState !== 'visible') return
       const upcoming = slides[(current + 1) % slides.length]
       const image = new window.Image()
       image.decoding = 'async'
       image.src = upcoming.image.url
-    }, 1200)
+    }, 4000)
     return () => window.clearTimeout(timer)
   }, [current, currentImageLoaded, slides])
 
