@@ -5,7 +5,6 @@ import DashboardShell from '@/components/DashboardShell'
 import { createClient } from '@/lib/supabase/client'
 import { Send, MessageSquare, Paperclip, FileText } from 'lucide-react'
 
-const CONVERSATION_SCAN_LIMIT = 500
 const THREAD_LIMIT = 100
 const MESSAGE_FIELDS = 'id,sender_id,recipient_id,content,attachment_url,attachment_name,attachment_type,created_at,read'
 
@@ -59,42 +58,13 @@ export default function EmployerMessagesPage() {
       if (!user || !active) { setLoading(false); return }
       setUserId(user.id)
 
-      const { data: allMsgs } = await supabase
-        .from('messages')
-        .select(MESSAGE_FIELDS)
-        .or(`sender_id.eq.${user.id},recipient_id.eq.${user.id}`)
-        .order('created_at', { ascending: false })
-        .limit(CONVERSATION_SCAN_LIMIT)
-
+      const res = await fetch('/api/messages/conversations')
+      const body = res.ok ? await res.json().catch(() => ({ conversations: [] })) : { conversations: [] }
       if (!active) return
-      const partners = new Map<string, any>()
-      for (const msg of allMsgs || []) {
-        const partnerId = msg.sender_id === user.id ? msg.recipient_id : msg.sender_id
-        if (!partnerId) continue
-        if (!partners.has(partnerId)) partners.set(partnerId, { partnerId, lastMessage: msg, unread: 0, partnerName: null })
-        if (msg.recipient_id === user.id && !msg.read) partners.get(partnerId)!.unread++
-      }
-
-      const partnerIds = Array.from(partners.keys())
-      if (partnerIds.length > 0) {
-        const [candRes, empRes] = await Promise.all([
-          supabase.from('candidate_profiles').select('user_id,full_name').in('user_id', partnerIds),
-          supabase.from('employer_profiles').select('user_id,company_name,contact_name,property_name').in('user_id', partnerIds),
-        ])
-        for (const cp of candRes.data || []) {
-          const p = partners.get(cp.user_id)
-          if (p) p.partnerName = cp.full_name
-        }
-        for (const ep of empRes.data || []) {
-          const p = partners.get(ep.user_id)
-          if (p && !p.partnerName) p.partnerName = ep.property_name || ep.company_name || ep.contact_name
-        }
-      }
-
-      const convoList = Array.from(partners.values())
+      const convoList = [...(body.conversations || [])]
       const to = typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('to') : null
       if (to && to !== user.id) {
-        if (!partners.has(to)) {
+        if (!convoList.some((conversation: any) => conversation.partnerId === to)) {
           let partnerName: string | null = null
           const { data: cp } = await supabase.from('candidate_profiles').select('full_name').eq('user_id', to).maybeSingle()
           partnerName = cp?.full_name || null
