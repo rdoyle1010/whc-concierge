@@ -13,7 +13,7 @@ export default function LoginPage() {
 function LoginForm() {
   const searchParams = useSearchParams()
   const initialRole = searchParams.get('role') || 'talent'
-  const requestedDestination = searchParams.get('redirect') || searchParams.get('next') || ''
+  const requestedDestination = searchParams.get('redirect') || searchParams.get('next') || searchParams.get('returnTo') || ''
   const safeDestination = requestedDestination.startsWith('/') && !requestedDestination.startsWith('//') ? requestedDestination : ''
   const confirmationPending = searchParams.get('registered') === '1' && searchParams.get('confirm') === '1'
   const [role, setRole] = useState<'talent' | 'employer'>(initialRole === 'employer' ? 'employer' : 'talent')
