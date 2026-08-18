@@ -165,6 +165,16 @@
 .dashboard-shell .ring-1 { --tw-ring-color: rgba(156,122,66,.16); }
 .dashboard-shell .hover\:bg-gray-100:hover { background-color: #f1eee7; }
 .dashboard-shell .hover\:bg-gray-50:hover { background-color: #faf8f3; }
+.dashboard-shell > main h1.text-2xl,
+.dashboard-shell > main h1.text-3xl {
+  font-size: clamp(2.35rem, 3.5vw, 3.65rem) !important;
+  line-height: 1 !important;
+  font-weight: 600 !important;
+  letter-spacing: -.025em !important;
+  margin-bottom: 1.75rem;
+}
+.dashboard-shell > main h2.text-lg,
+.dashboard-shell > main h2.text-xl { font-size: 1.55rem !important; letter-spacing: -.015em; }
 
 @media (min-width: 1024px) {
   .dashboard-metrics { grid-template-columns: repeat(4,minmax(0,1fr)); }
