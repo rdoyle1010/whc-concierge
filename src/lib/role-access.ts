@@ -15,15 +15,12 @@ export function dashboardForRole(role: AccountRole): string {
 
 export function canRoleAccessPath(role: AccountRole, pathname: string): boolean {
   if (role === 'admin') {
-    return pathname.startsWith('/admin') || pathname.startsWith('/employer') || pathname.startsWith('/hotel') || pathname.startsWith('/talent')
+    return pathname.startsWith('/admin') || pathname.startsWith('/employer') || pathname.startsWith('/hotel') || pathname.startsWith('/talent') || pathname === '/roles/match'
   }
   if (role === 'employer') return pathname.startsWith('/employer') || pathname.startsWith('/hotel')
-  return pathname.startsWith('/talent')
+  return pathname.startsWith('/talent') || pathname === '/roles/match'
 }
 
-// A registration may complete when the shared profile does not exist yet, or
-// when it already has the same authoritative role. It may never convert an
-// existing talent account into an employer account (or vice versa).
 export function canCompleteRegistration(existingRole: unknown, registration: RegistrationAccount): boolean {
   const role = normaliseAccountRole(existingRole)
   if (!role) return true
