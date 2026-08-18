@@ -41,20 +41,26 @@ create index if not exists residency_bookings_profile_idx on public.residency_bo
 
 alter table public.residency_bookings enable row level security;
 
+-- New Supabase projects do not necessarily expose newly-created public tables
+-- to the Data API automatically, so grant only the read capability the two
+-- browser dashboards need. All writes remain in authenticated server routes.
+grant select on table public.residency_bookings to authenticated;
+revoke insert, update, delete on table public.residency_bookings from anon, authenticated;
+
 -- Reads are limited to the employer who made the offer and the talent who owns the candidate profile.
 drop policy if exists "Residency bookings visible to participants" on public.residency_bookings;
 create policy "Residency bookings visible to participants"
 on public.residency_bookings for select
 to authenticated
 using (
-  created_by = auth.uid()
+  created_by = (select auth.uid())
   or exists (
     select 1 from public.employer_profiles e
-    where e.id = residency_bookings.employer_id and e.user_id = auth.uid()
+    where e.id = residency_bookings.employer_id and e.user_id = (select auth.uid())
   )
   or exists (
     select 1 from public.candidate_profiles c
-    where c.id = residency_bookings.candidate_id and c.user_id = auth.uid()
+    where c.id = residency_bookings.candidate_id and c.user_id = (select auth.uid())
   )
 );
 
