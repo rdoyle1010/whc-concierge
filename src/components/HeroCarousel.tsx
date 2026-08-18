@@ -22,6 +22,7 @@ export default function HeroCarousel({ siteContent }: { siteContent?: WebsiteCon
   }, [])
 
   const next = useCallback(() => {
+    if (document.visibilityState !== 'visible') return
     setCurrentImageLoaded(false)
     setCurrent(value => (value + 1) % slides.length)
   }, [slides.length])
@@ -32,18 +33,30 @@ export default function HeroCarousel({ siteContent }: { siteContent?: WebsiteCon
     return () => window.clearInterval(timer)
   }, [paused, next, slides.length])
 
-  // Loading every full-screen slide together made the hero image compete with
-  // hidden images and pushed Largest Contentful Paint beyond 30 seconds. Wait
-  // until the visible image has loaded, then quietly warm the next slide.
+  // Warm the next full-screen slide only after the current page has settled.
+  // Preloading it too soon competes with below-the-fold content on slower
+  // connections and can make the whole homepage feel heavy after first paint.
   useEffect(() => {
     if (!currentImageLoaded || slides.length < 2) return
-    const timer = window.setTimeout(() => {
+    let cancelled = false
+    const warm = () => {
+      if (cancelled || document.visibilityState !== 'visible') return
       const upcoming = slides[(current + 1) % slides.length]
       const image = new window.Image()
       image.decoding = 'async'
       image.src = upcoming.image.url
-    }, 1200)
-    return () => window.clearTimeout(timer)
+    }
+    const timer = window.setTimeout(() => {
+      if ('requestIdleCallback' in window) {
+        ;(window as any).requestIdleCallback(warm, { timeout: 2500 })
+      } else {
+        warm()
+      }
+    }, 4000)
+    return () => {
+      cancelled = true
+      window.clearTimeout(timer)
+    }
   }, [current, currentImageLoaded, slides])
 
   const slide = slides[current] || slides[0]
