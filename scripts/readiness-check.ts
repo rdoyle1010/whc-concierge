@@ -124,7 +124,7 @@ check('weak or mandatory-fail matches cannot apply', () => {
   const draft = read('src/app/api/applications/draft/route.ts')
   for (const source of [swipe, draft]) {
     assert.match(source, /hardStop/)
-    assert.match(source, /score < 45|match\.score < 45|result\.score < 45/)
+    assert.match(source, /score < 45|match\.score < 45|result\.score < 45|score < MIN_APPLICATION_MATCH|match\.score < MIN_APPLICATION_MATCH|result\.score < MIN_APPLICATION_MATCH/)
   }
 })
 check('match page ranks roles instead of hiding low scores', () => {
