@@ -31,15 +31,31 @@ export default function NotificationBell({ userId }: { userId: string }) {
     }
   }
 
-  // One lightweight load when the bell first appears. After that, refresh far
-  // less aggressively and only while the tab is visible. Opening the bell always
-  // refreshes immediately, so users still see current notifications on demand.
-  useEffect(() => { load() }, [userId])
+  useEffect(() => {
+    let cancelled = false
+    const start = () => {
+      if (!cancelled && document.visibilityState === 'visible') load()
+    }
+
+    if ('requestIdleCallback' in window) {
+      const idleId = (window as any).requestIdleCallback(start, { timeout: 3500 })
+      return () => {
+        cancelled = true
+        ;(window as any).cancelIdleCallback?.(idleId)
+      }
+    }
+
+    const timeout = window.setTimeout(start, 2500)
+    return () => {
+      cancelled = true
+      window.clearTimeout(timeout)
+    }
+  }, [userId])
 
   useEffect(() => {
     const interval = setInterval(() => {
       if (loadedOnce.current && document.visibilityState === 'visible') load()
-    }, 120000)
+    }, 180000)
     const onVisible = () => {
       if (document.visibilityState === 'visible' && loadedOnce.current) load()
     }
