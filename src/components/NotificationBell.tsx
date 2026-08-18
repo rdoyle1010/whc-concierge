@@ -31,31 +31,12 @@ export default function NotificationBell({ userId }: { userId: string }) {
     }
   }
 
-  useEffect(() => {
-    let cancelled = false
-    const start = () => {
-      if (!cancelled && document.visibilityState === 'visible') load()
-    }
-
-    if ('requestIdleCallback' in window) {
-      const idleId = (window as any).requestIdleCallback(start, { timeout: 3500 })
-      return () => {
-        cancelled = true
-        ;(window as any).cancelIdleCallback?.(idleId)
-      }
-    }
-
-    const timeout = window.setTimeout(start, 2500)
-    return () => {
-      cancelled = true
-      window.clearTimeout(timeout)
-    }
-  }, [userId])
+  useEffect(() => { load() }, [userId])
 
   useEffect(() => {
     const interval = setInterval(() => {
       if (loadedOnce.current && document.visibilityState === 'visible') load()
-    }, 180000)
+    }, 120000)
     const onVisible = () => {
       if (document.visibilityState === 'visible' && loadedOnce.current) load()
     }
