@@ -3,6 +3,8 @@ import { createServerSupabaseClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { calculateMatchScore } from '@/lib/matching'
 
+const MIN_APPLICATION_MATCH = 45
+
 export async function POST(req: NextRequest) {
   const auth = await createServerSupabaseClient()
   const { data: { user } } = await auth.auth.getUser()
@@ -24,6 +26,13 @@ export async function POST(req: NextRequest) {
 
   const match = calculateMatchScore(candidate, job)
   if (match.hardStop) return NextResponse.json({ error: match.hardStopReason || 'This role is not compatible with your profile.' }, { status: 400 })
+  if (match.score < MIN_APPLICATION_MATCH) {
+    return NextResponse.json({
+      error: `This role is currently a ${match.score}% match. Applications open from ${MIN_APPLICATION_MATCH}% once mandatory requirements are met.`,
+      matchScore: match.score,
+      minimumMatch: MIN_APPLICATION_MATCH,
+    }, { status: 400 })
+  }
 
   const { data: existing } = await admin.from('applications')
     .select('id,status,cover_letter')
