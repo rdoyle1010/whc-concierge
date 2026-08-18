@@ -72,6 +72,14 @@ check('profile photo uses the owned path convention', () => {
 })
 check('job alerts require a server-only secret', () => assert.match(read('src/app/api/job-alerts/route.ts'), /isInternalApiRequest/))
 check('Stripe webhook supplies the job-alert secret', () => assert.match(read('src/app/api/stripe/webhook/route.ts'), /x-whc-internal-secret/))
+check('public jobs use the sanitised public RPC', () => {
+  const source = read('src/app/api/jobs/public/route.ts')
+  assert.match(source, /get_public_jobs_page/)
+  assert.doesNotMatch(source, /select\('\*'\)/)
+  for (const field of ['job_title', 'job_description', 'salary_min', 'salary_max', 'salary_display_text', 'job_type', 'location', 'tier', 'posted_date', 'employer_profiles']) {
+    assert.match(source, new RegExp(field))
+  }
+})
 check('Residency payments are fulfilled by the signed Stripe webhook', () => {
   const webhook = read('src/app/api/stripe/webhook/route.ts')
   const residency = read('src/lib/residency-stripe-webhook.ts')
@@ -141,6 +149,7 @@ check('all service-role API routes are protected or deliberately public', () => 
     'src/app/api/seed-taxonomy/route.ts',
     'src/app/api/seed/route.ts',
     'src/app/api/update-jobs/route.ts',
+    'src/app/api/jobs/public/route.ts',
     'src/app/api/residency/public/route.ts',
   ])
   const authMarkers = /getUser\(|requireAdmin|verifyAdmin|stripe-signature|isInternalApiRequest/
