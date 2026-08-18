@@ -3,9 +3,6 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 
-// Creates a residency listing for the logged-in user.
-// Uses the service-role client because residency_profiles has no
-// INSERT policy for authenticated users (read-only RLS).
 export async function POST(req: NextRequest) {
   try {
     const cookieStore = await cookies()
@@ -18,20 +15,16 @@ export async function POST(req: NextRequest) {
     if (!user) return NextResponse.json({ error: 'Please log in' }, { status: 401 })
 
     const body = await req.json()
-    if (!body.title || typeof body.title !== 'string') {
-      return NextResponse.json({ error: 'Title is required' }, { status: 400 })
-    }
+    if (!body.title || typeof body.title !== 'string') return NextResponse.json({ error: 'Title is required' }, { status: 400 })
 
     const admin = createAdminClient()
+    const { data: cand } = await admin.from('candidate_profiles')
+      .select('id,full_name,profile_image_url,residency_member,residency_subscription_status')
+      .eq('user_id', user.id).maybeSingle()
 
-    // Pull the candidate profile (if any) to enrich the listing
-    const { data: cand } = await admin
-      .from('candidate_profiles')
-      .select('id, full_name, profile_image_url')
-      .eq('user_id', user.id)
-      .maybeSingle()
+    if (!cand) return NextResponse.json({ error: 'Complete your talent profile before creating a Residency listing.' }, { status: 403 })
+    if (!cand.residency_member) return NextResponse.json({ error: 'An active £10/month Residency membership is required before you can publish a listing.' }, { status: 402 })
 
-    // DB check constraints only allow these exact values
     const ALLOWED_DURATIONS = ['1-2 months', '3-4 months', '5-6 months', 'Flexible']
     const ALLOWED_TRAVEL = ['UK Only', 'Europe', 'Middle East', 'Asia Pacific', 'Global']
     const duration = ALLOWED_DURATIONS.includes(body.preferred_duration) ? body.preferred_duration : null
@@ -39,9 +32,9 @@ export async function POST(req: NextRequest) {
 
     const row: Record<string, any> = {
       user_id: user.id,
-      candidate_profile_id: cand?.id || null,
-      full_name: cand?.full_name || body.title,
-      profile_photo_url: cand?.profile_image_url || null,
+      candidate_profile_id: cand.id,
+      full_name: cand.full_name || body.title,
+      profile_photo_url: cand.profile_image_url || null,
       primary_specialism: body.title,
       bio: body.description || null,
       secondary_specialisms: Array.isArray(body.services_offered) && body.services_offered.length > 0 ? body.services_offered : null,
@@ -58,12 +51,7 @@ export async function POST(req: NextRequest) {
       approval_status: 'pending',
     }
 
-    const { data, error } = await admin
-      .from('residency_profiles')
-      .insert(row)
-      .select('id')
-      .single()
-
+    const { data, error } = await admin.from('residency_profiles').insert(row).select('id').single()
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
     return NextResponse.json({ success: true, id: data.id })
   } catch (e: any) {
