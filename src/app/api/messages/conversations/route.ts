@@ -23,14 +23,15 @@ export async function GET(req: NextRequest) {
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
   const partnerIds = Array.from(new Set((summaries || []).map((row: any) => row.partner_id).filter(Boolean)))
-  const [candidateProfiles, employerProfiles, currentEmployer] = await Promise.all([
+  const [candidateProfiles, employerProfiles, currentEmployer, currentCandidate] = await Promise.all([
     partnerIds.length
       ? admin.from('candidate_profiles').select('id,user_id,full_name').in('user_id', partnerIds)
       : Promise.resolve({ data: [] as any[] }),
     partnerIds.length
-      ? admin.from('employer_profiles').select('user_id,company_name,contact_name,property_name').in('user_id', partnerIds)
+      ? admin.from('employer_profiles').select('id,user_id,company_name,contact_name,property_name').in('user_id', partnerIds)
       : Promise.resolve({ data: [] as any[] }),
     admin.from('employer_profiles').select('id').eq('user_id', user.id).maybeSingle(),
+    admin.from('candidate_profiles').select('id').eq('user_id', user.id).maybeSingle(),
   ])
 
   const names = new Map<string, string>()
@@ -43,7 +44,8 @@ export async function GET(req: NextRequest) {
     if (name) names.set(employer.user_id, name)
   }
 
-  const hiddenCandidateUserIds = new Set<string>()
+  const privatePartnerUserIds = new Set<string>()
+
   if (currentEmployer.data?.id && (candidateProfiles.data || []).length > 0) {
     const candidateIds = (candidateProfiles.data || []).map((candidate: any) => candidate.id).filter(Boolean)
     const { data: residencyChats } = await admin.from('residency_conversations')
@@ -62,8 +64,32 @@ export async function GET(req: NextRequest) {
       const confirmedIds = new Set((confirmed || []).map((row: any) => row.candidate_id))
       for (const candidate of candidateProfiles.data || []) {
         if (residencyCandidateIds.includes(candidate.id) && !confirmedIds.has(candidate.id) && candidate.user_id) {
-          hiddenCandidateUserIds.add(candidate.user_id)
+          privatePartnerUserIds.add(candidate.user_id)
           names.set(candidate.user_id, 'Residency Specialist')
+        }
+      }
+    }
+  }
+
+  if (currentCandidate.data?.id && (employerProfiles.data || []).length > 0) {
+    const employerIds = (employerProfiles.data || []).map((employer: any) => employer.id).filter(Boolean)
+    const { data: residencyChats } = await admin.from('residency_conversations')
+      .select('employer_id')
+      .eq('candidate_id', currentCandidate.data.id)
+      .in('employer_id', employerIds)
+      .eq('status', 'open')
+
+    const residencyEmployerIds = Array.from(new Set((residencyChats || []).map((row: any) => row.employer_id).filter(Boolean)))
+    if (residencyEmployerIds.length > 0) {
+      const { data: confirmed } = await admin.from('residency_bookings')
+        .select('employer_id')
+        .eq('candidate_id', currentCandidate.data.id)
+        .in('employer_id', residencyEmployerIds)
+        .in('status', ['confirmed', 'completed'])
+      const confirmedIds = new Set((confirmed || []).map((row: any) => row.employer_id))
+      for (const employer of employerProfiles.data || []) {
+        if (residencyEmployerIds.includes(employer.id) && !confirmedIds.has(employer.id) && employer.user_id) {
+          privatePartnerUserIds.add(employer.user_id)
         }
       }
     }
@@ -72,7 +98,7 @@ export async function GET(req: NextRequest) {
   const conversations = (summaries || []).map((row: any) => ({
     partnerId: row.partner_id,
     partnerName: names.get(row.partner_id) || 'Unknown User',
-    residencyPrivate: hiddenCandidateUserIds.has(row.partner_id),
+    residencyPrivate: privatePartnerUserIds.has(row.partner_id),
     unread: Number(row.unread_count || 0),
     lastMessage: {
       id: row.last_message_id,
