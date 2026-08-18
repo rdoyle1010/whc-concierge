@@ -1,63 +1,108 @@
 'use client'
 
-import { useState, type FormEvent } from 'react'
-import { createClient } from '@/lib/supabase/client'
+import { useMemo, useState, type FormEvent } from 'react'
+import { ShieldCheck } from 'lucide-react'
 
-// Enquiry form for a residency specialist. This used to be static markup in
-// a server component - submitting just reloaded the page with the answers in
-// the URL and nothing was ever sent. Now it lands in contact_queries, which
-// the admin triages (and replies to by email) from Messages & Enquiries.
-export default function ResidencyEnquiryForm({ specialistName, listingId }: { specialistName: string; listingId: string }) {
-  const supabase = createClient()
+export default function ResidencyEnquiryForm({ specialistName, listingId, suggestedDayRate = 0 }: { specialistName: string; listingId: string; suggestedDayRate?: number }) {
   const [sending, setSending] = useState(false)
   const [done, setDone] = useState(false)
   const [error, setError] = useState('')
+  const [days, setDays] = useState(5)
+  const [dayRate, setDayRate] = useState(Number(suggestedDayRate || 0))
+
+  const therapistTotal = useMemo(() => Math.max(0, days) * Math.max(0, dayRate), [days, dayRate])
+  const platformFee = useMemo(() => therapistTotal * 0.10, [therapistTotal])
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
     setError('')
     const fd = new FormData(e.currentTarget)
-    const name = String(fd.get('name') || '').trim()
-    const email = String(fd.get('email') || '').trim()
-    const property = String(fd.get('property') || '').trim()
-    const dates = String(fd.get('dates') || '').trim()
-    const message = String(fd.get('message') || '').trim()
-    if (!name || !email || !message) { setError('Please fill in your name, email and message.'); return }
+    const payload = {
+      listingId,
+      propertyName: String(fd.get('propertyName') || '').trim(),
+      startDate: String(fd.get('startDate') || ''),
+      endDate: String(fd.get('endDate') || ''),
+      daysRequired: days,
+      proposedDayRate: dayRate,
+      accommodationIncluded: fd.get('accommodationIncluded') === 'on',
+      travelIncluded: fd.get('travelIncluded') === 'on',
+      servicesRequired: String(fd.get('servicesRequired') || '').trim(),
+      notes: String(fd.get('notes') || '').trim(),
+    }
 
     setSending(true)
-    const { error: insErr } = await supabase.from('contact_queries').insert({
-      name,
-      email,
-      subject: `Residency enquiry: ${specialistName}`,
-      message: `Specialist: ${specialistName} (listing ${listingId})\nProperty: ${property || '-'}\nDates needed: ${dates || '-'}\n\n${message}`,
-      type: 'residency_enquiry',
-      status: 'open',
+    const res = await fetch('/api/residency/offer', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
     })
+    const data = await res.json().catch(() => ({}))
     setSending(false)
-    if (insErr) { setError('Could not send your enquiry - please try again.'); return }
+
+    if (res.status === 401) {
+      window.location.href = `/login?role=employer&returnTo=${encodeURIComponent(`/residency/${listingId}#enquire`)}`
+      return
+    }
+    if (!res.ok) {
+      setError(data.error || 'Could not send your residency offer - please try again.')
+      return
+    }
     setDone(true)
   }
 
   if (done) {
     return (
-      <div className="bg-green-50 border border-green-100 rounded-lg p-4">
-        <p className="text-[13px] font-medium text-green-800">Enquiry sent</p>
-        <p className="text-[12px] text-green-700 mt-1">The Wellness House Collective team will come back to you by email, usually within one working day.</p>
+      <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-5">
+        <p className="text-[14px] font-semibold text-emerald-900">Residency offer sent</p>
+        <p className="text-[12px] leading-5 text-emerald-800 mt-1">{specialistName} can accept, counter or decline inside Spa Platform. If accepted, you&apos;ll confirm the booking and payment on-platform.</p>
       </div>
     )
   }
 
   return (
-    <form className="space-y-3" onSubmit={handleSubmit}>
-      <input name="name" required placeholder="Your name" className="input-field text-[13px]" />
-      <input name="email" type="email" required placeholder="Your email" className="input-field text-[13px]" />
-      <input name="property" placeholder="Property name" className="input-field text-[13px]" />
-      <input name="dates" placeholder="Dates needed" className="input-field text-[13px]" />
-      <textarea name="message" rows={3} required placeholder="Tell us what you're looking for..." className="input-field text-[13px]" />
+    <form className="space-y-4" onSubmit={handleSubmit}>
+      <div className="rounded-xl bg-parchment/70 border border-accent/20 p-4">
+        <div className="flex items-start gap-2.5">
+          <ShieldCheck size={17} className="text-accent mt-0.5 shrink-0" />
+          <div>
+            <p className="text-[12px] font-semibold text-ink">Book securely through Spa Platform</p>
+            <p className="text-[11px] text-muted leading-5 mt-0.5">Your dates, rate and inclusions are recorded here. A 10% platform booking fee is charged to the property only when the residency is accepted and confirmed.</p>
+          </div>
+        </div>
+      </div>
+
+      <div><label className="eyebrow block mb-1.5">Property *</label><input name="propertyName" required placeholder="Hotel, resort or spa" className="input-field text-[13px]" /></div>
+      <div className="grid grid-cols-2 gap-3">
+        <div><label className="eyebrow block mb-1.5">Start Date *</label><input name="startDate" type="date" required className="input-field text-[13px]" /></div>
+        <div><label className="eyebrow block mb-1.5">End Date *</label><input name="endDate" type="date" required className="input-field text-[13px]" /></div>
+      </div>
+      <div className="grid grid-cols-2 gap-3">
+        <div><label className="eyebrow block mb-1.5">Working Days *</label><input min={1} max={180} type="number" value={days} onChange={e => setDays(Number(e.target.value))} required className="input-field text-[13px]" /></div>
+        <div><label className="eyebrow block mb-1.5">Offer / Day (£) *</label><input min={1} step="1" type="number" value={dayRate || ''} onChange={e => setDayRate(Number(e.target.value))} required className="input-field text-[13px]" /></div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3">
+        <label className="flex items-center gap-2 rounded-xl border border-border p-3 cursor-pointer"><input name="accommodationIncluded" type="checkbox" className="rounded" /><span className="text-[12px] text-secondary">Accommodation included</span></label>
+        <label className="flex items-center gap-2 rounded-xl border border-border p-3 cursor-pointer"><input name="travelIncluded" type="checkbox" className="rounded" /><span className="text-[12px] text-secondary">Travel included</span></label>
+      </div>
+
+      <div><label className="eyebrow block mb-1.5">Treatments / Services</label><textarea name="servicesRequired" rows={2} placeholder="What would you like the specialist to deliver?" className="input-field text-[13px]" /></div>
+      <div><label className="eyebrow block mb-1.5">Additional Notes</label><textarea name="notes" rows={3} placeholder="Hours, uniform, facilities, expectations or other details..." className="input-field text-[13px]" /></div>
+
+      {therapistTotal > 0 && (
+        <div className="rounded-xl border border-border bg-surface/70 p-4 text-[12px]">
+          <div className="flex justify-between py-1"><span className="text-muted">Residency value</span><span className="font-medium text-ink">£{therapistTotal.toLocaleString('en-GB')}</span></div>
+          <div className="flex justify-between py-1"><span className="text-muted">Spa Platform fee (10%)</span><span className="font-medium text-ink">£{platformFee.toLocaleString('en-GB')}</span></div>
+          <div className="flex justify-between pt-2 mt-1 border-t border-border"><span className="font-semibold text-ink">Estimated property total</span><span className="font-semibold text-ink">£{(therapistTotal + platformFee).toLocaleString('en-GB')}</span></div>
+          <p className="text-[10px] text-muted mt-2">No payment is taken when you send this offer.</p>
+        </div>
+      )}
+
       {error && <p className="text-[12px] text-red-600">{error}</p>}
-      <button type="submit" disabled={sending} className="w-full py-2.5 rounded-lg text-[13px] font-semibold text-white disabled:opacity-50" style={{ backgroundColor: '#C9A96E' }}>
-        {sending ? 'Sending...' : 'Send Enquiry'}
+      <button type="submit" disabled={sending || days < 1 || dayRate <= 0} className="btn-primary w-full disabled:opacity-50">
+        {sending ? 'Sending Offer...' : `Invite ${specialistName.split(' ')[0] || 'Specialist'} to Residency`}
       </button>
+      <p className="text-[10px] leading-4 text-muted text-center">Keep the booking on Spa Platform to retain the agreed terms, secure payment record and eligibility for a verified residency review.</p>
     </form>
   )
 }
