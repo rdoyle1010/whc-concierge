@@ -140,12 +140,12 @@ export function parseWebsiteContent(value: unknown): WebsiteContent {
 
 export function websiteCssVariables(content: WebsiteContent): CSSProperties {
   const headings = {
-    modern: '-apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif',
+    modern: 'var(--font-manrope), "Segoe UI", sans-serif',
     editorial: 'var(--font-playfair), "Playfair Display", Georgia, serif',
     classic: 'Georgia, "Times New Roman", serif',
   }
   const bodies = {
-    system: '-apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif',
+    system: 'var(--font-manrope), "Segoe UI", sans-serif',
     clean: 'Arial, Helvetica, sans-serif',
     friendly: 'Trebuchet MS, Arial, sans-serif',
   }
