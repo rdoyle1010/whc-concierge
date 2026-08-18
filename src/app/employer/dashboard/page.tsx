@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import DashboardShell from '@/components/DashboardShell'
 import { createClient } from '@/lib/supabase/client'
-import { Briefcase, Users, FileText, MessageSquare, ArrowRight, Plus, Clock } from 'lucide-react'
+import { Briefcase, Users, FileText, MessageSquare, ArrowRight, Plus, Clock, Calendar, MapPin } from 'lucide-react'
 import SkeletonTable from '@/components/SkeletonTable'
 import Link from 'next/link'
 
@@ -74,7 +74,7 @@ export default function EmployerDashboard() {
         <div className="h-6 w-48 bg-surface rounded" />
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {[1,2,3,4].map(i => (
-            <div key={i} className="bg-white border border-border rounded-xl p-4">
+            <div key={i} className="bg-white border border-border rounded-md p-4">
               <div className="h-3 w-6 bg-surface rounded mb-2" />
               <div className="h-6 w-10 bg-surface rounded mb-1" />
               <div className="h-2.5 w-14 bg-surface rounded" />
@@ -85,19 +85,23 @@ export default function EmployerDashboard() {
       <div className="mt-6"><SkeletonTable rows={4} /></div>
     </DashboardShell>
   )
+
   return (
     <DashboardShell role="employer" userName={profile?.contact_name || profile?.company_name}>
-      {/* Approval banner */}
       {(!profile?.approval_status || profile?.approval_status === 'pending') && (
-        <div className="flex items-center gap-3 bg-amber-50 border border-amber-200 rounded-xl p-4 mb-6">
-          <Clock size={18} className="text-amber-600 shrink-0" />
-          <div><p className="text-[13px] font-medium text-amber-800">Your property is under review</p><p className="text-[12px] text-amber-600">You can set everything up now - post roles, browse talent - and we&apos;ll confirm your approval within 24 hours.</p></div>
+        <div className="border-l-2 border-amber-500 bg-white/65 px-5 py-4 mb-7 flex items-start gap-3">
+          <Clock size={17} className="text-amber-600 shrink-0 mt-0.5" />
+          <div>
+            <p className="text-[13px] font-medium text-amber-900">Your property is under review</p>
+            <p className="text-[12px] text-amber-700 mt-0.5">You can complete your profile and prepare recruitment activity while approval is being checked.</p>
+          </div>
         </div>
       )}
+
       <div className="mb-9">
-        <p className="dashboard-eyebrow">Recruitment desk</p>
+        <p className="dashboard-eyebrow">Property recruitment</p>
         <h1 className="dashboard-title">{profile?.property_name || profile?.company_name || 'Property dashboard'}</h1>
-        <p className="dashboard-intro">Manage permanent roles, agency cover and candidate conversations from one verified property workspace.</p>
+        <p className="dashboard-intro">Permanent recruitment, urgent agency cover, specialist Residencies and private candidate conversations in one verified property workspace.</p>
       </div>
 
       <div className="dashboard-metrics mb-8">
@@ -105,7 +109,7 @@ export default function EmployerDashboard() {
           { label: 'Active listings', value: stats.active, icon: <Briefcase size={16} /> },
           { label: 'Applications', value: stats.applications, icon: <FileText size={16} /> },
           { label: 'Candidates matched', value: stats.matches || '\u2014', icon: <Users size={16} /> },
-          { label: 'Messages', value: stats.messages, icon: <MessageSquare size={16} /> },
+          { label: 'Unread messages', value: stats.messages, icon: <MessageSquare size={16} /> },
         ].map(s => (
           <div key={s.label} className="dashboard-metric">
             <div className="text-accent mb-3">{s.icon}</div>
@@ -115,33 +119,40 @@ export default function EmployerDashboard() {
         ))}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-8">
-        <Link href="/employer/post-role" className="btn-primary flex items-center justify-center gap-2 py-3"><Plus size={14} />Post a new role</Link>
-        <Link href="/agency" className="btn-secondary flex items-center justify-center gap-2 py-3">Find agency cover</Link>
-        <Link href="/employer/candidates" className="btn-secondary flex items-center justify-center gap-2 py-3">Browse candidates</Link>
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-2.5 mb-8">
+        <Link href="/employer/post-role" className="btn-primary flex items-center justify-center gap-2 py-3"><Plus size={14} />Post a role</Link>
+        <Link href="/employer/agency" className="btn-secondary flex items-center justify-center gap-2 py-3"><Calendar size={14} />Agency cover</Link>
+        <Link href="/employer/residency" className="btn-secondary flex items-center justify-center gap-2 py-3"><MapPin size={14} />Residency</Link>
+        <Link href="/employer/candidates" className="btn-secondary flex items-center justify-center gap-2 py-3"><Users size={14} />Browse talent</Link>
       </div>
 
       {(!profile?.nearest_transport && !profile?.commute_car_required && !profile?.parking_available) && (
-        <div className="mb-8 border-l-2 border-accent bg-white/70 px-5 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-          <div><p className="text-[13px] font-medium text-ink">Help professionals plan the journey</p><p className="text-[12px] text-muted mt-0.5">Add the nearest transport, walking time, parking and taxi support to your Company Profile.</p></div>
+        <div className="mb-8 border-l-2 border-accent bg-white/65 px-5 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div>
+            <p className="text-[13px] font-medium text-ink">Help professionals plan the journey</p>
+            <p className="text-[12px] text-muted mt-0.5">Add nearest transport, walking time, parking and taxi support to your Company Profile.</p>
+          </div>
           <Link href="/employer/profile" className="text-[12px] font-medium text-accent whitespace-nowrap">Add travel details →</Link>
         </div>
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="dashboard-card">
-          <div className="flex items-center justify-between mb-4">
-            <p className="text-[14px] font-medium text-ink">Your listings</p>
+        <section className="dashboard-card">
+          <div className="flex items-end justify-between gap-3 mb-4">
+            <div>
+              <p className="dashboard-eyebrow !mb-1">Recruitment</p>
+              <h2 className="dashboard-section-title">Your listings</h2>
+            </div>
             <Link href="/employer/jobs" className="text-[12px] text-muted hover:text-ink flex items-center gap-1">Manage <ArrowRight size={12} /></Link>
           </div>
           {listings.length === 0 ? (
-            <div className="text-center py-8">
-              <Briefcase size={24} className="mx-auto text-muted mb-2" />
-              <p className="text-[13px] text-muted mb-3">No listings yet</p>
+            <div className="text-center py-9 border-t border-border">
+              <Briefcase size={22} className="mx-auto text-muted mb-2" />
+              <p className="text-[13px] text-muted mb-4">No listings yet.</p>
               <Link href="/employer/post-role" className="btn-primary text-[12px]">Post your first role</Link>
             </div>
           ) : (
-            <div className="space-y-2">
+            <div>
               {listings.slice(0, 5).map(job => (
                 <div key={job.id} className="dashboard-list-row">
                   <div>
@@ -151,33 +162,37 @@ export default function EmployerDashboard() {
                     </div>
                     <p className="text-[11px] text-muted">{job.location} \u00b7 {job.contract_type?.replace('_', ' ') || job.job_type}</p>
                   </div>
-                  <span className={`text-[11px] font-medium px-2 py-0.5 rounded-full ${job.is_live ? 'bg-emerald-50 text-emerald-700' : 'bg-neutral-100 text-muted'}`}>{job.is_live ? 'Live' : 'Closed'}</span>
+                  <span className={`text-[10px] font-semibold uppercase tracking-[.08em] ${job.is_live ? 'text-emerald-700' : 'text-muted'}`}>{job.is_live ? 'Live' : 'Closed'}</span>
                 </div>
               ))}
             </div>
           )}
-        </div>
-        <div className="dashboard-card">
-          <div className="flex items-center justify-between mb-4">
-            <p className="text-[14px] font-medium text-ink">Recent applications</p>
+        </section>
+
+        <section className="dashboard-card">
+          <div className="flex items-end justify-between gap-3 mb-4">
+            <div>
+              <p className="dashboard-eyebrow !mb-1">Talent pipeline</p>
+              <h2 className="dashboard-section-title">Recent applications</h2>
+            </div>
             <Link href="/employer/applications" className="text-[12px] text-muted hover:text-ink flex items-center gap-1">View all <ArrowRight size={12} /></Link>
           </div>
           {recentApps.length === 0 ? (
-            <p className="text-[13px] text-muted text-center py-8">No applications yet.</p>
+            <p className="text-[13px] text-muted text-center py-9 border-t border-border">No applications yet.</p>
           ) : (
-            <div className="space-y-2">
+            <div>
               {recentApps.map(app => (
                 <div key={app.id} className="dashboard-list-row">
                   <div>
                     <p className="text-[13px] font-medium text-ink">{app.candidate_profiles?.full_name || 'Candidate'}</p>
-                    <p className="text-[11px] text-muted">For: {app.jobTitle} \u00b7 {app.match_score ? `${app.match_score}% match` : ''}</p>
+                    <p className="text-[11px] text-muted">For: {app.jobTitle} {app.match_score ? `\u00b7 ${app.match_score}% match` : ''}</p>
                   </div>
-                  <span className={`text-[11px] font-medium px-2 py-0.5 rounded-full ${app.status === 'pending' ? 'bg-amber-50 text-amber-700' : app.status === 'shortlisted' ? 'bg-emerald-50 text-emerald-700' : 'bg-neutral-100 text-muted'}`}>{app.status}</span>
+                  <span className={`text-[10px] font-semibold uppercase tracking-[.08em] ${app.status === 'pending' ? 'text-amber-700' : app.status === 'shortlisted' ? 'text-emerald-700' : 'text-muted'}`}>{app.status}</span>
                 </div>
               ))}
             </div>
           )}
-        </div>
+        </section>
       </div>
     </DashboardShell>
   )
