@@ -23,6 +23,22 @@ async function requireAdmin() {
   return user
 }
 
+function londonClockKey(date = new Date()) {
+  const parts = new Intl.DateTimeFormat('en-GB', {
+    timeZone: 'Europe/London',
+    year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23',
+  }).formatToParts(date)
+  const values = Object.fromEntries(parts.map(part => [part.type, part.value]))
+  return `${values.year}-${values.month}-${values.day}T${values.hour}:${values.minute}:${values.second}`
+}
+
+function agencyShiftHasEnded(booking: any) {
+  if (!booking?.shift_date) return false
+  const end = String(booking.shift_end_time || '23:59:59').slice(0, 8)
+  return `${booking.shift_date}T${end}` <= londonClockKey()
+}
+
 export async function GET() {
   const user = await requireAdmin()
   if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
@@ -30,7 +46,7 @@ export async function GET() {
   try {
     const admin = createAdminClient()
     const { data: bookings, error: bookingsError } = await admin.from('agency_bookings')
-      .select('id,employer_id,candidate_id,shift_date,rate,hours,status,created_at,paid_at,amount_paid,payout_amount,payout_status,payout_at,dispute_status,dispute_reason,dispute_requested,refund_amount,stripe_payment_intent')
+      .select('id,employer_id,candidate_id,shift_date,shift_start_time,shift_end_time,rate,hours,status,created_at,paid_at,amount_paid,payout_amount,payout_status,payout_at,dispute_status,dispute_reason,dispute_requested,refund_amount,stripe_payment_intent')
       .order('created_at', { ascending: false })
       .limit(BOOKING_LIMIT)
     if (bookingsError) return NextResponse.json({ error: bookingsError.message }, { status: 500 })
@@ -46,6 +62,7 @@ export async function GET() {
 
     const rows = (bookings || []).map(b => ({
       ...b,
+      payout_ready: Boolean(b.paid_at && b.payout_status !== 'paid' && b.dispute_status !== 'open' && agencyShiftHasEnded(b)),
       employer_name: empMap.get(b.employer_id)?.property_name || empMap.get(b.employer_id)?.company_name || 'Property',
       candidate_name: candMap.get(b.candidate_id)?.full_name || 'Candidate',
       candidate_phone: candMap.get(b.candidate_id)?.phone || null,
@@ -144,7 +161,7 @@ export async function POST(req: NextRequest) {
 
     const admin = createAdminClient()
     const { data: booking, error: bookingError } = await admin.from('agency_bookings')
-      .select('id,employer_id,candidate_id,shift_date,paid_at,amount_paid,payout_amount,payout_status,dispute_status,stripe_payment_intent')
+      .select('id,employer_id,candidate_id,shift_date,shift_end_time,status,paid_at,amount_paid,payout_amount,payout_status,dispute_status,stripe_payment_intent')
       .eq('id', body.bookingId)
       .maybeSingle()
     if (bookingError) return NextResponse.json({ error: bookingError.message }, { status: 500 })
@@ -152,11 +169,12 @@ export async function POST(req: NextRequest) {
 
     if (body.action === 'mark_paid_out') {
       if (!booking.paid_at) return NextResponse.json({ error: 'The property has not paid for this booking yet.' }, { status: 400 })
+      if (!agencyShiftHasEnded(booking)) return NextResponse.json({ error: 'This shift has not finished yet. Therapist payout is only released after the scheduled end time.' }, { status: 400 })
       if (booking.payout_status === 'paid') return NextResponse.json({ error: 'Already marked as paid out.' }, { status: 400 })
       if (booking.dispute_status === 'open') return NextResponse.json({ error: 'This booking has an open dispute - resolve it before paying out.' }, { status: 400 })
 
       const { error } = await admin.from('agency_bookings')
-        .update({ payout_status: 'paid', payout_at: new Date().toISOString() })
+        .update({ payout_status: 'paid', payout_at: new Date().toISOString(), status: 'completed' })
         .eq('id', booking.id)
       if (error) return NextResponse.json({ error: error.message }, { status: 500 })
       return NextResponse.json({ success: true })
