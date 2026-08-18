@@ -2,10 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import DashboardShell from '@/components/DashboardShell'
-import { ShieldCheck, FileText, X } from 'lucide-react'
-
-// WHC Verified approval desk: check the therapist's insurance certificate
-// (and its expiry) plus qualification docs, then award or refuse the badge.
+import { ShieldCheck, FileText, X, Clock3 } from 'lucide-react'
 
 export default function AdminVerificationPage() {
   const [rows, setRows] = useState<any[]>([])
@@ -41,7 +38,10 @@ export default function AdminVerificationPage() {
   }
 
   const pending = rows.filter(r => r.verification_status === 'pending')
+  const verified = rows.filter(r => r.verification_status === 'verified')
+  const attention = rows.filter(r => r.verification_status === 'lapsed' || r.verification_status === 'rejected')
   const rest = rows.filter(r => r.verification_status !== 'pending')
+
   const statusColors: Record<string, string> = {
     pending: 'bg-amber-50 text-amber-700', verified: 'bg-green-50 text-green-700',
     rejected: 'bg-red-50 text-red-700', lapsed: 'bg-gray-100 text-gray-500',
@@ -49,10 +49,10 @@ export default function AdminVerificationPage() {
 
   const card = (r: any) => (
     <div key={r.id} className={`dashboard-card ${r.verification_status === 'pending' ? 'border-amber-200 ring-1 ring-amber-100' : ''}`}>
-      <div className="flex items-start justify-between gap-4">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap mb-1">
-            <h3 className="font-serif text-lg font-semibold text-ink">{r.full_name || 'Therapist'}</h3>
+            <h3 className="text-lg font-semibold text-ink">{r.full_name || 'Therapist'}</h3>
             <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${statusColors[r.verification_status] || 'bg-gray-100 text-gray-500'}`}>{r.verification_status}</span>
             {r.whc_verified && <ShieldCheck size={15} className="text-green-600" />}
           </div>
@@ -66,7 +66,7 @@ export default function AdminVerificationPage() {
           {Array.isArray(r.qualifications) && r.qualifications.length > 0 && (
             <p className="text-[12px] text-gray-500 mt-1">Claimed qualifications: {r.qualifications.join(', ')}</p>
           )}
-          <div className="flex flex-wrap gap-2 mt-2">
+          <div className="flex flex-wrap gap-x-4 gap-y-2 mt-3">
             {r.insurance_document_url && (
               <a href={r.insurance_document_url} target="_blank" rel="noreferrer"
                 className="inline-flex items-center gap-1 text-[12px] font-medium text-accent hover:underline"><FileText size={12} /> Insurance certificate</a>
@@ -76,16 +76,16 @@ export default function AdminVerificationPage() {
                 className="inline-flex items-center gap-1 text-[12px] font-medium text-accent hover:underline"><FileText size={12} /> {d.name || `Document ${i + 1}`}</a>
             ))}
           </div>
-          {r.verification_notes && <p className="text-[12px] text-gray-400 mt-2">Last decision note: {r.verification_notes}</p>}
+          {r.verification_notes && <p className="text-[12px] text-gray-400 mt-3">Last decision note: {r.verification_notes}</p>}
         </div>
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex flex-wrap items-center gap-2 lg:justify-end shrink-0">
           {!r.whc_verified && (
             <button onClick={() => decide(r.id, 'verified')} disabled={busyId === r.id}
               className="btn-primary !py-2 text-[12px] flex items-center gap-1 disabled:opacity-50"><ShieldCheck size={13} /> Verify</button>
           )}
           {r.verification_status !== 'rejected' && (
             <button onClick={() => { setRejecting(r); setReason('') }} disabled={busyId === r.id}
-              className="text-[12px] font-medium text-red-600 hover:text-red-700 px-3 py-2 disabled:opacity-50">{r.whc_verified ? 'Revoke' : 'Reject'}</button>
+              className="btn-secondary !py-2 text-[12px] !text-red-600 disabled:opacity-50">{r.whc_verified ? 'Revoke' : 'Reject'}</button>
           )}
         </div>
       </div>
@@ -94,44 +94,58 @@ export default function AdminVerificationPage() {
 
   return (
     <DashboardShell role="admin" userName="Admin">
-      <h1 className="text-2xl font-serif font-bold text-ink mb-2">Verification</h1>
-      <p className="text-[13px] text-gray-500 mb-6">Check documents, award the WHC Verified badge. Expiring insurance is chased automatically; expired insurance pauses the badge.</p>
-      {error && <div className="bg-red-50 text-red-600 text-sm px-4 py-3 rounded-lg mb-6">{error}</div>}
+      <div className="mb-8">
+        <p className="dashboard-eyebrow">Trust & compliance</p>
+        <h1 className="dashboard-title">Verification</h1>
+        <p className="dashboard-intro">Review insurance and qualification evidence before awarding WHC Verified. Expired insurance automatically pauses the badge until valid cover is supplied.</p>
+      </div>
+
+      {!loading && rows.length > 0 && (
+        <div className="dashboard-metrics mb-8">
+          <div className="dashboard-metric"><Clock3 size={16} className="text-accent mb-3" /><p className="dashboard-metric-value">{pending.length}</p><p className="dashboard-metric-label">Awaiting review</p></div>
+          <div className="dashboard-metric"><ShieldCheck size={16} className="text-accent mb-3" /><p className="dashboard-metric-value">{verified.length}</p><p className="dashboard-metric-label">Verified</p></div>
+          <div className="dashboard-metric"><FileText size={16} className="text-accent mb-3" /><p className="dashboard-metric-value">{attention.length}</p><p className="dashboard-metric-label">Rejected or lapsed</p></div>
+          <div className="dashboard-metric"><FileText size={16} className="text-accent mb-3" /><p className="dashboard-metric-value">{rows.length}</p><p className="dashboard-metric-label">Total records</p></div>
+        </div>
+      )}
+
+      {error && <div className="bg-red-50 text-red-600 text-sm px-4 py-3 mb-6 border border-red-100">{error}</div>}
 
       {loading ? (
         <div className="flex items-center justify-center h-64"><div className="animate-spin w-8 h-8 border-2 border-gold border-t-transparent rounded-full" /></div>
       ) : rows.length === 0 ? (
         <div className="dashboard-card text-center py-16 text-gray-400">
-          <ShieldCheck size={48} className="mx-auto mb-4 opacity-30" />
+          <ShieldCheck size={42} className="mx-auto mb-4 opacity-30" />
           <p>No verification submissions yet.</p>
         </div>
       ) : (
         <>
           {pending.length > 0 && (
-            <div className="mb-8">
-              <h2 className="text-[16px] font-medium text-ink mb-3">Awaiting review ({pending.length})</h2>
-              <div className="space-y-4">{pending.map(card)}</div>
+            <div className="mb-10">
+              <p className="dashboard-eyebrow">Action required</p>
+              <h2 className="dashboard-section-title mb-4">Awaiting review ({pending.length})</h2>
+              <div className="space-y-3">{pending.map(card)}</div>
             </div>
           )}
           {rest.length > 0 && (
             <div>
-              <h2 className="text-[16px] font-medium text-ink mb-3">Decided</h2>
-              <div className="space-y-4">{rest.map(card)}</div>
+              <p className="dashboard-eyebrow">History</p>
+              <h2 className="dashboard-section-title mb-4">Decided</h2>
+              <div className="space-y-3">{rest.map(card)}</div>
             </div>
           )}
         </>
       )}
 
-      {/* Reject / revoke modal */}
       {rejecting && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setRejecting(null)}>
-          <div className="bg-white rounded-2xl max-w-md w-full p-6" onClick={(e) => e.stopPropagation()}>
+          <div className="bg-white max-w-md w-full p-6 border border-border" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-2">
-              <h2 className="font-serif text-lg font-bold text-ink">{rejecting.whc_verified ? 'Revoke badge' : 'Reject verification'}</h2>
+              <h2 className="text-xl font-semibold text-ink">{rejecting.whc_verified ? 'Revoke badge' : 'Reject verification'}</h2>
               <button onClick={() => setRejecting(null)} className="text-gray-300 hover:text-ink"><X size={20} /></button>
             </div>
-            <p className="text-sm text-gray-500 mb-3">{rejecting.full_name} will be told why, by email and in-app, so they can fix it and resubmit.</p>
-            <textarea rows={3} value={reason} onChange={(e) => setReason(e.target.value)} className="input-field mb-3" placeholder="Reason (shown to the therapist)..." />
+            <p className="text-sm text-gray-500 mb-4">{rejecting.full_name} will be told why by email and in-app so they can correct the issue and resubmit.</p>
+            <textarea rows={3} value={reason} onChange={(e) => setReason(e.target.value)} className="input-field mb-4" placeholder="Reason shown to the therapist..." />
             <div className="flex gap-3">
               <button onClick={() => setRejecting(null)} className="btn-secondary flex-1">Cancel</button>
               <button onClick={() => decide(rejecting.id, 'rejected', reason)} disabled={busyId === rejecting.id}
