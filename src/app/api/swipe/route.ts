@@ -10,6 +10,7 @@ import { canEmployerDiscoverCandidate, mutualRadiusResult } from '@/lib/discover
 
 const RESEND_API_KEY = process.env.RESEND_API_KEY
 const FROM_EMAIL = 'WHC Concierge <noreply@mail.wellnesshousecollective.co.uk>'
+const MIN_APPLICATION_MATCH = 45
 
 async function sendEmail(to: string, subject: string, html: string) {
   if (!RESEND_API_KEY) return
@@ -136,8 +137,6 @@ async function createMutualMatch(admin: any, opts: {
   return { created: true, matchId: match.id }
 }
 
-// Returns remembered passes for both workspaces. This lets Tinder-style cards
-// disappear after a pass instead of resurfacing on every visit.
 export async function GET() {
   try {
     const { data: { user } } = await getAuthedUser()
@@ -173,7 +172,6 @@ export async function POST(req: NextRequest) {
 
     const admin = createAdminClient()
 
-    // ── Talent says Pass / Interested to a specific job ──
     if (targetType === 'job') {
       const [{ data: candidate }, { data: job }] = await Promise.all([
         admin.from('candidate_profiles').select('*').eq('user_id', user.id).maybeSingle(),
@@ -199,6 +197,16 @@ export async function POST(req: NextRequest) {
           swiper_id: user.id, swiper_type: 'candidate', target_id: job.id, target_type: 'job', context_job_id: context,
         })
         return NextResponse.json({ error: result.hardStopReason || 'This role is not compatible with your profile' }, { status: 400 })
+      }
+      if (result.score < MIN_APPLICATION_MATCH) {
+        await removeSwipe(admin, {
+          swiper_id: user.id, swiper_type: 'candidate', target_id: job.id, target_type: 'job', context_job_id: context,
+        })
+        return NextResponse.json({
+          error: `This role is currently a ${result.score}% match. Applications open from ${MIN_APPLICATION_MATCH}%.`,
+          matchScore: result.score,
+          minimumMatch: MIN_APPLICATION_MATCH,
+        }, { status: 400 })
       }
 
       const saved = await replaceSwipe(admin, {
@@ -261,7 +269,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ matched: true, jobTitle: job.job_title, employerName })
     }
 
-    // ── Employer says Pass / Interested to a candidate ──
     const { data: employer } = await admin.from('employer_profiles').select('*').eq('user_id', user.id).maybeSingle()
     if (!employer) return NextResponse.json({ error: 'Employer profile not found' }, { status: 404 })
     if (employer.approval_status !== 'approved') return NextResponse.json({ error: 'Your employer account must be approved first' }, { status: 403 })
