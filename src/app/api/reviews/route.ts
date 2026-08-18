@@ -14,7 +14,7 @@ async function getAuthedUser() {
   return supabaseAuth.auth.getUser()
 }
 
-const ACCEPTED_BOOKING_STATUSES = ['accepted', 'confirmed', 'completed']
+const REVIEWABLE_BOOKING_STATUSES = ['confirmed', 'completed']
 
 async function insertReviewDefensively(admin: any, row: Record<string, any>) {
   const attempt: Record<string, any> = { ...row }
@@ -52,6 +52,13 @@ async function fetchRatingsFor(admin: any, reviewedId: string) {
   return null
 }
 
+function shiftHasEnded(booking: any) {
+  if (!booking?.shift_date) return false
+  const end = String(booking.shift_end_time || '23:59:59').slice(0, 8)
+  const instant = new Date(`${booking.shift_date}T${end || '23:59:59'}+01:00`)
+  return Number.isFinite(instant.getTime()) && instant.getTime() <= Date.now()
+}
+
 async function hasWorkedTogether(
   admin: ReturnType<typeof createAdminClient>,
   employerProfileId: string,
@@ -61,24 +68,24 @@ async function hasWorkedTogether(
   if (bookingId) {
     const { data: booking } = await admin
       .from('agency_bookings')
-      .select('id')
+      .select('id,status,paid_at,shift_date,shift_end_time')
       .eq('id', bookingId)
       .eq('employer_id', employerProfileId)
       .eq('candidate_id', candidateProfileId)
-      .in('status', ACCEPTED_BOOKING_STATUSES)
+      .in('status', REVIEWABLE_BOOKING_STATUSES)
       .maybeSingle()
-    return !!booking
+    return Boolean(booking?.paid_at && shiftHasEnded(booking))
   }
 
   const { data: booking } = await admin
     .from('agency_bookings')
-    .select('id')
+    .select('id,status,paid_at,shift_date,shift_end_time')
     .eq('employer_id', employerProfileId)
     .eq('candidate_id', candidateProfileId)
-    .in('status', ACCEPTED_BOOKING_STATUSES)
-    .limit(1)
-    .maybeSingle()
-  if (booking) return true
+    .in('status', REVIEWABLE_BOOKING_STATUSES)
+    .not('paid_at', 'is', null)
+    .limit(20)
+  if ((booking || []).some(shiftHasEnded)) return true
 
   const { data: jobs } = await admin
     .from('job_listings')
@@ -148,8 +155,8 @@ export async function POST(req: NextRequest) {
     if (!workedTogether) {
       return NextResponse.json(
         { error: booking_id
-          ? 'You can only review this completed or agreed agency shift.'
-          : 'You can only review someone you have worked with through a placement or agency booking' },
+          ? 'Agency reviews unlock after the paid shift has finished.'
+          : 'You can only review someone you have worked with through a completed agency shift or accepted placement' },
         { status: 403 }
       )
     }
