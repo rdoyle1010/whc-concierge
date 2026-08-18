@@ -144,6 +144,28 @@
 .dashboard-list-row:first-child { border-top: 0; }
 .dashboard-rule { border-top: 1px solid #d7d0c4; }
 .dashboard-section-title { font-family: var(--font-editorial), Georgia, serif; font-size: 1.65rem; font-weight: 600; color: #10283b; letter-spacing: -.015em; }
+
+/* Bring older portal screens into the editorial system without touching their
+   booking, hiring or payment logic. Pills and avatars intentionally keep
+   rounded-full; only legacy card/button/modal radii are normalised. */
+.dashboard-shell .rounded-lg,
+.dashboard-shell .rounded-xl,
+.dashboard-shell .rounded-2xl { border-radius: 6px; }
+.dashboard-shell .bg-gray-50 { background-color: #faf8f3; }
+.dashboard-shell .bg-gray-100 { background-color: #f1eee7; }
+.dashboard-shell .border-gray-100 { border-color: #e3ddd2; }
+.dashboard-shell .border-gray-200 { border-color: #d8d3c8; }
+.dashboard-shell .text-gray-300 { color: #a8adaf; }
+.dashboard-shell .text-gray-400 { color: #858e94; }
+.dashboard-shell .text-gray-500 { color: #65717a; }
+.dashboard-shell .text-gray-600 { color: #4f5d67; }
+.dashboard-shell .text-gray-700 { color: #374550; }
+.dashboard-shell .shadow-xl,
+.dashboard-shell .shadow-2xl { box-shadow: 0 18px 54px rgba(10,34,52,.12); }
+.dashboard-shell .ring-1 { --tw-ring-color: rgba(156,122,66,.16); }
+.dashboard-shell .hover\:bg-gray-100:hover { background-color: #f1eee7; }
+.dashboard-shell .hover\:bg-gray-50:hover { background-color: #faf8f3; }
+
 @media (min-width: 1024px) {
   .dashboard-metrics { grid-template-columns: repeat(4,minmax(0,1fr)); }
   .dashboard-metric:nth-child(2n) { border-right: 1px solid #ddd6ca; }
