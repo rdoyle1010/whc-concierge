@@ -39,6 +39,14 @@ check('login routing never trusts editable auth metadata', () => {
   assert.doesNotMatch(read('src/proxy.ts'), /user_metadata\?\.role/)
   assert.doesNotMatch(read('src/lib/auth.ts'), /user_metadata\?\.role/)
 })
+check('login preserves supported return destinations', () => {
+  const login = read('src/app/login/page.tsx')
+  assert.match(login, /searchParams\.get\('redirect'\)/)
+  assert.match(login, /searchParams\.get\('next'\)/)
+  assert.match(login, /searchParams\.get\('returnTo'\)/)
+  const access = read('src/lib/role-access.ts')
+  assert.match(access, /pathname === '\/roles\/match'/)
+})
 check('registration uploads require proof and ownership', () => {
   const source = read('src/app/api/upload/route.ts')
   assert.match(source, /verifyRegistrationProof/)
@@ -55,7 +63,20 @@ check('swipes replace older decisions and remove blocked yeses', () => {
   const source = read('src/app/api/swipe/route.ts')
   assert.match(source, /replaceSwipe/)
   assert.match(source, /removeSwipe/)
-  assert.match(source, /createdAnyMatch/)
+  assert.match(source, /calculateMatchScore/)
+})
+check('weak or mandatory-fail matches cannot apply', () => {
+  const swipe = read('src/app/api/swipe/route.ts')
+  const draft = read('src/app/api/applications/draft/route.ts')
+  for (const source of [swipe, draft]) {
+    assert.match(source, /hardStop/)
+    assert.match(source, /score < 45|match\.score < 45|result\.score < 45/)
+  }
+})
+check('match page ranks roles instead of hiding low scores', () => {
+  const source = read('src/app/roles/match/page.tsx')
+  assert.doesNotMatch(source, /matchScore >= 45/)
+  assert.match(source, /sort\(\(a:any,b:any\) => b\.matchScore - a\.matchScore\)/)
 })
 check('all service-role API routes are protected or deliberately public', () => {
   const files = execFileSync('rg', ['-l', 'createAdminClient|SUPABASE_SERVICE_ROLE_KEY', 'src/app/api', '--glob', 'route.ts'], { encoding: 'utf8' }).trim().split('\n').filter(Boolean)
