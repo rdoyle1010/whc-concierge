@@ -5,21 +5,27 @@
 @layer base {
   html { font-family: var(--font-manrope), "Segoe UI", sans-serif; }
   body { @apply bg-white text-body antialiased font-sans; font-size: 15px; line-height: 1.7; }
-  h1, h2, h3, h4 { @apply text-ink font-semibold font-sans tracking-tight; line-height: 1.16; }
+  h1, h2, h3, h4 {
+    color: #10283b;
+    font-family: var(--font-editorial), Georgia, serif;
+    font-weight: 600;
+    letter-spacing: -0.022em;
+    line-height: 1.08;
+  }
   button, input, select, textarea { font: inherit; }
 }
 
 @layer components {
-  .btn-primary { @apply bg-ink text-white px-5 py-2.5 rounded-xl text-[13px] font-semibold hover:bg-navy-light transition-all duration-150; }
-  .btn-secondary { @apply bg-white text-ink border border-border px-5 py-2.5 rounded-xl text-[13px] font-semibold hover:bg-surface transition-all duration-150; }
-  .btn-accent { @apply bg-accent text-white px-5 py-2.5 rounded-xl text-[13px] font-semibold hover:bg-gold-dark transition-all duration-150; }
+  .btn-primary { @apply bg-ink text-white px-5 py-2.5 text-[13px] font-semibold hover:bg-navy-light transition-all duration-150; border-radius: 7px; }
+  .btn-secondary { @apply bg-white text-ink border border-border px-5 py-2.5 text-[13px] font-semibold hover:bg-surface transition-all duration-150; border-radius: 7px; }
+  .btn-accent { @apply bg-accent text-white px-5 py-2.5 text-[13px] font-semibold hover:bg-gold-dark transition-all duration-150; border-radius: 7px; }
   .btn-ghost { @apply text-secondary text-[13px] font-medium hover:text-ink transition-colors; }
-  .input-field { @apply w-full px-3.5 py-2.5 bg-white border border-border rounded-xl text-[14px] text-ink focus:outline-none focus:ring-2 focus:ring-ink/10 focus:border-ink/30 transition-all duration-150 placeholder:text-muted; }
-  .card { @apply bg-white border border-border rounded-2xl p-6 transition-all duration-200 hover:shadow-md hover:-translate-y-0.5; }
-  .card-flat { @apply bg-white border border-border rounded-2xl p-6; }
+  .input-field { @apply w-full px-3.5 py-2.5 bg-white border border-border text-[14px] text-ink focus:outline-none focus:ring-2 focus:ring-ink/10 focus:border-ink/30 transition-all duration-150 placeholder:text-muted; border-radius: 7px; }
+  .card { @apply bg-white border border-border p-6 transition-all duration-200 hover:shadow-sm; border-radius: 8px; }
+  .card-flat { @apply bg-white border border-border p-6; border-radius: 8px; }
   .eyebrow { @apply text-eyebrow uppercase text-muted font-medium; }
-  .dashboard-card { @apply bg-white border border-border rounded-2xl p-5; }
-  .section-heading { @apply text-[42px] md:text-[52px] font-medium text-ink leading-[1.1] tracking-tight; }
+  .dashboard-card { @apply bg-white border border-border p-5; border-radius: 6px; }
+  .section-heading { @apply text-[42px] md:text-[52px] font-medium text-ink leading-[1.02]; font-family: var(--font-editorial), Georgia, serif; letter-spacing: -.025em; }
 
   .badge-platinum { @apply bg-ink text-white text-[10px] font-semibold px-2.5 py-0.5 rounded-full; }
   .badge-gold { @apply bg-accent text-white text-[10px] font-semibold px-2.5 py-0.5 rounded-full; }
@@ -38,15 +44,14 @@
   .public-page { @apply min-h-screen bg-surface text-body; }
   .public-hero { @apply bg-parchment border-b border-border; }
   .public-eyebrow { @apply text-[10px] uppercase tracking-[0.18em] font-semibold text-accent; }
-  .public-title { @apply text-ink font-semibold tracking-[-0.04em] leading-[1.05]; font-size: clamp(2.25rem, 4vw, 3.5rem); }
+  .public-title { @apply text-ink font-semibold leading-[1.01]; font-family: var(--font-editorial), Georgia, serif; letter-spacing: -0.025em; font-size: clamp(2.5rem, 4.5vw, 4rem); }
   .public-intro { @apply text-secondary text-[15px] leading-7; }
-  .public-panel { @apply bg-white border border-border rounded-2xl; box-shadow: 0 10px 28px rgba(16,40,59,.045); }
+  .public-panel { @apply bg-white border border-border; border-radius: 8px; box-shadow: 0 8px 24px rgba(16,40,59,.035); }
 
   .skeleton { @apply bg-surface rounded animate-pulse; }
 }
 
-/* Legacy public utilities now inherit the WHC design language. This lets older
-   pages visually match the newer dashboards without touching their business logic. */
+/* Legacy public utilities now inherit the WHC design language. */
 .text-black { color: #10283b !important; }
 .bg-black { background-color: #0b2f4d !important; }
 .hover\:text-black:hover { color: #10283b !important; }
@@ -56,40 +61,92 @@
 .text-neutral-600 { color: #65717a !important; }
 .bg-neutral-100 { background-color: #f3f1ec !important; }
 
-/* One modern, premium workspace system shared by Talent, Employer and Admin. */
-.dashboard-shell { background: #f3f1ec; color: #17202a; font-family: var(--font-manrope), "Segoe UI", sans-serif; }
-.dashboard-sidebar { background: #0b2f4d; box-shadow: 1px 0 0 rgba(255,255,255,.08); }
+/* Editorial workspace shared by Talent, Employer and Admin. */
+.dashboard-shell {
+  background: #f5f2eb;
+  color: #17202a;
+  font-family: var(--font-manrope), "Segoe UI", sans-serif;
+}
+.dashboard-sidebar {
+  background: #092b45;
+  border-right: 1px solid rgba(201,169,110,.22);
+  box-shadow: none;
+}
 .dashboard-shell h1,
 .dashboard-shell h2,
 .dashboard-shell h3,
-.dashboard-shell .dashboard-title { font-family: var(--font-manrope), "Segoe UI", sans-serif; }
-.dashboard-title { color: #10283b; font-size: clamp(2rem, 3vw, 3.25rem); line-height: 1.06; font-weight: 650; letter-spacing: -.04em; }
-.dashboard-eyebrow { margin-bottom: .55rem; color: #9c7a42; font-size: 9px; line-height: 1.4; font-weight: 650; letter-spacing: .2em; text-transform: uppercase; }
-.dashboard-intro { max-width: 690px; margin-top: .8rem; color: #65717a; font-size: 13px; line-height: 1.7; }
+.dashboard-shell .dashboard-title {
+  font-family: var(--font-editorial), Georgia, serif;
+}
+.dashboard-title {
+  color: #10283b;
+  font-size: clamp(2.55rem, 4vw, 4.1rem);
+  line-height: .98;
+  font-weight: 600;
+  letter-spacing: -.025em;
+}
+.dashboard-eyebrow {
+  margin-bottom: .65rem;
+  color: #9c7a42;
+  font-size: 9px;
+  line-height: 1.4;
+  font-weight: 700;
+  letter-spacing: .22em;
+  text-transform: uppercase;
+}
+.dashboard-intro {
+  max-width: 720px;
+  margin-top: .9rem;
+  color: #65717a;
+  font-size: 13px;
+  line-height: 1.75;
+}
 .dashboard-shell .dashboard-card,
-.dashboard-panel { background: rgba(255,255,255,.9); border: 1px solid #ddd9d1; border-radius: 16px; padding: 1.5rem; box-shadow: 0 10px 28px rgba(16,40,59,.045); }
+.dashboard-panel {
+  background: rgba(255,255,255,.84);
+  border: 1px solid #d8d3c8;
+  border-radius: 6px;
+  padding: 1.5rem;
+  box-shadow: none;
+}
+.dashboard-shell .dashboard-card:hover { border-color: #c7c0b3; }
 .dashboard-shell .btn-primary,
 .dashboard-shell .btn-secondary,
 .dashboard-shell .btn-accent,
-.dashboard-shell .input-field { border-radius: 12px; }
+.dashboard-shell .input-field { border-radius: 6px; }
 .dashboard-shell select,
 .dashboard-shell textarea,
-.dashboard-shell input:not([type="checkbox"]):not([type="radio"]),
-.dashboard-shell table { border-radius: 12px; }
+.dashboard-shell input:not([type="checkbox"]):not([type="radio"]) { border-radius: 6px; }
+.dashboard-shell table { border-radius: 0; }
 .dashboard-shell .btn-primary { background: #0b2f4d; }
 .dashboard-shell .btn-primary:hover { background: #123f64; }
-.dashboard-shell .input-field:focus { border-color: #9c7a42; box-shadow: 0 0 0 2px rgba(156,122,66,.1); }
-.dashboard-metrics { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); background: rgba(255,255,255,.72); border-top: 1px solid #cfcac1; border-bottom: 1px solid #cfcac1; }
-.dashboard-metric { min-height: 112px; padding: 1.25rem; border-right: 1px solid #ddd8cf; }
+.dashboard-shell .input-field:focus { border-color: #9c7a42; box-shadow: 0 0 0 2px rgba(156,122,66,.09); }
+.dashboard-metrics {
+  display: grid;
+  grid-template-columns: repeat(2,minmax(0,1fr));
+  background: rgba(255,255,255,.58);
+  border-top: 1px solid #cfc8bb;
+  border-bottom: 1px solid #cfc8bb;
+}
+.dashboard-metric { min-height: 112px; padding: 1.25rem; border-right: 1px solid #ddd6ca; }
 .dashboard-metric:nth-child(2n) { border-right: 0; }
-.dashboard-metric-value { color: #10283b; font-family: var(--font-manrope), "Segoe UI", sans-serif; font-size: 2rem; line-height: 1; font-weight: 650; letter-spacing: -.035em; }
-.dashboard-nav-item { border-radius: 10px; }
-.dashboard-metric-label { margin-top: .55rem; color: #7a8288; font-size: 10px; text-transform: uppercase; letter-spacing: .12em; }
-.dashboard-list-row { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: .95rem 0; border-top: 1px solid #e5e1da; }
+.dashboard-metric-value {
+  color: #10283b;
+  font-family: var(--font-editorial), Georgia, serif;
+  font-size: 2.5rem;
+  line-height: .95;
+  font-weight: 600;
+  letter-spacing: -.02em;
+}
+.dashboard-nav-item { border-radius: 4px; }
+.dashboard-metric-label { margin-top: .55rem; color: #7a8288; font-size: 9px; font-weight: 650; text-transform: uppercase; letter-spacing: .14em; }
+.dashboard-list-row { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 1rem 0; border-top: 1px solid #e3ddd2; }
 .dashboard-list-row:first-child { border-top: 0; }
+.dashboard-rule { border-top: 1px solid #d7d0c4; }
+.dashboard-section-title { font-family: var(--font-editorial), Georgia, serif; font-size: 1.65rem; font-weight: 600; color: #10283b; letter-spacing: -.015em; }
 @media (min-width: 1024px) {
   .dashboard-metrics { grid-template-columns: repeat(4,minmax(0,1fr)); }
-  .dashboard-metric:nth-child(2n) { border-right: 1px solid #ddd8cf; }
+  .dashboard-metric:nth-child(2n) { border-right: 1px solid #ddd6ca; }
   .dashboard-metric:last-child { border-right: 0; }
 }
 
@@ -113,16 +170,16 @@
 ::-webkit-scrollbar { width:4px; } ::-webkit-scrollbar-track { background:transparent; } ::-webkit-scrollbar-thumb { background:#d4d4d4; border-radius:2px; }
 html { scroll-behavior:smooth; }
 
-/* Website & Brand editor variables. Defaults now match the dashboard system. */
+/* Website & Brand editor variables. Defaults match the editorial system. */
 .website-theme {
   font-family: var(--site-body-font, var(--font-manrope), "Segoe UI", sans-serif);
   color: var(--site-ink, #10283b);
   background: var(--site-background, #f3f1ec);
 }
 .website-theme .site-heading {
-  font-family: var(--site-heading-font, var(--font-manrope), "Segoe UI", sans-serif);
+  font-family: var(--site-heading-font, var(--font-editorial), Georgia, serif);
   color: var(--site-ink, #10283b);
-  letter-spacing: -0.035em;
+  letter-spacing: -0.025em;
 }
 .website-theme .site-accent { color: var(--site-accent, #C9A96E); }
 .website-theme .site-accent-bg { background-color: var(--site-accent, #0b2f4d); }
@@ -132,7 +189,7 @@ html { scroll-behavior:smooth; }
   padding-bottom: calc(5rem * var(--site-space, 1));
 }
 .website-theme .site-button {
-  border-radius: var(--site-button-radius, 12px);
+  border-radius: var(--site-button-radius, 7px);
   transition: transform 150ms ease, opacity 150ms ease;
 }
 .website-theme .site-button:hover { transform: translateY(-1px); opacity: .92; }
