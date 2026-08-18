@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { Manrope } from 'next/font/google'
+import { Cormorant_Garamond, Manrope } from 'next/font/google'
 import './globals.css'
 import CookieConsent from '@/components/CookieConsent'
 
@@ -7,6 +7,13 @@ const manrope = Manrope({
   subsets: ['latin'],
   variable: '--font-manrope',
   display: 'swap',
+})
+
+const editorial = Cormorant_Garamond({
+  subsets: ['latin'],
+  variable: '--font-editorial',
+  display: 'swap',
+  weight: ['500', '600', '700'],
 })
 
 export const metadata: Metadata = {
@@ -40,8 +47,6 @@ export const metadata: Metadata = {
     images: ['/opengraph-image'],
   },
   icons: {
-    // Reuse the verified brand asset instead of requesting the missing
-    // /favicon.ico, which was recorded as a browser-console error by Lighthouse.
     icon: '/images/whc-logo.jpg',
     apple: '/images/whc-logo.jpg',
   },
@@ -59,7 +64,7 @@ const organizationJsonLd = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={manrope.variable}>
+    <html lang="en" className={`${manrope.variable} ${editorial.variable}`}>
       <body>
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }} />
         {children}
