@@ -41,7 +41,8 @@ async function fulfillResidencyBooking(supabase: any, session: Stripe.Checkout.S
   if (bookingError) throw new Error(`Residency booking lookup failed: ${bookingError.message}`)
   if (!booking) throw new Error('Residency booking not found for Stripe payment')
 
-  if (!booking.paid_at || booking.status !== 'confirmed') {
+  const alreadyFulfilled = Boolean(booking.paid_at && booking.status === 'confirmed')
+  if (!alreadyFulfilled) {
     const payout = Math.max(0, gross)
     const { error } = await supabase.from('residency_bookings').update({
       status: 'confirmed',
@@ -53,34 +54,34 @@ async function fulfillResidencyBooking(supabase: any, session: Stripe.Checkout.S
       stripe_payment_intent: typeof session.payment_intent === 'string' ? session.payment_intent : session.payment_intent?.id || null,
     }).eq('id', booking.id)
     if (error) throw new Error(`Residency booking fulfilment failed: ${error.message}`)
-  }
 
-  try {
-    const [{ data: candidate }, { data: employer }] = await Promise.all([
-      supabase.from('candidate_profiles').select('user_id').eq('id', booking.candidate_id).maybeSingle(),
-      supabase.from('employer_profiles').select('user_id,property_name,company_name').eq('id', booking.employer_id).maybeSingle(),
-    ])
-    const propertyName = booking.property_name || employer?.property_name || employer?.company_name || 'the property'
-    if (candidate?.user_id) {
-      await createNotification(
-        candidate.user_id,
-        'general',
-        'Residency confirmed - payment received',
-        `Your Residency with ${propertyName} is confirmed. The agreed booking is now secured through Spa Platform.`,
-        '/talent/residency',
-      )
+    try {
+      const [{ data: candidate }, { data: employer }] = await Promise.all([
+        supabase.from('candidate_profiles').select('user_id').eq('id', booking.candidate_id).maybeSingle(),
+        supabase.from('employer_profiles').select('user_id,property_name,company_name').eq('id', booking.employer_id).maybeSingle(),
+      ])
+      const propertyName = booking.property_name || employer?.property_name || employer?.company_name || 'the property'
+      if (candidate?.user_id) {
+        await createNotification(
+          candidate.user_id,
+          'general',
+          'Residency confirmed - payment received',
+          `Your Residency with ${propertyName} is confirmed. The agreed booking is now secured through Spa Platform.`,
+          '/talent/residency',
+        )
+      }
+      if (employer?.user_id) {
+        await createNotification(
+          employer.user_id,
+          'general',
+          'Residency payment received',
+          'Your Residency booking with the specialist is confirmed and secured through Spa Platform.',
+          '/employer/residency',
+        )
+      }
+    } catch (error: any) {
+      console.error('Residency payment notification failed (non-fatal):', error?.message)
     }
-    if (employer?.user_id) {
-      await createNotification(
-        employer.user_id,
-        'general',
-        'Residency payment received',
-        `Your Residency booking with the specialist is confirmed and secured through Spa Platform.`,
-        '/employer/residency',
-      )
-    }
-  } catch (error: any) {
-    console.error('Residency payment notification failed (non-fatal):', error?.message)
   }
 
   return true
