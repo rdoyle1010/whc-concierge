@@ -24,10 +24,10 @@ module.exports = {
       },
       fontFamily: {
         sans: ['var(--font-manrope)', 'Manrope', 'Segoe UI', 'sans-serif'],
-        // Legacy font-serif classes still exist in older screens. Mapping
-        // them to Manrope removes the old serif without risking functional
-        // changes across the large route set.
-        serif: ['var(--font-manrope)', 'Manrope', 'Segoe UI', 'sans-serif'],
+        // Older routes already use font-serif for their important headings.
+        // Point those classes at the shared editorial face so legacy screens
+        // inherit the same luxury typography without route-by-route rewrites.
+        serif: ['var(--font-editorial)', 'Georgia', 'serif'],
       },
       fontSize: { eyebrow: ['11px', { letterSpacing: '0.08em', lineHeight: '1.4' }] },
     },
