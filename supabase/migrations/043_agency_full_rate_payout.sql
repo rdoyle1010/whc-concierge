@@ -8,7 +8,9 @@ LANGUAGE plpgsql
 SET search_path = public
 AS $$
 BEGIN
-  IF NEW.paid_at IS NOT NULL AND COALESCE(NEW.payout_status, 'pending') <> 'paid' THEN
+  -- Keep the agreed therapist amount visible and protected from booking creation
+  -- onwards. Historical bookings already marked paid out are left untouched.
+  IF COALESCE(NEW.payout_status, 'pending') <> 'paid' THEN
     NEW.payout_amount := ROUND(
       COALESCE(NEW.rate, 0)::numeric * COALESCE(NULLIF(NEW.hours, 0), 8)::numeric
     )::integer;
@@ -26,11 +28,10 @@ BEFORE INSERT OR UPDATE OF paid_at, payout_amount, rate, hours, payout_status
 ON public.agency_bookings
 FOR EACH ROW EXECUTE FUNCTION public.enforce_agency_full_rate_payout();
 
--- Correct paid but not yet paid-out bookings to the newly confirmed model.
--- Historical payouts already marked paid are deliberately left unchanged.
+-- Correct every booking that has not already been paid out to the newly
+-- confirmed model, including accepted bookings still awaiting property payment.
 UPDATE public.agency_bookings
 SET payout_amount = ROUND(
   COALESCE(rate, 0)::numeric * COALESCE(NULLIF(hours, 0), 8)::numeric
 )::integer
-WHERE paid_at IS NOT NULL
-  AND COALESCE(payout_status, 'pending') <> 'paid';
+WHERE COALESCE(payout_status, 'pending') <> 'paid';
