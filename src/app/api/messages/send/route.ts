@@ -5,13 +5,23 @@ import { cookies } from 'next/headers'
 import { createNotification } from '@/lib/notifications'
 import { sendNewMessageEmail } from '@/lib/emails'
 
-async function hasMessagingRelationship(admin: ReturnType<typeof createAdminClient>, senderId: string, recipientId: string) {
+function containsRestrictedContactDetails(value: string) {
+  const text = value || ''
+  const email = /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i.test(text)
+  const url = /\b(?:https?:\/\/|www\.)\S+/i.test(text)
+  const contactApp = /\b(?:whatsapp|telegram|signal|facetime|instagram|facebook|linkedin|snapchat)\b/i.test(text)
+  const phoneCandidates = text.match(/(?:\+?\d[\d\s().-]{5,}\d)/g) || []
+  const phone = phoneCandidates.some(value => (value.match(/\d/g) || []).length >= 7)
+  return email || url || contactApp || phone
+}
+
+async function getMessagingRelationship(admin: ReturnType<typeof createAdminClient>, senderId: string, recipientId: string) {
   const [{ data: senderRole }, { data: recipientRole }] = await Promise.all([
     admin.from('profiles').select('role').eq('id', senderId).maybeSingle(),
     admin.from('profiles').select('role').eq('id', recipientId).maybeSingle(),
   ])
-  if (!recipientRole) return false
-  if (senderRole?.role === 'admin' || recipientRole.role === 'admin') return true
+  if (!recipientRole) return { allowed: false, residencyRestricted: false }
+  if (senderRole?.role === 'admin' || recipientRole.role === 'admin') return { allowed: true, residencyRestricted: false }
 
   const [senderCand, senderEmp, recipientCand, recipientEmp] = await Promise.all([
     admin.from('candidate_profiles').select('id').eq('user_id', senderId).maybeSingle(),
@@ -22,30 +32,30 @@ async function hasMessagingRelationship(admin: ReturnType<typeof createAdminClie
 
   const candidateId = senderCand.data?.id || recipientCand.data?.id
   const employerId = senderEmp.data?.id || recipientEmp.data?.id
-  if (!candidateId || !employerId) return false
+  if (!candidateId || !employerId) return { allowed: false, residencyRestricted: false }
 
-  const [{ data: match }, { data: booking }, { data: shortlist }] = await Promise.all([
+  const [{ data: match }, { data: booking }, { data: shortlist }, { data: residencyConversation }, { data: confirmedResidency }] = await Promise.all([
     admin.from('matches').select('id').eq('candidate_id', candidateId).eq('employer_id', employerId).limit(1).maybeSingle(),
     admin.from('agency_bookings').select('id').eq('candidate_id', candidateId).eq('employer_id', employerId).limit(1).maybeSingle(),
     admin.from('shortlisted_candidates').select('id').eq('candidate_id', candidateId).eq('employer_id', employerId).limit(1).maybeSingle(),
+    admin.from('residency_conversations').select('id').eq('candidate_id', candidateId).eq('employer_id', employerId).eq('status', 'open').limit(1).maybeSingle(),
+    admin.from('residency_bookings').select('id').eq('candidate_id', candidateId).eq('employer_id', employerId).in('status', ['confirmed','completed']).limit(1).maybeSingle(),
   ])
-  if (match || booking || shortlist) return true
 
-  // An application is also a legitimate conversation. Tolerate the two job
-  // link column names found across the historical schema.
+  const residencyRestricted = Boolean(residencyConversation && !confirmedResidency)
+  if (match || booking || shortlist || residencyConversation) return { allowed: true, residencyRestricted }
+
   const { data: jobs } = await admin.from('job_listings').select('id').eq('employer_id', employerId)
   const jobIds = (jobs || []).map(job => job.id)
-  if (jobIds.length === 0) return false
+  if (jobIds.length === 0) return { allowed: false, residencyRestricted: false }
   const byRole = await admin.from('applications').select('id')
     .eq('candidate_id', candidateId).in('role_id', jobIds).limit(1).maybeSingle()
-  if (!byRole.error && byRole.data) return true
+  if (!byRole.error && byRole.data) return { allowed: true, residencyRestricted }
   const byJob = await admin.from('applications').select('id')
     .eq('candidate_id', candidateId).in('job_id', jobIds).limit(1).maybeSingle()
-  return Boolean(!byJob.error && byJob.data)
+  return { allowed: Boolean(!byJob.error && byJob.data), residencyRestricted }
 }
 
-// Sends a message from the logged-in user. The service-role write is retained
-// for schema compatibility, but only after the relationship is verified.
 export async function POST(req: NextRequest) {
   try {
     const cookieStore = await cookies()
@@ -70,12 +80,23 @@ export async function POST(req: NextRequest) {
     }
 
     const admin = createAdminClient()
-    if (!(await hasMessagingRelationship(admin, user.id, recipientId))) {
+    const relationship = await getMessagingRelationship(admin, user.id, recipientId)
+    if (!relationship.allowed) {
       return NextResponse.json(
-        { error: 'Messaging opens after an application, shortlist, match or agency booking.' },
+        { error: 'Messaging opens after an application, shortlist, match, agency booking or Residency conversation.' },
         { status: 403 },
       )
     }
+
+    if (relationship.residencyRestricted) {
+      if (attachmentUrl) {
+        return NextResponse.json({ error: 'Attachments are locked until the Residency booking is confirmed.' }, { status: 403 })
+      }
+      if (typeof content === 'string' && containsRestrictedContactDetails(content)) {
+        return NextResponse.json({ error: 'For your protection, phone numbers, email addresses, links and direct-contact details stay hidden until the Residency booking is confirmed.' }, { status: 403 })
+      }
+    }
+
     const { data, error } = await admin.from('messages').insert({
       sender_id: user.id,
       recipient_id: recipientId,
@@ -88,24 +109,17 @@ export async function POST(req: NextRequest) {
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-    // Notify the recipient, linking to the inbox for their role.
-    // MUST be awaited: on serverless the function freezes the moment the
-    // response returns, so a fire-and-forget insert almost never lands.
     const [{ data: recipProfile }, { data: senderProfile }] = await Promise.all([
       admin.from('profiles').select('role').eq('id', recipientId).maybeSingle(),
       admin.from('profiles').select('full_name').eq('id', user.id).maybeSingle(),
     ])
     const inbox = recipProfile?.role === 'employer' ? '/employer/messages' : '/talent/messages'
-    const senderName = senderProfile?.full_name || 'Someone'
+    const senderName = relationship.residencyRestricted ? 'Residency conversation' : (senderProfile?.full_name || 'Someone')
     const preview = content ? (content.length > 80 ? content.slice(0, 80) + '…' : content) : 'Sent you an attachment'
     try {
       await createNotification(recipientId, 'new_message', `New message from ${senderName}`, preview, inbox)
-    } catch { /* non-fatal - the message itself was saved */ }
+    } catch { }
 
-    // Email the recipient too - people who aren't logged in never see the
-    // bell. Skipped when they already have an unread message from this sender
-    // in the last 30 minutes, so a rapid back-and-forth doesn't send one
-    // email per line. All best-effort: never fails the send itself.
     try {
       let alreadyNudged = false
       try {
@@ -119,13 +133,13 @@ export async function POST(req: NextRequest) {
           .limit(1)
           .maybeSingle()
         alreadyNudged = Boolean(recentUnread)
-      } catch { /* throttle check failing must not block the email */ }
+      } catch { }
       if (!alreadyNudged) {
         const { data: recipUser } = await admin.auth.admin.getUserById(recipientId)
         const recipEmail = recipUser?.user?.email
         if (recipEmail) await sendNewMessageEmail(recipEmail, '', senderName)
       }
-    } catch { /* non-fatal - the message itself was saved */ }
+    } catch { }
 
     return NextResponse.json({ success: true, id: data.id })
   } catch (e: any) {
