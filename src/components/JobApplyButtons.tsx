@@ -15,7 +15,6 @@ type AuthState =
 export default function JobApplyButtons({ roleId }: Props) {
   const [auth, setAuth] = useState<AuthState>({ loading: true })
   const [saved, setSaved] = useState(false)
-  const [applied, setApplied] = useState(false)
   const [applying, setApplying] = useState(false)
 
   useEffect(() => {
@@ -88,20 +87,29 @@ export default function JobApplyButtons({ roleId }: Props) {
   const applyHref = `/register/talent?intent=apply&role=${encodeURIComponent(roleId)}`
 
   const handleApplyClick = async () => {
-    if (applied || applying) return
+    if (applying) return
     setApplying(true)
     try {
-      const res = await fetch('/api/swipe', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ targetId: roleId, targetType: 'job', action: 'right' }),
+      const res = await fetch('/api/applications/draft', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ jobId: roleId }),
       })
-      if (res.ok) setApplied(true)
-      else {
-        const d = await res.json().catch(() => ({}))
-        alert(d.error || 'Could not submit application - please try again.')
+      const d = await res.json().catch(() => ({}))
+
+      if (res.ok) {
+        window.location.href = '/talent/applications?review=draft'
+        return
       }
+
+      if (res.status === 409 && d.applicationId) {
+        window.location.href = '/talent/applications'
+        return
+      }
+
+      alert(d.error || 'Could not start your application - please try again.')
     } catch {
-      alert('Could not submit application - please try again.')
+      alert('Could not start your application - please try again.')
     }
     setApplying(false)
   }
@@ -136,11 +144,11 @@ export default function JobApplyButtons({ roleId }: Props) {
         <button
           type="button"
           onClick={handleApplyClick}
-          disabled={applied || applying}
+          disabled={applying}
           className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg text-[14px] font-semibold text-white transition-all hover:shadow-lg hover:shadow-[#C9A96E]/25 disabled:opacity-70"
-          style={{ backgroundColor: applied ? '#22C55E' : '#C9A96E' }}
+          style={{ backgroundColor: '#C9A96E' }}
         >
-          {applied ? 'Application sent' : applying ? 'Applying...' : 'Apply for this role'} {!applied && <ArrowRight size={16} />}
+          {applying ? 'Preparing application...' : 'Review application'} <ArrowRight size={16} />
         </button>
       )}
       {!auth.loggedIn ? (
