@@ -7,14 +7,6 @@ import { calculateMatchScore } from '@/lib/matching'
 import MatchBreakdown from '@/components/MatchBreakdown'
 import { ArrowLeft, ArrowRight, Check, ChevronDown, FileText, Heart, MapPin, Sparkles, Star, X } from 'lucide-react'
 
-const JOB_FIELDS = `
-  id,job_title,job_description,location,salary_min,salary_max,salary_display_text,job_type,contract_type,
-  tier,posted_date,expires_at,is_live,required_skills,required_brands,required_qualifications,min_years_experience,
-  required_systems,required_management_skills,required_role_level,location_postcode,radius_miles,insurance_required,
-  preferred_business_skills,shift_pattern,offers_accommodation,is_agency_role,latitude,longitude,employer_id,
-  employer_profiles(company_name,property_name,logo_url,property_photos,tagline,review_score,review_count,star_rating)
-`
-
 const tierClass = (tier: string) => tier === 'Platinum' ? 'badge-platinum' : tier === 'Gold' ? 'badge-gold' : tier === 'Silver' ? 'badge-silver' : 'badge-bronze'
 
 function salaryText(job:any){
@@ -57,21 +49,15 @@ export default function SwipeMatchPage() {
         return
       }
 
-      const now = new Date().toISOString()
       const [jobsResult, swipesResult, applicationsResult] = await Promise.all([
-        supabase.from('job_listings')
-          .select(JOB_FIELDS)
-          .eq('is_live', true)
-          .or(`expires_at.is.null,expires_at.gt.${now}`)
-          .order('posted_date', { ascending: false })
-          .limit(100),
+        fetch('/api/jobs/match').then(async r => ({ ok: r.ok, body: await r.json().catch(() => ({})) })).catch(() => ({ ok: false, body: {} })),
         fetch('/api/swipe').then(r => r.ok ? r.json() : { passed_job_ids: [] }).catch(() => ({ passed_job_ids: [] })),
         supabase.from('applications').select('job_id,role_id').eq('candidate_id', candidateProfile.id),
       ])
 
       if (!active) return
-      if (jobsResult.error) {
-        setError('We could not load your matches just now. Please refresh the page.')
+      if (!jobsResult.ok) {
+        setError(jobsResult.body?.error || 'We could not load your matches just now. Please refresh the page.')
         setLoading(false)
         return
       }
@@ -79,7 +65,7 @@ export default function SwipeMatchPage() {
       const passed = new Set(swipesResult.passed_job_ids || [])
       const alreadySaved = new Set((applicationsResult.data || []).flatMap((app:any) => [app.job_id, app.role_id]).filter(Boolean))
 
-      const normalized = (jobsResult.data || [])
+      const normalized = (jobsResult.body?.rows || [])
         .filter((job:any) => !passed.has(job.id) && !alreadySaved.has(job.id))
         .map((job: any) => {
           const employer = Array.isArray(job.employer_profiles) ? job.employer_profiles[0] : job.employer_profiles
@@ -186,6 +172,7 @@ export default function SwipeMatchPage() {
         <div className="w-16 h-16 bg-white border border-border rounded-2xl flex items-center justify-center mx-auto mb-5"><Sparkles size={24} className="text-[#9c7a42]" /></div>
         <h1 className="text-[28px] font-semibold text-ink mb-2">{jobs.length ? 'You’ve reviewed all current matches' : 'No eligible roles right now'}</h1>
         <p className="text-[14px] leading-6 text-muted mb-7">All roles that pass mandatory requirements are ranked here, strongest to weakest. Roles under 45% stay visible for comparison but cannot be applied to.</p>
+        {error && <div className="mb-5 rounded-xl bg-red-50 px-4 py-3 text-[12px] text-red-600">{error}</div>}
         <div className="flex justify-center gap-2"><Link href="/talent/applications" className="btn-primary">My Applications</Link><Link href="/jobs" className="btn-secondary">Browse all roles</Link></div>
       </div>
     </div>
