@@ -46,6 +46,18 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'This specialist cannot receive structured offers yet.' }, { status: 400 })
     }
 
+    const { data: conversation } = await admin.from('residency_conversations')
+      .select('id,status')
+      .eq('residency_profile_id', listing.id)
+      .eq('candidate_id', listing.candidate_profile_id)
+      .eq('employer_id', employer.id)
+      .eq('status', 'open')
+      .maybeSingle()
+
+    if (!conversation) {
+      return NextResponse.json({ error: 'Start a private Residency conversation before sending a formal offer.' }, { status: 403 })
+    }
+
     const proposedTotal = Number((daysRequired * proposedDayRate).toFixed(2))
     const platformFee = Number((proposedTotal * 0.10).toFixed(2))
 
