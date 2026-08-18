@@ -52,11 +52,20 @@ async function fetchRatingsFor(admin: any, reviewedId: string) {
   return null
 }
 
+function londonClockKey(date = new Date()) {
+  const parts = new Intl.DateTimeFormat('en-GB', {
+    timeZone: 'Europe/London',
+    year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23',
+  }).formatToParts(date)
+  const values = Object.fromEntries(parts.map(part => [part.type, part.value]))
+  return `${values.year}-${values.month}-${values.day}T${values.hour}:${values.minute}:${values.second}`
+}
+
 function shiftHasEnded(booking: any) {
   if (!booking?.shift_date) return false
   const end = String(booking.shift_end_time || '23:59:59').slice(0, 8)
-  const instant = new Date(`${booking.shift_date}T${end || '23:59:59'}+01:00`)
-  return Number.isFinite(instant.getTime()) && instant.getTime() <= Date.now()
+  return `${booking.shift_date}T${end}` <= londonClockKey()
 }
 
 async function hasWorkedTogether(
