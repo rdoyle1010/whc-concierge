@@ -36,7 +36,7 @@ export async function POST(req: NextRequest) {
 
   try {
     const { applicationId, type } = await req.json()
-    if (!applicationId || !['shortlist', 'not_progressing'].includes(type)) {
+    if (!applicationId || !['shortlist', 'not_progressing', 'offer'].includes(type)) {
       return NextResponse.json({ error: 'Invalid request' }, { status: 400 })
     }
 
@@ -64,7 +64,9 @@ export async function POST(req: NextRequest) {
     const firstName = (candidate.full_name || 'there').split(' ')[0]
     const task = type === 'shortlist'
       ? `Draft a warm, concise note telling ${firstName} they have been shortlisted and that the property would like to take their application forward. Say that interview details will follow. Do not promise the job.`
-      : `Draft a warm, respectful note thanking ${firstName} for applying and explaining that the property will not be taking this application forward. Keep it gracious, never give invented reasons, and encourage them to keep their Spa Platform profile active for future opportunities.`
+      : type === 'offer'
+        ? `Draft a warm, celebratory message telling ${firstName} that ${property} would like to offer them the role of ${job.job_title}. Make clear that the formal offer letter or contract containing salary, start date and full employment terms will be sent separately by the employer. Do not invent salary, start date, benefits or contractual terms.`
+        : `Draft a warm, respectful note thanking ${firstName} for applying and explaining that the property will not be taking this application forward. Keep it gracious, never give invented reasons, and encourage them to keep their Spa Platform profile active for future opportunities.`
 
     const prompt = `You write recruitment communications for Spa Platform, a premium UK spa, wellness and hospitality talent platform.
 
@@ -78,10 +80,10 @@ Candidate covering letter: ${JSON.stringify(application.cover_letter || applicat
 
 Rules:
 - UK English.
-- 90-150 words.
+- 90-160 words.
 - Human, polished and warm, not corporate or generic.
 - Never mention AI, match percentages or internal scoring.
-- Never invent a reason for rejection or claim a hiring decision beyond the requested stage.
+- Never invent facts, pay, dates, benefits, reasons or contractual terms.
 - Start with "Hi ${firstName}," and end with "Kind regards," followed by ${property}.
 - Return only the message body, no subject line and no markdown.`
 
