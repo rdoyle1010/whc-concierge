@@ -59,6 +59,25 @@ export async function POST(req: NextRequest) {
 
   if (updateError || !updatedApplication) return NextResponse.json({ error: 'Could not send your application.' }, { status: 500 })
 
+  // A submitted application is also the candidate's explicit "yes" to this role.
+  // Keep that relationship recorded so an employer "Interested" action can form
+  // a mutual match, unlock messaging and send the match notifications.
+  const { error: swipeError } = await admin.from('swipes').upsert({
+    swiper_id: user.id,
+    swiper_type: 'candidate',
+    target_id: job.id,
+    target_type: 'job',
+    action: 'right',
+    context_job_id: job.id,
+  }, {
+    onConflict: 'swiper_id,swiper_type,target_id,target_type,context_job_id',
+    ignoreDuplicates: false,
+  })
+  if (swipeError) {
+    console.error('Could not record submitted application as candidate interest:', swipeError.message)
+    return NextResponse.json({ error: 'Your application was saved but the matching relationship could not be updated. Please contact support.' }, { status: 500 })
+  }
+
   const employerName = employer.property_name || employer.company_name || 'the employer'
   if (employer.user_id) {
     await createNotification(employer.user_id, 'job_application', 'New application received', `${candidate.full_name || 'A candidate'} applied for ${job.job_title}.`, '/employer/applications')
