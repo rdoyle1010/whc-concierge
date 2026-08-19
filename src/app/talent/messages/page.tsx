@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef } from 'react'
 import DashboardShell from '@/components/DashboardShell'
 import { createClient } from '@/lib/supabase/client'
-import { Send, MessageSquare, Paperclip, FileText, ShieldCheck } from 'lucide-react'
+import { Send, MessageSquare, Paperclip, FileText, ShieldCheck, ChevronLeft } from 'lucide-react'
 
 const THREAD_LIMIT = 100
 const MESSAGE_FIELDS = 'id,sender_id,recipient_id,content,attachment_url,attachment_name,attachment_type,created_at,read'
@@ -138,11 +138,121 @@ export default function TalentMessagesPage() {
     } catch (error) { console.error('Error sending message:', error); alert('Failed to send message'); setAttachmentUploading(false) }
   }
 
-  return <DashboardShell role="talent">
-    <h1 className="text-2xl font-semibold text-ink mb-6">Messages</h1>
-    <div className="dashboard-card p-0 overflow-hidden" style={{ height: 'calc(100vh - 200px)' }}><div className="flex h-full">
-      <div className="w-80 border-r border-gray-100 overflow-y-auto">{loading ? <div className="p-8 text-center text-gray-400">Loading…</div> : conversations.length === 0 ? <div className="p-8 text-center text-gray-400"><MessageSquare size={32} className="mx-auto mb-2" /><p className="text-sm">No messages yet</p></div> : conversations.map(convo => <button type="button" key={convo.partnerId} onClick={() => setActiveConvo(convo.partnerId)} className={`w-full p-4 text-left border-b border-gray-50 hover:bg-gray-50 transition-colors ${activeConvo === convo.partnerId ? 'bg-gold/5 border-l-2 border-l-gold' : ''}`}><div className="flex items-center justify-between"><p className="font-medium text-ink text-sm truncate">{convo.partnerName || 'Unknown User'}</p>{convo.unread > 0 && <span className="w-5 h-5 bg-gold text-white text-xs rounded-full flex items-center justify-center">{convo.unread > 9 ? '9+' : convo.unread}</span>}</div>{convo.residencyPrivate && <p className="text-[10px] text-[#9c7a42] mt-1">Private Residency discussion</p>}<p className="text-xs text-gray-400 truncate mt-1">{convo.lastMessage?.content || (convo.lastMessage?.attachment_name ? `Attachment: ${convo.lastMessage.attachment_name}` : '')}</p></button>)}</div>
-      <div className="flex-1 flex flex-col">{!activeConvo ? <div className="flex-1 flex items-center justify-center text-gray-400"><p>Select a conversation to start messaging</p></div> : <><div className="px-6 py-3 border-b border-gray-100"><p className="font-medium text-ink text-sm">{activePartner?.partnerName || 'Unknown User'}</p>{residencyPrivate ? <p className="text-[10px] text-[#9c7a42] mt-0.5">Keep direct contact details private until the Residency booking is confirmed.</p> : <p className="text-[10px] text-muted mt-0.5">Showing latest {THREAD_LIMIT} messages</p>}</div>{residencyPrivate && <div className="mx-5 mt-4 rounded-xl border border-[#eadfc9] bg-[#faf6ed] px-4 py-3 flex items-start gap-2.5"><ShieldCheck size={15} className="text-[#9c7a42] mt-0.5 shrink-0" /><p className="text-[11px] leading-5 text-[#6d6559]">Discuss dates, treatments, hours and rate here. Email addresses, phone numbers, links and attachments are restricted until the booking is confirmed through Spa Platform.</p></div>}<div className="flex-1 overflow-y-auto p-6 space-y-3">{messages.map((msg, i) => <div key={msg.id || i} className={`flex ${msg.sender_id === userId ? 'justify-end' : 'justify-start'}`}><div className="flex flex-col"><div className={`max-w-xs px-4 py-2.5 rounded-2xl text-sm ${msg.sender_id === userId ? 'bg-gold text-white rounded-br-sm' : 'bg-gray-100 text-ink rounded-bl-sm'}`}>{msg.content && <p>{msg.content}</p>}{msg.attachment_url && <div className="mt-2">{msg.attachment_type?.startsWith('image/') ? <a href={msg.attachment_url} target="_blank" rel="noopener noreferrer"><img src={msg.attachment_url} alt={msg.attachment_name} className="max-w-[200px] rounded" /></a> : <div className="flex items-center gap-2 text-xs"><FileText size={14} /><a href={msg.attachment_url} download={msg.attachment_name} className="underline hover:opacity-80">{msg.attachment_name}</a></div>}</div>}</div><p className="text-xs text-gray-400 mt-1 px-2">{formatTimestamp(msg.created_at)}</p></div></div>)}<div ref={bottomRef} /></div><div className="p-4 border-t border-gray-100">{!residencyPrivate && attachmentFile && <div className="mb-3 p-3 bg-gray-50 rounded flex items-center justify-between"><div className="flex items-center gap-2 text-sm text-ink"><FileText size={16} /><span className="truncate">{attachmentFile.name}</span></div><button type="button" onClick={removeAttachment} className="text-gray-400 hover:text-ink">×</button></div>}<div className="flex space-x-3"><input type="text" value={newMsg} onChange={e => setNewMsg(e.target.value)} onKeyDown={e => e.key === 'Enter' && !attachmentUploading && sendMessage()} className="input-field flex-1" placeholder={residencyPrivate ? 'Discuss the Residency without sharing contact details…' : 'Type a message...'} disabled={attachmentUploading} />{!residencyPrivate && <><input ref={fileInputRef} type="file" onChange={handleFileSelected} accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" style={{ display: 'none' }} /><button type="button" onClick={handleAttachmentClick} className="btn-secondary !px-4" disabled={attachmentUploading} title="Attach file"><Paperclip size={18} /></button></>}<button type="button" onClick={sendMessage} className="btn-primary !px-4" disabled={attachmentUploading}><Send size={18} /></button></div></div></>}</div>
-    </div></div>
-  </DashboardShell>
+  return (
+    <DashboardShell role="talent">
+      <div className="mb-7">
+        <p className="dashboard-eyebrow">Private conversations</p>
+        <h1 className="dashboard-title">Messages</h1>
+        <p className="dashboard-intro">Continue conversations with matched properties and keep every opportunity organised in one secure place.</p>
+      </div>
+
+      <div className="overflow-hidden rounded-[22px] border border-[#ded8cc] bg-white shadow-[0_18px_55px_rgba(22,40,55,0.08)]" style={{ height: 'calc(100vh - 245px)', minHeight: 560 }}>
+        <div className="flex h-full">
+          <aside className={`${activeConvo ? 'hidden md:flex' : 'flex'} w-full md:w-[330px] lg:w-[360px] flex-col border-r border-[#e7e1d7] bg-[#fbfaf7]`}>
+            <div className="border-b border-[#e7e1d7] px-5 py-5">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#a48752]">Conversations</p>
+              <p className="mt-1 text-[12px] text-[#7c7a74]">{conversations.length} active thread{conversations.length === 1 ? '' : 's'}</p>
+            </div>
+            <div className="flex-1 overflow-y-auto">
+              {loading ? (
+                <div className="space-y-3 p-4">{[1,2,3].map(i => <div key={i} className="h-[76px] animate-pulse rounded-2xl bg-[#f0ede7]" />)}</div>
+              ) : conversations.length === 0 ? (
+                <div className="flex h-full flex-col items-center justify-center px-8 text-center">
+                  <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl border border-[#e2dbcf] bg-white text-[#a48752]"><MessageSquare size={20} /></div>
+                  <p className="text-[15px] font-medium text-[#17344d]">No conversations yet</p>
+                  <p className="mt-2 text-[12px] leading-5 text-[#8b877f]">When interest is mutual, the property conversation will appear here automatically.</p>
+                </div>
+              ) : conversations.map((convo) => {
+                const selected = activeConvo === convo.partnerId
+                const initials = String(convo.partnerName || 'U').split(' ').map((part: string) => part[0]).join('').slice(0,2).toUpperCase()
+                return (
+                  <button type="button" key={convo.partnerId} onClick={() => setActiveConvo(convo.partnerId)} className={`group w-full border-b border-[#eee9e0] px-4 py-4 text-left transition ${selected ? 'bg-white' : 'hover:bg-white/70'}`}>
+                    <div className="flex items-start gap-3">
+                      <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full border text-[11px] font-semibold ${selected ? 'border-[#c9a96e] bg-[#f8f1e4] text-[#8d6b31]' : 'border-[#ddd6c9] bg-white text-[#59636c]'}`}>{initials}</div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2">
+                          <p className="min-w-0 flex-1 truncate text-[13px] font-semibold text-[#17344d]">{convo.partnerName || 'Unknown User'}</p>
+                          {convo.unread > 0 && <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-[#0b2f4d] px-1.5 text-[10px] font-semibold text-white">{convo.unread > 9 ? '9+' : convo.unread}</span>}
+                        </div>
+                        {convo.residencyPrivate && <p className="mt-1 text-[9px] font-semibold uppercase tracking-[0.12em] text-[#a48752]">Protected Residency</p>}
+                        <p className="mt-1.5 truncate text-[11px] leading-4 text-[#8b877f]">{convo.lastMessage?.content || (convo.lastMessage?.attachment_name ? `Attachment: ${convo.lastMessage.attachment_name}` : 'Conversation ready')}</p>
+                      </div>
+                    </div>
+                  </button>
+                )
+              })}
+            </div>
+          </aside>
+
+          <section className={`${activeConvo ? 'flex' : 'hidden md:flex'} min-w-0 flex-1 flex-col bg-[#fdfcf9]`}>
+            {!activeConvo ? (
+              <div className="flex flex-1 flex-col items-center justify-center px-8 text-center">
+                <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-2xl border border-[#e3dccf] bg-white text-[#a48752]"><MessageSquare size={22} /></div>
+                <p className="text-[20px] font-medium tracking-[-0.02em] text-[#17344d]">Select a conversation</p>
+                <p className="mt-2 max-w-sm text-[12px] leading-5 text-[#8b877f]">Matched properties and protected Residency discussions will stay organised here.</p>
+              </div>
+            ) : (
+              <>
+                <header className="flex min-h-[76px] items-center gap-3 border-b border-[#e7e1d7] bg-white px-4 md:px-6">
+                  <button type="button" onClick={() => setActiveConvo(null)} className="flex h-9 w-9 items-center justify-center rounded-full border border-[#e4ded4] text-[#59636c] md:hidden"><ChevronLeft size={17} /></button>
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#0b2f4d] text-[11px] font-semibold text-white">{String(activePartner?.partnerName || 'U').split(' ').map((part: string) => part[0]).join('').slice(0,2).toUpperCase()}</div>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-[14px] font-semibold text-[#17344d]">{activePartner?.partnerName || 'Unknown User'}</p>
+                    <p className="mt-0.5 text-[10px] text-[#8b877f]">{residencyPrivate ? 'Protected Residency conversation' : 'Private matched conversation'}</p>
+                  </div>
+                </header>
+
+                {residencyPrivate && (
+                  <div className="mx-4 mt-4 flex items-start gap-3 rounded-2xl border border-[#e8dcc4] bg-[#faf5e9] px-4 py-3 md:mx-6">
+                    <ShieldCheck size={16} className="mt-0.5 shrink-0 text-[#9c7a42]" />
+                    <p className="text-[11px] leading-5 text-[#6d6559]">Discuss dates, treatments, hours and rate here. Direct contact details, links and attachments remain restricted until the Residency booking is confirmed.</p>
+                  </div>
+                )}
+
+                <div className="flex-1 overflow-y-auto px-4 py-6 md:px-7">
+                  {messages.length === 0 ? (
+                    <div className="flex h-full items-center justify-center text-center"><p className="max-w-xs text-[12px] leading-5 text-[#9a958d]">You are connected. Send the first message when you are ready.</p></div>
+                  ) : (
+                    <div className="mx-auto max-w-3xl space-y-4">
+                      {messages.map((msg, i) => {
+                        const mine = msg.sender_id === userId
+                        return (
+                          <div key={msg.id || i} className={`flex ${mine ? 'justify-end' : 'justify-start'}`}>
+                            <div className={`max-w-[82%] md:max-w-[68%] ${mine ? 'items-end' : 'items-start'} flex flex-col`}>
+                              <div className={`px-4 py-3 text-[13px] leading-5 shadow-sm ${mine ? 'rounded-[18px] rounded-br-[5px] bg-[#0b2f4d] text-white' : 'rounded-[18px] rounded-bl-[5px] border border-[#e5dfd5] bg-white text-[#253a4a]'}`}>
+                                {msg.content && <p className="whitespace-pre-wrap">{msg.content}</p>}
+                                {msg.attachment_url && <div className="mt-2">{msg.attachment_type?.startsWith('image/') ? <a href={msg.attachment_url} target="_blank" rel="noopener noreferrer"><img src={msg.attachment_url} alt={msg.attachment_name} className="max-w-[220px] rounded-xl" /></a> : <div className="flex items-center gap-2 text-xs"><FileText size={14} /><a href={msg.attachment_url} download={msg.attachment_name} className="underline hover:opacity-80">{msg.attachment_name}</a></div>}</div>}
+                              </div>
+                              <p className="mt-1 px-1 text-[9px] tracking-wide text-[#aaa49a]">{formatTimestamp(msg.created_at)}</p>
+                            </div>
+                          </div>
+                        )
+                      })}
+                      <div ref={bottomRef} />
+                    </div>
+                  )}
+                </div>
+
+                <div className="border-t border-[#e7e1d7] bg-white p-3 md:p-4">
+                  {!residencyPrivate && attachmentFile && (
+                    <div className="mb-3 flex items-center justify-between rounded-xl border border-[#e6e0d6] bg-[#fbfaf7] px-3 py-2.5">
+                      <div className="flex min-w-0 items-center gap-2 text-[12px] text-[#334b5d]"><FileText size={15} /><span className="truncate">{attachmentFile.name}</span></div>
+                      <button type="button" onClick={removeAttachment} className="ml-3 text-[#9b958b] hover:text-[#17344d]">×</button>
+                    </div>
+                  )}
+                  <div className="flex items-end gap-2">
+                    <div className="flex min-w-0 flex-1 items-center rounded-2xl border border-[#ddd6cb] bg-[#fbfaf7] px-3 py-1.5 focus-within:border-[#b99a63] focus-within:bg-white">
+                      <input type="text" value={newMsg} onChange={e => setNewMsg(e.target.value)} onKeyDown={e => e.key === 'Enter' && !attachmentUploading && sendMessage()} className="min-w-0 flex-1 bg-transparent px-1 py-2 text-[13px] text-[#17344d] outline-none placeholder:text-[#aaa49a]" placeholder={residencyPrivate ? 'Discuss the Residency without sharing contact details…' : 'Write a message…'} disabled={attachmentUploading} />
+                      {!residencyPrivate && <><input ref={fileInputRef} type="file" onChange={handleFileSelected} accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" style={{ display: 'none' }} /><button type="button" onClick={handleAttachmentClick} className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[#7d7a74] transition hover:bg-[#f0ece4] hover:text-[#0b2f4d]" disabled={attachmentUploading} title="Attach file"><Paperclip size={17} /></button></>}
+                    </div>
+                    <button type="button" onClick={sendMessage} className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#0b2f4d] text-white shadow-sm transition hover:bg-[#123d5d] disabled:opacity-50" disabled={attachmentUploading || (!newMsg.trim() && !attachmentFile)}><Send size={17} /></button>
+                  </div>
+                </div>
+              </>
+            )}
+          </section>
+        </div>
+      </div>
+    </DashboardShell>
+  )
 }
