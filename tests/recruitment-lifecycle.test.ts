@@ -52,12 +52,23 @@ test('post-hire platform reviews require a completed placement', () => {
   assert.equal(existsSync('supabase/migrations/046_platform_experience_reviews.sql'), true)
 })
 
-test('post-hire review workspace is visible to both employer and talent', () => {
-  const shell = read('src/components/DashboardShell.tsx')
+test('completed talent placements leave active applications and move to the archive', () => {
+  const mine = read('src/app/api/applications/mine/route.ts')
+  const pipeline = read('src/app/api/talent/applications/pipeline-list/route.ts')
+  const archive = read('src/app/api/talent/hired/route.ts')
+  const archivePage = read('src/app/talent/hired/page.tsx')
+  assert.match(mine, /\.is\('archived_at', null\)/)
+  assert.match(pipeline, /\.is\('archived_at', null\)/)
+  assert.match(archive, /\.not\('archived_at', 'is', null\)/)
+  assert.match(archive, /\.not\('hired_at', 'is', null\)/)
+  assert.match(archivePage, /PostHireReviews/)
+  assert.match(archivePage, /View communication/)
+  assert.match(archivePage, /View recruitment history/)
+})
+
+test('post-hire review workspace stays out of talent active applications', () => {
   const workspace = read('src/components/PostHireReviews.tsx')
-  assert.match(shell, /PostHireReviews/)
-  assert.match(shell, /pathname === '\/employer\/hired'/)
-  assert.match(shell, /pathname === '\/talent\/applications'/)
+  assert.match(workspace, /pathname === '\/talent\/applications'/)
   assert.match(workspace, /PlatformExperienceReview/)
   assert.match(workspace, /counterpartReviewType === 'candidate'/)
   assert.match(workspace, /'professional'\s*:\s*'property'/)
