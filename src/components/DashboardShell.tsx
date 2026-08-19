@@ -188,7 +188,7 @@ export default function DashboardShell({ children, role, userName }: DashboardSh
         </div>
       </aside>
 
-      <main className="lg:ml-[264px] min-h-screen"><div className="p-5 sm:p-6 md:p-8 lg:p-10 xl:p-12 max-w-[1540px] mx-auto">{showRecruitmentPipeline && role !== 'admin' ? <ApplicationPipelineHub role={role} /> : null}{children}</div></main>
+      <main className="lg:ml-[264px] min-h-screen"><div className="p-5 sm:p-6 md:p-8 lg:p-10 xl:p-12 max-w-[1540px] mx-auto">{showRecruitmentPipeline ? <ApplicationPipelineHub role={role as 'talent' | 'employer'} /> : null}{children}</div></main>
     </div>
   )
 }
