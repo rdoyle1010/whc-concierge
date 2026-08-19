@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { isAdminRequest } from '@/lib/admin-api-auth'
+import { isAdminRequest as requireAdmin } from '@/lib/admin-api-auth'
 
 export async function GET() {
-  if (!(await isAdminRequest())) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  if (!(await requireAdmin())) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
   const admin = createAdminClient()
   const { data: reviews, error } = await admin
