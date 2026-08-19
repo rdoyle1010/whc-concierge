@@ -3,16 +3,26 @@
 import { useEffect, useState } from 'react'
 import DashboardShell from '@/components/DashboardShell'
 import { createClient } from '@/lib/supabase/client'
-import { CheckCircle, XCircle, Star, FileText, X, MessageSquare } from 'lucide-react'
+import { CheckCircle, XCircle, Star, FileText, X, MessageSquare, Sparkles, Send, CalendarDays } from 'lucide-react'
 import Pagination from '@/components/Pagination'
 import ReviewForm from '@/components/ReviewForm'
 
 const SAFE_CANDIDATE_FIELDS = [
-  'id', 'user_id', 'full_name', 'headline', 'role_level', 'location', 'services_offered',
-  'experience_years', 'profile_image_url', 'review_score', 'review_count', 'bio',
-  'qualifications', 'product_houses', 'systems_experience', 'cv_url', 'certificates_urls',
-  'is_featured', 'featured_until',
+  'id','user_id','full_name','headline','role_level','location','services_offered','experience_years',
+  'profile_image_url','review_score','review_count','bio','qualifications','product_houses','systems_experience',
+  'cv_url','certificates_urls','is_featured','featured_until',
 ].join(',')
+
+type CommunicationType = 'shortlist' | 'not_progressing'
+
+type CommunicationDraft = {
+  application: any
+  type: CommunicationType
+  note: string
+  loading: boolean
+  sending: boolean
+  error: string
+}
 
 export default function EmployerApplicationsPage() {
   const supabase = createClient()
@@ -23,9 +33,9 @@ export default function EmployerApplicationsPage() {
   const [page, setPage] = useState(1)
   const [perPage, setPerPage] = useState(25)
   const [shortlistedIds, setShortlistedIds] = useState<Set<string>>(new Set())
-  const [updatingId, setUpdatingId] = useState<string | null>(null)
   const [viewing, setViewing] = useState<any>(null)
   const [reviewing, setReviewing] = useState<{ userId: string; name: string } | null>(null)
+  const [communication, setCommunication] = useState<CommunicationDraft | null>(null)
 
   useEffect(() => {
     async function load() {
@@ -36,7 +46,7 @@ export default function EmployerApplicationsPage() {
       if (!prof) { setLoading(false); return }
 
       const { data: jobIds } = await supabase.from('job_listings').select('id').eq('employer_id', prof.id)
-      if (!jobIds || jobIds.length === 0) { setLoading(false); return }
+      if (!jobIds?.length) { setLoading(false); return }
 
       const { data, error } = await supabase
         .from('applications')
@@ -46,18 +56,13 @@ export default function EmployerApplicationsPage() {
 
       if (error) {
         console.error('Applications load failed:', error.message)
-        setLoadError('We could not load your applications just now. Please refresh the page - if it keeps happening, contact us.')
+        setLoadError('We could not load your applications just now. Please refresh the page.')
       }
 
       let apps = data || []
       const candidateIds = Array.from(new Set(apps.map((a: any) => a.candidate_id).filter(Boolean)))
-      if (candidateIds.length > 0) {
-        // Only fetch fields employers need. Personal phone/email details are
-        // deliberately excluded so they never reach this page in the browser.
-        const { data: cands } = await supabase
-          .from('candidate_profiles')
-          .select(SAFE_CANDIDATE_FIELDS)
-          .in('id', candidateIds)
+      if (candidateIds.length) {
+        const { data: cands } = await supabase.from('candidate_profiles').select(SAFE_CANDIDATE_FIELDS).in('id', candidateIds)
         const candMap = new Map((cands || []).map((c: any) => [c.id, c]))
         apps = apps.map((a: any) => ({ ...a, candidate_profiles: candMap.get(a.candidate_id) || null }))
       }
@@ -68,221 +73,131 @@ export default function EmployerApplicationsPage() {
         const slData = await slRes.json()
         setShortlistedIds(new Set((slData.shortlisted || []).map((s: any) => s.candidate_id)))
       }
-
       setLoading(false)
     }
     load()
   }, [])
 
-  const addToShortlist = async (candidateId: string, jobId: string) => {
+  async function ensurePrivateShortlist(app: any) {
+    const candidateId = app.candidate_profiles?.id || app.candidate_id
     if (!candidateId || shortlistedIds.has(candidateId)) return
-    try {
-      const res = await fetch('/api/shortlist', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ candidateId, jobId }) })
-      if (!res.ok) { alert('Could not add this candidate to your shortlist - please try again.'); return }
-      setShortlistedIds(prev => new Set(Array.from(prev).concat(candidateId)))
-    } catch {
-      alert('Could not add this candidate to your shortlist - please try again.')
+    const res = await fetch('/api/shortlist', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ candidateId, jobId: app.role_id || app.job_id }),
+    })
+    if (res.ok) setShortlistedIds(prev => new Set([...prev, candidateId]))
+  }
+
+  async function openCommunication(app: any, type: CommunicationType) {
+    setCommunication({ application: app, type, note: '', loading: true, sending: false, error: '' })
+    const res = await fetch('/api/employer/applications/communication-ai', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ applicationId: app.id, type }),
+    }).catch(() => null)
+    const body = res ? await res.json().catch(() => ({})) : {}
+    if (!res?.ok) {
+      setCommunication(current => current ? { ...current, loading: false, error: body.error || 'Could not draft the message. You can still write it yourself.' } : null)
+      return
     }
+    setCommunication(current => current ? { ...current, loading: false, note: body.note || '' } : null)
   }
 
-  const updateStatus = async (appId: string, status: string) => {
-    const current = applications.find(a => a.id === appId)
-    if (updatingId === appId || current?.status === status) return
-    setUpdatingId(appId)
-    try {
-      const { error } = await supabase.from('applications').update({ status }).eq('id', appId)
-      if (error) { alert('Could not update this application - please try again.'); return }
-      setApplications(applications.map(a => a.id === appId ? { ...a, status } : a))
-
-      if (status === 'shortlisted' || status === 'accepted' || status === 'rejected') {
-        fetch('/api/application-decision-email', {
-          method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            applicationId: appId,
-            decision: status === 'shortlisted' || status === 'accepted' ? 'approved' : 'rejected',
-          }),
-        }).catch(() => {})
-      }
-    } finally {
-      setUpdatingId(null)
+  async function sendCommunication() {
+    if (!communication || communication.sending || communication.note.trim().length < 20) return
+    const decision = communication.type === 'shortlist' ? 'shortlisted' : 'rejected'
+    setCommunication(current => current ? { ...current, sending: true, error: '' } : null)
+    const res = await fetch('/api/employer/applications/decision', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ applicationId: communication.application.id, decision, note: communication.note.trim() }),
+    }).catch(() => null)
+    const body = res ? await res.json().catch(() => ({})) : {}
+    if (!res?.ok) {
+      setCommunication(current => current ? { ...current, sending: false, error: body.error || 'Could not update the application.' } : null)
+      return
     }
+    if (decision === 'shortlisted') await ensurePrivateShortlist(communication.application)
+    setApplications(current => current.map(app => app.id === communication.application.id ? { ...app, status: decision } : app))
+    setCommunication(null)
   }
 
-  const statusClass = (status: string) => {
-    if (status === 'accepted') return 'bg-emerald-50 text-emerald-700'
-    if (status === 'rejected') return 'bg-red-50 text-red-700'
-    if (status === 'shortlisted') return 'bg-[#FDF6EC] text-accent'
-    if (status === 'withdrawn') return 'bg-gray-100 text-gray-500'
-    return 'bg-blue-50 text-blue-700'
-  }
+  const statusLabel = (status: string) => status === 'pending' ? 'Submitted' : status === 'reviewed' ? 'Under review' : status === 'shortlisted' ? 'Shortlisted' : status === 'interview' ? 'Interview' : status === 'offered' ? 'Offer made' : status === 'accepted' ? 'Hired' : status === 'rejected' ? 'Not progressing' : status
+  const statusClass = (status: string) => status === 'accepted' ? 'bg-emerald-50 text-emerald-700' : status === 'rejected' ? 'bg-red-50 text-red-700' : status === 'shortlisted' ? 'bg-[#FDF6EC] text-[#9c7a42]' : status === 'interview' ? 'bg-violet-50 text-violet-700' : 'bg-blue-50 text-blue-700'
 
   return (
     <DashboardShell role="employer" userName={profile?.company_name}>
       <div className="mb-7">
         <p className="dashboard-eyebrow">Recruitment pipeline</p>
         <h1 className="dashboard-title">Applications</h1>
-        <p className="dashboard-intro">Review applicants, shortlist promising professionals and keep every hiring decision in one place.</p>
+        <p className="dashboard-intro">Move applicants through a clear hiring journey. Candidate communications are reviewed by you before anything is sent.</p>
       </div>
 
-      {loading ? (
-        <div className="flex items-center justify-center h-64"><div className="animate-spin w-8 h-8 border-2 border-gold border-t-transparent rounded-full" /></div>
-      ) : loadError ? (
-        <div className="dashboard-card text-center py-12"><p className="text-[13px] text-red-600">{loadError}</p></div>
-      ) : applications.length === 0 ? (
-        <div className="dashboard-card text-center py-16 text-gray-400">No applications received yet.</div>
-      ) : (
-        <div className="space-y-4">
-          {applications.slice((page - 1) * perPage, page * perPage).map((app) => {
+      {loading ? <div className="flex h-64 items-center justify-center"><div className="h-8 w-8 animate-spin rounded-full border-2 border-gold border-t-transparent" /></div>
+      : loadError ? <div className="dashboard-card py-12 text-center text-[13px] text-red-600">{loadError}</div>
+      : applications.length === 0 ? <div className="dashboard-card py-16 text-center text-gray-400">No applications received yet.</div>
+      : <div className="space-y-4">
+          {applications.slice((page - 1) * perPage, page * perPage).map(app => {
             const cand = app.candidate_profiles
-            return (
-              <div key={app.id} className={`dashboard-card ${cand?.is_featured ? 'border-accent ring-1 ring-accent/10' : ''}`}>
-                <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-                  <div className="flex gap-4 min-w-0">
-                    <div className="w-14 h-14 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden shrink-0">
-                      {cand?.profile_image_url
-                        ? <img src={cand.profile_image_url} alt="" className="w-full h-full object-cover" />
-                        : <span className="font-serif font-bold text-lg" style={{ color: '#C9A96E' }}>{cand?.full_name?.[0] || '?'}</span>}
+            const terminal = ['accepted','rejected','withdrawn'].includes(app.status)
+            return <div key={app.id} className={`dashboard-card ${cand?.is_featured ? 'border-accent ring-1 ring-accent/10' : ''}`}>
+              <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
+                <div className="flex min-w-0 gap-4">
+                  <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-full bg-gray-100">
+                    {cand?.profile_image_url ? <img src={cand.profile_image_url} alt="" className="h-full w-full object-cover" /> : <span className="font-serif text-lg font-bold text-[#C9A96E]">{cand?.full_name?.[0] || '?'}</span>}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h3 className="text-lg font-semibold text-ink">{cand?.full_name || 'Candidate'}</h3>
+                      {cand?.is_featured && <span className="rounded-full bg-accent px-2.5 py-1 text-[10px] font-semibold text-white">★ Featured</span>}
+                      <span className={`rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide ${statusClass(app.status)}`}>{statusLabel(app.status || 'pending')}</span>
+                      {typeof app.match_score === 'number' && <span className="rounded-full bg-[#FDF6EC] px-2 py-0.5 text-[11px] font-semibold text-[#C9A96E]">{app.match_score}% match</span>}
+                      {cand?.review_score ? <span className="flex items-center gap-1 text-[11px] font-medium text-amber-500"><Star size={11} fill="currentColor" />{Number(cand.review_score).toFixed(1)}</span> : null}
                     </div>
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <h3 className="text-lg font-semibold text-ink">{cand?.full_name || 'Candidate'}</h3>
-                        {cand?.is_featured && <span className="rounded-full bg-accent px-2.5 py-1 text-[10px] font-semibold text-white">★ Featured</span>}
-                        <span className={`text-[10px] font-semibold uppercase tracking-wide px-2.5 py-1 rounded-full ${statusClass(app.status)}`}>{app.status || 'applied'}</span>
-                        {typeof app.match_score === 'number' && (
-                          <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full" style={{ background: '#FDF6EC', color: '#C9A96E' }}>{app.match_score}% match</span>
-                        )}
-                        {cand?.review_score ? (
-                          <span className="flex items-center gap-1 text-[11px] text-amber-500 font-medium"><Star size={11} fill="currentColor" />{Number(cand.review_score).toFixed(1)}{cand.review_count ? ` (${cand.review_count})` : ''}</span>
-                        ) : null}
-                      </div>
-                      <p className="text-sm text-gray-500 mt-0.5">{cand?.headline}</p>
-                      <p className="text-xs text-gray-400 mt-1.5">
-                        Applied for: <span className="text-gold">{app.job_listings?.job_title}</span>
-                        {' '}&middot; {new Date(app.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
-                        {cand?.location ? <> &middot; {cand.location}</> : null}
-                        {cand?.experience_years ? <> &middot; {cand.experience_years} yrs experience</> : null}
-                      </p>
-                      {cand?.services_offered?.length > 0 && (
-                        <div className="flex flex-wrap gap-1 mt-2.5">
-                          {cand.services_offered.slice(0, 8).map((s: string) => (
-                            <span key={s} className="text-xs bg-gold/10 text-gold px-2 py-0.5 rounded-full">{s}</span>
-                          ))}
-                          {cand.services_offered.length > 8 && <span className="text-xs text-gray-400">+{cand.services_offered.length - 8} more</span>}
-                        </div>
-                      )}
-                      {(app.cover_note || app.cover_letter) && (
-                        <p className="text-sm text-gray-600 mt-3 bg-gray-50 p-3 rounded-lg leading-relaxed">{app.cover_note || app.cover_letter}</p>
-                      )}
-                      <div className="flex flex-wrap items-center gap-3 mt-3">
-                        <button type="button" onClick={() => setViewing(cand)} className="text-[12px] font-medium hover:underline" style={{ color: '#C9A96E' }}>View full profile</button>
-                        {cand?.cv_url && (
-                          <a href={cand.cv_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-[12px] font-medium text-gray-600 hover:underline"><FileText size={12} /> CV</a>
-                        )}
-                        {cand?.user_id && (
-                          <a href={`/employer/messages?to=${cand.user_id}`} className="inline-flex items-center gap-1 text-[12px] font-medium text-gray-600 hover:underline"><MessageSquare size={12} /> Message</a>
-                        )}
-                        {app.status === 'accepted' && cand?.user_id && (
-                          <button type="button" onClick={() => setReviewing({ userId: cand.user_id, name: cand.full_name || 'this candidate' })}
-                            className="inline-flex items-center gap-1 text-[12px] font-medium text-amber-500 hover:underline">
-                            <Star size={12} /> Leave a review
-                          </button>
-                        )}
-                      </div>
+                    <p className="mt-0.5 text-sm text-gray-500">{cand?.headline}</p>
+                    <p className="mt-1.5 text-xs text-gray-400">Applied for: <span className="text-gold">{app.job_listings?.job_title}</span> · {new Date(app.created_at).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'})}{cand?.location ? ` · ${cand.location}` : ''}{cand?.experience_years ? ` · ${cand.experience_years} yrs experience` : ''}</p>
+                    {cand?.services_offered?.length > 0 && <div className="mt-2.5 flex flex-wrap gap-1">{cand.services_offered.slice(0,8).map((s:string)=><span key={s} className="rounded-full bg-gold/10 px-2 py-0.5 text-xs text-gold">{s}</span>)}{cand.services_offered.length > 8 && <span className="text-xs text-gray-400">+{cand.services_offered.length - 8} more</span>}</div>}
+                    {(app.cover_note || app.cover_letter) && <div className="mt-3 rounded-xl bg-[#faf9f6] p-4 text-sm leading-6 text-gray-600"><p className="mb-2 text-[10px] font-semibold uppercase tracking-[.14em] text-[#9c7a42]">Covering letter</p>{app.cover_note || app.cover_letter}</div>}
+                    <div className="mt-3 flex flex-wrap items-center gap-3">
+                      <button type="button" onClick={()=>setViewing(cand)} className="text-[12px] font-medium text-[#C9A96E] hover:underline">View full profile</button>
+                      {cand?.cv_url && <a href={cand.cv_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-[12px] font-medium text-gray-600 hover:underline"><FileText size={12}/> CV</a>}
+                      {cand?.user_id && <a href={`/employer/messages?to=${cand.user_id}`} className="inline-flex items-center gap-1 text-[12px] font-medium text-gray-600 hover:underline"><MessageSquare size={12}/> Message</a>}
+                      {app.status === 'accepted' && cand?.user_id && <button type="button" onClick={()=>setReviewing({userId:cand.user_id,name:cand.full_name||'this candidate'})} className="inline-flex items-center gap-1 text-[12px] font-medium text-amber-500 hover:underline"><Star size={12}/> Leave a review</button>}
                     </div>
                   </div>
-                  {app.status !== 'withdrawn' && (
-                    <div className="flex items-center space-x-2 shrink-0">
-                      <button type="button" onClick={() => { updateStatus(app.id, 'shortlisted'); addToShortlist(cand?.id || app.candidate_id, app.role_id) }} title="Shortlist" disabled={updatingId === app.id}
-                        className={`p-2 rounded-lg disabled:opacity-50 ${app.status === 'shortlisted' || shortlistedIds.has(cand?.id || app.candidate_id) ? 'bg-[#FDF6EC] text-accent' : 'hover:bg-[#FDF6EC] text-gray-400'}`}>
-                        <Star size={18} fill={app.status === 'shortlisted' || shortlistedIds.has(cand?.id || app.candidate_id) ? 'currentColor' : 'none'} />
-                      </button>
-                      <button type="button" onClick={() => updateStatus(app.id, 'accepted')} title="Accept" disabled={updatingId === app.id}
-                        className={`p-2 rounded-lg disabled:opacity-50 ${app.status === 'accepted' ? 'bg-emerald-100 text-emerald-700' : 'hover:bg-emerald-50 text-gray-400'}`}>
-                        <CheckCircle size={18} />
-                      </button>
-                      <button type="button" onClick={() => updateStatus(app.id, 'rejected')} title="Reject" disabled={updatingId === app.id}
-                        className={`p-2 rounded-lg disabled:opacity-50 ${app.status === 'rejected' ? 'bg-red-100 text-red-700' : 'hover:bg-red-50 text-gray-400'}`}>
-                        <XCircle size={18} />
-                      </button>
-                    </div>
-                  )}
                 </div>
+
+                {!terminal && <div className="w-full shrink-0 rounded-2xl border border-[#e4ddd1] bg-[#fcfbf8] p-4 xl:w-[315px]">
+                  <p className="text-[10px] font-semibold uppercase tracking-[.15em] text-[#9c7a42]">Next action</p>
+                  <p className="mt-1 text-[12px] leading-5 text-gray-500">Choose the candidate's next stage. Nothing is sent until you review the message.</p>
+                  <div className="mt-4 grid gap-2">
+                    {app.status !== 'shortlisted' && <button type="button" onClick={()=>openCommunication(app,'shortlist')} className="btn-primary !py-2.5 inline-flex items-center justify-center gap-2"><Star size={14}/> Shortlist candidate</button>}
+                    {app.status === 'shortlisted' && <button type="button" className="btn-secondary !py-2.5 inline-flex items-center justify-center gap-2" disabled title="Interview scheduling is the next E2E block"><CalendarDays size={14}/> Invite to interview</button>}
+                    <button type="button" onClick={()=>openCommunication(app,'not_progressing')} className="btn-secondary !py-2.5 inline-flex items-center justify-center gap-2 text-red-600"><XCircle size={14}/> Not progressing</button>
+                  </div>
+                </div>}
               </div>
-            )
+            </div>
           })}
-          <Pagination page={page} perPage={perPage} total={applications.length} onPageChange={setPage} onPerPageChange={setPerPage} />
-        </div>
-      )}
+          <Pagination page={page} perPage={perPage} total={applications.length} onPageChange={setPage} onPerPageChange={setPerPage}/>
+        </div>}
 
-      {reviewing && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setReviewing(null)}>
-          <div className="bg-white rounded-2xl max-w-md w-full max-h-[90vh] overflow-y-auto p-6" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold text-ink">Review {reviewing.name}</h2>
-              <button type="button" onClick={() => setReviewing(null)} className="text-gray-300 hover:text-ink"><X size={20} /></button>
-            </div>
-            <ReviewForm reviewedId={reviewing.userId} reviewedName={reviewing.name} type="candidate" />
+      {communication && <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={()=>!communication.sending&&setCommunication(null)}>
+        <div className="w-full max-w-2xl rounded-3xl bg-white p-6 shadow-2xl" onClick={e=>e.stopPropagation()}>
+          <div className="flex items-start justify-between gap-4">
+            <div><p className="text-[10px] font-semibold uppercase tracking-[.16em] text-[#9c7a42]">Recruitment communication</p><h2 className="mt-1 text-2xl font-semibold text-ink">{communication.type==='shortlist'?'Shortlist candidate':'Not progressing'}</h2><p className="mt-1 text-[12px] text-muted">{communication.application.candidate_profiles?.full_name} · {communication.application.job_listings?.job_title}</p></div>
+            <button type="button" onClick={()=>setCommunication(null)} disabled={communication.sending}><X size={20}/></button>
           </div>
+          <div className="mt-5 rounded-2xl border border-[#e4ddd1] bg-[#fcfaf5] p-4">
+            <div className="flex items-start gap-3"><div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#0b2f4d] text-white"><Sparkles size={16}/></div><div><p className="text-[13px] font-semibold text-ink">AI drafted, employer approved</p><p className="mt-1 text-[11px] leading-5 text-muted">Spa Platform drafts the note from the real application data. You can change every word before it is sent.</p></div></div>
+          </div>
+          {communication.loading ? <div className="mt-5 flex h-40 items-center justify-center text-[13px] text-muted">Drafting candidate message…</div> : <textarea rows={9} value={communication.note} onChange={e=>setCommunication(current=>current?{...current,note:e.target.value}:null)} className="input-field mt-5 resize-y text-[13px] leading-6" placeholder="Write the message the candidate will receive…" />}
+          {communication.error && <div className="mt-3 rounded-xl bg-red-50 px-3 py-2 text-[12px] text-red-600">{communication.error}</div>}
+          <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end"><button type="button" onClick={()=>setCommunication(null)} disabled={communication.sending} className="btn-secondary">Cancel</button><button type="button" onClick={sendCommunication} disabled={communication.loading||communication.sending||communication.note.trim().length<20} className="btn-primary inline-flex items-center justify-center gap-2"><Send size={14}/>{communication.sending?'Sending…':communication.type==='shortlist'?'Send & shortlist':'Send update'}</button></div>
         </div>
-      )}
+      </div>}
 
-      {viewing && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex justify-end" onClick={() => setViewing(null)}>
-          <div className="bg-white w-full max-w-xl h-full overflow-y-auto shadow-2xl" onClick={(e) => e.stopPropagation()}>
-            <div className="p-6 border-b border-gray-100 flex items-start justify-between sticky top-0 bg-white z-10">
-              <div className="flex items-start gap-4 min-w-0 pr-4">
-                <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden flex-shrink-0 ring-1 ring-gray-100">
-                  {viewing.profile_image_url
-                    ? <img src={viewing.profile_image_url} alt="" className="w-full h-full object-cover" />
-                    : <span className="font-serif font-bold text-xl" style={{ color: '#C9A96E' }}>{viewing.full_name?.[0]}</span>}
-                </div>
-                <div className="min-w-0 pt-0.5">
-                  <div className="flex flex-wrap items-center gap-2 mb-1">
-                    <h3 className="text-xl font-semibold text-ink leading-tight">{viewing.full_name}</h3>
-                    {viewing.is_featured && <span className="rounded-full bg-accent px-2.5 py-1 text-[10px] font-semibold text-white">★ Featured</span>}
-                  </div>
-                  {viewing.headline && <p className="text-[13px] leading-relaxed text-gray-500 max-w-md">{viewing.headline}</p>}
-                  {viewing.review_score ? (
-                    <p className="flex items-center gap-1 text-[11px] text-amber-500 font-medium mt-1"><Star size={11} fill="currentColor" />{Number(viewing.review_score).toFixed(1)}{viewing.review_count ? ` from ${viewing.review_count} review${viewing.review_count === 1 ? '' : 's'}` : ''}</p>
-                  ) : null}
-                </div>
-              </div>
-              <button type="button" onClick={() => setViewing(null)} className="text-gray-300 hover:text-ink flex-shrink-0" aria-label="Close candidate profile"><X size={20} /></button>
-            </div>
-            <div className="p-6 space-y-6 text-sm">
-              <div className="grid grid-cols-2 gap-x-6 gap-y-5 rounded-xl bg-gray-50/70 p-4">
-                {viewing.role_level && <div><p className="text-[10px] text-gray-400 uppercase tracking-wider mb-1">Role Level</p><p className="text-ink font-medium">{viewing.role_level}</p></div>}
-                {viewing.location && <div><p className="text-[10px] text-gray-400 uppercase tracking-wider mb-1">Location</p><p className="text-ink font-medium">{viewing.location}</p></div>}
-                {viewing.experience_years && <div><p className="text-[10px] text-gray-400 uppercase tracking-wider mb-1">Experience</p><p className="text-ink font-medium">{viewing.experience_years} years</p></div>}
-                <div><p className="text-[10px] text-gray-400 uppercase tracking-wider mb-1">Contact</p><p className="text-ink font-medium">Via WHC Messages</p></div>
-              </div>
-              <p className="text-[12px] leading-relaxed text-gray-500 -mt-2">Personal phone and email details remain private. Use Messages to contact this professional.</p>
-              {viewing.bio && <div><p className="text-[10px] text-gray-400 uppercase tracking-wider mb-2">About</p><p className="text-ink leading-relaxed whitespace-pre-wrap text-[13px]">{viewing.bio}</p></div>}
-              {viewing.services_offered?.length > 0 && <div><p className="text-[10px] text-gray-400 uppercase tracking-wider mb-2">Treatments & Services</p><div className="flex flex-wrap gap-1.5">{viewing.services_offered.map((x: string) => <span key={x} className="text-[11px] bg-gray-100 text-gray-700 px-2 py-0.5 rounded-full">{x}</span>)}</div></div>}
-              {viewing.qualifications?.length > 0 && <div><p className="text-[10px] text-gray-400 uppercase tracking-wider mb-2">Qualifications</p><div className="flex flex-wrap gap-1.5">{viewing.qualifications.map((x: string) => <span key={x} className="text-[11px] bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full">{x}</span>)}</div></div>}
-              {viewing.product_houses?.length > 0 && <div><p className="text-[10px] text-gray-400 uppercase tracking-wider mb-2">Product Houses</p><div className="flex flex-wrap gap-1.5">{viewing.product_houses.map((x: string) => <span key={x} className="text-[11px] px-2 py-0.5 rounded-full" style={{ background: '#FDF6EC', color: '#C9A96E' }}>{x}</span>)}</div></div>}
-              {viewing.systems_experience?.length > 0 && <div><p className="text-[10px] text-gray-400 uppercase tracking-wider mb-2">Systems</p><div className="flex flex-wrap gap-1.5">{viewing.systems_experience.map((x: string) => <span key={x} className="text-[11px] bg-gray-100 text-gray-700 px-2 py-0.5 rounded-full">{x}</span>)}</div></div>}
-              <div className="pt-1">
-                <p className="text-[10px] text-gray-400 uppercase tracking-wider mb-2">Documents</p>
-                {viewing.cv_url
-                  ? <a href={viewing.cv_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-[13px] font-medium hover:underline" style={{ color: '#C9A96E' }}><FileText size={13} /> View CV</a>
-                  : <p className="text-gray-400 text-[12px]">No CV uploaded yet</p>}
-                {viewing.certificates_urls?.length > 0 && (
-                  <div className="mt-1.5 space-y-1">
-                    {viewing.certificates_urls.map((url: string, i: number) => (
-                      <a key={i} href={url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-[13px] font-medium hover:underline" style={{ color: '#C9A96E' }}><FileText size={13} /> Certificate {i + 1}</a>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-            <div className="p-6 border-t border-gray-100 sticky bottom-0 bg-white/95 backdrop-blur flex gap-2">
-              {viewing.user_id && <a href={`/employer/messages?to=${viewing.user_id}`} className="btn-primary flex-1 text-center inline-flex items-center justify-center gap-2"><MessageSquare size={15} /> Message</a>}
-              <button type="button" onClick={() => setViewing(null)} className="btn-secondary flex-1">Close</button>
-            </div>
-          </div>
-        </div>
-      )}
+      {reviewing && <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={()=>setReviewing(null)}><div className="w-full max-w-md rounded-2xl bg-white p-6" onClick={e=>e.stopPropagation()}><div className="mb-4 flex items-center justify-between"><h2 className="text-lg font-semibold text-ink">Review {reviewing.name}</h2><button type="button" onClick={()=>setReviewing(null)}><X size={20}/></button></div><ReviewForm reviewedId={reviewing.userId} reviewedName={reviewing.name} type="candidate"/></div></div>}
+
+      {viewing && <div className="fixed inset-0 z-50 flex justify-end bg-black/50" onClick={()=>setViewing(null)}><div className="h-full w-full max-w-xl overflow-y-auto bg-white shadow-2xl" onClick={e=>e.stopPropagation()}><div className="sticky top-0 z-10 flex items-start justify-between border-b border-gray-100 bg-white p-6"><div><h3 className="text-xl font-semibold text-ink">{viewing.full_name}</h3><p className="mt-1 text-[13px] text-gray-500">{viewing.headline}</p></div><button type="button" onClick={()=>setViewing(null)}><X size={20}/></button></div><div className="space-y-6 p-6">{viewing.bio&&<div><p className="mb-2 text-[10px] uppercase tracking-wider text-gray-400">About</p><p className="text-[13px] leading-6 text-gray-600">{viewing.bio}</p></div>}{viewing.qualifications?.length>0&&<div><p className="mb-2 text-[10px] uppercase tracking-wider text-gray-400">Qualifications</p><div className="flex flex-wrap gap-1.5">{viewing.qualifications.map((x:string)=><span key={x} className="rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] text-emerald-700">{x}</span>)}</div></div>}{viewing.product_houses?.length>0&&<div><p className="mb-2 text-[10px] uppercase tracking-wider text-gray-400">Product houses</p><div className="flex flex-wrap gap-1.5">{viewing.product_houses.map((x:string)=><span key={x} className="rounded-full bg-[#FDF6EC] px-2 py-0.5 text-[11px] text-[#C9A96E]">{x}</span>)}</div></div>}{viewing.cv_url&&<a href={viewing.cv_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-[13px] font-medium text-[#C9A96E]"><FileText size={14}/> View CV</a>}</div><div className="sticky bottom-0 flex gap-2 border-t border-gray-100 bg-white/95 p-6 backdrop-blur">{viewing.user_id&&<a href={`/employer/messages?to=${viewing.user_id}`} className="btn-primary flex-1 text-center">Message</a>}<button type="button" onClick={()=>setViewing(null)} className="btn-secondary flex-1">Close</button></div></div></div>}
     </DashboardShell>
   )
 }
