@@ -16,8 +16,6 @@ export function smsConfigured(): boolean {
   return Boolean(TWILIO_ACCOUNT_SID && TWILIO_AUTH_TOKEN && TWILIO_FROM_NUMBER)
 }
 
-// Normalise a UK-entered mobile number to E.164.
-// "07700 900123" → "+447700900123"; already-international numbers pass through.
 export function normaliseUkMobile(raw: string | null | undefined): string | null {
   if (!raw) return null
   const digits = raw.replace(/[^\d+]/g, '')
@@ -26,11 +24,9 @@ export function normaliseUkMobile(raw: string | null | undefined): string | null
   if (digits.startsWith('00')) return `+${digits.slice(2)}`
   if (digits.startsWith('07') && digits.length === 11) return `+44${digits.slice(1)}`
   if (digits.startsWith('447') && digits.length === 12) return `+${digits}`
-  return null // not a recognisable mobile - skip rather than send to a wrong number
+  return null
 }
 
-// Send a text. Returns true on acceptance by Twilio, false otherwise.
-// Never throws - SMS is best-effort and must not break the calling flow.
 export async function sendSms(to: string | null | undefined, body: string): Promise<boolean> {
   const number = normaliseUkMobile(to)
   if (!number) {
@@ -48,10 +44,10 @@ export async function sendSms(to: string | null | undefined, body: string): Prom
       {
         method: 'POST',
         headers: {
-          'Authorization': `Basic ${auth}`,
+          Authorization: `Basic ${auth}`,
           'Content-Type': 'application/x-www-form-urlencoded',
         },
-        body: new URLSearchParams({ To: number, From: TWILIO_FROM_NUMBER!, Body: body }).toString(),
+        body: new URLSearchParams({ To: number, From: TWILIO_FROM_NUMBER!, Body: body.slice(0, 600) }).toString(),
       }
     )
     if (!res.ok) {
@@ -64,4 +60,16 @@ export async function sendSms(to: string | null | undefined, body: string): Prom
     console.error('[SMS FAILED] network error:', err)
     return false
   }
+}
+
+export async function sendSmsIfOptedIn(opts: {
+  to: string | null | undefined
+  body: string
+  optedIn: boolean | null | undefined
+}): Promise<boolean> {
+  if (!opts.optedIn) {
+    console.log('[SMS skipped - recipient has not opted in]')
+    return false
+  }
+  return sendSms(opts.to, opts.body)
 }
