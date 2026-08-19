@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createServerSupabaseClient } from '@/lib/supabase/server'
 import { createNotification } from '@/lib/notifications'
+import { sendSmsIfOptedIn } from '@/lib/sms'
 
 const RESEND_API_KEY = process.env.RESEND_API_KEY
 const FROM_EMAIL = 'Spa Platform <noreply@mail.wellnesshousecollective.co.uk>'
@@ -26,6 +27,12 @@ export async function POST(req: NextRequest) {
     const roundNumber = Number(body.roundNumber || 1)
     const interviewMethod = String(body.interviewMethod || '')
     const employerNote = String(body.note || '').trim().slice(0, 2000)
+    const meetingLink = String(body.meetingLink || '').trim().slice(0, 1000) || null
+    const venueAddress = String(body.venueAddress || '').trim().slice(0, 1000) || null
+    const contactName = String(body.contactName || '').trim().slice(0, 300) || null
+    const preparationRequired = String(body.preparationRequired || '').trim().slice(0, 2000) || null
+    const assessmentType = String(body.assessmentType || '').trim().slice(0, 120) || null
+    const assessmentDetails = String(body.assessmentDetails || '').trim().slice(0, 2000) || null
     const slots: string[] = Array.isArray(body.slots)
       ? body.slots.map((value: unknown) => String(value)).filter((value: string) => value.length > 0)
       : []
@@ -50,7 +57,7 @@ export async function POST(req: NextRequest) {
     const jobId = application.role_id || application.job_id
     const [{ data: job }, { data: candidate }] = await Promise.all([
       admin.from('job_listings').select('id,job_title,employer_id').eq('id', jobId).maybeSingle(),
-      admin.from('candidate_profiles').select('id,user_id,full_name').eq('id', application.candidate_id).maybeSingle(),
+      admin.from('candidate_profiles').select('id,user_id,full_name,phone,sms_opt_in').eq('id', application.candidate_id).maybeSingle(),
     ])
     if (!job || job.employer_id !== employer.id || !candidate?.user_id) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
@@ -63,6 +70,12 @@ export async function POST(req: NextRequest) {
       status: 'proposed',
       employer_note: employerNote || null,
       candidate_note: null,
+      meeting_link: meetingLink,
+      venue_address: venueAddress,
+      contact_name: contactName,
+      preparation_required: preparationRequired,
+      assessment_type: assessmentType,
+      assessment_details: assessmentDetails,
       updated_at: new Date().toISOString(),
     }, { onConflict: 'application_id,round_number' }).select('*').single()
     if (interviewError) return NextResponse.json({ error: 'Could not create interview invitation.' }, { status: 500 })
@@ -83,7 +96,13 @@ export async function POST(req: NextRequest) {
       if (!res.ok) console.error('Interview invitation email failed:', res.status)
     }
 
-    return NextResponse.json({ success: true, interview })
+    const smsSent = await sendSmsIfOptedIn({
+      to: candidate.phone,
+      optedIn: candidate.sms_opt_in,
+      body: `Spa Platform: ${propertyName} has invited you to Interview ${roundNumber} for ${job.job_title}. Open My Applications to choose a time.`,
+    })
+
+    return NextResponse.json({ success: true, interview, smsSent })
   } catch (error: any) {
     return NextResponse.json({ error: error?.message || 'Could not create interview invitation.' }, { status: 500 })
   }
