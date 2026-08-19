@@ -22,6 +22,7 @@ export default function TalentJobsPage() {
   const [minMatch] = useState(0)
   const [sortBy, setSortBy] = useState('match')
   const [applied, setApplied] = useState<Set<string>>(new Set())
+  const [drafts, setDrafts] = useState<Set<string>>(new Set())
   const [saved, setSaved] = useState<Set<string>>(new Set())
   const [passed, setPassed] = useState<Set<string>>(new Set())
   const [applyError, setApplyError] = useState('')
@@ -39,11 +40,14 @@ export default function TalentJobsPage() {
         cp = data
         setProfile(data)
         const [{ data: apps }, savedRes, swipeRes] = await Promise.all([
-          supabase.from('applications').select('role_id').eq('candidate_id', cp?.id || user.id),
+          supabase.from('applications').select('role_id,status').eq('candidate_id', cp?.id || user.id),
           fetch('/api/saved-jobs'),
           fetch('/api/swipe'),
         ])
-        if (apps) setApplied(new Set(apps.map(a => a.role_id)))
+        if (apps) {
+          setApplied(new Set(apps.filter(a => a.status !== 'draft').map(a => a.role_id).filter(Boolean)))
+          setDrafts(new Set(apps.filter(a => a.status === 'draft').map(a => a.role_id).filter(Boolean)))
+        }
         if (savedRes.ok) {
           const savedData = await savedRes.json()
           setSaved(new Set((savedData.saved || []).map((s: any) => s.job_id)))
@@ -156,21 +160,28 @@ export default function TalentJobsPage() {
     if (!userId) return
     let res: Response
     try {
-      res = await fetch('/api/swipe', {
+      res = await fetch('/api/applications/draft', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ targetId: jobId, targetType: 'job', action: 'right' }),
+        body: JSON.stringify({ jobId }),
       })
     } catch {
-      setApplyError('Application failed - please check your connection and try again.')
+      setApplyError('Could not start your application - please check your connection and try again.')
       return
     }
+
+    const body = await res.json().catch(() => ({} as any))
     if (!res.ok) {
-      const errorBody = await res.json().catch(() => ({} as any))
-      setApplyError(errorBody.error || 'Application could not be submitted. Please try again.')
+      if (res.status === 409 && body.applicationId) {
+        window.location.href = '/talent/applications'
+        return
+      }
+      setApplyError(body.error || 'Could not start your application. Please try again.')
       return
     }
+
     setApplyError('')
-    setApplied(prev => new Set(prev).add(jobId))
+    setDrafts(prev => new Set(prev).add(jobId))
+    window.location.href = '/talent/applications?review=draft'
   }
 
   const tierClass = (t: string) => t === 'Platinum' ? 'badge-platinum' : t === 'Gold' ? 'badge-gold' : t === 'Silver' ? 'badge-silver' : 'badge-bronze'
@@ -296,9 +307,11 @@ export default function TalentJobsPage() {
                       <a href={`/jobs/${job.id}`} className="btn-secondary inline-flex items-center gap-1">Details <ArrowRight size={12} /></a>
                       <button type="button" onClick={() => handlePass(job.id)} className="btn-secondary inline-flex items-center gap-1" title="Pass and hide this role"><X size={12} />Pass</button>
                       {applied.has(job.id) ? (
-                        <div className="btn-secondary min-w-[130px] flex-1 text-center flex items-center justify-center gap-1 opacity-60 cursor-default"><Check size={12} />Interested</div>
+                        <div className="btn-secondary min-w-[130px] flex-1 text-center flex items-center justify-center gap-1 opacity-60 cursor-default"><Check size={12} />Application submitted</div>
+                      ) : drafts.has(job.id) ? (
+                        <a href="/talent/applications" className="btn-primary min-w-[130px] flex-1 text-center">Review draft</a>
                       ) : eligible ? (
-                        <button type="button" onClick={() => handleApply(job.id)} className="btn-primary min-w-[130px] flex-1">Interested</button>
+                        <button type="button" onClick={() => handleApply(job.id)} className="btn-primary min-w-[130px] flex-1">Interested — review application</button>
                       ) : (
                         <button type="button" disabled className="btn-secondary min-w-[130px] flex-1 opacity-55 cursor-not-allowed" title={job.hardStopReason || undefined}>
                           {job.hardStop ? 'Requirement missing' : belowThreshold ? 'Below 45% match' : needsProfile ? 'Complete profile' : 'Not eligible'}
