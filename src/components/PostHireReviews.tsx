@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { usePathname } from 'next/navigation'
 import { Star, X } from 'lucide-react'
 import ReviewForm from '@/components/ReviewForm'
 import PlatformExperienceReview from '@/components/PlatformExperienceReview'
@@ -17,6 +18,7 @@ type Placement = {
 }
 
 export default function PostHireReviews() {
+  const pathname = usePathname()
   const [placements, setPlacements] = useState<Placement[]>([])
   const [loading, setLoading] = useState(true)
   const [reviewing, setReviewing] = useState<Placement | null>(null)
@@ -31,7 +33,7 @@ export default function PostHireReviews() {
     return () => { active = false }
   }, [])
 
-  if (loading || placements.length === 0) return null
+  if (pathname === '/talent/applications' || loading || placements.length === 0) return null
 
   return (
     <section className="dashboard-card mb-7">
@@ -56,7 +58,7 @@ export default function PostHireReviews() {
               </div>
               <div className="flex flex-wrap gap-2">
                 {placement.counterpartReviewed ? (
-                  <span className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-[11px] font-medium text-emerald-700"><Star size={12} className="fill-emerald-600"/> Counterpart reviewed</span>
+                  <span className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-[11px] font-medium text-emerald-700"><Star size={12} className="fill-emerald-600"/> {placement.counterpartReviewType === 'candidate' ? 'Professional reviewed' : 'Property reviewed'}</span>
                 ) : (
                   <button type="button" onClick={()=>setReviewing(placement)} className="btn-secondary inline-flex items-center gap-2 !py-2.5"><Star size={13}/> Review {placement.counterpartReviewType === 'candidate' ? 'professional' : 'property'}</button>
                 )}
