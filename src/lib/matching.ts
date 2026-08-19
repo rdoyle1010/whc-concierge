@@ -185,7 +185,9 @@ export function calculateMatchScore(candidate: any, job: any): {
 
   const requiredBizSkills: string[] = job.preferred_business_skills || []
   const candidateBizSkills: string[] = candidate.business_skills || []
-  const bizResult = overlapScore(candidateBizSkills, requiredBizSkills)
+  const bizResult = candidateBizSkills.length > 0
+    ? overlapScore(candidateBizSkills, requiredBizSkills)
+    : { score: -1, matches: [] as string[] }
 
   const requiredSystems: string[] = job.required_systems || []
   const candidateSystems: string[] = candidate.systems_knowledge || candidate.systems_experience || []
@@ -218,14 +220,14 @@ export function calculateMatchScore(candidate: any, job: any): {
   else if (candidate.needs_accommodation && job.offers_accommodation) accommodationScore = 100
 
   const candidateProficiencies: Record<string, string> = candidate.skill_proficiencies || {}
-  let proficiencyScore = requiredSkills.length > 0 ? 50 : -1
+  let proficiencyScore = -1
   if (requiredSkills.length > 0 && Object.keys(candidateProficiencies).length > 0) {
     let total = 0; let count = 0
     for (const skill of requiredSkills) {
       const match = Object.entries(candidateProficiencies).find(([k]) => k.toLowerCase() === skill.toLowerCase())
       if (match) { total += (PROFICIENCY_WEIGHT[match[1]] || 0.5) * 100; count++ }
     }
-    proficiencyScore = count > 0 ? Math.round(total / count) : 30
+    proficiencyScore = count > 0 ? Math.round(total / count) : -1
   }
 
   const completionPct = candidate.profile_completion_score || candidate.profile_completion_pct || 0
