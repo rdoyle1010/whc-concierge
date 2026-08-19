@@ -5,7 +5,7 @@ import { createServerSupabaseClient } from '@/lib/supabase/server'
 const DEFAULT_PER_PAGE = 25
 const MAX_PER_PAGE = 100
 const ALLOWED_STATUSES = new Set(['draft','pending','reviewed','shortlisted','interview','offered','accepted','rejected','withdrawn'])
-const APPLICATION_SELECT = `id,status,match_score,cover_note,cover_letter,created_at,updated_at,submitted_at,role_id,job_id,job_listings(id,job_title,job_description,location,salary_min,salary_max,employer_id,is_live,expires_at,contract_type,job_type,required_role_level,required_skills,required_brands,required_qualifications,min_years_experience,preferred_business_skills,required_systems,latitude,longitude,radius_miles,shift_pattern,offers_accommodation,insurance_required,is_agency_role)`
+const APPLICATION_SELECT = `id,status,match_score,cover_note,cover_letter,created_at,updated_at,submitted_at,role_id,job_id,archived_at,job_listings(id,job_title,job_description,location,salary_min,salary_max,employer_id,is_live,expires_at,contract_type,job_type,required_role_level,required_skills,required_brands,required_qualifications,min_years_experience,preferred_business_skills,required_systems,latitude,longitude,radius_miles,shift_pattern,offers_accommodation,insurance_required,is_agency_role)`
 const CANDIDATE_MATCH_FIELDS = 'id,role_level,has_insurance,treatment_skills,services_offered,product_houses,qualifications,experience_years,years_experience,systems_experience,latitude,longitude,travel_radius_miles,max_commute,transport_method,location_preferences,shift_preferences,needs_accommodation,profile_completion_score,profile_completion_pct,review_score'
 
 export async function GET(req: NextRequest) {
@@ -27,12 +27,16 @@ export async function GET(req: NextRequest) {
   if (candidateError) return NextResponse.json({ error: candidateError.message }, { status: 500 })
   if (!candidate) return NextResponse.json({ error: 'Candidate profile not found' }, { status: 404 })
 
-  let query = admin.from('applications').select(APPLICATION_SELECT, { count: 'exact' }).eq('candidate_id', candidate.id).order('created_at', { ascending: false }).range(from, to)
+  let query = admin.from('applications').select(APPLICATION_SELECT, { count: 'exact' })
+    .eq('candidate_id', candidate.id)
+    .is('archived_at', null)
+    .order('created_at', { ascending: false })
+    .range(from, to)
   if (status !== 'all') query = query.eq('status', status)
 
   const [{ data: rows, error, count }, { data: statusRows, error: countsError }] = await Promise.all([
     query,
-    admin.rpc('get_candidate_application_status_counts', { p_candidate_id: candidate.id }),
+    admin.from('applications').select('status').eq('candidate_id', candidate.id).is('archived_at', null),
   ])
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   if (countsError) return NextResponse.json({ error: countsError.message }, { status: 500 })
@@ -59,8 +63,8 @@ export async function GET(req: NextRequest) {
 
   const counts: Record<string, number> = { all: 0 }
   for (const row of statusRows || []) {
-    counts[row.status] = Number(row.total || 0)
-    counts.all += Number(row.total || 0)
+    counts[row.status] = (counts[row.status] || 0) + 1
+    counts.all += 1
   }
   const total = count || 0
 
