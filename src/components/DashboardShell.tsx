@@ -7,6 +7,7 @@ import Navbar from '@/components/Navbar'
 import ApplicationPipelineHub from '@/components/ApplicationPipelineHub'
 import PostHireActions from '@/components/PostHireActions'
 import DashboardActivityCentre from '@/components/DashboardActivityCentre'
+import PostHireReviews from '@/components/PostHireReviews'
 import { usePathname } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import {
@@ -101,6 +102,7 @@ export default function DashboardShell({ children, role, userName }: DashboardSh
   const isPublicAgencyRoute = pathname === '/agency'
   const showRecruitmentPipeline = (role === 'talent' && pathname === '/talent/applications') || (role === 'employer' && pathname === '/employer/applications')
   const showPostHireActions = role === 'employer' && pathname === '/employer/applications'
+  const showPostHireReviews = (role === 'talent' && pathname === '/talent/applications') || (role === 'employer' && pathname === '/employer/hired')
   const activityRole: 'talent' | 'employer' | null = role === 'talent' && pathname === '/talent/dashboard' ? 'talent' : role === 'employer' && pathname === '/employer/dashboard' ? 'employer' : null
 
   useEffect(() => {
@@ -176,7 +178,7 @@ export default function DashboardShell({ children, role, userName }: DashboardSh
         </div>
       </aside>
 
-      <main className="lg:ml-[264px] min-h-screen"><div className="p-5 sm:p-6 md:p-8 lg:p-10 xl:p-12 max-w-[1540px] mx-auto">{showPostHireActions ? <PostHireActions /> : null}{showRecruitmentPipeline ? <ApplicationPipelineHub role={role as 'talent' | 'employer'} /> : null}{activityRole ? <DashboardActivityCentre role={activityRole} /> : null}{children}</div></main>
+      <main className="lg:ml-[264px] min-h-screen"><div className="p-5 sm:p-6 md:p-8 lg:p-10 xl:p-12 max-w-[1540px] mx-auto">{showPostHireActions ? <PostHireActions /> : null}{showRecruitmentPipeline ? <ApplicationPipelineHub role={role as 'talent' | 'employer'} /> : null}{activityRole ? <DashboardActivityCentre role={activityRole} /> : null}{showPostHireReviews ? <PostHireReviews /> : null}{children}</div></main>
     </div>
   )
 }
