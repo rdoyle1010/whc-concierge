@@ -16,6 +16,12 @@ function methodLabel(method: string) {
   return method === 'teams' ? 'Microsoft Teams' : method === 'video' ? 'Video call' : method === 'phone' ? 'Phone call' : 'In person'
 }
 
+function roundLabel(round: number) {
+  if (round === 1) return 'First interview'
+  if (round === 2) return 'Second interview'
+  return 'Final interview'
+}
+
 export async function POST(req: NextRequest) {
   const auth = await createServerSupabaseClient()
   const { data: { user } } = await auth.auth.getUser()
@@ -83,15 +89,16 @@ export async function POST(req: NextRequest) {
     await admin.from('applications').update({ status: 'interview', updated_at: new Date().toISOString() }).eq('id', application.id)
 
     const propertyName = employer.property_name || employer.company_name || 'the property'
-    const title = `Interview invitation - ${job.job_title}`
-    const note = `${propertyName} has invited you to Interview ${roundNumber}. Choose one of the proposed times in My Applications.`
+    const stageLabel = roundLabel(roundNumber)
+    const title = `${stageLabel} invitation - ${job.job_title}`
+    const note = `${propertyName} has invited you to the ${stageLabel.toLowerCase()} for ${job.job_title}. Choose one of the proposed times in My Applications.`
     await createNotification(candidate.user_id, 'general', title, note, '/talent/applications')
 
     const { data: authUser } = await admin.auth.admin.getUserById(candidate.user_id)
     const email = authUser?.user?.email || null
     if (email && RESEND_API_KEY) {
       const slotHtml = uniqueIso.map((slot: string) => `<li style="margin:7px 0;">${escapeHtml(new Date(slot).toLocaleString('en-GB',{dateStyle:'full',timeStyle:'short',timeZone:'Europe/London'}))}</li>`).join('')
-      const html = `<!doctype html><html><body style="margin:0;background:#f5f3ee;font-family:Arial,sans-serif;color:#17344d;"><div style="max-width:560px;margin:32px auto;background:#fff;padding:32px;border-radius:18px;"><p style="color:#9c7a42;font-size:11px;text-transform:uppercase;letter-spacing:1.5px;">Interview invitation</p><h1 style="font-family:Georgia,serif;font-weight:500;">${escapeHtml(job.job_title)}</h1><p>${escapeHtml(propertyName)} would like to invite you to Interview ${roundNumber} via ${escapeHtml(methodLabel(interviewMethod))}.</p><ul>${slotHtml}</ul>${employerNote ? `<p>${escapeHtml(employerNote)}</p>` : ''}<p><a href="https://talent.wellnesshousecollective.co.uk/talent/applications" style="display:inline-block;background:#0b2f4d;color:#fff;text-decoration:none;padding:12px 18px;border-radius:9px;">Choose interview time</a></p></div></body></html>`
+      const html = `<!doctype html><html><body style="margin:0;background:#f5f3ee;font-family:Arial,sans-serif;color:#17344d;"><div style="max-width:560px;margin:32px auto;background:#fff;padding:32px;border-radius:18px;"><p style="color:#9c7a42;font-size:11px;text-transform:uppercase;letter-spacing:1.5px;">${escapeHtml(stageLabel)} invitation</p><h1 style="font-family:Georgia,serif;font-weight:500;">${escapeHtml(job.job_title)}</h1><p>${escapeHtml(propertyName)} would like to invite you to the <strong>${escapeHtml(stageLabel.toLowerCase())}</strong> via ${escapeHtml(methodLabel(interviewMethod))}.</p><p>Please choose one of the proposed times below to confirm your attendance:</p><ul>${slotHtml}</ul>${employerNote ? `<p>${escapeHtml(employerNote)}</p>` : ''}<p><a href="https://talent.wellnesshousecollective.co.uk/talent/applications" style="display:inline-block;background:#0b2f4d;color:#fff;text-decoration:none;padding:12px 18px;border-radius:9px;">Choose ${escapeHtml(stageLabel.toLowerCase())} time</a></p></div></body></html>`
       const res = await fetch('https://api.resend.com/emails',{method:'POST',headers:{Authorization:`Bearer ${RESEND_API_KEY}`,'Content-Type':'application/json'},body:JSON.stringify({from:FROM_EMAIL,to:email,subject:title,html})})
       if (!res.ok) console.error('Interview invitation email failed:', res.status)
     }
@@ -99,7 +106,7 @@ export async function POST(req: NextRequest) {
     const smsSent = await sendSmsIfOptedIn({
       to: candidate.phone,
       optedIn: candidate.sms_opt_in,
-      body: `Spa Platform: ${propertyName} has invited you to Interview ${roundNumber} for ${job.job_title}. Open My Applications to choose a time.`,
+      body: `Spa Platform: ${propertyName} has invited you to the ${stageLabel.toLowerCase()} for ${job.job_title}. Open My Applications to choose a time.`,
     })
 
     return NextResponse.json({ success: true, interview, smsSent })
