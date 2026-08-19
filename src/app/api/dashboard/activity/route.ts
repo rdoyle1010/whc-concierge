@@ -22,11 +22,11 @@ export async function GET(req: NextRequest) {
   if (role === 'talent') {
     const { data: candidate } = await admin.from('candidate_profiles').select('id').eq('user_id', user.id).maybeSingle()
     if (candidate) {
-      const { data: apps } = await admin.from('applications').select('id,status,archived_at').eq('candidate_id', candidate.id)
-      const applicationIds = (apps || []).map(app => app.id)
+      const { data: apps } = await admin.from('applications').select('id,status,archived_at,hired_at').eq('candidate_id', candidate.id)
+      const liveApps = (apps || []).filter(app => !app.archived_at)
+      const applicationIds = liveApps.map(app => app.id)
       let interviewCount = 0
       let offerCount = 0
-      let hiredCount = 0
       if (applicationIds.length) {
         const [{ count: interviews }, { count: offers }] = await Promise.all([
           admin.from('application_interviews').select('id', { count: 'exact', head: true }).in('application_id', applicationIds).eq('status', 'proposed'),
@@ -35,10 +35,10 @@ export async function GET(req: NextRequest) {
         interviewCount = interviews || 0
         offerCount = offers || 0
       }
-      hiredCount = (apps || []).filter(app => app.status === 'accepted').length
+      const hiredCount = (apps || []).filter(app => Boolean(app.archived_at) && Boolean(app.hired_at)).length
       if (interviewCount) attention.push({ label: 'Interview times to review', count: interviewCount, href: '/talent/applications', tone: 'violet' })
       if (offerCount) attention.push({ label: 'Offers awaiting your response', count: offerCount, href: '/talent/applications', tone: 'gold' })
-      if (hiredCount) attention.push({ label: 'Successful placements', count: hiredCount, href: '/talent/applications', tone: 'green' })
+      if (hiredCount) attention.push({ label: 'Successful placements', count: hiredCount, href: '/talent/hired', tone: 'green' })
     }
   } else {
     const { data: employer } = await admin.from('employer_profiles').select('id').eq('user_id', user.id).maybeSingle()
