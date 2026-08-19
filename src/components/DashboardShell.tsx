@@ -5,7 +5,6 @@ import Link from 'next/link'
 import Wordmark from '@/components/Wordmark'
 import Navbar from '@/components/Navbar'
 import ApplicationPipelineHub from '@/components/ApplicationPipelineHub'
-import SmsPreferencesCard from '@/components/SmsPreferencesCard'
 import { usePathname } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import {
@@ -51,7 +50,7 @@ const navItems: Record<string, NavItem[]> = {
     { label: 'Dashboard', href: '/employer/dashboard', icon: <LayoutDashboard size={17} />, section: 'Overview' },
     { label: 'Company Profile', href: '/employer/profile', icon: <Building2 size={17} />, section: 'Recruitment' },
     { label: 'Job Listings', href: '/employer/jobs', icon: <Briefcase size={17} /> },
-    { label: 'Candidates', href: '/employer/candidates', icon: <Users size={17} /> },
+    { label: 'Discover Talent', href: '/employer/candidates', icon: <Users size={17} /> },
     { label: 'Applications', href: '/employer/applications', icon: <FileText size={17} /> },
     { label: 'Messages', href: '/employer/messages', icon: <MessageSquare size={17} /> },
     { label: 'Agency Bookings', href: '/employer/agency', icon: <Calendar size={17} />, section: 'Flexible staffing' },
@@ -98,7 +97,6 @@ export default function DashboardShell({ children, role, userName }: DashboardSh
   const items = navItems[role]
   const isPublicAgencyRoute = pathname === '/agency'
   const showRecruitmentPipeline = (role === 'talent' && pathname === '/talent/applications') || (role === 'employer' && pathname === '/employer/applications')
-  const showSmsPreferences = (role === 'talent' && pathname === '/talent/settings') || (role === 'employer' && pathname === '/employer/settings')
 
   useEffect(() => {
     if (!isPublicAgencyRoute) return
@@ -173,7 +171,7 @@ export default function DashboardShell({ children, role, userName }: DashboardSh
         </div>
       </aside>
 
-      <main className="lg:ml-[264px] min-h-screen"><div className="p-5 sm:p-6 md:p-8 lg:p-10 xl:p-12 max-w-[1540px] mx-auto">{showRecruitmentPipeline ? <ApplicationPipelineHub role={role as 'talent' | 'employer'} /> : null}{children}{showSmsPreferences ? <SmsPreferencesCard /> : null}</div></main>
+      <main className="lg:ml-[264px] min-h-screen"><div className="p-5 sm:p-6 md:p-8 lg:p-10 xl:p-12 max-w-[1540px] mx-auto">{showRecruitmentPipeline ? <ApplicationPipelineHub role={role as 'talent' | 'employer'} /> : null}{children}</div></main>
     </div>
   )
 }
