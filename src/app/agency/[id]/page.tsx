@@ -20,8 +20,8 @@ export default function AgencyProfilePage() {
   const [reviews, setReviews] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [isEmployer, setIsEmployer] = useState(false)
-  const [offer, setOffer] = useState<any>(null)
-  const [history, setHistory] = useState<any[]>([])
+  const [offer, setOffer] = useState<any>(null) // the OPEN offer (pending/countered) - only this blocks a new one
+  const [history, setHistory] = useState<any[]>([]) // resolved bookings: agreed, paid, declined, expired
   const [offerBusy, setOfferBusy] = useState(false)
   const [offerError, setOfferError] = useState('')
   const [showReview, setShowReview] = useState(false)
@@ -33,6 +33,7 @@ export default function AgencyProfilePage() {
   const [suggestBusy, setSuggestBusy] = useState(false)
   const [suggestNotice, setSuggestNotice] = useState('')
 
+  // Live cost preview: therapist receives rate × hours; WHC fee is on top, paid by the property
   const previewRate = parseInt(offerRate, 10) || 0
   const previewHours = shiftHours(offerStartTime, offerEndTime) || 0
   const previewSubtotal = previewRate * previewHours
@@ -49,10 +50,12 @@ export default function AgencyProfilePage() {
       if (data) {
         const { data: revs } = await supabase.from('reviews').select('*').eq('reviewee_id', data.user_id || data.id).order('created_at', { ascending: false }).limit(100)
         setReviews(revs || [])
+        // WHC Academy certificates - public read of completed enrolments only
         const { data: courses } = await supabase.from('course_enrollments')
           .select('course_slug, completed_at').eq('candidate_id', data.id).not('completed_at', 'is', null)
         setAcademyBadges(courses || [])
       }
+      // If the viewer is a logged-in employer, load any existing offer for this candidate
       const { data: { user } } = await supabase.auth.getUser()
       if (user) {
         const { data: emp } = await supabase.from('employer_profiles').select('id').eq('user_id', user.id).maybeSingle()
@@ -63,11 +66,13 @@ export default function AgencyProfilePage() {
             if (res.ok) {
               const j = await res.json()
               const mine = (j.bookings || []).filter((b: any) => b.candidate_id === profileId && b.viewer_role === 'employer')
+              // Only an OPEN offer blocks sending another; everything else is history,
+              // so a therapist can be booked again and again.
               const open = mine.find((b: any) => b.status === 'pending' || b.status === 'countered')
               setOffer(open || null)
               setHistory(mine.filter((b: any) => b.id !== open?.id))
             }
-          } catch { }
+          } catch { /* offer card still renders as a fresh form */ }
         }
       }
       setLoading(false)
@@ -112,10 +117,8 @@ export default function AgencyProfilePage() {
       })
       const j = await res.json()
       if (!res.ok) { setOfferError(j.error || 'Something went wrong - please try again.'); return }
-      if (action === 'accept') {
-        window.location.href = '/employer/agency?counterAccepted=true'
-        return
-      }
+      // Accepting/declining resolves the open offer - it moves to history and
+      // the form frees up so the therapist can be booked again.
       setOffer(null)
       setHistory((h) => [j.booking, ...h])
     } catch {
@@ -136,6 +139,7 @@ export default function AgencyProfilePage() {
         <p className="dashboard-eyebrow mb-2">Agency professional</p>
         <Link href="/agency" className="text-[13px] text-muted hover:text-ink flex items-center gap-1 mb-6"><ArrowLeft size={14} />Back to Agency</Link>
 
+        {/* Hero card */}
         <div className="bg-white border border-border rounded-2xl p-8 mb-6 shadow-sm">
           <div className="flex flex-col md:flex-row gap-6">
             <div className="w-24 h-24 rounded-full bg-[#F1EBDD] border border-[#E2D8C5] flex items-center justify-center shrink-0 overflow-hidden">
@@ -155,6 +159,7 @@ export default function AgencyProfilePage() {
                 : profile.has_insurance && <span className="flex items-center gap-1 text-success"><Shield size={13} />Insured</span>}
                 {profile.availability_status === 'immediately' && <span className="flex items-center gap-1 text-success"><span className="w-2 h-2 bg-success rounded-full" />Available Now</span>}
               </div>
+              {/* WHC Academy certificates - earned, verified, employer-visible */}
               {academyBadges.length > 0 && (
                 <div className="flex flex-wrap items-center gap-1.5 mt-3">
                   <span className="text-[11px] font-semibold uppercase tracking-wide text-accent inline-flex items-center gap-1"><GraduationCap size={13} /> WHC Academy:</span>
@@ -165,6 +170,7 @@ export default function AgencyProfilePage() {
                   ))}
                 </div>
               )}
+              {/* Employer nudge: suggest a course this candidate hasn't completed */}
               {isEmployer && (
                 suggestNotice ? (
                   <p className="text-[12px] text-green-700 mt-3">{suggestNotice}</p>
@@ -186,7 +192,7 @@ export default function AgencyProfilePage() {
                               body: JSON.stringify({ candidateId: profileId, courseSlug: suggestSlug }),
                             })
                             if (res.ok) setSuggestNotice(`Suggested - ${profile.full_name?.split(' ')[0] || 'they'} will be told your property would value this training.`)
-                          } catch { } finally { setSuggestBusy(false) }
+                          } catch { /* quiet */ } finally { setSuggestBusy(false) }
                         }}
                         className="btn-secondary !py-1.5 text-[12px] disabled:opacity-50">
                         {suggestBusy ? 'Sending...' : 'Send suggestion'}
@@ -207,6 +213,7 @@ export default function AgencyProfilePage() {
 
         <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_360px] gap-6">
           <div className="space-y-6">
+            {/* About */}
             {profile.bio && (
               <div className="bg-white border border-border rounded-xl p-6">
                 <h2 className="text-[16px] font-medium text-ink mb-3">About</h2>
@@ -215,6 +222,7 @@ export default function AgencyProfilePage() {
               </div>
             )}
 
+            {/* Services */}
             {profile.services_offered?.length > 0 && (
               <div className="bg-white border border-border rounded-xl p-6">
                 <h2 className="text-[16px] font-medium text-ink mb-3">Services Offered</h2>
@@ -222,6 +230,7 @@ export default function AgencyProfilePage() {
               </div>
             )}
 
+            {/* Product houses */}
             {profile.product_houses?.length > 0 && (
               <div className="bg-white border border-border rounded-xl p-6">
                 <h2 className="text-[16px] font-medium text-ink mb-3">Product House Experience</h2>
@@ -229,6 +238,7 @@ export default function AgencyProfilePage() {
               </div>
             )}
 
+            {/* Qualifications */}
             {profile.qualifications?.length > 0 && (
               <div className="bg-white border border-border rounded-xl p-6">
                 <h2 className="text-[16px] font-medium text-ink mb-3">Qualifications</h2>
@@ -236,9 +246,13 @@ export default function AgencyProfilePage() {
               </div>
             )}
 
+            {/* Reviews */}
             {reviews.length > 0 && (
               <div className="bg-white border border-border rounded-xl p-6">
                 <h2 className="text-[16px] font-medium text-ink mb-4">Reviews</h2>
+
+                {/* Score summary - per-criterion averages across every review,
+                    so a glance shows organisation, retail, reliability etc. */}
                 {(() => {
                   const sums: Record<string, { total: number; n: number }> = {}
                   for (const r of reviews) {
@@ -276,6 +290,7 @@ export default function AgencyProfilePage() {
             )}
           </div>
 
+          {/* Sidebar */}
           <div className="space-y-6">
             <div className="bg-white border border-border rounded-xl p-6">
               <h3 className="text-[14px] font-medium text-ink mb-3">Availability</h3>
@@ -284,25 +299,29 @@ export default function AgencyProfilePage() {
               {profile.has_car && <p className="text-[12px] text-muted mt-2">Has own transport</p>}
             </div>
 
+            {/* Make an offer (employers only) */}
             {isEmployer && (
               <div className="bg-white border border-border rounded-xl p-6">
                 <h3 className="text-[14px] font-medium text-ink mb-1">Make an Offer</h3>
-                <p className="text-[12px] text-muted mb-4">Offer an hourly rate for an agency shift. {profile.full_name?.split(' ')[0] || 'The candidate'} can accept, decline or counter.</p>
+                <p className="text-[12px] text-muted mb-4">Offer a day rate for an agency shift. {profile.full_name?.split(' ')[0] || 'The candidate'} can accept, decline or counter.</p>
 
                 {offer ? (
                   <div>
                     <div className="flex items-center justify-between mb-2">
                       <p className="text-[18px] font-semibold text-accent">£{offer.rate}<span className="text-[12px] font-normal text-muted"> /hour</span></p>
-                      <span className={`text-[11px] font-medium px-2.5 py-1 rounded-full ${offer.status === 'pending' ? 'bg-amber-50 text-amber-700' : 'bg-[#FDF6EC] text-accent'}`}>{offer.status}</span>
+                      <span className={`text-[11px] font-medium px-2.5 py-1 rounded-full ${
+                        offer.status === 'pending' ? 'bg-amber-50 text-amber-700' : 'bg-[#FDF6EC] text-accent'}`}>{offer.status}</span>
                     </div>
-                    <p className="text-[13px] text-secondary mb-3">{offer.shift_date ? new Date(offer.shift_date).toLocaleDateString() : ''}{offer.hours ? ` · ${offer.hours} hours` : ''}</p>
+                    <p className="text-[13px] text-secondary mb-3">
+                      {offer.shift_date ? new Date(offer.shift_date).toLocaleDateString() : ''}{offer.hours ? ` · ${offer.hours} hours` : ''}
+                    </p>
 
                     {offer.status === 'pending' && <p className="text-[13px] text-muted">Offer sent - awaiting a response.</p>}
                     {offer.status === 'countered' && (
                       <div>
                         <p className="text-[13px] text-secondary mb-3">{profile.full_name?.split(' ')[0] || 'The candidate'} has countered with £{offer.rate} per hour{offer.hours ? ` (£${offer.rate * offer.hours} for ${offer.hours} hours + £${offer.platform_fee || Math.ceil(offer.rate * offer.hours * AGENCY_PLATFORM_FEE_PCT)} WHC fee)` : ''}.</p>
                         <div className="flex gap-2">
-                          <button onClick={() => actOnOffer('accept')} disabled={offerBusy} className="btn-primary flex-1 text-[12px] disabled:opacity-50">{offerBusy ? 'Accepting...' : 'Accept Counter & Continue to Payment'}</button>
+                          <button onClick={() => actOnOffer('accept')} disabled={offerBusy} className="btn-primary flex-1 text-[12px] disabled:opacity-50">Accept Counter</button>
                           <button onClick={() => actOnOffer('decline')} disabled={offerBusy} className="btn-secondary flex-1 text-[12px] disabled:opacity-50">Decline</button>
                         </div>
                       </div>
@@ -365,6 +384,7 @@ export default function AgencyProfilePage() {
               </div>
             )}
 
+            {/* Booking history with this therapist (employers only) */}
             {isEmployer && history.length > 0 && (
               <div className="bg-white border border-border rounded-xl p-6">
                 <h3 className="text-[14px] font-medium text-ink mb-3">Your bookings with {profile.full_name?.split(' ')[0] || 'this therapist'}</h3>
@@ -376,22 +396,31 @@ export default function AgencyProfilePage() {
                           {b.shift_date ? new Date(b.shift_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Date TBC'}
                           {b.shift_type ? ` · ${b.shift_type}` : ''}{b.hours ? ` · ${b.hours}h` : ''}
                         </p>
-                        <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${b.status === 'accepted' ? 'bg-blue-50 text-blue-700' : b.status === 'confirmed' || b.status === 'completed' ? 'bg-green-50 text-green-700' : 'bg-gray-100 text-gray-500'}`}>{b.status}</span>
+                        <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${
+                          b.status === 'accepted' ? 'bg-blue-50 text-blue-700'
+                          : b.status === 'confirmed' || b.status === 'completed' ? 'bg-green-50 text-green-700'
+                          : 'bg-gray-100 text-gray-500'}`}>{b.status}</span>
                       </div>
                       <p className="text-[11px] text-muted">£{b.rate}/hour{b.hours ? ` · £${b.rate * b.hours + (b.platform_fee || Math.ceil(b.rate * b.hours * AGENCY_PLATFORM_FEE_PCT))} total incl. WHC fee` : ''}</p>
-                      {b.status === 'accepted' && <a href="/employer/agency" className="text-[11px] font-medium text-accent underline">Awaiting payment - pay &amp; confirm in Agency Bookings</a>}
-                      {b.status === 'confirmed' && <p className="text-[11px] text-green-700">Paid - WHC pays {profile.full_name?.split(' ')[0] || 'the therapist'} after the shift.</p>}
+                      {b.status === 'accepted' && (
+                        <a href="/employer/agency" className="text-[11px] font-medium text-accent underline">Awaiting payment - pay &amp; confirm in Agency Bookings</a>
+                      )}
+                      {b.status === 'confirmed' && (
+                        <p className="text-[11px] text-green-700">Paid - WHC pays {profile.full_name?.split(' ')[0] || 'the therapist'} after the shift.</p>
+                      )}
                     </div>
                   ))}
                 </div>
                 {profile.user_id && history.some((b) => ['accepted', 'confirmed', 'completed'].includes(b.status)) && (
-                  <button type="button" onClick={() => setShowReview(true)} className="mt-3 inline-flex items-center gap-1 text-[12px] font-medium text-amber-500 hover:underline">
+                  <button type="button" onClick={() => setShowReview(true)}
+                    className="mt-3 inline-flex items-center gap-1 text-[12px] font-medium text-amber-500 hover:underline">
                     <Star size={12} /> Review {profile.full_name?.split(' ')[0] || 'this candidate'}
                   </button>
                 )}
               </div>
             )}
 
+            {/* Non-employers: point them at the offer flow */}
             {!isEmployer && (
               <div className="bg-white border border-border rounded-xl p-6">
                 <h3 className="text-[14px] font-medium text-ink mb-2">Book {profile.full_name?.split(' ')[0] || 'this therapist'} for a shift</h3>
@@ -403,6 +432,7 @@ export default function AgencyProfilePage() {
         </div>
       </div>
 
+      {/* Review modal - offered once a shift is agreed */}
       {showReview && profile?.user_id && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setShowReview(false)}>
           <div className="bg-white rounded-2xl max-w-md w-full max-h-[90vh] overflow-y-auto p-6" onClick={(e) => e.stopPropagation()}>
