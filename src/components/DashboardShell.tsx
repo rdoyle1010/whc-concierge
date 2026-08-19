@@ -51,7 +51,6 @@ const navItems: Record<string, NavItem[]> = {
     { label: 'Job Listings', href: '/employer/jobs', icon: <Briefcase size={17} /> },
     { label: 'Candidates', href: '/employer/candidates', icon: <Users size={17} /> },
     { label: 'Applications', href: '/employer/applications', icon: <FileText size={17} /> },
-    { label: 'Shortlist', href: '/employer/shortlist', icon: <Star size={17} /> },
     { label: 'Messages', href: '/employer/messages', icon: <MessageSquare size={17} /> },
     { label: 'Agency Bookings', href: '/employer/agency', icon: <Calendar size={17} />, section: 'Flexible staffing' },
     { label: 'Residency', href: '/employer/residency', icon: <MapPin size={17} /> },
@@ -154,17 +153,12 @@ export default function DashboardShell({ children, role, userName }: DashboardSh
         <div className="fixed inset-0 bg-[#071d2d]/60 backdrop-blur-[1px] z-40 lg:hidden" onClick={() => setSidebarOpen(false)} />
       )}
 
-      <aside className={`dashboard-sidebar fixed top-0 left-0 h-full w-[264px] text-white z-50 transform transition-transform duration-200 lg:translate-x-0 ${
-        sidebarOpen ? 'translate-x-0' : '-translate-x-full'
-      }`}>
+      <aside className={`dashboard-sidebar fixed top-0 left-0 h-full w-[264px] text-white z-50 transform transition-transform duration-200 lg:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         <div className="px-7 pt-7 pb-4">
           <div className="flex items-center justify-between">
             <Wordmark dark />
-            <button type="button" onClick={() => setSidebarOpen(false)} className="lg:hidden text-white/55 hover:text-white p-1" aria-label="Close dashboard navigation">
-              <X size={19} />
-            </button>
+            <button type="button" onClick={() => setSidebarOpen(false)} className="lg:hidden text-white/55 hover:text-white p-1" aria-label="Close dashboard navigation"><X size={19} /></button>
           </div>
-
           <div className="mt-7 pb-5 border-b border-white/10">
             <p className="text-[#d8bf8a] text-[8px] uppercase tracking-[0.22em] font-semibold">{workspaceLabel[role]}</p>
             {userName && <p className="font-serif text-white text-[22px] leading-tight mt-2 truncate">{userName}</p>}
@@ -174,48 +168,25 @@ export default function DashboardShell({ children, role, userName }: DashboardSh
         <nav className="px-4 pb-20 overflow-y-auto h-[calc(100vh-156px)]">
           {items.map((item, index) => {
             const active = isActive(item.href)
-            return (
-              <div key={item.href}>
-                {item.section && (
-                  <p className={`${index === 0 ? 'mt-1' : 'mt-5'} mb-1.5 px-3 text-[8px] font-semibold uppercase tracking-[0.2em] text-white/32`}>
-                    {item.section}
-                  </p>
-                )}
-                <Link
-                  href={item.href}
-                  onClick={() => setSidebarOpen(false)}
-                  className={`dashboard-nav-item relative flex items-center gap-3 px-3 py-2 text-[12.5px] transition-colors border-l ${
-                    active
-                      ? 'text-white bg-white/[0.055] border-[#c9a96e]'
-                      : 'text-white/58 hover:text-white hover:bg-white/[0.035] border-transparent'
-                  }`}
-                >
-                  <span className={active ? 'text-[#d8bf8a]' : 'text-white/44'}>{item.icon}</span>
-                  <span className="tracking-[-0.01em]">{item.label}</span>
-                  {active && <ChevronRight size={12} className="ml-auto text-[#d8bf8a]" />}
-                </Link>
-              </div>
-            )
+            return <div key={item.href}>
+              {item.section && <p className={`${index === 0 ? 'mt-1' : 'mt-5'} mb-1.5 px-3 text-[8px] font-semibold uppercase tracking-[0.2em] text-white/32`}>{item.section}</p>}
+              <Link href={item.href} onClick={() => setSidebarOpen(false)} className={`dashboard-nav-item relative flex items-center gap-3 px-3 py-2 text-[12.5px] transition-colors border-l ${active ? 'text-white bg-white/[0.055] border-[#c9a96e]' : 'text-white/58 hover:text-white hover:bg-white/[0.035] border-transparent'}`}>
+                <span className={active ? 'text-[#d8bf8a]' : 'text-white/44'}>{item.icon}</span>
+                <span className="tracking-[-0.01em]">{item.label}</span>
+                {active && <ChevronRight size={12} className="ml-auto text-[#d8bf8a]" />}
+              </Link>
+            </div>
           })}
         </nav>
 
         <div className="absolute bottom-0 left-0 right-0 px-4 py-4 bg-[#092b45] border-t border-white/[0.07]">
-          <button
-            type="button"
-            onClick={handleSignOut}
-            className="dashboard-nav-item flex items-center gap-3 px-3 py-2.5 text-[12.5px] text-white/48 hover:text-white hover:bg-white/[0.035] w-full transition-colors"
-          >
-            <LogOut size={17} />
-            <span>Sign out</span>
+          <button type="button" onClick={handleSignOut} className="dashboard-nav-item flex items-center gap-3 px-3 py-2.5 text-[12.5px] text-white/48 hover:text-white hover:bg-white/[0.035] w-full transition-colors">
+            <LogOut size={17} /><span>Sign out</span>
           </button>
         </div>
       </aside>
 
-      <main className="lg:ml-[264px] min-h-screen">
-        <div className="p-5 sm:p-6 md:p-8 lg:p-10 xl:p-12 max-w-[1540px] mx-auto">
-          {children}
-        </div>
-      </main>
+      <main className="lg:ml-[264px] min-h-screen"><div className="p-5 sm:p-6 md:p-8 lg:p-10 xl:p-12 max-w-[1540px] mx-auto">{children}</div></main>
     </div>
   )
 }
