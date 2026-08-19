@@ -16,9 +16,10 @@ export async function GET() {
   if (!jobIds.length) return NextResponse.json({ items: [] })
 
   const { data: applications } = await admin.from('applications')
-    .select('id,candidate_id,role_id,job_id,status,match_score,updated_at')
+    .select('id,candidate_id,role_id,job_id,status,match_score,updated_at,archived_at')
     .in('role_id', jobIds)
     .in('status', ['shortlisted','interview','offered','accepted'])
+    .is('archived_at', null)
     .order('updated_at', { ascending: false })
 
   const rows = applications || []
