@@ -1,19 +1,23 @@
 // SMS sending via Twilio's REST API (plain fetch - no SDK dependency).
 //
-// Requires three environment variables in Netlify:
-//   TWILIO_ACCOUNT_SID   - starts "AC..."
-//   TWILIO_AUTH_TOKEN    - secret; paste directly into Netlify, never commit
-//   TWILIO_FROM_NUMBER   - E.164 format, e.g. +447700900123
+// Production-preferred Netlify environment variables:
+//   TWILIO_ACCOUNT_SID
+//   TWILIO_API_KEY_SID
+//   TWILIO_API_KEY_SECRET
+//   TWILIO_FROM_NUMBER
 //
-// Without them, sendSms is a safe no-op that logs and returns false, so the
-// rest of the platform (offers, emails, bell notifications) works unchanged.
+// TWILIO_AUTH_TOKEN is supported only as a fallback for initial testing.
 
 const TWILIO_ACCOUNT_SID = process.env.TWILIO_ACCOUNT_SID
+const TWILIO_API_KEY_SID = process.env.TWILIO_API_KEY_SID
+const TWILIO_API_KEY_SECRET = process.env.TWILIO_API_KEY_SECRET
 const TWILIO_AUTH_TOKEN = process.env.TWILIO_AUTH_TOKEN
 const TWILIO_FROM_NUMBER = process.env.TWILIO_FROM_NUMBER
 
 export function smsConfigured(): boolean {
-  return Boolean(TWILIO_ACCOUNT_SID && TWILIO_AUTH_TOKEN && TWILIO_FROM_NUMBER)
+  const hasProductionKey = Boolean(TWILIO_API_KEY_SID && TWILIO_API_KEY_SECRET)
+  const hasFallbackToken = Boolean(TWILIO_AUTH_TOKEN)
+  return Boolean(TWILIO_ACCOUNT_SID && TWILIO_FROM_NUMBER && (hasProductionKey || hasFallbackToken))
 }
 
 export function normaliseUkMobile(raw: string | null | undefined): string | null {
@@ -37,8 +41,11 @@ export async function sendSms(to: string | null | undefined, body: string): Prom
     console.log(`[SMS skipped - Twilio not configured] To: ${number}, body: ${body.slice(0, 60)}`)
     return false
   }
+
   try {
-    const auth = Buffer.from(`${TWILIO_ACCOUNT_SID}:${TWILIO_AUTH_TOKEN}`).toString('base64')
+    const username = TWILIO_API_KEY_SID || TWILIO_ACCOUNT_SID!
+    const password = TWILIO_API_KEY_SECRET || TWILIO_AUTH_TOKEN!
+    const auth = Buffer.from(`${username}:${password}`).toString('base64')
     const res = await fetch(
       `https://api.twilio.com/2010-04-01/Accounts/${TWILIO_ACCOUNT_SID}/Messages.json`,
       {
