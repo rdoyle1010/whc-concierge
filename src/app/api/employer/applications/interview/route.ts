@@ -26,15 +26,17 @@ export async function POST(req: NextRequest) {
     const roundNumber = Number(body.roundNumber || 1)
     const interviewMethod = String(body.interviewMethod || '')
     const employerNote = String(body.note || '').trim().slice(0, 2000)
-    const slots = Array.isArray(body.slots) ? body.slots.map((value: any) => String(value)).filter(Boolean) : []
+    const slots: string[] = Array.isArray(body.slots)
+      ? body.slots.map((value: unknown) => String(value)).filter((value: string) => value.length > 0)
+      : []
 
     if (!applicationId || !Number.isInteger(roundNumber) || roundNumber < 1 || roundNumber > 3) return NextResponse.json({ error: 'Invalid interview round.' }, { status: 400 })
     if (!METHODS.includes(interviewMethod as any)) return NextResponse.json({ error: 'Choose an interview method.' }, { status: 400 })
     if (slots.length < 1 || slots.length > 4) return NextResponse.json({ error: 'Offer between one and four interview times.' }, { status: 400 })
 
-    const parsedSlots = slots.map(slot => new Date(slot))
-    if (parsedSlots.some(date => Number.isNaN(date.getTime()) || date.getTime() <= Date.now())) return NextResponse.json({ error: 'All interview times must be in the future.' }, { status: 400 })
-    const uniqueIso = Array.from(new Set(parsedSlots.map(date => date.toISOString())))
+    const parsedSlots: Date[] = slots.map((slot: string) => new Date(slot))
+    if (parsedSlots.some((date: Date) => Number.isNaN(date.getTime()) || date.getTime() <= Date.now())) return NextResponse.json({ error: 'All interview times must be in the future.' }, { status: 400 })
+    const uniqueIso: string[] = Array.from(new Set<string>(parsedSlots.map((date: Date) => date.toISOString())))
     if (uniqueIso.length !== slots.length) return NextResponse.json({ error: 'Interview times must be unique.' }, { status: 400 })
 
     const admin = createAdminClient()
@@ -75,7 +77,7 @@ export async function POST(req: NextRequest) {
     const { data: authUser } = await admin.auth.admin.getUserById(candidate.user_id)
     const email = authUser?.user?.email || null
     if (email && RESEND_API_KEY) {
-      const slotHtml = uniqueIso.map(slot => `<li style="margin:7px 0;">${escapeHtml(new Date(slot).toLocaleString('en-GB',{dateStyle:'full',timeStyle:'short',timeZone:'Europe/London'}))}</li>`).join('')
+      const slotHtml = uniqueIso.map((slot: string) => `<li style="margin:7px 0;">${escapeHtml(new Date(slot).toLocaleString('en-GB',{dateStyle:'full',timeStyle:'short',timeZone:'Europe/London'}))}</li>`).join('')
       const html = `<!doctype html><html><body style="margin:0;background:#f5f3ee;font-family:Arial,sans-serif;color:#17344d;"><div style="max-width:560px;margin:32px auto;background:#fff;padding:32px;border-radius:18px;"><p style="color:#9c7a42;font-size:11px;text-transform:uppercase;letter-spacing:1.5px;">Interview invitation</p><h1 style="font-family:Georgia,serif;font-weight:500;">${escapeHtml(job.job_title)}</h1><p>${escapeHtml(propertyName)} would like to invite you to Interview ${roundNumber} via ${escapeHtml(methodLabel(interviewMethod))}.</p><ul>${slotHtml}</ul>${employerNote ? `<p>${escapeHtml(employerNote)}</p>` : ''}<p><a href="https://talent.wellnesshousecollective.co.uk/talent/applications" style="display:inline-block;background:#0b2f4d;color:#fff;text-decoration:none;padding:12px 18px;border-radius:9px;">Choose interview time</a></p></div></body></html>`
       const res = await fetch('https://api.resend.com/emails',{method:'POST',headers:{Authorization:`Bearer ${RESEND_API_KEY}`,'Content-Type':'application/json'},body:JSON.stringify({from:FROM_EMAIL,to:email,subject:title,html})})
       if (!res.ok) console.error('Interview invitation email failed:', res.status)
