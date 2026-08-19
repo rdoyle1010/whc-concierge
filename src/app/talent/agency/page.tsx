@@ -59,7 +59,7 @@ export default function TalentAgencyPage() {
     setActionError('')
     if (action === 'counter') {
       const parsed = parseInt(String(rate), 10)
-      if (!parsed || parsed <= 0) { setActionError('Please enter a valid day rate to counter with.'); return }
+      if (!parsed || parsed <= 0) { setActionError('Please enter a valid hourly rate to counter with.'); return }
     }
     setBusyId(bookingId)
     try {
@@ -93,7 +93,7 @@ export default function TalentAgencyPage() {
   const offers = bookings.filter((b) => b.status === 'pending' || b.status === 'countered')
   const shifts = bookings.filter((b) => b.status !== 'pending' && b.status !== 'countered')
 
-  const expectedPayout = (b: any) => b.payout_amount ?? Math.max(0, b.rate * (b.hours && b.hours > 0 ? b.hours : 8) - Math.ceil(b.rate * (b.hours && b.hours > 0 ? b.hours : 8) * 0.05))
+  const expectedPayout = (b: any) => b.payout_amount ?? Math.max(0, b.rate * (b.hours && b.hours > 0 ? b.hours : 8))
   const paidOut = shifts.filter((b) => b.payout_status === 'paid').reduce((s, b) => s + expectedPayout(b), 0)
   const awaitingPayout = shifts.filter((b) => b.paid_at && b.payout_status === 'pending' && b.dispute_status !== 'open').reduce((s, b) => s + expectedPayout(b), 0)
   const onHold = shifts.filter((b) => b.dispute_status === 'open').reduce((s, b) => s + expectedPayout(b), 0)
@@ -149,7 +149,7 @@ export default function TalentAgencyPage() {
           {offers.length > 0 && (
             <div className="mb-8">
               <h2 className="text-[16px] font-medium text-ink mb-3">Offers</h2>
-              <p className="text-[13px] text-gray-500 mb-4">Properties have offered you these shifts. Accept, decline or counter with a different day rate.</p>
+              <p className="text-[13px] text-gray-500 mb-4">Properties have offered you these shifts. Accept, decline or counter with a different hourly rate.</p>
               {actionError && <p className="text-[13px] text-red-600 mb-3">{actionError}</p>}
               <div className="space-y-4">
                 {offers.map((b) => (
@@ -231,10 +231,10 @@ export default function TalentAgencyPage() {
                     <h3 className="font-medium text-ink">{b.employer_name || 'Property'}{b.employer_review_score > 0 ? <span className="ml-2 inline-flex items-center gap-0.5 text-[11px] font-medium text-amber-500 align-middle"><Star size={10} className="fill-amber-400 text-amber-400" />{Number(b.employer_review_score).toFixed(1)}</span> : null}</h3>
                     <div className="flex items-center space-x-4 text-sm text-gray-500 mt-1">
                       <span className="flex items-center space-x-1"><Calendar size={14} /><span>{b.shift_date ? new Date(b.shift_date).toLocaleDateString() : 'Date TBC'}</span></span>
-                      {b.shift_type && <span className="flex items-center space-x-1"><Clock size={14} /><span>{b.shift_type}</span></span>}
+                      {b.shift_type && <span className="flex items-center space-x-1"><Clock size={14} /><span>{b.shift_type}</span>}
                       {b.hours && <span>{b.hours}h</span>}
                     </div>
-                    {b.status === 'accepted' && <p className="text-[11px] text-blue-700 mt-1.5">Agreed at £{b.rate}/hour - awaiting the property&apos;s payment to WHC. Once paid, your payout of £{Math.max(0, b.rate * (b.hours && b.hours > 0 ? b.hours : 8) - Math.ceil(b.rate * (b.hours && b.hours > 0 ? b.hours : 8) * 0.05))} (after the 5% WHC fee) is confirmed.</p>}
+                    {b.status === 'accepted' && <p className="text-[11px] text-blue-700 mt-1.5">Agreed at £{b.rate}/hour - awaiting the property&apos;s payment to WHC. Your agreed pay is £{expectedPayout(b)}. The property&apos;s 10% platform fee is charged separately and does not reduce your pay.</p>}
                     {(b.status === 'confirmed' || b.status === 'completed') && b.dispute_status === 'open' && <p className="text-[11px] text-amber-700 mt-1.5">The property has raised an issue with this shift - your payout of £{expectedPayout(b)} is on hold while WHC reviews it.</p>}
                     {(b.status === 'confirmed' || b.status === 'completed') && b.dispute_status !== 'open' && (
                       b.payout_status === 'cancelled' ? <p className="text-[11px] text-gray-500 mt-1.5">Issue resolved - no payout is due for this booking.</p> : <p className="text-[11px] text-green-700 mt-1.5">Paid &amp; confirmed - WHC pays you £{expectedPayout(b)} after the shift{b.payout_status === 'paid' ? ` (payout sent${b.payout_at ? ` ${new Date(b.payout_at).toLocaleDateString('en-GB')}` : ''})` : ''}.</p>
@@ -243,7 +243,7 @@ export default function TalentAgencyPage() {
                   <div className="text-right">
                     {b.rate && <p className="font-medium text-ink">£{b.rate}/hr</p>}
                     <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${statusColors[b.status] || ''}`}>{b.status}</span>
-                    {(b.status === 'accepted' || b.status === 'confirmed' || b.status === 'completed') && b.employer_user_id && (
+                    {(b.status === 'confirmed' || b.status === 'completed') && b.employer_user_id && (
                       b.reviewed_by_viewer ? (
                         <span className="flex items-center justify-end gap-1 mt-2 text-[12px] font-medium text-green-700"><Check size={12} /> Reviewed</span>
                       ) : (
