@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import Wordmark from '@/components/Wordmark'
 import Navbar from '@/components/Navbar'
+import ApplicationPipelineHub from '@/components/ApplicationPipelineHub'
 import { usePathname } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import {
@@ -95,6 +96,7 @@ export default function DashboardShell({ children, role, userName }: DashboardSh
   const supabase = createClient()
   const items = navItems[role]
   const isPublicAgencyRoute = pathname === '/agency'
+  const showRecruitmentPipeline = (role === 'talent' && pathname === '/talent/applications') || (role === 'employer' && pathname === '/employer/applications')
 
   useEffect(() => {
     if (!isPublicAgencyRoute) return
@@ -186,7 +188,7 @@ export default function DashboardShell({ children, role, userName }: DashboardSh
         </div>
       </aside>
 
-      <main className="lg:ml-[264px] min-h-screen"><div className="p-5 sm:p-6 md:p-8 lg:p-10 xl:p-12 max-w-[1540px] mx-auto">{children}</div></main>
+      <main className="lg:ml-[264px] min-h-screen"><div className="p-5 sm:p-6 md:p-8 lg:p-10 xl:p-12 max-w-[1540px] mx-auto">{showRecruitmentPipeline && role !== 'admin' ? <ApplicationPipelineHub role={role} /> : null}{children}</div></main>
     </div>
   )
 }
