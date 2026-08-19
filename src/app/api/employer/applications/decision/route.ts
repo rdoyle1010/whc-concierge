@@ -41,6 +41,17 @@ export async function POST(req: NextRequest) {
     if (!application) return NextResponse.json({ error: 'Application not found' }, { status: 404 })
     if (['withdrawn', 'accepted'].includes(application.status) && decision !== application.status) return NextResponse.json({ error: 'This application can no longer be changed from its current stage.' }, { status: 409 })
 
+    const { data: liveOffer } = await admin
+      .from('application_offers')
+      .select('id,status')
+      .eq('application_id', application.id)
+      .in('status', ['offered', 'accepted'])
+      .maybeSingle()
+
+    if (decision === 'rejected' && liveOffer) {
+      return NextResponse.json({ error: 'This candidate already has a live job offer. Withdraw or resolve the offer before marking the application as not progressing.' }, { status: 409 })
+    }
+
     const jobId = application.role_id || application.job_id
     const [{ data: job }, { data: candidate }] = await Promise.all([
       admin.from('job_listings').select('id,job_title,employer_id').eq('id', jobId).maybeSingle(),
