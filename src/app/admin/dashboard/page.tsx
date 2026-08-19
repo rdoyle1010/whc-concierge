@@ -36,6 +36,16 @@ type Health = {
   academy: { enrolments: number; revenue_pence: number; legacy_records: number }
   agency_money: { collected_pounds: number; refunded_pounds: number; payout_pending_pounds: number; open_disputes: number }
   payment_sources: { stripe: number; manual: number; legacy: number; unknown: number }
+  recruitment?: {
+    conversations: number
+    applications: number
+    shortlisted: number
+    interviewed: number
+    offers: number
+    accepted: number
+    hired: number
+    rejected: number
+  }
   scale?: { users: number; candidates: number; employers: number; live_jobs: number; applications: number; messages: number; notification_poll_seconds: number }
   expired_live_jobs: number
 }
@@ -137,6 +147,28 @@ export default function AdminDashboard() {
               </div>
             </div>
 
+            {health.recruitment && (
+              <div className="border-t border-border bg-white px-5 py-5">
+                <div className="mb-3 flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+                  <div>
+                    <p className="dashboard-eyebrow !mb-1">Recruitment funnel</p>
+                    <p className="text-[12px] text-secondary">See how people are moving from conversation through to successful hire.</p>
+                  </div>
+                  <Link href="/admin/matches" className="text-[11px] font-semibold text-accent hover:underline">View match activity →</Link>
+                </div>
+                <div className="grid grid-cols-2 gap-px overflow-hidden rounded-xl border border-border bg-border sm:grid-cols-4 xl:grid-cols-8">
+                  <FunnelCell label="Conversations" value={health.recruitment.conversations} />
+                  <FunnelCell label="Applications" value={health.recruitment.applications} />
+                  <FunnelCell label="Shortlisted" value={health.recruitment.shortlisted} />
+                  <FunnelCell label="Interviewed" value={health.recruitment.interviewed} />
+                  <FunnelCell label="Offers" value={health.recruitment.offers} />
+                  <FunnelCell label="Accepted" value={health.recruitment.accepted} />
+                  <FunnelCell label="Hired" value={health.recruitment.hired} emphasis />
+                  <FunnelCell label="Rejected" value={health.recruitment.rejected} />
+                </div>
+              </div>
+            )}
+
             {health.scale && (
               <div className="border-t border-border bg-[#faf9f6] px-5 py-4">
                 <p className="dashboard-eyebrow !mb-2">Platform scale</p>
@@ -183,6 +215,15 @@ function HealthCell({ label, value, detail, alert = false }: { label: string; va
       <p className="text-[10px] uppercase tracking-[0.13em] text-muted">{label}</p>
       <p className={`mt-1 text-[24px] font-semibold tracking-[-0.03em] ${alert ? 'text-amber-700' : 'text-ink'}`}>{value}</p>
       <p className="mt-1 text-[11px] text-muted">{detail}</p>
+    </div>
+  )
+}
+
+function FunnelCell({ label, value, emphasis = false }: { label: string; value: number; emphasis?: boolean }) {
+  return (
+    <div className={emphasis ? 'bg-[#f3f8f5] px-4 py-4' : 'bg-[#faf9f6] px-4 py-4'}>
+      <p className="text-[9px] uppercase tracking-[0.13em] text-muted">{label}</p>
+      <p className={emphasis ? 'mt-1 text-[23px] font-semibold text-emerald-700' : 'mt-1 text-[23px] font-semibold text-ink'}>{value}</p>
     </div>
   )
 }
