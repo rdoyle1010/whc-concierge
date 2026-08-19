@@ -12,8 +12,9 @@ export async function GET() {
   if (!candidate) return NextResponse.json({ error: 'Candidate profile not found.' }, { status: 404 })
 
   const { data: applications } = await admin.from('applications')
-    .select('id,role_id,job_id,status,match_score,updated_at')
+    .select('id,role_id,job_id,status,match_score,updated_at,archived_at')
     .eq('candidate_id', candidate.id)
+    .is('archived_at', null)
     .in('status', ['shortlisted','interview','offered','accepted'])
     .order('updated_at', { ascending: false })
 
