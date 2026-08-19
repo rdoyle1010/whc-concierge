@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createServerSupabaseClient } from '@/lib/supabase/server'
 import { createNotification } from '@/lib/notifications'
+import { sendSmsIfOptedIn } from '@/lib/sms'
 
 export async function POST(req: NextRequest) {
   const auth = await createServerSupabaseClient()
@@ -25,7 +26,7 @@ export async function POST(req: NextRequest) {
     const jobId = application.role_id || application.job_id
     const [{ data: job }, { data: candidate }] = await Promise.all([
       admin.from('job_listings').select('id,job_title,employer_id').eq('id', jobId).maybeSingle(),
-      admin.from('candidate_profiles').select('id,user_id,full_name').eq('id', application.candidate_id).maybeSingle(),
+      admin.from('candidate_profiles').select('id,user_id,full_name,phone,sms_opt_in').eq('id', application.candidate_id).maybeSingle(),
     ])
     if (!job || job.employer_id !== employer.id || !candidate?.user_id) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
@@ -46,7 +47,14 @@ export async function POST(req: NextRequest) {
     await admin.from('applications').update({ status: 'offered', updated_at: new Date().toISOString() }).eq('id', application.id)
     const propertyName = employer.property_name || employer.company_name || 'The property'
     await createNotification(candidate.user_id, 'general', `Job offer - ${job.job_title}`, `${propertyName} would like to offer you the role. Review the message in My Applications.`, '/talent/applications')
-    return NextResponse.json({ success: true, offer })
+
+    const smsSent = await sendSmsIfOptedIn({
+      to: candidate.phone,
+      optedIn: candidate.sms_opt_in,
+      body: `Spa Platform: Congratulations - ${propertyName} would like to offer you the ${job.job_title} role. Open My Applications to review and respond.`,
+    })
+
+    return NextResponse.json({ success: true, offer, smsSent })
   } catch (error: any) {
     return NextResponse.json({ error: error?.message || 'Could not create the offer.' }, { status: 500 })
   }
