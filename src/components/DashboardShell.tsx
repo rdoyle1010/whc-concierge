@@ -53,6 +53,7 @@ const navItems: Record<string, NavItem[]> = {
     { label: 'Job Listings', href: '/employer/jobs', icon: <Briefcase size={17} /> },
     { label: 'Discover Talent', href: '/employer/candidates', icon: <Users size={17} /> },
     { label: 'Applications', href: '/employer/applications', icon: <FileText size={17} /> },
+    { label: 'Hired', href: '/employer/hired', icon: <Star size={17} /> },
     { label: 'Messages', href: '/employer/messages', icon: <MessageSquare size={17} /> },
     { label: 'Agency Bookings', href: '/employer/agency', icon: <Calendar size={17} />, section: 'Flexible staffing' },
     { label: 'Residency', href: '/employer/residency', icon: <MapPin size={17} /> },
