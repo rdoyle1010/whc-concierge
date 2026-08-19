@@ -20,12 +20,7 @@ export default function AdminMessagesPage() {
   async function load(targetPage = page, targetFilter = filter) {
     setLoading(true)
     try {
-      const params = new URLSearchParams({
-        kind: 'contact_queries',
-        page: String(targetPage),
-        per_page: String(perPage),
-        status: targetFilter,
-      })
+      const params = new URLSearchParams({ kind: 'contact_queries', page: String(targetPage), per_page: String(perPage), status: targetFilter })
       const res = await fetch(`/api/admin/content?${params.toString()}`)
       const j = res.ok ? await res.json() : { rows: [], pagination: { total: 0 } }
       setQueries(j.rows || [])
@@ -43,9 +38,7 @@ export default function AdminMessagesPage() {
     }
   }
 
-  useEffect(() => {
-    load(page, filter)
-  }, [page, filter])
+  useEffect(() => { load(page, filter) }, [page, filter])
 
   const changeFilter = (nextFilter: string) => {
     setSelected(null)
@@ -69,104 +62,130 @@ export default function AdminMessagesPage() {
   }
 
   const statusColors: Record<string, string> = {
-    open: 'bg-amber-50 text-amber-700', replied: 'bg-green-50 text-green-700', closed: 'bg-gray-100 text-gray-500',
+    open: 'border-amber-200 bg-amber-50 text-amber-700',
+    replied: 'border-emerald-200 bg-emerald-50 text-emerald-700',
+    closed: 'border-[#ddd8cf] bg-[#f3f1ed] text-[#7d7971]',
   }
 
   return (
     <DashboardShell role="admin" userName="Admin">
-      <h1 className="text-2xl font-serif font-bold text-ink mb-6">Messages & Enquiries</h1>
+      <div className="mb-7">
+        <p className="dashboard-eyebrow">Inbox & support</p>
+        <h1 className="dashboard-title">Messages & Enquiries</h1>
+        <p className="dashboard-intro">Review incoming enquiries, reply by email and keep every conversation clearly tracked.</p>
+      </div>
 
-      <div className="flex space-x-2 mb-6">
+      <div className="mb-5 flex flex-wrap gap-2">
         {['all', 'open', 'replied', 'closed'].map((f) => (
-          <button key={f} type="button" onClick={() => changeFilter(f)}
-            className={`px-4 py-2 text-sm font-medium rounded-xl transition-colors capitalize ${
-              filter === f ? 'bg-ink text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
-            }`}>{f}</button>
+          <button key={f} type="button" onClick={() => changeFilter(f)} className={`rounded-full border px-4 py-2 text-[11px] font-semibold capitalize transition ${filter === f ? 'border-[#0b2f4d] bg-[#0b2f4d] text-white' : 'border-[#ddd7cd] bg-white text-[#736f68] hover:border-[#baa16f]'}`}>{f}</button>
         ))}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-1 space-y-2 max-h-[70vh] overflow-y-auto">
-          {loading ? (
-            <div className="flex items-center justify-center h-32"><div className="animate-spin w-8 h-8 border-2 border-gold border-t-transparent rounded-full" /></div>
-          ) : queries.length === 0 ? (
-            <div className="text-center py-12 text-gray-400"><Mail size={32} className="mx-auto mb-2 opacity-50" /><p className="text-sm">No messages</p></div>
-          ) : queries.map((q) => (
-            <button key={q.id} type="button" onClick={() => setSelected(q)}
-              className={`w-full text-left p-4 rounded-xl border transition-all ${
-                selected?.id === q.id ? 'border-gold/30 bg-gold/5' : 'border-gray-100 bg-white hover:bg-gray-50'
-              }`}>
-              <div className="flex items-center justify-between mb-1">
-                <p className="font-medium text-ink text-sm truncate">{q.name}</p>
-                <span className={`text-xs px-2 py-0.5 rounded-full ${statusColors[q.status] || 'bg-gray-100 text-gray-500'}`}>{q.status}</span>
-              </div>
-              <p className="text-xs text-gray-500 truncate">{q.subject || q.message}</p>
-              <p className="text-xs text-gray-300 mt-1">{new Date(q.created_at).toLocaleDateString()}</p>
-            </button>
-          ))}
-          <Pagination page={page} perPage={perPage} total={total} showPerPage={false} onPageChange={setPage} />
-        </div>
-
-        <div className="lg:col-span-2">
-          {!selected ? (
-            <div className="dashboard-card flex items-center justify-center h-64 text-gray-300">
-              <div className="text-center"><MessageSquare size={32} className="mx-auto mb-2" /><p className="text-sm">Select a message to view</p></div>
+      <div className="overflow-hidden rounded-[22px] border border-[#ded8cc] bg-white shadow-[0_18px_55px_rgba(22,40,55,0.08)]">
+        <div className="grid min-h-[640px] grid-cols-1 lg:grid-cols-[360px_minmax(0,1fr)]">
+          <aside className="border-b border-[#e8e2d8] bg-[#fbfaf7] lg:border-b-0 lg:border-r">
+            <div className="border-b border-[#e8e2d8] px-5 py-5">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#a48752]">Inbox</p>
+              <p className="mt-1 text-[12px] text-[#7d7972]">{total} message{total === 1 ? '' : 's'}</p>
             </div>
-          ) : (
-            <div className="dashboard-card">
-              <div className="flex items-start justify-between mb-6">
-                <div>
-                  <h3 className="font-serif text-xl font-semibold text-ink">{selected.subject}</h3>
-                  <p className="text-sm text-gray-500">{selected.name} &middot; {selected.email}</p>
-                  <p className="text-xs text-gray-300 mt-1">{new Date(selected.created_at).toLocaleString()}</p>
-                  {selected.type && <span className="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full mt-2 inline-block">{selected.type}</span>}
+            <div className="max-h-[570px] overflow-y-auto">
+              {loading ? (
+                <div className="space-y-3 p-4">{[1,2,3,4].map(i => <div key={i} className="h-[86px] animate-pulse rounded-2xl bg-[#f0ede7]" />)}</div>
+              ) : queries.length === 0 ? (
+                <div className="flex min-h-[300px] flex-col items-center justify-center px-8 text-center">
+                  <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl border border-[#e1dbcf] bg-white text-[#a48752]"><Mail size={20} /></div>
+                  <p className="text-[15px] font-medium text-[#17344d]">No messages here</p>
+                  <p className="mt-2 text-[12px] leading-5 text-[#8b877f]">New enquiries will appear here when they arrive.</p>
                 </div>
-                <div className="flex space-x-2">
-                  <button type="button" onClick={() => updateStatus(selected.id, 'replied')} className="p-2 rounded-lg hover:bg-green-50 text-gray-400 hover:text-green-600" title="Mark replied"><Check size={18} /></button>
-                  <button type="button" onClick={() => deleteQuery(selected.id)} className="p-2 rounded-lg hover:bg-red-50 text-gray-400 hover:text-red-500" title="Delete"><Trash2 size={18} /></button>
-                </div>
-              </div>
-              <div className="p-6 bg-gray-50 rounded-xl">
-                <p className="text-gray-600 whitespace-pre-wrap leading-relaxed">{selected.message}</p>
-              </div>
-
-              <div className="mt-4">
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">Reply by email to {selected.email}</label>
-                <textarea rows={4} value={reply} onChange={(e) => setReply(e.target.value)} className="input-field mb-2"
-                  placeholder={`Hi ${selected.name?.split(' ')[0] || 'there'},`} />
-                {replyMsg && <p className={`text-xs mb-2 ${replyMsg.includes('sent') ? 'text-green-600' : 'text-red-600'}`}>{replyMsg}</p>}
-                <button
-                  type="button"
-                  onClick={async () => {
-                    setSendingReply(true); setReplyMsg('')
-                    try {
-                      const res = await fetch('/api/admin/content', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'query_reply', id: selected.id, message: reply }) })
-                      const j = await res.json()
-                      if (!res.ok) { setReplyMsg(j.error || 'Could not send.') }
-                      else {
-                        setReplyMsg('Reply sent.')
-                        setReply('')
-                        setSelected({ ...selected, status: 'replied' })
-                        await load(page, filter)
-                      }
-                    } catch { setReplyMsg('Could not send - please try again.') }
-                    setSendingReply(false)
-                  }}
-                  disabled={sendingReply || !reply.trim()}
-                  className="btn-primary text-sm flex items-center gap-2 disabled:opacity-50">
-                  <Send size={14} /> {sendingReply ? 'Sending...' : 'Send Reply'}
-                </button>
-              </div>
-              <div className="flex space-x-2 mt-4">
-                {['open', 'replied', 'closed'].map((s) => (
-                  <button key={s} type="button" onClick={() => updateStatus(selected.id, s)}
-                    className={`text-xs px-3 py-1.5 rounded-lg capitalize transition-colors ${
-                      selected.status === s ? 'bg-gold/10 text-gold' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
-                    }`}>{s}</button>
-                ))}
-              </div>
+              ) : queries.map((q) => {
+                const active = selected?.id === q.id
+                const initials = String(q.name || 'Q').split(' ').map((part: string) => part[0]).join('').slice(0,2).toUpperCase()
+                return (
+                  <button key={q.id} type="button" onClick={() => setSelected(q)} className={`w-full border-b border-[#eee9e0] px-4 py-4 text-left transition ${active ? 'bg-white' : 'hover:bg-white/70'}`}>
+                    <div className="flex items-start gap-3">
+                      <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full border text-[11px] font-semibold ${active ? 'border-[#c9a96e] bg-[#f8f1e4] text-[#8d6b31]' : 'border-[#ddd6c9] bg-white text-[#59636c]'}`}>{initials}</div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2">
+                          <p className="min-w-0 flex-1 truncate text-[13px] font-semibold text-[#17344d]">{q.name}</p>
+                          <span className={`rounded-full border px-2 py-0.5 text-[9px] font-semibold capitalize ${statusColors[q.status] || 'border-[#ddd8cf] bg-[#f3f1ed] text-[#7d7971]'}`}>{q.status}</span>
+                        </div>
+                        <p className="mt-1 truncate text-[11px] font-medium text-[#625f5a]">{q.subject || 'General enquiry'}</p>
+                        <p className="mt-1 truncate text-[10px] text-[#99938a]">{q.message}</p>
+                        <p className="mt-2 text-[9px] uppercase tracking-[0.08em] text-[#aaa49a]">{new Date(q.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</p>
+                      </div>
+                    </div>
+                  </button>
+                )
+              })}
             </div>
-          )}
+            <div className="border-t border-[#e8e2d8] bg-white px-4 py-3"><Pagination page={page} perPage={perPage} total={total} showPerPage={false} onPageChange={setPage} /></div>
+          </aside>
+
+          <section className="min-w-0 bg-[#fdfcf9]">
+            {!selected ? (
+              <div className="flex min-h-[640px] flex-col items-center justify-center px-8 text-center">
+                <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-2xl border border-[#e3dccf] bg-white text-[#a48752]"><MessageSquare size={22} /></div>
+                <p className="text-[20px] font-medium tracking-[-0.02em] text-[#17344d]">Select an enquiry</p>
+                <p className="mt-2 max-w-sm text-[12px] leading-5 text-[#8b877f]">Open a message from the inbox to review the enquiry and reply.</p>
+              </div>
+            ) : (
+              <div className="flex min-h-[640px] flex-col">
+                <header className="flex flex-col gap-4 border-b border-[#e7e1d7] bg-white px-5 py-5 sm:flex-row sm:items-start sm:justify-between md:px-7">
+                  <div className="min-w-0">
+                    <div className="mb-2 flex flex-wrap items-center gap-2">
+                      <span className={`rounded-full border px-2.5 py-1 text-[9px] font-semibold capitalize ${statusColors[selected.status] || 'border-[#ddd8cf] bg-[#f3f1ed] text-[#7d7971]'}`}>{selected.status}</span>
+                      {selected.type && <span className="rounded-full border border-[#e5ded1] bg-[#faf8f4] px-2.5 py-1 text-[9px] font-semibold text-[#7c7468]">{selected.type}</span>}
+                    </div>
+                    <h2 className="text-[24px] font-medium tracking-[-0.03em] text-[#17344d]">{selected.subject || 'General enquiry'}</h2>
+                    <p className="mt-2 text-[12px] text-[#6f6b65]">{selected.name} · {selected.email}</p>
+                    <p className="mt-1 text-[10px] text-[#a09a91]">{new Date(selected.created_at).toLocaleString('en-GB')}</p>
+                  </div>
+                  <div className="flex gap-2">
+                    <button type="button" onClick={() => updateStatus(selected.id, 'replied')} className="flex h-10 w-10 items-center justify-center rounded-full border border-[#ddd7cd] bg-white text-[#66717a] transition hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-700" title="Mark replied"><Check size={17} /></button>
+                    <button type="button" onClick={() => deleteQuery(selected.id)} className="flex h-10 w-10 items-center justify-center rounded-full border border-[#ddd7cd] bg-white text-[#8f8a82] transition hover:border-red-200 hover:bg-red-50 hover:text-red-600" title="Delete"><Trash2 size={17} /></button>
+                  </div>
+                </header>
+
+                <div className="flex-1 px-5 py-6 md:px-7">
+                  <div className="rounded-[20px] border border-[#e5dfd5] bg-white p-5 shadow-sm md:p-6">
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#a48752]">Enquiry</p>
+                    <p className="mt-4 whitespace-pre-wrap text-[13px] leading-6 text-[#344a5b]">{selected.message}</p>
+                  </div>
+
+                  <div className="mt-6 rounded-[20px] border border-[#e5dfd5] bg-white p-5 md:p-6">
+                    <div className="mb-4">
+                      <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#a48752]">Reply</p>
+                      <p className="mt-1 text-[12px] text-[#7c7770]">Reply by email to {selected.email}</p>
+                    </div>
+                    <textarea rows={6} value={reply} onChange={(e) => setReply(e.target.value)} className="w-full resize-y rounded-2xl border border-[#ddd6cb] bg-[#fbfaf7] px-4 py-3 text-[13px] leading-6 text-[#17344d] outline-none transition placeholder:text-[#aaa49a] focus:border-[#b99a63] focus:bg-white" placeholder={`Hi ${selected.name?.split(' ')[0] || 'there'},`} />
+                    {replyMsg && <p className={`mt-2 text-[11px] ${replyMsg.includes('sent') ? 'text-emerald-600' : 'text-red-600'}`}>{replyMsg}</p>}
+                    <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                      <div className="flex flex-wrap gap-2">
+                        {['open', 'replied', 'closed'].map((s) => (
+                          <button key={s} type="button" onClick={() => updateStatus(selected.id, s)} className={`rounded-full border px-3 py-1.5 text-[10px] font-semibold capitalize transition ${selected.status === s ? 'border-[#0b2f4d] bg-[#0b2f4d] text-white' : 'border-[#ddd7cd] bg-[#faf9f6] text-[#77736c] hover:border-[#baa16f]'}`}>{s}</button>
+                        ))}
+                      </div>
+                      <button type="button" onClick={async () => {
+                        setSendingReply(true); setReplyMsg('')
+                        try {
+                          const res = await fetch('/api/admin/content', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'query_reply', id: selected.id, message: reply }) })
+                          const j = await res.json()
+                          if (!res.ok) setReplyMsg(j.error || 'Could not send.')
+                          else {
+                            setReplyMsg('Reply sent.')
+                            setReply('')
+                            setSelected({ ...selected, status: 'replied' })
+                            await load(page, filter)
+                          }
+                        } catch { setReplyMsg('Could not send - please try again.') }
+                        setSendingReply(false)
+                      }} disabled={sendingReply || !reply.trim()} className="inline-flex items-center justify-center gap-2 rounded-full bg-[#0b2f4d] px-5 py-2.5 text-[12px] font-semibold text-white transition hover:bg-[#123d5d] disabled:opacity-50"><Send size={14} />{sendingReply ? 'Sending…' : 'Send Reply'}</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </section>
         </div>
       </div>
     </DashboardShell>
