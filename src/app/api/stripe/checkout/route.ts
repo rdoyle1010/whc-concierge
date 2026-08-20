@@ -287,8 +287,8 @@ export async function POST(req: NextRequest) {
           quantity: 1,
         }],
         mode: 'payment',
-        allow_promotion_codes: true,
-        success_url: `${origin}/employer/agency?paid=true`,
+        allow_promotion_codes: false,
+        success_url: `${origin}/employer/agency?paid=processing&booking=${encodeURIComponent(booking.id)}`,
         cancel_url: `${origin}/employer/agency?paid=cancelled`,
         metadata: { type: 'agency_booking', booking_id: booking.id, employer_id: emp.id, user_id: user.id, gross: String(gross), fee: String(fee) },
       })
