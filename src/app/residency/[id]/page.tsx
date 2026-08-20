@@ -2,6 +2,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import ResidencyEnquiryForm from '@/components/ResidencyEnquiryForm'
+import StartResidencyConversation from '@/components/StartResidencyConversation'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
 import { ArrowLeft, Award, Calendar, Clock, MapPin, ShieldCheck, Sparkles, UserRound } from 'lucide-react'
@@ -55,7 +56,7 @@ export default async function ResidencyDetailPage(props: { params: Promise<{ id:
           <div className="grid md:grid-cols-[128px_1fr_auto] gap-7 items-start">
             <div className="w-28 h-32 bg-white/70 border border-white flex items-center justify-center"><UserRound size={38} className="text-accent/70"/></div>
             <div>{r.is_featured && <span className="badge-gold mb-3 inline-flex items-center gap-1"><Sparkles size={11}/>Featured Residency Talent</span>}<p className="text-[10px] uppercase tracking-[.15em] text-muted">{specialistLabel}</p><h1 className="text-4xl md:text-5xl leading-none tracking-[-.035em] font-semibold text-ink mt-2">{r.primary_specialism || 'Wellness Specialist'}</h1><div className="flex flex-wrap gap-4 text-[12px] text-muted mt-5">{r.current_location && <span className="flex items-center gap-1.5"><MapPin size={13}/>{r.current_location}</span>}{r.travel_availability && <span>Travels: {r.travel_availability}</span>}{r.available_from && <span className="flex items-center gap-1.5"><Calendar size={13}/>Available {new Date(r.available_from).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'})}</span>}{r.preferred_duration && <span className="flex items-center gap-1.5"><Clock size={13}/>{r.preferred_duration}</span>}</div>{secondarySpecs.length > 0 && <div className="flex flex-wrap gap-1.5 mt-5">{secondarySpecs.slice(0,7).map((s:string)=><span key={s} className="text-[10px] px-2.5 py-1 bg-white/70 border border-white text-ink">{s}</span>)}</div>}</div>
-            <div className="bg-white border border-white p-5 min-w-[210px] shadow-sm">{dayRate > 0 && <><p className="text-[10px] uppercase tracking-[.12em] text-muted">Indicative rate</p><p className="text-3xl font-semibold text-ink mt-1">£{dayRate}<span className="text-xs font-normal text-muted">/day</span></p></>}<a href="#enquire" className="btn-primary block text-center mt-4">Start Private Chat</a><p className="text-[10px] text-muted text-center mt-2">Identity remains protected until the Residency is confirmed.</p></div>
+            <div className="bg-white border border-white p-5 min-w-[210px] shadow-sm">{dayRate > 0 && <><p className="text-[10px] uppercase tracking-[.12em] text-muted">Indicative rate</p><p className="text-3xl font-semibold text-ink mt-1">£{dayRate}<span className="text-xs font-normal text-muted">/day</span></p></>}<a href="#enquire" className="btn-primary block text-center mt-4">Discuss Residency</a><p className="text-[10px] text-muted text-center mt-2">Identity remains protected until the Residency is confirmed.</p></div>
           </div>
         </div>
       </section>
@@ -75,6 +76,8 @@ export default async function ResidencyDetailPage(props: { params: Promise<{ id:
 
           <aside id="enquire" className="lg:sticky lg:top-24 bg-white border border-border p-6 shadow-lg shadow-black/5">
             <div className="flex items-start gap-3 pb-5 mb-5 border-b border-border"><div className="w-9 h-9 bg-parchment flex items-center justify-center shrink-0"><ShieldCheck size={17} className="text-accent"/></div><div><h2 className="text-[16px] font-semibold text-ink">Start a private conversation</h2><p className="text-[11px] text-muted leading-5 mt-1">Discuss fit first. Direct contact details and identity stay protected until confirmation.</p></div></div>
+            <StartResidencyConversation listingId={r.id} />
+            <div className="flex items-center gap-3 my-5"><span className="h-px flex-1 bg-border"/><span className="text-[10px] uppercase tracking-[.14em] text-muted">or send a structured offer</span><span className="h-px flex-1 bg-border"/></div>
             <ResidencyEnquiryForm specialistName={specialistLabel} listingId={r.id} suggestedDayRate={dayRate} />
           </aside>
         </div>
