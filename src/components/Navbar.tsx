@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import Wordmark from '@/components/Wordmark'
 import { createClient } from '@/lib/supabase/client'
-import { Menu, X, Flame, User, ChevronDown, LayoutDashboard, Settings, LogOut, MessageSquare, Building2, ShieldCheck } from 'lucide-react'
+import { Menu, X, User, ChevronDown, LayoutDashboard, Settings, LogOut, MessageSquare, Building2, ShieldCheck } from 'lucide-react'
 import NotificationBell from '@/components/NotificationBell'
 import { DEFAULT_WEBSITE_CONTENT, type WebsiteContent } from '@/lib/site-content'
 
@@ -64,49 +64,83 @@ export default function Navbar({ siteContent }: { siteContent?: WebsiteContent }
         ? [{ href: '/admin/users', label: 'Users' }, { href: '/admin/blog', label: 'Blog' }, { href: '/admin/complaints', label: 'Complaints' }]
         : [
             { href: '/jobs', label: 'Browse Roles' },
-            { href: '/roles/match', label: 'Match', icon: true },
+            { href: '/roles/match', label: 'Match' },
             { href: '/properties', label: 'Properties' },
             { href: '/talent/agency', label: 'Agency' },
             { href: '/academy', label: 'Academy' },
             { href: '/residency', label: 'Residency' },
           ]
-    : [
-        { href: '/jobs', label: labels.jobs },
-        { href: '/roles/match', label: 'Match', icon: true },
-        { href: '/properties', label: 'Properties' },
-        { href: '/agency/about', label: labels.agency },
-        { href: '/academy', label: labels.academy },
-        { href: '/residency', label: labels.residency },
-        { href: '/blog', label: labels.blog },
-      ]
+    : []
+
+  const publicGroups = [
+    {
+      label: 'Careers',
+      paths: ['/jobs', '/roles/match', '/properties'],
+      items: [
+        { href: '/jobs', label: labels.jobs, note: 'Browse permanent opportunities' },
+        { href: '/roles/match', label: 'Match', note: 'See roles ranked around you' },
+        { href: '/properties', label: 'Properties', note: 'Meet verified employers' },
+      ],
+    },
+    {
+      label: 'Flexible Work',
+      paths: ['/agency', '/residency'],
+      items: [
+        { href: '/agency/about', label: labels.agency, note: 'Flexible shifts and cover' },
+        { href: '/residency', label: labels.residency, note: 'Specialist placements' },
+      ],
+    },
+  ]
 
   const isActive = (href: string) => {
     const path = href.split('?')[0]
     return pathname === path || (path !== '/' && pathname.startsWith(`${path}/`))
   }
 
+  const groupActive = (paths: string[]) => paths.some(path => pathname === path || pathname.startsWith(`${path}/`))
+
   return (
-    <nav className="fixed top-0 z-50 h-[72px] w-full border-b border-white/10 bg-[#0b2f4d] text-white shadow-[0_8px_24px_rgba(7,36,59,0.10)]">
-      <div className="mx-auto grid h-full max-w-[1440px] grid-cols-[auto_1fr_auto] items-center gap-8 px-6 lg:px-10">
+    <nav className="fixed top-0 z-50 h-[76px] w-full border-b border-white/10 bg-[#0b2f4d] text-white shadow-[0_8px_24px_rgba(7,36,59,0.10)]">
+      <div className="mx-auto grid h-full max-w-[1440px] grid-cols-[auto_1fr_auto] items-center gap-10 px-6 lg:px-10">
         <div className="shrink-0"><Wordmark dark compact /></div>
 
         <div className="hidden h-full items-center justify-center lg:flex">
-          <div className="flex h-full items-center gap-1">
-            {navLinks.map(link => {
-              const active = isActive(link.href)
-              return (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  className={`relative flex h-full items-center gap-1.5 px-3.5 text-[11px] font-semibold tracking-[0.015em] transition-colors ${active ? 'text-white' : 'text-white/66 hover:text-white'}`}
-                >
-                  {(link as any).icon && <Flame size={10} className="text-[#d4b477]" />}
-                  <span>{link.label}</span>
-                  {active && <span className="absolute inset-x-3 bottom-0 h-[2px] bg-[#d4b477]" />}
-                </Link>
-              )
-            })}
-          </div>
+          {user ? (
+            <div className="flex h-full items-center gap-1">
+              {navLinks.map(link => {
+                const active = isActive(link.href)
+                return (
+                  <Link key={link.href} href={link.href} className={`relative flex h-full items-center px-3.5 text-[11px] font-semibold tracking-[0.015em] transition-colors ${active ? 'text-white' : 'text-white/66 hover:text-white'}`}>
+                    <span>{link.label}</span>
+                    {active && <span className="absolute inset-x-3 bottom-0 h-[2px] bg-[#d4b477]" />}
+                  </Link>
+                )
+              })}
+            </div>
+          ) : (
+            <div className="flex h-full items-center gap-8">
+              {publicGroups.map(group => {
+                const active = groupActive(group.paths)
+                return (
+                  <div key={group.label} className="group relative flex h-full items-center">
+                    <button type="button" className={`relative flex h-full items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] transition-colors ${active ? 'text-white' : 'text-white/68 group-hover:text-white'}`}>
+                      {group.label}<ChevronDown size={11} className="opacity-65 transition-transform group-hover:rotate-180" />
+                      {active && <span className="absolute inset-x-0 bottom-0 h-[2px] bg-[#d4b477]" />}
+                    </button>
+                    <div className="pointer-events-none absolute left-1/2 top-[64px] w-[290px] -translate-x-1/2 translate-y-2 border border-[#d8d3c8] bg-white p-2 opacity-0 shadow-[0_18px_48px_rgba(5,29,46,.16)] transition-all duration-150 group-hover:pointer-events-auto group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:translate-y-0 group-focus-within:opacity-100">
+                      {group.items.map(item => <Link key={item.href} href={item.href} className="block border-b border-[#ece8e1] px-4 py-3.5 last:border-0 hover:bg-[#f7f4ed]">
+                        <span className="block text-[12px] font-semibold text-[#10283b]">{item.label}</span>
+                        <span className="mt-1 block text-[10px] leading-4 text-[#7a858c]">{item.note}</span>
+                      </Link>)}
+                    </div>
+                  </div>
+                )
+              })}
+
+              <Link href="/academy" className={`relative flex h-full items-center text-[10px] font-semibold uppercase tracking-[0.16em] transition-colors ${isActive('/academy') ? 'text-white' : 'text-white/68 hover:text-white'}`}>Academy{isActive('/academy') && <span className="absolute inset-x-0 bottom-0 h-[2px] bg-[#d4b477]" />}</Link>
+              <Link href="/blog" className={`relative flex h-full items-center text-[10px] font-semibold uppercase tracking-[0.16em] transition-colors ${isActive('/blog') ? 'text-white' : 'text-white/68 hover:text-white'}`}>Journal{isActive('/blog') && <span className="absolute inset-x-0 bottom-0 h-[2px] bg-[#d4b477]" />}</Link>
+            </div>
+          )}
         </div>
 
         <div className="hidden items-center justify-end lg:flex">
@@ -114,8 +148,7 @@ export default function Navbar({ siteContent }: { siteContent?: WebsiteContent }
             <>
               <div className="mr-2 border-r border-white/12 pr-3 text-white"><NotificationBell userId={user.id} /></div>
               <div className="relative" ref={dropdownRef}>
-                <button type="button" onClick={() => setProfileOpen(!profileOpen)} aria-label="Open account menu"
-                  aria-expanded={profileOpen} aria-haspopup="menu" className="flex items-center gap-2 px-1.5 py-1 text-white/75 transition-colors hover:text-white">
+                <button type="button" onClick={() => setProfileOpen(!profileOpen)} aria-label="Open account menu" aria-expanded={profileOpen} aria-haspopup="menu" className="flex items-center gap-2 px-1.5 py-1 text-white/75 transition-colors hover:text-white">
                   <div className="flex h-8 w-8 items-center justify-center rounded-full border border-white/18 bg-white/7 text-[10px] font-semibold text-white">
                     {initials || (isAdmin ? <ShieldCheck size={15} /> : isEmployer ? <Building2 size={15} /> : <User size={15} />)}
                   </div>
@@ -134,37 +167,46 @@ export default function Navbar({ siteContent }: { siteContent?: WebsiteContent }
               </div>
             </>
           ) : (
-            <div className="flex items-stretch border border-white/18">
-              <Link href="/login?role=talent" className="px-4 py-2.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-white/78 transition-colors hover:bg-white/8 hover:text-white">For Talent</Link>
-              <span className="w-px bg-white/15" />
-              <Link href="/login?role=employer" className="bg-[#c9a96e] px-4 py-2.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-[#0b2f4d] transition-colors hover:bg-[#d4b477]">For Properties</Link>
+            <div className="flex items-center gap-5 whitespace-nowrap">
+              <Link href="/login?role=talent" className="text-[9px] font-semibold uppercase tracking-[0.17em] text-white/66 transition-colors hover:text-white">Talent Portal</Link>
+              <span className="h-5 w-px bg-white/18" />
+              <Link href="/login?role=employer" className="text-[9px] font-semibold uppercase tracking-[0.17em] text-[#d4b477] transition-colors hover:text-white">Property Portal</Link>
             </div>
           )}
         </div>
 
-        <button type="button" onClick={() => setMobileOpen(!mobileOpen)} className="col-start-3 rounded-lg p-2 text-white transition-colors hover:bg-white/10 lg:hidden"
-          aria-label={mobileOpen ? 'Close navigation menu' : 'Open navigation menu'} aria-expanded={mobileOpen} aria-controls="mobile-navigation">
+        <button type="button" onClick={() => setMobileOpen(!mobileOpen)} className="col-start-3 rounded-lg p-2 text-white transition-colors hover:bg-white/10 lg:hidden" aria-label={mobileOpen ? 'Close navigation menu' : 'Open navigation menu'} aria-expanded={mobileOpen} aria-controls="mobile-navigation">
           {mobileOpen ? <X size={20} /> : <Menu size={20} />}
         </button>
       </div>
 
       {mobileOpen && (
-        <div id="mobile-navigation" className="border-t border-white/10 bg-[#0b2f4d] lg:hidden">
-          <div className="space-y-1 px-6 py-5">
-            {navLinks.map(link => (
-              <Link key={link.href} href={link.href} className={`block border-b border-white/8 px-1 py-3 text-[13px] font-medium ${isActive(link.href) ? 'text-white' : 'text-white/70 hover:text-white'}`} onClick={() => setMobileOpen(false)}>{link.label}</Link>
-            ))}
-            <div className="mt-4 space-y-2 border-t border-white/10 pt-4">
+        <div id="mobile-navigation" className="max-h-[calc(100vh-76px)] overflow-y-auto border-t border-white/10 bg-[#0b2f4d] lg:hidden">
+          <div className="px-6 py-5">
+            {user ? navLinks.map(link => <Link key={link.href} href={link.href} className={`block border-b border-white/8 py-3 text-[13px] font-medium ${isActive(link.href) ? 'text-white' : 'text-white/70 hover:text-white'}`} onClick={() => setMobileOpen(false)}>{link.label}</Link>) : (
+              <>
+                <p className="pb-2 text-[9px] font-semibold uppercase tracking-[.18em] text-[#d4b477]">Careers</p>
+                {publicGroups[0].items.map(item => <Link key={item.href} href={item.href} className="block border-b border-white/8 py-3 text-[13px] text-white/78" onClick={() => setMobileOpen(false)}>{item.label}</Link>)}
+                <p className="pb-2 pt-6 text-[9px] font-semibold uppercase tracking-[.18em] text-[#d4b477]">Flexible Work</p>
+                {publicGroups[1].items.map(item => <Link key={item.href} href={item.href} className="block border-b border-white/8 py-3 text-[13px] text-white/78" onClick={() => setMobileOpen(false)}>{item.label}</Link>)}
+                <p className="pb-2 pt-6 text-[9px] font-semibold uppercase tracking-[.18em] text-[#d4b477]">Development & Ideas</p>
+                <Link href="/academy" className="block border-b border-white/8 py-3 text-[13px] text-white/78" onClick={() => setMobileOpen(false)}>Academy</Link>
+                <Link href="/blog" className="block border-b border-white/8 py-3 text-[13px] text-white/78" onClick={() => setMobileOpen(false)}>Journal</Link>
+              </>
+            )}
+
+            <div className="mt-5 border-t border-white/12 pt-5">
               {user ? (
                 <>
-                  <Link href={dashboardHref} className="block px-1 py-2 text-[13px] font-medium text-white" onClick={() => setMobileOpen(false)}>Dashboard</Link>
-                  <Link href={isEmployer ? '/employer/messages' : isAdmin ? '/admin/messages' : '/talent/messages'} className="block px-1 py-2 text-[13px] text-white/70" onClick={() => setMobileOpen(false)}>Messages</Link>
-                  <button type="button" onClick={handleSignOut} className="block w-full px-1 py-2 text-left text-[13px] text-white/70">Sign Out</button>
+                  <Link href={dashboardHref} className="block py-2 text-[13px] font-medium text-white" onClick={() => setMobileOpen(false)}>Dashboard</Link>
+                  <Link href={isEmployer ? '/employer/messages' : isAdmin ? '/admin/messages' : '/talent/messages'} className="block py-2 text-[13px] text-white/70" onClick={() => setMobileOpen(false)}>Messages</Link>
+                  <button type="button" onClick={handleSignOut} className="block w-full py-2 text-left text-[13px] text-white/70">Sign Out</button>
                 </>
               ) : (
-                <div className="grid grid-cols-2 border border-white/18">
-                  <Link href="/login?role=talent" className="px-3 py-3 text-center text-[10px] font-semibold uppercase tracking-[0.1em] text-white" onClick={() => setMobileOpen(false)}>For Talent</Link>
-                  <Link href="/login?role=employer" className="bg-[#c9a96e] px-3 py-3 text-center text-[10px] font-semibold uppercase tracking-[0.1em] text-[#0b2f4d]" onClick={() => setMobileOpen(false)}>For Properties</Link>
+                <div className="flex items-center gap-5">
+                  <Link href="/login?role=talent" className="text-[10px] font-semibold uppercase tracking-[.14em] text-white" onClick={() => setMobileOpen(false)}>Talent Portal</Link>
+                  <span className="h-5 w-px bg-white/18" />
+                  <Link href="/login?role=employer" className="text-[10px] font-semibold uppercase tracking-[.14em] text-[#d4b477]" onClick={() => setMobileOpen(false)}>Property Portal</Link>
                 </div>
               )}
             </div>
