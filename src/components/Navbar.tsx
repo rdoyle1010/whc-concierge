@@ -86,41 +86,43 @@ export default function Navbar({ siteContent }: { siteContent?: WebsiteContent }
   }
 
   return (
-    <nav className="fixed top-0 z-50 h-[68px] w-full border-b border-white/10 bg-[#0b2f4d] text-white shadow-[0_8px_24px_rgba(7,36,59,0.12)]">
-      <div className="mx-auto flex h-full max-w-7xl items-center justify-between px-6 lg:px-8">
-        <Wordmark dark compact />
+    <nav className="fixed top-0 z-50 h-[72px] w-full border-b border-white/10 bg-[#0b2f4d] text-white shadow-[0_8px_24px_rgba(7,36,59,0.10)]">
+      <div className="mx-auto grid h-full max-w-[1440px] grid-cols-[auto_1fr_auto] items-center gap-8 px-6 lg:px-10">
+        <div className="shrink-0"><Wordmark dark compact /></div>
 
-        <div className="hidden items-center gap-0.5 lg:flex">
-          {navLinks.map(link => {
-            const active = isActive(link.href)
-            return (
-              <Link
-                key={link.href}
-                href={link.href}
-                className={`relative flex items-center gap-1 rounded-xl px-3 py-2 text-[12px] font-medium transition-all ${active ? 'bg-white/10 text-white' : 'text-white/70 hover:bg-white/10 hover:text-white'}`}
-              >
-                {(link as any).icon && <Flame size={11} className="text-[#d4b477]" />}
-                <span>{link.label}</span>
-                {active && <span className="absolute inset-x-3 -bottom-[9px] h-[2px] rounded-full bg-[#d4b477]" />}
-              </Link>
-            )
-          })}
+        <div className="hidden h-full items-center justify-center lg:flex">
+          <div className="flex h-full items-center gap-1">
+            {navLinks.map(link => {
+              const active = isActive(link.href)
+              return (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className={`relative flex h-full items-center gap-1.5 px-3.5 text-[11px] font-semibold tracking-[0.015em] transition-colors ${active ? 'text-white' : 'text-white/66 hover:text-white'}`}
+                >
+                  {(link as any).icon && <Flame size={10} className="text-[#d4b477]" />}
+                  <span>{link.label}</span>
+                  {active && <span className="absolute inset-x-3 bottom-0 h-[2px] bg-[#d4b477]" />}
+                </Link>
+              )
+            })}
+          </div>
         </div>
 
-        <div className="hidden items-center gap-2.5 lg:flex">
+        <div className="hidden items-center justify-end lg:flex">
           {user ? (
             <>
-              <div className="rounded-xl bg-white/10 p-1 text-white"><NotificationBell userId={user.id} /></div>
+              <div className="mr-2 border-r border-white/12 pr-3 text-white"><NotificationBell userId={user.id} /></div>
               <div className="relative" ref={dropdownRef}>
                 <button type="button" onClick={() => setProfileOpen(!profileOpen)} aria-label="Open account menu"
-                  aria-expanded={profileOpen} aria-haspopup="menu" className="flex items-center gap-2 rounded-xl px-2 py-1.5 text-white/75 transition-colors hover:bg-white/10 hover:text-white">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-full border border-white/15 bg-white/10 text-[10px] font-semibold text-white">
+                  aria-expanded={profileOpen} aria-haspopup="menu" className="flex items-center gap-2 px-1.5 py-1 text-white/75 transition-colors hover:text-white">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full border border-white/18 bg-white/7 text-[10px] font-semibold text-white">
                     {initials || (isAdmin ? <ShieldCheck size={15} /> : isEmployer ? <Building2 size={15} /> : <User size={15} />)}
                   </div>
-                  <ChevronDown size={12} className={`transition-transform ${profileOpen ? 'rotate-180' : ''}`} />
+                  <ChevronDown size={11} className={`transition-transform ${profileOpen ? 'rotate-180' : ''}`} />
                 </button>
                 {profileOpen && (
-                  <div className="absolute right-0 mt-3 w-[210px] overflow-hidden rounded-2xl border border-border bg-white py-1.5 text-ink shadow-xl animate-fade-in">
+                  <div className="absolute right-0 mt-3 w-[210px] overflow-hidden border border-border bg-white py-1.5 text-ink shadow-xl animate-fade-in">
                     <Link href={dashboardHref} className="flex items-center gap-2.5 px-4 py-2.5 text-[13px] text-secondary hover:bg-surface hover:text-ink" onClick={() => setProfileOpen(false)}><LayoutDashboard size={13} />Dashboard</Link>
                     {!isAdmin && <Link href={profileHref} className="flex items-center gap-2.5 px-4 py-2.5 text-[13px] text-secondary hover:bg-surface hover:text-ink" onClick={() => setProfileOpen(false)}><User size={13} />My Profile</Link>}
                     <Link href={isEmployer ? '/employer/messages' : isAdmin ? '/admin/messages' : '/talent/messages'} className="flex items-center gap-2.5 px-4 py-2.5 text-[13px] text-secondary hover:bg-surface hover:text-ink" onClick={() => setProfileOpen(false)}><MessageSquare size={13} />Messages</Link>
@@ -132,14 +134,15 @@ export default function Navbar({ siteContent }: { siteContent?: WebsiteContent }
               </div>
             </>
           ) : (
-            <>
-              <Link href="/login?role=talent" className="rounded-xl border border-white/20 px-4 py-2 text-[12px] font-semibold text-white transition-all hover:bg-white/10">{labels.talentSignIn}</Link>
-              <Link href="/login?role=employer" className="rounded-xl bg-[#c9a96e] px-4 py-2 text-[12px] font-semibold text-[#0b2f4d] transition-all hover:bg-[#d4b477]">{labels.employerSignIn}</Link>
-            </>
+            <div className="flex items-stretch border border-white/18">
+              <Link href="/login?role=talent" className="px-4 py-2.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-white/78 transition-colors hover:bg-white/8 hover:text-white">For Talent</Link>
+              <span className="w-px bg-white/15" />
+              <Link href="/login?role=employer" className="bg-[#c9a96e] px-4 py-2.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-[#0b2f4d] transition-colors hover:bg-[#d4b477]">For Properties</Link>
+            </div>
           )}
         </div>
 
-        <button type="button" onClick={() => setMobileOpen(!mobileOpen)} className="rounded-xl p-2 text-white transition-colors hover:bg-white/10 lg:hidden"
+        <button type="button" onClick={() => setMobileOpen(!mobileOpen)} className="col-start-3 rounded-lg p-2 text-white transition-colors hover:bg-white/10 lg:hidden"
           aria-label={mobileOpen ? 'Close navigation menu' : 'Open navigation menu'} aria-expanded={mobileOpen} aria-controls="mobile-navigation">
           {mobileOpen ? <X size={20} /> : <Menu size={20} />}
         </button>
@@ -149,20 +152,20 @@ export default function Navbar({ siteContent }: { siteContent?: WebsiteContent }
         <div id="mobile-navigation" className="border-t border-white/10 bg-[#0b2f4d] lg:hidden">
           <div className="space-y-1 px-6 py-5">
             {navLinks.map(link => (
-              <Link key={link.href} href={link.href} className={`block rounded-xl px-3 py-2.5 text-[14px] ${isActive(link.href) ? 'bg-white/10 text-white' : 'text-white/70 hover:bg-white/10 hover:text-white'}`} onClick={() => setMobileOpen(false)}>{link.label}</Link>
+              <Link key={link.href} href={link.href} className={`block border-b border-white/8 px-1 py-3 text-[13px] font-medium ${isActive(link.href) ? 'text-white' : 'text-white/70 hover:text-white'}`} onClick={() => setMobileOpen(false)}>{link.label}</Link>
             ))}
             <div className="mt-4 space-y-2 border-t border-white/10 pt-4">
               {user ? (
                 <>
-                  <Link href={dashboardHref} className="block rounded-xl px-3 py-2 text-[14px] font-medium text-white" onClick={() => setMobileOpen(false)}>Dashboard</Link>
-                  <Link href={isEmployer ? '/employer/messages' : isAdmin ? '/admin/messages' : '/talent/messages'} className="block rounded-xl px-3 py-2 text-[14px] text-white/70" onClick={() => setMobileOpen(false)}>Messages</Link>
-                  <button type="button" onClick={handleSignOut} className="block w-full rounded-xl px-3 py-2 text-left text-[14px] text-white/70">Sign Out</button>
+                  <Link href={dashboardHref} className="block px-1 py-2 text-[13px] font-medium text-white" onClick={() => setMobileOpen(false)}>Dashboard</Link>
+                  <Link href={isEmployer ? '/employer/messages' : isAdmin ? '/admin/messages' : '/talent/messages'} className="block px-1 py-2 text-[13px] text-white/70" onClick={() => setMobileOpen(false)}>Messages</Link>
+                  <button type="button" onClick={handleSignOut} className="block w-full px-1 py-2 text-left text-[13px] text-white/70">Sign Out</button>
                 </>
               ) : (
-                <>
-                  <Link href="/login?role=talent" className="block rounded-xl border border-white/20 px-4 py-2.5 text-center text-[13px] font-semibold text-white" onClick={() => setMobileOpen(false)}>{labels.talentSignIn}</Link>
-                  <Link href="/login?role=employer" className="mt-2 block rounded-xl bg-[#c9a96e] px-4 py-2.5 text-center text-[13px] font-semibold text-[#0b2f4d]" onClick={() => setMobileOpen(false)}>{labels.employerSignIn}</Link>
-                </>
+                <div className="grid grid-cols-2 border border-white/18">
+                  <Link href="/login?role=talent" className="px-3 py-3 text-center text-[10px] font-semibold uppercase tracking-[0.1em] text-white" onClick={() => setMobileOpen(false)}>For Talent</Link>
+                  <Link href="/login?role=employer" className="bg-[#c9a96e] px-3 py-3 text-center text-[10px] font-semibold uppercase tracking-[0.1em] text-[#0b2f4d]" onClick={() => setMobileOpen(false)}>For Properties</Link>
+                </div>
               )}
             </div>
           </div>
