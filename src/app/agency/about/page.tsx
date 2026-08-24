@@ -21,7 +21,7 @@ export default function PublicAgencyPage() {
         <div className="max-w-7xl mx-auto px-6 lg:px-8 py-20 md:py-28 grid lg:grid-cols-[1.1fr_.9fr] gap-12 items-center">
           <div>
             <p className="text-[10px] uppercase tracking-[0.2em] font-semibold text-[#d4b477] mb-5">Flexible hospitality staffing</p>
-            <h1 className="text-[45px] md:text-[64px] font-semibold tracking-[-0.045em] leading-[.98] max-w-3xl">Need cover today? Or want to turn your availability into paid shifts?</h1>
+            <h1 className="text-[45px] md:text-[64px] font-semibold tracking-[-0.045em] leading-[.98] max-w-3xl text-white">Need cover today? Or want to turn your availability into paid shifts?</h1>
             <p className="text-[16px] md:text-[18px] leading-8 text-white/68 max-w-2xl mt-7">Spa Platform connects verified wellness professionals with properties that need trusted flexible cover — from planned rota gaps to urgent same-day shifts.</p>
             <div className="flex flex-col sm:flex-row gap-3 mt-9">
               <Link href="/login?role=employer&redirect=/agency" className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#d4b477] px-6 py-3.5 text-[13px] font-semibold text-[#0b2f4d] hover:bg-[#e0c48e] transition-colors">I need cover <ArrowRight size={14} /></Link>
