@@ -31,6 +31,17 @@ export default function PublicPagesEditor() {
     })
   }
 
+  function updateRoot(path: string, value: any) {
+    setContent(prev => {
+      const next = JSON.parse(JSON.stringify(prev))
+      const parts = path.split('.')
+      let target: any = next
+      for (let i=0;i<parts.length-1;i++) target = target[parts[i]]
+      target[parts[parts.length-1]] = value
+      return next
+    })
+  }
+
   async function save(action: 'save'|'publish') {
     setBusy(action); setNotice('')
     const res = await fetch('/api/admin/public-pages', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ action, content }) })
@@ -41,13 +52,14 @@ export default function PublicPagesEditor() {
     setNotice(action === 'publish' ? 'Pages published successfully.' : 'Draft saved.')
   }
 
-  async function upload(path: string, file?: File) {
+  async function upload(path: string, file?: File, root = false) {
     if (!file) return
     setBusy('upload')
-    const form = new FormData(); form.append('file', file); form.append('bucket','site-images'); form.append('path', `page-${selected}-${Date.now()}-${file.name.replace(/[^a-zA-Z0-9._-]/g,'-')}`)
+    const form = new FormData(); form.append('file', file); form.append('bucket','site-images'); form.append('path', `${root ? 'sitewide' : `page-${selected}`}-${Date.now()}-${file.name.replace(/[^a-zA-Z0-9._-]/g,'-')}`)
     const res = await fetch('/api/upload', { method:'POST', body:form }); const data = await res.json().catch(() => ({})); setBusy(null)
     if (!res.ok) return setNotice(data.error || 'Image upload failed.')
-    update(`${path}.url`, data.url)
+    if (root) updateRoot(`${path}.url`, data.url)
+    else update(`${path}.url`, data.url)
     setNotice('Photo uploaded into the draft. Save or publish when ready.')
   }
 
@@ -65,6 +77,22 @@ export default function PublicPagesEditor() {
     <div className="max-w-[1400px] mx-auto">
       <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4 mb-7"><div><p className="dashboard-eyebrow">Website & Brand</p><h1 className="dashboard-title">Public Pages</h1><p className="dashboard-intro">Change the wording and photography for each major public page without touching GitHub.</p></div><div className="flex flex-wrap gap-2">{changed && <span className="px-3 py-2 bg-amber-50 text-amber-700 text-[11px]">Unpublished changes</span>}<button onClick={()=>save('save')} disabled={!!busy} className="btn-secondary inline-flex gap-2 items-center"><Save size={14}/>{busy==='save'?'Saving...':'Save draft'}</button><a href={`${pagePaths[selected]}?pagePreview=draft`} target="_blank" className="btn-secondary inline-flex gap-2 items-center"><Eye size={14}/>Preview page</a><button onClick={()=>save('publish')} disabled={!!busy} className="btn-primary inline-flex gap-2 items-center"><Send size={14}/>{busy==='publish'?'Publishing...':'Publish pages'}</button></div></div>
       {notice && <div className="mb-5 px-4 py-3 bg-white border border-border text-[12px] flex items-center gap-2"><CheckCircle2 size={14} className="text-accent"/>{notice}</div>}
+
+      <section className="dashboard-panel mb-6">
+        <p className="dashboard-eyebrow">Sitewide</p>
+        <h2 className="dashboard-section-title mt-1">Footer editorial image strip</h2>
+        <p className="text-[12px] text-muted mt-2 max-w-3xl">These four photographs appear above the footer across the public website. Change them once here and publish to update the strip everywhere.</p>
+        <div className="grid md:grid-cols-2 xl:grid-cols-4 gap-4 mt-5">
+          {content.editorialBand.map((image, index) => <div key={index} className="border border-border bg-white p-3">
+            <div className="aspect-[4/5] overflow-hidden bg-surface">{image.url ? <img src={image.url} alt={image.alt} className="w-full h-full object-cover" style={{objectPosition:`${image.focalX}% ${image.focalY}%`}}/> : null}</div>
+            <label className="mt-3 btn-secondary inline-flex w-full justify-center items-center gap-2 cursor-pointer"><Upload size={13}/>{busy==='upload'?'Uploading...':'Replace photo'}<input type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={e => { upload(`editorialBand.${index}`,e.target.files?.[0],true); e.currentTarget.value='' }}/></label>
+            <label className="block text-[11px] mt-3">Caption<input className="input-field mt-1" value={image.label} onChange={e=>updateRoot(`editorialBand.${index}.label`,e.target.value)}/></label>
+            <label className="block text-[11px] mt-3">Alt text<input className="input-field mt-1" value={image.alt} onChange={e=>updateRoot(`editorialBand.${index}.alt`,e.target.value)}/></label>
+            <div className="grid grid-cols-2 gap-3 mt-3"><label className="text-[10px]">Horizontal<input type="range" min="0" max="100" value={image.focalX} className="w-full mt-1" onChange={e=>updateRoot(`editorialBand.${index}.focalX`,Number(e.target.value))}/></label><label className="text-[10px]">Vertical<input type="range" min="0" max="100" value={image.focalY} className="w-full mt-1" onChange={e=>updateRoot(`editorialBand.${index}.focalY`,Number(e.target.value))}/></label></div>
+          </div>)}
+        </div>
+      </section>
+
       <div className="grid lg:grid-cols-[230px_1fr] gap-6">
         <aside className="bg-white border border-border p-3 h-fit">{PUBLIC_PAGE_SLUGS.map(slug => <button key={slug} onClick={()=>setSelected(slug)} className={`w-full text-left px-4 py-3 text-[12px] border-l-2 ${selected===slug?'border-accent bg-surface text-ink':'border-transparent text-muted hover:text-ink'}`}>{pageNames[slug]}</button>)}</aside>
         <div className="space-y-6">
