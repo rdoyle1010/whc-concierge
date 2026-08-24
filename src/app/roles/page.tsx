@@ -1,155 +1,67 @@
-'use client'
-
-import { useEffect, useState } from 'react'
-import { createClient } from '@/lib/supabase/client'
-import { calculateMatchScore } from '@/lib/matching'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
-import Link from 'next/link'
-import { MapPin, Briefcase, Search, Sparkles, ArrowRight } from 'lucide-react'
-import SkeletonCard from '@/components/SkeletonCard'
-import Pagination from '@/components/Pagination'
 import SponsoredAd from '@/components/SponsoredAd'
+import PublicRolesBrowser from '@/components/PublicRolesBrowser'
+import { createAdminClient } from '@/lib/supabase/admin'
 
-const ROLE_TYPES = ['All', 'Permanent', 'Fixed Term', 'Freelance', 'Agency', 'Seasonal']
+export const revalidate = 180
 
-export default function BrowseRolesPage() {
-  const supabase = createClient()
-  const [jobs, setJobs] = useState<any[]>([])
-  const [loading, setLoading] = useState(true)
-  const [profile, setProfile] = useState<any>(null)
-  const [search, setSearch] = useState('')
-  const [roleType, setRoleType] = useState('All')
-  const [locationFilter, setLocationFilter] = useState('')
-  const [page, setPage] = useState(1)
-  const perPage = 12
+async function getPublicRoles() {
+  try {
+    const admin = createAdminClient()
+    const { data, error } = await admin
+      .from('job_listings')
+      .select('id,job_title,title,job_description,description,location,salary_min,salary_max,contract_type,job_type,tier,required_brands,posted_date,is_live')
+      .eq('is_live', true)
+      .order('posted_date', { ascending: false })
+      .limit(150)
 
-  useEffect(() => {
-    async function load() {
-      let loadedProfile: any = null
-      const { data: { user } } = await supabase.auth.getUser()
-      if (user) {
-        const { data: cp } = await supabase.from('candidate_profiles').select('*').eq('user_id', user.id).single()
-        setProfile(cp)
-        loadedProfile = cp
-      }
+    if (error) return []
 
-      const { data: rawJobs } = await supabase
-        .from('job_listings')
-        .select('*, employer_profiles(company_name, property_name)')
-        .eq('is_live', true)
-        .order('posted_date', { ascending: false })
+    return (data || []).map((job: any) => ({
+      id: job.id,
+      title: job.job_title || job.title || 'Hospitality opportunity',
+      description: job.job_description || job.description || '',
+      location: job.location || '',
+      salary: job.salary_min >= 1000 && job.salary_max >= 1000
+        ? `£${Math.round(job.salary_min / 1000)}k - £${Math.round(job.salary_max / 1000)}k`
+        : job.salary_min && job.salary_max
+          ? `£${job.salary_min} - £${job.salary_max}`
+          : 'Competitive',
+      contract_type: job.contract_type || '',
+      job_type: job.job_type || '',
+      tier: job.tier || 'Standard',
+      required_brands: job.required_brands || [],
+    }))
+  } catch {
+    return []
+  }
+}
 
-      const normalized = (rawJobs || []).map((j: any) => {
-        const title = j.job_title || j.title
-        const description = j.job_description || j.description
-        const companyName = j.employer_profiles?.property_name || j.employer_profiles?.company_name
-        return { ...j, title, description, companyName }
-      })
-
-      // Score if user has profile (use the freshly loaded profile, not stale state)
-      const scored = normalized.map((job: any) => {
-        if (loadedProfile && loadedProfile.role_level) {
-          const result = calculateMatchScore(loadedProfile, job)
-          return { ...job, matchScore: result.score, matchLabel: result.label, matchColour: result.colour, matchBg: result.bgColour, hardStop: result.hardStop, hardStopReason: result.hardStopReason }
-        }
-        return { ...job, matchScore: 0 }
-      })
-
-      setJobs(scored)
-      setLoading(false)
-    }
-    load()
-  }, [])
-
-  const filtered = jobs.filter(j => {
-    if (search && !j.title?.toLowerCase().includes(search.toLowerCase()) && !j.companyName?.toLowerCase().includes(search.toLowerCase())) return false
-    if (roleType !== 'All' && j.job_type?.toLowerCase() !== roleType.toLowerCase() && j.contract_type?.toLowerCase() !== roleType.toLowerCase().replace(' ', '_')) return false
-    if (locationFilter && !j.location?.toLowerCase().includes(locationFilter.toLowerCase())) return false
-    return true
-  })
-
-  const tierClass = (t: string) => t === 'Platinum' ? 'badge-platinum' : t === 'Gold' ? 'badge-gold' : t === 'Silver' ? 'badge-silver' : 'badge-bronze'
+export default async function BrowseRolesPage() {
+  const jobs = await getPublicRoles()
 
   return (
     <div className="min-h-screen bg-surface">
       <Navbar />
 
-      {/* Hero */}
       <section className="pt-16 bg-white border-b border-border">
         <div className="max-w-[1440px] mx-auto px-6 lg:px-10 py-16">
-          <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
-            <div><p className="text-[11px] font-semibold tracking-[0.15em] uppercase text-accent mb-3">Luxury wellness careers</p><h1 className="text-[38px] md:text-[52px] font-semibold text-ink tracking-[-0.04em] leading-[1.05] mb-3">Find your next role.</h1>
-            <p className="text-[15px] text-secondary max-w-xl">Search every live opportunity directly, or use personalised matching to see which roles fit your experience.</p></div>
-            <Link href="/roles/match" className="btn-primary inline-flex items-center justify-center gap-2 shrink-0"><Sparkles size={15} /> See my best matches</Link>
+          <div className="max-w-3xl">
+            <p className="text-[11px] font-semibold tracking-[0.15em] uppercase text-accent mb-3">Luxury spa & hospitality careers</p>
+            <h1 className="text-[38px] md:text-[54px] font-semibold text-ink tracking-[-0.04em] leading-[1.02] mb-4">Browse first. Decide later.</h1>
+            <p className="text-[15px] md:text-[16px] leading-7 text-secondary max-w-2xl">See the opportunities before you commit. We show enough to help you decide whether a role is worth exploring, while the property identity and full brief stay private until you create a free Talent profile.</p>
+            <div className="mt-6 flex flex-wrap gap-x-6 gap-y-2 text-[11px] uppercase tracking-[0.12em] text-muted">
+              <span>No account needed to browse</span>
+              <span>Property identity protected</span>
+              <span>Personal match after sign-in</span>
+            </div>
           </div>
         </div>
       </section>
 
       <SponsoredAd placement="jobs_talent_sponsor" />
-
-      {/* Filters */}
-      <section className="bg-white border-b border-border sticky top-[60px] z-40">
-        <div className="max-w-[1440px] mx-auto px-6 lg:px-10 py-4">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-            <div className="md:col-span-2 relative">
-              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
-              <input type="text" placeholder="Search roles or properties..." value={search} onChange={e => { setSearch(e.target.value); setPage(1) }} className="input-field pl-9 !py-2 text-[13px]" />
-            </div>
-            <select value={roleType} onChange={e => { setRoleType(e.target.value); setPage(1) }} className="input-field !py-2 text-[13px]">
-              {ROLE_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
-            </select>
-            <input type="text" placeholder="Location..." value={locationFilter} onChange={e => setLocationFilter(e.target.value)} className="input-field !py-2 text-[13px]" />
-          </div>
-          <p className="text-[11px] text-muted mt-2">{filtered.length} role{filtered.length !== 1 ? 's' : ''} available</p>
-        </div>
-      </section>
-
-      {/* Results */}
-      <section className="max-w-[1440px] mx-auto px-6 lg:px-10 py-12">
-        {loading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">{[1,2,3,4,5,6].map(i => <SkeletonCard key={i} variant="role" />)}</div>
-        ) : filtered.length === 0 ? (
-          <div className="bg-white border border-border rounded-xl p-16 text-center">
-            <Briefcase size={32} className="mx-auto text-muted mb-3" />
-            <p className="text-[15px] font-medium text-ink mb-2">No roles listed yet</p>
-            <p className="text-[13px] text-muted">Check back soon - new roles are added regularly.</p>
-          </div>
-        ) : (
-          <>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {filtered.slice((page - 1) * perPage, page * perPage).map(job => (
-              <Link key={job.id} href={`/jobs/${job.id}`} className="group bg-white border border-border rounded-2xl p-6 hover:shadow-lg hover:-translate-y-0.5 transition-all">
-                <div className="flex items-center justify-between mb-3">
-                  {job.tier && <span className={tierClass(job.tier)}>{job.tier}</span>}
-                  {job.matchScore > 0 && (
-                    <span className="text-[11px] font-semibold px-2.5 py-1 rounded-full" style={{ backgroundColor: job.matchBg || '#F3F4F6', color: job.matchColour || '#6B7280' }}>{job.matchScore}%</span>
-                  )}
-                </div>
-                <p className="eyebrow mb-0.5">{job.companyName}</p>
-                <h3 className="text-[16px] font-medium text-ink mb-2">{job.title}</h3>
-                <div className="flex flex-wrap gap-2 text-[12px] text-muted mb-3">
-                  {job.location && <span className="flex items-center gap-1"><MapPin size={11} />{job.location}</span>}
-                  {(job.contract_type || job.job_type) && <span className="flex items-center gap-1"><Briefcase size={11} />{(job.contract_type || job.job_type || '').replace('_', ' ')}</span>}
-                </div>
-                {job.salary_min && job.salary_max && (
-                  <p className="text-[14px] font-medium text-accent">£{(job.salary_min/1000).toFixed(0)}k - £{(job.salary_max/1000).toFixed(0)}k</p>
-                )}
-                {job.description && (
-                  <p className="mt-3 text-[13px] leading-6 text-secondary line-clamp-3">{job.description}</p>
-                )}
-                {(job.required_brands || []).length > 0 && (
-                  <div className="flex flex-wrap gap-1 mt-3">{(job.required_brands || []).slice(0, 3).map((b: string) => <span key={b} className="text-[10px] font-medium bg-[#FDF6EC] text-accent border border-accent/20 px-2 py-0.5 rounded-full">{b}</span>)}</div>
-                )}
-                <span className="mt-5 inline-flex items-center gap-1 text-[12px] font-semibold text-ink group-hover:text-accent">View role details <ArrowRight size={13} /></span>
-              </Link>
-            ))}
-          </div>
-          <Pagination page={page} perPage={perPage} total={filtered.length} showPerPage={false} onPageChange={setPage} />
-          </>
-        )}
-      </section>
-
+      <PublicRolesBrowser jobs={jobs} />
       <Footer />
     </div>
   )
