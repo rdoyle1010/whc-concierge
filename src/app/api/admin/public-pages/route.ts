@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { revalidateTag } from 'next/cache'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
+import { PUBLIC_PAGES_CACHE_TAG } from '@/lib/public-page-content-server'
 import {
   cloneDefaultPublicPagesContent,
   parsePublicPagesContent,
@@ -74,6 +76,7 @@ export async function POST(req: NextRequest) {
         saveValue(PUBLIC_PAGES_PUBLISHED_KEY, JSON.stringify(parsed.data)),
         saveValue(PUBLIC_PAGES_HISTORY_KEY, JSON.stringify(history)),
       ])
+      revalidateTag(PUBLIC_PAGES_CACHE_TAG, 'max')
       return NextResponse.json({ success: true, history })
     }
     return NextResponse.json({ error: 'Unknown action' }, { status: 400 })
