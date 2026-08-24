@@ -66,7 +66,7 @@ export default function Navbar({ siteContent }: { siteContent?: WebsiteContent }
             { href: '/jobs', label: 'Browse Roles' },
             { href: '/roles/match', label: 'Match', icon: true },
             { href: '/properties', label: 'Properties' },
-            { href: '/agency', label: 'Agency' },
+            { href: '/talent/agency', label: 'Agency' },
             { href: '/academy', label: 'Academy' },
             { href: '/residency', label: 'Residency' },
           ]
@@ -74,7 +74,7 @@ export default function Navbar({ siteContent }: { siteContent?: WebsiteContent }
         { href: '/jobs', label: labels.jobs },
         { href: '/roles/match', label: 'Match', icon: true },
         { href: '/properties', label: 'Properties' },
-        { href: '/agency', label: labels.agency },
+        { href: '/agency/about', label: labels.agency },
         { href: '/academy', label: labels.academy },
         { href: '/residency', label: labels.residency },
         { href: '/blog', label: labels.blog },
