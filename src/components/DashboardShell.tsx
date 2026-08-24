@@ -14,7 +14,7 @@ import {
   LayoutDashboard, User, Briefcase, MessageSquare, Star, Calendar,
   Settings, LogOut, Menu, X, Users, FileText, Megaphone,
   AlertTriangle, Heart, Building2, ChevronRight, BarChart3, CreditCard, GraduationCap,
-  Palette, Banknote, Download, MapPin,
+  Palette, Banknote, Download, MapPin, Brain,
 } from 'lucide-react'
 
 interface NavItem {
@@ -43,7 +43,8 @@ const navItems: Record<string, NavItem[]> = {
     { label: 'Agency Shifts', href: '/talent/agency', icon: <Calendar size={17} />, section: 'Flexible work' },
     { label: 'Agency Settings', href: '/talent/agency/settings', icon: <Settings size={17} /> },
     { label: 'Residency', href: '/talent/residency', icon: <MapPin size={17} /> },
-    { label: 'Get Verified', href: '/talent/verification', icon: <Star size={17} />, section: 'Development' },
+    { label: 'Interview Ready', href: '/talent/interview-ready', icon: <Brain size={17} />, section: 'Development' },
+    { label: 'Get Verified', href: '/talent/verification', icon: <Star size={17} /> },
     { label: 'Academy', href: '/talent/academy', icon: <GraduationCap size={17} /> },
     { label: 'Go Featured', href: '/talent/upgrade', icon: <Heart size={17} /> },
     { label: 'Billing', href: '/talent/billing', icon: <CreditCard size={17} />, section: 'Account' },
