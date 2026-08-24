@@ -1,32 +1,13 @@
 import Link from 'next/link'
 import Wordmark from '@/components/Wordmark'
 import { DEFAULT_WEBSITE_CONTENT, type WebsiteContent } from '@/lib/site-content'
+import { getPublicPagesContent } from '@/lib/public-page-content-server'
 
-const EDITORIAL_IMAGES = [
-  {
-    src: 'https://images.unsplash.com/photo-1600334129128-685c5582fd35?auto=format&fit=crop&q=82&w=1600',
-    alt: 'Luxury spa treatment in progress',
-    label: 'Spa & wellness',
-  },
-  {
-    src: 'https://images.unsplash.com/photo-1759038086403-c607d67bb245?auto=format&fit=crop&q=82&w=1600',
-    alt: 'Contemporary luxury hospitality interior',
-    label: 'Exceptional properties',
-  },
-  {
-    src: 'https://images.unsplash.com/photo-1779956511234-963c515b0516?auto=format&fit=crop&q=82&w=1600',
-    alt: 'Modern timber sauna and wellness space',
-    label: 'Wellness environments',
-  },
-  {
-    src: 'https://images.unsplash.com/photo-1751972788348-3360f69603f6?auto=format&fit=crop&q=82&w=1600',
-    alt: 'Warm Mediterranean hospitality courtyard',
-    label: 'Destination hospitality',
-  },
-]
-
-export default function Footer({ siteContent }: { siteContent?: WebsiteContent }) {
+export default async function Footer({ siteContent }: { siteContent?: WebsiteContent }) {
   const content = siteContent || DEFAULT_WEBSITE_CONTENT
+  const publicPages = await getPublicPagesContent(false)
+  const editorialImages = publicPages.editorialBand
+
   const primary = [
     { href: '/jobs', label: content.navigation.jobs },
     { href: '/agency/about', label: content.navigation.agency },
@@ -65,9 +46,9 @@ export default function Footer({ siteContent }: { siteContent?: WebsiteContent }
       <section className="bg-[#f4f1ea] border-t border-[#ddd9d1] overflow-hidden" aria-label="Spa Platform hospitality photography">
         <div className="max-w-[1500px] mx-auto px-0 md:px-6 lg:px-8 py-0 md:py-8">
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-px md:gap-3 bg-[#ddd9d1] md:bg-transparent">
-            {EDITORIAL_IMAGES.map((image, index) => (
-              <div key={image.src} className={`group relative overflow-hidden bg-[#d8d3ca] ${index === 0 || index === 3 ? 'aspect-[4/5]' : 'aspect-[4/5] md:aspect-[3/4]'}`}>
-                <img src={image.src} alt={image.alt} loading="lazy" decoding="async" className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.025]" />
+            {editorialImages.map((image, index) => (
+              <div key={`${image.url}-${index}`} className="group relative overflow-hidden bg-[#d8d3ca] aspect-[4/5] md:aspect-[3/4]">
+                {image.url ? <img src={image.url} alt={image.alt} loading="lazy" decoding="async" className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.025]" style={{ objectPosition: `${image.focalX}% ${image.focalY}%` }} /> : null}
                 <div className="absolute inset-0 bg-gradient-to-t from-[#071d2d]/55 via-transparent to-transparent" />
                 <p className="absolute bottom-4 left-4 right-4 text-[9px] md:text-[10px] uppercase tracking-[.16em] font-semibold text-white/90">{image.label}</p>
               </div>
