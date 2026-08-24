@@ -10,6 +10,7 @@ export type PublicPageSlug = typeof PUBLIC_PAGE_SLUGS[number]
 const text = z.string().trim().max(6000)
 const link = z.string().trim().max(2048)
 const imageSchema = z.object({ url: link, alt: text, focalX: z.number().min(0).max(100), focalY: z.number().min(0).max(100) })
+const labelledImageSchema = imageSchema.extend({ label: text })
 const blockSchema = z.object({ eyebrow: text, heading: text, text, image: imageSchema, visible: z.boolean() })
 const pageSchema = z.object({
   label: text,
@@ -17,8 +18,16 @@ const pageSchema = z.object({
   blocks: z.array(blockSchema).length(3),
 })
 
+const defaultEditorialBand = [
+  { url: 'https://images.unsplash.com/photo-1600334129128-685c5582fd35?auto=format&fit=crop&q=82&w=1600', alt: 'Luxury spa treatment in progress', label: 'Spa & wellness', focalX: 50, focalY: 50 },
+  { url: 'https://images.unsplash.com/photo-1759038086403-c607d67bb245?auto=format&fit=crop&q=82&w=1600', alt: 'Contemporary luxury hospitality interior', label: 'Exceptional properties', focalX: 50, focalY: 50 },
+  { url: 'https://images.unsplash.com/photo-1779956511234-963c515b0516?auto=format&fit=crop&q=82&w=1600', alt: 'Modern timber sauna and wellness space', label: 'Wellness environments', focalX: 50, focalY: 50 },
+  { url: 'https://images.unsplash.com/photo-1751972788348-3360f69603f6?auto=format&fit=crop&q=82&w=1600', alt: 'Warm Mediterranean hospitality courtyard', label: 'Destination hospitality', focalX: 50, focalY: 50 },
+]
+
 export const PublicPagesContentSchema = z.object({
   version: z.literal(1),
+  editorialBand: z.array(labelledImageSchema).length(4).default(defaultEditorialBand),
   pages: z.object({
     properties: pageSchema,
     agency: pageSchema,
@@ -33,11 +42,11 @@ export type PublicPageContent = PublicPagesContent['pages'][PublicPageSlug]
 export type PublicPagesHistoryEntry = { id: string; publishedAt: string; publishedBy?: string; content: PublicPagesContent }
 
 const image = (url: string, alt: string) => ({ url, alt, focalX: 50, focalY: 50 })
-const blankImage = image('', '')
 const block = (eyebrow: string, heading: string, text: string, url = '', alt = '') => ({ eyebrow, heading, text, image: image(url, alt), visible: true })
 
 export const DEFAULT_PUBLIC_PAGES_CONTENT: PublicPagesContent = {
   version: 1,
+  editorialBand: defaultEditorialBand,
   pages: {
     properties: {
       label: 'Properties',
@@ -76,7 +85,7 @@ export const DEFAULT_PUBLIC_PAGES_CONTENT: PublicPagesContent = {
         image: image('https://images.unsplash.com/photo-1779956511234-963c515b0516?auto=format&fit=crop&q=82&w=1800', 'Destination wellness setting'),
       },
       blocks: [
-        block('Residency talent', 'Specialists available for placement', 'Discover visiting practitioners, educators, trainers and programme creators for focused placements.', 'https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&q=82&w=1600', 'Luxury spa setting'),
+        block('Residency talent', 'Specialists available for placement', 'Discover visiting practitioners, educators, trainers and programme creators for focused placements.', 'https://images.unsplash.com/photo-1540555700478-4be289fbecef?w=1600&q=82&auto=format&fit=crop', 'Luxury spa setting'),
         block('For properties', 'Create something guests cannot get every day.', 'Residencies can bring distinctive expertise, seasonal programming and new commercial energy into a spa or wellness operation.', 'https://images.unsplash.com/photo-1600334089648-b0d9d3028eb2?auto=format&fit=crop&q=82&w=1600', 'Spa and wellness experience'),
         block('For specialists', 'Take your expertise somewhere remarkable.', 'Package your specialism, availability, preferred destinations and commercial terms into a protected professional listing.', 'https://images.unsplash.com/photo-1591343395082-e120087004b4?auto=format&fit=crop&q=82&w=1600', 'Wellness practitioner'),
       ],
