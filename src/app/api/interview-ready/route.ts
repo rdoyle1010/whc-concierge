@@ -30,11 +30,14 @@ function parseJson(text: string) {
   return null
 }
 
-async function generateJson(prompt: string, maxOutputTokens = 5200) {
+async function generateJson(prompt: string, maxOutputTokens = 1800) {
   if (!OPENAI_API_KEY) return null
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort(), 5500)
   try {
     const response = await fetch('https://api.openai.com/v1/responses', {
       method: 'POST',
+      signal: controller.signal,
       headers: { Authorization: `Bearer ${OPENAI_API_KEY}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
         model: INTERVIEW_MODEL,
@@ -49,8 +52,10 @@ async function generateJson(prompt: string, maxOutputTokens = 5200) {
     }
     return parseJson(extractResponseText(await response.json()))
   } catch (error) {
-    console.error('Interview Ready OpenAI fallback', error)
+    console.error('Interview Ready OpenAI fallback', error instanceof Error ? error.message : error)
     return null
+  } finally {
+    clearTimeout(timeout)
   }
 }
 
@@ -163,20 +168,55 @@ function fallback(candidate: any, job: any, employer: any, style: any, cvText: s
   return {
     style: { ...style, summary: `Your answers lean toward ${style.primary}, with ${style.secondary} as a secondary style. Use this as coaching language for how you naturally work.` },
     company_intelligence: { ...company, why_it_matters: company.verified_facts.slice(0, 5).map(f => `${f.label}: ${f.value}. Consider how that fact could shape guest expectations, team structure or the commercial priorities of the role.`) },
-    role_intelligence: { seniority: level, role_summary: `${title} is being prepared at ${level.toLowerCase()} level. The interview is likely to test ${focus.slice(0, 3).join(', ')}.`, what_they_are_really_hiring_for: focus, top_priorities: [...list(job.preferred_business_skills), ...list(job.required_skills), ...list(job.required_qualifications)].slice(0, 7), interview_themes: focus },
+    role_intelligence: {
+      seniority: level,
+      role_summary: `${title} is being prepared at ${level.toLowerCase()} level. The interview is likely to test ${focus.slice(0, 3).join(', ')}.`,
+      what_they_are_really_hiring_for: focus,
+      top_priorities: [...list(job.preferred_business_skills), ...list(job.required_skills), ...list(job.required_qualifications)].slice(0, 7),
+      interview_themes: focus,
+    },
     cv_match: {
       why_you_match: strengths.length ? strengths.map(item => `Your profile already evidences ${item}; prepare one real example that proves it.`) : ['Your profile provides the starting point. Pull out examples that directly answer the responsibilities in this job description.'],
       strongest_evidence: strengths,
-      underused_evidence: cvText ? ['Look for CV statements that describe responsibility but not the outcome. Add the genuine scale, result or learning when you know it.'] : ['Upload a CV to let Interview Ready identify evidence that may be undersold.'],
+      underused_evidence: cvText ? ['Look for CV statements that describe responsibility but not the outcome. Add the genuine scale, result or learning when you know it.'] : ['Your CV file could not be read on this attempt. Your WHC profile and the job description are still being used; re-uploading the CV will allow deeper evidence coaching.'],
       gaps_or_risks: gaps,
       talk_about_this: focus.slice(0, 5).map(item => `Prepare one real example showing your capability in ${item}.`),
       cv_improvements: ['Make evidence relevant to this exact role easy to spot.', 'Turn responsibilities into verified outcomes where you genuinely know the result.'],
     },
-    hard_questions: gaps.slice(0, 4).map(item => ({ question: `This role asks for ${item}. Your profile does not clearly evidence it. How would you address that?`, why: 'The interviewer may test a requirement that is not obvious in your CV.', prepare: ['Identify the closest transferable experience you genuinely have.', 'Be clear about what you have not done yet.', 'Explain the evidence that shows you can learn or step up.'] })),
-    likely_questions: focus.map(item => `Tell me about a time you demonstrated ${item}.`).concat([`Why does ${title} at ${company.name} interest you?`, 'Tell me about a difficult guest or team situation and what you learned.', 'What would your current manager say is your strongest contribution?']).slice(0, 10),
-    star_examples: strengths.slice(0, 4).map(item => ({ title: item, situation: `Choose a genuine situation from your experience involving ${item}.`, task: 'What were you personally responsible for?', action_prompt: 'Explain the actions you personally took.', result_prompt: 'What changed because of your actions? Add a real metric or outcome if you know it.', best_for: [item] })),
-    questions_to_ask: ['What would success in the first 90 days look like?', 'What are the biggest priorities for the spa team right now?', `How does ${company.name} measure guest experience and commercial success?`, 'What development opportunities are available within the property or wider group?', 'What would you most like the person joining this role to improve or protect?'],
-    readiness: { overall: strengths.length >= 4 ? 78 : strengths.length >= 2 ? 68 : 58, company: company.verified_facts.length >= 4 ? 80 : 60, role: clean(job.job_description) ? 80 : 60, evidence: strengths.length >= 3 ? 75 : 55, difficult_questions: gaps.length ? 55 : 75, practice: 50, message: 'Your preparation is started. Focus next on turning responsibilities into specific evidence and practising the areas the role may challenge.' },
+    hard_questions: gaps.slice(0, 4).map(item => ({
+      question: `This role asks for ${item}. Your profile does not clearly evidence it. How would you address that?`,
+      why: 'The interviewer may test a requirement that is not obvious in your CV.',
+      prepare: ['Identify the closest transferable experience you genuinely have.', 'Be clear about what you have not done yet.', 'Explain the evidence that shows you can learn or step up.'],
+    })),
+    likely_questions: focus.map(item => `Tell me about a time you demonstrated ${item}.`).concat([
+      `Why does ${title} at ${company.name} interest you?`,
+      'Tell me about a difficult guest or team situation and what you learned.',
+      'What would your current manager say is your strongest contribution?',
+    ]).slice(0, 10),
+    star_examples: strengths.slice(0, 4).map(item => ({
+      title: item,
+      situation: `Choose a genuine situation from your experience involving ${item}.`,
+      task: 'What were you personally responsible for?',
+      action_prompt: 'Explain the actions you personally took.',
+      result_prompt: 'What changed because of your actions? Add a real metric or outcome if you know it.',
+      best_for: [item],
+    })),
+    questions_to_ask: [
+      'What would success in the first 90 days look like?',
+      'What are the biggest priorities for the spa team right now?',
+      `How does ${company.name} measure guest experience and commercial success?`,
+      'What development opportunities are available within the property or wider group?',
+      'What would you most like the person joining this role to improve or protect?',
+    ],
+    readiness: {
+      overall: strengths.length >= 4 ? 78 : strengths.length >= 2 ? 68 : 58,
+      company: company.verified_facts.length >= 4 ? 80 : 60,
+      role: clean(job.job_description) ? 80 : 60,
+      evidence: strengths.length >= 3 ? 75 : 55,
+      difficult_questions: gaps.length ? 55 : 75,
+      practice: 50,
+      message: 'Your preparation is started. Focus next on turning responsibilities into specific evidence and practising the areas the role may challenge.',
+    },
   }
 }
 
@@ -220,33 +260,27 @@ export async function POST(req: NextRequest) {
       const answer = clean(body.answer).slice(0, 6000)
       if (!question || !answer) return NextResponse.json({ error: 'Question and answer are required.' }, { status: 400 })
       const ai = await generateJson(`You are Interview Ready, a confidence-building interview coach for luxury spa, wellness and hospitality professionals. Never write a replacement answer and never invent evidence. Return only JSON: {"score":0,"strong":"","improve":"","missing":"","try_again":"","follow_up":""}. Review the candidate's own answer against the exact role.\nSeniority: ${level}\nFocus: ${JSON.stringify(focus)}\nCandidate profile: ${JSON.stringify({ ...candidate, cv_url: undefined })}\nCV: ${JSON.stringify(cvText)}\nRole: ${JSON.stringify(role)}\nVerified company facts: ${JSON.stringify(company.verified_facts)}\nQuestion: ${JSON.stringify(question)}\nAnswer: ${JSON.stringify(answer)}`, 1700)
-      return NextResponse.json(ai ? { score: clamp(ai.score), strong: clean(ai.strong), improve: clean(ai.improve), missing: clean(ai.missing), try_again: clean(ai.try_again), follow_up: clean(ai.follow_up) } : { score: 60, strong: 'You have given a real answer in your own words.', improve: 'Make the situation, your personal action and the outcome easier to separate.', missing: 'Add the most relevant factual result, scale or learning if you have it.', try_again: 'Try again with one specific example and finish with what changed because of your actions.', follow_up: 'What was the measurable guest, team, commercial or operational outcome?' })
+      return NextResponse.json(ai ? {
+        score: clamp(ai.score),
+        strong: clean(ai.strong),
+        improve: clean(ai.improve),
+        missing: clean(ai.missing),
+        try_again: clean(ai.try_again),
+        follow_up: clean(ai.follow_up),
+      } : {
+        score: 60,
+        strong: 'You have given a real answer in your own words.',
+        improve: 'Make the situation, your personal action and the outcome easier to separate.',
+        missing: 'Add the most relevant factual result, scale or learning if you have it.',
+        try_again: 'Try again with one specific example and finish with what changed because of your actions.',
+        follow_up: 'What was the measurable guest, team, commercial or operational outcome?',
+      })
     }
 
     const base = fallback(candidate, role, employer, style, cvText, externalName)
-    const ai = await generateJson(`You are Interview Ready for luxury spa, wellness and hospitality professionals. This is NOT an answer machine; it is a confidence builder. Use the candidate's real profile/CV, exact role and ONLY the verified company facts supplied. Never invent facts, achievements, qualifications, brands, metrics or salary data. Calibrate depth to ${level}. Return ONLY JSON with keys: style, company_interpretation{why_it_matters[]}, role_intelligence{role_summary,what_they_are_really_hiring_for[],top_priorities[],interview_themes[]}, cv_match{why_you_match[],strongest_evidence[],underused_evidence[],gaps_or_risks[],talk_about_this[],cv_improvements[]}, hard_questions[{question,why,prepare[]}], likely_questions[], star_examples[{title,situation,task,action_prompt,result_prompt,best_for[]}], questions_to_ask[], readiness{overall,company,role,evidence,difficult_questions,practice,message}.\nCandidate: ${JSON.stringify({ ...candidate, cv_url: undefined })}\nCV: ${JSON.stringify(cvText)}\nRole: ${JSON.stringify(role)}\nVerified company data: ${JSON.stringify(company)}\nWorking style: ${JSON.stringify(style)}`, 6200)
-
-    if (!ai) return NextResponse.json({ ...base, source: { hasCv: Boolean(cvText), hasPlatformJob: Boolean(job), usedAi: false } })
-
     return NextResponse.json({
-      style: ai.style || base.style,
-      company_intelligence: { ...company, why_it_matters: list(ai.company_interpretation?.why_it_matters).slice(0, 6) },
-      role_intelligence: { seniority: level, ...(ai.role_intelligence || base.role_intelligence) },
-      cv_match: ai.cv_match || base.cv_match,
-      hard_questions: Array.isArray(ai.hard_questions) ? ai.hard_questions.slice(0, 7) : base.hard_questions,
-      likely_questions: list(ai.likely_questions).length ? list(ai.likely_questions).slice(0, 12) : base.likely_questions,
-      star_examples: Array.isArray(ai.star_examples) ? ai.star_examples.slice(0, 6) : base.star_examples,
-      questions_to_ask: list(ai.questions_to_ask).length ? list(ai.questions_to_ask).slice(0, 7) : base.questions_to_ask,
-      readiness: {
-        overall: clamp(ai.readiness?.overall ?? base.readiness.overall),
-        company: clamp(ai.readiness?.company ?? base.readiness.company),
-        role: clamp(ai.readiness?.role ?? base.readiness.role),
-        evidence: clamp(ai.readiness?.evidence ?? base.readiness.evidence),
-        difficult_questions: clamp(ai.readiness?.difficult_questions ?? base.readiness.difficult_questions),
-        practice: clamp(ai.readiness?.practice ?? base.readiness.practice),
-        message: clean(ai.readiness?.message || base.readiness.message),
-      },
-      source: { hasCv: Boolean(cvText), hasPlatformJob: Boolean(job), usedAi: true },
+      ...base,
+      source: { hasCv: Boolean(cvText), hasPlatformJob: Boolean(job), usedAi: false },
     })
   } catch (error: any) {
     console.error('Interview Ready request failed', error?.message || error)
