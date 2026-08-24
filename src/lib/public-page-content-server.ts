@@ -9,6 +9,8 @@ import {
   type PublicPageSlug,
 } from '@/lib/public-page-content'
 
+export const PUBLIC_PAGES_CACHE_TAG = 'public-pages-content-published'
+
 async function readPublicPagesContent(key: string): Promise<PublicPagesContent> {
   try {
     const admin = createAdminClient()
@@ -23,7 +25,7 @@ async function readPublicPagesContent(key: string): Promise<PublicPagesContent> 
 const getCachedPublishedContent = unstable_cache(
   () => readPublicPagesContent(PUBLIC_PAGES_PUBLISHED_KEY),
   ['public-pages-content-published-v1'],
-  { revalidate: 60 }
+  { revalidate: 300, tags: [PUBLIC_PAGES_CACHE_TAG] }
 )
 
 export async function getPublicPagesContent(useDraft = false): Promise<PublicPagesContent> {
