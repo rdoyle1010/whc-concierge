@@ -3,7 +3,9 @@
 import { useEffect, useState } from 'react'
 import DashboardShell from '@/components/DashboardShell'
 import { createClient } from '@/lib/supabase/client'
-import { CheckCircle2, MapPin, ShieldCheck, Utensils, BriefcaseBusiness, BedDouble } from 'lucide-react'
+import { CheckCircle2, MapPin, ShieldCheck, Utensils, BriefcaseBusiness, BedDouble, FileText, ExternalLink } from 'lucide-react'
+
+const BUCKET = 'property-fact-documents'
 
 function rows(obj: any) {
   if (!obj || typeof obj !== 'object') return []
@@ -18,6 +20,8 @@ export default function BeforeYouArrivePage() {
   const [packs, setPacks] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [busy, setBusy] = useState<string | null>(null)
+  const [opening, setOpening] = useState<string | null>(null)
+  const [error, setError] = useState('')
 
   useEffect(() => {
     async function load() {
@@ -36,9 +40,19 @@ export default function BeforeYouArrivePage() {
 
   async function acknowledge(id: string) {
     setBusy(id)
-    const { error } = await supabase.from('booking_arrival_packs').update({ acknowledged_at: new Date().toISOString() }).eq('id', id)
-    if (!error) setPacks(p => p.map(x => x.id === id ? { ...x, acknowledged_at: new Date().toISOString() } : x))
+    const now = new Date().toISOString()
+    const { error } = await supabase.from('booking_arrival_packs').update({ acknowledged_at: now }).eq('id', id)
+    if (!error) setPacks(p => p.map(x => x.id === id ? { ...x, acknowledged_at: now } : x))
     setBusy(null)
+  }
+
+  async function openDocument(doc: any) {
+    if (!doc?.path) return
+    setError(''); setOpening(doc.path)
+    const { data, error } = await supabase.storage.from(BUCKET).createSignedUrl(doc.path, 60 * 10)
+    if (error || !data?.signedUrl) setError('This document could not be opened. Please ask the property to re-upload it if the problem continues.')
+    else window.open(data.signedUrl, '_blank', 'noopener,noreferrer')
+    setOpening(null)
   }
 
   const Section = ({ icon, title, data }: { icon: React.ReactNode; title: string; data: any }) => {
@@ -60,9 +74,12 @@ export default function BeforeYouArrivePage() {
       <h1 className="dashboard-title">Before You Arrive</h1>
       <p className="dashboard-intro max-w-3xl">Everything you need once an Agency shift or Residency placement is confirmed. The pack is taken from the property's operational fact file at the point your booking is confirmed.</p>
 
+      {error && <div className="mt-5 bg-red-50 text-red-600 px-4 py-3 text-sm">{error}</div>}
+
       {!packs.length ? <div className="dashboard-panel mt-7"><p className="text-[13px] font-medium text-ink">No confirmed arrival packs yet.</p><p className="text-[12px] text-muted mt-1">Your first pack will appear here automatically after a booking is confirmed.</p></div> : <div className="space-y-6 mt-7">
         {packs.map(pack => {
           const s = pack.snapshot || {}
+          const documents = Array.isArray(s.documents) ? s.documents : []
           return <article key={pack.id} className="dashboard-panel">
             <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
               <div>
@@ -78,6 +95,17 @@ export default function BeforeYouArrivePage() {
             <Section icon={<Utensils size={15} className="text-accent"/>} title="Welfare & breaks" data={s.welfare} />
             <Section icon={<ShieldCheck size={15} className="text-accent"/>} title="Safety essentials" data={s.safety} />
             <Section icon={<BriefcaseBusiness size={15} className="text-accent"/>} title="Spa operations & commercial expectations" data={s.spa} />
+
+            {documents.length > 0 && <section className="border-t border-border pt-5 mt-5">
+              <div className="flex items-center gap-2 mb-3 text-ink font-medium text-[13px]"><FileText size={15} className="text-accent"/>Useful documents</div>
+              <div className="space-y-2">
+                {documents.map((doc: any, i: number) => <button key={`${doc.path}-${i}`} type="button" onClick={() => openDocument(doc)} disabled={opening === doc.path} className="w-full flex items-center justify-between gap-3 border border-border bg-white px-4 py-3 text-left hover:border-accent disabled:opacity-50">
+                  <div className="min-w-0"><p className="text-[12px] font-medium text-ink truncate">{doc.name || 'Document'}</p><p className="text-[10px] text-muted mt-0.5">Secure document from the confirmed property pack</p></div>
+                  <span className="inline-flex items-center gap-1 text-[11px] text-accent shrink-0">{opening === doc.path ? 'Opening...' : 'Open'} <ExternalLink size={12}/></span>
+                </button>)}
+              </div>
+            </section>}
+
             {pack.booking_type === 'residency' && <Section icon={<BedDouble size={15} className="text-accent"/>} title="Residency stay details" data={s.residency} />}
           </article>
         })}
