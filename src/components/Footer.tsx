@@ -6,7 +6,7 @@ export default function Footer({ siteContent }: { siteContent?: WebsiteContent }
   const content = siteContent || DEFAULT_WEBSITE_CONTENT
   const primary = [
     { href: '/jobs', label: content.navigation.jobs },
-    { href: '/agency', label: content.navigation.agency },
+    { href: '/agency/about', label: content.navigation.agency },
     { href: '/academy', label: content.navigation.academy },
     { href: '/residency', label: content.navigation.residency },
     { href: '/blog', label: content.navigation.blog },
@@ -15,6 +15,7 @@ export default function Footer({ siteContent }: { siteContent?: WebsiteContent }
     { href: '/properties', label: 'Properties' },
     { href: '/pricing', label: 'Pricing' },
     { href: '/advertise', label: 'Advertise' },
+    { href: '/coming-soon', label: 'Coming Soon' },
     { href: '/testimonials', label: 'Testimonials' },
     { href: '/about', label: 'About' },
     { href: '/contact', label: 'Contact' },
