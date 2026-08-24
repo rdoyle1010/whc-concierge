@@ -6,6 +6,7 @@ import { Upload, Save, Send, Eye, Image as ImageIcon, CheckCircle2 } from 'lucid
 import { cloneDefaultPublicPagesContent, PUBLIC_PAGE_SLUGS, type PublicPageSlug, type PublicPagesContent } from '@/lib/public-page-content'
 
 const pageNames: Record<PublicPageSlug,string> = { properties:'Properties', agency:'Agency', residency:'Residency', pricing:'Pricing', 'coming-soon':'Coming Soon' }
+const pagePaths: Record<PublicPageSlug,string> = { properties:'/properties', agency:'/agency/about', residency:'/residency', pricing:'/pricing', 'coming-soon':'/coming-soon' }
 
 export default function PublicPagesEditor() {
   const [content, setContent] = useState<PublicPagesContent>(cloneDefaultPublicPagesContent())
@@ -62,7 +63,7 @@ export default function PublicPagesEditor() {
 
   return <DashboardShell role="admin" userName="Admin">
     <div className="max-w-[1400px] mx-auto">
-      <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4 mb-7"><div><p className="dashboard-eyebrow">Website & Brand</p><h1 className="dashboard-title">Public Pages</h1><p className="dashboard-intro">Change the wording and photography for each major public page without touching GitHub.</p></div><div className="flex flex-wrap gap-2">{changed && <span className="px-3 py-2 bg-amber-50 text-amber-700 text-[11px]">Unpublished changes</span>}<button onClick={()=>save('save')} className="btn-secondary inline-flex gap-2 items-center"><Save size={14}/>Save draft</button><a href={`/${selected}?pagePreview=draft`} target="_blank" className="btn-secondary inline-flex gap-2 items-center"><Eye size={14}/>Preview page</a><button onClick={()=>save('publish')} className="btn-primary inline-flex gap-2 items-center"><Send size={14}/>Publish pages</button></div></div>
+      <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4 mb-7"><div><p className="dashboard-eyebrow">Website & Brand</p><h1 className="dashboard-title">Public Pages</h1><p className="dashboard-intro">Change the wording and photography for each major public page without touching GitHub.</p></div><div className="flex flex-wrap gap-2">{changed && <span className="px-3 py-2 bg-amber-50 text-amber-700 text-[11px]">Unpublished changes</span>}<button onClick={()=>save('save')} disabled={!!busy} className="btn-secondary inline-flex gap-2 items-center"><Save size={14}/>{busy==='save'?'Saving...':'Save draft'}</button><a href={`${pagePaths[selected]}?pagePreview=draft`} target="_blank" className="btn-secondary inline-flex gap-2 items-center"><Eye size={14}/>Preview page</a><button onClick={()=>save('publish')} disabled={!!busy} className="btn-primary inline-flex gap-2 items-center"><Send size={14}/>{busy==='publish'?'Publishing...':'Publish pages'}</button></div></div>
       {notice && <div className="mb-5 px-4 py-3 bg-white border border-border text-[12px] flex items-center gap-2"><CheckCircle2 size={14} className="text-accent"/>{notice}</div>}
       <div className="grid lg:grid-cols-[230px_1fr] gap-6">
         <aside className="bg-white border border-border p-3 h-fit">{PUBLIC_PAGE_SLUGS.map(slug => <button key={slug} onClick={()=>setSelected(slug)} className={`w-full text-left px-4 py-3 text-[12px] border-l-2 ${selected===slug?'border-accent bg-surface text-ink':'border-transparent text-muted hover:text-ink'}`}>{pageNames[slug]}</button>)}</aside>
