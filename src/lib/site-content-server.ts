@@ -1,3 +1,4 @@
+import { unstable_cache } from 'next/cache'
 import { createAdminClient } from '@/lib/supabase/admin'
 import {
   cloneDefaultWebsiteContent,
@@ -47,10 +48,9 @@ function applyLegacyImages(content: WebsiteContent, rows: LegacyImage[]): Websit
   return next
 }
 
-export async function getWebsiteContent(useDraft = false): Promise<WebsiteContent> {
+async function readWebsiteContent(key: string): Promise<WebsiteContent> {
   try {
     const admin = createAdminClient()
-    const key = useDraft ? WEBSITE_DRAFT_KEY : WEBSITE_PUBLISHED_KEY
     const [{ data: storedRows }, { data: legacyRows }] = await Promise.all([
       admin.from('platform_config').select('value').eq('key', key).limit(1),
       admin.from('site_images').select('slot, image_url, heading, subtext, sort_order').order('sort_order'),
@@ -62,4 +62,15 @@ export async function getWebsiteContent(useDraft = false): Promise<WebsiteConten
   } catch {
     return cloneDefaultWebsiteContent()
   }
+}
+
+const getCachedPublishedWebsiteContent = unstable_cache(
+  () => readWebsiteContent(WEBSITE_PUBLISHED_KEY),
+  ['website-content-published-v1'],
+  { revalidate: 60 }
+)
+
+export async function getWebsiteContent(useDraft = false): Promise<WebsiteContent> {
+  if (useDraft) return readWebsiteContent(WEBSITE_DRAFT_KEY)
+  return getCachedPublishedWebsiteContent()
 }
