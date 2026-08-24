@@ -1,12 +1,23 @@
+'use client'
+
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import Wordmark from '@/components/Wordmark'
 import { DEFAULT_WEBSITE_CONTENT, type WebsiteContent } from '@/lib/site-content'
-import { getPublicPagesContent } from '@/lib/public-page-content-server'
+import { DEFAULT_PUBLIC_PAGES_CONTENT } from '@/lib/public-page-content'
 
-export default async function Footer({ siteContent }: { siteContent?: WebsiteContent }) {
+export default function Footer({ siteContent }: { siteContent?: WebsiteContent }) {
   const content = siteContent || DEFAULT_WEBSITE_CONTENT
-  const publicPages = await getPublicPagesContent(false)
-  const editorialImages = publicPages.editorialBand
+  const [editorialImages, setEditorialImages] = useState(DEFAULT_PUBLIC_PAGES_CONTENT.editorialBand)
+
+  useEffect(() => {
+    fetch('/api/public-pages')
+      .then(response => response.ok ? response.json() : null)
+      .then(data => {
+        if (Array.isArray(data?.content?.editorialBand) && data.content.editorialBand.length === 4) setEditorialImages(data.content.editorialBand)
+      })
+      .catch(() => {})
+  }, [])
 
   const primary = [
     { href: '/jobs', label: content.navigation.jobs },
