@@ -130,9 +130,16 @@ function HowItWorksSection({ content }: { content: WebsiteContent }) {
         <h2 className="site-heading mb-10 text-[34px] font-medium leading-[1.05] md:text-[48px]">{content.howItWorks.heading}</h2>
         <HomepageHowItWorks />
       </div>
-      <div className="hidden overflow-hidden sm:block lg:col-span-7">
-        <img src={content.howItWorks.image.url} alt={content.howItWorks.image.alt} className="h-full max-h-[650px] w-full object-cover"
-          style={{ objectPosition: `${content.howItWorks.image.focalX}% ${content.howItWorks.image.focalY}%` }} />
+      <div className="relative hidden min-h-[520px] overflow-hidden sm:block lg:col-span-7">
+        <Image
+          src={content.howItWorks.image.url}
+          alt={content.howItWorks.image.alt}
+          fill
+          sizes="(max-width: 1024px) 100vw, 58vw"
+          quality={70}
+          className="object-cover"
+          style={{ objectPosition: `${content.howItWorks.image.focalX}% ${content.howItWorks.image.focalY}%` }}
+        />
       </div>
     </div>
   </section>
@@ -183,7 +190,7 @@ function RolesSection({ content, roles }: { content: WebsiteContent; roles: Feat
           const image = content.roles.images[index % content.roles.images.length]
           return <Link key={role.id} href={`/jobs/${role.id}`} className="group overflow-hidden border border-black/10 bg-white transition-all hover:-translate-y-1 hover:shadow-xl">
             <div className="relative h-44 overflow-hidden">
-              <Image src={image.url} alt={image.alt} fill sizes="(max-width: 768px) 100vw, 33vw" className="object-cover transition-transform duration-500 group-hover:scale-105"
+              <Image src={image.url} alt={image.alt} fill sizes="(max-width: 768px) 100vw, 33vw" quality={68} className="object-cover transition-transform duration-500 group-hover:scale-105"
                 style={{ objectPosition: `${image.focalX}% ${image.focalY}%` }} />
             </div>
             <div className="p-6">
@@ -211,7 +218,7 @@ function FeaturedTalentSection({ talent }: { talent: FeaturedTalent[] }) {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {talent.map(candidate => <Link key={candidate.id} href={`/employer/candidates?candidate=${encodeURIComponent(candidate.id)}`} aria-label={`View featured profile for ${candidate.name}`} className="group flex items-center gap-4 rounded-2xl border border-black/10 bg-white p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:border-black/20 hover:shadow-md">
           <div className="h-16 w-16 shrink-0 overflow-hidden rounded-full bg-[#EEEAE2]">
-            {candidate.image ? <img src={candidate.image} alt={candidate.name} className="h-full w-full object-cover" /> : <div className="flex h-full w-full items-center justify-center text-xl font-semibold opacity-40">{candidate.name[0]}</div>}
+            {candidate.image ? <Image src={candidate.image} alt={candidate.name} width={64} height={64} sizes="64px" quality={65} className="h-full w-full object-cover" /> : <div className="flex h-full w-full items-center justify-center text-xl font-semibold opacity-40">{candidate.name[0]}</div>}
           </div>
           <div className="min-w-0 flex-1">
             <p className="site-accent mb-1 flex items-center gap-1 text-[10px] font-semibold uppercase tracking-[0.12em]"><Star size={11} fill="currentColor" /> Featured</p>
@@ -228,8 +235,15 @@ function FeaturedTalentSection({ talent }: { talent: FeaturedTalent[] }) {
 
 function CalloutSection({ content }: { content: WebsiteContent }) {
   return <section className="relative overflow-hidden">
-    <img src={content.cta.background.url} alt={content.cta.background.alt} className="absolute inset-0 h-full w-full object-cover"
-      style={{ objectPosition: `${content.cta.background.focalX}% ${content.cta.background.focalY}%` }} />
+    <Image
+      src={content.cta.background.url}
+      alt={content.cta.background.alt}
+      fill
+      sizes="100vw"
+      quality={68}
+      className="object-cover"
+      style={{ objectPosition: `${content.cta.background.focalX}% ${content.cta.background.focalY}%` }}
+    />
     <div className="absolute inset-0 bg-black/45" />
     <div className="relative z-10 mx-auto grid max-w-6xl gap-px px-6 py-24 md:grid-cols-2 lg:px-8">
       {([content.cta.talent, content.cta.employer] as const).map(card => <div key={card.eyebrow} className="bg-white p-8 md:p-12">
