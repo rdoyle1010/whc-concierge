@@ -5,10 +5,6 @@ import { cookies } from 'next/headers'
 import { createNotification } from '@/lib/notifications'
 import { sendVerificationResultEmail } from '@/lib/emails'
 
-// WHC Verified - the admin desk. Review submitted insurance certificates and
-// qualification documents, award or refuse the badge. Every decision emails
-// and notifies the therapist.
-
 async function requireAdmin() {
   const cookieStore = await cookies()
   const supabase = createServerClient(
@@ -31,8 +27,8 @@ export async function GET() {
   const admin = createAdminClient()
   try {
     const { data } = await admin.from('candidate_profiles')
-      .select('id, user_id, full_name, role_level, whc_verified, whc_verified_at, verification_status, verification_docs, verification_notes, insurance_expiry_date, insurance_document_url, has_insurance, qualifications, review_score, review_count')
-      .not('verification_status', 'is', null)
+      .select('id, user_id, full_name, role_level, whc_verified, whc_verified_at, verification_status, verification_docs, verification_notes, insurance_expiry_date, insurance_document_url, has_insurance, qualifications, review_score, review_count, right_to_work_uk, right_to_work_ireland, right_to_work_status, right_to_work_document_url, right_to_work_expiry_date, right_to_work_verified_at, right_to_work_notes')
+      .or('verification_status.not.is.null,right_to_work_status.neq.not_submitted')
       .order('whc_verified', { ascending: true })
     return NextResponse.json({ rows: data || [] })
   } catch (e: any) {
@@ -52,24 +48,27 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'id and a valid decision are required' }, { status: 400 })
     }
 
+    const now = new Date().toISOString()
     const update: Record<string, any> = {
       verification_status: decision,
       verification_notes: String(body.reason || '').slice(0, 500) || null,
+      right_to_work_status: decision === 'verified' ? 'approved' : 'rejected',
+      right_to_work_verified_at: decision === 'verified' ? now : null,
+      right_to_work_notes: String(body.reason || '').slice(0, 500) || null,
       whc_verified: decision === 'verified',
-      whc_verified_at: decision === 'verified' ? new Date().toISOString() : null,
+      whc_verified_at: decision === 'verified' ? now : null,
     }
     const { data: row, error } = await admin.from('candidate_profiles')
       .update(update).eq('id', id).select('id, user_id, full_name').single()
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-    // Tell the therapist - awaited, never fatal
     try {
       if (row?.user_id) {
         await createNotification(row.user_id, 'general',
-          decision === 'verified' ? 'You are WHC Verified' : 'Verification needs attention',
+          decision === 'verified' ? 'Right to work verified' : 'Verification needs attention',
           decision === 'verified'
-            ? 'Your documents checked out - the WHC Verified badge now shows on your profile and in the agency directory.'
-            : `We couldn't verify your documents${body.reason ? `: ${body.reason}` : ''}. Update them and resubmit from your Verification page.`,
+            ? 'WHC has verified your right-to-work evidence. Your verified status is now visible to properties. Insurance is shown separately if you have chosen to provide it.'
+            : `We couldn't verify your right-to-work evidence${body.reason ? `: ${body.reason}` : ''}. Update it and resubmit from your Verification page.`,
           '/talent/verification')
         const { data: authUser } = await admin.auth.admin.getUserById(row.user_id)
         const email = authUser?.user?.email
