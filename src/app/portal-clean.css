@@ -1,0 +1,113 @@
+/* Shared portal palette for Talent, Employer and Admin.
+   Keep the navy workspace identity, remove warm beige/champagne/gold UI styling. */
+
+.dashboard-shell {
+  background: #f7f8fa !important;
+  color: #17202a;
+}
+
+.dashboard-shell main {
+  background: #f7f8fa;
+}
+
+.dashboard-eyebrow {
+  color: #65717a !important;
+}
+
+.dashboard-shell .dashboard-card,
+.dashboard-panel {
+  background: #ffffff !important;
+  border-color: #dce1e5 !important;
+}
+
+.dashboard-shell .dashboard-card:hover {
+  border-color: #c9d0d6 !important;
+}
+
+.dashboard-shell .input-field:focus,
+.dashboard-shell input:focus,
+.dashboard-shell select:focus,
+.dashboard-shell textarea:focus {
+  border-color: #0b2f4d !important;
+  box-shadow: 0 0 0 2px rgba(11,47,77,.08) !important;
+}
+
+.dashboard-metrics {
+  background: #ffffff !important;
+  border-color: #dce1e5 !important;
+}
+.dashboard-metric {
+  border-color: #e2e6ea !important;
+}
+.dashboard-list-row,
+.dashboard-rule {
+  border-color: #e2e6ea !important;
+}
+
+.dashboard-shell .bg-surface,
+.dashboard-shell .bg-parchment,
+.dashboard-shell .bg-gray-50,
+.dashboard-shell .bg-gray-100,
+.dashboard-shell [class*="bg-[#f5f2eb]"],
+.dashboard-shell [class*="bg-[#F5F2EB]"],
+.dashboard-shell [class*="bg-[#f8f1e4]"],
+.dashboard-shell [class*="bg-[#F8F1E4]"],
+.dashboard-shell [class*="bg-[#fcfaf5]"],
+.dashboard-shell [class*="bg-[#FCFAF5]"],
+.dashboard-shell [class*="bg-[#faf8f3]"],
+.dashboard-shell [class*="bg-[#FAF8F3]"],
+.dashboard-shell [class*="bg-[#f1eee7]"],
+.dashboard-shell [class*="bg-[#F1EEE7]"] {
+  background-color: #f7f8fa !important;
+}
+
+.dashboard-shell [class*="text-[#9c7a42]"],
+.dashboard-shell [class*="text-[#9C7A42]"],
+.dashboard-shell [class*="text-[#d8bf8a]"],
+.dashboard-shell [class*="text-[#D8BF8A]"],
+.dashboard-shell .text-accent,
+.dashboard-shell .text-gold,
+.dashboard-shell .text-gold-dark {
+  color: #5f6b74 !important;
+}
+
+.dashboard-shell [class*="border-[#c9a96e]"],
+.dashboard-shell [class*="border-[#C9A96E]"],
+.dashboard-shell [class*="border-[#e4dccd]"],
+.dashboard-shell [class*="border-[#E4DCCD]"],
+.dashboard-shell [class*="border-[#e6dece]"],
+.dashboard-shell [class*="border-[#E6DECE]"],
+.dashboard-shell [class*="border-[#d8d3c8]"],
+.dashboard-shell [class*="border-[#D8D3C8]"] {
+  border-color: #dce1e5 !important;
+}
+
+.dashboard-shell .bg-accent,
+.dashboard-shell .bg-gold,
+.dashboard-shell .bg-gold-dark {
+  background-color: #0b2f4d !important;
+}
+
+/* Sidebar remains navy, but active states are white/cool grey rather than gold. */
+.dashboard-sidebar {
+  background: #092b45 !important;
+  border-right-color: rgba(255,255,255,.10) !important;
+}
+.dashboard-sidebar [class*="text-[#d8bf8a]"],
+.dashboard-sidebar [class*="text-[#D8BF8A]"] {
+  color: rgba(255,255,255,.72) !important;
+}
+.dashboard-sidebar [class*="border-[#c9a96e]"],
+.dashboard-sidebar [class*="border-[#C9A96E]"] {
+  border-color: #ffffff !important;
+}
+
+/* Neutral notification/status surfaces that previously used champagne tones. */
+.dashboard-shell [class*="bg-amber-50"],
+.dashboard-shell [class*="bg-yellow-50"] {
+  background-color: #f3f5f7 !important;
+}
+.dashboard-shell [class*="text-amber-"],
+.dashboard-shell [class*="text-yellow-"] {
+  color: #44525d !important;
+}
