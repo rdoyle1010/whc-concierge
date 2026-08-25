@@ -34,23 +34,26 @@ export async function createNotification(
     user_id: userId, type, title, message, link: link || null, is_read: false,
   })
 
-  // Every talent-side platform notification can also create a short SMS alert.
-  // The SMS deliberately contains no private employer/rate/interview detail;
-  // sendSms normalises it into an action-led "you have an update" message.
-  // A few flows already send their own SMS immediately after creating the
-  // notification, so skip those here to avoid duplicate texts.
+  // Platform notifications may also create a short SMS alert for either a
+  // talent or employer account when that recipient has explicitly opted in.
+  // sendSms keeps the lock-screen copy private and action-led.
   if (!error && !alreadyHasDedicatedSms(title)) {
     try {
-      const { data: candidate } = await supabase
-        .from('candidate_profiles')
-        .select('phone,sms_opt_in')
-        .eq('user_id', userId)
-        .maybeSingle()
+      const [{ data: candidate }, { data: employer }] = await Promise.all([
+        supabase.from('candidate_profiles').select('phone,sms_opt_in').eq('user_id', userId).maybeSingle(),
+        supabase.from('employer_profiles').select('contact_phone,sms_opt_in').eq('user_id', userId).maybeSingle(),
+      ])
 
-      if (candidate?.phone) {
+      const recipient = candidate?.phone
+        ? { phone: candidate.phone, optedIn: candidate.sms_opt_in }
+        : employer?.contact_phone
+          ? { phone: employer.contact_phone, optedIn: employer.sms_opt_in }
+          : null
+
+      if (recipient) {
         await sendSmsIfOptedIn({
-          to: candidate.phone,
-          optedIn: candidate.sms_opt_in,
+          to: recipient.phone,
+          optedIn: recipient.optedIn,
           body: `${title}. ${message}`,
         })
       }
@@ -78,7 +81,7 @@ export async function markAsRead(notificationId: string, userId: string) {
     .from('notifications')
     .update({ is_read: true })
     .eq('id', notificationId)
-    .eq('user_id', userId) // only the owner can mark their notification read
+    .eq('user_id', userId)
   return { error }
 }
 
