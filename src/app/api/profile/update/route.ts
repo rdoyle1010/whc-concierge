@@ -42,6 +42,7 @@ const ALLOWED_COLUMNS = new Set([
   'cv_url',
   'insurance_document_url',
   'stealth_mode',
+  'sms_opt_in',
   'job_alerts_enabled',
   'job_alerts_frequency',
   'job_alerts_min_score',
@@ -62,7 +63,6 @@ function stripToAllowed(data: Record<string, unknown>): Record<string, unknown> 
 
 export async function POST(req: NextRequest) {
   try {
-    // -- Auth: caller must be logged in --
     const cookieStore = await cookies()
     const supabaseAuth = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -75,9 +75,7 @@ export async function POST(req: NextRequest) {
       }
     )
     const { data: { user } } = await supabaseAuth.auth.getUser()
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
-    }
+    if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
 
     const body = await req.json()
     const validation = validateRequest(profileUpdateSchema, body)
@@ -86,7 +84,6 @@ export async function POST(req: NextRequest) {
     }
     const { profileId, data } = validation.data!
 
-    // -- Ownership: profile must belong to the caller --
     const admin = createAdminClient()
     const { data: profile } = await admin
       .from('candidate_profiles')
@@ -94,19 +91,11 @@ export async function POST(req: NextRequest) {
       .eq('id', profileId)
       .single()
 
-    if (!profile || profile.user_id !== user.id) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-    }
+    if (!profile || profile.user_id !== user.id) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
-    // -- Whitelist: strip any columns not in the allow-list --
     const safeData = stripToAllowed(data)
-    if (Object.keys(safeData).length === 0) {
-      return NextResponse.json({ error: 'No valid fields provided' }, { status: 400 })
-    }
+    if (Object.keys(safeData).length === 0) return NextResponse.json({ error: 'No valid fields provided' }, { status: 400 })
 
-    // Strip-and-retry: if the live table lacks a column, drop ONLY that key
-    // and keep saving the rest. One missing column must never cost the user
-    // their whole form (this exact failure silently ate wizard step 1).
     const attempt = { ...safeData }
     const skipped: string[] = []
     let { error } = await admin.from('candidate_profiles').update(attempt).eq('id', profileId)
