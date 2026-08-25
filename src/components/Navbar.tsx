@@ -75,10 +75,10 @@ export default function Navbar({ siteContent }: { siteContent?: WebsiteContent }
   const publicGroups = [
     {
       label: 'Careers',
-      paths: ['/jobs', '/roles/match', '/properties'],
+      paths: ['/jobs', '/match', '/roles/match', '/properties'],
       items: [
         { href: '/jobs', label: labels.jobs, note: 'Browse permanent opportunities' },
-        { href: '/roles/match', label: 'Match', note: 'See roles ranked around you' },
+        { href: '/match', label: 'Match', note: 'See how swipe matching works' },
         { href: '/properties', label: 'Properties', note: 'Meet verified employers' },
       ],
     },
@@ -112,7 +112,7 @@ export default function Navbar({ siteContent }: { siteContent?: WebsiteContent }
                 return (
                   <Link key={link.href} href={link.href} className={`relative flex h-full items-center px-3.5 text-[11px] font-semibold tracking-[0.015em] transition-colors ${active ? 'text-white' : 'text-white/66 hover:text-white'}`}>
                     <span>{link.label}</span>
-                    {active && <span className="absolute inset-x-3 bottom-0 h-[2px] bg-[#d4b477]" />}
+                    {active && <span className="absolute inset-x-3 bottom-0 h-[2px] bg-white" />}
                   </Link>
                 )
               })}
@@ -125,10 +125,10 @@ export default function Navbar({ siteContent }: { siteContent?: WebsiteContent }
                   <div key={group.label} className="group relative flex h-full items-center">
                     <button type="button" className={`relative flex h-full items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] transition-colors ${active ? 'text-white' : 'text-white/68 group-hover:text-white'}`}>
                       {group.label}<ChevronDown size={11} className="opacity-65 transition-transform group-hover:rotate-180" />
-                      {active && <span className="absolute inset-x-0 bottom-0 h-[2px] bg-[#d4b477]" />}
+                      {active && <span className="absolute inset-x-0 bottom-0 h-[2px] bg-white" />}
                     </button>
-                    <div className="pointer-events-none absolute left-1/2 top-[64px] w-[290px] -translate-x-1/2 translate-y-2 border border-[#d8d3c8] bg-white p-2 opacity-0 shadow-[0_18px_48px_rgba(5,29,46,.16)] transition-all duration-150 group-hover:pointer-events-auto group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:translate-y-0 group-focus-within:opacity-100">
-                      {group.items.map(item => <Link key={item.href} href={item.href} className="block border-b border-[#ece8e1] px-4 py-3.5 last:border-0 hover:bg-[#f7f4ed]">
+                    <div className="pointer-events-none absolute left-1/2 top-[64px] w-[290px] -translate-x-1/2 translate-y-2 border border-[#d8dde1] bg-white p-2 opacity-0 shadow-[0_18px_48px_rgba(5,29,46,.16)] transition-all duration-150 group-hover:pointer-events-auto group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:translate-y-0 group-focus-within:opacity-100">
+                      {group.items.map(item => <Link key={item.href} href={item.href} className="block border-b border-[#e8ecef] px-4 py-3.5 last:border-0 hover:bg-[#f7f8fa]">
                         <span className="block text-[12px] font-semibold text-[#10283b]">{item.label}</span>
                         <span className="mt-1 block text-[10px] leading-4 text-[#7a858c]">{item.note}</span>
                       </Link>)}
@@ -137,8 +137,8 @@ export default function Navbar({ siteContent }: { siteContent?: WebsiteContent }
                 )
               })}
 
-              <Link href="/academy" className={`relative flex h-full items-center text-[10px] font-semibold uppercase tracking-[0.16em] transition-colors ${isActive('/academy') ? 'text-white' : 'text-white/68 hover:text-white'}`}>Academy{isActive('/academy') && <span className="absolute inset-x-0 bottom-0 h-[2px] bg-[#d4b477]" />}</Link>
-              <Link href="/blog" className={`relative flex h-full items-center text-[10px] font-semibold uppercase tracking-[0.16em] transition-colors ${isActive('/blog') ? 'text-white' : 'text-white/68 hover:text-white'}`}>Journal{isActive('/blog') && <span className="absolute inset-x-0 bottom-0 h-[2px] bg-[#d4b477]" />}</Link>
+              <Link href="/academy" className={`relative flex h-full items-center text-[10px] font-semibold uppercase tracking-[0.16em] transition-colors ${isActive('/academy') ? 'text-white' : 'text-white/68 hover:text-white'}`}>Academy{isActive('/academy') && <span className="absolute inset-x-0 bottom-0 h-[2px] bg-white" />}</Link>
+              <Link href="/blog" className={`relative flex h-full items-center text-[10px] font-semibold uppercase tracking-[0.16em] transition-colors ${isActive('/blog') ? 'text-white' : 'text-white/68 hover:text-white'}`}>Journal{isActive('/blog') && <span className="absolute inset-x-0 bottom-0 h-[2px] bg-white" />}</Link>
             </div>
           )}
         </div>
@@ -170,7 +170,7 @@ export default function Navbar({ siteContent }: { siteContent?: WebsiteContent }
             <div className="flex items-center gap-5 whitespace-nowrap">
               <Link href="/login?role=talent" className="text-[9px] font-semibold uppercase tracking-[0.17em] text-white/66 transition-colors hover:text-white">Talent Portal</Link>
               <span className="h-5 w-px bg-white/18" />
-              <Link href="/login?role=employer" className="text-[9px] font-semibold uppercase tracking-[0.17em] text-[#d4b477] transition-colors hover:text-white">Property Portal</Link>
+              <Link href="/login?role=employer" className="text-[9px] font-semibold uppercase tracking-[0.17em] text-white/82 transition-colors hover:text-white">Property Portal</Link>
             </div>
           )}
         </div>
@@ -185,11 +185,11 @@ export default function Navbar({ siteContent }: { siteContent?: WebsiteContent }
           <div className="px-6 py-5">
             {user ? navLinks.map(link => <Link key={link.href} href={link.href} className={`block border-b border-white/8 py-3 text-[13px] font-medium ${isActive(link.href) ? 'text-white' : 'text-white/70 hover:text-white'}`} onClick={() => setMobileOpen(false)}>{link.label}</Link>) : (
               <>
-                <p className="pb-2 text-[9px] font-semibold uppercase tracking-[.18em] text-[#d4b477]">Careers</p>
+                <p className="pb-2 text-[9px] font-semibold uppercase tracking-[.18em] text-white/55">Careers</p>
                 {publicGroups[0].items.map(item => <Link key={item.href} href={item.href} className="block border-b border-white/8 py-3 text-[13px] text-white/78" onClick={() => setMobileOpen(false)}>{item.label}</Link>)}
-                <p className="pb-2 pt-6 text-[9px] font-semibold uppercase tracking-[.18em] text-[#d4b477]">Flexible Work</p>
+                <p className="pb-2 pt-6 text-[9px] font-semibold uppercase tracking-[.18em] text-white/55">Flexible Work</p>
                 {publicGroups[1].items.map(item => <Link key={item.href} href={item.href} className="block border-b border-white/8 py-3 text-[13px] text-white/78" onClick={() => setMobileOpen(false)}>{item.label}</Link>)}
-                <p className="pb-2 pt-6 text-[9px] font-semibold uppercase tracking-[.18em] text-[#d4b477]">Development & Ideas</p>
+                <p className="pb-2 pt-6 text-[9px] font-semibold uppercase tracking-[.18em] text-white/55">Development & Ideas</p>
                 <Link href="/academy" className="block border-b border-white/8 py-3 text-[13px] text-white/78" onClick={() => setMobileOpen(false)}>Academy</Link>
                 <Link href="/blog" className="block border-b border-white/8 py-3 text-[13px] text-white/78" onClick={() => setMobileOpen(false)}>Journal</Link>
               </>
@@ -206,7 +206,7 @@ export default function Navbar({ siteContent }: { siteContent?: WebsiteContent }
                 <div className="flex items-center gap-5">
                   <Link href="/login?role=talent" className="text-[10px] font-semibold uppercase tracking-[.14em] text-white" onClick={() => setMobileOpen(false)}>Talent Portal</Link>
                   <span className="h-5 w-px bg-white/18" />
-                  <Link href="/login?role=employer" className="text-[10px] font-semibold uppercase tracking-[.14em] text-[#d4b477]" onClick={() => setMobileOpen(false)}>Property Portal</Link>
+                  <Link href="/login?role=employer" className="text-[10px] font-semibold uppercase tracking-[.14em] text-white/82" onClick={() => setMobileOpen(false)}>Property Portal</Link>
                 </div>
               )}
             </div>
