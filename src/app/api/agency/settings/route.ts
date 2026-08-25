@@ -4,10 +4,8 @@ import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { geocodePostcode } from '@/lib/geo'
 
-// Agency register settings - joining is FREE for therapists (decided 15 Jul:
-// hotels pay the 10% fee per booking; no candidate subscription).
-// This route owns everything the register needs: opt-in, rate, mobile,
-// postcode (geocoded to real coordinates) and travel radius.
+// Agency register settings. This route owns the practical details the
+// register needs: rate, mobile, postcode, travel radius and optional SMS consent.
 
 async function getAuthedUser() {
   const cookieStore = await cookies()
@@ -85,20 +83,20 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: 'Please set your hourly rate - properties need to see what you charge.' }, { status: 400 })
       }
       if (!body.phone || !String(body.phone).trim()) {
-        return NextResponse.json({ error: 'Please add your mobile number so we can alert you to new Agency Cover requests.' }, { status: 400 })
-      }
-      if (body.sms_opt_in !== true) {
-        return NextResponse.json({ error: 'Please choose whether to receive SMS alerts before joining the Agency register.' }, { status: 400 })
+        return NextResponse.json({ error: 'Please add your mobile number so properties can contact you about Agency Cover.' }, { status: 400 })
       }
     }
 
     const update: Record<string, any> = {
       hourly_rate: body.hourly_rate ? parseInt(String(body.hourly_rate), 10) : null,
       phone: body.phone ? String(body.phone).trim() : null,
-      sms_opt_in: body.sms_opt_in === true,
       postcode: body.postcode ? String(body.postcode).trim().toUpperCase() : null,
       travel_radius_miles: body.travel_radius_miles ? parseInt(String(body.travel_radius_miles), 10) : null,
     }
+
+    // Consent is explicit and must never be silently reset when another
+    // Agency setting is saved. Only write it when the caller actually sent it.
+    if (typeof body.sms_opt_in === 'boolean') update.sms_opt_in = body.sms_opt_in
 
     if (update.postcode) {
       const coords = await geocodePostcode(update.postcode)
@@ -120,7 +118,7 @@ export async function POST(req: NextRequest) {
     }
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-    return NextResponse.json({ success: true, sms_opt_in: body.sms_opt_in === true })
+    return NextResponse.json({ success: true })
   } catch (e: any) {
     return NextResponse.json({ error: e.message }, { status: 500 })
   }
