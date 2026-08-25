@@ -97,10 +97,10 @@ export default function EmployerFeaturedPage() {
             <div className="mb-5 flex h-11 w-11 items-center justify-center rounded-full bg-white/10 text-[#d4b477]"><Crown size={20} /></div>
             <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#d4b477]">Featured Hotel / Employer</p>
             <div className="mt-2 flex flex-wrap items-end gap-3">
-              <h2 className="text-[34px] font-semibold tracking-[-0.03em]">{priceLabel(setting)}</h2>
-              <span className="mb-1 text-[12px] text-white/55">cancel through billing</span>
+              <h2 className="!text-white text-[34px] font-semibold tracking-[-0.03em]">{priceLabel(setting)}</h2>
+              <span className="mb-1 !text-white/70 text-[12px]">cancel through billing</span>
             </div>
-            <p className="mt-4 max-w-2xl text-[13px] leading-6 text-white/65">{setting?.description || 'Premium property visibility across WHC Concierge.'}</p>
+            <p className="mt-4 max-w-2xl !text-white/75 text-[13px] leading-6">{setting?.description || 'Premium property visibility across WHC Concierge.'}</p>
           </div>
 
           <div className="grid gap-5 p-7 sm:grid-cols-2">
