@@ -39,10 +39,22 @@ export async function POST(req: NextRequest) {
     admin.from('candidate_profiles').select('id').eq('user_id', user.id).maybeSingle(),
     admin.from('employer_profiles').select('id').eq('user_id', user.id).maybeSingle(),
   ])
-  const role = candidate ? 'candidate' : employer ? 'employer' : null
+
+  let role: 'candidate' | 'employer' | null = null
+  let candidateId = ''
+  let employerId = ''
+
+  if (candidate) {
+    role = 'candidate'
+    candidateId = candidate.id
+    employerId = String(body.employerId || '')
+  } else if (employer) {
+    role = 'employer'
+    candidateId = String(body.candidateId || '')
+    employerId = employer.id
+  }
+
   if (!role) return NextResponse.json({ error: 'Agency profile required' }, { status: 403 })
-  const candidateId = role === 'candidate' ? candidate.id : String(body.candidateId || '')
-  const employerId = role === 'employer' ? employer.id : String(body.employerId || '')
   if (!candidateId || !employerId) return NextResponse.json({ error: 'Missing other party' }, { status: 400 })
 
   if (action === 'block') {
@@ -55,8 +67,6 @@ export async function POST(req: NextRequest) {
     }, { onConflict: 'candidate_id,employer_id,blocked_by_role' })
     if (error) return NextResponse.json({ error: 'Could not block this account' }, { status: 500 })
 
-    // Mirror into the existing platform privacy tables so a block affects
-    // recruitment discovery as well as Agency discovery.
     await Promise.allSettled([
       admin.from('profile_blocks').upsert({ candidate_id: candidateId, blocked_employer_id: employerId }, { onConflict: 'candidate_id,blocked_employer_id' }),
       admin.from('blocked_employers').upsert({ candidate_id: candidateId, employer_id: employerId }, { onConflict: 'candidate_id,employer_id' }),
@@ -66,8 +76,6 @@ export async function POST(req: NextRequest) {
       .eq('candidate_id', candidateId).eq('employer_id', employerId).eq('blocked_by_role', role)
     if (error) return NextResponse.json({ error: 'Could not remove block' }, { status: 500 })
 
-    // Only remove the shared platform block when neither side still has an
-    // active Agency block for this relationship.
     const { data: remaining } = await admin.from('agency_mutual_blocks').select('id')
       .eq('candidate_id', candidateId).eq('employer_id', employerId).limit(1)
     if (!remaining?.length) {
