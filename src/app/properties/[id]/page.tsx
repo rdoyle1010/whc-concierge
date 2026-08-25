@@ -9,7 +9,7 @@ import Footer from '@/components/Footer'
 import {
   MapPin, Star, Briefcase, ArrowLeft, Building2, ExternalLink, Users,
   BedDouble, Sparkles, Train, Car, ParkingCircle, BadgeCheck, CalendarDays,
-  HeartHandshake, CheckCircle2,
+  HeartHandshake, CheckCircle2, BookOpen, MessageSquareQuote,
 } from 'lucide-react'
 
 const asList = (value: any) => Array.isArray(value) ? value.filter(Boolean) : []
@@ -21,17 +21,25 @@ export default function PropertyDetailPage() {
 
   const [property, setProperty] = useState<any>(null)
   const [jobs, setJobs] = useState<any[]>([])
+  const [staffReviews, setStaffReviews] = useState<any[]>([])
+  const [reviewSummary, setReviewSummary] = useState<{ count: number; average: number | null }>({ count: 0, average: null })
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     async function load() {
       if (!id) return
-      const [{ data: propertyData }, { data: jobsData }] = await Promise.all([
+      const [{ data: propertyData }, { data: jobsData }, reviewsRes] = await Promise.all([
         supabase.from('employer_profiles').select('*').eq('id', id).single(),
         supabase.from('job_listings').select('*').eq('employer_id', id).eq('is_live', true).eq('status', 'active').order('posted_date', { ascending: false }),
+        fetch(`/api/properties/${id}/reviews`).catch(() => null),
       ])
       setProperty(propertyData)
       setJobs(jobsData || [])
+      if (reviewsRes?.ok) {
+        const payload = await reviewsRes.json().catch(() => null)
+        setStaffReviews(payload?.reviews || [])
+        setReviewSummary(payload?.summary || { count: 0, average: null })
+      }
       setLoading(false)
     }
     load()
@@ -48,8 +56,8 @@ export default function PropertyDetailPage() {
   const name = property.property_name || property.company_name
   const photos = asList(property.property_photos)
   const about = property.about_text || property.description
-  const reviewScore = Number(property.review_score || 0)
-  const reviewCount = Number(property.review_count || 0)
+  const whcReviewScore = reviewSummary.average ?? (Number(property.review_score || 0) || null)
+  const whcReviewCount = reviewSummary.count || Number(property.review_count || 0)
   const starRating = property.star_rating
   const services = asList(property.services_offered)
   const brands = asList(property.product_houses_used)
@@ -80,11 +88,13 @@ export default function PropertyDetailPage() {
             <div className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-3 text-[13px] text-[#65717a]">
               {(property.location || property.postcode) && <span className="inline-flex items-center gap-2"><MapPin size={16}/>{[property.location, property.postcode].filter(Boolean).join(' · ')}</span>}
               {starRating && <span className="inline-flex items-center gap-2 text-[#10283b]"><Star size={16} fill="currentColor"/>{isNaN(Number(starRating)) ? starRating : `${starRating} star property`}</span>}
-              {reviewScore > 0 && <span className="inline-flex items-center gap-2"><BadgeCheck size={16}/><strong className="text-[#10283b]">{reviewScore.toFixed(1)}</strong>{reviewCount > 0 ? ` from ${reviewCount} verified review${reviewCount === 1 ? '' : 's'}` : ' verified rating'}</span>}
+              {whcReviewScore && <span className="inline-flex items-center gap-2"><BadgeCheck size={16}/><strong className="text-[#10283b]">{whcReviewScore.toFixed(1)}</strong>{whcReviewCount > 0 ? ` from ${whcReviewCount} verified WHC review${whcReviewCount === 1 ? '' : 's'}` : ' WHC verified rating'}</span>}
             </div>
           </div>
-          <div className="flex flex-col sm:flex-row lg:flex-col gap-3 min-w-[200px]">
-            {property.website && <a href={property.website} target="_blank" rel="noopener noreferrer" className="btn-secondary inline-flex items-center justify-center gap-2">Visit property website <ExternalLink size={14}/></a>}
+          <div className="flex flex-col sm:flex-row lg:flex-col gap-3 min-w-[220px]">
+            {property.website && <a href={property.website} target="_blank" rel="noopener noreferrer" className="btn-secondary inline-flex items-center justify-center gap-2">Official website <ExternalLink size={14}/></a>}
+            {property.tripadvisor_url && <a href={property.tripadvisor_url} target="_blank" rel="noopener noreferrer" className="btn-secondary inline-flex items-center justify-center gap-2">View on TripAdvisor <ExternalLink size={14}/></a>}
+            {property.treatment_menu_url && <a href={property.treatment_menu_url} target="_blank" rel="noopener noreferrer" className="btn-secondary inline-flex items-center justify-center gap-2">View treatment menu <BookOpen size={14}/></a>}
             {jobs.length > 0 && <a href="#openings" className="btn-primary inline-flex items-center justify-center gap-2">View {jobs.length} opening{jobs.length === 1 ? '' : 's'} <Briefcase size={14}/></a>}
           </div>
         </div>
@@ -97,7 +107,7 @@ export default function PropertyDetailPage() {
       <section className="border-y border-[#e3e7eb] bg-[#f7f9fa]">
         <div className="max-w-7xl mx-auto px-6 py-7 grid grid-cols-2 md:grid-cols-4 gap-5">
           <div><p className="text-[10px] uppercase tracking-[.14em] text-[#7d8990]">Property rating</p><p className="mt-1 text-[24px] text-[#10283b]">{starRating ? (isNaN(Number(starRating)) ? starRating : `${starRating}★`) : 'Not listed'}</p></div>
-          <div><p className="text-[10px] uppercase tracking-[.14em] text-[#7d8990]">WHC review score</p><p className="mt-1 text-[24px] text-[#10283b]">{reviewScore > 0 ? reviewScore.toFixed(1) : 'New'}</p></div>
+          <div><p className="text-[10px] uppercase tracking-[.14em] text-[#7d8990]">WHC staff rating</p><p className="mt-1 text-[24px] text-[#10283b]">{whcReviewScore ? whcReviewScore.toFixed(1) : 'New'}</p><p className="text-[10px] text-[#8b969c] mt-1">Verified workers only</p></div>
           <div><p className="text-[10px] uppercase tracking-[.14em] text-[#7d8990]">Treatment rooms</p><p className="mt-1 text-[24px] text-[#10283b]">{property.num_treatment_rooms || '—'}</p></div>
           <div><p className="text-[10px] uppercase tracking-[.14em] text-[#7d8990]">Spa team</p><p className="mt-1 text-[24px] text-[#10283b]">{property.team_size || '—'}</p></div>
         </div>
@@ -105,13 +115,25 @@ export default function PropertyDetailPage() {
 
       <main className="max-w-7xl mx-auto px-6 py-14 md:py-16 space-y-16">
         {(about || highlights.length > 0) && <section className="grid lg:grid-cols-[1.25fr_.75fr] gap-10">
-          <div><p className="text-[10px] uppercase tracking-[.17em] font-semibold text-[#6f7f88]">About the property</p><h2 className="text-[32px] md:text-[38px] mt-2">What it is like to work here.</h2>{about && <p className="mt-5 text-[15px] leading-8 text-[#53636f] whitespace-pre-line">{about}</p>}</div>
+          <div><p className="text-[10px] uppercase tracking-[.17em] font-semibold text-[#6f7f88]">About the property</p><h2 className="text-[32px] md:text-[38px] mt-2">Understand the place before you apply.</h2>{about && <p className="mt-5 text-[15px] leading-8 text-[#53636f] whitespace-pre-line">{about}</p>}</div>
           {highlights.length > 0 && <div className="rounded-[20px] border border-[#dfe5e8] bg-white p-6"><h3 className="text-[20px]">Property highlights</h3><div className="mt-4 space-y-3">{highlights.map((item: string) => <div key={item} className="flex gap-3 text-[13px] text-[#53636f]"><CheckCircle2 size={16} className="text-[#6f7f88] shrink-0 mt-0.5"/>{item}</div>)}</div></div>}
+        </section>}
+
+        {(property.website || property.tripadvisor_url || property.treatment_menu_url || property.guest_review_summary) && <section>
+          <p className="text-[10px] uppercase tracking-[.17em] font-semibold text-[#6f7f88]">Guest reputation & spa experience</p>
+          <h2 className="text-[32px] md:text-[38px] mt-2">See what guests see too.</h2>
+          <p className="mt-3 text-[13px] leading-6 text-[#65717a] max-w-3xl">WHC keeps guest reputation separate from staff reviews. External links below are supplied by the property; WHC does not copy or invent external review scores.</p>
+          <div className="grid md:grid-cols-3 gap-4 mt-7">
+            {property.website && <ExternalCard title="Official property website" text="Explore the hotel, spa or wellness property directly." href={property.website}/>} 
+            {property.tripadvisor_url && <ExternalCard title="TripAdvisor" text="Open the property's supplied TripAdvisor page to see current guest commentary." href={property.tripadvisor_url}/>} 
+            {property.treatment_menu_url && <ExternalCard title="Treatment menu" text="See the current treatments, rituals, packages and spa positioning." href={property.treatment_menu_url}/>} 
+          </div>
+          {property.guest_review_summary && <div className="mt-5 rounded-[18px] bg-[#f7f9fa] border border-[#dfe5e8] p-5"><p className="text-[10px] uppercase tracking-[.12em] text-[#7d8990]">Property-supplied guest reputation context</p><p className="text-[13px] leading-6 text-[#53636f] mt-2">{property.guest_review_summary}</p></div>}
         </section>}
 
         <section>
           <p className="text-[10px] uppercase tracking-[.17em] font-semibold text-[#6f7f88]">Spa operation</p>
-          <h2 className="text-[32px] md:text-[38px] mt-2">Understand the environment before you apply.</h2>
+          <h2 className="text-[32px] md:text-[38px] mt-2">Understand the working environment.</h2>
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4 mt-7">
             <div className="border border-[#dfe5e8] rounded-[18px] p-5"><BedDouble size={19} className="text-[#6f7f88]"/><p className="text-[11px] text-[#7d8990] mt-4">Treatment rooms</p><p className="text-[22px] text-[#10283b] mt-1">{property.num_treatment_rooms || 'Not supplied'}</p></div>
             <div className="border border-[#dfe5e8] rounded-[18px] p-5"><Users size={19} className="text-[#6f7f88]"/><p className="text-[11px] text-[#7d8990] mt-4">Team size</p><p className="text-[22px] text-[#10283b] mt-1">{property.team_size || 'Not supplied'}</p></div>
@@ -139,12 +161,16 @@ export default function PropertyDetailPage() {
 
         {culture.length > 0 && <section><p className="text-[10px] uppercase tracking-[.17em] font-semibold text-[#6f7f88]">Culture</p><h2 className="text-[32px] md:text-[38px] mt-2">What this team says matters.</h2><div className="flex flex-wrap gap-2 mt-6">{culture.map((item: string) => <span key={item} className="rounded-full border border-[#dfe5e8] bg-[#f7f9fa] px-4 py-2 text-[12px] text-[#53636f]">{item}</span>)}</div></section>}
 
+        <section id="staff-reviews">
+          <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4"><div><p className="text-[10px] uppercase tracking-[.17em] font-semibold text-[#6f7f88]">Verified WHC professionals</p><h2 className="text-[32px] md:text-[38px] mt-2">What is it actually like to work here?</h2></div>{whcReviewScore && <div className="text-left md:text-right"><p className="text-[34px] text-[#10283b] leading-none">{whcReviewScore.toFixed(1)} / 5</p><p className="text-[11px] text-[#7d8990] mt-2">{whcReviewCount} verified review{whcReviewCount === 1 ? '' : 's'}</p></div>}</div>
+          <p className="mt-3 text-[13px] leading-6 text-[#65717a] max-w-3xl">Only professionals with a completed paid WHC Agency shift or accepted WHC placement can leave these reviews. They are separate from guest reviews and property marketing.</p>
+          {staffReviews.length > 0 ? <div className="grid md:grid-cols-2 gap-5 mt-7">{staffReviews.slice(0, 8).map(review => <article key={review.id} className="rounded-[20px] border border-[#dfe5e8] p-6 bg-white"><div className="flex items-start justify-between gap-4"><div><div className="flex gap-1">{[1,2,3,4,5].map(n => <Star key={n} size={14} className={n <= review.rating ? 'text-[#0b2f4d]' : 'text-[#cbd4d9]'} fill={n <= review.rating ? 'currentColor' : 'none'}/>)}</div><p className="text-[14px] font-semibold text-[#10283b] mt-3">{review.reviewer_name}</p>{review.reviewer_role && <p className="text-[11px] text-[#7d8990]">{review.reviewer_role}</p>}</div><span className="inline-flex items-center gap-1 rounded-full bg-[#eef4f1] text-[#355d49] px-2.5 py-1 text-[9px] font-semibold uppercase tracking-[.08em]"><BadgeCheck size={11}/>Verified</span></div>{review.comment && <p className="mt-5 text-[13px] leading-6 text-[#53636f]">“{review.comment}”</p>}<div className="mt-5 pt-4 border-t border-[#e8ecee] flex items-center justify-between gap-3"><p className="text-[10px] text-[#7d8990]">{review.source}</p>{review.created_at && <p className="text-[10px] text-[#9aa3a8]">{new Date(review.created_at).toLocaleDateString('en-GB', { month: 'short', year: 'numeric' })}</p>}</div></article>)}</div> : <div className="mt-7 rounded-[20px] border border-[#dfe5e8] bg-[#f7f9fa] p-8 text-center"><MessageSquareQuote size={24} className="mx-auto text-[#6f7f88]"/><p className="text-[16px] text-[#10283b] mt-3">No verified WHC staff reviews yet</p><p className="text-[12px] text-[#65717a] mt-1">The score will build as professionals complete WHC shifts and placements here.</p></div>}
+        </section>
+
         <section id="openings">
           <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4"><div><p className="text-[10px] uppercase tracking-[.17em] font-semibold text-[#6f7f88]">Careers</p><h2 className="text-[32px] md:text-[38px] mt-2">Current openings.</h2></div><p className="text-[13px] text-[#65717a]">{jobs.length} live role{jobs.length === 1 ? '' : 's'}</p></div>
           {jobs.length > 0 ? <div className="grid md:grid-cols-2 gap-5 mt-7">{jobs.map(job => <Link key={job.id} href={`/jobs/${job.id}`} className="group border border-[#dfe5e8] rounded-[20px] p-6 hover:border-[#aebbc2] hover:shadow-sm transition-all"><div className="flex items-start justify-between gap-4"><div><h3 className="text-[22px] group-hover:text-[#123f64]">{job.job_title}</h3><p className="text-[12px] text-[#65717a] mt-2">{job.location || property.location} · {job.job_type || 'Full-time'}</p></div><Briefcase size={18} className="text-[#6f7f88]"/></div>{job.salary_min && job.salary_max && <p className="text-[14px] font-semibold text-[#10283b] mt-4">£{Number(job.salary_min).toLocaleString()}–£{Number(job.salary_max).toLocaleString()}</p>}{(job.job_description || job.description) && <p className="text-[13px] leading-6 text-[#65717a] mt-3 line-clamp-3">{job.job_description || job.description}</p>}<p className="text-[12px] font-semibold text-[#0b2f4d] mt-5">View role →</p></Link>)}</div> : <div className="border border-[#dfe5e8] rounded-[20px] p-10 text-center mt-7"><CalendarDays size={24} className="mx-auto text-[#6f7f88]"/><p className="text-[16px] text-[#10283b] mt-3">No current openings</p><p className="text-[12px] text-[#65717a] mt-1">Follow WHC or check back for future opportunities at {name}.</p></div>}
         </section>
-
-        {(reviewScore > 0 || starRating) && <section className="rounded-[24px] bg-[#0b2f4d] text-white p-8 md:p-10 grid md:grid-cols-[auto_1fr] gap-7 items-center"><div className="h-20 w-20 rounded-full bg-white/10 flex items-center justify-center"><Star size={30} className="text-white" fill="currentColor"/></div><div><p className="text-[10px] uppercase tracking-[.17em] text-white/55">Property reputation</p><h2 className="text-white text-[30px] mt-2">{reviewScore > 0 ? `${reviewScore.toFixed(1)} WHC rating` : `${starRating} property`}</h2><p className="text-[13px] leading-6 text-white/65 mt-2">{reviewCount > 0 ? `Based on ${reviewCount} verified review${reviewCount === 1 ? '' : 's'} recorded through the WHC platform.` : 'Property classification and reputation information shown from the employer profile.'}</p></div></section>}
       </main>
 
       <Footer />
@@ -158,4 +184,8 @@ function InfoList({ title, items }: { title: string; items: string[] }) {
 
 function TravelCard({ icon: Icon, label, value }: { icon: any; label: string; value: string }) {
   return <div className="border border-[#dfe5e8] rounded-[18px] p-5"><Icon size={19} className="text-[#6f7f88]"/><p className="text-[10px] uppercase tracking-[.12em] text-[#7d8990] mt-4">{label}</p><p className="text-[14px] leading-6 text-[#10283b] mt-1">{value}</p></div>
+}
+
+function ExternalCard({ title, text, href }: { title: string; text: string; href: string }) {
+  return <a href={href} target="_blank" rel="noopener noreferrer" className="group rounded-[18px] border border-[#dfe5e8] p-5 hover:border-[#aebbc2] hover:bg-[#f7f9fa] transition-all"><div className="flex items-start justify-between gap-4"><div><h3 className="text-[18px]">{title}</h3><p className="text-[12px] leading-5 text-[#65717a] mt-2">{text}</p></div><ExternalLink size={16} className="text-[#6f7f88] shrink-0"/></div></a>
 }
