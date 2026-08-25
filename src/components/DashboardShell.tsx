@@ -8,6 +8,7 @@ import ApplicationPipelineHub from '@/components/ApplicationPipelineHub'
 import PostHireActions from '@/components/PostHireActions'
 import DashboardActivityCentre from '@/components/DashboardActivityCentre'
 import PostHireReviews from '@/components/PostHireReviews'
+import SponsoredAd from '@/components/SponsoredAd'
 import { usePathname } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import {
@@ -107,6 +108,7 @@ export default function DashboardShell({ children, role, userName }: DashboardSh
   const showRecruitmentPipeline = (role === 'talent' && pathname === '/talent/applications') || (role === 'employer' && pathname === '/employer/applications')
   const showPostHireActions = role === 'employer' && pathname === '/employer/applications'
   const showPostHireReviews = (role === 'talent' && pathname === '/talent/applications') || (role === 'employer' && pathname === '/employer/hired')
+  const showJobsTalentSponsor = (role === 'talent' && pathname === '/talent/jobs') || (role === 'employer' && pathname === '/employer/candidates')
   const activityRole: 'talent' | 'employer' | null = role === 'talent' && pathname === '/talent/dashboard' ? 'talent' : role === 'employer' && pathname === '/employer/dashboard' ? 'employer' : null
 
   useEffect(() => {
@@ -141,6 +143,6 @@ export default function DashboardShell({ children, role, userName }: DashboardSh
       <nav className="px-4 pb-20 overflow-y-auto h-[calc(100vh-156px)]">{items.map((item,index)=>{const active=isActive(item.href);return <div key={item.href}>{item.section&&<p className={`${index===0?'mt-1':'mt-5'} mb-1.5 px-3 text-[8px] font-semibold uppercase tracking-[0.2em] text-white/32`}>{item.section}</p>}<Link href={item.href} onClick={()=>setSidebarOpen(false)} className={`dashboard-nav-item relative flex items-center gap-3 px-3 py-2 text-[12.5px] transition-colors border-l ${active?'text-white bg-white/[0.055] border-[#c9a96e]':'text-white/58 hover:text-white hover:bg-white/[0.035] border-transparent'}`}><span className={active?'text-[#d8bf8a]':'text-white/44'}>{item.icon}</span><span className="tracking-[-0.01em]">{item.label}</span>{active&&<ChevronRight size={12} className="ml-auto text-[#d8bf8a]"/>}</Link></div>})}</nav>
       <div className="absolute bottom-0 left-0 right-0 px-4 py-4 bg-[#092b45] border-t border-white/[0.07]"><button type="button" onClick={handleSignOut} className="dashboard-nav-item flex items-center gap-3 px-3 py-2.5 text-[12.5px] text-white/48 hover:text-white hover:bg-white/[0.035] w-full transition-colors"><LogOut size={17}/><span>Sign out</span></button></div>
     </aside>
-    <main className="lg:ml-[264px] min-h-screen"><div className="p-5 sm:p-6 md:p-8 lg:p-10 xl:p-12 max-w-[1540px] mx-auto">{showPostHireActions?<PostHireActions/>:null}{showRecruitmentPipeline?<ApplicationPipelineHub role={role as 'talent'|'employer'}/>:null}{activityRole?<DashboardActivityCentre role={activityRole}/>:null}{showPostHireReviews?<PostHireReviews/>:null}{children}</div></main>
+    <main className="lg:ml-[264px] min-h-screen"><div className="p-5 sm:p-6 md:p-8 lg:p-10 xl:p-12 max-w-[1540px] mx-auto">{showJobsTalentSponsor?<div className="mb-7"><SponsoredAd placement="jobs_talent_sponsor" /></div>:null}{showPostHireActions?<PostHireActions/>:null}{showRecruitmentPipeline?<ApplicationPipelineHub role={role as 'talent'|'employer'}/>:null}{activityRole?<DashboardActivityCentre role={activityRole}/>:null}{showPostHireReviews?<PostHireReviews/>:null}{children}</div></main>
   </div>
 }
