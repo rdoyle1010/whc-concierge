@@ -28,8 +28,6 @@ export async function GET() {
     const { data: cand } = await admin.from('candidate_profiles').select('*').eq('user_id', user.id).maybeSingle()
     if (!cand) return NextResponse.json({ error: 'No candidate profile found' }, { status: 404 })
 
-    // Ensure a referral code exists (short, readable, unique). Best-effort -
-    // the column may not exist until migration 025 runs live.
     let referralCode: string | null = cand.referral_code ?? null
     let referralStats: { total: number; converted: number } | null = null
     try {
@@ -59,6 +57,7 @@ export async function GET() {
         agency_listed_until: cand.agency_listed_until ?? null,
         hourly_rate: cand.hourly_rate ?? null,
         phone: cand.phone ?? null,
+        sms_opt_in: Boolean(cand.sms_opt_in),
         postcode: cand.postcode ?? null,
         travel_radius_miles: cand.travel_radius_miles ?? null,
         has_coords: cand.latitude != null && cand.longitude != null,
@@ -80,28 +79,27 @@ export async function POST(req: NextRequest) {
 
     const body = await req.json()
 
-    // Joining the register requires the essentials properties rely on.
-    // NOTE: agency_available itself is NOT set here - only the Stripe
-    // webhook flips it, after the £10/mo listing subscription is paid.
     if (body.joining) {
       const rate = parseInt(String(body.hourly_rate), 10)
       if (!rate || rate <= 0) {
         return NextResponse.json({ error: 'Please set your hourly rate - properties need to see what you charge.' }, { status: 400 })
       }
       if (!body.phone || !String(body.phone).trim()) {
-        return NextResponse.json({ error: 'Please add your mobile number - urgent same-day offers are sent by text.' }, { status: 400 })
+        return NextResponse.json({ error: 'Please add your mobile number so we can alert you to new Agency Cover requests.' }, { status: 400 })
+      }
+      if (body.sms_opt_in !== true) {
+        return NextResponse.json({ error: 'Please choose whether to receive SMS alerts before joining the Agency register.' }, { status: 400 })
       }
     }
 
     const update: Record<string, any> = {
       hourly_rate: body.hourly_rate ? parseInt(String(body.hourly_rate), 10) : null,
       phone: body.phone ? String(body.phone).trim() : null,
+      sms_opt_in: body.sms_opt_in === true,
       postcode: body.postcode ? String(body.postcode).trim().toUpperCase() : null,
       travel_radius_miles: body.travel_radius_miles ? parseInt(String(body.travel_radius_miles), 10) : null,
     }
 
-    // Geocode when a postcode is present - once here, so searches and offers
-    // can do real-mileage maths without calling out per request.
     if (update.postcode) {
       const coords = await geocodePostcode(update.postcode)
       if (coords) {
@@ -112,9 +110,8 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Live table may lack the geo columns until the migration runs - strip and retry
     let { error } = await admin.from('candidate_profiles').update(update).eq('id', cand.id)
-    for (let i = 0; i < 4 && error; i++) {
+    for (let i = 0; i < 5 && error; i++) {
       const m = /Could not find the '([^']+)' column/.exec(error.message || '')
       if (!m || !(m[1] in update)) break
       delete update[m[1]]
@@ -123,7 +120,7 @@ export async function POST(req: NextRequest) {
     }
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-    return NextResponse.json({ success: true })
+    return NextResponse.json({ success: true, sms_opt_in: body.sms_opt_in === true })
   } catch (e: any) {
     return NextResponse.json({ error: e.message }, { status: 500 })
   }
