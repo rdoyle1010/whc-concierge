@@ -54,10 +54,28 @@ export async function POST(req: NextRequest) {
       reason: String(body.reason || '').trim() || null,
     }, { onConflict: 'candidate_id,employer_id,blocked_by_role' })
     if (error) return NextResponse.json({ error: 'Could not block this account' }, { status: 500 })
+
+    // Mirror into the existing platform privacy tables so a block affects
+    // recruitment discovery as well as Agency discovery.
+    await Promise.allSettled([
+      admin.from('profile_blocks').upsert({ candidate_id: candidateId, blocked_employer_id: employerId }, { onConflict: 'candidate_id,blocked_employer_id' }),
+      admin.from('blocked_employers').upsert({ candidate_id: candidateId, employer_id: employerId }, { onConflict: 'candidate_id,employer_id' }),
+    ])
   } else {
     const { error } = await admin.from('agency_mutual_blocks').delete()
       .eq('candidate_id', candidateId).eq('employer_id', employerId).eq('blocked_by_role', role)
     if (error) return NextResponse.json({ error: 'Could not remove block' }, { status: 500 })
+
+    // Only remove the shared platform block when neither side still has an
+    // active Agency block for this relationship.
+    const { data: remaining } = await admin.from('agency_mutual_blocks').select('id')
+      .eq('candidate_id', candidateId).eq('employer_id', employerId).limit(1)
+    if (!remaining?.length) {
+      await Promise.allSettled([
+        admin.from('profile_blocks').delete().eq('candidate_id', candidateId).eq('blocked_employer_id', employerId),
+        admin.from('blocked_employers').delete().eq('candidate_id', candidateId).eq('employer_id', employerId),
+      ])
+    }
   }
   return NextResponse.json({ success: true })
 }
