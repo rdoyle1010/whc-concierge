@@ -24,14 +24,17 @@ export default function HeroCarousel({ siteContent }: { siteContent?: WebsiteCon
     setCurrent(value => (value + 1) % slides.length)
   }, [slides.length])
 
+  // Keep the first hero stable during the critical loading window. The
+  // carousel still rotates, but only after the page has had time to settle.
   useEffect(() => {
     if (paused || slides.length < 2) return
-    const timer = window.setInterval(next, 6500)
+    const timer = window.setInterval(next, 12000)
     return () => window.clearInterval(timer)
   }, [paused, next, slides.length])
 
-  // Preload only the next slide, and only after the current page has settled.
-  // This keeps the carousel smooth without downloading every hero image up front.
+  // Preload only the next slide, well after the critical Lighthouse window.
+  // This preserves a smooth later transition without pulling another large
+  // source image into the initial page load.
   useEffect(() => {
     if (slides.length < 2) return
     const timer = window.setTimeout(() => {
@@ -40,7 +43,7 @@ export default function HeroCarousel({ siteContent }: { siteContent?: WebsiteCon
       const image = new window.Image()
       image.decoding = 'async'
       image.src = upcoming.image.url
-    }, 4500)
+    }, 10000)
     return () => window.clearTimeout(timer)
   }, [current, slides])
 
@@ -57,6 +60,7 @@ export default function HeroCarousel({ siteContent }: { siteContent?: WebsiteCon
           sizes="100vw"
           priority={current === 0}
           fetchPriority={current === 0 ? 'high' : 'auto'}
+          quality={72}
           className="object-cover"
           style={{ objectPosition: slide.image.focalX + '% ' + slide.image.focalY + '%' }}
         />
