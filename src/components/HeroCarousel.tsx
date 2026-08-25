@@ -42,6 +42,7 @@ export default function HeroCarousel({ siteContent }: { siteContent?: WebsiteCon
           fill
           sizes="100vw"
           priority={current === 0}
+          fetchPriority={current === 0 ? 'high' : 'auto'}
           className="object-cover"
           style={{ objectPosition: slide.image.focalX + '% ' + slide.image.focalY + '%' }}
         />
