@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getStripe } from '@/lib/stripe'
-import { AD_PLACEMENTS, isAdPlacement } from '@/lib/advertising'
+import { AD_PLACEMENTS, AD_TERMS_VERSION, isAdPlacement } from '@/lib/advertising'
 import { getCommercialSetting } from '@/lib/commercial-settings'
 import { assertStripeModeMatchesOrigin, getSafeSiteOrigin } from '@/lib/site-origin'
 
@@ -18,6 +18,7 @@ export async function POST(req: NextRequest) {
     const body = await req.json()
     const placement = body.placement
     if (!isAdPlacement(placement)) return NextResponse.json({ error: 'Choose an advert location.' }, { status: 400 })
+    if (body.termsAccepted !== true) return NextResponse.json({ error: 'Please accept the Advertising Terms & Conditions before continuing.' }, { status: 400 })
 
     const brandName = String(body.brandName || '').trim().slice(0, 120)
     const contactEmail = String(body.contactEmail || '').trim().toLowerCase().slice(0, 254)
@@ -37,6 +38,7 @@ export async function POST(req: NextRequest) {
     const origin = getSafeSiteOrigin(body.returnUrl)
     assertStripeModeMatchesOrigin(origin)
     const stripe = getStripe()
+    const acceptedAt = new Date().toISOString()
     const metadata = {
       type: 'sponsored_ad',
       placement,
@@ -47,6 +49,8 @@ export async function POST(req: NextRequest) {
       logo_url: logoUrl,
       monthly_pence: String(setting.price_pence),
       pricing_source: 'commercial_settings',
+      terms_version: AD_TERMS_VERSION,
+      terms_accepted_at: acceptedAt,
     }
 
     const session = await stripe.checkout.sessions.create({
@@ -55,7 +59,10 @@ export async function POST(req: NextRequest) {
       line_items: [{
         price_data: {
           currency: 'gbp',
-          product_data: { name: `WHC Sponsored Advert - ${setting.label || config.label}`, description: setting.description || config.description },
+          product_data: {
+            name: `WHC Sponsored Advert - ${setting.label || config.label}`,
+            description: `${setting.description || config.description} Rolling monthly subscription; renews until cancelled.`,
+          },
           unit_amount: setting.price_pence,
           recurring: { interval: 'month' },
         },
@@ -63,7 +70,7 @@ export async function POST(req: NextRequest) {
       }],
       mode: 'subscription',
       allow_promotion_codes: true,
-      success_url: `${origin}/advertise?paid=true`,
+      success_url: `${origin}/advertise?paid=true&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${origin}/advertise?cancelled=true`,
       metadata,
       subscription_data: { metadata },
