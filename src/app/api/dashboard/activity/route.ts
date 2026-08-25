@@ -2,6 +2,29 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createServerSupabaseClient } from '@/lib/supabase/server'
 
+function activityLink(role: 'talent' | 'employer', item: { title?: string | null; message?: string | null; link?: string | null }) {
+  const text = `${item.title || ''} ${item.message || ''}`.toLowerCase()
+
+  // Route activity to the workspace where the user can actually act on it.
+  if (text.includes('agency') || text.includes('shift') || text.includes('counter-offer') || text.includes('counter offer')) {
+    return role === 'employer' ? '/employer/agency' : '/talent/agency'
+  }
+  if (text.includes('residency')) {
+    return role === 'employer' ? '/employer/residency' : '/talent/residency'
+  }
+  if (text.includes('message') || text.includes('conversation')) {
+    return `/${role}/messages`
+  }
+  if (text.includes('interview') || text.includes('application') || text.includes('shortlist') || text.includes('job offer')) {
+    return `/${role}/applications`
+  }
+  if (text.includes('hired') || text.includes('placement')) {
+    return `/${role}/hired`
+  }
+
+  return item.link || `/${role}/dashboard`
+}
+
 export async function GET(req: NextRequest) {
   const auth = await createServerSupabaseClient()
   const { data: { user } } = await auth.auth.getUser()
@@ -69,10 +92,15 @@ export async function GET(req: NextRequest) {
     }
   }
 
+  const recent = (notifications || []).map(item => ({
+    ...item,
+    link: activityLink(role, item),
+  }))
+
   return NextResponse.json({
     unreadMessages: unreadMessages || 0,
-    unreadNotifications: (notifications || []).filter(item => !item.is_read).length,
+    unreadNotifications: recent.filter(item => !item.is_read).length,
     attention,
-    recent: notifications || [],
+    recent,
   })
 }
