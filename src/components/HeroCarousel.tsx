@@ -30,6 +30,20 @@ export default function HeroCarousel({ siteContent }: { siteContent?: WebsiteCon
     return () => window.clearInterval(timer)
   }, [paused, next, slides.length])
 
+  // Preload only the next slide, and only after the current page has settled.
+  // This keeps the carousel smooth without downloading every hero image up front.
+  useEffect(() => {
+    if (slides.length < 2) return
+    const timer = window.setTimeout(() => {
+      if (document.visibilityState !== 'visible') return
+      const upcoming = slides[(current + 1) % slides.length]
+      const image = new window.Image()
+      image.decoding = 'async'
+      image.src = upcoming.image.url
+    }, 4500)
+    return () => window.clearTimeout(timer)
+  }, [current, slides])
+
   const slide = slides[current] || slides[0]
 
   return (
