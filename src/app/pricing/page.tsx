@@ -4,30 +4,40 @@ import { useEffect, useState } from 'react'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
 import Link from 'next/link'
-import { X, ChevronDown, Shield, Check, CalendarDays, MapPin, Sparkles } from 'lucide-react'
-import { JOB_TIERS } from '@/lib/constants'
+import { ChevronDown, Shield, Check, CalendarDays, MapPin, Sparkles, Building2, BriefcaseBusiness } from 'lucide-react'
+import { JOB_TIERS, TALENT_MEMBERSHIPS, FEATURED_TALENT, EMPLOYER_MEMBERSHIPS, RESIDENCY_PRICING, AGENCY_PLATFORM_FEE_PCT } from '@/lib/constants'
 import { DEFAULT_PUBLIC_PAGES_CONTENT, type PublicPageContent } from '@/lib/public-page-content'
 
-const TIER_KEYS = ['Bronze', 'Silver', 'Gold', 'Platinum'] as const
-const TIERS = TIER_KEYS.map(k => ({ name: k, ...JOB_TIERS[k] }))
-const ROWS: { label: string; key: string; boolean?: boolean }[] = [
-  { label: 'Price', key: 'display' }, { label: 'Duration', key: 'days' }, { label: 'Listing visibility', key: 'visibility' },
-  { label: 'Match notifications', key: 'matchNotifs' }, { label: 'Featured badge', key: 'badge', boolean: true },
-  { label: 'Candidate shortlisting', key: 'shortlisting', boolean: true }, { label: 'Analytics access', key: 'analytics', boolean: true },
-  { label: 'Support level', key: 'support' },
-]
-const FAQS = [
-  { q: 'Is it free for Talent to join?', a: 'Yes. A professional can create a profile, browse roles, receive matches and apply for permanent opportunities without paying a membership fee.' },
-  { q: 'Do you charge commission on permanent hires?', a: 'No. Employers pay for the job-listing package they choose. Spa Platform does not charge a percentage of the successful candidate’s salary.' },
-  { q: 'How does Agency pricing work?', a: 'Professionals join the Agency register from £10 per month. When a property confirms a shift, the property pays the agreed professional cost plus a 10% Spa Platform fee.' },
-  { q: 'How does Residency pricing work?', a: 'Residency specialists join for £10 per month. Properties pay the agreed specialist amount plus a 10% Spa Platform fee when a booking is confirmed.' },
-  { q: 'What payment methods do you accept?', a: 'Online payments are processed securely through Stripe. Available payment methods can vary by device, country and checkout.' },
-]
+const pounds = (pence: number) => `£${(pence / 100).toFixed(pence % 100 === 0 ? 0 : 2)}`
+
 const talentPlans = [
-  { eyebrow: 'Core career profile', title: 'Talent', price: '£0', cadence: 'forever', text: 'Build a professional profile, browse permanent roles, receive matches and apply.', bullets: ['Professional profile', 'Role matching', 'Applications and interviews', 'Messaging and reviews'], href: '/register/talent', cta: 'Create free profile', featured: false },
-  { eyebrow: 'More visibility', title: 'Featured Talent', price: '£10', cadence: '/month', text: 'For professionals who want to appear more prominently to relevant employers.', bullets: ['Priority search visibility', 'Featured profile badge', 'Homepage feature opportunities', 'Employer newsletter visibility'], href: '/talent/upgrade', cta: 'Go Featured', featured: true },
-  { eyebrow: 'Flexible work', title: 'Agency Register', price: '£10', cadence: '/month', text: 'Set your rate, travel radius and exact availability for flexible shift offers.', bullets: ['Searchable availability', 'Shift offers and counters', 'Booking records', 'Property reviews'], href: '/register?role=talent&redirect=/talent/agency/settings', cta: 'Join Agency', featured: false },
-  { eyebrow: 'Specialist placements', title: 'Residency', price: '£10', cadence: '/month', text: 'For specialist professionals offering short-term programmes, residencies and expertise.', bullets: ['Protected public listing', 'Private property conversations', 'Structured offers', 'Booking and review history'], href: '/residency', cta: 'Explore Residency', featured: false },
+  {
+    eyebrow: 'Start here', title: 'Talent Free', price: '£0', cadence: 'forever', featured: false,
+    text: 'A genuinely useful free account for spa and wellness professionals at every career level.',
+    bullets: ['Professional profile and CV', 'Browse and apply for roles', 'Basic job-match percentage', 'Save and withdraw applications', '1 Interview Ready trial when joining', 'Academy at standard price'],
+    href: '/register/talent', cta: 'Create free profile',
+  },
+  {
+    eyebrow: 'Career development', title: 'Talent Standard', price: pounds(TALENT_MEMBERSHIPS.standard.price), cadence: '/month', featured: false,
+    text: 'For professionals who want stronger job insights, better visibility and ongoing career support.',
+    bullets: ['1 Interview Ready credit every month', 'Unused credits roll over up to 3', 'Detailed match insights', 'Enhanced CV and profile tools', 'Increased employer-search visibility', '10% off Academy courses'],
+    href: '/talent/billing', cta: 'Choose Standard',
+  },
+  {
+    eyebrow: 'Full career toolkit', title: 'Talent Pro', price: pounds(TALENT_MEMBERSHIPS.pro.price), cadence: '/month', featured: true,
+    text: 'The strongest package for active jobseekers, senior candidates and professionals preparing for several opportunities.',
+    bullets: ['10 Interview Ready credits every month', 'Unused credits roll over up to 20', 'Priority employer visibility', 'Advanced job-match intelligence', 'Role, company and brand research', '20% off Academy courses'],
+    href: '/talent/billing', cta: 'Choose Pro',
+  },
+]
+
+const FAQS = [
+  { q: 'Is it free for Talent to join?', a: 'Yes. Talent Free is £0 and includes a professional profile, CV, role browsing, applications, basic matching and a first Interview Ready trial.' },
+  { q: 'How much does Featured Talent cost?', a: `Featured Talent is ${pounds(FEATURED_TALENT.seven_days.price)} for 7 days or ${pounds(FEATURED_TALENT.thirty_days.price)} for 30 days. It is separate from membership so a professional can buy extra visibility only when they need it.` },
+  { q: 'How does Agency pricing work?', a: `The professional keeps 100% of the agreed shift rate. The property pays the agreed shift value plus a ${Math.round(AGENCY_PLATFORM_FEE_PCT * 100)}% WHC platform fee.` },
+  { q: 'Do you offer a recruitment service as well as job advertising?', a: 'Yes. Employers can advertise directly, or ask WHC to run the search. WHC Recruitment Service is typically 12.5% of first-year salary. Executive Search for senior leadership roles is typically 15–20%.' },
+  { q: 'How does Residency pricing work?', a: `A Standard Residency listing is ${pounds(RESIDENCY_PRICING.standard.price)} and a Featured Residency listing is ${pounds(RESIDENCY_PRICING.featured.price)}. If WHC is asked to source the specialist directly, recruitment fees may apply instead.` },
+  { q: 'How are payments handled?', a: 'Online payments are processed securely through Stripe. Paid services are subject to the relevant platform terms, cancellation and refund rules.' },
 ]
 
 export default function PricingPage() {
@@ -42,13 +52,65 @@ export default function PricingPage() {
   return <div className="public-page">
     <Navbar />
     <main className="pt-[68px]">
-      <section className="bg-[#0b2f4d] text-white"><div className="max-w-7xl mx-auto px-6 py-14 md:py-20 grid lg:grid-cols-[1fr_.85fr] gap-10 items-center"><div><p className="text-[10px] uppercase tracking-[.2em] font-semibold text-[#d4b477] mb-4">{cms.hero.eyebrow}</p><h1 className="text-[44px] md:text-[62px] leading-[1.01] tracking-[-.05em] font-semibold text-white mb-5">{cms.hero.heading}</h1><p className="text-[15px] md:text-[17px] leading-7 text-white/68 max-w-3xl">{cms.hero.text}</p></div><div className="aspect-[4/3] overflow-hidden rounded-[26px]"><img src={cms.hero.image.url} alt={cms.hero.image.alt} className="w-full h-full object-cover" style={{objectPosition:`${cms.hero.image.focalX}% ${cms.hero.image.focalY}%`}}/></div></div></section>
+      <section className="bg-[#0b2f4d] text-white">
+        <div className="max-w-7xl mx-auto px-6 py-14 md:py-20 grid lg:grid-cols-[1fr_.85fr] gap-10 items-center">
+          <div>
+            <p className="text-[10px] uppercase tracking-[.2em] font-semibold text-[#d4b477] mb-4">Simple, transparent pricing</p>
+            <h1 className="text-[44px] md:text-[62px] leading-[1.01] tracking-[-.05em] font-semibold text-white mb-5">Choose what you need. Pay for what creates value.</h1>
+            <p className="text-[15px] md:text-[17px] leading-7 text-white/68 max-w-3xl">Free entry for Talent and Employers, clear paid upgrades, transparent Agency fees and specialist recruitment when you want WHC to do more.</p>
+          </div>
+          <div className="aspect-[4/3] overflow-hidden rounded-[26px]"><img src={cms.hero.image.url} alt={cms.hero.image.alt} className="w-full h-full object-cover" style={{objectPosition:`${cms.hero.image.focalX}% ${cms.hero.image.focalY}%`}}/></div>
+        </div>
+      </section>
 
-      <section className="py-16 px-6 bg-[#f4f1ea]"><div className="max-w-7xl mx-auto"><div className="grid lg:grid-cols-[.7fr_1.3fr] gap-8 items-start mb-9"><div><p className="text-[10px] uppercase tracking-[.18em] font-semibold text-[#9c7a42]">{cms.blocks[0].eyebrow}</p><h2 className="text-[32px] md:text-[42px] tracking-[-.04em] font-semibold text-[#10283b] mt-2">{cms.blocks[0].heading}</h2><p className="text-[13px] leading-6 text-[#65727c] mt-3">{cms.blocks[0].text}</p></div><div className="aspect-[16/7] overflow-hidden rounded-[22px]"><img src={cms.blocks[0].image.url} alt={cms.blocks[0].image.alt} className="w-full h-full object-cover"/></div></div><div className="grid md:grid-cols-2 xl:grid-cols-4 gap-5">{talentPlans.map(plan => <article key={plan.title} className={`rounded-[22px] bg-white p-6 flex flex-col ${plan.featured?'border border-[#c9a96e] ring-1 ring-[#c9a96e]/20 shadow-lg':'border border-[#ddd9d1]'}`}><div className="flex items-start justify-between gap-3"><div><p className="text-[9px] uppercase tracking-[.16em] font-semibold text-[#9c7a42]">{plan.eyebrow}</p><h3 className="text-[20px] font-semibold text-[#10283b] mt-2">{plan.title}</h3></div>{plan.featured&&<Sparkles size={18} className="text-[#9c7a42]"/>}</div><div className="mt-5"><span className="text-[34px] font-semibold text-[#10283b]">{plan.price}</span><span className="text-[12px] text-[#7a858c]">{plan.cadence}</span></div><p className="text-[12px] leading-6 text-[#65727c] mt-4">{plan.text}</p><div className="space-y-2 mt-5 mb-7">{plan.bullets.map(b=><div key={b} className="flex gap-2 text-[11px] text-[#53636f]"><Check size={13} className="text-[#9c7a42] shrink-0 mt-0.5"/>{b}</div>)}</div><Link href={plan.href} className={`${plan.featured?'btn-accent':'btn-secondary'} mt-auto text-center`}>{plan.cta}</Link></article>)}</div></div></section>
+      <section className="py-16 px-6 bg-[#f4f1ea]">
+        <div className="max-w-7xl mx-auto">
+          <div className="max-w-3xl mb-9"><p className="text-[10px] uppercase tracking-[.18em] font-semibold text-[#9c7a42]">Talent memberships</p><h2 className="text-[32px] md:text-[42px] tracking-[-.04em] font-semibold text-[#10283b] mt-2">Build your career at your pace.</h2><p className="text-[13px] leading-6 text-[#65727c] mt-3">Start free. Upgrade when you want deeper matching, more Interview Ready support and stronger employer visibility.</p></div>
+          <div className="grid md:grid-cols-3 gap-5">{talentPlans.map(plan => <article key={plan.title} className={`rounded-[22px] bg-white p-6 flex flex-col ${plan.featured?'border border-[#c9a96e] ring-1 ring-[#c9a96e]/20 shadow-lg':'border border-[#ddd9d1]'}`}><div className="flex items-start justify-between gap-3"><div><p className="text-[9px] uppercase tracking-[.16em] font-semibold text-[#9c7a42]">{plan.eyebrow}</p><h3 className="text-[20px] font-semibold text-[#10283b] mt-2">{plan.title}</h3></div>{plan.featured&&<Sparkles size={18} className="text-[#9c7a42]"/>}</div><div className="mt-5"><span className="text-[34px] font-semibold text-[#10283b]">{plan.price}</span><span className="text-[12px] text-[#7a858c]">{plan.cadence}</span></div><p className="text-[12px] leading-6 text-[#65727c] mt-4">{plan.text}</p><div className="space-y-2 mt-5 mb-7">{plan.bullets.map(b=><div key={b} className="flex gap-2 text-[11px] text-[#53636f]"><Check size={13} className="text-[#9c7a42] shrink-0 mt-0.5"/>{b}</div>)}</div><Link href={plan.href} className={`${plan.featured?'btn-accent':'btn-secondary'} mt-auto text-center`}>{plan.cta}</Link></article>)}</div>
 
-      {cms.blocks[1].visible && <section className="py-16 px-6 bg-white border-y border-[#ddd9d1]"><div className="max-w-7xl mx-auto grid lg:grid-cols-[.8fr_1.2fr] gap-8 items-center"><div><p className="text-[10px] uppercase tracking-[.18em] font-semibold text-[#9c7a42]">{cms.blocks[1].eyebrow}</p><h2 className="text-[32px] md:text-[42px] tracking-[-.04em] font-semibold text-[#10283b] mt-2">{cms.blocks[1].heading}</h2><p className="text-[13px] leading-6 text-[#65727c] mt-4">{cms.blocks[1].text}</p><div className="aspect-[16/10] overflow-hidden rounded-[22px] mt-6"><img src={cms.blocks[1].image.url} alt={cms.blocks[1].image.alt} className="w-full h-full object-cover"/></div></div><div className="grid md:grid-cols-2 gap-5"><div className="rounded-[22px] bg-[#f7f4ed] border border-[#ddd9d1] p-7"><CalendarDays size={20} className="text-[#9c7a42]"/><p className="text-[10px] uppercase tracking-[.16em] font-semibold text-[#9c7a42] mt-5">Agency booking</p><h3 className="text-[24px] font-semibold text-[#10283b] mt-2">Agreed shift cost + 10%</h3><p className="text-[12px] leading-6 text-[#65727c] mt-3">The professional agrees the shift rate first. The property then pays that rate plus the Spa Platform booking fee.</p></div><div className="rounded-[22px] bg-[#0b2f4d] p-7 text-white"><MapPin size={20} className="text-[#d4b477]"/><p className="text-[10px] uppercase tracking-[.16em] font-semibold text-[#d4b477] mt-5">Residency booking</p><h3 className="text-[24px] font-semibold text-white mt-2">Agreed specialist fee + 10%</h3><p className="text-[12px] leading-6 text-white/65 mt-3">The property and specialist agree the Residency value first, then the platform booking fee is added.</p></div></div></div></section>}
+          <div className="mt-6 rounded-[22px] bg-[#10283b] text-white p-6 md:p-8 grid md:grid-cols-[1fr_auto] gap-6 items-center">
+            <div><p className="text-[9px] uppercase tracking-[.16em] font-semibold text-[#d4b477]">Extra visibility when you need it</p><h3 className="text-[25px] font-semibold mt-2">Featured Talent</h3><p className="text-[12px] leading-6 text-white/65 mt-2">Appear more prominently in employer searches, recommendation areas and selected employer communications without changing your membership.</p></div>
+            <div className="flex flex-col sm:flex-row gap-3"><div className="rounded-xl bg-white/10 px-5 py-4 text-center"><p className="text-[24px] font-semibold">{pounds(FEATURED_TALENT.seven_days.price)}</p><p className="text-[11px] text-white/60">7 days</p></div><div className="rounded-xl bg-white/10 px-5 py-4 text-center"><p className="text-[24px] font-semibold">{pounds(FEATURED_TALENT.thirty_days.price)}</p><p className="text-[11px] text-white/60">30 days</p></div></div>
+          </div>
+        </div>
+      </section>
 
-      {cms.blocks[2].visible && <section className="py-16 px-6 bg-[#f4f1ea] border-b border-[#ddd9d1]"><div className="max-w-6xl mx-auto"><div className="grid lg:grid-cols-[.8fr_1.2fr] gap-8 items-center mb-10"><div><p className="text-[10px] uppercase tracking-[.18em] font-semibold text-[#9c7a42]">{cms.blocks[2].eyebrow}</p><h2 className="text-[32px] md:text-[42px] font-semibold tracking-[-0.04em] text-[#10283b] mt-2">{cms.blocks[2].heading}</h2><p className="text-[13px] leading-6 text-[#65727c] mt-3">{cms.blocks[2].text}</p></div><div className="aspect-[16/9] overflow-hidden rounded-[22px]"><img src={cms.blocks[2].image.url} alt={cms.blocks[2].image.alt} className="w-full h-full object-cover"/></div></div><div className="bg-white border border-[#ddd9d1] rounded-[22px] overflow-x-auto p-4 md:p-6"><table className="w-full min-w-[680px]"><thead><tr><th className="text-left py-4 pr-4 w-[180px]"/>{TIERS.map(t=><th key={t.name} className="py-4 px-3 text-center"><p className="text-[15px] font-semibold text-ink">{t.name}</p></th>)}</tr></thead><tbody>{ROWS.map(row=><tr key={row.key} className="border-b border-border"><td className="py-3.5 pr-4 text-[13px] font-medium text-secondary">{row.label}</td>{TIERS.map(t=>{const val=(t as any)[row.key];const displayVal=row.key==='days'?`${val} days`:val;return <td key={t.name} className="py-3.5 px-3 text-center text-[13px]">{row.boolean?(val?<span className="text-ink">{val}</span>:<X size={14} className="inline text-muted"/>):<span className={row.key==='display'?'text-[18px] font-semibold text-ink':'text-secondary'}>{displayVal}</span>}</td>})}</tr>)}</tbody></table></div></div></section>}
+      <section className="py-16 px-6 bg-white border-y border-[#ddd9d1]">
+        <div className="max-w-7xl mx-auto">
+          <div className="max-w-3xl mb-9"><p className="text-[10px] uppercase tracking-[.18em] font-semibold text-[#9c7a42]">Flexible work & specialist placements</p><h2 className="text-[32px] md:text-[42px] tracking-[-.04em] font-semibold text-[#10283b] mt-2">The professional keeps the agreed rate.</h2><p className="text-[13px] leading-6 text-[#65727c] mt-3">WHC adds its platform fee to the property side, so the rate a professional agrees is the rate they earn.</p></div>
+          <div className="grid md:grid-cols-2 gap-5">
+            <div className="rounded-[22px] bg-[#f7f4ed] border border-[#ddd9d1] p-7"><CalendarDays size={20} className="text-[#9c7a42]"/><p className="text-[10px] uppercase tracking-[.16em] font-semibold text-[#9c7a42] mt-5">Agency booking</p><h3 className="text-[26px] font-semibold text-[#10283b] mt-2">Agreed shift value + {Math.round(AGENCY_PLATFORM_FEE_PCT * 100)}%</h3><p className="text-[12px] leading-6 text-[#65727c] mt-3">Example: £20/hour × 10 hours = £200 to the professional. WHC fee £30. Property total £230.</p><p className="text-[11px] font-semibold text-[#10283b] mt-4">The rate you see is the rate you earn.</p></div>
+            <div className="rounded-[22px] bg-[#0b2f4d] p-7 text-white"><MapPin size={20} className="text-[#d4b477]"/><p className="text-[10px] uppercase tracking-[.16em] font-semibold text-[#d4b477] mt-5">Residency listings</p><h3 className="text-[26px] font-semibold text-white mt-2">{pounds(RESIDENCY_PRICING.standard.price)} standard · {pounds(RESIDENCY_PRICING.featured.price)} featured</h3><p className="text-[12px] leading-6 text-white/65 mt-3">For seasonal resorts, retreats, cruise, private residences, international placements and specialist programmes.</p></div>
+          </div>
+        </div>
+      </section>
+
+      <section className="py-16 px-6 bg-[#f4f1ea] border-b border-[#ddd9d1]">
+        <div className="max-w-7xl mx-auto">
+          <div className="max-w-3xl mb-9"><p className="text-[10px] uppercase tracking-[.18em] font-semibold text-[#9c7a42]">Employer pricing</p><h2 className="text-[32px] md:text-[42px] tracking-[-.04em] font-semibold text-[#10283b] mt-2">Advertise once or build an ongoing hiring partnership.</h2><p className="text-[13px] leading-6 text-[#65727c] mt-3">Employers can start free, buy individual job listings or choose an annual membership for regular recruitment.</p></div>
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-5">
+            <article className="rounded-[22px] bg-white border border-[#ddd9d1] p-6"><BriefcaseBusiness size={19} className="text-[#9c7a42]"/><p className="text-[9px] uppercase tracking-[.16em] font-semibold text-[#9c7a42] mt-5">Job advertising</p><h3 className="text-[20px] font-semibold text-[#10283b] mt-2">Standard Job</h3><p className="text-[31px] font-semibold text-[#10283b] mt-4">{JOB_TIERS.Bronze.display}</p><p className="text-[11px] text-[#65727c] mt-2">30 days · matching · applications · shortlist · filled-role notifications</p></article>
+            <article className="rounded-[22px] bg-white border border-[#c9a96e] ring-1 ring-[#c9a96e]/20 p-6"><Sparkles size={19} className="text-[#9c7a42]"/><p className="text-[9px] uppercase tracking-[.16em] font-semibold text-[#9c7a42] mt-5">More visibility</p><h3 className="text-[20px] font-semibold text-[#10283b] mt-2">Featured Job</h3><p className="text-[31px] font-semibold text-[#10283b] mt-4">{JOB_TIERS.Platinum.display}</p><p className="text-[11px] text-[#65727c] mt-2">30 days · priority placement · featured badge · talent email · enhanced branding</p></article>
+            <article className="rounded-[22px] bg-white border border-[#ddd9d1] p-6"><Building2 size={19} className="text-[#9c7a42]"/><p className="text-[9px] uppercase tracking-[.16em] font-semibold text-[#9c7a42] mt-5">Annual membership</p><h3 className="text-[20px] font-semibold text-[#10283b] mt-2">Employer Pro</h3><p className="text-[31px] font-semibold text-[#10283b] mt-4">{pounds(EMPLOYER_MEMBERSHIPS.pro.price)}<span className="text-[12px] text-[#7a858c] font-normal">/year</span></p><p className="text-[11px] text-[#65727c] mt-2">Full talent search, analytics, shortlisting, Property Fact Files and £99 Standard Jobs.</p></article>
+            <article className="rounded-[22px] bg-[#10283b] text-white p-6"><Building2 size={19} className="text-[#d4b477]"/><p className="text-[9px] uppercase tracking-[.16em] font-semibold text-[#d4b477] mt-5">Groups & regular recruiters</p><h3 className="text-[20px] font-semibold mt-2">Employer Group</h3><p className="text-[31px] font-semibold mt-4">{pounds(EMPLOYER_MEMBERSHIPS.group.price)}<span className="text-[12px] text-white/55 font-normal">/year</span></p><p className="text-[11px] text-white/60 mt-2">Up to 20 job listings per year, multiple properties, multiple hiring managers and advanced talent access.</p></article>
+          </div>
+        </div>
+      </section>
+
+      <section className="py-16 px-6 bg-white border-b border-[#ddd9d1]">
+        <div className="max-w-7xl mx-auto grid lg:grid-cols-2 gap-5">
+          <div className="rounded-[22px] border border-[#ddd9d1] p-7"><p className="text-[10px] uppercase tracking-[.16em] font-semibold text-[#9c7a42]">WHC Recruitment Service</p><h3 className="text-[28px] font-semibold text-[#10283b] mt-2">12.5% of first-year salary</h3><p className="text-[12px] leading-6 text-[#65727c] mt-3">WHC takes the vacancy brief, searches the platform and wider network, approaches suitable candidates, pre-screens, builds the shortlist and supports the offer process.</p></div>
+          <div className="rounded-[22px] bg-[#f7f4ed] border border-[#ddd9d1] p-7"><p className="text-[10px] uppercase tracking-[.16em] font-semibold text-[#9c7a42]">Executive Search</p><h3 className="text-[28px] font-semibold text-[#10283b] mt-2">15–20% of first-year salary</h3><p className="text-[12px] leading-6 text-[#65727c] mt-3">For Director of Spa, Wellness Director, Regional leadership, Group Spa Director and other senior confidential searches.</p></div>
+        </div>
+      </section>
+
+      <section className="py-16 px-6 bg-[#f4f1ea] border-b border-[#ddd9d1]">
+        <div className="max-w-7xl mx-auto grid md:grid-cols-3 gap-5">
+          <div className="rounded-[22px] bg-white border border-[#ddd9d1] p-6"><p className="text-[10px] uppercase tracking-[.16em] font-semibold text-[#9c7a42]">Academy</p><h3 className="text-[22px] font-semibold text-[#10283b] mt-2">£29–£199+</h3><p className="text-[12px] text-[#65727c] mt-3">Free members pay standard price. Standard members receive 10% off. Pro members receive 20% off.</p></div>
+          <div className="rounded-[22px] bg-white border border-[#ddd9d1] p-6"><p className="text-[10px] uppercase tracking-[.16em] font-semibold text-[#9c7a42]">Brand exposure</p><h3 className="text-[22px] font-semibold text-[#10283b] mt-2">From £295</h3><p className="text-[12px] text-[#65727c] mt-3">Brand Spotlight £295, Industry Feature £495 and Partner Campaigns from £995.</p></div>
+          <div className="rounded-[22px] bg-white border border-[#ddd9d1] p-6"><p className="text-[10px] uppercase tracking-[.16em] font-semibold text-[#9c7a42]">Employer profile</p><h3 className="text-[22px] font-semibold text-[#10283b] mt-2">Free to start</h3><p className="text-[12px] text-[#65727c] mt-3">Create your property profile, add photographs and information, receive applications and build employer reputation.</p></div>
+        </div>
+      </section>
 
       <section className="py-16 px-6 bg-white"><div className="max-w-3xl mx-auto"><div className="text-center mb-10"><p className="text-[10px] uppercase tracking-[.18em] font-semibold text-[#9c7a42] mb-3">Questions</p><h2 className="text-[30px] font-semibold text-[#10283b]">Pricing without the small-print mystery.</h2></div><div className="space-y-3">{FAQS.map((faq,i)=><div key={i} className="rounded-2xl border border-[#ddd9d1] bg-white overflow-hidden"><button type="button" onClick={()=>setOpenFaq(openFaq===i?null:i)} className="w-full flex items-center justify-between px-5 py-4 text-left hover:bg-[#f7f4ed]"><span className="text-[14px] font-semibold text-[#10283b]">{faq.q}</span><ChevronDown size={16} className={`transition-transform ${openFaq===i?'rotate-180':''}`}/></button>{openFaq===i&&<div className="px-5 pb-4"><p className="text-[13px] leading-7 text-secondary">{faq.a}</p></div>}</div>)}</div></div></section>
       <section className="py-8 px-6 bg-[#f4f1ea] border-t border-[#ddd9d1]"><div className="max-w-5xl mx-auto flex items-center justify-center gap-3 text-center"><Shield size={16} className="text-secondary"/><p className="text-[12px] text-secondary">Secure online payments through Stripe. Paid services are subject to the platform Terms and relevant cancellation/refund rules.</p></div></section>
