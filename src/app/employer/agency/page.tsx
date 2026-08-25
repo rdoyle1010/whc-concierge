@@ -185,7 +185,7 @@ export default function EmployerAgencyPage() {
 
   return (
     <DashboardShell role="employer">
-      <h1 className="text-2xl font-serif font-bold text-ink mb-6">Agency Bookings</h1>
+      <h1 className="text-2xl font-serif font-bold text-ink mb-6">Agency Cover &amp; Bookings</h1>
 
       {notice && <div className="bg-green-50 text-green-700 text-sm px-4 py-3 rounded-lg mb-6">{notice}</div>}
       {error && <div className="bg-red-50 text-red-600 text-sm px-4 py-3 rounded-lg mb-6">{error}</div>}
@@ -215,12 +215,19 @@ export default function EmployerAgencyPage() {
           )}
 
           {profile?.preferred_employer && (
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-ink rounded-xl px-5 py-4 mb-6">
-              <div>
-                <p className="text-[14px] font-medium text-white flex items-center gap-2"><Zap size={15} className="text-gold" /> Need cover today?</p>
-                <p className="text-[12px] text-white/60 mt-0.5">Tell us the shift and we&apos;ll offer it to the nearest available therapists one by one - by text, 30 minutes each - until someone accepts. No ringing round.</p>
-              </div>
-              <button type="button" onClick={() => { setUrgentOpen(true); setError('') }} className="btn-primary !bg-gold !text-ink text-[12px] shrink-0">Find me someone</button>
+            <div className="grid gap-3 mb-6 md:grid-cols-2">
+              <Link href="/agency" className="group rounded-xl border border-border bg-white p-5 transition hover:-translate-y-0.5 hover:shadow-md">
+                <p className="text-[10px] font-semibold uppercase tracking-[.14em] text-accent">Agency directory</p>
+                <h2 className="mt-2 text-[18px] font-semibold text-ink">Need cover? See who is available near you</h2>
+                <p className="mt-1 text-[12px] leading-5 text-gray-500">Browse local professionals by date, hours and distance, then open a profile and send an offer.</p>
+                <span className="mt-4 inline-flex text-[12px] font-semibold text-accent group-hover:underline">Browse available people →</span>
+              </Link>
+              <button type="button" onClick={() => { setUrgentOpen(true); setError('') }} className="group rounded-xl bg-ink p-5 text-left transition hover:-translate-y-0.5 hover:shadow-md">
+                <p className="text-[10px] font-semibold uppercase tracking-[.14em] text-gold">Urgent same-day cover</p>
+                <h2 className="mt-2 flex items-center gap-2 text-[18px] font-semibold text-white"><Zap size={16} className="text-gold" /> Need someone today?</h2>
+                <p className="mt-1 text-[12px] leading-5 text-white/65">Send the shift to the nearest available people automatically. Each person gets 30 minutes before it moves on.</p>
+                <span className="mt-4 inline-flex text-[12px] font-semibold text-gold group-hover:underline">Send urgent cover request →</span>
+              </button>
             </div>
           )}
 
