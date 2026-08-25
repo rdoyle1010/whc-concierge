@@ -5,10 +5,16 @@ import Link from 'next/link'
 import Wordmark from '@/components/Wordmark'
 import { DEFAULT_WEBSITE_CONTENT, type WebsiteContent } from '@/lib/site-content'
 import { DEFAULT_PUBLIC_PAGES_CONTENT } from '@/lib/public-page-content'
+import { Linkedin, Instagram, Facebook, MessageCircle, Mail, Link2, Share2, Check } from 'lucide-react'
+
+const WHC_LINKEDIN = 'https://www.linkedin.com/company/wellnesshousecollective/'
+const WHC_INSTAGRAM = 'https://www.instagram.com/wellnesshousecollective/'
+const WHC_FACEBOOK = 'https://www.facebook.com/wellnesshousecollective'
 
 export default function Footer({ siteContent }: { siteContent?: WebsiteContent }) {
   const content = siteContent || DEFAULT_WEBSITE_CONTENT
   const [editorialImages, setEditorialImages] = useState(DEFAULT_PUBLIC_PAGES_CONTENT.editorialBand)
+  const [copied, setCopied] = useState(false)
 
   useEffect(() => {
     fetch('/api/public-pages')
@@ -52,6 +58,40 @@ export default function Footer({ siteContent }: { siteContent?: WebsiteContent }
     </div>
   )
 
+  const currentUrl = () => typeof window !== 'undefined' ? window.location.href : 'https://talent.wellnesshousecollective.co.uk'
+  const pageTitle = () => typeof document !== 'undefined' ? document.title : 'Wellness House Collective'
+
+  const openShare = (network: 'linkedin' | 'facebook' | 'whatsapp' | 'email') => {
+    const url = encodeURIComponent(currentUrl())
+    const title = encodeURIComponent(pageTitle())
+    const text = encodeURIComponent(`Take a look at this from Wellness House Collective: ${pageTitle()} ${currentUrl()}`)
+    const targets = {
+      linkedin: `https://www.linkedin.com/sharing/share-offsite/?url=${url}`,
+      facebook: `https://www.facebook.com/sharer/sharer.php?u=${url}`,
+      whatsapp: `https://wa.me/?text=${text}`,
+      email: `mailto:?subject=${title}&body=${text}`,
+    }
+    window.open(targets[network], network === 'email' ? '_self' : '_blank', 'noopener,noreferrer')
+  }
+
+  const copyPage = async () => {
+    try {
+      await navigator.clipboard.writeText(currentUrl())
+      setCopied(true)
+      window.setTimeout(() => setCopied(false), 1800)
+    } catch {}
+  }
+
+  const nativeShare = async () => {
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: pageTitle(), text: 'Wellness House Collective', url: currentUrl() })
+        return
+      } catch {}
+    }
+    copyPage()
+  }
+
   return (
     <>
       <section className="bg-white border-t border-[#e3e7eb] overflow-hidden" aria-label="Spa Platform hospitality photography">
@@ -64,6 +104,35 @@ export default function Footer({ siteContent }: { siteContent?: WebsiteContent }
                 <p className="absolute bottom-4 left-4 right-4 text-[9px] md:text-[10px] uppercase tracking-[.16em] font-semibold text-white/90">{image.label}</p>
               </div>
             ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="bg-white border-t border-[#e3e7eb] border-b border-[#e3e7eb]" aria-label="Share and follow Wellness House Collective">
+        <div className="max-w-7xl mx-auto px-6 lg:px-8 py-8 md:py-10 grid lg:grid-cols-2 gap-8 lg:gap-12">
+          <div>
+            <p className="text-[9px] uppercase tracking-[.2em] font-semibold text-[#6f7f88]">Share this page</p>
+            <h2 className="mt-2 text-[24px] md:text-[28px] text-[#10283b]">Worth sharing? Pass it on.</h2>
+            <p className="mt-2 text-[12px] leading-5 text-[#65717a] max-w-xl">Share jobs, Academy courses, Residency opportunities, articles or any WHC page directly with your network.</p>
+            <div className="flex flex-wrap gap-2 mt-5">
+              <button type="button" onClick={() => openShare('linkedin')} className="inline-flex items-center gap-2 border border-[#dfe5e8] bg-white px-3.5 py-2.5 text-[12px] font-semibold text-[#10283b] hover:bg-[#f7f9fa] transition-colors rounded-lg"><Linkedin size={15}/>LinkedIn</button>
+              <button type="button" onClick={() => openShare('facebook')} className="inline-flex items-center gap-2 border border-[#dfe5e8] bg-white px-3.5 py-2.5 text-[12px] font-semibold text-[#10283b] hover:bg-[#f7f9fa] transition-colors rounded-lg"><Facebook size={15}/>Facebook</button>
+              <button type="button" onClick={() => openShare('whatsapp')} className="inline-flex items-center gap-2 border border-[#dfe5e8] bg-white px-3.5 py-2.5 text-[12px] font-semibold text-[#10283b] hover:bg-[#f7f9fa] transition-colors rounded-lg"><MessageCircle size={15}/>WhatsApp</button>
+              <button type="button" onClick={() => openShare('email')} className="inline-flex items-center gap-2 border border-[#dfe5e8] bg-white px-3.5 py-2.5 text-[12px] font-semibold text-[#10283b] hover:bg-[#f7f9fa] transition-colors rounded-lg"><Mail size={15}/>Email</button>
+              <button type="button" onClick={copyPage} className="inline-flex items-center gap-2 border border-[#dfe5e8] bg-white px-3.5 py-2.5 text-[12px] font-semibold text-[#10283b] hover:bg-[#f7f9fa] transition-colors rounded-lg">{copied ? <Check size={15}/> : <Link2 size={15}/>} {copied ? 'Copied' : 'Copy link'}</button>
+              <button type="button" onClick={nativeShare} className="inline-flex items-center gap-2 bg-[#0b2f4d] px-3.5 py-2.5 text-[12px] font-semibold text-white hover:bg-[#123f64] transition-colors rounded-lg"><Share2 size={15}/>More</button>
+            </div>
+          </div>
+
+          <div className="lg:border-l lg:border-[#e3e7eb] lg:pl-12">
+            <p className="text-[9px] uppercase tracking-[.2em] font-semibold text-[#6f7f88]">Connect with WHC</p>
+            <h2 className="mt-2 text-[24px] md:text-[28px] text-[#10283b]">Follow the conversation.</h2>
+            <p className="mt-2 text-[12px] leading-5 text-[#65717a] max-w-xl">Jobs, industry insight, Academy updates, employer features and new opportunities from Wellness House Collective.</p>
+            <div className="grid sm:grid-cols-3 gap-3 mt-5">
+              <a href={WHC_LINKEDIN} target="_blank" rel="noopener noreferrer" className="group flex items-center gap-3 border border-[#dfe5e8] rounded-xl p-4 hover:border-[#aebbc2] hover:bg-[#f7f9fa] transition-all"><div className="h-9 w-9 rounded-lg bg-[#eef2f4] flex items-center justify-center text-[#0b2f4d]"><Linkedin size={17}/></div><div><p className="text-[12px] font-semibold text-[#10283b]">LinkedIn</p><p className="text-[10px] text-[#7d8990] group-hover:text-[#65717a]">Follow WHC</p></div></a>
+              <a href={WHC_INSTAGRAM} target="_blank" rel="noopener noreferrer" className="group flex items-center gap-3 border border-[#dfe5e8] rounded-xl p-4 hover:border-[#aebbc2] hover:bg-[#f7f9fa] transition-all"><div className="h-9 w-9 rounded-lg bg-[#eef2f4] flex items-center justify-center text-[#0b2f4d]"><Instagram size={17}/></div><div><p className="text-[12px] font-semibold text-[#10283b]">Instagram</p><p className="text-[10px] text-[#7d8990] group-hover:text-[#65717a]">Follow WHC</p></div></a>
+              <a href={WHC_FACEBOOK} target="_blank" rel="noopener noreferrer" className="group flex items-center gap-3 border border-[#dfe5e8] rounded-xl p-4 hover:border-[#aebbc2] hover:bg-[#f7f9fa] transition-all"><div className="h-9 w-9 rounded-lg bg-[#eef2f4] flex items-center justify-center text-[#0b2f4d]"><Facebook size={17}/></div><div><p className="text-[12px] font-semibold text-[#10283b]">Facebook</p><p className="text-[10px] text-[#7d8990] group-hover:text-[#65717a]">Follow WHC</p></div></a>
+            </div>
           </div>
         </div>
       </section>
