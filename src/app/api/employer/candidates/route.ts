@@ -134,6 +134,7 @@ export async function GET(req: NextRequest) {
 
   return NextResponse.json({
     candidates,
+    live_role_count: jobs.length,
     pagination: {
       limit,
       offset,
