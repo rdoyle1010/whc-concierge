@@ -1,10 +1,11 @@
 'use client'
 
 import { FormEvent, useEffect, useState } from 'react'
+import Link from 'next/link'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
-import { AD_PLACEMENTS, type AdPlacementKey } from '@/lib/advertising'
-import { ArrowRight, Check, Eye, Megaphone, MousePointerClick, ShieldCheck, Sparkles, Users } from 'lucide-react'
+import { AD_BILLING_COPY, AD_PLACEMENTS, type AdPlacementKey } from '@/lib/advertising'
+import { ArrowRight, Check, ShieldCheck } from 'lucide-react'
 
 const audienceCopy: Record<AdPlacementKey, { audience: string; where: string; bestFor: string }> = {
   homepage_spotlight: {
@@ -24,21 +25,49 @@ const audienceCopy: Record<AdPlacementKey, { audience: string; where: string; be
   },
 }
 
+type Confirmation = { brandName: string; placement: string; reviewStatus: string }
+
 export default function AdvertisePage() {
   const [placement, setPlacement] = useState<AdPlacementKey>('homepage_spotlight')
   const [form, setForm] = useState({ brandName: '', contactEmail: '', tagline: '', websiteUrl: '', logoUrl: '' })
+  const [termsAccepted, setTermsAccepted] = useState(false)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
-  const [paid, setPaid] = useState(false)
+  const [confirming, setConfirming] = useState(false)
+  const [confirmation, setConfirmation] = useState<Confirmation | null>(null)
+  const [confirmationError, setConfirmationError] = useState('')
+  const [cancelled, setCancelled] = useState(false)
 
-  useEffect(() => { setPaid(new URLSearchParams(window.location.search).get('paid') === 'true') }, [])
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    setCancelled(params.get('cancelled') === 'true')
+    const sessionId = params.get('session_id')
+    if (params.get('paid') !== 'true' || !sessionId) return
+
+    setConfirming(true)
+    fetch('/api/stripe/sponsored-ad-confirm', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ sessionId }),
+    })
+      .then(async response => {
+        const json = await response.json()
+        if (!response.ok) throw new Error(json.error || 'Could not confirm your advert submission.')
+        setConfirmation(json.advert)
+      })
+      .catch(caught => setConfirmationError(caught.message || 'Could not confirm your advert submission.'))
+      .finally(() => setConfirming(false))
+  }, [])
 
   async function submit(event: FormEvent) {
-    event.preventDefault(); setBusy(true); setError('')
+    event.preventDefault()
+    setBusy(true)
+    setError('')
     try {
-      const response = await fetch('/api/stripe/checkout', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ type: 'sponsored_ad', placement, ...form, returnUrl: window.location.origin }),
+      const response = await fetch('/api/stripe/sponsored-ad-checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ placement, ...form, termsAccepted, returnUrl: window.location.origin }),
       })
       const json = await response.json()
       if (!response.ok || !json.url) throw new Error(json.error || 'Could not start payment.')
@@ -56,39 +85,25 @@ export default function AdvertisePage() {
     <Navbar />
     <main className="pt-[68px]">
       <section className="bg-[#0b2f4d] text-white">
-        <div className="max-w-7xl mx-auto px-6 lg:px-8 py-20 md:py-24 grid lg:grid-cols-[1.05fr_.95fr] gap-12 items-center">
-          <div>
-            <p className="text-[10px] uppercase tracking-[0.2em] text-[#d4b477] font-semibold mb-4">Advertise with Wellness House Collective</p>
-            <h1 className="text-[44px] md:text-[62px] leading-[1.01] tracking-[-0.05em] font-semibold text-white max-w-4xl">Be seen by the people shaping luxury wellness.</h1>
-            <p className="text-[16px] leading-8 text-white/68 max-w-2xl mt-6">Put your brand in front of spa professionals, hospitality employers and decision-makers through carefully placed, clearly labelled sponsored positions across Spa Platform.</p>
-            <div className="flex flex-wrap gap-5 mt-7 text-[11px] text-white/70">
-              <span className="inline-flex items-center gap-2"><ShieldCheck size={14} className="text-[#d4b477]" /> WHC reviewed before launch</span>
-              <span className="inline-flex items-center gap-2"><Eye size={14} className="text-[#d4b477]" /> Impressions tracked</span>
-              <span className="inline-flex items-center gap-2"><MousePointerClick size={14} className="text-[#d4b477]" /> Clicks tracked</span>
-            </div>
-          </div>
-
-          <div className="rounded-[28px] bg-white text-[#10283b] p-7 md:p-9 shadow-2xl shadow-black/20">
-            <p className="text-[10px] uppercase tracking-[.16em] font-semibold text-[#9c7a42]">What brands are buying</p>
-            <h2 className="text-[28px] font-semibold tracking-[-.035em] mt-2">A real placement. A defined audience. A measurable result.</h2>
-            <div className="space-y-4 mt-6">
-              {[
-                [Users, 'Relevant audience', 'Choose the part of Spa Platform where the people you want to reach are already active.'],
-                [Megaphone, 'Visible sponsored placement', 'Your brand appears as a clearly labelled sponsored feature, not buried in a generic directory.'],
-                [Sparkles, 'Quality controlled', 'WHC reviews the wording, destination and creative before anything goes live.'],
-              ].map(([Icon, title, text]: any) => <div key={title} className="flex gap-4"><div className="h-10 w-10 rounded-xl bg-[#f5efe2] flex items-center justify-center shrink-0"><Icon size={18} className="text-[#9c7a42]" /></div><div><p className="text-[14px] font-semibold">{title}</p><p className="text-[12px] text-black/55 leading-5 mt-1">{text}</p></div></div>)}
-            </div>
-          </div>
+        <div className="max-w-7xl mx-auto px-6 lg:px-8 py-16 md:py-20">
+          <p className="text-[10px] uppercase tracking-[0.2em] text-[#d4b477] font-semibold mb-4">Advertise with Wellness House Collective</p>
+          <h1 className="text-[42px] md:text-[58px] leading-[1.02] tracking-[-0.05em] font-semibold text-white max-w-4xl">A real placement, with a clear audience and clear terms.</h1>
+          <p className="text-[15px] leading-7 text-white/70 max-w-2xl mt-5">Choose where your brand appears, pay securely through Stripe, then WHC reviews the creative before publication.</p>
         </div>
       </section>
 
-      {paid && <div className="max-w-7xl mx-auto px-6 lg:px-8 pt-8"><div className="bg-green-50 border border-green-200 text-green-800 rounded-xl p-5"><p className="font-medium flex items-center gap-2"><Check size={16} /> Payment confirmed.</p><p className="text-[13px] mt-1">Your advert is now in the WHC approval queue. It cannot appear publicly until it has been reviewed.</p></div></div>}
+      <div className="max-w-7xl mx-auto px-6 lg:px-8 pt-8 space-y-3">
+        {confirming && <div className="bg-blue-50 border border-blue-200 text-blue-800 rounded-xl p-5">Confirming your Stripe payment and creating the admin approval record…</div>}
+        {confirmation && <div className="bg-green-50 border border-green-200 text-green-800 rounded-xl p-5"><p className="font-medium flex items-center gap-2"><Check size={16} /> Payment confirmed and advert submitted.</p><p className="text-[13px] mt-1"><strong>{confirmation.brandName}</strong> · {confirmation.placement}. Status: awaiting WHC approval. A confirmation email has been sent to the address supplied.</p></div>}
+        {confirmationError && <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl p-5"><p className="font-medium">Payment return needs attention.</p><p className="text-[13px] mt-1">{confirmationError}</p></div>}
+        {cancelled && <div className="bg-amber-50 border border-amber-200 text-amber-800 rounded-xl p-5">Checkout was cancelled. No advert has been submitted.</div>}
+      </div>
 
-      <section className="max-w-7xl mx-auto px-6 lg:px-8 py-14 md:py-16">
+      <section className="max-w-7xl mx-auto px-6 lg:px-8 py-12 md:py-16">
         <div className="max-w-3xl mb-8">
           <p className="text-[10px] uppercase tracking-[.18em] font-semibold text-[#9c7a42]">Choose your placement</p>
           <h2 className="text-[32px] md:text-[42px] font-semibold tracking-[-.04em] text-[#10283b] mt-2">Where do you want your brand to live?</h2>
-          <p className="text-[13px] leading-6 text-[#65727c] mt-3">Each position has a different context and audience. Select one to see exactly what it is designed to do.</p>
+          <p className="text-[13px] leading-6 text-[#65727c] mt-3">All placements are rolling monthly subscriptions. They renew each month until cancelled.</p>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 mb-10">
@@ -114,23 +129,23 @@ export default function AdvertisePage() {
               <div className="space-y-4 mt-6 text-[12px] leading-6 text-[#65727c]">
                 <div><p className="font-semibold text-[#10283b]">Where it appears</p><p>{selectedAudience.where}</p></div>
                 <div><p className="font-semibold text-[#10283b]">Who sees it</p><p>{selectedAudience.audience}</p></div>
-                <div><p className="font-semibold text-[#10283b]">Best suited to</p><p>{selectedAudience.bestFor}</p></div>
+                <div><p className="font-semibold text-[#10283b]">How long it runs</p><p>{AD_BILLING_COPY.short}</p></div>
+                <div><p className="font-semibold text-[#10283b]">When it starts</p><p>{AD_BILLING_COPY.start}</p></div>
               </div>
             </div>
 
-            <div className="rounded-[22px] bg-[#f8f5ee] border border-[#ddd9d1] p-7">
-              <p className="text-[10px] uppercase tracking-[.16em] font-semibold text-[#9c7a42]">How it works</p>
-              <ol className="space-y-5 mt-5">
-                <li className="flex gap-3"><span className="h-7 w-7 rounded-full bg-[#10283b] text-white flex items-center justify-center text-[10px] shrink-0">1</span><div><p className="text-[13px] font-semibold text-[#10283b]">Choose the placement and submit your creative</p><p className="text-[11px] text-[#65727c] leading-5 mt-1">Brand, wording, destination link and logo.</p></div></li>
-                <li className="flex gap-3"><span className="h-7 w-7 rounded-full bg-[#10283b] text-white flex items-center justify-center text-[10px] shrink-0">2</span><div><p className="text-[13px] font-semibold text-[#10283b]">Complete secure payment</p><p className="text-[11px] text-[#65727c] leading-5 mt-1">Stripe creates the monthly paid placement.</p></div></li>
-                <li className="flex gap-3"><span className="h-7 w-7 rounded-full bg-[#10283b] text-white flex items-center justify-center text-[10px] shrink-0">3</span><div><p className="text-[13px] font-semibold text-[#10283b]">WHC approves before anything appears</p><p className="text-[11px] text-[#65727c] leading-5 mt-1">Quality, wording and destination are reviewed.</p></div></li>
-                <li className="flex gap-3"><span className="h-7 w-7 rounded-full bg-[#10283b] text-white flex items-center justify-center text-[10px] shrink-0">4</span><div><p className="text-[13px] font-semibold text-[#10283b]">Go live and measure engagement</p><p className="text-[11px] text-[#65727c] leading-5 mt-1">Impressions and clicks are tracked inside the platform.</p></div></li>
-              </ol>
+            <div className="rounded-[22px] bg-[#f8f5ee] border border-[#ddd9d1] p-7 text-[12px] leading-6 text-[#65727c]">
+              <p className="text-[10px] uppercase tracking-[.16em] font-semibold text-[#9c7a42] mb-3">Approval journey</p>
+              <p><strong className="text-[#10283b]">1.</strong> Submit your creative and accept the Advertising Terms.</p>
+              <p><strong className="text-[#10283b]">2.</strong> Complete Stripe checkout. Promotion codes can reduce the first checkout amount, including to £0 where valid.</p>
+              <p><strong className="text-[#10283b]">3.</strong> The booking is written to Admin as <strong>Pending Approval</strong>.</p>
+              <p><strong className="text-[#10283b]">4.</strong> WHC reviews it, then approval makes the advert live in the placement you bought.</p>
+              <p><strong className="text-[#10283b]">5.</strong> You receive an email when it is submitted and another when it goes live.</p>
             </div>
           </div>
 
           <form onSubmit={submit} className="bg-white border border-[#ddd9d1] rounded-[22px] p-7 md:p-8 shadow-sm">
-            <div className="flex items-start justify-between gap-4 pb-6 mb-6 border-b border-[#ece8e1]"><div><p className="text-[10px] uppercase tracking-[.16em] font-semibold text-[#9c7a42]">Book this placement</p><h2 className="text-[27px] font-semibold tracking-[-.03em] text-[#10283b] mt-2">{selected.label}</h2></div><p className="text-right text-[24px] font-semibold text-[#10283b]">£{selected.monthlyPence / 100}<span className="block text-[10px] font-normal text-[#8a949b]">per month</span></p></div>
+            <div className="flex items-start justify-between gap-4 pb-6 mb-6 border-b border-[#ece8e1]"><div><p className="text-[10px] uppercase tracking-[.16em] font-semibold text-[#9c7a42]">Book this placement</p><h2 className="text-[27px] font-semibold tracking-[-.03em] text-[#10283b] mt-2">{selected.label}</h2></div><p className="text-right text-[24px] font-semibold text-[#10283b]">£{selected.monthlyPence / 100}<span className="block text-[10px] font-normal text-[#8a949b]">per month · recurring</span></p></div>
             <div className="space-y-4">
               <label className="block text-[12px] text-[#53636f]">Brand name<input required value={form.brandName} onChange={event => setForm({ ...form, brandName: event.target.value })} className="input-field mt-1" /></label>
               <label className="block text-[12px] text-[#53636f]">Contact email<input required type="email" value={form.contactEmail} onChange={event => setForm({ ...form, contactEmail: event.target.value })} className="input-field mt-1" /></label>
@@ -138,8 +153,16 @@ export default function AdvertisePage() {
               <label className="block text-[12px] text-[#53636f]">Website link<input required type="url" value={form.websiteUrl} onChange={event => setForm({ ...form, websiteUrl: event.target.value })} placeholder="https://yourbrand.com" className="input-field mt-1" /></label>
               <label className="block text-[12px] text-[#53636f]">Logo image link<input required type="url" value={form.logoUrl} onChange={event => setForm({ ...form, logoUrl: event.target.value })} placeholder="https://yourbrand.com/logo.png" className="input-field mt-1" /><span className="block mt-1 text-[10px] text-[#8a949b]">Direct public HTTPS link to a PNG, JPG, WebP or SVG logo.</span></label>
             </div>
+
+            <div className="mt-6 rounded-xl border border-[#e3ddd2] bg-[#faf8f3] p-4">
+              <label className="flex gap-3 cursor-pointer text-[12px] leading-5 text-[#53636f]">
+                <input required type="checkbox" checked={termsAccepted} onChange={event => setTermsAccepted(event.target.checked)} className="mt-1 h-4 w-4" />
+                <span>I have read and agree to the <Link href="/advertising-terms" target="_blank" className="font-semibold text-[#10283b] underline">Advertising Terms & Conditions</Link>. I understand this is a rolling monthly subscription, billing starts at checkout, and publication is subject to WHC approval.</span>
+              </label>
+            </div>
+
             {error && <p className="text-[12px] text-red-600 mt-4">{error}</p>}
-            <button disabled={busy} className="btn-primary w-full mt-6 disabled:opacity-50 inline-flex items-center justify-center gap-2">{busy ? 'Opening secure payment...' : <>Continue to Stripe — £{selected.monthlyPence / 100}/month <ArrowRight size={13}/></>}</button>
+            <button disabled={busy || !termsAccepted} className="btn-primary w-full mt-6 disabled:opacity-50 inline-flex items-center justify-center gap-2">{busy ? 'Opening secure payment...' : <>Continue to Stripe — £{selected.monthlyPence / 100}/month <ArrowRight size={13}/></>}</button>
             <div className="flex gap-2 mt-4 text-[10px] leading-5 text-[#7a858c]"><ShieldCheck size={14} className="text-[#9c7a42] shrink-0 mt-0.5" /><p>Payment does not automatically publish the advert. WHC approval is required before the placement can go live.</p></div>
           </form>
         </div>

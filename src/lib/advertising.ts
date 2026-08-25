@@ -1,3 +1,5 @@
+export const AD_TERMS_VERSION = '2026-08-25'
+
 export const AD_PLACEMENTS = {
   homepage_spotlight: {
     label: 'Homepage Spotlight',
@@ -22,3 +24,8 @@ export function isAdPlacement(value: unknown): value is AdPlacementKey {
   return typeof value === 'string' && value in AD_PLACEMENTS
 }
 
+export const AD_BILLING_COPY = {
+  short: 'Rolling monthly subscription. Renews every month until cancelled.',
+  approval: 'Your advert is reviewed by WHC before it can appear publicly.',
+  start: 'Billing starts at checkout. Public display starts only after WHC approval.',
+} as const
