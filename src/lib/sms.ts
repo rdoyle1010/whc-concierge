@@ -34,29 +34,34 @@ export function normaliseUkMobile(raw: string | null | undefined): string | null
 }
 
 // SMS is deliberately only a private notification trigger.
-// Full employer names, rates, interview details, offer details and messages
-// stay inside the signed-in platform rather than appearing on a lock screen.
+// Full names, rates, interview details, offer details and messages stay inside
+// the signed-in platform rather than appearing on a lock screen. Links are
+// role-neutral so the same helper is safe for talent and employer accounts.
 function privateNotificationBody(original: string): string {
   const text = original.toLowerCase()
 
+  if (text.includes('urgent') && (text.includes('agency') || text.includes('cover') || text.includes('shift'))) {
+    return `WHC Concierge: You have an urgent Agency Cover update. Sign in to view and respond: ${PLATFORM_URL}`
+  }
+
   if (text.includes('interview')) {
-    return `WHC Concierge: You have an update to your interview. Sign in to view the details: ${PLATFORM_URL}/talent/applications`
+    return `WHC Concierge: You have an interview update. Sign in to view the details: ${PLATFORM_URL}`
   }
 
   if (text.includes('agency') || text.includes('cover') || text.includes('shift')) {
-    return `WHC Concierge: You have a new Agency Cover update. Sign in to view and respond: ${PLATFORM_URL}/talent/agency`
+    return `WHC Concierge: You have a new Agency Cover update. Sign in to view and respond: ${PLATFORM_URL}`
   }
 
   if (text.includes('residency')) {
-    return `WHC Concierge: You have a new Residency update. Sign in to view the details: ${PLATFORM_URL}/talent/residency`
+    return `WHC Concierge: You have a new Residency update. Sign in to view the details: ${PLATFORM_URL}`
   }
 
   if (text.includes('message') || text.includes('inbox')) {
-    return `WHC Concierge: You have a new message. Sign in to read it: ${PLATFORM_URL}/talent/messages`
+    return `WHC Concierge: You have a new message waiting. Sign in to read it: ${PLATFORM_URL}`
   }
 
-  if (text.includes('application') || text.includes('shortlist') || text.includes('job offer') || text.includes('offer you')) {
-    return `WHC Concierge: You have an update to your application. Sign in to view the details: ${PLATFORM_URL}/talent/applications`
+  if (text.includes('application') || text.includes('shortlist') || text.includes('job offer') || text.includes('offer you') || text.includes('candidate')) {
+    return `WHC Concierge: You have a recruitment update. Sign in to view the details: ${PLATFORM_URL}`
   }
 
   return `WHC Concierge: You have a new update. Sign in to view the details: ${PLATFORM_URL}`
