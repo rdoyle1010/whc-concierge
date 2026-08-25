@@ -54,11 +54,11 @@ export default function Footer({ siteContent }: { siteContent?: WebsiteContent }
 
   return (
     <>
-      <section className="bg-[#f4f1ea] border-t border-[#ddd9d1] overflow-hidden" aria-label="Spa Platform hospitality photography">
+      <section className="bg-white border-t border-[#e3e7eb] overflow-hidden" aria-label="Spa Platform hospitality photography">
         <div className="max-w-[1500px] mx-auto px-0 md:px-6 lg:px-8 py-0 md:py-8">
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-px md:gap-3 bg-[#ddd9d1] md:bg-transparent">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-px md:gap-3 bg-[#e3e7eb] md:bg-transparent">
             {editorialImages.map((image, index) => (
-              <div key={`${image.url}-${index}`} className="group relative overflow-hidden bg-[#d8d3ca] aspect-[4/5] md:aspect-[3/4]">
+              <div key={`${image.url}-${index}`} className="group relative overflow-hidden bg-[#f2f4f6] aspect-[4/5] md:aspect-[3/4]">
                 {image.url ? <img src={image.url} alt={image.alt} loading="lazy" decoding="async" className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.025]" style={{ objectPosition: `${image.focalX}% ${image.focalY}%` }} /> : null}
                 <div className="absolute inset-0 bg-gradient-to-t from-[#071d2d]/55 via-transparent to-transparent" />
                 <p className="absolute bottom-4 left-4 right-4 text-[9px] md:text-[10px] uppercase tracking-[.16em] font-semibold text-white/90">{image.label}</p>
@@ -75,9 +75,9 @@ export default function Footer({ siteContent }: { siteContent?: WebsiteContent }
               <Wordmark dark />
               <p className="mt-5 max-w-sm text-[13px] leading-6 text-white/60">Luxury wellness recruitment, agency cover and career opportunities for exceptional professionals and properties.</p>
             </div>
-            <div><p className="text-[9px] uppercase tracking-[0.2em] text-[#d4b477] mb-4 font-semibold">Discover</p><LinkList items={primary} /></div>
-            <div><p className="text-[9px] uppercase tracking-[0.2em] text-[#d4b477] mb-4 font-semibold">WHC</p><LinkList items={company} /></div>
-            <div><p className="text-[9px] uppercase tracking-[0.2em] text-[#d4b477] mb-4 font-semibold">Support</p><LinkList items={support} /></div>
+            <div><p className="text-[9px] uppercase tracking-[0.2em] text-white/55 mb-4 font-semibold">Discover</p><LinkList items={primary} /></div>
+            <div><p className="text-[9px] uppercase tracking-[0.2em] text-white/55 mb-4 font-semibold">WHC</p><LinkList items={company} /></div>
+            <div><p className="text-[9px] uppercase tracking-[0.2em] text-white/55 mb-4 font-semibold">Support</p><LinkList items={support} /></div>
           </div>
           <div className="border-t border-white/10 pt-5 flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
             <p className="text-[11px] text-white/45">{content.footer.copyright}</p>
