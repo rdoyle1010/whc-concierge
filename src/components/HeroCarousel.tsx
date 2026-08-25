@@ -1,6 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useState } from 'react'
+import Image from 'next/image'
 import Link from 'next/link'
 import { ArrowRight } from 'lucide-react'
 import { DEFAULT_WEBSITE_CONTENT, type WebsiteContent } from '@/lib/site-content'
@@ -10,19 +11,16 @@ export default function HeroCarousel({ siteContent }: { siteContent?: WebsiteCon
   const slides = content.hero.slides
   const [current, setCurrent] = useState(0)
   const [paused, setPaused] = useState(false)
-  const [currentImageLoaded, setCurrentImageLoaded] = useState(false)
 
   useEffect(() => {
     if (current >= slides.length) setCurrent(0)
   }, [current, slides.length])
 
   const showSlide = useCallback((index: number) => {
-    setCurrentImageLoaded(false)
     setCurrent(index)
   }, [])
 
   const next = useCallback(() => {
-    setCurrentImageLoaded(false)
     setCurrent(value => (value + 1) % slides.length)
   }, [slides.length])
 
@@ -32,34 +30,19 @@ export default function HeroCarousel({ siteContent }: { siteContent?: WebsiteCon
     return () => window.clearInterval(timer)
   }, [paused, next, slides.length])
 
-  useEffect(() => {
-    if (!currentImageLoaded || slides.length < 2) return
-    const timer = window.setTimeout(() => {
-      if (document.visibilityState !== 'visible') return
-      const upcoming = slides[(current + 1) % slides.length]
-      const image = new window.Image()
-      image.decoding = 'async'
-      image.src = upcoming.image.url
-    }, 4000)
-    return () => window.clearTimeout(timer)
-  }, [current, currentImageLoaded, slides])
-
   const slide = slides[current] || slides[0]
 
   return (
     <div className="relative w-full min-h-[680px] h-[calc(100vh-60px)] overflow-hidden bg-black"
       onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)}>
       <div key={current} className="absolute inset-0 animate-fade-in">
-        <img
+        <Image
           src={slide.image.url}
           alt={slide.image.alt}
-          width={1920}
-          height={1080}
-          loading="eager"
-          fetchPriority={current === 0 ? 'high' : 'auto'}
-          decoding="async"
-          onLoad={() => setCurrentImageLoaded(true)}
-          className="w-full h-full object-cover"
+          fill
+          sizes="100vw"
+          priority={current === 0}
+          className="object-cover"
           style={{ objectPosition: slide.image.focalX + '% ' + slide.image.focalY + '%' }}
         />
         <div className="absolute inset-0 bg-gradient-to-b from-black/45 via-black/20 to-black/65" />
