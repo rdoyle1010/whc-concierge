@@ -4,11 +4,6 @@ import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { createNotification } from '@/lib/notifications'
 
-// WHC Verified - the candidate side. Therapists submit their insurance
-// certificate (with expiry date) and qualification documents; WHC checks them
-// in the admin desk and awards the badge. Docs upload via /api/upload to the
-// talent-documents bucket first; this route records the submission.
-
 async function getAuthedUser() {
   const cookieStore = await cookies()
   const supabaseAuth = createServerClient(
@@ -26,7 +21,7 @@ export async function GET() {
 
     const admin = createAdminClient()
     const { data: cand } = await admin.from('candidate_profiles')
-      .select('id, whc_verified, whc_verified_at, verification_status, verification_docs, verification_notes, insurance_expiry_date, insurance_document_url, has_insurance')
+      .select('id, whc_verified, whc_verified_at, verification_status, verification_docs, verification_notes, insurance_expiry_date, insurance_document_url, has_insurance, right_to_work_uk, right_to_work_ireland, right_to_work_status, right_to_work_document_url, right_to_work_expiry_date, right_to_work_verified_at, right_to_work_notes')
       .eq('user_id', user.id).maybeSingle()
     if (!cand) return NextResponse.json({ error: 'No candidate profile found' }, { status: 404 })
     return NextResponse.json({ verification: cand })
@@ -42,7 +37,8 @@ export async function POST(req: NextRequest) {
 
     const admin = createAdminClient()
     const { data: cand } = await admin.from('candidate_profiles')
-      .select('id, full_name, verification_status').eq('user_id', user.id).maybeSingle()
+      .select('id, full_name, verification_status, insurance_document_url, right_to_work_document_url')
+      .eq('user_id', user.id).maybeSingle()
     if (!cand) return NextResponse.json({ error: 'No candidate profile found' }, { status: 404 })
 
     const body = await req.json()
@@ -50,36 +46,60 @@ export async function POST(req: NextRequest) {
       ? body.docs.filter((d: any) => d && typeof d.url === 'string').slice(0, 10)
           .map((d: any) => ({ name: String(d.name || 'Document').slice(0, 120), url: String(d.url) }))
       : []
-    const expiry = String(body.insurance_expiry_date || '')
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(expiry)) {
-      return NextResponse.json({ error: 'Please give your insurance expiry date - we chase renewals so your badge never lapses silently.' }, { status: 400 })
+
+    const rightToWorkUk = Boolean(body.right_to_work_uk)
+    const rightToWorkIreland = Boolean(body.right_to_work_ireland)
+    if (!rightToWorkUk && !rightToWorkIreland) {
+      return NextResponse.json({ error: 'Please confirm whether you have the right to work in the UK, Ireland, or both.' }, { status: 400 })
     }
-    if (new Date(expiry).getTime() < Date.now()) {
-      return NextResponse.json({ error: 'That insurance expiry date is in the past - please upload a current certificate.' }, { status: 400 })
+
+    const rightToWorkUrl = body.right_to_work_document_url ? String(body.right_to_work_document_url) : cand.right_to_work_document_url
+    if (!rightToWorkUrl) return NextResponse.json({ error: 'Please upload evidence of your right to work.' }, { status: 400 })
+
+    const rightToWorkExpiry = body.right_to_work_expiry_date ? String(body.right_to_work_expiry_date) : null
+    if (rightToWorkExpiry && !/^\d{4}-\d{2}-\d{2}$/.test(rightToWorkExpiry)) {
+      return NextResponse.json({ error: 'Please use a valid right-to-work expiry date.' }, { status: 400 })
     }
-    if (docs.length === 0 && !body.insurance_document_url) {
-      return NextResponse.json({ error: 'Please upload at least your insurance certificate.' }, { status: 400 })
+
+    const hasInsurance = Boolean(body.has_insurance)
+    let insuranceExpiry: string | null = null
+    let insuranceUrl: string | null = null
+    if (hasInsurance) {
+      insuranceExpiry = String(body.insurance_expiry_date || '')
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(insuranceExpiry)) {
+        return NextResponse.json({ error: 'Please give the expiry date for your insurance.' }, { status: 400 })
+      }
+      if (new Date(insuranceExpiry).getTime() < Date.now()) {
+        return NextResponse.json({ error: 'That insurance expiry date is in the past - please upload a current certificate.' }, { status: 400 })
+      }
+      insuranceUrl = body.insurance_document_url ? String(body.insurance_document_url) : cand.insurance_document_url
+      if (!insuranceUrl) return NextResponse.json({ error: 'Please upload your insurance certificate, or choose that you do not currently hold insurance.' }, { status: 400 })
     }
 
     const update: Record<string, any> = {
       verification_status: 'pending',
       verification_docs: docs,
-      insurance_expiry_date: expiry,
+      right_to_work_uk: rightToWorkUk,
+      right_to_work_ireland: rightToWorkIreland,
+      right_to_work_status: 'pending',
+      right_to_work_document_url: rightToWorkUrl,
+      right_to_work_expiry_date: rightToWorkExpiry,
+      right_to_work_verified_at: null,
+      right_to_work_notes: null,
+      has_insurance: hasInsurance,
+      insurance_document_url: hasInsurance ? insuranceUrl : null,
+      insurance_expiry_date: hasInsurance ? insuranceExpiry : null,
       insurance_chased_at: null,
     }
-    if (body.insurance_document_url) {
-      update.insurance_document_url = String(body.insurance_document_url)
-      update.has_insurance = true
-    }
+
     const { error } = await admin.from('candidate_profiles').update(update).eq('id', cand.id)
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-    // Tell the admins there's a verification to review - best effort
     try {
       const { data: admins } = await admin.from('profiles').select('id').eq('role', 'admin').limit(5)
       for (const a of admins || []) {
         await createNotification(a.id, 'general', 'Verification submitted',
-          `${cand.full_name || 'A therapist'} has submitted documents for WHC Verified review.`, '/admin/verification')
+          `${cand.full_name || 'A professional'} has submitted right-to-work and verification documents for review.`, '/admin/verification')
       }
     } catch { /* non-fatal */ }
 
