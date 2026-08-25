@@ -4,9 +4,9 @@ import { readFileSync } from 'node:fs'
 
 const read = (path: string) => readFileSync(new URL(`../${path}`, import.meta.url), 'utf8')
 
-test('Agency commercial constants keep the property 10% fee and no therapist booking deduction', () => {
+test('Agency commercial constants keep the property 15% fee and no therapist booking deduction', () => {
   const constants = read('src/lib/constants.ts')
-  assert.match(constants, /AGENCY_PLATFORM_FEE_PCT\s*=\s*0\.10/)
+  assert.match(constants, /AGENCY_PLATFORM_FEE_PCT\s*=\s*0\.15/)
   assert.match(constants, /PREFERRED_EMPLOYER_PRICE\s*=\s*15000/)
   assert.match(constants, /basic:\s*\{\s*price:\s*1000/)
   assert.match(constants, /featured:\s*\{\s*price:\s*2000/)
