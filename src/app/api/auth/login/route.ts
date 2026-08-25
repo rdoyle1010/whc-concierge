@@ -68,7 +68,24 @@ export async function POST(request: NextRequest) {
       ? requested
       : null
 
-    return NextResponse.json({ ok: true, redirect: safeRequested || dashboardForRole(accountRole) }, {
+    const destination = safeRequested || dashboardForRole(accountRole)
+    const { data: factors } = await supabase.auth.mfa.listFactors()
+    const hasVerifiedTotp = Boolean((factors?.totp || []).some((factor: any) => factor.status === 'verified'))
+    const { data: assurance } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel()
+
+    if (hasVerifiedTotp && assurance?.currentLevel !== 'aal2') {
+      return NextResponse.json({ ok: true, mfaRequired: true, redirect: `/mfa-challenge?next=${encodeURIComponent(destination)}` }, {
+        headers: { 'Cache-Control': 'private, no-store' },
+      })
+    }
+
+    if (accountRole === 'admin' && !hasVerifiedTotp) {
+      return NextResponse.json({ ok: true, setupRequired: true, redirect: '/admin/settings?security=required' }, {
+        headers: { 'Cache-Control': 'private, no-store' },
+      })
+    }
+
+    return NextResponse.json({ ok: true, redirect: destination }, {
       headers: { 'Cache-Control': 'private, no-store' },
     })
   } catch (error) {
