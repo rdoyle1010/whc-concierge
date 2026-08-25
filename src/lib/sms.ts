@@ -14,6 +14,8 @@ const TWILIO_API_KEY_SECRET = process.env.TWILIO_API_KEY_SECRET
 const TWILIO_AUTH_TOKEN = process.env.TWILIO_AUTH_TOKEN
 const TWILIO_FROM_NUMBER = process.env.TWILIO_FROM_NUMBER
 
+const PLATFORM_URL = 'https://talent.wellnesshousecollective.co.uk'
+
 export function smsConfigured(): boolean {
   const hasProductionKey = Boolean(TWILIO_API_KEY_SID && TWILIO_API_KEY_SECRET)
   const hasFallbackToken = Boolean(TWILIO_AUTH_TOKEN)
@@ -31,14 +33,44 @@ export function normaliseUkMobile(raw: string | null | undefined): string | null
   return null
 }
 
+// SMS is deliberately only a private notification trigger.
+// Full employer names, rates, interview details, offer details and messages
+// stay inside the signed-in platform rather than appearing on a lock screen.
+function privateNotificationBody(original: string): string {
+  const text = original.toLowerCase()
+
+  if (text.includes('interview')) {
+    return `WHC Concierge: You have an update to your interview. Sign in to view the details: ${PLATFORM_URL}/talent/applications`
+  }
+
+  if (text.includes('agency') || text.includes('cover') || text.includes('shift')) {
+    return `WHC Concierge: You have a new Agency Cover update. Sign in to view and respond: ${PLATFORM_URL}/talent/agency`
+  }
+
+  if (text.includes('residency')) {
+    return `WHC Concierge: You have a new Residency update. Sign in to view the details: ${PLATFORM_URL}/talent/residency`
+  }
+
+  if (text.includes('message') || text.includes('inbox')) {
+    return `WHC Concierge: You have a new message. Sign in to read it: ${PLATFORM_URL}/talent/messages`
+  }
+
+  if (text.includes('application') || text.includes('shortlist') || text.includes('job offer') || text.includes('offer you')) {
+    return `WHC Concierge: You have an update to your application. Sign in to view the details: ${PLATFORM_URL}/talent/applications`
+  }
+
+  return `WHC Concierge: You have a new update. Sign in to view the details: ${PLATFORM_URL}`
+}
+
 export async function sendSms(to: string | null | undefined, body: string): Promise<boolean> {
   const number = normaliseUkMobile(to)
+  const safeBody = privateNotificationBody(body)
   if (!number) {
-    console.log(`[SMS skipped - no valid mobile] body: ${body.slice(0, 60)}`)
+    console.log(`[SMS skipped - no valid mobile] body: ${safeBody.slice(0, 60)}`)
     return false
   }
   if (!smsConfigured()) {
-    console.log(`[SMS skipped - Twilio not configured] To: ${number}, body: ${body.slice(0, 60)}`)
+    console.log(`[SMS skipped - Twilio not configured] To: ${number}, body: ${safeBody.slice(0, 60)}`)
     return false
   }
 
@@ -54,7 +86,7 @@ export async function sendSms(to: string | null | undefined, body: string): Prom
           Authorization: `Basic ${auth}`,
           'Content-Type': 'application/x-www-form-urlencoded',
         },
-        body: new URLSearchParams({ To: number, From: TWILIO_FROM_NUMBER!, Body: body.slice(0, 600) }).toString(),
+        body: new URLSearchParams({ To: number, From: TWILIO_FROM_NUMBER!, Body: safeBody.slice(0, 600) }).toString(),
       }
     )
     if (!res.ok) {
