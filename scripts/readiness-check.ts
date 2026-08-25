@@ -151,6 +151,7 @@ check('all service-role API routes are protected or deliberately public', () => 
     'src/app/api/update-jobs/route.ts',
     'src/app/api/jobs/public/route.ts',
     'src/app/api/residency/public/route.ts',
+    'src/app/api/stripe/sponsored-ad-confirm/route.ts',
   ])
   const authMarkers = /getUser\(|requireAdmin|verifyAdmin|stripe-signature|isInternalApiRequest/
   const unguarded = files.filter(file => !authMarkers.test(read(file)) && !deliberatePublic.has(file))
