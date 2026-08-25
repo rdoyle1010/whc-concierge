@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { createServerClient } from '@supabase/ssr'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { createNotification } from '@/lib/notifications'
 
 async function currentUser() {
   const store = await cookies()
@@ -61,6 +62,15 @@ export async function POST(req: NextRequest) {
     if (error) return NextResponse.json({ error: 'Could not open this case.' }, { status: 500 })
     await admin.from('agency_bookings').update({ dispute_status: 'open', payout_status: 'on_hold', dispute_reason: description }).eq('id', booking.id)
     await admin.from('agency_case_events').insert({ case_id: data.id, actor_user_id: user.id, actor_role: role, event_type: 'case_opened' })
+
+    const [{ data: bookingCandidate }, { data: bookingEmployer }] = await Promise.all([
+      admin.from('candidate_profiles').select('user_id,full_name').eq('id', booking.candidate_id).maybeSingle(),
+      admin.from('employer_profiles').select('user_id,property_name,company_name').eq('id', booking.employer_id).maybeSingle(),
+    ])
+    const otherUserId = role === 'candidate' ? bookingEmployer?.user_id : bookingCandidate?.user_id
+    if (otherUserId) {
+      await createNotification(otherUserId, 'general', 'Agency shift issue raised', `An issue has been raised about the Agency shift on ${booking.shift_date || 'the agreed date'}. Please review it and give your response.`, role === 'candidate' ? '/employer/agency/cases' : '/talent/agency/cases')
+    }
     return NextResponse.json({ case: data })
   }
 
@@ -74,6 +84,11 @@ export async function POST(req: NextRequest) {
     if (!response) return NextResponse.json({ error: 'Please add your response.' }, { status: 400 })
     const { data } = await admin.from('agency_cases').update({ counterparty_response: response, counterparty_response_user_id: user.id, counterparty_responded_at: new Date().toISOString(), status: 'under_review' }).eq('id', row.id).select('*').single()
     await admin.from('agency_case_events').insert({ case_id: row.id, actor_user_id: user.id, actor_role: profile?.role === 'admin' ? 'admin' : (row.booking?.candidate_id === candidate?.id ? 'candidate' : 'employer'), event_type: 'response_added' })
+
+    try {
+      const { data: adminProfiles } = await admin.from('profiles').select('id').eq('role', 'admin')
+      await Promise.allSettled((adminProfiles || []).map((p: any) => createNotification(p.id, 'general', 'Agency case ready for review', `Both sides have now responded to Agency case ${row.id.slice(0,8).toUpperCase()}.`, '/admin/agency-cases')))
+    } catch {}
     return NextResponse.json({ case: data })
   }
 
