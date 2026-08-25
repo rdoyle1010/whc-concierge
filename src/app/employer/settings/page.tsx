@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import DashboardShell from '@/components/DashboardShell'
 import { createClient } from '@/lib/supabase/client'
 import { Save, Download, AlertTriangle } from 'lucide-react'
@@ -13,6 +13,44 @@ export default function EmployerSettingsPage() {
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState('')
   const [messageType, setMessageType] = useState<'success' | 'error'>('error')
+  const [employerId, setEmployerId] = useState<string | null>(null)
+  const [smsEnabled, setSmsEnabled] = useState(false)
+  const [smsPhone, setSmsPhone] = useState('')
+  const [smsSaving, setSmsSaving] = useState(false)
+
+  useEffect(() => {
+    async function loadSmsSettings() {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+      const { data } = await supabase.from('employer_profiles').select('id,contact_phone,sms_opt_in').eq('user_id', user.id).maybeSingle()
+      if (!data) return
+      setEmployerId(data.id)
+      setSmsPhone(data.contact_phone || '')
+      setSmsEnabled(Boolean(data.sms_opt_in))
+    }
+    loadSmsSettings()
+  }, [])
+
+  const saveSmsSettings = async (enabled = smsEnabled) => {
+    if (!employerId) return
+    if (enabled && !smsPhone.trim()) {
+      setMessage('Add a mobile number before turning SMS alerts on.')
+      setMessageType('error')
+      return
+    }
+    setSmsSaving(true)
+    const { error } = await supabase.from('employer_profiles').update({ contact_phone: smsPhone.trim() || null, sms_opt_in: enabled }).eq('id', employerId)
+    setSmsSaving(false)
+    if (error) {
+      setMessage(error.message)
+      setMessageType('error')
+      return
+    }
+    setSmsEnabled(enabled)
+    setMessage('SMS notification settings saved.')
+    setMessageType('success')
+    setTimeout(() => setMessage(''), 3000)
+  }
 
   const handlePasswordChange = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -99,7 +137,7 @@ export default function EmployerSettingsPage() {
   }
 
   const handleDeleteAccount = async () => {
-    if (!confirm('Are you sure you want to delete your account? All your data \u2014 profile, job listings, applications, and messages \u2014 will be permanently removed. This cannot be undone.')) return
+    if (!confirm('Are you sure you want to delete your account? All your data — profile, job listings, applications, and messages — will be permanently removed. This cannot be undone.')) return
     if (!confirm('Final confirmation: delete your account and all associated data?')) return
 
     setDeleting(true)
@@ -122,9 +160,32 @@ export default function EmployerSettingsPage() {
     <DashboardShell role="employer">
       <h1 className="text-2xl font-serif font-bold text-ink mb-6">Settings</h1>
       <div className="max-w-2xl space-y-6">
+        {message && <div className={`px-4 py-3 rounded-lg text-sm ${messageType === 'success' ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'}`}>{message}</div>}
+
+        <div className="dashboard-card">
+          <div className="flex items-start justify-between gap-4 mb-4">
+            <div>
+              <h3 className="font-serif text-lg font-semibold">SMS Notifications</h3>
+              <p className="text-sm text-gray-500 mt-1">Get short text alerts when something important needs attention. Full details stay inside WHC Concierge.</p>
+            </div>
+            <button type="button" onClick={() => saveSmsSettings(!smsEnabled)} disabled={smsSaving}
+              aria-label={smsEnabled ? 'Turn SMS notifications off' : 'Turn SMS notifications on'}
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors shrink-0 disabled:opacity-50 ${smsEnabled ? 'bg-ink' : 'bg-gray-200'}`}>
+              <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${smsEnabled ? 'translate-x-6' : 'translate-x-1'}`} />
+            </button>
+          </div>
+          <div className="pt-4 border-t border-border space-y-3">
+            <div>
+              <label className="eyebrow block mb-1.5">Mobile number for alerts</label>
+              <input type="tel" value={smsPhone} onChange={e => setSmsPhone(e.target.value)} className="input-field" placeholder="07700 900123" />
+            </div>
+            <p className="text-[12px] leading-5 text-muted">Alerts can include new messages, new applications, candidate responses, interview updates, Agency Cover responses, urgent cover updates and Residency activity. Texts only tell you that there is an update waiting; sensitive details remain in your account.</p>
+            <button type="button" onClick={() => saveSmsSettings()} disabled={smsSaving} className="btn-secondary text-[13px] disabled:opacity-50">{smsSaving ? 'Saving...' : 'Save SMS settings'}</button>
+          </div>
+        </div>
+
         <div className="dashboard-card">
           <h3 className="font-serif text-lg font-semibold mb-4">Change Password</h3>
-          {message && <div className={`px-4 py-3 rounded-lg mb-4 text-sm ${messageType === 'success' ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'}`}>{message}</div>}
           <form onSubmit={handlePasswordChange} className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1.5">Current Password</label>
@@ -145,7 +206,6 @@ export default function EmployerSettingsPage() {
           </form>
         </div>
 
-        {/* Data & Privacy */}
         <div className="dashboard-card">
           <h3 className="font-serif text-lg font-semibold mb-4">Your Data</h3>
           <p className="text-sm text-gray-500 mb-4">Download a copy of all personal data we hold about you, in compliance with GDPR Article 15.</p>
