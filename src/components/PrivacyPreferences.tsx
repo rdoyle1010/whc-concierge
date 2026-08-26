@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { ShieldCheck, Mail, Bell, Users, Database, CheckCircle2, AlertTriangle } from 'lucide-react'
+import { ShieldCheck, Mail, Bell, Users, Database } from 'lucide-react'
 
 type Preferences = {
   marketing_email_status: 'never' | 'pending' | 'confirmed' | 'unsubscribed'
@@ -53,10 +53,6 @@ export default function PrivacyPreferences() {
 
   async function withdrawMarketing() {
     setSaving(true); setMessage('')
-    const res = await fetch('/api/privacy/preferences', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({}) })
-    if (!res.ok) { setMessage('Could not update your preference.'); setSaving(false); return }
-    // Authenticated withdrawal is handled with the dedicated status endpoint semantics by requesting no new marketing.
-    // Use the preference API through a direct status update below.
     const stop = await fetch('/api/privacy/marketing/withdraw', { method: 'POST' })
     const data = await stop.json().catch(() => ({}))
     if (stop.ok) { await load(); setMessage('Marketing emails have been switched off.') } else setMessage(data.error || 'Could not unsubscribe.')
