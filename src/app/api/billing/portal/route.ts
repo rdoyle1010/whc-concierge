@@ -1,57 +1,33 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getStripe } from '@/lib/stripe'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { createServerClient } from '@supabase/ssr'
-import { cookies } from 'next/headers'
 import { assertStripeModeMatchesOrigin, getSafeSiteOrigin } from '@/lib/site-origin'
-
-// Stripe customer portal for subscription management. Called (with no body)
-// by /talent/billing, which redirects to the returned { url }.
+import { getRequestUser } from '@/lib/request-user'
 
 export async function POST(req: NextRequest) {
   try {
-    // ── Auth: caller must be logged in ──
-    const cookieStore = await cookies()
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      { cookies: { getAll() { return cookieStore.getAll() }, setAll() {} } }
-    )
-    const { data: { user } } = await supabase.auth.getUser()
+    const user = await getRequestUser(req)
     if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
 
-    // ── Find the caller's Stripe customer id (candidate first, employer as
-    // a fallback so the handler can serve both sides later) ──
+    const body = await req.json().catch(() => ({}))
     const admin = createAdminClient()
-    const { data: cand } = await admin
-      .from('candidate_profiles')
-      .select('stripe_customer_id')
-      .eq('user_id', user.id)
-      .maybeSingle()
+    const [{ data: cand }, { data: emp }] = await Promise.all([
+      admin.from('candidate_profiles').select('stripe_customer_id,membership_stripe_customer_id').eq('user_id', user.id).maybeSingle(),
+      admin.from('employer_profiles').select('stripe_customer_id,membership_stripe_customer_id').eq('user_id', user.id).maybeSingle(),
+    ])
 
-    let customerId: string | null = cand?.stripe_customer_id || null
+    const customerId = cand?.membership_stripe_customer_id || cand?.stripe_customer_id || emp?.membership_stripe_customer_id || emp?.stripe_customer_id || null
     if (!customerId) {
-      const { data: emp } = await admin
-        .from('employer_profiles')
-        .select('stripe_customer_id')
-        .eq('user_id', user.id)
-        .maybeSingle()
-      customerId = emp?.stripe_customer_id || null
+      return NextResponse.json({ error: 'No billing account found yet. It is created with your first subscription payment.' }, { status: 400 })
     }
 
-    if (!customerId) {
-      return NextResponse.json(
-        { error: 'No billing account found for your profile yet - it is created with your first subscription payment.' },
-        { status: 400 }
-      )
-    }
-
-    const origin = getSafeSiteOrigin(req.headers.get('origin'))
+    const origin = getSafeSiteOrigin(body.returnUrl || req.headers.get('origin'))
     assertStripeModeMatchesOrigin(origin)
+    const role = emp ? 'employer' : 'talent'
     const stripe = getStripe()
     const session = await stripe.billingPortal.sessions.create({
       customer: customerId,
-      return_url: `${origin}/talent/billing`,
+      return_url: `${origin}/${role}/membership`,
     })
 
     return NextResponse.json({ url: session.url })
