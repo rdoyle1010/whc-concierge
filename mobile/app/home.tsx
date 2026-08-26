@@ -4,7 +4,7 @@ import { router, useLocalSearchParams } from 'expo-router'
 import { supabase } from '../src/lib/supabase'
 
 type Role = 'talent' | 'employer' | 'admin'
-type Card = { title: string; copy: string; href?: '/jobs' | '/applications' | '/agency' | '/messages' | '/profile' | '/notifications' | '/interview-ready' | '/discover-talent' | '/saved' | '/residency' | '/billing'; locked?: boolean; badge?: string }
+type Card = { title: string; copy: string; href?: '/jobs' | '/applications' | '/agency' | '/messages' | '/profile' | '/notifications' | '/interview-ready' | '/discover-talent' | '/saved' | '/residency' | '/billing' | '/property-profile'; locked?: boolean; badge?: string }
 
 const talentCards: Card[] = [
   { title: 'Matches & Jobs', copy: 'Browse live roles and open the complete job and employer detail.', href: '/jobs' },
@@ -20,7 +20,8 @@ const talentCards: Card[] = [
 ]
 
 const employerCards: Card[] = [
-  { title: 'Jobs', copy: 'See and manage the same opportunities as your web workspace.', href: '/jobs' },
+  { title: 'Jobs', copy: 'Post, edit, publish, close and fill roles from the app.', href: '/jobs' },
+  { title: 'Property Profile', copy: 'Manage property photos, spa details, staff travel, parking and arrival information.', href: '/property-profile' },
   { title: 'Applications', copy: 'Review candidates and see where they sit in the recruitment process.', href: '/applications' },
   { title: 'Discover Talent', copy: 'Search visible spa and wellness professionals.', href: '/discover-talent', locked: true, badge: 'PRO' },
   { title: 'Agency bookings', copy: 'See upcoming flexible staffing bookings for your property.', href: '/agency' },
