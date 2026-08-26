@@ -9,7 +9,7 @@ import { getPublicPageContent } from '@/lib/public-page-content-server'
 export const revalidate = 60
 
 const PUBLIC_PROPERTIES_LIMIT = 120
-const PROPERTY_FIELDS = 'id,company_name,property_name,location,description,logo_url,property_photos,review_score,review_count,star_rating,property_type,tagline,featured_employer,featured_until,created_at,is_verified,approval_status'
+const PROPERTY_FIELDS = 'id,company_name,property_name,location,about_text,logo_url,property_photos,review_score,review_count,star_rating,property_type,tagline,featured_employer,featured_until,created_at,is_verified,approval_status'
 
 async function readPublicProperties() {
   try {
@@ -38,7 +38,7 @@ async function readPublicProperties() {
   }
 }
 
-const getPublicProperties = unstable_cache(readPublicProperties, ['public-properties-v1'], { revalidate: 60 })
+const getPublicProperties = unstable_cache(readPublicProperties, ['public-properties-v2'], { revalidate: 60 })
 
 export default async function PropertiesPage({ searchParams }: { searchParams?: Promise<Record<string,string|string[]|undefined>> }) {
   const params = searchParams ? await searchParams : {}
@@ -71,7 +71,7 @@ export default async function PropertiesPage({ searchParams }: { searchParams?: 
             </div>
             <div className="p-6"><div className="flex items-start justify-between gap-3"><div><h3 className="text-[19px] font-semibold tracking-tight text-[#10283b]">{p.property_name||p.company_name}</h3>{p.tagline&&<p className="text-[12px] text-[#65717a] mt-1">{p.tagline}</p>}</div>{p.star_rating&&<span className="text-[12px] font-semibold text-[#10283b] whitespace-nowrap">{isNaN(Number(p.star_rating))?p.star_rating:`${p.star_rating}★`}</span>}</div>
               <div className="flex flex-wrap items-center gap-3 text-[12px] text-muted mt-3">{p.location&&<span className="flex items-center gap-1"><MapPin size={13}/>{p.location}</span>}{Number(p.review_score)>0&&<span className="flex items-center gap-1"><Star size={12} fill="currentColor" className="text-[#6f7f88]"/> {Number(p.review_score).toFixed(1)} WHC{p.review_count?` · ${p.review_count} review${Number(p.review_count)===1?'':'s'}`:''}</span>}</div>
-              {p.description&&<p className="text-[13px] leading-6 text-secondary mt-4 line-clamp-3">{p.description}</p>}
+              {p.about_text&&<p className="text-[13px] leading-6 text-secondary mt-4 line-clamp-3">{p.about_text}</p>}
               <span className="mt-5 inline-flex text-[12px] font-semibold text-[#0b2f4d]">Explore property →</span>
             </div>
           </Link>})}</div>
