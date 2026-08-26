@@ -18,6 +18,8 @@ function mobileDestination(destination: string) {
     '/employer/agency': '/agency',
     '/talent/residency': '/residency',
     '/employer/residency': '/residency',
+    '/talent/reputation': '/reputation',
+    '/employer/reputation': '/reputation',
   }
   return exact[destination] || destination
 }
