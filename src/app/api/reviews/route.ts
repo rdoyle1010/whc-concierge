@@ -1,18 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { createServerClient } from '@supabase/ssr'
-import { cookies } from 'next/headers'
 import { reviewSchema, validateRequest } from '@/lib/validations'
-
-async function getAuthedUser() {
-  const cookieStore = await cookies()
-  const supabaseAuth = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    { cookies: { getAll() { return cookieStore.getAll() }, setAll() {} } }
-  )
-  return supabaseAuth.auth.getUser()
-}
+import { getRequestUser } from '@/lib/request-user'
 
 const REVIEWABLE_BOOKING_STATUSES = ['confirmed', 'completed']
 
@@ -116,7 +105,7 @@ async function hasWorkedTogether(
 
 export async function POST(req: NextRequest) {
   try {
-    const { data: { user } } = await getAuthedUser()
+    const user = await getRequestUser(req)
     if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
 
     const body = await req.json()
