@@ -41,13 +41,13 @@ export async function GET(req: NextRequest) {
       .eq('employer_id', employer.id).order('created_at', { ascending: false })
     const candidateIds = Array.from(new Set((refs || []).map((row: any) => row.candidate_id)))
     const { data: candidates } = candidateIds.length ? await admin.from('candidate_profiles')
-      .select('id,user_id,full_name,current_job_title,profile_image_url').in('id', candidateIds) : { data: [] as any[] }
+      .select('id,user_id,full_name,profile_image_url').in('id', candidateIds) : { data: [] as any[] }
     const candidateMap = new Map((candidates || []).map((row: any) => [row.id, row]))
     return NextResponse.json({
       role,
       profile: { name: employer.property_name || employer.company_name || 'Property', reviewScore: employer.review_score || 0, reviewCount: employer.review_count || 0 },
       reviews: receivedReviews || [],
-      references: (refs || []).map((row: any) => ({ ...row, candidate_name: candidateMap.get(row.candidate_id)?.full_name || 'Talent', candidate_user_id: candidateMap.get(row.candidate_id)?.user_id || null, candidate_title: candidateMap.get(row.candidate_id)?.current_job_title || null })),
+      references: (refs || []).map((row: any) => ({ ...row, candidate_name: candidateMap.get(row.candidate_id)?.full_name || 'Talent', candidate_user_id: candidateMap.get(row.candidate_id)?.user_id || null })),
     })
   }
 
