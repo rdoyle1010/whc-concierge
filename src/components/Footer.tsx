@@ -11,18 +11,33 @@ const WHC_LINKEDIN = 'https://www.linkedin.com/company/wellnesshousecollective/'
 const WHC_INSTAGRAM = 'https://www.instagram.com/wellnesshousecollective/'
 const WHC_FACEBOOK = 'https://www.facebook.com/wellnesshousecollective'
 
+let cachedEditorialBand = DEFAULT_PUBLIC_PAGES_CONTENT.editorialBand
+let publicPagesPromise: Promise<any> | null = null
+
+function loadPublicPagesOnce() {
+  if (!publicPagesPromise) {
+    publicPagesPromise = fetch('/api/public-pages', { cache: 'force-cache' })
+      .then(response => response.ok ? response.json() : null)
+      .catch(() => null)
+  }
+  return publicPagesPromise
+}
+
 export default function Footer({ siteContent }: { siteContent?: WebsiteContent }) {
   const content = siteContent || DEFAULT_WEBSITE_CONTENT
-  const [editorialImages, setEditorialImages] = useState(DEFAULT_PUBLIC_PAGES_CONTENT.editorialBand)
+  const [editorialImages, setEditorialImages] = useState(cachedEditorialBand)
   const [copied, setCopied] = useState(false)
 
   useEffect(() => {
-    fetch('/api/public-pages')
-      .then(response => response.ok ? response.json() : null)
-      .then(data => {
-        if (Array.isArray(data?.content?.editorialBand) && data.content.editorialBand.length === 4) setEditorialImages(data.content.editorialBand)
-      })
-      .catch(() => {})
+    let active = true
+    loadPublicPagesOnce().then(data => {
+      if (!active) return
+      if (Array.isArray(data?.content?.editorialBand) && data.content.editorialBand.length === 4) {
+        cachedEditorialBand = data.content.editorialBand
+        setEditorialImages(cachedEditorialBand)
+      }
+    })
+    return () => { active = false }
   }, [])
 
   const primary = [
@@ -99,7 +114,7 @@ export default function Footer({ siteContent }: { siteContent?: WebsiteContent }
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-px md:gap-3 bg-[#e3e7eb] md:bg-transparent">
             {editorialImages.map((image, index) => (
               <div key={`${image.url}-${index}`} className="group relative overflow-hidden bg-[#f2f4f6] aspect-[4/5] md:aspect-[3/4]">
-                {image.url ? <img src={image.url} alt={image.alt} loading="lazy" decoding="async" className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.025]" style={{ objectPosition: `${image.focalX}% ${image.focalY}%` }} /> : null}
+                {image.url ? <img src={image.url} alt={image.alt} loading="lazy" decoding="async" fetchPriority="low" className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.025]" style={{ objectPosition: `${image.focalX}% ${image.focalY}%` }} /> : null}
                 <div className="absolute inset-0 bg-gradient-to-t from-[#071d2d]/55 via-transparent to-transparent" />
                 <p className="absolute bottom-4 left-4 right-4 text-[9px] md:text-[10px] uppercase tracking-[.16em] font-semibold text-white/90">{image.label}</p>
               </div>
