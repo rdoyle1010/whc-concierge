@@ -5,12 +5,14 @@ import { geocodePostcode } from '@/lib/geo'
 
 const ALLOWED_FIELDS = [
   'job_title', 'job_description', 'location', 'location_postcode', 'radius_miles',
-  'job_type', 'contract_type', 'required_role_level', 'salary_min', 'salary_max',
+  'job_type', 'contract_type', 'required_role_level', 'candidate_scope', 'salary_min', 'salary_max',
   'required_skills', 'required_brands', 'required_qualifications', 'required_systems',
   'preferred_business_skills', 'min_years_experience', 'shift_pattern',
   'offers_accommodation', 'requirements', 'benefits', 'insurance_required',
   'is_agency_role', 'is_residency_role', 'tier', 'is_live', 'status',
 ] as const
+
+const CANDIDATE_SCOPES = new Set(['same_level', 'step_up', 'emerging', 'open_transferable'])
 
 export async function POST(req: NextRequest) {
   const auth = await createServerSupabaseClient()
@@ -38,30 +40,17 @@ export async function POST(req: NextRequest) {
   if (!['draft', 'pending_payment'].includes(String(payload.status))) {
     return NextResponse.json({ error: 'Invalid job status.' }, { status: 400 })
   }
-  // New roles cannot be made public by bypassing checkout.
+  if (!CANDIDATE_SCOPES.has(String(payload.candidate_scope || 'step_up'))) payload.candidate_scope = 'step_up'
   payload.is_live = false
 
-  // Permanent-role matching uses the same real distance model as Agency.
-  // Prefer the role postcode; if it is omitted, inherit the property's cached
-  // coordinates rather than making every role at that property location-blind.
   const rolePostcode = String(payload.location_postcode || '').trim()
   let coords: { latitude: number; longitude: number } | null = null
   if (rolePostcode) coords = await geocodePostcode(rolePostcode)
-  if (!coords && employer.latitude != null && employer.longitude != null) {
-    coords = { latitude: employer.latitude, longitude: employer.longitude }
-  }
+  if (!coords && employer.latitude != null && employer.longitude != null) coords = { latitude: employer.latitude, longitude: employer.longitude }
   if (!coords && employer.postcode) coords = await geocodePostcode(employer.postcode)
-  if (coords) {
-    payload.latitude = coords.latitude
-    payload.longitude = coords.longitude
-  }
+  if (coords) { payload.latitude = coords.latitude; payload.longitude = coords.longitude }
 
-  const { data: job, error } = await admin
-    .from('job_listings')
-    .insert(payload)
-    .select('id')
-    .single()
-
+  const { data: job, error } = await admin.from('job_listings').insert(payload).select('id').single()
   if (error) return NextResponse.json({ error: error.message }, { status: 400 })
   return NextResponse.json({ job })
 }
