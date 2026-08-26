@@ -8,6 +8,12 @@ const PROTECTED_PREFIXES = ['/talent', '/employer', '/hotel', '/admin']
 // Routes that should redirect logged-in users away (to dashboard or requested destination)
 const AUTH_PAGES = ['/login', '/register']
 
+// Employer routes included in an active Pro or Group membership.
+const EMPLOYER_PREMIUM_ROUTES: Record<string, string> = {
+  '/employer/candidates': 'talent-search',
+  '/employer/analytics': 'analytics',
+}
+
 // Maintenance / dev-only API routes that should be blocked in production
 const BLOCKED_API_ROUTES = [
   '/api/seed',
@@ -76,6 +82,27 @@ export async function proxy(request: NextRequest) {
     if (matchesRoutePrefix(pathname, '/employer') || matchesRoutePrefix(pathname, '/hotel')) loginUrl.searchParams.set('role', 'employer')
     if (matchesRoutePrefix(pathname, '/talent')) loginUrl.searchParams.set('role', 'talent')
     return NextResponse.redirect(loginUrl)
+  }
+
+  // Premium employer pages remain visible as locked items in navigation, but direct
+  // URL access is also enforced here so a free account cannot bypass the lock.
+  if (user) {
+    const premiumEntry = Object.entries(EMPLOYER_PREMIUM_ROUTES).find(([route]) => matchesRoutePrefix(pathname, route))
+    if (premiumEntry) {
+      const { data: employer } = await supabase
+        .from('employer_profiles')
+        .select('membership_tier')
+        .eq('user_id', user.id)
+        .maybeSingle()
+      const premium = employer?.membership_tier === 'pro' || employer?.membership_tier === 'group'
+      if (!premium) {
+        const billingUrl = request.nextUrl.clone()
+        billingUrl.pathname = '/employer/billing'
+        billingUrl.search = ''
+        billingUrl.searchParams.set('locked', premiumEntry[1])
+        return NextResponse.redirect(billingUrl)
+      }
+    }
   }
 
   // Auth pages: a signed-in user should continue to a valid requested destination,
