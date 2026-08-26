@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { createServerClient } from '@supabase/ssr'
-import { cookies } from 'next/headers'
 import { DATE_RE, validShiftWindow } from '@/lib/agency-time'
+import { getRequestUser } from '@/lib/request-user'
 
 // Therapist availability calendar. Available dates now carry one or more
 // private time windows; employers only receive a derived match status.
@@ -11,26 +10,15 @@ import { DATE_RE, validShiftWindow } from '@/lib/agency-time'
 //   (no row)      → availability not confirmed
 // All writes via service role - RLS on agency_availability is locked down.
 
-async function getAuthedUser() {
-  const cookieStore = await cookies()
-  const supabaseAuth = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    { cookies: { getAll() { return cookieStore.getAll() }, setAll() {} } }
-  )
-  return supabaseAuth.auth.getUser()
-}
-
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
-    const { data: { user } } = await getAuthedUser()
+    const user = await getRequestUser(req)
     if (!user) return NextResponse.json({ error: 'Please log in' }, { status: 401 })
 
     const admin = createAdminClient()
     const { data: cand } = await admin.from('candidate_profiles').select('id').eq('user_id', user.id).maybeSingle()
     if (!cand) return NextResponse.json({ error: 'No candidate profile found' }, { status: 404 })
 
-    // Everything from today forward (past rows are irrelevant to the queue)
     const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Europe/London' })
     const [{ data, error }, { data: windows, error: windowError }] = await Promise.all([
       admin.from('agency_availability').select('date, available').eq('candidate_id', cand.id).gte('date', today),
@@ -45,7 +33,7 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   try {
-    const { data: { user } } = await getAuthedUser()
+    const user = await getRequestUser(req)
     if (!user) return NextResponse.json({ error: 'Please log in' }, { status: 401 })
 
     const admin = createAdminClient()
@@ -76,8 +64,12 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: 'Choose a valid start and finish time' }, { status: 400 })
       }
       const { error: windowError } = await admin.from('agency_availability_windows').upsert({
-        candidate_id: cand.id, date, start_time: startTime, end_time: endTime,
-        timezone: 'Europe/London', updated_at: new Date().toISOString(),
+        candidate_id: cand.id,
+        date,
+        start_time: startTime,
+        end_time: endTime,
+        timezone: 'Europe/London',
+        updated_at: new Date().toISOString(),
       }, { onConflict: 'candidate_id,date,start_time,end_time' })
       if (windowError) return NextResponse.json({ error: windowError.message }, { status: 500 })
     } else {
@@ -85,8 +77,7 @@ export async function POST(req: NextRequest) {
       if (windowError) return NextResponse.json({ error: windowError.message }, { status: 500 })
     }
 
-    const { error } = await admin
-      .from('agency_availability')
+    const { error } = await admin.from('agency_availability')
       .upsert({ candidate_id: cand.id, date, available: state === 'available' }, { onConflict: 'candidate_id,date' })
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
     return NextResponse.json({ success: true })
