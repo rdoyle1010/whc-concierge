@@ -1,18 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerClient } from '@supabase/ssr'
-import { cookies } from 'next/headers'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createNotification } from '@/lib/notifications'
+import { getRequestUser } from '@/lib/request-user'
 
 export async function POST(req: NextRequest) {
   try {
-    const cookieStore = await cookies()
-    const auth = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      { cookies: { getAll() { return cookieStore.getAll() }, setAll() {} } },
-    )
-    const { data: { user } } = await auth.auth.getUser()
+    const user = await getRequestUser(req)
     if (!user) return NextResponse.json({ error: 'Please sign in as an employer to send an offer.' }, { status: 401 })
 
     const body = await req.json()
