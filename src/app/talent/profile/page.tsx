@@ -8,417 +8,71 @@ import CollapsibleCheckboxSection from '@/components/CollapsibleCheckboxSection'
 import { ROLE_LEVELS, TRAVEL_OPTIONS, AVAILABILITY_STATUSES } from '@/lib/constants'
 import { SERVICES_CATEGORIES, PRODUCT_HOUSES_FULL as PRODUCT_HOUSES, QUALS_CATEGORIES, SYSTEMS_FULL } from '@/lib/taxonomy'
 import type { CvSuggestions } from '@/lib/cv-analysis'
-import { Save, Upload, FileText, Sparkles, CheckCircle2, Eye, Award } from 'lucide-react'
+import { Save, Upload, FileText, Sparkles, CheckCircle2, Eye, Award, ShieldCheck, BrainCircuit } from 'lucide-react'
 import { courseTitle } from '@/lib/academy'
 
-// Merge systems into quals for talent display (keeps existing UI behaviour)
-const QUALS_WITH_SYSTEMS = [
-  ...QUALS_CATEGORIES,
-  { name: 'Systems', items: SYSTEMS_FULL },
-]
+const BUSINESS_SKILLS = ['Reception & Front of House','Revenue Management','Stock Control','Team Leadership','Staff Training','Rota Management','KPI Reporting','Health & Safety','COSHH Management','Budget Management','Client Consultation','Upselling & Retail','Social Media','Event Coordination','Membership Management']
 
 export default function TalentProfilePage() {
-  const supabase = createClient()
-  const [profile, setProfile] = useState<any>(null)
-  const [loading, setLoading] = useState(true)
-  const [saving, setSaving] = useState(false)
-  const [message, setMessage] = useState('')
-  const [analysingCv, setAnalysingCv] = useState(false)
-  const [cvSuggestions, setCvSuggestions] = useState<CvSuggestions | null>(null)
-  const [academyBadges, setAcademyBadges] = useState<{ course_slug: string; completed_at: string; certificate_code?: string }[]>([])
+  const supabase=createClient(); const [profile,setProfile]=useState<any>(null); const [loading,setLoading]=useState(true); const [saving,setSaving]=useState(false); const [message,setMessage]=useState('')
+  const [analysingCv,setAnalysingCv]=useState(false); const [cvSuggestions,setCvSuggestions]=useState<CvSuggestions|null>(null); const [aiCvConsent,setAiCvConsent]=useState(false)
+  const [academyBadges,setAcademyBadges]=useState<{course_slug:string;completed_at:string;certificate_code?:string}[]>([])
 
-  useEffect(() => {
-    async function load() {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return
-      const { data } = await supabase.from('candidate_profiles').select('*').eq('user_id', user.id).single()
-      setProfile(data || {})
-      if (data?.id) {
-        const { data: completed } = await supabase.from('course_enrollments')
-          .select('course_slug, completed_at, certificate_code')
-          .eq('candidate_id', data.id)
-          .not('completed_at', 'is', null)
-          .order('completed_at', { ascending: false })
-        setAcademyBadges(completed || [])
-      }
-      setLoading(false)
-    }
-    load()
-  }, [])
+  useEffect(()=>{(async()=>{const {data:{user}}=await supabase.auth.getUser();if(!user)return;const {data}=await supabase.from('candidate_profiles').select('*').eq('user_id',user.id).single();setProfile(data||{});if(data?.id){const {data:completed}=await supabase.from('course_enrollments').select('course_slug,completed_at,certificate_code').eq('candidate_id',data.id).not('completed_at','is',null).order('completed_at',{ascending:false});setAcademyBadges(completed||[])}setLoading(false)})()},[])
+  const u=(field:string,value:any)=>setProfile((p:any)=>({...p,[field]:value}))
+  const completionItems=[!!profile?.full_name,!!profile?.role_level,!!profile?.headline,!!profile?.bio,(profile?.services_offered?.length||0)>0,(profile?.qualifications?.length||0)>0,!!profile?.cv_url,!!profile?.experience_years,!!profile?.postcode,(profile?.business_skills?.length||0)>0]
+  const completionPct=profile?Math.round(completionItems.filter(Boolean).length/completionItems.length*100):0
 
-  const u = (field: string, value: any) => setProfile((p: any) => ({ ...p, [field]: value }))
+  async function handleSave(){if(!profile?.id)return;setSaving(true);setMessage('');const data={full_name:profile.full_name,phone:profile.phone||null,postcode:profile.postcode||null,location:profile.postcode||null,has_car:!!profile.has_car,role_level:profile.role_level||null,headline:profile.headline||null,bio:profile.bio||null,experience_years:profile.experience_years?parseInt(profile.experience_years):null,day_rate_min:profile.day_rate_min?parseInt(profile.day_rate_min):null,day_rate_max:profile.day_rate_max?parseInt(profile.day_rate_max):null,availability_status:profile.availability_status||null,right_to_work:profile.right_to_work||null,services_offered:profile.services_offered?.length?profile.services_offered:null,product_houses:profile.product_houses?.length?profile.product_houses:null,qualifications:profile.qualifications?.length?profile.qualifications:null,systems_experience:profile.systems_experience?.length?profile.systems_experience:null,business_skills:profile.business_skills?.length?profile.business_skills:null,career_evidence:profile.career_evidence?.length?profile.career_evidence:null,travel_availability:profile.travel_availability||'uk_only',travel_radius_miles:profile.travel_radius_miles?parseInt(profile.travel_radius_miles):null,has_insurance:!!profile.has_insurance,profile_completion_score:completionPct}
+    const res=await fetch('/api/profile/update',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({profileId:profile.id,data})});const result=await res.json().catch(()=>({}));setSaving(false);setMessage(res.ok?'Profile saved successfully!':result.error||'Save failed');setTimeout(()=>setMessage(''),4000)}
 
-  // ─── Completion score ───
-  const completionItems = [
-    { done: !!profile?.full_name, label: 'Full name' },
-    { done: !!profile?.role_level, label: 'Role level' },
-    { done: !!profile?.headline, label: 'Headline' },
-    { done: !!profile?.bio, label: 'Bio' },
-    { done: (profile?.services_offered?.length || 0) > 0, label: 'Services offered' },
-    { done: (profile?.product_houses?.length || 0) > 0, label: 'Product houses' },
-    { done: (profile?.qualifications?.length || 0) > 0, label: 'Qualifications' },
-    { done: !!profile?.cv_url, label: 'CV uploaded' },
-    { done: !!profile?.experience_years, label: 'Experience' },
-    { done: !!profile?.postcode, label: 'Postcode' },
-  ]
-  const completionPct = profile ? Math.round(completionItems.filter(i => i.done).length / completionItems.length * 100) : 0
+  const userId=profile?.user_id||profile?.id
+  async function uploadViaApi(file:File,bucket:string,path:string,column?:string){const fd=new FormData();fd.append('file',file);fd.append('bucket',bucket);fd.append('path',path);if(profile?.id&&column){fd.append('profileId',profile.id);fd.append('column',column)}const res=await fetch('/api/upload',{method:'POST',body:fd});const data=await res.json();if(!res.ok){setMessage(`Upload failed: ${data.error}`);return null}return data.url as string}
+  async function handlePhotoUpload(e:React.ChangeEvent<HTMLInputElement>){const file=e.target.files?.[0];if(!file||!userId)return;const ext=file.name.split('.').pop()||'jpg';const url=await uploadViaApi(file,'site-images',`${userId}/profile/photo.${ext}`,'profile_image_url');if(url){u('profile_image_url',url);setMessage('Photo updated!')}}
+  async function handleCvUpload(e:React.ChangeEvent<HTMLInputElement>){const file=e.target.files?.[0];if(!file||!userId)return;const ext=file.name.split('.').pop()||'pdf';const url=await uploadViaApi(file,'talent-documents',`${userId}/cv.${ext}`,'cv_url');if(url){u('cv_url',url);setCvSuggestions(null);setAiCvConsent(false);setMessage('CV uploaded. You can now choose whether to analyse it with WHC AI.')}}
+  async function handleInsuranceUpload(e:React.ChangeEvent<HTMLInputElement>){const file=e.target.files?.[0];if(!file||!userId)return;const ext=file.name.split('.').pop()||'pdf';const url=await uploadViaApi(file,'talent-documents',`${userId}/insurance.${ext}`,'insurance_document_url');if(url){u('insurance_document_url',url);setMessage('Insurance uploaded!')}}
+  async function handleCertsUpload(e:React.ChangeEvent<HTMLInputElement>){const files=e.target.files;if(!files||!userId)return;const urls:string[]=[...(profile.certificates_urls||[])];for(const file of Array.from(files)){const url=await uploadViaApi(file,'talent-documents',`${userId}/cert_${Date.now()}_${file.name}`);if(url)urls.push(url)}await fetch('/api/profile/update',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({profileId:profile.id,data:{certificates_urls:urls}})});u('certificates_urls',urls);setMessage('Certificates uploaded!')}
 
-  // ─── Save ───
-  const handleSave = async () => {
-    if (!profile?.id) return
-    setSaving(true); setMessage('')
+  async function analyseCurrentCv(){if(!profile?.id||!profile?.cv_url||!aiCvConsent)return;setAnalysingCv(true);setMessage('');const res=await fetch('/api/cv/analyse',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({profileId:profile.id,aiConsent:true})});const result=await res.json().catch(()=>({}));setAnalysingCv(false);if(!res.ok){setMessage(result.error||'CV analysis failed');return}setCvSuggestions(result.suggestions)}
+  function applyCvSuggestions(){if(!cvSuggestions)return;setProfile((c:any)=>({...c,role_level:cvSuggestions.roleLevel||c.role_level,experience_years:cvSuggestions.experienceYears||c.experience_years,services_offered:Array.from(new Set([...(c.services_offered||[]),...(cvSuggestions.services||[])])),product_houses:Array.from(new Set([...(c.product_houses||[]),...(cvSuggestions.productHouses||[])])),qualifications:Array.from(new Set([...(c.qualifications||[]),...(cvSuggestions.qualifications||[])])),systems_experience:Array.from(new Set([...(c.systems_experience||[]),...(cvSuggestions.systems||[])])),business_skills:Array.from(new Set([...(c.business_skills||[]),...(cvSuggestions.businessSkills||[])])),career_evidence:Array.from(new Set([...(c.career_evidence||[]),...(cvSuggestions.careerEvidence||[])]))}));setCvSuggestions(null);setMessage('Suggestions added for your review. Nothing becomes final until you Save Changes.')}
 
-    const systemsList = QUALS_WITH_SYSTEMS[2].items
-    const allQuals = profile.qualifications || []
-    const systems_experience = allQuals.filter((q: string) => systemsList.includes(q))
-    const qualifications_only = allQuals.filter((q: string) => !systemsList.includes(q))
+  if(loading)return <DashboardShell role="talent"><div className="h-64 flex items-center justify-center">Loading…</div></DashboardShell>
+  if(!profile?.id)return <DashboardShell role="talent"><p>Profile not found.</p></DashboardShell>
+  return <DashboardShell role="talent" userName={profile.full_name}><div className="max-w-3xl">
+    <div className="flex items-center justify-between gap-3 mb-2"><div><p className="dashboard-eyebrow">Career profile</p><h1 className="dashboard-section-title">Edit Profile</h1></div><div className="flex gap-2"><Link href="/talent/profile/preview" className="btn-secondary inline-flex items-center gap-2"><Eye size={14}/>Preview</Link><button onClick={handleSave} disabled={saving} className="btn-primary inline-flex items-center gap-2"><Save size={14}/>{saving?'Saving...':'Save Changes'}</button></div></div>
+    <div className="flex items-center gap-3 mb-8"><div className="flex-1 h-1.5 bg-[#eef2f4] rounded-full overflow-hidden"><div className="h-full bg-[#0b2f4d]" style={{width:`${completionPct}%`}}/></div><span className="text-[12px]">{completionPct}%</span></div>
+    {message&&<div className="mb-6 rounded-lg bg-[#f1f4f6] px-4 py-3 text-[12px] text-[#53636f]">{message}</div>}
+    <div className="space-y-6">
+      <section className="dashboard-card"><p className="eyebrow">WHC Academy achievements</p>{academyBadges.length?<div className="mt-4 space-y-2">{academyBadges.map(b=><div key={b.course_slug} className="flex justify-between border border-border rounded-lg p-3"><div><p className="text-[13px] font-semibold">{courseTitle(b.course_slug)}</p><p className="text-[10px] text-muted">Completed {new Date(b.completed_at).toLocaleDateString('en-GB')}</p></div><Award size={17}/></div>)}</div>:<p className="text-[12px] text-muted mt-2">Completed Academy courses will appear here.</p>}</section>
 
-    const data: Record<string, any> = {
-      full_name: profile.full_name,
-      phone: profile.phone || null,
-      postcode: profile.postcode || null,
-      location: profile.postcode || null,
-      has_car: profile.has_car || false,
-      role_level: profile.role_level || null,
-      headline: profile.headline || null,
-      bio: profile.bio || null,
-      experience_years: profile.experience_years ? parseInt(profile.experience_years) : null,
-      day_rate_min: profile.day_rate_min ? parseInt(profile.day_rate_min) : null,
-      day_rate_max: profile.day_rate_max ? parseInt(profile.day_rate_max) : null,
-      availability_status: profile.availability_status || null,
-      services_offered: (profile.services_offered?.length || 0) > 0 ? profile.services_offered : null,
-      product_houses: (profile.product_houses?.length || 0) > 0 ? profile.product_houses : null,
-      qualifications: qualifications_only.length > 0 ? qualifications_only : null,
-      systems_experience: systems_experience.length > 0 ? systems_experience : null,
-      travel_availability: profile.travel_availability || 'uk_only',
-      travel_radius_miles: profile.travel_radius_miles ? parseInt(profile.travel_radius_miles) : null,
-      has_insurance: profile.has_insurance || false,
-      profile_completion_score: completionPct,
-    }
+      <section className="dashboard-card space-y-4"><p className="eyebrow">Personal details</p><div className="flex items-center gap-4"><div className="w-16 h-16 rounded-full overflow-hidden bg-[#eef2f4]">{profile.profile_image_url&&<img src={profile.profile_image_url} alt="" className="w-full h-full object-cover"/>}</div><label className="btn-secondary cursor-pointer inline-flex gap-2"><Upload size={13}/>Upload Photo<input type="file" accept="image/*" className="hidden" onChange={handlePhotoUpload}/></label></div><div className="grid sm:grid-cols-2 gap-4"><Field label="Full name"><input className="input-field" value={profile.full_name||''} onChange={e=>u('full_name',e.target.value)}/></Field><Field label="Phone"><input className="input-field" value={profile.phone||''} onChange={e=>u('phone',e.target.value)}/></Field><Field label="Postcode"><input className="input-field" value={profile.postcode||''} onChange={e=>u('postcode',e.target.value)}/></Field><Field label="Right to work"><select className="input-field" value={profile.right_to_work||''} onChange={e=>u('right_to_work',e.target.value)}><option value="">Select</option><option value="uk">Right to work in the UK</option><option value="ireland">Right to work in Ireland</option><option value="uk_ireland">Right to work in UK & Ireland</option><option value="visa_required">Visa / sponsorship required</option></select></Field></div></section>
 
-    // Save via server API to bypass RLS
-    const res = await fetch('/api/profile/update', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ profileId: profile.id, data }),
-    })
-    const result = await res.json()
-    setSaving(false)
-    setMessage(res.ok ? 'Profile saved successfully!' : (result.error || 'Save failed'))
-    setTimeout(() => setMessage(''), 4000)
-  }
+      <section className="dashboard-card space-y-4"><p className="eyebrow">Professional details</p><Field label="Current role level"><select className="input-field" value={profile.role_level||''} onChange={e=>u('role_level',e.target.value)}><option value="">Select</option>{ROLE_LEVELS.map(r=><option key={r}>{r}</option>)}</select></Field><Field label="Headline"><input className="input-field" value={profile.headline||''} onChange={e=>u('headline',e.target.value)} placeholder="e.g. Spa Manager | Luxury Hospitality | Commercial & People Leadership"/></Field><Field label="Bio"><textarea rows={4} className="input-field" value={profile.bio||''} onChange={e=>u('bio',e.target.value)}/></Field><div className="grid sm:grid-cols-3 gap-4"><Field label="Experience years"><input type="number" className="input-field" value={profile.experience_years||''} onChange={e=>u('experience_years',e.target.value)}/></Field><Field label="Day rate min"><input type="number" className="input-field" value={profile.day_rate_min||''} onChange={e=>u('day_rate_min',e.target.value)}/></Field><Field label="Day rate max"><input type="number" className="input-field" value={profile.day_rate_max||''} onChange={e=>u('day_rate_max',e.target.value)}/></Field></div><Field label="Availability"><select className="input-field" value={profile.availability_status||''} onChange={e=>u('availability_status',e.target.value)}>{AVAILABILITY_STATUSES.map(a=><option key={a.value} value={a.value}>{a.label}</option>)}</select></Field></section>
 
-  // ─── File uploads via server-side API (bypasses storage RLS) ───
-  const userId = profile?.user_id || profile?.id
+      <CollapsibleCheckboxSection title="Services Offered" categories={SERVICES_CATEGORIES} selected={profile.services_offered||[]} onChange={v=>u('services_offered',v)}/>
+      <CollapsibleCheckboxSection title="Product Houses" flatItems={PRODUCT_HOUSES} selected={profile.product_houses||[]} onChange={v=>u('product_houses',v)}/>
+      <CollapsibleCheckboxSection title="Qualifications & Certifications" categories={QUALS_CATEGORIES} selected={profile.qualifications||[]} onChange={v=>u('qualifications',v)}/>
+      <CollapsibleCheckboxSection title="Systems Experience" flatItems={SYSTEMS_FULL} selected={profile.systems_experience||[]} onChange={v=>u('systems_experience',v)}/>
+      <CollapsibleCheckboxSection title="Leadership & Business Skills" flatItems={BUSINESS_SKILLS} selected={profile.business_skills||[]} onChange={v=>u('business_skills',v)}/>
 
-  const uploadViaApi = async (file: File, bucket: string, path: string, column?: string): Promise<string | null> => {
-    const formData = new FormData()
-    formData.append('file', file)
-    formData.append('bucket', bucket)
-    formData.append('path', path)
-    if (profile?.id && column) {
-      formData.append('profileId', profile.id)
-      formData.append('column', column)
-    }
-    const res = await fetch('/api/upload', { method: 'POST', body: formData })
-    const data = await res.json()
-    if (!res.ok) { setMessage(`Upload failed: ${data.error}`); return null }
-    return data.url
-  }
+      <section className="dashboard-card space-y-4"><div className="flex items-start justify-between gap-4"><div><p className="eyebrow">CV intelligence</p><h2 className="text-[23px] mt-1">Turn your CV into better matching evidence.</h2><p className="text-[12px] text-secondary mt-2">WHC first extracts exact facts, then — only when you choose — uses AI to identify transferable leadership and commercial evidence. AI suggestions never change your profile automatically.</p></div><BrainCircuit size={22} className="text-[#6f7f88]"/></div>
+        {profile.cv_url?<div className="flex items-center gap-2 border border-border rounded-lg p-3"><FileText size={14}/><a href={profile.cv_url} target="_blank" rel="noopener noreferrer" className="text-[13px] flex-1 truncate">Current CV</a><label className="text-[11px] cursor-pointer">Replace<input type="file" accept=".pdf,.docx" className="hidden" onChange={handleCvUpload}/></label></div>:<label className="border border-dashed border-border rounded-lg p-5 text-center cursor-pointer block"><Upload size={16} className="mx-auto mb-2"/><span className="text-[12px]">Upload CV (PDF or .docx)</span><input type="file" accept=".pdf,.docx" className="hidden" onChange={handleCvUpload}/></label>}
+        {profile.cv_url&&<><label className="flex items-start gap-3 rounded-lg border border-[#dfe5e8] bg-[#f7f9fa] p-4"><input type="checkbox" checked={aiCvConsent} onChange={e=>setAiCvConsent(e.target.checked)} className="mt-1"/><span className="text-[11px] leading-5 text-secondary"><strong className="text-ink">Analyse my CV with WHC AI.</strong> I understand WHC will process the text of my CV to create career and matching suggestions. The raw CV text is not added to my public profile and suggestions are not saved unless I approve them.</span></label><button type="button" onClick={analyseCurrentCv} disabled={!aiCvConsent||analysingCv} className="btn-primary w-full inline-flex items-center justify-center gap-2 disabled:opacity-40"><Sparkles size={14}/>{analysingCv?'Analysing privately...':'Analyse CV with WHC AI'}</button></>}
+        {cvSuggestions&&<div className="rounded-xl border border-[#dfe5e8] bg-white p-5 space-y-4"><div className="flex items-start gap-2"><ShieldCheck size={17} className="text-[#6f7f88]"/><div><p className="text-[14px] font-semibold">Suggestions ready</p><p className="text-[11px] text-muted">{cvSuggestions.aiEnhanced?'AI-enhanced analysis completed.':'Exact CV extraction completed; AI was unavailable, so no AI inference was used.'}</p></div></div><div className="grid sm:grid-cols-2 gap-3 text-[12px]"><Mini label="Current role" value={cvSuggestions.roleLevel||'Not confidently detected'}/><Mini label="Experience" value={cvSuggestions.experienceYears?`${cvSuggestions.experienceYears} years`:'Not confidently detected'}/><Mini label="Business skills" value={`${cvSuggestions.businessSkills?.length||0} found`}/><Mini label="Career evidence" value={`${cvSuggestions.careerEvidence?.length||0} evidence points`}/></div>
+          {!!cvSuggestions.progressionSignals?.length&&<div><p className="eyebrow mb-2">Progression signals</p>{cvSuggestions.progressionSignals.map(x=><p key={x} className="text-[12px] leading-5 text-secondary flex gap-2 mb-2"><CheckCircle2 size={13} className="mt-1 shrink-0"/>{x}</p>)}</div>}
+          {!!cvSuggestions.careerEvidence?.length&&<div><p className="eyebrow mb-2">Evidence found in your CV</p>{cvSuggestions.careerEvidence.map(x=><p key={x} className="text-[12px] leading-5 text-secondary flex gap-2 mb-2"><CheckCircle2 size={13} className="mt-1 shrink-0"/>{x}</p>)}</div>}
+          <div className="flex gap-2"><button onClick={applyCvSuggestions} className="btn-primary flex-1">Use approved suggestions</button><button onClick={()=>setCvSuggestions(null)} className="btn-secondary">Dismiss</button></div></div>}
+      </section>
 
-  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]; if (!file || !userId) return
-    const ext = file.name.split('.').pop() || 'jpg'
-    // Use site-images (public) so photos are accessible
-    const url = await uploadViaApi(file, 'site-images', `${userId}/profile/photo.${ext}`, 'profile_image_url')
-    if (url) { u('profile_image_url', url); setMessage('Photo updated!'); setTimeout(() => setMessage(''), 3000) }
-  }
+      {!!profile.career_evidence?.length&&<section className="dashboard-card"><p className="eyebrow">Career evidence used in matching</p><p className="text-[11px] text-muted mt-1">These are short evidence statements you approved from your CV. They help WHC recognise progression potential without changing your current job title.</p><div className="mt-4 space-y-2">{profile.career_evidence.map((x:string)=><div key={x} className="flex gap-2 text-[12px] text-secondary"><CheckCircle2 size={13} className="mt-1 shrink-0"/>{x}</div>)}</div></section>}
 
-  const handleCvUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]; if (!file || !userId) return
-    const ext = file.name.split('.').pop() || 'pdf'
-    const url = await uploadViaApi(file, 'talent-documents', `${userId}/cv.${ext}`, 'cv_url')
-    if (url) {
-      u('cv_url', url)
-      setCvSuggestions(null)
-      setMessage('CV uploaded. Select Analyse CV to review suggested profile details.')
-      setTimeout(() => setMessage(''), 5000)
-    }
-  }
+      <section className="dashboard-card space-y-4"><p className="eyebrow">Documents & insurance</p><Field label="Certificates">{(profile.certificates_urls||[]).map((url:string,i:number)=><a key={url} href={url} target="_blank" rel="noopener noreferrer" className="block text-[12px] underline mb-1">Certificate {i+1}</a>)}<label className="btn-secondary inline-flex cursor-pointer mt-2">Add certificates<input type="file" accept=".pdf" multiple className="hidden" onChange={handleCertsUpload}/></label></Field><label className="flex gap-2 text-[13px]"><input type="checkbox" checked={!!profile.has_insurance} onChange={e=>u('has_insurance',e.target.checked)}/>I have professional insurance (optional unless a role requires it)</label>{profile.has_insurance&&(profile.insurance_document_url?<a href={profile.insurance_document_url} target="_blank" rel="noopener noreferrer" className="text-[12px] underline">View insurance certificate</a>:<label className="btn-secondary inline-flex cursor-pointer">Upload insurance<input type="file" accept=".pdf" className="hidden" onChange={handleInsuranceUpload}/></label>)}</section>
 
-  const analyseCurrentCv = async () => {
-    if (!profile?.id || !profile?.cv_url) return
-    setAnalysingCv(true); setMessage('')
-    const res = await fetch('/api/cv/analyse', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ profileId: profile.id }),
-    })
-    const result = await res.json().catch(() => ({}))
-    setAnalysingCv(false)
-    if (!res.ok) { setMessage(result.error || 'CV analysis failed'); return }
-    setCvSuggestions(result.suggestions)
-  }
-
-  const applyCvSuggestions = () => {
-    if (!cvSuggestions) return
-    setProfile((current: any) => ({
-      ...current,
-      role_level: cvSuggestions.roleLevel || current.role_level,
-      experience_years: cvSuggestions.experienceYears || current.experience_years,
-      services_offered: Array.from(new Set([...(current.services_offered || []), ...(cvSuggestions.services || [])])),
-      product_houses: Array.from(new Set([...(current.product_houses || []), ...(cvSuggestions.productHouses || [])])),
-      qualifications: Array.from(new Set([...(current.qualifications || []), ...(current.systems_experience || []), ...(cvSuggestions.qualifications || []), ...(cvSuggestions.systems || [])])),
-    }))
-    setCvSuggestions(null)
-    setMessage('CV suggestions added successfully for review. Press Save Changes when you are satisfied they are accurate.')
-  }
-
-  const handleInsuranceUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]; if (!file || !userId) return
-    const ext = file.name.split('.').pop() || 'pdf'
-    const url = await uploadViaApi(file, 'talent-documents', `${userId}/insurance.${ext}`, 'insurance_document_url')
-    if (url) { u('insurance_document_url', url); setMessage('Insurance uploaded!'); setTimeout(() => setMessage(''), 3000) }
-  }
-
-  const handleCertsUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files; if (!files || !userId) return
-    const urls: string[] = [...(profile.certificates_urls || [])]
-    for (const file of Array.from(files)) {
-      const url = await uploadViaApi(file, 'talent-documents', `${userId}/cert_${Date.now()}_${file.name}`)
-      if (url) urls.push(url)
-    }
-    // Update via server API to bypass RLS
-    await fetch('/api/profile/update', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ profileId: profile.id, data: { certificates_urls: urls } }) })
-    u('certificates_urls', urls); setMessage('Certificates uploaded!')
-    setTimeout(() => setMessage(''), 3000)
-  }
-
-  if (loading) return <DashboardShell role="talent"><div className="flex items-center justify-center h-64"><div className="animate-spin w-6 h-6 border-2 border-ink border-t-transparent rounded-full" /></div></DashboardShell>
-  if (!profile?.id) return <DashboardShell role="talent"><p className="text-muted">Profile not found. Please complete registration first.</p></DashboardShell>
-
-  return (
-    <DashboardShell role="talent" userName={profile.full_name}>
-      <div className="max-w-2xl">
-        {/* Header + save */}
-        <div className="flex items-center justify-between mb-2">
-          <h1 className="text-[24px] font-medium text-ink">Edit Profile</h1>
-          <div className="flex items-center gap-2">
-            <Link href="/talent/profile/preview" className="btn-secondary flex items-center gap-2">
-              <Eye size={14} />Preview my profile
-            </Link>
-            <button type="button" onClick={handleSave} disabled={saving} className="btn-primary flex items-center gap-2 disabled:opacity-50">
-              <Save size={14} />{saving ? 'Saving...' : 'Save Changes'}
-            </button>
-          </div>
-        </div>
-
-        {/* Completion bar */}
-        <div className="flex items-center gap-3 mb-8">
-          <div className="flex-1 h-1.5 bg-surface rounded-full overflow-hidden"><div className="h-full bg-ink rounded-full transition-all" style={{ width: `${completionPct}%` }} /></div>
-          <span className="text-[13px] font-medium text-ink">{completionPct}%</span>
-        </div>
-
-        {message && <div className={`text-[13px] px-4 py-3 rounded-lg mb-6 ${message.includes('success') || message.includes('updated') || message.includes('uploaded') ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-600'}`}>{message}</div>}
-
-        <div className="space-y-6">
-
-          <div className="dashboard-card space-y-3">
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <p className="eyebrow">WHC Academy achievements</p>
-                <p className="text-[12px] text-muted mt-1">Completed courses stay on your profile and are visible to approved employers.</p>
-              </div>
-              <Award size={18} className="text-accent shrink-0" />
-            </div>
-            {academyBadges.length > 0 ? (
-              <div className="space-y-2">
-                {academyBadges.map(badge => (
-                  <div key={badge.course_slug} className="flex items-center justify-between gap-3 rounded-lg border border-border bg-surface px-3 py-2.5">
-                    <div>
-                      <p className="text-[13px] font-medium text-ink">{courseTitle(badge.course_slug)}</p>
-                      <p className="text-[10px] text-muted">Completed {new Date(badge.completed_at).toLocaleDateString('en-GB')}</p>
-                    </div>
-                    <Link href={`/talent/academy/certificate/${badge.course_slug}`} className="text-[11px] font-medium text-accent hover:underline">View certificate</Link>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="rounded-lg border border-dashed border-border px-4 py-4 text-center">
-                <p className="text-[12px] text-muted">Complete an Academy course to display its verified certificate here.</p>
-                <Link href="/talent/academy" className="text-[12px] font-medium text-accent hover:underline">Browse Academy courses</Link>
-              </div>
-            )}
-          </div>
-
-
-          {/* ── S1: Personal Details ── */}
-          <div className="dashboard-card space-y-4">
-            <p className="eyebrow">Personal Details</p>
-            <div className="flex items-center gap-4">
-              <div className="w-16 h-16 bg-surface border border-border rounded-full flex items-center justify-center overflow-hidden shrink-0">
-                {profile.profile_image_url ? <img src={profile.profile_image_url} alt="" className="w-full h-full object-cover" /> : <span className="text-[20px] font-semibold text-muted">{profile.full_name?.[0]}</span>}
-              </div>
-              <label className="btn-secondary cursor-pointer flex items-center gap-2 text-[12px]"><Upload size={13} />Upload Photo<input type="file" accept="image/*" onChange={handlePhotoUpload} className="hidden" /></label>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div><label className="eyebrow block mb-1.5">Full Name</label><input type="text" value={profile.full_name||''} onChange={e=>u('full_name',e.target.value)} className="input-field" /></div>
-              <div><label className="eyebrow block mb-1.5">Phone</label><input type="tel" value={profile.phone||''} onChange={e=>u('phone',e.target.value)} className="input-field" /></div>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div><label className="eyebrow block mb-1.5">Postcode</label><input type="text" value={profile.postcode||''} onChange={e=>u('postcode',e.target.value)} className="input-field" /></div>
-              <div className="flex items-end pb-1"><label className="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked={profile.has_car||false} onChange={e=>u('has_car',e.target.checked)} className="w-3.5 h-3.5 border-border rounded text-ink" /><span className="text-[13px] text-secondary">I have access to a car</span></label></div>
-            </div>
-          </div>
-
-          {/* ── S2: Professional Details ── */}
-          <div className="dashboard-card space-y-4">
-            <p className="eyebrow">Professional Details</p>
-            <div>
-              <label className="eyebrow block mb-1.5">Role Level</label>
-              <select value={profile.role_level||''} onChange={e=>u('role_level',e.target.value)} className="input-field"><option value="">Select</option>{ROLE_LEVELS.map(r=><option key={r} value={r}>{r}</option>)}</select>
-            </div>
-            <div><label className="eyebrow block mb-1.5">Headline</label><input type="text" value={profile.headline||''} onChange={e=>u('headline',e.target.value)} className="input-field" placeholder="e.g. Senior Spa Therapist | CIDESCO Qualified | 8 Years Experience" /></div>
-            <div><label className="eyebrow block mb-1.5">Bio</label><textarea rows={4} value={profile.bio||''} onChange={e=>u('bio',e.target.value)} className="input-field" /></div>
-            <div className="grid grid-cols-3 gap-4">
-              <div><label className="eyebrow block mb-1.5">Experience (years)</label><input type="number" value={profile.experience_years||''} onChange={e=>u('experience_years',e.target.value)} className="input-field" /></div>
-              <div><label className="eyebrow block mb-1.5">Day Rate Min (£)</label><input type="number" value={profile.day_rate_min||''} onChange={e=>u('day_rate_min',e.target.value)} className="input-field" /></div>
-              <div><label className="eyebrow block mb-1.5">Day Rate Max (£)</label><input type="number" value={profile.day_rate_max||''} onChange={e=>u('day_rate_max',e.target.value)} className="input-field" /></div>
-            </div>
-            <div><label className="eyebrow block mb-1.5">Availability</label><select value={profile.availability_status||''} onChange={e=>u('availability_status',e.target.value)} className="input-field">{AVAILABILITY_STATUSES.map(a=><option key={a.value} value={a.value}>{a.label}</option>)}</select></div>
-          </div>
-
-          {/* ── S3: Services Offered ── */}
-          <CollapsibleCheckboxSection title="Services Offered" categories={SERVICES_CATEGORIES} selected={profile.services_offered||[]} onChange={v=>u('services_offered',v)} />
-
-          {/* ── S4: Product Houses ── */}
-          <CollapsibleCheckboxSection title="Product Houses" flatItems={PRODUCT_HOUSES} selected={profile.product_houses||[]} onChange={v=>u('product_houses',v)} />
-
-          {/* ── S5: Qualifications & Certifications ── */}
-          <CollapsibleCheckboxSection title="Qualifications & Certifications" categories={QUALS_WITH_SYSTEMS} selected={[...(profile.qualifications||[]),...(profile.systems_experience||[])]} onChange={v=>u('qualifications',v)} />
-
-          {/* ── S6: Documents ── */}
-          <div className="dashboard-card space-y-4">
-            <p className="eyebrow">Documents</p>
-
-            <div>
-              <label className="eyebrow block mb-1.5">CV (PDF or Word)</label>
-              {profile.cv_url ? (
-                <div className="flex items-center gap-2 p-3 bg-surface rounded-lg border border-border">
-                  <FileText size={14} className="text-muted" />
-                  <a href={profile.cv_url} target="_blank" rel="noopener noreferrer" className="text-[13px] text-ink hover:underline flex-1 truncate">Current CV</a>
-                  <label className="text-[11px] text-muted hover:text-ink cursor-pointer">Replace<input type="file" accept=".pdf,.docx" onChange={handleCvUpload} className="hidden" /></label>
-                </div>
-              ) : (
-                <label className="flex items-center justify-center border border-dashed border-border py-5 cursor-pointer hover:border-ink/30 transition-colors rounded-lg">
-                  <div className="text-center"><Upload size={16} className="mx-auto text-muted mb-1" /><p className="text-[12px] text-muted">Click to upload CV</p></div>
-                  <input type="file" accept=".pdf,.docx" onChange={handleCvUpload} className="hidden" />
-                </label>
-              )}
-              {profile.cv_url && (
-                <button type="button" onClick={analyseCurrentCv} disabled={analysingCv}
-                  className="btn-secondary mt-2 w-full flex items-center justify-center gap-2 disabled:opacity-50">
-                  <Sparkles size={14} />{analysingCv ? 'Analysing CV privately...' : 'Analyse CV'}
-                </button>
-              )}
-              <p className="text-[10px] text-muted mt-2">PDF or .docx only. Suggestions never change your profile until you approve and save them.</p>
-            </div>
-
-            {cvSuggestions && (
-              <div className="rounded-lg border border-accent/30 bg-[#FDF9F1] p-4 space-y-3">
-                <div className="flex items-start gap-2">
-                  <Sparkles size={15} className="text-accent mt-0.5" />
-                  <div><p className="text-[13px] font-medium text-ink">CV suggestions ready</p><p className="text-[11px] text-muted">Review these before adding them to your profile.</p></div>
-                </div>
-                <div className="grid grid-cols-2 gap-2 text-[11px]">
-                  <div className="bg-white/70 rounded p-2"><span className="text-muted">Role</span><p className="font-medium text-ink">{cvSuggestions.roleLevel || 'Not confidently detected'}</p></div>
-                  <div className="bg-white/70 rounded p-2"><span className="text-muted">Experience</span><p className="font-medium text-ink">{cvSuggestions.experienceYears ? `${cvSuggestions.experienceYears} years` : 'Not confidently detected'}</p></div>
-                  <div className="bg-white/70 rounded p-2"><span className="text-muted">Qualifications</span><p className="font-medium text-ink">{cvSuggestions.qualifications?.length || 0} found</p></div>
-                  <div className="bg-white/70 rounded p-2"><span className="text-muted">Product houses</span><p className="font-medium text-ink">{cvSuggestions.productHouses?.length || 0} found</p></div>
-                  <div className="bg-white/70 rounded p-2"><span className="text-muted">Services</span><p className="font-medium text-ink">{cvSuggestions.services?.length || 0} found</p></div>
-                  <div className="bg-white/70 rounded p-2"><span className="text-muted">Systems</span><p className="font-medium text-ink">{cvSuggestions.systems?.length || 0} found</p></div>
-                </div>
-                {[
-                  ['Qualifications', cvSuggestions.qualifications],
-                  ['Product houses', cvSuggestions.productHouses],
-                  ['Services', cvSuggestions.services],
-                  ['Systems', cvSuggestions.systems],
-                ].filter(([, items]) => (items as string[]).length > 0).map(([label, items]) => (
-                  <div key={label as string}>
-                    <p className="text-[10px] uppercase tracking-wide text-muted mb-1">{label as string}</p>
-                    <div className="flex flex-wrap gap-1">{(items as string[]).map(item => <span key={item} className="rounded-full border border-border bg-white px-2 py-1 text-[10px] text-secondary">{item}</span>)}</div>
-                  </div>
-                ))}
-                {cvSuggestions.evidence?.length > 0 && <div className="space-y-1">{cvSuggestions.evidence.map((item: string) => <p key={item} className="flex items-center gap-1.5 text-[11px] text-secondary"><CheckCircle2 size={11} className="text-emerald-600" />{item}</p>)}</div>}
-                <div className="flex gap-2">
-                  <button type="button" onClick={applyCvSuggestions} className="btn-primary flex-1">Use these suggestions</button>
-                  <button type="button" onClick={() => setCvSuggestions(null)} className="btn-secondary">Dismiss</button>
-                </div>
-              </div>
-            )}
-
-            <div>
-              <label className="eyebrow block mb-1.5">Certificates (PDFs)</label>
-              {(profile.certificates_urls?.length || 0) > 0 && (
-                <div className="space-y-1.5 mb-2">
-                  {profile.certificates_urls.map((url: string, i: number) => (
-                    <div key={i} className="flex items-center gap-2 p-2 bg-surface rounded border border-border">
-                      <FileText size={12} className="text-muted" />
-                      <a href={url} target="_blank" rel="noopener noreferrer" className="text-[12px] text-ink hover:underline flex-1 truncate">Certificate {i+1}</a>
-                    </div>
-                  ))}
-                </div>
-              )}
-              <label className="flex items-center justify-center border border-dashed border-border py-4 cursor-pointer hover:border-ink/30 transition-colors rounded-lg">
-                <p className="text-[12px] text-muted">Add certificates</p>
-                <input type="file" accept=".pdf" multiple onChange={handleCertsUpload} className="hidden" />
-              </label>
-            </div>
-
-            <div>
-              <label className="flex items-center gap-2 cursor-pointer mb-2"><input type="checkbox" checked={profile.has_insurance||false} onChange={e=>u('has_insurance',e.target.checked)} className="w-3.5 h-3.5 border-border rounded text-ink" /><span className="text-[13px] text-secondary">I have professional insurance</span></label>
-              {profile.has_insurance && (
-                profile.insurance_document_url ? (
-                  <div className="flex items-center gap-2 p-3 bg-surface rounded-lg border border-border">
-                    <FileText size={14} className="text-muted" />
-                    <a href={profile.insurance_document_url} target="_blank" rel="noopener noreferrer" className="text-[13px] text-ink hover:underline flex-1 truncate">Insurance certificate</a>
-                    <label className="text-[11px] text-muted hover:text-ink cursor-pointer">Replace<input type="file" accept=".pdf" onChange={handleInsuranceUpload} className="hidden" /></label>
-                  </div>
-                ) : (
-                  <label className="flex items-center justify-center border border-dashed border-border py-4 cursor-pointer hover:border-ink/30 transition-colors rounded-lg">
-                    <p className="text-[12px] text-muted">Upload insurance certificate</p>
-                    <input type="file" accept=".pdf" onChange={handleInsuranceUpload} className="hidden" />
-                  </label>
-                )
-              )}
-            </div>
-          </div>
-
-          {/* ── S7: Travel Preferences ── */}
-          <div className="dashboard-card space-y-4">
-            <p className="eyebrow">Travel Preferences</p>
-            <div>
-              <label className="eyebrow block mb-2">Travel Availability</label>
-              <div className="flex flex-wrap gap-2">
-                {TRAVEL_OPTIONS.map(t => (
-                  <button type="button" key={t.value} onClick={()=>u('travel_availability',t.value)}
-                    className={`px-4 py-2 rounded-lg text-[12px] font-medium transition-colors ${profile.travel_availability===t.value?'bg-ink text-white':'bg-surface text-muted border border-border'}`}>{t.label}</button>
-                ))}
-              </div>
-            </div>
-            {profile.travel_availability === 'radius' && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div><label className="eyebrow block mb-1.5">Miles</label><input type="number" value={profile.travel_radius_miles||''} onChange={e=>u('travel_radius_miles',e.target.value)} className="input-field" placeholder="25" /></div>
-                <div><label className="eyebrow block mb-1.5">From Postcode</label><input type="text" value={profile.postcode||''} onChange={e=>u('postcode',e.target.value)} className="input-field" /></div>
-              </div>
-            )}
-          </div>
-
-          {/* Bottom save */}
-          <button type="button" onClick={handleSave} disabled={saving} className="btn-primary w-full flex items-center justify-center gap-2 disabled:opacity-50">
-            <Save size={14} />{saving ? 'Saving...' : 'Save All Changes'}
-          </button>
-        </div>
-      </div>
-    </DashboardShell>
-  )
+      <section className="dashboard-card space-y-4"><p className="eyebrow">Travel preferences</p><div className="flex flex-wrap gap-2">{TRAVEL_OPTIONS.map(t=><button type="button" key={t.value} onClick={()=>u('travel_availability',t.value)} className={`px-4 py-2 rounded-lg text-[12px] border ${profile.travel_availability===t.value?'bg-[#0b2f4d] text-white border-[#0b2f4d]':'bg-white border-border'}`}>{t.label}</button>)}</div>{profile.travel_availability==='radius'&&<Field label="Travel radius (miles)"><input type="number" className="input-field" value={profile.travel_radius_miles||''} onChange={e=>u('travel_radius_miles',e.target.value)}/></Field>}</section>
+      <button onClick={handleSave} disabled={saving} className="btn-primary w-full inline-flex justify-center gap-2"><Save size={14}/>{saving?'Saving...':'Save All Changes'}</button>
+    </div>
+  </div></DashboardShell>
 }
+
+function Field({label,children}:{label:string;children:React.ReactNode}){return <div><label className="eyebrow block mb-1.5">{label}</label>{children}</div>}
+function Mini({label,value}:{label:string;value:string}){return <div className="rounded-lg bg-[#f7f9fa] p-3"><p className="text-[10px] text-muted">{label}</p><p className="font-semibold text-ink mt-1">{value}</p></div>}
