@@ -4,7 +4,14 @@ import { router } from 'expo-router'
 import { supabase } from '../src/lib/supabase'
 
 type Role = 'talent' | 'employer'
-type StatusPayload = { role: Role; profile: any }
+type FeaturedEmployerOffer = {
+  product_key: string
+  label: string
+  description: string
+  price_pence: number
+  billing_interval: 'month' | 'year' | 'one_off'
+}
+type StatusPayload = { role: Role; profile: any; featuredEmployerOffer?: FeaturedEmployerOffer | null }
 
 const WEB_URL = process.env.EXPO_PUBLIC_WEB_URL || 'https://talent.wellnesshousecollective.co.uk'
 
@@ -12,6 +19,12 @@ function dateLabel(value?: string | null) {
   if (!value) return ''
   const date = new Date(value)
   return Number.isNaN(date.getTime()) ? '' : date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+}
+
+function priceLabel(pence: number, interval?: string | null) {
+  const pounds = pence / 100
+  const amount = Number.isInteger(pounds) ? `£${pounds}` : `£${pounds.toFixed(2)}`
+  return interval === 'year' ? `${amount} / year` : interval === 'month' ? `${amount} / month` : amount
 }
 
 export default function BillingScreen() {
@@ -67,12 +80,30 @@ export default function BillingScreen() {
     }
   }
 
-  async function manage() {
-    setBusy('manage'); setError('')
+  async function checkoutFeaturedEmployer() {
+    if (!data?.profile?.id) return
+    setBusy('featured_employer'); setError('')
+    try {
+      const result = await authFetch('/api/stripe/featured-employer', {
+        method: 'POST',
+        body: JSON.stringify({ employerId: data.profile.id, returnUrl: WEB_URL, returnPath: '/billing' }),
+      })
+      if (!result?.url) throw new Error('Featured Employer checkout did not return a secure payment link.')
+      Alert.alert('Featured Employer', 'Stripe will open securely. Return to the app after payment and your Featured status will refresh automatically.')
+      await Linking.openURL(result.url)
+    } catch (e: any) {
+      setError(e?.message || 'Could not start Featured Employer checkout.')
+    } finally {
+      setBusy('')
+    }
+  }
+
+  async function manage(scope = '') {
+    setBusy(scope === 'featured_employer' ? 'manage_featured' : 'manage'); setError('')
     try {
       const result = await authFetch('/api/billing/portal', {
         method: 'POST',
-        body: JSON.stringify({ returnUrl: WEB_URL }),
+        body: JSON.stringify({ returnUrl: WEB_URL, returnPath: '/billing', ...(scope ? { scope } : {}) }),
       })
       if (!result?.url) throw new Error('Billing portal unavailable.')
       await Linking.openURL(result.url)
@@ -90,12 +121,13 @@ export default function BillingScreen() {
   const tier = String(profile.membership_tier || 'free').toLowerCase()
   const paidMembership = role === 'talent' ? ['standard', 'pro'].includes(tier) : ['pro', 'group'].includes(tier)
   const renewal = dateLabel(profile.membership_renews_at)
+  const featuredActive = role === 'employer' && Boolean(profile.featured_employer && (!profile.featured_until || new Date(profile.featured_until).getTime() > Date.now()))
 
   return <ScrollView style={styles.scroll} contentContainerStyle={styles.page}>
     <Pressable onPress={() => router.back()}><Text style={styles.back}>‹ Back</Text></Pressable>
     <Text style={styles.eyebrow}>MEMBERSHIP & BILLING</Text>
     <Text style={styles.title}>{role === 'talent' ? 'Invest in your career.' : 'Your recruitment membership.'}</Text>
-    <Text style={styles.intro}>{role === 'talent' ? 'See your live entitlements, upgrade your membership and manage Featured Talent from the same account as the website.' : 'See your current employer membership, included job allowance and manage your annual plan.'}</Text>
+    <Text style={styles.intro}>{role === 'talent' ? 'See your live entitlements, upgrade your membership and manage Featured Talent from the same account as the website.' : 'See your employer membership, included job allowance and Featured Employer visibility in one place.'}</Text>
     {error ? <Text style={styles.error}>{error}</Text> : null}
 
     <View style={styles.currentCard}>
@@ -109,7 +141,7 @@ export default function BillingScreen() {
         {tier === 'group' ? <Text style={styles.line}>{Math.max(0, Number(profile.annual_job_allowance || 0) - Number(profile.annual_jobs_used || 0))} of {Number(profile.annual_job_allowance || 0)} included jobs remaining</Text> : null}
         {tier === 'pro' ? <Text style={styles.line}>Standard Jobs discounted to £99</Text> : null}
       </>}
-      {paidMembership ? <Pressable disabled={!!busy} onPress={manage} style={styles.secondary}><Text style={styles.secondaryText}>{busy === 'manage' ? 'Opening...' : 'Manage subscription & payment method'}</Text></Pressable> : null}
+      {paidMembership ? <Pressable disabled={!!busy} onPress={() => manage()} style={styles.secondary}><Text style={styles.secondaryText}>{busy === 'manage' ? 'Opening...' : 'Manage membership & payment method'}</Text></Pressable> : null}
     </View>
 
     {role === 'talent' ? <>
@@ -125,15 +157,27 @@ export default function BillingScreen() {
       <View style={styles.card}><Text style={styles.cardTitle}>30 days</Text><Text style={styles.price}>£24.99</Text><Text style={styles.copy}>A month of premium profile visibility.</Text><Pressable disabled={!!busy} onPress={() => checkout('featured_talent_30')} style={styles.secondary}><Text style={styles.secondaryText}>{busy === 'featured_talent_30' ? 'Opening...' : 'Feature me for 30 days'}</Text></Pressable></View>
 
       <Text style={styles.sectionTitle}>Other paid services</Text>
-      <View style={styles.miniCard}><Text style={styles.cardTitle}>Agency Register</Text><Text style={styles.copy}>{profile.agency_available ? `Active${profile.agency_tier ? ` · ${profile.agency_tier}` : ''}` : 'Not currently listed'}</Text><Pressable onPress={() => router.push('/agency')}><Text style={styles.link}>Open Agency →</Text></Pressable></View>
-      <View style={styles.miniCard}><Text style={styles.cardTitle}>Residency</Text><Text style={styles.copy}>{profile.residency_member ? 'Membership active' : 'No active Residency membership'}</Text><Pressable onPress={() => router.push('/residency')}><Text style={styles.link}>Open Residency →</Text></Pressable></View>
+      <View style={styles.miniCard}><Text style={styles.cardTitle}>Agency Register</Text><Text style={styles.copy}>{profile.agency_available ? `Active${profile.agency_tier ? ` · ${profile.agency_tier}` : ''}` : 'Not currently listed'}</Text><Pressable onPress={() => router.push('/agency-account')}><Text style={styles.link}>Manage Agency →</Text></Pressable></View>
+      <View style={styles.miniCard}><Text style={styles.cardTitle}>Residency</Text><Text style={styles.copy}>{profile.residency_member ? 'Membership active' : 'No active Residency membership'}</Text><Pressable onPress={() => router.push('/residency-setup')}><Text style={styles.link}>Manage Residency →</Text></Pressable></View>
     </> : <>
       {!paidMembership ? <>
         <Text style={styles.sectionTitle}>Employer membership</Text>
         <View style={styles.card}><Text style={styles.cardTitle}>Employer Pro</Text><Text style={styles.price}>£499 / year</Text><Text style={styles.copy}>Full Talent search, enhanced matching, analytics and £99 Standard Jobs.</Text><Pressable disabled={!!busy} onPress={() => checkout('employer_pro')} style={styles.primary}><Text style={styles.primaryText}>{busy === 'employer_pro' ? 'Opening...' : 'Choose Employer Pro'}</Text></Pressable></View>
         <View style={styles.card}><Text style={styles.cardTitle}>Employer Group</Text><Text style={styles.price}>£999 / year</Text><Text style={styles.copy}>Multi-property recruitment, advanced tools and up to 20 included jobs each year.</Text><Pressable disabled={!!busy} onPress={() => checkout('employer_group')} style={styles.primary}><Text style={styles.primaryText}>{busy === 'employer_group' ? 'Opening...' : 'Choose Employer Group'}</Text></Pressable></View>
       </> : null}
-      {profile.featured_employer ? <View style={styles.activeBox}><Text style={styles.activeTitle}>Featured Employer active</Text><Text style={styles.copy}>{profile.featured_until ? `Featured until ${dateLabel(profile.featured_until)}.` : 'Your property currently receives enhanced visibility.'}</Text></View> : null}
+
+      <Text style={styles.sectionTitle}>Featured Employer</Text>
+      {featuredActive ? <View style={styles.activeBox}>
+        <Text style={styles.activeTitle}>Featured Employer active</Text>
+        <Text style={styles.copy}>{profile.featured_until ? `Current paid period runs until ${dateLabel(profile.featured_until)}.` : 'Your property currently receives enhanced visibility.'}</Text>
+        <Pressable disabled={!!busy} onPress={() => manage('featured_employer')} style={styles.secondary}><Text style={styles.secondaryText}>{busy === 'manage_featured' ? 'Opening...' : 'Manage Featured subscription'}</Text></Pressable>
+      </View> : data.featuredEmployerOffer ? <View style={styles.card}>
+        <Text style={styles.cardTitle}>{data.featuredEmployerOffer.label}</Text>
+        <Text style={styles.price}>{priceLabel(data.featuredEmployerOffer.price_pence, data.featuredEmployerOffer.billing_interval)}</Text>
+        <Text style={styles.copy}>{data.featuredEmployerOffer.description}</Text>
+        <Text style={styles.copy}>Featured property placement, homepage exposure and a launch alert to approved Talent. This is separate from Employer Pro/Group and Preferred Employer.</Text>
+        <Pressable disabled={!!busy} onPress={checkoutFeaturedEmployer} style={styles.primary}><Text style={styles.primaryText}>{busy === 'featured_employer' ? 'Opening...' : 'Go Featured'}</Text></Pressable>
+      </View> : <View style={styles.miniCard}><Text style={styles.copy}>Featured Employer is not currently available for purchase.</Text></View>}
     </>}
   </ScrollView>
 }
