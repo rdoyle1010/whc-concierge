@@ -3,7 +3,7 @@ import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from
 import { router } from 'expo-router'
 import { supabase } from '../src/lib/supabase'
 
-type MessageRow = { id: string; sender_id: string; recipient_id: string; content: string; read: boolean | null; created_at: string | null; profiles?: any }
+type MessageRow = { id: string; sender_id: string; recipient_id: string; content: string; read: boolean | null; created_at: string | null }
 type Person = { id: string; full_name: string | null; email: string | null; role: string | null }
 
 export default function MessagesScreen() {
@@ -13,24 +13,22 @@ export default function MessagesScreen() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
-  useEffect(() => {
-    async function load() {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) { router.replace('/login'); return }
-      setUserId(user.id)
-      const { data, error: queryError } = await supabase.from('messages').select('id,sender_id,recipient_id,content,read,created_at').or(`sender_id.eq.${user.id},recipient_id.eq.${user.id}`).order('created_at', { ascending: false })
-      if (queryError) { setError(queryError.message); setLoading(false); return }
-      const rows = (data || []) as MessageRow[]
-      setMessages(rows)
-      const ids = Array.from(new Set(rows.flatMap(row => [row.sender_id, row.recipient_id]).filter(id => id !== user.id)))
-      if (ids.length) {
-        const { data: profiles } = await supabase.from('profiles').select('id,full_name,email,role').in('id', ids)
-        setPeople(Object.fromEntries((profiles || []).map(person => [person.id, person as Person])))
-      }
-      setLoading(false)
+  useEffect(() => { load() }, [])
+  async function load() {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) { router.replace('/login'); return }
+    setUserId(user.id)
+    const { data, error: queryError } = await supabase.from('messages').select('id,sender_id,recipient_id,content,read,created_at').or(`sender_id.eq.${user.id},recipient_id.eq.${user.id}`).order('created_at', { ascending: false })
+    if (queryError) { setError(queryError.message); setLoading(false); return }
+    const rows = (data || []) as MessageRow[]
+    setMessages(rows)
+    const ids = Array.from(new Set(rows.flatMap(row => [row.sender_id, row.recipient_id]).filter(id => id !== user.id)))
+    if (ids.length) {
+      const { data: profiles } = await supabase.from('profiles').select('id,full_name,email,role').in('id', ids)
+      setPeople(Object.fromEntries((profiles || []).map(person => [person.id, person as Person])))
     }
-    load()
-  }, [])
+    setLoading(false)
+  }
 
   const threads = useMemo(() => {
     const seen = new Set<string>()
@@ -44,22 +42,10 @@ export default function MessagesScreen() {
 
   return <ScrollView style={styles.scroll} contentContainerStyle={styles.page}>
     <Pressable onPress={() => router.back()}><Text style={styles.back}>‹ Back</Text></Pressable>
-    <Text style={styles.eyebrow}>CONVERSATIONS</Text>
-    <Text style={styles.title}>Messages</Text>
-    <Text style={styles.intro}>Your employer and talent conversations, synced with the website.</Text>
-    {loading ? <ActivityIndicator color="#092b45" style={{ marginTop: 30 }} /> : null}
-    {error ? <Text style={styles.error}>{error}</Text> : null}
+    <Text style={styles.eyebrow}>CONVERSATIONS</Text><Text style={styles.title}>Messages</Text><Text style={styles.intro}>Your employer and talent conversations, synced with the website.</Text>
+    {loading ? <ActivityIndicator color="#092b45" style={{ marginTop: 30 }} /> : null}{error ? <Text style={styles.error}>{error}</Text> : null}
     {!loading && threads.length === 0 ? <View style={styles.empty}><Text style={styles.emptyTitle}>No messages yet.</Text><Text style={styles.emptyCopy}>When a conversation starts on the platform, it will appear here.</Text></View> : null}
-    <View style={styles.list}>{threads.map(message => {
-      const otherId = message.sender_id === userId ? message.recipient_id : message.sender_id
-      const person = people[otherId]
-      const unread = message.recipient_id === userId && !message.read
-      return <View key={message.id} style={[styles.card, unread && styles.unreadCard]}>
-        <View style={styles.row}><Text style={styles.name}>{person?.full_name || person?.email || 'Platform member'}</Text>{unread ? <Text style={styles.unread}>NEW</Text> : null}</View>
-        <Text numberOfLines={2} style={styles.preview}>{message.content}</Text>
-        <Text style={styles.date}>{message.created_at ? new Date(message.created_at).toLocaleString('en-GB', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' }) : ''}</Text>
-      </View>
-    })}</View>
+    <View style={styles.list}>{threads.map(message => { const otherId = message.sender_id === userId ? message.recipient_id : message.sender_id; const person = people[otherId]; const unread = message.recipient_id === userId && !message.read; return <Pressable key={message.id} onPress={()=>router.push(`/message/${otherId}`)} style={[styles.card, unread && styles.unreadCard]}><View style={styles.row}><Text style={styles.name}>{person?.full_name || person?.email || 'Platform member'}</Text>{unread ? <Text style={styles.unread}>NEW</Text> : null}</View><Text numberOfLines={2} style={styles.preview}>{message.content}</Text><Text style={styles.date}>{message.created_at ? new Date(message.created_at).toLocaleString('en-GB', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' }) : ''}</Text></Pressable> })}</View>
   </ScrollView>
 }
 
