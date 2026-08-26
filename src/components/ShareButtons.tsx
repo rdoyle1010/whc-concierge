@@ -1,80 +1,38 @@
-'use client';
+'use client'
 
-import { useState } from 'react';
+import { useState } from 'react'
+import { Linkedin, Facebook, MessageCircle, Mail, Link2, Check } from 'lucide-react'
 
 interface ShareButtonsProps {
-  url: string;
-  title: string;
+  url: string
+  title: string
 }
 
 export default function ShareButtons({ url, title }: ShareButtonsProps) {
-  const [copied, setCopied] = useState(false);
-
-  const encodedUrl = encodeURIComponent(url);
-  const encodedTitle = encodeURIComponent(title);
+  const [copied, setCopied] = useState(false)
+  const encodedUrl = encodeURIComponent(url)
+  const encodedTitle = encodeURIComponent(title)
+  const encodedMessage = encodeURIComponent(`${title} ${url}`)
 
   const handleCopyLink = async () => {
     try {
-      await navigator.clipboard.writeText(url);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch (err) {
-      console.error('Failed to copy link:', err);
-    }
-  };
+      await navigator.clipboard.writeText(url)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    } catch {}
+  }
 
-  const shareLinks = [
-    {
-      name: 'LinkedIn',
-      icon: 'in',
-      href: `https://www.linkedin.com/sharing/share-offsite/?url=${encodedUrl}`,
-      external: true,
-    },
-    {
-      name: 'X',
-      icon: '𝕏',
-      href: `https://twitter.com/intent/tweet?text=${encodedTitle}&url=${encodedUrl}`,
-      external: true,
-    },
-    {
-      name: 'WhatsApp',
-      icon: 'wa',
-      href: `https://wa.me/?text=${encodedTitle}%20${encodedUrl}`,
-      external: true,
-    },
-  ];
+  const links = [
+    { name: 'LinkedIn', icon: <Linkedin size={15}/>, href: `https://www.linkedin.com/sharing/share-offsite/?url=${encodedUrl}` },
+    { name: 'Facebook', icon: <Facebook size={15}/>, href: `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}` },
+    { name: 'WhatsApp', icon: <MessageCircle size={15}/>, href: `https://wa.me/?text=${encodedMessage}` },
+    { name: 'Email', icon: <Mail size={15}/>, href: `mailto:?subject=${encodedTitle}&body=${encodedMessage}` },
+  ]
 
-  return (
-    <div className="flex flex-row items-center gap-2">
-      {shareLinks.map((link) => (
-        <a
-          key={link.name}
-          href={link.href}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-muted text-xs hover:text-ink transition-colors duration-150"
-          title={`Share on ${link.name}`}
-        >
-          {link.icon}
-        </a>
-      ))}
-
-      <button
-        onClick={handleCopyLink}
-        className="text-muted text-xs hover:text-ink transition-colors duration-150 relative"
-        title="Copy link to clipboard"
-      >
-        {copied ? (
-          <>
-            <span className="inline-block">✓</span>
-            <span className="absolute top-full mt-1 right-0 bg-ink text-background px-2 py-1 rounded text-xs whitespace-nowrap pointer-events-none">
-              Copied!
-            </span>
-          </>
-        ) : (
-          '🔗'
-        )}
-      </button>
-    </div>
-  );
+  return <div className="flex flex-wrap items-center gap-2">
+    {links.map(link => <a key={link.name} href={link.href} target={link.name === 'Email' ? undefined : '_blank'} rel="noopener noreferrer" className="inline-flex items-center gap-2 rounded-lg border border-[#dfe5e8] bg-white px-3 py-2 text-[11px] font-semibold text-[#10283b] hover:bg-[#f7f9fa]" title={`Share on ${link.name}`}>{link.icon}{link.name}</a>)}
+    <button type="button" onClick={handleCopyLink} className="inline-flex items-center gap-2 rounded-lg border border-[#dfe5e8] bg-white px-3 py-2 text-[11px] font-semibold text-[#10283b] hover:bg-[#f7f9fa]" title="Copy article link">
+      {copied ? <Check size={15}/> : <Link2 size={15}/>} {copied ? 'Copied' : 'Copy link'}
+    </button>
+  </div>
 }
