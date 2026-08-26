@@ -19,7 +19,7 @@
         "expo-image-picker",
         {
           "photosPermission": "Wellness House uses your photo library only when you choose property images to add to your employer profile.",
-          "cameraPermission": "Wellness House uses your camera only when you choose to take a property photo.",
+          "cameraPermission": false,
           "microphonePermission": false
         }
       ]
