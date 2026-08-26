@@ -57,7 +57,6 @@ export async function POST(req: NextRequest) {
       const coords = await geocodePostcode(postcode)
       if (coords) { payload.latitude = coords.latitude; payload.longitude = coords.longitude }
     }
-    payload.updated_at = new Date().toISOString()
 
     const { data: updated, error } = await admin.from('job_listings').update(payload).eq('id', job.id).eq('employer_id', employer.id).select('*').single()
     if (error) return NextResponse.json({ error: error.message }, { status: 400 })
