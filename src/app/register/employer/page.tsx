@@ -5,9 +5,11 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Wordmark from '@/components/Wordmark'
 import { createClient } from '@/lib/supabase/client'
-import { PRODUCT_HOUSES, SYSTEMS, COMPANY_TYPES } from '@/lib/constants'
+import { AGENCY_PLATFORM_FEE_PCT, COMPANY_TYPES, EMPLOYER_MEMBERSHIPS, JOB_TIERS, PRODUCT_HOUSES, SYSTEMS } from '@/lib/constants'
 import CheckboxGroup from '@/components/CheckboxGroup'
 import { Check } from 'lucide-react'
+
+const pounds = (pence: number) => `£${(pence / 100).toFixed(pence % 100 === 0 ? 0 : 2)}`
 
 export default function EmployerRegisterPage() {
   const router = useRouter()
@@ -162,21 +164,21 @@ export default function EmployerRegisterPage() {
             <div><label className="block text-xs font-medium text-neutral-500 uppercase tracking-wider mb-1.5">Work Email (for verification)</label><input type="email" value={form.work_email} onChange={(e) => update('work_email', e.target.value)} className="input-field" placeholder="name@property.com" /></div>
             {/* Terms & Conditions */}
             <div className="border border-border rounded-lg p-4 max-h-48 overflow-y-auto text-[12px] text-secondary leading-relaxed">
-              <p className="font-medium text-ink mb-2">Terms & Conditions - Employer</p>
+              <p className="font-medium text-ink mb-2">Terms &amp; Conditions - Employer</p>
               <p className="mb-2">By registering a property on WHC Concierge, you agree to the following:</p>
-              <p className="mb-2">1. <strong>Accuracy of listings:</strong> All job listings and company information must be accurate and represent genuine vacancies. WHC Concierge reserves the right to remove misleading listings.</p>
-              <p className="mb-2">2. <strong>Account review:</strong> All employer accounts are subject to review and approval by the WHC Concierge team before listings become visible to candidates.</p>
-              <p className="mb-2">3. <strong>Job posting fees:</strong> Job listings are subject to the pricing tier selected at the time of posting (Bronze £150, Silver £175, Gold £200, Platinum £250). Fees are non-refundable once the listing is published.</p>
-              <p className="mb-2">4. <strong>Agency commission:</strong> For shifts booked through the WHC agency marketplace, a 10% platform commission applies to the agreed rate.</p>
-              <p className="mb-2">5. <strong>Candidate data:</strong> You agree to handle candidate personal data in accordance with GDPR and our <a href="/privacy" className="underline text-ink">Privacy Policy</a>. Candidate information accessed through the platform must not be shared with third parties.</p>
-              <p className="mb-2">6. <strong>Professional conduct:</strong> You agree to treat all candidates fairly and professionally. Discriminatory practices are prohibited.</p>
-              <p className="mb-2">7. <strong>Payment terms:</strong> All payments are processed securely through Stripe. You are responsible for fulfilling salary and compensation terms as advertised in your listings.</p>
-              <p>8. <strong>Termination:</strong> We reserve the right to suspend or remove your account at any time if you breach these terms.</p>
+              <p className="mb-2">1. <strong>Accuracy of listings:</strong> All job listings and company information must be accurate and represent genuine vacancies. WHC reserves the right to remove misleading listings.</p>
+              <p className="mb-2">2. <strong>Account review:</strong> Employer accounts may be reviewed and approved by WHC before protected Talent or Agency features become available.</p>
+              <p className="mb-2">3. <strong>Job posting fees:</strong> Standard Jobs are {JOB_TIERS.Bronze.display} for {JOB_TIERS.Bronze.days} days and Featured Jobs are {JOB_TIERS.Platinum.display} for {JOB_TIERS.Platinum.days} days. Employer Pro currently receives {pounds(EMPLOYER_MEMBERSHIPS.pro.discountedStandardJobPrice)} Standard Jobs and Employer Group currently includes up to {EMPLOYER_MEMBERSHIPS.group.includedJobs} Standard Jobs per membership year. Fees are generally non-refundable once a paid listing is published.</p>
+              <p className="mb-2">4. <strong>Agency bookings:</strong> The professional keeps 100% of the agreed shift value. The property pays that agreed value plus a {Math.round(AGENCY_PLATFORM_FEE_PCT * 100)}% WHC platform fee through the Platform. WHC manages the professional payout after the completed shift, subject to any cancellation, dispute or adjustment process.</p>
+              <p className="mb-2">5. <strong>Candidate data:</strong> You agree to handle Talent personal data in accordance with applicable data-protection law and our <a href="/privacy" className="underline text-ink">Privacy Policy</a>. Information accessed through the Platform must not be shared with unauthorised third parties.</p>
+              <p className="mb-2">6. <strong>Professional conduct:</strong> You agree to treat Talent fairly and professionally. Discriminatory, misleading or abusive practices are prohibited.</p>
+              <p className="mb-2">7. <strong>Payments:</strong> Online Platform payments are processed securely through Stripe or another payment provider shown at checkout. You remain responsible for employment salary and compensation terms you advertise unless WHC expressly contracts otherwise.</p>
+              <p>8. <strong>Full terms:</strong> Your use of WHC is also subject to the current full Terms of Service linked below.</p>
             </div>
 
             <label className="flex items-start gap-3 cursor-pointer">
               <input type="checkbox" checked={form.agreed_terms} onChange={(e) => update('agreed_terms', e.target.checked)} className="w-4 h-4 border-border rounded text-ink focus:ring-ink mt-0.5" />
-              <span className="text-[13px] text-secondary">I have read and agree to the <Link href="/terms" className="underline text-ink">Terms & Conditions</Link> and <Link href="/privacy" className="underline text-ink">Privacy Policy</Link></span>
+              <span className="text-[13px] text-secondary">I have read and agree to the <Link href="/terms" className="underline text-ink">Terms &amp; Conditions</Link> and <Link href="/privacy" className="underline text-ink">Privacy Policy</Link></span>
             </label>
 
             <div className="bg-surface p-4 rounded-lg text-[13px] text-muted">
