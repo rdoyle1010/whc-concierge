@@ -85,18 +85,21 @@ export default function JobDetailScreen() {
     if (!job || !candidateId || alreadyApplied || applying) return
     setApplying(true)
     const now = new Date().toISOString()
-    const { error: applyError } = await supabase.from('applications').insert({
+    const { data: application, error: applyError } = await supabase.from('applications').insert({
       role_id: job.id,
       job_id: job.id,
       candidate_id: candidateId,
       status: 'pending',
       submitted_at: now,
       updated_at: now,
-    })
+    }).select('id').single()
     setApplying(false)
     if (applyError) {
       Alert.alert('Could not apply', applyError.message)
       return
+    }
+    if (application?.id) {
+      supabase.functions.invoke('mobile-event-push',{body:{eventType:'job_application',recordId:application.id}}).catch(()=>null)
     }
     setAlreadyApplied(true)
     Alert.alert('Application sent', 'This role is now in your Applications area.')
