@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerSupabaseClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { geocodePostcode } from '@/lib/geo'
+import { getRequestUser } from '@/lib/request-user'
 
 const ALLOWED_FIELDS = [
   'job_title', 'job_description', 'location', 'location_postcode', 'radius_miles',
@@ -15,8 +15,7 @@ const ALLOWED_FIELDS = [
 const CANDIDATE_SCOPES = new Set(['same_level', 'step_up', 'emerging', 'open_transferable'])
 
 export async function POST(req: NextRequest) {
-  const auth = await createServerSupabaseClient()
-  const { data: { user } } = await auth.auth.getUser()
+  const user = await getRequestUser(req)
   if (!user) return NextResponse.json({ error: 'Please sign in again.' }, { status: 401 })
 
   const body = await req.json()
