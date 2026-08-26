@@ -53,10 +53,11 @@ export async function GET() {
   const roles = eligible.map((r: any) => r.role)
   const profileEmails = new Set(eligible.map((r: any) => String(r.email || '').toLowerCase()))
   const newsletterOnly = (newsletter || []).filter((r: any) => !profileEmails.has(String(r.email || '').toLowerCase()))
+  const excluded_without_confirmed_consent = (audience || []).filter((r: any) => r.email && !optedInSet.has(r.id)).length
   return NextResponse.json({
     campaigns: campaigns || [],
     promotion: { featured_candidates: (cands || []).filter((c: any) => c.is_featured), agency_featured: (cands || []).filter((c: any) => c.agency_tier === 'featured'), preferred_employers: emps || [] },
-    audiences: { all: eligible.length + newsletterOnly.length, candidates: roles.filter((r: string) => r === 'candidate').length, employers: roles.filter((r: string) => r === 'employer').length, newsletter: (newsletter || []).length, note: 'Counts include confirmed WHC marketing users and confirmed standalone newsletter subscribers.' },
+    audiences: { all: eligible.length + newsletterOnly.length, candidates: roles.filter((r: string) => r === 'candidate').length, employers: roles.filter((r: string) => r === 'employer').length, newsletter: (newsletter || []).length, excluded_without_confirmed_consent, note: 'Counts include confirmed WHC marketing users and confirmed standalone newsletter subscribers.' },
   })
 }
 
@@ -113,6 +114,7 @@ export async function POST(req: NextRequest) {
     const ids = (profiles || []).map((r: any) => r.id)
     const { data: optIns } = ids.length ? await admin.from('privacy_preferences').select('user_id').in('user_id', ids).eq('marketing_email_status', 'confirmed') : { data: [] as any[] }
     const allowed = new Set((optIns || []).map((r: any) => r.user_id))
+    const excludedWithoutConfirmedConsent = (profiles || []).filter((r: any) => r.email && !allowed.has(r.id))
     const profileRecipients = (profiles || []).filter((r: any) => r.email && allowed.has(r.id)).map((r: any) => ({ email: r.email, unsubscribe: marketingUnsubscribeUrl(r.id) }))
 
     let newsletterRecipients: any[] = []
@@ -124,7 +126,7 @@ export async function POST(req: NextRequest) {
     const uniqueMap = new Map<string, { email: string; unsubscribe: string }>()
     for (const r of [...profileRecipients, ...newsletterRecipients]) if (r.email) uniqueMap.set(String(r.email).toLowerCase(), r)
     const recipients = Array.from(uniqueMap.values())
-    if (!recipients.length) return NextResponse.json({ error: 'No confirmed recipients are available for this audience.' }, { status: 400 })
+    if (!recipients.length) return NextResponse.json({ error: 'No confirmed recipients are available for this audience.', excluded_without_confirmed_consent: excludedWithoutConfirmedConsent.length }, { status: 400 })
     if (recipients.length > MAX_RECIPIENTS_PER_SEND) return NextResponse.json({ error: `Confirmed audience is ${recipients.length} people - above the ${MAX_RECIPIENTS_PER_SEND} per-send cap.` }, { status: 400 })
 
     let sent = 0, failed = 0
@@ -138,7 +140,7 @@ export async function POST(req: NextRequest) {
       for (const r of results) r.status === 'fulfilled' ? sent++ : failed++
     }
     await admin.from('campaigns').update({ status: 'sent', sent_at: new Date().toISOString(), recipients_count: sent }).eq('id', campaign.id)
-    return NextResponse.json({ success: true, sent, failed })
+    return NextResponse.json({ success: true, sent, failed, excluded_without_confirmed_consent: excludedWithoutConfirmedConsent.length })
   } catch (e: any) {
     return NextResponse.json({ error: e.message }, { status: 500 })
   }
