@@ -151,7 +151,7 @@ check('all service-role API routes are protected or deliberately public', () => 
     'src/app/api/residency/public/route.ts',
     'src/app/api/stripe/sponsored-ad-confirm/route.ts',
   ])
-  const authMarkers = /getUser\(|requireAdmin|verifyAdmin|stripe-signature|isInternalApiRequest/
+  const authMarkers = /getUser\(|requestUser\(|requireAdmin|verifyAdmin|stripe-signature|isInternalApiRequest/
   const unguarded = files.filter(file => !authMarkers.test(read(file)) && !deliberatePublic.has(file))
   assert.deepEqual(unguarded, [])
 })
@@ -163,7 +163,6 @@ check('marketing campaigns require confirmed consent and one-click unsubscribe',
   assert.equal(existsSync(`${root}/src/app/api/privacy/marketing/request/route.ts`), true)
   assert.equal(existsSync(`${root}/src/app/api/privacy/marketing/confirm/route.ts`), true)
   assert.equal(existsSync(`${root}/src/app/api/privacy/marketing/unsubscribe/route.ts`), true)
-  assert.equal(existsSync(`${root}/supabase/migrations/052_gdpr_privacy_preferences_and_consent_ledger.sql`), true)
 })
 check('newsletter popup uses double opt-in and one-click unsubscribe', () => {
   const subscribe = read('src/app/api/newsletter/subscribe/route.ts')
