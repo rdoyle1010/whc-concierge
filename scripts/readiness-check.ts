@@ -144,6 +144,10 @@ check('all service-role API routes are protected or deliberately public', () => 
     'src/app/api/properties/[id]/reviews/route.ts',
     'src/app/api/privacy/marketing/confirm/route.ts',
     'src/app/api/privacy/marketing/unsubscribe/route.ts',
+    'src/app/api/newsletter/config/route.ts',
+    'src/app/api/newsletter/subscribe/route.ts',
+    'src/app/api/newsletter/confirm/route.ts',
+    'src/app/api/newsletter/unsubscribe/route.ts',
     'src/app/api/residency/public/route.ts',
     'src/app/api/stripe/sponsored-ad-confirm/route.ts',
   ])
@@ -160,6 +164,17 @@ check('marketing campaigns require confirmed consent and one-click unsubscribe',
   assert.equal(existsSync(`${root}/src/app/api/privacy/marketing/confirm/route.ts`), true)
   assert.equal(existsSync(`${root}/src/app/api/privacy/marketing/unsubscribe/route.ts`), true)
   assert.equal(existsSync(`${root}/supabase/migrations/052_gdpr_privacy_preferences_and_consent_ledger.sql`), true)
+})
+check('newsletter popup uses double opt-in and one-click unsubscribe', () => {
+  const subscribe = read('src/app/api/newsletter/subscribe/route.ts')
+  const confirm = read('src/app/api/newsletter/confirm/route.ts')
+  const unsubscribe = read('src/app/api/newsletter/unsubscribe/route.ts')
+  assert.match(subscribe, /sendNewsletterDoubleOptInEmail/)
+  assert.match(subscribe, /status: 'pending'/)
+  assert.match(confirm, /status: 'confirmed'/)
+  assert.match(unsubscribe, /status: 'unsubscribed'/)
+  assert.equal(existsSync(`${root}/src/components/NewsletterSignupBar.tsx`), true)
+  assert.equal(existsSync(`${root}/supabase/migrations/054_newsletter_double_opt_in_subscribers.sql`), true)
 })
 check('public adverts require Stripe payment and admin approval', () => {
   for (const file of ['src/app/api/advertising/route.ts', 'src/app/api/advertising/click/route.ts']) {
