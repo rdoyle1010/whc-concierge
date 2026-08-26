@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { createServerSupabaseClient } from '@/lib/supabase/server'
 import { normaliseAccountRole } from '@/lib/role-access'
 import { canEmployerDiscoverCandidate, mutualRadiusResult } from '@/lib/discovery'
 import { validShiftWindow, windowCovers, windowsOverlap } from '@/lib/agency-time'
+import { getRequestUser } from '@/lib/request-user'
 
 export const dynamic = 'force-dynamic'
 
@@ -22,8 +22,7 @@ const SAFE_FIELDS = [
 ].join(',')
 
 export async function GET(req: NextRequest) {
-  const auth = await createServerSupabaseClient()
-  const { data: { user } } = await auth.auth.getUser()
+  const user = await getRequestUser(req)
   if (!user) {
     return NextResponse.json({ error: 'Please sign in as a hotel or spa to search agency professionals', requires_sign_in: true }, { status: 401 })
   }
@@ -75,8 +74,8 @@ export async function GET(req: NextRequest) {
   if (id) query = query.eq('id', id)
   const [{ data, error }, { data: blocks }] = await Promise.all([
     query
-    .order('is_featured', { ascending: false })
-    .order('review_score', { ascending: false }),
+      .order('is_featured', { ascending: false })
+      .order('review_score', { ascending: false }),
     employer
       ? admin.from('profile_blocks').select('candidate_id').eq('blocked_employer_id', employer.id)
       : Promise.resolve({ data: [] as any[] }),
@@ -131,8 +130,6 @@ export async function GET(req: NextRequest) {
         completed_shift_count: completedCount.get(candidate.id) || 0,
       }
     })
-    // A UK-wide search may remove the employer's radius, but it cannot widen
-    // the professional's own travel commitment.
     .filter((candidate: any) => isAdmin || candidate.within_radius)
     .filter((candidate: any) => !hasShiftSearch || candidate.availability_match === 'confirmed')
   if (id && candidates.length === 0) return NextResponse.json({ error: 'Profile not found' }, { status: 404 })
