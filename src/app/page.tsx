@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import type { ReactNode } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
+import { unstable_cache } from 'next/cache'
 import { ArrowRight, MapPin, Star } from 'lucide-react'
 import CandidateProfileMockup from '@/components/homepage-mockups/CandidateProfileMockup'
 import MatchScoreMockup from '@/components/homepage-mockups/MatchScoreMockup'
@@ -45,7 +46,7 @@ type FeaturedTalent = {
   experience: number | null
 }
 
-async function getFeaturedTalent(): Promise<FeaturedTalent[]> {
+const getFeaturedTalent = unstable_cache(async (): Promise<FeaturedTalent[]> => {
   try {
     const admin = createAdminClient()
     const now = new Date().toISOString()
@@ -69,12 +70,12 @@ async function getFeaturedTalent(): Promise<FeaturedTalent[]> {
   } catch {
     return []
   }
-}
+}, ['homepage-featured-talent-v1'], { revalidate: 60 })
 
-async function getFeaturedRoles(): Promise<FeaturedRole[]> {
+const getFeaturedRoles = unstable_cache(async (): Promise<FeaturedRole[]> => {
   try {
-    const supabase = await createServerSupabaseClient()
-    const { data } = await supabase
+    const admin = createAdminClient()
+    const { data } = await admin
       .from('job_listings')
       .select('id, job_title, location, salary_min, salary_max, contract_type, tier, employer_profiles(company_name, property_name)')
       .eq('is_live', true)
@@ -95,7 +96,7 @@ async function getFeaturedRoles(): Promise<FeaturedRole[]> {
   } catch {
     return []
   }
-}
+}, ['homepage-featured-roles-v1'], { revalidate: 60 })
 
 async function canPreviewDraft() {
   try {
@@ -183,7 +184,7 @@ function RolesSection({ content, roles }: { content: WebsiteContent; roles: Feat
     <div className="mx-auto max-w-7xl px-6 lg:px-8">
       <div className="mb-10 flex items-end justify-between">
         <div><Eyebrow>{content.roles.eyebrow}</Eyebrow><h2 className="site-heading text-[34px] font-medium md:text-[48px]">{content.roles.heading}</h2></div>
-        <Link href="/roles" className="hidden items-center gap-2 text-[13px] font-medium opacity-60 transition-opacity hover:opacity-100 md:flex">{content.roles.linkLabel}<ArrowRight size={14} /></Link>
+        <Link href="/jobs" className="hidden items-center gap-2 text-[13px] font-medium opacity-60 transition-opacity hover:opacity-100 md:flex">{content.roles.linkLabel}<ArrowRight size={14} /></Link>
       </div>
       <div className="grid gap-5 md:grid-cols-3">
         {roles.map((role, index) => {
@@ -202,14 +203,14 @@ function RolesSection({ content, roles }: { content: WebsiteContent; roles: Feat
           </Link>
         })}
       </div>
-      <Link href="/roles" className="site-button site-accent-bg mx-auto mt-8 flex w-fit items-center gap-2 px-6 py-3 text-[13px] font-semibold text-white md:hidden">{content.roles.linkLabel}<ArrowRight size={14} /></Link>
+      <Link href="/jobs" className="site-button site-accent-bg mx-auto mt-8 flex w-fit items-center gap-2 px-6 py-3 text-[13px] font-semibold text-white md:hidden">{content.roles.linkLabel}<ArrowRight size={14} /></Link>
     </div>
   </section>
 }
 
 function FeaturedTalentSection({ talent }: { talent: FeaturedTalent[] }) {
   if (!talent.length) return null
-  return <section className="border-b border-black/10 bg-[#F7F3EA] py-12">
+  return <section className="border-b border-black/10 bg-white py-12">
     <div className="mx-auto max-w-7xl px-6 lg:px-8">
       <div className="mb-7 flex flex-col justify-between gap-4 md:flex-row md:items-end">
         <div><Eyebrow>Featured talent</Eyebrow><h2 className="site-heading text-[30px] font-medium md:text-[40px]">Professionals ready to be discovered.</h2></div>
@@ -217,7 +218,7 @@ function FeaturedTalentSection({ talent }: { talent: FeaturedTalent[] }) {
       </div>
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {talent.map(candidate => <Link key={candidate.id} href={`/employer/candidates?candidate=${encodeURIComponent(candidate.id)}`} aria-label={`View featured profile for ${candidate.name}`} className="group flex items-center gap-4 rounded-2xl border border-black/10 bg-white p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:border-black/20 hover:shadow-md">
-          <div className="h-16 w-16 shrink-0 overflow-hidden rounded-full bg-[#EEEAE2]">
+          <div className="h-16 w-16 shrink-0 overflow-hidden rounded-full bg-[#eef2f4]">
             {candidate.image ? <Image src={candidate.image} alt={candidate.name} width={64} height={64} sizes="64px" quality={65} className="h-full w-full object-cover" /> : <div className="flex h-full w-full items-center justify-center text-xl font-semibold opacity-40">{candidate.name[0]}</div>}
           </div>
           <div className="min-w-0 flex-1">
@@ -282,7 +283,7 @@ function TestimonialsSection({ content }: { content: WebsiteContent }) {
 type HomePageProps = { searchParams?: Promise<{ websitePreview?: string | string[] }> }
 
 export default async function HomePage(props: HomePageProps) {
-  const searchParams = await props.searchParams;
+  const searchParams = await props.searchParams
   const previewRequested = searchParams?.websitePreview === 'draft'
   const previewingDraft = previewRequested && (await canPreviewDraft())
   const [content, featuredRoles, featuredTalent] = await Promise.all([getWebsiteContent(previewingDraft), getFeaturedRoles(), getFeaturedTalent()])
