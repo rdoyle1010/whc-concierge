@@ -21,6 +21,7 @@ type BookingRow = {
   candidate_travel_radius?: number | null
   within_radius?: boolean | null
   employer_name?: string | null
+  employer_user_id?: string | null
   employer_location?: string | null
   employer_review_score?: number | null
   employer_review_count?: number | null
@@ -33,6 +34,7 @@ type BookingRow = {
   taxi_notes?: string | null
   travel_notes?: string | null
   candidate_name?: string | null
+  candidate_user_id?: string | null
   reviewed_by_viewer?: boolean | null
   viewer_role?: 'candidate' | 'employer'
 }
@@ -164,6 +166,8 @@ export default function AgencyScreen() {
       <Text style={styles.sectionTitle}>{role === 'talent' ? 'Shift offers & bookings' : 'Bookings'}</Text>
       {upcoming.length === 0 ? <Text style={styles.emptyCopy}>No agency bookings to show yet.</Text> : upcoming.map(booking => {
         const name = role === 'talent' ? (booking.employer_name || 'Property') : (booking.candidate_name || 'Talent')
+        const reviewable = Boolean(booking.paid_at && ['confirmed', 'completed'].includes(booking.status) && !booking.reviewed_by_viewer)
+        const reviewedId = role === 'talent' ? booking.employer_user_id : booking.candidate_user_id
         return <View key={booking.id} style={styles.card}>
           <View style={styles.topRow}><Text style={styles.status}>{booking.status}</Text>{booking.urgent ? <Text style={styles.urgent}>URGENT</Text> : null}</View>
           <Text style={styles.cardTitle}>{name}</Text>
@@ -181,6 +185,7 @@ export default function AgencyScreen() {
             {booking.employer_review_score != null ? <Text style={styles.travelLine}>Property rating: {booking.employer_review_score}/5{booking.employer_review_count ? ` from ${booking.employer_review_count} reviews` : ''}</Text> : null}
           </View> : null}
           {booking.status === 'pending' || booking.status === 'countered' ? <Text style={styles.pendingHint}>{role === 'talent' ? 'Offer response actions are the next Agency mobile step.' : 'Waiting for the professional to respond.'}</Text> : null}
+          {reviewable && reviewedId ? <Pressable onPress={() => router.push({ pathname: '/agency-review/[id]', params: { id: booking.id, reviewedId, type: role === 'talent' ? 'employer' : 'candidate', name } })} style={styles.reviewButton}><Text style={styles.reviewButtonText}>Leave shift review →</Text></Pressable> : null}
           {booking.reviewed_by_viewer ? <Text style={styles.reviewed}>Review submitted ✓</Text> : null}
         </View>
       })}
@@ -189,5 +194,5 @@ export default function AgencyScreen() {
 }
 
 const styles = StyleSheet.create({
-  scroll:{flex:1,backgroundColor:'#fff'}, page:{paddingHorizontal:22,paddingTop:64,paddingBottom:110}, back:{color:'#66747c',fontSize:13,marginBottom:34}, eyebrow:{color:'#71808a',fontSize:9,letterSpacing:2.1,marginBottom:10}, title:{color:'#092b45',fontSize:31,lineHeight:37,fontWeight:'500'}, intro:{color:'#66747c',fontSize:14,lineHeight:21,marginTop:10,marginBottom:28}, section:{marginBottom:30}, sectionTitle:{color:'#173246',fontSize:17,fontWeight:'600',marginBottom:8}, help:{color:'#71808a',fontSize:11,lineHeight:17,marginBottom:14}, availabilityCard:{borderWidth:1,borderColor:'#dce3e7',padding:16,marginBottom:10}, dayTop:{flexDirection:'row',justifyContent:'space-between',alignItems:'center'}, rowMain:{color:'#173246',fontSize:14,fontWeight:'600'}, savedState:{color:'#71808a',fontSize:9,marginTop:3,textTransform:'uppercase',letterSpacing:.8}, timeRow:{flexDirection:'row',gap:10,marginTop:13}, label:{color:'#173246',fontSize:10,fontWeight:'600',marginBottom:5}, input:{borderWidth:1,borderColor:'#d7e0e4',paddingHorizontal:10,paddingVertical:10,color:'#173246',fontSize:12}, buttonRow:{flexDirection:'row',alignItems:'center',gap:9,marginTop:13,flexWrap:'wrap'}, saveButton:{backgroundColor:'#092b45',paddingHorizontal:13,paddingVertical:11}, saveText:{color:'#fff',fontSize:10,fontWeight:'700'}, outlineButton:{borderWidth:1,borderColor:'#cfd9de',paddingHorizontal:12,paddingVertical:10}, outlineText:{color:'#66747c',fontSize:10,fontWeight:'600'}, clearText:{color:'#7a4a4a',fontSize:10,padding:8}, disabled:{opacity:.45}, card:{borderWidth:1,borderColor:'#dce3e7',padding:18,marginBottom:10}, topRow:{flexDirection:'row',justifyContent:'space-between'}, status:{color:'#71808a',fontSize:9,textTransform:'uppercase',letterSpacing:1.2}, urgent:{color:'#8a3434',fontSize:8,letterSpacing:1.2,fontWeight:'700'}, cardTitle:{color:'#173246',fontSize:17,fontWeight:'600',marginTop:8}, cardCopy:{color:'#66747c',fontSize:12,lineHeight:18,marginTop:6}, travelBox:{backgroundColor:'#f5f8f9',padding:13,marginTop:14}, travelTitle:{color:'#173246',fontSize:11,fontWeight:'700',marginBottom:5}, travelLine:{color:'#66747c',fontSize:10,lineHeight:16,marginTop:2}, warning:{color:'#8a3434',fontSize:10,lineHeight:15,marginTop:4,fontWeight:'600'}, pendingHint:{color:'#71808a',fontSize:10,lineHeight:16,marginTop:12,fontStyle:'italic'}, reviewed:{color:'#456655',fontSize:10,fontWeight:'600',marginTop:10}, emptyCopy:{color:'#71808a',fontSize:12,lineHeight:18,backgroundColor:'#f4f7f8',padding:17}, error:{color:'#9b2c2c',fontSize:12,marginBottom:18}
+  scroll:{flex:1,backgroundColor:'#fff'}, page:{paddingHorizontal:22,paddingTop:64,paddingBottom:110}, back:{color:'#66747c',fontSize:13,marginBottom:34}, eyebrow:{color:'#71808a',fontSize:9,letterSpacing:2.1,marginBottom:10}, title:{color:'#092b45',fontSize:31,lineHeight:37,fontWeight:'500'}, intro:{color:'#66747c',fontSize:14,lineHeight:21,marginTop:10,marginBottom:28}, section:{marginBottom:30}, sectionTitle:{color:'#173246',fontSize:17,fontWeight:'600',marginBottom:8}, help:{color:'#71808a',fontSize:11,lineHeight:17,marginBottom:14}, availabilityCard:{borderWidth:1,borderColor:'#dce3e7',padding:16,marginBottom:10}, dayTop:{flexDirection:'row',justifyContent:'space-between',alignItems:'center'}, rowMain:{color:'#173246',fontSize:14,fontWeight:'600'}, savedState:{color:'#71808a',fontSize:9,marginTop:3,textTransform:'uppercase',letterSpacing:.8}, timeRow:{flexDirection:'row',gap:10,marginTop:13}, label:{color:'#173246',fontSize:10,fontWeight:'600',marginBottom:5}, input:{borderWidth:1,borderColor:'#d7e0e4',paddingHorizontal:10,paddingVertical:10,color:'#173246',fontSize:12}, buttonRow:{flexDirection:'row',alignItems:'center',gap:9,marginTop:13,flexWrap:'wrap'}, saveButton:{backgroundColor:'#092b45',paddingHorizontal:13,paddingVertical:11}, saveText:{color:'#fff',fontSize:10,fontWeight:'700'}, outlineButton:{borderWidth:1,borderColor:'#cfd9de',paddingHorizontal:12,paddingVertical:10}, outlineText:{color:'#66747c',fontSize:10,fontWeight:'600'}, clearText:{color:'#7a4a4a',fontSize:10,padding:8}, disabled:{opacity:.45}, card:{borderWidth:1,borderColor:'#dce3e7',padding:18,marginBottom:10}, topRow:{flexDirection:'row',justifyContent:'space-between'}, status:{color:'#71808a',fontSize:9,textTransform:'uppercase',letterSpacing:1.2}, urgent:{color:'#8a3434',fontSize:8,letterSpacing:1.2,fontWeight:'700'}, cardTitle:{color:'#173246',fontSize:17,fontWeight:'600',marginTop:8}, cardCopy:{color:'#66747c',fontSize:12,lineHeight:18,marginTop:6}, travelBox:{backgroundColor:'#f5f8f9',padding:13,marginTop:14}, travelTitle:{color:'#173246',fontSize:11,fontWeight:'700',marginBottom:5}, travelLine:{color:'#66747c',fontSize:10,lineHeight:16,marginTop:2}, warning:{color:'#8a3434',fontSize:10,lineHeight:15,marginTop:4,fontWeight:'600'}, pendingHint:{color:'#71808a',fontSize:10,lineHeight:16,marginTop:12,fontStyle:'italic'}, reviewButton:{borderTopWidth:1,borderTopColor:'#edf1f3',paddingTop:12,marginTop:14}, reviewButtonText:{color:'#092b45',fontSize:10,fontWeight:'700'}, reviewed:{color:'#456655',fontSize:10,fontWeight:'600',marginTop:10}, emptyCopy:{color:'#71808a',fontSize:12,lineHeight:18,backgroundColor:'#f4f7f8',padding:17}, error:{color:'#9b2c2c',fontSize:12,marginBottom:18}
 })
