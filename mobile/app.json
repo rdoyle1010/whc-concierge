@@ -3,16 +3,40 @@
     "name": "Wellness House Talent",
     "slug": "wellness-house-talent",
     "scheme": "whctalent",
-    "version": "0.1.0",
+    "version": "0.2.0",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
-    "plugins": ["expo-router"],
+    "plugins": [
+      "expo-router",
+      [
+        "expo-notifications",
+        {
+          "defaultChannel": "platform-updates",
+          "enableBackgroundRemoteNotifications": false
+        }
+      ]
+    ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.wellnesshousecollective.talent"
+      "bundleIdentifier": "com.wellnesshousecollective.talent",
+      "associatedDomains": ["applinks:talent.wellnesshousecollective.co.uk"]
     },
     "android": {
-      "package": "com.wellnesshousecollective.talent"
+      "package": "com.wellnesshousecollective.talent",
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [
+            {
+              "scheme": "https",
+              "host": "talent.wellnesshousecollective.co.uk",
+              "pathPrefix": "/"
+            }
+          ],
+          "category": ["BROWSABLE", "DEFAULT"]
+        }
+      ]
     },
     "experiments": {
       "typedRoutes": true
