@@ -1,15 +1,18 @@
 import { useEffect } from 'react'
 import { Stack, router } from 'expo-router'
 import { StatusBar } from 'expo-status-bar'
+import { View } from 'react-native'
 import * as Notifications from 'expo-notifications'
 import { registerPushNotifications } from '../src/lib/push'
+import MobileNav from '../src/components/MobileNav'
 
 function useNotificationRouting() {
   useEffect(() => {
     function openNotification(notification: Notifications.Notification) {
-      const url = notification.request.content.data?.url
-      if (typeof url === 'string' && url.startsWith('/')) {
-        router.push(url as never)
+      const data = notification.request.content.data || {}
+      const destination = typeof data.url === 'string' ? data.url : typeof data.link === 'string' ? data.link : ''
+      if (destination.startsWith('/')) {
+        router.push(destination as never)
       }
     }
 
@@ -30,9 +33,10 @@ export default function RootLayout() {
   useNotificationRouting()
 
   return (
-    <>
+    <View style={{ flex: 1, backgroundColor: '#fff' }}>
       <StatusBar style="dark" />
-      <Stack screenOptions={{ headerShown: false, animation: 'fade' }} />
-    </>
+      <View style={{ flex: 1 }}><Stack screenOptions={{ headerShown: false, animation: 'fade' }} /></View>
+      <MobileNav />
+    </View>
   )
 }
