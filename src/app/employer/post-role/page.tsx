@@ -1,551 +1,78 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import DashboardShell from '@/components/DashboardShell'
 import { createClient } from '@/lib/supabase/client'
 import { ROLE_LEVELS, CONTRACT_TYPES, JOB_TIERS } from '@/lib/constants'
 import { SERVICES_CATEGORIES, PRODUCT_HOUSES_FULL, QUALS_CATEGORIES, SYSTEMS_FULL } from '@/lib/taxonomy'
 import CollapsibleCheckboxSection from '@/components/CollapsibleCheckboxSection'
-import { Check } from 'lucide-react'
+import { Check, ArrowRight, Users } from 'lucide-react'
 
 const TIER_KEYS = ['Bronze', 'Silver', 'Gold', 'Platinum'] as const
-const tierCards = TIER_KEYS.map(k => ({
-  name: k,
-  price: JOB_TIERS[k].price / 100,
-  features: JOB_TIERS[k].features as readonly string[],
-}))
-
+const tierCards = TIER_KEYS.map(k => ({ name: k, price: JOB_TIERS[k].price / 100, features: JOB_TIERS[k].features as readonly string[] }))
 const SHIFT_OPTIONS = ['Early morning', 'Daytime', 'Evening', 'Overnight', 'Split shifts', 'Weekends only', 'Flexible']
-
-const BUSINESS_SKILLS = [
-  'Reception & Front of House', 'Revenue Management', 'Stock Control',
-  'Team Leadership', 'Staff Training', 'Rota Management', 'KPI Reporting',
-  'Health & Safety', 'COSHH Management', 'Budget Management',
-  'Client Consultation', 'Upselling & Retail', 'Social Media',
-  'Event Coordination', 'Membership Management',
-]
+const BUSINESS_SKILLS = ['Reception & Front of House','Revenue Management','Stock Control','Team Leadership','Staff Training','Rota Management','KPI Reporting','Health & Safety','COSHH Management','Budget Management','Client Consultation','Upselling & Retail','Social Media','Event Coordination','Membership Management']
+const SCOPE_OPTIONS = [
+  { value: 'same_level', title: 'Same level only', text: 'Prioritise people already working at this level. They may still see the role, but lower-level candidates will not be treated as a strong match.' },
+  { value: 'step_up', title: 'Ready for the next step', text: 'Recommended. Match people at this level and strong candidates one career level below, such as Spa Manager → Spa Director.' },
+  { value: 'emerging', title: 'Open to emerging talent', text: 'Also consider candidates up to two career levels below where their leadership, commercial and technical evidence supports progression.' },
+  { value: 'open_transferable', title: 'Open / transferable experience', text: 'Allow WHC to surface less obvious candidates where transferable evidence makes the opportunity credible.' },
+] as const
 
 export default function PostRolePage() {
-  const router = useRouter()
-  const searchParams = useSearchParams()
-  const supabase = createClient()
-
-  const [profile, setProfile] = useState<any>(null)
-  const [phase, setPhase] = useState<'form' | 'tier'>('form')
-  const [selectedTier, setSelectedTier] = useState('Bronze')
-  const [saving, setSaving] = useState(false)
-  const [checkoutLoading, setCheckoutLoading] = useState(false)
-  const [error, setError] = useState('')
-  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
-  const [form, setForm] = useState({
-    title: '', description: '', location: '', location_postcode: '',
-    radius_miles: '', job_type: 'Full-time', contract_type: 'permanent',
-    required_role_level: '', salary_min: '', salary_max: '', specialism: '',
-    // ── Algorithm fields ──
-    required_skills: [] as string[],
-    required_product_houses: [] as string[],
-    required_qualifications: [] as string[],
-    required_systems: [] as string[],
-    preferred_business_skills: [] as string[],
-    min_years_experience: '',
-    shift_pattern: '',
-    offers_accommodation: false,
-    // ── Other ──
-    requirements: '', benefits: '',
-    insurance_required: false, is_agency_role: false, is_residency_role: false,
+  const router = useRouter(); const searchParams = useSearchParams(); const supabase = createClient()
+  const [profile,setProfile]=useState<any>(null); const [phase,setPhase]=useState<'form'|'tier'>('form'); const [selectedTier,setSelectedTier]=useState('Bronze')
+  const [saving,setSaving]=useState(false); const [checkoutLoading,setCheckoutLoading]=useState(false); const [error,setError]=useState(''); const [fieldErrors,setFieldErrors]=useState<Record<string,string>>({})
+  const [form,setForm]=useState({
+    title:'',description:'',location:'',location_postcode:'',radius_miles:'',job_type:'Full-time',contract_type:'permanent',required_role_level:'',candidate_scope:'step_up',salary_min:'',salary_max:'',
+    required_skills:[] as string[],required_product_houses:[] as string[],required_qualifications:[] as string[],required_systems:[] as string[],preferred_business_skills:[] as string[],min_years_experience:'',shift_pattern:'',offers_accommodation:false,
+    requirements:'',benefits:'',insurance_required:false,is_agency_role:false,is_residency_role:false,
   })
+  const update=(field:keyof typeof form,value:any)=>{setForm(p=>({...p,[field]:value}));setFieldErrors(p=>{const n={...p};delete n[field];return n})}
 
-  const update = (field: keyof typeof form, value: any) => {
-    setForm(prev => ({ ...prev, [field]: value }))
-    setFieldErrors(prev => { const next = { ...prev }; delete next[field]; return next })
-  }
+  useEffect(()=>{(async()=>{
+    const {data:{user}}=await supabase.auth.getUser(); if(!user){router.push('/login');return}
+    const {data}=await supabase.from('employer_profiles').select('*').eq('user_id',user.id).single(); setProfile(data)
+    const id=searchParams?.get('clone')||searchParams?.get('repost'); if(!id)return
+    const {data:j}=await supabase.from('job_listings').select('*').eq('id',id).single(); if(!j)return
+    setForm({title:j.job_title||'',description:j.job_description||'',location:j.location||'',location_postcode:j.location_postcode||'',radius_miles:j.radius_miles?.toString()||'',job_type:j.job_type||'Full-time',contract_type:j.contract_type||'permanent',required_role_level:j.required_role_level||'',candidate_scope:j.candidate_scope||'step_up',salary_min:j.salary_min?.toString()||'',salary_max:j.salary_max?.toString()||'',required_skills:j.required_skills||[],required_product_houses:j.required_brands||j.required_product_houses||[],required_qualifications:j.required_qualifications||[],required_systems:j.required_systems||[],preferred_business_skills:j.preferred_business_skills||[],min_years_experience:j.min_years_experience?.toString()||'',shift_pattern:j.shift_pattern||'',offers_accommodation:!!j.offers_accommodation,requirements:Array.isArray(j.requirements)?j.requirements.join('\n'):'',benefits:Array.isArray(j.benefits)?j.benefits.join('\n'):'',insurance_required:!!j.insurance_required,is_agency_role:!!j.is_agency_role,is_residency_role:!!j.is_residency_role})
+  })()},[])
 
-  useEffect(() => {
-    async function load() {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) { router.push('/login'); return }
-      const { data } = await supabase.from('employer_profiles').select('*').eq('user_id', user.id).single()
-      setProfile(data)
+  const payload=()=>({employer_id:profile.id,job_title:form.title,job_description:form.description,location:form.location,location_postcode:form.location_postcode||null,radius_miles:form.radius_miles?parseInt(form.radius_miles):null,job_type:form.job_type,contract_type:form.contract_type,required_role_level:form.required_role_level||null,candidate_scope:form.candidate_scope,salary_min:form.salary_min?parseInt(form.salary_min):null,salary_max:form.salary_max?parseInt(form.salary_max):null,required_skills:form.required_skills.length?form.required_skills:null,required_brands:form.required_product_houses.length?form.required_product_houses:null,required_qualifications:form.required_qualifications.length?form.required_qualifications:null,required_systems:form.required_systems.length?form.required_systems:null,preferred_business_skills:form.preferred_business_skills.length?form.preferred_business_skills:null,min_years_experience:form.min_years_experience?parseInt(form.min_years_experience):0,shift_pattern:form.shift_pattern||null,offers_accommodation:form.offers_accommodation,requirements:form.requirements?form.requirements.split('\n').filter(Boolean):null,benefits:form.benefits?form.benefits.split('\n').filter(Boolean):null,insurance_required:form.insurance_required,is_agency_role:form.is_agency_role,is_residency_role:form.is_residency_role,tier:selectedTier})
 
-      const cloneId = searchParams?.get('clone')
-      const repostId = searchParams?.get('repost')
-      const jobIdToLoad = cloneId || repostId
+  async function saveDraft(){if(!profile||!form.title||!form.location)return;setSaving(true);setError('');try{const r=await fetch('/api/employer/jobs/create',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({...payload(),is_live:false,status:'draft'})});const j=await r.json();if(!r.ok)throw new Error(j.error||'Error saving draft');router.push('/employer/dashboard?tab=drafts')}catch(e:any){setError(e.message);setSaving(false)}}
+  function next(){const e:Record<string,string>={};if(form.title.trim().length<5)e.job_title='Title must be at least 5 characters';if(form.description.trim().length<10)e.job_description='Description must be at least 10 characters';if(!form.location.trim())e.location='Location is required';setFieldErrors(e);if(Object.keys(e).length){setError('Please complete the highlighted fields.');window.scrollTo({top:0,behavior:'smooth'});return}setError('');setPhase('tier');window.scrollTo({top:0,behavior:'smooth'})}
+  async function post(){if(!profile||saving||checkoutLoading)return;setSaving(true);setError('');try{const c=await fetch('/api/employer/jobs/create',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({...payload(),is_live:false,status:'pending_payment'})});const cd=await c.json();if(!c.ok||!cd.job)throw new Error(cd.error||'Failed to create listing');setCheckoutLoading(true);const r=await fetch('/api/stripe/checkout',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({type:'job_posting',jobId:cd.job.id,employerId:profile.id,tier:selectedTier})});const d=await r.json();if(!r.ok||!d.url)throw new Error(d.error||'Could not start checkout');window.location.href=d.url}catch(e:any){setError(e.message);setSaving(false);setCheckoutLoading(false)}}
 
-      if (jobIdToLoad) {
-        const { data: jobData } = await supabase.from('job_listings').select('*').eq('id', jobIdToLoad).single()
-        if (jobData) {
-          setForm({
-            title: jobData.job_title || '',
-            description: jobData.job_description || '',
-            location: jobData.location || '',
-            location_postcode: jobData.location_postcode || '',
-            radius_miles: jobData.radius_miles?.toString() || '',
-            job_type: jobData.job_type || 'Full-time',
-            contract_type: jobData.contract_type || 'permanent',
-            required_role_level: jobData.required_role_level || '',
-            salary_min: jobData.salary_min?.toString() || '',
-            salary_max: jobData.salary_max?.toString() || '',
-            specialism: jobData.specialism || '',
-            required_skills: jobData.required_skills || [],
-            required_product_houses: jobData.required_brands || jobData.required_product_houses || [],
-            required_qualifications: jobData.required_qualifications || [],
-            required_systems: jobData.required_systems || [],
-            preferred_business_skills: jobData.preferred_business_skills || [],
-            min_years_experience: jobData.min_years_experience?.toString() || '',
-            shift_pattern: jobData.shift_pattern || '',
-            offers_accommodation: jobData.offers_accommodation || false,
-            requirements: (jobData.requirements && Array.isArray(jobData.requirements)) ? jobData.requirements.join('\n') : '',
-            benefits: (jobData.benefits && Array.isArray(jobData.benefits)) ? jobData.benefits.join('\n') : '',
-            insurance_required: jobData.insurance_required || false,
-            is_agency_role: jobData.is_agency_role || false,
-            is_residency_role: jobData.is_residency_role || false,
-          })
-        }
-      }
-    }
-    load()
-  }, [])
+  if(!profile)return <div/>
+  return <DashboardShell role="employer" userName={profile.company_name}>
+    <div className="max-w-4xl"><p className="dashboard-eyebrow">Recruitment</p><h1 className="dashboard-title">Post a Role</h1><p className="dashboard-intro">Tell WHC what the job genuinely needs and how open you are to career progression. The match score should guide decisions, not force an exact job-title match.</p></div>
+    {error&&<div className="max-w-4xl mt-6 bg-red-50 text-red-700 text-sm px-4 py-3 rounded-lg">{error}</div>}
+    {phase==='form'?<div className="max-w-4xl mt-8 space-y-7">
+      <section className="dashboard-card space-y-5"><p className="eyebrow">Job details</p>
+        <Field label="Job title *"><input className={`input-field ${fieldErrors.job_title?'border-red-300':''}`} value={form.title} onChange={e=>update('title',e.target.value)} placeholder="e.g. Director of Spa"/></Field>
+        <Field label="Job description *"><textarea className={`input-field ${fieldErrors.job_description?'border-red-300':''}`} rows={7} value={form.description} onChange={e=>update('description',e.target.value)} placeholder="Responsibilities, priorities, reporting line, team size and what success looks like..."/></Field>
+        <div className="grid md:grid-cols-2 gap-4"><Field label="Role level"><select className="input-field" value={form.required_role_level} onChange={e=>update('required_role_level',e.target.value)}><option value="">Use job title / any level</option>{ROLE_LEVELS.map(r=><option key={r}>{r}</option>)}</select></Field><Field label="Contract type"><select className="input-field" value={form.contract_type} onChange={e=>update('contract_type',e.target.value)}>{CONTRACT_TYPES.map(t=><option key={t} value={t}>{t.replace('_',' ')}</option>)}</select></Field></div>
+        <div className="grid md:grid-cols-2 gap-4"><Field label="Location *"><input className={`input-field ${fieldErrors.location?'border-red-300':''}`} value={form.location} onChange={e=>update('location',e.target.value)}/></Field><Field label="Postcode"><input className="input-field" value={form.location_postcode} onChange={e=>update('location_postcode',e.target.value)}/></Field></div>
+        <div className="grid md:grid-cols-4 gap-4"><Field label="Min salary"><input type="number" className="input-field" value={form.salary_min} onChange={e=>update('salary_min',e.target.value)}/></Field><Field label="Max salary"><input type="number" className="input-field" value={form.salary_max} onChange={e=>update('salary_max',e.target.value)}/></Field><Field label="Experience"><input type="number" className="input-field" value={form.min_years_experience} onChange={e=>update('min_years_experience',e.target.value)}/></Field><Field label="Job type"><select className="input-field" value={form.job_type} onChange={e=>update('job_type',e.target.value)}><option>Full-time</option><option>Part-time</option><option>Contract</option><option>Temporary</option><option>Freelance</option></select></Field></div>
+      </section>
 
-  const buildJobPayload = () => ({
-    employer_id: profile.id,
-    job_title: form.title,
-    job_description: form.description,
-    location: form.location,
-    location_postcode: form.location_postcode || null,
-    radius_miles: form.radius_miles ? parseInt(form.radius_miles) : null,
-    job_type: form.job_type,
-    contract_type: form.contract_type,
-    required_role_level: form.required_role_level || null,
-    salary_min: form.salary_min ? parseInt(form.salary_min) : null,
-    salary_max: form.salary_max ? parseInt(form.salary_max) : null,
-    // ── Algorithm fields ──
-    required_skills: form.required_skills.length > 0 ? form.required_skills : null,
-    required_brands: form.required_product_houses.length > 0 ? form.required_product_houses : null,
-    required_qualifications: form.required_qualifications.length > 0 ? form.required_qualifications : null,
-    required_systems: form.required_systems.length > 0 ? form.required_systems : null,
-    preferred_business_skills: form.preferred_business_skills.length > 0 ? form.preferred_business_skills : null,
-    min_years_experience: form.min_years_experience ? parseInt(form.min_years_experience) : 0,
-    shift_pattern: form.shift_pattern || null,
-    offers_accommodation: form.offers_accommodation,
-    // ── Other ──
-    requirements: form.requirements ? form.requirements.split('\n').filter(Boolean) : null,
-    benefits: form.benefits ? form.benefits.split('\n').filter(Boolean) : null,
-    insurance_required: form.insurance_required,
-    is_agency_role: form.is_agency_role,
-    is_residency_role: form.is_residency_role,
-    tier: selectedTier,
-  })
+      <section className="dashboard-card"><div className="flex items-start gap-3"><Users size={20} className="text-[#6f7f88] mt-1"/><div><p className="eyebrow">Who should WHC consider?</p><h2 className="text-[25px] mt-1">Set the career-progression window.</h2><p className="text-[12px] text-secondary mt-2 max-w-2xl">This is separate from must-have qualifications. A Spa Manager can match a Spa Director role when you choose a step-up option and their leadership/commercial evidence supports it.</p></div></div><div className="grid md:grid-cols-2 gap-3 mt-6">{SCOPE_OPTIONS.map(o=><button type="button" key={o.value} onClick={()=>update('candidate_scope',o.value)} className={`text-left rounded-xl border p-4 transition-all ${form.candidate_scope===o.value?'border-[#0b2f4d] bg-[#f1f4f6]':'border-[#dfe5e8] bg-white hover:border-[#aebbc2]'}`}><div className="flex items-center justify-between gap-3"><p className="text-[14px] font-semibold text-[#10283b]">{o.title}</p>{form.candidate_scope===o.value&&<Check size={15} className="text-[#0b2f4d]"/>}</div><p className="text-[11px] leading-5 text-secondary mt-2">{o.text}</p></button>)}</div></section>
 
-  const handleSaveAsDraft = async () => {
-    if (!profile || !form.title || !form.location) return
-    setSaving(true)
-    setError('')
+      <section className="dashboard-card space-y-5"><div><p className="eyebrow">Matching criteria</p><h2 className="text-[24px] mt-1">Separate genuine requirements from preferences.</h2><p className="text-[12px] text-secondary mt-2">Only select criteria that should influence the score. For leadership roles, leave treatment skills blank unless hands-on treatment delivery is genuinely required.</p></div>
+        <CollapsibleCheckboxSection title="Required Services & Treatment Skills" categories={SERVICES_CATEGORIES} selected={form.required_skills} onChange={v=>update('required_skills',v)}/>
+        <CollapsibleCheckboxSection title="Required Product Houses" flatItems={[...PRODUCT_HOUSES_FULL]} selected={form.required_product_houses} onChange={v=>update('required_product_houses',v)}/>
+        <CollapsibleCheckboxSection title="Required Qualifications" categories={QUALS_CATEGORIES} selected={form.required_qualifications} onChange={v=>update('required_qualifications',v)}/>
+        <CollapsibleCheckboxSection title="Required Systems" flatItems={[...SYSTEMS_FULL]} selected={form.required_systems} onChange={v=>update('required_systems',v)}/>
+        <CollapsibleCheckboxSection title="Preferred Leadership & Business Skills" flatItems={BUSINESS_SKILLS} selected={form.preferred_business_skills} onChange={v=>update('preferred_business_skills',v)}/>
+        <div className="grid md:grid-cols-2 gap-4"><Field label="Shift pattern"><select className="input-field" value={form.shift_pattern} onChange={e=>update('shift_pattern',e.target.value)}><option value="">Any / Flexible</option>{SHIFT_OPTIONS.map(s=><option key={s}>{s}</option>)}</select></Field><Field label="Search radius (miles)"><input type="number" className="input-field" value={form.radius_miles} onChange={e=>update('radius_miles',e.target.value)}/></Field></div>
+      </section>
 
-    try {
-      const res = await fetch('/api/employer/jobs/create', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...buildJobPayload(), is_live: false, status: 'draft' }),
-      })
-      const result = await res.json()
-      if (!res.ok) throw new Error(result.error || 'Error saving draft')
-      router.push('/employer/dashboard?tab=drafts')
-    } catch (err: any) {
-      setError(err.message || 'Error saving draft')
-      setSaving(false)
-    }
-  }
-
-  const handleValidateAndNext = async () => {
-    setError('')
-    setFieldErrors({})
-
-    const newErrors: Record<string, string> = {}
-    if (!form.title || form.title.trim().length < 5) newErrors.job_title = 'Title must be at least 5 characters'
-    if (!form.description || form.description.trim().length < 10) newErrors.job_description = 'Description must be at least 10 characters'
-    if (!form.location || !form.location.trim()) newErrors.location = 'Location is required'
-
-    if (Object.keys(newErrors).length > 0) {
-      setFieldErrors(newErrors)
-      const FIELD_LABELS: Record<string, string> = { job_title: 'Job Title', job_description: 'Description', location: 'Location' }
-      setError(`Please check these fields before continuing: ${Object.keys(newErrors).map(k => FIELD_LABELS[k]).join(', ')}`)
-      window.scrollTo({ top: 0, behavior: 'smooth' })
-      return
-    }
-    setPhase('tier')
-    window.scrollTo({ top: 0, behavior: 'smooth' })
-  }
-
-  const handlePostLive = async () => {
-    if (!profile) return
-    if (saving || checkoutLoading) return
-    setSaving(true)
-    setError('')
-
-    try {
-      const tierConfig = JOB_TIERS[selectedTier as keyof typeof JOB_TIERS]
-      const expiresAt = new Date(Date.now() + (tierConfig?.days || 30) * 24 * 60 * 60 * 1000).toISOString()
-
-      const createRes = await fetch('/api/employer/jobs/create', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...buildJobPayload(), is_live: false, status: 'pending_payment' }),
-      })
-      const createData = await createRes.json()
-      const insertedJob = createData.job
-      if (!createRes.ok || !insertedJob) { setError(createData.error || 'Failed to create listing'); setSaving(false); return }
-
-      setCheckoutLoading(true)
-      const res = await fetch('/api/stripe/checkout', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          type: 'job_posting',
-          jobId: insertedJob.id,
-          employerId: profile.id,
-          tier: selectedTier,
-        }),
-      })
-
-      const data = await res.json()
-      if (!res.ok || !data.url) {
-        setError(data.error || 'Could not start checkout - please try again.')
-        setSaving(false)
-        setCheckoutLoading(false)
-        return
-      }
-      window.location.href = data.url
-    } catch (err: any) {
-      setError(err.message)
-      setSaving(false)
-    }
-  }
-
-  if (!profile) return <div />
-
-  return (
-    <DashboardShell role="employer" userName={profile?.company_name}>
-      <h1 className="text-2xl font-bold text-black mb-2">Post a Role</h1>
-      <p className="text-neutral-400 text-sm mb-8">Create your job listing with full matching criteria, then select a package.</p>
-
-      {error && <div className="bg-red-50 text-red-600 text-sm px-4 py-3 mb-6">{error}</div>}
-
-      {phase === 'form' ? (
-        <div className="max-w-2xl space-y-8">
-
-          {/* ── SECTION: Job Details ── */}
-          <div className="space-y-6">
-            <p className="text-xs font-medium text-neutral-400 uppercase tracking-widest border-b border-neutral-100 pb-2">Job Details</p>
-
-            <div><label className="block text-xs font-medium text-neutral-500 uppercase tracking-wider mb-1.5">Job Title *</label>
-              <input type="text" value={form.title} onChange={(e) => update('title', e.target.value)} className={`input-field ${fieldErrors.job_title ? 'border-red-300' : ''}`} placeholder="e.g. Senior Spa Therapist" />
-              {fieldErrors.job_title && <p className="text-red-500 text-xs mt-1">{fieldErrors.job_title}</p>}</div>
-
-            <div><label className="block text-xs font-medium text-neutral-500 uppercase tracking-wider mb-1.5">Description *</label>
-              <textarea rows={5} value={form.description} onChange={(e) => update('description', e.target.value)} className={`input-field ${fieldErrors.job_description ? 'border-red-300' : ''}`} placeholder="Describe the role, responsibilities, and ideal candidate..." />
-              {fieldErrors.job_description && <p className="text-red-500 text-xs mt-1">{fieldErrors.job_description}</p>}</div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div><label className="block text-xs font-medium text-neutral-500 uppercase tracking-wider mb-1.5">Role Level</label>
-                <select value={form.required_role_level} onChange={(e) => update('required_role_level', e.target.value)} className="input-field">
-                  <option value="">Any level</option>
-                  {ROLE_LEVELS.map((r) => <option key={r} value={r}>{r}</option>)}
-                </select></div>
-              <div><label className="block text-xs font-medium text-neutral-500 uppercase tracking-wider mb-1.5">Contract Type</label>
-                <select value={form.contract_type} onChange={(e) => update('contract_type', e.target.value)} className="input-field">
-                  {CONTRACT_TYPES.map((t) => <option key={t} value={t}>{t.replace('_', ' ')}</option>)}
-                </select></div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div><label className="block text-xs font-medium text-neutral-500 uppercase tracking-wider mb-1.5">Location *</label>
-                <input type="text" value={form.location} onChange={(e) => update('location', e.target.value)} className={`input-field ${fieldErrors.location ? 'border-red-300' : ''}`} placeholder="London" />
-                {fieldErrors.location && <p className="text-red-500 text-xs mt-1">{fieldErrors.location}</p>}</div>
-              <div><label className="block text-xs font-medium text-neutral-500 uppercase tracking-wider mb-1.5">Postcode</label>
-                <input type="text" value={form.location_postcode} onChange={(e) => update('location_postcode', e.target.value)} className="input-field" placeholder="SW1A 1AA" /></div>
-            </div>
-
-            <div className="grid grid-cols-3 gap-4">
-              <div><label className="block text-xs font-medium text-neutral-500 uppercase tracking-wider mb-1.5">Min Salary (£)</label>
-                <input type="number" value={form.salary_min} onChange={(e) => update('salary_min', e.target.value)} className="input-field" /></div>
-              <div><label className="block text-xs font-medium text-neutral-500 uppercase tracking-wider mb-1.5">Max Salary (£)</label>
-                <input type="number" value={form.salary_max} onChange={(e) => update('salary_max', e.target.value)} className="input-field" /></div>
-              <div><label className="block text-xs font-medium text-neutral-500 uppercase tracking-wider mb-1.5">Job Type</label>
-                <select value={form.job_type} onChange={(e) => update('job_type', e.target.value)} className="input-field">
-                  <option>Full-time</option><option>Part-time</option><option>Contract</option><option>Temporary</option><option>Freelance</option>
-                </select></div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div><label className="block text-xs font-medium text-neutral-500 uppercase tracking-wider mb-1.5">Min. Years Experience</label>
-                <input type="number" min="0" max="30" value={form.min_years_experience} onChange={(e) => update('min_years_experience', e.target.value)} className="input-field" placeholder="0" /></div>
-              <div><label className="block text-xs font-medium text-neutral-500 uppercase tracking-wider mb-1.5">Shift Pattern</label>
-                <select value={form.shift_pattern} onChange={(e) => update('shift_pattern', e.target.value)} className="input-field">
-                  <option value="">Any / Flexible</option>
-                  {SHIFT_OPTIONS.map(s => <option key={s} value={s}>{s}</option>)}
-                </select></div>
-            </div>
-          </div>
-
-          {/* ── SECTION: Matching Criteria ── */}
-          <div className="space-y-6">
-            <div className="border-b border-neutral-100 pb-2">
-              <p className="text-xs font-medium text-neutral-400 uppercase tracking-widest">Matching Criteria</p>
-              <p className="text-xs text-neutral-400 mt-1">These fields power the matching algorithm - only tick what the role genuinely requires. Hiring a manager? Leave treatments unticked and candidates won't be filtered on them.</p>
-            </div>
-
-            <CollapsibleCheckboxSection
-              title="Required Services & Treatment Skills"
-              categories={SERVICES_CATEGORIES}
-              selected={form.required_skills}
-              onChange={(v) => update('required_skills', v)}
-            />
-
-            <CollapsibleCheckboxSection
-              title="Required Product Houses"
-              flatItems={[...PRODUCT_HOUSES_FULL]}
-              selected={form.required_product_houses}
-              onChange={(v) => update('required_product_houses', v)}
-            />
-
-            <CollapsibleCheckboxSection
-              title="Required Qualifications"
-              categories={QUALS_CATEGORIES}
-              selected={form.required_qualifications}
-              onChange={(v) => update('required_qualifications', v)}
-            />
-
-            <CollapsibleCheckboxSection
-              title="Required Systems"
-              flatItems={[...SYSTEMS_FULL]}
-              selected={form.required_systems}
-              onChange={(v) => update('required_systems', v)}
-            />
-
-            <CollapsibleCheckboxSection
-              title="Preferred Business Skills"
-              flatItems={[...BUSINESS_SKILLS]}
-              selected={form.preferred_business_skills}
-              onChange={(v) => update('preferred_business_skills', v)}
-            />
-          </div>
-
-          {/* ── SECTION: Additional Info ── */}
-          <div className="space-y-6">
-            <p className="text-xs font-medium text-neutral-400 uppercase tracking-widest border-b border-neutral-100 pb-2">Additional Information</p>
-
-            <div><label className="block text-xs font-medium text-neutral-500 uppercase tracking-wider mb-1.5">Requirements (one per line)</label>
-              <textarea rows={3} value={form.requirements} onChange={(e) => update('requirements', e.target.value)} className="input-field" placeholder="CIDESCO qualified&#10;3+ years luxury spa experience" /></div>
-
-            <div><label className="block text-xs font-medium text-neutral-500 uppercase tracking-wider mb-1.5">Benefits (one per line)</label>
-              <textarea rows={3} value={form.benefits} onChange={(e) => update('benefits', e.target.value)} className="input-field" placeholder="Staff accommodation&#10;Treatment allowance" /></div>
-
-            <div className="flex flex-wrap gap-6">
-              <label className="flex items-center space-x-2 cursor-pointer"><input type="checkbox" checked={form.insurance_required} onChange={(e) => update('insurance_required', e.target.checked)} className="w-4 h-4 border-neutral-300 text-black focus:ring-black rounded-sm" /><span className="text-sm text-neutral-600">Insurance required</span></label>
-              <label className="flex items-center space-x-2 cursor-pointer"><input type="checkbox" checked={form.offers_accommodation} onChange={(e) => update('offers_accommodation', e.target.checked)} className="w-4 h-4 border-neutral-300 text-black focus:ring-black rounded-sm" /><span className="text-sm text-neutral-600">Accommodation provided</span></label>
-              <label className="flex items-center space-x-2 cursor-pointer"><input type="checkbox" checked={form.is_agency_role} onChange={(e) => update('is_agency_role', e.target.checked)} className="w-4 h-4 border-neutral-300 text-black focus:ring-black rounded-sm" /><span className="text-sm text-neutral-600">Agency role</span></label>
-              <label className="flex items-center space-x-2 cursor-pointer"><input type="checkbox" checked={form.is_residency_role} onChange={(e) => update('is_residency_role', e.target.checked)} className="w-4 h-4 border-neutral-300 text-black focus:ring-black rounded-sm" /><span className="text-sm text-neutral-600">Residency role</span></label>
-            </div>
-          </div>
-
-          <div className="flex gap-3 pt-4">
-            <button onClick={handleSaveAsDraft} disabled={!form.title || !form.location || saving} className="btn-secondary flex-1 disabled:opacity-40">
-              {saving ? 'Saving...' : 'Save as Draft'}
-            </button>
-            <button onClick={handleValidateAndNext} disabled={!form.title || !form.location || saving} className="btn-primary flex-1 disabled:opacity-40">
-              {saving ? 'Validating...' : 'Continue →'}
-            </button>
-          </div>
-        </div>
-      ) : (
-        <div className="max-w-4xl">
-          {/* Preview + Tier selection */}
-          <div className="grid grid-cols-2 gap-8 mb-8">
-            {/* Left: Preview */}
-            <div className="dashboard-card p-8">
-              <h3 className="text-lg font-bold text-black mb-4">Your Role Preview</h3>
-
-              <div className="mb-6">
-                <h2 className="text-xl font-bold text-black mb-2">{form.title}</h2>
-                <p className="text-gray-600 mb-4">{form.location}</p>
-
-                <div className="flex flex-wrap gap-2 mb-4">
-                  {form.job_type && (
-                    <span className="inline-block px-3 py-1 bg-neutral-100 text-sm text-neutral-700 rounded">{form.job_type}</span>
-                  )}
-                  {form.contract_type && (
-                    <span className="inline-block px-3 py-1 bg-neutral-100 text-sm text-neutral-700 rounded">{form.contract_type}</span>
-                  )}
-                  {form.required_role_level && (
-                    <span className="inline-block px-3 py-1 bg-neutral-100 text-sm text-neutral-700 rounded">{form.required_role_level}</span>
-                  )}
-                  {form.min_years_experience && (
-                    <span className="inline-block px-3 py-1 bg-neutral-100 text-sm text-neutral-700 rounded">{form.min_years_experience}+ years</span>
-                  )}
-                  {form.shift_pattern && (
-                    <span className="inline-block px-3 py-1 bg-neutral-100 text-sm text-neutral-700 rounded">{form.shift_pattern}</span>
-                  )}
-                  {form.offers_accommodation && (
-                    <span className="inline-block px-3 py-1 bg-green-50 text-sm text-green-700 rounded">Accommodation provided</span>
-                  )}
-                </div>
-              </div>
-
-              {form.salary_min || form.salary_max ? (
-                <div className="mb-6">
-                  <p className="text-sm text-gray-600">Salary</p>
-                  <p className="text-xl font-bold text-black">
-                    £{form.salary_min || '0'} - £{form.salary_max || 'negotiable'}
-                  </p>
-                </div>
-              ) : null}
-
-              {form.description && (
-                <div className="mb-6">
-                  <h3 className="font-bold text-black mb-2">About the role</h3>
-                  <p className="text-sm text-gray-600 whitespace-pre-line">{form.description}</p>
-                </div>
-              )}
-
-              {form.requirements && (
-                <div className="mb-6">
-                  <h3 className="font-bold text-black mb-3">Requirements</h3>
-                  <ul className="space-y-2">
-                    {form.requirements.split('\n').filter(Boolean).map((req, i) => (
-                      <li key={i} className="text-sm text-gray-600 flex items-start gap-2">
-                        <span className="block w-1.5 h-1.5 rounded-full bg-black mt-2 shrink-0" />
-                        {req}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-
-              {form.benefits && (
-                <div>
-                  <h3 className="font-bold text-black mb-3">Benefits</h3>
-                  <ul className="space-y-2">
-                    {form.benefits.split('\n').filter(Boolean).map((ben, i) => (
-                      <li key={i} className="text-sm text-gray-600 flex items-start gap-2">
-                        <span className="block w-1.5 h-1.5 rounded-full bg-black mt-2 shrink-0" />
-                        {ben}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-
-              {form.required_skills.length > 0 && (
-                <div className="mb-6">
-                  <h3 className="font-bold text-black mb-3">Required Services & Skills</h3>
-                  <div className="flex flex-wrap gap-2">
-                    {form.required_skills.map((skill) => (
-                      <span key={skill} className="inline-block px-3 py-1 bg-black text-white text-xs rounded">{skill}</span>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {form.required_product_houses.length > 0 && (
-                <div className="mb-6">
-                  <h3 className="font-bold text-black mb-3">Product Houses</h3>
-                  <div className="flex flex-wrap gap-2">
-                    {form.required_product_houses.map((house) => (
-                      <span key={house} className="inline-block px-3 py-1 bg-black text-white text-xs rounded">{house}</span>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {form.required_qualifications.length > 0 && (
-                <div className="mb-6">
-                  <h3 className="font-bold text-black mb-3">Qualifications</h3>
-                  <div className="flex flex-wrap gap-2">
-                    {form.required_qualifications.map((qual) => (
-                      <span key={qual} className="inline-block px-3 py-1 bg-black text-white text-xs rounded">{qual}</span>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {form.required_systems.length > 0 && (
-                <div className="mb-6">
-                  <h3 className="font-bold text-black mb-3">Systems</h3>
-                  <div className="flex flex-wrap gap-2">
-                    {form.required_systems.map((sys) => (
-                      <span key={sys} className="inline-block px-3 py-1 bg-black text-white text-xs rounded">{sys}</span>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {form.preferred_business_skills.length > 0 && (
-                <div>
-                  <h3 className="font-bold text-black mb-3">Preferred Business Skills</h3>
-                  <div className="flex flex-wrap gap-2">
-                    {form.preferred_business_skills.map((skill) => (
-                      <span key={skill} className="inline-block px-3 py-1 bg-neutral-100 text-neutral-700 text-xs rounded">{skill}</span>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Right: Tier selection */}
-            <div>
-              <h3 className="text-lg font-bold text-black mb-6">Select your package</h3>
-              <div className="space-y-3">
-                {tierCards.map((tier) => {
-                  const selected = selectedTier === tier.name
-                  return (
-                    <button
-                      type="button"
-                      key={tier.name}
-                      onClick={() => setSelectedTier(tier.name)}
-                      className="block w-full text-left bg-white rounded-xl p-5 transition-all"
-                      style={{
-                        border: selected ? '2px solid #C9A96E' : '1px solid #E5E5E3',
-                        boxShadow: selected ? '0 4px 14px rgba(201, 169, 110, 0.18)' : 'none',
-                      }}
-                    >
-                      <div className="flex items-center justify-between mb-3">
-                        <div className="flex items-center gap-2.5">
-                          <span
-                            className="w-4 h-4 rounded-full border flex items-center justify-center shrink-0"
-                            style={{ borderColor: selected ? '#C9A96E' : '#D1D5DB' }}
-                          >
-                            {selected && <span className="w-2 h-2 rounded-full" style={{ background: '#C9A96E' }} />}
-                          </span>
-                          <span className="text-[15px] font-semibold text-ink">{tier.name}</span>
-                        </div>
-                        <span className="text-[17px] font-semibold" style={{ color: selected ? '#C9A96E' : '#1a1a1a' }}>£{tier.price}</span>
-                      </div>
-                      <ul className="space-y-1.5 text-[12px] text-gray-600">
-                        {tier.features.map((feature, i) => (
-                          <li key={i} className="flex items-center gap-2">
-                            <Check size={12} style={{ color: '#C9A96E' }} className="shrink-0" />
-                            {feature}
-                          </li>
-                        ))}
-                      </ul>
-                    </button>
-                  )
-                })}
-              </div>
-            </div>
-          </div>
-
-          <div className="flex gap-3">
-            <button onClick={() => setPhase('form')} className="btn-secondary flex-1">
-              ← Back to edit
-            </button>
-            <button onClick={handlePostLive} disabled={saving || checkoutLoading} className="btn-primary flex-1 disabled:opacity-40">
-              {checkoutLoading ? 'Redirecting...' : saving ? 'Processing...' : 'Post role & pay'}
-            </button>
-          </div>
-        </div>
-      )}
-    </DashboardShell>
-  )
+      <section className="dashboard-card space-y-5"><p className="eyebrow">Additional information</p><Field label="Requirements (one per line)"><textarea rows={4} className="input-field" value={form.requirements} onChange={e=>update('requirements',e.target.value)}/></Field><Field label="Benefits (one per line)"><textarea rows={4} className="input-field" value={form.benefits} onChange={e=>update('benefits',e.target.value)}/></Field><div className="flex flex-wrap gap-5">{[['insurance_required','Insurance required'],['offers_accommodation','Accommodation provided'],['is_agency_role','Agency role'],['is_residency_role','Residency role']].map(([k,l])=><label key={k} className="flex items-center gap-2 text-[13px] text-secondary"><input type="checkbox" checked={(form as any)[k]} onChange={e=>update(k as any,e.target.checked)}/>{l}</label>)}</div></section>
+      <div className="flex gap-3"><button onClick={saveDraft} disabled={saving} className="btn-secondary flex-1">Save as Draft</button><button onClick={next} disabled={saving} className="btn-primary flex-1 inline-flex items-center justify-center gap-2">Continue <ArrowRight size={14}/></button></div>
+    </div>:<div className="max-w-4xl mt-8"><div className="dashboard-card mb-6"><p className="eyebrow">Matching setup</p><h2 className="text-[25px] mt-1">{form.title}</h2><p className="text-[13px] text-secondary mt-2">{SCOPE_OPTIONS.find(o=>o.value===form.candidate_scope)?.title} · {form.required_role_level||'Role level inferred from title'} · {form.min_years_experience||0}+ years</p></div><div className="grid md:grid-cols-2 gap-4 mb-6">{tierCards.map(t=><button key={t.name} onClick={()=>setSelectedTier(t.name)} className={`dashboard-card text-left ${selectedTier===t.name?'border-[#0b2f4d] ring-1 ring-[#0b2f4d]/10':''}`}><div className="flex justify-between"><h3 className="text-[20px]">{t.name}</h3><strong>£{t.price}</strong></div><ul className="mt-4 space-y-2 text-[12px] text-secondary">{t.features.map(f=><li key={f} className="flex gap-2"><Check size={13}/>{f}</li>)}</ul></button>)}</div><div className="flex gap-3"><button onClick={()=>setPhase('form')} className="btn-secondary flex-1">← Back to edit</button><button onClick={post} disabled={saving||checkoutLoading} className="btn-primary flex-1">{checkoutLoading?'Redirecting...':saving?'Processing...':'Post role & pay'}</button></div></div>}
+  </DashboardShell>
 }
+
+function Field({label,children}:{label:string;children:React.ReactNode}){return <div><label className="eyebrow block mb-1.5">{label}</label>{children}</div>}
