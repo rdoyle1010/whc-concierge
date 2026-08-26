@@ -7,7 +7,11 @@ export type CvSuggestions = {
   productHouses: string[]
   qualifications: string[]
   systems: string[]
+  businessSkills: string[]
+  careerEvidence: string[]
+  progressionSignals: string[]
   evidence: string[]
+  aiEnhanced?: boolean
 }
 
 function searchable(value: string): string {
@@ -31,11 +35,10 @@ function matchingItems(text: string, items: string[]): string[] {
 }
 
 function detectRole(text: string): string | null {
-  // Highest relevant role wins, while the evidence list below lets the user
-  // verify the suggestion before accepting it.
   if (/\b(group )?(spa|wellness).{0,12}director\b|\bdirector of (spa|wellness)\b|\bhead of (spa|wellness)\b/.test(text)) return 'Director of Spa'
   if (/\b(spa|wellness|operations).{0,12}manager\b/.test(text)) return 'Spa Manager'
-  if (/\bsenior.{0,12}therapist\b|\blead.{0,12}therapist\b/.test(text)) return 'Senior Therapist'
+  if (/\blead.{0,12}therapist\b|\bteam lead\b|\bsupervisor\b/.test(text)) return 'Lead Therapist'
+  if (/\bsenior.{0,12}therapist\b/.test(text)) return 'Senior Therapist'
   if (/\bspa receptionist\b|\bfront desk\b/.test(text)) return 'Receptionist'
   if (/\bbeauty therapist\b/.test(text)) return 'Beauty Therapist'
   if (/\bspa therapist\b|\bmassage therapist\b/.test(text)) return 'Therapist'
@@ -55,6 +58,25 @@ function detectExperience(text: string): number | null {
   return values.length ? Math.max(...values) : null
 }
 
+const BUSINESS_PATTERNS: Array<[string, RegExp]> = [
+  ['Team Leadership', /team lead|managed (?:a )?team|line manag|people management|direct reports|supervis/],
+  ['Staff Training', /train(?:ed|ing)|coach(?:ed|ing)|mentor(?:ed|ing)|onboard/],
+  ['Rota Management', /rota|roster|scheduling staff|workforce planning/],
+  ['Revenue Management', /revenue|commercial performance|sales target|turnover/],
+  ['Budget Management', /budget|p&l|profit and loss|forecast|payroll|labour cost/],
+  ['KPI Reporting', /kpi|performance report|dashboard|metric/],
+  ['Upselling & Retail', /retail|upsell|rebook|conversion|product sales/],
+  ['Stock Control', /stock control|inventory|stocktake|ordering/],
+  ['Health & Safety', /health and safety|risk assessment|h&s|compliance/],
+  ['Reception & Front of House', /reception|front of house|front desk|reservations/],
+  ['Membership Management', /membership|member retention|member journey/],
+  ['Event Coordination', /event|activation|launch|open day/],
+]
+
+function detectBusinessSkills(text: string): string[] {
+  return BUSINESS_PATTERNS.filter(([, pattern]) => pattern.test(text)).map(([label]) => label)
+}
+
 export function analyseCvText(rawText: string): CvSuggestions {
   const text = searchable(rawText)
   const services = matchingItems(text, SERVICES_CATEGORIES.flatMap(category => category.items))
@@ -63,6 +85,7 @@ export function analyseCvText(rawText: string): CvSuggestions {
   const systems = matchingItems(text, SYSTEMS_FULL)
   const roleLevel = detectRole(text)
   const experienceYears = detectExperience(text)
+  const businessSkills = detectBusinessSkills(text)
 
   const evidence: string[] = []
   if (roleLevel) evidence.push(`Role wording supports ${roleLevel}`)
@@ -71,6 +94,19 @@ export function analyseCvText(rawText: string): CvSuggestions {
   if (productHouses.length) evidence.push(`${productHouses.length} product house${productHouses.length === 1 ? '' : 's'} found`)
   if (services.length) evidence.push(`${services.length} treatment or wellness service${services.length === 1 ? '' : 's'} found`)
   if (systems.length) evidence.push(`${systems.length} booking or hotel system${systems.length === 1 ? '' : 's'} found`)
+  if (businessSkills.length) evidence.push(`${businessSkills.length} business or leadership skill${businessSkills.length === 1 ? '' : 's'} found`)
 
-  return { roleLevel, experienceYears, services, productHouses, qualifications, systems, evidence }
+  return {
+    roleLevel,
+    experienceYears,
+    services,
+    productHouses,
+    qualifications,
+    systems,
+    businessSkills,
+    careerEvidence: [],
+    progressionSignals: [],
+    evidence,
+    aiEnhanced: false,
+  }
 }
