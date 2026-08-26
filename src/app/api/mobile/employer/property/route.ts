@@ -5,7 +5,7 @@ import { geocodePostcode } from '@/lib/geo'
 
 const EDITABLE = [
   'company_name','property_name','contact_name','contact_phone','contact_email','website','location','postcode',
-  'company_type','property_type','star_rating','about_text','tagline','product_houses_used','systems_used',
+  'company_type','property_type','star_rating','about_text','tagline','logo_url','product_houses_used','systems_used',
   'services_offered','brand_partners','num_treatment_rooms','team_size','commute_car_required','nearest_transport',
   'transport_walk_minutes','parking_available','taxi_support','taxi_notes','travel_notes','culture_points','highlights',
   'property_photos','tripadvisor_url','treatment_menu_url','guest_review_summary','agency_available','agency_note',

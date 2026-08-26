@@ -72,7 +72,9 @@ export async function POST(req: NextRequest) {
     const isAdmin = callerProfile?.role === 'admin'
     const isOwnUserPath = path === effectiveUserId || path.startsWith(`${effectiveUserId}/`)
     const isOwnEmployerAsset = Boolean(employerProfile && (
-      path.startsWith(`${employerProfile.id}-`) || path.startsWith(`logos/${employerProfile.id}.`)
+      path.startsWith(`${employerProfile.id}-`) ||
+      path.startsWith(`logos/${employerProfile.id}.`) ||
+      path.startsWith(`logos/${employerProfile.id}-`)
     ))
     if (!isAdmin && !isOwnUserPath && !isOwnEmployerAsset) {
       return NextResponse.json({ error: 'Upload path does not belong to this account' }, { status: 403 })
