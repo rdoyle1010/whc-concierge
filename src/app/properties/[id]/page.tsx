@@ -1,58 +1,82 @@
-'use client'
-
-import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { useParams } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
+import { unstable_cache } from 'next/cache'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
+import { createAdminClient } from '@/lib/supabase/admin'
 import {
   MapPin, Star, Briefcase, ArrowLeft, Building2, ExternalLink, Users,
   BedDouble, Sparkles, Train, Car, ParkingCircle, BadgeCheck, CalendarDays,
   HeartHandshake, CheckCircle2, BookOpen, MessageSquareQuote,
 } from 'lucide-react'
 
+export const revalidate = 60
+
 const asList = (value: any) => Array.isArray(value) ? value.filter(Boolean) : []
 
-export default function PropertyDetailPage() {
-  const supabase = createClient()
-  const params = useParams()
-  const id = params?.id as string
+async function loadReviews(admin: ReturnType<typeof createAdminClient>, employerUserId?: string | null) {
+  if (!employerUserId) return { reviews: [] as any[], summary: { count: 0, average: null as number | null } }
 
-  const [property, setProperty] = useState<any>(null)
-  const [jobs, setJobs] = useState<any[]>([])
-  const [staffReviews, setStaffReviews] = useState<any[]>([])
-  const [reviewSummary, setReviewSummary] = useState<{ count: number; average: number | null }>({ count: 0, average: null })
-  const [loading, setLoading] = useState(true)
+  let reviews: any[] = []
+  for (const reviewedColumn of ['reviewed_id', 'reviewee_id']) {
+    const { data, error } = await admin
+      .from('reviews')
+      .select('id,reviewer_id,rating,text,comment,criteria_scores,booking_id,created_at,type')
+      .eq(reviewedColumn, employerUserId)
+      .eq('type', 'employer')
+      .order('created_at', { ascending: false })
+      .limit(30)
+    if (!error) { reviews = data || []; break }
+  }
 
-  useEffect(() => {
-    async function load() {
-      if (!id) return
-      const [{ data: propertyData }, { data: jobsData }, reviewsRes] = await Promise.all([
-        supabase.from('employer_profiles').select('*').eq('id', id).single(),
-        supabase.from('job_listings').select('*').eq('employer_id', id).eq('is_live', true).eq('status', 'active').order('posted_date', { ascending: false }),
-        fetch(`/api/properties/${id}/reviews`).catch(() => null),
-      ])
-      setProperty(propertyData)
-      setJobs(jobsData || [])
-      if (reviewsRes?.ok) {
-        const payload = await reviewsRes.json().catch(() => null)
-        setStaffReviews(payload?.reviews || [])
-        setReviewSummary(payload?.summary || { count: 0, average: null })
+  const reviewerIds = [...new Set(reviews.map(r => r.reviewer_id).filter(Boolean))]
+  const { data: candidates } = reviewerIds.length
+    ? await admin.from('candidate_profiles').select('user_id,full_name,current_role').in('user_id', reviewerIds)
+    : { data: [] as any[] }
+  const candidateMap = new Map((candidates || []).map((c: any) => [c.user_id, c]))
+
+  const publicReviews = reviews
+    .filter(r => Number(r.rating) >= 1 && Number(r.rating) <= 5)
+    .map(r => {
+      const reviewer: any = candidateMap.get(r.reviewer_id)
+      return {
+        id: r.id,
+        rating: Number(r.rating),
+        comment: r.comment || r.text || '',
+        created_at: r.created_at,
+        verified: true,
+        source: r.booking_id ? 'Completed WHC agency shift' : 'WHC placement',
+        reviewer_name: reviewer?.full_name || 'WHC professional',
+        reviewer_role: reviewer?.current_role || null,
       }
-      setLoading(false)
-    }
-    load()
-  }, [id])
+    })
 
-  if (loading) {
-    return <div className="min-h-screen bg-white"><Navbar /><div className="flex items-center justify-center h-64"><div className="animate-spin w-8 h-8 border-2 border-[#0b2f4d] border-t-transparent rounded-full" /></div><Footer /></div>
+  const average = publicReviews.length
+    ? Math.round((publicReviews.reduce((sum, r) => sum + r.rating, 0) / publicReviews.length) * 10) / 10
+    : null
+
+  return { reviews: publicReviews, summary: { count: publicReviews.length, average } }
+}
+
+const getPropertyPageData = unstable_cache(async (id: string) => {
+  const admin = createAdminClient()
+  const [{ data: property }, { data: jobs }] = await Promise.all([
+    admin.from('employer_profiles').select('*').eq('id', id).eq('approval_status', 'approved').maybeSingle(),
+    admin.from('job_listings').select('*').eq('employer_id', id).eq('is_live', true).eq('status', 'active').order('posted_date', { ascending: false }),
+  ])
+  if (!property) return null
+  const reviewData = await loadReviews(admin, property.user_id)
+  return { property, jobs: jobs || [], ...reviewData }
+}, ['public-property-detail-v2'], { revalidate: 60 })
+
+export default async function PropertyDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
+  const data = await getPropertyPageData(id)
+
+  if (!data) {
+    return <div className="min-h-screen bg-white"><Navbar /><section className="pt-[120px] pb-20"><div className="max-w-7xl mx-auto px-6 text-center"><h1 className="text-3xl text-ink mb-4">Property not found</h1><Link href="/properties" className="text-[#0b2f4d] font-semibold">Back to Properties</Link></div></section><Footer /></div>
   }
 
-  if (!property) {
-    return <div className="min-h-screen bg-white"><Navbar /><section className="py-20"><div className="max-w-7xl mx-auto px-6 text-center"><h1 className="text-3xl text-ink mb-4">Property not found</h1><Link href="/properties" className="text-[#0b2f4d] font-semibold">Back to Properties</Link></div></section><Footer /></div>
-  }
-
+  const { property, jobs, reviews: staffReviews, summary: reviewSummary } = data
   const name = property.property_name || property.company_name
   const photos = asList(property.property_photos)
   const about = property.about_text || property.description
@@ -101,7 +125,7 @@ export default function PropertyDetailPage() {
       </section>
 
       {photos.length > 0 && <section className="bg-white pb-14"><div className="max-w-7xl mx-auto px-6"><div className={`grid gap-3 ${photos.length === 1 ? 'grid-cols-1' : 'grid-cols-2 lg:grid-cols-4'}`}>
-        {photos.slice(0, 6).map((url: string, index: number) => <div key={url} className={`overflow-hidden rounded-[18px] bg-[#f2f4f6] ${index === 0 && photos.length > 2 ? 'col-span-2 row-span-2 min-h-[420px]' : 'aspect-[4/3]'}`}><img src={url} alt={`${name} property ${index + 1}`} className="w-full h-full object-cover"/></div>)}
+        {photos.slice(0, 6).map((url: string, index: number) => <div key={url} className={`overflow-hidden rounded-[18px] bg-[#f2f4f6] ${index === 0 && photos.length > 2 ? 'col-span-2 row-span-2 min-h-[420px]' : 'aspect-[4/3]'}`}><img src={url} alt={`${name} property ${index + 1}`} loading={index === 0 ? 'eager' : 'lazy'} decoding="async" className="w-full h-full object-cover"/></div>)}
       </div></div></section>}
 
       <section className="border-y border-[#e3e7eb] bg-[#f7f9fa]">
@@ -164,12 +188,12 @@ export default function PropertyDetailPage() {
         <section id="staff-reviews">
           <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4"><div><p className="text-[10px] uppercase tracking-[.17em] font-semibold text-[#6f7f88]">Verified WHC professionals</p><h2 className="text-[32px] md:text-[38px] mt-2">What is it actually like to work here?</h2></div>{whcReviewScore && <div className="text-left md:text-right"><p className="text-[34px] text-[#10283b] leading-none">{whcReviewScore.toFixed(1)} / 5</p><p className="text-[11px] text-[#7d8990] mt-2">{whcReviewCount} verified review{whcReviewCount === 1 ? '' : 's'}</p></div>}</div>
           <p className="mt-3 text-[13px] leading-6 text-[#65717a] max-w-3xl">Only professionals with a completed paid WHC Agency shift or accepted WHC placement can leave these reviews. They are separate from guest reviews and property marketing.</p>
-          {staffReviews.length > 0 ? <div className="grid md:grid-cols-2 gap-5 mt-7">{staffReviews.slice(0, 8).map(review => <article key={review.id} className="rounded-[20px] border border-[#dfe5e8] p-6 bg-white"><div className="flex items-start justify-between gap-4"><div><div className="flex gap-1">{[1,2,3,4,5].map(n => <Star key={n} size={14} className={n <= review.rating ? 'text-[#0b2f4d]' : 'text-[#cbd4d9]'} fill={n <= review.rating ? 'currentColor' : 'none'}/>)}</div><p className="text-[14px] font-semibold text-[#10283b] mt-3">{review.reviewer_name}</p>{review.reviewer_role && <p className="text-[11px] text-[#7d8990]">{review.reviewer_role}</p>}</div><span className="inline-flex items-center gap-1 rounded-full bg-[#eef4f1] text-[#355d49] px-2.5 py-1 text-[9px] font-semibold uppercase tracking-[.08em]"><BadgeCheck size={11}/>Verified</span></div>{review.comment && <p className="mt-5 text-[13px] leading-6 text-[#53636f]">“{review.comment}”</p>}<div className="mt-5 pt-4 border-t border-[#e8ecee] flex items-center justify-between gap-3"><p className="text-[10px] text-[#7d8990]">{review.source}</p>{review.created_at && <p className="text-[10px] text-[#9aa3a8]">{new Date(review.created_at).toLocaleDateString('en-GB', { month: 'short', year: 'numeric' })}</p>}</div></article>)}</div> : <div className="mt-7 rounded-[20px] border border-[#dfe5e8] bg-[#f7f9fa] p-8 text-center"><MessageSquareQuote size={24} className="mx-auto text-[#6f7f88]"/><p className="text-[16px] text-[#10283b] mt-3">No verified WHC staff reviews yet</p><p className="text-[12px] text-[#65717a] mt-1">The score will build as professionals complete WHC shifts and placements here.</p></div>}
+          {staffReviews.length > 0 ? <div className="grid md:grid-cols-2 gap-5 mt-7">{staffReviews.slice(0, 8).map((review: any) => <article key={review.id} className="rounded-[20px] border border-[#dfe5e8] p-6 bg-white"><div className="flex items-start justify-between gap-4"><div><div className="flex gap-1">{[1,2,3,4,5].map(n => <Star key={n} size={14} className={n <= review.rating ? 'text-[#0b2f4d]' : 'text-[#cbd4d9]'} fill={n <= review.rating ? 'currentColor' : 'none'}/>)}</div><p className="text-[14px] font-semibold text-[#10283b] mt-3">{review.reviewer_name}</p>{review.reviewer_role && <p className="text-[11px] text-[#7d8990]">{review.reviewer_role}</p>}</div><span className="inline-flex items-center gap-1 rounded-full bg-[#eef4f1] text-[#355d49] px-2.5 py-1 text-[9px] font-semibold uppercase tracking-[.08em]"><BadgeCheck size={11}/>Verified</span></div>{review.comment && <p className="mt-5 text-[13px] leading-6 text-[#53636f]">“{review.comment}”</p>}<div className="mt-5 pt-4 border-t border-[#e8ecee] flex items-center justify-between gap-3"><p className="text-[10px] text-[#7d8990]">{review.source}</p>{review.created_at && <p className="text-[10px] text-[#9aa3a8]">{new Date(review.created_at).toLocaleDateString('en-GB', { month: 'short', year: 'numeric' })}</p>}</div></article>)}</div> : <div className="mt-7 rounded-[20px] border border-[#dfe5e8] bg-[#f7f9fa] p-8 text-center"><MessageSquareQuote size={24} className="mx-auto text-[#6f7f88]"/><p className="text-[16px] text-[#10283b] mt-3">No verified WHC staff reviews yet</p><p className="text-[12px] text-[#65717a] mt-1">The score will build as professionals complete WHC shifts and placements here.</p></div>}
         </section>
 
         <section id="openings">
           <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4"><div><p className="text-[10px] uppercase tracking-[.17em] font-semibold text-[#6f7f88]">Careers</p><h2 className="text-[32px] md:text-[38px] mt-2">Current openings.</h2></div><p className="text-[13px] text-[#65717a]">{jobs.length} live role{jobs.length === 1 ? '' : 's'}</p></div>
-          {jobs.length > 0 ? <div className="grid md:grid-cols-2 gap-5 mt-7">{jobs.map(job => <Link key={job.id} href={`/jobs/${job.id}`} className="group border border-[#dfe5e8] rounded-[20px] p-6 hover:border-[#aebbc2] hover:shadow-sm transition-all"><div className="flex items-start justify-between gap-4"><div><h3 className="text-[22px] group-hover:text-[#123f64]">{job.job_title}</h3><p className="text-[12px] text-[#65717a] mt-2">{job.location || property.location} · {job.job_type || 'Full-time'}</p></div><Briefcase size={18} className="text-[#6f7f88]"/></div>{job.salary_min && job.salary_max && <p className="text-[14px] font-semibold text-[#10283b] mt-4">£{Number(job.salary_min).toLocaleString()}–£{Number(job.salary_max).toLocaleString()}</p>}{(job.job_description || job.description) && <p className="text-[13px] leading-6 text-[#65717a] mt-3 line-clamp-3">{job.job_description || job.description}</p>}<p className="text-[12px] font-semibold text-[#0b2f4d] mt-5">View role →</p></Link>)}</div> : <div className="border border-[#dfe5e8] rounded-[20px] p-10 text-center mt-7"><CalendarDays size={24} className="mx-auto text-[#6f7f88]"/><p className="text-[16px] text-[#10283b] mt-3">No current openings</p><p className="text-[12px] text-[#65717a] mt-1">Follow WHC or check back for future opportunities at {name}.</p></div>}
+          {jobs.length > 0 ? <div className="grid md:grid-cols-2 gap-5 mt-7">{jobs.map((job: any) => <Link key={job.id} href={`/jobs/${job.id}`} className="group border border-[#dfe5e8] rounded-[20px] p-6 hover:border-[#aebbc2] hover:shadow-sm transition-all"><div className="flex items-start justify-between gap-4"><div><h3 className="text-[22px] group-hover:text-[#123f64]">{job.job_title}</h3><p className="text-[12px] text-[#65717a] mt-2">{job.location || property.location} · {job.job_type || 'Full-time'}</p></div><Briefcase size={18} className="text-[#6f7f88]"/></div>{job.salary_min && job.salary_max && <p className="text-[14px] font-semibold text-[#10283b] mt-4">£{Number(job.salary_min).toLocaleString()}–£{Number(job.salary_max).toLocaleString()}</p>}{(job.job_description || job.description) && <p className="text-[13px] leading-6 text-[#65717a] mt-3 line-clamp-3">{job.job_description || job.description}</p>}<p className="text-[12px] font-semibold text-[#0b2f4d] mt-5">View role →</p></Link>)}</div> : <div className="border border-[#dfe5e8] rounded-[20px] p-10 text-center mt-7"><CalendarDays size={24} className="mx-auto text-[#6f7f88]"/><p className="text-[16px] text-[#10283b] mt-3">No current openings</p><p className="text-[12px] text-[#65717a] mt-1">Follow WHC or check back for future opportunities at {name}.</p></div>}
         </section>
       </main>
 
