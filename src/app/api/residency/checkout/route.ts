@@ -1,19 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerClient } from '@supabase/ssr'
-import { cookies } from 'next/headers'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getStripe } from '@/lib/stripe'
 import { assertStripeModeMatchesOrigin, getSafeSiteOrigin } from '@/lib/site-origin'
+import { getRequestUser } from '@/lib/request-user'
 
 export async function POST(req: NextRequest) {
   try {
-    const cookieStore = await cookies()
-    const auth = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      { cookies: { getAll() { return cookieStore.getAll() }, setAll() {} } },
-    )
-    const { data: { user } } = await auth.auth.getUser()
+    const user = await getRequestUser(req)
     if (!user) return NextResponse.json({ error: 'Please sign in.' }, { status: 401 })
 
     const body = await req.json()
@@ -62,7 +55,7 @@ export async function POST(req: NextRequest) {
       },
     })
 
-    return NextResponse.json({ url: session.url })
+    return NextResponse.json({ url: session.url, gross, fee, total: Number((gross + fee).toFixed(2)) })
   } catch (e: any) {
     return NextResponse.json({ error: e.message || 'Could not start residency payment.' }, { status: 500 })
   }
