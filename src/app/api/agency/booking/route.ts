@@ -1,8 +1,7 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { createServerClient } from '@supabase/ssr'
-import { cookies } from 'next/headers'
 import { profileDistanceMiles } from '@/lib/geo'
+import { getRequestUser } from '@/lib/request-user'
 import { GET as legacyGET, POST } from './core'
 
 export { POST }
@@ -16,23 +15,13 @@ const BOOKING_FIELDS = [
   'refund_amount', 'cascade_queue', 'cascade_index', 'cascade_deadline', 'cascade_notes', 'booking_group',
 ].join(',')
 
-async function getAuthedUser() {
-  const cookieStore = await cookies()
-  const supabaseAuth = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    { cookies: { getAll() { return cookieStore.getAll() }, setAll() {} } }
-  )
-  return supabaseAuth.auth.getUser()
-}
-
 function employerDisplayName(emp: any) {
   return emp?.property_name || emp?.company_name || 'A property'
 }
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
-    const { data: { user } } = await getAuthedUser()
+    const user = await getRequestUser(req)
     if (!user) return NextResponse.json({ error: 'Please log in' }, { status: 401 })
 
     const admin = createAdminClient()
