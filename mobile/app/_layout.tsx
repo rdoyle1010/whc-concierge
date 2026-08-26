@@ -6,13 +6,28 @@ import * as Notifications from 'expo-notifications'
 import { registerPushNotifications } from '../src/lib/push'
 import MobileNav from '../src/components/MobileNav'
 
+function mobileDestination(destination: string) {
+  const exact: Record<string, string> = {
+    '/talent/applications': '/applications',
+    '/employer/applications': '/applications',
+    '/talent/messages': '/messages',
+    '/employer/messages': '/messages',
+    '/talent/notifications': '/notifications',
+    '/employer/notifications': '/notifications',
+    '/talent/agency': '/agency',
+    '/employer/agency': '/agency',
+  }
+  return exact[destination] || destination
+}
+
 function useNotificationRouting() {
   useEffect(() => {
     function openNotification(notification: Notifications.Notification) {
       const data = notification.request.content.data || {}
       const destination = typeof data.url === 'string' ? data.url : typeof data.link === 'string' ? data.link : ''
-      if (destination.startsWith('/')) {
-        router.push(destination as never)
+      const route = mobileDestination(destination)
+      if (route.startsWith('/')) {
+        router.push(route as never)
       }
     }
 
