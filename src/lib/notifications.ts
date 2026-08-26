@@ -1,5 +1,6 @@
 import { createAdminClient } from '@/lib/supabase/admin'
 import { sendSmsIfOptedIn } from '@/lib/sms'
+import { sendMobilePush } from '@/lib/push-notifications'
 
 export type NotificationType =
   | 'new_match'
@@ -33,6 +34,14 @@ export async function createNotification(
   const { error } = await supabase.from('notifications').insert({
     user_id: userId, type, title, message, link: link || null, is_read: false,
   })
+
+  if (!error) {
+    try {
+      await sendMobilePush({ userId, title, message, link })
+    } catch (pushError) {
+      console.error('[Notification push failed]', pushError)
+    }
+  }
 
   // Platform notifications may also create a short SMS alert for either a
   // talent or employer account when that recipient has explicitly opted in.
