@@ -48,8 +48,8 @@ export async function POST(req: NextRequest) {
         }],
         mode: 'payment',
         allow_promotion_codes: true,
-        success_url: `${SITE}/talent/academy?enrolled=${encodeURIComponent(slug)}`,
-        cancel_url: `${SITE}/talent/academy?cancelled=true`,
+        success_url: `${SITE}/academy?enrolled=${encodeURIComponent(slug)}`,
+        cancel_url: `${SITE}/academy?cancelled=true`,
         metadata: { type: 'course', candidate_id: candidate.id, course_slug: slug, user_id: user.id },
       })
       return NextResponse.json({ url: session.url, amountPence, basePence, discountPct })
@@ -80,8 +80,8 @@ export async function POST(req: NextRequest) {
         }],
         mode: 'payment',
         allow_promotion_codes: true,
-        success_url: `${SITE}/talent/academy?enrolled=bundle`,
-        cancel_url: `${SITE}/talent/academy?cancelled=true`,
+        success_url: `${SITE}/academy?enrolled=bundle`,
+        cancel_url: `${SITE}/academy?cancelled=true`,
         metadata: { type: 'course_bundle', candidate_id: candidate.id, user_id: user.id },
       })
       return NextResponse.json({ url: session.url, amountPence, basePence: BUNDLE_PRICE, discountPct })
