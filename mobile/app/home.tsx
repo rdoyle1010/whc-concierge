@@ -4,31 +4,32 @@ import { router, useLocalSearchParams } from 'expo-router'
 import { supabase } from '../src/lib/supabase'
 
 type Role = 'talent' | 'employer' | 'admin'
-
-type Card = { title: string; copy: string; locked?: boolean }
+type Card = { title: string; copy: string; href?: '/jobs' | '/applications' | '/agency' | '/messages'; locked?: boolean; badge?: string }
 
 const talentCards: Card[] = [
-  { title: 'Matches', copy: 'See roles matched to your profile and experience.' },
-  { title: 'Applications', copy: 'Track every role you have applied for.' },
-  { title: 'Agency shifts', copy: 'Manage flexible work and daily availability.' },
-  { title: 'Interview Ready', copy: 'Prepare using your CV, the role and the employer.' },
-  { title: 'Messages', copy: 'Keep conversations with employers in one place.' },
-  { title: 'Profile', copy: 'Keep your experience, skills and preferences current.' },
+  { title: 'Matches & Jobs', copy: 'Browse live roles and open the complete job and employer detail.', href: '/jobs' },
+  { title: 'Applications', copy: 'Track every role you have applied for and withdraw interest if needed.', href: '/applications' },
+  { title: 'Agency shifts', copy: 'See your day-by-day availability and upcoming flexible work.', href: '/agency' },
+  { title: 'Interview Ready', copy: 'Prepare using your CV, the role and the employer.', badge: 'NEXT' },
+  { title: 'Messages', copy: 'Keep conversations with employers in one place.', href: '/messages' },
+  { title: 'Profile', copy: 'Keep your experience, skills and preferences current.', badge: 'NEXT' },
 ]
 
 const employerCards: Card[] = [
-  { title: 'Jobs', copy: 'Post, edit and manage your live opportunities.' },
-  { title: 'Applications', copy: 'Review candidates and move them through the process.' },
-  { title: 'Discover Talent', copy: 'Search matched spa and wellness professionals.' },
-  { title: 'Agency bookings', copy: 'Find flexible staffing and manage bookings.' },
-  { title: 'Messages', copy: 'Keep candidate conversations together.' },
-  { title: 'Analytics', copy: 'Understand applications, matching and role performance.' },
+  { title: 'Jobs', copy: 'See and manage the same opportunities as your web workspace.', href: '/jobs' },
+  { title: 'Applications', copy: 'Review candidates and see where they sit in the recruitment process.', href: '/applications' },
+  { title: 'Discover Talent', copy: 'Search matched spa and wellness professionals.', locked: true, badge: 'PRO' },
+  { title: 'Agency bookings', copy: 'See upcoming flexible staffing bookings for your property.', href: '/agency' },
+  { title: 'Messages', copy: 'Keep candidate conversations together.', href: '/messages' },
+  { title: 'Analytics', copy: 'Understand applications, matching and role performance.', locked: true, badge: 'PRO' },
 ]
 
 export default function HomeScreen() {
   const params = useLocalSearchParams<{ role?: string }>()
   const [role, setRole] = useState<Role>((params.role as Role) || 'talent')
   const [name, setName] = useState('')
+  const [membership, setMembership] = useState('free')
+  const [interviewCredits, setInterviewCredits] = useState(0)
 
   useEffect(() => {
     async function load() {
@@ -38,6 +39,15 @@ export default function HomeScreen() {
       const resolved: Role = profile?.role === 'employer' ? 'employer' : profile?.role === 'admin' ? 'admin' : 'talent'
       setRole(resolved)
       setName(profile?.full_name || '')
+
+      if (resolved === 'talent') {
+        const { data } = await supabase.from('candidate_profiles').select('membership_tier,interview_ready_credits').eq('user_id', user.id).maybeSingle()
+        setMembership(data?.membership_tier || 'free')
+        setInterviewCredits(Math.max(0, Number(data?.interview_ready_credits || 0)))
+      } else if (resolved === 'employer') {
+        const { data } = await supabase.from('employer_profiles').select('membership_tier').eq('user_id', user.id).maybeSingle()
+        setMembership(data?.membership_tier || 'free')
+      }
     }
     load()
   }, [])
@@ -48,19 +58,32 @@ export default function HomeScreen() {
   }
 
   if (role === 'admin') {
-    return <View style={styles.page}><Text style={styles.wordmark}>WELLNESS HOUSE</Text><Text style={styles.title}>Admin stays web-first.</Text><Text style={styles.intro}>The mobile app is being built around Talent and Employer workflows. Platform administration remains on the full web dashboard.</Text><Pressable onPress={signOut} style={styles.secondaryButton}><Text style={styles.secondaryButtonText}>Sign out</Text></Pressable></View>
+    return <View style={styles.page}><Text style={styles.wordmark}>WELLNESS HOUSE</Text><Text style={styles.title}>Admin stays web-first.</Text><Text style={styles.intro}>The mobile app is focused on Talent and Employer workflows. Full platform administration remains on the web dashboard.</Text><Pressable onPress={signOut} style={styles.secondaryButton}><Text style={styles.secondaryButtonText}>Sign out</Text></Pressable></View>
   }
 
-  const cards = role === 'employer' ? employerCards : talentCards
+  const premiumEmployer = role === 'employer' && (membership === 'pro' || membership === 'group')
+  const cards = (role === 'employer' ? employerCards : talentCards).map(card => {
+    if (role === 'employer' && (card.title === 'Discover Talent' || card.title === 'Analytics')) return { ...card, locked: !premiumEmployer }
+    if (role === 'talent' && card.title === 'Interview Ready') return { ...card, locked: interviewCredits < 1, badge: interviewCredits > 0 ? `${interviewCredits} LEFT` : 'LOCKED' }
+    return card
+  })
 
   return (
     <ScrollView style={styles.scroll} contentContainerStyle={styles.page}>
       <View style={styles.topRow}><View><Text style={styles.wordmark}>WELLNESS HOUSE</Text><Text style={styles.sub}>{role === 'employer' ? 'EMPLOYER' : 'TALENT'}</Text></View><Pressable onPress={signOut}><Text style={styles.signOut}>Sign out</Text></Pressable></View>
       <Text style={styles.eyebrow}>{role === 'employer' ? 'PROPERTY WORKSPACE' : 'YOUR CAREER'}</Text>
       <Text style={styles.title}>{name ? `Hello, ${name.split(' ')[0]}.` : 'Welcome back.'}</Text>
-      <Text style={styles.intro}>{role === 'employer' ? 'Recruit, manage and connect from the same platform you already use on the web.' : 'Your matches, applications, shifts, development and messages in one mobile workspace.'}</Text>
-      <View style={styles.grid}>{cards.map(card => <View key={card.title} style={styles.card}><Text style={styles.cardTitle}>{card.title}</Text><Text style={styles.cardCopy}>{card.copy}</Text></View>)}</View>
-      <View style={styles.notice}><Text style={styles.noticeTitle}>Same platform. Same account.</Text><Text style={styles.noticeCopy}>This app reads from the existing Wellness House Talent Supabase project, so changes made here and on the website stay in sync.</Text></View>
+      <Text style={styles.intro}>{role === 'employer' ? 'Recruit, manage and connect from the same platform you already use on the web.' : 'Your jobs, applications, shifts, development and messages in one mobile workspace.'}</Text>
+      <View style={styles.grid}>{cards.map(card => {
+        const isLocked = Boolean(card.locked)
+        const canOpen = Boolean(card.href) && !isLocked
+        return <Pressable key={card.title} disabled={!canOpen} onPress={() => card.href && router.push(card.href)} style={[styles.card, isLocked && styles.lockedCard]}>
+          <View style={styles.cardTop}><Text style={[styles.cardTitle, isLocked && styles.lockedText]}>{card.title}</Text>{card.badge ? <Text style={styles.badge}>{isLocked ? '🔒 ' : ''}{card.badge}</Text> : null}</View>
+          <Text style={styles.cardCopy}>{card.copy}</Text>
+          {canOpen ? <Text style={styles.open}>Open →</Text> : isLocked ? <Text style={styles.lockCopy}>{role === 'employer' ? 'Upgrade membership on Billing to unlock.' : 'Upgrade or add more access to unlock.'}</Text> : <Text style={styles.next}>Coming next</Text>}
+        </Pressable>
+      })}</View>
+      <View style={styles.notice}><Text style={styles.noticeTitle}>Same platform. Same account.</Text><Text style={styles.noticeCopy}>Everything here reads from the existing Wellness House Talent platform, so changes made in the app and website stay in sync.</Text></View>
     </ScrollView>
   )
 }
@@ -77,8 +100,15 @@ const styles = StyleSheet.create({
   intro: { color: '#66747c', fontSize: 14, lineHeight: 21, marginTop: 10, marginBottom: 28, maxWidth: 520 },
   grid: { gap: 12 },
   card: { borderWidth: 1, borderColor: '#dce3e7', padding: 20, backgroundColor: '#ffffff' },
-  cardTitle: { color: '#173246', fontSize: 17, fontWeight: '600', marginBottom: 7 },
+  lockedCard: { backgroundColor: '#f8f9fa', borderColor: '#e5e9eb' },
+  cardTop: { flexDirection: 'row', justifyContent: 'space-between', gap: 10 },
+  cardTitle: { color: '#173246', fontSize: 17, fontWeight: '600', marginBottom: 7, flex: 1 },
+  lockedText: { color: '#738089' },
+  badge: { color: '#71808a', fontSize: 8, letterSpacing: 1.1, paddingTop: 3 },
   cardCopy: { color: '#71808a', fontSize: 12, lineHeight: 18 },
+  open: { color: '#092b45', fontSize: 11, fontWeight: '600', marginTop: 13 },
+  next: { color: '#909ba1', fontSize: 10, marginTop: 13, textTransform: 'uppercase', letterSpacing: 1.1 },
+  lockCopy: { color: '#7c878d', fontSize: 10, marginTop: 13 },
   notice: { marginTop: 26, backgroundColor: '#f4f7f8', padding: 18 },
   noticeTitle: { color: '#173246', fontSize: 13, fontWeight: '600', marginBottom: 6 },
   noticeCopy: { color: '#71808a', fontSize: 11, lineHeight: 17 },
