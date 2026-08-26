@@ -1,49 +1,61 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import DashboardShell from '@/components/DashboardShell'
-import { createClient } from '@/lib/supabase/client'
-import { Plus, Edit2, Trash2, Eye, EyeOff, FileText, X } from 'lucide-react'
+import { Plus, Edit2, Trash2, Eye, EyeOff, FileText, X, Upload, Image as ImageIcon, Share2 } from 'lucide-react'
 import Pagination from '@/components/Pagination'
 
-const CATEGORIES = ['Career Advice', 'Industry Insights', 'Wellness Trends', 'Business Tips', 'Recruitment']
+const CATEGORIES = ['Career Advice', 'Industry Insights', 'Wellness Trends', 'Business Tips', 'Recruitment', 'Leadership', 'Employer Insights', 'Qualifications']
 
 export default function AdminBlogPage() {
-  const supabase = createClient()
   const [posts, setPosts] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
   const [editing, setEditing] = useState<any>(null)
   const [saving, setSaving] = useState(false)
+  const [uploading, setUploading] = useState(false)
   const [showDelete, setShowDelete] = useState<string | null>(null)
   const [formError, setFormError] = useState('')
   const [pageError, setPageError] = useState('')
   const [page, setPage] = useState(1)
-  const [perPage, setPerPage] = useState(20)
+  const perPage = 20
 
   const emptyPost = {
     title: '', slug: '', content: '', excerpt: '', image_url: '',
-    author: 'WHC Concierge', category: '', tags: '', status: 'draft' as string,
-    published_at: '',
+    author: 'WHC Concierge', category: '', tags: '', status: 'draft', published_at: '',
   }
   const [form, setForm] = useState(emptyPost)
 
-  useEffect(() => {
-    async function load() {
-      const res = await fetch('/api/admin/blog?per_page=200')
-      const j = res.ok ? await res.json() : { posts: [] }
-      setPosts(j.posts || [])
-      setLoading(false)
-    }
-    load()
-  }, [])
+  const load = async () => {
+    const res = await fetch('/api/admin/blog?per_page=200', { cache: 'no-store' })
+    const j = res.ok ? await res.json() : { posts: [] }
+    setPosts(j.posts || [])
+    setLoading(false)
+  }
+
+  useEffect(() => { load() }, [])
 
   const generateSlug = (title: string) => title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
 
+  const uploadImage = async (file: File) => {
+    setUploading(true); setFormError('')
+    try {
+      const body = new FormData()
+      body.append('file', file)
+      body.append('bucket', 'site-images')
+      body.append('path', `blog-${Date.now()}-${file.name.replace(/[^a-zA-Z0-9._-]/g, '-')}`)
+      const res = await fetch('/api/upload', { method: 'POST', body })
+      const j = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(j.error || 'Image upload failed.')
+      setForm(current => ({ ...current, image_url: j.url }))
+    } catch (error) {
+      setFormError(error instanceof Error ? error.message : 'Image upload failed.')
+    } finally { setUploading(false) }
+  }
+
   const handleSave = async () => {
     if (!form.title || !form.content) return
-    setSaving(true)
-    setFormError('')
+    setSaving(true); setFormError('')
     const payload = {
       title: form.title,
       slug: form.slug || generateSlug(form.title),
@@ -56,253 +68,90 @@ export default function AdminBlogPage() {
       status: form.status,
       published_at: form.status === 'published' ? (form.published_at || new Date().toISOString()) : null,
     }
-
-    // Writes go through the service-role admin API - direct writes are blocked by RLS
-    let saveRes: Response
-    if (editing) {
-      saveRes = await fetch('/api/admin/blog', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: editing.id, ...payload }) })
-    } else {
-      saveRes = await fetch('/api/admin/blog', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
-    }
-
-    if (!saveRes.ok) {
-      const err = await saveRes.json().catch(() => ({}))
-      setFormError(err.error || 'Save failed - please try again.')
-      setSaving(false)
-      return
-    }
-
-    const res = await fetch('/api/admin/blog?per_page=200')
-    const j = res.ok ? await res.json() : { posts: [] }
-    setPosts(j.posts || [])
-    setShowForm(false)
-    setEditing(null)
-    setForm(emptyPost)
-    setSaving(false)
+    const res = await fetch('/api/admin/blog', {
+      method: editing ? 'PATCH' : 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(editing ? { id: editing.id, ...payload } : payload),
+    })
+    const j = await res.json().catch(() => ({}))
+    if (!res.ok) { setFormError(j.error || 'Save failed.'); setSaving(false); return }
+    await load(); setShowForm(false); setEditing(null); setForm(emptyPost); setSaving(false)
   }
 
   const handleEdit = (post: any) => {
     setForm({
-      title: post.title, slug: post.slug, content: post.content,
-      excerpt: post.excerpt || '', image_url: post.image_url || '',
-      author: post.author || 'WHC Concierge', category: post.category || '',
+      title: post.title || '', slug: post.slug || '', content: post.content || '', excerpt: post.excerpt || '',
+      image_url: post.image_url || '', author: post.author || 'WHC Concierge', category: post.category || '',
       tags: post.tags?.join(', ') || '', status: post.status || 'draft',
       published_at: post.published_at ? post.published_at.slice(0, 10) : '',
     })
-    setEditing(post)
-    setFormError('')
-    setShowForm(true)
+    setEditing(post); setFormError(''); setShowForm(true)
   }
 
   const confirmDelete = async () => {
     if (!showDelete) return
-    setPageError('')
     const res = await fetch('/api/admin/blog', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: showDelete }) })
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}))
-      setPageError(err.error || 'Failed to delete post - please try again.')
-      setShowDelete(null)
-      return
-    }
-    setPosts(posts.filter(p => p.id !== showDelete))
-    setShowDelete(null)
+    if (!res.ok) { const j = await res.json().catch(() => ({})); setPageError(j.error || 'Delete failed.'); return }
+    setPosts(posts.filter(p => p.id !== showDelete)); setShowDelete(null)
   }
 
   const togglePublish = async (post: any) => {
-    const newStatus = post.status === 'published' ? 'draft' : 'published'
-    const updates: any = { status: newStatus }
-    if (newStatus === 'published' && !post.published_at) updates.published_at = new Date().toISOString()
-    setPageError('')
-    const res = await fetch('/api/admin/blog', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: post.id, ...updates }) })
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}))
-      setPageError(err.error || `Failed to ${newStatus === 'published' ? 'publish' : 'unpublish'} post - please try again.`)
-      return
-    }
-    setPosts(posts.map(p => p.id === post.id ? { ...p, ...updates } : p))
+    const status = post.status === 'published' ? 'draft' : 'published'
+    const res = await fetch('/api/admin/blog', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: post.id, status, ...(status === 'published' && !post.published_at ? { published_at: new Date().toISOString() } : {}) }) })
+    if (!res.ok) { const j = await res.json().catch(() => ({})); setPageError(j.error || 'Status update failed.'); return }
+    await load()
   }
 
-  const paginatedPosts = posts.slice((page - 1) * perPage, page * perPage)
+  const paginated = useMemo(() => posts.slice((page - 1) * perPage, page * perPage), [posts, page])
   const publishedCount = posts.filter(p => p.status === 'published').length
   const draftCount = posts.filter(p => p.status === 'draft').length
 
-  return (
-    <DashboardShell role="admin" userName="Admin">
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-serif font-bold text-ink">Blog Management</h1>
-          <p className="text-[12px] text-muted mt-1">{publishedCount} published &middot; {draftCount} drafts</p>
+  return <DashboardShell role="admin" userName="Admin">
+    <div className="mb-7 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+      <div><p className="dashboard-eyebrow">Content & revenue</p><h1 className="dashboard-title">Blog & Journal</h1><p className="dashboard-intro">Create visual editorial content for the public Journal. Every published article includes social sharing controls automatically.</p></div>
+      <button type="button" onClick={() => { setForm(emptyPost); setEditing(null); setShowForm(true) }} className="btn-primary flex items-center gap-2"><Plus size={16}/>Write blog post</button>
+    </div>
+
+    <div className="grid gap-3 sm:grid-cols-3 mb-7">
+      <div className="dashboard-card !py-4"><p className="dashboard-eyebrow">Total</p><p className="text-[24px] font-semibold text-[#10283b]">{posts.length}</p></div>
+      <div className="dashboard-card !py-4"><p className="dashboard-eyebrow">Published</p><p className="text-[24px] font-semibold text-[#10283b]">{publishedCount}</p></div>
+      <div className="dashboard-card !py-4"><p className="dashboard-eyebrow">Drafts</p><p className="text-[24px] font-semibold text-[#10283b]">{draftCount}</p></div>
+    </div>
+
+    {pageError && <div className="mb-5 rounded-xl bg-red-50 px-4 py-3 text-[13px] text-red-600">{pageError}</div>}
+
+    {showForm && <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setShowForm(false)}>
+      <div className="max-h-[92vh] w-full max-w-4xl overflow-y-auto rounded-2xl bg-white p-7 md:p-9" onClick={e => e.stopPropagation()}>
+        <div className="mb-6 flex items-center justify-between"><div><p className="dashboard-eyebrow">Journal editor</p><h2 className="text-[24px] font-semibold text-[#10283b]">{editing ? 'Edit article' : 'Write new article'}</h2></div><button onClick={() => setShowForm(false)} className="p-2 text-[#65717a]"><X size={18}/></button></div>
+        <div className="space-y-5">
+          <div><label className="dashboard-eyebrow block mb-1.5">Title *</label><input className="input-field" value={form.title} onChange={e => setForm({ ...form, title: e.target.value, slug: editing ? form.slug : generateSlug(e.target.value) })} placeholder="Article title"/></div>
+          <div className="grid md:grid-cols-2 gap-4"><div><label className="dashboard-eyebrow block mb-1.5">Slug</label><input className="input-field" value={form.slug} onChange={e => setForm({ ...form, slug: e.target.value })}/></div><div><label className="dashboard-eyebrow block mb-1.5">Author</label><input className="input-field" value={form.author} onChange={e => setForm({ ...form, author: e.target.value })}/></div></div>
+          <div className="grid md:grid-cols-2 gap-4"><div><label className="dashboard-eyebrow block mb-1.5">Category</label><select className="input-field" value={form.category} onChange={e => setForm({ ...form, category: e.target.value })}><option value="">Select category</option>{CATEGORIES.map(c => <option key={c}>{c}</option>)}</select></div><div><label className="dashboard-eyebrow block mb-1.5">Tags</label><input className="input-field" value={form.tags} onChange={e => setForm({ ...form, tags: e.target.value })} placeholder="spa, leadership, careers"/></div></div>
+
+          <div><label className="dashboard-eyebrow block mb-1.5">Featured image</label><div className="grid md:grid-cols-[240px_1fr] gap-4 rounded-2xl border border-[#dfe5e8] p-4 bg-[#f7f9fa]">
+            <div className="aspect-[16/10] overflow-hidden rounded-xl bg-white border border-[#dfe5e8]">{form.image_url ? <img src={form.image_url} alt="Article preview" className="w-full h-full object-cover"/> : <div className="h-full flex items-center justify-center text-[#8a979f]"><ImageIcon size={30}/></div>}</div>
+            <div className="flex flex-col justify-center gap-3"><p className="text-[12px] leading-5 text-[#65717a]">Upload the article image here. It will be stored in WHC site storage and used on the Journal card and article page.</p><label className="btn-secondary w-fit cursor-pointer inline-flex items-center gap-2"><Upload size={14}/>{uploading ? 'Uploading…' : 'Upload image'}<input type="file" accept="image/jpeg,image/png,image/webp" className="hidden" disabled={uploading} onChange={e => { const file=e.target.files?.[0]; if(file) uploadImage(file); e.target.value='' }}/></label><input className="input-field text-[12px]" value={form.image_url} onChange={e => setForm({ ...form, image_url: e.target.value })} placeholder="Or paste an image URL"/></div>
+          </div></div>
+
+          <div><label className="dashboard-eyebrow block mb-1.5">Excerpt</label><textarea rows={3} maxLength={220} className="input-field" value={form.excerpt} onChange={e => setForm({ ...form, excerpt: e.target.value })} placeholder="Short introduction shown on the Journal page"/></div>
+          <div><label className="dashboard-eyebrow block mb-1.5">Article *</label><textarea rows={16} className="input-field leading-7" value={form.content} onChange={e => setForm({ ...form, content: e.target.value })} placeholder="Write the full article here…"/></div>
+
+          <div className="rounded-xl bg-[#eef2f4] p-4 flex gap-3"><Share2 size={18} className="text-[#0b2f4d] shrink-0 mt-0.5"/><div><p className="text-[12px] font-semibold text-[#10283b]">Social sharing is automatic</p><p className="text-[11px] text-[#65717a] mt-1">Published articles get LinkedIn, Facebook, WhatsApp, Email and Copy Link buttons on the article page.</p></div></div>
+
+          <div className="flex flex-wrap items-center justify-between gap-4"><label className="flex items-center gap-3"><input type="checkbox" checked={form.status === 'published'} onChange={e => setForm({ ...form, status: e.target.checked ? 'published' : 'draft' })}/><span className="text-[13px] font-semibold text-[#10283b]">Publish article</span></label><div className="flex gap-2"><button onClick={() => setShowForm(false)} className="btn-secondary">Cancel</button><button onClick={handleSave} disabled={saving || uploading || !form.title || !form.content} className="btn-primary disabled:opacity-40">{saving ? 'Saving…' : editing ? 'Update article' : 'Create article'}</button></div></div>
+          {formError && <div className="rounded-xl bg-red-50 px-4 py-3 text-[12px] text-red-600">{formError}</div>}
         </div>
-        <button type="button" onClick={() => { setForm(emptyPost); setEditing(null); setFormError(''); setShowForm(true) }}
-          className="btn-primary flex items-center space-x-2"><Plus size={16} /><span>New Post</span></button>
       </div>
+    </div>}
 
-      {pageError && (
-        <div className="mb-6 px-4 py-3 rounded-lg text-[13px] font-medium bg-red-50 text-red-600">{pageError}</div>
-      )}
+    {showDelete && <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setShowDelete(null)}><div className="w-full max-w-sm rounded-2xl bg-white p-6" onClick={e=>e.stopPropagation()}><h3 className="text-[18px] font-semibold text-[#10283b]">Delete this article?</h3><p className="text-[12px] text-[#65717a] mt-2">This cannot be undone.</p><div className="flex gap-2 mt-6"><button className="btn-secondary flex-1" onClick={()=>setShowDelete(null)}>Cancel</button><button className="flex-1 rounded-lg bg-red-600 px-4 py-2 text-white text-[12px] font-semibold" onClick={confirmDelete}>Delete</button></div></div></div>}
 
-      {/* ── Form Modal ── */}
-      {showForm && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setShowForm(false)}>
-          <div className="bg-white rounded-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto p-8" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="font-serif text-xl font-bold">{editing ? 'Edit Post' : 'New Blog Post'}</h2>
-              <button type="button" onClick={() => setShowForm(false)} className="p-1 text-muted hover:text-ink"><X size={18} /></button>
-            </div>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-xs font-medium text-neutral-500 uppercase tracking-wider mb-1.5">Title *</label>
-                <input type="text" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value, slug: editing ? form.slug : generateSlug(e.target.value) })} className="input-field" placeholder="Your blog post title" />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-medium text-neutral-500 uppercase tracking-wider mb-1.5">Slug</label>
-                  <input type="text" value={form.slug} onChange={(e) => setForm({ ...form, slug: e.target.value })} className="input-field text-[13px] font-mono" />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-neutral-500 uppercase tracking-wider mb-1.5">Author</label>
-                  <input type="text" value={form.author} onChange={(e) => setForm({ ...form, author: e.target.value })} className="input-field" />
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-medium text-neutral-500 uppercase tracking-wider mb-1.5">Category</label>
-                  <select value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} className="input-field">
-                    <option value="">Select category...</option>
-                    {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-neutral-500 uppercase tracking-wider mb-1.5">Published Date</label>
-                  <input type="date" value={form.published_at} onChange={(e) => setForm({ ...form, published_at: e.target.value })} className="input-field" />
-                </div>
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-neutral-500 uppercase tracking-wider mb-1.5">Excerpt</label>
-                <textarea rows={2} maxLength={200} value={form.excerpt} onChange={(e) => setForm({ ...form, excerpt: e.target.value })} className="input-field" placeholder="Brief summary for previews..." />
-                <p className="text-[11px] text-muted mt-1">{form.excerpt.length}/200</p>
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-neutral-500 uppercase tracking-wider mb-1.5">Content *</label>
-                <textarea rows={14} value={form.content} onChange={(e) => setForm({ ...form, content: e.target.value })} className="input-field font-mono text-sm leading-relaxed" placeholder="Write your post content here. Markdown supported." />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-medium text-neutral-500 uppercase tracking-wider mb-1.5">Featured Image URL</label>
-                  <input type="text" value={form.image_url} onChange={(e) => setForm({ ...form, image_url: e.target.value })} className="input-field text-[13px]" placeholder="https://..." />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-neutral-500 uppercase tracking-wider mb-1.5">Tags (comma separated)</label>
-                  <input type="text" value={form.tags} onChange={(e) => setForm({ ...form, tags: e.target.value })} className="input-field" placeholder="wellness, spa, careers" />
-                </div>
-              </div>
-              <div className="flex items-center justify-between pt-2">
-                <label className="flex items-center gap-2.5 cursor-pointer">
-                  <button type="button" onClick={() => setForm({ ...form, status: form.status === 'published' ? 'draft' : 'published' })}
-                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${form.status === 'published' ? 'bg-emerald-500' : 'bg-gray-200'}`}>
-                    <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${form.status === 'published' ? 'translate-x-6' : 'translate-x-1'}`} />
-                  </button>
-                  <span className="text-sm font-medium text-ink">{form.status === 'published' ? 'Published' : 'Draft'}</span>
-                </label>
-              </div>
-              {formError && (
-                <div className="px-4 py-3 rounded-lg text-[13px] font-medium bg-red-50 text-red-600">{formError}</div>
-              )}
-              <div className="flex gap-3 pt-2">
-                <button type="button" onClick={() => setShowForm(false)} className="btn-secondary flex-1">Cancel</button>
-                <button type="button" onClick={handleSave} disabled={saving || !form.title || !form.content} className="btn-primary flex-1 disabled:opacity-40">
-                  {saving ? 'Saving...' : editing ? 'Update Post' : 'Create Post'}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ── Delete Confirmation Modal ── */}
-      {showDelete && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setShowDelete(null)}>
-          <div className="bg-white rounded-xl max-w-sm w-full p-6 text-center" onClick={(e) => e.stopPropagation()}>
-            <div className="w-12 h-12 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Trash2 size={20} className="text-red-500" />
-            </div>
-            <h3 className="text-[16px] font-medium text-ink mb-2">Delete this post?</h3>
-            <p className="text-[13px] text-muted mb-6">This action cannot be undone. The post will be permanently removed.</p>
-            <div className="flex gap-3">
-              <button type="button" onClick={() => setShowDelete(null)} className="btn-secondary flex-1">Cancel</button>
-              <button type="button" onClick={confirmDelete} className="flex-1 px-4 py-2 bg-red-500 text-white text-[13px] font-medium rounded-lg hover:bg-red-600 transition-colors">Delete</button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ── Posts Table ── */}
-      {loading ? (
-        <div className="flex items-center justify-center h-64"><div className="animate-spin w-8 h-8 border-2 border-ink border-t-transparent rounded-full" /></div>
-      ) : posts.length === 0 ? (
-        <div className="dashboard-card text-center py-16">
-          <FileText size={40} className="mx-auto mb-3 text-muted/40" />
-          <p className="text-[15px] font-medium text-ink mb-1">No blog posts yet</p>
-          <p className="text-[13px] text-muted">Create your first post to get started.</p>
-        </div>
-      ) : (
-        <>
-          <div className="bg-white rounded-xl border border-border overflow-hidden">
-            <table className="w-full">
-              <thead className="bg-surface border-b border-border">
-                <tr>
-                  <th className="text-left px-5 py-3 text-[11px] font-medium text-muted uppercase tracking-wider">Title</th>
-                  <th className="text-left px-5 py-3 text-[11px] font-medium text-muted uppercase tracking-wider">Category</th>
-                  <th className="text-left px-5 py-3 text-[11px] font-medium text-muted uppercase tracking-wider">Status</th>
-                  <th className="text-left px-5 py-3 text-[11px] font-medium text-muted uppercase tracking-wider">Date</th>
-                  <th className="text-right px-5 py-3 text-[11px] font-medium text-muted uppercase tracking-wider">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border">
-                {paginatedPosts.map((post) => (
-                  <tr key={post.id} className="hover:bg-surface/50 transition-colors">
-                    <td className="px-5 py-3.5">
-                      <p className="text-[13px] font-medium text-ink">{post.title}</p>
-                      <p className="text-[11px] text-muted font-mono">/{post.slug}</p>
-                    </td>
-                    <td className="px-5 py-3.5">
-                      {post.category ? (
-                        <span className="text-[11px] font-medium bg-[#FDF6EC] text-accent border border-accent/20 px-2 py-0.5 rounded-full">{post.category}</span>
-                      ) : <span className="text-[11px] text-muted">-</span>}
-                    </td>
-                    <td className="px-5 py-3.5">
-                      <span className={`text-[11px] font-medium px-2 py-0.5 rounded-full ${post.status === 'published' ? 'bg-emerald-50 text-emerald-700' : 'bg-neutral-100 text-neutral-500'}`}>
-                        {post.status === 'published' ? 'Published' : 'Draft'}
-                      </span>
-                    </td>
-                    <td className="px-5 py-3.5 text-[12px] text-muted">
-                      {new Date(post.published_at || post.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
-                    </td>
-                    <td className="px-5 py-3.5">
-                      <div className="flex items-center justify-end gap-1">
-                        <button type="button" onClick={() => togglePublish(post)}
-                          className="p-1.5 rounded-lg hover:bg-surface text-muted hover:text-ink transition-colors"
-                          title={post.status === 'published' ? 'Unpublish' : 'Publish'}>
-                          {post.status === 'published' ? <EyeOff size={15} /> : <Eye size={15} />}
-                        </button>
-                        <button type="button" onClick={() => handleEdit(post)}
-                          className="p-1.5 rounded-lg hover:bg-surface text-muted hover:text-ink transition-colors" title="Edit">
-                          <Edit2 size={15} />
-                        </button>
-                        <button type="button" onClick={() => setShowDelete(post.id)}
-                          className="p-1.5 rounded-lg hover:bg-red-50 text-muted hover:text-red-500 transition-colors" title="Delete">
-                          <Trash2 size={15} />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          <Pagination page={page} perPage={perPage} total={posts.length} onPageChange={setPage} onPerPageChange={setPerPage} />
-        </>
-      )}
-    </DashboardShell>
-  )
+    {loading ? <div className="h-64 flex items-center justify-center"><div className="h-8 w-8 animate-spin rounded-full border-2 border-[#6f7f88] border-t-transparent"/></div> : posts.length === 0 ? <div className="dashboard-card text-center py-16"><FileText size={38} className="mx-auto text-[#8a979f]"/><p className="mt-3 text-[15px] font-semibold text-[#10283b]">No articles yet</p></div> : <>
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">{paginated.map(post => <article key={post.id} className="overflow-hidden rounded-2xl border border-[#dfe5e8] bg-white">
+        <div className="aspect-[16/9] bg-[#eef2f4] overflow-hidden">{post.image_url ? <img src={post.image_url} alt={post.title} className="w-full h-full object-cover" loading="lazy"/> : <div className="h-full flex items-center justify-center text-[#8a979f]"><ImageIcon size={28}/></div>}</div>
+        <div className="p-5"><div className="flex items-center justify-between gap-2"><span className="text-[9px] uppercase tracking-[.14em] font-semibold text-[#6f7f88]">{post.category || 'Journal'}</span><span className={`text-[10px] rounded-full px-2 py-1 ${post.status==='published'?'bg-emerald-50 text-emerald-700':'bg-[#eef2f4] text-[#65717a]'}`}>{post.status}</span></div><h3 className="mt-3 text-[17px] font-semibold leading-snug text-[#10283b]">{post.title}</h3><p className="mt-2 line-clamp-2 text-[12px] leading-5 text-[#65717a]">{post.excerpt || post.content?.slice(0,120)}</p><div className="mt-5 flex items-center justify-between"><a href={`/blog/${post.slug}`} target="_blank" className="text-[11px] font-semibold text-[#0b2f4d]">View article →</a><div className="flex gap-1"><button title="Edit" onClick={()=>handleEdit(post)} className="p-2 text-[#65717a] hover:text-[#0b2f4d]"><Edit2 size={14}/></button><button title={post.status==='published'?'Unpublish':'Publish'} onClick={()=>togglePublish(post)} className="p-2 text-[#65717a] hover:text-[#0b2f4d]">{post.status==='published'?<EyeOff size={14}/>:<Eye size={14}/>}</button><button title="Delete" onClick={()=>setShowDelete(post.id)} className="p-2 text-[#65717a] hover:text-red-600"><Trash2 size={14}/></button></div></div></div>
+      </article>)}</div>
+      <Pagination page={page} perPage={perPage} total={posts.length} showPerPage={false} onPageChange={setPage}/>
+    </>}
+  </DashboardShell>
 }
