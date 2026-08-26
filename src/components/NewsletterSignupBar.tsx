@@ -1,7 +1,7 @@
 'use client'
 
 import { FormEvent, useEffect, useState } from 'react'
-import { usePathname, useSearchParams } from 'next/navigation'
+import { usePathname } from 'next/navigation'
 import { Mail, X } from 'lucide-react'
 
 const HIDE_PREFIXES = ['/admin', '/talent', '/employer', '/login', '/register']
@@ -18,7 +18,6 @@ type Config = {
 
 export default function NewsletterSignupBar() {
   const pathname = usePathname()
-  const searchParams = useSearchParams()
   const [config, setConfig] = useState<Config | null>(null)
   const [visible, setVisible] = useState(false)
   const [email, setEmail] = useState('')
@@ -28,7 +27,7 @@ export default function NewsletterSignupBar() {
   const [success, setSuccess] = useState(false)
 
   useEffect(() => {
-    const status = searchParams.get('newsletter')
+    const status = typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('newsletter') : null
     if (status === 'confirmed') {
       setMessage('You’re subscribed. Welcome to the WHC newsletter.')
       setSuccess(true)
@@ -45,6 +44,7 @@ export default function NewsletterSignupBar() {
     if (HIDE_PREFIXES.some(prefix => pathname.startsWith(prefix))) return
 
     let active = true
+    let timer: number | undefined
     fetch('/api/newsletter/config')
       .then(res => res.ok ? res.json() : null)
       .then((data: Config | null) => {
@@ -52,11 +52,14 @@ export default function NewsletterSignupBar() {
         setConfig(data)
         const dismissedUntil = Number(localStorage.getItem(STORAGE_KEY) || 0)
         if (dismissedUntil > Date.now()) return
-        window.setTimeout(() => { if (active) setVisible(true) }, Math.max(0, data.delaySeconds) * 1000)
+        timer = window.setTimeout(() => { if (active) setVisible(true) }, Math.max(0, data.delaySeconds) * 1000)
       })
       .catch(() => {})
-    return () => { active = false }
-  }, [pathname, searchParams])
+    return () => {
+      active = false
+      if (timer) window.clearTimeout(timer)
+    }
+  }, [pathname])
 
   const dismiss = () => {
     const days = config?.frequencyDays || 14
