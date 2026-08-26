@@ -1,24 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { createServerClient } from '@supabase/ssr'
-import { cookies } from 'next/headers'
 import { createNotification } from '@/lib/notifications'
 import { PASS_MARK } from '@/lib/academy'
 import { getAcademyAnswerKey, getAcademyCourseBySlug } from '@/lib/academy-catalog-server'
+import { getRequestUser } from '@/lib/request-user'
 
 // WHC Academy - enrolments, lesson progress and the server-graded quiz.
-// Payment happens via /api/stripe/checkout (type 'course'); the webhook sets
-// paid_at. Quizzes are graded HERE so answer keys never reach the browser.
-
-async function getAuthedUser() {
-  const cookieStore = await cookies()
-  const supabaseAuth = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    { cookies: { getAll() { return cookieStore.getAll() }, setAll() {} } }
-  )
-  return supabaseAuth.auth.getUser()
-}
+// Payment happens via Stripe checkout; the webhook sets paid_at. Quizzes are
+// graded HERE so answer keys never reach the browser or mobile app.
 
 function makeCertificateCode() {
   const alphabet = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'
@@ -27,8 +16,6 @@ function makeCertificateCode() {
   return code
 }
 
-// Random codes can collide; check the table before accepting one so the
-// /verify lookup (maybeSingle) never finds two rows for the same code.
 async function makeUniqueCertificateCode(admin: any) {
   let code = makeCertificateCode()
   for (let i = 0; i < 5; i++) {
@@ -40,19 +27,24 @@ async function makeUniqueCertificateCode(admin: any) {
   return code
 }
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
-    const { data: { user } } = await getAuthedUser()
+    const user = await getRequestUser(req)
     if (!user) return NextResponse.json({ error: 'Please log in' }, { status: 401 })
 
     const admin = createAdminClient()
-    const { data: cand } = await admin.from('candidate_profiles').select('id, full_name').eq('user_id', user.id).maybeSingle()
+    const { data: cand } = await admin.from('candidate_profiles').select('id, full_name, academy_discount_pct').eq('user_id', user.id).maybeSingle()
     if (!cand) return NextResponse.json({ error: 'No candidate profile found' }, { status: 404 })
 
     const { data: rows, error } = await admin.from('course_enrollments')
       .select('*').eq('candidate_id', cand.id)
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-    return NextResponse.json({ enrollments: rows || [], candidate_name: cand.full_name })
+    return NextResponse.json({
+      enrollments: rows || [],
+      candidate_name: cand.full_name,
+      candidate_id: cand.id,
+      academy_discount_pct: Number(cand.academy_discount_pct || 0),
+    })
   } catch (e: any) {
     return NextResponse.json({ error: e.message }, { status: 500 })
   }
@@ -60,7 +52,7 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   try {
-    const { data: { user } } = await getAuthedUser()
+    const user = await getRequestUser(req)
     if (!user) return NextResponse.json({ error: 'Please log in' }, { status: 401 })
 
     const admin = createAdminClient()
@@ -79,7 +71,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'You are not enrolled on this course yet.' }, { status: 403 })
     }
 
-    // ── progress: tick a lesson as read ──
     if (action === 'progress') {
       const idx = parseInt(String(body.lesson), 10)
       if (isNaN(idx) || idx < 0 || idx >= course.lessons.length) {
@@ -92,11 +83,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true, progress })
     }
 
-    // ── quiz: grade server-side, award the certificate at 80%+ ──
     if (action === 'quiz') {
-      // The UI locks the assessment until every module is done - enforce the
-      // same gate here so a direct POST cannot earn a certificate unread.
-      // (JSONB keys deserialize as strings; progressMap[i] coerces the index.)
       const progressMap = enrolment.progress || {}
       if (!course.lessons.every((_: any, i: number) => progressMap[i])) {
         return NextResponse.json({ error: 'Complete all modules before the assessment.' }, { status: 400 })
@@ -104,16 +91,12 @@ export async function POST(req: NextRequest) {
       const key = await getAcademyAnswerKey(slug)
       if (!key.length || key.length !== course.quiz.length) return NextResponse.json({ error: 'Quiz unavailable' }, { status: 500 })
       const answers = Array.isArray(body.answers) ? body.answers.map((a: any) => parseInt(String(a), 10)) : []
-      if (answers.length !== key.length) {
-        return NextResponse.json({ error: 'Please answer every question.' }, { status: 400 })
-      }
+      if (answers.length !== key.length) return NextResponse.json({ error: 'Please answer every question.' }, { status: 400 })
+
       const correct = key.reduce((n, k, i) => n + (answers[i] === k ? 1 : 0), 0)
       const score = Math.round((correct / key.length) * 100)
       const passed = score >= PASS_MARK
-
-      const update: Record<string, any> = {
-        quiz_score: Math.max(score, enrolment.quiz_score || 0),
-      }
+      const update: Record<string, any> = { quiz_score: Math.max(score, enrolment.quiz_score || 0) }
       if (passed && !enrolment.completed_at) {
         update.completed_at = new Date().toISOString()
         update.certificate_code = await makeUniqueCertificateCode(admin)
@@ -130,14 +113,7 @@ export async function POST(req: NextRequest) {
         } catch { /* non-fatal */ }
       }
 
-      return NextResponse.json({
-        success: true,
-        score,
-        passed,
-        correct,
-        total: key.length,
-        certificate_code: updated.certificate_code || null,
-      })
+      return NextResponse.json({ success: true, score, passed, correct, total: key.length, certificate_code: updated.certificate_code || null })
     }
 
     return NextResponse.json({ error: 'Unknown action' }, { status: 400 })
