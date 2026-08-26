@@ -1,12 +1,10 @@
 const ROLE_LEVELS: Record<string, number> = {
-  'Apprentice': 1, 'Junior': 2, 'Junior Therapist': 2, 'Therapist': 3,
-  'Senior Therapist': 4, 'Lead Therapist': 5, 'Spa Manager': 6,
-  'Operations Manager': 6, 'Spa & Wellness Operations Manager': 6,
-  'Spa Director': 7, 'Director': 7, 'Director of Spa': 7,
-  'Receptionist': 2, 'Spa Receptionist': 2, 'Spa Attendant': 1,
-  'Beauty Therapist': 3, 'Wellness Practitioner': 3,
-  'Yoga/Pilates Instructor': 3, 'Personal Trainer': 3,
-  'Nutritionist': 3, 'Nail Technician': 2, 'Hair Stylist': 3, 'Barber': 3,
+  'Apprentice': 1, 'Junior': 2, 'Junior Therapist': 2, 'Receptionist': 2, 'Spa Receptionist': 2,
+  'Spa Attendant': 1, 'Nail Technician': 2, 'Therapist': 3, 'Beauty Therapist': 3,
+  'Wellness Practitioner': 3, 'Yoga/Pilates Instructor': 3, 'Personal Trainer': 3,
+  'Nutritionist': 3, 'Hair Stylist': 3, 'Barber': 3, 'Senior Therapist': 4,
+  'Lead Therapist': 5, 'Supervisor': 5, 'Spa Manager': 6, 'Operations Manager': 6,
+  'Spa & Wellness Operations Manager': 6, 'Spa Director': 7, 'Director': 7, 'Director of Spa': 7,
 }
 
 function roleLevel(value: string): number {
@@ -24,53 +22,39 @@ function roleLevel(value: string): number {
   return 3
 }
 
-const PROFICIENCY_WEIGHT: Record<string, number> = {
-  beginner: 0.25, basic: 0.25, intermediate: 0.5, competent: 0.5,
-  advanced: 0.75, master: 1.0, expert: 1.0,
-}
-
-const PROFICIENCY_LABEL: Record<string, string> = {
-  beginner: 'beginner', basic: 'beginner', intermediate: 'intermediate',
-  competent: 'intermediate', advanced: 'advanced', master: 'master', expert: 'master',
-}
-
+const PROFICIENCY_WEIGHT: Record<string, number> = { beginner: .25, basic: .25, intermediate: .5, competent: .5, advanced: .75, master: 1, expert: 1 }
+const PROFICIENCY_LABEL: Record<string, string> = { beginner: 'beginner', basic: 'beginner', intermediate: 'intermediate', competent: 'intermediate', advanced: 'advanced', master: 'master', expert: 'master' }
 type RoleFamily = 'leadership' | 'reception' | 'treatment' | 'fitness' | 'hair' | 'other'
+type CandidateScope = 'same_level' | 'step_up' | 'emerging' | 'open_transferable'
 
 function roleFamily(value: string): RoleFamily {
   const role = value.toLowerCase()
   if (/director|manager|head of spa|operations lead/.test(role)) return 'leadership'
   if (/reception|front desk|concierge|attendant/.test(role)) return 'reception'
-  if (/therapist|practitioner|nail|beauty|massage|aesthetic/.test(role)) return 'treatment'
+  if (/therapist|practitioner|nail|beauty|massage|aesthetic|supervisor|team lead/.test(role)) return 'treatment'
   if (/fitness|personal trainer|yoga|pilates|nutrition/.test(role)) return 'fitness'
   if (/hair|stylist|barber/.test(role)) return 'hair'
   return 'other'
 }
 
 function overlapScore(candidateArr: string[], requiredArr: string[]): { score: number; matches: string[] } {
-  if (requiredArr.length === 0) return { score: -1, matches: [] }
+  if (!requiredArr.length) return { score: -1, matches: [] }
   const matches = requiredArr.filter(r => candidateArr.some(c => c.toLowerCase() === r.toLowerCase()))
-  return { score: Math.round((matches.length / requiredArr.length) * 100), matches }
+  return { score: Math.round(matches.length / requiredArr.length * 100), matches }
 }
 
 function validCoordinate(value: unknown, min: number, max: number): value is number {
   return typeof value === 'number' && Number.isFinite(value) && value >= min && value <= max
 }
-
 function distanceMiles(a: { latitude: number; longitude: number }, b: { latitude: number; longitude: number }) {
-  const radius = 3958.761
-  const toRad = (degrees: number) => (degrees * Math.PI) / 180
-  const dLat = toRad(b.latitude - a.latitude)
-  const dLng = toRad(b.longitude - a.longitude)
-  const lat1 = toRad(a.latitude)
-  const lat2 = toRad(b.latitude)
-  const h = Math.sin(dLat / 2) ** 2 + Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLng / 2) ** 2
-  return 2 * radius * Math.asin(Math.sqrt(h))
+  const radius = 3958.761, toRad = (d: number) => d * Math.PI / 180
+  const dLat = toRad(b.latitude-a.latitude), dLng = toRad(b.longitude-a.longitude), lat1=toRad(a.latitude), lat2=toRad(b.latitude)
+  const h = Math.sin(dLat/2)**2 + Math.cos(lat1)*Math.cos(lat2)*Math.sin(dLng/2)**2
+  return 2*radius*Math.asin(Math.sqrt(h))
 }
-
 function candidateRadiusMiles(candidate: any): number | null {
-  const explicit = Number(candidate.travel_radius_miles)
-  if (Number.isFinite(explicit) && explicit > 0) return explicit
-  const commute = String(candidate.max_commute || '').toLowerCase()
+  const explicit=Number(candidate.travel_radius_miles); if (Number.isFinite(explicit)&&explicit>0) return explicit
+  const commute=String(candidate.max_commute||'').toLowerCase()
   if (commute.includes('willing to relocate')) return 250
   if (commute.includes('1.5 hour')) return 45
   if (commute.includes('1 hour')) return 30
@@ -78,240 +62,133 @@ function candidateRadiusMiles(candidate: any): number | null {
   if (commute.includes('30')) return 15
   return null
 }
-
-function geographicLocationScore(candidate: any, job: any): { score: number; distance: number | null; basis: 'distance' | 'text' | 'unknown' } {
-  const hasCandidateCoords = validCoordinate(candidate.latitude, -90, 90) && validCoordinate(candidate.longitude, -180, 180)
-  const hasJobCoords = validCoordinate(job.latitude, -90, 90) && validCoordinate(job.longitude, -180, 180)
-
-  if (hasCandidateCoords && hasJobCoords) {
-    const distance = distanceMiles(
-      { latitude: candidate.latitude, longitude: candidate.longitude },
-      { latitude: job.latitude, longitude: job.longitude },
-    )
-    const relocation = String(candidate.max_commute || '').toLowerCase().includes('willing to relocate')
-      || String(candidate.transport_method || '').toLowerCase().includes('relocating')
-    if (relocation) return { score: 100, distance, basis: 'distance' }
-
-    const candidateRadius = candidateRadiusMiles(candidate)
-    const employerRadiusRaw = Number(job.radius_miles)
-    const employerRadius = Number.isFinite(employerRadiusRaw) && employerRadiusRaw > 0 ? employerRadiusRaw : null
-    const effectiveRadius = candidateRadius && employerRadius ? Math.min(candidateRadius, employerRadius) : candidateRadius || employerRadius
-
-    if (!effectiveRadius) {
-      const score = distance <= 5 ? 100 : distance <= 15 ? 90 : distance <= 30 ? 75 : distance <= 50 ? 55 : 30
-      return { score, distance, basis: 'distance' }
-    }
-    if (distance <= effectiveRadius * 0.35) return { score: 100, distance, basis: 'distance' }
-    if (distance <= effectiveRadius * 0.7) return { score: 90, distance, basis: 'distance' }
-    if (distance <= effectiveRadius) return { score: 75, distance, basis: 'distance' }
-    if (distance <= effectiveRadius * 1.25) return { score: 40, distance, basis: 'distance' }
-    return { score: 10, distance, basis: 'distance' }
+function geographicLocationScore(candidate:any, job:any) {
+  const cc=validCoordinate(candidate.latitude,-90,90)&&validCoordinate(candidate.longitude,-180,180)
+  const jc=validCoordinate(job.latitude,-90,90)&&validCoordinate(job.longitude,-180,180)
+  if (cc&&jc) {
+    const distance=distanceMiles({latitude:candidate.latitude,longitude:candidate.longitude},{latitude:job.latitude,longitude:job.longitude})
+    const relocation=String(candidate.max_commute||'').toLowerCase().includes('willing to relocate')||String(candidate.transport_method||'').toLowerCase().includes('relocating')
+    if (relocation) return {score:100,distance,basis:'distance' as const}
+    const cr=candidateRadiusMiles(candidate), er=Number(job.radius_miles), employerRadius=Number.isFinite(er)&&er>0?er:null
+    const effective=cr&&employerRadius?Math.min(cr,employerRadius):cr||employerRadius
+    if (!effective) return {score:distance<=5?100:distance<=15?90:distance<=30?75:distance<=50?55:30,distance,basis:'distance' as const}
+    if (distance<=effective*.35) return {score:100,distance,basis:'distance' as const}
+    if (distance<=effective*.7) return {score:90,distance,basis:'distance' as const}
+    if (distance<=effective) return {score:75,distance,basis:'distance' as const}
+    if (distance<=effective*1.25) return {score:40,distance,basis:'distance' as const}
+    return {score:10,distance,basis:'distance' as const}
   }
-
-  const jobLocation = String(job.location || '').toLowerCase()
-  const candidateLocPrefs: string[] = (candidate.location_preferences || []).map((l: string) => l.toLowerCase())
-  if (jobLocation && candidateLocPrefs.length > 0) {
-    const hasMatch = candidateLocPrefs.some(l => jobLocation.includes(l) || l === 'worldwide')
-    return { score: hasMatch ? 100 : 30, distance: null, basis: 'text' }
-  }
-  return { score: jobLocation ? 50 : -1, distance: null, basis: 'unknown' }
+  const jl=String(job.location||'').toLowerCase(), prefs:string[]=(candidate.location_preferences||[]).map((l:string)=>l.toLowerCase())
+  if (jl&&prefs.length) return {score:prefs.some(l=>jl.includes(l)||l==='worldwide')?100:30,distance:null,basis:'text' as const}
+  return {score:jl?50:-1,distance:null,basis:'unknown' as const}
 }
 
-export function calculateMatchScore(candidate: any, job: any): {
-  score: number
-  label: string
-  colour: string
-  bgColour: string
-  breakdown: {
-    roleLevel: number; treatmentSkills: number; brands: number; qualifications: number
-    experience: number; businessSkills: number; systems: number; location: number
-    shiftCompatibility: number; transport: number; accommodation: number
-    proficiencyDepth: number; profileCompleteness: number; reviewScore: number
-  }
-  matchingSkills: string[]
-  hardStop: boolean
-  hardStopReason?: string
-  matchExplanation: string
-  distanceMiles: number | null
-  locationBasis: 'distance' | 'text' | 'unknown'
+function progressionPolicy(candidate:any, job:any, candidateRole:string, requiredRole:string) {
+  const candLevel=roleLevel(candidateRole), jobLevel=roleLevel(requiredRole)
+  const levelGap=jobLevel-candLevel
+  const scope=(job.candidate_scope || 'step_up') as CandidateScope
+  const candidateFamily=roleFamily(candidateRole), jobFamily=roleFamily(requiredRole)
+  const businessSkills:string[]=candidate.business_skills||[]
+  const careerEvidence:string[]=candidate.career_evidence||[]
+  const leadershipEvidence=businessSkills.filter(s=>['Team Leadership','Staff Training','Rota Management','Revenue Management','Budget Management','KPI Reporting','Membership Management'].includes(s)).length
+  const progressionBridge=(jobFamily==='leadership' && (candidateFamily==='leadership'||candidateFamily==='treatment'||candidateFamily==='reception')) && leadershipEvidence>=2
+  const sameFamily=candidateFamily==='other'||jobFamily==='other'||candidateFamily===jobFamily||progressionBridge
+
+  let allowed=true
+  if (scope==='same_level') allowed=levelGap<=0
+  else if (scope==='step_up') allowed=levelGap<=1
+  else if (scope==='emerging') allowed=levelGap<=2
+  else allowed=true
+
+  let score:number
+  if (!sameFamily && scope!=='open_transferable') score=15
+  else if (levelGap<=0) score=100
+  else if (levelGap===1) score=scope==='same_level'?35:85
+  else if (levelGap===2) score=scope==='emerging'||scope==='open_transferable'?65:30
+  else score=scope==='open_transferable'?45:10
+
+  if (progressionBridge && levelGap>0) score=Math.max(score, levelGap===1?90:70)
+  return {candLevel,jobLevel,levelGap,scope,allowed,sameFamily,progressionBridge,leadershipEvidence,careerEvidence,score}
+}
+
+export function calculateMatchScore(candidate:any, job:any): {
+  score:number; label:string; colour:string; bgColour:string; breakdown:any; matchingSkills:string[]; hardStop:boolean; hardStopReason?:string; matchExplanation:string; distanceMiles:number|null; locationBasis:'distance'|'text'|'unknown'; progression?:any
 } {
-  const emptyBreakdown = {
-    roleLevel: -1, treatmentSkills: -1, brands: -1, qualifications: -1,
-    experience: -1, businessSkills: -1, systems: -1, location: -1,
-    shiftCompatibility: -1, transport: -1, accommodation: -1,
-    proficiencyDepth: -1, profileCompleteness: 0, reviewScore: 0,
+  const emptyBreakdown={roleLevel:-1,treatmentSkills:-1,brands:-1,qualifications:-1,experience:-1,businessSkills:-1,systems:-1,location:-1,shiftCompatibility:-1,transport:-1,accommodation:-1,proficiencyDepth:-1,profileCompleteness:0,reviewScore:0}
+  const empty={score:10,label:'Requirement Missing',colour:'#6B7280',bgColour:'#F3F4F6',breakdown:emptyBreakdown,matchingSkills:[] as string[],hardStop:true,matchExplanation:'',distanceMiles:null,locationBasis:'unknown' as const}
+
+  const candidateRole=String(candidate.role_level||candidate.current_role||candidate.job_title||'')
+  const requiredRole=String(job.required_role_level||job.job_title||job.title||'')
+  const policy=progressionPolicy(candidate,job,candidateRole,requiredRole)
+
+  const insuranceApplies=job.insurance_required&&(roleFamily(requiredRole)==='treatment'||(job.is_agency_role&&roleFamily(requiredRole)!=='leadership'))
+  if (insuranceApplies&&!candidate.has_insurance) return {...empty,hardStopReason:'Professional insurance required for treatment delivery'}
+
+  const requiredSkills:string[]=job.required_skills||[], candidateSkills:string[]=candidate.treatment_skills||candidate.skills||candidate.services_offered||[]
+  const treatmentResult=overlapScore(candidateSkills,requiredSkills)
+  const brandResult=overlapScore(candidate.product_houses||[],job.required_brands||job.required_product_houses||[])
+  const qualResult=overlapScore(candidate.qualifications||[],job.required_qualifications||[])
+  const minYears=job.min_years_experience||0, candYears=candidate.experience_years||candidate.years_experience||0
+  const expScore=minYears===0?-1:candYears>=minYears?100:Math.max(10,Math.round(candYears/minYears*80))
+  const bizResult=overlapScore(candidate.business_skills||[],job.preferred_business_skills||[])
+  const sysResult=overlapScore(candidate.systems_knowledge||candidate.systems_experience||[],job.required_systems||[])
+  const geo=geographicLocationScore(candidate,job), locationScore=geo.score
+  const jobShift=String(job.shift_pattern||'').toLowerCase(), candidateShifts:string[]=(candidate.shift_preferences||[]).map((s:string)=>s.toLowerCase())
+  let shiftScore=jobShift?50:-1
+  if (jobShift&&candidateShifts.length) shiftScore=candidateShifts.includes('flexible')||candidateShifts.some(s=>jobShift.includes(s))?100:30
+  const candidateTransport=candidate.transport_method||'', candidateCommute=candidate.max_commute||''
+  let transportScore=candidateTransport||candidateCommute?70:-1
+  if (candidateTransport==='Own car'||candidateTransport==='Relocating for role') transportScore=100
+  else if (candidateTransport==='Public transport') transportScore=80
+  if (candidateCommute==='Willing to relocate') transportScore=100
+  else if (candidateCommute==='1.5 hours') transportScore=Math.max(transportScore,90)
+  else if (candidateCommute==='1 hour') transportScore=Math.max(transportScore,80)
+  let accommodationScore=-1
+  if (candidate.needs_accommodation&&!job.offers_accommodation) accommodationScore=20
+  else if (candidate.needs_accommodation&&job.offers_accommodation) accommodationScore=100
+  const profs:Record<string,string>=candidate.skill_proficiencies||{}
+  let proficiencyScore=-1
+  if (requiredSkills.length&&Object.keys(profs).length) {
+    let total=0,count=0
+    for (const skill of requiredSkills) { const match=Object.entries(profs).find(([k])=>k.toLowerCase()===skill.toLowerCase()); if(match){total+=(PROFICIENCY_WEIGHT[match[1]]||.5)*100;count++} }
+    proficiencyScore=count?Math.round(total/count):-1
   }
-  const empty = {
-    score: 10, label: 'Requirement Missing', colour: '#6B7280', bgColour: '#F3F4F6',
-    breakdown: emptyBreakdown, matchingSkills: [] as string[], hardStop: true,
-    matchExplanation: '', distanceMiles: null, locationBasis: 'unknown' as const,
+  const profileScore=Math.min(100,candidate.profile_completion_score||candidate.profile_completion_pct||0)
+  const rv=candidate.review_score||0, reviewScoreNorm=rv>=4.5?100:rv>=4?85:rv>=3.5?65:rv>0?40:50
+
+  const components=[
+    {value:policy.score,weight:32},{value:treatmentResult.score,weight:16},{value:brandResult.score,weight:8},{value:qualResult.score,weight:12},{value:expScore,weight:10},{value:bizResult.score,weight:12},{value:sysResult.score,weight:7},{value:locationScore,weight:10},{value:shiftScore,weight:5},{value:transportScore,weight:3},{value:accommodationScore,weight:2},{value:proficiencyScore,weight:3},
+  ].filter(c=>c.value>=0)
+  const weight=components.reduce((t,c)=>t+c.weight,0)
+  let score=weight?components.reduce((t,c)=>t+c.value*c.weight,0)/weight:10
+  if (!policy.allowed && policy.scope!=='open_transferable') score=Math.min(score,44)
+  if (!policy.sameFamily && policy.scope!=='open_transferable') score=Math.min(score,25)
+  const rounded=Math.max(10,Math.round(score))
+  const label=rounded>=90?'Perfect Match':rounded>=75?'Strong Match':rounded>=60?'Good Match':rounded>=45?'Partial Match':'Low Match'
+  const colour=rounded>=90?'#16A34A':rounded>=75?'#1D4ED8':rounded>=60?'#D97706':'#6B7280'
+  const bgColour=rounded>=90?'#DCFCE7':rounded>=75?'#DBEAFE':rounded>=60?'#FEF3C7':'#F3F4F6'
+  const matchingSkills=[...treatmentResult.matches,...brandResult.matches,...qualResult.matches,...bizResult.matches].slice(0,6)
+  const reasons:string[]=[]
+  if (policy.levelGap===1 && policy.allowed) reasons.push('career progression fit')
+  if (policy.progressionBridge) reasons.push('leadership evidence supports progression')
+  if (qualResult.matches.length) reasons.push(`${qualResult.matches[0]} qualification`)
+  if (bizResult.matches.length) reasons.push(`${bizResult.matches[0]} business experience`)
+  if (brandResult.matches.length&&reasons.length<3) reasons.push(`${brandResult.matches[0]} product experience`)
+  if (treatmentResult.matches.length&&reasons.length<3) {
+    const skill=treatmentResult.matches[0], prof=Object.entries(profs).find(([k])=>k.toLowerCase()===skill.toLowerCase())?.[1], pl=prof?PROFICIENCY_LABEL[prof]:null
+    reasons.push(pl?`${pl}-level ${skill}`:`${skill} skills`)
   }
+  if (geo.distance!=null&&locationScore>=75&&reasons.length<3) reasons.push(`${geo.distance.toFixed(1)} miles from the role`)
+  const strength=rounded>=90?'Excellent':rounded>=75?'Strong':rounded>=60?'Good':'Partial'
+  let matchExplanation=reasons.length?`${strength} match based on ${reasons.join(', ')}.`:''
+  if (policy.levelGap===1&&policy.allowed) matchExplanation += ` This employer is open to candidates ready for the next career step.`
+  if (!policy.allowed&&policy.scope==='same_level') matchExplanation += ` This employer asked WHC to prioritise candidates already at this level.`
 
-  const candidateRole = String(candidate.role_level || candidate.current_role || candidate.job_title || '')
-  const requiredRole = String(job.job_title || job.title || job.required_role_level || '')
-  const candidateFamily = roleFamily(candidateRole)
-  const jobFamily = roleFamily(requiredRole)
-  const comparableFamilies = candidateFamily !== 'other' && jobFamily !== 'other'
-  const sameJobFamily = !comparableFamilies || candidateFamily === jobFamily
-
-  const insuranceApplies = job.insurance_required &&
-    (jobFamily === 'treatment' || (job.is_agency_role && jobFamily !== 'leadership'))
-  if (insuranceApplies && !candidate.has_insurance) {
-    return { ...empty, hardStopReason: 'Professional insurance required for treatment delivery' }
-  }
-
-  const candLevel = roleLevel(candidateRole)
-  const jobLevel = roleLevel(requiredRole)
-  const diff = Math.abs(candLevel - jobLevel)
-  const roleLevelScore = candidateRole && requiredRole
-    ? (!sameJobFamily ? 0 : diff === 0 ? 100 : diff === 1 ? 70 : diff === 2 ? 35 : 10)
-    : -1
-
-  const requiredSkills: string[] = job.required_skills || []
-  const candidateSkills: string[] = candidate.treatment_skills || candidate.skills || candidate.services_offered || []
-  const treatmentResult = overlapScore(candidateSkills, requiredSkills)
-
-  const requiredBrands: string[] = job.required_brands || job.required_product_houses || []
-  const candidateBrands: string[] = candidate.product_houses || []
-  const brandResult = overlapScore(candidateBrands, requiredBrands)
-
-  const requiredQuals: string[] = job.required_qualifications || []
-  const candidateQuals: string[] = candidate.qualifications || []
-  const qualResult = overlapScore(candidateQuals, requiredQuals)
-
-  const minYears = job.min_years_experience || 0
-  const candYears = candidate.experience_years || candidate.years_experience || 0
-  const expScore = minYears === 0 ? -1 : candYears >= minYears ? 100 : Math.round((candYears / minYears) * 80)
-
-  const requiredBizSkills: string[] = job.preferred_business_skills || []
-  const candidateBizSkills: string[] = candidate.business_skills || []
-  const bizResult = candidateBizSkills.length > 0
-    ? overlapScore(candidateBizSkills, requiredBizSkills)
-    : { score: -1, matches: [] as string[] }
-
-  const requiredSystems: string[] = job.required_systems || []
-  const candidateSystems: string[] = candidate.systems_knowledge || candidate.systems_experience || []
-  const sysResult = overlapScore(candidateSystems, requiredSystems)
-
-  const geo = geographicLocationScore(candidate, job)
-  const locationScore = geo.score
-
-  const jobShift = String(job.shift_pattern || '').toLowerCase()
-  const candidateShifts: string[] = (candidate.shift_preferences || []).map((s: string) => s.toLowerCase())
-  let shiftScore = jobShift ? 50 : -1
-  if (jobShift && candidateShifts.length > 0) {
-    const isFlexible = candidateShifts.includes('flexible')
-    const hasMatch = candidateShifts.some(s => jobShift.includes(s))
-    shiftScore = isFlexible || hasMatch ? 100 : 30
-  }
-
-  const candidateTransport = candidate.transport_method || ''
-  const candidateCommute = candidate.max_commute || ''
-  let transportScore = candidateTransport || candidateCommute ? 70 : -1
-  if (candidateTransport === 'Own car') transportScore = 100
-  else if (candidateTransport === 'Relocating for role') transportScore = 100
-  else if (candidateTransport === 'Public transport') transportScore = 80
-  if (candidateCommute === 'Willing to relocate') transportScore = Math.max(transportScore, 100)
-  else if (candidateCommute === '1.5 hours') transportScore = Math.max(transportScore, 90)
-  else if (candidateCommute === '1 hour') transportScore = Math.max(transportScore, 80)
-
-  let accommodationScore = -1
-  if (candidate.needs_accommodation && !job.offers_accommodation) accommodationScore = 20
-  else if (candidate.needs_accommodation && job.offers_accommodation) accommodationScore = 100
-
-  const candidateProficiencies: Record<string, string> = candidate.skill_proficiencies || {}
-  let proficiencyScore = -1
-  if (requiredSkills.length > 0 && Object.keys(candidateProficiencies).length > 0) {
-    let total = 0; let count = 0
-    for (const skill of requiredSkills) {
-      const match = Object.entries(candidateProficiencies).find(([k]) => k.toLowerCase() === skill.toLowerCase())
-      if (match) { total += (PROFICIENCY_WEIGHT[match[1]] || 0.5) * 100; count++ }
-    }
-    proficiencyScore = count > 0 ? Math.round(total / count) : -1
-  }
-
-  const completionPct = candidate.profile_completion_score || candidate.profile_completion_pct || 0
-  const profileScore = Math.min(100, completionPct)
-  const reviewVal = candidate.review_score || 0
-  const reviewScoreNorm = reviewVal >= 4.5 ? 100 : reviewVal >= 4.0 ? 85 : reviewVal >= 3.5 ? 65 : reviewVal > 0 ? 40 : 50
-
-  const components = [
-    { value: roleLevelScore, weight: 40 },
-    { value: treatmentResult.score, weight: 18 },
-    { value: brandResult.score, weight: 10 },
-    { value: qualResult.score, weight: 12 },
-    { value: expScore, weight: 10 },
-    { value: bizResult.score, weight: 8 },
-    { value: sysResult.score, weight: 7 },
-    { value: locationScore, weight: 12 },
-    { value: shiftScore, weight: 5 },
-    { value: transportScore, weight: 3 },
-    { value: accommodationScore, weight: 2 },
-    { value: proficiencyScore, weight: 2 },
-  ].filter(component => component.value >= 0)
-  const activeWeight = components.reduce((total, component) => total + component.weight, 0)
-  const score = activeWeight > 0
-    ? components.reduce((total, component) => total + (component.value * component.weight), 0) / activeWeight
-    : 10
-
-  const familyAdjustedScore = comparableFamilies && !sameJobFamily ? Math.min(score, 20) : score
-  const rounded = Math.max(10, Math.round(familyAdjustedScore))
-  const label = rounded >= 90 ? 'Perfect Match' : rounded >= 75 ? 'Strong Match' : rounded >= 60 ? 'Good Match' : rounded >= 45 ? 'Partial Match' : 'Low Match'
-  const colour = rounded >= 90 ? '#16A34A' : rounded >= 75 ? '#1D4ED8' : rounded >= 60 ? '#D97706' : '#6B7280'
-  const bgColour = rounded >= 90 ? '#DCFCE7' : rounded >= 75 ? '#DBEAFE' : rounded >= 60 ? '#FEF3C7' : '#F3F4F6'
-
-  const matchingSkills = [...treatmentResult.matches, ...brandResult.matches, ...qualResult.matches].slice(0, 5)
-  const reasons: string[] = []
-  if (qualResult.matches.length > 0) reasons.push(`${qualResult.matches[0]} qualification`)
-  if (brandResult.matches.length > 0) reasons.push(`${brandResult.matches[0]} product experience`)
-  if (candYears >= 5 && roleLevelScore >= 60) reasons.push(`${candYears}+ years at ${candidate.role_level || 'senior'} level`)
-  if (treatmentResult.matches.length > 0 && reasons.length < 3) {
-    const skillName = treatmentResult.matches[0]
-    const prof = candidateProficiencies[skillName.toLowerCase()] || Object.entries(candidateProficiencies).find(([k]) => k.toLowerCase() === skillName.toLowerCase())?.[1]
-    const profLabel = prof ? PROFICIENCY_LABEL[prof] : null
-    reasons.push(profLabel ? `${profLabel}-level ${skillName}` : `${skillName} skills`)
-  }
-  if (sysResult.matches.length > 0 && reasons.length < 3) reasons.push(`${sysResult.matches[0]} system experience`)
-  if (bizResult.matches.length > 0 && reasons.length < 3) reasons.push(`${bizResult.matches[0]} business skills`)
-  if (geo.distance != null && locationScore >= 75 && reasons.length < 3) reasons.push(`${geo.distance.toFixed(1)} miles from the role`)
-  else if (locationScore === 100 && geo.basis === 'text' && reasons.length < 3) reasons.push('location match')
-  if (shiftScore === 100 && candidateShifts.length > 0 && reasons.length < 3) reasons.push('shift compatibility')
-
-  let matchExplanation = ''
-  if (reasons.length > 0) {
-    const strength = rounded >= 90 ? 'Excellent' : rounded >= 75 ? 'Strong' : rounded >= 60 ? 'Good' : 'Partial'
-    matchExplanation = `${strength} match based on ${reasons.join(', ')}.`
-  }
-
-  return {
-    score: rounded, label, colour, bgColour,
-    breakdown: {
-      roleLevel: roleLevelScore, treatmentSkills: treatmentResult.score,
-      brands: brandResult.score, qualifications: qualResult.score,
-      experience: expScore, businessSkills: bizResult.score,
-      systems: sysResult.score, location: locationScore,
-      shiftCompatibility: shiftScore, transport: transportScore,
-      accommodation: accommodationScore, proficiencyDepth: proficiencyScore,
-      profileCompleteness: profileScore, reviewScore: reviewScoreNorm,
-    },
-    matchingSkills, hardStop: false, matchExplanation,
-    distanceMiles: geo.distance, locationBasis: geo.basis,
-  }
+  return {score:rounded,label,colour,bgColour,breakdown:{roleLevel:policy.score,treatmentSkills:treatmentResult.score,brands:brandResult.score,qualifications:qualResult.score,experience:expScore,businessSkills:bizResult.score,systems:sysResult.score,location:locationScore,shiftCompatibility:shiftScore,transport:transportScore,accommodation:accommodationScore,proficiencyDepth:proficiencyScore,profileCompleteness:profileScore,reviewScore:reviewScoreNorm},matchingSkills,hardStop:false,matchExplanation,distanceMiles:geo.distance,locationBasis:geo.basis,progression:{scope:policy.scope,levelGap:policy.levelGap,isStepUp:policy.levelGap===1&&policy.allowed,bridge:policy.progressionBridge}}
 }
 
-export function rankCandidates(candidates: any[], job: any, minScore = 10, blockedEmployerIds?: string[]) {
-  const employerId = job.employer_id || job.employer_profile_id
-  return candidates
-    .filter(c => {
-      if (blockedEmployerIds && employerId && blockedEmployerIds.includes(c.id)) return false
-      return true
-    })
-    .map(c => ({ ...calculateMatchScore(c, job), candidateId: c.id }))
-    .filter(r => r.score >= minScore)
-    .sort((a, b) => b.score - a.score)
+export function rankCandidates(candidates:any[],job:any,minScore=10,blockedEmployerIds?:string[]) {
+  const employerId=job.employer_id||job.employer_profile_id
+  return candidates.filter(c=>!(blockedEmployerIds&&employerId&&blockedEmployerIds.includes(c.id))).map(c=>({...calculateMatchScore(c,job),candidateId:c.id})).filter(r=>r.score>=minScore).sort((a,b)=>b.score-a.score)
 }
-
-export function filterBlockedCandidates(candidates: any[], blockedCandidateIds: string[]) {
-  if (!blockedCandidateIds.length) return candidates
-  return candidates.filter(c => !blockedCandidateIds.includes(c.id))
-}
+export function filterBlockedCandidates(candidates:any[],blockedCandidateIds:string[]) { return blockedCandidateIds.length?candidates.filter(c=>!blockedCandidateIds.includes(c.id)):candidates }
