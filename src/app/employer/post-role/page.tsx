@@ -4,13 +4,12 @@ import { useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import DashboardShell from '@/components/DashboardShell'
 import { createClient } from '@/lib/supabase/client'
-import { ROLE_LEVELS, CONTRACT_TYPES, JOB_TIERS } from '@/lib/constants'
+import { ROLE_LEVELS, CONTRACT_TYPES, JOB_TIERS, EMPLOYER_MEMBERSHIPS } from '@/lib/constants'
 import { SERVICES_CATEGORIES, PRODUCT_HOUSES_FULL, QUALS_CATEGORIES, SYSTEMS_FULL } from '@/lib/taxonomy'
 import CollapsibleCheckboxSection from '@/components/CollapsibleCheckboxSection'
 import { Check, ArrowRight, Users } from 'lucide-react'
 
-const TIER_KEYS = ['Bronze', 'Silver', 'Gold', 'Platinum'] as const
-const tierCards = TIER_KEYS.map(k => ({ name: k, price: JOB_TIERS[k].price / 100, features: JOB_TIERS[k].features as readonly string[] }))
+const TIER_KEYS = ['Bronze', 'Platinum'] as const
 const SHIFT_OPTIONS = ['Early morning', 'Daytime', 'Evening', 'Overnight', 'Split shifts', 'Weekends only', 'Flexible']
 const BUSINESS_SKILLS = ['Reception & Front of House','Revenue Management','Stock Control','Team Leadership','Staff Training','Rota Management','KPI Reporting','Health & Safety','COSHH Management','Budget Management','Client Consultation','Upselling & Retail','Social Media','Event Coordination','Membership Management']
 const SCOPE_OPTIONS = [
@@ -22,7 +21,7 @@ const SCOPE_OPTIONS = [
 
 export default function PostRolePage() {
   const router = useRouter(); const searchParams = useSearchParams(); const supabase = createClient()
-  const [profile,setProfile]=useState<any>(null); const [phase,setPhase]=useState<'form'|'tier'>('form'); const [selectedTier,setSelectedTier]=useState('Bronze')
+  const [profile,setProfile]=useState<any>(null); const [phase,setPhase]=useState<'form'|'tier'>('form'); const [selectedTier,setSelectedTier]=useState<'Bronze'|'Platinum'>('Bronze')
   const [saving,setSaving]=useState(false); const [checkoutLoading,setCheckoutLoading]=useState(false); const [error,setError]=useState(''); const [fieldErrors,setFieldErrors]=useState<Record<string,string>>({})
   const [form,setForm]=useState({
     title:'',description:'',location:'',location_postcode:'',radius_miles:'',job_type:'Full-time',contract_type:'permanent',required_role_level:'',candidate_scope:'step_up',salary_min:'',salary_max:'',
@@ -43,9 +42,20 @@ export default function PostRolePage() {
 
   async function saveDraft(){if(!profile||!form.title||!form.location)return;setSaving(true);setError('');try{const r=await fetch('/api/employer/jobs/create',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({...payload(),is_live:false,status:'draft'})});const j=await r.json();if(!r.ok)throw new Error(j.error||'Error saving draft');router.push('/employer/dashboard?tab=drafts')}catch(e:any){setError(e.message);setSaving(false)}}
   function next(){const e:Record<string,string>={};if(form.title.trim().length<5)e.job_title='Title must be at least 5 characters';if(form.description.trim().length<10)e.job_description='Description must be at least 10 characters';if(!form.location.trim())e.location='Location is required';setFieldErrors(e);if(Object.keys(e).length){setError('Please complete the highlighted fields.');window.scrollTo({top:0,behavior:'smooth'});return}setError('');setPhase('tier');window.scrollTo({top:0,behavior:'smooth'})}
-  async function post(){if(!profile||saving||checkoutLoading)return;setSaving(true);setError('');try{const c=await fetch('/api/employer/jobs/create',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({...payload(),is_live:false,status:'pending_payment'})});const cd=await c.json();if(!c.ok||!cd.job)throw new Error(cd.error||'Failed to create listing');setCheckoutLoading(true);const r=await fetch('/api/stripe/checkout',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({type:'job_posting',jobId:cd.job.id,employerId:profile.id,tier:selectedTier})});const d=await r.json();if(!r.ok||!d.url)throw new Error(d.error||'Could not start checkout');window.location.href=d.url}catch(e:any){setError(e.message);setSaving(false);setCheckoutLoading(false)}}
+  async function post(){if(!profile||saving||checkoutLoading)return;setSaving(true);setError('');try{const c=await fetch('/api/employer/jobs/create',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({...payload(),is_live:false,status:'draft'})});const cd=await c.json();if(!c.ok||!cd.job)throw new Error(cd.error||'Failed to create listing');setCheckoutLoading(true);const r=await fetch('/api/mobile/employer/jobs/manage',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'publish',jobId:cd.job.id,tier:selectedTier})});const d=await r.json();if(!r.ok)throw new Error(d.error||'Could not publish role');if(d.included){router.push('/employer/jobs?published=included');return}if(!d.url)throw new Error('Could not start checkout');window.location.href=d.url}catch(e:any){setError(e.message);setSaving(false);setCheckoutLoading(false)}}
 
   if(!profile)return <div/>
+  const membership=String(profile.membership_tier||'free').toLowerCase()
+  const allowance=Number(profile.annual_job_allowance||(membership==='group'?EMPLOYER_MEMBERSHIPS.group.includedJobs:0))
+  const used=Number(profile.annual_jobs_used||0)
+  const groupRemaining=membership==='group'?Math.max(0,allowance-used):0
+  const tierCards=TIER_KEYS.map(name=>{
+    const base=JOB_TIERS[name]
+    const price=name==='Bronze'&&membership==='pro'?EMPLOYER_MEMBERSHIPS.pro.discountedStandardJobPrice:base.price
+    const included=name==='Bronze'&&membership==='group'&&groupRemaining>0
+    return {name,price,included,features:base.features as readonly string[]}
+  })
+  const selectedIncluded=selectedTier==='Bronze'&&membership==='group'&&groupRemaining>0
   return <DashboardShell role="employer" userName={profile.company_name}>
     <div className="max-w-4xl"><p className="dashboard-eyebrow">Recruitment</p><h1 className="dashboard-title">Post a Role</h1><p className="dashboard-intro">Tell WHC what the job genuinely needs and how open you are to career progression. The match score should guide decisions, not force an exact job-title match.</p></div>
     {error&&<div className="max-w-4xl mt-6 bg-red-50 text-red-700 text-sm px-4 py-3 rounded-lg">{error}</div>}
@@ -71,7 +81,7 @@ export default function PostRolePage() {
 
       <section className="dashboard-card space-y-5"><p className="eyebrow">Additional information</p><Field label="Requirements (one per line)"><textarea rows={4} className="input-field" value={form.requirements} onChange={e=>update('requirements',e.target.value)}/></Field><Field label="Benefits (one per line)"><textarea rows={4} className="input-field" value={form.benefits} onChange={e=>update('benefits',e.target.value)}/></Field><div className="flex flex-wrap gap-5">{[['insurance_required','Insurance required'],['offers_accommodation','Accommodation provided'],['is_agency_role','Agency role'],['is_residency_role','Residency role']].map(([k,l])=><label key={k} className="flex items-center gap-2 text-[13px] text-secondary"><input type="checkbox" checked={(form as any)[k]} onChange={e=>update(k as any,e.target.checked)}/>{l}</label>)}</div></section>
       <div className="flex gap-3"><button onClick={saveDraft} disabled={saving} className="btn-secondary flex-1">Save as Draft</button><button onClick={next} disabled={saving} className="btn-primary flex-1 inline-flex items-center justify-center gap-2">Continue <ArrowRight size={14}/></button></div>
-    </div>:<div className="max-w-4xl mt-8"><div className="dashboard-card mb-6"><p className="eyebrow">Matching setup</p><h2 className="text-[25px] mt-1">{form.title}</h2><p className="text-[13px] text-secondary mt-2">{SCOPE_OPTIONS.find(o=>o.value===form.candidate_scope)?.title} · {form.required_role_level||'Role level inferred from title'} · {form.min_years_experience||0}+ years</p></div><div className="grid md:grid-cols-2 gap-4 mb-6">{tierCards.map(t=><button key={t.name} onClick={()=>setSelectedTier(t.name)} className={`dashboard-card text-left ${selectedTier===t.name?'border-[#0b2f4d] ring-1 ring-[#0b2f4d]/10':''}`}><div className="flex justify-between"><h3 className="text-[20px]">{t.name}</h3><strong>£{t.price}</strong></div><ul className="mt-4 space-y-2 text-[12px] text-secondary">{t.features.map(f=><li key={f} className="flex gap-2"><Check size={13}/>{f}</li>)}</ul></button>)}</div><div className="flex gap-3"><button onClick={()=>setPhase('form')} className="btn-secondary flex-1">← Back to edit</button><button onClick={post} disabled={saving||checkoutLoading} className="btn-primary flex-1">{checkoutLoading?'Redirecting...':saving?'Processing...':'Post role & pay'}</button></div></div>}
+    </div>:<div className="max-w-4xl mt-8"><div className="dashboard-card mb-6"><p className="eyebrow">Matching setup</p><h2 className="text-[25px] mt-1">{form.title}</h2><p className="text-[13px] text-secondary mt-2">{SCOPE_OPTIONS.find(o=>o.value===form.candidate_scope)?.title} · {form.required_role_level||'Role level inferred from title'} · {form.min_years_experience||0}+ years</p>{membership==='pro'?<p className="text-[12px] text-[#0b2f4d] mt-3">Employer Pro pricing applied: Standard jobs are £99.</p>:membership==='group'?<p className="text-[12px] text-[#0b2f4d] mt-3">Employer Group: {groupRemaining} of {allowance} included Standard jobs remaining.</p>:null}</div><div className="grid md:grid-cols-2 gap-4 mb-6">{tierCards.map(t=><button key={t.name} onClick={()=>setSelectedTier(t.name)} className={`dashboard-card text-left ${selectedTier===t.name?'border-[#0b2f4d] ring-1 ring-[#0b2f4d]/10':''}`}><div className="flex justify-between"><h3 className="text-[20px]">{t.name==='Bronze'?'Standard':'Featured'}</h3><strong>{t.included?'Included':`£${t.price/100}`}</strong></div><ul className="mt-4 space-y-2 text-[12px] text-secondary">{t.features.map(f=><li key={f} className="flex gap-2"><Check size={13}/>{f}</li>)}</ul></button>)}</div><div className="flex gap-3"><button onClick={()=>setPhase('form')} className="btn-secondary flex-1">← Back to edit</button><button onClick={post} disabled={saving||checkoutLoading} className="btn-primary flex-1">{checkoutLoading?(selectedIncluded?'Publishing...':'Redirecting...'):saving?'Processing...':selectedIncluded?'Post role':'Post role & pay'}</button></div></div>}
   </DashboardShell>
 }
 
