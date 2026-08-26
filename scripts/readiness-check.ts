@@ -77,7 +77,15 @@ check('public jobs use the sanitised public RPC', () => {
 check('Residency payments are fulfilled by the signed Stripe webhook', () => {
   const webhook = read('src/app/api/stripe/webhook/route.ts')
   const residency = read('src/lib/residency-stripe-webhook.ts')
-  for (const pattern of [/handleResidencyStripeEvent/, /residency_booking/, /residency_listing/, /checkout\.session\.completed/, /invoice\.paid/, /invoice\.payment_failed/, /customer\.subscription\.updated/, /customer\.subscription\.deleted/, /alreadyFulfilled/]) assert.match(pattern === /handleResidencyStripeEvent/ ? webhook : residency, pattern)
+  assert.match(webhook, /handleResidencyStripeEvent/)
+  assert.match(residency, /residency_booking/)
+  assert.match(residency, /residency_listing/)
+  assert.match(residency, /checkout\.session\.completed/)
+  assert.match(residency, /invoice\.paid/)
+  assert.match(residency, /invoice\.payment_failed/)
+  assert.match(residency, /customer\.subscription\.updated/)
+  assert.match(residency, /customer\.subscription\.deleted/)
+  assert.match(residency, /alreadyFulfilled/)
 })
 check('public Residency data is sanitised and membership-gated', () => {
   const route = read('src/app/api/residency/public/route.ts')
