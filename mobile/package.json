@@ -1,6 +1,6 @@
 {
   "name": "whc-talent-mobile",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "main": "expo-router/entry",
   "scripts": {
@@ -15,7 +15,9 @@
     "@supabase/supabase-js": "2.112.3",
     "expo": "57.0.16",
     "expo-constants": "57.0.13",
+    "expo-device": "~57.0.1",
     "expo-linking": "~8.0.8",
+    "expo-notifications": "~57.0.13",
     "expo-router": "57.0.16",
     "expo-status-bar": "~3.0.8",
     "react": "19.2.0",
