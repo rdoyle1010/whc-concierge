@@ -4,6 +4,7 @@ import './globals.css'
 import './public-clean.css'
 import './portal-clean.css'
 import CookieConsent from '@/components/CookieConsent'
+import NewsletterSignupBar from '@/components/NewsletterSignupBar'
 
 const manrope = Manrope({
   subsets: ['latin'],
@@ -70,6 +71,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body>
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }} />
         {children}
+        <NewsletterSignupBar />
         <CookieConsent />
       </body>
     </html>
