@@ -15,7 +15,11 @@ export default function MessageThread(){
  }
  async function send(){ const body=text.trim(); if(!body||!me||!userId)return; setSending(true)
   const {data,error}=await supabase.from('messages').insert({sender_id:me,recipient_id:userId,content:body,read:false}).select('id,sender_id,recipient_id,content,read,created_at').single()
-  if(!error&&data){setItems([...items,data]);setText('')} setSending(false)
+  if(!error&&data){
+   setItems([...items,data]); setText('')
+   supabase.functions.invoke('mobile-event-push',{body:{eventType:'new_message',recordId:data.id}}).catch(()=>null)
+  }
+  setSending(false)
  }
  return <KeyboardAvoidingView style={{flex:1}} behavior={Platform.OS==='ios'?'padding':undefined}><View style={styles.page}><Pressable onPress={()=>router.back()}><Text style={styles.back}>‹ Messages</Text></Pressable><Text style={styles.name}>{person?.full_name||person?.email||'Conversation'}</Text><Text style={styles.role}>{person?.role==='employer'?'EMPLOYER':'TALENT'}</Text>
   {loading?<ActivityIndicator color="#092b45" style={{marginTop:30}}/>:<ScrollView style={styles.thread} contentContainerStyle={{paddingVertical:18,gap:10}}>{items.map(item=>{const mine=item.sender_id===me;return <View key={item.id} style={[styles.bubble,mine?styles.mine:styles.theirs]}><Text style={[styles.body,mine&&styles.mineText]}>{item.content}</Text><Text style={[styles.time,mine&&styles.mineTime]}>{item.created_at?new Date(item.created_at).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}):''}</Text></View>})}</ScrollView>}
