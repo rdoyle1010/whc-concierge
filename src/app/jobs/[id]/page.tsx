@@ -2,14 +2,13 @@ import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { cache } from 'react'
 import Link from 'next/link'
-import { MapPin, Star, Check, ArrowRight } from 'lucide-react'
+import { MapPin, Star, Check, ArrowRight, Building2, Users, BedDouble, ExternalLink, BriefcaseBusiness, CalendarDays, BadgeCheck } from 'lucide-react'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
 import JobApplyButtons from '@/components/JobApplyButtons'
 import { createServerSupabaseClient } from '@/lib/supabase/server'
 
 const SITE = 'https://talent.wellnesshousecollective.co.uk'
-
 type Job = Record<string, any>
 
 const getJob = cache(async (id: string): Promise<Job | null> => {
@@ -24,434 +23,165 @@ const getJob = cache(async (id: string): Promise<Job | null> => {
   return data as Job
 })
 
-function stripPlain(s: string): string {
-  return s.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
-}
-
-function prettyChip(s: string): string {
-  return String(s).replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
-}
-
-function hasAny(values: unknown[]): boolean {
-  return values.some((v) => {
-    if (v == null) return false
-    if (Array.isArray(v)) return v.length > 0
-    if (typeof v === 'string') return v.trim().length > 0
-    if (typeof v === 'boolean') return v === true
-    if (typeof v === 'number') return true
-    return Boolean(v)
-  })
-}
-
-const TIER_BADGES: Record<string, { className: string; label: string }> = {
-  Platinum: { className: 'badge-platinum', label: 'Platinum' },
-  Gold: { className: 'badge-gold', label: 'Gold' },
-  Silver: { className: 'badge-silver', label: 'Silver' },
-  Bronze: { className: 'badge-bronze', label: 'Bronze' },
+function stripPlain(s: string) { return s.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim() }
+function prettyChip(s: string) { return String(s).replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) }
+function hasAny(values: unknown[]) {
+  return values.some(v => Array.isArray(v) ? v.length > 0 : typeof v === 'string' ? v.trim().length > 0 : Boolean(v))
 }
 
 const EMPLOYMENT_TYPE_MAP: Record<string, string> = {
-  full_time: 'FULL_TIME',
-  part_time: 'PART_TIME',
-  contract: 'CONTRACTOR',
-  contractor: 'CONTRACTOR',
-  temporary: 'TEMPORARY',
-  permanent: 'FULL_TIME',
-  internship: 'INTERN',
+  full_time: 'FULL_TIME', part_time: 'PART_TIME', contract: 'CONTRACTOR', contractor: 'CONTRACTOR', temporary: 'TEMPORARY', permanent: 'FULL_TIME', internship: 'INTERN',
 }
 
 export async function generateMetadata(props: { params: Promise<{ id: string }> }): Promise<Metadata> {
-  const params = await props.params;
+  const params = await props.params
   const job = await getJob(params.id)
-  if (!job) {
-    return {
-      title: { absolute: 'Role not found | WHC Concierge' },
-      robots: { index: false, follow: false },
-    }
-  }
-
-  const propertyName =
-    job.employer_profiles?.property_name || job.employer_profiles?.company_name || 'WHC Concierge'
+  if (!job) return { title: { absolute: 'Role not found | WHC Concierge' }, robots: { index: false, follow: false } }
+  const employer = job.employer_profiles || {}
+  const propertyName = employer.property_name || employer.company_name || 'WHC Concierge'
   const titleText = job.job_title || job.title || 'Role'
-  const fullTitle = `${titleText} - ${propertyName} | WHC Concierge`
   const description = stripPlain(String(job.job_description || job.description || '')).slice(0, 160)
   const url = `${SITE}/jobs/${params.id}`
-
+  const image = Array.isArray(employer.property_photos) ? employer.property_photos[0] : undefined
   return {
-    title: { absolute: fullTitle },
-    description,
+    title: { absolute: `${titleText} - ${propertyName} | WHC Concierge` }, description,
     alternates: { canonical: url },
-    openGraph: { title: fullTitle, description, url, type: 'article' },
-    twitter: { title: fullTitle, description, card: 'summary_large_image' },
+    openGraph: { title: `${titleText} - ${propertyName}`, description, url, type: 'article', ...(image ? { images: [image] } : {}) },
+    twitter: { title: `${titleText} - ${propertyName}`, description, card: 'summary_large_image', ...(image ? { images: [image] } : {}) },
   }
 }
 
 export default async function RoleDetailPage(props: { params: Promise<{ id: string }> }) {
-  const params = await props.params;
+  const params = await props.params
   const job = await getJob(params.id)
   if (!job) notFound()
 
   const employer = (job.employer_profiles || {}) as Job
-  const propertyName = employer.property_name || employer.company_name || 'Premium Property'
+  const propertyName = employer.property_name || employer.company_name || 'Property'
   const titleText = job.job_title || job.title || 'Role'
-  const description: string = String(job.job_description || job.description || '')
-  const tier = TIER_BADGES[job.tier as string] || TIER_BADGES.Bronze
+  const description = String(job.job_description || job.description || '')
+  const salaryRange = job.salary_min && job.salary_max ? `£${Number(job.salary_min).toLocaleString()} - £${Number(job.salary_max).toLocaleString()}` : null
+  const propertyPhoto = Array.isArray(employer.property_photos) && employer.property_photos.length ? employer.property_photos[0] : null
+  const reviewScore = Number(employer.review_score || 0)
+  const reviewCount = Number(employer.review_count || 0)
+  const packageItems = [job.salary_display_text, job.shift_pattern, job.offers_accommodation ? 'Accommodation provided' : null].filter(Boolean)
 
-  const salaryRange =
-    job.salary_min && job.salary_max
-      ? `£${Number(job.salary_min).toLocaleString()} - £${Number(job.salary_max).toLocaleString()}`
-      : null
-
-  // JobPosting structured data for Google Jobs eligibility
   const jobPostingLd: Record<string, unknown> = {
-    '@context': 'https://schema.org/',
-    '@type': 'JobPosting',
-    title: titleText,
+    '@context': 'https://schema.org/', '@type': 'JobPosting', title: titleText,
     description: description ? `<p>${stripPlain(description).slice(0, 5000)}</p>` : '',
     datePosted: job.posted_date || job.created_at || new Date().toISOString(),
-    employmentType:
-      EMPLOYMENT_TYPE_MAP[String(job.contract_type || '').toLowerCase()] || 'FULL_TIME',
-    hiringOrganization: {
-      '@type': 'Organization',
-      name: employer.company_name || propertyName,
-      ...(employer.website ? { sameAs: employer.website } : {}),
-    },
-    jobLocation: {
-      '@type': 'Place',
-      address: {
-        '@type': 'PostalAddress',
-        addressLocality: job.location || employer.city || undefined,
-        addressCountry: 'GB',
-      },
-    },
+    employmentType: EMPLOYMENT_TYPE_MAP[String(job.contract_type || '').toLowerCase()] || 'FULL_TIME',
+    hiringOrganization: { '@type': 'Organization', name: employer.company_name || propertyName, ...(employer.website ? { sameAs: employer.website } : {}) },
+    jobLocation: { '@type': 'Place', address: { '@type': 'PostalAddress', addressLocality: job.location || employer.location || employer.city || undefined, addressCountry: 'GB' } },
   }
   if (job.application_deadline) jobPostingLd.validThrough = job.application_deadline
-  if (job.salary_min && job.salary_max) {
-    jobPostingLd.baseSalary = {
-      '@type': 'MonetaryAmount',
-      currency: 'GBP',
-      value: {
-        '@type': 'QuantitativeValue',
-        minValue: Number(job.salary_min),
-        maxValue: Number(job.salary_max),
-        unitText: 'YEAR',
-      },
-    }
-  }
+  if (job.salary_min && job.salary_max) jobPostingLd.baseSalary = { '@type': 'MonetaryAmount', currency: 'GBP', value: { '@type': 'QuantitativeValue', minValue: Number(job.salary_min), maxValue: Number(job.salary_max), unitText: 'YEAR' } }
 
-  const requirementValues = [
-    job.required_skills,
-    job.required_qualifications,
-    job.required_brands,
-    job.required_systems,
-    job.required_management_skills,
-    job.required_role_level,
-    job.min_years_experience,
-  ]
+  return <>
+    <Navbar />
+    <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jobPostingLd) }} />
+    <main className="pt-[68px] bg-white">
+      <section className="border-b border-[#e3e7eb] bg-white">
+        <div className="max-w-6xl mx-auto px-6 py-4"><Link href="/jobs" className="text-[12px] text-[#65717a] hover:text-[#0b2f4d]">← All roles</Link></div>
+      </section>
 
-  const offerValues = [
-    job.three_things,
-    job.perks,
-    job.salary_display_text,
-    job.offers_accommodation,
-    job.shift_pattern,
-  ]
-
-  return (
-    <>
-      <Navbar />
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jobPostingLd) }}
-      />
-      <main className="pt-[60px]">
-        {/* Hero */}
-        <section className="bg-white pt-12 pb-12 px-6">
-          <div className="max-w-5xl mx-auto">
-            <Link href="/jobs" className="text-[12px] hover:underline" style={{ color: '#9CA3AF' }}>
-              ← All roles
+      <section className="bg-white">
+        <div className="max-w-6xl mx-auto px-6 py-10 md:py-14 grid lg:grid-cols-[1fr_320px] gap-8 lg:gap-12 items-start">
+          <div>
+            <span className="inline-flex rounded-full bg-[#eef2f4] px-3 py-1 text-[10px] uppercase tracking-[.12em] font-semibold text-[#53636f]">{job.tier === 'Platinum' ? 'Featured role' : 'Standard role'}</span>
+            <h1 className="text-[42px] md:text-[58px] leading-[1.02] tracking-[-.045em] text-[#10283b] mt-4">{titleText}</h1>
+            <Link href={employer.id ? `/properties/${employer.id}` : '#'} className="inline-flex items-center gap-2 mt-4 text-[17px] font-semibold text-[#0b2f4d] hover:underline">
+              <Building2 size={17}/>{propertyName}<ArrowRight size={14}/>
             </Link>
-            <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-8 mt-4 items-start">
+            <div className="flex flex-wrap gap-x-5 gap-y-2 mt-4 text-[13px] text-[#65717a]">
+              {(job.location || employer.location) && <span className="inline-flex items-center gap-1.5"><MapPin size={14}/>{job.location || employer.location}</span>}
+              {employer.star_rating && <span className="inline-flex items-center gap-1.5"><Star size={14} fill="currentColor"/>{isNaN(Number(employer.star_rating)) ? employer.star_rating : `${employer.star_rating} star property`}</span>}
+              {reviewScore > 0 && <span className="inline-flex items-center gap-1.5"><BadgeCheck size={14}/>{reviewScore.toFixed(1)} WHC rating{reviewCount ? ` · ${reviewCount} review${reviewCount === 1 ? '' : 's'}` : ''}</span>}
+            </div>
+            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3 mt-7">
+              {salaryRange && <Fact label="Salary" value={salaryRange}/>} 
+              {job.contract_type && <Fact label="Contract" value={prettyChip(String(job.contract_type))}/>} 
+              {job.job_type && <Fact label="Hours" value={prettyChip(String(job.job_type))}/>} 
+              {job.application_deadline && <Fact label="Apply by" value={new Date(job.application_deadline).toLocaleDateString('en-GB')}/>} 
+            </div>
+          </div>
+
+          <aside className="lg:sticky lg:top-24 border border-[#dfe5e8] rounded-[20px] p-5 bg-white shadow-sm">
+            <p className="text-[10px] uppercase tracking-[.14em] text-[#7d8990]">Interested in this role?</p>
+            <p className="text-[13px] leading-6 text-[#65717a] mt-2">Apply through WHC so the property can review your full professional profile and match information.</p>
+            <div className="mt-5"><JobApplyButtons roleId={String(job.id)} /></div>
+          </aside>
+        </div>
+      </section>
+
+      {(propertyPhoto || employer.id) && <section className="border-y border-[#e3e7eb] bg-[#f7f9fa]">
+        <div className="max-w-6xl mx-auto px-6 py-8 grid md:grid-cols-[220px_1fr_auto] gap-6 items-center">
+          {propertyPhoto ? <div className="aspect-[4/3] overflow-hidden rounded-[16px] bg-white"><img src={propertyPhoto} alt={propertyName} className="w-full h-full object-cover"/></div> : <div className="aspect-[4/3] rounded-[16px] bg-white border border-[#dfe5e8] flex items-center justify-center"><Building2 size={30} className="text-[#8a979f]"/></div>}
+          <div>
+            <p className="text-[10px] uppercase tracking-[.14em] text-[#6f7f88]">The property</p>
+            <h2 className="text-[28px] mt-2">{propertyName}</h2>
+            {employer.tagline && <p className="text-[13px] text-[#65717a] mt-2">{employer.tagline}</p>}
+            <div className="flex flex-wrap gap-4 mt-4 text-[12px] text-[#65717a]">
+              {employer.num_treatment_rooms && <span className="inline-flex items-center gap-1.5"><BedDouble size={14}/>{employer.num_treatment_rooms} treatment rooms</span>}
+              {employer.team_size && <span className="inline-flex items-center gap-1.5"><Users size={14}/>{employer.team_size} team members</span>}
+              {employer.property_type && <span className="inline-flex items-center gap-1.5"><Building2 size={14}/>{prettyChip(String(employer.property_type))}</span>}
+            </div>
+          </div>
+          <div className="flex md:flex-col gap-2">{employer.id && <Link href={`/properties/${employer.id}`} className="btn-primary text-center">View full property profile</Link>}{employer.website && <a href={employer.website} target="_blank" rel="noopener noreferrer" className="btn-secondary inline-flex items-center justify-center gap-2">Property website <ExternalLink size={13}/></a>}</div>
+        </div>
+      </section>}
+
+      <section className="max-w-6xl mx-auto px-6 py-14 md:py-16 grid lg:grid-cols-[minmax(0,1fr)_290px] gap-12">
+        <div className="space-y-14">
+          {description && <JobSection eyebrow="The role" title="What you'll be doing"><div className="text-[15px] leading-8 text-[#465761] whitespace-pre-line">{description}</div></JobSection>}
+
+          {hasAny([job.required_skills, job.required_qualifications, job.required_brands, job.required_systems, job.required_management_skills, job.required_role_level, job.min_years_experience]) &&
+            <JobSection eyebrow="What we're looking for" title="Experience, skills & qualifications">
+              <div className="space-y-7">
+                <ChipList label="Skills" items={job.required_skills}/>
+                <ChipList label="Qualifications" items={job.required_qualifications}/>
+                <ChipList label="Brand experience" items={job.required_brands}/>
+                <ChipList label="Systems" items={job.required_systems}/>
+                <ChipList label="Management skills" items={job.required_management_skills}/>
+                {(job.required_role_level || job.min_years_experience != null) && <div className="grid sm:grid-cols-2 gap-3">{job.required_role_level && <Fact label="Role level" value={prettyChip(String(job.required_role_level))}/>} {job.min_years_experience != null && <Fact label="Experience" value={`${job.min_years_experience}+ years`}/>}</div>}
+              </div>
+            </JobSection>}
+
+          {hasAny([job.three_things, job.perks, ...packageItems]) && <JobSection eyebrow="The package" title="What you'll get">
+            {Array.isArray(job.three_things) && job.three_things.length > 0 && <TickList items={job.three_things}/>} 
+            {Array.isArray(job.perks) && job.perks.length > 0 && <div className="mt-6"><p className="text-[11px] uppercase tracking-[.12em] font-semibold text-[#7d8990] mb-3">Benefits & perks</p><TickList items={job.perks}/></div>}
+            {packageItems.length > 0 && <div className="flex flex-wrap gap-2 mt-6">{packageItems.map((item: any) => <span key={String(item)} className="rounded-full bg-[#f1f4f6] px-3 py-1.5 text-[12px] text-[#53636f]">{String(item)}</span>)}</div>}
+          </JobSection>}
+
+          <JobSection eyebrow="The employer" title={`Why ${propertyName}`}>
+            <div className="grid md:grid-cols-[1fr_auto] gap-6 items-start border border-[#dfe5e8] rounded-[20px] p-6">
               <div>
-                <span className={`${tier.className} inline-block`}>
-                  {tier.label}
-                </span>
-                <h1 className="text-[36px] md:text-[48px] font-medium text-ink tracking-tight leading-[1.08] mt-4 mb-3">
-                  {titleText}
-                </h1>
-                <p className="text-[16px]">
-                  <span className="font-medium" style={{ color: '#C9A96E' }}>{propertyName}</span>
-                  {job.location && <span style={{ color: '#9CA3AF' }}> · </span>}
-                  {job.location && <span style={{ color: '#6B7280' }}>{job.location}</span>}
-                </p>
-                <div className="flex flex-wrap gap-2 mt-5">
-                  {salaryRange && <Pill>{salaryRange}</Pill>}
-                  {job.contract_type && <Pill>{prettyChip(String(job.contract_type))}</Pill>}
-                  {job.job_type && <Pill>{prettyChip(String(job.job_type))}</Pill>}
-                  {job.sector && <Pill>{prettyChip(String(job.sector))}</Pill>}
-                </div>
+                <p className="text-[14px] leading-7 text-[#53636f]">{employer.about_text || employer.description || employer.tagline || `Explore the full WHC property profile for ${propertyName} to see its spa operation, staff reviews, property rating, brands, travel information and current opportunities.`}</p>
+                <div className="flex flex-wrap gap-3 mt-4 text-[12px] text-[#65717a]">{employer.star_rating && <span>{isNaN(Number(employer.star_rating)) ? employer.star_rating : `${employer.star_rating}★ property`}</span>}{reviewScore > 0 && <span>{reviewScore.toFixed(1)} WHC staff rating</span>}{employer.num_treatment_rooms && <span>{employer.num_treatment_rooms} treatment rooms</span>}</div>
               </div>
-              <div className="lg:sticky lg:top-24">
-                <JobApplyButtons roleId={String(job.id)} />
-              </div>
+              {employer.id && <Link href={`/properties/${employer.id}`} className="btn-secondary inline-flex items-center gap-2 whitespace-nowrap">Explore property <ArrowRight size={13}/></Link>}
             </div>
+          </JobSection>
+        </div>
+
+        <aside className="space-y-4">
+          <div className="border border-[#dfe5e8] rounded-[18px] p-5">
+            <p className="text-[10px] uppercase tracking-[.14em] text-[#7d8990]">Role at a glance</p>
+            <div className="space-y-4 mt-4">{salaryRange && <MiniFact icon={BriefcaseBusiness} label="Salary" value={salaryRange}/>} {(job.location || employer.location) && <MiniFact icon={MapPin} label="Location" value={job.location || employer.location}/>} {job.shift_pattern && <MiniFact icon={CalendarDays} label="Shift pattern" value={prettyChip(String(job.shift_pattern))}/>} {employer.star_rating && <MiniFact icon={Star} label="Property" value={isNaN(Number(employer.star_rating)) ? employer.star_rating : `${employer.star_rating} star`}/>}</div>
           </div>
-        </section>
+        </aside>
+      </section>
 
-        {/* About the role */}
-        {description && (
-          <Section title="About the role" eyebrow="Overview">
-            <div
-              className="text-[15px] md:text-[16px] leading-[1.85] whitespace-pre-line"
-              style={{ color: '#374151' }}
-            >
-              {description}
-            </div>
-          </Section>
-        )}
-
-        {/* Who we're looking for */}
-        {hasAny(requirementValues) && (
-          <Section title="Who we're looking for" eyebrow="Requirements" alt>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-6">
-              <ChipList label="Skills" items={job.required_skills as string[] | null | undefined} />
-              <ChipList label="Qualifications" items={job.required_qualifications as string[] | null | undefined} />
-              <ChipList label="Brand experience" items={job.required_brands as string[] | null | undefined} />
-              <ChipList label="Systems" items={job.required_systems as string[] | null | undefined} />
-              <ChipList label="Management skills" items={job.required_management_skills as string[] | null | undefined} />
-              {job.required_role_level && (
-                <SingleChip label="Role level" value={prettyChip(String(job.required_role_level))} />
-              )}
-              {job.min_years_experience != null && (
-                <Plain label="Minimum years' experience" value={`${job.min_years_experience}+ years`} />
-              )}
-            </div>
-          </Section>
-        )}
-
-        {/* What's on offer */}
-        {hasAny(offerValues) && (
-          <Section title="What's on offer" eyebrow="The package">
-            {Array.isArray(job.three_things) && job.three_things.length > 0 && (
-              <TickList items={job.three_things as string[]} />
-            )}
-            {Array.isArray(job.perks) && job.perks.length > 0 && (
-              <div className="mt-6">
-                <p className="text-[12px] uppercase tracking-wide font-medium mb-3" style={{ color: '#6B7280' }}>
-                  Perks
-                </p>
-                <TickList items={job.perks as string[]} />
-              </div>
-            )}
-            {(job.salary_display_text || job.offers_accommodation || job.shift_pattern) && (
-              <div className="flex flex-wrap gap-3 mt-6">
-                {job.salary_display_text && <Pill>{String(job.salary_display_text)}</Pill>}
-                {job.offers_accommodation && <Pill>Accommodation provided</Pill>}
-                {job.shift_pattern && <Pill>{prettyChip(String(job.shift_pattern))}</Pill>}
-              </div>
-            )}
-          </Section>
-        )}
-
-        {/* About the property */}
-        <Section title="About the property" eyebrow="The employer" alt>
-          <div
-            className="rounded-2xl p-6 md:p-8 max-w-2xl bg-white"
-            style={{ border: '1px solid #E5E5E5' }}
-          >
-            {employer.hotel_group && (
-              <p className="text-[11px] uppercase tracking-wide mb-1" style={{ color: '#9CA3AF' }}>
-                {String(employer.hotel_group)}
-              </p>
-            )}
-            <h3 className="text-[22px] font-medium" style={{ color: '#1a1a1a' }}>
-              {propertyName}
-            </h3>
-            <div
-              className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2 text-[13px]"
-              style={{ color: '#6B7280' }}
-            >
-              {(employer.city || job.location) && (
-                <span className="inline-flex items-center gap-1">
-                  <MapPin size={12} /> {String(employer.city || job.location)}
-                </span>
-              )}
-              {employer.star_rating && (
-                <span className="inline-flex items-center gap-1">
-                  <Star size={12} className="fill-current" style={{ color: '#C9A96E' }} />{' '}
-                  {String(employer.star_rating)}-star
-                </span>
-              )}
-              {employer.num_treatment_rooms && (
-                <span>{String(employer.num_treatment_rooms)} treatment rooms</span>
-              )}
-            </div>
-            {Array.isArray(employer.brand_partners) && employer.brand_partners.length > 0 && (
-              <div className="flex flex-wrap gap-1.5 mt-4">
-                {(employer.brand_partners as string[]).slice(0, 3).map((b) => (
-                  <span
-                    key={b}
-                    className="text-[11px] px-2 py-0.5 rounded-md"
-                    style={{ background: '#F8F7F5', color: '#374151' }}
-                  >
-                    {b}
-                  </span>
-                ))}
-              </div>
-            )}
-            {employer.id && (
-              <Link
-                href={`/properties/${employer.id}`}
-                className="inline-flex items-center gap-1.5 text-[13px] font-medium mt-5"
-                style={{ color: '#C9A96E' }}
-              >
-                View property <ArrowRight size={13} />
-              </Link>
-            )}
-          </div>
-        </Section>
-
-        {/* Apply CTA strip */}
-        <section className="bg-white py-16 px-6">
-          <div className="max-w-5xl mx-auto text-center">
-            <h2
-              className="text-[24px] md:text-[28px] font-medium tracking-tight mb-3"
-              style={{ color: '#1a1a1a' }}
-            >
-              Ready to apply?
-            </h2>
-            <p className="text-[14px] mb-8 max-w-xl mx-auto" style={{ color: '#6B7280' }}>
-              Your application goes directly to the property, where your full profile is reviewed.
-            </p>
-            <div className="flex justify-center">
-              <JobApplyButtons roleId={String(job.id)} />
-            </div>
-          </div>
-        </section>
-      </main>
-      <Footer />
-    </>
-  )
+      <section className="bg-[#0b2f4d] text-white py-14 px-6"><div className="max-w-4xl mx-auto text-center"><h2 className="text-[30px] text-white">Could this be your next move?</h2><p className="text-[14px] text-white/65 mt-3 mb-7">Apply through WHC and the property will receive your profile, experience and match information in one place.</p><div className="flex justify-center"><JobApplyButtons roleId={String(job.id)} /></div></div></section>
+    </main>
+    <Footer />
+  </>
 }
 
-function Section({
-  title,
-  eyebrow,
-  alt = false,
-  children,
-}: {
-  title: string
-  eyebrow?: string
-  alt?: boolean
-  children: React.ReactNode
-}) {
-  return (
-    <section
-      className="py-14 px-6"
-      style={
-        alt
-          ? { background: '#F8F7F5', borderTop: '1px solid #E8E5E0', borderBottom: '1px solid #E8E5E0' }
-          : { background: '#FFFFFF' }
-      }
-    >
-      <div className="max-w-5xl mx-auto">
-        {eyebrow && (
-          <p
-            className="text-[11px] tracking-[0.15em] uppercase font-medium mb-2"
-            style={{ color: '#C9A96E' }}
-          >
-            {eyebrow}
-          </p>
-        )}
-        <h2
-          className="text-[22px] md:text-[28px] font-medium tracking-tight leading-[1.15] mb-6"
-          style={{ color: '#1a1a1a' }}
-        >
-          {title}
-        </h2>
-        {children}
-      </div>
-    </section>
-  )
+function JobSection({ eyebrow, title, children }: { eyebrow: string; title: string; children: React.ReactNode }) {
+  return <section><p className="text-[10px] uppercase tracking-[.16em] font-semibold text-[#6f7f88]">{eyebrow}</p><h2 className="text-[30px] md:text-[36px] mt-2 mb-5">{title}</h2>{children}</section>
 }
-
-function Pill({ children }: { children: React.ReactNode }) {
-  return (
-    <span
-      className="text-[12px] px-3 py-1 rounded-full"
-      style={{ background: '#F8F7F5', color: '#374151', border: '1px solid #E8E5E0' }}
-    >
-      {children}
-    </span>
-  )
-}
-
-function ChipList({ label, items }: { label: string; items?: string[] | null }) {
-  if (!Array.isArray(items) || items.length === 0) return null
-  return (
-    <div>
-      <p className="text-[12px] uppercase tracking-wide font-medium mb-2" style={{ color: '#6B7280' }}>
-        {label}
-      </p>
-      <div className="flex flex-wrap gap-1.5">
-        {items.map((it) => (
-          <span
-            key={it}
-            className="text-[12px] px-2.5 py-1 rounded-md"
-            style={{ background: '#FFFFFF', color: '#374151', border: '1px solid #E5E5E5' }}
-          >
-            {it}
-          </span>
-        ))}
-      </div>
-    </div>
-  )
-}
-
-function SingleChip({ label, value }: { label: string; value: string }) {
-  return (
-    <div>
-      <p className="text-[12px] uppercase tracking-wide font-medium mb-2" style={{ color: '#6B7280' }}>
-        {label}
-      </p>
-      <span
-        className="text-[12px] px-2.5 py-1 rounded-md inline-block"
-        style={{
-          background: '#FDF6EC',
-          color: '#C9A96E',
-          border: '1px solid rgba(201, 169, 110, 0.4)',
-        }}
-      >
-        {value}
-      </span>
-    </div>
-  )
-}
-
-function Plain({ label, value }: { label: string; value: string }) {
-  return (
-    <div>
-      <p className="text-[12px] uppercase tracking-wide font-medium mb-1" style={{ color: '#6B7280' }}>
-        {label}
-      </p>
-      <p className="text-[14px]" style={{ color: '#1a1a1a' }}>
-        {value}
-      </p>
-    </div>
-  )
-}
-
-function TickList({ items }: { items: string[] }) {
-  return (
-    <ul className="space-y-2.5">
-      {items.map((it, i) => (
-        <li key={i} className="flex items-start gap-3 text-[15px]" style={{ color: '#374151' }}>
-          <span className="flex-shrink-0 mt-0.5">
-            <Check size={16} style={{ color: '#C9A96E' }} />
-          </span>
-          <span>{it}</span>
-        </li>
-      ))}
-    </ul>
-  )
-}
+function Fact({ label, value }: { label: string; value: string }) { return <div className="rounded-[14px] border border-[#dfe5e8] bg-white px-4 py-3"><p className="text-[9px] uppercase tracking-[.12em] text-[#8a979f]">{label}</p><p className="text-[13px] font-semibold text-[#10283b] mt-1">{value}</p></div> }
+function MiniFact({ icon: Icon, label, value }: { icon: any; label: string; value: string }) { return <div className="flex gap-3"><Icon size={16} className="text-[#6f7f88] mt-0.5 shrink-0"/><div><p className="text-[10px] uppercase tracking-[.1em] text-[#8a979f]">{label}</p><p className="text-[13px] text-[#10283b] mt-0.5">{value}</p></div></div> }
+function ChipList({ label, items }: { label: string; items?: string[] | null }) { if (!Array.isArray(items) || items.length === 0) return null; return <div><p className="text-[11px] uppercase tracking-[.12em] font-semibold text-[#7d8990] mb-3">{label}</p><div className="flex flex-wrap gap-2">{items.map(item => <span key={item} className="rounded-full border border-[#dfe5e8] bg-[#f7f9fa] px-3 py-1.5 text-[12px] text-[#53636f]">{prettyChip(String(item))}</span>)}</div></div> }
+function TickList({ items }: { items: string[] }) { return <div className="grid sm:grid-cols-2 gap-3">{items.map(item => <div key={item} className="flex gap-3 text-[13px] text-[#53636f]"><Check size={15} className="text-[#0b2f4d] mt-0.5 shrink-0"/>{item}</div>)}</div> }
