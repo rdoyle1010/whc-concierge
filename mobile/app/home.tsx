@@ -4,7 +4,7 @@ import { router, useLocalSearchParams } from 'expo-router'
 import { supabase } from '../src/lib/supabase'
 
 type Role = 'talent' | 'employer' | 'admin'
-type Card = { title: string; copy: string; href?: '/jobs' | '/applications' | '/agency' | '/messages' | '/profile' | '/notifications' | '/interview-ready' | '/discover-talent' | '/saved' | '/residency' | '/billing' | '/property-profile' | '/academy'; locked?: boolean; badge?: string }
+type Card = { title: string; copy: string; href?: '/jobs' | '/applications' | '/agency' | '/messages' | '/profile' | '/notifications' | '/interview-ready' | '/discover-talent' | '/saved' | '/residency' | '/residency-setup' | '/billing' | '/property-profile' | '/academy'; locked?: boolean; badge?: string }
 
 const talentCards: Card[] = [
   { title: 'Matches & Jobs', copy: 'Browse live roles and open the complete job and employer detail.', href: '/jobs' },
@@ -12,6 +12,7 @@ const talentCards: Card[] = [
   { title: 'Applications', copy: 'Track every role you have applied for and withdraw interest if needed.', href: '/applications' },
   { title: 'Agency shifts', copy: 'See your day-by-day availability and upcoming flexible work.', href: '/agency' },
   { title: 'Residency', copy: 'Manage specialist residency offers, negotiations and longer-form placements.', href: '/residency' },
+  { title: 'Residency Profile', copy: 'Join Residency, set your specialist rates, availability and travel, and manage your live listing.', href: '/residency-setup' },
   { title: 'Interview Ready', copy: 'Prepare using your CV, the role and the employer.', href: '/interview-ready' },
   { title: 'WHC Academy', copy: 'Learn, track modules, complete assessments and earn certificates that show on your profile.', href: '/academy' },
   { title: 'Membership & Billing', copy: 'See your plan, credits, Featured Talent status and subscription settings.', href: '/billing' },
