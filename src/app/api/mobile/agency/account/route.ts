@@ -38,7 +38,7 @@ export async function POST(req: NextRequest) {
   const action = String(body.action || '')
   const admin = createAdminClient()
   const { data: candidate } = await admin.from('candidate_profiles')
-    .select('id,user_id,approval_status,agency_available,hourly_rate,phone,postcode,travel_radius_miles')
+    .select('id,user_id,approval_status,agency_available,hourly_rate,phone,postcode,travel_radius_miles,stripe_customer_id')
     .eq('user_id', user.id).maybeSingle()
   if (!candidate) return NextResponse.json({ error: 'Talent profile not found.' }, { status: 404 })
 
@@ -68,6 +68,18 @@ export async function POST(req: NextRequest) {
     const { error } = await admin.from('candidate_profiles').update(update).eq('id', candidate.id)
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
     return NextResponse.json({ success: true })
+  }
+
+  if (action === 'manage_subscription') {
+    if (!candidate.stripe_customer_id) {
+      return NextResponse.json({ error: 'No Agency billing account found yet.' }, { status: 400 })
+    }
+    const stripe = getStripe()
+    const session = await stripe.billingPortal.sessions.create({
+      customer: candidate.stripe_customer_id,
+      return_url: `${SITE}/agency-account`,
+    })
+    return NextResponse.json({ url: session.url })
   }
 
   if (action === 'checkout') {
