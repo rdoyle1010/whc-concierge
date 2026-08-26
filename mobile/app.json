@@ -1,0 +1,21 @@
+{
+  "expo": {
+    "name": "Wellness House Talent",
+    "slug": "wellness-house-talent",
+    "scheme": "whctalent",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "plugins": ["expo-router"],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.wellnesshousecollective.talent"
+    },
+    "android": {
+      "package": "com.wellnesshousecollective.talent"
+    },
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}
