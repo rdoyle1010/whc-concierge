@@ -4,13 +4,14 @@ import { router, useLocalSearchParams } from 'expo-router'
 import { supabase } from '../src/lib/supabase'
 
 type Role = 'talent' | 'employer' | 'admin'
-type Card = { title: string; copy: string; href?: '/jobs' | '/applications' | '/agency' | '/messages' | '/profile' | '/notifications' | '/interview-ready' | '/discover-talent' | '/saved'; locked?: boolean; badge?: string }
+type Card = { title: string; copy: string; href?: '/jobs' | '/applications' | '/agency' | '/messages' | '/profile' | '/notifications' | '/interview-ready' | '/discover-talent' | '/saved' | '/residency'; locked?: boolean; badge?: string }
 
 const talentCards: Card[] = [
   { title: 'Matches & Jobs', copy: 'Browse live roles and open the complete job and employer detail.', href: '/jobs' },
   { title: 'Saved Roles', copy: 'Come back to the opportunities you are considering.', href: '/saved' },
   { title: 'Applications', copy: 'Track every role you have applied for and withdraw interest if needed.', href: '/applications' },
   { title: 'Agency shifts', copy: 'See your day-by-day availability and upcoming flexible work.', href: '/agency' },
+  { title: 'Residency', copy: 'Manage specialist residency offers, negotiations and longer-form placements.', href: '/residency' },
   { title: 'Interview Ready', copy: 'Prepare using your CV, the role and the employer.', href: '/interview-ready' },
   { title: 'Messages', copy: 'Keep conversations with employers in one place.', href: '/messages' },
   { title: 'Notifications', copy: 'See application, booking and platform updates.', href: '/notifications' },
@@ -22,6 +23,7 @@ const employerCards: Card[] = [
   { title: 'Applications', copy: 'Review candidates and see where they sit in the recruitment process.', href: '/applications' },
   { title: 'Discover Talent', copy: 'Search visible spa and wellness professionals.', href: '/discover-talent', locked: true, badge: 'PRO' },
   { title: 'Agency bookings', copy: 'See upcoming flexible staffing bookings for your property.', href: '/agency' },
+  { title: 'Residency', copy: 'Discover specialist talent, start private conversations and send structured offers.', href: '/residency' },
   { title: 'Messages', copy: 'Keep candidate conversations together.', href: '/messages' },
   { title: 'Notifications', copy: 'See recruitment, booking and platform updates.', href: '/notifications' },
   { title: 'Analytics', copy: 'Understand applications, matching and role performance.', locked: true, badge: 'PRO' },
