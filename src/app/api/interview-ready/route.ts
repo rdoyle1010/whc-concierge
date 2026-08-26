@@ -233,6 +233,15 @@ export async function POST(req: NextRequest) {
     if (candidateError) console.error('Interview Ready candidate query', candidateError.message)
     if (!candidate) return NextResponse.json({ error: 'Complete your talent profile first.' }, { status: 404 })
 
+    const credits = Math.max(0, Number(candidate.interview_ready_credits || 0))
+    if (mode === 'prepare' && credits < 1) {
+      return NextResponse.json({
+        error: 'You have used your Interview Ready allowance. Upgrade or add more access to continue.',
+        code: 'FEATURE_LOCKED',
+        upgradeHref: '/talent/billing',
+      }, { status: 403 })
+    }
+
     const jobId = typeof body.jobId === 'string' ? body.jobId : ''
     let job: any = null
     let employer: any = null
@@ -278,8 +287,29 @@ export async function POST(req: NextRequest) {
     }
 
     const base = fallback(candidate, role, employer, style, cvText, externalName)
+    const nextCredits = credits - 1
+    const { data: consumed, error: consumeError } = await supabase
+      .from('candidate_profiles')
+      .update({ interview_ready_credits: nextCredits })
+      .eq('id', candidate.id)
+      .eq('interview_ready_credits', credits)
+      .select('interview_ready_credits')
+      .maybeSingle()
+
+    if (consumeError) {
+      console.error('Interview Ready credit update', consumeError.message)
+      return NextResponse.json({ error: 'We could not confirm your Interview Ready allowance. Please try again.' }, { status: 409 })
+    }
+    if (!consumed) {
+      return NextResponse.json({
+        error: 'Your Interview Ready allowance changed while this request was being prepared. Please try again.',
+        code: 'ALLOWANCE_CHANGED',
+      }, { status: 409 })
+    }
+
     return NextResponse.json({
       ...base,
+      creditsRemaining: consumed.interview_ready_credits,
       source: { hasCv: Boolean(cvText), hasPlatformJob: Boolean(job), usedAi: false },
     })
   } catch (error: any) {
