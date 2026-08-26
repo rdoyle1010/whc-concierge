@@ -4,12 +4,16 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { getRequestUser } from '@/lib/request-user'
 import { AGENCY_PLATFORM_FEE_PCT } from '@/lib/constants'
 
+const RETURN_PATHS = new Set(['/agency', '/employer/agency'])
+
 export async function POST(req: NextRequest) {
   const user = await getRequestUser(req)
   if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
 
   try {
-    const { bookingId } = await req.json()
+    const body = await req.json()
+    const bookingId = body.bookingId
+    const returnPath = RETURN_PATHS.has(String(body.returnPath || '')) ? String(body.returnPath) : '/agency'
     if (!bookingId) return NextResponse.json({ error: 'Missing bookingId' }, { status: 400 })
 
     const admin = createAdminClient()
@@ -33,6 +37,7 @@ export async function POST(req: NextRequest) {
 
     const stripe = getStripe()
     const site = 'https://talent.wellnesshousecollective.co.uk'
+    const feePct = Math.round(AGENCY_PLATFORM_FEE_PCT * 100)
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       line_items: [{
@@ -40,7 +45,7 @@ export async function POST(req: NextRequest) {
           currency: 'gbp',
           product_data: {
             name: 'WHC Concierge - Agency Shift Booking',
-            description: `${booking.shift_date || 'Agreed date'}: £${booking.rate}/hr × ${effectiveHours}h (£${gross}) + WHC fee (£${fee}). The professional receives the full £${gross} agreed shift amount after the completed shift.`,
+            description: `${booking.shift_date || 'Agreed date'}: £${booking.rate}/hr × ${effectiveHours}h (£${gross}) + ${feePct}% WHC fee (£${fee}). The professional receives the full £${gross} agreed shift amount after the completed shift.`,
           },
           unit_amount: totalPounds * 100,
         },
@@ -48,8 +53,8 @@ export async function POST(req: NextRequest) {
       }],
       mode: 'payment',
       allow_promotion_codes: false,
-      success_url: `${site}/agency?paid=processing&booking=${encodeURIComponent(booking.id)}`,
-      cancel_url: `${site}/agency?paid=cancelled&booking=${encodeURIComponent(booking.id)}`,
+      success_url: `${site}${returnPath}?paid=processing&booking=${encodeURIComponent(booking.id)}`,
+      cancel_url: `${site}${returnPath}?paid=cancelled&booking=${encodeURIComponent(booking.id)}`,
       metadata: {
         type: 'agency_booking',
         booking_id: booking.id,
@@ -57,10 +62,11 @@ export async function POST(req: NextRequest) {
         user_id: user.id,
         gross: String(gross),
         fee: String(fee),
+        fee_pct: String(AGENCY_PLATFORM_FEE_PCT),
       },
     })
 
-    return NextResponse.json({ url: session.url, gross, fee, total: totalPounds })
+    return NextResponse.json({ url: session.url, gross, fee, total: totalPounds, feePct })
   } catch (error: any) {
     return NextResponse.json({ error: error?.message || 'Could not start payment.' }, { status: 500 })
   }
