@@ -1,9 +1,9 @@
 import Link from 'next/link'
 import { unstable_cache } from 'next/cache'
+import { createClient } from '@supabase/supabase-js'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
 import { Building2, MapPin, Star, BadgeCheck } from 'lucide-react'
-import { createAdminClient } from '@/lib/supabase/admin'
 import { getPublicPageContent } from '@/lib/public-page-content-server'
 
 export const revalidate = 60
@@ -11,10 +11,18 @@ export const revalidate = 60
 const PUBLIC_PROPERTIES_LIMIT = 120
 const PROPERTY_FIELDS = 'id,company_name,property_name,location,about_text,logo_url,property_photos,review_score,review_count,star_rating,property_type,tagline,featured_employer,featured_until,created_at,is_verified,approval_status'
 
+function createPublicSupabaseClient() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    { auth: { autoRefreshToken: false, persistSession: false } }
+  )
+}
+
 async function readPublicProperties() {
   try {
-    const admin = createAdminClient()
-    const { data, error } = await admin
+    const supabase = createPublicSupabaseClient()
+    const { data, error } = await supabase
       .from('employer_profiles')
       .select(PROPERTY_FIELDS)
       .eq('approval_status', 'approved')
@@ -38,7 +46,7 @@ async function readPublicProperties() {
   }
 }
 
-const getPublicProperties = unstable_cache(readPublicProperties, ['public-properties-v2'], { revalidate: 60 })
+const getPublicProperties = unstable_cache(readPublicProperties, ['public-properties-v3'], { revalidate: 60 })
 
 export default async function PropertiesPage({ searchParams }: { searchParams?: Promise<Record<string,string|string[]|undefined>> }) {
   const params = searchParams ? await searchParams : {}
