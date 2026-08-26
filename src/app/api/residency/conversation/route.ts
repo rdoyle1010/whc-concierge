@@ -1,18 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { cookies } from 'next/headers'
-import { createServerClient } from '@supabase/ssr'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createNotification } from '@/lib/notifications'
+import { getRequestUser } from '@/lib/request-user'
 
 export async function POST(req: NextRequest) {
   try {
-    const cookieStore = await cookies()
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      { cookies: { getAll() { return cookieStore.getAll() }, setAll() {} } }
-    )
-    const { data: { user } } = await supabase.auth.getUser()
+    const user = await getRequestUser(req)
     if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
 
     const { listingId } = await req.json()
@@ -69,7 +62,7 @@ export async function POST(req: NextRequest) {
         'new_message',
         'New Residency conversation',
         'A property would like to discuss a possible residency with you.',
-        '/talent/messages'
+        '/talent/messages',
       )
     } catch { }
 
