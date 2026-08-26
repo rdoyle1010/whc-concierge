@@ -9,9 +9,10 @@ import MobileNav from '../src/components/MobileNav'
 function useNotificationRouting() {
   useEffect(() => {
     function openNotification(notification: Notifications.Notification) {
-      const url = notification.request.content.data?.url
-      if (typeof url === 'string' && url.startsWith('/')) {
-        router.push(url as never)
+      const data = notification.request.content.data || {}
+      const destination = typeof data.url === 'string' ? data.url : typeof data.link === 'string' ? data.link : ''
+      if (destination.startsWith('/')) {
+        router.push(destination as never)
       }
     }
 
