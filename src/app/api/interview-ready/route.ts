@@ -234,7 +234,7 @@ export async function POST(req: NextRequest) {
     if (!candidate) return NextResponse.json({ error: 'Complete your talent profile first.' }, { status: 404 })
 
     const credits = Math.max(0, Number(candidate.interview_ready_credits || 0))
-    if (credits < 1) {
+    if (mode === 'prepare' && credits < 1) {
       return NextResponse.json({
         error: 'You have used your Interview Ready allowance. Upgrade or add more access to continue.',
         code: 'FEATURE_LOCKED',
