@@ -15,7 +15,7 @@ import {
   LayoutDashboard, User, Briefcase, MessageSquare, Star, Calendar,
   Settings, LogOut, Menu, X, Users, FileText, Megaphone,
   AlertTriangle, Heart, Building2, ChevronRight, BarChart3, CreditCard, GraduationCap,
-  Palette, Banknote, Download, MapPin, Brain, ClipboardList,
+  Palette, Banknote, Download, MapPin, Brain, ClipboardList, ShieldCheck,
 } from 'lucide-react'
 
 interface NavItem {
@@ -51,6 +51,7 @@ const navItems: Record<string, NavItem[]> = {
     { label: 'Academy', href: '/talent/academy', icon: <GraduationCap size={17} /> },
     { label: 'Go Featured', href: '/talent/upgrade', icon: <Heart size={17} /> },
     { label: 'Billing', href: '/talent/billing', icon: <CreditCard size={17} />, section: 'Account' },
+    { label: 'Privacy & Preferences', href: '/talent/privacy', icon: <ShieldCheck size={17} /> },
     { label: 'Settings', href: '/talent/settings', icon: <Settings size={17} /> },
   ],
   employer: [
@@ -69,6 +70,7 @@ const navItems: Record<string, NavItem[]> = {
     { label: 'Social & Advertising', href: '/employer/social', icon: <Megaphone size={17} /> },
     { label: 'Get Featured', href: '/employer/featured', icon: <Star size={17} /> },
     { label: 'Billing', href: '/employer/billing', icon: <CreditCard size={17} />, section: 'Account' },
+    { label: 'Privacy & Preferences', href: '/employer/privacy', icon: <ShieldCheck size={17} /> },
     { label: 'Settings', href: '/employer/settings', icon: <Settings size={17} /> },
   ],
   admin: [
