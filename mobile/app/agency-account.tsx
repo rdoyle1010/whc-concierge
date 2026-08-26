@@ -62,7 +62,7 @@ export default function AgencyAccountScreen(){
   async function manageSubscription(){
     setBusy('portal');setError('')
     try{
-      const data=await authFetch('/api/billing/portal',{method:'POST',body:JSON.stringify({returnUrl:WEB_URL})})
+      const data=await authFetch('/api/mobile/agency/account',{method:'POST',body:JSON.stringify({action:'manage_subscription'})})
       if(!data.url) throw new Error('Could not open billing portal.')
       await Linking.openURL(data.url)
     }catch(e:any){setError(e.message||'Could not open subscription management.')}
