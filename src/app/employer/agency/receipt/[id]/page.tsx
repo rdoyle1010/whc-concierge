@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import { Printer, ArrowLeft } from 'lucide-react'
+import { AGENCY_PLATFORM_FEE_PCT } from '@/lib/constants'
 
 // Printable receipt for a paid agency booking - what accountants ask for.
 // Print to PDF via the browser; everything on this page is print-safe.
@@ -40,7 +41,8 @@ export default function AgencyReceiptPage() {
 
   const hours = booking.hours && booking.hours > 0 ? booking.hours : 8
   const subtotal = booking.rate * hours
-  const fee = booking.platform_fee || Math.ceil(subtotal * 0.10)
+  const fee = booking.platform_fee || Math.ceil(subtotal * AGENCY_PLATFORM_FEE_PCT)
+  const feePct = Math.round(AGENCY_PLATFORM_FEE_PCT * 100)
   const total = booking.amount_paid || subtotal + fee
   const ref = `WHC-${String(booking.id).slice(0, 8).toUpperCase()}`
 
@@ -88,7 +90,7 @@ export default function AgencyReceiptPage() {
               <td className="py-3 pr-4 text-right">£{subtotal.toFixed(2)}</td>
             </tr>
             <tr className="border-b border-gray-100">
-              <td className="py-3 pr-4">WHC service fee (10%)</td>
+              <td className="py-3 pr-4">WHC platform fee ({feePct}%)</td>
               <td className="py-3 pr-4 text-right">£{fee.toFixed(2)}</td>
             </tr>
             <tr>
@@ -103,7 +105,7 @@ export default function AgencyReceiptPage() {
         ) : null}
 
         <div className="text-[11px] text-gray-400 space-y-1 border-t border-gray-100 pt-6">
-          <p>Payment received in full by Wellness House Collective, who engages and pays the therapist directly. No VAT has been charged on this receipt.</p>
+          <p>Payment received in full by Wellness House Collective, who manages the professional payout after the completed shift. No VAT has been charged on this receipt.</p>
           <p>Questions about this receipt? Reply to any WHC email or contact us through your dashboard.</p>
         </div>
       </div>
