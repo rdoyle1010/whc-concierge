@@ -4,7 +4,7 @@ import { router, useLocalSearchParams } from 'expo-router'
 import { supabase } from '../src/lib/supabase'
 
 type Role = 'talent' | 'employer' | 'admin'
-type Card = { title: string; copy: string; href?: '/jobs' | '/applications' | '/agency' | '/messages' | '/profile' | '/notifications' | '/interview-ready' | '/discover-talent' | '/saved' | '/residency'; locked?: boolean; badge?: string }
+type Card = { title: string; copy: string; href?: '/jobs' | '/applications' | '/agency' | '/messages' | '/profile' | '/notifications' | '/interview-ready' | '/discover-talent' | '/saved' | '/residency' | '/billing'; locked?: boolean; badge?: string }
 
 const talentCards: Card[] = [
   { title: 'Matches & Jobs', copy: 'Browse live roles and open the complete job and employer detail.', href: '/jobs' },
@@ -13,6 +13,7 @@ const talentCards: Card[] = [
   { title: 'Agency shifts', copy: 'See your day-by-day availability and upcoming flexible work.', href: '/agency' },
   { title: 'Residency', copy: 'Manage specialist residency offers, negotiations and longer-form placements.', href: '/residency' },
   { title: 'Interview Ready', copy: 'Prepare using your CV, the role and the employer.', href: '/interview-ready' },
+  { title: 'Membership & Billing', copy: 'See your plan, credits, Featured Talent status and subscription settings.', href: '/billing' },
   { title: 'Messages', copy: 'Keep conversations with employers in one place.', href: '/messages' },
   { title: 'Notifications', copy: 'See application, booking and platform updates.', href: '/notifications' },
   { title: 'Profile & Stealth', copy: 'Update your profile visibility, alerts and Stealth Mode.', href: '/profile' },
@@ -24,6 +25,7 @@ const employerCards: Card[] = [
   { title: 'Discover Talent', copy: 'Search visible spa and wellness professionals.', href: '/discover-talent', locked: true, badge: 'PRO' },
   { title: 'Agency bookings', copy: 'See upcoming flexible staffing bookings for your property.', href: '/agency' },
   { title: 'Residency', copy: 'Discover specialist talent, start private conversations and send structured offers.', href: '/residency' },
+  { title: 'Membership & Billing', copy: 'See your plan, annual allowance and manage employer subscription billing.', href: '/billing' },
   { title: 'Messages', copy: 'Keep candidate conversations together.', href: '/messages' },
   { title: 'Notifications', copy: 'See recruitment, booking and platform updates.', href: '/notifications' },
   { title: 'Analytics', copy: 'Understand applications, matching and role performance.', locked: true, badge: 'PRO' },
