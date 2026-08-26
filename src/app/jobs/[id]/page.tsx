@@ -6,13 +6,15 @@ import { MapPin, Star, Check, ArrowRight, Building2, Users, BedDouble, ExternalL
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
 import JobApplyButtons from '@/components/JobApplyButtons'
-import { createServerSupabaseClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
+
+export const revalidate = 60
 
 const SITE = 'https://talent.wellnesshousecollective.co.uk'
 type Job = Record<string, any>
 
 const getJob = cache(async (id: string): Promise<Job | null> => {
-  const supabase = await createServerSupabaseClient()
+  const supabase = createAdminClient()
   const { data, error } = await supabase
     .from('job_listings')
     .select('*, employer_profiles(*)')
