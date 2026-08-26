@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { unstable_cache } from 'next/cache'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
 import { Building2, MapPin, Star, BadgeCheck } from 'lucide-react'
@@ -10,12 +11,9 @@ export const revalidate = 60
 const PUBLIC_PROPERTIES_LIMIT = 120
 const PROPERTY_FIELDS = 'id,company_name,property_name,location,description,logo_url,property_photos,review_score,review_count,star_rating,property_type,tagline,featured_employer,featured_until,created_at,is_verified,approval_status'
 
-async function getPublicProperties() {
+async function readPublicProperties() {
   try {
     const admin = createAdminClient()
-    // A property belongs in the public directory once WHC has approved the
-    // employer account. "is_verified" is a separate reputation/verification
-    // badge and must not hide an otherwise approved live property.
     const { data, error } = await admin
       .from('employer_profiles')
       .select(PROPERTY_FIELDS)
@@ -39,6 +37,8 @@ async function getPublicProperties() {
     return []
   }
 }
+
+const getPublicProperties = unstable_cache(readPublicProperties, ['public-properties-v1'], { revalidate: 60 })
 
 export default async function PropertiesPage({ searchParams }: { searchParams?: Promise<Record<string,string|string[]|undefined>> }) {
   const params = searchParams ? await searchParams : {}
