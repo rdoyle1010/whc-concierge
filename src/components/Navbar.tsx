@@ -9,6 +9,23 @@ import { Menu, X, User, ChevronDown, LayoutDashboard, Settings, LogOut, MessageS
 import NotificationBell from '@/components/NotificationBell'
 import { DEFAULT_WEBSITE_CONTENT, type WebsiteContent } from '@/lib/site-content'
 
+const supabase = createClient()
+let sessionPromise: ReturnType<typeof supabase.auth.getSession> | null = null
+let cachedRoleByUser = new Map<string, string | null>()
+
+function getSessionOnce() {
+  if (!sessionPromise) sessionPromise = supabase.auth.getSession()
+  return sessionPromise
+}
+
+async function getRoleOnce(userId: string) {
+  if (cachedRoleByUser.has(userId)) return cachedRoleByUser.get(userId) || null
+  const { data } = await supabase.from('profiles').select('role').eq('id', userId).single()
+  const role = data?.role || null
+  cachedRoleByUser.set(userId, role)
+  return role
+}
+
 export default function Navbar({ siteContent }: { siteContent?: WebsiteContent }) {
   const [mobileOpen, setMobileOpen] = useState(false)
   const [profileOpen, setProfileOpen] = useState(false)
@@ -16,18 +33,16 @@ export default function Navbar({ siteContent }: { siteContent?: WebsiteContent }
   const [role, setRole] = useState<string | null>(null)
   const dropdownRef = useRef<HTMLDivElement>(null)
   const pathname = usePathname()
-  const supabase = createClient()
 
   useEffect(() => {
     let active = true
-    supabase.auth.getSession().then(({ data }) => {
+    getSessionOnce().then(async ({ data }) => {
       if (!active) return
       const sessionUser = data.session?.user || null
       setUser(sessionUser)
       if (sessionUser) {
-        supabase.from('profiles').select('role').eq('id', sessionUser.id).single().then(({ data: p }) => {
-          if (active) setRole(p?.role || null)
-        })
+        const resolvedRole = await getRoleOnce(sessionUser.id)
+        if (active) setRole(resolvedRole)
       }
     })
     return () => { active = false }
@@ -39,7 +54,12 @@ export default function Navbar({ siteContent }: { siteContent?: WebsiteContent }
     return () => document.removeEventListener('mousedown', h)
   }, [])
 
-  const handleSignOut = async () => { await supabase.auth.signOut(); window.location.href = '/' }
+  const handleSignOut = async () => {
+    cachedRoleByUser.clear()
+    sessionPromise = null
+    await supabase.auth.signOut()
+    window.location.href = '/'
+  }
 
   const initials = user?.user_metadata?.full_name
     ? user.user_metadata.full_name.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase()
