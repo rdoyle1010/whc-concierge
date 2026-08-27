@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import DashboardShell from '@/components/DashboardShell'
-import { Award, BookOpen, ChevronDown, ChevronUp, GraduationCap, Plus, Save, Trash2, UserPlus, X } from 'lucide-react'
+import { Award, BookOpen, ChevronDown, ChevronUp, GraduationCap, Image as ImageIcon, Plus, Save, Trash2, Upload, UserPlus, X } from 'lucide-react'
 
 const CATEGORIES = ['Guest Experience', 'Standards', 'Treatments', 'Commercial', 'Brands', 'Specialist Care']
 
@@ -22,6 +22,7 @@ export default function AdminAcademyPage() {
   const [candidates, setCandidates] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [busyId, setBusyId] = useState<string | null>(null)
+  const [uploadingImage, setUploadingImage] = useState(false)
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
   const [grantCandidate, setGrantCandidate] = useState('')
@@ -63,6 +64,27 @@ export default function AdminAcademyPage() {
       setError(caught.message)
     } finally {
       setBusyId(null)
+    }
+  }
+
+  async function uploadCourseImage(file: File) {
+    if (!editing) return
+    setUploadingImage(true); setError(''); setNotice('')
+    try {
+      const body = new FormData()
+      body.append('file', file)
+      body.append('bucket', 'site-images')
+      const safeSlug = (editing.slug || editing.title || 'course').toLowerCase().replace(/[^a-z0-9-]+/g, '-').replace(/^-|-$/g, '')
+      body.append('path', `academy/${safeSlug}-${Date.now()}-${file.name.replace(/[^a-zA-Z0-9._-]/g, '-')}`)
+      const response = await fetch('/api/upload', { method: 'POST', body })
+      const json = await response.json().catch(() => ({}))
+      if (!response.ok) throw new Error(json.error || 'Course image upload failed.')
+      setEditing((course: any) => ({ ...course, image_url: json.url }))
+      setNotice('Course image uploaded. Save the course to publish the change.')
+    } catch (caught: any) {
+      setError(caught.message || 'Course image upload failed.')
+    } finally {
+      setUploadingImage(false)
     }
   }
 
@@ -114,7 +136,7 @@ export default function AdminAcademyPage() {
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between mb-6">
         <div>
           <div className="flex items-center gap-2 mb-1"><GraduationCap size={22} className="text-accent" /><h1 className="text-2xl font-serif font-bold text-ink">Academy</h1></div>
-          <p className="text-[13px] text-gray-500 max-w-2xl">Add courses, change wording and prices, or archive courses without breaking certificates already issued.</p>
+          <p className="text-[13px] text-gray-500 max-w-2xl">Add courses, change wording, prices and course imagery, or archive courses without breaking certificates already issued.</p>
         </div>
         <button onClick={() => { setOriginalSlug(''); setEditing(blankCourse()); setError(''); setNotice('') }} className="btn-primary text-[13px] inline-flex items-center gap-2"><Plus size={14} /> Add course</button>
       </div>
@@ -136,8 +158,23 @@ export default function AdminAcademyPage() {
             <label className="text-[12px] text-gray-600">Category<select value={editing.category} onChange={event => setEditing({ ...editing, category: event.target.value })} className="input-field mt-1">{CATEGORIES.map(category => <option key={category}>{category}</option>)}</select></label>
             <label className="text-[12px] text-gray-600">Duration in minutes<input type="number" min="1" value={editing.minutes} onChange={event => setEditing({ ...editing, minutes: Number(event.target.value) })} className="input-field mt-1" /></label>
             <label className="text-[12px] text-gray-600">Member price (£)<input type="number" min="0" step="0.01" value={(editing.price || 0) / 100} onChange={event => setEditing({ ...editing, price: Math.round(Number(event.target.value) * 100) })} className="input-field mt-1" /></label>
-            <label className="text-[12px] text-gray-600">Course image URL<input value={editing.image_url || ''} onChange={event => setEditing({ ...editing, image_url: event.target.value })} placeholder="https://..." className="input-field mt-1" /></label>
             <label className="md:col-span-2 flex items-center gap-2 text-[12px] text-gray-600"><input type="checkbox" checked={Boolean(editing.is_core)} onChange={event => setEditing({ ...editing, is_core: event.target.checked })} /> Include this course in the Core Curriculum bundle</label>
+          </div>
+
+          <div className="border-t border-border pt-5 mb-6">
+            <div className="mb-3"><h3 className="text-[15px] font-medium text-ink">Course image</h3><p className="text-[11px] text-gray-500">This image appears on the Academy course card and course page. Upload a landscape image for the best result.</p></div>
+            <div className="grid gap-4 md:grid-cols-[260px_1fr] rounded-xl border border-border bg-surface/50 p-4">
+              <div className="aspect-[16/10] overflow-hidden rounded-xl border border-border bg-white">
+                {editing.image_url ? <img src={editing.image_url} alt={`${editing.title || 'Course'} preview`} className="h-full w-full object-cover" /> : <div className="flex h-full items-center justify-center text-gray-300"><ImageIcon size={34} /></div>}
+              </div>
+              <div className="flex flex-col justify-center gap-3">
+                <p className="text-[12px] leading-5 text-gray-500">Choose a JPEG, PNG or WebP from your computer or phone. You no longer need to paste an image URL.</p>
+                <div className="flex flex-wrap gap-2">
+                  <label className="btn-secondary w-fit cursor-pointer inline-flex items-center gap-2"><Upload size={14}/>{uploadingImage ? 'Uploading...' : editing.image_url ? 'Replace image' : 'Upload image'}<input type="file" accept="image/jpeg,image/png,image/webp" className="hidden" disabled={uploadingImage} onChange={event => { const file = event.target.files?.[0]; if (file) uploadCourseImage(file); event.target.value = '' }} /></label>
+                  {editing.image_url ? <button type="button" onClick={() => setEditing({ ...editing, image_url: '' })} className="btn-secondary text-[12px]">Remove image</button> : null}
+                </div>
+              </div>
+            </div>
           </div>
 
           <div className="border-t border-border pt-5 mb-6">
@@ -167,7 +204,7 @@ export default function AdminAcademyPage() {
             </div>
           </div>
 
-          <div className="flex flex-wrap gap-2"><button onClick={() => act({ action: 'save_course', course: editing }, 'save-course', 'Course saved. It is now in the catalogue.', true)} disabled={busyId === 'save-course'} className="btn-primary text-[13px] inline-flex items-center gap-2 disabled:opacity-50"><Save size={14} /> {busyId === 'save-course' ? 'Saving...' : 'Save course'}</button><button onClick={() => setEditing(null)} className="btn-secondary text-[13px]">Cancel</button></div>
+          <div className="flex flex-wrap gap-2"><button onClick={() => act({ action: 'save_course', course: editing }, 'save-course', 'Course saved. It is now in the catalogue.', true)} disabled={busyId === 'save-course' || uploadingImage} className="btn-primary text-[13px] inline-flex items-center gap-2 disabled:opacity-50"><Save size={14} /> {busyId === 'save-course' ? 'Saving...' : 'Save course'}</button><button onClick={() => setEditing(null)} className="btn-secondary text-[13px]">Cancel</button></div>
         </div>
       )}
 
@@ -189,6 +226,7 @@ export default function AdminAcademyPage() {
           const open = openCourse === course.slug
           return <div key={course.slug} className={`dashboard-card !p-0 overflow-hidden ${course.is_active ? '' : 'opacity-70'}`}>
             <div className="p-4 flex flex-col md:flex-row md:items-center gap-3">
+              <div className="h-16 w-24 shrink-0 overflow-hidden rounded-lg border border-border bg-surface">{course.image_url ? <img src={course.image_url} alt="" className="h-full w-full object-cover"/> : <div className="flex h-full items-center justify-center text-gray-300"><ImageIcon size={20}/></div>}</div>
               <button onClick={() => setOpenCourse(open ? null : course.slug)} className="text-left flex-1 min-w-0"><div className="flex flex-wrap items-center gap-2"><p className="text-[14px] font-medium text-ink">{course.title}</p><span className={`text-[10px] font-semibold uppercase px-2 py-0.5 rounded-full ${course.is_active ? 'bg-green-50 text-green-700' : 'bg-gray-100 text-gray-500'}`}>{course.is_active ? 'Live' : 'Archived'}</span>{course.managed && <span className="text-[10px] text-accent">Edited</span>}</div><p className="text-[11px] text-gray-500 mt-1">{course.category} · {course.lessons.length} modules · £{((course.price || 0) / 100).toFixed(2)} · {course.enrolments} enrolments · £{(course.revenue / 100).toFixed(2)} revenue</p></button>
               <div className="flex items-center gap-2"><button onClick={() => editCourse(course)} className="btn-secondary text-[11px]">Edit</button><button onClick={() => act({ action: course.is_active ? 'archive_course' : 'restore_course', courseSlug: course.slug }, `toggle-${course.slug}`, course.is_active ? 'Course archived. Existing learners and certificates are preserved.' : 'Course restored to the catalogue.')} className={`text-[11px] font-medium ${course.is_active ? 'text-red-500' : 'text-green-700'}`}>{course.is_active ? 'Archive' : 'Restore'}</button><button onClick={() => setOpenCourse(open ? null : course.slug)} className="text-gray-400">{open ? <ChevronUp size={16} /> : <ChevronDown size={16} />}</button></div>
             </div>
