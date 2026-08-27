@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { ArrowRight, Bell, BriefcaseBusiness, CalendarDays, CheckCircle2, MessageSquare, Sparkles } from 'lucide-react'
+import { ArrowRight, Bell, BookOpen, BriefcaseBusiness, Building2, CalendarDays, CheckCircle2, MapPin, MessageSquare, Newspaper, Sparkles } from 'lucide-react'
 
 type Role = 'talent' | 'employer'
 
@@ -71,6 +71,14 @@ export default function DashboardActivityCentre({ role }: { role: Role }) {
   if (!data) return null
 
   const hasAttention = data.attention.length > 0 || data.unreadMessages > 0
+  const exploreLinks = [
+    { href: '/jobs', label: 'Browse Roles', note: role === 'talent' ? 'See the public role marketplace and live opportunities.' : 'See the role marketplace as Talent sees it.', icon: <BriefcaseBusiness size={16}/> },
+    { href: '/properties', label: 'Properties', note: 'Explore approved spa and wellness employers.', icon: <Building2 size={16}/> },
+    { href: '/agency/about', label: 'Agency', note: 'See flexible staffing, availability and how Agency works.', icon: <CalendarDays size={16}/> },
+    { href: '/academy', label: 'Academy', note: 'Explore learning, development and live courses.', icon: <BookOpen size={16}/> },
+    { href: '/residency', label: 'Residency', note: 'Explore specialist placements and longer-form opportunities.', icon: <MapPin size={16}/> },
+    { href: '/blog', label: 'Journal', note: 'Read industry insight, ideas and Wellness House updates.', icon: <Newspaper size={16}/> },
+  ]
 
   return (
     <section className="dashboard-card mb-8">
@@ -98,6 +106,14 @@ export default function DashboardActivityCentre({ role }: { role: Role }) {
           const content = <div className="dashboard-list-row !py-3"><div className="flex min-w-0 items-start gap-3"><span className={`mt-0.5 ${item.is_read ? 'text-muted' : 'text-[#9c7a42]'}`}>{iconFor(item.type)}</span><div className="min-w-0"><p className={`truncate text-[12px] ${item.is_read ? 'font-medium text-ink' : 'font-semibold text-ink'}`}>{item.title}</p><p className="mt-0.5 line-clamp-1 text-[11px] text-muted">{item.message}</p></div></div><span className="shrink-0 text-[10px] text-muted">{relativeTime(item.created_at)}</span></div>
           return item.link ? <Link key={item.id} href={item.link}>{content}</Link> : <div key={item.id}>{content}</div>
         })}</div>}
+      </div>
+
+      <div className="mt-6 border-t border-[#e8e2d8] pt-5">
+        <div className="mb-1 flex items-center gap-2"><Sparkles size={14} className="text-[#0b2f4d]"/><p className="text-[10px] font-semibold uppercase tracking-[.15em] text-[#0b2f4d]">Explore Wellness House</p></div>
+        <p className="mb-4 text-[12px] text-muted">Your dashboard is your private workspace. These links take you into the wider Wellness House platform, so nothing is hidden behind the homepage.</p>
+        <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+          {exploreLinks.map(link => <Link key={link.href} href={link.href} className="group flex items-start gap-3 rounded-xl border border-[#e2e6e8] bg-white p-3.5 transition hover:border-[#b9c5cb] hover:bg-[#fafbfb]"><span className="mt-0.5 text-[#0b2f4d]">{link.icon}</span><span className="min-w-0"><span className="flex items-center gap-1 text-[12px] font-semibold text-ink">{link.label}<ArrowRight size={11} className="opacity-45 transition group-hover:translate-x-0.5 group-hover:opacity-100"/></span><span className="mt-1 block text-[10.5px] leading-4 text-muted">{link.note}</span></span></Link>)}
+        </div>
       </div>
     </section>
   )
