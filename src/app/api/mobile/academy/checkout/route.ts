@@ -6,7 +6,21 @@ import { BUNDLE_PRICE, coursePrice } from '@/lib/academy'
 import { getAcademyCatalog, getAcademyCourseBySlug } from '@/lib/academy-catalog-server'
 
 const SITE = 'https://talent.wellnesshousecollective.co.uk'
-const ACADEMY_RETURN = `${SITE}/talent/academy`
+const WEB_ACADEMY_RETURN = `${SITE}/talent/academy`
+const APP_RETURN = `${SITE}/app-return/academy`
+
+function checkoutReturnUrls(returnToApp:boolean, result:string) {
+  if (returnToApp) {
+    return {
+      success: `${APP_RETURN}?status=success&result=${encodeURIComponent(result)}`,
+      cancel: `${APP_RETURN}?status=cancelled`,
+    }
+  }
+  return {
+    success: `${WEB_ACADEMY_RETURN}?enrolled=${encodeURIComponent(result)}`,
+    cancel: `${WEB_ACADEMY_RETURN}?cancelled=true`,
+  }
+}
 
 export async function POST(req: NextRequest) {
   try {
@@ -15,6 +29,7 @@ export async function POST(req: NextRequest) {
 
     const body = await req.json().catch(() => ({}))
     const product = String(body.product || '')
+    const returnToApp = body.source === 'app' || body.returnToApp === true
     const admin = createAdminClient()
     const { data: candidate } = await admin.from('candidate_profiles')
       .select('id,user_id,academy_discount_pct')
@@ -36,6 +51,7 @@ export async function POST(req: NextRequest) {
 
       const basePence = coursePrice(course)
       const amountPence = Math.max(100, Math.round(basePence * (1 - discountPct / 100)))
+      const returns = checkoutReturnUrls(returnToApp, slug)
       const session = await stripe.checkout.sessions.create({
         payment_method_types: ['card'],
         customer_email: user.email || undefined,
@@ -49,9 +65,9 @@ export async function POST(req: NextRequest) {
         }],
         mode: 'payment',
         allow_promotion_codes: true,
-        success_url: `${ACADEMY_RETURN}?enrolled=${encodeURIComponent(slug)}&source=mobile`,
-        cancel_url: `${ACADEMY_RETURN}?cancelled=true&source=mobile`,
-        metadata: { type: 'course', candidate_id: candidate.id, course_slug: slug, user_id: user.id },
+        success_url: returns.success,
+        cancel_url: returns.cancel,
+        metadata: { type: 'course', candidate_id: candidate.id, course_slug: slug, user_id: user.id, checkout_source: returnToApp ? 'app' : 'web' },
       })
       return NextResponse.json({ url: session.url, amountPence, basePence, discountPct })
     }
@@ -68,6 +84,7 @@ export async function POST(req: NextRequest) {
       }
 
       const amountPence = Math.max(100, Math.round(BUNDLE_PRICE * (1 - discountPct / 100)))
+      const returns = checkoutReturnUrls(returnToApp, 'bundle')
       const session = await stripe.checkout.sessions.create({
         payment_method_types: ['card'],
         customer_email: user.email || undefined,
@@ -81,9 +98,9 @@ export async function POST(req: NextRequest) {
         }],
         mode: 'payment',
         allow_promotion_codes: true,
-        success_url: `${ACADEMY_RETURN}?enrolled=bundle&source=mobile`,
-        cancel_url: `${ACADEMY_RETURN}?cancelled=true&source=mobile`,
-        metadata: { type: 'course_bundle', candidate_id: candidate.id, user_id: user.id },
+        success_url: returns.success,
+        cancel_url: returns.cancel,
+        metadata: { type: 'course_bundle', candidate_id: candidate.id, user_id: user.id, checkout_source: returnToApp ? 'app' : 'web' },
       })
       return NextResponse.json({ url: session.url, amountPence, basePence: BUNDLE_PRICE, discountPct })
     }
