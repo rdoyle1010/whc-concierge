@@ -15,7 +15,7 @@ const readPublicJobs = unstable_cache(async (search: string, location: string, o
   })
   if (error) throw new Error(error.message)
   return data || []
-}, ['public-jobs-page-v2'], { revalidate: 60 })
+}, ['public-jobs-page-v3'], { revalidate: 60 })
 
 export async function GET(req: NextRequest) {
   const pageParam = Number(req.nextUrl.searchParams.get('page'))
@@ -34,6 +34,7 @@ export async function GET(req: NextRequest) {
       id: row.id,
       job_title: row.job_title,
       job_description: row.job_description,
+      job_image_url: row.job_image_url,
       salary_min: row.salary_min,
       salary_max: row.salary_max,
       salary_display_text: row.salary_display_text,
