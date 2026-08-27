@@ -49,7 +49,7 @@ export default function AcademyScreen(){
     setBusy(product==='bundle'?'__bundle__':courseSlug||''); setError('')
     try{
       const headers=await authHeaders()
-      const res=await fetch(`${WEB_URL}/api/mobile/academy/checkout`,{method:'POST',headers:{...headers,'Content-Type':'application/json'},body:JSON.stringify({product,courseSlug})})
+      const res=await fetch(`${WEB_URL}/api/mobile/academy/checkout`,{method:'POST',headers:{...headers,'Content-Type':'application/json'},body:JSON.stringify({product,courseSlug,source:'app',returnToApp:true})})
       const j=await res.json()
       if(!res.ok||!j.url) throw new Error(j.error||'Could not start payment.')
       const saving=j.discountPct>0?` Your ${j.discountPct}% member Academy discount has been applied.`:''
