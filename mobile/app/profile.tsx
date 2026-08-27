@@ -1,7 +1,14 @@
 import { useEffect, useState } from 'react'
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Switch, Text, TextInput, View } from 'react-native'
+import { ActivityIndicator, Alert, Linking, Pressable, ScrollView, StyleSheet, Switch, Text, TextInput, View } from 'react-native'
 import { router } from 'expo-router'
 import { supabase } from '../src/lib/supabase'
+
+function certificateLabel(url:string,index:number){
+  try{
+    const tail=decodeURIComponent(url.split('/').pop()||'').replace(/^cert_[0-9]+_/,'').replace(/[-_]+/g,' ').trim()
+    return tail||`Certificate ${index+1}`
+  }catch{return `Certificate ${index+1}`}
+}
 
 export default function ProfileScreen() {
   const [profile, setProfile] = useState<any>(null)
@@ -14,7 +21,7 @@ export default function ProfileScreen() {
   async function load() {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) { router.replace('/login'); return }
-    const { data } = await supabase.from('candidate_profiles').select('id,full_name,headline,location,bio,role_level,primary_specialism,profile_visible,show_first_name_only,job_alerts_enabled').eq('user_id', user.id).maybeSingle()
+    const { data } = await supabase.from('candidate_profiles').select('id,full_name,headline,location,bio,role_level,primary_specialism,profile_visible,show_first_name_only,job_alerts_enabled,certificates_urls').eq('user_id', user.id).maybeSingle()
     setProfile(data)
     setLoading(false)
   }
@@ -35,10 +42,28 @@ export default function ProfileScreen() {
     setSaving(false)
   }
 
+  function confirmRemoveCertificate(url:string,index:number){
+    Alert.alert('Remove uploaded certificate?',`Remove ${certificateLabel(url,index)} from your Talent profile? This does not affect WHC Academy certificates.`,[
+      {text:'Cancel',style:'cancel'},
+      {text:'Remove',style:'destructive',onPress:()=>removeUploadedCertificate(url)},
+    ])
+  }
+
+  async function removeUploadedCertificate(url:string){
+    if(!profile?.id)return
+    const previous=Array.isArray(profile.certificates_urls)?profile.certificates_urls:[]
+    const next=previous.filter((item:string)=>item!==url)
+    setProfile({...profile,certificates_urls:next})
+    const {error}=await supabase.from('candidate_profiles').update({certificates_urls:next,updated_at:new Date().toISOString()}).eq('id',profile.id)
+    if(error){setProfile({...profile,certificates_urls:previous});setMessage('Could not remove the certificate. Please try again.')}
+    else setMessage('Certificate removed from your profile.')
+  }
+
   if (loading) return <View style={styles.center}><ActivityIndicator color="#092b45" /></View>
   if (!profile) return <View style={styles.center}><Text>Complete your Talent profile on the website first.</Text></View>
 
   const toggle = (key: string, label: string, copy: string) => <View style={styles.toggleRow}><View style={{flex:1,paddingRight:14}}><Text style={styles.toggleTitle}>{label}</Text><Text style={styles.toggleCopy}>{copy}</Text></View><Switch value={!!profile[key]} onValueChange={v => setProfile({...profile,[key]:v})} /></View>
+  const uploadedCertificates=Array.isArray(profile.certificates_urls)?profile.certificates_urls:[]
 
   return <ScrollView style={styles.scroll} contentContainerStyle={styles.page}>
     <Pressable onPress={() => router.back()}><Text style={styles.back}>‹ Back</Text></Pressable>
@@ -48,6 +73,13 @@ export default function ProfileScreen() {
     <Text style={styles.label}>Headline</Text><TextInput style={styles.input} value={profile.headline || ''} onChangeText={v=>setProfile({...profile,headline:v})} placeholder="Spa therapist, manager, director..." />
     <Text style={styles.label}>Location</Text><TextInput style={styles.input} value={profile.location || ''} onChangeText={v=>setProfile({...profile,location:v})} placeholder="Leeds, London, Dubai..." />
     <Text style={styles.label}>About you</Text><TextInput multiline style={[styles.input,styles.textarea]} value={profile.bio || ''} onChangeText={v=>setProfile({...profile,bio:v})} placeholder="Your experience, strengths and what you are looking for." />
+
+    <View style={styles.section}>
+      <Text style={styles.sectionTitle}>Certificates & qualifications</Text>
+      <Text style={styles.sectionCopy}>Manage certificates you uploaded yourself. WHC Academy certificates are verified records and cannot be silently deleted by Talent.</Text>
+      {uploadedCertificates.length===0?<View style={styles.emptyCert}><Text style={styles.emptyCertTitle}>No uploaded certificates</Text><Text style={styles.emptyCertCopy}>Upload qualifications from the website profile editor; they will appear here automatically.</Text></View>:uploadedCertificates.map((url:string,index:number)=><View key={`${url}-${index}`} style={styles.certRow}><Pressable onPress={()=>Linking.openURL(url)} style={{flex:1}}><Text style={styles.certTitle} numberOfLines={1}>{certificateLabel(url,index)}</Text><Text style={styles.certOpen}>View certificate →</Text></Pressable><Pressable onPress={()=>confirmRemoveCertificate(url,index)} style={styles.removeButton}><Text style={styles.removeText}>Remove</Text></Pressable></View>)}
+      <Pressable onPress={()=>router.push('/academy')} style={styles.academyCard}><View style={{flex:1}}><Text style={styles.academyTitle}>WHC Academy certificates</Text><Text style={styles.academyCopy}>View certificates earned through Academy. If one was issued incorrectly, Wellness House Admin can revoke it with an audit trail and notification.</Text></View><Text style={styles.chevron}>›</Text></Pressable>
+    </View>
 
     <View style={styles.section}><Text style={styles.sectionTitle}>Privacy & visibility</Text>
       <Pressable onPress={()=>router.push('/privacy-stealth')} style={styles.privacyCard}><View style={{flex:1}}><Text style={styles.privacyTitle}>Stealth Mode & blocked employers</Text><Text style={styles.privacyCopy}>Choose the exact employers, hotels or spas that must not be able to discover you.</Text></View><Text style={styles.chevron}>›</Text></Pressable>
@@ -61,4 +93,4 @@ export default function ProfileScreen() {
   </ScrollView>
 }
 
-const styles=StyleSheet.create({scroll:{flex:1,backgroundColor:'#fff'},page:{paddingHorizontal:22,paddingTop:64,paddingBottom:44},center:{flex:1,alignItems:'center',justifyContent:'center',padding:28},back:{color:'#66747c',fontSize:13,marginBottom:34},eyebrow:{color:'#71808a',fontSize:9,letterSpacing:2.1,marginBottom:10},title:{color:'#092b45',fontSize:30,fontWeight:'500'},meta:{color:'#71808a',fontSize:12,marginTop:6,marginBottom:28},label:{color:'#173246',fontSize:12,fontWeight:'600',marginBottom:7,marginTop:14},input:{borderWidth:1,borderColor:'#dce3e7',paddingHorizontal:14,paddingVertical:13,fontSize:14,color:'#173246'},textarea:{minHeight:120,textAlignVertical:'top'},section:{marginTop:28,borderTopWidth:1,borderTopColor:'#e4e9ec'},sectionTitle:{color:'#092b45',fontSize:17,fontWeight:'600',marginTop:22,marginBottom:8},privacyCard:{borderWidth:1,borderColor:'#cfd9de',backgroundColor:'#f4f7f8',padding:16,flexDirection:'row',alignItems:'center',marginTop:8,marginBottom:4},privacyTitle:{color:'#092b45',fontSize:14,fontWeight:'700'},privacyCopy:{color:'#71808a',fontSize:11,lineHeight:17,marginTop:4},toggleRow:{flexDirection:'row',alignItems:'center',paddingVertical:16,borderBottomWidth:1,borderBottomColor:'#edf0f2'},toggleTitle:{color:'#173246',fontSize:14,fontWeight:'600'},toggleCopy:{color:'#71808a',fontSize:11,lineHeight:16,marginTop:4},securityCard:{marginTop:20,borderWidth:1,borderColor:'#dce3e7',padding:16,flexDirection:'row',alignItems:'center'},securityTitle:{color:'#092b45',fontSize:15,fontWeight:'700'},securityCopy:{color:'#71808a',fontSize:11,lineHeight:17,marginTop:4},chevron:{color:'#71808a',fontSize:24,marginLeft:12},button:{marginTop:28,backgroundColor:'#092b45',paddingVertical:15,alignItems:'center'},buttonText:{color:'#fff',fontWeight:'600'},message:{marginTop:12,color:'#66747c',fontSize:12}})
+const styles=StyleSheet.create({scroll:{flex:1,backgroundColor:'#fff'},page:{paddingHorizontal:22,paddingTop:64,paddingBottom:110},center:{flex:1,alignItems:'center',justifyContent:'center',padding:28},back:{color:'#66747c',fontSize:13,marginBottom:34},eyebrow:{color:'#71808a',fontSize:9,letterSpacing:2.1,marginBottom:10},title:{color:'#092b45',fontSize:30,fontWeight:'500'},meta:{color:'#71808a',fontSize:12,marginTop:6,marginBottom:28},label:{color:'#173246',fontSize:12,fontWeight:'600',marginBottom:7,marginTop:14},input:{borderWidth:1,borderColor:'#dce3e7',paddingHorizontal:14,paddingVertical:13,fontSize:14,color:'#173246'},textarea:{minHeight:120,textAlignVertical:'top'},section:{marginTop:28,borderTopWidth:1,borderTopColor:'#e4e9ec'},sectionTitle:{color:'#092b45',fontSize:17,fontWeight:'600',marginTop:22,marginBottom:8},sectionCopy:{color:'#71808a',fontSize:11,lineHeight:17,marginBottom:12},emptyCert:{borderWidth:1,borderColor:'#e0e5e8',backgroundColor:'#f8fafb',padding:14},emptyCertTitle:{color:'#173246',fontSize:12,fontWeight:'700'},emptyCertCopy:{color:'#71808a',fontSize:10.5,lineHeight:16,marginTop:4},certRow:{borderWidth:1,borderColor:'#dce3e7',padding:13,flexDirection:'row',alignItems:'center',gap:12,marginBottom:8},certTitle:{color:'#173246',fontSize:12,fontWeight:'700'},certOpen:{color:'#71808a',fontSize:10,marginTop:4},removeButton:{borderWidth:1,borderColor:'#e1c4c4',paddingVertical:8,paddingHorizontal:10},removeText:{color:'#9b3d45',fontSize:10,fontWeight:'700'},academyCard:{borderWidth:1,borderColor:'#cfd9de',backgroundColor:'#f4f7f8',padding:15,flexDirection:'row',alignItems:'center',marginTop:10},academyTitle:{color:'#092b45',fontSize:13,fontWeight:'700'},academyCopy:{color:'#71808a',fontSize:10.5,lineHeight:16,marginTop:4},privacyCard:{borderWidth:1,borderColor:'#cfd9de',backgroundColor:'#f4f7f8',padding:16,flexDirection:'row',alignItems:'center',marginTop:8,marginBottom:4},privacyTitle:{color:'#092b45',fontSize:14,fontWeight:'700'},privacyCopy:{color:'#71808a',fontSize:11,lineHeight:17,marginTop:4},toggleRow:{flexDirection:'row',alignItems:'center',paddingVertical:16,borderBottomWidth:1,borderBottomColor:'#edf0f2'},toggleTitle:{color:'#173246',fontSize:14,fontWeight:'600'},toggleCopy:{color:'#71808a',fontSize:11,lineHeight:16,marginTop:4},securityCard:{marginTop:20,borderWidth:1,borderColor:'#dce3e7',padding:16,flexDirection:'row',alignItems:'center'},securityTitle:{color:'#092b45',fontSize:15,fontWeight:'700'},securityCopy:{color:'#71808a',fontSize:11,lineHeight:17,marginTop:4},chevron:{color:'#71808a',fontSize:24,marginLeft:12},button:{marginTop:28,backgroundColor:'#092b45',paddingVertical:15,alignItems:'center'},buttonText:{color:'#fff',fontWeight:'600'},message:{marginTop:12,color:'#66747c',fontSize:12}})
