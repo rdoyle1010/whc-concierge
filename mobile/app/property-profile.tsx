@@ -149,11 +149,11 @@ export default function PropertyProfileScreen() {
   if (loading) return <View style={styles.center}><ActivityIndicator color="#092b45" /></View>
   if (!profile) return <View style={styles.center}><Text style={styles.error}>{error || 'Property profile not found.'}</Text></View>
 
-  return <ScrollView style={styles.scroll} contentContainerStyle={styles.page}>
+  return <ScrollView style={styles.scroll} contentContainerStyle={styles.page} keyboardShouldPersistTaps="handled">
     <Pressable onPress={() => router.back()}><Text style={styles.back}>‹ Back</Text></Pressable>
     <Text style={styles.eyebrow}>PROPERTY PROFILE</Text>
     <Text style={styles.title}>Show Talent what working here is really like.</Text>
-    <Text style={styles.intro}>Keep your property identity, spa operation and real travel information accurate. These details support jobs, Agency and Residency decisions.</Text>
+    <Text style={styles.intro}>Keep your property, spa operation and travel information accurate across Jobs, Agency and Residency.</Text>
     {error ? <Text style={styles.error}>{error}</Text> : null}
 
     <Section title="Property identity">
@@ -165,7 +165,7 @@ export default function PropertyProfileScreen() {
           {profile.logo_url ? <Pressable onPress={removeLogo} disabled={uploadingLogo}><Text style={styles.removeLogoText}>Remove logo</Text></Pressable> : null}
         </View>
       </View>
-      <Text style={styles.help}>Use your official property or hotel brand mark. It will be used wherever WHC displays your Employer identity.</Text>
+      <Text style={styles.help}>Use your official property or hotel brand mark.</Text>
       <Field label="Property name" value={profile.property_name} onChange={v => update('property_name', v)} />
       <Field label="Company / brand" value={profile.company_name} onChange={v => update('company_name', v)} />
       <Field label="Tagline" value={profile.tagline} onChange={v => update('tagline', v)} />
@@ -178,7 +178,7 @@ export default function PropertyProfileScreen() {
     </Section>
 
     <Section title="Property photos">
-      <Text style={styles.help}>Add up to six genuine property and spa images. These appear on your public property profile and help Talent understand the environment.</Text>
+      <Text style={styles.help}>Add up to six genuine property and spa images to help Talent understand the environment.</Text>
       <View style={styles.photoGrid}>{(profile.property_photos || []).map(url => <View key={url} style={styles.photoWrap}><Image source={{ uri: url }} style={styles.photo} /><Pressable onPress={() => removePhoto(url)} style={styles.remove}><Text style={styles.removeText}>Remove</Text></Pressable></View>)}</View>
       <Pressable onPress={addPhoto} disabled={uploading} style={styles.secondary}><Text style={styles.secondaryText}>{uploading ? 'Uploading...' : `Add property photo (${(profile.property_photos || []).length}/6)`}</Text></Pressable>
     </Section>
@@ -220,5 +220,8 @@ function Field({ label, value, onChange, multiline, keyboard }: { label: string;
 function Toggle({ label, value, onChange }: { label: string; value: boolean; onChange: (v: boolean) => void }) { return <View style={styles.toggle}><Text style={styles.toggleLabel}>{label}</Text><Switch value={value} onValueChange={onChange} trackColor={{ false: '#d9e0e4', true: '#92a7b3' }} thumbColor="#fff" /></View> }
 
 const styles = StyleSheet.create({
-  scroll:{flex:1,backgroundColor:'#fff'},page:{paddingHorizontal:22,paddingTop:64,paddingBottom:44},center:{flex:1,alignItems:'center',justifyContent:'center',backgroundColor:'#fff',padding:24},back:{color:'#66747c',fontSize:13,marginBottom:34},eyebrow:{color:'#71808a',fontSize:9,letterSpacing:2.1,marginBottom:10},title:{color:'#092b45',fontSize:31,lineHeight:38,fontWeight:'500'},intro:{color:'#66747c',fontSize:14,lineHeight:21,marginTop:10,marginBottom:24},error:{color:'#9b2c2c',fontSize:12,marginBottom:16},section:{borderWidth:1,borderColor:'#dce3e7',padding:18,marginBottom:14},sectionTitle:{color:'#173246',fontSize:18,fontWeight:'600',marginBottom:14},field:{marginBottom:13,flex:1},label:{color:'#5d6d76',fontSize:10,fontWeight:'600',marginBottom:6},input:{borderWidth:1,borderColor:'#d9e1e5',paddingHorizontal:12,paddingVertical:11,color:'#173246',fontSize:13,backgroundColor:'#fff'},multiline:{minHeight:90,textAlignVertical:'top'},two:{flexDirection:'row',gap:10},help:{color:'#71808a',fontSize:11,lineHeight:17,marginBottom:12},toggle:{flexDirection:'row',justifyContent:'space-between',alignItems:'center',gap:12,paddingVertical:9,borderBottomWidth:1,borderBottomColor:'#eef1f2'},toggleLabel:{color:'#526976',fontSize:12,flex:1},logoRow:{flexDirection:'row',alignItems:'center',gap:14,marginBottom:10},logoFrame:{width:96,height:96,borderWidth:1,borderColor:'#dce3e7',backgroundColor:'#f7f9fa',alignItems:'center',justifyContent:'center',padding:8},logo:{width:'100%',height:'100%'},logoPlaceholder:{color:'#8b979e',fontSize:10},logoActions:{flex:1,gap:10},secondaryCompact:{borderWidth:1,borderColor:'#092b45',paddingVertical:12,alignItems:'center'},removeLogoText:{color:'#8b3c3c',fontSize:11,fontWeight:'600'},photoGrid:{gap:10,marginBottom:12},photoWrap:{borderWidth:1,borderColor:'#e0e6e9',padding:6},photo:{width:'100%',height:180,backgroundColor:'#f2f4f6'},remove:{paddingVertical:9,alignItems:'center'},removeText:{color:'#8b3c3c',fontSize:11,fontWeight:'600'},primary:{backgroundColor:'#092b45',paddingVertical:16,alignItems:'center',marginTop:8},primaryText:{color:'#fff',fontWeight:'700',fontSize:13},secondary:{borderWidth:1,borderColor:'#092b45',paddingVertical:14,alignItems:'center'},secondaryText:{color:'#092b45',fontSize:12,fontWeight:'700'}
+  scroll:{flex:1,backgroundColor:'#fff'},page:{paddingHorizontal:18,paddingTop:18,paddingBottom:36},center:{flex:1,alignItems:'center',justifyContent:'center',backgroundColor:'#fff',padding:24},back:{color:'#66747c',fontSize:14,marginBottom:25},eyebrow:{color:'#71808a',fontSize:8,letterSpacing:2,marginBottom:8},title:{color:'#092b45',fontSize:28,lineHeight:34,fontWeight:'500'},intro:{color:'#66747c',fontSize:13,lineHeight:20,marginTop:8,marginBottom:20},error:{color:'#9b2c2c',fontSize:11,marginBottom:14},
+  section:{borderWidth:1,borderColor:'#dce3e7',padding:15,marginBottom:12},sectionTitle:{color:'#173246',fontSize:17,fontWeight:'600',marginBottom:12},field:{marginBottom:11,flex:1},label:{color:'#5d6d76',fontSize:10,fontWeight:'600',marginBottom:5},input:{borderWidth:1,borderColor:'#d9e1e5',paddingHorizontal:11,paddingVertical:10,color:'#173246',fontSize:12,backgroundColor:'#fff'},multiline:{minHeight:76,textAlignVertical:'top'},two:{flexDirection:'row',gap:8},help:{color:'#71808a',fontSize:10,lineHeight:16,marginBottom:10},
+  toggle:{flexDirection:'row',justifyContent:'space-between',alignItems:'center',gap:10,paddingVertical:8,borderBottomWidth:1,borderBottomColor:'#eef1f2'},toggleLabel:{color:'#526976',fontSize:11,flex:1},logoRow:{flexDirection:'row',alignItems:'center',gap:12,marginBottom:9},logoFrame:{width:78,height:78,borderWidth:1,borderColor:'#dce3e7',backgroundColor:'#f7f9fa',alignItems:'center',justifyContent:'center',padding:7},logo:{width:'100%',height:'100%'},logoPlaceholder:{color:'#8b979e',fontSize:9},logoActions:{flex:1,gap:8},secondaryCompact:{borderWidth:1,borderColor:'#092b45',paddingVertical:10,alignItems:'center'},removeLogoText:{color:'#8b3c3c',fontSize:10,fontWeight:'600'},
+  photoGrid:{flexDirection:'row',flexWrap:'wrap',gap:8,marginBottom:11},photoWrap:{width:'48%',borderWidth:1,borderColor:'#e0e6e9',padding:5},photo:{width:'100%',height:105,backgroundColor:'#f2f4f6'},remove:{paddingVertical:7,alignItems:'center'},removeText:{color:'#8b3c3c',fontSize:10,fontWeight:'600'},primary:{backgroundColor:'#092b45',paddingVertical:15,alignItems:'center',marginTop:5},primaryText:{color:'#fff',fontWeight:'700',fontSize:12},secondary:{borderWidth:1,borderColor:'#092b45',paddingVertical:12,alignItems:'center'},secondaryText:{color:'#092b45',fontSize:11,fontWeight:'700'}
 })
