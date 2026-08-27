@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useState } from 'react'
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
-import { router } from 'expo-router'
+import { router, useFocusEffect } from 'expo-router'
 import { supabase } from '../src/lib/supabase'
 
 type Role = 'talent' | 'employer' | 'admin'
@@ -46,7 +46,7 @@ export default function HomeScreen() {
   const [unreadNotifications, setUnreadNotifications] = useState(0)
   const [agencyAttention, setAgencyAttention] = useState(0)
 
-  useEffect(() => { load() }, [])
+  useFocusEffect(useCallback(() => { load() }, []))
 
   async function load() {
     const { data: { user } } = await supabase.auth.getUser()
@@ -109,12 +109,12 @@ export default function HomeScreen() {
       <View style={styles.attentionHeader}><Text style={styles.attentionTitle}>Needs your attention</Text><Text style={styles.attentionTotal}>{totalAttention}</Text></View>
       {unreadMessages>0?<Pressable onPress={()=>router.push('/messages')} style={styles.attentionRow}><Text style={styles.attentionText}>New messages</Text><Text style={styles.attentionCount}>{unreadMessages}</Text></Pressable>:null}
       {agencyAttention>0?<Pressable onPress={()=>router.push('/agency')} style={styles.attentionRow}><Text style={styles.attentionText}>{role==='employer'?'Agency booking updates':'Agency shift updates'}</Text><Text style={styles.attentionCount}>{agencyAttention}</Text></Pressable>:null}
-      {unreadNotifications>0?<Pressable onPress={()=>router.push('/notifications')} style={styles.attentionRow}><Text style={styles.attentionText}>Other notifications</Text><Text style={styles.attentionCount}>{unreadNotifications}</Text></Pressable>:null}
+      {unreadNotifications>0?<Pressable onPress={()=>router.push('/notifications')} style={styles.attentionRow}><Text style={styles.attentionText}>Unread updates</Text><Text style={styles.attentionCount}>{unreadNotifications}</Text></Pressable>:null}
     </View>:null}
 
     <Pressable onPress={() => router.push('/reputation')} style={styles.ratingCard}>
       <View><Text style={styles.ratingLabel}>{role === 'employer' ? 'PROPERTY REPUTATION' : 'YOUR REPUTATION'}</Text><Text style={styles.ratingValue}>{reviewCount > 0 ? `${reviewScore.toFixed(1)} ★` : 'New'}</Text></View>
-      <View style={styles.ratingRight}><Text style={styles.ratingCount}>{reviewCount} verified review{reviewCount === 1 ? '' : 's'}</Text><Text style={styles.ratingOpen}>View reputation →</Text></View>
+      <View style={styles.ratingRight}><Text style={styles.ratingCount}>{reviewCount} verified review{reviewCount === 1 ? '' : 's'}</Text><Text style={styles.ratingOpen}>View full reputation →</Text></View>
     </Pressable>
 
     {role === 'talent' && profileCompletion < 100 ? <Pressable onPress={() => router.push('/profile')} style={styles.progressCard}><Text style={styles.progressTitle}>Profile {profileCompletion}% complete</Text><Text style={styles.progressCopy}>Improve your profile to give matching and employers stronger evidence.</Text></Pressable> : null}
