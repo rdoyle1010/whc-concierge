@@ -9,13 +9,6 @@
     "plugins": [
       "expo-router",
       [
-        "expo-notifications",
-        {
-          "defaultChannel": "platform-updates",
-          "enableBackgroundRemoteNotifications": false
-        }
-      ],
-      [
         "expo-image-picker",
         {
           "photosPermission": "Wellness House uses your photo library only when you choose property images to add to your employer profile.",
@@ -27,7 +20,6 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.wellnesshousecollective.talent",
-      "associatedDomains": ["applinks:talent.wellnesshousecollective.co.uk"],
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       }
