@@ -3,11 +3,11 @@ import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleShee
 import { router, useLocalSearchParams } from 'expo-router'
 import { supabase } from '../src/lib/supabase'
 
-type Role = 'talent' | 'employer' | 'admin'
+type Role = 'talent' | 'employer'
 
 export default function LoginScreen() {
   const params = useLocalSearchParams<{ role?: string }>()
-  const initialRole: Role = params.role === 'employer' ? 'employer' : params.role === 'admin' ? 'admin' : 'talent'
+  const initialRole: Role = params.role === 'employer' ? 'employer' : 'talent'
   const [role, setRole] = useState<Role>(initialRole)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -28,12 +28,14 @@ export default function LoginScreen() {
     }
 
     const { data: profile } = await supabase.from('profiles').select('role').eq('id', data.user.id).maybeSingle()
-    const actualRole: Role = profile?.role === 'employer' ? 'employer' : profile?.role === 'admin' ? 'admin' : 'talent'
+    const actualRole = profile?.role === 'employer' ? 'employer' : profile?.role === 'admin' ? 'admin' : 'talent'
 
-    if ((role === 'admin' && actualRole !== 'admin') || (role === 'employer' && actualRole !== 'employer') || (role === 'talent' && actualRole !== 'talent')) {
+    // Admin is intentionally not advertised in the public app login. Valid admin
+    // credentials are still detected securely and routed through MFA below.
+    if (actualRole !== 'admin' && actualRole !== role) {
       await supabase.auth.signOut()
       setLoading(false)
-      const correct = actualRole === 'admin' ? 'Admin' : actualRole === 'employer' ? 'Employer' : 'Talent'
+      const correct = actualRole === 'employer' ? 'Employer' : 'Talent'
       Alert.alert('Wrong sign-in area', `This is a ${correct} account. Please use the ${correct} sign in.`)
       return
     }
@@ -66,18 +68,18 @@ export default function LoginScreen() {
     <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : 'height'} keyboardVerticalOffset={8}>
       <ScrollView style={styles.scroll} contentContainerStyle={styles.page} keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive" automaticallyAdjustKeyboardInsets>
         <Pressable onPress={() => router.back()}><Text style={styles.back}>‹ Back</Text></Pressable>
-        <View style={styles.header}><Text style={styles.wordmark}>WELLNESS HOUSE</Text><Text style={styles.sub}>{role === 'admin' ? 'ADMIN' : role === 'employer' ? 'EMPLOYER' : 'TALENT'}</Text></View>
+        <View style={styles.header}><Text style={styles.wordmark}>WELLNESS HOUSE</Text><Text style={styles.sub}>{role === 'employer' ? 'EMPLOYER' : 'TALENT'}</Text></View>
 
-        <View style={styles.switcher}>{(['talent','employer','admin'] as Role[]).map(item => <Pressable key={item} onPress={() => setRole(item)} style={[styles.switch, role === item && styles.switchActive]}><Text style={[styles.switchText, role === item && styles.switchTextActive]}>{item === 'admin' ? 'Admin' : item === 'employer' ? 'Employer' : 'Talent'}</Text></Pressable>)}</View>
+        <View style={styles.switcher}>{(['talent','employer'] as Role[]).map(item => <Pressable key={item} onPress={() => setRole(item)} style={[styles.switch, role === item && styles.switchActive]}><Text style={[styles.switchText, role === item && styles.switchTextActive]}>{item === 'employer' ? 'Employer' : 'Talent'}</Text></Pressable>)}</View>
 
         <View style={styles.card}>
-          <Text style={styles.eyebrow}>{role === 'admin' ? 'SECURE PLATFORM ACCESS' : 'WELCOME BACK'}</Text>
-          <Text style={styles.title}>{role === 'admin' ? 'Admin sign in.' : 'Your Wellness House account.'}</Text>
-          <Text style={styles.intro}>{role === 'admin' ? 'Administrator accounts require authenticator protection before sensitive platform access.' : 'Use the same account as the Wellness House website. If Authenticator is enabled, you will be asked for the current six-digit code next.'}</Text>
+          <Text style={styles.eyebrow}>WELCOME BACK</Text>
+          <Text style={styles.title}>Your Wellness House account.</Text>
+          <Text style={styles.intro}>Use the same account as the Wellness House website. Accounts protected by Authenticator will be asked for the current six-digit code before access.</Text>
           <TextInput value={email} onChangeText={setEmail} autoCapitalize="none" autoCorrect={false} keyboardType="email-address" returnKeyType="next" onSubmitEditing={() => passwordRef.current?.focus()} placeholder="Email address" placeholderTextColor="#9aa5ac" style={styles.input}/>
           <TextInput ref={passwordRef} value={password} onChangeText={setPassword} secureTextEntry returnKeyType="go" onSubmitEditing={signIn} placeholder="Password" placeholderTextColor="#9aa5ac" style={styles.input}/>
           <Pressable onPress={signIn} disabled={loading} style={({ pressed }) => [styles.button, pressed && { opacity: 0.88 }, loading && { opacity: 0.6 }]}><Text style={styles.buttonText}>{loading ? 'Checking security…' : 'Sign in securely'}</Text></Pressable>
-          <Text style={styles.keyboardNote}>Your password is only the first step when Authenticator protection is enabled.</Text>
+          <Text style={styles.keyboardNote}>Admin access is not advertised in the public app. Authorised administrator accounts are detected automatically and require Authenticator protection.</Text>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
