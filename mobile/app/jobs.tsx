@@ -1,174 +1,41 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { ActivityIndicator, Animated, Dimensions, PanResponder, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
+import { ActivityIndicator, Animated, Dimensions, Image, PanResponder, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
 import { router } from 'expo-router'
 import { supabase } from '../src/lib/supabase'
 import { calculateMatchScore } from '../src/lib/matching'
 
-type AccountRole = 'talent' | 'employer'
-type Job = { id:string; job_title:string; location:string|null; job_type:string|null; salary_display_text:string|null; tier:string|null; is_featured:boolean|null; status:string|null; employer_profiles?:{company_name?:string|null;property_name?:string|null}|{company_name?:string|null;property_name?:string|null}[]|null; [key:string]:any }
+type AccountRole='talent'|'employer'
+type Job={id:string;job_title:string;job_image_url?:string|null;location:string|null;job_type:string|null;salary_display_text:string|null;tier:string|null;is_featured:boolean|null;status:string|null;employer_profiles?:any;[key:string]:any}
+const SCREEN_WIDTH=Dimensions.get('window').width
+const SWIPE_THRESHOLD=Math.min(105,SCREEN_WIDTH*.25)
 
-const SCREEN_WIDTH = Dimensions.get('window').width
-const SWIPE_THRESHOLD = Math.min(105, SCREEN_WIDTH * 0.25)
-
-export default function JobsScreen() {
-  const [role,setRole]=useState<AccountRole>('talent')
-  const [jobs,setJobs]=useState<Job[]>([])
-  const [candidate,setCandidate]=useState<any>(null)
-  const [saved,setSaved]=useState<Set<string>>(new Set())
-  const [loading,setLoading]=useState(true)
-  const [error,setError]=useState('')
-  const [cardIndex,setCardIndex]=useState(0)
-  const [lastAction,setLastAction]=useState('')
-  const position=useRef(new Animated.ValueXY()).current
-
-  useEffect(()=>{load()},[])
-
-  async function load(){
-    const {data:{user}}=await supabase.auth.getUser()
-    if(!user){router.replace('/login');return}
-    const {data:account}=await supabase.from('profiles').select('role').eq('id',user.id).maybeSingle()
-    const resolved:AccountRole=account?.role==='employer'?'employer':'talent'
-    setRole(resolved)
-
-    if(resolved==='employer'){
-      const {data:employer}=await supabase.from('employer_profiles').select('id').eq('user_id',user.id).maybeSingle()
-      if(!employer){setError('Employer profile not found.');setLoading(false);return}
-      const {data,error:queryError}=await supabase.from('job_listings').select('*,employer_profiles(company_name,property_name)').eq('employer_id',employer.id).order('posted_date',{ascending:false})
-      if(queryError)setError(queryError.message)
-      setJobs((data||[]) as Job[])
-    }else{
-      const {data:candidateRow}=await supabase.from('candidate_profiles').select('*').eq('user_id',user.id).maybeSingle()
-      setCandidate(candidateRow||null)
-      if(candidateRow?.id){
-        const {data:savedRows}=await supabase.from('saved_jobs').select('job_id').eq('candidate_id',candidateRow.id)
-        setSaved(new Set((savedRows||[]).map((row:any)=>row.job_id)))
-      }
-      const now=new Date().toISOString()
-      const {data,error:queryError}=await supabase.from('job_listings').select('*,employer_profiles(company_name,property_name)').eq('is_live',true).or(`expires_at.is.null,expires_at.gt.${now}`).order('is_featured',{ascending:false}).order('posted_date',{ascending:false})
-      if(queryError)setError(queryError.message)
-      setJobs((data||[]) as Job[])
-    }
-    setLoading(false)
+export default function JobsScreen(){
+ const [role,setRole]=useState<AccountRole>('talent');const [jobs,setJobs]=useState<Job[]>([]);const [candidate,setCandidate]=useState<any>(null);const [saved,setSaved]=useState<Set<string>>(new Set());const [loading,setLoading]=useState(true);const [error,setError]=useState('');const [cardIndex,setCardIndex]=useState(0);const [lastAction,setLastAction]=useState('');const position=useRef(new Animated.ValueXY()).current
+ useEffect(()=>{load()},[])
+ async function load(){
+  const {data:{user}}=await supabase.auth.getUser();if(!user){router.replace('/login');return}
+  const {data:account}=await supabase.from('profiles').select('role').eq('id',user.id).maybeSingle();const resolved:AccountRole=account?.role==='employer'?'employer':'talent';setRole(resolved)
+  const employerSelect='company_name,property_name,property_photos,review_score,review_count,star_rating'
+  if(resolved==='employer'){
+   const {data:employer}=await supabase.from('employer_profiles').select('id').eq('user_id',user.id).maybeSingle();if(!employer){setError('Employer profile not found.');setLoading(false);return}
+   const {data,error:queryError}=await supabase.from('job_listings').select(`*,employer_profiles(${employerSelect})`).eq('employer_id',employer.id).order('posted_date',{ascending:false});if(queryError)setError(queryError.message);setJobs((data||[]) as Job[])
+  }else{
+   const {data:candidateRow}=await supabase.from('candidate_profiles').select('*').eq('user_id',user.id).maybeSingle();setCandidate(candidateRow||null)
+   if(candidateRow?.id){const {data:savedRows}=await supabase.from('saved_jobs').select('job_id').eq('candidate_id',candidateRow.id);setSaved(new Set((savedRows||[]).map((row:any)=>row.job_id)))}
+   const now=new Date().toISOString();const {data,error:queryError}=await supabase.from('job_listings').select(`*,employer_profiles(${employerSelect})`).eq('is_live',true).or(`expires_at.is.null,expires_at.gt.${now}`).order('is_featured',{ascending:false}).order('posted_date',{ascending:false});if(queryError)setError(queryError.message);setJobs((data||[]) as Job[])
   }
-
-  async function saveJob(jobId:string){
-    if(!candidate?.id||saved.has(jobId))return
-    const {error:saveError}=await supabase.from('saved_jobs').insert({candidate_id:candidate.id,job_id:jobId})
-    if(!saveError)setSaved(prev=>new Set(prev).add(jobId))
-  }
-
-  async function toggleSave(jobId:string){
-    if(!candidate?.id)return
-    if(saved.has(jobId)){
-      await supabase.from('saved_jobs').delete().eq('candidate_id',candidate.id).eq('job_id',jobId)
-      setSaved(prev=>{const next=new Set(prev);next.delete(jobId);return next})
-    }else{
-      await saveJob(jobId)
-    }
-  }
-
-  const rankedJobs=useMemo(()=>{
-    if(role!=='talent'||!candidate)return jobs.map(job=>({job,match:null as any}))
-    return jobs.map(job=>({job,match:calculateMatchScore(candidate,job)})).sort((a,b)=>Number(Boolean(b.job.is_featured))-Number(Boolean(a.job.is_featured))||Number(b.match?.score||0)-Number(a.match?.score||0))
-  },[jobs,candidate,role])
-
-  const current=rankedJobs[cardIndex]
-  const next=rankedJobs[cardIndex+1]
-
-  function resetPosition(){Animated.spring(position,{toValue:{x:0,y:0},useNativeDriver:false,friction:5}).start()}
-
-  async function completeSwipe(direction:'left'|'right'){
-    if(!current)return
-    if(direction==='right'){
-      await saveJob(current.job.id)
-      setLastAction('Saved to your roles')
-    }else{
-      setLastAction('Passed for now')
-    }
-    setCardIndex(index=>index+1)
-    position.setValue({x:0,y:0})
-  }
-
-  function triggerSwipe(direction:'left'|'right'){
-    Animated.timing(position,{toValue:{x:direction==='right'?SCREEN_WIDTH: -SCREEN_WIDTH,y:0},duration:190,useNativeDriver:false}).start(()=>{completeSwipe(direction).catch(()=>{})})
-  }
-
-  const panResponder=useMemo(()=>PanResponder.create({
-    onStartShouldSetPanResponder:()=>false,
-    onMoveShouldSetPanResponder:(_,gesture)=>Math.abs(gesture.dx)>6,
-    onPanResponderMove:Animated.event([null,{dx:position.x,dy:position.y}],{useNativeDriver:false}),
-    onPanResponderRelease:(_,gesture)=>{
-      if(gesture.dx>SWIPE_THRESHOLD)triggerSwipe('right')
-      else if(gesture.dx< -SWIPE_THRESHOLD)triggerSwipe('left')
-      else resetPosition()
-    },
-  }),[cardIndex,current?.job.id,candidate?.id])
-
-  const rotate=position.x.interpolate({inputRange:[-SCREEN_WIDTH/2,0,SCREEN_WIDTH/2],outputRange:['-8deg','0deg','8deg'],extrapolate:'clamp'})
-  const saveOpacity=position.x.interpolate({inputRange:[0,SWIPE_THRESHOLD],outputRange:[0,1],extrapolate:'clamp'})
-  const passOpacity=position.x.interpolate({inputRange:[-SWIPE_THRESHOLD,0],outputRange:[1,0],extrapolate:'clamp'})
-
-  function renderJobContent(job:Job,match:any){
-    const employer=Array.isArray(job.employer_profiles)?job.employer_profiles[0]:job.employer_profiles
-    const company=employer?.property_name||employer?.company_name||'Wellness employer'
-    return <>
-      <View style={styles.row}><Text style={styles.company}>{company}</Text><View style={styles.badges}>{job.is_featured?<Text style={styles.featured}>FEATURED</Text>:null}{match?<Text style={styles.match}>{match.score}% MATCH</Text>:null}</View></View>
-      <Text style={styles.jobTitle}>{job.job_title}</Text>
-      <Text style={styles.meta}>{[job.location,job.job_type,job.salary_display_text].filter(Boolean).join(' · ')||'Details available inside'}</Text>
-      {match?.matchExplanation?<Text style={styles.explanation}>{match.matchExplanation}</Text>:null}
-      {role==='employer'?<Text style={styles.status}>{job.status||'draft'}</Text>:null}
-      <Text style={styles.view}>View full role →</Text>
-    </>
-  }
-
-  if(role==='talent'){
-    return <View style={styles.swipeScreen}>
-      <ScrollView style={styles.scroll} contentContainerStyle={styles.swipePage} scrollEnabled={!current}>
-        <Pressable onPress={()=>router.back()}><Text style={styles.back}>‹ Back</Text></Pressable>
-        <Text style={styles.eyebrow}>OPPORTUNITIES</Text>
-        <Text style={styles.title}>Your matched roles</Text>
-        <Text style={styles.intro}>Swipe right to save a role. Swipe left to pass. Tap the card to read the full job before deciding.</Text>
-        {loading?<ActivityIndicator color="#092b45" style={{marginTop:26}}/>:null}
-        {error?<Text style={styles.error}>{error}</Text>:null}
-        {!loading&&!error&&rankedJobs.length===0?<View style={styles.empty}><Text style={styles.emptyTitle}>Nothing to show yet.</Text><Text style={styles.emptyCopy}>New live opportunities will appear here as employers publish them.</Text></View>:null}
-        {!loading&&!error&&rankedJobs.length>0&&current?<View style={styles.deck}>
-          {next?<View style={[styles.swipeCard,styles.nextCard]}>{renderJobContent(next.job,next.match)}</View>:null}
-          <Animated.View {...panResponder.panHandlers} style={[styles.swipeCard,styles.topCard,{transform:[{translateX:position.x},{translateY:position.y},{rotate}]}]}>
-            <Animated.View pointerEvents="none" style={[styles.decisionBadge,styles.passBadge,{opacity:passOpacity}]}><Text style={styles.passText}>PASS</Text></Animated.View>
-            <Animated.View pointerEvents="none" style={[styles.decisionBadge,styles.saveBadge,{opacity:saveOpacity}]}><Text style={styles.saveText}>SAVE</Text></Animated.View>
-            <Pressable onPress={()=>router.push({pathname:'/job/[id]',params:{id:current.job.id}})} style={styles.cardPress}>{renderJobContent(current.job,current.match)}</Pressable>
-          </Animated.View>
-        </View>:null}
-        {!loading&&!error&&rankedJobs.length>0&&!current?<View style={styles.empty}><Text style={styles.emptyTitle}>You are all caught up.</Text><Text style={styles.emptyCopy}>You have reviewed every live role currently matched to you. Saved roles remain in your account.</Text><Pressable onPress={()=>setCardIndex(0)} style={styles.restart}><Text style={styles.restartText}>Review roles again</Text></Pressable></View>:null}
-        {current?<>
-          <View style={styles.swipeActions}>
-            <Pressable onPress={()=>triggerSwipe('left')} style={[styles.circleButton,styles.passCircle]}><Text style={styles.circleSymbol}>×</Text><Text style={styles.circleLabel}>Pass</Text></Pressable>
-            <Pressable onPress={()=>router.push({pathname:'/job/[id]',params:{id:current.job.id}})} style={[styles.circleButton,styles.viewCircle]}><Text style={styles.infoSymbol}>i</Text><Text style={styles.circleLabel}>Details</Text></Pressable>
-            <Pressable onPress={()=>triggerSwipe('right')} style={[styles.circleButton,styles.saveCircle]}><Text style={styles.heartSymbol}>♡</Text><Text style={styles.circleLabel}>Save</Text></Pressable>
-          </View>
-          <Text style={styles.progress}>{Math.min(cardIndex+1,rankedJobs.length)} of {rankedJobs.length}{lastAction?` · ${lastAction}`:''}</Text>
-        </>:null}
-        <Pressable onPress={()=>router.push('/saved')} style={styles.savedLink}><Text style={styles.savedLinkText}>View saved roles ({saved.size}) →</Text></Pressable>
-      </ScrollView>
-    </View>
-  }
-
-  return <ScrollView style={styles.scroll} contentContainerStyle={styles.page}>
-    <Pressable onPress={()=>router.back()}><Text style={styles.back}>‹ Back</Text></Pressable>
-    <Text style={styles.eyebrow}>RECRUITMENT</Text>
-    <Text style={styles.title}>Your jobs</Text>
-    <Text style={styles.intro}>Create, edit, publish and close roles from the same live recruitment workspace.</Text>
-    <Pressable onPress={()=>router.push({pathname:'/employer-job/[id]',params:{id:'new'}})} style={styles.postButton}><Text style={styles.postButtonText}>+ Post a role</Text></Pressable>
-    {loading?<ActivityIndicator color="#092b45" style={{marginTop:26}}/>:null}
-    {error?<Text style={styles.error}>{error}</Text>:null}
-    {!loading&&!error&&rankedJobs.length===0?<View style={styles.empty}><Text style={styles.emptyTitle}>Nothing to show yet.</Text><Text style={styles.emptyCopy}>Create your first role or publish an existing draft.</Text></View>:null}
-    <View style={styles.list}>{rankedJobs.map(({job,match})=><View key={job.id} style={styles.card}>
-      <Pressable onPress={()=>router.push({pathname:'/job/[id]',params:{id:job.id}})}>{renderJobContent(job,match)}</Pressable>
-      <Pressable onPress={()=>router.push({pathname:'/employer-job/[id]',params:{id:job.id}})} style={styles.action}><Text style={styles.actionText}>Manage role →</Text></Pressable>
-    </View>)}</View>
-  </ScrollView>
+  setLoading(false)
+ }
+ async function saveJob(jobId:string){if(!candidate?.id||saved.has(jobId))return;const {error:saveError}=await supabase.from('saved_jobs').insert({candidate_id:candidate.id,job_id:jobId});if(!saveError)setSaved(prev=>new Set(prev).add(jobId))}
+ const rankedJobs=useMemo(()=>{if(role!=='talent'||!candidate)return jobs.map(job=>({job,match:null as any}));return jobs.map(job=>({job,match:calculateMatchScore(candidate,job)})).sort((a,b)=>Number(Boolean(b.job.is_featured))-Number(Boolean(a.job.is_featured))||Number(b.match?.score||0)-Number(a.match?.score||0))},[jobs,candidate,role])
+ const current=rankedJobs[cardIndex];const next=rankedJobs[cardIndex+1]
+ function resetPosition(){Animated.spring(position,{toValue:{x:0,y:0},useNativeDriver:false,friction:5}).start()}
+ async function completeSwipe(direction:'left'|'right'){if(!current)return;if(direction==='right'){await saveJob(current.job.id);setLastAction('Saved to your roles')}else setLastAction('Passed for now');setCardIndex(i=>i+1);position.setValue({x:0,y:0})}
+ function triggerSwipe(direction:'left'|'right'){Animated.timing(position,{toValue:{x:direction==='right'?SCREEN_WIDTH:-SCREEN_WIDTH,y:0},duration:190,useNativeDriver:false}).start(()=>{completeSwipe(direction).catch(()=>{})})}
+ const panResponder=useMemo(()=>PanResponder.create({onStartShouldSetPanResponder:()=>false,onMoveShouldSetPanResponder:(_,g)=>Math.abs(g.dx)>6,onPanResponderMove:Animated.event([null,{dx:position.x,dy:position.y}],{useNativeDriver:false}),onPanResponderRelease:(_,g)=>{if(g.dx>SWIPE_THRESHOLD)triggerSwipe('right');else if(g.dx< -SWIPE_THRESHOLD)triggerSwipe('left');else resetPosition()}}),[cardIndex,current?.job.id,candidate?.id])
+ const rotate=position.x.interpolate({inputRange:[-SCREEN_WIDTH/2,0,SCREEN_WIDTH/2],outputRange:['-8deg','0deg','8deg'],extrapolate:'clamp'});const saveOpacity=position.x.interpolate({inputRange:[0,SWIPE_THRESHOLD],outputRange:[0,1],extrapolate:'clamp'});const passOpacity=position.x.interpolate({inputRange:[-SWIPE_THRESHOLD,0],outputRange:[1,0],extrapolate:'clamp'})
+ function renderJobContent(job:Job,match:any){const employer=Array.isArray(job.employer_profiles)?job.employer_profiles[0]:job.employer_profiles;const company=employer?.property_name||employer?.company_name||'Wellness employer';const photos=Array.isArray(employer?.property_photos)?employer.property_photos:[];const image=job.job_image_url||photos[0]||null;const rating=Number(employer?.review_score||employer?.star_rating||0);const reviews=Number(employer?.review_count||0);return <>{image?<Image source={{uri:image}} style={styles.jobImage}/>:<View style={styles.imagePlaceholder}><Text style={styles.placeholderText}>WELLNESS HOUSE</Text></View>}<View style={styles.contentPad}><View style={styles.row}><Text style={styles.company}>{company}</Text><View style={styles.badges}>{job.is_featured?<Text style={styles.featured}>FEATURED</Text>:null}{match?<Text style={styles.match}>{match.score}% MATCH</Text>:null}</View></View><Text style={styles.jobTitle}>{job.job_title}</Text><Text style={styles.meta}>{[job.location,job.job_type,job.salary_display_text].filter(Boolean).join(' · ')||'Details available inside'}</Text>{rating>0?<Text style={styles.rating}>{rating.toFixed(1)} ★ {reviews?`· ${reviews} review${reviews===1?'':'s'}`:''}</Text>:null}{match?.matchExplanation?<Text style={styles.explanation}>{match.matchExplanation}</Text>:null}{role==='employer'?<Text style={styles.status}>{job.status||'draft'}</Text>:null}<Text style={styles.view}>View full role →</Text></View></>}
+ if(role==='talent')return <View style={styles.swipeScreen}><ScrollView style={styles.scroll} contentContainerStyle={styles.swipePage} scrollEnabled={!current}><Pressable onPress={()=>router.back()}><Text style={styles.back}>‹ Back</Text></Pressable><Text style={styles.eyebrow}>OPPORTUNITIES</Text><Text style={styles.title}>Your matched roles</Text><Text style={styles.intro}>Swipe right to save. Swipe left to pass. Tap the card for the full job, hotel information, photos and AI application assistant.</Text>{loading?<ActivityIndicator color="#092b45" style={{marginTop:26}}/>:null}{error?<Text style={styles.error}>{error}</Text>:null}{!loading&&!error&&rankedJobs.length===0?<View style={styles.empty}><Text style={styles.emptyTitle}>Nothing to show yet.</Text><Text style={styles.emptyCopy}>New live opportunities will appear here.</Text></View>:null}{!loading&&!error&&current?<View style={styles.deck}>{next?<View style={[styles.swipeCard,styles.nextCard]}>{renderJobContent(next.job,next.match)}</View>:null}<Animated.View {...panResponder.panHandlers} style={[styles.swipeCard,styles.topCard,{transform:[{translateX:position.x},{translateY:position.y},{rotate}]}]}><Animated.View pointerEvents="none" style={[styles.decisionBadge,styles.passBadge,{opacity:passOpacity}]}><Text style={styles.passText}>PASS</Text></Animated.View><Animated.View pointerEvents="none" style={[styles.decisionBadge,styles.saveBadge,{opacity:saveOpacity}]}><Text style={styles.saveText}>SAVE</Text></Animated.View><Pressable onPress={()=>router.push({pathname:'/job/[id]',params:{id:current.job.id}})} style={styles.cardPress}>{renderJobContent(current.job,current.match)}</Pressable></Animated.View></View>:null}{!loading&&!error&&rankedJobs.length>0&&!current?<View style={styles.empty}><Text style={styles.emptyTitle}>You are all caught up.</Text><Text style={styles.emptyCopy}>You have reviewed every live role currently matched to you.</Text><Pressable onPress={()=>setCardIndex(0)} style={styles.restart}><Text style={styles.restartText}>Review roles again</Text></Pressable></View>:null}{current?<><View style={styles.swipeActions}><Pressable onPress={()=>triggerSwipe('left')} style={[styles.circleButton,styles.passCircle]}><Text style={styles.circleSymbol}>×</Text><Text style={styles.circleLabel}>Pass</Text></Pressable><Pressable onPress={()=>router.push({pathname:'/job/[id]',params:{id:current.job.id}})} style={[styles.circleButton,styles.viewCircle]}><Text style={styles.infoSymbol}>i</Text><Text style={styles.circleLabel}>Details</Text></Pressable><Pressable onPress={()=>triggerSwipe('right')} style={[styles.circleButton,styles.saveCircle]}><Text style={styles.heartSymbol}>♡</Text><Text style={styles.circleLabel}>Save</Text></Pressable></View><Text style={styles.progress}>{Math.min(cardIndex+1,rankedJobs.length)} of {rankedJobs.length}{lastAction?` · ${lastAction}`:''}</Text></>:null}<Pressable onPress={()=>router.push('/saved')} style={styles.savedLink}><Text style={styles.savedLinkText}>View saved roles ({saved.size}) →</Text></Pressable></ScrollView></View>
+ return <ScrollView style={styles.scroll} contentContainerStyle={styles.page}><Pressable onPress={()=>router.back()}><Text style={styles.back}>‹ Back</Text></Pressable><Text style={styles.eyebrow}>RECRUITMENT</Text><Text style={styles.title}>Your jobs</Text><Text style={styles.intro}>Create, edit, publish and close roles from the same live recruitment workspace.</Text><Pressable onPress={()=>router.push({pathname:'/employer-job/[id]',params:{id:'new'}})} style={styles.postButton}><Text style={styles.postButtonText}>+ Post a role</Text></Pressable>{loading?<ActivityIndicator color="#092b45"/>:null}{error?<Text style={styles.error}>{error}</Text>:null}<View style={styles.list}>{rankedJobs.map(({job,match})=><View key={job.id} style={styles.card}><Pressable onPress={()=>router.push({pathname:'/job/[id]',params:{id:job.id}})}>{renderJobContent(job,match)}</Pressable><Pressable onPress={()=>router.push({pathname:'/employer-job/[id]',params:{id:job.id}})} style={styles.action}><Text style={styles.actionText}>Manage role →</Text></Pressable></View>)}</View></ScrollView>
 }
-
-const styles=StyleSheet.create({
-  scroll:{flex:1,backgroundColor:'#fff'},page:{paddingHorizontal:22,paddingTop:18,paddingBottom:28},swipeScreen:{flex:1,backgroundColor:'#f7f8f8'},swipePage:{paddingHorizontal:20,paddingTop:18,paddingBottom:110,minHeight:'100%'},back:{color:'#66747c',fontSize:14,marginBottom:28},eyebrow:{color:'#71808a',fontSize:9,letterSpacing:2.1,marginBottom:9},title:{color:'#092b45',fontSize:30,lineHeight:36,fontWeight:'500'},intro:{color:'#66747c',fontSize:14,lineHeight:21,marginTop:9,marginBottom:18},postButton:{backgroundColor:'#092b45',paddingVertical:15,alignItems:'center',marginBottom:20},postButtonText:{color:'#fff',fontSize:13,fontWeight:'700'},list:{gap:12},card:{borderWidth:1,borderColor:'#dce3e7',padding:18,backgroundColor:'#fff'},row:{flexDirection:'row',justifyContent:'space-between',gap:10},company:{color:'#71808a',fontSize:11,flex:1,textTransform:'uppercase',letterSpacing:.6},badges:{flexDirection:'row',gap:5},featured:{color:'#092b45',backgroundColor:'#edf2f4',paddingHorizontal:7,paddingVertical:4,fontSize:8},match:{color:'#092b45',borderWidth:1,borderColor:'#cdd8dd',paddingHorizontal:7,paddingVertical:4,fontSize:8,fontWeight:'700'},jobTitle:{color:'#173246',fontSize:22,lineHeight:28,fontWeight:'600',marginTop:12},meta:{color:'#66747c',fontSize:12,lineHeight:18,marginTop:8},explanation:{color:'#526976',fontSize:12,lineHeight:19,marginTop:14},status:{color:'#71808a',fontSize:10,textTransform:'uppercase',letterSpacing:1,marginTop:9},view:{color:'#092b45',fontSize:12,fontWeight:'700',marginTop:18},action:{marginTop:13,borderTopWidth:1,borderTopColor:'#eef1f2',paddingTop:12},actionText:{color:'#092b45',fontSize:11,fontWeight:'700'},empty:{backgroundColor:'#fff',borderWidth:1,borderColor:'#dce3e7',padding:22,marginTop:8},emptyTitle:{color:'#173246',fontSize:16,fontWeight:'600'},emptyCopy:{color:'#71808a',fontSize:12,lineHeight:18,marginTop:6},error:{color:'#9b2c2c',fontSize:12,marginBottom:18},deck:{height:390,marginTop:4,position:'relative'},swipeCard:{position:'absolute',left:0,right:0,borderWidth:1,borderColor:'#d9e0e3',backgroundColor:'#fff',padding:22,minHeight:350,shadowColor:'#0b2f4d',shadowOpacity:.10,shadowRadius:16,shadowOffset:{width:0,height:8},elevation:4},topCard:{zIndex:2},nextCard:{top:10,left:8,right:8,opacity:.55,transform:[{scale:.975}]},cardPress:{flex:1},decisionBadge:{position:'absolute',top:22,zIndex:20,borderWidth:2,paddingHorizontal:12,paddingVertical:7,transform:[{rotate:'-8deg'}]},passBadge:{right:20,borderColor:'#9b3d45'},saveBadge:{left:20,borderColor:'#3f7a62',transform:[{rotate:'8deg'}]},passText:{color:'#9b3d45',fontSize:16,fontWeight:'800',letterSpacing:1.4},saveText:{color:'#3f7a62',fontSize:16,fontWeight:'800',letterSpacing:1.4},swipeActions:{flexDirection:'row',justifyContent:'center',gap:26,alignItems:'center',marginTop:12},circleButton:{width:68,height:68,borderRadius:34,backgroundColor:'#fff',borderWidth:1,alignItems:'center',justifyContent:'center',shadowColor:'#0b2f4d',shadowOpacity:.08,shadowRadius:8,shadowOffset:{width:0,height:4},elevation:2},passCircle:{borderColor:'#dfc7ca'},saveCircle:{borderColor:'#c7d9d0'},viewCircle:{width:58,height:58,borderRadius:29,borderColor:'#d7dfe3'},circleSymbol:{fontSize:29,color:'#9b3d45',lineHeight:30},heartSymbol:{fontSize:28,color:'#3f7a62',lineHeight:30},infoSymbol:{fontSize:22,color:'#526976',fontWeight:'600'},circleLabel:{fontSize:8,color:'#71808a',textTransform:'uppercase',letterSpacing:.8,marginTop:1},progress:{textAlign:'center',fontSize:10,color:'#71808a',marginTop:14},savedLink:{alignSelf:'center',marginTop:18,padding:10},savedLinkText:{color:'#092b45',fontSize:12,fontWeight:'700'},restart:{backgroundColor:'#092b45',paddingVertical:12,paddingHorizontal:16,alignSelf:'flex-start',marginTop:16},restartText:{color:'#fff',fontSize:11,fontWeight:'700'}
-})
+const styles=StyleSheet.create({scroll:{flex:1,backgroundColor:'#fff'},page:{paddingHorizontal:22,paddingTop:18,paddingBottom:40},swipeScreen:{flex:1,backgroundColor:'#f7f8f8'},swipePage:{paddingHorizontal:20,paddingTop:18,paddingBottom:110,minHeight:'100%'},back:{color:'#66747c',fontSize:14,marginBottom:28},eyebrow:{color:'#71808a',fontSize:9,letterSpacing:2.1,marginBottom:9},title:{color:'#092b45',fontSize:30,lineHeight:36,fontWeight:'500'},intro:{color:'#66747c',fontSize:13,lineHeight:20,marginTop:9,marginBottom:18},postButton:{backgroundColor:'#092b45',paddingVertical:15,alignItems:'center',marginBottom:20},postButtonText:{color:'#fff',fontSize:13,fontWeight:'700'},list:{gap:12},card:{borderWidth:1,borderColor:'#dce3e7',backgroundColor:'#fff',overflow:'hidden'},jobImage:{width:'100%',height:170,backgroundColor:'#eef2f4'},imagePlaceholder:{height:150,backgroundColor:'#edf2f4',alignItems:'center',justifyContent:'center'},placeholderText:{fontSize:10,letterSpacing:2,color:'#71808a'},contentPad:{padding:18},row:{flexDirection:'row',justifyContent:'space-between',gap:10},company:{color:'#71808a',fontSize:10,flex:1,textTransform:'uppercase',letterSpacing:.6},badges:{flexDirection:'row',gap:5},featured:{color:'#092b45',backgroundColor:'#edf2f4',paddingHorizontal:7,paddingVertical:4,fontSize:8},match:{color:'#092b45',borderWidth:1,borderColor:'#cdd8dd',paddingHorizontal:7,paddingVertical:4,fontSize:8,fontWeight:'700'},jobTitle:{color:'#173246',fontSize:22,lineHeight:28,fontWeight:'600',marginTop:10},meta:{color:'#66747c',fontSize:11,lineHeight:17,marginTop:7},rating:{color:'#173246',fontSize:10,fontWeight:'700',marginTop:8},explanation:{color:'#526976',fontSize:11,lineHeight:17,marginTop:12},status:{color:'#71808a',fontSize:9,textTransform:'uppercase',letterSpacing:1,marginTop:9},view:{color:'#092b45',fontSize:11,fontWeight:'700',marginTop:14},action:{margin:18,marginTop:0,borderTopWidth:1,borderTopColor:'#eef1f2',paddingTop:12},actionText:{color:'#092b45',fontSize:11,fontWeight:'700'},empty:{backgroundColor:'#fff',borderWidth:1,borderColor:'#dce3e7',padding:22,marginTop:8},emptyTitle:{color:'#173246',fontSize:16,fontWeight:'600'},emptyCopy:{color:'#71808a',fontSize:12,lineHeight:18,marginTop:6},error:{color:'#9b2c2c',fontSize:12,marginBottom:18},deck:{height:540,marginTop:4,position:'relative'},swipeCard:{position:'absolute',left:0,right:0,borderWidth:1,borderColor:'#d9e0e3',backgroundColor:'#fff',minHeight:500,overflow:'hidden',shadowColor:'#0b2f4d',shadowOpacity:.10,shadowRadius:16,shadowOffset:{width:0,height:8},elevation:4},topCard:{zIndex:2},nextCard:{top:10,left:8,right:8,opacity:.55,transform:[{scale:.975}]},cardPress:{flex:1},decisionBadge:{position:'absolute',top:24,zIndex:20,borderWidth:2,paddingHorizontal:12,paddingVertical:7,backgroundColor:'rgba(255,255,255,.92)'},passBadge:{right:20,borderColor:'#9b3d45',transform:[{rotate:'-8deg'}]},saveBadge:{left:20,borderColor:'#3f7a62',transform:[{rotate:'8deg'}]},passText:{color:'#9b3d45',fontSize:16,fontWeight:'800'},saveText:{color:'#3f7a62',fontSize:16,fontWeight:'800'},swipeActions:{flexDirection:'row',justifyContent:'center',gap:26,alignItems:'center',marginTop:12},circleButton:{width:68,height:68,borderRadius:34,backgroundColor:'#fff',borderWidth:1,alignItems:'center',justifyContent:'center'},passCircle:{borderColor:'#dfc7ca'},saveCircle:{borderColor:'#c7d9d0'},viewCircle:{width:58,height:58,borderRadius:29,borderColor:'#d7dfe3'},circleSymbol:{fontSize:29,color:'#9b3d45',lineHeight:30},heartSymbol:{fontSize:28,color:'#3f7a62',lineHeight:30},infoSymbol:{fontSize:22,color:'#526976',fontWeight:'600'},circleLabel:{fontSize:8,color:'#71808a',textTransform:'uppercase',letterSpacing:.8,marginTop:1},progress:{textAlign:'center',fontSize:10,color:'#71808a',marginTop:14},savedLink:{alignSelf:'center',marginTop:18,padding:10},savedLinkText:{color:'#092b45',fontSize:12,fontWeight:'700'},restart:{backgroundColor:'#092b45',paddingVertical:12,paddingHorizontal:16,alignSelf:'flex-start',marginTop:16},restartText:{color:'#fff',fontSize:11,fontWeight:'700'}})
