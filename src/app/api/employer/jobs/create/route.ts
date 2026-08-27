@@ -4,7 +4,7 @@ import { geocodePostcode } from '@/lib/geo'
 import { getRequestUser } from '@/lib/request-user'
 
 const ALLOWED_FIELDS = [
-  'job_title', 'job_description', 'location', 'location_postcode', 'radius_miles',
+  'job_title', 'job_description', 'job_image_url', 'location', 'location_postcode', 'radius_miles',
   'job_type', 'contract_type', 'required_role_level', 'candidate_scope', 'salary_min', 'salary_max',
   'required_skills', 'required_brands', 'required_qualifications', 'required_systems',
   'preferred_business_skills', 'min_years_experience', 'shift_pattern',
