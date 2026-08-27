@@ -1,20 +1,26 @@
 'use client'
 
-import { useEffect } from 'react'
-import { useSearchParams } from 'next/navigation'
+import { useEffect, useState } from 'react'
 
 export default function AcademyAppReturnPage() {
-  const params = useSearchParams()
-  const status = params.get('status') || 'success'
-  const result = params.get('result') || ''
-  const deepLink = `whctalent://academy?status=${encodeURIComponent(status)}&result=${encodeURIComponent(result)}`
+  const [status, setStatus] = useState('success')
+  const [result, setResult] = useState('')
 
   useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const nextStatus = params.get('status') || 'success'
+    const nextResult = params.get('result') || ''
+    setStatus(nextStatus)
+    setResult(nextResult)
+
+    const deepLink = `whctalent://academy?status=${encodeURIComponent(nextStatus)}&result=${encodeURIComponent(nextResult)}`
     const timer = window.setTimeout(() => {
       window.location.href = deepLink
     }, 250)
     return () => window.clearTimeout(timer)
-  }, [deepLink])
+  }, [])
+
+  const deepLink = `whctalent://academy?status=${encodeURIComponent(status)}&result=${encodeURIComponent(result)}`
 
   return (
     <main style={{minHeight:'100vh',display:'grid',placeItems:'center',background:'#fff',padding:'24px'}}>
