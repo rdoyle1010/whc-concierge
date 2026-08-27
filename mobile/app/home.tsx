@@ -4,9 +4,10 @@ import { router } from 'expo-router'
 import { supabase } from '../src/lib/supabase'
 
 type Role = 'talent' | 'employer' | 'admin'
-type Card = { title: string; copy: string; href?: '/jobs' | '/applications' | '/agency' | '/agency-account' | '/messages' | '/profile' | '/notifications' | '/interview-ready' | '/discover-talent' | '/saved' | '/residency' | '/residency-setup' | '/billing' | '/property-profile' | '/academy' | '/reputation'; locked?: boolean; badge?: string }
+type Card = { title: string; copy: string; href?: '/jobs' | '/applications' | '/agency' | '/agency-account' | '/messages' | '/profile' | '/notifications' | '/interview-ready' | '/discover-talent' | '/saved' | '/residency' | '/residency-setup' | '/billing' | '/property-profile' | '/academy' | '/reputation' | '/tour'; locked?: boolean; badge?: string }
 
 const talentCards: Card[] = [
+  { title: 'Start here', copy: 'A 60-second guide to your profile, matches, applications, Agency, Academy and Interview Ready.', href: '/tour', badge: 'GUIDE' },
   { title: 'Matches & Jobs', copy: 'Browse live roles and open the complete job and employer detail.', href: '/jobs' },
   { title: 'Saved Roles', copy: 'Come back to the opportunities you are considering.', href: '/saved' },
   { title: 'Applications', copy: 'Track every role you have applied for and withdraw interest if needed.', href: '/applications' },
@@ -14,18 +15,21 @@ const talentCards: Card[] = [
   { title: 'Residency', copy: 'Manage specialist residency offers and longer-form placements.', href: '/residency' },
   { title: 'Interview Ready', copy: 'Prepare using your CV, the role and the employer.', href: '/interview-ready' },
   { title: 'WHC Academy', copy: 'Learn, complete assessments and build visible professional development.', href: '/academy' },
+  { title: 'Reputation & Reviews', copy: 'See your verified star rating, reviews and employer references.', href: '/reputation' },
   { title: 'Membership & Billing', copy: 'See your plan, credits and Featured Talent status.', href: '/billing' },
   { title: 'Messages', copy: 'Keep conversations with employers in one place.', href: '/messages' },
   { title: 'Profile & Stealth', copy: 'Update your profile visibility and Stealth Mode.', href: '/profile' },
 ]
 
 const employerCards: Card[] = [
+  { title: 'Start here', copy: 'A 60-second guide to posting roles, finding Talent, Agency, applications and your property profile.', href: '/tour', badge: 'GUIDE' },
   { title: 'Jobs', copy: 'Post, edit, publish, close and fill roles from the app.', href: '/jobs' },
   { title: 'Property Profile', copy: 'Manage property photos, spa details and staff travel information.', href: '/property-profile' },
   { title: 'Applications', copy: 'Review candidates and recruitment progress.', href: '/applications' },
   { title: 'Discover Talent', copy: 'Search visible spa and wellness professionals.', href: '/discover-talent', locked: true, badge: 'PRO' },
   { title: 'Agency bookings', copy: 'See flexible staffing bookings for your property.', href: '/agency' },
   { title: 'Residency', copy: 'Discover specialist talent and manage structured offers.', href: '/residency' },
+  { title: 'Reputation & Reviews', copy: 'See your property star rating, verified reviews and reference requests.', href: '/reputation' },
   { title: 'Membership & Billing', copy: 'See your plan and manage subscription billing.', href: '/billing' },
   { title: 'Messages', copy: 'Keep candidate conversations together.', href: '/messages' },
 ]
@@ -36,6 +40,8 @@ export default function HomeScreen() {
   const [membership, setMembership] = useState('free')
   const [interviewCredits, setInterviewCredits] = useState(0)
   const [profileCompletion, setProfileCompletion] = useState(0)
+  const [reviewScore, setReviewScore] = useState(0)
+  const [reviewCount, setReviewCount] = useState(0)
 
   useEffect(() => { load() }, [])
 
@@ -47,13 +53,17 @@ export default function HomeScreen() {
     if (resolved === 'admin') { router.replace('/admin'); return }
     setRole(resolved); setName(profile?.full_name || '')
     if (resolved === 'talent') {
-      const { data } = await supabase.from('candidate_profiles').select('membership_tier,interview_ready_credits,profile_completion_pct,profile_completion_score').eq('user_id', user.id).maybeSingle()
+      const { data } = await supabase.from('candidate_profiles').select('membership_tier,interview_ready_credits,profile_completion_pct,profile_completion_score,review_score,review_count').eq('user_id', user.id).maybeSingle()
       setMembership(data?.membership_tier || 'free')
       setInterviewCredits(Math.max(0, Number(data?.interview_ready_credits || 0)))
       setProfileCompletion(Math.max(0, Math.min(100, Number(data?.profile_completion_pct ?? data?.profile_completion_score ?? 0))))
+      setReviewScore(Number(data?.review_score || 0))
+      setReviewCount(Number(data?.review_count || 0))
     } else {
-      const { data } = await supabase.from('employer_profiles').select('membership_tier').eq('user_id', user.id).maybeSingle()
+      const { data } = await supabase.from('employer_profiles').select('membership_tier,review_score,review_count').eq('user_id', user.id).maybeSingle()
       setMembership(data?.membership_tier || 'free')
+      setReviewScore(Number(data?.review_score || 0))
+      setReviewCount(Number(data?.review_count || 0))
     }
   }
 
@@ -71,9 +81,15 @@ export default function HomeScreen() {
     <Text style={styles.eyebrow}>{role === 'employer' ? 'PROPERTY WORKSPACE' : 'YOUR CAREER'}</Text>
     <Text style={styles.title}>{name ? `Hello, ${name.split(' ')[0]}.` : 'Welcome back.'}</Text>
     <Text style={styles.intro}>{role === 'employer' ? 'Recruit, manage and connect using the same live platform as the website.' : 'Your roles, applications, development and messages in one mobile workspace.'}</Text>
+
+    <Pressable onPress={() => router.push('/reputation')} style={styles.ratingCard}>
+      <View><Text style={styles.ratingLabel}>{role === 'employer' ? 'PROPERTY REPUTATION' : 'YOUR REPUTATION'}</Text><Text style={styles.ratingValue}>{reviewCount > 0 ? `${reviewScore.toFixed(1)} ★` : 'New'}</Text></View>
+      <View style={styles.ratingRight}><Text style={styles.ratingCount}>{reviewCount} verified review{reviewCount === 1 ? '' : 's'}</Text><Text style={styles.ratingOpen}>View reputation →</Text></View>
+    </Pressable>
+
     {role === 'talent' && profileCompletion < 100 ? <Pressable onPress={() => router.push('/profile')} style={styles.progressCard}><Text style={styles.progressTitle}>Profile {profileCompletion}% complete</Text><Text style={styles.progressCopy}>Improve your profile to give matching and employers stronger evidence.</Text></Pressable> : null}
     <View style={styles.grid}>{cards.map(card => <Pressable key={card.title} onPress={()=>card.href&&router.push(card.href)} style={[styles.card,card.locked&&styles.lockedCard]}><View style={styles.cardTop}><Text style={styles.cardTitle}>{card.title}</Text>{card.badge?<Text style={styles.badge}>{card.badge}</Text>:null}</View><Text style={styles.cardCopy}>{card.copy}</Text><Text style={styles.open}>{card.locked?'View access →':'Open →'}</Text></Pressable>)}</View>
   </ScrollView>
 }
 
-const styles=StyleSheet.create({scroll:{flex:1,backgroundColor:'#fff'},page:{paddingHorizontal:22,paddingTop:22,paddingBottom:32},topRow:{flexDirection:'row',justifyContent:'space-between',alignItems:'flex-start',marginBottom:40},wordmark:{color:'#092b45',fontSize:21,letterSpacing:2,fontWeight:'600'},sub:{color:'#6f7f88',marginTop:4,fontSize:9,letterSpacing:3},signOut:{color:'#71808a',fontSize:12},eyebrow:{color:'#71808a',fontSize:9,letterSpacing:2.1,marginBottom:10},title:{color:'#092b45',fontSize:30,lineHeight:36,fontWeight:'500'},intro:{color:'#66747c',fontSize:14,lineHeight:21,marginTop:10,marginBottom:20},progressCard:{backgroundColor:'#f4f7f8',padding:16,marginBottom:16},progressTitle:{color:'#173246',fontSize:13,fontWeight:'600'},progressCopy:{color:'#71808a',fontSize:11,lineHeight:17,marginTop:6},grid:{gap:12},card:{borderWidth:1,borderColor:'#dce3e7',padding:18,backgroundColor:'#fff'},lockedCard:{backgroundColor:'#f8f9fa'},cardTop:{flexDirection:'row',justifyContent:'space-between',gap:10},cardTitle:{color:'#173246',fontSize:17,fontWeight:'600',flex:1},badge:{color:'#71808a',fontSize:8,letterSpacing:1},cardCopy:{color:'#71808a',fontSize:12,lineHeight:18,marginTop:7},open:{color:'#092b45',fontSize:11,fontWeight:'700',marginTop:12}})
+const styles=StyleSheet.create({scroll:{flex:1,backgroundColor:'#fff'},page:{paddingHorizontal:22,paddingTop:22,paddingBottom:32},topRow:{flexDirection:'row',justifyContent:'space-between',alignItems:'flex-start',marginBottom:32},wordmark:{color:'#092b45',fontSize:21,letterSpacing:2,fontWeight:'600'},sub:{color:'#6f7f88',marginTop:4,fontSize:9,letterSpacing:3},signOut:{color:'#71808a',fontSize:12},eyebrow:{color:'#71808a',fontSize:9,letterSpacing:2.1,marginBottom:10},title:{color:'#092b45',fontSize:30,lineHeight:36,fontWeight:'500'},intro:{color:'#66747c',fontSize:14,lineHeight:21,marginTop:10,marginBottom:18},ratingCard:{backgroundColor:'#092b45',padding:16,marginBottom:14,flexDirection:'row',justifyContent:'space-between',alignItems:'center',gap:12},ratingLabel:{color:'#b8c4cc',fontSize:8,letterSpacing:1.5},ratingValue:{color:'#fff',fontSize:24,fontWeight:'600',marginTop:4},ratingRight:{alignItems:'flex-end',flex:1},ratingCount:{color:'#d7e0e5',fontSize:10},ratingOpen:{color:'#fff',fontSize:10,fontWeight:'700',marginTop:6},progressCard:{backgroundColor:'#f4f7f8',padding:16,marginBottom:16},progressTitle:{color:'#173246',fontSize:13,fontWeight:'600'},progressCopy:{color:'#71808a',fontSize:11,lineHeight:17,marginTop:6},grid:{gap:12},card:{borderWidth:1,borderColor:'#dce3e7',padding:18,backgroundColor:'#fff'},lockedCard:{backgroundColor:'#f8f9fa'},cardTop:{flexDirection:'row',justifyContent:'space-between',gap:10},cardTitle:{color:'#173246',fontSize:17,fontWeight:'600',flex:1},badge:{color:'#71808a',fontSize:8,letterSpacing:1},cardCopy:{color:'#71808a',fontSize:12,lineHeight:18,marginTop:7},open:{color:'#092b45',fontSize:11,fontWeight:'700',marginTop:12}})
