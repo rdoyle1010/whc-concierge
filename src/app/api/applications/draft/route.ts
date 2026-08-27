@@ -1,13 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerSupabaseClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { getRequestUser } from '@/lib/request-user'
 import { calculateMatchScore } from '@/lib/matching'
 
 const MIN_APPLICATION_MATCH = 45
 
 export async function POST(req: NextRequest) {
-  const auth = await createServerSupabaseClient()
-  const { data: { user } } = await auth.auth.getUser()
+  const user = await getRequestUser(req)
   if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
 
   const { jobId } = await req.json()
@@ -31,6 +30,7 @@ export async function POST(req: NextRequest) {
       error: `This role is currently a ${match.score}% match. Applications open from ${MIN_APPLICATION_MATCH}% once mandatory requirements are met.`,
       matchScore: match.score,
       minimumMatch: MIN_APPLICATION_MATCH,
+      matchExplanation: match.matchExplanation || '',
     }, { status: 400 })
   }
 
@@ -47,7 +47,7 @@ export async function POST(req: NextRequest) {
   if (existing) {
     const { error } = await admin.from('applications').update({ match_score: match.score, updated_at: new Date().toISOString() }).eq('id', existing.id)
     if (error) return NextResponse.json({ error: 'Could not save this role to Ready to Send.' }, { status: 500 })
-    return NextResponse.json({ success: true, applicationId: existing.id, draft: true })
+    return NextResponse.json({ success: true, applicationId: existing.id, draft: true, coverLetter: existing.cover_letter || '', matchScore: match.score, matchLabel: match.label, matchExplanation: match.matchExplanation || '' })
   }
 
   const { data: created, error } = await admin.from('applications').insert({
@@ -61,5 +61,5 @@ export async function POST(req: NextRequest) {
   }).select('id').single()
 
   if (error) return NextResponse.json({ error: 'Could not save this role to Ready to Send.' }, { status: 500 })
-  return NextResponse.json({ success: true, applicationId: created.id, draft: true })
+  return NextResponse.json({ success: true, applicationId: created.id, draft: true, coverLetter: '', matchScore: match.score, matchLabel: match.label, matchExplanation: match.matchExplanation || '' })
 }
