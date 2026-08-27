@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react'
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
+import { ActivityIndicator, Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
 import { router } from 'expo-router'
 import { supabase } from '../src/lib/supabase'
 
 type Counts = { users:number; employers:number; jobs:number; applications:number; agency:number }
+const WEB = (process.env.EXPO_PUBLIC_WEB_URL || 'https://talent.wellnesshousecollective.co.uk').replace(/\/$/,'')
 
 export default function AdminScreen() {
   const [name,setName]=useState('')
@@ -34,23 +35,45 @@ export default function AdminScreen() {
   }
 
   async function signOut(){ await supabase.auth.signOut(); router.replace('/') }
+  function openAdmin(path:string){ Linking.openURL(`${WEB}/admin/${path}`) }
 
-  const cards=[
-    ['Users',counts.users,'Review platform accounts and access.'],
-    ['Employers',counts.employers,'Monitor employer profiles and activity.'],
-    ['Jobs',counts.jobs,'See role volume and publishing activity.'],
-    ['Applications',counts.applications,'Track recruitment activity across the platform.'],
-    ['Agency bookings',counts.agency,'Monitor flexible staffing activity.'],
+  const metrics=[
+    ['Users',counts.users],['Employers',counts.employers],['Jobs',counts.jobs],['Applications',counts.applications],['Agency',counts.agency],
+  ] as const
+  const tools=[
+    ['Dashboard','dashboard','Overall platform operations'],
+    ['Users & access','users','Review platform accounts'],
+    ['Jobs','jobs','Manage and inspect live roles'],
+    ['Matches','matches','Check matching activity'],
+    ['Agency','agency','Bookings, staffing and disputes'],
+    ['Messages','messages','Platform conversations'],
+    ['Complaints','complaints','Review issues and escalations'],
+    ['Campaigns','campaigns','Marketing and email activity'],
+    ['Advertising','advertising','Paid placements and adverts'],
+    ['Academy','academy','Learning content and courses'],
+    ['Platform reviews','platform-reviews','Review quality and feedback'],
   ] as const
 
   return <ScrollView style={styles.scroll} contentContainerStyle={styles.page}>
     <View style={styles.topRow}><View><Text style={styles.wordmark}>WELLNESS HOUSE</Text><Text style={styles.sub}>ADMIN</Text></View><Pressable onPress={signOut}><Text style={styles.signOut}>Sign out</Text></Pressable></View>
     <Text style={styles.eyebrow}>PLATFORM OPERATIONS</Text>
     <Text style={styles.title}>Hello, {name.split(' ')[0]}.</Text>
-    <Text style={styles.intro}>A mobile view of the live platform for quick operational checks. Detailed administration remains available on the web dashboard.</Text>
-    {loading?<ActivityIndicator color="#092b45" style={{marginTop:24}}/>:<View style={styles.grid}>{cards.map(([label,value,copy])=><View key={label} style={styles.card}><Text style={styles.value}>{value}</Text><Text style={styles.cardTitle}>{label}</Text><Text style={styles.cardCopy}>{copy}</Text></View>)}</View>}
-    <View style={styles.notice}><Text style={styles.noticeTitle}>Mobile admin access is live.</Text><Text style={styles.noticeCopy}>This account is using the same Supabase permissions and data as the website. We can now extend the mobile admin area around the tasks you actually need away from your desk.</Text></View>
+    <Text style={styles.intro}>Your mobile control centre for quick checks and platform actions. It uses the same live account and data as the website.</Text>
+
+    {loading?<ActivityIndicator color="#092b45" style={{marginTop:22}}/>:<View style={styles.metricGrid}>{metrics.map(([label,value])=><View key={label} style={styles.metric}><Text style={styles.value}>{value}</Text><Text style={styles.metricLabel}>{label}</Text></View>)}</View>}
+
+    <Text style={styles.sectionTitle}>Admin tools</Text>
+    <View style={styles.toolList}>{tools.map(([label,path,copy])=><Pressable key={path} onPress={()=>openAdmin(path)} style={styles.toolCard}><View style={{flex:1}}><Text style={styles.toolTitle}>{label}</Text><Text style={styles.toolCopy}>{copy}</Text></View><Text style={styles.arrow}>→</Text></Pressable>)}</View>
+
+    <View style={styles.notice}><Text style={styles.noticeTitle}>App + web, working together.</Text><Text style={styles.noticeCopy}>Quick information is native in the app. Deeper admin tools open the secure web admin area so you are not maintaining two different administration systems.</Text></View>
   </ScrollView>
 }
 
-const styles=StyleSheet.create({scroll:{flex:1,backgroundColor:'#fff'},page:{paddingHorizontal:22,paddingTop:22,paddingBottom:40},topRow:{flexDirection:'row',justifyContent:'space-between',alignItems:'flex-start',marginBottom:44},wordmark:{color:'#092b45',fontSize:21,letterSpacing:2,fontWeight:'600'},sub:{color:'#71808a',fontSize:9,letterSpacing:3,marginTop:4},signOut:{color:'#71808a',fontSize:12},eyebrow:{color:'#71808a',fontSize:9,letterSpacing:2.1,marginBottom:10},title:{color:'#092b45',fontSize:31,lineHeight:37,fontWeight:'500'},intro:{color:'#66747c',fontSize:14,lineHeight:21,marginTop:10,marginBottom:22},grid:{gap:12},card:{borderWidth:1,borderColor:'#dce3e7',padding:18},value:{color:'#092b45',fontSize:30,lineHeight:34,fontWeight:'500'},cardTitle:{color:'#173246',fontSize:16,fontWeight:'600',marginTop:4},cardCopy:{color:'#71808a',fontSize:11,lineHeight:17,marginTop:6},notice:{backgroundColor:'#f4f7f8',padding:18,marginTop:22},noticeTitle:{color:'#173246',fontSize:13,fontWeight:'600'},noticeCopy:{color:'#71808a',fontSize:11,lineHeight:17,marginTop:6}})
+const styles=StyleSheet.create({
+  scroll:{flex:1,backgroundColor:'#fff'},page:{paddingHorizontal:22,paddingTop:18,paddingBottom:34},
+  topRow:{flexDirection:'row',justifyContent:'space-between',alignItems:'flex-start',marginBottom:36},wordmark:{color:'#092b45',fontSize:20,letterSpacing:2,fontWeight:'700'},sub:{color:'#71808a',fontSize:8,letterSpacing:3,marginTop:4},signOut:{color:'#71808a',fontSize:12},
+  eyebrow:{color:'#71808a',fontSize:8,letterSpacing:2,marginBottom:9},title:{color:'#092b45',fontSize:30,lineHeight:36,fontWeight:'500'},intro:{color:'#66747c',fontSize:14,lineHeight:21,marginTop:9,marginBottom:20},
+  metricGrid:{flexDirection:'row',flexWrap:'wrap',gap:9},metric:{width:'48%',borderWidth:1,borderColor:'#dce3e7',padding:16},value:{color:'#092b45',fontSize:27,lineHeight:31,fontWeight:'600'},metricLabel:{color:'#71808a',fontSize:10,marginTop:4},
+  sectionTitle:{color:'#173246',fontSize:18,fontWeight:'600',marginTop:28,marginBottom:11},toolList:{gap:9},toolCard:{borderWidth:1,borderColor:'#dce3e7',padding:16,flexDirection:'row',alignItems:'center',gap:12},toolTitle:{color:'#173246',fontSize:14,fontWeight:'600'},toolCopy:{color:'#71808a',fontSize:11,lineHeight:16,marginTop:4},arrow:{color:'#092b45',fontSize:18},
+  notice:{backgroundColor:'#f4f7f8',padding:17,marginTop:22},noticeTitle:{color:'#173246',fontSize:13,fontWeight:'600'},noticeCopy:{color:'#71808a',fontSize:11,lineHeight:17,marginTop:6}
+})
