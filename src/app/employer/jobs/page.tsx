@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import DashboardShell from '@/components/DashboardShell'
 import { createClient } from '@/lib/supabase/client'
-import { Plus, Edit2, Trash2, Eye, EyeOff, Copy, RotateCcw, CheckCircle2 } from 'lucide-react'
+import { Plus, Edit2, Trash2, Eye, EyeOff, Copy, RotateCcw, CheckCircle2, Upload, Image as ImageIcon, X } from 'lucide-react'
 
 export default function EmployerJobsPage() {
   const router = useRouter()
@@ -15,9 +15,10 @@ export default function EmployerJobsPage() {
   const [showForm, setShowForm] = useState(false)
   const [editing, setEditing] = useState<any>(null)
   const [saving, setSaving] = useState(false)
+  const [uploadingImage, setUploadingImage] = useState(false)
 
   const emptyJob = {
-    title: '', description: '', location: '', job_type: 'Full-time',
+    title: '', description: '', job_image_url: '', location: '', job_type: 'Full-time',
     specialism: '', salary_min: '', salary_max: '', tier: 'Silver',
     benefits: '', requirements: '', status: 'active',
   }
@@ -38,6 +39,26 @@ export default function EmployerJobsPage() {
     load()
   }, [])
 
+  async function uploadJobImage(file: File) {
+    if (!profile?.id) return
+    setUploadingImage(true)
+    try {
+      const fd = new FormData()
+      fd.append('file', file)
+      fd.append('bucket', 'site-images')
+      const safe = (form.title || 'job').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
+      fd.append('path', `jobs/${profile.id}/${safe}-${Date.now()}-${file.name.replace(/[^a-zA-Z0-9._-]/g, '-')}`)
+      const res = await fetch('/api/upload', { method: 'POST', body: fd })
+      const body = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(body.error || 'Image upload failed')
+      setForm(current => ({ ...current, job_image_url: body.url }))
+    } catch (error: any) {
+      alert(error?.message || 'Could not upload image.')
+    } finally {
+      setUploadingImage(false)
+    }
+  }
+
   const handleSave = async () => {
     if (!profile) return
     setSaving(true)
@@ -48,6 +69,7 @@ export default function EmployerJobsPage() {
       employer_id: profile.id,
       job_title: form.title,
       job_description: form.description,
+      job_image_url: form.job_image_url || null,
       location: form.location,
       job_type: form.job_type,
       salary_min: form.salary_min ? parseInt(form.salary_min as string) : null,
@@ -80,7 +102,7 @@ export default function EmployerJobsPage() {
 
   const handleEdit = (job: any) => {
     setForm({
-      title: job.title, description: job.description, location: job.location,
+      title: job.title, description: job.description, job_image_url: job.job_image_url || '', location: job.location,
       job_type: job.job_type, specialism: job.specialism || '', tier: job.tier || 'Silver',
       salary_min: job.salary_min?.toString() || '', salary_max: job.salary_max?.toString() || '',
       benefits: job.benefits?.join('\n') || '', requirements: job.requirements?.join('\n') || '',
@@ -103,7 +125,6 @@ export default function EmployerJobsPage() {
   const toggleStatus = async (job: any) => {
     const isCurrentlyActive = job.status === 'active'
     const newIsLive = !isCurrentlyActive
-
     if (newIsLive) {
       const paidUntil = job.expires_at ? new Date(job.expires_at).getTime() : 0
       if (!paidUntil || paidUntil <= Date.now()) {
@@ -112,7 +133,6 @@ export default function EmployerJobsPage() {
         return
       }
     }
-
     const newStatus = newIsLive ? 'active' : 'closed'
     const { data: updated, error } = await supabase.from('job_listings').update({ is_live: newIsLive, status: newStatus }).eq('id', job.id).select('id')
     if (error || !updated?.length) {
@@ -138,102 +158,32 @@ export default function EmployerJobsPage() {
   return (
     <DashboardShell role="employer" userName={profile?.company_name}>
       <div className="mb-8 flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
-        <div>
-          <p className="dashboard-eyebrow">Recruitment inventory</p>
-          <h1 className="dashboard-title">Job listings</h1>
-          <p className="dashboard-intro">Create, edit and close permanent roles. Marking a role filled removes it from the site and notifies every applicant automatically.</p>
-        </div>
-        <button onClick={() => router.push('/employer/post-role')} className="btn-primary inline-flex items-center justify-center gap-2 self-start md:self-auto">
-          <Plus size={15} /><span>Post a new role</span>
-        </button>
+        <div><p className="dashboard-eyebrow">Recruitment inventory</p><h1 className="dashboard-title">Job listings</h1><p className="dashboard-intro">Create, edit and close permanent roles. Each role can now have its own image.</p></div>
+        <button onClick={() => router.push('/employer/post-role')} className="btn-primary inline-flex items-center justify-center gap-2 self-start md:self-auto"><Plus size={15} /><span>Post a new role</span></button>
       </div>
 
-      {!loading && jobs.length > 0 && (
-        <div className="dashboard-metrics mb-8">
-          <div className="dashboard-metric"><p className="dashboard-metric-value">{activeCount}</p><p className="dashboard-metric-label">Live roles</p></div>
-          <div className="dashboard-metric"><p className="dashboard-metric-value">{draftCount}</p><p className="dashboard-metric-label">Drafts</p></div>
-          <div className="dashboard-metric"><p className="dashboard-metric-value">{filledCount}</p><p className="dashboard-metric-label">Filled</p></div>
-          <div className="dashboard-metric"><p className="dashboard-metric-value">{jobs.length}</p><p className="dashboard-metric-label">Total listings</p></div>
-        </div>
-      )}
+      {!loading && jobs.length > 0 && <div className="dashboard-metrics mb-8"><div className="dashboard-metric"><p className="dashboard-metric-value">{activeCount}</p><p className="dashboard-metric-label">Live roles</p></div><div className="dashboard-metric"><p className="dashboard-metric-value">{draftCount}</p><p className="dashboard-metric-label">Drafts</p></div><div className="dashboard-metric"><p className="dashboard-metric-value">{filledCount}</p><p className="dashboard-metric-label">Filled</p></div><div className="dashboard-metric"><p className="dashboard-metric-value">{jobs.length}</p><p className="dashboard-metric-label">Total listings</p></div></div>}
 
-      {showForm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#071c2d]/55 p-4" onClick={() => setShowForm(false)}>
-          <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto border border-border bg-[#fffdf9] p-6 md:p-8 shadow-2xl" onClick={(e) => e.stopPropagation()}>
-            <p className="dashboard-eyebrow">Listing editor</p>
-            <h2 className="dashboard-section-title mb-2">{editing ? 'Edit role' : 'Create role draft'}</h2>
-            <p className="mb-6 text-[12px] leading-5 text-muted">Publishing a new paid listing still happens through Post a Role checkout. Edits to an existing paid listing remain here.</p>
-            <div className="space-y-4">
-              <div>
-                <label className="mb-1.5 block text-[12px] font-semibold text-secondary">Job title *</label>
-                <input type="text" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} className="input-field" placeholder="e.g. Senior Spa Therapist" />
-              </div>
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <div>
-                  <label className="mb-1.5 block text-[12px] font-semibold text-secondary">Location *</label>
-                  <input type="text" value={form.location} onChange={(e) => setForm({ ...form, location: e.target.value })} className="input-field" />
-                </div>
-                <div>
-                  <label className="mb-1.5 block text-[12px] font-semibold text-secondary">Job type</label>
-                  <select value={form.job_type} onChange={(e) => setForm({ ...form, job_type: e.target.value })} className="input-field">
-                    <option>Full-time</option><option>Part-time</option><option>Contract</option><option>Temporary</option><option>Freelance</option>
-                  </select>
-                </div>
-              </div>
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-                <div><label className="mb-1.5 block text-[12px] font-semibold text-secondary">Min salary (£)</label><input type="number" value={form.salary_min} onChange={(e) => setForm({ ...form, salary_min: e.target.value })} className="input-field" /></div>
-                <div><label className="mb-1.5 block text-[12px] font-semibold text-secondary">Max salary (£)</label><input type="number" value={form.salary_max} onChange={(e) => setForm({ ...form, salary_max: e.target.value })} className="input-field" /></div>
-                <div><label className="mb-1.5 block text-[12px] font-semibold text-secondary">Tier</label><select value={form.tier} onChange={(e) => setForm({ ...form, tier: e.target.value })} className="input-field"><option>Silver</option><option>Gold</option><option>Platinum</option></select></div>
-              </div>
-              <div><label className="mb-1.5 block text-[12px] font-semibold text-secondary">Specialism</label><input type="text" value={form.specialism} onChange={(e) => setForm({ ...form, specialism: e.target.value })} className="input-field" placeholder="e.g. Massage Therapy" /></div>
-              <div><label className="mb-1.5 block text-[12px] font-semibold text-secondary">Description *</label><textarea rows={5} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} className="input-field" /></div>
-              <div><label className="mb-1.5 block text-[12px] font-semibold text-secondary">Requirements <span className="font-normal text-muted">— one per line</span></label><textarea rows={3} value={form.requirements} onChange={(e) => setForm({ ...form, requirements: e.target.value })} className="input-field" /></div>
-              <div><label className="mb-1.5 block text-[12px] font-semibold text-secondary">Benefits <span className="font-normal text-muted">— one per line</span></label><textarea rows={3} value={form.benefits} onChange={(e) => setForm({ ...form, benefits: e.target.value })} className="input-field" /></div>
-              <div className="flex flex-col-reverse gap-3 border-t border-border pt-5 sm:flex-row sm:justify-end">
-                <button onClick={() => setShowForm(false)} className="btn-secondary sm:min-w-28">Cancel</button>
-                <button onClick={handleSave} disabled={saving} className="btn-primary disabled:opacity-50 sm:min-w-36">{saving ? 'Saving...' : editing ? 'Save changes' : 'Save draft'}</button>
-              </div>
-            </div>
-          </div>
+      {showForm && <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#071c2d]/55 p-4" onClick={() => setShowForm(false)}><div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto border border-border bg-[#fffdf9] p-6 md:p-8 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+        <p className="dashboard-eyebrow">Listing editor</p><h2 className="dashboard-section-title mb-2">{editing ? 'Edit role' : 'Create role draft'}</h2><p className="mb-6 text-[12px] leading-5 text-muted">You can change the role image here at any time. It updates the live Browse Roles card once saved.</p>
+        <div className="space-y-4">
+          <div><label className="mb-1.5 block text-[12px] font-semibold text-secondary">Job title *</label><input type="text" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} className="input-field" placeholder="e.g. Senior Spa Therapist" /></div>
+          <div><label className="mb-1.5 block text-[12px] font-semibold text-secondary">Job image</label><div className="grid sm:grid-cols-[180px_1fr] gap-4 items-center rounded-xl border border-border bg-white p-4">{form.job_image_url ? <div className="aspect-[16/10] overflow-hidden rounded-lg"><img src={form.job_image_url} alt="Job preview" className="h-full w-full object-cover" /></div> : <div className="aspect-[16/10] rounded-lg border border-dashed border-border flex items-center justify-center text-muted"><ImageIcon size={26}/></div>}<div className="flex flex-wrap gap-2"><label className="btn-secondary inline-flex items-center gap-2 cursor-pointer"><Upload size={13}/>{uploadingImage?'Uploading...':form.job_image_url?'Replace image':'Upload image'}<input type="file" accept="image/jpeg,image/png,image/webp" className="hidden" disabled={uploadingImage} onChange={e=>{const file=e.target.files?.[0];if(file)uploadJobImage(file);e.target.value=''}}/></label>{form.job_image_url && <button type="button" onClick={()=>setForm(current=>({...current,job_image_url:''}))} className="btn-secondary inline-flex items-center gap-2"><X size={13}/>Remove</button>}</div></div></div>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2"><div><label className="mb-1.5 block text-[12px] font-semibold text-secondary">Location *</label><input type="text" value={form.location} onChange={(e) => setForm({ ...form, location: e.target.value })} className="input-field" /></div><div><label className="mb-1.5 block text-[12px] font-semibold text-secondary">Job type</label><select value={form.job_type} onChange={(e) => setForm({ ...form, job_type: e.target.value })} className="input-field"><option>Full-time</option><option>Part-time</option><option>Contract</option><option>Temporary</option><option>Freelance</option></select></div></div>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3"><div><label className="mb-1.5 block text-[12px] font-semibold text-secondary">Min salary (£)</label><input type="number" value={form.salary_min} onChange={(e) => setForm({ ...form, salary_min: e.target.value })} className="input-field" /></div><div><label className="mb-1.5 block text-[12px] font-semibold text-secondary">Max salary (£)</label><input type="number" value={form.salary_max} onChange={(e) => setForm({ ...form, salary_max: e.target.value })} className="input-field" /></div><div><label className="mb-1.5 block text-[12px] font-semibold text-secondary">Tier</label><select value={form.tier} onChange={(e) => setForm({ ...form, tier: e.target.value })} className="input-field"><option>Silver</option><option>Gold</option><option>Platinum</option></select></div></div>
+          <div><label className="mb-1.5 block text-[12px] font-semibold text-secondary">Specialism</label><input type="text" value={form.specialism} onChange={(e) => setForm({ ...form, specialism: e.target.value })} className="input-field" placeholder="e.g. Massage Therapy" /></div>
+          <div><label className="mb-1.5 block text-[12px] font-semibold text-secondary">Description *</label><textarea rows={5} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} className="input-field" /></div>
+          <div><label className="mb-1.5 block text-[12px] font-semibold text-secondary">Requirements <span className="font-normal text-muted">— one per line</span></label><textarea rows={3} value={form.requirements} onChange={(e) => setForm({ ...form, requirements: e.target.value })} className="input-field" /></div>
+          <div><label className="mb-1.5 block text-[12px] font-semibold text-secondary">Benefits <span className="font-normal text-muted">— one per line</span></label><textarea rows={3} value={form.benefits} onChange={(e) => setForm({ ...form, benefits: e.target.value })} className="input-field" /></div>
+          <div className="flex flex-col-reverse gap-3 border-t border-border pt-5 sm:flex-row sm:justify-end"><button onClick={() => setShowForm(false)} className="btn-secondary sm:min-w-28">Cancel</button><button onClick={handleSave} disabled={saving||uploadingImage} className="btn-primary disabled:opacity-50 sm:min-w-36">{saving ? 'Saving...' : editing ? 'Save changes' : 'Save draft'}</button></div>
         </div>
-      )}
+      </div></div>}
 
-      {loading ? (
-        <div className="flex h-64 items-center justify-center"><div className="h-8 w-8 animate-spin rounded-full border-2 border-gold border-t-transparent" /></div>
-      ) : jobs.length === 0 ? (
-        <div className="dashboard-panel py-16 text-center">
-          <p className="dashboard-eyebrow">No listings yet</p>
-          <h2 className="dashboard-section-title">Start with your first permanent role</h2>
-          <p className="mx-auto mt-2 max-w-lg text-[13px] leading-6 text-muted">Your full job description, property details and requirements will appear to suitable talent once the listing is live.</p>
-          <button onClick={() => router.push('/employer/post-role')} className="btn-primary mt-5 inline-flex items-center gap-2"><Plus size={14} />Post a role</button>
-        </div>
-      ) : (
-        <div className="border-y border-[#cfc8bb] bg-white/45">
-          {jobs.map((job, index) => (
-            <div key={job.id} className={`grid gap-5 px-4 py-5 md:px-5 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-center ${index > 0 ? 'border-t border-[#ded8cc]' : ''}`}>
-              <div className="min-w-0">
-                <div className="mb-2 flex flex-wrap items-center gap-2.5">
-                  <h3 className="text-[22px] text-ink">{job.title}</h3>
-                  <span className={`rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[.1em] ${job.status === 'active' ? 'bg-green-50 text-green-700' : job.status === 'draft' ? 'bg-amber-50 text-amber-700' : job.status === 'filled' ? 'bg-[#edf4ef] text-[#42634b]' : 'bg-gray-100 text-gray-500'}`}>{job.status}</span>
-                  {job.tier && <span className={job.tier === 'Platinum' ? 'badge-platinum' : job.tier === 'Gold' ? 'badge-gold' : 'badge-silver'}>{job.tier}</span>}
-                </div>
-                <p className="text-[12px] font-medium text-secondary">{job.location} · {job.job_type}</p>
-                {job.description && <p className="mt-2 max-w-3xl text-[13px] leading-6 text-secondary line-clamp-2">{job.description}</p>}
-                {job.expires_at && <p className="mt-2 text-[11px] text-muted">Paid listing term: {new Date(job.expires_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</p>}
-              </div>
-
-              <div className="flex flex-wrap items-center gap-2 xl:justify-end">
-                {job.status === 'active' && <button onClick={() => markFilled(job)} className="btn-secondary !px-3 !py-2 inline-flex items-center gap-1.5 text-emerald-700" title="Take down this role and notify all applicants"><CheckCircle2 size={15} />Mark filled</button>}
-                {job.status !== 'draft' && job.status !== 'filled' && <button onClick={() => toggleStatus(job)} className="btn-secondary !px-3 !py-2 inline-flex items-center gap-1.5" title={job.status === 'active' ? 'Take down without marking filled' : 'Activate'}>{job.status === 'active' ? <><EyeOff size={15} />Take down</> : <><Eye size={15} />Activate</>}</button>}
-                <button onClick={() => handleEdit(job)} className="btn-secondary !px-3 !py-2 inline-flex items-center gap-1.5"><Edit2 size={15} />Edit</button>
-                <button onClick={() => router.push(`/employer/post-role?clone=${job.id}`)} className="inline-flex h-9 w-9 items-center justify-center border border-border text-muted hover:bg-[#faf8f3] hover:text-ink" title="Clone"><Copy size={15} /></button>
-                {(job.status === 'closed' || job.status === 'expired') && <button onClick={() => router.push(`/employer/post-role?repost=${job.id}`)} className="inline-flex h-9 w-9 items-center justify-center border border-border text-muted hover:bg-[#faf8f3] hover:text-ink" title="Repost"><RotateCcw size={15} /></button>}
-                <button onClick={() => handleDelete(job.id)} className="inline-flex h-9 w-9 items-center justify-center border border-border text-muted hover:border-red-200 hover:bg-red-50 hover:text-red-600" title="Delete"><Trash2 size={15} /></button>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
+      {loading ? <div className="flex h-64 items-center justify-center"><div className="h-8 w-8 animate-spin rounded-full border-2 border-gold border-t-transparent" /></div> : jobs.length === 0 ? <div className="dashboard-panel py-16 text-center"><p className="dashboard-eyebrow">No listings yet</p><h2 className="dashboard-section-title">Start with your first permanent role</h2><p className="mx-auto mt-2 max-w-lg text-[13px] leading-6 text-muted">Your full job description, property details and requirements will appear to suitable talent once the listing is live.</p><button onClick={() => router.push('/employer/post-role')} className="btn-primary mt-5 inline-flex items-center gap-2"><Plus size={14} />Post a role</button></div> : <div className="border-y border-[#cfc8bb] bg-white/45">{jobs.map((job, index) => <div key={job.id} className={`grid gap-5 px-4 py-5 md:px-5 xl:grid-cols-[96px_minmax(0,1fr)_auto] xl:items-center ${index > 0 ? 'border-t border-[#ded8cc]' : ''}`}>
+        <div className="hidden xl:block h-20 w-24 overflow-hidden rounded-lg border border-border bg-white">{job.job_image_url ? <img src={job.job_image_url} alt="" className="h-full w-full object-cover"/> : <div className="h-full w-full flex items-center justify-center text-muted"><ImageIcon size={20}/></div>}</div>
+        <div className="min-w-0"><div className="mb-2 flex flex-wrap items-center gap-2.5"><h3 className="text-[22px] text-ink">{job.title}</h3><span className={`rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[.1em] ${job.status === 'active' ? 'bg-green-50 text-green-700' : job.status === 'draft' ? 'bg-amber-50 text-amber-700' : job.status === 'filled' ? 'bg-[#edf4ef] text-[#42634b]' : 'bg-gray-100 text-gray-500'}`}>{job.status}</span>{job.tier && <span className={job.tier === 'Platinum' ? 'badge-platinum' : job.tier === 'Gold' ? 'badge-gold' : 'badge-silver'}>{job.tier}</span>}</div><p className="text-[12px] font-medium text-secondary">{job.location} · {job.job_type}</p>{job.description && <p className="mt-2 max-w-3xl text-[13px] leading-6 text-secondary line-clamp-2">{job.description}</p>}{job.expires_at && <p className="mt-2 text-[11px] text-muted">Paid listing term: {new Date(job.expires_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</p>}</div>
+        <div className="flex flex-wrap items-center gap-2 xl:justify-end">{job.status === 'active' && <button onClick={() => markFilled(job)} className="btn-secondary !px-3 !py-2 inline-flex items-center gap-1.5 text-emerald-700"><CheckCircle2 size={15} />Mark filled</button>}{job.status !== 'draft' && job.status !== 'filled' && <button onClick={() => toggleStatus(job)} className="btn-secondary !px-3 !py-2 inline-flex items-center gap-1.5">{job.status === 'active' ? <><EyeOff size={15} />Take down</> : <><Eye size={15} />Activate</>}</button>}<button onClick={() => handleEdit(job)} className="btn-secondary !px-3 !py-2 inline-flex items-center gap-1.5"><Edit2 size={15} />Edit</button><button onClick={() => router.push(`/employer/post-role?clone=${job.id}`)} className="inline-flex h-9 w-9 items-center justify-center border border-border text-muted hover:bg-[#faf8f3] hover:text-ink" title="Clone"><Copy size={15} /></button>{(job.status === 'closed' || job.status === 'expired') && <button onClick={() => router.push(`/employer/post-role?repost=${job.id}`)} className="inline-flex h-9 w-9 items-center justify-center border border-border text-muted hover:bg-[#faf8f3] hover:text-ink" title="Repost"><RotateCcw size={15} /></button>}<button onClick={() => handleDelete(job.id)} className="inline-flex h-9 w-9 items-center justify-center border border-border text-muted hover:border-red-200 hover:bg-red-50 hover:text-red-600" title="Delete"><Trash2 size={15} /></button></div>
+      </div>)}</div>}
     </DashboardShell>
   )
 }
