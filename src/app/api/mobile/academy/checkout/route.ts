@@ -6,6 +6,7 @@ import { BUNDLE_PRICE, coursePrice } from '@/lib/academy'
 import { getAcademyCatalog, getAcademyCourseBySlug } from '@/lib/academy-catalog-server'
 
 const SITE = 'https://talent.wellnesshousecollective.co.uk'
+const ACADEMY_RETURN = `${SITE}/talent/academy`
 
 export async function POST(req: NextRequest) {
   try {
@@ -48,8 +49,8 @@ export async function POST(req: NextRequest) {
         }],
         mode: 'payment',
         allow_promotion_codes: true,
-        success_url: `${SITE}/academy?enrolled=${encodeURIComponent(slug)}`,
-        cancel_url: `${SITE}/academy?cancelled=true`,
+        success_url: `${ACADEMY_RETURN}?enrolled=${encodeURIComponent(slug)}&source=mobile`,
+        cancel_url: `${ACADEMY_RETURN}?cancelled=true&source=mobile`,
         metadata: { type: 'course', candidate_id: candidate.id, course_slug: slug, user_id: user.id },
       })
       return NextResponse.json({ url: session.url, amountPence, basePence, discountPct })
@@ -80,8 +81,8 @@ export async function POST(req: NextRequest) {
         }],
         mode: 'payment',
         allow_promotion_codes: true,
-        success_url: `${SITE}/academy?enrolled=bundle`,
-        cancel_url: `${SITE}/academy?cancelled=true`,
+        success_url: `${ACADEMY_RETURN}?enrolled=bundle&source=mobile`,
+        cancel_url: `${ACADEMY_RETURN}?cancelled=true&source=mobile`,
         metadata: { type: 'course_bundle', candidate_id: candidate.id, user_id: user.id },
       })
       return NextResponse.json({ url: session.url, amountPence, basePence: BUNDLE_PRICE, discountPct })
