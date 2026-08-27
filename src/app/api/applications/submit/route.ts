@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerSupabaseClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { getRequestUser } from '@/lib/request-user'
 import { createNotification } from '@/lib/notifications'
 import { applicantConfirmationHtml, employerNotificationHtml } from '@/lib/application-email-templates'
 
@@ -18,8 +18,7 @@ async function sendEmail(to: string, subject: string, html: string) {
 }
 
 export async function POST(req: NextRequest) {
-  const auth = await createServerSupabaseClient()
-  const { data: { user } } = await auth.auth.getUser()
+  const user = await getRequestUser(req)
   if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
 
   const { applicationId, coverLetter } = await req.json()
@@ -59,9 +58,6 @@ export async function POST(req: NextRequest) {
 
   if (updateError || !updatedApplication) return NextResponse.json({ error: 'Could not send your application.' }, { status: 500 })
 
-  // A submitted application is also the candidate's explicit "yes" to this role.
-  // Keep that relationship recorded so an employer "Interested" action can form
-  // a mutual match, unlock messaging and send the match notifications.
   const { error: swipeError } = await admin.from('swipes').upsert({
     swiper_id: user.id,
     swiper_type: 'candidate',
