@@ -3,37 +3,35 @@
 import { useEffect, useState } from 'react'
 import DashboardShell from '@/components/DashboardShell'
 import AuthenticatorSecurity from '@/components/AuthenticatorSecurity'
-import { Save, Settings, CreditCard } from 'lucide-react'
+import { Save, Settings, CreditCard, Share2, ExternalLink } from 'lucide-react'
 
-type CommercialSetting = {
-  product_key: string
-  label: string
-  description: string
-  price_pence: number
-  billing_interval: 'month' | 'year' | 'one_off'
-  is_active: boolean
-}
+type CommercialSetting = { product_key: string; label: string; description: string; price_pence: number; billing_interval: 'month' | 'year' | 'one_off'; is_active: boolean }
+type SocialLinks = { linkedin_url: string; instagram_url: string; facebook_url: string; tiktok_url: string; youtube_url: string }
+const EMPTY_SOCIAL: SocialLinks = { linkedin_url:'', instagram_url:'', facebook_url:'', tiktok_url:'', youtube_url:'' }
 
 export default function AdminSettingsPage() {
   const [config, setConfig] = useState<Record<string, any>>({})
   const [products, setProducts] = useState<CommercialSetting[]>([])
+  const [socialLinks, setSocialLinks] = useState<SocialLinks>(EMPTY_SOCIAL)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState('')
 
   useEffect(() => {
     async function load() {
-      const [configRes, commercialRes] = await Promise.all([
+      const [configRes, commercialRes, socialRes] = await Promise.all([
         fetch('/api/admin/content?kind=platform_config', { cache: 'no-store' }),
         fetch('/api/admin/commercial-settings', { cache: 'no-store' }),
+        fetch('/api/public-social-links', { cache: 'no-store' }),
       ])
       const { rows: data } = configRes.ok ? await configRes.json() : { rows: [] }
       const configMap: Record<string, any> = {}
       for (const row of data || []) configMap[row.key] = row.value
       setConfig(configMap)
-      if (commercialRes.ok) {
-        const commercial = await commercialRes.json()
-        setProducts(commercial.rows || [])
+      if (commercialRes.ok) { const commercial = await commercialRes.json(); setProducts(commercial.rows || []) }
+      if (socialRes.ok) {
+        const social = await socialRes.json()
+        setSocialLinks({ ...EMPTY_SOCIAL, ...(social.links || {}) })
       }
       setLoading(false)
     }
@@ -50,7 +48,6 @@ export default function AdminSettingsPage() {
   }
 
   const updateProductLocal = (key: string, patch: Partial<CommercialSetting>) => setProducts(current => current.map(product => product.product_key === key ? { ...product, ...patch } : product))
-
   const saveProduct = async (product: CommercialSetting) => {
     setSaving(true); setMessage('')
     const res = await fetch('/api/admin/commercial-settings', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(product) })
@@ -60,20 +57,42 @@ export default function AdminSettingsPage() {
     setSaving(false); setTimeout(() => setMessage(''), 3000)
   }
 
+  const saveSocialLinks = async () => {
+    setSaving(true); setMessage('')
+    const res = await fetch('/api/public-social-links', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(socialLinks) })
+    const body = await res.json().catch(() => ({}))
+    if (!res.ok) setMessage(`Error: ${body.error || 'could not save social links'}`)
+    else { setSocialLinks({ ...EMPTY_SOCIAL, ...(body.links || {}) }); setMessage('Public social links updated.') }
+    setSaving(false); setTimeout(() => setMessage(''), 3500)
+  }
+
   const configFields = [
     { key: 'site_name', label: 'Site Name', placeholder: 'WHC Concierge' },
     { key: 'site_description', label: 'Site Description', placeholder: 'The specialist careers platform for luxury wellness' },
     { key: 'contact_email', label: 'Contact Email', placeholder: 'hello@wellnesshousecollective.co.uk' },
     { key: 'maintenance_mode', label: 'Maintenance Mode (true/false)', placeholder: 'false' },
   ]
+  const socialFields: { key:keyof SocialLinks; label:string; placeholder:string }[] = [
+    { key:'instagram_url', label:'Instagram public profile', placeholder:'https://www.instagram.com/...' },
+    { key:'linkedin_url', label:'LinkedIn public page', placeholder:'https://www.linkedin.com/company/...' },
+    { key:'facebook_url', label:'Facebook public page', placeholder:'https://www.facebook.com/...' },
+    { key:'tiktok_url', label:'TikTok public profile', placeholder:'https://www.tiktok.com/@...' },
+    { key:'youtube_url', label:'YouTube public channel', placeholder:'https://www.youtube.com/@...' },
+  ]
 
   return <DashboardShell role="admin" userName="Admin">
-    <div className="mb-8"><p className="dashboard-eyebrow">Controls</p><h1 className="dashboard-title">Platform Settings</h1><p className="dashboard-intro">Manage platform security, live configuration and commercial product pricing.</p></div>
+    <div className="mb-8"><p className="dashboard-eyebrow">Controls</p><h1 className="dashboard-title">Platform Settings</h1><p className="dashboard-intro">Manage platform security, public-facing links, live configuration and commercial product pricing.</p></div>
 
     {loading ? <div className="flex h-64 items-center justify-center"><div className="h-8 w-8 animate-spin rounded-full border-2 border-[#9c7a42] border-t-transparent" /></div> : <div className="max-w-4xl space-y-6">
       {message && <div className={`rounded-xl px-4 py-3 text-[13px] ${message.includes('Error') ? 'bg-red-50 text-red-600' : 'bg-emerald-50 text-emerald-700'}`}>{message}</div>}
 
       <AuthenticatorSecurity required />
+
+      <div className="dashboard-card">
+        <div className="mb-5 flex items-start gap-3"><div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#eef2f4] text-[#0b2f4d]"><Share2 size={18}/></div><div><p className="text-[15px] font-semibold text-ink">Public social media links</p><p className="mt-1 max-w-2xl text-[12px] leading-5 text-muted">These are simple public profile links shown on the front end. WHC does not need access to your social inbox, DMs, password or account management. Paste only the public page you want visitors to see.</p></div></div>
+        <div className="space-y-4">{socialFields.map(field => <div key={field.key}><label className="dashboard-eyebrow block mb-1.5 !text-[9px]">{field.label}</label><div className="flex gap-2"><input type="url" value={socialLinks[field.key] || ''} onChange={e=>setSocialLinks(current=>({...current,[field.key]:e.target.value}))} className="input-field flex-1" placeholder={field.placeholder}/>{socialLinks[field.key] ? <a href={socialLinks[field.key]} target="_blank" rel="noopener noreferrer" className="btn-secondary !px-3 inline-flex items-center" title="Open public page"><ExternalLink size={14}/></a> : null}</div></div>)}</div>
+        <div className="mt-5 flex items-center justify-between gap-4 border-t border-border pt-4"><p className="text-[10.5px] leading-4 text-muted">Leave a field blank and that network will not be shown publicly.</p><button type="button" onClick={saveSocialLinks} disabled={saving} className="btn-primary shrink-0 inline-flex items-center gap-2 disabled:opacity-50"><Save size={14}/>Save public links</button></div>
+      </div>
 
       <div className="dashboard-card">
         <div className="mb-6 flex items-start gap-3"><div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#f3f1ec] text-[#9c7a42]"><CreditCard size={18} /></div><div><p className="text-[15px] font-semibold text-ink">Commercial products</p><p className="mt-1 text-[12px] text-muted">These values are read at checkout. Changing a price here changes the price shown to new customers without a code deployment. Existing Stripe subscriptions keep their existing agreed price until changed in Stripe.</p></div></div>
