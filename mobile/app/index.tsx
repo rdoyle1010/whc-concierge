@@ -56,12 +56,6 @@ export default function IndexScreen() {
             <Text style={styles.roleCopy}>Recruitment, candidates, Agency cover, property profile, messages and live role management.</Text>
             <Text style={styles.roleLink}>Enter Employer →</Text>
           </Pressable>
-          <Pressable onPress={() => router.push({ pathname: '/login', params: { role: 'admin' } })} style={[styles.roleCard, styles.adminCard]}>
-            <Text style={styles.roleEyebrow}>ADMIN</Text>
-            <Text style={styles.roleTitle}>Run the platform.</Text>
-            <Text style={styles.roleCopy}>Secure administrator access for users, employers, jobs, applications, Agency activity and platform operations.</Text>
-            <Text style={styles.roleLink}>Admin access →</Text>
-          </Pressable>
         </View>
 
         <View style={styles.footerNote}>
@@ -92,7 +86,6 @@ const styles = StyleSheet.create({
   sectionEyebrow: { color: '#788791', fontSize: 8, letterSpacing: 1.9, marginBottom: 12 },
   roleGrid: { gap: 12 },
   roleCard: { borderWidth: 1, borderColor: '#dce3e7', padding: 19, backgroundColor: '#fff' },
-  adminCard: { backgroundColor: '#f7f9fa' },
   roleEyebrow: { color: '#788791', fontSize: 8, letterSpacing: 1.8, marginBottom: 7 },
   roleTitle: { color: '#173246', fontSize: 19, lineHeight: 24, fontWeight: '600' },
   roleCopy: { color: '#71808a', fontSize: 12, lineHeight: 18, marginTop: 6 },
