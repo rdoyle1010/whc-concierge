@@ -6,6 +6,7 @@ import { geocodePostcode } from '@/lib/geo'
 import { AGENCY_LISTING_TIERS } from '@/lib/constants'
 
 const SITE = 'https://talent.wellnesshousecollective.co.uk'
+const mobileReturn = (status: 'success' | 'cancelled' | 'billing') => `${SITE}/mobile-return/agency?status=${status}`
 
 export async function GET(req: NextRequest) {
   const user = await getRequestUser(req)
@@ -77,7 +78,7 @@ export async function POST(req: NextRequest) {
     const stripe = getStripe()
     const session = await stripe.billingPortal.sessions.create({
       customer: candidate.stripe_customer_id,
-      return_url: `${SITE}/agency-account`,
+      return_url: mobileReturn('billing'),
     })
     return NextResponse.json({ url: session.url })
   }
@@ -122,8 +123,8 @@ export async function POST(req: NextRequest) {
       }, quantity: 1 }],
       mode: 'subscription',
       allow_promotion_codes: true,
-      success_url: `${SITE}/agency-account?agency=success`,
-      cancel_url: `${SITE}/agency-account?agency=cancelled`,
+      success_url: mobileReturn('success'),
+      cancel_url: mobileReturn('cancelled'),
       metadata: meta,
       subscription_data: { metadata: meta },
     })
