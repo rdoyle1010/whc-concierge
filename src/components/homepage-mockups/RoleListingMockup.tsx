@@ -1,63 +1,44 @@
-import { MapPin } from 'lucide-react'
+import { MapPin, Star } from 'lucide-react'
 
 export default function RoleListingMockup() {
   return (
-    <div className="bg-white rounded-2xl border border-[#E5E5E5] shadow-sm p-5 max-w-sm w-full mx-auto relative overflow-hidden">
-      <div
-        className="absolute top-0 left-0 right-0 h-[3px]"
-        style={{ background: 'linear-gradient(90deg, transparent, #C9A96E, transparent)' }}
-      />
-
-      <div className="mt-1 flex items-center justify-between">
-        <span
-          className="text-[10px] font-semibold tracking-[0.12em] uppercase px-2.5 py-1 rounded-full"
-          style={{ background: '#FDF6EC', color: '#C9A96E' }}
-        >
-          Gold
-        </span>
-        <span className="text-[11px]" style={{ color: '#6B7280' }}>Posted 3 days ago</span>
+    <div className="mx-auto w-full max-w-sm overflow-hidden rounded-3xl border border-border bg-white shadow-[0_18px_55px_rgba(16,40,59,.08)]">
+      <div className="relative min-h-[170px] overflow-hidden bg-[#0b2f4d]">
+        <div className="absolute inset-0 bg-gradient-to-br from-[#0b2f4d] via-[#123f64] to-[#765d34]" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-black/15" />
+        <div className="absolute left-4 top-4"><span className="badge-gold">Gold</span></div>
+        <div className="absolute inset-x-0 bottom-0 p-5 text-white">
+          <p className="mb-1 text-[10px] uppercase tracking-[.14em] text-white/70">Property</p>
+          <p className="text-[17px] font-semibold">The Mayfair Hotel Spa</p>
+          <div className="mt-2 flex flex-wrap items-center gap-3 text-[11px] text-white/80">
+            <span className="inline-flex items-center gap-1"><MapPin size={11}/>London</span>
+            <span className="inline-flex items-center gap-1"><Star size={11} fill="currentColor"/>4.8</span>
+          </div>
+        </div>
       </div>
 
-      <div className="mt-3">
-        <p className="text-[11px] uppercase tracking-wide mb-1" style={{ color: '#6B7280' }}>
-          5★ Country House Hotel
-        </p>
-        <h3 className="text-[17px] font-medium leading-tight" style={{ color: '#1a1a1a' }}>
-          Senior Spa Therapist
-        </h3>
-      </div>
+      <div className="p-5">
+        <div className="mb-4 flex items-start justify-between gap-4">
+          <div>
+            <p className="dashboard-eyebrow">Best-fit role</p>
+            <h3 className="text-[22px] font-semibold leading-[1.08] tracking-[-.03em] text-ink">Senior Spa Therapist</h3>
+            <p className="mt-2 text-[12px] text-muted">Full time · £34k–£38k</p>
+          </div>
+          <div className="shrink-0 rounded-2xl border border-[#e4dccd] bg-[#fcfaf5] px-3 py-2 text-center">
+            <div className="text-[26px] font-semibold tracking-[-.04em] text-[#287548]">94%</div>
+            <div className="text-[9px] font-semibold uppercase tracking-[.08em] text-[#287548]">Excellent</div>
+          </div>
+        </div>
 
-      <div className="mt-3 flex items-center justify-between text-[13px]">
-        <span className="inline-flex items-center gap-1" style={{ color: '#6B7280' }}>
-          <MapPin size={12} /> South West England
-        </span>
-        <span className="font-medium" style={{ color: '#C9A96E' }}>£32,000 - £38,000</span>
-      </div>
+        <div className="mb-4 rounded-2xl border border-[#e6dece] bg-[#fcfaf5] p-4">
+          <p className="mb-1 text-[9px] font-semibold uppercase tracking-[.14em] text-[#9c7a42]">Why this role is showing</p>
+          <p className="text-[11px] leading-5 text-secondary">Your treatment skills, qualifications, experience and location align strongly with this role.</p>
+        </div>
 
-      <div className="mt-3 flex flex-wrap gap-1.5">
-        {['Full-time', 'Permanent', 'On-site'].map((chip) => (
-          <span
-            key={chip}
-            className="text-[11px] px-2 py-0.5 rounded-md"
-            style={{ background: '#F8F7F5', color: '#374151' }}
-          >
-            {chip}
-          </span>
-        ))}
-      </div>
-
-      <p className="text-[12px] leading-[1.6] mt-3" style={{ color: '#6B7280' }}>
-        Lead role in a renowned spa with a luxury international brand presence.
-      </p>
-
-      <div className="mt-4 pt-4 border-t border-[#F0EEEA] flex items-center justify-end">
-        <button
-          type="button"
-          className="text-[12px] font-semibold text-white px-3.5 py-1.5 rounded-md transition-all hover:shadow-md hover:shadow-[#C9A96E]/25"
-          style={{ backgroundColor: '#C9A96E' }}
-        >
-          Apply Now
-        </button>
+        <div className="flex gap-2">
+          <button type="button" className="btn-secondary flex-1 text-[11px]">Pass</button>
+          <button type="button" className="btn-primary flex-1 text-[11px]">Save interest</button>
+        </div>
       </div>
     </div>
   )
