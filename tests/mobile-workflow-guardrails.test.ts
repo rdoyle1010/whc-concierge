@@ -27,8 +27,8 @@ test('employer mobile application UI cannot expose offer before completed interv
   assert.match(screen, /completedInterviews\.length > 0/)
   assert.match(screen, /Mark interview completed/)
   assert.match(screen, /roundNumber: nextRound/)
-  assert.match(screen, /AI interview/)
-  assert.match(screen, /Offer locked/)
+  assert.match(screen, /writeMessage\(draftIntent\)/)
+  assert.match(screen, /Complete an interview first/)
   assert.doesNotMatch(screen, /canOffer\s*=\s*\['shortlisted'/)
 })
 
