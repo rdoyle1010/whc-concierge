@@ -9,6 +9,8 @@ on:
       - 'supabase/**'
       - 'package.json'
       - 'package-lock.json'
+      - 'next.config.js'
+      - 'netlify.toml'
       - '.github/workflows/quality-ci.yml'
   push:
     branches: [main]
@@ -19,6 +21,8 @@ on:
       - 'supabase/**'
       - 'package.json'
       - 'package-lock.json'
+      - 'next.config.js'
+      - 'netlify.toml'
       - '.github/workflows/quality-ci.yml'
 
 concurrency:
@@ -30,17 +34,19 @@ permissions:
 
 jobs:
   quality:
-    name: Tests, readiness and TypeScript
+    name: Tests, TypeScript and production build
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Use Node.js 22
+      - name: Use Node.js 20 to match Netlify
         uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 20
           cache: npm
       - name: Install dependencies
         run: npm ci --no-audit --no-fund
       - name: Run platform checks
         run: npm run check
+      - name: Build production website
+        run: npm run build
