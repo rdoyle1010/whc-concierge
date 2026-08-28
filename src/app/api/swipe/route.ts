@@ -10,7 +10,6 @@ import { canEmployerDiscoverCandidate, mutualRadiusResult } from '@/lib/discover
 
 const RESEND_API_KEY = process.env.RESEND_API_KEY
 const FROM_EMAIL = 'WHC Concierge <noreply@mail.wellnesshousecollective.co.uk>'
-const MIN_APPLICATION_MATCH = 45
 
 async function sendEmail(to: string, subject: string, html: string) {
   if (!RESEND_API_KEY) return
@@ -191,23 +190,10 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ matched: false })
       }
 
+      // Candidate matching is advisory. We keep the score and any gap/hard-stop
+      // explanation for the application assistant, but do not prevent a candidate
+      // from applying to a live role.
       const result = calculateMatchScore(candidate, job)
-      if (result.hardStop) {
-        await removeSwipe(admin, {
-          swiper_id: user.id, swiper_type: 'candidate', target_id: job.id, target_type: 'job', context_job_id: context,
-        })
-        return NextResponse.json({ error: result.hardStopReason || 'This role is not compatible with your profile' }, { status: 400 })
-      }
-      if (result.score < MIN_APPLICATION_MATCH) {
-        await removeSwipe(admin, {
-          swiper_id: user.id, swiper_type: 'candidate', target_id: job.id, target_type: 'job', context_job_id: context,
-        })
-        return NextResponse.json({
-          error: `This role is currently a ${result.score}% match. Applications open from ${MIN_APPLICATION_MATCH}%.`,
-          matchScore: result.score,
-          minimumMatch: MIN_APPLICATION_MATCH,
-        }, { status: 400 })
-      }
 
       const saved = await replaceSwipe(admin, {
         swiper_id: user.id, swiper_type: 'candidate', target_id: job.id, target_type: 'job', action: 'right', context_job_id: context,
