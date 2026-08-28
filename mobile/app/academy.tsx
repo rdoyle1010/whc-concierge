@@ -94,6 +94,15 @@ export default function AcademyScreen(){
         </View>
       </View>
 
+      <Pressable onPress={()=>router.push('/academy-transcript')} style={styles.transcriptCard}>
+        <View style={{flex:1}}>
+          <Text style={styles.transcriptEyebrow}>STUDENT RECORDS</Text>
+          <Text style={styles.transcriptTitle}>Academic Transcript</Text>
+          <Text style={styles.transcriptCopy}>View your complete WHC Academy learning history, study time, module progress, assessment results and certificate codes.</Text>
+        </View>
+        <Text style={styles.transcriptArrow}>→</Text>
+      </Pressable>
+
       {discount>0?<View style={styles.supportCard}><Text style={styles.supportEyebrow}>MEMBER LEARNING SUPPORT</Text><Text style={styles.supportTitle}>{discount}% Academy tuition reduction active</Text><Text style={styles.supportCopy}>Your member rate is applied automatically at secure enrolment checkout.</Text></View>:null}
 
       <SectionHeader eyebrow="MY LEARNING" title="Current studies" copy="Return to your enrolled programmes, continue from where you stopped and keep your learning record moving." />
@@ -172,6 +181,11 @@ const styles=StyleSheet.create({
   portalStat:{flex:1},
   portalStatNumber:{color:palette.paper,fontSize:16,fontWeight:'700',fontFamily:type.sans},
   portalStatLabel:{color:'#CDD7DC',fontSize:8.5,marginTop:3,fontFamily:type.sans},
+  transcriptCard:{backgroundColor:palette.paper,borderWidth:1,borderColor:palette.line,padding:16,borderRadius:radius.large,marginBottom:10,flexDirection:'row',alignItems:'center',gap:12},
+  transcriptEyebrow:{color:palette.quiet,fontSize:7.5,letterSpacing:1.2,fontWeight:'700',fontFamily:type.sans},
+  transcriptTitle:{color:palette.inkStrong,fontSize:18,lineHeight:23,fontWeight:'400',fontFamily:type.serif,marginTop:5},
+  transcriptCopy:{color:palette.muted,fontSize:10.5,lineHeight:17,marginTop:5,fontFamily:type.sans},
+  transcriptArrow:{color:palette.ink,fontSize:18},
   supportCard:{backgroundColor:palette.paper,borderWidth:1,borderColor:palette.line,padding:15,borderRadius:radius.large,marginBottom:8},
   supportEyebrow:{color:palette.quiet,fontSize:7.5,letterSpacing:1.2,fontWeight:'700',fontFamily:type.sans},
   supportTitle:{color:palette.inkStrong,fontSize:16,lineHeight:21,fontWeight:'400',fontFamily:type.serif,marginTop:5},
