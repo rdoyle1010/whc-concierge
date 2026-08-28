@@ -6,21 +6,21 @@ import { supabase } from '../lib/supabase'
 import { palette, type } from '../lib/theme'
 
 type Role = 'talent' | 'employer'
-type NavItem = { label:string; href:string; symbol:string }
+type NavItem = { label:string; href:string }
 
 const talentItems:NavItem[]=[
-  {label:'Home',href:'/home',symbol:'⌂'},
-  {label:'Jobs',href:'/jobs',symbol:'◌'},
-  {label:'Applications',href:'/applications',symbol:'◇'},
-  {label:'Messages',href:'/messages',symbol:'✉'},
-  {label:'Profile',href:'/profile',symbol:'○'},
+  {label:'Home',href:'/home'},
+  {label:'Jobs',href:'/jobs'},
+  {label:'Applications',href:'/applications'},
+  {label:'Messages',href:'/messages'},
+  {label:'Profile',href:'/profile'},
 ]
 const employerItems:NavItem[]=[
-  {label:'Home',href:'/home',symbol:'⌂'},
-  {label:'Jobs',href:'/jobs',symbol:'◌'},
-  {label:'Match',href:'/match',symbol:'♡'},
-  {label:'Applications',href:'/applications',symbol:'◇'},
-  {label:'Messages',href:'/messages',symbol:'✉'},
+  {label:'Home',href:'/home'},
+  {label:'Jobs',href:'/jobs'},
+  {label:'Match',href:'/match'},
+  {label:'Applications',href:'/applications'},
+  {label:'Messages',href:'/messages'},
 ]
 
 export default function MobileNav(){
@@ -83,23 +83,24 @@ export default function MobileNav(){
   return <View style={styles.wrap}>{items.map(item=>{
     const active=pathname===item.href
     const badge=item.href==='/messages'?unreadMessages:item.href==='/home'?totalAttention:0
-    return <Pressable key={item.href} onPress={()=>router.replace(item.href as never)} style={styles.item}>
-      <View style={styles.iconWrap}><Text style={[styles.symbol,active&&styles.activeSymbol]}>{item.symbol}</Text>{badge>0?<View style={styles.badge}><Text style={styles.badgeText}>{badge>99?'99+':badge}</Text></View>:null}</View>
-      <Text numberOfLines={1} style={[styles.label,active&&styles.activeLabel]}>{item.label}</Text>
+    return <Pressable key={item.href} onPress={()=>router.replace(item.href as never)} style={[styles.item,active&&styles.activeItem]}>
       {active?<View style={styles.activeLine}/>:null}
+      <View style={styles.labelWrap}>
+        <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.82} style={[styles.label,active&&styles.activeLabel]}>{item.label}</Text>
+        {badge>0?<View style={styles.badge}><Text style={styles.badgeText}>{badge>99?'99+':badge}</Text></View>:null}
+      </View>
     </Pressable>
   })}</View>
 }
 
 const styles=StyleSheet.create({
-  wrap:{height:70,borderTopWidth:1,borderTopColor:palette.line,backgroundColor:palette.paper,flexDirection:'row',alignItems:'stretch'},
-  item:{flex:1,alignItems:'center',justifyContent:'center',paddingTop:7,paddingBottom:6,position:'relative'},
-  iconWrap:{position:'relative',minWidth:26,alignItems:'center'},
-  symbol:{color:palette.quiet,fontSize:18,lineHeight:20,fontFamily:type.sans},
-  label:{color:palette.quiet,fontSize:8.5,marginTop:3,fontFamily:type.sans},
-  activeSymbol:{color:palette.inkStrong},
+  wrap:{height:58,borderTopWidth:1,borderTopColor:palette.line,backgroundColor:palette.paper,flexDirection:'row',alignItems:'stretch'},
+  item:{flex:1,alignItems:'center',justifyContent:'center',paddingHorizontal:3,position:'relative'},
+  activeItem:{backgroundColor:palette.paper},
+  labelWrap:{position:'relative',alignItems:'center',justifyContent:'center',minWidth:44,maxWidth:'100%'},
+  label:{color:palette.quiet,fontSize:9.25,lineHeight:13,fontFamily:type.sans,fontWeight:'500',letterSpacing:.05,textAlign:'center'},
   activeLabel:{color:palette.inkStrong,fontWeight:'700'},
-  activeLine:{position:'absolute',bottom:0,width:24,height:2,backgroundColor:palette.inkStrong,borderRadius:1},
-  badge:{position:'absolute',top:-8,right:-13,minWidth:18,height:18,paddingHorizontal:4,borderRadius:9,backgroundColor:palette.danger,alignItems:'center',justifyContent:'center',borderWidth:1.5,borderColor:palette.paper},
-  badgeText:{color:'#fff',fontSize:8,fontWeight:'800'},
+  activeLine:{position:'absolute',top:-1,width:30,height:2,backgroundColor:palette.ink,borderRadius:1},
+  badge:{position:'absolute',top:-13,right:-10,minWidth:16,height:16,paddingHorizontal:4,borderRadius:8,backgroundColor:palette.danger,alignItems:'center',justifyContent:'center',borderWidth:1.5,borderColor:palette.paper},
+  badgeText:{color:palette.paper,fontSize:7.5,fontWeight:'800'},
 })
