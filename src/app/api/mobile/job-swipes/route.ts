@@ -24,7 +24,6 @@ export async function GET(req: NextRequest) {
   return NextResponse.json({
     passed_job_ids: passedJobIds,
     reviewed_job_ids: reviewedJobIds,
-    // Kept temporarily for backwards compatibility with older TestFlight builds.
     saved_job_ids: reviewedJobIds,
   })
 }
@@ -100,7 +99,7 @@ export async function POST(req: NextRequest) {
     context_job_id: targetId,
   }
   const { error } = await admin.from('swipes').upsert(row, {
-    onConflict: 'swiper_id,swiper_type,target_id,target_type',
+    onConflict: 'swiper_id,swiper_type,target_id,target_type,context_job_id',
     ignoreDuplicates: false,
   })
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
@@ -134,7 +133,6 @@ export async function DELETE(req: NextRequest) {
     .eq('target_type', 'job')
   if (swipeDeleteError) return NextResponse.json({ error: swipeDeleteError.message }, { status: 500 })
 
-  // Clean up legacy Saved rows created by older mobile builds.
   if (targetIds.length) {
     const { error: savedDeleteError } = await admin
       .from('saved_jobs')
