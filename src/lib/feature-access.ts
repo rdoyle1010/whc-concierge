@@ -17,6 +17,8 @@ export type EmployerAccessProfile = {
   membership_tier?: string | null
   annual_job_allowance?: number | null
   annual_jobs_used?: number | null
+  featured_employer?: boolean | null
+  featured_until?: string | null
 }
 
 export type FeatureKey =
@@ -24,7 +26,17 @@ export type FeatureKey =
   | 'employer_talent_search'
   | 'employer_analytics'
 
-const activeEmployerMembership = (tier?: string | null) => tier === 'pro' || tier === 'group'
+function hasActiveFeaturedAccess(profile?: EmployerAccessProfile | null) {
+  if (!profile?.featured_employer) return false
+  if (!profile.featured_until) return true
+  const expiry = new Date(profile.featured_until).getTime()
+  return Number.isFinite(expiry) && expiry > Date.now()
+}
+
+function activeEmployerPremium(profile?: EmployerAccessProfile | null) {
+  const tier = String(profile?.membership_tier || '').toLowerCase()
+  return tier === 'pro' || tier === 'group' || hasActiveFeaturedAccess(profile)
+}
 
 export function talentFeatureAccess(profile?: TalentAccessProfile | null): Record<FeatureKey, FeatureAccess> {
   const credits = Math.max(0, Number(profile?.interview_ready_credits || 0))
@@ -39,16 +51,16 @@ export function talentFeatureAccess(profile?: TalentAccessProfile | null): Recor
 }
 
 export function employerFeatureAccess(profile?: EmployerAccessProfile | null): Record<FeatureKey, FeatureAccess> {
-  const premium = activeEmployerMembership(profile?.membership_tier)
+  const premium = activeEmployerPremium(profile)
 
   return {
     talent_interview_ready: { state: 'included' },
     employer_talent_search: premium
       ? { state: 'included' }
-      : { state: 'locked', label: 'Pro feature', upgradeHref: '/employer/billing' },
+      : { state: 'locked', label: 'Premium feature', upgradeHref: '/employer/billing' },
     employer_analytics: premium
       ? { state: 'included' }
-      : { state: 'locked', label: 'Pro feature', upgradeHref: '/employer/billing' },
+      : { state: 'locked', label: 'Premium feature', upgradeHref: '/employer/billing' },
   }
 }
 
