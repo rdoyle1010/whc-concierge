@@ -22,17 +22,10 @@ const employerItems:NavItem[]=[
   {label:'Agency',href:'/agency',symbol:'○'},
 ]
 
-function isMirroredActionNotification(item:any){
-  const type=String(item?.type||'').toLowerCase()
-  const link=String(item?.link||'').toLowerCase()
-  return type.includes('message')||link.includes('/message')||type.includes('agency')||link.includes('/agency')
-}
-
 export default function MobileNav(){
   const pathname=usePathname()
   const [role,setRole]=useState<Role>('talent')
   const [unreadMessages,setUnreadMessages]=useState(0)
-  const [actionCount,setActionCount]=useState(0)
   const [agencyCount,setAgencyCount]=useState(0)
 
   useEffect(()=>{
@@ -42,10 +35,7 @@ export default function MobileNav(){
 
     async function loadCounts(userId:string,resolvedRole?:Role){
       const roleToUse=resolvedRole||role
-      const [{count:messageCount},{data:notificationRows}]=await Promise.all([
-        supabase.from('messages').select('id',{count:'exact',head:true}).eq('recipient_id',userId).eq('read',false),
-        supabase.from('notifications').select('id,type,link,requires_action,done_at').eq('user_id',userId).eq('requires_action',true).is('done_at',null).limit(100),
-      ])
+      const {count:messageCount}=await supabase.from('messages').select('id',{count:'exact',head:true}).eq('recipient_id',userId).eq('read',false)
       let agency=0
       if(roleToUse==='talent'){
         const {data:candidate}=await supabase.from('candidate_profiles').select('id').eq('user_id',userId).maybeSingle()
@@ -56,11 +46,9 @@ export default function MobileNav(){
       }
       if(!active)return
       const messages=messageCount||0
-      const actions=(notificationRows||[]).filter((item:any)=>!isMirroredActionNotification(item)).length
       setUnreadMessages(messages)
-      setActionCount(actions)
       setAgencyCount(agency)
-      try{await Notifications.setBadgeCountAsync(messages+actions+agency)}catch{}
+      try{await Notifications.setBadgeCountAsync(messages+agency)}catch{}
     }
 
     async function load(){
@@ -73,14 +61,13 @@ export default function MobileNav(){
       if(!channel){
         channel=supabase.channel(`mobile-attention-${user.id}`)
           .on('postgres_changes',{event:'*',schema:'public',table:'messages',filter:`recipient_id=eq.${user.id}`},()=>loadCounts(user.id,resolved))
-          .on('postgres_changes',{event:'*',schema:'public',table:'notifications',filter:`user_id=eq.${user.id}`},()=>loadCounts(user.id,resolved))
           .on('postgres_changes',{event:'*',schema:'public',table:'agency_bookings'},()=>loadCounts(user.id,resolved))
           .subscribe()
       }
     }
 
     load()
-    const interval=setInterval(load,30000)
+    const interval=setInterval(load,15000)
     return()=>{
       active=false
       clearInterval(interval)
@@ -90,7 +77,7 @@ export default function MobileNav(){
 
   if(pathname==='/'||pathname==='/login'||pathname==='/admin'||pathname.startsWith('/message/')||pathname.startsWith('/job/'))return null
   const items=role==='employer'?employerItems:talentItems
-  const totalAttention=unreadMessages+actionCount+agencyCount
+  const totalAttention=unreadMessages+agencyCount
 
   return <View style={styles.wrap}>{items.map(item=>{
     const active=pathname===item.href
