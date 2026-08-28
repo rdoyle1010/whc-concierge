@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getRequestUser } from '@/lib/request-user'
+import { calculateMatchScore } from '@/lib/matching'
+
+const MIN_APPLICATION_MATCH = 45
+const RESTARTABLE_STATUSES = new Set(['withdrawn', 'rejected'])
 
 export async function GET(req: NextRequest) {
   const user = await getRequestUser(req)
@@ -33,11 +37,51 @@ export async function POST(req: NextRequest) {
 
   const admin = createAdminClient()
   const [{ data: candidate }, { data: job }] = await Promise.all([
-    admin.from('candidate_profiles').select('id').eq('user_id', user.id).maybeSingle(),
-    admin.from('job_listings').select('id,is_live,expires_at').eq('id', targetId).maybeSingle(),
+    admin.from('candidate_profiles').select('*').eq('user_id', user.id).maybeSingle(),
+    admin.from('job_listings').select('*').eq('id', targetId).maybeSingle(),
   ])
   if (!candidate) return NextResponse.json({ error: 'Candidate profile not found.' }, { status: 404 })
   if (!job || !job.is_live || (job.expires_at && new Date(job.expires_at).getTime() <= Date.now())) return NextResponse.json({ error: 'This role is no longer available.' }, { status: 404 })
+
+  if (action === 'right') {
+    const match = calculateMatchScore(candidate, job)
+    if (match.hardStop) return NextResponse.json({ error: match.hardStopReason || 'This role is not compatible with your profile.' }, { status: 400 })
+    if (match.score < MIN_APPLICATION_MATCH) {
+      return NextResponse.json({
+        error: `This role is currently a ${match.score}% match. Applications open from ${MIN_APPLICATION_MATCH}% once mandatory requirements are met.`,
+        matchScore: match.score,
+        minimumMatch: MIN_APPLICATION_MATCH,
+      }, { status: 400 })
+    }
+
+    const { data: existing } = await admin.from('applications')
+      .select('id,status,cover_letter')
+      .eq('candidate_id', candidate.id)
+      .eq('role_id', targetId)
+      .maybeSingle()
+
+    if (existing?.status === 'draft') {
+      await admin.from('applications').update({ match_score: match.score, updated_at: new Date().toISOString() }).eq('id', existing.id)
+    } else if (existing && RESTARTABLE_STATUSES.has(String(existing.status || '').toLowerCase())) {
+      await admin.from('applications').update({
+        status: 'draft',
+        match_score: match.score,
+        submitted_at: null,
+        updated_at: new Date().toISOString(),
+      }).eq('id', existing.id)
+    } else if (!existing) {
+      const { error: createError } = await admin.from('applications').insert({
+        candidate_id: candidate.id,
+        role_id: targetId,
+        job_id: targetId,
+        status: 'draft',
+        match_score: match.score,
+        cover_letter: '',
+        submitted_at: null,
+      })
+      if (createError) return NextResponse.json({ error: 'Could not start your application.' }, { status: 500 })
+    }
+  }
 
   const row = {
     swiper_id: user.id,
@@ -57,7 +101,7 @@ export async function POST(req: NextRequest) {
     await admin.from('saved_jobs').upsert({ candidate_id: candidate.id, job_id: targetId }, { onConflict: 'candidate_id,job_id', ignoreDuplicates: true })
   }
 
-  return NextResponse.json({ success: true, action })
+  return NextResponse.json({ success: true, action, applicationDraft: action === 'right' })
 }
 
 export async function DELETE(req: NextRequest) {
