@@ -3,6 +3,7 @@ import { ActivityIndicator, Animated, Dimensions, Image, PanResponder, Pressable
 import { router } from 'expo-router'
 import { supabase } from '../src/lib/supabase'
 import { calculateMatchScore } from '../src/lib/matching'
+import { palette, radius, space, type } from '../src/lib/theme'
 
 const WEB_URL=process.env.EXPO_PUBLIC_WEB_URL||'https://talent.wellnesshousecollective.co.uk'
 const SCREEN_WIDTH=Dimensions.get('window').width
@@ -126,45 +127,92 @@ export default function JobsScreen(){
         <View style={styles.propertyRow}>
           {employer?.logo_url?<Image source={{uri:employer.logo_url}} style={styles.logo}/>:null}
           <View style={{flex:1}}><Text style={styles.company}>{employer?.property_name||employer?.company_name||'Wellness employer'}</Text><Text style={styles.rating}>{rating>0?`${rating.toFixed(1)} ★${reviews?` · ${reviews} reviews`:''}`:'New property'}</Text></View>
-          {match?<Text style={styles.match}>{match.score}% MATCH</Text>:null}
+          {match?<View style={styles.matchBox}><Text style={styles.matchScore}>{match.score}%</Text><Text style={styles.matchLabel}>MATCH</Text></View>:null}
         </View>
         <Text style={styles.jobTitle}>{job.job_title}</Text>
         <Text style={styles.meta}>{[job.location||employer?.location,job.job_type,job.salary_display_text].filter(Boolean).join(' · ')||'Open for full details'}</Text>
-        <Pressable onPress={()=>router.push({pathname:'/job/[id]',params:{id:job.id}})} style={styles.detailsButton}><Text style={styles.detailsText}>Hotel, role & full details →</Text></Pressable>
+        <Pressable onPress={()=>router.push({pathname:'/job/[id]',params:{id:job.id}})} style={styles.detailsButton}><Text style={styles.detailsText}>View property and role</Text><Text style={styles.arrow}>→</Text></Pressable>
       </View>
     </>
   }
 
   if(role==='employer')return <ScrollView style={styles.screen} contentContainerStyle={styles.page}>
-    <Text style={styles.eyebrow}>RECRUITMENT</Text><Text style={styles.title}>Your jobs</Text><Text style={styles.intro}>Create, edit, publish, close and manage your current roles.</Text>
-    <Pressable onPress={()=>router.push({pathname:'/employer-job/[id]',params:{id:'new'}})} style={styles.primary}><Text style={styles.primaryText}>+ Post a role</Text></Pressable>
-    {loading?<ActivityIndicator color="#092b45"/>:null}{error?<Text style={styles.error}>{error}</Text>:null}
-    {ranked.map(({job,match})=><View key={job.id} style={styles.listCard}><Pressable onPress={()=>router.push({pathname:'/job/[id]',params:{id:job.id}})}>{jobCard(job,match)}</Pressable><Pressable onPress={()=>router.push({pathname:'/employer-job/[id]',params:{id:job.id}})} style={styles.manage}><Text style={styles.manageText}>Manage role →</Text></Pressable></View>)}
+    <Text style={styles.eyebrow}>RECRUITMENT</Text><Text style={styles.title}>Your jobs</Text><Text style={styles.intro}>Create, edit, publish and close roles from one place.</Text>
+    <Pressable onPress={()=>router.push({pathname:'/employer-job/[id]',params:{id:'new'}})} style={styles.primary}><Text style={styles.primaryText}>Post a role</Text></Pressable>
+    {loading?<ActivityIndicator color={palette.ink}/>:null}{error?<Text style={styles.error}>{error}</Text>:null}
+    {ranked.map(({job,match})=><View key={job.id} style={styles.listCard}><Pressable onPress={()=>router.push({pathname:'/job/[id]',params:{id:job.id}})}>{jobCard(job,match)}</Pressable><Pressable onPress={()=>router.push({pathname:'/employer-job/[id]',params:{id:job.id}})} style={styles.manage}><Text style={styles.manageText}>Manage role</Text><Text style={styles.arrow}>→</Text></Pressable></View>)}
   </ScrollView>
 
   return <View style={styles.screen}><ScrollView contentContainerStyle={styles.page} scrollEnabled={!current}>
     <Text style={styles.eyebrow}>OPPORTUNITIES</Text><Text style={styles.title}>Jobs</Text>
-    <Text style={styles.intro}>One place to discover roles. Swipe left to pass. Swipe right to start your AI application.</Text>
-    {loading?<ActivityIndicator color="#092b45" style={{marginTop:30}}/>:null}{error?<Text style={styles.error}>{error}</Text>:null}
-    {!loading&&!error&&!current?<View style={styles.empty}><Text style={styles.emptyTitle}>{jobs.length?'You’ve reviewed every live role.':'No live roles right now.'}</Text><Text style={styles.emptyCopy}>{jobs.length?'Applied roles are tracked in Applications. Reset the deck only if you want to review current roles again.':'New matching roles will appear here automatically.'}</Text>{jobs.length?<Pressable onPress={resetDeck} style={styles.reset}><Text style={styles.resetText}>{busy?'Resetting…':'Reset swipe deck'}</Text></Pressable>:null}</View>:null}
+    <Text style={styles.intro}>Roles selected for your profile. Swipe left to pass or right to begin an application.</Text>
+    {loading?<ActivityIndicator color={palette.ink} style={{marginTop:30}}/>:null}{error?<Text style={styles.error}>{error}</Text>:null}
+    {!loading&&!error&&!current?<View style={styles.empty}><Text style={styles.emptyTitle}>{jobs.length?'You’re up to date.':'No live roles right now.'}</Text><Text style={styles.emptyCopy}>{jobs.length?'You have reviewed every current role. Your submitted applications stay in Applications.':'New matching roles will appear here automatically.'}</Text>{jobs.length?<Pressable onPress={resetDeck} style={styles.reset}><Text style={styles.resetText}>{busy?'Resetting…':'Review current roles again'}</Text></Pressable>:null}</View>:null}
     {!loading&&!error&&current?<>
       <View style={styles.deck}>
         {next?<View style={[styles.card,styles.nextCard]}>{jobCard(next.job,next.match)}</View>:null}
         <Animated.View {...panResponder.panHandlers} style={[styles.card,styles.topCard,{transform:[{translateX:position.x},{translateY:position.y},{rotate}]}]}>
           <Animated.View pointerEvents="none" style={[styles.swipeLabel,styles.passLabel,{opacity:passOpacity}]}><Text style={styles.passLabelText}>PASS</Text></Animated.View>
-          <Animated.View pointerEvents="none" style={[styles.swipeLabel,styles.applyLabel,{opacity:applyOpacity}]}><Text style={styles.applyLabelText}>APPLY WITH AI</Text></Animated.View>
+          <Animated.View pointerEvents="none" style={[styles.swipeLabel,styles.applyLabel,{opacity:applyOpacity}]}><Text style={styles.applyLabelText}>START APPLICATION</Text></Animated.View>
           {jobCard(current.job,current.match)}
         </Animated.View>
       </View>
       <View style={styles.actions}>
-        <Pressable onPress={()=>animateAction('left')} disabled={busy} style={[styles.actionButton,styles.passButton]}><Text style={styles.passButtonText}>PASS</Text></Pressable>
-        <Pressable onPress={()=>animateAction('right')} disabled={busy} style={[styles.actionButton,styles.applyButton]}><Text style={styles.applyButtonText}>{busy?'OPENING…':'APPLY WITH AI'}</Text></Pressable>
+        <Pressable onPress={()=>animateAction('left')} disabled={busy} style={[styles.actionButton,styles.passButton]}><Text style={styles.passButtonText}>Pass</Text></Pressable>
+        <Pressable onPress={()=>animateAction('right')} disabled={busy} style={[styles.actionButton,styles.applyButton]}><Text style={styles.applyButtonText}>{busy?'Opening…':'Start application'}</Text></Pressable>
       </View>
-      <Text style={styles.help}>Apply with AI opens the hotel and role, your match analysis, tailored covering letter and Submit Application. Once submitted, track it in Applications.</Text>
+      <Text style={styles.help}>Open the role to see the property, your match analysis and tailored application support before you submit anything.</Text>
     </>:null}
   </ScrollView></View>
 }
 
 const styles=StyleSheet.create({
-  screen:{flex:1,backgroundColor:'#f7f8f8'},page:{paddingHorizontal:20,paddingTop:22,paddingBottom:110,minHeight:'100%'},eyebrow:{color:'#71808a',fontSize:9,letterSpacing:2.1,marginBottom:8},title:{color:'#092b45',fontSize:30,lineHeight:36,fontWeight:'600'},intro:{color:'#66747c',fontSize:13,lineHeight:20,marginTop:10,marginBottom:18},error:{color:'#9b2c2c',fontSize:12,marginVertical:14},deck:{height:535,position:'relative',marginTop:4},card:{position:'absolute',left:0,right:0,minHeight:500,backgroundColor:'#fff',borderWidth:1,borderColor:'#d9e0e3',overflow:'hidden',shadowColor:'#0b2f4d',shadowOpacity:.10,shadowRadius:16,shadowOffset:{width:0,height:8},elevation:4},topCard:{zIndex:2},nextCard:{top:10,left:8,right:8,opacity:.55,transform:[{scale:.975}]},hero:{width:'100%',height:190,backgroundColor:'#eef2f4'},placeholder:{height:180,backgroundColor:'#edf2f4',alignItems:'center',justifyContent:'center'},placeholderText:{fontSize:10,letterSpacing:2,color:'#71808a'},cardBody:{padding:18},propertyRow:{flexDirection:'row',alignItems:'center',gap:9},logo:{width:38,height:38,borderRadius:8,borderWidth:1,borderColor:'#e4e9eb'},company:{color:'#173246',fontSize:11,textTransform:'uppercase',letterSpacing:.6,fontWeight:'700'},rating:{color:'#526976',fontSize:9.5,marginTop:3},match:{color:'#092b45',borderWidth:1,borderColor:'#cdd8dd',paddingHorizontal:7,paddingVertical:4,fontSize:8,fontWeight:'700'},jobTitle:{color:'#173246',fontSize:23,lineHeight:29,fontWeight:'600',marginTop:14},meta:{color:'#66747c',fontSize:11,lineHeight:17,marginTop:7},detailsButton:{marginTop:18,paddingVertical:10},detailsText:{color:'#092b45',fontSize:11,fontWeight:'700'},swipeLabel:{position:'absolute',top:22,zIndex:5,borderWidth:2,paddingHorizontal:10,paddingVertical:7,backgroundColor:'#fff'},passLabel:{left:18,borderColor:'#9b2c2c'},applyLabel:{right:18,borderColor:'#0b6245'},passLabelText:{color:'#9b2c2c',fontSize:13,fontWeight:'900',letterSpacing:1},applyLabelText:{color:'#0b6245',fontSize:11,fontWeight:'900',letterSpacing:.7},actions:{flexDirection:'row',gap:10,marginTop:12},actionButton:{flex:1,minHeight:52,alignItems:'center',justifyContent:'center',borderWidth:1},passButton:{backgroundColor:'#fff',borderColor:'#c7d1d6'},applyButton:{backgroundColor:'#092b45',borderColor:'#092b45'},passButtonText:{color:'#8f1d1d',fontSize:11,fontWeight:'800',letterSpacing:1},applyButtonText:{color:'#fff',fontSize:11,fontWeight:'800',letterSpacing:.7},help:{color:'#71808a',fontSize:10.5,lineHeight:16,marginTop:11,textAlign:'center'},empty:{backgroundColor:'#fff',borderWidth:1,borderColor:'#d9e0e3',padding:22,marginTop:18},emptyTitle:{color:'#092b45',fontSize:20,fontWeight:'700'},emptyCopy:{color:'#66747c',fontSize:13,lineHeight:20,marginTop:8},reset:{backgroundColor:'#092b45',paddingVertical:14,alignItems:'center',marginTop:18},resetText:{color:'#fff',fontSize:11,fontWeight:'800'},primary:{backgroundColor:'#092b45',paddingVertical:14,alignItems:'center',marginVertical:18},primaryText:{color:'#fff',fontSize:11,fontWeight:'800'},listCard:{backgroundColor:'#fff',borderWidth:1,borderColor:'#d9e0e3',marginBottom:14,overflow:'hidden'},manage:{padding:15,borderTopWidth:1,borderTopColor:'#e4e9eb'},manageText:{color:'#092b45',fontSize:11,fontWeight:'700'}
+  screen:{flex:1,backgroundColor:palette.stone},
+  page:{paddingHorizontal:space.page,paddingTop:space.lg,paddingBottom:112,minHeight:'100%'},
+  eyebrow:{color:palette.quiet,fontSize:8,letterSpacing:2.2,marginBottom:9,fontWeight:'700'},
+  title:{color:palette.inkStrong,fontSize:34,lineHeight:40,fontWeight:'400',fontFamily:type.serif},
+  intro:{color:palette.muted,fontSize:13,lineHeight:20,marginTop:10,marginBottom:20,maxWidth:350},
+  error:{color:palette.danger,fontSize:12,lineHeight:18,marginVertical:14},
+  deck:{height:535,position:'relative',marginTop:4},
+  card:{position:'absolute',left:0,right:0,minHeight:500,backgroundColor:palette.paper,borderWidth:1,borderColor:palette.line,overflow:'hidden',borderRadius:radius.large,shadowColor:'#13242C',shadowOpacity:.07,shadowRadius:18,shadowOffset:{width:0,height:8},elevation:3},
+  topCard:{zIndex:2},
+  nextCard:{top:10,left:8,right:8,opacity:.52,transform:[{scale:.975}]},
+  hero:{width:'100%',height:190,backgroundColor:palette.stoneDeep},
+  placeholder:{height:180,backgroundColor:palette.stoneDeep,alignItems:'center',justifyContent:'center'},
+  placeholderText:{fontSize:9,letterSpacing:2.2,color:palette.quiet,fontWeight:'700'},
+  cardBody:{padding:18},
+  propertyRow:{flexDirection:'row',alignItems:'center',gap:10},
+  logo:{width:38,height:38,borderRadius:radius.medium,borderWidth:1,borderColor:palette.line},
+  company:{color:palette.text,fontSize:10,textTransform:'uppercase',letterSpacing:.8,fontWeight:'700'},
+  rating:{color:palette.muted,fontSize:9.5,marginTop:3},
+  matchBox:{minWidth:54,alignItems:'flex-end'},
+  matchScore:{color:palette.sage,fontSize:18,fontWeight:'700'},
+  matchLabel:{color:palette.quiet,fontSize:7,letterSpacing:1.1,fontWeight:'700',marginTop:1},
+  jobTitle:{color:palette.inkStrong,fontSize:26,lineHeight:31,fontWeight:'400',fontFamily:type.serif,marginTop:16},
+  meta:{color:palette.muted,fontSize:11,lineHeight:17,marginTop:8},
+  detailsButton:{marginTop:17,paddingTop:13,borderTopWidth:1,borderTopColor:palette.line,flexDirection:'row',justifyContent:'space-between',alignItems:'center'},
+  detailsText:{color:palette.ink,fontSize:11,fontWeight:'700'},
+  arrow:{color:palette.ink,fontSize:15},
+  swipeLabel:{position:'absolute',top:22,zIndex:5,borderWidth:1.5,paddingHorizontal:10,paddingVertical:7,backgroundColor:palette.paper,borderRadius:radius.small},
+  passLabel:{left:18,borderColor:palette.danger},
+  applyLabel:{right:18,borderColor:palette.sage},
+  passLabelText:{color:palette.danger,fontSize:11,fontWeight:'800',letterSpacing:1},
+  applyLabelText:{color:palette.sage,fontSize:9.5,fontWeight:'800',letterSpacing:.7},
+  actions:{flexDirection:'row',gap:10,marginTop:12},
+  actionButton:{flex:1,minHeight:52,alignItems:'center',justifyContent:'center',borderWidth:1,borderRadius:radius.medium},
+  passButton:{backgroundColor:palette.paper,borderColor:palette.lineStrong},
+  applyButton:{backgroundColor:palette.inkStrong,borderColor:palette.inkStrong},
+  passButtonText:{color:palette.text,fontSize:12,fontWeight:'700'},
+  applyButtonText:{color:palette.paper,fontSize:12,fontWeight:'700'},
+  help:{color:palette.quiet,fontSize:10.5,lineHeight:16,marginTop:12,textAlign:'center',paddingHorizontal:6},
+  empty:{backgroundColor:palette.paper,borderWidth:1,borderColor:palette.line,padding:22,marginTop:18,borderRadius:radius.large},
+  emptyTitle:{color:palette.inkStrong,fontSize:22,lineHeight:27,fontWeight:'400',fontFamily:type.serif},
+  emptyCopy:{color:palette.muted,fontSize:13,lineHeight:20,marginTop:8},
+  reset:{borderWidth:1,borderColor:palette.lineStrong,paddingVertical:14,alignItems:'center',marginTop:18,borderRadius:radius.medium},
+  resetText:{color:palette.ink,fontSize:11,fontWeight:'700'},
+  primary:{backgroundColor:palette.inkStrong,paddingVertical:15,alignItems:'center',marginVertical:18,borderRadius:radius.medium},
+  primaryText:{color:palette.paper,fontSize:12,fontWeight:'700'},
+  listCard:{backgroundColor:palette.paper,borderWidth:1,borderColor:palette.line,marginBottom:14,overflow:'hidden',borderRadius:radius.large},
+  manage:{padding:15,borderTopWidth:1,borderTopColor:palette.line,flexDirection:'row',justifyContent:'space-between',alignItems:'center'},
+  manageText:{color:palette.ink,fontSize:11,fontWeight:'700'}
 })
