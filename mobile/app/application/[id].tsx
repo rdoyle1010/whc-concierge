@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native'
 import { router, useLocalSearchParams } from 'expo-router'
 import { supabase } from '../../src/lib/supabase'
+import { palette, radius, space, type } from '../../src/lib/theme'
 
 type InterviewMethod = 'teams' | 'video' | 'phone' | 'in_person'
 type MessageIntent = 'shortlist' | 'interview' | 'decline' | 'offer'
@@ -64,6 +65,11 @@ function stageIndex(status: string) {
   if (['interview'].includes(status)) return 2
   if (['shortlisted'].includes(status)) return 1
   return 0
+}
+
+function stageLabel(status:string){
+  const map:Record<string,string>={pending:'Applied',reviewed:'Reviewing',shortlisted:'Shortlisted',interview:'Interview',offered:'Offer sent',accepted:'Accepted',rejected:'Not progressing',withdrawn:'Withdrawn'}
+  return map[status]||status.replaceAll('_',' ')
 }
 
 export default function EmployerApplicationScreen() {
@@ -133,9 +139,9 @@ export default function EmployerApplicationScreen() {
   const openInterview = orderedInterviews.find(item => item.status === 'proposed' || item.status === 'confirmed') || null
   const nextRound = Math.min(3, completedInterviews.length + 1)
 
-  async function writeAiMessage(intent: MessageIntent) {
+  async function writeMessage(intent: MessageIntent) {
     if (!application || busy) return
-    setBusy(`ai-${intent}`)
+    setBusy(`draft-${intent}`)
     setError('')
     try {
       const data = await api('/api/employer/applications/message-ai', {
@@ -143,7 +149,7 @@ export default function EmployerApplicationScreen() {
       })
       setNote(String(data.message || ''))
     } catch (e: any) {
-      setError(e.message || 'Could not write the candidate message.')
+      setError(e.message || 'Could not draft the candidate message.')
     } finally {
       setBusy('')
     }
@@ -151,7 +157,7 @@ export default function EmployerApplicationScreen() {
 
   function requireNote(label: string) {
     if (note.trim().length < 20) {
-      Alert.alert(`${label} message needed`, 'Use the AI assistant or write a short, clear message for the candidate before sending.')
+      Alert.alert(`${label} message needed`, 'Write a short, clear candidate message or use Draft message before sending.')
       return false
     }
     return true
@@ -231,7 +237,7 @@ export default function EmployerApplicationScreen() {
     finally { setBusy('') }
   }
 
-  if (loading) return <View style={styles.center}><ActivityIndicator color="#092b45" /></View>
+  if (loading) return <View style={styles.center}><ActivityIndicator color={palette.ink} /></View>
   if (!application) return <View style={styles.center}><Text style={styles.error}>{error || 'Application not found.'}</Text><Pressable onPress={() => router.back()}><Text style={styles.back}>‹ Back</Text></Pressable></View>
 
   const canShortlist = ['pending', 'reviewed'].includes(application.status)
@@ -242,68 +248,140 @@ export default function EmployerApplicationScreen() {
   const currentStage = stageIndex(application.status)
   const confirmedTime = openInterview?.selected_slot ? new Date(openInterview.selected_slot) : null
   const canCompleteCurrent = Boolean(openInterview?.status === 'confirmed' && confirmedTime && confirmedTime.getTime() <= Date.now())
+  const draftIntent:MessageIntent=canShortlist?'shortlist':canScheduleInterview?'interview':canOffer?'offer':'decline'
 
   return <ScrollView style={styles.scroll} contentContainerStyle={styles.page} keyboardShouldPersistTaps="handled">
-    <Pressable onPress={() => router.back()}><Text style={styles.back}>‹ Applications</Text></Pressable>
-    <Text style={styles.eyebrow}>MANAGE CANDIDATE</Text>
-    <View style={styles.titleRow}><View style={{ flex: 1 }}><Text style={styles.title}>{candidate?.full_name || 'Candidate'}</Text><Text style={styles.meta}>{[candidate?.headline || candidate?.role_level, candidate?.location].filter(Boolean).join(' · ')}</Text></View>{application.match_score != null ? <View style={styles.scoreBox}><Text style={styles.score}>{application.match_score}%</Text><Text style={styles.scoreLabel}>MATCH</Text></View> : null}</View>
+    <Pressable onPress={() => router.back()} style={styles.backButton}><Text style={styles.back}>‹ Applications</Text></Pressable>
+    <Text style={styles.eyebrow}>CANDIDATE</Text>
+    <View style={styles.titleRow}>
+      <View style={{ flex: 1 }}><Text style={styles.title}>{candidate?.full_name || 'Candidate'}</Text><Text style={styles.meta}>{[candidate?.headline || candidate?.role_level, candidate?.location].filter(Boolean).join(' · ')}</Text></View>
+      {application.match_score != null ? <View style={styles.scoreBox}><Text style={styles.score}>{application.match_score}%</Text><Text style={styles.scoreLabel}>MATCH</Text></View> : null}
+    </View>
     <Text style={styles.role}>{job?.job_title || 'Role'}{job?.location ? ` · ${job.location}` : ''}</Text>
+    {candidate?.review_score?<Text style={styles.reputation}>{Number(candidate.review_score).toFixed(1)} ★ verified reputation</Text>:null}
 
-    <View style={styles.timeline}>{['Applied', 'Shortlisted', 'Interview', 'Offer', 'Accepted'].map((label, index) => <View key={label} style={styles.timelineItem}><View style={[styles.timelineDot, index <= currentStage && styles.timelineDotActive]} /><Text style={[styles.timelineLabel, index <= currentStage && styles.timelineLabelActive]}>{label}</Text></View>)}</View>
-    <Text style={styles.stage}>CURRENT STAGE  {application.status.replaceAll('_', ' ').toUpperCase()}</Text>
+    <View style={styles.stageCard}>
+      <View style={styles.stageTop}><Text style={styles.stageEyebrow}>CURRENT STAGE</Text><Text style={styles.stageValue}>{stageLabel(application.status)}</Text></View>
+      <View style={styles.timeline}>{['Applied', 'Shortlisted', 'Interview', 'Offer', 'Accepted'].map((label, index) => <View key={label} style={styles.timelineItem}><View style={[styles.timelineDot, index <= currentStage && styles.timelineDotActive]} /><Text style={[styles.timelineLabel, index <= currentStage && styles.timelineLabelActive]}>{label}</Text></View>)}</View>
+    </View>
 
-    {candidate?.bio ? <View style={styles.section}><Text style={styles.sectionTitle}>Candidate profile</Text><Text style={styles.copy}>{candidate.bio}</Text></View> : null}
+    {candidate?.bio ? <View style={styles.section}><Text style={styles.sectionEyebrow}>PROFILE</Text><Text style={styles.sectionTitle}>Candidate overview</Text><Text style={styles.copy}>{candidate.bio}</Text></View> : null}
 
     {orderedInterviews.length ? <View style={styles.section}>
-      <Text style={styles.sectionTitle}>Interview history</Text>
+      <Text style={styles.sectionEyebrow}>INTERVIEWS</Text><Text style={styles.sectionTitle}>Interview history</Text>
       {orderedInterviews.map(interview => <View key={interview.id} style={styles.interviewCard}>
-        <View style={styles.interviewHeader}><Text style={styles.interviewTitle}>{roundLabel(interview.round_number)}</Text><Text style={[styles.interviewStatus, interview.status === 'completed' && styles.completedStatus]}>{interview.status.toUpperCase()}</Text></View>
+        <View style={styles.interviewHeader}><Text style={styles.interviewTitle}>{roundLabel(interview.round_number)}</Text><View style={[styles.interviewPill,interview.status==='completed'&&styles.completedPill]}><Text style={[styles.interviewStatus,interview.status==='completed'&&styles.completedStatus]}>{interview.status.toUpperCase()}</Text></View></View>
         <Text style={styles.help}>{interview.interview_method.replaceAll('_', ' ')}{interview.selected_slot ? ` · ${displayDate(interview.selected_slot)}` : ''}</Text>
         {interview.status === 'proposed' ? <Text style={styles.waiting}>Waiting for the candidate to choose a time.</Text> : null}
-        {interview.status === 'confirmed' && !canCompleteCurrent ? <Text style={styles.waiting}>Confirmed. Completion unlocks after the interview time.</Text> : null}
-        {interview.id === openInterview?.id && canCompleteCurrent ? <Pressable onPress={() => completeInterview(interview)} disabled={!!busy} style={[styles.primary, !!busy && styles.disabled]}><Text style={styles.primaryText}>{busy === `complete-${interview.id}` ? 'Completing...' : 'Mark interview completed'}</Text></Pressable> : null}
+        {interview.status === 'confirmed' && !canCompleteCurrent ? <Text style={styles.confirmed}>Confirmed. Completion unlocks after the interview time.</Text> : null}
+        {interview.id === openInterview?.id && canCompleteCurrent ? <Pressable onPress={() => completeInterview(interview)} disabled={!!busy} style={[styles.primary, !!busy && styles.disabled]}><Text style={styles.primaryText}>{busy === `complete-${interview.id}` ? 'Completing…' : 'Mark interview completed'}</Text></Pressable> : null}
       </View>)}
     </View> : null}
 
     {!closed ? <>
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Message to candidate</Text>
-        <Text style={styles.help}>Only messages appropriate to the current recruitment stage are shown. AI creates a draft; you remain in control of every word.</Text>
-        <View style={styles.aiRow}>
-          {canShortlist ? <Pressable onPress={() => writeAiMessage('shortlist')} disabled={!!busy} style={[styles.aiButton, !!busy && styles.disabled]}><Text style={styles.aiButtonText}>{busy === 'ai-shortlist' ? 'Writing…' : 'AI shortlist'}</Text></Pressable> : null}
-          {canScheduleInterview ? <Pressable onPress={() => writeAiMessage('interview')} disabled={!!busy} style={[styles.aiButton, !!busy && styles.disabled]}><Text style={styles.aiButtonText}>{busy === 'ai-interview' ? 'Writing…' : 'AI interview'}</Text></Pressable> : null}
-          {canOffer ? <Pressable onPress={() => writeAiMessage('offer')} disabled={!!busy} style={[styles.aiButton, !!busy && styles.disabled]}><Text style={styles.aiButtonText}>{busy === 'ai-offer' ? 'Writing…' : 'AI offer'}</Text></Pressable> : null}
-          {canDecline ? <Pressable onPress={() => writeAiMessage('decline')} disabled={!!busy} style={[styles.aiButton, !!busy && styles.disabled]}><Text style={styles.aiButtonText}>{busy === 'ai-decline' ? 'Writing…' : 'AI decline'}</Text></Pressable> : null}
-        </View>
-        <TextInput value={note} onChangeText={setNote} multiline placeholder="AI message will appear here, or write your own..." style={styles.textarea} />
+        <Text style={styles.sectionEyebrow}>COMMUNICATION</Text><Text style={styles.sectionTitle}>Message to candidate</Text>
+        <Text style={styles.help}>Write in your own voice. If useful, Draft message creates a starting point based on the current recruitment stage; you still review and control every word.</Text>
+        <Pressable onPress={() => writeMessage(draftIntent)} disabled={!!busy} style={[styles.draftButton,!!busy&&styles.disabled]}><Text style={styles.draftButtonText}>{busy===`draft-${draftIntent}`?'Drafting…':'Draft message'}</Text><Text style={styles.draftArrow}>→</Text></Pressable>
+        <TextInput value={note} onChangeText={setNote} multiline placeholder="Write your message to the candidate…" placeholderTextColor={palette.quiet} style={styles.textarea} />
       </View>
 
-      {canShortlist ? <View style={styles.actionGrid}>
-        <Pressable onPress={() => decision('shortlisted')} disabled={!!busy} style={[styles.primary, !!busy && styles.disabled]}><Text style={styles.primaryText}>{busy === 'shortlisted' ? 'Sending...' : 'Shortlist candidate'}</Text></Pressable>
+      {canShortlist ? <View style={styles.actionSection}>
+        <Text style={styles.sectionEyebrow}>NEXT STEP</Text><Text style={styles.sectionTitle}>Make a decision</Text><Text style={styles.help}>Shortlisting moves the candidate forward and sends the message above.</Text>
+        <Pressable onPress={() => decision('shortlisted')} disabled={!!busy} style={[styles.primary, !!busy && styles.disabled]}><Text style={styles.primaryText}>{busy === 'shortlisted' ? 'Sending…' : 'Shortlist candidate'}</Text></Pressable>
       </View> : null}
 
       {canScheduleInterview ? <View style={styles.section}>
-        <Text style={styles.sectionTitle}>{roundLabel(nextRound)}</Text>
+        <Text style={styles.sectionEyebrow}>NEXT STEP</Text><Text style={styles.sectionTitle}>{roundLabel(nextRound)}</Text>
         <Text style={styles.help}>Offer two future times. The candidate chooses one before the interview is confirmed.</Text>
         <View style={styles.methodRow}>{(['video', 'teams', 'phone', 'in_person'] as InterviewMethod[]).map(value => <Pressable key={value} onPress={() => setMethod(value)} style={[styles.method, method === value && styles.methodActive]}><Text style={[styles.methodText, method === value && styles.methodTextActive]}>{value === 'in_person' ? 'In person' : value === 'teams' ? 'Teams' : value === 'video' ? 'Video' : 'Phone'}</Text></Pressable>)}</View>
-        <Text style={styles.label}>First option</Text><TextInput value={slotOne} onChangeText={setSlotOne} style={styles.input} placeholder="YYYY-MM-DD HH:mm" />
-        <Text style={styles.label}>Second option</Text><TextInput value={slotTwo} onChangeText={setSlotTwo} style={styles.input} placeholder="YYYY-MM-DD HH:mm" />
-        {method === 'in_person' ? <><Text style={styles.label}>Venue</Text><TextInput value={venueAddress} onChangeText={setVenueAddress} style={styles.input} placeholder="Interview address" /></> : <><Text style={styles.label}>Meeting link (optional)</Text><TextInput value={meetingLink} onChangeText={setMeetingLink} style={styles.input} placeholder="Teams / video link" autoCapitalize="none" /></>}
-        <Pressable onPress={inviteInterview} disabled={!!busy} style={[styles.primary, !!busy && styles.disabled]}><Text style={styles.primaryText}>{busy === 'interview' ? 'Sending...' : `Send ${roundLabel(nextRound).toLowerCase()} invitation`}</Text></Pressable>
+        <Text style={styles.label}>First option</Text><TextInput value={slotOne} onChangeText={setSlotOne} style={styles.input} placeholder="YYYY-MM-DD HH:mm" placeholderTextColor={palette.quiet} />
+        <Text style={styles.label}>Second option</Text><TextInput value={slotTwo} onChangeText={setSlotTwo} style={styles.input} placeholder="YYYY-MM-DD HH:mm" placeholderTextColor={palette.quiet} />
+        {method === 'in_person' ? <><Text style={styles.label}>Venue</Text><TextInput value={venueAddress} onChangeText={setVenueAddress} style={styles.input} placeholder="Interview address" placeholderTextColor={palette.quiet} /></> : <><Text style={styles.label}>Meeting link <Text style={styles.optional}>(optional)</Text></Text><TextInput value={meetingLink} onChangeText={setMeetingLink} style={styles.input} placeholder="Teams / video link" placeholderTextColor={palette.quiet} autoCapitalize="none" /></>}
+        <Pressable onPress={inviteInterview} disabled={!!busy} style={[styles.primary, !!busy && styles.disabled]}><Text style={styles.primaryText}>{busy === 'interview' ? 'Sending…' : `Send ${roundLabel(nextRound).toLowerCase()} invitation`}</Text></Pressable>
       </View> : null}
 
-      {canOffer ? <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Make an offer</Text>
-        <Text style={styles.help}>{completedInterviews.length} interview{completedInterviews.length === 1 ? '' : 's'} completed. The candidate can now receive and respond to a formal offer.</Text>
-        <Pressable onPress={makeOffer} disabled={!!busy} style={[styles.offer, !!busy && styles.disabled]}><Text style={styles.offerText}>{busy === 'offer' ? 'Sending...' : application.status === 'offered' ? 'Update offer message' : 'Send job offer'}</Text></Pressable>
-      </View> : application.status === 'shortlisted' || application.status === 'interview' ? <View style={styles.lockedStep}><Text style={styles.lockedTitle}>Offer locked</Text><Text style={styles.help}>At least one confirmed interview must be completed before an offer can be created.</Text></View> : null}
+      {canOffer ? <View style={styles.offerSection}>
+        <Text style={styles.sectionEyebrow}>OFFER</Text><Text style={styles.offerTitle}>Ready to make the offer?</Text>
+        <Text style={styles.offerCopy}>{completedInterviews.length} interview{completedInterviews.length === 1 ? '' : 's'} completed. The message above will accompany the formal offer.</Text>
+        <Pressable onPress={makeOffer} disabled={!!busy} style={[styles.offerButton, !!busy && styles.disabled]}><Text style={styles.offerButtonText}>{busy === 'offer' ? 'Sending…' : application.status === 'offered' ? 'Update offer message' : 'Send job offer'}</Text></Pressable>
+      </View> : application.status === 'shortlisted' || application.status === 'interview' ? <View style={styles.lockedStep}><Text style={styles.lockedEyebrow}>OFFER</Text><Text style={styles.lockedTitle}>Complete an interview first</Text><Text style={styles.help}>At least one confirmed interview must be completed before an offer can be created.</Text></View> : null}
 
-      {canDecline ? <Pressable onPress={() => decision('rejected')} disabled={!!busy} style={[styles.secondary, !!busy && styles.disabled]}><Text style={styles.dangerText}>{busy === 'rejected' ? 'Sending...' : 'Not progressing'}</Text></Pressable> : null}
-    </> : <View style={styles.closed}><Text style={styles.closedTitle}>This application is closed.</Text><Text style={styles.help}>No further recruitment action is available from this stage.</Text></View>}
+      {canDecline ? <View style={styles.declineSection}><Text style={styles.declineHelp}>Not the right fit? The candidate receives the message above when you close their application.</Text><Pressable onPress={() => decision('rejected')} disabled={!!busy} style={[styles.secondary, !!busy && styles.disabled]}><Text style={styles.dangerText}>{busy === 'rejected' ? 'Sending…' : 'Not progressing'}</Text></Pressable></View> : null}
+    </> : <View style={styles.closed}><Text style={styles.closedEyebrow}>RECRUITMENT CLOSED</Text><Text style={styles.closedTitle}>{stageLabel(application.status)}</Text><Text style={styles.help}>No further recruitment action is available from this stage.</Text></View>}
     {error ? <Text style={styles.error}>{error}</Text> : null}
   </ScrollView>
 }
 
 const styles = StyleSheet.create({
-  scroll:{flex:1,backgroundColor:'#fff'},page:{paddingHorizontal:22,paddingTop:64,paddingBottom:80},center:{flex:1,alignItems:'center',justifyContent:'center',padding:28,backgroundColor:'#fff'},back:{color:'#66747c',fontSize:13,marginBottom:34},eyebrow:{color:'#71808a',fontSize:9,letterSpacing:2.1,marginBottom:10},titleRow:{flexDirection:'row',gap:16,alignItems:'flex-start'},title:{color:'#092b45',fontSize:29,lineHeight:35,fontWeight:'500'},meta:{color:'#71808a',fontSize:12,lineHeight:18,marginTop:6},scoreBox:{borderWidth:1,borderColor:'#ccd8dd',paddingHorizontal:12,paddingVertical:8,alignItems:'center'},score:{color:'#092b45',fontSize:17,fontWeight:'700'},scoreLabel:{color:'#71808a',fontSize:7,letterSpacing:1.2,marginTop:2},role:{color:'#173246',fontSize:14,fontWeight:'600',marginTop:22},stage:{color:'#71808a',fontSize:9,letterSpacing:1.1,marginTop:12},timeline:{flexDirection:'row',justifyContent:'space-between',marginTop:24,gap:4},timelineItem:{flex:1,alignItems:'center'},timelineDot:{width:9,height:9,borderRadius:5,backgroundColor:'#d8e0e4'},timelineDotActive:{backgroundColor:'#092b45'},timelineLabel:{color:'#9aa5ab',fontSize:7.5,marginTop:5,textAlign:'center'},timelineLabelActive:{color:'#173246',fontWeight:'700'},section:{borderTopWidth:1,borderTopColor:'#e3e8eb',paddingTop:22,marginTop:26},sectionTitle:{color:'#173246',fontSize:17,fontWeight:'600',marginBottom:7},copy:{color:'#66747c',fontSize:13,lineHeight:21},help:{color:'#71808a',fontSize:11,lineHeight:17,marginBottom:12},interviewCard:{borderWidth:1,borderColor:'#dce3e7',padding:14,marginTop:10},interviewHeader:{flexDirection:'row',justifyContent:'space-between',gap:10},interviewTitle:{color:'#173246',fontSize:13,fontWeight:'700'},interviewStatus:{color:'#71808a',fontSize:8,letterSpacing:1},completedStatus:{color:'#315846',fontWeight:'800'},waiting:{color:'#8a5b18',fontSize:10.5,lineHeight:16,marginTop:7},aiRow:{flexDirection:'row',flexWrap:'wrap',gap:8,marginBottom:12},aiButton:{minWidth:'47%',flexGrow:1,borderWidth:1,borderColor:'#9fb1bb',backgroundColor:'#f4f7f8',paddingVertical:10,paddingHorizontal:8,alignItems:'center'},aiButtonText:{color:'#092b45',fontSize:9.5,fontWeight:'700'},textarea:{borderWidth:1,borderColor:'#d7e0e4',minHeight:110,padding:13,textAlignVertical:'top',fontSize:13,color:'#173246'},actionGrid:{gap:10,marginTop:14},primary:{backgroundColor:'#092b45',paddingVertical:15,alignItems:'center',marginTop:12},primaryText:{color:'#fff',fontSize:12,fontWeight:'700'},secondary:{borderWidth:1,borderColor:'#d7e0e4',paddingVertical:14,alignItems:'center',marginTop:18},dangerText:{color:'#7c3f3f',fontSize:12,fontWeight:'600'},disabled:{opacity:.45},methodRow:{flexDirection:'row',flexWrap:'wrap',gap:8,marginVertical:10},method:{borderWidth:1,borderColor:'#d7e0e4',paddingHorizontal:11,paddingVertical:9},methodActive:{backgroundColor:'#092b45',borderColor:'#092b45'},methodText:{color:'#66747c',fontSize:10},methodTextActive:{color:'#fff',fontWeight:'700'},label:{color:'#173246',fontSize:11,fontWeight:'600',marginTop:11,marginBottom:6},input:{borderWidth:1,borderColor:'#d7e0e4',paddingHorizontal:12,paddingVertical:12,color:'#173246',fontSize:12},offer:{borderWidth:1,borderColor:'#092b45',paddingVertical:15,alignItems:'center',marginTop:10},offerText:{color:'#092b45',fontSize:12,fontWeight:'700'},lockedStep:{backgroundColor:'#f4f7f8',padding:16,marginTop:24},lockedTitle:{color:'#173246',fontSize:13,fontWeight:'700',marginBottom:5},closed:{backgroundColor:'#f4f7f8',padding:18,marginTop:28},closedTitle:{color:'#173246',fontSize:14,fontWeight:'600',marginBottom:5},error:{color:'#9b2c2c',fontSize:12,lineHeight:18,marginTop:18},
+  scroll:{flex:1,backgroundColor:palette.stone},
+  page:{paddingHorizontal:space.page,paddingTop:18,paddingBottom:118},
+  center:{flex:1,alignItems:'center',justifyContent:'center',padding:28,backgroundColor:palette.stone},
+  backButton:{alignSelf:'flex-start',paddingVertical:6,marginBottom:22},
+  back:{color:palette.muted,fontSize:13},
+  eyebrow:{color:palette.quiet,fontSize:8,letterSpacing:2.2,fontWeight:'700',marginBottom:9},
+  titleRow:{flexDirection:'row',gap:16,alignItems:'flex-start'},
+  title:{color:palette.inkStrong,fontSize:31,lineHeight:37,fontWeight:'400',fontFamily:type.serif},
+  meta:{color:palette.muted,fontSize:11.5,lineHeight:18,marginTop:5},
+  scoreBox:{backgroundColor:palette.sageSoft,paddingHorizontal:11,paddingVertical:8,alignItems:'center',borderRadius:radius.medium},
+  score:{color:palette.sage,fontSize:17,fontWeight:'800'},
+  scoreLabel:{color:palette.sage,fontSize:7,letterSpacing:1.1,marginTop:1,fontWeight:'800'},
+  role:{color:palette.text,fontSize:12.5,fontWeight:'700',marginTop:18},
+  reputation:{color:palette.sage,fontSize:10,fontWeight:'700',marginTop:6},
+  stageCard:{backgroundColor:palette.paper,borderWidth:1,borderColor:palette.line,padding:16,borderRadius:radius.large,marginTop:18},
+  stageTop:{flexDirection:'row',justifyContent:'space-between',alignItems:'center',gap:12},
+  stageEyebrow:{color:palette.quiet,fontSize:7.5,letterSpacing:1.2,fontWeight:'700'},
+  stageValue:{color:palette.inkStrong,fontSize:11,fontWeight:'800'},
+  timeline:{flexDirection:'row',justifyContent:'space-between',marginTop:15,gap:4},
+  timelineItem:{flex:1,alignItems:'center'},
+  timelineDot:{width:8,height:8,borderRadius:4,backgroundColor:palette.stoneDeep},
+  timelineDotActive:{backgroundColor:palette.sage},
+  timelineLabel:{color:palette.quiet,fontSize:7.5,marginTop:5,textAlign:'center'},
+  timelineLabelActive:{color:palette.text,fontWeight:'700'},
+  section:{borderTopWidth:1,borderTopColor:palette.line,paddingTop:22,marginTop:26},
+  actionSection:{backgroundColor:palette.paper,borderWidth:1,borderColor:palette.line,padding:17,borderRadius:radius.large,marginTop:24},
+  sectionEyebrow:{color:palette.quiet,fontSize:8,letterSpacing:1.6,fontWeight:'700',marginBottom:5},
+  sectionTitle:{color:palette.inkStrong,fontSize:21,lineHeight:26,fontWeight:'400',fontFamily:type.serif,marginBottom:7},
+  copy:{color:palette.muted,fontSize:12,lineHeight:19},
+  help:{color:palette.muted,fontSize:10.5,lineHeight:17,marginBottom:11},
+  interviewCard:{borderWidth:1,borderColor:palette.line,padding:14,marginTop:9,backgroundColor:palette.paper,borderRadius:radius.medium},
+  interviewHeader:{flexDirection:'row',justifyContent:'space-between',gap:10,alignItems:'center'},
+  interviewTitle:{color:palette.inkStrong,fontSize:12.5,fontWeight:'700'},
+  interviewPill:{backgroundColor:'#F5F0E5',paddingHorizontal:7,paddingVertical:4,borderRadius:999},
+  completedPill:{backgroundColor:palette.sageSoft},
+  interviewStatus:{color:'#7A6845',fontSize:7.5,letterSpacing:.8,fontWeight:'800'},
+  completedStatus:{color:palette.sage},
+  waiting:{color:'#80652C',fontSize:10,lineHeight:16,marginTop:7},
+  confirmed:{color:palette.sage,fontSize:10,lineHeight:16,marginTop:7},
+  draftButton:{borderWidth:1,borderColor:palette.lineStrong,backgroundColor:palette.paper,paddingHorizontal:12,paddingVertical:11,flexDirection:'row',justifyContent:'space-between',alignItems:'center',borderRadius:radius.medium,marginBottom:9},
+  draftButtonText:{color:palette.ink,fontSize:10.5,fontWeight:'700'},
+  draftArrow:{color:palette.ink,fontSize:15},
+  textarea:{borderWidth:1,borderColor:palette.line,minHeight:112,padding:13,textAlignVertical:'top',fontSize:12,color:palette.text,backgroundColor:palette.paper,borderRadius:radius.medium},
+  primary:{backgroundColor:palette.inkStrong,paddingVertical:14,alignItems:'center',marginTop:11,borderRadius:radius.medium},
+  primaryText:{color:palette.paper,fontSize:10.5,fontWeight:'700'},
+  secondary:{borderWidth:1,borderColor:'#D9BCBC',paddingVertical:13,alignItems:'center',backgroundColor:palette.paper,borderRadius:radius.medium},
+  dangerText:{color:palette.danger,fontSize:10.5,fontWeight:'700'},
+  disabled:{opacity:.45},
+  methodRow:{flexDirection:'row',flexWrap:'wrap',gap:7,marginVertical:10},
+  method:{borderWidth:1,borderColor:palette.lineStrong,paddingHorizontal:10,paddingVertical:9,backgroundColor:palette.paper,borderRadius:radius.medium},
+  methodActive:{backgroundColor:palette.inkStrong,borderColor:palette.inkStrong},
+  methodText:{color:palette.muted,fontSize:9.5,fontWeight:'600'},
+  methodTextActive:{color:palette.paper,fontWeight:'700'},
+  label:{color:palette.text,fontSize:10,fontWeight:'700',marginTop:10,marginBottom:5},
+  optional:{color:palette.quiet,fontWeight:'500'},
+  input:{borderWidth:1,borderColor:palette.line,paddingHorizontal:12,paddingVertical:11,color:palette.text,fontSize:11.5,backgroundColor:palette.paper,borderRadius:radius.medium},
+  offerSection:{backgroundColor:palette.inkStrong,padding:17,borderRadius:radius.large,marginTop:24},
+  offerTitle:{color:palette.paper,fontFamily:type.serif,fontSize:21,lineHeight:26,fontWeight:'400'},
+  offerCopy:{color:'#D8DEDF',fontSize:10.5,lineHeight:17,marginTop:6},
+  offerButton:{backgroundColor:palette.paper,paddingVertical:13,alignItems:'center',marginTop:13,borderRadius:radius.medium},
+  offerButtonText:{color:palette.inkStrong,fontSize:10.5,fontWeight:'800'},
+  lockedStep:{backgroundColor:palette.paper,borderWidth:1,borderColor:palette.line,padding:16,borderRadius:radius.large,marginTop:24},
+  lockedEyebrow:{color:palette.quiet,fontSize:7.5,letterSpacing:1.2,fontWeight:'700'},
+  lockedTitle:{color:palette.inkStrong,fontFamily:type.serif,fontSize:18,fontWeight:'400',marginTop:4,marginBottom:5},
+  declineSection:{marginTop:22},
+  declineHelp:{color:palette.quiet,fontSize:9.5,lineHeight:15,textAlign:'center',marginBottom:9,paddingHorizontal:8},
+  closed:{backgroundColor:palette.paper,borderWidth:1,borderColor:palette.line,padding:18,borderRadius:radius.large,marginTop:26},
+  closedEyebrow:{color:palette.quiet,fontSize:7.5,letterSpacing:1.2,fontWeight:'700'},
+  closedTitle:{color:palette.inkStrong,fontFamily:type.serif,fontSize:19,fontWeight:'400',marginTop:4,marginBottom:5},
+  error:{color:palette.danger,fontSize:11,lineHeight:17,marginTop:16},
 })
