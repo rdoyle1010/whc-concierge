@@ -146,21 +146,63 @@ function HowItWorksSection({ content }: { content: WebsiteContent }) {
   </section>
 }
 
-function ProductSection({ content }: { content: WebsiteContent }) {
+function ProductSection({ content: _content }: { content: WebsiteContent }) {
   const mockups = [<CandidateProfileMockup key="candidate" />, <MatchScoreMockup key="matching" />, <RoleListingMockup key="role" />]
+  const examples = [
+    {
+      label: 'Example professional profile',
+      text: 'Employers can see the person behind the CV — experience, treatment skills, qualifications, location, availability and professional status in one place.',
+    },
+    {
+      label: 'Why this match',
+      text: 'We compare the things that genuinely affect fit: skills, treatments, qualifications, experience, location, availability and working preferences — not just keywords.',
+    },
+    {
+      label: 'Example live opportunity',
+      text: 'Professionals see real roles and shifts that suit their profile, so they can quickly understand the property, the work and why it may suit them.',
+    },
+  ]
+
+  const waysToWork = [
+    { title: 'Permanent careers', text: 'Find long-term spa and wellness roles matched to your experience and ambitions.', href: '/jobs', action: 'Browse roles' },
+    { title: 'Agency shifts', text: 'Choose flexible shifts when you are available, with skills and requirements made clear before you accept.', href: '/agency', action: 'Explore agency' },
+    { title: 'Residencies', text: 'Discover temporary, seasonal and specialist placements in remarkable properties.', href: '/residency', action: 'Explore residencies' },
+  ]
+
   return <section className="site-section site-surface">
     <div className="mx-auto max-w-7xl px-6 lg:px-8">
-      <div className="mx-auto mb-14 max-w-3xl text-center">
-        <Eyebrow>{content.product.eyebrow}</Eyebrow>
-        <h2 className="site-heading mb-5 text-[34px] font-medium leading-[1.05] md:text-[48px]">{content.product.heading}</h2>
-        <p className="text-[15px] leading-[1.8] opacity-65 md:text-[17px]">{content.product.intro}</p>
+      <div className="mx-auto mb-10 max-w-3xl text-center">
+        <Eyebrow>Built for spa & wellness</Eyebrow>
+        <h2 className="site-heading mb-5 text-[34px] font-medium leading-[1.05] md:text-[48px]">One platform. Three ways to work.</h2>
+        <p className="text-[15px] leading-[1.8] opacity-65 md:text-[17px]">Permanent careers, flexible agency shifts and residencies — for spa and wellness professionals and the employers looking for them.</p>
       </div>
+
+      <div className="mb-20 grid gap-4 md:grid-cols-3">
+        {waysToWork.map(item => <Link key={item.title} href={item.href} className="group border border-black/10 bg-white p-7 transition-all hover:-translate-y-0.5 hover:shadow-lg">
+          <h3 className="site-heading mb-3 text-[22px] font-medium">{item.title}</h3>
+          <p className="mb-6 text-[13px] leading-[1.7] opacity-65">{item.text}</p>
+          <span className="site-accent inline-flex items-center gap-2 text-[12px] font-semibold">{item.action}<ArrowRight size={13} className="transition-transform group-hover:translate-x-1" /></span>
+        </Link>)}
+      </div>
+
+      <div className="mx-auto mb-12 max-w-3xl text-center">
+        <Eyebrow>See how it works</Eyebrow>
+        <h2 className="site-heading mb-5 text-[32px] font-medium leading-[1.05] md:text-[42px]">From profile to genuine match.</h2>
+        <p className="text-[15px] leading-[1.8] opacity-65">A simple view of what employers and professionals actually see — and how the platform helps both sides make a better decision.</p>
+      </div>
+
       <div className="grid gap-10 md:grid-cols-2 lg:grid-cols-3 lg:gap-8">
-        {content.product.cards.map((card, index) => <div key={card.label} className="flex flex-col">
+        {examples.map((card, index) => <div key={card.label} className="flex flex-col">
           <p className="site-accent mb-5 text-center text-[11px] font-semibold uppercase tracking-[0.15em]">{card.label}</p>
           {mockups[index]}
           <p className="mx-auto mt-5 max-w-xs text-center text-[13px] leading-[1.75] opacity-65">{card.text}</p>
         </div>)}
+      </div>
+
+      <div className="mx-auto mt-16 max-w-5xl border border-black/10 bg-white px-6 py-8 text-center md:px-10">
+        <p className="site-accent mb-3 text-[11px] font-semibold uppercase tracking-[0.16em]">Built for an international industry</p>
+        <h3 className="site-heading mb-4 text-[24px] font-medium md:text-[30px]">Trained somewhere else? Your experience should still make sense here.</h3>
+        <p className="mx-auto max-w-3xl text-[13px] leading-[1.8] opacity-65 md:text-[14px]">Spa is a global industry. Profiles can show where someone trained, the treatments they are qualified to perform, qualification review status, right-to-work information and insurance status — helping employers understand international experience without relying on an unfamiliar certificate name alone.</p>
       </div>
     </div>
   </section>
