@@ -1,13 +1,14 @@
 'use client'
 
-import { useEffect, useMemo } from 'react'
+import { Suspense, useEffect, useMemo } from 'react'
 import { useSearchParams } from 'next/navigation'
 
 const ALLOWED = new Set(['success', 'cancelled', 'billing'])
 
-export default function AgencyMobileReturnPage() {
+function AgencyMobileReturnContent() {
   const params = useSearchParams()
-  const status = ALLOWED.has(params.get('status') || '') ? String(params.get('status')) : 'billing'
+  const requestedStatus = params.get('status') || ''
+  const status = ALLOWED.has(requestedStatus) ? requestedStatus : 'billing'
   const deepLink = useMemo(() => `whctalent://agency-account?status=${encodeURIComponent(status)}`, [status])
 
   useEffect(() => {
@@ -37,4 +38,20 @@ export default function AgencyMobileReturnPage() {
       <p className="mt-4 text-center text-xs leading-5 text-[#8a969d]">The app should open automatically. Use the button if your browser blocks it.</p>
     </section>
   </main>
+}
+
+function AgencyMobileReturnFallback() {
+  return <main className="min-h-screen bg-[#f5f7f8] px-5 py-16 text-[#173246]">
+    <section className="mx-auto max-w-lg border border-[#dce3e7] bg-white p-7 sm:p-10">
+      <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#71808a]">Wellness House Talent</p>
+      <h1 className="mt-4 font-serif text-4xl leading-tight text-[#092b45]">Returning to the Talent app</h1>
+      <p className="mt-5 text-sm leading-6 text-[#66747c]">Preparing your secure Agency return.</p>
+    </section>
+  </main>
+}
+
+export default function AgencyMobileReturnPage() {
+  return <Suspense fallback={<AgencyMobileReturnFallback />}>
+    <AgencyMobileReturnContent />
+  </Suspense>
 }
