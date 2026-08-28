@@ -21,7 +21,7 @@ export default function AcademyCourseScreen(){
   const [error,setError]=useState('')
 
   useEffect(()=>{load()},[slug])
-  async function headers(){const {data:{session}}=await supabase.auth.getSession();return session?.access_token?{Authorization:`Bearer ${session.access_token}`}:{}}
+  async function headers():Promise<Record<string,string>>{const {data:{session}}=await supabase.auth.getSession();return session?.access_token?{Authorization:`Bearer ${session.access_token}`}:{}}
   async function load(){
     setLoading(true);setError('')
     try{
