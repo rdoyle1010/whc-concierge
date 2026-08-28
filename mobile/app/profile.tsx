@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { ActivityIndicator, Alert, Image, Linking, Pressable, ScrollView, StyleSheet, Switch, Text, TextInput, View } from 'react-native'
 import * as ImagePicker from 'expo-image-picker'
 import { router } from 'expo-router'
@@ -84,11 +84,8 @@ export default function ProfileScreen(){
   if(!profile)return <View style={styles.center}><Text style={styles.emptyStateTitle}>Talent profile not found.</Text><Text style={styles.emptyStateCopy}>Sign out and back in. If the problem continues, your Talent profile may need reconnecting.</Text></View>
 
   const uploadedCertificates=Array.isArray(profile.certificates_urls)?profile.certificates_urls:[]
-  const completion=useMemo(()=>{
-    const checks=[profile.profile_image_url,profile.headline,profile.location,profile.bio,profile.cv_url,uploadedCertificates.length>0]
-    return Math.round(checks.filter(Boolean).length/checks.length*100)
-  },[profile.profile_image_url,profile.headline,profile.location,profile.bio,profile.cv_url,uploadedCertificates.length])
-
+  const completionChecks=[profile.profile_image_url,profile.headline,profile.location,profile.bio,profile.cv_url,uploadedCertificates.length>0]
+  const completion=Math.round(completionChecks.filter(Boolean).length/completionChecks.length*100)
   const toggle=(key:string,label:string,copy:string)=><View style={styles.toggleRow}><View style={{flex:1,paddingRight:14}}><Text style={styles.toggleTitle}>{label}</Text><Text style={styles.toggleCopy}>{copy}</Text></View><Switch value={!!profile[key]} onValueChange={v=>setProfile({...profile,[key]:v})} trackColor={{false:palette.lineStrong,true:'#BCC8BF'}} thumbColor={palette.paper}/></View>
 
   return <ScrollView style={styles.scroll} contentContainerStyle={styles.page} keyboardShouldPersistTaps="handled">
