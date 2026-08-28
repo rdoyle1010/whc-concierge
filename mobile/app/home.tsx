@@ -17,11 +17,11 @@ const talentCards:Card[]=[
 ]
 
 const employerCards:Card[]=[
+ {title:'Talent Match',copy:'Choose a live role and swipe the professionals who match it best.',href:'/match'},
  {title:'Agency bookings',copy:'Manage flexible staffing responses.',href:'/agency'},
  {title:'Property Profile',copy:'Manage property photos and spa information.',href:'/property-profile'},
  {title:'Residency',copy:'Manage specialist residency opportunities.',href:'/residency'},
  {title:'Analytics',copy:'Track recruitment and role performance.',href:'/analytics'},
- {title:'Discover Talent',copy:'Search visible spa and wellness professionals.',href:'/discover-talent'},
  {title:'Membership & Billing',copy:'Manage your plan and Featured Employer visibility.',href:'/billing'},
  {title:'Notifications',copy:'See updates and platform history. These do not inflate the red attention count.',href:'/notifications'},
  {title:'Security, Safety & Legal',copy:'Privacy, GDPR, safety guidance and account protection.',href:'/security'},
@@ -76,13 +76,13 @@ export default function HomeScreen(){
   <View style={styles.topRow}><View><Text style={styles.wordmark}>WELLNESS HOUSE</Text><Text style={styles.sub}>{role==='employer'?'EMPLOYER':'TALENT'}</Text></View><Pressable onPress={signOut}><Text style={styles.signOut}>Sign out</Text></Pressable></View>
   <Text style={styles.eyebrow}>{role==='employer'?'PROPERTY WORKSPACE':'YOUR CAREER'}</Text>
   <Text style={styles.title}>{name?`Hello, ${name.split(' ')[0]}.`:'Welcome back.'}</Text>
-  <Text style={styles.intro}>{role==='employer'?'Recruit, manage and connect.':'Discover roles in Jobs, apply with AI and track everything in Applications.'}</Text>
+  <Text style={styles.intro}>{role==='employer'?'Post roles, match with the right professionals and manage recruitment.':'Discover roles in Jobs, apply with AI and track everything in Applications.'}</Text>
 
   {totalAttention>0?<View style={styles.attentionBox}><View style={styles.attentionHeader}><Text style={styles.attentionTitle}>Needs your attention</Text><Text style={styles.attentionTotal}>{totalAttention}</Text></View><Text style={styles.attentionHelp}>Only unread messages and Agency responses that still need action count here.</Text>{unreadMessages>0?<Pressable onPress={()=>router.push('/messages')} style={styles.attentionRow}><Text style={styles.attentionText}>Unread messages</Text><Text style={styles.attentionCount}>{unreadMessages}</Text></Pressable>:null}{agencyAttention>0?<Pressable onPress={()=>router.push('/agency')} style={styles.attentionRow}><Text style={styles.attentionText}>{role==='employer'?'Agency responses waiting':'Agency shifts needing a response'}</Text><Text style={styles.attentionCount}>{agencyAttention}</Text></Pressable>:null}</View>:<View style={styles.caughtUp}><Text style={styles.caughtUpTitle}>You’re up to date</Text><Text style={styles.caughtUpCopy}>No unread messages or Agency responses are waiting.</Text></View>}
 
   <View style={styles.quickRow}>
    <Pressable onPress={()=>router.push('/jobs')} style={styles.quickPrimary}><Text style={styles.quickPrimaryTitle}>{role==='employer'?'Manage jobs':'Find jobs'}</Text><Text style={styles.quickPrimaryCopy}>{role==='employer'?'Post and manage live roles.':'Swipe roles and apply with AI.'}</Text></Pressable>
-   <Pressable onPress={()=>router.push('/applications')} style={styles.quickSecondary}><Text style={styles.quickSecondaryTitle}>Applications</Text><Text style={styles.quickSecondaryCopy}>Active recruitment and hired history.</Text></Pressable>
+   <Pressable onPress={()=>router.push(role==='employer'?'/match':'/applications')} style={styles.quickSecondary}><Text style={styles.quickSecondaryTitle}>{role==='employer'?'Talent Match':'Applications'}</Text><Text style={styles.quickSecondaryCopy}>{role==='employer'?'Swipe candidates against a live role.':'Active recruitment and hired history.'}</Text></Pressable>
   </View>
 
   <Pressable onPress={()=>router.push('/reputation')} style={styles.ratingCard}><View><Text style={styles.ratingLabel}>{role==='employer'?'PROPERTY REPUTATION':'YOUR REPUTATION'}</Text><Text style={styles.ratingValue}>{reviewCount>0?`${reviewScore.toFixed(1)} ★`:'New'}</Text></View><View style={styles.ratingRight}><Text style={styles.ratingCount}>{reviewCount} verified review{reviewCount===1?'':'s'}</Text><Text style={styles.ratingOpen}>View full reputation →</Text></View></Pressable>
