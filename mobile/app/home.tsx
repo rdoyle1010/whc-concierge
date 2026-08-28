@@ -4,17 +4,20 @@ import { router, useFocusEffect } from 'expo-router'
 import { supabase } from '../src/lib/supabase'
 
 type Role='talent'|'employer'|'admin'
-type Card={title:string;copy:string;href?:'/jobs'|'/applications'|'/agency'|'/agency-account'|'/messages'|'/profile'|'/notifications'|'/interview-ready'|'/discover-talent'|'/saved'|'/residency'|'/residency-setup'|'/billing'|'/property-profile'|'/academy'|'/reputation'|'/tour'|'/security';locked?:boolean;badge?:string}
+type Card={title:string;copy:string;href?:'/jobs'|'/applications'|'/agency'|'/agency-account'|'/messages'|'/profile'|'/notifications'|'/interview-ready'|'/discover-talent'|'/saved'|'/residency'|'/residency-setup'|'/billing'|'/property-profile'|'/academy'|'/reputation'|'/tour'|'/security'|'/awards'|'/hired'|'/analytics'|'/before-you-arrive';locked?:boolean;badge?:string}
 const talentCards:Card[]=[
  {title:'Start here',copy:'A 60-second guide to your profile, matches, applications, Agency, Academy and Interview Ready.',href:'/tour',badge:'GUIDE'},
  {title:'Security, Safety & Legal',copy:'Authenticator protection, Agency safety guidance, privacy, GDPR, Terms and data rights.',href:'/security',badge:'SECURE'},
  {title:'Matches & Jobs',copy:'Swipe live roles, then open hotel photos, ratings, role detail and your AI application assistant.',href:'/jobs'},
  {title:'Saved Roles',copy:'Come back to the opportunities you are considering.',href:'/saved'},
  {title:'Applications',copy:'Track every role you have applied for and withdraw interest if needed.',href:'/applications'},
+ {title:'Hired & Placement History',copy:'Keep completed hires, interviews and offer history safely archived.',href:'/hired'},
  {title:'Agency shifts',copy:'See availability, property photos, ratings, travel detail and the full shift before accepting.',href:'/agency'},
+ {title:'Before You Arrive',copy:'Open confirmed Agency and Residency fact packs, safety details, arrival instructions and documents.',href:'/before-you-arrive'},
  {title:'Residency',copy:'Manage specialist residency offers and longer-form placements.',href:'/residency'},
  {title:'Interview Ready',copy:'Prepare using your CV, the role and the employer.',href:'/interview-ready'},
  {title:'WHC Academy',copy:'Learn, complete assessments and build visible professional development.',href:'/academy'},
+ {title:'Awards & Recognition',copy:'Add genuine professional awards and evidence to strengthen your profile.',href:'/awards'},
  {title:'Reputation & Reviews',copy:'See your verified star rating, reviews and employer references.',href:'/reputation'},
  {title:'Membership & Billing',copy:'See your plan, credits and Featured Talent status.',href:'/billing'},
  {title:'Messages',copy:'Keep conversations with employers in one place.',href:'/messages'},
@@ -26,11 +29,14 @@ const employerCards:Card[]=[
  {title:'Jobs',copy:'Post, edit, publish, close and fill roles from the app.',href:'/jobs'},
  {title:'Property Profile',copy:'Manage property photos, spa details and staff travel information.',href:'/property-profile'},
  {title:'Applications',copy:'Review candidates and recruitment progress.',href:'/applications'},
+ {title:'Hired & Placement History',copy:'Keep completed hires and their interview and offer history away from active recruitment.',href:'/hired'},
+ {title:'Analytics',copy:'Track live role performance, applications, match scores and recruitment funnel movement.',href:'/analytics'},
  {title:'Discover Talent',copy:'Search visible spa and wellness professionals.',href:'/discover-talent',locked:true,badge:'PRO'},
  {title:'Agency bookings',copy:'See flexible staffing bookings for your property.',href:'/agency'},
  {title:'Residency',copy:'Discover specialist talent and manage structured offers.',href:'/residency'},
+ {title:'Awards & Recognition',copy:'Show genuine property, spa and employer awards on your profile.',href:'/awards'},
  {title:'Reputation & Reviews',copy:'See your property star rating, verified reviews and reference requests.',href:'/reputation'},
- {title:'Membership & Billing',copy:'See your plan and manage subscription billing.',href:'/billing'},
+ {title:'Membership, Featured & Billing',copy:'Manage your plan, payment method and Featured Employer visibility in one place.',href:'/billing'},
  {title:'Messages',copy:'Keep candidate conversations together.',href:'/messages'},
 ]
 
