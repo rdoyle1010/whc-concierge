@@ -7,26 +7,21 @@ type Role='talent'|'employer'|'admin'
 type Card={title:string;copy:string;href:string;badge?:string;locked?:boolean}
 
 const talentCards:Card[]=[
- {title:'Applications',copy:'Track active applications, interviews and offers.',href:'/applications'},
  {title:'Agency shifts',copy:'Find and manage flexible spa shifts.',href:'/agency'},
  {title:'Residency',copy:'Manage specialist residency opportunities.',href:'/residency'},
  {title:'Interview Ready',copy:'Prepare from your CV, the role and the employer.',href:'/interview-ready'},
  {title:'WHC Academy',copy:'Build your professional development and certificates.',href:'/academy'},
  {title:'Before You Arrive',copy:'Open arrival packs for confirmed placements and shifts.',href:'/before-you-arrive'},
- {title:'Reputation & Reviews',copy:'See verified reviews and references.',href:'/reputation'},
  {title:'Membership & Billing',copy:'Manage your plan, credits and Featured Talent.',href:'/billing'},
  {title:'Notifications',copy:'See updates and platform history. These do not inflate the red attention count.',href:'/notifications'},
- {title:'Security, Safety & Legal',copy:'Privacy, GDPR, safety guidance and account protection.',href:'/security'},
 ]
 
 const employerCards:Card[]=[
- {title:'Applications',copy:'Review active candidates, interviews and offers.',href:'/applications'},
  {title:'Agency bookings',copy:'Manage flexible staffing responses.',href:'/agency'},
  {title:'Property Profile',copy:'Manage property photos and spa information.',href:'/property-profile'},
  {title:'Residency',copy:'Manage specialist residency opportunities.',href:'/residency'},
  {title:'Analytics',copy:'Track recruitment and role performance.',href:'/analytics'},
  {title:'Discover Talent',copy:'Search visible spa and wellness professionals.',href:'/discover-talent'},
- {title:'Reputation & Reviews',copy:'See verified employer reviews and references.',href:'/reputation'},
  {title:'Membership & Billing',copy:'Manage your plan and Featured Employer visibility.',href:'/billing'},
  {title:'Notifications',copy:'See updates and platform history. These do not inflate the red attention count.',href:'/notifications'},
  {title:'Security, Safety & Legal',copy:'Privacy, GDPR, safety guidance and account protection.',href:'/security'},
@@ -35,7 +30,6 @@ const employerCards:Card[]=[
 export default function HomeScreen(){
  const [role,setRole]=useState<Role>('talent')
  const [name,setName]=useState('')
- const [membership,setMembership]=useState('free')
  const [interviewCredits,setInterviewCredits]=useState(0)
  const [profileCompletion,setProfileCompletion]=useState(0)
  const [reviewScore,setReviewScore]=useState(0)
@@ -51,22 +45,20 @@ export default function HomeScreen(){
   const {data:profile}=await supabase.from('profiles').select('role,full_name').eq('id',user.id).maybeSingle()
   const resolved:Role=profile?.role==='employer'?'employer':profile?.role==='admin'?'admin':'talent'
   if(resolved==='admin'){router.replace('/admin');return}
-  setRole(resolved)
-  setName(profile?.full_name||'')
+  setRole(resolved);setName(profile?.full_name||'')
 
   const {count:messageCount}=await supabase.from('messages').select('id',{count:'exact',head:true}).eq('recipient_id',user.id).eq('read',false)
   setUnreadMessages(messageCount||0)
 
   if(resolved==='talent'){
-   const {data}=await supabase.from('candidate_profiles').select('id,membership_tier,interview_ready_credits,profile_completion_pct,profile_completion_score,review_score,review_count').eq('user_id',user.id).maybeSingle()
-   setMembership(data?.membership_tier||'free')
+   const {data}=await supabase.from('candidate_profiles').select('id,interview_ready_credits,profile_completion_pct,profile_completion_score,review_score,review_count').eq('user_id',user.id).maybeSingle()
    setInterviewCredits(Math.max(0,Number(data?.interview_ready_credits||0)))
    setProfileCompletion(Math.max(0,Math.min(100,Number(data?.profile_completion_pct??data?.profile_completion_score??0))))
    setReviewScore(Number(data?.review_score||0));setReviewCount(Number(data?.review_count||0))
    if(data?.id){const {count}=await supabase.from('agency_bookings').select('id',{count:'exact',head:true}).eq('candidate_id',data.id).in('status',['pending','offered','requested','countered']);setAgencyAttention(count||0)}else setAgencyAttention(0)
   }else{
-   const {data}=await supabase.from('employer_profiles').select('id,membership_tier,review_score,review_count').eq('user_id',user.id).maybeSingle()
-   setMembership(data?.membership_tier||'free');setReviewScore(Number(data?.review_score||0));setReviewCount(Number(data?.review_count||0))
+   const {data}=await supabase.from('employer_profiles').select('id,review_score,review_count').eq('user_id',user.id).maybeSingle()
+   setReviewScore(Number(data?.review_score||0));setReviewCount(Number(data?.review_count||0))
    if(data?.id){const {count}=await supabase.from('agency_bookings').select('id',{count:'exact',head:true}).eq('employer_id',data.id).in('status',['pending','offered','requested','countered']);setAgencyAttention(count||0)}else setAgencyAttention(0)
   }
  }
@@ -84,13 +76,13 @@ export default function HomeScreen(){
   <View style={styles.topRow}><View><Text style={styles.wordmark}>WELLNESS HOUSE</Text><Text style={styles.sub}>{role==='employer'?'EMPLOYER':'TALENT'}</Text></View><Pressable onPress={signOut}><Text style={styles.signOut}>Sign out</Text></Pressable></View>
   <Text style={styles.eyebrow}>{role==='employer'?'PROPERTY WORKSPACE':'YOUR CAREER'}</Text>
   <Text style={styles.title}>{name?`Hello, ${name.split(' ')[0]}.`:'Welcome back.'}</Text>
-  <Text style={styles.intro}>{role==='employer'?'Recruit, manage and connect.':'Discover roles in Jobs, save what interests you, apply with AI and track everything in Applications.'}</Text>
+  <Text style={styles.intro}>{role==='employer'?'Recruit, manage and connect.':'Discover roles in Jobs, apply with AI and track everything in Applications.'}</Text>
 
-  {totalAttention>0?<View style={styles.attentionBox}><View style={styles.attentionHeader}><Text style={styles.attentionTitle}>Needs your attention</Text><Text style={styles.attentionTotal}>{totalAttention}</Text></View><Text style={styles.attentionHelp}>This red number now only means something you genuinely need to act on.</Text>{unreadMessages>0?<Pressable onPress={()=>router.push('/messages')} style={styles.attentionRow}><Text style={styles.attentionText}>Unread messages</Text><Text style={styles.attentionCount}>{unreadMessages}</Text></Pressable>:null}{agencyAttention>0?<Pressable onPress={()=>router.push('/agency')} style={styles.attentionRow}><Text style={styles.attentionText}>{role==='employer'?'Agency responses waiting':'Agency shifts needing a response'}</Text><Text style={styles.attentionCount}>{agencyAttention}</Text></Pressable>:null}</View>:<View style={styles.caughtUp}><Text style={styles.caughtUpTitle}>You’re up to date</Text><Text style={styles.caughtUpCopy}>No unread messages or Agency responses are waiting.</Text></View>}
+  {totalAttention>0?<View style={styles.attentionBox}><View style={styles.attentionHeader}><Text style={styles.attentionTitle}>Needs your attention</Text><Text style={styles.attentionTotal}>{totalAttention}</Text></View><Text style={styles.attentionHelp}>Only unread messages and Agency responses that still need action count here.</Text>{unreadMessages>0?<Pressable onPress={()=>router.push('/messages')} style={styles.attentionRow}><Text style={styles.attentionText}>Unread messages</Text><Text style={styles.attentionCount}>{unreadMessages}</Text></Pressable>:null}{agencyAttention>0?<Pressable onPress={()=>router.push('/agency')} style={styles.attentionRow}><Text style={styles.attentionText}>{role==='employer'?'Agency responses waiting':'Agency shifts needing a response'}</Text><Text style={styles.attentionCount}>{agencyAttention}</Text></Pressable>:null}</View>:<View style={styles.caughtUp}><Text style={styles.caughtUpTitle}>You’re up to date</Text><Text style={styles.caughtUpCopy}>No unread messages or Agency responses are waiting.</Text></View>}
 
   <View style={styles.quickRow}>
    <Pressable onPress={()=>router.push('/jobs')} style={styles.quickPrimary}><Text style={styles.quickPrimaryTitle}>{role==='employer'?'Manage jobs':'Find jobs'}</Text><Text style={styles.quickPrimaryCopy}>{role==='employer'?'Post and manage live roles.':'Swipe roles and apply with AI.'}</Text></Pressable>
-   <Pressable onPress={()=>router.push('/applications')} style={styles.quickSecondary}><Text style={styles.quickSecondaryTitle}>Applications</Text><Text style={styles.quickSecondaryCopy}>Track active recruitment.</Text></Pressable>
+   <Pressable onPress={()=>router.push('/applications')} style={styles.quickSecondary}><Text style={styles.quickSecondaryTitle}>Applications</Text><Text style={styles.quickSecondaryCopy}>Active recruitment and hired history.</Text></Pressable>
   </View>
 
   <Pressable onPress={()=>router.push('/reputation')} style={styles.ratingCard}><View><Text style={styles.ratingLabel}>{role==='employer'?'PROPERTY REPUTATION':'YOUR REPUTATION'}</Text><Text style={styles.ratingValue}>{reviewCount>0?`${reviewScore.toFixed(1)} ★`:'New'}</Text></View><View style={styles.ratingRight}><Text style={styles.ratingCount}>{reviewCount} verified review{reviewCount===1?'':'s'}</Text><Text style={styles.ratingOpen}>View full reputation →</Text></View></Pressable>
