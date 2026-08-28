@@ -22,6 +22,12 @@ const employerItems:NavItem[]=[
   {label:'Agency',href:'/agency',symbol:'○'},
 ]
 
+function isMirroredActionNotification(item:any){
+  const type=String(item?.type||'').toLowerCase()
+  const link=String(item?.link||'').toLowerCase()
+  return type.includes('message')||link.includes('/message')||type.includes('agency')||link.includes('/agency')
+}
+
 export default function MobileNav(){
   const pathname=usePathname()
   const [role,setRole]=useState<Role>('talent')
@@ -36,9 +42,9 @@ export default function MobileNav(){
 
     async function loadCounts(userId:string,resolvedRole?:Role){
       const roleToUse=resolvedRole||role
-      const [{count:messageCount},{count:notificationCount}]=await Promise.all([
+      const [{count:messageCount},{data:notificationRows}]=await Promise.all([
         supabase.from('messages').select('id',{count:'exact',head:true}).eq('recipient_id',userId).eq('read',false),
-        supabase.from('notifications').select('id',{count:'exact',head:true}).eq('user_id',userId).eq('requires_action',true).is('done_at',null),
+        supabase.from('notifications').select('id,type,link,requires_action,done_at').eq('user_id',userId).eq('requires_action',true).is('done_at',null).limit(100),
       ])
       let agency=0
       if(roleToUse==='talent'){
@@ -50,7 +56,7 @@ export default function MobileNav(){
       }
       if(!active)return
       const messages=messageCount||0
-      const actions=notificationCount||0
+      const actions=(notificationRows||[]).filter((item:any)=>!isMirroredActionNotification(item)).length
       setUnreadMessages(messages)
       setActionCount(actions)
       setAgencyCount(agency)
