@@ -3,24 +3,24 @@ import { Pressable, StyleSheet, Text, View } from 'react-native'
 import { router, usePathname } from 'expo-router'
 import * as Notifications from 'expo-notifications'
 import { supabase } from '../lib/supabase'
+import { palette, type } from '../lib/theme'
 
 type Role = 'talent' | 'employer'
 type NavItem = { label:string; href:string; symbol:string }
 
 const talentItems:NavItem[]=[
   {label:'Home',href:'/home',symbol:'⌂'},
-  {label:'Jobs',href:'/jobs',symbol:'◉'},
+  {label:'Jobs',href:'/jobs',symbol:'◌'},
   {label:'Applications',href:'/applications',symbol:'◇'},
   {label:'Messages',href:'/messages',symbol:'✉'},
   {label:'Profile',href:'/profile',symbol:'○'},
 ]
 const employerItems:NavItem[]=[
   {label:'Home',href:'/home',symbol:'⌂'},
-  {label:'Jobs',href:'/jobs',symbol:'◉'},
+  {label:'Jobs',href:'/jobs',symbol:'◌'},
   {label:'Match',href:'/match',symbol:'♡'},
   {label:'Applications',href:'/applications',symbol:'◇'},
   {label:'Messages',href:'/messages',symbol:'✉'},
-  {label:'Agency',href:'/agency',symbol:'○'},
 ]
 
 export default function MobileNav(){
@@ -82,12 +82,24 @@ export default function MobileNav(){
 
   return <View style={styles.wrap}>{items.map(item=>{
     const active=pathname===item.href
-    const badge=item.href==='/messages'?unreadMessages:item.href==='/home'?totalAttention:item.href==='/agency'?agencyCount:0
+    const badge=item.href==='/messages'?unreadMessages:item.href==='/home'?totalAttention:0
     return <Pressable key={item.href} onPress={()=>router.replace(item.href as never)} style={styles.item}>
-      <View style={styles.iconWrap}><Text style={[styles.symbol,active&&styles.active]}>{item.symbol}</Text>{badge>0?<View style={styles.badge}><Text style={styles.badgeText}>{badge>99?'99+':badge}</Text></View>:null}</View>
-      <Text numberOfLines={1} style={[styles.label,active&&styles.active,badge>0&&styles.attentionLabel]}>{item.label}</Text>
+      <View style={styles.iconWrap}><Text style={[styles.symbol,active&&styles.activeSymbol]}>{item.symbol}</Text>{badge>0?<View style={styles.badge}><Text style={styles.badgeText}>{badge>99?'99+':badge}</Text></View>:null}</View>
+      <Text numberOfLines={1} style={[styles.label,active&&styles.activeLabel]}>{item.label}</Text>
+      {active?<View style={styles.activeLine}/>:null}
     </Pressable>
   })}</View>
 }
 
-const styles=StyleSheet.create({wrap:{height:64,borderTopWidth:1,borderTopColor:'#e6ebee',backgroundColor:'#fff',flexDirection:'row',alignItems:'center',justifyContent:'space-around'},item:{flex:1,alignItems:'center',justifyContent:'center',gap:2,paddingHorizontal:1},iconWrap:{position:'relative',minWidth:24,alignItems:'center'},symbol:{color:'#8a969d',fontSize:18,lineHeight:20},label:{color:'#8a969d',fontSize:7.7},active:{color:'#092b45',fontWeight:'700'},attentionLabel:{color:'#8f1d1d',fontWeight:'800'},badge:{position:'absolute',top:-8,right:-12,minWidth:19,height:19,paddingHorizontal:4,borderRadius:10,backgroundColor:'#d62828',alignItems:'center',justifyContent:'center',borderWidth:1.5,borderColor:'#fff'},badgeText:{color:'#fff',fontSize:8,fontWeight:'900'}})
+const styles=StyleSheet.create({
+  wrap:{height:70,borderTopWidth:1,borderTopColor:palette.line,backgroundColor:palette.paper,flexDirection:'row',alignItems:'stretch'},
+  item:{flex:1,alignItems:'center',justifyContent:'center',paddingTop:7,paddingBottom:6,position:'relative'},
+  iconWrap:{position:'relative',minWidth:26,alignItems:'center'},
+  symbol:{color:palette.quiet,fontSize:18,lineHeight:20,fontFamily:type.sans},
+  label:{color:palette.quiet,fontSize:8.5,marginTop:3,fontFamily:type.sans},
+  activeSymbol:{color:palette.inkStrong},
+  activeLabel:{color:palette.inkStrong,fontWeight:'700'},
+  activeLine:{position:'absolute',bottom:0,width:24,height:2,backgroundColor:palette.inkStrong,borderRadius:1},
+  badge:{position:'absolute',top:-8,right:-13,minWidth:18,height:18,paddingHorizontal:4,borderRadius:9,backgroundColor:palette.danger,alignItems:'center',justifyContent:'center',borderWidth:1.5,borderColor:palette.paper},
+  badgeText:{color:'#fff',fontSize:8,fontWeight:'800'},
+})
