@@ -7,9 +7,6 @@ import { getRequestUser } from '@/lib/request-user'
 
 export const dynamic = 'force-dynamic'
 
-// Public directory data is explicitly selected and shaped here. Never expose
-// candidate_profiles.select('*') to an anonymous browser: that table also
-// contains CVs, telephone numbers, documents and exact coordinates.
 const SAFE_FIELDS = [
   'id', 'user_id', 'full_name', 'profile_image_url', 'role_level', 'headline',
   'bio', 'experience_years', 'location', 'postcode', 'services_offered',
@@ -37,7 +34,7 @@ export async function GET(req: NextRequest) {
 
   const { data: employer } = isAdmin ? { data: null } : await admin
     .from('employer_profiles')
-    .select('id, approval_status, latitude, longitude, postcode')
+    .select('id, approval_status, latitude, longitude, postcode, agency_search_radius_miles')
     .eq('user_id', user.id)
     .maybeSingle()
   if (!isAdmin && (!employer || employer.approval_status !== 'approved')) {
@@ -52,7 +49,14 @@ export async function GET(req: NextRequest) {
   const requestedRadius = Number(req.nextUrl.searchParams.get('radius'))
   const hasSearchPoint = latParam != null && lngParam != null
     && Number.isFinite(requestedLat) && Number.isFinite(requestedLng)
-  const radius = Number.isFinite(requestedRadius) && requestedRadius > 0 ? Math.min(requestedRadius, 250) : null
+  const radius = Number.isFinite(requestedRadius) && requestedRadius > 0
+    ? Math.min(requestedRadius, 250)
+    : (Number(employer?.agency_search_radius_miles) > 0 ? Number(employer?.agency_search_radius_miles) : null)
+
+  if (!isAdmin && employer && radius != null && radius !== Number(employer.agency_search_radius_miles || 0)) {
+    await admin.from('employer_profiles').update({ agency_search_radius_miles: radius }).eq('id', employer.id)
+  }
+
   const shiftDate = req.nextUrl.searchParams.get('shiftDate') || ''
   const shiftStartTime = req.nextUrl.searchParams.get('shiftStartTime') || ''
   const shiftEndTime = req.nextUrl.searchParams.get('shiftEndTime') || ''
@@ -60,9 +64,16 @@ export async function GET(req: NextRequest) {
   if (hasShiftSearch && !validShiftWindow(shiftDate, shiftStartTime, shiftEndTime)) {
     return NextResponse.json({ error: 'Choose a valid shift date, start time and finish time' }, { status: 400 })
   }
+  if (!isAdmin && !radius) {
+    return NextResponse.json({ error: 'Set a search radius before looking for Agency Talent.' }, { status: 400 })
+  }
+
   const origin = {
     latitude: hasSearchPoint ? requestedLat : employer?.latitude,
     longitude: hasSearchPoint ? requestedLng : employer?.longitude,
+  }
+  if (!isAdmin && (origin.latitude == null || origin.longitude == null)) {
+    return NextResponse.json({ error: 'Your property location must be mapped before Agency search can calculate real travel distance.' }, { status: 400 })
   }
 
   let query = admin.from('candidate_profiles')
@@ -138,6 +149,7 @@ export async function GET(req: NextRequest) {
     origin: {
       postcode: employer?.postcode || null,
       geocoded: origin.latitude != null && origin.longitude != null,
+      search_radius_miles: radius,
     },
     shift: hasShiftSearch ? { date: shiftDate, startTime: shiftStartTime, endTime: shiftEndTime } : null,
   })
