@@ -19,9 +19,13 @@ export async function GET(req: NextRequest) {
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   const rows = data || []
+  const passedJobIds = Array.from(new Set(rows.filter((row: any) => row.action === 'left').map((row: any) => row.target_id)))
+  const reviewedJobIds = Array.from(new Set(rows.filter((row: any) => row.action === 'right').map((row: any) => row.target_id)))
   return NextResponse.json({
-    passed_job_ids: Array.from(new Set(rows.filter((row: any) => row.action === 'left').map((row: any) => row.target_id))),
-    saved_job_ids: Array.from(new Set(rows.filter((row: any) => row.action === 'right').map((row: any) => row.target_id))),
+    passed_job_ids: passedJobIds,
+    reviewed_job_ids: reviewedJobIds,
+    // Kept temporarily for backwards compatibility with older TestFlight builds.
+    saved_job_ids: reviewedJobIds,
   })
 }
 
@@ -101,10 +105,6 @@ export async function POST(req: NextRequest) {
   })
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-  if (action === 'right') {
-    await admin.from('saved_jobs').upsert({ candidate_id: candidate.id, job_id: targetId }, { onConflict: 'candidate_id,job_id', ignoreDuplicates: true })
-  }
-
   return NextResponse.json({ success: true, action, applicationDraft: action === 'right', applicationId, matchScore })
 }
 
@@ -134,6 +134,7 @@ export async function DELETE(req: NextRequest) {
     .eq('target_type', 'job')
   if (swipeDeleteError) return NextResponse.json({ error: swipeDeleteError.message }, { status: 500 })
 
+  // Clean up legacy Saved rows created by older mobile builds.
   if (targetIds.length) {
     const { error: savedDeleteError } = await admin
       .from('saved_jobs')
