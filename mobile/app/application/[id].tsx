@@ -4,6 +4,7 @@ import { router, useLocalSearchParams } from 'expo-router'
 import { supabase } from '../../src/lib/supabase'
 
 type InterviewMethod = 'teams' | 'video' | 'phone' | 'in_person'
+type MessageIntent = 'shortlist' | 'decline' | 'offer'
 type ApplicationRow = {
   id: string
   status: string
@@ -75,9 +76,22 @@ export default function EmployerApplicationScreen() {
     return body
   }
 
+  async function writeAiMessage(intent: MessageIntent) {
+    if (!application || busy) return
+    setBusy(`ai-${intent}`)
+    setError('')
+    try {
+      const data = await callApi('/api/employer/applications/message-ai', { applicationId: application.id, intent })
+      setNote(String(data.message || ''))
+    } catch (e: any) {
+      setError(e.message || 'Could not write the candidate message.')
+    }
+    setBusy('')
+  }
+
   function requireNote(label: string) {
     if (note.trim().length < 20) {
-      Alert.alert(`${label} message needed`, 'Write a short, clear message for the candidate before sending.')
+      Alert.alert(`${label} message needed`, 'Use the AI assistant or write a short, clear message for the candidate before sending.')
       return false
     }
     return true
@@ -145,7 +159,16 @@ export default function EmployerApplicationScreen() {
     {candidate?.bio ? <View style={styles.section}><Text style={styles.sectionTitle}>Candidate profile</Text><Text style={styles.copy}>{candidate.bio}</Text></View> : null}
 
     {!closed ? <>
-      <View style={styles.section}><Text style={styles.sectionTitle}>Message to candidate</Text><Text style={styles.help}>This message is used for shortlist, decline and offer actions. Keep it personal and clear.</Text><TextInput value={note} onChangeText={setNote} multiline placeholder="Write the candidate message..." style={styles.textarea} /></View>
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Message to candidate</Text>
+        <Text style={styles.help}>Use AI to create a polished first draft from the real candidate, role and property details. You can edit every word before sending.</Text>
+        <View style={styles.aiRow}>
+          <Pressable onPress={() => writeAiMessage('shortlist')} disabled={!!busy} style={[styles.aiButton, !!busy && styles.disabled]}><Text style={styles.aiButtonText}>{busy === 'ai-shortlist' ? 'Writing…' : 'AI shortlist'}</Text></Pressable>
+          <Pressable onPress={() => writeAiMessage('decline')} disabled={!!busy} style={[styles.aiButton, !!busy && styles.disabled]}><Text style={styles.aiButtonText}>{busy === 'ai-decline' ? 'Writing…' : 'AI decline'}</Text></Pressable>
+          <Pressable onPress={() => writeAiMessage('offer')} disabled={!!busy} style={[styles.aiButton, !!busy && styles.disabled]}><Text style={styles.aiButtonText}>{busy === 'ai-offer' ? 'Writing…' : 'AI offer'}</Text></Pressable>
+        </View>
+        <TextInput value={note} onChangeText={setNote} multiline placeholder="AI message will appear here, or write your own..." style={styles.textarea} />
+      </View>
       <View style={styles.actionGrid}>
         <Pressable onPress={() => decision('shortlisted')} disabled={!!busy || application.status === 'shortlisted'} style={[styles.primary, (busy !== '' || application.status === 'shortlisted') && styles.disabled]}><Text style={styles.primaryText}>{busy === 'shortlisted' ? 'Sending...' : application.status === 'shortlisted' ? 'Shortlisted ✓' : 'Shortlist candidate'}</Text></Pressable>
         <Pressable onPress={() => decision('rejected')} disabled={!!busy} style={[styles.secondary, busy !== '' && styles.disabled]}><Text style={styles.dangerText}>{busy === 'rejected' ? 'Sending...' : 'Not progressing'}</Text></Pressable>
@@ -160,5 +183,5 @@ export default function EmployerApplicationScreen() {
 }
 
 const styles = StyleSheet.create({
-  scroll:{flex:1,backgroundColor:'#fff'},page:{paddingHorizontal:22,paddingTop:64,paddingBottom:48},center:{flex:1,alignItems:'center',justifyContent:'center',padding:28,backgroundColor:'#fff'},back:{color:'#66747c',fontSize:13,marginBottom:34},eyebrow:{color:'#71808a',fontSize:9,letterSpacing:2.1,marginBottom:10},titleRow:{flexDirection:'row',gap:16,alignItems:'flex-start'},title:{color:'#092b45',fontSize:29,lineHeight:35,fontWeight:'500'},meta:{color:'#71808a',fontSize:12,lineHeight:18,marginTop:6},scoreBox:{borderWidth:1,borderColor:'#ccd8dd',paddingHorizontal:12,paddingVertical:8,alignItems:'center'},score:{color:'#092b45',fontSize:17,fontWeight:'700'},scoreLabel:{color:'#71808a',fontSize:7,letterSpacing:1.2,marginTop:2},role:{color:'#173246',fontSize:14,fontWeight:'600',marginTop:22},stage:{color:'#71808a',fontSize:9,letterSpacing:1.1,marginTop:8},section:{borderTopWidth:1,borderTopColor:'#e3e8eb',paddingTop:22,marginTop:26},sectionTitle:{color:'#173246',fontSize:17,fontWeight:'600',marginBottom:7},copy:{color:'#66747c',fontSize:13,lineHeight:21},help:{color:'#71808a',fontSize:11,lineHeight:17,marginBottom:12},textarea:{borderWidth:1,borderColor:'#d7e0e4',minHeight:110,padding:13,textAlignVertical:'top',fontSize:13,color:'#173246'},actionGrid:{gap:10,marginTop:14},primary:{backgroundColor:'#092b45',paddingVertical:15,alignItems:'center',marginTop:12},primaryText:{color:'#fff',fontSize:12,fontWeight:'700'},secondary:{borderWidth:1,borderColor:'#d7e0e4',paddingVertical:14,alignItems:'center'},dangerText:{color:'#7c3f3f',fontSize:12,fontWeight:'600'},disabled:{opacity:.45},methodRow:{flexDirection:'row',flexWrap:'wrap',gap:8,marginVertical:10},method:{borderWidth:1,borderColor:'#d7e0e4',paddingHorizontal:11,paddingVertical:9},methodActive:{backgroundColor:'#092b45',borderColor:'#092b45'},methodText:{color:'#66747c',fontSize:10},methodTextActive:{color:'#fff',fontWeight:'700'},label:{color:'#173246',fontSize:11,fontWeight:'600',marginTop:11,marginBottom:6},input:{borderWidth:1,borderColor:'#d7e0e4',paddingHorizontal:12,paddingVertical:12,color:'#173246',fontSize:12},offer:{borderWidth:1,borderColor:'#092b45',paddingVertical:15,alignItems:'center',marginTop:10},offerText:{color:'#092b45',fontSize:12,fontWeight:'700'},closed:{backgroundColor:'#f4f7f8',padding:18,marginTop:28},closedTitle:{color:'#173246',fontSize:14,fontWeight:'600',marginBottom:5},error:{color:'#9b2c2c',fontSize:12,lineHeight:18,marginTop:18},
+  scroll:{flex:1,backgroundColor:'#fff'},page:{paddingHorizontal:22,paddingTop:64,paddingBottom:48},center:{flex:1,alignItems:'center',justifyContent:'center',padding:28,backgroundColor:'#fff'},back:{color:'#66747c',fontSize:13,marginBottom:34},eyebrow:{color:'#71808a',fontSize:9,letterSpacing:2.1,marginBottom:10},titleRow:{flexDirection:'row',gap:16,alignItems:'flex-start'},title:{color:'#092b45',fontSize:29,lineHeight:35,fontWeight:'500'},meta:{color:'#71808a',fontSize:12,lineHeight:18,marginTop:6},scoreBox:{borderWidth:1,borderColor:'#ccd8dd',paddingHorizontal:12,paddingVertical:8,alignItems:'center'},score:{color:'#092b45',fontSize:17,fontWeight:'700'},scoreLabel:{color:'#71808a',fontSize:7,letterSpacing:1.2,marginTop:2},role:{color:'#173246',fontSize:14,fontWeight:'600',marginTop:22},stage:{color:'#71808a',fontSize:9,letterSpacing:1.1,marginTop:8},section:{borderTopWidth:1,borderTopColor:'#e3e8eb',paddingTop:22,marginTop:26},sectionTitle:{color:'#173246',fontSize:17,fontWeight:'600',marginBottom:7},copy:{color:'#66747c',fontSize:13,lineHeight:21},help:{color:'#71808a',fontSize:11,lineHeight:17,marginBottom:12},aiRow:{flexDirection:'row',gap:8,marginBottom:12},aiButton:{flex:1,borderWidth:1,borderColor:'#9fb1bb',backgroundColor:'#f4f7f8',paddingVertical:10,paddingHorizontal:6,alignItems:'center'},aiButtonText:{color:'#092b45',fontSize:9.5,fontWeight:'700'},textarea:{borderWidth:1,borderColor:'#d7e0e4',minHeight:110,padding:13,textAlignVertical:'top',fontSize:13,color:'#173246'},actionGrid:{gap:10,marginTop:14},primary:{backgroundColor:'#092b45',paddingVertical:15,alignItems:'center',marginTop:12},primaryText:{color:'#fff',fontSize:12,fontWeight:'700'},secondary:{borderWidth:1,borderColor:'#d7e0e4',paddingVertical:14,alignItems:'center'},dangerText:{color:'#7c3f3f',fontSize:12,fontWeight:'600'},disabled:{opacity:.45},methodRow:{flexDirection:'row',flexWrap:'wrap',gap:8,marginVertical:10},method:{borderWidth:1,borderColor:'#d7e0e4',paddingHorizontal:11,paddingVertical:9},methodActive:{backgroundColor:'#092b45',borderColor:'#092b45'},methodText:{color:'#66747c',fontSize:10},methodTextActive:{color:'#fff',fontWeight:'700'},label:{color:'#173246',fontSize:11,fontWeight:'600',marginTop:11,marginBottom:6},input:{borderWidth:1,borderColor:'#d7e0e4',paddingHorizontal:12,paddingVertical:12,color:'#173246',fontSize:12},offer:{borderWidth:1,borderColor:'#092b45',paddingVertical:15,alignItems:'center',marginTop:10},offerText:{color:'#092b45',fontSize:12,fontWeight:'700'},closed:{backgroundColor:'#f4f7f8',padding:18,marginTop:28},closedTitle:{color:'#173246',fontSize:14,fontWeight:'600',marginBottom:5},error:{color:'#9b2c2c',fontSize:12,lineHeight:18,marginTop:18},
 })
