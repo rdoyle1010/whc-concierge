@@ -3,6 +3,7 @@ import { ActivityIndicator, Alert, Linking, Pressable, ScrollView, StyleSheet, S
 import { router, useLocalSearchParams } from 'expo-router'
 import { supabase } from '../../src/lib/supabase'
 import MultiSelectField from '../../src/components/MultiSelectField'
+import { palette, radius, space, type } from '../../src/lib/theme'
 
 const WEB_URL = process.env.EXPO_PUBLIC_WEB_URL || 'https://talent.wellnesshousecollective.co.uk'
 const BUSINESS_SKILLS = ['Reception & Front of House','Revenue Management','Stock Control','Team Leadership','Staff Training','Rota Management','KPI Reporting','Health & Safety','COSHH Management','Budget Management','Client Consultation','Upselling & Retail','Social Media','Event Coordination','Membership Management']
@@ -52,7 +53,7 @@ export default function EmployerJobEditor() {
   const [busy, setBusy] = useState('')
   const [error, setError] = useState('')
 
-  useEffect(() => { loadTaxonomy(); if (!isNew) load() }, [id])
+  useEffect(() => { void loadTaxonomy(); if (!isNew) void load() }, [id])
 
   async function loadTaxonomy() {
     try {
@@ -107,6 +108,7 @@ export default function EmployerJobEditor() {
   }
 
   function update<K extends keyof FormState>(key: K, value: FormState[K]) { setForm(current => ({ ...current, [key]: value })) }
+
   function payload() {
     return {
       ...form,
@@ -118,6 +120,7 @@ export default function EmployerJobEditor() {
       benefits: form.benefits.split('\n').map(v => v.trim()).filter(Boolean),
     }
   }
+
   function validate() {
     if (form.job_title.trim().length < 5) return 'Job title must be at least 5 characters.'
     if (form.job_description.trim().length < 10) return 'Add a meaningful job description.'
@@ -181,53 +184,146 @@ export default function EmployerJobEditor() {
     ])
   }
 
-  if (loading) return <View style={styles.center}><ActivityIndicator color="#092b45" /></View>
+  if (loading) return <View style={styles.center}><ActivityIndicator color={palette.ink} /></View>
   const closed = ['closed', 'filled'].includes(String(job?.status || ''))
   const live = Boolean(job?.is_live) && job?.status === 'active'
 
-  return <ScrollView style={styles.scroll} contentContainerStyle={styles.page}>
-    <Pressable onPress={() => router.back()}><Text style={styles.back}>‹ Back</Text></Pressable>
-    <Text style={styles.eyebrow}>EMPLOYER · RECRUITMENT</Text><Text style={styles.title}>{isNew ? 'Post a role.' : 'Manage role.'}</Text>
-    <Text style={styles.intro}>Write the role properly once. These criteria feed WHC matching, applications and Interview Ready, so only mark something required when it genuinely matters.</Text>
-    {job ? <View style={styles.statusCard}><Text style={styles.status}>{String(job.status || 'draft').toUpperCase()}</Text><Text style={styles.help}>{live ? 'This role is currently live.' : closed ? 'This role is closed and cannot be edited.' : 'This role is not live yet.'}</Text></View> : null}
+  return <ScrollView style={styles.scroll} contentContainerStyle={styles.page} keyboardShouldPersistTaps="handled">
+    <Pressable onPress={() => router.back()} style={styles.backButton}><Text style={styles.back}>‹ Back</Text></Pressable>
+    <Text style={styles.eyebrow}>EMPLOYER · RECRUITMENT</Text>
+    <Text style={styles.title}>{isNew ? 'Post a role' : 'Manage role'}</Text>
+    <Text style={styles.intro}>Write the role properly once. These details power matching, applications and Interview Ready, so only mark something required when it genuinely matters.</Text>
+
+    {job ? <View style={[styles.statusCard,live&&styles.statusCardLive,closed&&styles.statusCardClosed]}>
+      <View><Text style={styles.statusEyebrow}>ROLE STATUS</Text><Text style={styles.status}>{String(job.status || 'draft').replace(/_/g,' ').toUpperCase()}</Text></View>
+      <Text style={styles.statusCopy}>{live ? 'This role is currently live and visible to Talent.' : closed ? 'This role is closed and can no longer be edited.' : 'This role is saved but is not live yet.'}</Text>
+    </View> : null}
     {error ? <Text style={styles.error}>{error}</Text> : null}
 
-    <Text style={styles.sectionTitle}>Role basics</Text>
-    <Field label="Job title"><TextInput editable={!closed} value={form.job_title} onChangeText={v => update('job_title', v)} style={styles.input} placeholder="e.g. Director of Spa" /></Field>
-    <Field label="Job description"><TextInput editable={!closed} value={form.job_description} onChangeText={v => update('job_description', v)} style={[styles.input, styles.textarea]} multiline placeholder="Responsibilities, priorities, reporting line, team size and what success looks like..." /></Field>
-    <View style={styles.two}><View style={styles.flex}><Field label="Location"><TextInput editable={!closed} value={form.location} onChangeText={v => update('location', v)} style={styles.input} /></Field></View><View style={styles.flex}><Field label="Postcode"><TextInput editable={!closed} autoCapitalize="characters" value={form.location_postcode} onChangeText={v => update('location_postcode', v)} style={styles.input} /></Field></View></View>
-    <View style={styles.two}><View style={styles.flex}><Field label="Search radius (miles)"><TextInput editable={!closed} value={form.radius_miles} onChangeText={v => update('radius_miles', v)} keyboardType="number-pad" style={styles.input} placeholder="25" /></Field></View><View style={styles.flex}><Field label="Role level"><TextInput editable={!closed} value={form.required_role_level} onChangeText={v => update('required_role_level', v)} style={styles.input} placeholder="e.g. Spa Manager" /></Field></View></View>
+    <SectionHeader eyebrow="01 · ROLE" title="Role basics" copy="Give candidates enough information to understand the opportunity before they ever apply." />
+    <Field label="Job title"><TextInput editable={!closed} value={form.job_title} onChangeText={v => update('job_title', v)} style={styles.input} placeholder="e.g. Director of Spa" placeholderTextColor={palette.quiet} /></Field>
+    <Field label="Job description"><TextInput editable={!closed} value={form.job_description} onChangeText={v => update('job_description', v)} style={[styles.input, styles.textarea]} multiline placeholder="Responsibilities, priorities, reporting line, team size and what success looks like..." placeholderTextColor={palette.quiet} /></Field>
+    <View style={styles.two}><View style={styles.flex}><Field label="Location"><TextInput editable={!closed} value={form.location} onChangeText={v => update('location', v)} style={styles.input} placeholderTextColor={palette.quiet} /></Field></View><View style={styles.flex}><Field label="Postcode"><TextInput editable={!closed} autoCapitalize="characters" value={form.location_postcode} onChangeText={v => update('location_postcode', v)} style={styles.input} placeholderTextColor={palette.quiet} /></Field></View></View>
+    <View style={styles.two}><View style={styles.flex}><Field label="Search radius (miles)"><TextInput editable={!closed} value={form.radius_miles} onChangeText={v => update('radius_miles', v)} keyboardType="number-pad" style={styles.input} placeholder="25" placeholderTextColor={palette.quiet} /></Field></View><View style={styles.flex}><Field label="Role level"><TextInput editable={!closed} value={form.required_role_level} onChangeText={v => update('required_role_level', v)} style={styles.input} placeholder="e.g. Spa Manager" placeholderTextColor={palette.quiet} /></Field></View></View>
     <View style={styles.two}><View style={styles.flex}><Field label="Job type"><TextInput editable={!closed} value={form.job_type} onChangeText={v => update('job_type', v)} style={styles.input} /></Field></View><View style={styles.flex}><Field label="Contract"><TextInput editable={!closed} value={form.contract_type} onChangeText={v => update('contract_type', v)} style={styles.input} /></Field></View></View>
-    <Field label="Who should WHC consider?"><View style={styles.scopeRow}>{[['same_level','Same level'],['step_up','Ready to step up'],['emerging','Emerging'],['open_transferable','Transferable']].map(([value,label]) => <Pressable disabled={closed} key={value} onPress={() => update('candidate_scope', value)} style={[styles.scope,form.candidate_scope===value&&styles.scopeActive]}><Text style={[styles.scopeText,form.candidate_scope===value&&styles.scopeTextActive]}>{label}</Text></Pressable>)}</View></Field>
-    <View style={styles.two}><View style={styles.flex}><Field label="Min salary"><TextInput editable={!closed} value={form.salary_min} onChangeText={v => update('salary_min', v)} keyboardType="number-pad" style={styles.input} /></Field></View><View style={styles.flex}><Field label="Max salary"><TextInput editable={!closed} value={form.salary_max} onChangeText={v => update('salary_max', v)} keyboardType="number-pad" style={styles.input} /></Field></View></View>
-    <View style={styles.two}><View style={styles.flex}><Field label="Years experience"><TextInput editable={!closed} value={form.min_years_experience} onChangeText={v => update('min_years_experience', v)} keyboardType="number-pad" style={styles.input} /></Field></View><View style={styles.flex}><Field label="Shift pattern"><TextInput editable={!closed} value={form.shift_pattern} onChangeText={v => update('shift_pattern', v)} style={styles.input} /></Field></View></View>
 
-    <Text style={styles.sectionTitle}>Matching criteria</Text>
-    <Text style={styles.sectionHelp}>These feed the match score. Keep genuine must-haves separate from nice-to-have leadership and business experience.</Text>
+    <Field label="Who should WHC consider?">
+      <Text style={styles.fieldHelp}>This changes who enters the match pool. Choose the broadest level you would genuinely interview.</Text>
+      <View style={styles.scopeRow}>{[['same_level','Same level'],['step_up','Ready to step up'],['emerging','Emerging'],['open_transferable','Transferable']].map(([value,label]) => <Pressable disabled={closed} key={value} onPress={() => update('candidate_scope', value)} style={[styles.scope,form.candidate_scope===value&&styles.scopeActive]}><Text style={[styles.scopeText,form.candidate_scope===value&&styles.scopeTextActive]}>{label}</Text></Pressable>)}</View>
+    </Field>
+
+    <View style={styles.two}><View style={styles.flex}><Field label="Minimum salary"><TextInput editable={!closed} value={form.salary_min} onChangeText={v => update('salary_min', v)} keyboardType="number-pad" style={styles.input} placeholder="35000" placeholderTextColor={palette.quiet} /></Field></View><View style={styles.flex}><Field label="Maximum salary"><TextInput editable={!closed} value={form.salary_max} onChangeText={v => update('salary_max', v)} keyboardType="number-pad" style={styles.input} placeholder="45000" placeholderTextColor={palette.quiet} /></Field></View></View>
+    <View style={styles.two}><View style={styles.flex}><Field label="Minimum experience"><TextInput editable={!closed} value={form.min_years_experience} onChangeText={v => update('min_years_experience', v)} keyboardType="number-pad" style={styles.input} placeholder="3" placeholderTextColor={palette.quiet} /></Field></View><View style={styles.flex}><Field label="Shift pattern"><TextInput editable={!closed} value={form.shift_pattern} onChangeText={v => update('shift_pattern', v)} style={styles.input} placeholder="e.g. 5 days over 7" placeholderTextColor={palette.quiet} /></Field></View></View>
+
+    <SectionHeader eyebrow="02 · MATCHING" title="What genuinely matters?" copy="These criteria feed the match score. Keep genuine must-haves separate from nice-to-have experience." />
     <MultiSelectField disabled={closed} label="Required services & treatment skills" help="Choose only skills the person genuinely needs to do this job." options={taxonomy.skills} selected={form.required_skills} onChange={value => update('required_skills', value)} />
     <MultiSelectField disabled={closed} label="Required product houses" options={taxonomy.brands} selected={form.required_brands} onChange={value => update('required_brands', value)} />
     <MultiSelectField disabled={closed} label="Required qualifications" options={taxonomy.qualifications} selected={form.required_qualifications} onChange={value => update('required_qualifications', value)} />
     <MultiSelectField disabled={closed} label="Required systems" options={taxonomy.systems} selected={form.required_systems} onChange={value => update('required_systems', value)} />
     <MultiSelectField disabled={closed} label="Preferred leadership & business skills" help="Useful evidence for fit, but not an automatic exclusion." options={BUSINESS_SKILLS} selected={form.preferred_business_skills} onChange={value => update('preferred_business_skills', value)} />
 
-    <Text style={styles.sectionTitle}>Requirements & benefits</Text>
-    <Field label="Requirements · one per line"><TextInput editable={!closed} value={form.requirements} onChangeText={v => update('requirements', v)} style={[styles.input,styles.smallArea]} multiline /></Field>
-    <Field label="Benefits · one per line"><TextInput editable={!closed} value={form.benefits} onChangeText={v => update('benefits', v)} style={[styles.input,styles.smallArea]} multiline /></Field>
-    <Toggle disabled={closed} label="Accommodation provided" help="Make this visible to candidates before they apply." value={form.offers_accommodation} onChange={value => update('offers_accommodation', value)} />
-    <Toggle disabled={closed} label="Professional insurance required" help="Use this only where the role genuinely requires valid cover." value={form.insurance_required} onChange={value => update('insurance_required', value)} />
-    <Toggle disabled={closed} label="Agency role" help="Flag this role as flexible Agency work where appropriate." value={form.is_agency_role} onChange={value => update('is_agency_role', value)} />
-    <Toggle disabled={closed} label="Residency role" help="Flag longer-form specialist Residency opportunities." value={form.is_residency_role} onChange={value => update('is_residency_role', value)} />
+    <SectionHeader eyebrow="03 · CANDIDATE VIEW" title="Requirements & benefits" copy="This is where candidates understand the practical reality of the role, not just the title." />
+    <Field label="Requirements · one per line"><TextInput editable={!closed} value={form.requirements} onChangeText={v => update('requirements', v)} style={[styles.input,styles.smallArea]} multiline placeholder="Right to work in the UK\nLevel 3 Beauty Therapy\nPrevious luxury spa experience" placeholderTextColor={palette.quiet} /></Field>
+    <Field label="Benefits · one per line"><TextInput editable={!closed} value={form.benefits} onChangeText={v => update('benefits', v)} style={[styles.input,styles.smallArea]} multiline placeholder="Service charge\nMeals on duty\nHotel discounts\nTraining & development" placeholderTextColor={palette.quiet} /></Field>
+
+    <View style={styles.toggleGroup}>
+      <Toggle disabled={closed} label="Accommodation provided" help="Make this visible to candidates before they apply." value={form.offers_accommodation} onChange={value => update('offers_accommodation', value)} />
+      <Toggle disabled={closed} label="Professional insurance required" help="Use this only where the role genuinely requires valid cover." value={form.insurance_required} onChange={value => update('insurance_required', value)} />
+      <Toggle disabled={closed} label="Agency role" help="Flag this role as flexible Agency work where appropriate." value={form.is_agency_role} onChange={value => update('is_agency_role', value)} />
+      <Toggle disabled={closed} label="Residency role" help="Flag longer-form specialist Residency opportunities." value={form.is_residency_role} onChange={value => update('is_residency_role', value)} />
+    </View>
 
     {!closed ? <View style={styles.actions}>
-      <Pressable disabled={!!busy} onPress={saveDraft} style={styles.secondary}><Text style={styles.secondaryText}>{busy==='save'?'Saving...':'Save changes'}</Text></Pressable>
-      {!live ? <><View style={styles.priceCard}><Text style={styles.priceTitle}>Standard Job · 30 days</Text><Text style={styles.help}>£149 normally · £99 for Employer Pro · included from Group allowance.</Text><Pressable disabled={!!busy} onPress={() => publish('Bronze')} style={styles.primary}><Text style={styles.primaryText}>{busy==='publish-Bronze'?'Preparing...':'Publish Standard Job'}</Text></Pressable></View>
-      <View style={styles.priceCard}><Text style={styles.priceTitle}>Featured Job · 30 days</Text><Text style={styles.help}>£249 · priority search placement, relevant Talent email and featured branding.</Text><Pressable disabled={!!busy} onPress={() => publish('Platinum')} style={styles.primary}><Text style={styles.primaryText}>{busy==='publish-Platinum'?'Preparing...':'Publish Featured Job'}</Text></Pressable></View></> : null}
-      {live ? <><Pressable disabled={!!busy} onPress={() => changeStatus('filled')} style={styles.primary}><Text style={styles.primaryText}>Mark role filled</Text></Pressable><Pressable disabled={!!busy} onPress={() => changeStatus('closed')} style={styles.danger}><Text style={styles.dangerText}>Close role</Text></Pressable></> : null}
-    </View> : null}
+      <SectionHeader eyebrow="04 · PUBLISH" title={live?'Manage this live role':'Choose how to publish'} copy={live?'You can still save edits, mark the position filled or close it early.':'Save a draft first if you are not ready. Publishing may use your Group allowance or open secure Stripe checkout.'} />
+      <Pressable disabled={!!busy} onPress={saveDraft} style={styles.secondary}><Text style={styles.secondaryText}>{busy==='save'?'Saving…':isNew?'Save draft':'Save changes'}</Text></Pressable>
+
+      {!live ? <>
+        <View style={styles.priceCard}>
+          <View style={styles.priceTop}><View><Text style={styles.priceEyebrow}>STANDARD JOB</Text><Text style={styles.priceTitle}>30 days</Text></View><Text style={styles.priceAmount}>£149</Text></View>
+          <Text style={styles.priceCopy}>£99 for Employer Pro. Included where your Employer Group allowance is available.</Text>
+          <Pressable disabled={!!busy} onPress={() => publish('Bronze')} style={styles.primary}><Text style={styles.primaryText}>{busy==='publish-Bronze'?'Preparing…':'Publish Standard Job'}</Text></Pressable>
+        </View>
+        <View style={[styles.priceCard,styles.featuredCard]}>
+          <View style={styles.priceTop}><View><Text style={styles.priceEyebrow}>FEATURED JOB</Text><Text style={styles.priceTitle}>30 days + priority visibility</Text></View><Text style={styles.priceAmount}>£249</Text></View>
+          <Text style={styles.priceCopy}>Priority search placement, relevant Talent email and featured branding.</Text>
+          <Pressable disabled={!!busy} onPress={() => publish('Platinum')} style={styles.primary}><Text style={styles.primaryText}>{busy==='publish-Platinum'?'Preparing…':'Publish Featured Job'}</Text></Pressable>
+        </View>
+      </> : null}
+
+      {live ? <>
+        <Pressable disabled={!!busy} onPress={() => changeStatus('filled')} style={styles.primary}><Text style={styles.primaryText}>{busy==='filled'?'Updating…':'Mark role filled'}</Text></Pressable>
+        <Text style={styles.closeHelp}>Marking a role filled removes it from Talent view and emails applicants that the vacancy has been filled.</Text>
+        <Pressable disabled={!!busy} onPress={() => changeStatus('closed')} style={styles.danger}><Text style={styles.dangerText}>{busy==='closed'?'Updating…':'Close role without marking filled'}</Text></Pressable>
+      </> : null}
+    </View> : <View style={styles.closedBox}><Text style={styles.closedTitle}>This role is closed</Text><Text style={styles.closedCopy}>Its history remains available, but the role can no longer be edited or republished from this screen.</Text></View>}
   </ScrollView>
 }
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) { return <View style={styles.field}><Text style={styles.fieldLabel}>{label}</Text>{children}</View> }
-function Toggle({ label, help, value, onChange, disabled }: { label:string; help:string; value:boolean; onChange:(value:boolean)=>void; disabled:boolean }) { return <View style={styles.switchRow}><View style={styles.flex}><Text style={styles.fieldLabel}>{label}</Text><Text style={styles.help}>{help}</Text></View><Switch disabled={disabled} value={value} onValueChange={onChange} /></View> }
+function SectionHeader({eyebrow,title,copy}:{eyebrow:string;title:string;copy:string}){
+  return <View style={styles.sectionHeader}><Text style={styles.sectionEyebrow}>{eyebrow}</Text><Text style={styles.sectionTitle}>{title}</Text><Text style={styles.sectionHelp}>{copy}</Text></View>
+}
 
-const styles=StyleSheet.create({scroll:{flex:1,backgroundColor:'#fff'},page:{paddingHorizontal:22,paddingTop:64,paddingBottom:120},center:{flex:1,alignItems:'center',justifyContent:'center',backgroundColor:'#fff'},back:{color:'#66747c',fontSize:13,marginBottom:34},eyebrow:{color:'#71808a',fontSize:9,letterSpacing:2.1,marginBottom:10},title:{color:'#092b45',fontSize:31,lineHeight:37,fontWeight:'500'},intro:{color:'#66747c',fontSize:14,lineHeight:21,marginTop:10,marginBottom:24},statusCard:{backgroundColor:'#f4f7f8',padding:15,marginBottom:18},status:{color:'#173246',fontSize:10,fontWeight:'700',letterSpacing:1.2,marginBottom:5},help:{color:'#71808a',fontSize:10,lineHeight:16},sectionTitle:{color:'#173246',fontSize:17,fontWeight:'700',marginTop:15,marginBottom:8},sectionHelp:{color:'#71808a',fontSize:10,lineHeight:16,marginBottom:8},field:{marginBottom:15},fieldLabel:{color:'#173246',fontSize:10,fontWeight:'700',marginBottom:6},input:{borderWidth:1,borderColor:'#d7e0e4',backgroundColor:'#fff',paddingHorizontal:12,paddingVertical:11,color:'#173246',fontSize:12},textarea:{minHeight:150,textAlignVertical:'top'},smallArea:{minHeight:88,textAlignVertical:'top'},two:{flexDirection:'row',gap:10},flex:{flex:1},scopeRow:{flexDirection:'row',flexWrap:'wrap',gap:7},scope:{borderWidth:1,borderColor:'#d7e0e4',paddingHorizontal:10,paddingVertical:9},scopeActive:{backgroundColor:'#092b45',borderColor:'#092b45'},scopeText:{color:'#66747c',fontSize:9},scopeTextActive:{color:'#fff'},switchRow:{flexDirection:'row',alignItems:'center',gap:12,borderTopWidth:1,borderTopColor:'#e7edef',paddingVertical:14},actions:{gap:11,marginTop:20},secondary:{borderWidth:1,borderColor:'#cfd9de',paddingVertical:14,alignItems:'center'},secondaryText:{color:'#173246',fontSize:11,fontWeight:'700'},primary:{backgroundColor:'#092b45',paddingVertical:14,alignItems:'center',marginTop:12},primaryText:{color:'#fff',fontSize:11,fontWeight:'700'},danger:{paddingVertical:14,alignItems:'center',borderWidth:1,borderColor:'#d9bcbc'},dangerText:{color:'#8b3c3c',fontSize:11,fontWeight:'700'},priceCard:{borderWidth:1,borderColor:'#dce3e7',padding:16},priceTitle:{color:'#173246',fontSize:14,fontWeight:'700',marginBottom:5},error:{color:'#9b2c2c',fontSize:11,lineHeight:17,marginBottom:16}})
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  return <View style={styles.field}><Text style={styles.fieldLabel}>{label}</Text>{children}</View>
+}
+
+function Toggle({ label, help, value, onChange, disabled }: { label:string; help:string; value:boolean; onChange:(value:boolean)=>void; disabled:boolean }) {
+  return <View style={styles.switchRow}><View style={styles.flex}><Text style={styles.toggleLabel}>{label}</Text><Text style={styles.toggleHelp}>{help}</Text></View><Switch disabled={disabled} value={value} onValueChange={onChange} trackColor={{false:palette.lineStrong,true:'#BCC8BF'}} thumbColor={palette.paper} /></View>
+}
+
+const styles=StyleSheet.create({
+  scroll:{flex:1,backgroundColor:palette.stone},
+  page:{paddingHorizontal:space.page,paddingTop:18,paddingBottom:120},
+  center:{flex:1,alignItems:'center',justifyContent:'center',backgroundColor:palette.stone},
+  backButton:{alignSelf:'flex-start',paddingVertical:6,marginBottom:22},
+  back:{color:palette.muted,fontSize:13},
+  eyebrow:{color:palette.quiet,fontSize:8,letterSpacing:2.2,fontWeight:'700',marginBottom:9},
+  title:{color:palette.inkStrong,fontFamily:type.serif,fontSize:34,lineHeight:40,fontWeight:'400'},
+  intro:{color:palette.muted,fontSize:13,lineHeight:20,marginTop:10,marginBottom:22,maxWidth:365},
+  statusCard:{backgroundColor:palette.paper,borderWidth:1,borderColor:palette.line,padding:16,borderRadius:radius.large,marginBottom:22},
+  statusCardLive:{borderColor:'#BCC8BF',backgroundColor:'#FBFCFA'},
+  statusCardClosed:{borderColor:'#E1CFCF',backgroundColor:'#FBF7F6'},
+  statusEyebrow:{color:palette.quiet,fontSize:7.5,letterSpacing:1.3,fontWeight:'700'},
+  status:{color:palette.inkStrong,fontSize:13,fontWeight:'800',letterSpacing:.7,marginTop:4},
+  statusCopy:{color:palette.muted,fontSize:10.5,lineHeight:16,marginTop:6},
+  error:{color:palette.danger,fontSize:11,lineHeight:17,marginBottom:16},
+  sectionHeader:{marginTop:8,marginBottom:13},
+  sectionEyebrow:{color:palette.quiet,fontSize:8,letterSpacing:1.7,fontWeight:'700',marginBottom:5},
+  sectionTitle:{color:palette.inkStrong,fontFamily:type.serif,fontSize:23,lineHeight:28,fontWeight:'400'},
+  sectionHelp:{color:palette.muted,fontSize:10.5,lineHeight:16,marginTop:5},
+  field:{marginBottom:15},
+  fieldLabel:{color:palette.text,fontSize:10.5,fontWeight:'700',marginBottom:6},
+  fieldHelp:{color:palette.muted,fontSize:9.5,lineHeight:15,marginBottom:9},
+  input:{borderWidth:1,borderColor:palette.line,backgroundColor:palette.paper,paddingHorizontal:13,paddingVertical:12,color:palette.text,fontSize:12,borderRadius:radius.medium},
+  textarea:{minHeight:150,textAlignVertical:'top'},
+  smallArea:{minHeight:96,textAlignVertical:'top'},
+  two:{flexDirection:'row',gap:10},
+  flex:{flex:1},
+  scopeRow:{flexDirection:'row',flexWrap:'wrap',gap:7},
+  scope:{borderWidth:1,borderColor:palette.lineStrong,paddingHorizontal:10,paddingVertical:9,borderRadius:radius.medium,backgroundColor:palette.paper},
+  scopeActive:{backgroundColor:palette.inkStrong,borderColor:palette.inkStrong},
+  scopeText:{color:palette.muted,fontSize:9,fontWeight:'600'},
+  scopeTextActive:{color:palette.paper},
+  toggleGroup:{borderWidth:1,borderColor:palette.line,backgroundColor:palette.paper,borderRadius:radius.large,paddingHorizontal:15,marginBottom:20},
+  switchRow:{flexDirection:'row',alignItems:'center',gap:12,borderBottomWidth:1,borderBottomColor:palette.line,paddingVertical:14},
+  toggleLabel:{color:palette.text,fontSize:11.5,fontWeight:'700'},
+  toggleHelp:{color:palette.muted,fontSize:9.5,lineHeight:15,marginTop:3},
+  actions:{gap:11,marginTop:6},
+  secondary:{borderWidth:1,borderColor:palette.lineStrong,paddingVertical:14,alignItems:'center',borderRadius:radius.medium,backgroundColor:palette.paper},
+  secondaryText:{color:palette.ink,fontSize:10.5,fontWeight:'700'},
+  primary:{backgroundColor:palette.inkStrong,paddingVertical:14,alignItems:'center',marginTop:12,borderRadius:radius.medium},
+  primaryText:{color:palette.paper,fontSize:10.5,fontWeight:'700'},
+  danger:{paddingVertical:14,alignItems:'center',borderWidth:1,borderColor:'#D9BCBC',borderRadius:radius.medium,backgroundColor:palette.paper},
+  dangerText:{color:palette.danger,fontSize:10.5,fontWeight:'700'},
+  priceCard:{borderWidth:1,borderColor:palette.line,padding:17,borderRadius:radius.large,backgroundColor:palette.paper},
+  featuredCard:{borderColor:'#C9B99D',backgroundColor:'#FCFAF5'},
+  priceTop:{flexDirection:'row',justifyContent:'space-between',gap:12,alignItems:'flex-start'},
+  priceEyebrow:{color:palette.quiet,fontSize:7.5,letterSpacing:1.2,fontWeight:'800'},
+  priceTitle:{color:palette.inkStrong,fontFamily:type.serif,fontSize:19,lineHeight:24,fontWeight:'400',marginTop:4},
+  priceAmount:{color:palette.inkStrong,fontSize:17,fontWeight:'800'},
+  priceCopy:{color:palette.muted,fontSize:10.5,lineHeight:16,marginTop:8},
+  closeHelp:{color:palette.muted,fontSize:9.5,lineHeight:15,textAlign:'center',paddingHorizontal:8},
+  closedBox:{backgroundColor:palette.paper,borderWidth:1,borderColor:palette.line,padding:17,borderRadius:radius.large,marginTop:15},
+  closedTitle:{color:palette.inkStrong,fontFamily:type.serif,fontSize:19,fontWeight:'400'},
+  closedCopy:{color:palette.muted,fontSize:10.5,lineHeight:16,marginTop:5},
+})
