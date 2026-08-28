@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { ActivityIndicator, Alert, Animated, Dimensions, Image, PanResponder, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
 import { router } from 'expo-router'
 import { supabase } from '../src/lib/supabase'
+import { palette, radius, space, type } from '../src/lib/theme'
 
 const WEB_URL=process.env.EXPO_PUBLIC_WEB_URL||'https://talent.wellnesshousecollective.co.uk'
 const SCREEN_WIDTH=Dimensions.get('window').width
@@ -124,26 +125,26 @@ export default function EmployerMatchScreen(){
         <Text style={styles.meta}>{[candidate.location,experience?`${experience} yrs experience`:null,candidate.distance_miles!=null?`${Math.round(Number(candidate.distance_miles))} miles away`:null].filter(Boolean).join(' · ')}</Text>
         {candidate.review_score?<Text style={styles.rating}>{Number(candidate.review_score).toFixed(1)} ★ verified reputation</Text>:null}
         {candidate.bio?<Text numberOfLines={4} style={styles.bio}>{candidate.bio}</Text>:null}
-        {Array.isArray(candidate.match_explanation)&&candidate.match_explanation.length?<View style={styles.why}><Text style={styles.whyTitle}>Why this match</Text>{candidate.match_explanation.slice(0,3).map((item,index)=><Text key={`${item}-${index}`} style={styles.whyText}>• {item}</Text>)}</View>:null}
+        {Array.isArray(candidate.match_explanation)&&candidate.match_explanation.length?<View style={styles.why}><Text style={styles.whyTitle}>Why this person fits</Text>{candidate.match_explanation.slice(0,3).map((item,index)=><Text key={`${item}-${index}`} style={styles.whyText}>• {item}</Text>)}</View>:null}
       </View>
     </View>
   }
 
   return <View style={styles.screen}><ScrollView contentContainerStyle={styles.page} scrollEnabled={!current}>
     <Text style={styles.eyebrow}>RECRUITMENT</Text><Text style={styles.title}>Talent Match</Text>
-    <Text style={styles.intro}>Choose a live role, then review the professionals who fit it best. Swipe left to pass. Swipe right to show interest.</Text>
+    <Text style={styles.intro}>Choose a live role and review the professionals who fit it best.</Text>
 
-    <Text style={styles.label}>MATCH FOR ROLE</Text>
+    <Text style={styles.label}>ROLE</Text>
     <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.jobRow}>
       {jobs.map(job=><Pressable key={job.id} onPress={()=>setJobId(job.id)} style={[styles.jobChip,job.id===jobId&&styles.jobChipActive]}><Text numberOfLines={1} style={[styles.jobChipText,job.id===jobId&&styles.jobChipTextActive]}>{job.job_title}</Text></Pressable>)}
     </ScrollView>
-    {!jobs.length&&!loading?<View style={styles.empty}><Text style={styles.emptyTitle}>Post a live role first.</Text><Text style={styles.emptyCopy}>Talent Match ranks professionals against a specific vacancy, so the hotel needs a live job before matching.</Text><Pressable onPress={()=>router.push({pathname:'/employer-job/[id]',params:{id:'new'}})} style={styles.primary}><Text style={styles.primaryText}>Post a role</Text></Pressable></View>:null}
+    {!jobs.length&&!loading?<View style={styles.empty}><Text style={styles.emptyTitle}>Post a live role first.</Text><Text style={styles.emptyCopy}>Matching works against a specific vacancy, so you need a live role before reviewing talent.</Text><Pressable onPress={()=>router.push({pathname:'/employer-job/[id]',params:{id:'new'}})} style={styles.primary}><Text style={styles.primaryText}>Post a role</Text></Pressable></View>:null}
 
     {selectedJob?<Text style={styles.roleContext}>{selectedJob.job_title}{selectedJob.location?` · ${selectedJob.location}`:''}</Text>:null}
-    {loading?<ActivityIndicator color="#092b45" style={{marginTop:30}}/>:null}
+    {loading?<ActivityIndicator color={palette.ink} style={{marginTop:30}}/>:null}
     {error?<Text style={styles.error}>{error}</Text>:null}
 
-    {!loading&&!error&&jobs.length>0&&!current?<View style={styles.empty}><Text style={styles.emptyTitle}>You’ve reviewed the current matches.</Text><Text style={styles.emptyCopy}>Reset this role’s deck if you want to review the current professionals again.</Text><Pressable onPress={resetDeck} style={styles.secondary}><Text style={styles.secondaryText}>{busy?'Resetting…':'Reset match deck'}</Text></Pressable></View>:null}
+    {!loading&&!error&&jobs.length>0&&!current?<View style={styles.empty}><Text style={styles.emptyTitle}>You’re up to date.</Text><Text style={styles.emptyCopy}>You have reviewed the current matches for this role.</Text><Pressable onPress={resetDeck} style={styles.secondary}><Text style={styles.secondaryText}>{busy?'Resetting…':'Review current matches again'}</Text></Pressable></View>:null}
 
     {!loading&&!error&&current?<>
       <View style={styles.deck}>
@@ -154,12 +155,64 @@ export default function EmployerMatchScreen(){
           {candidateCard(current)}
         </Animated.View>
       </View>
-      <View style={styles.actions}><Pressable onPress={()=>animateAction('left')} disabled={busy} style={[styles.action,styles.passButton]}><Text style={styles.passButtonText}>PASS</Text></Pressable><Pressable onPress={()=>animateAction('right')} disabled={busy} style={[styles.action,styles.yesButton]}><Text style={styles.yesButtonText}>{busy?'SAVING…':'INTERESTED'}</Text></Pressable></View>
-      <Text style={styles.help}>A right swipe notifies the professional. If they have already shown interest in the same role, it becomes a mutual match and you can move straight into the recruitment conversation.</Text>
+      <View style={styles.actions}><Pressable onPress={()=>animateAction('left')} disabled={busy} style={[styles.action,styles.passButton]}><Text style={styles.passButtonText}>Pass</Text></Pressable><Pressable onPress={()=>animateAction('right')} disabled={busy} style={[styles.action,styles.yesButton]}><Text style={styles.yesButtonText}>{busy?'Saving…':'Interested'}</Text></Pressable></View>
+      <Text style={styles.help}>Showing interest notifies the professional. If they have already shown interest in the same role, you can move directly into recruitment.</Text>
     </>:null}
   </ScrollView></View>
 }
 
 const styles=StyleSheet.create({
-  screen:{flex:1,backgroundColor:'#f7f8f8'},page:{paddingHorizontal:20,paddingTop:22,paddingBottom:110,minHeight:'100%'},eyebrow:{color:'#71808a',fontSize:9,letterSpacing:2.1,marginBottom:8},title:{color:'#092b45',fontSize:30,lineHeight:36,fontWeight:'600'},intro:{color:'#66747c',fontSize:13,lineHeight:20,marginTop:10,marginBottom:18},label:{color:'#71808a',fontSize:8,letterSpacing:1.4,marginBottom:8},jobRow:{gap:8,paddingBottom:14},jobChip:{borderWidth:1,borderColor:'#cad5da',backgroundColor:'#fff',paddingHorizontal:12,paddingVertical:10,maxWidth:210},jobChipActive:{backgroundColor:'#092b45',borderColor:'#092b45'},jobChipText:{color:'#526976',fontSize:10,fontWeight:'600'},jobChipTextActive:{color:'#fff'},roleContext:{color:'#173246',fontSize:12,fontWeight:'700',marginBottom:12},error:{color:'#9b2c2c',fontSize:12,lineHeight:18,marginVertical:14},deck:{height:560,position:'relative'},card:{position:'absolute',left:0,right:0,minHeight:520,backgroundColor:'#fff',borderWidth:1,borderColor:'#d9e0e3',overflow:'hidden',shadowColor:'#0b2f4d',shadowOpacity:.10,shadowRadius:16,shadowOffset:{width:0,height:8},elevation:4},topCard:{zIndex:2},nextCard:{top:10,left:8,right:8,opacity:.5,transform:[{scale:.975}]},cardInner:{flex:1},photo:{width:'100%',height:205,backgroundColor:'#e9eef0'},photoPlaceholder:{height:205,backgroundColor:'#e8edef',alignItems:'center',justifyContent:'center'},initial:{color:'#092b45',fontSize:56,fontWeight:'500'},cardBody:{padding:18},topRow:{flexDirection:'row',gap:12,alignItems:'flex-start'},name:{color:'#092b45',fontSize:22,fontWeight:'600'},headline:{color:'#66747c',fontSize:11,lineHeight:16,marginTop:4},scoreBox:{borderWidth:1,borderColor:'#cbd6db',paddingHorizontal:10,paddingVertical:7,alignItems:'center'},score:{color:'#092b45',fontSize:17,fontWeight:'800'},scoreLabel:{color:'#71808a',fontSize:7,letterSpacing:1},meta:{color:'#526976',fontSize:10.5,lineHeight:16,marginTop:12},rating:{color:'#173246',fontSize:10.5,fontWeight:'600',marginTop:8},bio:{color:'#66747c',fontSize:11,lineHeight:17,marginTop:13},why:{backgroundColor:'#f4f7f8',padding:12,marginTop:14},whyTitle:{color:'#173246',fontSize:10,fontWeight:'700',marginBottom:5},whyText:{color:'#66747c',fontSize:9.5,lineHeight:15},swipeLabel:{position:'absolute',top:22,zIndex:5,borderWidth:2,paddingHorizontal:10,paddingVertical:7,backgroundColor:'#fff'},passLabel:{left:18,borderColor:'#9b2c2c'},yesLabel:{right:18,borderColor:'#0b6245'},passText:{color:'#9b2c2c',fontSize:13,fontWeight:'900'},yesText:{color:'#0b6245',fontSize:11,fontWeight:'900'},actions:{flexDirection:'row',gap:10,marginTop:12},action:{flex:1,minHeight:52,alignItems:'center',justifyContent:'center',borderWidth:1},passButton:{backgroundColor:'#fff',borderColor:'#c7d1d6'},yesButton:{backgroundColor:'#092b45',borderColor:'#092b45'},passButtonText:{color:'#8f1d1d',fontSize:11,fontWeight:'800'},yesButtonText:{color:'#fff',fontSize:11,fontWeight:'800'},help:{color:'#71808a',fontSize:10.5,lineHeight:16,marginTop:11,textAlign:'center'},empty:{backgroundColor:'#fff',borderWidth:1,borderColor:'#d9e0e3',padding:22,marginTop:18},emptyTitle:{color:'#092b45',fontSize:19,fontWeight:'700'},emptyCopy:{color:'#66747c',fontSize:12.5,lineHeight:20,marginTop:8},primary:{backgroundColor:'#092b45',paddingVertical:14,alignItems:'center',marginTop:16},primaryText:{color:'#fff',fontSize:11,fontWeight:'800'},secondary:{borderWidth:1,borderColor:'#092b45',paddingVertical:14,alignItems:'center',marginTop:16},secondaryText:{color:'#092b45',fontSize:11,fontWeight:'800'}
+  screen:{flex:1,backgroundColor:palette.stone},
+  page:{paddingHorizontal:space.page,paddingTop:space.lg,paddingBottom:112,minHeight:'100%'},
+  eyebrow:{color:palette.quiet,fontSize:8,letterSpacing:2.2,marginBottom:9,fontWeight:'700'},
+  title:{color:palette.inkStrong,fontSize:34,lineHeight:40,fontWeight:'400',fontFamily:type.serif},
+  intro:{color:palette.muted,fontSize:13,lineHeight:20,marginTop:10,marginBottom:18,maxWidth:350},
+  label:{color:palette.quiet,fontSize:8,letterSpacing:1.5,marginBottom:8,fontWeight:'700'},
+  jobRow:{gap:8,paddingBottom:14},
+  jobChip:{borderWidth:1,borderColor:palette.lineStrong,backgroundColor:palette.paper,paddingHorizontal:12,paddingVertical:10,maxWidth:210,borderRadius:radius.medium},
+  jobChipActive:{backgroundColor:palette.inkStrong,borderColor:palette.inkStrong},
+  jobChipText:{color:palette.muted,fontSize:10,fontWeight:'600'},
+  jobChipTextActive:{color:palette.paper},
+  roleContext:{color:palette.text,fontSize:11.5,fontWeight:'700',marginBottom:12},
+  error:{color:palette.danger,fontSize:12,lineHeight:18,marginVertical:14},
+  deck:{height:560,position:'relative'},
+  card:{position:'absolute',left:0,right:0,minHeight:520,backgroundColor:palette.paper,borderWidth:1,borderColor:palette.line,overflow:'hidden',borderRadius:radius.large,shadowColor:'#13242C',shadowOpacity:.07,shadowRadius:18,shadowOffset:{width:0,height:8},elevation:3},
+  topCard:{zIndex:2},
+  nextCard:{top:10,left:8,right:8,opacity:.5,transform:[{scale:.975}]},
+  cardInner:{flex:1},
+  photo:{width:'100%',height:205,backgroundColor:palette.stoneDeep},
+  photoPlaceholder:{height:205,backgroundColor:palette.stoneDeep,alignItems:'center',justifyContent:'center'},
+  initial:{color:palette.inkStrong,fontSize:56,fontWeight:'400',fontFamily:type.serif},
+  cardBody:{padding:18},
+  topRow:{flexDirection:'row',gap:12,alignItems:'flex-start'},
+  name:{color:palette.inkStrong,fontSize:25,lineHeight:30,fontWeight:'400',fontFamily:type.serif},
+  headline:{color:palette.muted,fontSize:11,lineHeight:16,marginTop:4},
+  scoreBox:{alignItems:'flex-end',minWidth:52},
+  score:{color:palette.sage,fontSize:18,fontWeight:'700'},
+  scoreLabel:{color:palette.quiet,fontSize:7,letterSpacing:1.1,fontWeight:'700'},
+  meta:{color:palette.muted,fontSize:10.5,lineHeight:16,marginTop:12},
+  rating:{color:palette.text,fontSize:10.5,fontWeight:'600',marginTop:8},
+  bio:{color:palette.muted,fontSize:11,lineHeight:17,marginTop:13},
+  why:{backgroundColor:palette.sageSoft,padding:12,marginTop:14,borderRadius:radius.medium},
+  whyTitle:{color:palette.sage,fontSize:10,fontWeight:'700',marginBottom:5},
+  whyText:{color:palette.muted,fontSize:9.5,lineHeight:15},
+  swipeLabel:{position:'absolute',top:22,zIndex:5,borderWidth:1.5,paddingHorizontal:10,paddingVertical:7,backgroundColor:palette.paper,borderRadius:radius.small},
+  passLabel:{left:18,borderColor:palette.danger},
+  yesLabel:{right:18,borderColor:palette.sage},
+  passText:{color:palette.danger,fontSize:11,fontWeight:'800'},
+  yesText:{color:palette.sage,fontSize:10,fontWeight:'800'},
+  actions:{flexDirection:'row',gap:10,marginTop:12},
+  action:{flex:1,minHeight:52,alignItems:'center',justifyContent:'center',borderWidth:1,borderRadius:radius.medium},
+  passButton:{backgroundColor:palette.paper,borderColor:palette.lineStrong},
+  yesButton:{backgroundColor:palette.inkStrong,borderColor:palette.inkStrong},
+  passButtonText:{color:palette.text,fontSize:12,fontWeight:'700'},
+  yesButtonText:{color:palette.paper,fontSize:12,fontWeight:'700'},
+  help:{color:palette.quiet,fontSize:10.5,lineHeight:16,marginTop:12,textAlign:'center'},
+  empty:{backgroundColor:palette.paper,borderWidth:1,borderColor:palette.line,padding:22,marginTop:18,borderRadius:radius.large},
+  emptyTitle:{color:palette.inkStrong,fontSize:21,lineHeight:26,fontWeight:'400',fontFamily:type.serif},
+  emptyCopy:{color:palette.muted,fontSize:12.5,lineHeight:20,marginTop:8},
+  primary:{backgroundColor:palette.inkStrong,paddingVertical:14,alignItems:'center',marginTop:16,borderRadius:radius.medium},
+  primaryText:{color:palette.paper,fontSize:11,fontWeight:'700'},
+  secondary:{borderWidth:1,borderColor:palette.lineStrong,paddingVertical:14,alignItems:'center',marginTop:16,borderRadius:radius.medium},
+  secondaryText:{color:palette.ink,fontSize:11,fontWeight:'700'}
 })
