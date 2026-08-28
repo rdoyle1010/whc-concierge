@@ -1,25 +1,27 @@
 import { Platform } from 'react-native'
 
 export const palette = {
-  ink: '#172A34',
-  inkStrong: '#10232D',
-  text: '#253740',
-  muted: '#6D7A80',
-  quiet: '#8D979B',
-  line: '#E2E6E4',
-  lineStrong: '#D5DBD8',
+  ink: '#0B2F4D',
+  inkStrong: '#10283B',
+  text: '#263746',
+  muted: '#65717A',
+  quiet: '#7F8A91',
+  line: '#DFE5E8',
+  lineStrong: '#CBD4D9',
   paper: '#FFFFFF',
-  stone: '#F6F6F3',
-  stoneDeep: '#EFEFEB',
-  sage: '#68776C',
-  sageSoft: '#F1F4F1',
+  stone: '#F7F9FA',
+  stoneDeep: '#F0F3F5',
+  sage: '#6F7F88',
+  sageSoft: '#F3F6F7',
   danger: '#A33A3A',
   dangerSoft: '#FBF4F3',
 }
 
 export const type = {
-  serif: Platform.select({ ios: 'Georgia', android: 'serif', default: 'serif' }),
-  sans: Platform.select({ ios: 'System', android: 'sans-serif', default: 'System' }),
+  // Closest dependable native equivalents to the website's
+  // Cormorant Garamond + Manrope pairing, without bundling font files.
+  serif: Platform.select({ ios: 'Baskerville', android: 'serif', default: 'serif' }),
+  sans: Platform.select({ ios: 'Avenir Next', android: 'sans-serif', default: 'System' }),
 }
 
 export const space = {
@@ -34,6 +36,6 @@ export const space = {
 
 export const radius = {
   small: 4,
-  medium: 8,
-  large: 14,
+  medium: 7,
+  large: 8,
 }
