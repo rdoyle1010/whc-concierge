@@ -65,15 +65,15 @@ export const DEFAULT_PUBLIC_PAGES_CONTENT: PublicPagesContent = {
     agency: {
       label: 'Agency',
       hero: {
-        eyebrow: 'Flexible hospitality staffing',
-        heading: 'Need cover today? Or want to turn your availability into paid shifts?',
-        text: 'Spa Platform connects verified wellness professionals with properties that need trusted flexible cover — from planned rota gaps to urgent same-day shifts.',
+        eyebrow: 'Flexible spa staffing',
+        heading: 'Need a therapist tomorrow? Want flexible spa shifts?',
+        text: 'Agency connects spas and hotels that need qualified cover with professionals who have chosen when they are available to work. Employers search the shift. Professionals choose when and where they work.',
         image: image('https://images.unsplash.com/photo-1600334129128-685c5582fd35?auto=format&fit=crop&q=82&w=1800', 'Spa professional delivering a treatment'),
       },
       blocks: [
-        block('Built for real operations', 'Flexible staffing should feel controlled, not chaotic.', 'Real availability, verified professionals, clear rates and local matching make last-minute cover easier to manage.', 'https://images.unsplash.com/photo-1544161515-4ab6ce6db874?auto=format&fit=crop&q=82&w=1600', 'Spa therapist at work'),
-        block('For professionals', 'Your free day can become a paid shift.', 'Set your rate, travel radius and exact availability. Properties can find you when your hours genuinely fit what they need.', 'https://images.unsplash.com/photo-1515377905703-c4788e51af15?auto=format&fit=crop&q=82&w=1600', 'Wellness professional'),
-        block('For properties', 'Find trusted cover when the rota changes.', 'Search by date, time, location, skills, brands and rate, then confirm a worker whose availability genuinely fits.', 'https://images.unsplash.com/photo-1564501049412-61c2a3083791?auto=format&fit=crop&q=82&w=1600', 'Luxury hotel interior'),
+        block('For employers', 'Post the shift. See who is genuinely available.', 'Choose the date, hours, location and treatments you need. Spa Platform shows suitable professionals whose availability fits the whole shift, together with their experience, skills, rate, location and verification information. Review the profile, make an offer and confirm the cover.', 'https://images.unsplash.com/photo-1564501049412-61c2a3083791?auto=format&fit=crop&q=82&w=1600', 'Luxury hotel spa team'),
+        block('For professionals', 'Tell us when you are free. You decide what you accept.', 'Set your exact availability, hourly rate, travel radius, treatment skills and preferred working area. Suitable properties can find you for the hours you have chosen. You review the opportunity and decide whether the shift works for you.', 'https://images.unsplash.com/photo-1515377905703-c4788e51af15?auto=format&fit=crop&q=82&w=1600', 'Wellness professional'),
+        block('Verification made clearer', 'Qualified abroad? Your experience should still make sense here.', 'Spa is an international industry. Profiles can show where a professional trained, the treatments they are qualified to perform, qualification review status, right-to-work information and insurance status. Where a formal UK equivalence has not been established, the platform does not pretend that it has.', 'https://images.unsplash.com/photo-1544161515-4ab6ce6db874?auto=format&fit=crop&q=82&w=1600', 'Spa therapist at work'),
       ],
     },
     residency: {
