@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
-import { router } from 'expo-router'
+import { router, useFocusEffect } from 'expo-router'
 import { supabase } from '../src/lib/supabase'
 
 type MessageRow = { id: string; sender_id: string; recipient_id: string; content: string; read: boolean | null; created_at: string | null }
@@ -13,8 +13,9 @@ export default function MessagesScreen() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
-  useEffect(() => { load() }, [])
-  async function load() {
+  const load = useCallback(async () => {
+    setLoading(true)
+    setError('')
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) { router.replace('/login'); return }
     setUserId(user.id)
@@ -26,9 +27,16 @@ export default function MessagesScreen() {
     if (ids.length) {
       const { data: profiles } = await supabase.from('profiles').select('id,full_name,email,role').in('id', ids)
       setPeople(Object.fromEntries((profiles || []).map(person => [person.id, person as Person])))
+    } else {
+      setPeople({})
     }
     setLoading(false)
-  }
+  }, [])
+
+  useFocusEffect(useCallback(() => {
+    void load()
+    return undefined
+  }, [load]))
 
   const threads = useMemo(() => {
     const seen = new Set<string>()
@@ -45,7 +53,7 @@ export default function MessagesScreen() {
   return <ScrollView style={styles.scroll} contentContainerStyle={styles.page}>
     <Pressable onPress={() => router.back()}><Text style={styles.back}>‹ Back</Text></Pressable>
     <View style={styles.headingRow}><View style={{flex:1}}><Text style={styles.eyebrow}>CONVERSATIONS</Text><Text style={styles.title}>Messages</Text></View>{unreadCount>0?<View style={styles.count}><Text style={styles.countText}>{unreadCount}</Text></View>:null}</View>
-    <Text style={styles.intro}>Your Wellness House conversations in one place. Messages stay synced with the website.</Text>
+    <Text style={styles.intro}>Your Wellness House conversations in one place. Opening a conversation marks received messages as read.</Text>
     {loading ? <ActivityIndicator color="#092b45" style={{ marginTop: 24 }} /> : null}
     {error ? <Text style={styles.error}>{error}</Text> : null}
     {!loading && threads.length === 0 ? <View style={styles.empty}><Text style={styles.emptyTitle}>No conversations yet.</Text><Text style={styles.emptyCopy}>Applications, Agency activity and employer conversations will appear here when they begin.</Text></View> : null}
