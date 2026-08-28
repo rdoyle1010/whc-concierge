@@ -2,19 +2,14 @@ import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 import { canRoleAccessPath, dashboardForRole, normaliseAccountRole } from '@/lib/role-access'
 
-// Routes that require authentication
 const PROTECTED_PREFIXES = ['/talent', '/employer', '/hotel', '/admin']
-
-// Routes that should redirect logged-in users away (to dashboard or requested destination)
 const AUTH_PAGES = ['/login', '/register']
 
-// Employer routes included in an active Pro or Group membership.
 const EMPLOYER_PREMIUM_ROUTES: Record<string, string> = {
   '/employer/candidates': 'talent-search',
   '/employer/analytics': 'analytics',
 }
 
-// Maintenance / dev-only API routes that should be blocked in production
 const BLOCKED_API_ROUTES = [
   '/api/seed',
   '/api/seed-taxonomy',
@@ -32,20 +27,23 @@ function matchesRoutePrefix(pathname: string, prefix: string) {
   return pathname === prefix || pathname.startsWith(`${prefix}/`)
 }
 
+function activeFeaturedEmployer(employer: any) {
+  if (!employer?.featured_employer) return false
+  if (!employer.featured_until) return true
+  const expiry = new Date(employer.featured_until).getTime()
+  return Number.isFinite(expiry) && expiry > Date.now()
+}
+
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
 
-  // Block maintenance API routes entirely.
   if (BLOCKED_API_ROUTES.some(route => matchesRoutePrefix(pathname, route))) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 })
   }
 
-  // Match route boundaries, not raw string prefixes. Without this,
-  // `/admin-sign-in` was incorrectly treated as a protected `/admin` route.
   const isProtected = PROTECTED_PREFIXES.some(prefix => matchesRoutePrefix(pathname, prefix))
   const isAuthPage = AUTH_PAGES.some(page => matchesRoutePrefix(pathname, page))
 
-  // Critical performance guard: do NOT call Supabase Auth for every request.
   if (!isProtected && !isAuthPage) {
     return NextResponse.next({ request: { headers: request.headers } })
   }
@@ -57,9 +55,7 @@ export async function proxy(request: NextRequest) {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
-        getAll() {
-          return request.cookies.getAll()
-        },
+        getAll() { return request.cookies.getAll() },
         setAll(cookiesToSet: { name: string; value: string; options?: any }[]) {
           cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
           response = NextResponse.next({ request: { headers: request.headers } })
@@ -71,8 +67,6 @@ export async function proxy(request: NextRequest) {
 
   const { data: { user } } = await supabase.auth.getUser()
 
-  // Protected routes: redirect to login if no session. Preserve the complete
-  // destination (including query string) so featured-profile deep links survive sign-in.
   if (isProtected && !user) {
     const loginUrl = request.nextUrl.clone()
     const destination = `${request.nextUrl.pathname}${request.nextUrl.search}`
@@ -84,17 +78,16 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(loginUrl)
   }
 
-  // Premium employer pages remain visible as locked items in navigation, but direct
-  // URL access is also enforced here so a free account cannot bypass the lock.
   if (user) {
     const premiumEntry = Object.entries(EMPLOYER_PREMIUM_ROUTES).find(([route]) => matchesRoutePrefix(pathname, route))
     if (premiumEntry) {
       const { data: employer } = await supabase
         .from('employer_profiles')
-        .select('membership_tier')
+        .select('membership_tier,featured_employer,featured_until')
         .eq('user_id', user.id)
         .maybeSingle()
-      const premium = employer?.membership_tier === 'pro' || employer?.membership_tier === 'group'
+      const tier = String(employer?.membership_tier || '').toLowerCase()
+      const premium = tier === 'pro' || tier === 'group' || activeFeaturedEmployer(employer)
       if (!premium) {
         const billingUrl = request.nextUrl.clone()
         billingUrl.pathname = '/employer/billing'
@@ -105,8 +98,6 @@ export async function proxy(request: NextRequest) {
     }
   }
 
-  // Auth pages: a signed-in user should continue to a valid requested destination,
-  // rather than being bounced to their dashboard and losing context.
   if (isAuthPage && user) {
     const { data: prof } = await supabase.from('profiles').select('role').eq('id', user.id).single()
     const role = normaliseAccountRole(prof?.role)
@@ -133,7 +124,5 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: [
-    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)',
-  ],
+  matcher: ['/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)'],
 }
