@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { ActivityIndicator, Alert, Image, Linking, Pressable, ScrollView, StyleSheet, Switch, Text, TextInput, View } from 'react-native'
+import * as DocumentPicker from 'expo-document-picker'
 import * as ImagePicker from 'expo-image-picker'
 import { router } from 'expo-router'
 import { supabase } from '../src/lib/supabase'
@@ -14,6 +15,7 @@ export default function ProfileScreen(){
   const [loading,setLoading]=useState(true)
   const [saving,setSaving]=useState(false)
   const [uploading,setUploading]=useState(false)
+  const [uploadingCv,setUploadingCv]=useState(false)
   const [message,setMessage]=useState('')
 
   useEffect(()=>{void load()},[])
@@ -53,6 +55,34 @@ export default function ProfileScreen(){
       setMessage('Profile photo updated.')
     }catch(e:any){setMessage(e.message||'Could not upload photo.')}
     finally{setUploading(false)}
+  }
+
+  async function pickCv(){
+    if(!userId||uploadingCv||!profile?.id)return
+    const result=await DocumentPicker.getDocumentAsync({type:['application/pdf','application/vnd.openxmlformats-officedocument.wordprocessingml.document'],copyToCacheDirectory:true,multiple:false})
+    if(result.canceled||!result.assets?.[0])return
+    const asset=result.assets[0]
+    const fileName=asset.name||'cv.pdf'
+    const ext=(fileName.split('.').pop()||'pdf').toLowerCase().replace(/[^a-z0-9]/g,'')
+    if(!['pdf','docx'].includes(ext)){Alert.alert('CV format','Please choose a PDF or DOCX file.');return}
+    setUploadingCv(true);setMessage('')
+    try{
+      const response=await fetch(asset.uri)
+      const blob=await response.blob()
+      const fd=new FormData()
+      fd.append('file',blob as any,fileName)
+      fd.append('bucket','talent-documents')
+      fd.append('path',`${userId}/cv.${ext}`)
+      fd.append('profileId',profile.id)
+      fd.append('column','cv_url')
+      const {data:{session}}=await supabase.auth.getSession()
+      const res=await fetch(`${WEB_URL}/api/upload`,{method:'POST',headers:session?.access_token?{Authorization:`Bearer ${session.access_token}`}:{},body:fd})
+      const body=await res.json().catch(()=>({}))
+      if(!res.ok)throw new Error(body.error||'CV upload failed')
+      setProfile((p:any)=>({...p,cv_url:body.url}))
+      setMessage('CV uploaded and connected to your profile.')
+    }catch(e:any){setMessage(e.message||'Could not upload your CV.')}
+    finally{setUploadingCv(false)}
   }
 
   async function save(){
@@ -117,8 +147,12 @@ export default function ProfileScreen(){
       <Text style={styles.sectionTitle}>CV & qualifications</Text>
       <View style={[styles.documentCard,profile.cv_url&&styles.documentCardActive]}>
         <View style={{flex:1}}><Text style={styles.documentStatus}>{profile.cv_url?'CV ATTACHED':'CV NOT ATTACHED'}</Text><Text style={styles.documentTitle}>{profile.cv_url?'Your CV is connected to your profile':'Add your CV to strengthen matching'}</Text><Text style={styles.documentCopy}>{profile.cv_url?'Interview Ready and matching can use the CV evidence already stored on your WHC account.':'A CV gives matching and Interview Ready more evidence about your experience.'}</Text></View>
-        {profile.cv_url?<Pressable onPress={()=>Linking.openURL(profile.cv_url)} style={styles.documentAction}><Text style={styles.documentActionText}>View CV</Text></Pressable>:null}
       </View>
+      <View style={styles.documentButtons}>
+        {profile.cv_url?<Pressable onPress={()=>Linking.openURL(profile.cv_url)} style={styles.documentSecondary}><Text style={styles.documentSecondaryText}>View CV</Text></Pressable>:null}
+        <Pressable onPress={pickCv} disabled={uploadingCv} style={styles.documentPrimary}><Text style={styles.documentPrimaryText}>{uploadingCv?'Uploading…':profile.cv_url?'Replace CV':'Upload CV'}</Text></Pressable>
+      </View>
+      <Text style={styles.documentHelp}>PDF or DOCX. Replacing your CV updates the same document used by matching and Interview Ready.</Text>
 
       <Text style={styles.subsectionTitle}>Uploaded certificates</Text>
       <Text style={styles.sectionCopy}>These are documents you uploaded yourself. WHC Academy certificates remain verified records.</Text>
@@ -173,13 +207,17 @@ const styles=StyleSheet.create({
   label:{color:palette.text,fontSize:10.5,fontWeight:'700',marginBottom:6,marginTop:11},
   input:{borderWidth:1,borderColor:palette.line,backgroundColor:palette.paper,paddingHorizontal:13,paddingVertical:12,fontSize:13,color:palette.text,borderRadius:radius.medium},
   textarea:{minHeight:112,textAlignVertical:'top'},
-  documentCard:{borderWidth:1,borderColor:palette.line,padding:15,backgroundColor:palette.paper,borderRadius:radius.large,flexDirection:'row',gap:12,alignItems:'center'},
+  documentCard:{borderWidth:1,borderColor:palette.line,padding:15,backgroundColor:palette.paper,borderRadius:radius.large},
   documentCardActive:{borderColor:'#BCC8BF',backgroundColor:'#FBFCFA'},
   documentStatus:{color:palette.sage,fontSize:7.5,fontWeight:'800',letterSpacing:1.1},
   documentTitle:{color:palette.inkStrong,fontSize:14,fontWeight:'700',marginTop:5},
   documentCopy:{color:palette.muted,fontSize:10.5,lineHeight:16,marginTop:4},
-  documentAction:{borderWidth:1,borderColor:palette.lineStrong,paddingHorizontal:10,paddingVertical:9,borderRadius:radius.medium},
-  documentActionText:{color:palette.ink,fontSize:9.5,fontWeight:'700'},
+  documentButtons:{flexDirection:'row',gap:8,marginTop:9},
+  documentPrimary:{flex:1,backgroundColor:palette.inkStrong,paddingVertical:11,alignItems:'center',borderRadius:radius.medium},
+  documentPrimaryText:{color:palette.paper,fontSize:10,fontWeight:'700'},
+  documentSecondary:{flex:1,borderWidth:1,borderColor:palette.lineStrong,paddingVertical:10,alignItems:'center',borderRadius:radius.medium},
+  documentSecondaryText:{color:palette.ink,fontSize:10,fontWeight:'700'},
+  documentHelp:{color:palette.quiet,fontSize:9.5,lineHeight:15,marginTop:7},
   subsectionTitle:{color:palette.text,fontSize:12,fontWeight:'700',marginTop:18,marginBottom:4},
   sectionCopy:{color:palette.muted,fontSize:10.5,lineHeight:16,marginBottom:10},
   emptyCert:{borderWidth:1,borderColor:palette.line,backgroundColor:palette.paper,padding:14,borderRadius:radius.medium},
