@@ -23,6 +23,22 @@ function alreadyHasDedicatedSms(title: string): boolean {
   )
 }
 
+function notificationRequiresAction(type: NotificationType, title: string, link?: string): boolean {
+  const value = `${title} ${link || ''}`.toLowerCase()
+  if (type === 'new_message' || type === 'job_application') return true
+  return (
+    value.includes('interview') ||
+    value.includes('offer') ||
+    value.includes('shortlist') ||
+    value.includes('action required') ||
+    value.includes('respond') ||
+    value.includes('shift offer') ||
+    value.includes('/agency') ||
+    value.includes('/applications') ||
+    value.includes('/messages')
+  )
+}
+
 export async function createNotification(
   userId: string,
   type: NotificationType,
@@ -32,7 +48,13 @@ export async function createNotification(
 ) {
   const supabase = createAdminClient()
   const { error } = await supabase.from('notifications').insert({
-    user_id: userId, type, title, message, link: link || null, is_read: false,
+    user_id: userId,
+    type,
+    title,
+    message,
+    link: link || null,
+    is_read: false,
+    requires_action: notificationRequiresAction(type, title, link),
   })
 
   if (!error) {
@@ -43,9 +65,6 @@ export async function createNotification(
     }
   }
 
-  // Platform notifications may also create a short SMS alert for either a
-  // talent or employer account when that recipient has explicitly opted in.
-  // sendSms keeps the lock-screen copy private and action-led.
   if (!error && !alreadyHasDedicatedSms(title)) {
     try {
       const [{ data: candidate }, { data: employer }] = await Promise.all([
