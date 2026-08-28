@@ -132,7 +132,7 @@ export default function DashboardShell({ children, role, userName }: DashboardSh
         const { data } = await supabase.from('candidate_profiles').select('membership_tier,interview_ready_credits,academy_discount_pct,free_feature_credits').eq('user_id', user.id).maybeSingle()
         if (active) setAccess(talentFeatureAccess(data))
       } else {
-        const { data } = await supabase.from('employer_profiles').select('membership_tier,annual_job_allowance,annual_jobs_used').eq('user_id', user.id).maybeSingle()
+        const { data } = await supabase.from('employer_profiles').select('membership_tier,annual_job_allowance,annual_jobs_used,featured_employer,featured_until').eq('user_id', user.id).maybeSingle()
         if (active) setAccess(employerFeatureAccess(data))
       }
     }
