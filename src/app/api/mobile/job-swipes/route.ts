@@ -3,7 +3,6 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { getRequestUser } from '@/lib/request-user'
 import { calculateMatchScore } from '@/lib/matching'
 
-const MIN_APPLICATION_MATCH = 45
 const RESTARTABLE_STATUSES = new Set(['withdrawn', 'rejected'])
 
 export async function GET(req: NextRequest) {
@@ -43,43 +42,48 @@ export async function POST(req: NextRequest) {
   if (!candidate) return NextResponse.json({ error: 'Candidate profile not found.' }, { status: 404 })
   if (!job || !job.is_live || (job.expires_at && new Date(job.expires_at).getTime() <= Date.now())) return NextResponse.json({ error: 'This role is no longer available.' }, { status: 404 })
 
+  let applicationId: string | null = null
+  let matchScore: number | null = null
+
   if (action === 'right') {
     const match = calculateMatchScore(candidate, job)
-    if (match.hardStop) return NextResponse.json({ error: match.hardStopReason || 'This role is not compatible with your profile.' }, { status: 400 })
-    if (match.score < MIN_APPLICATION_MATCH) {
-      return NextResponse.json({
-        error: `This role is currently a ${match.score}% match. Applications open from ${MIN_APPLICATION_MATCH}% once mandatory requirements are met.`,
-        matchScore: match.score,
-        minimumMatch: MIN_APPLICATION_MATCH,
-      }, { status: 400 })
-    }
+    matchScore = Number(match.score || 0)
 
     const { data: existing } = await admin.from('applications')
       .select('id,status,cover_letter')
       .eq('candidate_id', candidate.id)
       .eq('role_id', targetId)
+      .order('created_at', { ascending: false })
+      .limit(1)
       .maybeSingle()
 
     if (existing?.status === 'draft') {
-      await admin.from('applications').update({ match_score: match.score, updated_at: new Date().toISOString() }).eq('id', existing.id)
+      applicationId = existing.id
+      await admin.from('applications').update({ match_score: matchScore, updated_at: new Date().toISOString() }).eq('id', existing.id)
     } else if (existing && RESTARTABLE_STATUSES.has(String(existing.status || '').toLowerCase())) {
+      applicationId = existing.id
       await admin.from('applications').update({
         status: 'draft',
-        match_score: match.score,
+        match_score: matchScore,
         submitted_at: null,
+        archived_at: null,
+        hired_at: null,
         updated_at: new Date().toISOString(),
       }).eq('id', existing.id)
-    } else if (!existing) {
-      const { error: createError } = await admin.from('applications').insert({
+    } else if (existing) {
+      applicationId = existing.id
+    } else {
+      const { data: created, error: createError } = await admin.from('applications').insert({
         candidate_id: candidate.id,
         role_id: targetId,
         job_id: targetId,
         status: 'draft',
-        match_score: match.score,
+        match_score: matchScore,
         cover_letter: '',
         submitted_at: null,
-      })
+      }).select('id').single()
       if (createError) return NextResponse.json({ error: 'Could not start your application.' }, { status: 500 })
+      applicationId = created?.id || null
     }
   }
 
@@ -101,7 +105,7 @@ export async function POST(req: NextRequest) {
     await admin.from('saved_jobs').upsert({ candidate_id: candidate.id, job_id: targetId }, { onConflict: 'candidate_id,job_id', ignoreDuplicates: true })
   }
 
-  return NextResponse.json({ success: true, action, applicationDraft: action === 'right' })
+  return NextResponse.json({ success: true, action, applicationDraft: action === 'right', applicationId, matchScore })
 }
 
 export async function DELETE(req: NextRequest) {
