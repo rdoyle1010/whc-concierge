@@ -59,3 +59,41 @@ export async function POST(req: NextRequest) {
 
   return NextResponse.json({ success: true, action })
 }
+
+export async function DELETE(req: NextRequest) {
+  const user = await getRequestUser(req)
+  if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+
+  const admin = createAdminClient()
+  const { data: candidate } = await admin.from('candidate_profiles').select('id').eq('user_id', user.id).maybeSingle()
+  if (!candidate) return NextResponse.json({ error: 'Candidate profile not found.' }, { status: 404 })
+
+  const { data: swipes, error: swipeReadError } = await admin
+    .from('swipes')
+    .select('target_id')
+    .eq('swiper_id', user.id)
+    .eq('swiper_type', 'candidate')
+    .eq('target_type', 'job')
+
+  if (swipeReadError) return NextResponse.json({ error: swipeReadError.message }, { status: 500 })
+  const targetIds = Array.from(new Set((swipes || []).map((row: any) => row.target_id).filter(Boolean)))
+
+  const { error: swipeDeleteError } = await admin
+    .from('swipes')
+    .delete()
+    .eq('swiper_id', user.id)
+    .eq('swiper_type', 'candidate')
+    .eq('target_type', 'job')
+  if (swipeDeleteError) return NextResponse.json({ error: swipeDeleteError.message }, { status: 500 })
+
+  if (targetIds.length) {
+    const { error: savedDeleteError } = await admin
+      .from('saved_jobs')
+      .delete()
+      .eq('candidate_id', candidate.id)
+      .in('job_id', targetIds)
+    if (savedDeleteError) return NextResponse.json({ error: savedDeleteError.message }, { status: 500 })
+  }
+
+  return NextResponse.json({ success: true, reset_count: targetIds.length })
+}
