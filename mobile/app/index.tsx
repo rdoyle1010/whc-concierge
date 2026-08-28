@@ -72,7 +72,7 @@ const styles = StyleSheet.create({
   page: { paddingBottom: 32 },
   heroImage: { minHeight: 500, justifyContent: 'flex-end' },
   heroImageInner: { resizeMode: 'cover' },
-  overlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(5,34,52,0.48)' },
+  overlay: { position:'absolute', top:0, right:0, bottom:0, left:0, backgroundColor: 'rgba(5,34,52,0.48)' },
   heroContent: { minHeight: 500, paddingHorizontal: 22, paddingTop: 26, paddingBottom: 30, justifyContent: 'space-between' },
   wordmark: { color: '#fff', fontSize: 21, letterSpacing: 2.1, fontWeight: '700' },
   sub: { color: '#edf4f6', marginTop: 4, fontSize: 8, letterSpacing: 2.3 },
