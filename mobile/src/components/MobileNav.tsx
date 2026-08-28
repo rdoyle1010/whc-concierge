@@ -46,7 +46,7 @@ export default function MobileNav(){
         if(candidate?.id){const {count}=await supabase.from('agency_bookings').select('id',{count:'exact',head:true}).eq('candidate_id',candidate.id).in('status',['pending','offered','requested','countered']);agency=count||0}
       }else{
         const {data:employer}=await supabase.from('employer_profiles').select('id').eq('user_id',userId).maybeSingle()
-        if(employer?.id){const {count}=await supabase.from('agency_bookings').select('id',{count:'exact',head:true}).eq('employer_id',employer.id).in('status',['pending','offered','requested','countered','accepted']);agency=count||0}
+        if(employer?.id){const {count}=await supabase.from('agency_bookings').select('id',{count:'exact',head:true}).eq('employer_id',employer.id).in('status',['pending','offered','requested','countered']);agency=count||0}
       }
       if(!active)return
       const messages=messageCount||0
