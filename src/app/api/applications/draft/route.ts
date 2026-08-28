@@ -4,6 +4,7 @@ import { getRequestUser } from '@/lib/request-user'
 import { calculateMatchScore } from '@/lib/matching'
 
 const MIN_APPLICATION_MATCH = 45
+const RESTARTABLE_STATUSES = new Set(['withdrawn', 'rejected'])
 
 export async function POST(req: NextRequest) {
   const user = await getRequestUser(req)
@@ -40,14 +41,26 @@ export async function POST(req: NextRequest) {
     .eq('role_id', job.id)
     .maybeSingle()
 
-  if (existing && existing.status !== 'draft') {
-    return NextResponse.json({ error: 'You already have an application for this role.', applicationId: existing.id }, { status: 409 })
+  if (existing && existing.status === 'draft') {
+    const { error } = await admin.from('applications').update({ match_score: match.score, updated_at: new Date().toISOString() }).eq('id', existing.id)
+    if (error) return NextResponse.json({ error: 'Could not refresh your application draft.' }, { status: 500 })
+    return NextResponse.json({ success: true, applicationId: existing.id, draft: true, coverLetter: existing.cover_letter || '', matchScore: match.score, matchLabel: match.label, matchExplanation: match.matchExplanation || '' })
+  }
+
+  if (existing && RESTARTABLE_STATUSES.has(String(existing.status || '').toLowerCase())) {
+    const { error } = await admin.from('applications').update({
+      status: 'draft',
+      match_score: match.score,
+      cover_letter: existing.cover_letter || '',
+      submitted_at: null,
+      updated_at: new Date().toISOString(),
+    }).eq('id', existing.id)
+    if (error) return NextResponse.json({ error: 'Could not restart your application.' }, { status: 500 })
+    return NextResponse.json({ success: true, applicationId: existing.id, draft: true, restarted: true, coverLetter: existing.cover_letter || '', matchScore: match.score, matchLabel: match.label, matchExplanation: match.matchExplanation || '' })
   }
 
   if (existing) {
-    const { error } = await admin.from('applications').update({ match_score: match.score, updated_at: new Date().toISOString() }).eq('id', existing.id)
-    if (error) return NextResponse.json({ error: 'Could not save this role to Ready to Send.' }, { status: 500 })
-    return NextResponse.json({ success: true, applicationId: existing.id, draft: true, coverLetter: existing.cover_letter || '', matchScore: match.score, matchLabel: match.label, matchExplanation: match.matchExplanation || '' })
+    return NextResponse.json({ error: 'You already have an active application for this role.', applicationId: existing.id }, { status: 409 })
   }
 
   const { data: created, error } = await admin.from('applications').insert({
@@ -60,6 +73,6 @@ export async function POST(req: NextRequest) {
     submitted_at: null,
   }).select('id').single()
 
-  if (error) return NextResponse.json({ error: 'Could not save this role to Ready to Send.' }, { status: 500 })
+  if (error) return NextResponse.json({ error: 'Could not start your application.' }, { status: 500 })
   return NextResponse.json({ success: true, applicationId: created.id, draft: true, coverLetter: '', matchScore: match.score, matchLabel: match.label, matchExplanation: match.matchExplanation || '' })
 }
