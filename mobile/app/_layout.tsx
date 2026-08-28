@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 import { Stack } from 'expo-router'
 import { StatusBar } from 'expo-status-bar'
-import { View } from 'react-native'
+import { AppState, View } from 'react-native'
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context'
 import MobileNav from '../src/components/MobileNav'
 import { supabase } from '../src/lib/supabase'
@@ -26,10 +26,14 @@ export default function RootLayout() {
       if (!active || !session || (event !== 'SIGNED_IN' && event !== 'TOKEN_REFRESHED')) return
       registerPushNotifications().catch(error => console.warn('[Push registration skipped]', error))
     })
+    const appStateListener = AppState.addEventListener('change', state => {
+      if (state === 'active') register()
+    })
 
     return () => {
       active = false
       listener.subscription.unsubscribe()
+      appStateListener.remove()
     }
   }, [])
 
