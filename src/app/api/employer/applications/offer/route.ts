@@ -16,18 +16,34 @@ export async function POST(req: NextRequest) {
     if (note.length < 20) return NextResponse.json({ error: 'Review the offer message before sending it.' }, { status: 400 })
 
     const admin = createAdminClient()
-    const { data: employer } = await admin.from('employer_profiles').select('id,user_id,company_name,property_name').eq('user_id', user.id).maybeSingle()
+    const { data: employer } = await admin.from('employer_profiles')
+      .select('id,user_id,company_name,property_name')
+      .eq('user_id', user.id)
+      .maybeSingle()
     if (!employer) return NextResponse.json({ error: 'Employer profile not found.' }, { status: 404 })
-    const { data: application } = await admin.from('applications').select('id,candidate_id,role_id,job_id,status').eq('id', applicationId).maybeSingle()
+
+    const { data: application } = await admin.from('applications')
+      .select('id,candidate_id,role_id,job_id,status')
+      .eq('id', applicationId)
+      .maybeSingle()
     if (!application) return NextResponse.json({ error: 'Application not found.' }, { status: 404 })
-    if (!['interview','shortlisted','offered'].includes(application.status)) return NextResponse.json({ error: 'Move the candidate through shortlist/interview before making an offer.' }, { status: 409 })
+    if (!['interview', 'offered'].includes(application.status)) {
+      return NextResponse.json({ error: 'Complete an interview before making an offer.' }, { status: 409 })
+    }
 
     const jobId = application.role_id || application.job_id
-    const [{ data: job }, { data: candidate }] = await Promise.all([
+    const [{ data: job }, { data: candidate }, { count: completedInterviewCount }] = await Promise.all([
       admin.from('job_listings').select('id,job_title,employer_id').eq('id', jobId).maybeSingle(),
       admin.from('candidate_profiles').select('id,user_id,full_name,phone,sms_opt_in').eq('id', application.candidate_id).maybeSingle(),
+      admin.from('application_interviews')
+        .select('id', { count: 'exact', head: true })
+        .eq('application_id', application.id)
+        .eq('status', 'completed'),
     ])
     if (!job || job.employer_id !== employer.id || !candidate?.user_id) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    if (!completedInterviewCount) {
+      return NextResponse.json({ error: 'Mark at least one confirmed interview as completed before sending an offer.' }, { status: 409 })
+    }
 
     const { data: offer, error } = await admin.from('application_offers').upsert({
       application_id: application.id,
