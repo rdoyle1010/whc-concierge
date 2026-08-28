@@ -105,8 +105,8 @@ export default function EmployerMatchScreen(){
   }
 
   const panResponder=useMemo(()=>PanResponder.create({
-    onStartShouldSetPanResponder:()=>true,
-    onMoveShouldSetPanResponder:(_,g)=>Math.abs(g.dx)>4,
+    onStartShouldSetPanResponder:()=>false,
+    onMoveShouldSetPanResponder:(_,g)=>Math.abs(g.dx)>8&&Math.abs(g.dx)>Math.abs(g.dy),
     onPanResponderMove:Animated.event([null,{dx:position.x,dy:position.y}],{useNativeDriver:false}),
     onPanResponderRelease:(_,g)=>{if(g.dx>SWIPE_THRESHOLD)animateAction('right');else if(g.dx< -SWIPE_THRESHOLD)animateAction('left');else resetPosition()},
   }),[current?.id,jobId,busy])
@@ -130,7 +130,7 @@ export default function EmployerMatchScreen(){
     </View>
   }
 
-  return <View style={styles.screen}><ScrollView contentContainerStyle={styles.page} scrollEnabled={!current}>
+  return <View style={styles.screen}><ScrollView contentContainerStyle={styles.page}>
     <Text style={styles.eyebrow}>RECRUITMENT</Text><Text style={styles.title}>Talent Match</Text>
     <Text style={styles.intro}>Choose a live role and review the professionals who fit it best.</Text>
 
@@ -147,6 +147,14 @@ export default function EmployerMatchScreen(){
     {!loading&&!error&&jobs.length>0&&!current?<View style={styles.empty}><Text style={styles.emptyTitle}>You’re up to date.</Text><Text style={styles.emptyCopy}>You have reviewed the current matches for this role.</Text><Pressable onPress={resetDeck} style={styles.secondary}><Text style={styles.secondaryText}>{busy?'Resetting…':'Review current matches again'}</Text></Pressable></View>:null}
 
     {!loading&&!error&&current?<>
+      <View style={styles.decisionHeader}>
+        <Text style={styles.decisionTitle}>Your decision</Text>
+        <Text style={styles.decisionHint}>Swipe the card left or right, or use the buttons.</Text>
+      </View>
+      <View style={styles.actions}>
+        <Pressable onPress={()=>animateAction('left')} disabled={busy} style={[styles.action,styles.passButton]}><Text style={styles.passButtonText}>← Pass</Text></Pressable>
+        <Pressable onPress={()=>animateAction('right')} disabled={busy} style={[styles.action,styles.yesButton]}><Text style={styles.yesButtonText}>{busy?'Saving…':'Interested →'}</Text></Pressable>
+      </View>
       <View style={styles.deck}>
         {next?<View style={[styles.card,styles.nextCard]}>{candidateCard(next)}</View>:null}
         <Animated.View {...panResponder.panHandlers} style={[styles.card,styles.topCard,{transform:[{translateX:position.x},{translateY:position.y},{rotate}]}]}>
@@ -155,7 +163,6 @@ export default function EmployerMatchScreen(){
           {candidateCard(current)}
         </Animated.View>
       </View>
-      <View style={styles.actions}><Pressable onPress={()=>animateAction('left')} disabled={busy} style={[styles.action,styles.passButton]}><Text style={styles.passButtonText}>Pass</Text></Pressable><Pressable onPress={()=>animateAction('right')} disabled={busy} style={[styles.action,styles.yesButton]}><Text style={styles.yesButtonText}>{busy?'Saving…':'Interested'}</Text></Pressable></View>
       <Text style={styles.help}>Showing interest notifies the professional. If they have already shown interest in the same role, you can move directly into recruitment.</Text>
     </>:null}
   </ScrollView></View>
@@ -175,7 +182,10 @@ const styles=StyleSheet.create({
   jobChipTextActive:{color:palette.paper},
   roleContext:{color:palette.text,fontSize:11.5,fontWeight:'700',marginBottom:12},
   error:{color:palette.danger,fontSize:12,lineHeight:18,marginVertical:14},
-  deck:{height:560,position:'relative'},
+  decisionHeader:{marginTop:2,marginBottom:9},
+  decisionTitle:{color:palette.inkStrong,fontSize:14,fontWeight:'700'},
+  decisionHint:{color:palette.quiet,fontSize:10.5,lineHeight:16,marginTop:3},
+  deck:{height:560,position:'relative',marginTop:12},
   card:{position:'absolute',left:0,right:0,minHeight:520,backgroundColor:palette.paper,borderWidth:1,borderColor:palette.line,overflow:'hidden',borderRadius:radius.large,shadowColor:'#13242C',shadowOpacity:.07,shadowRadius:18,shadowOffset:{width:0,height:8},elevation:3},
   topCard:{zIndex:2},
   nextCard:{top:10,left:8,right:8,opacity:.5,transform:[{scale:.975}]},
@@ -201,7 +211,7 @@ const styles=StyleSheet.create({
   yesLabel:{right:18,borderColor:palette.sage},
   passText:{color:palette.danger,fontSize:11,fontWeight:'800'},
   yesText:{color:palette.sage,fontSize:10,fontWeight:'800'},
-  actions:{flexDirection:'row',gap:10,marginTop:12},
+  actions:{flexDirection:'row',gap:10,marginTop:4},
   action:{flex:1,minHeight:52,alignItems:'center',justifyContent:'center',borderWidth:1,borderRadius:radius.medium},
   passButton:{backgroundColor:palette.paper,borderColor:palette.lineStrong},
   yesButton:{backgroundColor:palette.inkStrong,borderColor:palette.inkStrong},
