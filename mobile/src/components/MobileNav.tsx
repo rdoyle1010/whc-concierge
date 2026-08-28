@@ -17,6 +17,7 @@ const talentItems:NavItem[]=[
 const employerItems:NavItem[]=[
   {label:'Home',href:'/home',symbol:'⌂'},
   {label:'Jobs',href:'/jobs',symbol:'◉'},
+  {label:'Match',href:'/match',symbol:'♡'},
   {label:'Applications',href:'/applications',symbol:'◇'},
   {label:'Messages',href:'/messages',symbol:'✉'},
   {label:'Agency',href:'/agency',symbol:'○'},
@@ -89,4 +90,4 @@ export default function MobileNav(){
   })}</View>
 }
 
-const styles=StyleSheet.create({wrap:{height:64,borderTopWidth:1,borderTopColor:'#e6ebee',backgroundColor:'#fff',flexDirection:'row',alignItems:'center',justifyContent:'space-around'},item:{flex:1,alignItems:'center',justifyContent:'center',gap:2,paddingHorizontal:2},iconWrap:{position:'relative',minWidth:26,alignItems:'center'},symbol:{color:'#8a969d',fontSize:19,lineHeight:21},label:{color:'#8a969d',fontSize:8.5},active:{color:'#092b45',fontWeight:'700'},attentionLabel:{color:'#8f1d1d',fontWeight:'800'},badge:{position:'absolute',top:-8,right:-12,minWidth:19,height:19,paddingHorizontal:4,borderRadius:10,backgroundColor:'#d62828',alignItems:'center',justifyContent:'center',borderWidth:1.5,borderColor:'#fff'},badgeText:{color:'#fff',fontSize:8,fontWeight:'900'}})
+const styles=StyleSheet.create({wrap:{height:64,borderTopWidth:1,borderTopColor:'#e6ebee',backgroundColor:'#fff',flexDirection:'row',alignItems:'center',justifyContent:'space-around'},item:{flex:1,alignItems:'center',justifyContent:'center',gap:2,paddingHorizontal:1},iconWrap:{position:'relative',minWidth:24,alignItems:'center'},symbol:{color:'#8a969d',fontSize:18,lineHeight:20},label:{color:'#8a969d',fontSize:7.7},active:{color:'#092b45',fontWeight:'700'},attentionLabel:{color:'#8f1d1d',fontWeight:'800'},badge:{position:'absolute',top:-8,right:-12,minWidth:19,height:19,paddingHorizontal:4,borderRadius:10,backgroundColor:'#d62828',alignItems:'center',justifyContent:'center',borderWidth:1.5,borderColor:'#fff'},badgeText:{color:'#fff',fontSize:8,fontWeight:'900'}})
