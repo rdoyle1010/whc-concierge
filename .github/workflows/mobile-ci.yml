@@ -36,5 +36,7 @@ jobs:
           cache-dependency-path: mobile/package.json
       - name: Install dependencies
         run: npm install --no-audit --no-fund
+      - name: Route integrity audit
+        run: npm run routecheck
       - name: Typecheck
         run: npm run typecheck

@@ -3,7 +3,6 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { getRequestUser } from '@/lib/request-user'
 import { calculateMatchScore } from '@/lib/matching'
 
-const MIN_APPLICATION_MATCH = 45
 const RESTARTABLE_STATUSES = new Set(['withdrawn', 'rejected'])
 
 export async function POST(req: NextRequest) {
@@ -25,26 +24,22 @@ export async function POST(req: NextRequest) {
   }
 
   const match = calculateMatchScore(candidate, job)
-  if (match.hardStop) return NextResponse.json({ error: match.hardStopReason || 'This role is not compatible with your profile.' }, { status: 400 })
-  if (match.score < MIN_APPLICATION_MATCH) {
-    return NextResponse.json({
-      error: `This role is currently a ${match.score}% match. Applications open from ${MIN_APPLICATION_MATCH}% once mandatory requirements are met.`,
-      matchScore: match.score,
-      minimumMatch: MIN_APPLICATION_MATCH,
-      matchExplanation: match.matchExplanation || '',
-    }, { status: 400 })
-  }
+  const matchExplanation = match.hardStop
+    ? [match.matchExplanation, match.hardStopReason].filter(Boolean).join(' ')
+    : (match.matchExplanation || '')
 
   const { data: existing } = await admin.from('applications')
     .select('id,status,cover_letter')
     .eq('candidate_id', candidate.id)
     .eq('role_id', job.id)
+    .order('created_at', { ascending: false })
+    .limit(1)
     .maybeSingle()
 
   if (existing && existing.status === 'draft') {
     const { error } = await admin.from('applications').update({ match_score: match.score, updated_at: new Date().toISOString() }).eq('id', existing.id)
     if (error) return NextResponse.json({ error: 'Could not refresh your application draft.' }, { status: 500 })
-    return NextResponse.json({ success: true, applicationId: existing.id, draft: true, coverLetter: existing.cover_letter || '', matchScore: match.score, matchLabel: match.label, matchExplanation: match.matchExplanation || '' })
+    return NextResponse.json({ success: true, applicationId: existing.id, draft: true, coverLetter: existing.cover_letter || '', matchScore: match.score, matchLabel: match.label, matchExplanation })
   }
 
   if (existing && RESTARTABLE_STATUSES.has(String(existing.status || '').toLowerCase())) {
@@ -53,10 +48,12 @@ export async function POST(req: NextRequest) {
       match_score: match.score,
       cover_letter: existing.cover_letter || '',
       submitted_at: null,
+      archived_at: null,
+      hired_at: null,
       updated_at: new Date().toISOString(),
     }).eq('id', existing.id)
     if (error) return NextResponse.json({ error: 'Could not restart your application.' }, { status: 500 })
-    return NextResponse.json({ success: true, applicationId: existing.id, draft: true, restarted: true, coverLetter: existing.cover_letter || '', matchScore: match.score, matchLabel: match.label, matchExplanation: match.matchExplanation || '' })
+    return NextResponse.json({ success: true, applicationId: existing.id, draft: true, restarted: true, coverLetter: existing.cover_letter || '', matchScore: match.score, matchLabel: match.label, matchExplanation })
   }
 
   if (existing) {
@@ -74,5 +71,5 @@ export async function POST(req: NextRequest) {
   }).select('id').single()
 
   if (error) return NextResponse.json({ error: 'Could not start your application.' }, { status: 500 })
-  return NextResponse.json({ success: true, applicationId: created.id, draft: true, coverLetter: '', matchScore: match.score, matchLabel: match.label, matchExplanation: match.matchExplanation || '' })
+  return NextResponse.json({ success: true, applicationId: created.id, draft: true, coverLetter: '', matchScore: match.score, matchLabel: match.label, matchExplanation })
 }

@@ -113,13 +113,14 @@ check('swipes replace older decisions and remove blocked yeses', () => {
   assert.match(source, /removeSwipe/)
   assert.match(source, /calculateMatchScore/)
 })
-check('weak or mandatory-fail matches cannot apply', () => {
+check('application matching advises rather than blocks candidates', () => {
   const swipe = read('src/app/api/swipe/route.ts')
+  const mobileSwipe = read('src/app/api/mobile/job-swipes/route.ts')
   const draft = read('src/app/api/applications/draft/route.ts')
-  for (const source of [swipe, draft]) {
-    assert.match(source, /hardStop/)
-    assert.match(source, /score < 45|match\.score < 45|result\.score < 45|score < MIN_APPLICATION_MATCH|match\.score < MIN_APPLICATION_MATCH|result\.score < MIN_APPLICATION_MATCH/)
-  }
+  for (const source of [swipe, mobileSwipe, draft]) assert.match(source, /calculateMatchScore/)
+  assert.doesNotMatch(swipe, /result\.score < 45|result\.score < MIN_APPLICATION_MATCH/)
+  assert.doesNotMatch(mobileSwipe, /match\.score < 45|match\.score < MIN_APPLICATION_MATCH/)
+  assert.doesNotMatch(draft, /match\.score < 45|match\.score < MIN_APPLICATION_MATCH/)
 })
 check('match page ranks roles instead of hiding low scores', () => {
   const source = read('src/app/roles/match/page.tsx')
