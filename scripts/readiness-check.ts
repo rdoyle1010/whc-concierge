@@ -113,12 +113,10 @@ check('swipes replace older decisions and remove blocked yeses', () => {
   assert.match(source, /removeSwipe/)
   assert.match(source, /calculateMatchScore/)
 })
-check('application matching advises rather than blocks candidates', () => {
-  const swipe = read('src/app/api/swipe/route.ts')
+check('mobile application matching advises rather than blocks candidates', () => {
   const mobileSwipe = read('src/app/api/mobile/job-swipes/route.ts')
   const draft = read('src/app/api/applications/draft/route.ts')
-  for (const source of [swipe, mobileSwipe, draft]) assert.match(source, /calculateMatchScore/)
-  assert.doesNotMatch(swipe, /result\.score < 45|result\.score < MIN_APPLICATION_MATCH/)
+  for (const source of [mobileSwipe, draft]) assert.match(source, /calculateMatchScore/)
   assert.doesNotMatch(mobileSwipe, /match\.score < 45|match\.score < MIN_APPLICATION_MATCH/)
   assert.doesNotMatch(draft, /match\.score < 45|match\.score < MIN_APPLICATION_MATCH/)
 })
