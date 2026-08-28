@@ -6,12 +6,53 @@ import { supabase } from './supabase'
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
-    shouldPlaySound: false,
+    shouldPlaySound: true,
     shouldSetBadge: true,
     shouldShowBanner: true,
     shouldShowList: true,
   }),
 })
+
+async function scheduleAgencyShiftReminders(userId:string){
+  try{
+    const scheduled=await Notifications.getAllScheduledNotificationsAsync()
+    await Promise.all(scheduled.filter(item=>String(item.content?.data?.kind||'')==='agency_shift_reminder').map(item=>Notifications.cancelScheduledNotificationAsync(item.identifier)))
+
+    const {data:profile}=await supabase.from('profiles').select('role').eq('id',userId).maybeSingle()
+    const role=profile?.role==='employer'?'employer':'talent'
+    let profileId:string|null=null
+    if(role==='employer'){
+      const {data}=await supabase.from('employer_profiles').select('id').eq('user_id',userId).maybeSingle();profileId=data?.id||null
+    }else{
+      const {data}=await supabase.from('candidate_profiles').select('id').eq('user_id',userId).maybeSingle();profileId=data?.id||null
+    }
+    if(!profileId)return
+
+    let query=supabase.from('agency_bookings').select('id,shift_date,shift_start_time,shift_type,status').in('status',['accepted','confirmed'])
+    query=role==='employer'?query.eq('employer_id',profileId):query.eq('candidate_id',profileId)
+    const {data:bookings}=await query.order('shift_date',{ascending:true}).limit(30)
+    const now=Date.now()
+    for(const booking of bookings||[]){
+      if(!booking.shift_date)continue
+      const start=String(booking.shift_start_time||'09:00').slice(0,5)
+      const shiftStart=new Date(`${booking.shift_date}T${start}:00`)
+      const shiftMs=shiftStart.getTime()
+      if(!Number.isFinite(shiftMs)||shiftMs<=now)continue
+      const title=booking.shift_type||'Agency shift'
+      const reminders=[
+        {when:shiftMs-24*60*60*1000,body:`${title} is tomorrow. Open Agency to re-check your Fact File, travel and arrival details.`},
+        {when:shiftMs-2*60*60*1000,body:`${title} starts in 2 hours. Check travel, arrival point and contact details before you set off.`},
+      ]
+      for(const reminder of reminders){
+        if(reminder.when<=now)continue
+        await Notifications.scheduleNotificationAsync({
+          content:{title:'Agency shift reminder',body:reminder.body,data:{kind:'agency_shift_reminder',bookingId:booking.id,route:'/agency'},badge:1,sound:true},
+          trigger:{type:Notifications.SchedulableTriggerInputTypes.DATE,date:new Date(reminder.when)},
+        })
+      }
+    }
+  }catch(error){console.warn('[Agency reminders skipped]',error)}
+}
 
 export async function registerPushNotifications() {
   if (!Device.isDevice) return null
@@ -48,5 +89,6 @@ export async function registerPushNotifications() {
     updated_at: new Date().toISOString(),
   }, { onConflict: 'expo_push_token' })
 
+  await scheduleAgencyShiftReminders(user.id)
   return token
 }
