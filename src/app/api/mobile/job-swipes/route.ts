@@ -48,7 +48,7 @@ export async function POST(req: NextRequest) {
     context_job_id: targetId,
   }
   const { error } = await admin.from('swipes').upsert(row, {
-    onConflict: 'swiper_id,swiper_type,target_id,target_type,context_job_id',
+    onConflict: 'swiper_id,swiper_type,target_id,target_type',
     ignoreDuplicates: false,
   })
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
