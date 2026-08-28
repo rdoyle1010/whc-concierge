@@ -2,6 +2,7 @@ import { useRef, useState } from 'react'
 import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native'
 import { router, useLocalSearchParams } from 'expo-router'
 import { supabase } from '../src/lib/supabase'
+import { palette, radius, space, type } from '../src/lib/theme'
 
 type Role = 'talent' | 'employer'
 
@@ -30,8 +31,6 @@ export default function LoginScreen() {
     const { data: profile } = await supabase.from('profiles').select('role').eq('id', data.user.id).maybeSingle()
     const actualRole = profile?.role === 'employer' ? 'employer' : profile?.role === 'admin' ? 'admin' : 'talent'
 
-    // Admin is intentionally not advertised in the public app login. Valid admin
-    // credentials are still detected securely and routed through MFA below.
     if (actualRole !== 'admin' && actualRole !== role) {
       await supabase.auth.signOut()
       setLoading(false)
@@ -67,23 +66,50 @@ export default function LoginScreen() {
   return (
     <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : 'height'} keyboardVerticalOffset={8}>
       <ScrollView style={styles.scroll} contentContainerStyle={styles.page} keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive" automaticallyAdjustKeyboardInsets>
-        <Pressable onPress={() => router.back()}><Text style={styles.back}>‹ Back</Text></Pressable>
+        <Pressable onPress={() => router.back()}><Text style={styles.back}>← Back</Text></Pressable>
         <View style={styles.header}><Text style={styles.wordmark}>WELLNESS HOUSE</Text><Text style={styles.sub}>{role === 'employer' ? 'EMPLOYER' : 'TALENT'}</Text></View>
+
+        <Text style={styles.eyebrow}>WELCOME BACK</Text>
+        <Text style={styles.title}>Sign in to your account.</Text>
+        <Text style={styles.intro}>Your website and app use the same Wellness House account.</Text>
 
         <View style={styles.switcher}>{(['talent','employer'] as Role[]).map(item => <Pressable key={item} onPress={() => setRole(item)} style={[styles.switch, role === item && styles.switchActive]}><Text style={[styles.switchText, role === item && styles.switchTextActive]}>{item === 'employer' ? 'Employer' : 'Talent'}</Text></Pressable>)}</View>
 
-        <View style={styles.card}>
-          <Text style={styles.eyebrow}>WELCOME BACK</Text>
-          <Text style={styles.title}>Your Wellness House account.</Text>
-          <Text style={styles.intro}>Use the same account as the Wellness House website. Accounts protected by Authenticator will be asked for the current six-digit code before access.</Text>
-          <TextInput value={email} onChangeText={setEmail} autoCapitalize="none" autoCorrect={false} keyboardType="email-address" returnKeyType="next" onSubmitEditing={() => passwordRef.current?.focus()} placeholder="Email address" placeholderTextColor="#9aa5ac" style={styles.input}/>
-          <TextInput ref={passwordRef} value={password} onChangeText={setPassword} secureTextEntry returnKeyType="go" onSubmitEditing={signIn} placeholder="Password" placeholderTextColor="#9aa5ac" style={styles.input}/>
-          <Pressable onPress={signIn} disabled={loading} style={({ pressed }) => [styles.button, pressed && { opacity: 0.88 }, loading && { opacity: 0.6 }]}><Text style={styles.buttonText}>{loading ? 'Checking security…' : 'Sign in securely'}</Text></Pressable>
-          <Text style={styles.keyboardNote}>Admin access is not advertised in the public app. Authorised administrator accounts are detected automatically and require Authenticator protection.</Text>
+        <View style={styles.form}>
+          <Text style={styles.inputLabel}>Email</Text>
+          <TextInput value={email} onChangeText={setEmail} autoCapitalize="none" autoCorrect={false} keyboardType="email-address" returnKeyType="next" onSubmitEditing={() => passwordRef.current?.focus()} placeholder="you@example.com" placeholderTextColor={palette.quiet} style={styles.input}/>
+          <Text style={styles.inputLabel}>Password</Text>
+          <TextInput ref={passwordRef} value={password} onChangeText={setPassword} secureTextEntry returnKeyType="go" onSubmitEditing={signIn} placeholder="Your password" placeholderTextColor={palette.quiet} style={styles.input}/>
+          <Pressable onPress={signIn} disabled={loading} style={({ pressed }) => [styles.button, pressed && { opacity: 0.9 }, loading && { opacity: 0.6 }]}><Text style={styles.buttonText}>{loading ? 'Checking security…' : 'Sign in'}</Text></Pressable>
+          <View style={styles.securityNote}><Text style={styles.securityTitle}>Secure account access</Text><Text style={styles.securityCopy}>Accounts protected by Authenticator will be asked for the current six-digit code before access.</Text></View>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
   )
 }
 
-const styles = StyleSheet.create({flex:{flex:1,backgroundColor:'#fff'},scroll:{flex:1,backgroundColor:'#fff'},page:{paddingHorizontal:22,paddingTop:18,paddingBottom:180},back:{color:'#66747c',fontSize:14,marginBottom:24},header:{marginBottom:22},wordmark:{color:'#092b45',fontSize:22,letterSpacing:2.2,fontWeight:'600'},sub:{color:'#6f7f88',marginTop:4,fontSize:10,letterSpacing:3.2},switcher:{flexDirection:'row',borderWidth:1,borderColor:'#dce3e7',marginBottom:22},switch:{flex:1,paddingVertical:11,alignItems:'center'},switchActive:{backgroundColor:'#092b45'},switchText:{color:'#71808a',fontSize:11,fontWeight:'600'},switchTextActive:{color:'#fff'},card:{borderTopWidth:1,borderTopColor:'#dfe5e8',paddingTop:22},eyebrow:{fontSize:9,letterSpacing:2.1,color:'#6f7f88',marginBottom:10},title:{color:'#092b45',fontSize:28,lineHeight:34,fontWeight:'500',marginBottom:9},intro:{color:'#65737c',fontSize:13,lineHeight:20,marginBottom:20},input:{height:52,borderWidth:1,borderColor:'#d7dfe3',backgroundColor:'#fff',paddingHorizontal:15,marginBottom:11,color:'#173246',fontSize:15},button:{height:52,backgroundColor:'#092b45',alignItems:'center',justifyContent:'center',marginTop:3},buttonText:{color:'#fff',fontSize:14,fontWeight:'700'},keyboardNote:{color:'#8a969d',fontSize:10,lineHeight:15,marginTop:12}})
+const styles = StyleSheet.create({
+  flex:{flex:1,backgroundColor:palette.stone},
+  scroll:{flex:1,backgroundColor:palette.stone},
+  page:{paddingHorizontal:space.page,paddingTop:20,paddingBottom:180},
+  back:{color:palette.muted,fontSize:13,marginBottom:34},
+  header:{marginBottom:42},
+  wordmark:{color:palette.inkStrong,fontSize:20,letterSpacing:2.2,fontWeight:'700'},
+  sub:{color:palette.quiet,marginTop:4,fontSize:9,letterSpacing:3},
+  eyebrow:{fontSize:8,letterSpacing:2.1,color:palette.quiet,marginBottom:10,fontWeight:'700'},
+  title:{color:palette.inkStrong,fontSize:36,lineHeight:42,fontWeight:'400',fontFamily:type.serif,marginBottom:10},
+  intro:{color:palette.muted,fontSize:13,lineHeight:20,marginBottom:24,maxWidth:330},
+  switcher:{flexDirection:'row',backgroundColor:palette.stoneDeep,padding:4,borderRadius:radius.medium,marginBottom:28},
+  switch:{flex:1,paddingVertical:11,alignItems:'center',borderRadius:radius.small},
+  switchActive:{backgroundColor:palette.paper},
+  switchText:{color:palette.muted,fontSize:11,fontWeight:'600'},
+  switchTextActive:{color:palette.inkStrong},
+  form:{backgroundColor:palette.paper,borderWidth:1,borderColor:palette.line,padding:18,borderRadius:radius.large},
+  inputLabel:{color:palette.text,fontSize:11,fontWeight:'700',marginBottom:7},
+  input:{height:52,borderWidth:1,borderColor:palette.lineStrong,backgroundColor:palette.paper,paddingHorizontal:14,marginBottom:16,color:palette.text,fontSize:15,borderRadius:radius.medium},
+  button:{height:52,backgroundColor:palette.inkStrong,alignItems:'center',justifyContent:'center',borderRadius:radius.medium,marginTop:2},
+  buttonText:{color:palette.paper,fontSize:13,fontWeight:'700'},
+  securityNote:{backgroundColor:palette.sageSoft,padding:13,borderRadius:radius.medium,marginTop:16},
+  securityTitle:{color:palette.sage,fontSize:10,fontWeight:'700'},
+  securityCopy:{color:palette.muted,fontSize:10,lineHeight:15,marginTop:4}
+})
