@@ -57,7 +57,7 @@ export default function LoginScreen() {
       return
     }
 
-    const actualRole = profile.role === 'employer' ? 'employer' : profile.role === 'admin' ? 'admin' : 'talent'
+    const actualRole = profile?.role === 'employer' ? 'employer' : profile?.role === 'admin' ? 'admin' : 'talent'
 
     if (actualRole !== 'admin' && actualRole !== role) {
       await supabase.auth.signOut()
