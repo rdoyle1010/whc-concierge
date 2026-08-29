@@ -66,7 +66,6 @@ export async function GET(req: NextRequest) {
   const reviewedForRole = new Set(roleSwipes.map((row: any) => row.target_id))
   const interestedForRole = new Set(roleSwipes.filter((row: any) => row.action === 'right').map((row: any) => row.target_id))
   const applicationsByCandidate = new Map((applications || []).map((row: any) => [row.candidate_id, row]))
-
   const eligibleRows = (rows || []).filter((candidate: any) => canEmployerDiscoverCandidate(candidate, blocked))
 
   const candidates = eligibleRows.map((candidate: any) => {
@@ -138,7 +137,6 @@ export async function POST(req: NextRequest) {
     context_job_id: jobId,
   })
   if (swipeError) return NextResponse.json({ error: 'Your decision could not be saved.' }, { status: 500 })
-
   if (action === 'left') return NextResponse.json({ success: true, matched: false })
 
   let applicationId: string | null = null
@@ -166,7 +164,7 @@ export async function DELETE(req: NextRequest) {
   if (!jobId) return NextResponse.json({ error: 'Choose a role first.' }, { status: 400 })
   const admin = createAdminClient()
   const { error } = await admin.from('swipes').delete()
-    .eq('swiper_id', user.id).eq('swiper_type', 'employer').eq('target_type', 'candidate').eq('context_job_id', jobId)
-  if (error) return NextResponse.json({ error: 'Could not reset matches.' }, { status: 500 })
+    .eq('swiper_id', user.id).eq('swiper_type', 'employer').eq('target_type', 'candidate').eq('context_job_id', jobId).eq('action', 'left')
+  if (error) return NextResponse.json({ error: 'Could not restore passed professionals.' }, { status: 500 })
   return NextResponse.json({ success: true })
 }
