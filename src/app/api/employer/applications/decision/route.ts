@@ -21,10 +21,10 @@ function messageHtml(opts: { note: string; jobTitle: string; propertyName: strin
 }
 
 export async function POST(req: NextRequest) {
-  const user = await getRequestUser(req)
-  if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
-
   try {
+    const user = await getRequestUser(req)
+    if (!user) return NextResponse.json({ error: 'Your session could not be verified. Please sign in again.' }, { status: 401 })
+
     const body = await req.json()
     const applicationId = String(body.applicationId || '')
     const decision = String(body.decision || '') as Decision
@@ -33,10 +33,12 @@ export async function POST(req: NextRequest) {
     if (note.length < 20 || note.length > 3000) return NextResponse.json({ error: 'Please review the candidate message before sending.' }, { status: 400 })
 
     const admin = createAdminClient()
-    const { data: employer } = await admin.from('employer_profiles').select('id,user_id,company_name,property_name').eq('user_id', user.id).maybeSingle()
+    const { data: employer, error: employerError } = await admin.from('employer_profiles').select('id,user_id,company_name,property_name').eq('user_id', user.id).maybeSingle()
+    if (employerError) return NextResponse.json({ error: `Could not load employer profile: ${employerError.message}` }, { status: 500 })
     if (!employer) return NextResponse.json({ error: 'Employer profile not found' }, { status: 404 })
 
-    const { data: application } = await admin.from('applications').select('id,candidate_id,role_id,job_id,status').eq('id', applicationId).maybeSingle()
+    const { data: application, error: applicationError } = await admin.from('applications').select('id,candidate_id,role_id,job_id,status').eq('id', applicationId).maybeSingle()
+    if (applicationError) return NextResponse.json({ error: `Could not load application: ${applicationError.message}` }, { status: 500 })
     if (!application) return NextResponse.json({ error: 'Application not found' }, { status: 404 })
 
     if (decision === 'shortlisted' && !['pending', 'reviewed', 'shortlisted'].includes(application.status)) {
@@ -46,15 +48,18 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'This application can no longer be marked as not progressing.' }, { status: 409 })
     }
 
-    const { data: liveOffer } = await admin.from('application_offers').select('id,status').eq('application_id', application.id).in('status', ['offered', 'accepted']).maybeSingle()
+    const { data: liveOffer, error: offerError } = await admin.from('application_offers').select('id,status').eq('application_id', application.id).in('status', ['offered', 'accepted']).maybeSingle()
+    if (offerError) return NextResponse.json({ error: `Could not check live offer: ${offerError.message}` }, { status: 500 })
     if (decision === 'rejected' && liveOffer) return NextResponse.json({ error: 'This candidate already has a live job offer. Withdraw or resolve the offer before marking the application as not progressing.' }, { status: 409 })
 
     const jobId = application.role_id || application.job_id
-    const [{ data: job }, { data: candidate }] = await Promise.all([
-      admin.from('job_listings').select('id,job_title,employer_id').eq('id', jobId).maybeSingle(),
-      admin.from('candidate_profiles').select('id,user_id,full_name').eq('id', application.candidate_id).maybeSingle(),
-    ])
-    if (!job || job.employer_id !== employer.id || !candidate?.user_id) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    const { data: job, error: jobError } = await admin.from('job_listings').select('id,job_title,employer_id').eq('id', jobId).maybeSingle()
+    if (jobError) return NextResponse.json({ error: `Could not load job: ${jobError.message}` }, { status: 500 })
+    if (!job || job.employer_id !== employer.id) return NextResponse.json({ error: 'This application does not belong to the signed-in employer.' }, { status: 403 })
+
+    const { data: candidate, error: candidateError } = await admin.from('candidate_profiles').select('id,user_id,full_name').eq('id', application.candidate_id).maybeSingle()
+    if (candidateError) return NextResponse.json({ error: `Could not load candidate: ${candidateError.message}` }, { status: 500 })
+    if (!candidate?.user_id) return NextResponse.json({ error: 'Candidate profile is incomplete.' }, { status: 409 })
 
     const { data: updated, error: updateError } = await admin.from('applications')
       .update({ status: decision, updated_at: new Date().toISOString() })
@@ -67,6 +72,9 @@ export async function POST(req: NextRequest) {
     const title = decision === 'shortlisted' ? `You have been shortlisted for ${job.job_title}` : `Update on your application for ${job.job_title}`
 
     let notificationSent = false
+    let emailSent = false
+    let smsSent = false
+
     try {
       await createNotification(candidate.user_id, 'general', title, note.slice(0, 500), '/talent/applications')
       notificationSent = true
@@ -74,7 +82,6 @@ export async function POST(req: NextRequest) {
       console.error('Recruitment decision notification failed:', notificationError?.message || notificationError)
     }
 
-    let emailSent = false
     try {
       const { data: authUser } = await admin.auth.admin.getUserById(candidate.user_id)
       const email = authUser?.user?.email || null
@@ -88,7 +95,6 @@ export async function POST(req: NextRequest) {
       console.error('Recruitment decision email lookup/send failed:', emailError?.message || emailError)
     }
 
-    let smsSent = false
     if (decision === 'shortlisted') {
       try {
         const { data: smsCandidate } = await admin.from('candidate_profiles').select('phone,sms_opt_in').eq('id', application.candidate_id).maybeSingle()
