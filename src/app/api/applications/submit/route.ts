@@ -3,6 +3,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { getRequestUser } from '@/lib/request-user'
 import { createNotification } from '@/lib/notifications'
 import { applicantConfirmationHtml, employerNotificationHtml } from '@/lib/application-email-templates'
+import { sendNewMatchEmail } from '@/lib/emails'
 
 const RESEND_API_KEY = process.env.RESEND_API_KEY
 const FROM_EMAIL = 'WHC Concierge <noreply@mail.wellnesshousecollective.co.uk>'
@@ -84,6 +85,70 @@ export async function POST(req: NextRequest) {
     }
   }
 
+  let mutualMatch = false
+  let matchId: string | null = null
+  if (swipeSynced && employer.user_id) {
+    const { data: employerYes } = await admin.from('swipes').select('id')
+      .eq('swiper_id', employer.user_id)
+      .eq('swiper_type', 'employer')
+      .eq('target_id', candidate.id)
+      .eq('target_type', 'candidate')
+      .eq('action', 'right')
+      .eq('context_job_id', job.id)
+      .maybeSingle()
+
+    if (employerYes) {
+      mutualMatch = true
+      const { data: existingMatch } = await admin.from('matches').select('id')
+        .eq('candidate_id', candidate.id)
+        .eq('employer_id', employer.id)
+        .eq('job_listing_id', job.id)
+        .maybeSingle()
+
+      if (existingMatch) {
+        matchId = existingMatch.id
+      } else {
+        const { data: createdMatch, error: matchError } = await admin.from('matches').insert({
+          candidate_id: candidate.id,
+          employer_id: employer.id,
+          job_listing_id: job.id,
+          match_score: Number(application.match_score || 0),
+          candidate_swiped_at: now,
+          employer_swiped_at: now,
+          matched_at: now,
+          status: 'active',
+          messaging_unlocked: true,
+        }).select('id').single()
+        if (matchError) {
+          mutualMatch = false
+          console.error('Could not create mutual match after application submit:', matchError.message)
+        } else {
+          matchId = createdMatch.id
+          await Promise.allSettled([
+            admin.from('messages').insert({
+              sender_id: employer.user_id,
+              recipient_id: user.id,
+              content: `It's a match! You both said yes to ${job.job_title} at ${employerName}. Say hello and take it from here.`,
+              read: false,
+            }),
+            createNotification(user.id, 'new_match', "It's a match!", `${employerName} wants to talk about ${job.job_title}.`, '/talent/messages'),
+            createNotification(employer.user_id, 'new_match', "It's a match!", `${candidate.full_name || 'A candidate'} is interested in ${job.job_title}.`, '/employer/messages'),
+          ])
+
+          let employerEmail = employer.contact_email || null
+          if (!employerEmail) {
+            const { data: employerAuth } = await admin.auth.admin.getUserById(employer.user_id)
+            employerEmail = employerAuth?.user?.email || null
+          }
+          await Promise.allSettled([
+            user.email ? sendNewMatchEmail(user.email, candidate.full_name || 'there', employerName) : Promise.resolve(),
+            employerEmail ? sendNewMatchEmail(employerEmail, employerName, candidate.full_name || 'A candidate') : Promise.resolve(),
+          ])
+        }
+      }
+    }
+  }
+
   try {
     const jobs: Promise<void>[] = []
     if (user.email) jobs.push(sendEmail(user.email, `Application Received - ${job.job_title}`, applicantConfirmationHtml({ applicantName: candidate.full_name || 'there', jobTitle: job.job_title, propertyName: employerName })))
@@ -100,10 +165,12 @@ export async function POST(req: NextRequest) {
     success: true,
     application: updatedApplication,
     swipeSynced,
+    mutualMatch,
+    matchId,
     progress: {
       current: 'submitted',
       next: 'under_review',
-      message: 'Application submitted. The property can now review it.',
+      message: mutualMatch ? 'Application submitted. You and the property are a mutual match.' : 'Application submitted. The property can now review it.',
     },
   })
 }
