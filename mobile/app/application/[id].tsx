@@ -56,7 +56,7 @@ function displayDate(value?: string | null) {
 }
 
 function roundLabel(round: number) {
-  return round === 1 ? 'First interview' : round === 2 ? 'Second interview' : 'Final interview'
+  return round === 1 ? 'First interview' : 'Second interview'
 }
 
 function stageIndex(status: string) {
@@ -68,7 +68,7 @@ function stageIndex(status: string) {
 }
 
 function stageLabel(status:string){
-  const map:Record<string,string>={pending:'Applied',reviewed:'Reviewing',shortlisted:'Shortlisted',interview:'Interview',offered:'Offer sent',accepted:'Accepted',rejected:'Not progressing',withdrawn:'Withdrawn'}
+  const map:Record<string,string>={pending:'Applied',reviewed:'Reviewing',shortlisted:'Progressing',interview:'Interview',offered:'Offer sent',accepted:'Accepted',rejected:'Not progressing',withdrawn:'Withdrawn'}
   return map[status]||status.replaceAll('_',' ')
 }
 
@@ -137,7 +137,16 @@ export default function EmployerApplicationScreen() {
   const orderedInterviews = useMemo(() => [...interviews].sort((a, b) => a.round_number - b.round_number), [interviews])
   const completedInterviews = orderedInterviews.filter(item => item.status === 'completed')
   const openInterview = orderedInterviews.find(item => item.status === 'proposed' || item.status === 'confirmed') || null
-  const nextRound = Math.min(3, completedInterviews.length + 1)
+  const nextRound = Math.min(2, completedInterviews.length + 1)
+
+  function localDraft(intent: MessageIntent) {
+    const firstName = String(candidate?.full_name || '').trim().split(/\s+/)[0] || 'there'
+    const role = job?.job_title || 'the role'
+    if (intent === 'shortlist') return `Hi ${firstName},\n\nThank you for your application for the ${role} position. We wanted to let you know that your application is progressing and remains under active consideration. We are reviewing the next stage and will be in touch through the platform with a further update shortly.\n\nBest wishes,\nThe hiring team`
+    if (intent === 'interview') return `Hi ${firstName},\n\nThank you for your continued interest in the ${role} position. We would be delighted to invite you to ${completedInterviews.length ? 'a second interview' : 'an interview'} and learn more about your experience. Please review the time options in the platform and choose the one that works best for you.\n\nBest wishes,\nThe hiring team`
+    if (intent === 'offer') return `Hi ${firstName},\n\nThank you for taking the time to meet with us regarding the ${role} position. We are pleased to let you know that we would like to offer you the role. You can review the offer and respond through the platform.\n\nBest wishes,\nThe hiring team`
+    return `Hi ${firstName},\n\nThank you for your time and for your interest in the ${role} position. After careful consideration, we will not be progressing your application further on this occasion. We appreciate the time you invested in the process and wish you every success with your next opportunity.\n\nBest wishes,\nThe hiring team`
+  }
 
   async function writeMessage(intent: MessageIntent) {
     if (!application || busy) return
@@ -147,9 +156,10 @@ export default function EmployerApplicationScreen() {
       const data = await api('/api/employer/applications/message-ai', {
         method: 'POST', body: JSON.stringify({ applicationId: application.id, intent }),
       })
-      setNote(String(data.message || ''))
-    } catch (e: any) {
-      setError(e.message || 'Could not draft the candidate message.')
+      setNote(String(data.message || localDraft(intent)))
+    } catch {
+      setNote(localDraft(intent))
+      setError('')
     } finally {
       setBusy('')
     }
@@ -157,14 +167,14 @@ export default function EmployerApplicationScreen() {
 
   function requireNote(label: string) {
     if (note.trim().length < 20) {
-      Alert.alert(`${label} message needed`, 'Write a short, clear candidate message or use Draft message before sending.')
+      Alert.alert(`${label} message needed`, 'Write a short, clear candidate message or use the relevant draft button before sending.')
       return false
     }
     return true
   }
 
   async function decision(decisionValue: 'shortlisted' | 'rejected') {
-    if (!application || !requireNote(decisionValue === 'shortlisted' ? 'Shortlist' : 'Candidate')) return
+    if (!application || !requireNote(decisionValue === 'shortlisted' ? 'Progress update' : 'Candidate')) return
     setBusy(decisionValue)
     setError('')
     try {
@@ -173,7 +183,7 @@ export default function EmployerApplicationScreen() {
       })
       setNote('')
       await load()
-      Alert.alert(decisionValue === 'shortlisted' ? 'Candidate shortlisted' : 'Application updated', 'The candidate has been notified through the platform.')
+      Alert.alert(decisionValue === 'shortlisted' ? 'Progress update sent' : 'Application updated', decisionValue === 'shortlisted' ? 'The candidate has received a holding update. You can now decide when to invite them to interview.' : 'The candidate has been notified through the platform.')
     } catch (e: any) { setError(e.message) }
     finally { setBusy('') }
   }
@@ -217,7 +227,7 @@ export default function EmployerApplicationScreen() {
         method: 'POST', body: JSON.stringify({ action: 'complete', applicationId: application.id, interviewId: interview.id }),
       })
       await load()
-      Alert.alert('Interview completed', 'You can now schedule another interview or move to a job offer.')
+      Alert.alert('Interview completed', interview.round_number === 1 ? 'Choose the next step: make an offer, decline the candidate, or invite them to a second interview if needed.' : 'Choose the final next step: make an offer or decline the candidate.')
     } catch (e: any) { setError(e.message) }
     finally { setBusy('') }
   }
@@ -242,13 +252,13 @@ export default function EmployerApplicationScreen() {
 
   const canShortlist = ['pending', 'reviewed'].includes(application.status)
   const canDecline = ['pending', 'reviewed', 'shortlisted', 'interview'].includes(application.status)
-  const canScheduleInterview = ['shortlisted', 'interview'].includes(application.status) && !openInterview && completedInterviews.length < 3
+  const canScheduleInterview = ['shortlisted', 'interview'].includes(application.status) && !openInterview && completedInterviews.length < 2
   const canOffer = ['interview', 'offered'].includes(application.status) && completedInterviews.length > 0 && !openInterview
   const closed = ['accepted', 'rejected', 'withdrawn'].includes(application.status)
   const currentStage = stageIndex(application.status)
   const confirmedTime = openInterview?.selected_slot ? new Date(openInterview.selected_slot) : null
   const canCompleteCurrent = Boolean(openInterview?.status === 'confirmed' && confirmedTime && confirmedTime.getTime() <= Date.now())
-  const draftIntent:MessageIntent=canShortlist?'shortlist':canScheduleInterview?'interview':canOffer?'offer':'decline'
+  const secondInterviewOption = canScheduleInterview && completedInterviews.length === 1
 
   return <ScrollView style={styles.scroll} contentContainerStyle={styles.page} keyboardShouldPersistTaps="handled">
     <Pressable onPress={() => router.back()} style={styles.backButton}><Text style={styles.back}>‹ Applications</Text></Pressable>
@@ -262,7 +272,7 @@ export default function EmployerApplicationScreen() {
 
     <View style={styles.stageCard}>
       <View style={styles.stageTop}><Text style={styles.stageEyebrow}>CURRENT STAGE</Text><Text style={styles.stageValue}>{stageLabel(application.status)}</Text></View>
-      <View style={styles.timeline}>{['Applied', 'Shortlisted', 'Interview', 'Offer', 'Accepted'].map((label, index) => <View key={label} style={styles.timelineItem}><View style={[styles.timelineDot, index <= currentStage && styles.timelineDotActive]} /><Text style={[styles.timelineLabel, index <= currentStage && styles.timelineLabelActive]}>{label}</Text></View>)}</View>
+      <View style={styles.timeline}>{['Applied', 'Progressing', 'Interview', 'Offer', 'Accepted'].map((label, index) => <View key={label} style={styles.timelineItem}><View style={[styles.timelineDot, index <= currentStage && styles.timelineDotActive]} /><Text style={[styles.timelineLabel, index <= currentStage && styles.timelineLabelActive]}>{label}</Text></View>)}</View>
     </View>
 
     {candidate?.bio ? <View style={styles.section}><Text style={styles.sectionEyebrow}>PROFILE</Text><Text style={styles.sectionTitle}>Candidate overview</Text><Text style={styles.copy}>{candidate.bio}</Text></View> : null}
@@ -281,19 +291,20 @@ export default function EmployerApplicationScreen() {
     {!closed ? <>
       <View style={styles.section}>
         <Text style={styles.sectionEyebrow}>COMMUNICATION</Text><Text style={styles.sectionTitle}>Message to candidate</Text>
-        <Text style={styles.help}>Write in your own voice. If useful, Draft message creates a starting point based on the current recruitment stage; you still review and control every word.</Text>
-        <Pressable onPress={() => writeMessage(draftIntent)} disabled={!!busy} style={[styles.draftButton,!!busy&&styles.disabled]}><Text style={styles.draftButtonText}>{busy===`draft-${draftIntent}`?'Drafting…':'Draft message'}</Text><Text style={styles.draftArrow}>→</Text></Pressable>
+        <Text style={styles.help}>Write in your own voice, or use the specific draft button beside the action you are about to take. Nothing is sent until you press the stage action.</Text>
         <TextInput value={note} onChangeText={setNote} multiline placeholder="Write your message to the candidate…" placeholderTextColor={palette.quiet} style={styles.textarea} />
       </View>
 
       {canShortlist ? <View style={styles.actionSection}>
-        <Text style={styles.sectionEyebrow}>NEXT STEP</Text><Text style={styles.sectionTitle}>Make a decision</Text><Text style={styles.help}>Shortlisting moves the candidate forward and sends the message above.</Text>
-        <Pressable onPress={() => decision('shortlisted')} disabled={!!busy} style={[styles.primary, !!busy && styles.disabled]}><Text style={styles.primaryText}>{busy === 'shortlisted' ? 'Sending…' : 'Shortlist candidate'}</Text></Pressable>
+        <Text style={styles.sectionEyebrow}>STEP 1</Text><Text style={styles.sectionTitle}>Keep the candidate warm</Text><Text style={styles.help}>Send a holding update first. This tells the candidate their application is progressing but does not invite them to interview yet.</Text>
+        <Pressable onPress={() => writeMessage('shortlist')} disabled={!!busy} style={[styles.draftButton,!!busy&&styles.disabled]}><Text style={styles.draftButtonText}>{busy==='draft-shortlist'?'Drafting…':'Draft holding update'}</Text><Text style={styles.draftArrow}>→</Text></Pressable>
+        <Pressable onPress={() => decision('shortlisted')} disabled={!!busy} style={[styles.primary, !!busy && styles.disabled]}><Text style={styles.primaryText}>{busy === 'shortlisted' ? 'Sending…' : 'Send progress update & shortlist'}</Text></Pressable>
       </View> : null}
 
       {canScheduleInterview ? <View style={styles.section}>
-        <Text style={styles.sectionEyebrow}>NEXT STEP</Text><Text style={styles.sectionTitle}>{roundLabel(nextRound)}</Text>
-        <Text style={styles.help}>Offer two future times. The candidate chooses one before the interview is confirmed.</Text>
+        <Text style={styles.sectionEyebrow}>{secondInterviewOption?'OPTIONAL NEXT STEP':'STEP 2'}</Text><Text style={styles.sectionTitle}>{roundLabel(nextRound)}</Text>
+        <Text style={styles.help}>{secondInterviewOption?'Only use a second interview if you genuinely need another stage. You can also move straight to offer or decline.':'This is a separate interview invitation after the candidate has received their progress update. Offer two future times and let them choose one.'}</Text>
+        <Pressable onPress={() => writeMessage('interview')} disabled={!!busy} style={[styles.draftButton,!!busy&&styles.disabled]}><Text style={styles.draftButtonText}>{busy==='draft-interview'?'Drafting…':`Draft ${roundLabel(nextRound).toLowerCase()} note`}</Text><Text style={styles.draftArrow}>→</Text></Pressable>
         <View style={styles.methodRow}>{(['video', 'teams', 'phone', 'in_person'] as InterviewMethod[]).map(value => <Pressable key={value} onPress={() => setMethod(value)} style={[styles.method, method === value && styles.methodActive]}><Text style={[styles.methodText, method === value && styles.methodTextActive]}>{value === 'in_person' ? 'In person' : value === 'teams' ? 'Teams' : value === 'video' ? 'Video' : 'Phone'}</Text></Pressable>)}</View>
         <Text style={styles.label}>First option</Text><TextInput value={slotOne} onChangeText={setSlotOne} style={styles.input} placeholder="YYYY-MM-DD HH:mm" placeholderTextColor={palette.quiet} />
         <Text style={styles.label}>Second option</Text><TextInput value={slotTwo} onChangeText={setSlotTwo} style={styles.input} placeholder="YYYY-MM-DD HH:mm" placeholderTextColor={palette.quiet} />
@@ -303,11 +314,12 @@ export default function EmployerApplicationScreen() {
 
       {canOffer ? <View style={styles.offerSection}>
         <Text style={styles.sectionEyebrow}>OFFER</Text><Text style={styles.offerTitle}>Ready to make the offer?</Text>
-        <Text style={styles.offerCopy}>{completedInterviews.length} interview{completedInterviews.length === 1 ? '' : 's'} completed. The message above will accompany the formal offer.</Text>
+        <Text style={styles.offerCopy}>{completedInterviews.length} interview{completedInterviews.length === 1 ? '' : 's'} completed. A second interview is optional; if you have what you need, move straight to the offer.</Text>
+        <Pressable onPress={() => writeMessage('offer')} disabled={!!busy} style={[styles.draftButton,styles.offerDraft,!!busy&&styles.disabled]}><Text style={styles.draftButtonText}>{busy==='draft-offer'?'Drafting…':'Draft offer message'}</Text><Text style={styles.draftArrow}>→</Text></Pressable>
         <Pressable onPress={makeOffer} disabled={!!busy} style={[styles.offerButton, !!busy && styles.disabled]}><Text style={styles.offerButtonText}>{busy === 'offer' ? 'Sending…' : application.status === 'offered' ? 'Update offer message' : 'Send job offer'}</Text></Pressable>
-      </View> : application.status === 'shortlisted' || application.status === 'interview' ? <View style={styles.lockedStep}><Text style={styles.lockedEyebrow}>OFFER</Text><Text style={styles.lockedTitle}>Complete an interview first</Text><Text style={styles.help}>At least one confirmed interview must be completed before an offer can be created.</Text></View> : null}
+      </View> : application.status === 'shortlisted' || application.status === 'interview' ? <View style={styles.lockedStep}><Text style={styles.lockedEyebrow}>OFFER</Text><Text style={styles.lockedTitle}>Complete the first interview</Text><Text style={styles.help}>After one confirmed interview is completed, you can offer the role, decline, or choose a second interview if needed.</Text></View> : null}
 
-      {canDecline ? <View style={styles.declineSection}><Text style={styles.declineHelp}>Not the right fit? The candidate receives the message above when you close their application.</Text><Pressable onPress={() => decision('rejected')} disabled={!!busy} style={[styles.secondary, !!busy && styles.disabled]}><Text style={styles.dangerText}>{busy === 'rejected' ? 'Sending…' : 'Not progressing'}</Text></Pressable></View> : null}
+      {canDecline ? <View style={styles.declineSection}><Text style={styles.declineHelp}>If you are not progressing the candidate, draft the decline separately so an interview or offer message cannot be sent by mistake.</Text><Pressable onPress={() => writeMessage('decline')} disabled={!!busy} style={[styles.draftButton,!!busy&&styles.disabled]}><Text style={styles.draftButtonText}>{busy==='draft-decline'?'Drafting…':'Draft decline message'}</Text><Text style={styles.draftArrow}>→</Text></Pressable><Pressable onPress={() => decision('rejected')} disabled={!!busy} style={[styles.secondary, !!busy && styles.disabled]}><Text style={styles.dangerText}>{busy === 'rejected' ? 'Sending…' : 'Not progressing'}</Text></Pressable></View> : null}
     </> : <View style={styles.closed}><Text style={styles.closedEyebrow}>RECRUITMENT CLOSED</Text><Text style={styles.closedTitle}>{stageLabel(application.status)}</Text><Text style={styles.help}>No further recruitment action is available from this stage.</Text></View>}
     {error ? <Text style={styles.error}>{error}</Text> : null}
   </ScrollView>
@@ -356,6 +368,7 @@ const styles = StyleSheet.create({
   draftButton:{borderWidth:1,borderColor:palette.lineStrong,backgroundColor:palette.paper,paddingHorizontal:12,paddingVertical:11,flexDirection:'row',justifyContent:'space-between',alignItems:'center',borderRadius:radius.medium,marginBottom:9},
   draftButtonText:{color:palette.ink,fontSize:10.5,fontWeight:'700'},
   draftArrow:{color:palette.ink,fontSize:15},
+  offerDraft:{marginTop:13,marginBottom:0},
   textarea:{borderWidth:1,borderColor:palette.line,minHeight:112,padding:13,textAlignVertical:'top',fontSize:12,color:palette.text,backgroundColor:palette.paper,borderRadius:radius.medium},
   primary:{backgroundColor:palette.inkStrong,paddingVertical:14,alignItems:'center',marginTop:11,borderRadius:radius.medium},
   primaryText:{color:palette.paper,fontSize:10.5,fontWeight:'700'},
