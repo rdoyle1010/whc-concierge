@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getRequestUser } from '@/lib/request-user'
+import { calculateMatchScore } from '@/lib/matching'
 
 function cvStorageRef(value?: string | null) {
   if (!value) return null
@@ -38,18 +39,22 @@ export async function GET(req: NextRequest) {
 
     const jobId = application.role_id || application.job_id
     const [{ data: job }, { data: candidate }] = await Promise.all([
-      admin.from('job_listings')
-        .select('id,employer_id,job_title,location,job_type,salary_display_text,required_role_level,job_description,requirements,benefits')
-        .eq('id', jobId)
-        .maybeSingle(),
-      admin.from('candidate_profiles')
-        .select('id,user_id,full_name,headline,role_level,location,bio,profile_image_url,review_score,review_count,experience_years,years_experience,qualifications,product_houses,systems_experience,business_skills,career_evidence,awards,services_offered,availability_status,has_car,travel_radius_miles,cv_url')
-        .eq('id', application.candidate_id)
-        .maybeSingle(),
+      admin.from('job_listings').select('*').eq('id', jobId).maybeSingle(),
+      admin.from('candidate_profiles').select('*').eq('id', application.candidate_id).maybeSingle(),
     ])
 
     if (!job || job.employer_id !== employer.id) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     if (!candidate) return NextResponse.json({ error: 'Candidate profile not found.' }, { status: 404 })
+
+    const liveMatch = calculateMatchScore(candidate, job)
+    const liveScore = liveMatch.hardStop ? Number(application.match_score || 0) : Number(liveMatch.score || 0)
+    const matchExplanation = liveMatch.hardStop
+      ? String(liveMatch.hardStopReason || 'The current role settings need review before a live match explanation can be shown.')
+      : String(liveMatch.matchExplanation || '')
+
+    if (!liveMatch.hardStop && liveScore !== Number(application.match_score || 0)) {
+      await admin.from('applications').update({ match_score: liveScore, updated_at: new Date().toISOString() }).eq('id', application.id)
+    }
 
     let cvSignedUrl: string | null = null
     const cvRef = cvStorageRef(candidate.cv_url)
@@ -62,7 +67,9 @@ export async function GET(req: NextRequest) {
       application: {
         id: application.id,
         status: application.status,
-        match_score: application.match_score,
+        match_score: liveScore,
+        match_label: liveMatch.label || null,
+        match_explanation: matchExplanation,
         cover_letter: application.cover_letter || application.cover_note || '',
         submitted_at: application.submitted_at,
         created_at: application.created_at,
