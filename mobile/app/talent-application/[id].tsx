@@ -33,7 +33,14 @@ type Offer = {
 
 function stageLabel(status: string) {
   const labels: Record<string, string> = {
-    pending: 'Applied', reviewed: 'Reviewed', shortlisted: 'Shortlisted', interview: 'Interview', offered: 'Offer received', accepted: 'Accepted', rejected: 'Not progressing', withdrawn: 'Withdrawn',
+    pending: 'Under review',
+    reviewed: 'Under review',
+    shortlisted: 'Under review',
+    interview: 'Interview stage',
+    offered: 'Offer received',
+    accepted: 'Offer accepted',
+    rejected: 'Application closed',
+    withdrawn: 'Withdrawn',
   }
   return labels[status] || status.replaceAll('_', ' ')
 }
@@ -50,6 +57,10 @@ function displayDate(value: string) {
   return new Date(value).toLocaleString('en-GB', { dateStyle: 'medium', timeStyle: 'short' })
 }
 
+function interviewTitle(round: number) {
+  return round === 1 ? 'First interview' : 'Second interview'
+}
+
 export default function TalentApplicationScreen() {
   const { id } = useLocalSearchParams<{ id: string }>()
   const [application, setApplication] = useState<any>(null)
@@ -60,7 +71,7 @@ export default function TalentApplicationScreen() {
   const [error, setError] = useState('')
   const [note, setNote] = useState('')
 
-  useEffect(() => { load() }, [id])
+  useEffect(() => { void load() }, [id])
 
   async function authHeaders() {
     const { data: { session } } = await supabase.auth.getSession()
@@ -69,6 +80,8 @@ export default function TalentApplicationScreen() {
   }
 
   async function load() {
+    setLoading(true)
+    setError('')
     try {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user || !id) { router.replace('/login'); return }
@@ -90,17 +103,24 @@ export default function TalentApplicationScreen() {
       if (body.applicationStatus && row) setApplication({ ...row, status: body.applicationStatus })
     } catch (e: any) {
       setError(e?.message || 'Could not load this application.')
+    } finally {
+      setLoading(false)
     }
-    setLoading(false)
   }
 
   const job = useMemo(() => application ? (Array.isArray(application.job_listings) ? application.job_listings[0] : application.job_listings) : null, [application])
   const employer = useMemo(() => job ? (Array.isArray(job.employer_profiles) ? job.employer_profiles[0] : job.employer_profiles) : null, [job])
+  const orderedInterviews = useMemo(() => [...interviews].sort((a, b) => a.round_number - b.round_number), [interviews])
+  const firstInterview = orderedInterviews.find(item => item.round_number === 1) || null
+  const secondInterview = orderedInterviews.find(item => item.round_number === 2) || null
+  const completedCount = orderedInterviews.filter(item => item.status === 'completed').length
 
   async function post(path: string, payload: Record<string, unknown>) {
     const headers = await authHeaders()
     const response = await fetch(`${WEB_URL}${path}`, {
-      method: 'POST', headers: { ...headers, 'Content-Type': 'application/json' }, body: JSON.stringify(payload),
+      method: 'POST',
+      headers: { ...headers, 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
     })
     const body = await response.json().catch(() => ({}))
     if (!response.ok) throw new Error(body?.error || 'Could not update your application.')
@@ -108,30 +128,93 @@ export default function TalentApplicationScreen() {
   }
 
   async function chooseInterview(interview: Interview, slot: string) {
-    setBusy(`interview-${interview.id}`); setError('')
+    setBusy(`interview-${interview.id}`)
+    setError('')
     try {
-      const body = await post('/api/talent/applications/interview', { interviewId: interview.id, selectedSlot: slot, note: note.trim() })
+      const body = await post('/api/talent/applications/interview', {
+        interviewId: interview.id,
+        selectedSlot: slot,
+        note: note.trim(),
+      })
       setInterviews(current => current.map(item => item.id === interview.id ? body.interview : item))
       setApplication((current: any) => current ? { ...current, status: 'interview' } : current)
-      Alert.alert('Interview confirmed', 'The employer has been notified of your chosen time.')
-    } catch (e: any) { setError(e.message) }
-    setBusy('')
+      setNote('')
+      Alert.alert('Interview confirmed', 'Your interview time is confirmed and the employer has been notified.')
+    } catch (e: any) {
+      setError(e.message)
+    } finally {
+      setBusy('')
+    }
   }
 
   async function respondOffer(action: 'accept' | 'decline') {
     if (!application) return
-    setBusy(action); setError('')
+    setBusy(action)
+    setError('')
     try {
-      const body = await post('/api/talent/applications/offer', { applicationId: application.id, action, note: note.trim() })
+      const body = await post('/api/talent/applications/offer', {
+        applicationId: application.id,
+        action,
+        note: note.trim(),
+      })
       setOffer(body.offer || null)
       setApplication({ ...application, status: body.applicationStatus })
-      Alert.alert(action === 'accept' ? 'Offer accepted' : 'Offer declined', action === 'accept' ? 'The employer has been notified. Congratulations.' : 'The employer has been notified of your decision.')
-    } catch (e: any) { setError(e.message) }
-    setBusy('')
+      setNote('')
+      Alert.alert(
+        action === 'accept' ? 'Offer accepted' : 'Offer declined',
+        action === 'accept' ? 'The employer has been notified. Congratulations.' : 'The employer has been notified of your decision.'
+      )
+    } catch (e: any) {
+      setError(e.message)
+    } finally {
+      setBusy('')
+    }
+  }
+
+  function InterviewStep({ interview, step }: { interview: Interview; step: number }) {
+    const proposed = interview.status === 'proposed'
+    const confirmed = interview.status === 'confirmed'
+    const completed = interview.status === 'completed'
+    return <View style={styles.stepCard}>
+      <View style={styles.stepHeader}>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.stepEyebrow}>STEP {step}</Text>
+          <Text style={styles.stepTitle}>{interviewTitle(interview.round_number)}</Text>
+        </View>
+        <View style={[styles.statusPill, (confirmed || completed) && styles.statusPillActive]}>
+          <Text style={[styles.statusPillText, (confirmed || completed) && styles.statusPillTextActive]}>{completed ? 'COMPLETED' : confirmed ? 'CONFIRMED' : 'ACTION NEEDED'}</Text>
+        </View>
+      </View>
+
+      <Text style={styles.method}>{interviewMethod(interview.interview_method)}</Text>
+      {interview.employer_note ? <View style={styles.messageBox}><Text style={styles.messageLabel}>MESSAGE FROM EMPLOYER</Text><Text style={styles.messageText}>{interview.employer_note}</Text></View> : null}
+
+      {proposed ? <>
+        <Text style={styles.actionTitle}>Choose and confirm your interview time</Text>
+        <Text style={styles.copy}>Select the time that works for you. Your choice is sent straight back to the employer.</Text>
+        {(interview.proposed_slots || []).map(slot => <Pressable key={slot} disabled={!!busy} onPress={() => chooseInterview(interview, slot)} style={styles.slot}>
+          <Text style={styles.slotDate}>{displayDate(slot)}</Text>
+          <Text style={styles.confirmAction}>{busy === `interview-${interview.id}` ? 'Confirming…' : 'Confirm this time'}</Text>
+        </Pressable>)}
+      </> : interview.selected_slot ? <View style={styles.confirmedBox}>
+        <Text style={styles.confirmedEyebrow}>{completed ? 'INTERVIEW COMPLETED' : 'INTERVIEW CONFIRMED'}</Text>
+        <Text style={styles.confirmedDate}>{displayDate(interview.selected_slot)}</Text>
+        {!completed ? <Text style={styles.confirmedCopy}>You are booked in. If the employer needs anything else, it will appear here.</Text> : <Text style={styles.confirmedCopy}>Your interview is complete. The employer will now decide the next step.</Text>}
+      </View> : null}
+
+      {interview.preparation_required ? <><Text style={styles.label}>Preparation</Text><Text style={styles.copy}>{interview.preparation_required}</Text></> : null}
+      {interview.assessment_type ? <><Text style={styles.label}>Assessment</Text><Text style={styles.copy}>{[interview.assessment_type, interview.assessment_details].filter(Boolean).join(' · ')}</Text></> : null}
+      {interview.meeting_link ? <Text style={styles.small}>Meeting link: {interview.meeting_link}</Text> : null}
+      {interview.venue_address ? <Text style={styles.small}>Venue: {interview.venue_address}</Text> : null}
+      {interview.contact_name ? <Text style={styles.small}>Contact: {interview.contact_name}</Text> : null}
+    </View>
   }
 
   if (loading) return <View style={styles.center}><ActivityIndicator color={palette.ink} /></View>
   if (!application) return <View style={styles.center}><Text style={styles.error}>{error || 'Application not found.'}</Text></View>
+
+  const applicationClosed = ['rejected', 'withdrawn'].includes(application.status)
+  const awaitingDecision = completedCount > 0 && !secondInterview && !offer && !applicationClosed
 
   return <ScrollView style={styles.scroll} contentContainerStyle={styles.page}>
     <Pressable onPress={() => router.back()} style={styles.backButton}><Text style={styles.back}>‹ Applications</Text></Pressable>
@@ -144,34 +227,45 @@ export default function TalentApplicationScreen() {
       {application.match_score ? <View style={styles.matchPill}><Text style={styles.match}>{application.match_score}%</Text><Text style={styles.matchLabel}>MATCH</Text></View> : null}
     </View>
 
-    {interviews.map(interview => <View key={interview.id} style={styles.sectionCard}>
-      <View style={styles.sectionHeader}><View><Text style={styles.sectionEyebrow}>INTERVIEW {interview.round_number}</Text><Text style={styles.sectionTitle}>{interviewMethod(interview.interview_method)}</Text></View><View style={styles.statusPill}><Text style={styles.statusPillText}>{interview.status.toUpperCase()}</Text></View></View>
-      {interview.employer_note ? <Text style={styles.note}>{interview.employer_note}</Text> : null}
-      {interview.preparation_required ? <><Text style={styles.label}>Preparation</Text><Text style={styles.copy}>{interview.preparation_required}</Text></> : null}
-      {interview.assessment_type ? <><Text style={styles.label}>Assessment</Text><Text style={styles.copy}>{[interview.assessment_type, interview.assessment_details].filter(Boolean).join(' · ')}</Text></> : null}
-      {interview.status === 'proposed' ? <>
-        <Text style={styles.label}>Choose your interview time</Text>
-        {(interview.proposed_slots || []).map(slot => <Pressable key={slot} disabled={!!busy} onPress={() => chooseInterview(interview, slot)} style={styles.slot}><Text style={styles.slotText}>{displayDate(slot)}</Text><Text style={styles.choose}>Choose →</Text></Pressable>)}
-      </> : interview.selected_slot ? <View style={styles.confirmed}><Text style={styles.confirmedEyebrow}>CONFIRMED</Text><Text style={styles.confirmedDate}>{displayDate(interview.selected_slot)}</Text></View> : null}
-      {interview.meeting_link ? <Text style={styles.small}>Meeting link: {interview.meeting_link}</Text> : null}
-      {interview.venue_address ? <Text style={styles.small}>Venue: {interview.venue_address}</Text> : null}
-      {interview.contact_name ? <Text style={styles.small}>Contact: {interview.contact_name}</Text> : null}
-    </View>)}
+    <View style={styles.receivedCard}>
+      <View style={styles.receivedIcon}><Text style={styles.receivedTick}>✓</Text></View>
+      <View style={{ flex: 1 }}>
+        <Text style={styles.stepEyebrow}>STEP 1</Text>
+        <Text style={styles.receivedTitle}>Application received</Text>
+        <Text style={styles.receivedCopy}>We’ve received your application and the hiring team is reviewing it. You’ll get a separate interview invitation here if they would like to move forward.</Text>
+      </View>
+    </View>
+
+    {firstInterview ? <InterviewStep interview={firstInterview} step={2} /> : !applicationClosed && !offer ? <View style={styles.waitingCard}>
+      <Text style={styles.waitingEyebrow}>WHAT HAPPENS NEXT</Text>
+      <Text style={styles.waitingTitle}>Your application is under review.</Text>
+      <Text style={styles.copy}>There is nothing you need to do right now. If the employer wants to progress your application, your first interview invitation and available times will appear here.</Text>
+    </View> : null}
+
+    {awaitingDecision ? <View style={styles.waitingCard}>
+      <Text style={styles.waitingEyebrow}>NEXT STEP</Text>
+      <Text style={styles.waitingTitle}>Awaiting employer decision</Text>
+      <Text style={styles.copy}>Your first interview is complete. The employer can now make an offer, close the application, or invite you to a second interview if they need another stage.</Text>
+    </View> : null}
+
+    {secondInterview ? <InterviewStep interview={secondInterview} step={3} /> : null}
 
     {offer ? <View style={styles.offerCard}>
-      <Text style={styles.offerEyebrow}>JOB OFFER</Text>
-      <Text style={styles.offerTitle}>{offer.status === 'offered' ? 'You have an offer.' : offer.status === 'accepted' ? 'Offer accepted.' : 'Offer update.'}</Text>
+      <Text style={styles.offerEyebrow}>{secondInterview ? 'FINAL STEP' : 'NEXT STEP'}</Text>
+      <Text style={styles.offerTitle}>{offer.status === 'offered' ? 'You have a job offer.' : offer.status === 'accepted' ? 'Offer accepted.' : 'Offer update.'}</Text>
       <Text style={styles.offerStatus}>{offer.status === 'offered' ? 'OFFER RECEIVED' : offer.status.toUpperCase()}</Text>
       {offer.employer_note ? <Text style={styles.offerNote}>{offer.employer_note}</Text> : null}
       {offer.status === 'offered' ? <>
         <Text style={styles.offerLabel}>Optional note to employer</Text>
-        <TextInput value={note} onChangeText={setNote} multiline style={styles.textarea} placeholder="Add a short response if you wish..." placeholderTextColor={palette.quiet} />
-        <Pressable disabled={!!busy} onPress={() => respondOffer('accept')} style={styles.primary}><Text style={styles.primaryText}>{busy === 'accept' ? 'Sending...' : 'Accept offer'}</Text></Pressable>
-        <Pressable disabled={!!busy} onPress={() => respondOffer('decline')} style={styles.secondary}><Text style={styles.declineText}>{busy === 'decline' ? 'Sending...' : 'Decline offer'}</Text></Pressable>
+        <TextInput value={note} onChangeText={setNote} multiline style={styles.textarea} placeholder="Add a short response if you wish…" placeholderTextColor="#AEBBC1" />
+        <Pressable disabled={!!busy} onPress={() => respondOffer('accept')} style={styles.acceptButton}><Text style={styles.acceptButtonText}>{busy === 'accept' ? 'Sending…' : 'Accept job offer'}</Text></Pressable>
+        <Pressable disabled={!!busy} onPress={() => respondOffer('decline')} style={styles.declineButton}><Text style={styles.declineText}>{busy === 'decline' ? 'Sending…' : 'Decline offer'}</Text></Pressable>
       </> : offer.candidate_note ? <Text style={styles.offerSmall}>Your response: {offer.candidate_note}</Text> : null}
     </View> : null}
 
-    {!interviews.length && !offer ? <View style={styles.empty}><Text style={styles.emptyEyebrow}>APPLICATION ACTIVE</Text><Text style={styles.emptyTitle}>Application submitted.</Text><Text style={styles.copy}>Any shortlist, interview or offer updates will appear here and in your notifications.</Text></View> : null}
+    {application.status === 'rejected' ? <View style={styles.closedCard}><Text style={styles.closedEyebrow}>APPLICATION CLOSED</Text><Text style={styles.closedTitle}>Not progressing on this occasion</Text><Text style={styles.copy}>This application has now closed. Any message from the employer remains in your application history.</Text></View> : null}
+    {application.status === 'withdrawn' ? <View style={styles.closedCard}><Text style={styles.closedEyebrow}>APPLICATION WITHDRAWN</Text><Text style={styles.closedTitle}>You withdrew from this role</Text><Text style={styles.copy}>This application is no longer active.</Text></View> : null}
+
     {error ? <View style={styles.errorCard}><Text style={styles.error}>{error}</Text></View> : null}
   </ScrollView>
 }
@@ -191,21 +285,36 @@ const styles = StyleSheet.create({
   matchPill:{backgroundColor:palette.paper,paddingHorizontal:10,paddingVertical:8,borderRadius:radius.medium,alignItems:'center'},
   match:{color:palette.inkStrong,fontSize:15,fontWeight:'800',fontFamily:type.sans},
   matchLabel:{color:palette.quiet,fontSize:6.5,letterSpacing:.8,fontWeight:'800',marginTop:1,fontFamily:type.sans},
-  sectionCard:{backgroundColor:palette.paper,borderWidth:1,borderColor:palette.line,padding:17,borderRadius:radius.large,marginTop:12},
-  sectionHeader:{flexDirection:'row',justifyContent:'space-between',gap:12,alignItems:'flex-start'},
-  sectionEyebrow:{color:palette.quiet,fontSize:7.5,letterSpacing:1.3,fontWeight:'700',fontFamily:type.sans},
-  sectionTitle:{color:palette.inkStrong,fontSize:20,lineHeight:25,fontWeight:'400',fontFamily:type.serif,marginTop:4},
-  statusPill:{backgroundColor:palette.stoneDeep,paddingHorizontal:8,paddingVertical:5,borderRadius:999},
-  statusPillText:{color:palette.quiet,fontSize:7,fontWeight:'800',letterSpacing:.7,fontFamily:type.sans},
-  label:{color:palette.text,fontSize:9.5,fontWeight:'700',marginTop:15,marginBottom:6,fontFamily:type.sans},
+  receivedCard:{backgroundColor:palette.paper,borderWidth:1,borderColor:palette.line,padding:17,borderRadius:radius.large,marginTop:18,flexDirection:'row',gap:13},
+  receivedIcon:{width:30,height:30,borderRadius:15,backgroundColor:palette.sageSoft,alignItems:'center',justifyContent:'center'},
+  receivedTick:{color:palette.sage,fontSize:16,fontWeight:'800'},
+  stepEyebrow:{color:palette.quiet,fontSize:7.5,letterSpacing:1.4,fontWeight:'700',fontFamily:type.sans},
+  receivedTitle:{color:palette.inkStrong,fontSize:20,lineHeight:25,fontWeight:'400',fontFamily:type.serif,marginTop:3},
+  receivedCopy:{color:palette.muted,fontSize:11.5,lineHeight:18,fontFamily:type.sans,marginTop:6},
+  waitingCard:{backgroundColor:palette.paper,borderWidth:1,borderColor:palette.line,padding:17,borderRadius:radius.large,marginTop:12},
+  waitingEyebrow:{color:palette.quiet,fontSize:7.5,letterSpacing:1.4,fontWeight:'700',fontFamily:type.sans},
+  waitingTitle:{color:palette.inkStrong,fontSize:19,lineHeight:24,fontWeight:'400',fontFamily:type.serif,marginTop:4,marginBottom:7},
+  stepCard:{backgroundColor:palette.paper,borderWidth:1,borderColor:palette.line,padding:17,borderRadius:radius.large,marginTop:12},
+  stepHeader:{flexDirection:'row',justifyContent:'space-between',gap:12,alignItems:'flex-start'},
+  stepTitle:{color:palette.inkStrong,fontSize:22,lineHeight:27,fontWeight:'400',fontFamily:type.serif,marginTop:4},
+  statusPill:{backgroundColor:'#F4EEE1',paddingHorizontal:8,paddingVertical:5,borderRadius:999},
+  statusPillActive:{backgroundColor:palette.sageSoft},
+  statusPillText:{color:'#7A6845',fontSize:7,fontWeight:'800',letterSpacing:.7,fontFamily:type.sans},
+  statusPillTextActive:{color:palette.sage},
+  method:{color:palette.text,fontSize:11,fontWeight:'700',fontFamily:type.sans,marginTop:8},
+  messageBox:{backgroundColor:palette.stone,padding:13,borderRadius:radius.medium,marginTop:12},
+  messageLabel:{color:palette.quiet,fontSize:7,letterSpacing:1.1,fontWeight:'800',fontFamily:type.sans},
+  messageText:{color:palette.text,fontSize:11.5,lineHeight:18,fontFamily:type.sans,marginTop:5},
+  actionTitle:{color:palette.inkStrong,fontSize:15,fontWeight:'700',fontFamily:type.sans,marginTop:16,marginBottom:4},
   copy:{color:palette.muted,fontSize:11.5,lineHeight:18,fontFamily:type.sans},
-  note:{color:palette.muted,fontSize:11.5,lineHeight:18,marginTop:12,fontFamily:type.sans},
-  slot:{borderWidth:1,borderColor:palette.lineStrong,padding:13,marginTop:8,flexDirection:'row',justifyContent:'space-between',gap:12,backgroundColor:palette.stone,borderRadius:radius.medium},
-  slotText:{color:palette.inkStrong,fontSize:10.5,fontWeight:'700',fontFamily:type.sans},
-  choose:{color:palette.ink,fontSize:10,fontWeight:'700',fontFamily:type.sans},
-  confirmed:{backgroundColor:palette.sageSoft,padding:14,marginTop:12,borderRadius:radius.medium},
+  slot:{borderWidth:1,borderColor:palette.lineStrong,padding:13,marginTop:9,backgroundColor:palette.paper,borderRadius:radius.medium},
+  slotDate:{color:palette.inkStrong,fontSize:12,fontWeight:'700',fontFamily:type.sans},
+  confirmAction:{color:palette.sage,fontSize:10,fontWeight:'800',fontFamily:type.sans,marginTop:5},
+  confirmedBox:{backgroundColor:palette.sageSoft,padding:14,marginTop:14,borderRadius:radius.medium},
   confirmedEyebrow:{color:palette.sage,fontSize:7.5,fontWeight:'800',letterSpacing:1.1,fontFamily:type.sans},
-  confirmedDate:{color:palette.inkStrong,fontSize:12,fontWeight:'700',marginTop:4,fontFamily:type.sans},
+  confirmedDate:{color:palette.inkStrong,fontSize:13,fontWeight:'700',marginTop:4,fontFamily:type.sans},
+  confirmedCopy:{color:palette.muted,fontSize:10.5,lineHeight:16,marginTop:6,fontFamily:type.sans},
+  label:{color:palette.text,fontSize:9.5,fontWeight:'700',marginTop:15,marginBottom:6,fontFamily:type.sans},
   small:{color:palette.muted,fontSize:10,lineHeight:16,marginTop:8,fontFamily:type.sans},
   offerCard:{backgroundColor:palette.inkStrong,padding:18,borderRadius:radius.large,marginTop:14},
   offerEyebrow:{color:'#CBD5D9',fontSize:7.5,letterSpacing:1.3,fontWeight:'700',fontFamily:type.sans},
@@ -214,14 +323,14 @@ const styles = StyleSheet.create({
   offerNote:{color:'#DCE4E7',fontSize:11,lineHeight:18,marginTop:10,fontFamily:type.sans},
   offerLabel:{color:'#DCE4E7',fontSize:9.5,fontWeight:'700',marginTop:16,marginBottom:6,fontFamily:type.sans},
   textarea:{borderWidth:1,borderColor:'rgba(255,255,255,.22)',minHeight:90,padding:12,textAlignVertical:'top',color:palette.paper,fontSize:11,backgroundColor:'rgba(255,255,255,.06)',borderRadius:radius.medium,fontFamily:type.sans},
-  primary:{backgroundColor:palette.paper,paddingVertical:14,alignItems:'center',marginTop:13,borderRadius:radius.medium},
-  primaryText:{color:palette.inkStrong,fontSize:10.5,fontWeight:'800',fontFamily:type.sans},
-  secondary:{borderWidth:1,borderColor:'rgba(255,255,255,.26)',paddingVertical:13,alignItems:'center',marginTop:9,borderRadius:radius.medium},
-  declineText:{color:'#F1D8D8',fontSize:10.5,fontWeight:'700',fontFamily:type.sans},
-  offerSmall:{color:'#DCE4E7',fontSize:10,lineHeight:16,marginTop:10,fontFamily:type.sans},
-  empty:{backgroundColor:palette.paper,borderWidth:1,borderColor:palette.line,padding:18,marginTop:14,borderRadius:radius.large},
-  emptyEyebrow:{color:palette.quiet,fontSize:7.5,letterSpacing:1.2,fontWeight:'700',fontFamily:type.sans},
-  emptyTitle:{color:palette.inkStrong,fontSize:19,lineHeight:24,fontWeight:'400',fontFamily:type.serif,marginTop:5,marginBottom:6},
-  errorCard:{backgroundColor:palette.dangerSoft,padding:13,borderRadius:radius.medium,marginTop:14},
-  error:{color:palette.danger,fontSize:10.5,lineHeight:17,fontFamily:type.sans}
+  acceptButton:{backgroundColor:palette.paper,paddingVertical:14,alignItems:'center',borderRadius:radius.medium,marginTop:13},
+  acceptButtonText:{color:palette.inkStrong,fontSize:11,fontWeight:'800',fontFamily:type.sans},
+  declineButton:{borderWidth:1,borderColor:'rgba(255,255,255,.28)',paddingVertical:13,alignItems:'center',borderRadius:radius.medium,marginTop:9},
+  declineText:{color:palette.paper,fontSize:10.5,fontWeight:'700',fontFamily:type.sans},
+  offerSmall:{color:'#DCE4E7',fontSize:10.5,lineHeight:17,marginTop:12,fontFamily:type.sans},
+  closedCard:{backgroundColor:palette.paper,borderWidth:1,borderColor:palette.line,padding:17,borderRadius:radius.large,marginTop:12},
+  closedEyebrow:{color:palette.quiet,fontSize:7.5,letterSpacing:1.3,fontWeight:'700',fontFamily:type.sans},
+  closedTitle:{color:palette.inkStrong,fontSize:19,lineHeight:24,fontWeight:'400',fontFamily:type.serif,marginTop:4,marginBottom:7},
+  errorCard:{backgroundColor:'#FFF3F3',borderWidth:1,borderColor:'#E9CACA',padding:13,borderRadius:radius.medium,marginTop:12},
+  error:{color:palette.danger,fontSize:11,lineHeight:17,fontFamily:type.sans},
 })
