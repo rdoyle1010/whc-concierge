@@ -70,6 +70,7 @@ export default function NotificationsScreen(){
   else if(link.includes('award'))router.push('/awards')
   else if(link.includes('billing')||link.includes('featured')||link.includes('membership'))router.push('/billing')
   else if(link.includes('profile')||link.includes('verification'))router.push('/profile')
+  else if(link.includes('job')||link.includes('interest')||link.includes('match'))router.push('/jobs')
  }
 
  const outstanding=useMemo(()=>items.filter(item=>item.requires_action&&!item.done_at).length,[items])
