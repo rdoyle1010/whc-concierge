@@ -1,0 +1,60 @@
+name: Mobile Lock Sync
+
+on:
+  push:
+    branches:
+      - full-app-audit-hardening
+
+permissions:
+  contents: write
+
+concurrency:
+  group: mobile-lock-sync-full-app-audit-hardening
+  cancel-in-progress: true
+
+jobs:
+  sync-lockfile:
+    name: Sync mobile package lock
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout audit branch
+        uses: actions/checkout@v4
+        with:
+          ref: full-app-audit-hardening
+          fetch-depth: 0
+
+      - name: Use Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+
+      - name: Regenerate mobile lockfile
+        working-directory: mobile
+        run: npm install --package-lock-only --ignore-scripts --no-audit --no-fund
+
+      - name: Verify Expo-style clean install
+        working-directory: mobile
+        run: npm ci --include=dev --no-audit --no-fund
+
+      - name: Run route integrity audit
+        working-directory: mobile
+        run: npm run routecheck
+
+      - name: Run TypeScript check
+        working-directory: mobile
+        run: npm run typecheck
+
+      - name: Commit corrected lockfile when changed
+        shell: bash
+        run: |
+          if git diff --quiet -- mobile/package-lock.json; then
+            echo "mobile/package-lock.json is already in sync"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add mobile/package-lock.json
+          git commit -m "fix: sync mobile package lock for EAS"
+          git push origin HEAD:full-app-audit-hardening
