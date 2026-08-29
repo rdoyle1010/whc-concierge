@@ -30,7 +30,7 @@ export default function MobileNav(){
   const [agencyCount,setAgencyCount]=useState(0)
 
   useEffect(()=>{
-    if(pathname==='/'||pathname==='/login'||pathname==='/admin')return
+    if(pathname==='/'||pathname==='/login'||pathname==='/signup'||pathname==='/mfa-challenge'||pathname==='/admin')return
     let active=true
     let channel:any
 
@@ -76,7 +76,7 @@ export default function MobileNav(){
     }
   },[pathname])
 
-  if(pathname==='/'||pathname==='/login'||pathname==='/admin'||pathname.startsWith('/message/')||pathname.startsWith('/job/')||pathname.startsWith('/application/')||pathname.startsWith('/talent-application/'))return null
+  if(pathname==='/'||pathname==='/login'||pathname==='/signup'||pathname==='/mfa-challenge'||pathname==='/admin'||pathname.startsWith('/message/')||pathname.startsWith('/job/')||pathname.startsWith('/application/')||pathname.startsWith('/talent-application/'))return null
   const items=role==='employer'?employerItems:talentItems
   const totalAttention=unreadMessages+agencyCount
 
