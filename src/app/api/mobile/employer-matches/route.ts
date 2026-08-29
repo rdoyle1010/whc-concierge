@@ -52,7 +52,7 @@ export async function GET(req: NextRequest) {
   ])
   const liveJobs = jobs || []
   const selectedJob = requestedJobId ? liveJobs.find((job: any) => job.id === requestedJobId) : liveJobs[0]
-  if (!selectedJob) return NextResponse.json({ jobs: liveJobs, candidates: [], interested_candidates: [], selected_job_id: null })
+  if (!selectedJob) return NextResponse.json({ jobs: liveJobs, candidates: [], interested_candidates: [], selected_job_id: null, eligible_count: 0 })
 
   const [{ data: rows, error }, { data: swipes }, { data: applications }] = await Promise.all([
     admin.from('candidate_profiles').select(CANDIDATE_FIELDS).eq('approval_status', 'approved').or('profile_visible.eq.true,profile_visible.is.null').order('is_featured', { ascending: false }).limit(100),
@@ -68,6 +68,17 @@ export async function GET(req: NextRequest) {
   const applicationsByCandidate = new Map((applications || []).map((row: any) => [row.candidate_id, row]))
   const eligibleRows = (rows || []).filter((candidate: any) => canEmployerDiscoverCandidate(candidate, blocked))
 
+  const candidateUserIds = eligibleRows.map((candidate: any) => candidate.user_id).filter(Boolean)
+  const { data: candidateResponses } = candidateUserIds.length
+    ? await admin.from('swipes')
+        .select('swiper_id,action,target_id,context_job_id')
+        .in('swiper_id', candidateUserIds)
+        .eq('swiper_type', 'candidate')
+        .eq('target_type', 'job')
+        .eq('target_id', selectedJob.id)
+    : { data: [] as any[] }
+  const responseByUser = new Map((candidateResponses || []).map((row: any) => [row.swiper_id, row.action]))
+
   const candidates = eligibleRows.map((candidate: any) => {
     if (reviewedForRole.has(candidate.id)) return null
     return candidateResult(employer, candidate, selectedJob)
@@ -78,20 +89,28 @@ export async function GET(req: NextRequest) {
     const result = candidateResult(employer, candidate, selectedJob)
     if (!result) return null
     const application: any = applicationsByCandidate.get(candidate.id) || null
+    const talentResponse = responseByUser.get(candidate.user_id)
+    const declined = talentResponse === 'left'
+    const accepted = talentResponse === 'right'
     return {
       ...result,
       application_id: application?.id || null,
       application_status: application?.status || null,
-      mutual: Boolean(application?.id),
-      interest_status: application?.id ? 'matched' : 'waiting',
+      mutual: Boolean(application?.id || accepted),
+      interest_status: declined ? 'declined' : (application?.id || accepted) ? 'matched' : 'waiting',
     }
-  }).filter(Boolean).sort((a: any, b: any) => Number(Boolean(b.mutual)) - Number(Boolean(a.mutual)) || Number(b.match_score || 0) - Number(a.match_score || 0))
+  }).filter(Boolean).sort((a: any, b: any) => {
+    const rank = (value: string) => value === 'matched' ? 0 : value === 'waiting' ? 1 : 2
+    return rank(a.interest_status) - rank(b.interest_status) || Number(b.match_score || 0) - Number(a.match_score || 0)
+  })
 
   return NextResponse.json({
     jobs: liveJobs.map((job: any) => ({ id: job.id, job_title: job.job_title, location: job.location, job_type: job.job_type })),
     selected_job_id: selectedJob.id,
     candidates,
     interested_candidates: interestedCandidates,
+    eligible_count: eligibleRows.length,
+    reviewed_count: reviewedForRole.size,
   })
 }
 
@@ -145,16 +164,23 @@ export async function POST(req: NextRequest) {
   applicationId = application?.id || null
 
   let mutual = false
+  let declined = false
   if (candidate.user_id) {
-    const { data: candidateYes } = await admin.from('swipes').select('id')
+    const { data: candidateResponse } = await admin.from('swipes').select('id,action')
       .eq('swiper_id', candidate.user_id).eq('swiper_type', 'candidate')
-      .eq('target_id', jobId).eq('target_type', 'job').eq('action', 'right').maybeSingle()
-    mutual = Boolean(candidateYes || applicationId)
-    await createNotification(candidate.user_id, 'general', mutual ? "It's a match" : 'A property is interested in you',
-      `${employer.property_name || employer.company_name || 'A property'} is interested in you for ${job.job_title}.`, '/talent/messages')
+      .eq('target_id', jobId).eq('target_type', 'job').maybeSingle()
+    mutual = Boolean(candidateResponse?.action === 'right' || applicationId)
+    declined = candidateResponse?.action === 'left'
+    await createNotification(
+      candidate.user_id,
+      'general',
+      mutual ? "It's a match" : 'A property is interested in you',
+      `${employer.property_name || employer.company_name || 'A property'} is interested in you for ${job.job_title}.`,
+      '/talent/jobs?interest=1',
+    )
   }
 
-  return NextResponse.json({ success: true, matched: mutual, applicationId, candidateName: candidate.full_name || 'Candidate', jobTitle: job.job_title })
+  return NextResponse.json({ success: true, matched: mutual, declined, applicationId, candidateName: candidate.full_name || 'Candidate', jobTitle: job.job_title })
 }
 
 export async function DELETE(req: NextRequest) {
