@@ -2,6 +2,7 @@ import { useCallback, useState } from 'react'
 import { ActivityIndicator, Alert, Image, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native'
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router'
 import { supabase } from '../../src/lib/supabase'
+import { palette, radius, space, type } from '../../src/lib/theme'
 
 const WEB_URL = process.env.EXPO_PUBLIC_WEB_URL || 'https://talent.wellnesshousecollective.co.uk'
 
@@ -191,7 +192,7 @@ export default function JobDetailScreen() {
     router.push({ pathname: '/talent-application/[id]', params: { id: applicationId } })
   }
 
-  if (loading) return <View style={styles.loading}><ActivityIndicator color="#092b45" /></View>
+  if (loading) return <View style={styles.loading}><ActivityIndicator color={palette.ink} /></View>
   if (!job) return <View style={styles.loading}><Text style={styles.error}>{error || 'This role is no longer available.'}</Text><Pressable onPress={() => router.back()}><Text style={styles.back}>‹ Back</Text></Pressable></View>
 
   const employer = Array.isArray(job.employer_profiles) ? job.employer_profiles[0] : job.employer_profiles
@@ -268,5 +269,77 @@ export default function JobDetailScreen() {
 }
 
 const styles = StyleSheet.create({
-  flex:{flex:1,backgroundColor:'#fff'},scroll:{flex:1,backgroundColor:'#fff'},page:{paddingHorizontal:22,paddingTop:64,paddingBottom:120},loading:{flex:1,backgroundColor:'#fff',justifyContent:'center',alignItems:'center',padding:30},back:{color:'#66747c',fontSize:13,marginBottom:24},hero:{width:'100%',height:220,marginBottom:18,backgroundColor:'#eef2f4'},company:{color:'#71808a',fontSize:11,letterSpacing:.5,marginBottom:7},title:{color:'#092b45',fontSize:30,lineHeight:36,fontWeight:'600'},meta:{color:'#66747c',fontSize:12,lineHeight:19,marginTop:10},propertySummary:{flexDirection:'row',gap:12,alignItems:'center',borderWidth:1,borderColor:'#dce3e7',padding:14,marginTop:18},propertyLogo:{width:45,height:45,borderRadius:8,borderWidth:1,borderColor:'#e0e6e8',backgroundColor:'#fff'},propertyName:{color:'#173246',fontSize:14,fontWeight:'700'},propertyLocation:{color:'#71808a',fontSize:10.5,marginTop:3},ratingBox:{alignItems:'flex-end'},ratingValue:{color:'#092b45',fontSize:17,fontWeight:'700'},ratingCount:{color:'#71808a',fontSize:9,marginTop:2},factRow:{flexDirection:'row',flexWrap:'wrap',gap:6,marginTop:10},factChip:{backgroundColor:'#f2f5f6',color:'#526976',fontSize:9.5,paddingHorizontal:9,paddingVertical:6,borderRadius:14},gallery:{marginTop:10},thumb:{width:120,height:82,marginRight:8,backgroundColor:'#eef2f4'},propertyCard:{backgroundColor:'#f4f7f8',padding:16,marginTop:14},propertyButton:{borderWidth:1,borderColor:'#bfcbd1',padding:15,marginTop:12},propertyButtonTitle:{color:'#173246',fontSize:14,fontWeight:'700'},propertyButtonCopy:{color:'#71808a',fontSize:9.5,lineHeight:15,marginTop:5},propertyButtonLink:{color:'#092b45',fontSize:10.5,fontWeight:'700',marginTop:10},assistantIntro:{backgroundColor:'#f4f7f8',padding:20,marginTop:24},assistantEyebrow:{color:'#71808a',fontSize:8,letterSpacing:1.8,marginBottom:8},assistantTitle:{color:'#092b45',fontSize:20,lineHeight:25,fontWeight:'600'},assistantCopy:{color:'#66747c',fontSize:12,lineHeight:19,marginTop:8},applyButton:{backgroundColor:'#092b45',paddingVertical:15,alignItems:'center',marginTop:18},applyText:{color:'#fff',fontSize:12,fontWeight:'700'},restartCard:{borderWidth:1,borderColor:'#d7e0e4',padding:18,marginTop:22},restartTitle:{color:'#173246',fontSize:17,fontWeight:'700'},restartCopy:{color:'#71808a',fontSize:11.5,lineHeight:18,marginTop:6},statusCard:{backgroundColor:'#092b45',padding:19,marginTop:22},statusEyebrow:{color:'#b9c8d1',fontSize:8,letterSpacing:1.5},statusTitle:{color:'#fff',fontSize:20,fontWeight:'700',marginTop:7},statusCopy:{color:'#dce6eb',fontSize:11.5,lineHeight:18,marginTop:6},statusButton:{borderWidth:1,borderColor:'#8fa7b5',paddingVertical:12,alignItems:'center',marginTop:16},statusButtonText:{color:'#fff',fontSize:11,fontWeight:'700'},applicationBox:{borderWidth:1,borderColor:'#b9c8cf',padding:18,marginTop:22},matchRow:{flexDirection:'row',gap:14,alignItems:'center',backgroundColor:'#f4f7f8',padding:14},matchScore:{color:'#092b45',fontSize:28,fontWeight:'700'},matchLabel:{color:'#173246',fontSize:12,fontWeight:'700',textTransform:'uppercase'},matchCopy:{color:'#71808a',fontSize:10.5,lineHeight:16,marginTop:3},stepTitle:{color:'#173246',fontSize:16,fontWeight:'700',marginTop:24,marginBottom:7},stepCopy:{color:'#71808a',fontSize:11.5,lineHeight:18,marginBottom:10},analysisSummary:{color:'#526976',fontSize:12,lineHeight:19},aiPanel:{backgroundColor:'#f5f9f7',padding:14,marginTop:12},gapPanel:{backgroundColor:'#faf8f3',padding:14,marginTop:10},aiHeading:{color:'#173246',fontSize:11,fontWeight:'700',marginBottom:7},aiBullet:{flexDirection:'row',gap:8,marginTop:5},goodDot:{color:'#315846',fontWeight:'800'},gapDot:{color:'#8a5b18',fontWeight:'800'},aiText:{color:'#526976',fontSize:10.5,lineHeight:16,flex:1},primary:{backgroundColor:'#092b45',paddingVertical:14,alignItems:'center',marginTop:12},primaryText:{color:'#fff',fontSize:11,fontWeight:'700'},secondary:{borderWidth:1,borderColor:'#bfcbd1',paddingVertical:13,alignItems:'center',marginTop:12},secondaryText:{color:'#092b45',fontSize:10.5,fontWeight:'700'},letterInput:{borderWidth:1,borderColor:'#cbd6db',minHeight:220,padding:13,color:'#173246',fontSize:12,lineHeight:19},letterActions:{flexDirection:'row',gap:8,marginTop:9},secondaryHalf:{flex:1,borderWidth:1,borderColor:'#bfcbd1',paddingVertical:12,alignItems:'center'},submitButton:{backgroundColor:'#0b6245',paddingVertical:16,alignItems:'center',marginTop:12},submitText:{color:'#fff',fontSize:12,fontWeight:'800'},disabled:{opacity:.45},error:{color:'#9b2c2c',fontSize:12},errorBox:{color:'#9b2c2c',fontSize:12,lineHeight:18,backgroundColor:'#fff4f4',padding:13,marginTop:14},section:{borderTopWidth:1,borderTopColor:'#e3e8eb',paddingTop:20,marginTop:24},sectionTitle:{color:'#173246',fontSize:17,fontWeight:'700',marginBottom:8},copy:{color:'#66747c',fontSize:12.5,lineHeight:20},bulletRow:{flexDirection:'row',gap:8,marginTop:7},bullet:{color:'#092b45',fontWeight:'800'},bulletText:{color:'#66747c',fontSize:12,lineHeight:18,flex:1},
+  flex:{flex:1,backgroundColor:palette.stone},
+  scroll:{flex:1,backgroundColor:palette.stone},
+  page:{paddingHorizontal:space.page,paddingTop:18,paddingBottom:118},
+  loading:{flex:1,backgroundColor:palette.stone,justifyContent:'center',alignItems:'center',padding:30},
+  back:{color:palette.muted,fontSize:13,marginBottom:22,fontFamily:type.sans},
+  hero:{width:'100%',height:220,marginBottom:18,backgroundColor:palette.stoneDeep,borderRadius:radius.large},
+  company:{color:palette.quiet,fontSize:8,letterSpacing:1.8,marginBottom:7,fontWeight:'700',fontFamily:type.sans,textTransform:'uppercase'},
+  title:{color:palette.inkStrong,fontSize:34,lineHeight:40,fontWeight:'400',fontFamily:type.serif},
+  meta:{color:palette.muted,fontSize:11,lineHeight:18,marginTop:9,fontFamily:type.sans},
+  propertySummary:{flexDirection:'row',gap:12,alignItems:'center',borderWidth:1,borderColor:palette.line,padding:14,marginTop:18,backgroundColor:palette.paper,borderRadius:radius.large},
+  propertyLogo:{width:45,height:45,borderRadius:radius.medium,borderWidth:1,borderColor:palette.line,backgroundColor:palette.paper},
+  propertyName:{color:palette.inkStrong,fontSize:13,fontWeight:'700',fontFamily:type.sans},
+  propertyLocation:{color:palette.muted,fontSize:9.5,marginTop:3,fontFamily:type.sans},
+  ratingBox:{alignItems:'flex-end'},
+  ratingValue:{color:palette.inkStrong,fontSize:15,fontWeight:'700',fontFamily:type.sans},
+  ratingCount:{color:palette.quiet,fontSize:8.5,marginTop:2,fontFamily:type.sans},
+  factRow:{flexDirection:'row',flexWrap:'wrap',gap:6,marginTop:10},
+  factChip:{backgroundColor:palette.stoneDeep,color:palette.muted,fontSize:8.5,paddingHorizontal:9,paddingVertical:6,borderRadius:999,fontFamily:type.sans},
+  gallery:{marginTop:10},
+  thumb:{width:120,height:82,marginRight:8,backgroundColor:palette.stoneDeep,borderRadius:radius.medium},
+  propertyCard:{backgroundColor:palette.paper,borderWidth:1,borderColor:palette.line,padding:16,marginTop:14,borderRadius:radius.large},
+  propertyButton:{borderWidth:1,borderColor:palette.lineStrong,padding:15,marginTop:12,backgroundColor:palette.paper,borderRadius:radius.large},
+  propertyButtonTitle:{color:palette.inkStrong,fontSize:15,fontWeight:'400',fontFamily:type.serif},
+  propertyButtonCopy:{color:palette.muted,fontSize:9.5,lineHeight:15,marginTop:5,fontFamily:type.sans},
+  propertyButtonLink:{color:palette.ink,fontSize:10,fontWeight:'700',marginTop:10,fontFamily:type.sans},
+  assistantIntro:{backgroundColor:palette.inkStrong,padding:18,marginTop:24,borderRadius:radius.large},
+  assistantEyebrow:{color:palette.quiet,fontSize:7.5,letterSpacing:1.6,marginBottom:7,fontWeight:'700',fontFamily:type.sans},
+  assistantTitle:{color:palette.paper,fontSize:21,lineHeight:26,fontWeight:'400',fontFamily:type.serif},
+  assistantCopy:{color:'#DCE4E7',fontSize:10.5,lineHeight:17,marginTop:7,fontFamily:type.sans},
+  applyButton:{backgroundColor:palette.paper,paddingVertical:14,alignItems:'center',marginTop:16,borderRadius:radius.medium},
+  applyText:{color:palette.inkStrong,fontSize:10.5,fontWeight:'800',fontFamily:type.sans},
+  restartCard:{borderWidth:1,borderColor:palette.line,padding:17,marginTop:22,backgroundColor:palette.paper,borderRadius:radius.large},
+  restartTitle:{color:palette.inkStrong,fontSize:18,fontWeight:'400',fontFamily:type.serif},
+  restartCopy:{color:palette.muted,fontSize:10.5,lineHeight:17,marginTop:6,fontFamily:type.sans},
+  statusCard:{backgroundColor:palette.inkStrong,padding:18,marginTop:22,borderRadius:radius.large},
+  statusEyebrow:{color:'#CBD5D9',fontSize:7.5,letterSpacing:1.4,fontWeight:'700',fontFamily:type.sans},
+  statusTitle:{color:palette.paper,fontSize:20,lineHeight:25,fontWeight:'400',fontFamily:type.serif,marginTop:6},
+  statusCopy:{color:'#DCE4E7',fontSize:10.5,lineHeight:17,marginTop:5,fontFamily:type.sans},
+  statusButton:{borderWidth:1,borderColor:'rgba(255,255,255,.28)',paddingVertical:12,alignItems:'center',marginTop:14,borderRadius:radius.medium},
+  statusButtonText:{color:palette.paper,fontSize:10,fontWeight:'700',fontFamily:type.sans},
+  applicationBox:{borderWidth:1,borderColor:palette.line,padding:17,marginTop:22,backgroundColor:palette.paper,borderRadius:radius.large},
+  matchRow:{flexDirection:'row',gap:14,alignItems:'center',backgroundColor:palette.stoneDeep,padding:14,borderRadius:radius.medium},
+  matchScore:{color:palette.inkStrong,fontSize:29,fontWeight:'400',fontFamily:type.serif},
+  matchLabel:{color:palette.inkStrong,fontSize:9,fontWeight:'800',textTransform:'uppercase',letterSpacing:.8,fontFamily:type.sans},
+  matchCopy:{color:palette.muted,fontSize:9.5,lineHeight:15,marginTop:3,fontFamily:type.sans},
+  stepTitle:{color:palette.inkStrong,fontSize:18,lineHeight:23,fontWeight:'400',fontFamily:type.serif,marginTop:24,marginBottom:6},
+  stepCopy:{color:palette.muted,fontSize:10.5,lineHeight:17,marginBottom:10,fontFamily:type.sans},
+  analysisSummary:{color:palette.muted,fontSize:11,lineHeight:18,fontFamily:type.sans},
+  aiPanel:{backgroundColor:palette.sageSoft,padding:14,marginTop:12,borderRadius:radius.medium},
+  gapPanel:{backgroundColor:'#F7F3EA',padding:14,marginTop:10,borderRadius:radius.medium},
+  aiHeading:{color:palette.inkStrong,fontSize:10.5,fontWeight:'700',marginBottom:7,fontFamily:type.sans},
+  aiBullet:{flexDirection:'row',gap:8,marginTop:5},
+  goodDot:{color:palette.sage,fontWeight:'800'},
+  gapDot:{color:'#8A6A2C',fontWeight:'800'},
+  aiText:{color:palette.muted,fontSize:9.5,lineHeight:15,flex:1,fontFamily:type.sans},
+  primary:{backgroundColor:palette.inkStrong,paddingVertical:14,alignItems:'center',marginTop:12,borderRadius:radius.medium},
+  primaryText:{color:palette.paper,fontSize:10.5,fontWeight:'700',fontFamily:type.sans},
+  secondary:{borderWidth:1,borderColor:palette.lineStrong,paddingVertical:12,alignItems:'center',marginTop:12,backgroundColor:palette.paper,borderRadius:radius.medium},
+  secondaryText:{color:palette.ink,fontSize:10,fontWeight:'700',fontFamily:type.sans},
+  letterInput:{borderWidth:1,borderColor:palette.line,minHeight:220,padding:13,color:palette.text,fontSize:11,lineHeight:18,backgroundColor:palette.stone,borderRadius:radius.medium,fontFamily:type.sans},
+  letterActions:{flexDirection:'row',gap:8,marginTop:9},
+  secondaryHalf:{flex:1,borderWidth:1,borderColor:palette.lineStrong,paddingVertical:12,alignItems:'center',backgroundColor:palette.paper,borderRadius:radius.medium},
+  submitButton:{backgroundColor:palette.sage,paddingVertical:15,alignItems:'center',marginTop:12,borderRadius:radius.medium},
+  submitText:{color:palette.paper,fontSize:10.5,fontWeight:'800',fontFamily:type.sans},
+  disabled:{opacity:.45},
+  error:{color:palette.danger,fontSize:11,fontFamily:type.sans},
+  errorBox:{color:palette.danger,fontSize:10.5,lineHeight:17,backgroundColor:palette.dangerSoft,padding:13,marginTop:14,borderRadius:radius.medium,fontFamily:type.sans},
+  section:{borderTopWidth:1,borderTopColor:palette.line,paddingTop:20,marginTop:24},
+  sectionTitle:{color:palette.inkStrong,fontSize:20,lineHeight:25,fontWeight:'400',fontFamily:type.serif,marginBottom:8},
+  copy:{color:palette.muted,fontSize:11.5,lineHeight:19,fontFamily:type.sans},
+  bulletRow:{flexDirection:'row',gap:8,marginTop:7},
+  bullet:{color:palette.sage,fontWeight:'800'},
+  bulletText:{color:palette.muted,fontSize:11,lineHeight:18,flex:1,fontFamily:type.sans},
 })
