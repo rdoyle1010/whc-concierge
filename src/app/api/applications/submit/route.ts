@@ -58,6 +58,7 @@ export async function POST(req: NextRequest) {
 
   if (updateError || !updatedApplication) return NextResponse.json({ error: 'Could not send your application.' }, { status: 500 })
 
+  let swipeSynced = true
   const { error: swipeError } = await admin.from('swipes').upsert({
     swiper_id: user.id,
     swiper_type: 'candidate',
@@ -70,13 +71,17 @@ export async function POST(req: NextRequest) {
     ignoreDuplicates: false,
   })
   if (swipeError) {
+    swipeSynced = false
     console.error('Could not record submitted application as candidate interest:', swipeError.message)
-    return NextResponse.json({ error: 'Your application was saved but the matching relationship could not be updated. Please contact support.' }, { status: 500 })
   }
 
   const employerName = employer.property_name || employer.company_name || 'the employer'
   if (employer.user_id) {
-    await createNotification(employer.user_id, 'job_application', 'New application received', `${candidate.full_name || 'A candidate'} applied for ${job.job_title}.`, '/employer/applications')
+    try {
+      await createNotification(employer.user_id, 'job_application', 'New application received', `${candidate.full_name || 'A candidate'} applied for ${job.job_title}.`, '/employer/applications')
+    } catch (notificationError: any) {
+      console.error('Employer application notification failed:', notificationError?.message || notificationError)
+    }
   }
 
   try {
@@ -94,6 +99,7 @@ export async function POST(req: NextRequest) {
   return NextResponse.json({
     success: true,
     application: updatedApplication,
+    swipeSynced,
     progress: {
       current: 'submitted',
       next: 'under_review',
