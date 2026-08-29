@@ -44,14 +44,11 @@ export async function POST(req: NextRequest) {
     if (decision === 'rejected' && liveOffer) return NextResponse.json({ error: 'This candidate already has a live job offer. Withdraw or resolve the offer before marking the application as not progressing.' }, { status: 409 })
 
     const jobId = application.role_id || application.job_id
-    const [{ data: job }, { data: candidate }] = await Promise.all([
-      admin.from('job_listings').select('id,job_title,employer_id').eq('id', jobId).maybeSingle(),
-      admin.from('candidate_profiles').select('id,user_id,full_name').eq('id', application.candidate_id).maybeSingle(),
-    ])
-    if (!job || job.employer_id !== employer.id || !candidate?.user_id) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    const { data: job } = await admin.from('job_listings').select('id,job_title,employer_id').eq('id', jobId).maybeSingle()
+    if (!job || job.employer_id !== employer.id) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
-    // Saving the recruitment decision is the primary action. Secondary communications
-    // must never make a successful status change look as though it failed.
+    // Save the recruitment decision as soon as ownership and stage rules are verified.
+    // Candidate communication is deliberately best-effort and happens only afterwards.
     const { data: updated, error: updateError } = await admin.from('applications')
       .update({ status: decision, updated_at: new Date().toISOString() })
       .eq('id', application.id)
@@ -59,38 +56,42 @@ export async function POST(req: NextRequest) {
       .maybeSingle()
     if (updateError || !updated) return NextResponse.json({ error: updateError?.message || 'Could not save the application decision.' }, { status: 500 })
 
+    const { data: candidate } = await admin.from('candidate_profiles').select('id,user_id,full_name').eq('id', application.candidate_id).maybeSingle()
     const propertyName = employer.property_name || employer.company_name || 'the property'
     const title = decision === 'shortlisted' ? `You have been shortlisted for ${job.job_title}` : decision === 'accepted' ? `Your application for ${job.job_title} has progressed` : `Update on your application for ${job.job_title}`
 
     let notificationSent = false
-    try {
-      await createNotification(candidate.user_id, 'general', title, note.slice(0, 500), '/talent/applications')
-      notificationSent = true
-    } catch (notificationError: any) {
-      console.error('Recruitment decision notification failed:', notificationError?.message || notificationError)
-    }
-
     let emailSent = false
-    try {
-      const { data: authUser } = await admin.auth.admin.getUserById(candidate.user_id)
-      const email = authUser?.user?.email || null
-      if (email && RESEND_API_KEY) {
-        const subject = decision === 'shortlisted' ? `You have been shortlisted - ${job.job_title}` : decision === 'accepted' ? `Application update - ${job.job_title}` : `Update on your application - ${job.job_title}`
-        const res = await fetch('https://api.resend.com/emails', { method: 'POST', headers: { Authorization: `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ from: FROM_EMAIL, to: email, subject, html: messageHtml({ note, jobTitle: job.job_title, propertyName, decision }) }) })
-        emailSent = res.ok
-        if (!res.ok) console.error('Recruitment decision email failed:', res.status, (await res.text().catch(() => '')).slice(0, 300))
-      }
-    } catch (emailError: any) {
-      console.error('Recruitment decision email lookup/send failed:', emailError?.message || emailError)
-    }
-
     let smsSent = false
-    if (decision === 'shortlisted') {
+
+    if (candidate?.user_id) {
       try {
-        const { data: smsCandidate } = await admin.from('candidate_profiles').select('phone,sms_opt_in').eq('id', application.candidate_id).maybeSingle()
-        if (smsCandidate) smsSent = await sendSmsIfOptedIn({ to: smsCandidate.phone, optedIn: smsCandidate.sms_opt_in, body: `Spa Platform: Congratulations, you have been shortlisted for ${job.job_title} at ${propertyName}. Open My Applications for the update.` })
-      } catch (smsError: any) {
-        console.error('Recruitment decision SMS failed:', smsError?.message || smsError)
+        await createNotification(candidate.user_id, 'general', title, note.slice(0, 500), '/talent/applications')
+        notificationSent = true
+      } catch (notificationError: any) {
+        console.error('Recruitment decision notification failed:', notificationError?.message || notificationError)
+      }
+
+      try {
+        const { data: authUser } = await admin.auth.admin.getUserById(candidate.user_id)
+        const email = authUser?.user?.email || null
+        if (email && RESEND_API_KEY) {
+          const subject = decision === 'shortlisted' ? `You have been shortlisted - ${job.job_title}` : decision === 'accepted' ? `Application update - ${job.job_title}` : `Update on your application - ${job.job_title}`
+          const res = await fetch('https://api.resend.com/emails', { method: 'POST', headers: { Authorization: `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ from: FROM_EMAIL, to: email, subject, html: messageHtml({ note, jobTitle: job.job_title, propertyName, decision }) }) })
+          emailSent = res.ok
+          if (!res.ok) console.error('Recruitment decision email failed:', res.status, (await res.text().catch(() => '')).slice(0, 300))
+        }
+      } catch (emailError: any) {
+        console.error('Recruitment decision email lookup/send failed:', emailError?.message || emailError)
+      }
+
+      if (decision === 'shortlisted') {
+        try {
+          const { data: smsCandidate } = await admin.from('candidate_profiles').select('phone,sms_opt_in').eq('id', application.candidate_id).maybeSingle()
+          if (smsCandidate) smsSent = await sendSmsIfOptedIn({ to: smsCandidate.phone, optedIn: smsCandidate.sms_opt_in, body: `Spa Platform: Congratulations, you have been shortlisted for ${job.job_title} at ${propertyName}. Open My Applications for the update.` })
+        } catch (smsError: any) {
+          console.error('Recruitment decision SMS failed:', smsError?.message || smsError)
+        }
       }
     }
 
