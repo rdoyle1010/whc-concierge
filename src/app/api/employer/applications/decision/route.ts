@@ -21,10 +21,10 @@ function messageHtml(opts: { note: string; jobTitle: string; propertyName: strin
 }
 
 export async function POST(req: NextRequest) {
-  const user = await getRequestUser(req)
-  if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
-
   try {
+    const user = await getRequestUser(req)
+    if (!user) return NextResponse.json({ error: 'Your session could not be verified. Please sign in again.' }, { status: 401 })
+
     const body = await req.json()
     const applicationId = String(body.applicationId || '')
     const decision = String(body.decision || '') as Decision
@@ -33,22 +33,24 @@ export async function POST(req: NextRequest) {
     if (note.length < 20 || note.length > 3000) return NextResponse.json({ error: 'Please review the candidate message before sending.' }, { status: 400 })
 
     const admin = createAdminClient()
-    const { data: employer } = await admin.from('employer_profiles').select('id,user_id,company_name,property_name').eq('user_id', user.id).maybeSingle()
+    const { data: employer, error: employerError } = await admin.from('employer_profiles').select('id,user_id,company_name,property_name').eq('user_id', user.id).maybeSingle()
+    if (employerError) return NextResponse.json({ error: `Could not load employer profile: ${employerError.message}` }, { status: 500 })
     if (!employer) return NextResponse.json({ error: 'Employer profile not found' }, { status: 404 })
 
-    const { data: application } = await admin.from('applications').select('id,candidate_id,role_id,job_id,status').eq('id', applicationId).maybeSingle()
+    const { data: application, error: applicationError } = await admin.from('applications').select('id,candidate_id,role_id,job_id,status').eq('id', applicationId).maybeSingle()
+    if (applicationError) return NextResponse.json({ error: `Could not load application: ${applicationError.message}` }, { status: 500 })
     if (!application) return NextResponse.json({ error: 'Application not found' }, { status: 404 })
     if (['withdrawn', 'accepted'].includes(application.status) && decision !== application.status) return NextResponse.json({ error: 'This application can no longer be changed from its current stage.' }, { status: 409 })
 
-    const { data: liveOffer } = await admin.from('application_offers').select('id,status').eq('application_id', application.id).in('status', ['offered', 'accepted']).maybeSingle()
+    const { data: liveOffer, error: offerError } = await admin.from('application_offers').select('id,status').eq('application_id', application.id).in('status', ['offered', 'accepted']).maybeSingle()
+    if (offerError) return NextResponse.json({ error: `Could not check live offer: ${offerError.message}` }, { status: 500 })
     if (decision === 'rejected' && liveOffer) return NextResponse.json({ error: 'This candidate already has a live job offer. Withdraw or resolve the offer before marking the application as not progressing.' }, { status: 409 })
 
     const jobId = application.role_id || application.job_id
-    const { data: job } = await admin.from('job_listings').select('id,job_title,employer_id').eq('id', jobId).maybeSingle()
-    if (!job || job.employer_id !== employer.id) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    const { data: job, error: jobError } = await admin.from('job_listings').select('id,job_title,employer_id').eq('id', jobId).maybeSingle()
+    if (jobError) return NextResponse.json({ error: `Could not load job: ${jobError.message}` }, { status: 500 })
+    if (!job || job.employer_id !== employer.id) return NextResponse.json({ error: 'This application does not belong to the signed-in employer.' }, { status: 403 })
 
-    // Save the recruitment decision as soon as ownership and stage rules are verified.
-    // Candidate communication is deliberately best-effort and happens only afterwards.
     const { data: updated, error: updateError } = await admin.from('applications')
       .update({ status: decision, updated_at: new Date().toISOString() })
       .eq('id', application.id)
