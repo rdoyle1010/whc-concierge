@@ -1,14 +1,17 @@
 name: Mobile CI
 
 on:
+  workflow_dispatch:
   push:
     branches: [main]
     paths:
       - 'mobile/**'
+      - 'src/app/api/mobile/**'
       - '.github/workflows/mobile-ci.yml'
   pull_request:
     paths:
       - 'mobile/**'
+      - 'src/app/api/mobile/**'
       - '.github/workflows/mobile-ci.yml'
 
 concurrency:
