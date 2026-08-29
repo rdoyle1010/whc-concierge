@@ -22,13 +22,20 @@ test('interview rounds are confirmed, completed and ordered before progression',
   assert.match(route, /Finish or cancel the current interview stage/)
 })
 
-test('employer mobile application UI cannot expose offer before completed interview', () => {
+test('employer mobile application UI enforces the explicit recruitment stage flow', () => {
   const screen = read('mobile/app/application/[id].tsx')
   assert.match(screen, /completedInterviews\.length > 0/)
   assert.match(screen, /Mark interview completed/)
   assert.match(screen, /roundNumber: nextRound/)
-  assert.match(screen, /writeMessage\(draftIntent\)/)
-  assert.match(screen, /Complete an interview first/)
+  assert.match(screen, /writeMessage\('shortlist'\)/)
+  assert.match(screen, /writeMessage\('interview'\)/)
+  assert.match(screen, /writeMessage\('offer'\)/)
+  assert.match(screen, /writeMessage\('decline'\)/)
+  assert.match(screen, /Draft holding update/)
+  assert.match(screen, /Send progress update & shortlist/)
+  assert.match(screen, /Complete the first interview/)
+  assert.match(screen, /completedInterviews\.length < 2/)
+  assert.match(screen, /second interview is optional/i)
   assert.doesNotMatch(screen, /canOffer\s*=\s*\['shortlisted'/)
 })
 
