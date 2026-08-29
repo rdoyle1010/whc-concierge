@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native'
 import { router } from 'expo-router'
 import { supabase } from '../src/lib/supabase'
+import { palette, radius, space, type } from '../src/lib/theme'
 
 type Employer = { id:string; company_name:string|null; property_name:string|null; location?:string|null }
 
@@ -67,24 +68,32 @@ export default function PrivacyStealthScreen(){
     setBusy(null)
   }
 
-  if(loading)return <View style={styles.center}><ActivityIndicator color="#092b45"/></View>
+  if(loading)return <View style={styles.center}><ActivityIndicator color={palette.ink}/></View>
 
   return <ScrollView style={styles.scroll} contentContainerStyle={styles.page} keyboardShouldPersistTaps="handled">
-    <Pressable onPress={()=>router.back()}><Text style={styles.back}>‹ Back</Text></Pressable>
-    <Text style={styles.eyebrow}>PRIVACY & STEALTH</Text>
-    <Text style={styles.title}>Who can see you?</Text>
-    <Text style={styles.intro}>Keep your profile open to opportunities while hiding it from specific employers, including your current workplace.</Text>
+    <Pressable onPress={()=>router.back()} style={styles.backButton}><Text style={styles.back}>‹ Back</Text></Pressable>
+    <Text style={styles.eyebrow}>PRIVACY · STEALTH MODE</Text>
+    <Text style={styles.title}>Control who can discover you.</Text>
+    <Text style={styles.intro}>Stay open to new opportunities while hiding your profile from selected employers, including your current workplace.</Text>
 
-    <View style={styles.visibilityCard}>
-      <View style={{flex:1,paddingRight:12}}><Text style={styles.cardTitle}>Visible to eligible employers</Text><Text style={styles.cardCopy}>{profileVisible?'Your profile can appear in employer search and matching, except to businesses you block below.':'Your profile is hidden from every employer until you turn visibility back on.'}</Text></View>
+    <View style={[styles.visibilityCard,!profileVisible&&styles.visibilityCardHidden]}>
+      <View style={{flex:1,paddingRight:12}}>
+        <Text style={[styles.visibilityEyebrow,!profileVisible&&styles.visibilityEyebrowHidden]}>{profileVisible?'PROFILE DISCOVERY ON':'PROFILE HIDDEN'}</Text>
+        <Text style={[styles.visibilityTitle,!profileVisible&&styles.visibilityTitleHidden]}>{profileVisible?'Visible to eligible employers':'Hidden from all employer discovery'}</Text>
+        <Text style={[styles.visibilityCopy,!profileVisible&&styles.visibilityCopyHidden]}>{profileVisible?'Your profile can appear in employer search and matching, except to businesses you block below.':'Your profile will not appear in employer search or matching until visibility is turned back on.'}</Text>
+      </View>
       <Pressable onPress={()=>setVisibility(!profileVisible)} style={[styles.visibilityButton,profileVisible&&styles.visibilityButtonOn]}><Text style={[styles.visibilityText,profileVisible&&styles.visibilityTextOn]}>{profileVisible?'ON':'OFF'}</Text></Pressable>
     </View>
 
-    <View style={styles.summary}><Text style={styles.summaryNumber}>{blocked.size}</Text><View style={{flex:1}}><Text style={styles.summaryTitle}>Blocked employer{blocked.size===1?'':'s'}</Text><Text style={styles.summaryCopy}>These businesses cannot discover you in search, matching, Agency or shortlists.</Text></View></View>
+    <View style={styles.summaryCard}>
+      <View style={styles.summaryNumberWrap}><Text style={styles.summaryNumber}>{blocked.size}</Text></View>
+      <View style={{flex:1}}><Text style={styles.summaryEyebrow}>BLOCKED EMPLOYERS</Text><Text style={styles.summaryTitle}>{blocked.size===0?'No employers are blocked':`${blocked.size} employer${blocked.size===1?'':'s'} cannot discover you`}</Text><Text style={styles.summaryCopy}>Blocked businesses are excluded from search, matching, Agency and shortlists.</Text></View>
+    </View>
 
-    <Text style={styles.sectionLabel}>WHO SHOULD NOT SEE YOU?</Text>
-    <TextInput value={search} onChangeText={setSearch} placeholder="Search employer, hotel, spa or location" placeholderTextColor="#98a3aa" style={styles.search}/>
-    <Text style={styles.helper}>Tap the box beside any employer you want to hide from. A selected employer is blocked immediately.</Text>
+    <View style={styles.sectionHeader}><Text style={styles.sectionEyebrow}>SELECTIVE PRIVACY</Text><Text style={styles.sectionTitle}>Who should not see you?</Text><Text style={styles.sectionCopy}>Search for a hotel, spa, company or location and block only the employers you want hidden from.</Text></View>
+
+    <View style={styles.searchWrap}><TextInput value={search} onChangeText={setSearch} placeholder="Search employer, hotel, spa or location" placeholderTextColor={palette.quiet} style={styles.search}/></View>
+    <Text style={styles.helper}>Tap an employer to block or unblock them. Changes are applied immediately.</Text>
 
     <View style={styles.list}>
       {filtered.map(employer=>{
@@ -93,15 +102,74 @@ export default function PrivacyStealthScreen(){
         return <Pressable key={employer.id} onPress={()=>toggleEmployer(employer)} disabled={busy===employer.id} style={[styles.row,isBlocked&&styles.rowBlocked]}>
           <View style={[styles.check,isBlocked&&styles.checkBlocked]}><Text style={[styles.checkText,isBlocked&&styles.checkTextBlocked]}>{isBlocked?'✓':''}</Text></View>
           <View style={{flex:1}}><Text style={styles.employerName}>{name}</Text>{employer.company_name&&employer.property_name&&employer.company_name!==employer.property_name?<Text style={styles.company}>{employer.company_name}</Text>:null}{employer.location?<Text style={styles.location}>{employer.location}</Text>:null}</View>
-          <Text style={[styles.state,isBlocked&&styles.stateBlocked]}>{busy===employer.id?'Saving…':isBlocked?'BLOCKED':'Can see you'}</Text>
+          <View style={[styles.statePill,isBlocked&&styles.statePillBlocked]}><Text style={[styles.state,isBlocked&&styles.stateBlocked]}>{busy===employer.id?'SAVING':isBlocked?'BLOCKED':'VISIBLE'}</Text></View>
         </Pressable>
       })}
     </View>
 
-    {filtered.length===0?<View style={styles.empty}><Text style={styles.emptyTitle}>No employers found.</Text><Text style={styles.emptyCopy}>Try a different property, company or location name.</Text></View>:null}
-    {message?<Text style={styles.message}>{message}</Text>:null}
-    <View style={styles.note}><Text style={styles.noteTitle}>Important</Text><Text style={styles.noteCopy}>Blocking an employer stops future discovery. It does not erase an application or conversation you already chose to send. Wellness House administrators retain access for safety, fraud prevention and support.</Text></View>
+    {filtered.length===0?<View style={styles.empty}><Text style={styles.emptyEyebrow}>NO MATCHES</Text><Text style={styles.emptyTitle}>No employers found.</Text><Text style={styles.emptyCopy}>Try a different property, company or location name.</Text></View>:null}
+    {message?<View style={styles.messageCard}><Text style={styles.message}>{message}</Text></View>:null}
+
+    <View style={styles.note}><Text style={styles.noteEyebrow}>PRIVACY PRINCIPLE</Text><Text style={styles.noteTitle}>You stay in control of discovery.</Text><Text style={styles.noteCopy}>Blocking an employer stops future discovery. It does not erase an application or conversation you already chose to send. Wellness House administrators retain access where needed for safety, fraud prevention and support.</Text></View>
   </ScrollView>
 }
 
-const styles=StyleSheet.create({scroll:{flex:1,backgroundColor:'#fff'},page:{paddingHorizontal:20,paddingTop:54,paddingBottom:110},center:{flex:1,alignItems:'center',justifyContent:'center',backgroundColor:'#fff'},back:{fontSize:14,color:'#66747c',marginBottom:28},eyebrow:{fontSize:9,letterSpacing:2.1,color:'#71808a',marginBottom:9},title:{fontSize:30,lineHeight:36,color:'#092b45',fontWeight:'500'},intro:{fontSize:13,lineHeight:20,color:'#66747c',marginTop:9,marginBottom:22},visibilityCard:{flexDirection:'row',alignItems:'center',borderWidth:1,borderColor:'#dce3e7',padding:16,backgroundColor:'#f9fbfb'},cardTitle:{fontSize:14,fontWeight:'700',color:'#173246'},cardCopy:{fontSize:11,lineHeight:17,color:'#71808a',marginTop:4},visibilityButton:{minWidth:52,paddingVertical:10,paddingHorizontal:10,borderWidth:1,borderColor:'#d7dfe3',alignItems:'center'},visibilityButtonOn:{backgroundColor:'#092b45',borderColor:'#092b45'},visibilityText:{fontSize:10,fontWeight:'800',color:'#71808a'},visibilityTextOn:{color:'#fff'},summary:{marginTop:14,flexDirection:'row',gap:14,alignItems:'center',borderWidth:1,borderColor:'#e2e6e8',padding:15},summaryNumber:{fontSize:28,color:'#092b45',fontWeight:'600'},summaryTitle:{fontSize:13,fontWeight:'700',color:'#173246'},summaryCopy:{fontSize:10.5,lineHeight:16,color:'#71808a',marginTop:2},sectionLabel:{fontSize:9,letterSpacing:1.8,color:'#71808a',marginTop:28,marginBottom:9},search:{borderWidth:1,borderColor:'#d7dfe3',paddingHorizontal:14,paddingVertical:13,color:'#173246',fontSize:14},helper:{fontSize:10.5,lineHeight:16,color:'#7a878e',marginTop:8,marginBottom:12},list:{gap:8},row:{flexDirection:'row',alignItems:'center',gap:12,borderWidth:1,borderColor:'#e0e5e8',padding:13,backgroundColor:'#fff'},rowBlocked:{borderColor:'#9eb0bb',backgroundColor:'#f3f7f8'},check:{width:24,height:24,borderWidth:1.5,borderColor:'#aeb8be',alignItems:'center',justifyContent:'center'},checkBlocked:{backgroundColor:'#092b45',borderColor:'#092b45'},checkText:{fontSize:14,color:'#fff',fontWeight:'800'},checkTextBlocked:{color:'#fff'},employerName:{fontSize:13,fontWeight:'700',color:'#173246'},company:{fontSize:10.5,color:'#71808a',marginTop:2},location:{fontSize:10,color:'#89949a',marginTop:2},state:{fontSize:8.5,letterSpacing:.6,color:'#839097'},stateBlocked:{color:'#092b45',fontWeight:'800'},empty:{borderWidth:1,borderColor:'#e0e5e8',padding:18,marginTop:8},emptyTitle:{fontSize:13,fontWeight:'700',color:'#173246'},emptyCopy:{fontSize:11,color:'#71808a',marginTop:4},message:{fontSize:11,lineHeight:17,color:'#526976',marginTop:14},note:{backgroundColor:'#f4f7f8',padding:15,marginTop:22},noteTitle:{fontSize:11,fontWeight:'700',color:'#173246'},noteCopy:{fontSize:10.5,lineHeight:17,color:'#71808a',marginTop:4}})
+const styles=StyleSheet.create({
+  scroll:{flex:1,backgroundColor:palette.stone},
+  page:{paddingHorizontal:space.page,paddingTop:18,paddingBottom:118},
+  center:{flex:1,alignItems:'center',justifyContent:'center',backgroundColor:palette.stone},
+  backButton:{alignSelf:'flex-start',paddingVertical:6,marginBottom:22},
+  back:{fontSize:13,color:palette.muted,fontFamily:type.sans},
+  eyebrow:{fontSize:8,letterSpacing:2.1,color:palette.quiet,marginBottom:9,fontWeight:'700',fontFamily:type.sans},
+  title:{fontSize:34,lineHeight:40,color:palette.inkStrong,fontWeight:'400',fontFamily:type.serif,maxWidth:360},
+  intro:{fontSize:13,lineHeight:20,color:palette.muted,marginTop:10,marginBottom:22,fontFamily:type.sans},
+  visibilityCard:{flexDirection:'row',alignItems:'center',backgroundColor:palette.inkStrong,padding:18,borderRadius:radius.large},
+  visibilityCardHidden:{backgroundColor:palette.paper,borderWidth:1,borderColor:palette.line},
+  visibilityEyebrow:{color:'#CBD5D9',fontSize:7.5,letterSpacing:1.3,fontWeight:'700',fontFamily:type.sans},
+  visibilityEyebrowHidden:{color:palette.quiet},
+  visibilityTitle:{color:palette.paper,fontSize:19,lineHeight:24,fontWeight:'400',fontFamily:type.serif,marginTop:5},
+  visibilityTitleHidden:{color:palette.inkStrong},
+  visibilityCopy:{color:'#DCE4E7',fontSize:10.5,lineHeight:17,marginTop:5,fontFamily:type.sans},
+  visibilityCopyHidden:{color:palette.muted},
+  visibilityButton:{minWidth:54,paddingVertical:10,paddingHorizontal:10,borderWidth:1,borderColor:palette.lineStrong,alignItems:'center',borderRadius:999,backgroundColor:palette.stoneDeep},
+  visibilityButtonOn:{backgroundColor:palette.paper,borderColor:palette.paper},
+  visibilityText:{fontSize:9,fontWeight:'800',color:palette.quiet,fontFamily:type.sans},
+  visibilityTextOn:{color:palette.inkStrong},
+  summaryCard:{marginTop:10,flexDirection:'row',gap:13,alignItems:'center',backgroundColor:palette.paper,borderWidth:1,borderColor:palette.line,padding:15,borderRadius:radius.large},
+  summaryNumberWrap:{width:52,height:52,borderRadius:26,backgroundColor:palette.stoneDeep,alignItems:'center',justifyContent:'center'},
+  summaryNumber:{fontSize:22,color:palette.inkStrong,fontWeight:'400',fontFamily:type.serif},
+  summaryEyebrow:{color:palette.quiet,fontSize:7.5,letterSpacing:1.1,fontWeight:'700',fontFamily:type.sans},
+  summaryTitle:{fontSize:12.5,fontWeight:'700',color:palette.inkStrong,marginTop:3,fontFamily:type.sans},
+  summaryCopy:{fontSize:9.5,lineHeight:15,color:palette.muted,marginTop:3,fontFamily:type.sans},
+  sectionHeader:{marginTop:28,marginBottom:10},
+  sectionEyebrow:{fontSize:7.5,letterSpacing:1.4,color:palette.quiet,fontWeight:'700',fontFamily:type.sans},
+  sectionTitle:{fontSize:21,lineHeight:26,color:palette.inkStrong,fontWeight:'400',fontFamily:type.serif,marginTop:4},
+  sectionCopy:{fontSize:10.5,lineHeight:17,color:palette.muted,marginTop:5,fontFamily:type.sans},
+  searchWrap:{backgroundColor:palette.paper,borderWidth:1,borderColor:palette.line,borderRadius:radius.large,padding:6},
+  search:{borderWidth:1,borderColor:palette.lineStrong,paddingHorizontal:12,paddingVertical:12,color:palette.text,fontSize:11.5,backgroundColor:palette.stone,borderRadius:radius.medium,fontFamily:type.sans},
+  helper:{fontSize:8.5,lineHeight:13,color:palette.quiet,marginTop:7,marginBottom:12,fontFamily:type.sans},
+  list:{gap:8},
+  row:{flexDirection:'row',alignItems:'center',gap:12,borderWidth:1,borderColor:palette.line,padding:13,backgroundColor:palette.paper,borderRadius:radius.medium},
+  rowBlocked:{borderColor:palette.lineStrong,backgroundColor:palette.stoneDeep},
+  check:{width:24,height:24,borderWidth:1.5,borderColor:palette.lineStrong,alignItems:'center',justifyContent:'center',borderRadius:6,backgroundColor:palette.paper},
+  checkBlocked:{backgroundColor:palette.ink,borderColor:palette.ink},
+  checkText:{fontSize:13,color:palette.paper,fontWeight:'800',fontFamily:type.sans},
+  checkTextBlocked:{color:palette.paper},
+  employerName:{fontSize:12.5,fontWeight:'700',color:palette.inkStrong,fontFamily:type.sans},
+  company:{fontSize:9.5,color:palette.muted,marginTop:2,fontFamily:type.sans},
+  location:{fontSize:9,color:palette.quiet,marginTop:2,fontFamily:type.sans},
+  statePill:{backgroundColor:palette.stoneDeep,paddingHorizontal:7,paddingVertical:5,borderRadius:999},
+  statePillBlocked:{backgroundColor:palette.ink},
+  state:{fontSize:7,letterSpacing:.6,color:palette.quiet,fontWeight:'800',fontFamily:type.sans},
+  stateBlocked:{color:palette.paper},
+  empty:{borderWidth:1,borderColor:palette.line,padding:17,marginTop:8,borderRadius:radius.large,backgroundColor:palette.paper},
+  emptyEyebrow:{fontSize:7.5,letterSpacing:1.2,color:palette.quiet,fontWeight:'700',fontFamily:type.sans},
+  emptyTitle:{fontSize:16,lineHeight:21,fontWeight:'400',color:palette.inkStrong,fontFamily:type.serif,marginTop:4},
+  emptyCopy:{fontSize:10,color:palette.muted,marginTop:4,fontFamily:type.sans},
+  messageCard:{backgroundColor:palette.stoneDeep,padding:13,borderRadius:radius.medium,marginTop:12},
+  message:{fontSize:10,lineHeight:16,color:palette.muted,fontFamily:type.sans},
+  note:{backgroundColor:palette.ink,padding:16,marginTop:22,borderRadius:radius.large},
+  noteEyebrow:{fontSize:7.5,letterSpacing:1.2,color:'#CBD5D9',fontWeight:'700',fontFamily:type.sans},
+  noteTitle:{fontSize:17,lineHeight:22,fontWeight:'400',color:palette.paper,fontFamily:type.serif,marginTop:5},
+  noteCopy:{fontSize:10,lineHeight:16,color:'#DCE4E7',marginTop:5,fontFamily:type.sans}
+})
