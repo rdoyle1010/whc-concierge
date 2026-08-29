@@ -39,19 +39,23 @@ export default function IndexScreen() {
           <Pressable onPress={() => router.push('/home')} style={styles.primary}>
             <Text style={styles.primaryText}>Continue to your account</Text>
           </Pressable>
-        ) : (
-          <Pressable onPress={() => router.push('/login')} style={styles.primary}>
-            <Text style={styles.primaryText}>Sign in</Text>
+        ) : <>
+          <Pressable onPress={() => router.push('/signup')} style={styles.primary}>
+            <Text style={styles.primaryText}>Create Talent account</Text>
           </Pressable>
-        )}
+          <Pressable onPress={() => router.push('/login')} style={styles.secondaryTop}>
+            <Text style={styles.secondaryTopText}>Already registered? Sign in</Text>
+          </Pressable>
+        </>}
 
         <Text style={styles.sectionEyebrow}>CHOOSE YOUR SPACE</Text>
         <View style={styles.roleGrid}>
-          <Pressable onPress={() => router.push({ pathname: '/login', params: { role: 'talent' } })} style={styles.roleCard}>
+          <View style={styles.roleCard}>
             <View style={styles.roleTop}><Text style={styles.roleEyebrow}>TALENT</Text><Text style={styles.arrow}>→</Text></View>
             <Text style={styles.roleTitle}>Find the right next move.</Text>
             <Text style={styles.roleCopy}>Permanent jobs, Agency shifts, Residency, Interview Ready, Academy and one professional profile.</Text>
-          </Pressable>
+            {!hasSession?<View style={styles.roleActions}><Pressable onPress={() => router.push('/signup')} style={styles.rolePrimary}><Text style={styles.rolePrimaryText}>Create account</Text></Pressable><Pressable onPress={() => router.push({ pathname: '/login', params: { role: 'talent' } })} style={styles.roleSecondary}><Text style={styles.roleSecondaryText}>Sign in</Text></Pressable></View>:null}
+          </View>
           <Pressable onPress={() => router.push({ pathname: '/login', params: { role: 'employer' } })} style={styles.roleCard}>
             <View style={styles.roleTop}><Text style={styles.roleEyebrow}>EMPLOYERS</Text><Text style={styles.arrow}>→</Text></View>
             <Text style={styles.roleTitle}>Build stronger spa teams.</Text>
@@ -70,31 +74,5 @@ export default function IndexScreen() {
 }
 
 const styles = StyleSheet.create({
-  scroll:{flex:1,backgroundColor:palette.paper},
-  page:{paddingBottom:34},
-  heroImage:{minHeight:500,justifyContent:'flex-end'},
-  heroImageInner:{resizeMode:'cover'},
-  overlay:{position:'absolute',top:0,right:0,bottom:0,left:0,backgroundColor:'rgba(8,32,49,.50)'},
-  heroContent:{minHeight:500,paddingHorizontal:space.page,paddingTop:26,paddingBottom:30,justifyContent:'space-between'},
-  wordmark:{color:palette.paper,fontSize:20,letterSpacing:2.1,fontWeight:'700',fontFamily:type.sans},
-  sub:{color:'#E7EDF0',marginTop:4,fontSize:7.5,letterSpacing:2.3,fontFamily:type.sans},
-  heroCopy:{marginTop:'auto',maxWidth:350},
-  eyebrowLight:{color:'#E3EAED',fontSize:8,letterSpacing:1.8,marginBottom:10,fontWeight:'700',fontFamily:type.sans},
-  titleLight:{color:palette.paper,fontSize:36,lineHeight:41,fontWeight:'400',fontFamily:type.serif},
-  introLight:{color:'#EDF2F4',fontSize:13.5,lineHeight:20,marginTop:13,maxWidth:340,fontFamily:type.sans},
-  content:{paddingHorizontal:space.page,paddingTop:22},
-  primary:{backgroundColor:palette.ink,paddingVertical:15,alignItems:'center',marginBottom:28,borderRadius:radius.medium},
-  primaryText:{color:palette.paper,fontSize:11,fontWeight:'700',fontFamily:type.sans},
-  sectionEyebrow:{color:palette.quiet,fontSize:8,letterSpacing:1.9,marginBottom:10,fontWeight:'700',fontFamily:type.sans},
-  roleGrid:{gap:10},
-  roleCard:{borderWidth:1,borderColor:palette.line,padding:18,backgroundColor:palette.paper,borderRadius:radius.large},
-  roleTop:{flexDirection:'row',justifyContent:'space-between',alignItems:'center'},
-  roleEyebrow:{color:palette.quiet,fontSize:8,letterSpacing:1.7,fontWeight:'700',fontFamily:type.sans},
-  arrow:{color:palette.ink,fontSize:16},
-  roleTitle:{color:palette.inkStrong,fontSize:21,lineHeight:26,fontWeight:'400',fontFamily:type.serif,marginTop:7},
-  roleCopy:{color:palette.muted,fontSize:11.5,lineHeight:18,marginTop:6,fontFamily:type.sans},
-  footerNote:{backgroundColor:palette.stone,padding:17,marginTop:20,borderRadius:radius.large},
-  footerEyebrow:{color:palette.quiet,fontSize:7.5,letterSpacing:1.4,fontWeight:'700',fontFamily:type.sans},
-  footerTitle:{color:palette.inkStrong,fontSize:16,fontWeight:'400',fontFamily:type.serif,marginTop:5},
-  footerCopy:{color:palette.muted,fontSize:10.5,lineHeight:17,marginTop:5,fontFamily:type.sans},
+  scroll:{flex:1,backgroundColor:palette.paper},page:{paddingBottom:34},heroImage:{minHeight:500,justifyContent:'flex-end'},heroImageInner:{resizeMode:'cover'},overlay:{position:'absolute',top:0,right:0,bottom:0,left:0,backgroundColor:'rgba(8,32,49,.50)'},heroContent:{minHeight:500,paddingHorizontal:space.page,paddingTop:26,paddingBottom:30,justifyContent:'space-between'},wordmark:{color:palette.paper,fontSize:20,letterSpacing:2.1,fontWeight:'700',fontFamily:type.sans},sub:{color:'#E7EDF0',marginTop:4,fontSize:7.5,letterSpacing:2.3,fontFamily:type.sans},heroCopy:{marginTop:'auto',maxWidth:350},eyebrowLight:{color:'#E3EAED',fontSize:8,letterSpacing:1.8,marginBottom:10,fontWeight:'700',fontFamily:type.sans},titleLight:{color:palette.paper,fontSize:36,lineHeight:41,fontWeight:'400',fontFamily:type.serif},introLight:{color:'#EDF2F4',fontSize:13.5,lineHeight:20,marginTop:13,maxWidth:340,fontFamily:type.sans},content:{paddingHorizontal:space.page,paddingTop:22},primary:{backgroundColor:palette.ink,paddingVertical:15,alignItems:'center',borderRadius:radius.medium},primaryText:{color:palette.paper,fontSize:11,fontWeight:'700',fontFamily:type.sans},secondaryTop:{paddingVertical:13,alignItems:'center',marginBottom:19},secondaryTopText:{color:palette.ink,fontSize:10.5,fontWeight:'700'},sectionEyebrow:{color:palette.quiet,fontSize:8,letterSpacing:1.9,marginBottom:10,fontWeight:'700',fontFamily:type.sans},roleGrid:{gap:10},roleCard:{borderWidth:1,borderColor:palette.line,padding:18,backgroundColor:palette.paper,borderRadius:radius.large},roleTop:{flexDirection:'row',justifyContent:'space-between',alignItems:'center'},roleEyebrow:{color:palette.quiet,fontSize:8,letterSpacing:1.7,fontWeight:'700',fontFamily:type.sans},arrow:{color:palette.ink,fontSize:16},roleTitle:{color:palette.inkStrong,fontSize:21,lineHeight:26,fontWeight:'400',fontFamily:type.serif,marginTop:7},roleCopy:{color:palette.muted,fontSize:11.5,lineHeight:18,marginTop:6,fontFamily:type.sans},roleActions:{flexDirection:'row',gap:8,marginTop:15},rolePrimary:{flex:1,backgroundColor:palette.inkStrong,paddingVertical:11,alignItems:'center',borderRadius:radius.small},rolePrimaryText:{color:palette.paper,fontSize:9.5,fontWeight:'700'},roleSecondary:{flex:1,borderWidth:1,borderColor:palette.lineStrong,paddingVertical:10,alignItems:'center',borderRadius:radius.small},roleSecondaryText:{color:palette.ink,fontSize:9.5,fontWeight:'700'},footerNote:{backgroundColor:palette.stone,padding:17,marginTop:20,borderRadius:radius.large},footerEyebrow:{color:palette.quiet,fontSize:7.5,letterSpacing:1.4,fontWeight:'700',fontFamily:type.sans},footerTitle:{color:palette.inkStrong,fontSize:16,fontWeight:'400',fontFamily:type.serif,marginTop:5},footerCopy:{color:palette.muted,fontSize:10.5,lineHeight:17,marginTop:5,fontFamily:type.sans},
 })
