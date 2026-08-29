@@ -52,7 +52,7 @@ export async function GET(req: NextRequest) {
   ])
   const liveJobs = jobs || []
   const selectedJob = requestedJobId ? liveJobs.find((job: any) => job.id === requestedJobId) : liveJobs[0]
-  if (!selectedJob) return NextResponse.json({ jobs: liveJobs, candidates: [], interested_candidates: [], selected_job_id: null, eligible_count: 0 })
+  if (!selectedJob) return NextResponse.json({ jobs: liveJobs, candidates: [], interested_candidates: [], selected_job_id: null, eligible_count: 0, reviewed_count: 0 })
 
   const [{ data: rows, error }, { data: swipes }, { data: applications }] = await Promise.all([
     admin.from('candidate_profiles').select(CANDIDATE_FIELDS).eq('approval_status', 'approved').or('profile_visible.eq.true,profile_visible.is.null').order('is_featured', { ascending: false }).limit(100),
@@ -187,8 +187,29 @@ export async function DELETE(req: NextRequest) {
   const user = await getRequestUser(req)
   if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
   const jobId = String(req.nextUrl.searchParams.get('jobId') || '')
+  const candidateId = String(req.nextUrl.searchParams.get('candidateId') || '')
   if (!jobId) return NextResponse.json({ error: 'Choose a role first.' }, { status: 400 })
+
   const admin = createAdminClient()
+  const employer = await getEmployer(admin, user.id)
+  if (!employer) return NextResponse.json({ error: 'Employer profile not found.' }, { status: 404 })
+  const { data: job } = await admin.from('job_listings').select('id').eq('id', jobId).eq('employer_id', employer.id).maybeSingle()
+  if (!job) return NextResponse.json({ error: 'This role does not belong to your account.' }, { status: 403 })
+
+  if (candidateId) {
+    const { data: application } = await admin.from('applications').select('id,status')
+      .eq('candidate_id', candidateId).or(`job_id.eq.${jobId},role_id.eq.${jobId}`).order('created_at', { ascending: false }).limit(1).maybeSingle()
+    if (application && !['draft','withdrawn','rejected'].includes(String(application.status || '').toLowerCase())) {
+      return NextResponse.json({ error: 'This person is already in an active recruitment journey. Manage them from Applications.' }, { status: 409 })
+    }
+    const { error } = await admin.from('swipes').delete()
+      .eq('swiper_id', user.id).eq('swiper_type', 'employer')
+      .eq('target_type', 'candidate').eq('target_id', candidateId)
+      .eq('context_job_id', jobId).eq('action', 'right')
+    if (error) return NextResponse.json({ error: 'Could not withdraw this interest.' }, { status: 500 })
+    return NextResponse.json({ success: true, withdrawn: true })
+  }
+
   const { error } = await admin.from('swipes').delete()
     .eq('swiper_id', user.id).eq('swiper_type', 'employer').eq('target_type', 'candidate').eq('context_job_id', jobId).eq('action', 'left')
   if (error) return NextResponse.json({ error: 'Could not restore passed professionals.' }, { status: 500 })
