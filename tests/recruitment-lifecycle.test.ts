@@ -6,11 +6,11 @@ function read(path: string) {
   return readFileSync(path, 'utf8')
 }
 
-test('interview pipeline supports up to three rounds and candidate confirmation', () => {
+test('interview pipeline supports up to two rounds and candidate confirmation', () => {
   const employer = read('src/app/api/employer/applications/interview/route.ts')
   const talent = read('src/app/api/talent/applications/interview/route.ts')
   assert.match(employer, /roundNumber/)
-  assert.match(employer, /roundNumber\s*>\s*3/)
+  assert.match(employer, /roundNumber\s*>\s*2/)
   assert.match(employer, /application_interviews/)
   assert.match(talent, /application_interviews/)
   assert.match(talent, /selected_slot/)
