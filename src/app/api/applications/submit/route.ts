@@ -4,6 +4,7 @@ import { getRequestUser } from '@/lib/request-user'
 import { createNotification } from '@/lib/notifications'
 import { applicantConfirmationHtml, employerNotificationHtml } from '@/lib/application-email-templates'
 import { sendNewMatchEmail } from '@/lib/emails'
+import { calculateMatchScore } from '@/lib/matching'
 
 const RESEND_API_KEY = process.env.RESEND_API_KEY
 const FROM_EMAIL = 'WHC Concierge <noreply@mail.wellnesshousecollective.co.uk>'
@@ -11,8 +12,7 @@ const FROM_EMAIL = 'WHC Concierge <noreply@mail.wellnesshousecollective.co.uk>'
 async function sendEmail(to: string, subject: string, html: string) {
   if (!RESEND_API_KEY) return
   const res = await fetch('https://api.resend.com/emails', {
-    method: 'POST',
-    headers: { Authorization: `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' },
+    method: 'POST', headers: { Authorization: `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({ from: FROM_EMAIL, to, subject, html }),
   })
   if (!res.ok) console.error(`[Email FAILED ${res.status}] ${subject}`)
@@ -24,117 +24,68 @@ export async function POST(req: NextRequest) {
 
   const { applicationId, coverLetter } = await req.json()
   if (!applicationId) return NextResponse.json({ error: 'Application is required' }, { status: 400 })
-
   const letter = String(coverLetter || '').trim()
   if (letter.length > 5000) return NextResponse.json({ error: 'Covering letter must be 5,000 characters or fewer.' }, { status: 400 })
 
   const admin = createAdminClient()
   const { data: candidate } = await admin.from('candidate_profiles').select('*').eq('user_id', user.id).maybeSingle()
   if (!candidate) return NextResponse.json({ error: 'Candidate profile not found' }, { status: 404 })
+  if (candidate.approval_status !== 'approved' || candidate.profile_visible === false) {
+    return NextResponse.json({ error: 'Your Talent profile must be approved and active before submitting an application.' }, { status: 403 })
+  }
 
   const { data: application } = await admin.from('applications')
-    .select('id,candidate_id,role_id,status,match_score')
-    .eq('id', applicationId)
-    .maybeSingle()
-
+    .select('id,candidate_id,role_id,status,match_score').eq('id', applicationId).maybeSingle()
   if (!application || application.candidate_id !== candidate.id) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   if (application.status !== 'draft') return NextResponse.json({ error: 'This application has already been sent.' }, { status: 409 })
 
   const { data: job } = await admin.from('job_listings').select('*').eq('id', application.role_id).maybeSingle()
-  if (!job || !job.is_live || (job.expires_at && new Date(job.expires_at).getTime() <= Date.now())) {
-    return NextResponse.json({ error: 'This role is no longer available.' }, { status: 409 })
-  }
-
+  if (!job || !job.is_live || (job.expires_at && new Date(job.expires_at).getTime() <= Date.now())) return NextResponse.json({ error: 'This role is no longer available.' }, { status: 409 })
   const { data: employer } = await admin.from('employer_profiles').select('*').eq('id', job.employer_id).maybeSingle()
   if (!employer) return NextResponse.json({ error: 'Employer profile not found.' }, { status: 404 })
 
+  const liveMatch = calculateMatchScore(candidate, job)
+  const liveScore = liveMatch.hardStop ? Number(application.match_score || 0) : Number(liveMatch.score || 0)
   const now = new Date().toISOString()
   const { data: updatedApplication, error: updateError } = await admin.from('applications').update({
-    status: 'pending',
-    cover_letter: letter,
-    cover_note: letter || null,
-    submitted_at: now,
-    updated_at: now,
+    status: 'pending', match_score: liveScore, cover_letter: letter, cover_note: letter || null, submitted_at: now, updated_at: now,
   }).eq('id', application.id).eq('status', 'draft').select('id,status,submitted_at,updated_at').maybeSingle()
-
   if (updateError || !updatedApplication) return NextResponse.json({ error: 'Could not send your application.' }, { status: 500 })
 
   let swipeSynced = true
   const { error: swipeError } = await admin.from('swipes').upsert({
-    swiper_id: user.id,
-    swiper_type: 'candidate',
-    target_id: job.id,
-    target_type: 'job',
-    action: 'right',
-    context_job_id: job.id,
-  }, {
-    onConflict: 'swiper_id,swiper_type,target_id,target_type,context_job_id',
-    ignoreDuplicates: false,
-  })
-  if (swipeError) {
-    swipeSynced = false
-    console.error('Could not record submitted application as candidate interest:', swipeError.message)
-  }
+    swiper_id: user.id, swiper_type: 'candidate', target_id: job.id, target_type: 'job', action: 'right', context_job_id: job.id,
+  }, { onConflict: 'swiper_id,swiper_type,target_id,target_type,context_job_id', ignoreDuplicates: false })
+  if (swipeError) { swipeSynced = false; console.error('Could not record submitted application as candidate interest:', swipeError.message) }
 
   const employerName = employer.property_name || employer.company_name || 'the employer'
   if (employer.user_id) {
-    try {
-      await createNotification(employer.user_id, 'job_application', 'New application received', `${candidate.full_name || 'A candidate'} applied for ${job.job_title}.`, '/employer/applications')
-    } catch (notificationError: any) {
-      console.error('Employer application notification failed:', notificationError?.message || notificationError)
-    }
+    await createNotification(employer.user_id, 'job_application', 'New application received', `${candidate.full_name || 'A candidate'} applied for ${job.job_title}.`, '/employer/applications').catch(()=>null)
   }
 
   let mutualMatch = false
   let matchId: string | null = null
   if (swipeSynced && employer.user_id) {
     const { data: employerYes } = await admin.from('swipes').select('id')
-      .eq('swiper_id', employer.user_id)
-      .eq('swiper_type', 'employer')
-      .eq('target_id', candidate.id)
-      .eq('target_type', 'candidate')
-      .eq('action', 'right')
-      .eq('context_job_id', job.id)
-      .maybeSingle()
+      .eq('swiper_id', employer.user_id).eq('swiper_type', 'employer').eq('target_id', candidate.id).eq('target_type', 'candidate')
+      .eq('action', 'right').eq('context_job_id', job.id).maybeSingle()
 
     if (employerYes) {
       mutualMatch = true
-      const { data: existingMatch } = await admin.from('matches').select('id')
-        .eq('candidate_id', candidate.id)
-        .eq('employer_id', employer.id)
-        .eq('job_listing_id', job.id)
-        .maybeSingle()
-
-      if (existingMatch) {
-        matchId = existingMatch.id
-      } else {
+      const { data: existingMatch } = await admin.from('matches').select('id').eq('candidate_id', candidate.id).eq('employer_id', employer.id).eq('job_listing_id', job.id).maybeSingle()
+      if (existingMatch) matchId = existingMatch.id
+      else {
         const { data: createdMatch, error: matchError } = await admin.from('matches').insert({
-          candidate_id: candidate.id,
-          employer_id: employer.id,
-          job_listing_id: job.id,
-          match_score: Number(application.match_score || 0),
-          candidate_swiped_at: now,
-          employer_swiped_at: now,
-          matched_at: now,
-          status: 'active',
-          messaging_unlocked: true,
+          candidate_id: candidate.id, employer_id: employer.id, job_listing_id: job.id, match_score: liveScore,
+          candidate_swiped_at: now, employer_swiped_at: now, matched_at: now, status: 'active', messaging_unlocked: true,
         }).select('id').single()
-        if (matchError) {
-          mutualMatch = false
-          console.error('Could not create mutual match after application submit:', matchError.message)
-        } else {
+        if (matchError) { mutualMatch = false; console.error('Could not create mutual match after application submit:', matchError.message) }
+        else {
           matchId = createdMatch.id
           await Promise.allSettled([
-            admin.from('messages').insert({
-              sender_id: employer.user_id,
-              recipient_id: user.id,
-              content: `It's a match! You both said yes to ${job.job_title} at ${employerName}. Say hello and take it from here.`,
-              read: false,
-            }),
-            createNotification(user.id, 'new_match', "It's a match!", `${employerName} wants to talk about ${job.job_title}.`, '/talent/messages'),
-            createNotification(employer.user_id, 'new_match', "It's a match!", `${candidate.full_name || 'A candidate'} is interested in ${job.job_title}.`, '/employer/messages'),
+            createNotification(user.id, 'new_match', "It's a match!", `${employerName} is interested in your application for ${job.job_title}. Track the recruitment process in Applications.`, '/talent/applications'),
+            createNotification(employer.user_id, 'new_match', "It's a match!", `${candidate.full_name || 'A candidate'} is interested in ${job.job_title}. Review the application before deciding the next step.`, '/employer/applications'),
           ])
-
           let employerEmail = employer.contact_email || null
           if (!employerEmail) {
             const { data: employerAuth } = await admin.auth.admin.getUserById(employer.user_id)
@@ -161,16 +112,6 @@ export async function POST(req: NextRequest) {
     await Promise.allSettled(jobs)
   } catch (e: any) { console.error('Application email failed:', e?.message) }
 
-  return NextResponse.json({
-    success: true,
-    application: updatedApplication,
-    swipeSynced,
-    mutualMatch,
-    matchId,
-    progress: {
-      current: 'submitted',
-      next: 'under_review',
-      message: mutualMatch ? 'Application submitted. You and the property are a mutual match.' : 'Application submitted. The property can now review it.',
-    },
-  })
+  return NextResponse.json({ success: true, application: updatedApplication, swipeSynced, mutualMatch, matchId,
+    progress: { current: 'submitted', next: 'under_review', message: mutualMatch ? 'Application submitted. You and the property are a mutual match. The employer can now review your application.' : 'Application submitted. The property can now review it.' } })
 }
