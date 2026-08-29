@@ -164,11 +164,25 @@ export async function POST(req: NextRequest) {
     const candidateId = String(body.candidateId || '')
     const jobId = String(body.jobId || '')
     const action = String(body.action || '')
-    if (!candidateId || !['left','right'].includes(action)) return NextResponse.json({ error: 'Invalid decision' }, { status: 400 })
+    if (!candidateId || !['left','right','save','unsave'].includes(action)) return NextResponse.json({ error: 'Invalid decision' }, { status: 400 })
 
     const admin = createAdminClient()
     const employer = await employerFor(admin, user.id)
     if (!employer || employer.approval_status !== 'approved') return NextResponse.json({ error: 'Approved employer account required' }, { status: 403 })
+
+    if (action === 'save') {
+      const { data: candidate } = await admin.from('candidate_profiles').select('id,approval_status,profile_visible').eq('id', candidateId).maybeSingle()
+      if (!candidate || candidate.approval_status !== 'approved' || candidate.profile_visible === false) return NextResponse.json({ error: 'This profile is not available to your business' }, { status: 403 })
+      const { error } = await admin.from('shortlisted_candidates').insert({ employer_id: employer.id, candidate_id: candidateId, job_id: jobId || null })
+      if (error && error.code !== '23505') return NextResponse.json({ error: 'Could not save this professional.' }, { status: 500 })
+      return NextResponse.json({ success: true, saved: true })
+    }
+
+    if (action === 'unsave') {
+      const { error } = await admin.from('shortlisted_candidates').delete().eq('employer_id', employer.id).eq('candidate_id', candidateId)
+      if (error) return NextResponse.json({ error: 'Could not remove this saved professional.' }, { status: 500 })
+      return NextResponse.json({ success: true, saved: false })
+    }
 
     if (action === 'left') {
       const { error } = await upsertSwipe(admin, {
