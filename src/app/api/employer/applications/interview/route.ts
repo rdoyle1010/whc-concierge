@@ -17,9 +17,7 @@ function methodLabel(method: string) {
 }
 
 function roundLabel(round: number) {
-  if (round === 1) return 'First interview'
-  if (round === 2) return 'Second interview'
-  return 'Final interview'
+  return round === 1 ? 'First interview' : 'Second interview'
 }
 
 async function employerApplication(admin: any, userId: string, applicationId: string) {
@@ -119,10 +117,12 @@ export async function POST(req: NextRequest) {
       ? body.slots.map((value: unknown) => String(value)).filter((value: string) => value.length > 0)
       : []
 
-    if (!Number.isInteger(roundNumber) || roundNumber < 1 || roundNumber > 3) return NextResponse.json({ error: 'Invalid interview round.' }, { status: 400 })
+    if (!Number.isInteger(roundNumber) || roundNumber < 1 || roundNumber > 2) return NextResponse.json({ error: 'Invalid interview round.' }, { status: 400 })
     if (!METHODS.includes(interviewMethod as any)) return NextResponse.json({ error: 'Choose an interview method.' }, { status: 400 })
     if (slots.length < 1 || slots.length > 4) return NextResponse.json({ error: 'Offer between one and four interview times.' }, { status: 400 })
-    if (!['shortlisted', 'interview'].includes(application.status)) return NextResponse.json({ error: 'Shortlist the candidate before inviting them to interview.' }, { status: 409 })
+    if (!['pending', 'reviewed', 'shortlisted', 'interview'].includes(application.status)) {
+      return NextResponse.json({ error: 'This application is not available to move to interview.' }, { status: 409 })
+    }
 
     const parsedSlots = slots.map(slot => new Date(slot))
     if (parsedSlots.some(date => Number.isNaN(date.getTime()) || date.getTime() <= Date.now())) return NextResponse.json({ error: 'All interview times must be in the future.' }, { status: 400 })
