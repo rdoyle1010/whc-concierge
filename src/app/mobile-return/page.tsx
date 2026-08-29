@@ -1,22 +1,29 @@
 'use client'
 
-import { useEffect } from 'react'
-import { useSearchParams } from 'next/navigation'
+import { useEffect, useState } from 'react'
 
 const ALLOWED_TARGETS = new Set(['billing','agency','residency'])
+const DEFAULT_LINK = 'whctalent://billing?status=complete'
 
-export default function MobileReturnPage(){
-  const params=useSearchParams()
-  const target=ALLOWED_TARGETS.has(String(params.get('target')||''))?String(params.get('target')):'billing'
-  const status=String(params.get('status')||'complete').replace(/[^a-z_-]/gi,'')
+function buildDeepLink(search:string){
+  const params=new URLSearchParams(search)
+  const requestedTarget=String(params.get('target')||'')
+  const target=ALLOWED_TARGETS.has(requestedTarget)?requestedTarget:'billing'
+  const status=String(params.get('status')||'complete').replace(/[^a-z_-]/gi,'')||'complete'
   const sessionId=String(params.get('session_id')||'')
   const booking=String(params.get('booking')||'')
-  const deepLink=`whctalent://${target}?status=${encodeURIComponent(status)}${sessionId?`&session_id=${encodeURIComponent(sessionId)}`:''}${booking?`&booking=${encodeURIComponent(booking)}`:''}`
+  return `whctalent://${target}?status=${encodeURIComponent(status)}${sessionId?`&session_id=${encodeURIComponent(sessionId)}`:''}${booking?`&booking=${encodeURIComponent(booking)}`:''}`
+}
+
+export default function MobileReturnPage(){
+  const [deepLink,setDeepLink]=useState(DEFAULT_LINK)
 
   useEffect(()=>{
-    const timer=window.setTimeout(()=>{window.location.href=deepLink},250)
+    const link=buildDeepLink(window.location.search)
+    setDeepLink(link)
+    const timer=window.setTimeout(()=>{window.location.href=link},250)
     return()=>window.clearTimeout(timer)
-  },[deepLink])
+  },[])
 
   return <main style={{minHeight:'100vh',display:'grid',placeItems:'center',background:'#f5f3ee',padding:24,fontFamily:'Arial, sans-serif',color:'#17344d'}}>
     <div style={{maxWidth:480,width:'100%',background:'#fff',border:'1px solid #dedbd3',borderRadius:18,padding:28,textAlign:'center'}}>
