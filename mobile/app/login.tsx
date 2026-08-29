@@ -2,6 +2,7 @@ import { useRef, useState } from 'react'
 import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native'
 import { router, useLocalSearchParams } from 'expo-router'
 import { supabase } from '../src/lib/supabase'
+import { ensureTalentRecords } from '../src/lib/talent-bootstrap'
 import { palette, radius, space, type } from '../src/lib/theme'
 
 type Role = 'talent' | 'employer'
@@ -28,8 +29,35 @@ export default function LoginScreen() {
       return
     }
 
-    const { data: profile } = await supabase.from('profiles').select('role').eq('id', data.user.id).maybeSingle()
-    const actualRole = profile?.role === 'employer' ? 'employer' : profile?.role === 'admin' ? 'admin' : 'talent'
+    let { data: profile, error: profileError } = await supabase.from('profiles').select('role').eq('id', data.user.id).maybeSingle()
+    if (profileError) {
+      await supabase.auth.signOut()
+      setLoading(false)
+      Alert.alert('Account setup', 'We could not load your Wellness House profile. Please try again.')
+      return
+    }
+
+    if (!profile && role === 'talent') {
+      try {
+        await ensureTalentRecords(data.user)
+        const refreshed = await supabase.from('profiles').select('role').eq('id', data.user.id).maybeSingle()
+        profile = refreshed.data
+      } catch (bootstrapError:any) {
+        await supabase.auth.signOut()
+        setLoading(false)
+        Alert.alert('Finish account setup', bootstrapError?.message || 'We could not finish setting up your Talent profile.')
+        return
+      }
+    }
+
+    if (!profile) {
+      await supabase.auth.signOut()
+      setLoading(false)
+      Alert.alert('Account not ready', 'This account is not linked to a Wellness House profile yet. If you are Talent, choose Talent and try again. Employer accounts should contact the property administrator.')
+      return
+    }
+
+    const actualRole = profile.role === 'employer' ? 'employer' : profile.role === 'admin' ? 'admin' : 'talent'
 
     if (actualRole !== 'admin' && actualRole !== role) {
       await supabase.auth.signOut()
@@ -37,6 +65,17 @@ export default function LoginScreen() {
       const correct = actualRole === 'employer' ? 'Employer' : 'Talent'
       Alert.alert('Wrong sign-in area', `This is a ${correct} account. Please use the ${correct} sign in.`)
       return
+    }
+
+    if (actualRole === 'talent') {
+      try {
+        await ensureTalentRecords(data.user)
+      } catch (bootstrapError:any) {
+        await supabase.auth.signOut()
+        setLoading(false)
+        Alert.alert('Talent profile unavailable', bootstrapError?.message || 'We could not prepare your Talent profile.')
+        return
+      }
     }
 
     const { data: factors, error: factorError } = await supabase.auth.mfa.listFactors()
@@ -81,6 +120,7 @@ export default function LoginScreen() {
           <Text style={styles.inputLabel}>Password</Text>
           <TextInput ref={passwordRef} value={password} onChangeText={setPassword} secureTextEntry returnKeyType="go" onSubmitEditing={signIn} placeholder="Your password" placeholderTextColor={palette.quiet} style={styles.input}/>
           <Pressable onPress={signIn} disabled={loading} style={({ pressed }) => [styles.button, pressed && { opacity: 0.9 }, loading && { opacity: 0.6 }]}><Text style={styles.buttonText}>{loading ? 'Checking security…' : 'Sign in'}</Text></Pressable>
+          {role==='talent'?<Pressable onPress={()=>router.push('/signup')} style={styles.signupLink}><Text style={styles.signupText}>New to Wellness House? Create Talent account</Text></Pressable>:null}
           <View style={styles.securityNote}><Text style={styles.securityTitle}>Secure account access</Text><Text style={styles.securityCopy}>Accounts protected by Authenticator will be asked for the current six-digit code before access.</Text></View>
         </View>
       </ScrollView>
@@ -89,27 +129,5 @@ export default function LoginScreen() {
 }
 
 const styles = StyleSheet.create({
-  flex:{flex:1,backgroundColor:palette.stone},
-  scroll:{flex:1,backgroundColor:palette.stone},
-  page:{paddingHorizontal:space.page,paddingTop:20,paddingBottom:180},
-  back:{color:palette.muted,fontSize:13,marginBottom:34},
-  header:{marginBottom:42},
-  wordmark:{color:palette.inkStrong,fontSize:20,letterSpacing:2.2,fontWeight:'700'},
-  sub:{color:palette.quiet,marginTop:4,fontSize:9,letterSpacing:3},
-  eyebrow:{fontSize:8,letterSpacing:2.1,color:palette.quiet,marginBottom:10,fontWeight:'700'},
-  title:{color:palette.inkStrong,fontSize:36,lineHeight:42,fontWeight:'400',fontFamily:type.serif,marginBottom:10},
-  intro:{color:palette.muted,fontSize:13,lineHeight:20,marginBottom:24,maxWidth:330},
-  switcher:{flexDirection:'row',backgroundColor:palette.stoneDeep,padding:4,borderRadius:radius.medium,marginBottom:28},
-  switch:{flex:1,paddingVertical:11,alignItems:'center',borderRadius:radius.small},
-  switchActive:{backgroundColor:palette.paper},
-  switchText:{color:palette.muted,fontSize:11,fontWeight:'600'},
-  switchTextActive:{color:palette.inkStrong},
-  form:{backgroundColor:palette.paper,borderWidth:1,borderColor:palette.line,padding:18,borderRadius:radius.large},
-  inputLabel:{color:palette.text,fontSize:11,fontWeight:'700',marginBottom:7},
-  input:{height:52,borderWidth:1,borderColor:palette.lineStrong,backgroundColor:palette.paper,paddingHorizontal:14,marginBottom:16,color:palette.text,fontSize:15,borderRadius:radius.medium},
-  button:{height:52,backgroundColor:palette.inkStrong,alignItems:'center',justifyContent:'center',borderRadius:radius.medium,marginTop:2},
-  buttonText:{color:palette.paper,fontSize:13,fontWeight:'700'},
-  securityNote:{backgroundColor:palette.sageSoft,padding:13,borderRadius:radius.medium,marginTop:16},
-  securityTitle:{color:palette.sage,fontSize:10,fontWeight:'700'},
-  securityCopy:{color:palette.muted,fontSize:10,lineHeight:15,marginTop:4}
+  flex:{flex:1,backgroundColor:palette.stone},scroll:{flex:1,backgroundColor:palette.stone},page:{paddingHorizontal:space.page,paddingTop:20,paddingBottom:180},back:{color:palette.muted,fontSize:13,marginBottom:34},header:{marginBottom:42},wordmark:{color:palette.inkStrong,fontSize:20,letterSpacing:2.2,fontWeight:'700'},sub:{color:palette.quiet,marginTop:4,fontSize:9,letterSpacing:3},eyebrow:{fontSize:8,letterSpacing:2.1,color:palette.quiet,marginBottom:10,fontWeight:'700'},title:{color:palette.inkStrong,fontSize:36,lineHeight:42,fontWeight:'400',fontFamily:type.serif,marginBottom:10},intro:{color:palette.muted,fontSize:13,lineHeight:20,marginBottom:24,maxWidth:330},switcher:{flexDirection:'row',backgroundColor:palette.stoneDeep,padding:4,borderRadius:radius.medium,marginBottom:28},switch:{flex:1,paddingVertical:11,alignItems:'center',borderRadius:radius.small},switchActive:{backgroundColor:palette.paper},switchText:{color:palette.muted,fontSize:11,fontWeight:'600'},switchTextActive:{color:palette.inkStrong},form:{backgroundColor:palette.paper,borderWidth:1,borderColor:palette.line,padding:18,borderRadius:radius.large},inputLabel:{color:palette.text,fontSize:11,fontWeight:'700',marginBottom:7},input:{height:52,borderWidth:1,borderColor:palette.lineStrong,backgroundColor:palette.paper,paddingHorizontal:14,marginBottom:16,color:palette.text,fontSize:15,borderRadius:radius.medium},button:{height:52,backgroundColor:palette.inkStrong,alignItems:'center',justifyContent:'center',borderRadius:radius.medium,marginTop:2},buttonText:{color:palette.paper,fontSize:13,fontWeight:'700'},signupLink:{paddingVertical:14,alignItems:'center'},signupText:{color:palette.ink,fontSize:10.5,fontWeight:'700'},securityNote:{backgroundColor:palette.sageSoft,padding:13,borderRadius:radius.medium,marginTop:2},securityTitle:{color:palette.sage,fontSize:10,fontWeight:'700'},securityCopy:{color:palette.muted,fontSize:10,lineHeight:15,marginTop:4}
 })
