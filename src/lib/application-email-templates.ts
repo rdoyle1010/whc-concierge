@@ -19,8 +19,8 @@ export function applicantConfirmationHtml({ applicantName, jobTitle, propertyNam
 
         <!-- Body -->
         <tr><td style="background-color: #FFFFFF; padding: 40px;">
-          <h2 style="margin: 0 0 16px; font-size: 22px; font-weight: 600; color: #1a1a1a;">Good news, ${firstName}</h2>
-          <p style="margin: 0 0 24px; font-size: 15px; line-height: 1.7; color: #4B5563;">Your application has been submitted successfully. Here are the details:</p>
+          <h2 style="margin: 0 0 16px; font-size: 22px; font-weight: 600; color: #1a1a1a;">Welcome, ${firstName}</h2>
+          <p style="margin: 0 0 24px; font-size: 15px; line-height: 1.7; color: #4B5563;">Thank you for your application. We have received it successfully and it is now being reviewed by the hiring team.</p>
 
           <!-- Application details -->
           <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color: #F9FAFB; border-radius: 8px; margin-bottom: 24px;">
@@ -43,12 +43,12 @@ export function applicantConfirmationHtml({ applicantName, jobTitle, propertyNam
           </table>
 
           <p style="margin: 0 0 8px; font-size: 13px; font-weight: 600; color: #1a1a1a; text-transform: uppercase; letter-spacing: 0.5px;">What happens next</p>
-          <p style="margin: 0 0 32px; font-size: 14px; line-height: 1.7; color: #4B5563;">The employer will review your profile and respond within 5 working days. You'll receive a notification when there's an update on your application.</p>
+          <p style="margin: 0 0 32px; font-size: 14px; line-height: 1.7; color: #4B5563;">The hiring team will review your profile and application. If they would like to move forward, you will receive a separate interview invitation with available date and time options through the platform.</p>
 
           <!-- CTA -->
           <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
             <tr><td align="center">
-              <a href="https://talent.wellnesshousecollective.co.uk/talent/dashboard" style="display: inline-block; padding: 14px 32px; background-color: #1a1a1a; color: #FFFFFF; font-size: 14px; font-weight: 600; text-decoration: none; border-radius: 8px; letter-spacing: 0.3px;">View Your Applications</a>
+              <a href="https://talent.wellnesshousecollective.co.uk/talent/dashboard" style="display:inline-block;padding:14px 32px;background-color:#1a1a1a;color:#FFFFFF;font-size:14px;font-weight:600;text-decoration:none;border-radius:8px;letter-spacing:0.3px;">View Your Applications</a>
             </td></tr>
           </table>
         </td></tr>
@@ -110,7 +110,7 @@ export function employerNotificationHtml({ applicantName, jobTitle, propertyName
             </td></tr>
           </table>
 
-          <p style="margin: 0 0 32px; font-size: 14px; line-height: 1.7; color: #4B5563;">Log in to your dashboard to review their profile, match score, and decide whether to shortlist or message them directly.</p>
+          <p style="margin: 0 0 32px; font-size: 14px; line-height: 1.7; color: #4B5563;">Log in to your dashboard to review their profile, match score, and decide whether to progress them to interview or close the application.</p>
 
           <!-- CTA -->
           <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
