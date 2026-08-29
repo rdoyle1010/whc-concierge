@@ -5,7 +5,7 @@ import { supabase } from '../../src/lib/supabase'
 import { palette, radius, space, type } from '../../src/lib/theme'
 
 type InterviewMethod = 'teams' | 'video' | 'phone' | 'in_person'
-type MessageIntent = 'shortlist' | 'interview' | 'decline' | 'offer'
+type MessageIntent = 'interview' | 'decline' | 'offer'
 type ApplicationRow = {
   id: string
   status: string
@@ -60,15 +60,14 @@ function roundLabel(round: number) {
 }
 
 function stageIndex(status: string) {
-  if (['accepted'].includes(status)) return 4
-  if (['offered'].includes(status)) return 3
-  if (['interview'].includes(status)) return 2
-  if (['shortlisted'].includes(status)) return 1
+  if (status === 'accepted') return 3
+  if (status === 'offered') return 2
+  if (status === 'interview') return 1
   return 0
 }
 
 function stageLabel(status:string){
-  const map:Record<string,string>={pending:'Applied',reviewed:'Reviewing',shortlisted:'Progressing',interview:'Interview',offered:'Offer sent',accepted:'Accepted',rejected:'Not progressing',withdrawn:'Withdrawn'}
+  const map:Record<string,string>={pending:'Under review',reviewed:'Under review',shortlisted:'Under review',interview:'Interview',offered:'Offer sent',accepted:'Accepted',rejected:'Not progressing',withdrawn:'Withdrawn'}
   return map[status]||status.replaceAll('_',' ')
 }
 
@@ -142,7 +141,6 @@ export default function EmployerApplicationScreen() {
   function localDraft(intent: MessageIntent) {
     const firstName = String(candidate?.full_name || '').trim().split(/\s+/)[0] || 'there'
     const role = job?.job_title || 'the role'
-    if (intent === 'shortlist') return `Hi ${firstName},\n\nThank you for your application for the ${role} position. We wanted to let you know that your application is progressing and remains under active consideration. We are reviewing the next stage and will be in touch through the platform with a further update shortly.\n\nBest wishes,\nThe hiring team`
     if (intent === 'interview') return `Hi ${firstName},\n\nThank you for your continued interest in the ${role} position. We would be delighted to invite you to ${completedInterviews.length ? 'a second interview' : 'an interview'} and learn more about your experience. Please review the time options in the platform and choose the one that works best for you.\n\nBest wishes,\nThe hiring team`
     if (intent === 'offer') return `Hi ${firstName},\n\nThank you for taking the time to meet with us regarding the ${role} position. We are pleased to let you know that we would like to offer you the role. You can review the offer and respond through the platform.\n\nBest wishes,\nThe hiring team`
     return `Hi ${firstName},\n\nThank you for your time and for your interest in the ${role} position. After careful consideration, we will not be progressing your application further on this occasion. We appreciate the time you invested in the process and wish you every success with your next opportunity.\n\nBest wishes,\nThe hiring team`
@@ -173,17 +171,17 @@ export default function EmployerApplicationScreen() {
     return true
   }
 
-  async function decision(decisionValue: 'shortlisted' | 'rejected') {
-    if (!application || !requireNote(decisionValue === 'shortlisted' ? 'Progress update' : 'Candidate')) return
-    setBusy(decisionValue)
+  async function decisionRejected() {
+    if (!application || !requireNote('Candidate')) return
+    setBusy('rejected')
     setError('')
     try {
       await api('/api/employer/applications/decision', {
-        method: 'POST', body: JSON.stringify({ applicationId: application.id, decision: decisionValue, note: note.trim() }),
+        method: 'POST', body: JSON.stringify({ applicationId: application.id, decision: 'rejected', note: note.trim() }),
       })
       setNote('')
       await load()
-      Alert.alert(decisionValue === 'shortlisted' ? 'Progress update sent' : 'Application updated', decisionValue === 'shortlisted' ? 'The candidate has received a holding update. You can now decide when to invite them to interview.' : 'The candidate has been notified through the platform.')
+      Alert.alert('Application updated', 'The candidate has been notified through the platform.')
     } catch (e: any) { setError(e.message) }
     finally { setBusy('') }
   }
@@ -250,9 +248,8 @@ export default function EmployerApplicationScreen() {
   if (loading) return <View style={styles.center}><ActivityIndicator color={palette.ink} /></View>
   if (!application) return <View style={styles.center}><Text style={styles.error}>{error || 'Application not found.'}</Text><Pressable onPress={() => router.back()}><Text style={styles.back}>‹ Back</Text></Pressable></View>
 
-  const canShortlist = ['pending', 'reviewed'].includes(application.status)
   const canDecline = ['pending', 'reviewed', 'shortlisted', 'interview'].includes(application.status)
-  const canScheduleInterview = ['shortlisted', 'interview'].includes(application.status) && !openInterview && completedInterviews.length < 2
+  const canScheduleInterview = ['pending', 'reviewed', 'shortlisted', 'interview'].includes(application.status) && !openInterview && completedInterviews.length < 2
   const canOffer = ['interview', 'offered'].includes(application.status) && completedInterviews.length > 0 && !openInterview
   const closed = ['accepted', 'rejected', 'withdrawn'].includes(application.status)
   const currentStage = stageIndex(application.status)
@@ -272,10 +269,16 @@ export default function EmployerApplicationScreen() {
 
     <View style={styles.stageCard}>
       <View style={styles.stageTop}><Text style={styles.stageEyebrow}>CURRENT STAGE</Text><Text style={styles.stageValue}>{stageLabel(application.status)}</Text></View>
-      <View style={styles.timeline}>{['Applied', 'Progressing', 'Interview', 'Offer', 'Accepted'].map((label, index) => <View key={label} style={styles.timelineItem}><View style={[styles.timelineDot, index <= currentStage && styles.timelineDotActive]} /><Text style={[styles.timelineLabel, index <= currentStage && styles.timelineLabelActive]}>{label}</Text></View>)}</View>
+      <View style={styles.timeline}>{['Applied', 'Interview', 'Offer', 'Accepted'].map((label, index) => <View key={label} style={styles.timelineItem}><View style={[styles.timelineDot, index <= currentStage && styles.timelineDotActive]} /><Text style={[styles.timelineLabel, index <= currentStage && styles.timelineLabelActive]}>{label}</Text></View>)}</View>
     </View>
 
     {candidate?.bio ? <View style={styles.section}><Text style={styles.sectionEyebrow}>PROFILE</Text><Text style={styles.sectionTitle}>Candidate overview</Text><Text style={styles.copy}>{candidate.bio}</Text></View> : null}
+
+    <View style={styles.ackCard}>
+      <View style={styles.ackTop}><View><Text style={styles.sectionEyebrow}>STEP 1</Text><Text style={styles.ackTitle}>Application received</Text></View><Text style={styles.ackTick}>✓</Text></View>
+      <Text style={styles.ackStatus}>Candidate acknowledgement sent automatically</Text>
+      <Text style={styles.help}>The candidate has already received a welcome email confirming that their application was received and is under review. If you want to move forward, the next communication should be a separate interview invitation.</Text>
+    </View>
 
     {orderedInterviews.length ? <View style={styles.section}>
       <Text style={styles.sectionEyebrow}>INTERVIEWS</Text><Text style={styles.sectionTitle}>Interview history</Text>
@@ -289,22 +292,11 @@ export default function EmployerApplicationScreen() {
     </View> : null}
 
     {!closed ? <>
-      <View style={styles.section}>
-        <Text style={styles.sectionEyebrow}>COMMUNICATION</Text><Text style={styles.sectionTitle}>Message to candidate</Text>
-        <Text style={styles.help}>Write in your own voice, or use the specific draft button beside the action you are about to take. Nothing is sent until you press the stage action.</Text>
-        <TextInput value={note} onChangeText={setNote} multiline placeholder="Write your message to the candidate…" placeholderTextColor={palette.quiet} style={styles.textarea} />
-      </View>
-
-      {canShortlist ? <View style={styles.actionSection}>
-        <Text style={styles.sectionEyebrow}>STEP 1</Text><Text style={styles.sectionTitle}>Keep the candidate warm</Text><Text style={styles.help}>Send a holding update first. This tells the candidate their application is progressing but does not invite them to interview yet.</Text>
-        <Pressable onPress={() => writeMessage('shortlist')} disabled={!!busy} style={[styles.draftButton,!!busy&&styles.disabled]}><Text style={styles.draftButtonText}>{busy==='draft-shortlist'?'Drafting…':'Draft holding update'}</Text><Text style={styles.draftArrow}>→</Text></Pressable>
-        <Pressable onPress={() => decision('shortlisted')} disabled={!!busy} style={[styles.primary, !!busy && styles.disabled]}><Text style={styles.primaryText}>{busy === 'shortlisted' ? 'Sending…' : 'Send progress update & shortlist'}</Text></Pressable>
-      </View> : null}
-
       {canScheduleInterview ? <View style={styles.section}>
         <Text style={styles.sectionEyebrow}>{secondInterviewOption?'OPTIONAL NEXT STEP':'STEP 2'}</Text><Text style={styles.sectionTitle}>{roundLabel(nextRound)}</Text>
-        <Text style={styles.help}>{secondInterviewOption?'Only use a second interview if you genuinely need another stage. You can also move straight to offer or decline.':'This is a separate interview invitation after the candidate has received their progress update. Offer two future times and let them choose one.'}</Text>
+        <Text style={styles.help}>{secondInterviewOption?'Only use a second interview if you genuinely need another stage. You can also move straight to offer or decline.':'If you would like to move the candidate forward, choose the interview method and offer two future times. The candidate will receive a separate interview invitation and choose one.'}</Text>
         <Pressable onPress={() => writeMessage('interview')} disabled={!!busy} style={[styles.draftButton,!!busy&&styles.disabled]}><Text style={styles.draftButtonText}>{busy==='draft-interview'?'Drafting…':`Draft ${roundLabel(nextRound).toLowerCase()} note`}</Text><Text style={styles.draftArrow}>→</Text></Pressable>
+        <TextInput value={note} onChangeText={setNote} multiline placeholder="Optional note to include with the interview invitation…" placeholderTextColor={palette.quiet} style={styles.textarea} />
         <View style={styles.methodRow}>{(['video', 'teams', 'phone', 'in_person'] as InterviewMethod[]).map(value => <Pressable key={value} onPress={() => setMethod(value)} style={[styles.method, method === value && styles.methodActive]}><Text style={[styles.methodText, method === value && styles.methodTextActive]}>{value === 'in_person' ? 'In person' : value === 'teams' ? 'Teams' : value === 'video' ? 'Video' : 'Phone'}</Text></Pressable>)}</View>
         <Text style={styles.label}>First option</Text><TextInput value={slotOne} onChangeText={setSlotOne} style={styles.input} placeholder="YYYY-MM-DD HH:mm" placeholderTextColor={palette.quiet} />
         <Text style={styles.label}>Second option</Text><TextInput value={slotTwo} onChangeText={setSlotTwo} style={styles.input} placeholder="YYYY-MM-DD HH:mm" placeholderTextColor={palette.quiet} />
@@ -316,10 +308,11 @@ export default function EmployerApplicationScreen() {
         <Text style={styles.sectionEyebrow}>OFFER</Text><Text style={styles.offerTitle}>Ready to make the offer?</Text>
         <Text style={styles.offerCopy}>{completedInterviews.length} interview{completedInterviews.length === 1 ? '' : 's'} completed. A second interview is optional; if you have what you need, move straight to the offer.</Text>
         <Pressable onPress={() => writeMessage('offer')} disabled={!!busy} style={[styles.draftButton,styles.offerDraft,!!busy&&styles.disabled]}><Text style={styles.draftButtonText}>{busy==='draft-offer'?'Drafting…':'Draft offer message'}</Text><Text style={styles.draftArrow}>→</Text></Pressable>
+        <TextInput value={note} onChangeText={setNote} multiline placeholder="Offer message to the candidate…" placeholderTextColor={palette.quiet} style={styles.textarea} />
         <Pressable onPress={makeOffer} disabled={!!busy} style={[styles.offerButton, !!busy && styles.disabled]}><Text style={styles.offerButtonText}>{busy === 'offer' ? 'Sending…' : application.status === 'offered' ? 'Update offer message' : 'Send job offer'}</Text></Pressable>
-      </View> : application.status === 'shortlisted' || application.status === 'interview' ? <View style={styles.lockedStep}><Text style={styles.lockedEyebrow}>OFFER</Text><Text style={styles.lockedTitle}>Complete the first interview</Text><Text style={styles.help}>After one confirmed interview is completed, you can offer the role, decline, or choose a second interview if needed.</Text></View> : null}
+      </View> : application.status === 'interview' ? <View style={styles.lockedStep}><Text style={styles.lockedEyebrow}>OFFER</Text><Text style={styles.lockedTitle}>Complete the first interview</Text><Text style={styles.help}>After one confirmed interview is completed, you can offer the role, decline, or choose a second interview if needed.</Text></View> : null}
 
-      {canDecline ? <View style={styles.declineSection}><Text style={styles.declineHelp}>If you are not progressing the candidate, draft the decline separately so an interview or offer message cannot be sent by mistake.</Text><Pressable onPress={() => writeMessage('decline')} disabled={!!busy} style={[styles.draftButton,!!busy&&styles.disabled]}><Text style={styles.draftButtonText}>{busy==='draft-decline'?'Drafting…':'Draft decline message'}</Text><Text style={styles.draftArrow}>→</Text></Pressable><Pressable onPress={() => decision('rejected')} disabled={!!busy} style={[styles.secondary, !!busy && styles.disabled]}><Text style={styles.dangerText}>{busy === 'rejected' ? 'Sending…' : 'Not progressing'}</Text></Pressable></View> : null}
+      {canDecline ? <View style={styles.declineSection}><Text style={styles.declineHelp}>If you are not progressing the candidate, draft the decline separately so an interview or offer message cannot be sent by mistake.</Text><Pressable onPress={() => writeMessage('decline')} disabled={!!busy} style={[styles.draftButton,!!busy&&styles.disabled]}><Text style={styles.draftButtonText}>{busy==='draft-decline'?'Drafting…':'Draft decline message'}</Text><Text style={styles.draftArrow}>→</Text></Pressable><TextInput value={note} onChangeText={setNote} multiline placeholder="Decline message to the candidate…" placeholderTextColor={palette.quiet} style={styles.textarea}/><Pressable onPress={decisionRejected} disabled={!!busy} style={[styles.secondary, !!busy && styles.disabled]}><Text style={styles.dangerText}>{busy === 'rejected' ? 'Sending…' : 'Not progressing'}</Text></Pressable></View> : null}
     </> : <View style={styles.closed}><Text style={styles.closedEyebrow}>RECRUITMENT CLOSED</Text><Text style={styles.closedTitle}>{stageLabel(application.status)}</Text><Text style={styles.help}>No further recruitment action is available from this stage.</Text></View>}
     {error ? <Text style={styles.error}>{error}</Text> : null}
   </ScrollView>
@@ -351,11 +344,15 @@ const styles = StyleSheet.create({
   timelineLabel:{color:palette.quiet,fontSize:7.5,marginTop:5,textAlign:'center'},
   timelineLabelActive:{color:palette.text,fontWeight:'700'},
   section:{borderTopWidth:1,borderTopColor:palette.line,paddingTop:22,marginTop:26},
-  actionSection:{backgroundColor:palette.paper,borderWidth:1,borderColor:palette.line,padding:17,borderRadius:radius.large,marginTop:24},
   sectionEyebrow:{color:palette.quiet,fontSize:8,letterSpacing:1.6,fontWeight:'700',marginBottom:5},
   sectionTitle:{color:palette.inkStrong,fontSize:21,lineHeight:26,fontWeight:'400',fontFamily:type.serif,marginBottom:7},
   copy:{color:palette.muted,fontSize:12,lineHeight:19},
   help:{color:palette.muted,fontSize:10.5,lineHeight:17,marginBottom:11},
+  ackCard:{backgroundColor:palette.paper,borderWidth:1,borderColor:palette.line,padding:17,borderRadius:radius.large,marginTop:24},
+  ackTop:{flexDirection:'row',justifyContent:'space-between',alignItems:'flex-start',gap:12},
+  ackTitle:{color:palette.inkStrong,fontSize:21,lineHeight:26,fontWeight:'400',fontFamily:type.serif},
+  ackTick:{color:palette.sage,fontSize:24,fontWeight:'800'},
+  ackStatus:{color:palette.sage,fontSize:10.5,fontWeight:'700',marginTop:10,marginBottom:7},
   interviewCard:{borderWidth:1,borderColor:palette.line,padding:14,marginTop:9,backgroundColor:palette.paper,borderRadius:radius.medium},
   interviewHeader:{flexDirection:'row',justifyContent:'space-between',gap:10,alignItems:'center'},
   interviewTitle:{color:palette.inkStrong,fontSize:12.5,fontWeight:'700'},
@@ -368,8 +365,8 @@ const styles = StyleSheet.create({
   draftButton:{borderWidth:1,borderColor:palette.lineStrong,backgroundColor:palette.paper,paddingHorizontal:12,paddingVertical:11,flexDirection:'row',justifyContent:'space-between',alignItems:'center',borderRadius:radius.medium,marginBottom:9},
   draftButtonText:{color:palette.ink,fontSize:10.5,fontWeight:'700'},
   draftArrow:{color:palette.ink,fontSize:15},
-  offerDraft:{marginTop:13,marginBottom:0},
-  textarea:{borderWidth:1,borderColor:palette.line,minHeight:112,padding:13,textAlignVertical:'top',fontSize:12,color:palette.text,backgroundColor:palette.paper,borderRadius:radius.medium},
+  offerDraft:{marginTop:13,marginBottom:9},
+  textarea:{borderWidth:1,borderColor:palette.line,minHeight:112,padding:13,textAlignVertical:'top',fontSize:12,color:palette.text,backgroundColor:palette.paper,borderRadius:radius.medium,marginBottom:10},
   primary:{backgroundColor:palette.inkStrong,paddingVertical:14,alignItems:'center',marginTop:11,borderRadius:radius.medium},
   primaryText:{color:palette.paper,fontSize:10.5,fontWeight:'700'},
   secondary:{borderWidth:1,borderColor:'#D9BCBC',paddingVertical:13,alignItems:'center',backgroundColor:palette.paper,borderRadius:radius.medium},
