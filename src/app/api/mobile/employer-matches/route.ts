@@ -19,6 +19,23 @@ async function getEmployer(admin: any, userId: string) {
   return data
 }
 
+function candidateResult(employer: any, candidate: any, job: any) {
+  const travel = mutualRadiusResult(employer, candidate, null)
+  if (!travel.withinRadius) return null
+  const match = calculateMatchScore(candidate, job)
+  if (match.hardStop) return null
+  return {
+    ...candidate,
+    latitude: undefined,
+    longitude: undefined,
+    match_score: match.score,
+    match_label: match.label,
+    match_explanation: match.matchExplanation || [],
+    distance_miles: travel.distanceMiles,
+    role_title: job.job_title,
+  }
+}
+
 export async function GET(req: NextRequest) {
   const user = await getRequestUser(req)
   if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
@@ -35,39 +52,47 @@ export async function GET(req: NextRequest) {
   ])
   const liveJobs = jobs || []
   const selectedJob = requestedJobId ? liveJobs.find((job: any) => job.id === requestedJobId) : liveJobs[0]
-  if (!selectedJob) return NextResponse.json({ jobs: liveJobs, candidates: [], selected_job_id: null })
+  if (!selectedJob) return NextResponse.json({ jobs: liveJobs, candidates: [], interested_candidates: [], selected_job_id: null })
 
-  const [{ data: rows, error }, { data: swipes }] = await Promise.all([
+  const [{ data: rows, error }, { data: swipes }, { data: applications }] = await Promise.all([
     admin.from('candidate_profiles').select(CANDIDATE_FIELDS).eq('approval_status', 'approved').or('profile_visible.eq.true,profile_visible.is.null').order('is_featured', { ascending: false }).limit(100),
     admin.from('swipes').select('target_id,action,context_job_id').eq('swiper_id', user.id).eq('swiper_type', 'employer').eq('target_type', 'candidate'),
+    admin.from('applications').select('id,candidate_id,status,job_id,role_id').or(`job_id.eq.${selectedJob.id},role_id.eq.${selectedJob.id}`),
   ])
   if (error) return NextResponse.json({ error: 'Talent matches are unavailable.' }, { status: 500 })
 
   const blocked = new Set((blocks || []).map((row: any) => row.candidate_id))
-  const reviewedForRole = new Set((swipes || []).filter((row: any) => row.context_job_id === selectedJob.id).map((row: any) => row.target_id))
-  const candidates = (rows || []).map((candidate: any) => {
+  const roleSwipes = (swipes || []).filter((row: any) => row.context_job_id === selectedJob.id)
+  const reviewedForRole = new Set(roleSwipes.map((row: any) => row.target_id))
+  const interestedForRole = new Set(roleSwipes.filter((row: any) => row.action === 'right').map((row: any) => row.target_id))
+  const applicationsByCandidate = new Map((applications || []).map((row: any) => [row.candidate_id, row]))
+
+  const eligibleRows = (rows || []).filter((candidate: any) => canEmployerDiscoverCandidate(candidate, blocked))
+
+  const candidates = eligibleRows.map((candidate: any) => {
     if (reviewedForRole.has(candidate.id)) return null
-    if (!canEmployerDiscoverCandidate(candidate, blocked)) return null
-    const travel = mutualRadiusResult(employer, candidate, null)
-    if (!travel.withinRadius) return null
-    const match = calculateMatchScore(candidate, selectedJob)
-    if (match.hardStop) return null
-    return {
-      ...candidate,
-      latitude: undefined,
-      longitude: undefined,
-      match_score: match.score,
-      match_label: match.label,
-      match_explanation: match.matchExplanation || [],
-      distance_miles: travel.distanceMiles,
-      role_title: selectedJob.job_title,
-    }
+    return candidateResult(employer, candidate, selectedJob)
   }).filter(Boolean).sort((a: any, b: any) => Number(Boolean(b.is_featured)) - Number(Boolean(a.is_featured)) || Number(b.match_score || 0) - Number(a.match_score || 0))
+
+  const interestedCandidates = eligibleRows.map((candidate: any) => {
+    if (!interestedForRole.has(candidate.id)) return null
+    const result = candidateResult(employer, candidate, selectedJob)
+    if (!result) return null
+    const application: any = applicationsByCandidate.get(candidate.id) || null
+    return {
+      ...result,
+      application_id: application?.id || null,
+      application_status: application?.status || null,
+      mutual: Boolean(application?.id),
+      interest_status: application?.id ? 'matched' : 'waiting',
+    }
+  }).filter(Boolean).sort((a: any, b: any) => Number(Boolean(b.mutual)) - Number(Boolean(a.mutual)) || Number(b.match_score || 0) - Number(a.match_score || 0))
 
   return NextResponse.json({
     jobs: liveJobs.map((job: any) => ({ id: job.id, job_title: job.job_title, location: job.location, job_type: job.job_type })),
     selected_job_id: selectedJob.id,
     candidates,
+    interested_candidates: interestedCandidates,
   })
 }
 
@@ -126,7 +151,7 @@ export async function POST(req: NextRequest) {
     const { data: candidateYes } = await admin.from('swipes').select('id')
       .eq('swiper_id', candidate.user_id).eq('swiper_type', 'candidate')
       .eq('target_id', jobId).eq('target_type', 'job').eq('action', 'right').maybeSingle()
-    mutual = Boolean(candidateYes)
+    mutual = Boolean(candidateYes || applicationId)
     await createNotification(candidate.user_id, 'general', mutual ? "It's a match" : 'A property is interested in you',
       `${employer.property_name || employer.company_name || 'A property'} is interested in you for ${job.job_title}.`, '/talent/messages')
   }
