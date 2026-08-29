@@ -81,7 +81,7 @@ test('mobile recruitment mirrors the website matching state machine', () => {
   const submitApi = read('src/app/api/applications/submit/route.ts')
 
   assert.match(employerMatch, /Browse candidates/)
-  assert.match(employerMatch, />Pass</)
+  assert.match(employerMatch, /['"]Pass['"]/)
   assert.match(employerMatch, /Saved/)
   assert.match(employerMatch, /Interested/)
   assert.match(employerMatch, /Keep browsing/)
@@ -93,7 +93,7 @@ test('mobile recruitment mirrors the website matching state machine', () => {
   assert.match(talentJobs, /Interested — review application/)
   assert.match(talentJobs, /\/api\/applications\/draft/)
   assert.match(talentJobs, /\/api\/saved-jobs/)
-  assert.match(talentJobs, />Pass</)
+  assert.match(talentJobs, /['"]Pass['"]/)
   assert.doesNotMatch(talentJobs, /\/api\/mobile\/talent-interests/)
   assert.doesNotMatch(talentJobs, /I’m interested too/)
   assert.doesNotMatch(talentJobs, /EMPLOYER INTEREST/)
