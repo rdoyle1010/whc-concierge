@@ -4,6 +4,8 @@ import * as Device from 'expo-device'
 import * as Notifications from 'expo-notifications'
 import { supabase } from './supabase'
 
+const WEB_URL=process.env.EXPO_PUBLIC_WEB_URL||'https://talent.wellnesshousecollective.co.uk'
+
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
     shouldPlaySound: true,
@@ -78,16 +80,20 @@ export async function registerPushNotifications() {
   const token = (await Notifications.getExpoPushTokenAsync({ projectId })).data
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return token
+  const {data:{session}}=await supabase.auth.getSession()
+  if(!session?.access_token)return token
 
-  await supabase.from('mobile_push_tokens').upsert({
-    user_id: user.id,
-    expo_push_token: token,
-    platform: Platform.OS,
-    device_name: Device.deviceName || Device.modelName || null,
-    app_version: Constants.expoConfig?.version || null,
-    is_active: true,
-    updated_at: new Date().toISOString(),
-  }, { onConflict: 'expo_push_token' })
+  const response=await fetch(`${WEB_URL}/api/mobile/push-token`,{
+    method:'POST',
+    headers:{Authorization:`Bearer ${session.access_token}`,'Content-Type':'application/json'},
+    body:JSON.stringify({
+      expoPushToken:token,
+      platform:Platform.OS,
+      deviceName:Device.deviceName||Device.modelName||null,
+      appVersion:Constants.expoConfig?.version||null,
+    }),
+  })
+  if(!response.ok)console.warn('[Push registration failed]',response.status)
 
   await scheduleAgencyShiftReminders(user.id)
   return token
