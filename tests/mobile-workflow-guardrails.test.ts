@@ -73,3 +73,24 @@ test('mobile login routes the authenticated account by its stored role', () => {
   assert.match(login, /profile\?\.role === 'admin'/)
   assert.match(login, /Wrong sign-in area/)
 })
+
+test('Talent Match has a complete two-sided interest response', () => {
+  const talentApi = read('src/app/api/mobile/talent-interests/route.ts')
+  const talentJobs = read('mobile/app/jobs.tsx')
+  const employerMatch = read('mobile/app/match.tsx')
+
+  assert.match(talentApi, /action\s*=\s*String\(body\.action/)
+  assert.match(talentApi, /\['accept', 'decline'\]/)
+  assert.match(talentApi, /status:\s*'pending'/)
+  assert.match(talentApi, /is interested too/)
+
+  assert.match(talentJobs, /EMPLOYER INTEREST/)
+  assert.match(talentJobs, /respondToInterest/)
+  assert.match(talentJobs, /I’m interested too/)
+  assert.match(talentJobs, /Decline/)
+
+  assert.match(employerMatch, /WAITING FOR TALENT RESPONSE/)
+  assert.match(employerMatch, /MUTUAL INTEREST/)
+  assert.match(employerMatch, /TALENT DECLINED/)
+  assert.match(employerMatch, /withdrawInterest/)
+})
