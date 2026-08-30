@@ -30,8 +30,8 @@ export async function POST(req: NextRequest) {
   const admin = createAdminClient()
   const { data: candidate } = await admin.from('candidate_profiles').select('*').eq('user_id', user.id).maybeSingle()
   if (!candidate) return NextResponse.json({ error: 'Candidate profile not found' }, { status: 404 })
-  if (candidate.approval_status !== 'approved' || candidate.profile_visible === false) {
-    return NextResponse.json({ error: 'Your Talent profile must be approved and active before submitting an application.' }, { status: 403 })
+  if (candidate.profile_visible === false) {
+    return NextResponse.json({ error: 'Make your Talent profile active before submitting an application.' }, { status: 403 })
   }
 
   const { data: application } = await admin.from('applications')
