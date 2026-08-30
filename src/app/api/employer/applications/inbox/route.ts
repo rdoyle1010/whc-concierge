@@ -17,7 +17,7 @@ const CANDIDATE_FIELDS = [
   'id','user_id','full_name','headline','role_level','location','services_offered','treatment_skills','experience_years',
   'profile_image_url','review_score','review_count','bio','qualifications','product_houses','systems_experience',
   'business_skills','career_evidence','has_insurance','cv_url','certificates_urls','is_featured','featured_until',
-  'salary_expectation_min','salary_expectation_max','commercial_experience','revenue_responsibility','team_size_managed','desired_roles','portfolio_url','availability_status',
+  'salary_expectation_min','salary_expectation_max','salary_expectation_private','commercial_experience','revenue_responsibility','team_size_managed','desired_roles','portfolio_url','availability_status',
 ].join(',')
 
 const norm = (value: unknown) => String(value ?? '').trim().toLowerCase()
@@ -157,13 +157,19 @@ export async function GET(req: NextRequest) {
   }
 
   const enriched = rows.map((application: any) => {
-    const candidate = candidateMap.get(application.candidate_id) || null
+    const rawCandidate = candidateMap.get(application.candidate_id) || null
+    // Salary expectation is private by default: the matching engine still uses
+    // it (fit is computed before stripping), but the number itself is only
+    // shown when the talent has chosen to share it.
+    const candidate = rawCandidate && rawCandidate.salary_expectation_private !== false
+      ? { ...rawCandidate, salary_expectation_min: null, salary_expectation_max: null }
+      : rawCandidate
     const job = jobMap.get(application.role_id) || jobMap.get(application.job_id) || null
     return {
       ...application,
       candidate_profiles: candidate,
       job_listings: job ? { job_title: job.job_title } : null,
-      fit: candidate && job ? buildFit(candidate, job) : null,
+      fit: rawCandidate && job ? buildFit(rawCandidate, job) : null,
       academy: candidate ? (academyByCandidate.get(candidate.id) || []) : [],
       endorsements: candidate?.user_id ? (endorsementsByUser.get(candidate.user_id) || []) : [],
       offer_declined: application.status === 'rejected' && offerStatusByApplication.get(application.id) === 'declined',

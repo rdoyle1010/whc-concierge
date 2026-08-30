@@ -11,7 +11,7 @@ const ALLOWED_COLUMNS = new Set([
   'has_insurance','employment_types_wanted','skills','certificates_urls','profile_completion_pct','profile_completion_score','profile_image_url','cv_url',
   'insurance_document_url','stealth_mode','sms_opt_in','job_alerts_enabled','job_alerts_frequency','job_alerts_min_score','transport_method','max_commute',
   'shift_preferences','location_preferences','needs_accommodation',
-  'salary_expectation_min','salary_expectation_max','commercial_experience','revenue_responsibility','team_size_managed','desired_roles','portfolio_url',
+  'salary_expectation_min','salary_expectation_max','salary_expectation_private','commercial_experience','revenue_responsibility','team_size_managed','desired_roles','portfolio_url',
 ])
 
 function stripToAllowed(data: Record<string, unknown>): Record<string, unknown> {

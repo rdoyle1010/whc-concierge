@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import DashboardShell from '@/components/DashboardShell'
 import { createClient } from '@/lib/supabase/client'
 import { Save, Upload } from 'lucide-react'
-import { COMPANY_TYPES } from '@/lib/constants'
+import { COMPANY_TYPES, FACILITY_OPTIONS, STAFF_BENEFIT_OPTIONS } from '@/lib/constants'
 import { SERVICES_CATEGORIES, PRODUCT_HOUSES_FULL, QUALS_CATEGORIES, SYSTEMS_FULL } from '@/lib/taxonomy'
 import CollapsibleCheckboxSection from '@/components/CollapsibleCheckboxSection'
 
@@ -368,23 +368,25 @@ export default function EmployerProfilePage() {
               <input type="number" value={profile.opening_year || ''} onChange={(e) => update('opening_year', e.target.value)} className="input-field" placeholder="e.g. 2024" />
             </div>
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">Facilities <span className="font-normal text-gray-400">(one per line)</span></label>
-            <textarea rows={3} value={Array.isArray(profile.facilities) ? profile.facilities.join('\n') : ''} onChange={(e) => update('facilities', e.target.value.split('\n').map((v: string) => v.trim()).filter(Boolean))} className="input-field" placeholder={'Hydrotherapy pool\nThermal suite\nGym & studio'} />
-          </div>
+          <CollapsibleCheckboxSection
+            title="Facilities"
+            flatItems={FACILITY_OPTIONS as unknown as string[]}
+            selected={profile.facilities || []}
+            onChange={(v) => update('facilities', v)}
+          />
+          <CollapsibleCheckboxSection
+            title="Staff Benefits"
+            flatItems={STAFF_BENEFIT_OPTIONS as unknown as string[]}
+            selected={profile.staff_benefits || []}
+            onChange={(v) => update('staff_benefits', v)}
+          />
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1.5">Culture</label>
             <textarea rows={3} value={profile.culture_statement || ''} onChange={(e) => update('culture_statement', e.target.value)} className="input-field" placeholder="What it genuinely feels like to work here - candidates read this before applying." />
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">Staff Benefits <span className="font-normal text-gray-400">(one per line)</span></label>
-              <textarea rows={3} value={Array.isArray(profile.staff_benefits) ? profile.staff_benefits.join('\n') : ''} onChange={(e) => update('staff_benefits', e.target.value.split('\n').map((v: string) => v.trim()).filter(Boolean))} className="input-field" placeholder={'Service charge\nSpa treatments allowance\nCross-property discounts'} />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">Progression</label>
-              <textarea rows={3} value={profile.progression_notes || ''} onChange={(e) => update('progression_notes', e.target.value)} className="input-field" placeholder="Real progression examples - therapists who became managers, transfers within the group..." />
-            </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">Progression</label>
+            <textarea rows={3} value={profile.progression_notes || ''} onChange={(e) => update('progression_notes', e.target.value)} className="input-field" placeholder="Real progression examples - therapists who became managers, transfers within the group..." />
           </div>
 
           <CollapsibleCheckboxSection

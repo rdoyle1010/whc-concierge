@@ -139,3 +139,18 @@ export const AGENCY_LISTING_TIERS = {
 } as const
 
 export type AgencyTier = keyof typeof AGENCY_LISTING_TIERS
+
+export const FACILITY_OPTIONS = [
+  'Hydrotherapy pool','Vitality pool','Indoor pool','Outdoor pool','Thermal suite','Sauna','Steam room','Hammam',
+  'Snow cave / ice fountain','Experience showers','Salt room','Cryotherapy','Flotation','Relaxation lounge',
+  'Rooftop terrace','Gym','Fitness studio','Yoga / Pilates studio','Padel or tennis courts','Nail salon','Hair salon',
+  'Spa café / healthy dining','Private spa suites','Couples suites',
+] as const
+
+export const STAFF_BENEFIT_OPTIONS = [
+  'Service charge / tronc','Retail commission','Treatment commission','Spa treatment allowance','Product discount',
+  'Free meals on duty','Uniform provided & laundered','Hotel discounts worldwide','Friends & family rates',
+  'Pension scheme','Private healthcare','Mental health support','Training budget','Brand training',
+  'Clear progression pathway','Accommodation available','Relocation support','Gym use','28+ days holiday',
+  'Birthday day off','Employee assistance programme',
+] as const

@@ -21,3 +21,6 @@ ALTER TABLE candidate_profiles ADD COLUMN IF NOT EXISTS desired_roles text[];
 ALTER TABLE candidate_profiles ADD COLUMN IF NOT EXISTS portfolio_url text;
 
 NOTIFY pgrst, 'reload schema';
+
+-- Added 30 Aug (later the same day): salary expectation is private by default.
+ALTER TABLE candidate_profiles ADD COLUMN IF NOT EXISTS salary_expectation_private boolean DEFAULT true;
