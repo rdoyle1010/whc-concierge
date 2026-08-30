@@ -21,10 +21,12 @@ test('interview rounds are confirmed, completed and ordered before progression',
   assert.match(route, /previous\.status\s*!==\s*'completed'/)
   assert.match(route, /Finish or cancel the current interview stage/)
   assert.match(route, /roundNumber\s*>\s*2/)
-  assert.match(route, /\['pending',\s*'reviewed',\s*'shortlisted',\s*'interview'\]\.includes\(application\.status\)/)
+  assert.match(route, /roundNumber\s*===\s*1\s*&&\s*application\.status\s*!==\s*'shortlisted'/)
+  assert.match(route, /Complete interview 1 before scheduling interview 2/)
+  assert.doesNotMatch(route, /\['pending',\s*'reviewed',\s*'shortlisted',\s*'interview'\]\.includes\(application\.status\)/)
 })
 
-test('employer mobile application UI shows the submitted application before recruitment actions', () => {
+test('employer mobile application UI mirrors the website recruitment sequence', () => {
   const screen = read('mobile/app/application/[id].tsx')
   const detailRoute = read('src/app/api/employer/applications/detail/route.ts')
 
@@ -33,22 +35,33 @@ test('employer mobile application UI shows the submitted application before recr
   assert.match(screen, /Review the person before the process/)
   assert.match(screen, /Covering letter/)
   assert.match(screen, /Open candidate CV/)
-  assert.match(screen, /What they bring/)
+  assert.match(screen, /Career evidence/)
   assert.match(screen, /Qualifications/)
   assert.match(screen, /Product houses/)
   assert.match(screen, /Systems/)
   assert.match(screen, /Business skills/)
-  assert.match(screen, /completed\.length\s*>\s*0/)
-  assert.match(screen, /completed\.length\s*<\s*2/)
-  assert.match(screen, /Mark interview completed/)
-  assert.match(screen, /roundNumber\s*:\s*nextRound/)
-  assert.match(screen, /Send .*interview invitation/)
+
+  assert.match(screen, /const underReview=\['pending','reviewed'\]\.includes\(application\.status\)/)
+  assert.match(screen, /const shortlisted=application\.status==='shortlisted'/)
+  assert.match(screen, /const interviewing=application\.status==='interview'/)
+  assert.match(screen, /const rejected=application\.status==='rejected'/)
+  assert.match(screen, /const canArrangeFirst=shortlisted&&!roundOne/)
+  assert.match(screen, /const canArrangeSecond=interviewing&&completed\.length===1&&!roundTwo&&!openInterview/)
+  assert.match(screen, /const offerReady=interviewing&&completed\.length>0&&!openInterview/)
+
+  assert.match(screen, /Shortlist candidate/)
+  assert.match(screen, /Arrange the first interview/)
+  assert.match(screen, /Second interview/)
   assert.match(screen, /Make offer/)
   assert.match(screen, /Not progressing/)
-  assert.match(screen, /\['pending','reviewed','shortlisted','interview'\]\.includes\(application\.status\)/)
+  assert.match(screen, /Reopen application/)
+  assert.match(screen, /\/api\/employer\/applications\/reopen/)
+  assert.match(screen, /Mark interview completed/)
+  assert.match(screen, /roundNumber/)
   assert.match(screen, /google_meet/)
   assert.match(screen, /zoom/)
   assert.match(screen, /candidate_note/)
+
   assert.doesNotMatch(screen, /Draft holding update/)
   assert.doesNotMatch(screen, /Send progress update & shortlist/)
 
@@ -57,6 +70,20 @@ test('employer mobile application UI shows the submitted application before recr
   assert.match(detailRoute, /job\.employer_id !== employer\.id/)
   assert.match(detailRoute, /cover_letter/)
   assert.match(detailRoute, /createSignedUrl/)
+})
+
+test('AI recruitment messaging cannot skip website stages', () => {
+  const route = read('src/app/api/employer/applications/message-ai/route.ts')
+  assert.match(route, /intent === 'interview' && status !== 'shortlisted'/)
+  assert.match(route, /intent === 'offer'/)
+  assert.match(route, /completedInterviews < 1/)
+})
+
+test('rejected applications can be deliberately reopened by the employer', () => {
+  const route = read('src/app/api/employer/applications/reopen/route.ts')
+  assert.match(route, /application\.status !== 'rejected'/)
+  assert.match(route, /status: 'reviewed'/)
+  assert.match(route, /Your application has been reopened/)
 })
 
 test('Agency checkout returns through a mobile deep-link bridge', () => {
