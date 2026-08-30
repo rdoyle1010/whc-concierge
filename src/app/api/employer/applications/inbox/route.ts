@@ -17,6 +17,7 @@ const CANDIDATE_FIELDS = [
   'id','user_id','full_name','headline','role_level','location','services_offered','treatment_skills','experience_years',
   'profile_image_url','review_score','review_count','bio','qualifications','product_houses','systems_experience',
   'business_skills','career_evidence','has_insurance','cv_url','certificates_urls','is_featured','featured_until',
+  'salary_expectation_min','salary_expectation_max','commercial_experience','revenue_responsibility','team_size_managed','desired_roles','portfolio_url','availability_status',
 ].join(',')
 
 const norm = (value: unknown) => String(value ?? '').trim().toLowerCase()

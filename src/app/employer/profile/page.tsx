@@ -76,6 +76,15 @@ export default function EmployerProfilePage() {
         taxi_support: profile.taxi_support,
         taxi_notes: profile.taxi_notes,
         travel_notes: profile.travel_notes,
+        // Property intelligence
+        hotel_group: profile.hotel_group || null,
+        room_count: profile.room_count ? parseInt(profile.room_count) : null,
+        spa_size: profile.spa_size || null,
+        facilities: profile.facilities?.length ? profile.facilities : null,
+        opening_year: profile.opening_year ? parseInt(profile.opening_year) : null,
+        culture_statement: profile.culture_statement || null,
+        staff_benefits: profile.staff_benefits?.length ? profile.staff_benefits : null,
+        progression_notes: profile.progression_notes || null,
         // Culture
         culture_points: profile.culture_points,
         highlights: profile.highlights,
@@ -341,6 +350,40 @@ export default function EmployerProfilePage() {
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1.5">Team Size</label>
               <input type="number" value={profile.team_size || ''} onChange={(e) => update('team_size', e.target.value)} className="input-field" placeholder="e.g. 25" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">Hotel Group</label>
+              <input value={profile.hotel_group || ''} onChange={(e) => update('hotel_group', e.target.value)} className="input-field" placeholder="e.g. Fairmont Hotels & Resorts" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">Room Count</label>
+              <input type="number" value={profile.room_count || ''} onChange={(e) => update('room_count', e.target.value)} className="input-field" placeholder="e.g. 180" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">Spa Size</label>
+              <input value={profile.spa_size || ''} onChange={(e) => update('spa_size', e.target.value)} className="input-field" placeholder="e.g. 2,000 sqm over two floors" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">Opening Year</label>
+              <input type="number" value={profile.opening_year || ''} onChange={(e) => update('opening_year', e.target.value)} className="input-field" placeholder="e.g. 2024" />
+            </div>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">Facilities <span className="font-normal text-gray-400">(one per line)</span></label>
+            <textarea rows={3} value={Array.isArray(profile.facilities) ? profile.facilities.join('\n') : ''} onChange={(e) => update('facilities', e.target.value.split('\n').map((v: string) => v.trim()).filter(Boolean))} className="input-field" placeholder={'Hydrotherapy pool\nThermal suite\nGym & studio'} />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">Culture</label>
+            <textarea rows={3} value={profile.culture_statement || ''} onChange={(e) => update('culture_statement', e.target.value)} className="input-field" placeholder="What it genuinely feels like to work here - candidates read this before applying." />
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">Staff Benefits <span className="font-normal text-gray-400">(one per line)</span></label>
+              <textarea rows={3} value={Array.isArray(profile.staff_benefits) ? profile.staff_benefits.join('\n') : ''} onChange={(e) => update('staff_benefits', e.target.value.split('\n').map((v: string) => v.trim()).filter(Boolean))} className="input-field" placeholder={'Service charge\nSpa treatments allowance\nCross-property discounts'} />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">Progression</label>
+              <textarea rows={3} value={profile.progression_notes || ''} onChange={(e) => update('progression_notes', e.target.value)} className="input-field" placeholder="Real progression examples - therapists who became managers, transfers within the group..." />
             </div>
           </div>
 

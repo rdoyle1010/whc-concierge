@@ -18,6 +18,8 @@ type BreakdownData = {
   proficiencyDepth: number
   profileCompleteness: number
   reviewScore: number
+  salaryFit?: number
+  availability?: number
 }
 
 const CATEGORIES: { key: keyof BreakdownData; label: string; weight: number }[] = [
@@ -31,6 +33,8 @@ const CATEGORIES: { key: keyof BreakdownData; label: string; weight: number }[] 
   { key: 'businessSkills', label: 'Business Skills', weight: 8 },
   { key: 'systems', label: 'Systems', weight: 7 },
   { key: 'shiftCompatibility', label: 'Shift Fit', weight: 5 },
+  { key: 'salaryFit', label: 'Salary Fit', weight: 6 },
+  { key: 'availability', label: 'Availability', weight: 4 },
   { key: 'transport', label: 'Transport', weight: 3 },
   { key: 'accommodation', label: 'Accommodation', weight: 2 },
 ]
@@ -65,7 +69,7 @@ export default function MatchBreakdown({
 }) {
   const [open, setOpen] = useState(!compact)
 
-  const specified = CATEGORIES.filter(cat => breakdown[cat.key] >= 0)
+  const specified = CATEGORIES.filter(cat => (breakdown[cat.key] ?? -1) >= 0)
   const notAssessedCount = CATEGORIES.length - specified.length
 
   // Sort categories by weighted contribution (score × weight), highest first
@@ -97,7 +101,7 @@ export default function MatchBreakdown({
         {open && (
           <div className="mt-3 space-y-1.5 animate-fade-in">
             {sorted.map(cat => {
-              const val = breakdown[cat.key]
+              const val = breakdown[cat.key] ?? 0
               return (
                 <div key={cat.key} className="flex items-center gap-2">
                   <span className="text-[10px] text-muted w-[80px] shrink-0 text-right">{cat.label}</span>
@@ -149,7 +153,7 @@ export default function MatchBreakdown({
       {/* Category bars */}
       <div className="space-y-2">
         {sorted.map(cat => {
-          const val = breakdown[cat.key]
+          const val = breakdown[cat.key] ?? 0
           return (
             <div key={cat.key} className="flex items-center gap-2.5">
               <span className="text-[11px] text-muted w-[90px] shrink-0 text-right">{cat.label}</span>

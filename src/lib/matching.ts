@@ -112,9 +112,9 @@ function progressionPolicy(candidate:any, job:any, candidateRole:string, require
 }
 
 export function calculateMatchScore(candidate:any, job:any): {
-  score:number; label:string; colour:string; bgColour:string; breakdown:any; matchingSkills:string[]; hardStop:boolean; hardStopReason?:string; matchExplanation:string; distanceMiles:number|null; locationBasis:'distance'|'text'|'unknown'; progression?:any
+  score:number; label:string; colour:string; bgColour:string; breakdown:any; matchingSkills:string[]; hardStop:boolean; hardStopReason?:string; matchExplanation:string; distanceMiles:number|null; locationBasis:'distance'|'text'|'unknown'; progression?:any; mode?:'permanent'|'agency'|'leadership'
 } {
-  const emptyBreakdown={roleLevel:-1,treatmentSkills:-1,brands:-1,qualifications:-1,experience:-1,businessSkills:-1,systems:-1,location:-1,shiftCompatibility:-1,transport:-1,accommodation:-1,proficiencyDepth:-1,profileCompleteness:0,reviewScore:0}
+  const emptyBreakdown={roleLevel:-1,treatmentSkills:-1,brands:-1,qualifications:-1,experience:-1,businessSkills:-1,systems:-1,location:-1,shiftCompatibility:-1,transport:-1,accommodation:-1,proficiencyDepth:-1,salaryFit:-1,availability:-1,profileCompleteness:0,reviewScore:0}
   const empty={score:10,label:'Requirement Missing',colour:'#6B7280',bgColour:'#F3F4F6',breakdown:emptyBreakdown,matchingSkills:[] as string[],hardStop:true,matchExplanation:'',distanceMiles:null,locationBasis:'unknown' as const}
 
   const candidateRole=String(candidate.role_level||candidate.current_role||candidate.job_title||'')
@@ -156,9 +156,36 @@ export function calculateMatchScore(candidate:any, job:any): {
   const profileScore=Math.min(100,candidate.profile_completion_score||candidate.profile_completion_pct||0)
   const rv=candidate.review_score||0, reviewScoreNorm=rv>=4.5?100:rv>=4?85:rv>=3.5?65:rv>0?40:50
 
+  // Different logic for agency, permanent and leadership roles: the same
+  // factors matter differently for a Saturday shift, a permanent post and a
+  // Director appointment.
+  const mode:'permanent'|'agency'|'leadership'=job.is_agency_role?'agency':roleFamily(requiredRole)==='leadership'?'leadership':'permanent'
+
+  // Salary fit: does the role's band meet the candidate's stated expectation?
+  const expectationMin=Number(candidate.salary_expectation_min||candidate.salary_expectation||0)
+  const jobSalaryMin=Number(job.salary_min||0), jobSalaryMax=Number(job.salary_max||job.salary_min||0)
+  let salaryScore=-1
+  if (mode!=='agency'&&expectationMin>0&&jobSalaryMax>0) {
+    if (jobSalaryMax>=expectationMin) salaryScore=jobSalaryMin>=expectationMin?100:88
+    else {
+      const shortfall=(expectationMin-jobSalaryMax)/expectationMin
+      salaryScore=shortfall<=0.05?72:shortfall<=0.15?48:22
+    }
+  }
+
+  // Availability: how soon can they realistically start?
+  const AVAILABILITY_SCORE:Record<string,number>={immediately:100,'1_week':95,'2_weeks':88,'1_month':72,not_available:10}
+  const availabilityScore=candidate.availability_status?AVAILABILITY_SCORE[String(candidate.availability_status)]??60:-1
+
+  const MODE_WEIGHTS:Record<string,Record<string,number>>={
+    permanent:{roleLevel:30,treatments:15,brands:8,qualifications:12,experience:10,business:11,systems:6,location:10,shift:5,transport:3,accommodation:2,proficiency:3,salary:6,availability:4,review:0},
+    agency:{roleLevel:10,treatments:24,brands:10,qualifications:12,experience:8,business:3,systems:6,location:16,shift:8,transport:6,accommodation:1,proficiency:6,salary:0,availability:10,review:8},
+    leadership:{roleLevel:36,treatments:5,brands:6,qualifications:10,experience:14,business:18,systems:4,location:8,shift:2,transport:2,accommodation:1,proficiency:0,salary:8,availability:4,review:4},
+  }
+  const w=MODE_WEIGHTS[mode]
   const components=[
-    {value:policy.score,weight:32},{value:treatmentResult.score,weight:16},{value:brandResult.score,weight:8},{value:qualResult.score,weight:12},{value:expScore,weight:10},{value:bizResult.score,weight:12},{value:sysResult.score,weight:7},{value:locationScore,weight:10},{value:shiftScore,weight:5},{value:transportScore,weight:3},{value:accommodationScore,weight:2},{value:proficiencyScore,weight:3},
-  ].filter(c=>c.value>=0)
+    {value:policy.score,weight:w.roleLevel},{value:treatmentResult.score,weight:w.treatments},{value:brandResult.score,weight:w.brands},{value:qualResult.score,weight:w.qualifications},{value:expScore,weight:w.experience},{value:bizResult.score,weight:w.business},{value:sysResult.score,weight:w.systems},{value:locationScore,weight:w.location},{value:shiftScore,weight:w.shift},{value:transportScore,weight:w.transport},{value:accommodationScore,weight:w.accommodation},{value:proficiencyScore,weight:w.proficiency},{value:salaryScore,weight:w.salary},{value:availabilityScore,weight:w.availability},{value:rv>0?reviewScoreNorm:-1,weight:w.review},
+  ].filter(c=>c.value>=0&&c.weight>0)
   const weight=components.reduce((t,c)=>t+c.weight,0)
   let score=weight?components.reduce((t,c)=>t+c.value*c.weight,0)/weight:10
   if (!policy.allowed && policy.scope!=='open_transferable') score=Math.min(score,44)
@@ -183,8 +210,11 @@ export function calculateMatchScore(candidate:any, job:any): {
   let matchExplanation=reasons.length?`${strength} match based on ${reasons.join(', ')}.`:''
   if (policy.levelGap===1&&policy.allowed) matchExplanation += ` This employer is open to candidates ready for the next career step.`
   if (!policy.allowed&&policy.scope==='same_level') matchExplanation += ` This employer asked WHC to prioritise candidates already at this level.`
+  if (mode==='agency') matchExplanation += ` Weighted for agency work: treatment capability, availability, distance and reliability count most.`
+  if (mode==='leadership') matchExplanation += ` Weighted for a leadership appointment: level, commercial and people experience count most.`
+  if (salaryScore>=0&&salaryScore<50) matchExplanation += ` Note: the advertised salary sits below their stated expectation.`
 
-  return {score:rounded,label,colour,bgColour,breakdown:{roleLevel:policy.score,treatmentSkills:treatmentResult.score,brands:brandResult.score,qualifications:qualResult.score,experience:expScore,businessSkills:bizResult.score,systems:sysResult.score,location:locationScore,shiftCompatibility:shiftScore,transport:transportScore,accommodation:accommodationScore,proficiencyDepth:proficiencyScore,profileCompleteness:profileScore,reviewScore:reviewScoreNorm},matchingSkills,hardStop:false,matchExplanation,distanceMiles:geo.distance,locationBasis:geo.basis,progression:{scope:policy.scope,levelGap:policy.levelGap,isStepUp:policy.levelGap===1&&policy.allowed,bridge:policy.progressionBridge}}
+  return {score:rounded,label,colour,bgColour,breakdown:{roleLevel:policy.score,treatmentSkills:treatmentResult.score,brands:brandResult.score,qualifications:qualResult.score,experience:expScore,businessSkills:bizResult.score,systems:sysResult.score,location:locationScore,shiftCompatibility:shiftScore,transport:transportScore,accommodation:accommodationScore,proficiencyDepth:proficiencyScore,salaryFit:salaryScore,availability:availabilityScore,profileCompleteness:profileScore,reviewScore:reviewScoreNorm},matchingSkills,hardStop:false,matchExplanation,distanceMiles:geo.distance,locationBasis:geo.basis,mode,progression:{scope:policy.scope,levelGap:policy.levelGap,isStepUp:policy.levelGap===1&&policy.allowed,bridge:policy.progressionBridge}}
 }
 
 export function rankCandidates(candidates:any[],job:any,minScore=10,blockedEmployerIds?:string[]) {
