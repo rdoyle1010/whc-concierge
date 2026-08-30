@@ -45,7 +45,7 @@ export async function GET(req: NextRequest) {
   if (error) return NextResponse.json({ error: 'Talent matches are unavailable.' }, { status: 500 })
 
   const blocked = new Set((blocks || []).map((row: any) => row.candidate_id))
-  const reviewedForRole = new Set((swipes || []).filter((row: any) => row.context_job_id === selectedJob.id).map((row: any) => row.target_id))
+  const reviewedForRole = new Set((swipes || []).filter((row: any) => row.action === 'left' || row.context_job_id === selectedJob.id).map((row: any) => row.target_id))
   const candidates = (rows || []).map((candidate: any) => {
     if (reviewedForRole.has(candidate.id)) return null
     if (!canEmployerDiscoverCandidate(candidate, blocked)) return null
@@ -101,9 +101,12 @@ export async function POST(req: NextRequest) {
     if (match.hardStop) return NextResponse.json({ error: match.hardStopReason || 'This professional is not compatible with that role.' }, { status: 400 })
   }
 
-  await admin.from('swipes').delete()
+  const contextForAction = action === 'right' ? jobId : null
+  let deleteQuery = admin.from('swipes').delete()
     .eq('swiper_id', user.id).eq('swiper_type', 'employer')
-    .eq('target_id', candidateId).eq('target_type', 'candidate').eq('context_job_id', jobId)
+    .eq('target_id', candidateId).eq('target_type', 'candidate')
+  deleteQuery = contextForAction ? deleteQuery.eq('context_job_id', contextForAction) : deleteQuery.is('context_job_id', null)
+  await deleteQuery
 
   const { error: swipeError } = await admin.from('swipes').insert({
     swiper_id: user.id,
@@ -111,7 +114,8 @@ export async function POST(req: NextRequest) {
     target_id: candidateId,
     target_type: 'candidate',
     action,
-    context_job_id: jobId,
+    // Passes are global (matching the web convention); interest is role-specific.
+    context_job_id: contextForAction,
   })
   if (swipeError) return NextResponse.json({ error: 'Your decision could not be saved.' }, { status: 500 })
 
@@ -119,7 +123,9 @@ export async function POST(req: NextRequest) {
 
   let applicationId: string | null = null
   const { data: application } = await admin.from('applications').select('id,status')
-    .eq('candidate_id', candidateId).or(`job_id.eq.${jobId},role_id.eq.${jobId}`).order('created_at', { ascending: false }).limit(1).maybeSingle()
+    .eq('candidate_id', candidateId).or(`job_id.eq.${jobId},role_id.eq.${jobId}`)
+    .neq('status', 'draft')
+    .order('created_at', { ascending: false }).limit(1).maybeSingle()
   applicationId = application?.id || null
 
   let mutual = false
@@ -166,7 +172,8 @@ export async function DELETE(req: NextRequest) {
   if (!jobId) return NextResponse.json({ error: 'Choose a role first.' }, { status: 400 })
   const admin = createAdminClient()
   const { error } = await admin.from('swipes').delete()
-    .eq('swiper_id', user.id).eq('swiper_type', 'employer').eq('target_type', 'candidate').eq('context_job_id', jobId)
+    .eq('swiper_id', user.id).eq('swiper_type', 'employer').eq('target_type', 'candidate')
+    .or(`context_job_id.eq.${jobId},context_job_id.is.null`)
   if (error) return NextResponse.json({ error: 'Could not reset matches.' }, { status: 500 })
   return NextResponse.json({ success: true })
 }

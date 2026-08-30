@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { createServerClient } from '@supabase/ssr'
-import { cookies } from 'next/headers'
+import { getRequestUser } from '@/lib/request-user'
 import { createNotification } from '@/lib/notifications'
 import { sendNewMessageEmail } from '@/lib/emails'
 
@@ -58,13 +57,7 @@ async function getMessagingRelationship(admin: ReturnType<typeof createAdminClie
 
 export async function POST(req: NextRequest) {
   try {
-    const cookieStore = await cookies()
-    const supabaseAuth = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      { cookies: { getAll() { return cookieStore.getAll() }, setAll() {} } }
-    )
-    const { data: { user } } = await supabaseAuth.auth.getUser()
+    const user = await getRequestUser(req)
     if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
 
     const body = await req.json()

@@ -14,10 +14,18 @@ export default function MessageThread(){
   setPerson(profile); setItems(messages||[]); await supabase.from('messages').update({read:true}).eq('recipient_id',user.id).eq('sender_id',userId).eq('read',false); setLoading(false)
  }
  async function send(){ const body=text.trim(); if(!body||!me||!userId)return; setSending(true)
-  const {data,error}=await supabase.from('messages').insert({sender_id:me,recipient_id:userId,content:body,read:false}).select('id,sender_id,recipient_id,content,read,created_at').single()
-  if(!error&&data){
-   setItems([...items,data]); setText('')
-   supabase.functions.invoke('mobile-event-push',{body:{eventType:'new_message',recordId:data.id}}).catch(()=>null)
+  // Send through the platform API: it verifies a real relationship exists,
+  // filters off-platform contact details, and notifies + emails the recipient.
+  try{
+   const {data:{session}}=await supabase.auth.getSession()
+   if(!session?.access_token)throw new Error('Your session has expired.')
+   const WEB_URL=process.env.EXPO_PUBLIC_WEB_URL||'https://talent.wellnesshousecollective.co.uk'
+   const res=await fetch(`${WEB_URL}/api/messages/send`,{method:'POST',headers:{'Content-Type':'application/json',Authorization:`Bearer ${session.access_token}`},body:JSON.stringify({recipientId:userId,content:body})})
+   const payload=await res.json().catch(()=>({}))
+   if(!res.ok)throw new Error(payload.error||'Could not send the message.')
+   setItems([...items,payload.message||{id:String(Date.now()),sender_id:me,recipient_id:userId,content:body,read:false,created_at:new Date().toISOString()}]); setText('')
+  }catch(e:any){
+   setItems(items); alert(e?.message||'Could not send the message.')
   }
   setSending(false)
  }

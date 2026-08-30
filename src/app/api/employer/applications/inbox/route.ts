@@ -100,10 +100,19 @@ export async function GET(req: NextRequest) {
   // A declined offer is stored as status 'rejected' for pipeline purposes, but
   // it must never READ as an employer rejection - join the offers to tell them apart.
   const applicationIds = rows.map((application: any) => application.id)
-  const { data: offers } = applicationIds.length
-    ? await admin.from('application_offers').select('application_id,status').in('application_id', applicationIds)
-    : { data: [] as any[] }
+  const [{ data: offers }, { data: interviewRows }] = applicationIds.length
+    ? await Promise.all([
+        admin.from('application_offers').select('application_id,status').in('application_id', applicationIds),
+        admin.from('application_interviews').select('id,application_id,round_number,interview_method,proposed_slots,selected_slot,status,employer_note,candidate_note').in('application_id', applicationIds).order('round_number', { ascending: true }),
+      ])
+    : [{ data: [] as any[] }, { data: [] as any[] }]
   const offerStatusByApplication = new Map((offers || []).map((offer: any) => [offer.application_id, offer.status]))
+  const interviewsByApplication = new Map<string, any[]>()
+  for (const interview of interviewRows || []) {
+    const list = interviewsByApplication.get(interview.application_id) || []
+    list.push(interview)
+    interviewsByApplication.set(interview.application_id, list)
+  }
 
   const candidateIds = Array.from(new Set(rows.map((application: any) => application.candidate_id).filter(Boolean)))
   const { data: candidates } = candidateIds.length
@@ -157,6 +166,7 @@ export async function GET(req: NextRequest) {
       academy: candidate ? (academyByCandidate.get(candidate.id) || []) : [],
       endorsements: candidate?.user_id ? (endorsementsByUser.get(candidate.user_id) || []) : [],
       offer_declined: application.status === 'rejected' && offerStatusByApplication.get(application.id) === 'declined',
+      interviews: interviewsByApplication.get(application.id) || [],
     }
   })
 

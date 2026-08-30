@@ -19,7 +19,7 @@ export async function GET(req: NextRequest) {
   if (!allJobs.length) return NextResponse.json({ stats: { activeListings: 0, totalAppsMonth: 0, totalAppsLastMonth: 0, avgMatch: 0, avgDaysToFirst: 0 }, jobs: [], funnel: { total: 0 }, topSkills: [] })
 
   const jobIds = allJobs.map(job => job.id)
-  const { data: apps, error: appsError } = await admin.from('applications').select('*').in('role_id', jobIds)
+  const { data: apps, error: appsError } = await admin.from('applications').select('*').in('role_id', jobIds).neq('status', 'draft')
   if (appsError) return NextResponse.json({ error: 'Could not load application analytics.' }, { status: 500 })
   const applicationRows = apps || []
 

@@ -9,6 +9,8 @@ type ApplicationRow = {
   id: string
   status: string
   match_score: number | null
+  offer_declined?: boolean
+  interviews?: { id: string; round_number: number; status: string; selected_slot?: string | null }[]
   candidate_profiles?: { full_name?: string | null; headline?: string | null; role_level?: string | null; location?: string | null; bio?: string | null; review_score?: number | null } | { full_name?: string | null; headline?: string | null; role_level?: string | null; location?: string | null; bio?: string | null; review_score?: number | null }[] | null
   job_listings?: { job_title?: string | null; location?: string | null } | { job_title?: string | null; location?: string | null }[] | null
 }
@@ -51,25 +53,29 @@ export default function EmployerApplicationScreen() {
     if (!user || !id) { router.replace('/login'); return }
     const { data: account } = await supabase.from('profiles').select('role').eq('id', user.id).maybeSingle()
     if (account?.role !== 'employer') { router.replace('/applications'); return }
-    const { data, error: queryError } = await supabase.from('applications')
-      .select('id,status,match_score,candidate_profiles(full_name,headline,role_level,location,bio,review_score),job_listings(job_title,location)')
-      .eq('id', id)
-      .maybeSingle()
-    if (queryError) setError(queryError.message)
-    setApplication(data as ApplicationRow | null)
+    try {
+      // The inbox API returns the applicant's full profile whatever their
+      // privacy settings (they applied to you), plus interview rounds.
+      const inbox = await callApi('/api/employer/applications/inbox', undefined, 'GET')
+      const row = (inbox.applications || []).find((application: any) => application.id === id)
+      if (!row) { setError('Application not found.'); setLoading(false); return }
+      setApplication(row as ApplicationRow)
+    } catch (e: any) {
+      setError(e?.message || 'Could not load this application.')
+    }
     setLoading(false)
   }
 
   const candidate = useMemo(() => application ? (Array.isArray(application.candidate_profiles) ? application.candidate_profiles[0] : application.candidate_profiles) : null, [application])
   const job = useMemo(() => application ? (Array.isArray(application.job_listings) ? application.job_listings[0] : application.job_listings) : null, [application])
 
-  async function callApi(path: string, payload: Record<string, unknown>) {
+  async function callApi(path: string, payload?: Record<string, unknown>, methodOverride: 'GET' | 'POST' | 'PATCH' = 'POST') {
     const { data: { session } } = await supabase.auth.getSession()
     if (!session?.access_token) throw new Error('Your session has expired. Please sign in again.')
     const response = await fetch(`${WEB_URL}${path}`, {
-      method: 'POST',
+      method: methodOverride,
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
-      body: JSON.stringify(payload),
+      ...(payload !== undefined && methodOverride !== 'GET' ? { body: JSON.stringify(payload) } : {}),
     })
     const body = await response.json().catch(() => ({}))
     if (!response.ok) throw new Error(body?.error || 'Could not update this application.')
@@ -119,7 +125,7 @@ export default function EmployerApplicationScreen() {
     try {
       await callApi('/api/employer/applications/interview', {
         applicationId: application.id,
-        roundNumber: 1,
+        roundNumber: nextRound,
         interviewMethod: method,
         note: note.trim(),
         slots: dates.map(date => date.toISOString()),
@@ -143,12 +149,47 @@ export default function EmployerApplicationScreen() {
     setBusy('')
   }
 
+  async function markInterviewComplete() {
+    if (!application || !latestInterview || busy) return
+    setBusy('complete-interview'); setError('')
+    try {
+      await callApi('/api/employer/applications/interview', { interviewId: latestInterview.id }, 'PATCH')
+      await load()
+      Alert.alert('Interview marked complete', 'You can now arrange the next interview or make an offer.')
+    } catch (e: any) { setError(e.message) }
+    setBusy('')
+  }
+
+  async function completeHire() {
+    if (!application || busy) return
+    Alert.alert('Complete hire & close role?', 'The role will be closed, other applicants will be notified, and this placement will move to Hired history.', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Complete hire', onPress: async () => {
+        setBusy('complete-hire'); setError('')
+        try {
+          await callApi('/api/employer/applications/complete-hire', { applicationId: application.id })
+          Alert.alert('Hire completed', 'Congratulations - the placement is recorded and the role has been closed.')
+          router.replace('/applications')
+        } catch (e: any) { setError(e.message) }
+        setBusy('')
+      } },
+    ])
+  }
+
   if (loading) return <View style={styles.center}><ActivityIndicator color="#092b45" /></View>
   if (!application) return <View style={styles.center}><Text style={styles.error}>{error || 'Application not found.'}</Text><Pressable onPress={() => router.back()}><Text style={styles.back}>‹ Back</Text></Pressable></View>
 
-  const canInterview = ['shortlisted', 'interview'].includes(application.status)
-  const canOffer = ['shortlisted', 'interview', 'offered'].includes(application.status)
-  const closed = ['accepted', 'rejected', 'withdrawn'].includes(application.status)
+  const interviews = application.interviews || []
+  const latestInterview = interviews.length ? interviews[interviews.length - 1] : null
+  const latestHeld = !!latestInterview && (latestInterview.status === 'completed' || (latestInterview.status === 'confirmed' && !!latestInterview.selected_slot && new Date(latestInterview.selected_slot).getTime() <= Date.now()))
+  const latestAwaitingCompletion = !!latestInterview && latestInterview.status === 'confirmed' && !!latestInterview.selected_slot && new Date(latestInterview.selected_slot).getTime() <= Date.now()
+  // Round to send next: update the current round while it is still proposed;
+  // otherwise the next round (once the previous one has been held).
+  const nextRound = !latestInterview ? 1 : latestInterview.status === 'proposed' ? latestInterview.round_number : latestHeld ? Math.min(latestInterview.round_number + 1, 3) : latestInterview.round_number
+  const canInterview = ['shortlisted', 'interview'].includes(application.status) && (!latestInterview || latestInterview.status === 'proposed' || latestHeld)
+  const canOffer = ['interview', 'offered'].includes(application.status) && (latestHeld || application.status === 'offered')
+  const accepted = application.status === 'accepted'
+  const closed = ['rejected', 'withdrawn'].includes(application.status)
 
   return <ScrollView style={styles.scroll} contentContainerStyle={styles.page}>
     <Pressable onPress={() => router.back()}><Text style={styles.back}>‹ Applications</Text></Pressable>
@@ -158,7 +199,7 @@ export default function EmployerApplicationScreen() {
     <Text style={styles.stage}>CURRENT STAGE  {application.status.replaceAll('_', ' ').toUpperCase()}</Text>
     {candidate?.bio ? <View style={styles.section}><Text style={styles.sectionTitle}>Candidate profile</Text><Text style={styles.copy}>{candidate.bio}</Text></View> : null}
 
-    {!closed ? <>
+    {!closed && !accepted ? <>
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Message to candidate</Text>
         <Text style={styles.help}>Use AI to create a polished first draft from the real candidate, role and property details. You can edit every word before sending.</Text>
@@ -174,14 +215,16 @@ export default function EmployerApplicationScreen() {
         <Pressable onPress={() => decision('rejected')} disabled={!!busy} style={[styles.secondary, busy !== '' && styles.disabled]}><Text style={styles.dangerText}>{busy === 'rejected' ? 'Sending...' : 'Not progressing'}</Text></Pressable>
       </View>
 
-      {canInterview ? <View style={styles.section}><Text style={styles.sectionTitle}>Interview invitation</Text><Text style={styles.help}>Offer one or two future times. The candidate chooses their preferred slot.</Text><View style={styles.methodRow}>{(['video','teams','phone','in_person'] as InterviewMethod[]).map(value => <Pressable key={value} onPress={() => setMethod(value)} style={[styles.method, method === value && styles.methodActive]}><Text style={[styles.methodText, method === value && styles.methodTextActive]}>{value === 'in_person' ? 'In person' : value === 'teams' ? 'Teams' : value === 'video' ? 'Video' : 'Phone'}</Text></Pressable>)}</View><Text style={styles.label}>First option</Text><TextInput value={slotOne} onChangeText={setSlotOne} style={styles.input} placeholder="YYYY-MM-DD HH:mm" /><Text style={styles.label}>Second option</Text><TextInput value={slotTwo} onChangeText={setSlotTwo} style={styles.input} placeholder="YYYY-MM-DD HH:mm" />{method === 'in_person' ? <><Text style={styles.label}>Venue</Text><TextInput value={venueAddress} onChangeText={setVenueAddress} style={styles.input} placeholder="Interview address" /></> : <><Text style={styles.label}>Meeting link (optional)</Text><TextInput value={meetingLink} onChangeText={setMeetingLink} style={styles.input} placeholder="Teams / video link" autoCapitalize="none" /></>}<Pressable onPress={inviteInterview} disabled={!!busy} style={[styles.primary, busy !== '' && styles.disabled]}><Text style={styles.primaryText}>{busy === 'interview' ? 'Sending...' : application.status === 'interview' ? 'Update interview invitation' : 'Send interview invitation'}</Text></Pressable></View> : null}
+      {canInterview ? <View style={styles.section}><Text style={styles.sectionTitle}>Interview invitation</Text><Text style={styles.help}>Offer one or two future times. The candidate chooses their preferred slot.</Text><View style={styles.methodRow}>{(['video','teams','phone','in_person'] as InterviewMethod[]).map(value => <Pressable key={value} onPress={() => setMethod(value)} style={[styles.method, method === value && styles.methodActive]}><Text style={[styles.methodText, method === value && styles.methodTextActive]}>{value === 'in_person' ? 'In person' : value === 'teams' ? 'Teams' : value === 'video' ? 'Video' : 'Phone'}</Text></Pressable>)}</View><Text style={styles.label}>First option</Text><TextInput value={slotOne} onChangeText={setSlotOne} style={styles.input} placeholder="YYYY-MM-DD HH:mm" /><Text style={styles.label}>Second option</Text><TextInput value={slotTwo} onChangeText={setSlotTwo} style={styles.input} placeholder="YYYY-MM-DD HH:mm" />{method === 'in_person' ? <><Text style={styles.label}>Venue</Text><TextInput value={venueAddress} onChangeText={setVenueAddress} style={styles.input} placeholder="Interview address" /></> : <><Text style={styles.label}>Meeting link (optional)</Text><TextInput value={meetingLink} onChangeText={setMeetingLink} style={styles.input} placeholder="Teams / video link" autoCapitalize="none" /></>}<Pressable onPress={inviteInterview} disabled={!!busy} style={[styles.primary, busy !== '' && styles.disabled]}><Text style={styles.primaryText}>{busy === 'interview' ? 'Sending...' : latestInterview && latestInterview.status === 'proposed' && nextRound === latestInterview.round_number ? `Update interview ${nextRound} invitation` : `Send interview ${nextRound} invitation`}</Text></Pressable></View> : null}
+
+      {latestAwaitingCompletion ? <View style={styles.section}><Text style={styles.sectionTitle}>Interview held?</Text><Text style={styles.help}>Interview {latestInterview?.round_number} was scheduled for a time that has now passed. Mark it complete to unlock the next interview or an offer.</Text><Pressable onPress={markInterviewComplete} disabled={!!busy} style={[styles.secondary, busy !== '' && styles.disabled]}><Text style={styles.completeText}>{busy === 'complete-interview' ? 'Saving...' : 'Mark interview complete'}</Text></Pressable></View> : null}
 
       {canOffer ? <View style={styles.section}><Text style={styles.sectionTitle}>Make an offer</Text><Text style={styles.help}>The candidate will receive an offer alert and can respond from My Applications.</Text><Pressable onPress={makeOffer} disabled={!!busy} style={[styles.offer, busy !== '' && styles.disabled]}><Text style={styles.offerText}>{busy === 'offer' ? 'Sending...' : application.status === 'offered' ? 'Resend / update offer' : 'Send job offer'}</Text></Pressable></View> : null}
-    </> : <View style={styles.closed}><Text style={styles.closedTitle}>This application is closed.</Text><Text style={styles.help}>No further recruitment action is available from this stage.</Text></View>}
+    </> : accepted ? <View style={styles.section}><Text style={styles.sectionTitle}>Offer accepted 🎉</Text><Text style={styles.help}>Complete the hire to close the role, notify the other applicants and archive this placement to Hired history.</Text><Pressable onPress={completeHire} disabled={!!busy} style={[styles.primary, busy !== '' && styles.disabled]}><Text style={styles.primaryText}>{busy === 'complete-hire' ? 'Completing...' : 'Complete hire & close role'}</Text></Pressable></View> : <View style={styles.closed}><Text style={styles.closedTitle}>{(application as any).offer_declined ? 'The candidate declined the offer.' : 'This application is closed.'}</Text><Text style={styles.help}>No further recruitment action is available from this stage.</Text></View>}
     {error ? <Text style={styles.error}>{error}</Text> : null}
   </ScrollView>
 }
 
 const styles = StyleSheet.create({
-  scroll:{flex:1,backgroundColor:'#fff'},page:{paddingHorizontal:22,paddingTop:64,paddingBottom:48},center:{flex:1,alignItems:'center',justifyContent:'center',padding:28,backgroundColor:'#fff'},back:{color:'#66747c',fontSize:13,marginBottom:34},eyebrow:{color:'#71808a',fontSize:9,letterSpacing:2.1,marginBottom:10},titleRow:{flexDirection:'row',gap:16,alignItems:'flex-start'},title:{color:'#092b45',fontSize:29,lineHeight:35,fontWeight:'500'},meta:{color:'#71808a',fontSize:12,lineHeight:18,marginTop:6},scoreBox:{borderWidth:1,borderColor:'#ccd8dd',paddingHorizontal:12,paddingVertical:8,alignItems:'center'},score:{color:'#092b45',fontSize:17,fontWeight:'700'},scoreLabel:{color:'#71808a',fontSize:7,letterSpacing:1.2,marginTop:2},role:{color:'#173246',fontSize:14,fontWeight:'600',marginTop:22},stage:{color:'#71808a',fontSize:9,letterSpacing:1.1,marginTop:8},section:{borderTopWidth:1,borderTopColor:'#e3e8eb',paddingTop:22,marginTop:26},sectionTitle:{color:'#173246',fontSize:17,fontWeight:'600',marginBottom:7},copy:{color:'#66747c',fontSize:13,lineHeight:21},help:{color:'#71808a',fontSize:11,lineHeight:17,marginBottom:12},aiRow:{flexDirection:'row',gap:8,marginBottom:12},aiButton:{flex:1,borderWidth:1,borderColor:'#9fb1bb',backgroundColor:'#f4f7f8',paddingVertical:10,paddingHorizontal:6,alignItems:'center'},aiButtonText:{color:'#092b45',fontSize:9.5,fontWeight:'700'},textarea:{borderWidth:1,borderColor:'#d7e0e4',minHeight:110,padding:13,textAlignVertical:'top',fontSize:13,color:'#173246'},actionGrid:{gap:10,marginTop:14},primary:{backgroundColor:'#092b45',paddingVertical:15,alignItems:'center',marginTop:12},primaryText:{color:'#fff',fontSize:12,fontWeight:'700'},secondary:{borderWidth:1,borderColor:'#d7e0e4',paddingVertical:14,alignItems:'center'},dangerText:{color:'#7c3f3f',fontSize:12,fontWeight:'600'},disabled:{opacity:.45},methodRow:{flexDirection:'row',flexWrap:'wrap',gap:8,marginVertical:10},method:{borderWidth:1,borderColor:'#d7e0e4',paddingHorizontal:11,paddingVertical:9},methodActive:{backgroundColor:'#092b45',borderColor:'#092b45'},methodText:{color:'#66747c',fontSize:10},methodTextActive:{color:'#fff',fontWeight:'700'},label:{color:'#173246',fontSize:11,fontWeight:'600',marginTop:11,marginBottom:6},input:{borderWidth:1,borderColor:'#d7e0e4',paddingHorizontal:12,paddingVertical:12,color:'#173246',fontSize:12},offer:{borderWidth:1,borderColor:'#092b45',paddingVertical:15,alignItems:'center',marginTop:10},offerText:{color:'#092b45',fontSize:12,fontWeight:'700'},closed:{backgroundColor:'#f4f7f8',padding:18,marginTop:28},closedTitle:{color:'#173246',fontSize:14,fontWeight:'600',marginBottom:5},error:{color:'#9b2c2c',fontSize:12,lineHeight:18,marginTop:18},
+  scroll:{flex:1,backgroundColor:'#fff'},page:{paddingHorizontal:22,paddingTop:64,paddingBottom:48},center:{flex:1,alignItems:'center',justifyContent:'center',padding:28,backgroundColor:'#fff'},back:{color:'#66747c',fontSize:13,marginBottom:34},eyebrow:{color:'#71808a',fontSize:9,letterSpacing:2.1,marginBottom:10},titleRow:{flexDirection:'row',gap:16,alignItems:'flex-start'},title:{color:'#092b45',fontSize:29,lineHeight:35,fontWeight:'500'},meta:{color:'#71808a',fontSize:12,lineHeight:18,marginTop:6},scoreBox:{borderWidth:1,borderColor:'#ccd8dd',paddingHorizontal:12,paddingVertical:8,alignItems:'center'},score:{color:'#092b45',fontSize:17,fontWeight:'700'},scoreLabel:{color:'#71808a',fontSize:7,letterSpacing:1.2,marginTop:2},role:{color:'#173246',fontSize:14,fontWeight:'600',marginTop:22},stage:{color:'#71808a',fontSize:9,letterSpacing:1.1,marginTop:8},section:{borderTopWidth:1,borderTopColor:'#e3e8eb',paddingTop:22,marginTop:26},sectionTitle:{color:'#173246',fontSize:17,fontWeight:'600',marginBottom:7},copy:{color:'#66747c',fontSize:13,lineHeight:21},help:{color:'#71808a',fontSize:11,lineHeight:17,marginBottom:12},aiRow:{flexDirection:'row',gap:8,marginBottom:12},aiButton:{flex:1,borderWidth:1,borderColor:'#9fb1bb',backgroundColor:'#f4f7f8',paddingVertical:10,paddingHorizontal:6,alignItems:'center'},aiButtonText:{color:'#092b45',fontSize:9.5,fontWeight:'700'},textarea:{borderWidth:1,borderColor:'#d7e0e4',minHeight:110,padding:13,textAlignVertical:'top',fontSize:13,color:'#173246'},actionGrid:{gap:10,marginTop:14},primary:{backgroundColor:'#092b45',paddingVertical:15,alignItems:'center',marginTop:12},primaryText:{color:'#fff',fontSize:12,fontWeight:'700'},secondary:{borderWidth:1,borderColor:'#d7e0e4',paddingVertical:14,alignItems:'center'},dangerText:{color:'#7c3f3f',fontSize:12,fontWeight:'600'},completeText:{color:'#0b6245',fontSize:12,fontWeight:'700'},disabled:{opacity:.45},methodRow:{flexDirection:'row',flexWrap:'wrap',gap:8,marginVertical:10},method:{borderWidth:1,borderColor:'#d7e0e4',paddingHorizontal:11,paddingVertical:9},methodActive:{backgroundColor:'#092b45',borderColor:'#092b45'},methodText:{color:'#66747c',fontSize:10},methodTextActive:{color:'#fff',fontWeight:'700'},label:{color:'#173246',fontSize:11,fontWeight:'600',marginTop:11,marginBottom:6},input:{borderWidth:1,borderColor:'#d7e0e4',paddingHorizontal:12,paddingVertical:12,color:'#173246',fontSize:12},offer:{borderWidth:1,borderColor:'#092b45',paddingVertical:15,alignItems:'center',marginTop:10},offerText:{color:'#092b45',fontSize:12,fontWeight:'700'},closed:{backgroundColor:'#f4f7f8',padding:18,marginTop:28},closedTitle:{color:'#173246',fontSize:14,fontWeight:'600',marginBottom:5},error:{color:'#9b2c2c',fontSize:12,lineHeight:18,marginTop:18},
 })

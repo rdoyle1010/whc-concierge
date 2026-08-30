@@ -10,7 +10,7 @@ export default function DiscoverTalent(){
  async function load(){ const {data:{user}}=await supabase.auth.getUser(); if(!user){router.replace('/login');return}
   const {data:employer}=await supabase.from('employer_profiles').select('id,membership_tier').eq('user_id',user.id).maybeSingle(); const tier=String(employer?.membership_tier||'free').toLowerCase(); if(!['pro','group'].includes(tier)){setLocked(true);setLoading(false);return}
   const {data:jobRows}=employer?.id?await supabase.from('job_listings').select('*').eq('employer_id',employer.id).order('posted_date',{ascending:false}):{data:[] as any[]}; setJobs(jobRows||[]); if(jobRows?.[0]?.id)setSelectedJobId(jobRows[0].id)
-  const {data}=await supabase.from('candidate_profiles').select('*').eq('profile_visible',true).eq('stealth_mode',false).order('is_featured',{ascending:false}).limit(100)
+  const {data}=await supabase.from('candidate_profiles').select('*').or('profile_visible.eq.true,profile_visible.is.null').eq('stealth_mode',false).order('is_featured',{ascending:false}).limit(100)
   setItems(data||[]); setLoading(false)
  }
  const selectedJob=jobs.find(job=>job.id===selectedJobId)||null

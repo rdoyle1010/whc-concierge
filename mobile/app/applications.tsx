@@ -6,7 +6,7 @@ import { supabase } from '../src/lib/supabase'
 const WEB_URL=process.env.EXPO_PUBLIC_WEB_URL||'https://talent.wellnesshousecollective.co.uk'
 type Role='talent'|'employer'
 type Application={id:string;status:string;match_score:number|null;created_at:string|null;archived_at?:string|null;hired_at?:string|null;candidate_id:string;role_id:string;job_listings?:any;candidate_profiles?:any}
-const statusCopy:Record<string,string>={draft:'Draft',pending:'Applied',reviewed:'Reviewed',shortlisted:'Shortlisted',interview:'Interview',offered:'Offer',accepted:'Accepted',rejected:'Not progressing',withdrawn:'Withdrawn'}
+const statusCopy:Record<string,string>={draft:'Ready to Send',pending:'Applied',reviewed:'Reviewed',shortlisted:'Shortlisted',interview:'Interview',offered:'Offer',accepted:'Accepted',rejected:'Not progressing',withdrawn:'Withdrawn'}
 const ACTIVE_STATUSES=new Set(['draft','pending','reviewed','shortlisted','interview','offered','accepted'])
 function fmt(v?:string|null){if(!v)return '—';const d=new Date(v);return Number.isNaN(d.getTime())?'—':d.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'})}
 function method(v:string){return v==='teams'?'Microsoft Teams':v==='video'?'Video call':v==='phone'?'Phone call':'In person'}
@@ -41,23 +41,18 @@ export default function ApplicationsScreen(){
       const resolved:Role=account?.role==='employer'?'employer':'talent'
       setRole(resolved)
       if(resolved==='talent'){
-        const {data:candidate}=await supabase.from('candidate_profiles').select('id').eq('user_id',user.id).maybeSingle()
-        if(candidate){
-          const {data,error:queryError}=await supabase.from('applications').select('id,status,match_score,created_at,archived_at,hired_at,candidate_id,role_id,job_listings(job_title,location,employer_profiles(property_name,company_name))').eq('candidate_id',candidate.id).order('created_at',{ascending:false})
-          if(queryError)throw queryError
-          setItems((data||[]) as Application[])
-        }
+        // The shared API keeps drafts reachable ("Ready to Send"), hides
+        // archived rows, and flags declined offers correctly.
+        const [sent,drafts]=await Promise.all([
+          authFetch('/api/applications/mine?per_page=100'),
+          authFetch('/api/applications/mine?status=draft&per_page=50').catch(()=>({applications:[]})),
+        ])
+        setItems(([...(drafts.applications||[]),...(sent.applications||[])]) as Application[])
       }else{
-        const {data:employer}=await supabase.from('employer_profiles').select('id').eq('user_id',user.id).maybeSingle()
-        if(employer){
-          const {data:jobs}=await supabase.from('job_listings').select('id').eq('employer_id',employer.id)
-          const ids=(jobs||[]).map(j=>j.id)
-          if(ids.length){
-            const {data,error:queryError}=await supabase.from('applications').select('id,status,match_score,created_at,archived_at,hired_at,candidate_id,role_id,job_listings(job_title,location),candidate_profiles(full_name,headline,role_level)').in('role_id',ids).order('created_at',{ascending:false})
-            if(queryError)throw queryError
-            setItems((data||[]) as Application[])
-          }
-        }
+        // The employer inbox API never exposes unsent drafts, and always
+        // returns the applicant's profile - whatever their privacy settings.
+        const inbox=await authFetch('/api/employer/applications/inbox')
+        setItems((inbox.applications||[]) as Application[])
       }
       const history=await authFetch('/api/mobile/hired')
       setHired(history.items||[])
@@ -68,9 +63,10 @@ export default function ApplicationsScreen(){
   const live=useMemo(()=>items.filter(item=>!item.archived_at&&!item.hired_at&&ACTIVE_STATUSES.has(String(item.status||'').toLowerCase())),[items])
 
   async function withdraw(item:Application){
-    const {error:updateError}=await supabase.from('applications').update({status:'withdrawn',updated_at:new Date().toISOString()}).eq('id',item.id)
-    if(updateError){setError(updateError.message);return}
-    setItems(current=>current.map(row=>row.id===item.id?{...row,status:'withdrawn'}:row))
+    try{
+      await authFetch('/api/applications/withdraw',{method:'POST',body:JSON.stringify({applicationId:item.id})})
+      await load()
+    }catch(e:any){setError(e?.message||'Could not withdraw this application.')}
   }
 
   async function reopen(id:string){
@@ -86,7 +82,7 @@ export default function ApplicationsScreen(){
     <Text style={styles.intro}>{mode==='active'?(role==='employer'?'Candidates currently moving through recruitment.':'Roles currently moving through recruitment.'):role==='employer'?'Completed hires and their preserved recruitment history.':'Your completed placements and preserved recruitment history.'}</Text>
     {loading?<ActivityIndicator color="#092b45" style={{marginTop:30}}/>:null}{error?<Text style={styles.error}>{error}</Text>:null}
     {!loading&&mode==='active'&&live.length===0?<View style={styles.empty}><Text style={styles.emptyTitle}>No active applications.</Text><Text style={styles.emptyCopy}>{role==='talent'?'Go to Jobs and choose Apply with AI to start an application.':'New applications appear here when Talent apply to your live roles.'}</Text></View>:null}
-    {mode==='active'?<View style={styles.list}>{live.map(item=>{const job=Array.isArray(item.job_listings)?item.job_listings[0]:item.job_listings,employer=Array.isArray(job?.employer_profiles)?job?.employer_profiles[0]:job?.employer_profiles,candidate=Array.isArray(item.candidate_profiles)?item.candidate_profiles[0]:item.candidate_profiles;return <View key={item.id} style={styles.card}><View style={styles.topRow}><Text style={styles.status}>{statusCopy[item.status]||item.status}</Text>{item.match_score?<Text style={styles.score}>{item.match_score}% match</Text>:null}</View><Text style={styles.cardTitle}>{role==='talent'?(job?.job_title||'Role'):(candidate?.full_name||'Candidate')}</Text><Text style={styles.meta}>{role==='talent'?[employer?.property_name||employer?.company_name,job?.location].filter(Boolean).join(' · '):[candidate?.headline||candidate?.role_level,job?.job_title].filter(Boolean).join(' · ')}</Text>{role==='talent'?<Pressable onPress={()=>router.push({pathname:'/talent-application/[id]',params:{id:item.id}})} style={styles.manage}><Text style={styles.manageText}>{['interview','offered','accepted'].includes(item.status)?'View & respond →':'View application progress →'}</Text></Pressable>:null}{role==='talent'&&!['accepted','rejected','offered'].includes(item.status)?<Pressable onPress={()=>withdraw(item)}><Text style={styles.withdraw}>Withdraw interest</Text></Pressable>:null}{role==='employer'?<Pressable onPress={()=>router.push({pathname:'/application/[id]',params:{id:item.id}})} style={styles.manage}><Text style={styles.manageText}>Manage candidate →</Text></Pressable>:null}</View>})}</View>:null}
+    {mode==='active'?<View style={styles.list}>{live.map(item=>{const job=Array.isArray(item.job_listings)?item.job_listings[0]:item.job_listings,employer=Array.isArray(job?.employer_profiles)?job?.employer_profiles[0]:job?.employer_profiles,candidate=Array.isArray(item.candidate_profiles)?item.candidate_profiles[0]:item.candidate_profiles;return <View key={item.id} style={styles.card}><View style={styles.topRow}><Text style={styles.status}>{(item as any).offer_declined?(role==='talent'?'Offer declined by you':'Offer declined'):statusCopy[item.status]||item.status}</Text>{item.match_score?<Text style={styles.score}>{item.match_score}% match</Text>:null}</View><Text style={styles.cardTitle}>{role==='talent'?(job?.job_title||'Role'):(candidate?.full_name||'Candidate')}</Text><Text style={styles.meta}>{role==='talent'?[employer?.property_name||employer?.company_name,job?.location].filter(Boolean).join(' · '):[candidate?.headline||candidate?.role_level,job?.job_title].filter(Boolean).join(' · ')}</Text>{role==='talent'?<Pressable onPress={()=>item.status==='draft'?router.push({pathname:'/job/[id]',params:{id:item.role_id}}):router.push({pathname:'/talent-application/[id]',params:{id:item.id}})} style={styles.manage}><Text style={styles.manageText}>{item.status==='draft'?'Review & Send →':['interview','offered','accepted'].includes(item.status)?'View & respond →':'View application progress →'}</Text></Pressable>:null}{role==='talent'&&!['accepted','rejected','offered'].includes(item.status)?<Pressable onPress={()=>withdraw(item)}><Text style={styles.withdraw}>Withdraw interest</Text></Pressable>:null}{role==='employer'?<Pressable onPress={()=>router.push({pathname:'/application/[id]',params:{id:item.id}})} style={styles.manage}><Text style={styles.manageText}>Manage candidate →</Text></Pressable>:null}</View>})}</View>:null}
     {!loading&&mode==='hired'&&!hired.length?<View style={styles.empty}><Text style={styles.emptyTitle}>{role==='talent'?'No completed placements yet.':'No completed hires yet.'}</Text><Text style={styles.emptyCopy}>Completed recruitment records will appear here automatically.</Text></View>:null}
     {mode==='hired'?<View style={styles.list}>{hired.map(item=>{const person=role==='talent'?item.employer:item.candidate,job=item.job||{},open=expanded===item.id;return <View key={item.id} style={styles.card}><Text style={styles.hiredStatus}>HIRED</Text><Text style={styles.cardTitle}>{role==='talent'?(job.job_title||'Role'):(person?.full_name||'Candidate')}</Text><Text style={styles.meta}>{role==='talent'?[person?.property_name||person?.company_name,job.location].filter(Boolean).join(' · '):[job.job_title,person?.headline,person?.location].filter(Boolean).join(' · ')}</Text><Text style={styles.date}>Hired {fmt(item.hired_at)} · Archived {fmt(item.archived_at)}</Text><Pressable onPress={()=>setExpanded(open?'':item.id)} style={styles.manage}><Text style={styles.manageText}>{open?'Hide recruitment history':'View recruitment history'} →</Text></Pressable>{role==='employer'?<Pressable disabled={busy===item.id} onPress={()=>reopen(item.id)}><Text style={styles.reopen}>{busy===item.id?'Reopening...':'Reopen record'}</Text></Pressable>:null}{open?<View style={styles.history}>{item.cover_note||item.cover_letter?<View style={styles.block}><Text style={styles.blockLabel}>ORIGINAL COVERING LETTER</Text><Text style={styles.blockCopy}>{item.cover_note||item.cover_letter}</Text></View>:null}{(item.interviews||[]).length?<View style={styles.block}><Text style={styles.blockLabel}>INTERVIEW HISTORY</Text>{item.interviews.map((iv:any)=><View key={iv.id} style={styles.line}><Text style={styles.lineTitle}>Interview {iv.round_number} · {method(iv.interview_method)}</Text><Text style={styles.lineCopy}>{iv.selected_slot?new Date(iv.selected_slot).toLocaleString('en-GB'):'No confirmed time recorded'}</Text>{iv.employer_note?<Text style={styles.lineCopy}>{iv.employer_note}</Text>:null}</View>)}</View>:null}{item.offer?<View style={styles.block}><Text style={styles.blockLabel}>OFFER COMMUNICATION</Text><Text style={styles.blockCopy}>{item.offer.employer_note||'Offer recorded.'}</Text></View>:null}</View>:null}</View>})}</View>:null}
   </ScrollView>

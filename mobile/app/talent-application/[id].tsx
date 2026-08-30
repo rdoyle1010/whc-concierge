@@ -117,6 +117,20 @@ export default function TalentApplicationScreen() {
     setBusy('')
   }
 
+  async function requestAlternative(interview: Interview) {
+    if (note.trim().length < 10) {
+      Alert.alert('Add your availability first', 'Use the note box below the offer times to say when you ARE available, then request alternatives.')
+      return
+    }
+    setBusy(`alt-${interview.id}`); setError('')
+    try {
+      await post('/api/talent/applications/interview', { interviewId: interview.id, action: 'request_alternative', note: note.trim() })
+      Alert.alert('Request sent', 'The property has been asked to offer new interview times.')
+      setNote('')
+    } catch (e: any) { setError(e.message) }
+    setBusy('')
+  }
+
   async function respondOffer(action: 'accept' | 'decline') {
     if (!application) return
     setBusy(action); setError('')
@@ -137,7 +151,7 @@ export default function TalentApplicationScreen() {
     <Text style={styles.eyebrow}>YOUR APPLICATION</Text>
     <Text style={styles.title}>{job?.job_title || 'Role'}</Text>
     <Text style={styles.meta}>{[employer?.property_name || employer?.company_name, job?.location].filter(Boolean).join(' · ')}</Text>
-    <View style={styles.stageBox}><Text style={styles.stageLabel}>CURRENT STAGE</Text><Text style={styles.stage}>{stageLabel(application.status)}</Text>{application.match_score ? <Text style={styles.match}>{application.match_score}% match</Text> : null}</View>
+    <View style={styles.stageBox}><Text style={styles.stageLabel}>CURRENT STAGE</Text><Text style={styles.stage}>{offer?.status==='declined'&&application.status==='rejected'?'Offer declined by you':stageLabel(application.status)}</Text>{application.match_score ? <Text style={styles.match}>{application.match_score}% match</Text> : null}</View>
 
     {interviews.map(interview => <View key={interview.id} style={styles.section}>
       <Text style={styles.sectionTitle}>Interview {interview.round_number}</Text>
@@ -148,6 +162,9 @@ export default function TalentApplicationScreen() {
       {interview.status === 'proposed' ? <>
         <Text style={styles.label}>Choose your interview time</Text>
         {(interview.proposed_slots || []).map(slot => <Pressable key={slot} disabled={!!busy} onPress={() => chooseInterview(interview, slot)} style={styles.slot}><Text style={styles.slotText}>{displayDate(slot)}</Text><Text style={styles.choose}>Choose →</Text></Pressable>)}
+        <Text style={styles.label}>None of these times work?</Text>
+        <TextInput value={note} onChangeText={setNote} multiline style={styles.textarea} placeholder="Tell the property when you are available..." />
+        <Pressable disabled={!!busy} onPress={() => requestAlternative(interview)} style={styles.secondary}><Text style={styles.altText}>{busy === `alt-${interview.id}` ? 'Sending...' : 'Request alternative times'}</Text></Pressable>
       </> : interview.selected_slot ? <View style={styles.confirmed}><Text style={styles.confirmedTitle}>Confirmed</Text><Text style={styles.copy}>{displayDate(interview.selected_slot)}</Text></View> : null}
       {interview.meeting_link ? <Text style={styles.small}>Meeting link: {interview.meeting_link}</Text> : null}
       {interview.venue_address ? <Text style={styles.small}>Venue: {interview.venue_address}</Text> : null}
@@ -172,5 +189,5 @@ export default function TalentApplicationScreen() {
 }
 
 const styles = StyleSheet.create({
-  scroll:{flex:1,backgroundColor:'#fff'},page:{paddingHorizontal:22,paddingTop:64,paddingBottom:48},center:{flex:1,alignItems:'center',justifyContent:'center',padding:28,backgroundColor:'#fff'},back:{color:'#66747c',fontSize:13,marginBottom:34},eyebrow:{color:'#71808a',fontSize:9,letterSpacing:2.1,marginBottom:10},title:{color:'#092b45',fontSize:29,lineHeight:35,fontWeight:'500'},meta:{color:'#71808a',fontSize:12,lineHeight:18,marginTop:7},stageBox:{backgroundColor:'#f4f7f8',padding:18,marginTop:24},stageLabel:{color:'#71808a',fontSize:8,letterSpacing:1.4},stage:{color:'#173246',fontSize:19,fontWeight:'600',marginTop:5},match:{color:'#526976',fontSize:11,marginTop:6},section:{borderTopWidth:1,borderTopColor:'#e3e8eb',paddingTop:22,marginTop:26},sectionTitle:{color:'#173246',fontSize:18,fontWeight:'600',marginBottom:8},label:{color:'#173246',fontSize:11,fontWeight:'700',marginTop:16,marginBottom:7},copy:{color:'#66747c',fontSize:13,lineHeight:20},note:{color:'#526976',fontSize:13,lineHeight:20,marginTop:10},slot:{borderWidth:1,borderColor:'#d7e0e4',padding:14,marginTop:8,flexDirection:'row',justifyContent:'space-between',gap:12},slotText:{color:'#173246',fontSize:12,fontWeight:'600'},choose:{color:'#092b45',fontSize:11,fontWeight:'700'},confirmed:{backgroundColor:'#f4f7f8',padding:14,marginTop:12},confirmedTitle:{color:'#092b45',fontSize:10,fontWeight:'700',letterSpacing:1.2,marginBottom:4},small:{color:'#71808a',fontSize:11,lineHeight:17,marginTop:8},offerStatus:{color:'#092b45',fontSize:10,fontWeight:'700',letterSpacing:1.2},textarea:{borderWidth:1,borderColor:'#d7e0e4',minHeight:90,padding:12,textAlignVertical:'top',color:'#173246',fontSize:12},primary:{backgroundColor:'#092b45',paddingVertical:15,alignItems:'center',marginTop:14},primaryText:{color:'#fff',fontSize:12,fontWeight:'700'},secondary:{borderWidth:1,borderColor:'#d7e0e4',paddingVertical:14,alignItems:'center',marginTop:10},declineText:{color:'#7c3f3f',fontSize:12,fontWeight:'600'},empty:{backgroundColor:'#f4f7f8',padding:18,marginTop:28},emptyTitle:{color:'#173246',fontSize:15,fontWeight:'600',marginBottom:6},error:{color:'#9b2c2c',fontSize:12,lineHeight:18,marginTop:18}
+  scroll:{flex:1,backgroundColor:'#fff'},page:{paddingHorizontal:22,paddingTop:64,paddingBottom:48},center:{flex:1,alignItems:'center',justifyContent:'center',padding:28,backgroundColor:'#fff'},back:{color:'#66747c',fontSize:13,marginBottom:34},eyebrow:{color:'#71808a',fontSize:9,letterSpacing:2.1,marginBottom:10},title:{color:'#092b45',fontSize:29,lineHeight:35,fontWeight:'500'},meta:{color:'#71808a',fontSize:12,lineHeight:18,marginTop:7},stageBox:{backgroundColor:'#f4f7f8',padding:18,marginTop:24},stageLabel:{color:'#71808a',fontSize:8,letterSpacing:1.4},stage:{color:'#173246',fontSize:19,fontWeight:'600',marginTop:5},match:{color:'#526976',fontSize:11,marginTop:6},section:{borderTopWidth:1,borderTopColor:'#e3e8eb',paddingTop:22,marginTop:26},sectionTitle:{color:'#173246',fontSize:18,fontWeight:'600',marginBottom:8},label:{color:'#173246',fontSize:11,fontWeight:'700',marginTop:16,marginBottom:7},copy:{color:'#66747c',fontSize:13,lineHeight:20},note:{color:'#526976',fontSize:13,lineHeight:20,marginTop:10},slot:{borderWidth:1,borderColor:'#d7e0e4',padding:14,marginTop:8,flexDirection:'row',justifyContent:'space-between',gap:12},slotText:{color:'#173246',fontSize:12,fontWeight:'600'},choose:{color:'#092b45',fontSize:11,fontWeight:'700'},confirmed:{backgroundColor:'#f4f7f8',padding:14,marginTop:12},confirmedTitle:{color:'#092b45',fontSize:10,fontWeight:'700',letterSpacing:1.2,marginBottom:4},small:{color:'#71808a',fontSize:11,lineHeight:17,marginTop:8},offerStatus:{color:'#092b45',fontSize:10,fontWeight:'700',letterSpacing:1.2},textarea:{borderWidth:1,borderColor:'#d7e0e4',minHeight:90,padding:12,textAlignVertical:'top',color:'#173246',fontSize:12},primary:{backgroundColor:'#092b45',paddingVertical:15,alignItems:'center',marginTop:14},primaryText:{color:'#fff',fontSize:12,fontWeight:'700'},secondary:{borderWidth:1,borderColor:'#d7e0e4',paddingVertical:14,alignItems:'center',marginTop:10},declineText:{color:'#7c3f3f',fontSize:12,fontWeight:'600'},altText:{color:'#9c7a42',fontSize:12,fontWeight:'700'},empty:{backgroundColor:'#f4f7f8',padding:18,marginTop:28},emptyTitle:{color:'#173246',fontSize:15,fontWeight:'600',marginBottom:6},error:{color:'#9b2c2c',fontSize:12,lineHeight:18,marginTop:18}
 })
