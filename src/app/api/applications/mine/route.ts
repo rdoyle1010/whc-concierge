@@ -32,11 +32,16 @@ export async function GET(req: NextRequest) {
     .is('archived_at', null)
     .order('created_at', { ascending: false })
     .range(from, to)
-  if (status !== 'all') query = query.eq('status', status)
+
+  // My Applications is for applications that have actually been sent.
+  // Drafts belong to the Apply/Review & Send journey and must not appear as
+  // submitted recruitment activity simply because a role was matched or opened.
+  if (status === 'all') query = query.neq('status', 'draft')
+  else query = query.eq('status', status)
 
   const [{ data: rows, error, count }, { data: statusRows, error: countsError }] = await Promise.all([
     query,
-    admin.from('applications').select('status').eq('candidate_id', candidate.id).is('archived_at', null),
+    admin.from('applications').select('status').eq('candidate_id', candidate.id).is('archived_at', null).neq('status', 'draft'),
   ])
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   if (countsError) return NextResponse.json({ error: countsError.message }, { status: 500 })
