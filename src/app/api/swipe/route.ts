@@ -93,12 +93,20 @@ export async function GET() {
     const { data: { user } } = await getAuthedUser()
     if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
     const admin = createAdminClient()
-    const { data } = await admin.from('swipes').select('target_id,target_type')
-      .eq('swiper_id', user.id).eq('action', 'left')
+    const { data } = await admin.from('swipes').select('target_id,target_type,action,context_job_id')
+      .eq('swiper_id', user.id)
     const rows = data || []
+    const passed = rows.filter((r: any) => r.action === 'left')
+    const interested = rows.filter((r: any) => r.action === 'right')
     return NextResponse.json({
-      passed_ids: Array.from(new Set(rows.filter((r: any) => r.target_type === 'candidate').map((r: any) => r.target_id))),
-      passed_job_ids: Array.from(new Set(rows.filter((r: any) => r.target_type === 'job').map((r: any) => r.target_id))),
+      passed_ids: Array.from(new Set(passed.filter((r: any) => r.target_type === 'candidate').map((r: any) => r.target_id))),
+      passed_job_ids: Array.from(new Set(passed.filter((r: any) => r.target_type === 'job').map((r: any) => r.target_id))),
+      // Employer right swipes: which candidate was approached, and for which live role.
+      employer_interests: interested
+        .filter((r: any) => r.target_type === 'candidate')
+        .map((r: any) => ({ candidate_id: r.target_id, job_id: r.context_job_id })),
+      // Talent right swipes: which jobs this candidate has already expressed interest in.
+      interested_job_ids: Array.from(new Set(interested.filter((r: any) => r.target_type === 'job').map((r: any) => r.target_id))),
     })
   } catch (e: any) {
     return NextResponse.json({ error: e.message }, { status: 500 })

@@ -74,15 +74,18 @@ export async function GET(req: NextRequest) {
     if (!radiusResult.withinRadius) return null
 
     let best: any = null
+    const eligibleJobs: any[] = []
     for (const job of jobs) {
       const result = calculateMatchScore(candidate, job)
       if (result.hardStop) continue
+      eligibleJobs.push({ id: job.id, title: job.title, matchScore: result.score, matchLabel: result.label })
       if (!best || result.score > best.matchScore) {
         best = { matchScore: result.score, matchLabel: result.label, matchColour: result.colour, matchBg: result.bgColour, matchExplanation: result.matchExplanation, progression: result.progression || null, bestJob: job.title, bestJobId: job.id, roleDistanceMiles: result.distanceMiles }
       }
     }
+    eligibleJobs.sort((a, b) => b.matchScore - a.matchScore)
 
-    return { ...candidate, ...(best || {}), latitude: undefined, longitude: undefined, distance_miles: radiusResult.distanceMiles, distance_status: radiusResult.reason, within_radius: radiusResult.withinRadius }
+    return { ...candidate, ...(best || {}), eligibleJobs, latitude: undefined, longitude: undefined, distance_miles: radiusResult.distanceMiles, distance_status: radiusResult.reason, within_radius: radiusResult.withinRadius }
   }
 
   const pageCandidates = (pageRows || []).map(scoreCandidate).filter(Boolean).sort((a: any, b: any) => {
