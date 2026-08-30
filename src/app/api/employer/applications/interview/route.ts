@@ -5,7 +5,7 @@ import { createNotification } from '@/lib/notifications'
 import { sendSmsIfOptedIn } from '@/lib/sms'
 
 const RESEND_API_KEY = process.env.RESEND_API_KEY
-const FROM_EMAIL = 'Spa Platform <noreply@mail.wellnesshousecollective.co.uk>'
+const FROM_EMAIL = 'WHC Concierge <noreply@mail.wellnesshousecollective.co.uk>'
 const METHODS = ['teams','video','phone','in_person'] as const
 
 function escapeHtml(value: string) {
@@ -149,11 +149,43 @@ export async function POST(req: NextRequest) {
     const smsSent = await sendSmsIfOptedIn({
       to: candidate.phone,
       optedIn: candidate.sms_opt_in,
-      body: `Spa Platform: ${propertyName} has invited you to the ${stageLabel.toLowerCase()} for ${job.job_title}. Open My Applications to choose a time.`,
+      body: `WHC Concierge: ${propertyName} has invited you to the ${stageLabel.toLowerCase()} for ${job.job_title}. Open My Applications to choose a time.`,
     })
 
     return NextResponse.json({ success: true, interview, smsSent })
   } catch (error: any) {
     return NextResponse.json({ error: error?.message || 'Could not create interview invitation.' }, { status: 500 })
+  }
+}
+
+export async function PATCH(req: NextRequest) {
+  const user = await getRequestUser(req)
+  if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+  try {
+    const body = await req.json()
+    const interviewId = String(body.interviewId || '')
+    if (!interviewId) return NextResponse.json({ error: 'Interview is required.' }, { status: 400 })
+
+    const admin = createAdminClient()
+    const { data: employer } = await admin.from('employer_profiles').select('id').eq('user_id', user.id).maybeSingle()
+    if (!employer) return NextResponse.json({ error: 'Employer profile not found.' }, { status: 404 })
+
+    const { data: interview } = await admin.from('application_interviews').select('id,application_id,status,selected_slot,round_number').eq('id', interviewId).maybeSingle()
+    if (!interview) return NextResponse.json({ error: 'Interview not found.' }, { status: 404 })
+
+    const { data: application } = await admin.from('applications').select('id,role_id,job_id').eq('id', interview.application_id).maybeSingle()
+    const jobId = application?.role_id || application?.job_id
+    const { data: job } = jobId ? await admin.from('job_listings').select('id,employer_id').eq('id', jobId).maybeSingle() : { data: null }
+    if (!job || job.employer_id !== employer.id) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+
+    if (interview.status === 'completed') return NextResponse.json({ success: true, interview })
+    if (interview.status !== 'confirmed' || !interview.selected_slot) return NextResponse.json({ error: 'The interview needs a confirmed time before it can be marked complete.' }, { status: 409 })
+    if (new Date(interview.selected_slot).getTime() > Date.now()) return NextResponse.json({ error: 'This interview has not taken place yet.' }, { status: 409 })
+
+    const { data: updated, error } = await admin.from('application_interviews').update({ status: 'completed', updated_at: new Date().toISOString() }).eq('id', interview.id).select('*').single()
+    if (error) return NextResponse.json({ error: 'Could not mark the interview complete.' }, { status: 500 })
+    return NextResponse.json({ success: true, interview: updated })
+  } catch (error: any) {
+    return NextResponse.json({ error: error?.message || 'Could not mark the interview complete.' }, { status: 500 })
   }
 }

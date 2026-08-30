@@ -94,6 +94,29 @@ export default function TalentPendingInterviewActions() {
     window.location.reload()
   }
 
+  async function requestAlternative(interviewId: string) {
+    const note = (notes[interviewId] || '').trim()
+    if (note.length < 10) {
+      setError('Add a note first telling the property when you are available, then request new times.')
+      return
+    }
+    setBusy(interviewId)
+    setError('')
+    const res = await fetch('/api/talent/applications/interview', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ interviewId, action: 'request_alternative', note }),
+    }).catch(() => null)
+    const body = res ? await res.json().catch(() => ({})) : {}
+    setBusy('')
+    if (!res?.ok) {
+      setError(body.error || 'Could not request alternative times.')
+      return
+    }
+    await load()
+    window.location.reload()
+  }
+
   const pending = items.flatMap(item =>
     (item.interviews || [])
       .filter((interview: any) => interview.status === 'proposed' && Array.isArray(interview.proposed_slots) && interview.proposed_slots.length)
@@ -181,6 +204,15 @@ export default function TalentPendingInterviewActions() {
                     <CheckCircle size={15} />
                     {busy === interview.id ? 'Confirming interview…' : action}
                   </button>
+                  <button
+                    type="button"
+                    disabled={busy === interview.id}
+                    onClick={() => requestAlternative(interview.id)}
+                    className="mt-2 block text-[11px] font-semibold text-[#9c7a42] underline disabled:opacity-40 sm:ml-3 sm:mt-0 sm:inline-block"
+                  >
+                    None of these times work - request alternatives
+                  </button>
+                  <p className="mt-2 text-[10px] text-muted">To request alternatives, first use the note box above to say when you are available.</p>
                 </div>
               </div>
             )

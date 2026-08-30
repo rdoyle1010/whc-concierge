@@ -124,7 +124,7 @@ function companyFacts(employer: any, externalName: string) {
   add('Hotel bedrooms', e.room_count || e.hotel_rooms || e.number_of_rooms)
   add('Property opened', e.opened_year || e.opening_year)
   add('Spa opened', e.spa_opened_year || e.spa_opening_year)
-  const brands = list(e.product_houses_used || e.product_houses || e.brand_partners)
+  const brands = list(e.product_houses_used || e.product_houses)
   if (brands.length) facts.push({ label: 'Spa / product brands', value: brands.join(', ') })
   const facilities = list(e.services_offered || e.spa_facilities || e.facilities)
   if (facilities.length) facts.push({ label: 'Spa facilities / services', value: facilities.slice(0, 12).join(', ') })

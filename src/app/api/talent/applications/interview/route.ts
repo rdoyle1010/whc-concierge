@@ -30,8 +30,11 @@ export async function POST(req: NextRequest) {
     const body = await req.json()
     const interviewId = String(body.interviewId || '')
     const selectedSlot = String(body.selectedSlot || '')
+    const action = String(body.action || 'confirm')
     const candidateNote = String(body.note || '').trim().slice(0, 1500)
-    if (!interviewId || !selectedSlot) return NextResponse.json({ error: 'Choose an interview time.' }, { status: 400 })
+    if (!interviewId) return NextResponse.json({ error: 'Interview is required.' }, { status: 400 })
+    if (action === 'request_alternative' && candidateNote.length < 10) return NextResponse.json({ error: 'Tell the property when you are available so they can offer new times.' }, { status: 400 })
+    if (action !== 'request_alternative' && !selectedSlot) return NextResponse.json({ error: 'Choose an interview time.' }, { status: 400 })
 
     const admin = createAdminClient()
     const { data: candidate } = await admin.from('candidate_profiles').select('id,user_id,full_name').eq('user_id', user.id).maybeSingle()
@@ -42,6 +45,22 @@ export async function POST(req: NextRequest) {
 
     const { data: application } = await admin.from('applications').select('id,candidate_id,role_id,job_id').eq('id', interview.application_id).maybeSingle()
     if (!application || application.candidate_id !== candidate.id) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+
+    // None of the proposed times work: keep the invitation open, record the
+    // candidate's availability, and ask the employer for new times.
+    if (action === 'request_alternative') {
+      if (interview.status !== 'proposed') return NextResponse.json({ error: 'This interview has already been confirmed.' }, { status: 409 })
+      await admin.from('application_interviews').update({ candidate_note: candidateNote, updated_at: new Date().toISOString() }).eq('id', interview.id)
+      const jobIdAlt = application.role_id || application.job_id
+      const { data: jobAlt } = await admin.from('job_listings').select('id,job_title,employer_id').eq('id', jobIdAlt).maybeSingle()
+      if (jobAlt?.employer_id) {
+        const { data: employerAlt } = await admin.from('employer_profiles').select('user_id').eq('id', jobAlt.employer_id).maybeSingle()
+        if (employerAlt?.user_id) {
+          await createNotification(employerAlt.user_id, 'general', `New interview times requested - ${jobAlt.job_title}`, `${candidate.full_name || 'The candidate'} cannot make the proposed times for ${jobAlt.job_title}. Their availability: "${candidateNote}". Send a fresh invitation with new times.`, '/employer/applications')
+        }
+      }
+      return NextResponse.json({ success: true, requested_alternative: true })
+    }
 
     const proposed = Array.isArray(interview.proposed_slots) ? interview.proposed_slots.map(String) : []
     const chosen = new Date(selectedSlot)

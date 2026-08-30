@@ -124,6 +124,15 @@ export default function ApplicationPipelineHub({ role }: { role: Role }) {
     })
   }
 
+  async function markInterviewComplete(interviewId: string) {
+    setBusy(interviewId)
+    const res = await fetch('/api/employer/applications/interview', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ interviewId }) }).catch(() => null)
+    const body = res ? await res.json().catch(() => ({})) : {}
+    setBusy('')
+    if (!res?.ok) { setError(body.error || 'Could not mark the interview complete.'); return }
+    await load()
+  }
+
   async function saveBriefing() {
     if (!briefingDraft) return
     setBusy(`briefing-${briefingDraft.interviewId}`); setError('')
@@ -162,7 +171,7 @@ export default function ApplicationPipelineHub({ role }: { role: Role }) {
                 {interview.assessment_type && <p className="sm:col-span-2"><strong>{interview.assessment_type}:</strong> {interview.assessment_details || 'Further details to follow.'}</p>}
                 {interview.employer_note && <p className="sm:col-span-2">{interview.employer_note}</p>}
               </div>
-              {role === 'employer' && <button type="button" onClick={()=>openBriefing(interview)} className="mt-3 text-[11px] font-semibold text-[#0b2f4d] underline">{interview.meeting_link || interview.venue_address || interview.preparation_required ? 'Edit interview details' : 'Add interview details'}</button>}
+              {role === 'employer' && <button type="button" onClick={()=>openBriefing(interview)} className="mt-3 text-[11px] font-semibold text-[#0b2f4d] underline">{interview.meeting_link || interview.venue_address || interview.preparation_required ? 'Edit interview details' : 'Add interview details'}</button>}{role === 'employer' && interview.status === 'confirmed' && interview.selected_slot && new Date(interview.selected_slot).getTime() <= Date.now() && <button type="button" disabled={busy===interview.id} onClick={()=>markInterviewComplete(interview.id)} className="mt-3 ml-3 text-[11px] font-semibold text-emerald-700 underline disabled:opacity-40">Mark interview complete</button>}
             </div>)}</div>}
             {item.offer && <div className="mt-3 rounded-xl border border-[#e1d4b9] bg-[#fffaf0] p-3"><div className="flex items-center gap-2"><Briefcase size={14} className="text-[#9c7a42]"/><span className="text-[12px] font-semibold text-ink">Job offer</span><span className="ml-auto text-[10px] font-semibold uppercase text-[#9c7a42]">{item.offer.status}</span></div>{item.offer.employer_note && <p className="mt-2 whitespace-pre-wrap text-[11px] leading-5 text-secondary">{item.offer.employer_note}</p>}{item.offer.status === 'offered' && <p className="mt-2 text-[10px] text-muted">Formal offer letter / contract with salary, start date and employment terms will be issued separately by the employer.</p>}</div>}
           </div>

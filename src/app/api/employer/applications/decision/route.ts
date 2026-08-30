@@ -5,7 +5,7 @@ import { createNotification } from '@/lib/notifications'
 import { sendSmsIfOptedIn } from '@/lib/sms'
 
 const RESEND_API_KEY = process.env.RESEND_API_KEY
-const FROM_EMAIL = 'Spa Platform <noreply@mail.wellnesshousecollective.co.uk>'
+const FROM_EMAIL = 'WHC Concierge <noreply@mail.wellnesshousecollective.co.uk>'
 
 const ALLOWED = ['shortlisted', 'rejected', 'accepted'] as const
 type Decision = typeof ALLOWED[number]
@@ -92,7 +92,7 @@ export async function POST(req: NextRequest) {
       if (decision === 'shortlisted') {
         try {
           const { data: smsCandidate } = await admin.from('candidate_profiles').select('phone,sms_opt_in').eq('id', application.candidate_id).maybeSingle()
-          if (smsCandidate) smsSent = await sendSmsIfOptedIn({ to: smsCandidate.phone, optedIn: smsCandidate.sms_opt_in, body: `Spa Platform: Congratulations, you have been shortlisted for ${job.job_title} at ${propertyName}. Open My Applications for the update.` })
+          if (smsCandidate) smsSent = await sendSmsIfOptedIn({ to: smsCandidate.phone, optedIn: smsCandidate.sms_opt_in, body: `WHC Concierge: Congratulations, you have been shortlisted for ${job.job_title} at ${propertyName}. Open My Applications for the update.` })
         } catch (smsError: any) {
           console.error('Recruitment decision SMS failed:', smsError?.message || smsError)
         }

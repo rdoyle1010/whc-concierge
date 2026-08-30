@@ -330,7 +330,7 @@ export default function EmployerProfilePage() {
         <div className="dashboard-card mb-6 space-y-5">
           <div>
             <h3 className="font-serif text-lg font-semibold">Spa Operations</h3>
-            <p className="text-sm text-gray-500 mt-1">This information is used to match candidates to your roles. The more you complete, the better your matches.</p>
+            <p className="text-sm text-gray-500 mt-1">This builds your property profile for candidates. Role-specific matching uses the requirements you set on each job listing.</p>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

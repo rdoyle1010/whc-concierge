@@ -119,9 +119,14 @@ export async function POST(req: NextRequest) {
     }
 
     if (action === 'job_toggle_live') {
-      const { data: job } = await admin.from('job_listings').select('id, is_live').eq('id', id).maybeSingle()
+      const { data: job } = await admin.from('job_listings').select('id, is_live, status').eq('id', id).maybeSingle()
       if (!job) return NextResponse.json({ error: 'Job not found' }, { status: 404 })
       const next = !job.is_live
+      // A filled role was closed because someone was hired into it. Reopening
+      // it must be an explicit, acknowledged act - never a one-click toggle.
+      if (next && job.status === 'filled' && !body.confirmReopenFilled) {
+        return NextResponse.json({ error: 'This role was filled through a completed hire. To relist it, tick the confirmation - or ask the employer to repost the role.' }, { status: 409 })
+      }
       const { error } = await admin.from('job_listings')
         .update({ is_live: next, status: next ? 'active' : 'paused' })
         .eq('id', id)

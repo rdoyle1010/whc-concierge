@@ -5,7 +5,7 @@ import { createNotification } from '@/lib/notifications'
 import { sendRoleFilledEmail } from '@/lib/emails'
 
 const RESEND_API_KEY = process.env.RESEND_API_KEY
-const FROM_EMAIL = 'Spa Platform <noreply@mail.wellnesshousecollective.co.uk>'
+const FROM_EMAIL = 'WHC Concierge <noreply@mail.wellnesshousecollective.co.uk>'
 
 function escapeHtml(value: string) {
   return value.replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#039;')

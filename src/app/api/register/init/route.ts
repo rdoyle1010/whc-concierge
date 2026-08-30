@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { createRegistrationProof, type RegistrationRole } from '@/lib/registration'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { geocodePostcode } from '@/lib/geo'
 import { getClientIp, rateLimit } from '@/lib/rate-limit'
 
 export const runtime = 'nodejs'
@@ -68,14 +69,23 @@ export async function POST(req: NextRequest) {
         full_name: displayName || null,
         location: postcode || null,
       }, { onConflict: 'id' })
-      if (sharedProfileError) console.error('Talent signup shared profile seed failed:', sharedProfileError.message)
+      if (sharedProfileError) {
+        // Without a profiles row the account can never pass the role gate at
+        // login - reporting success here would create a permanently locked
+        // account. Fail loudly instead so the person can retry.
+        console.error('Talent signup shared profile seed failed:', sharedProfileError.message)
+        return NextResponse.json({ error: 'Your account could not be fully set up. Please try again in a moment.' }, { status: 500 })
+      }
 
+      let coords: { latitude: number; longitude: number } | null = null
+      if (postcode) { try { coords = await geocodePostcode(postcode) } catch {} }
       const { error: candidateError } = await admin.from('candidate_profiles').upsert({
         user_id: data.user.id,
         full_name: displayName || null,
         phone: phone || null,
         postcode: postcode || null,
         location: postcode || null,
+        ...(coords ? { latitude: coords.latitude, longitude: coords.longitude } : {}),
         has_car: hasCar,
         approval_status: 'approved',
         profile_visible: true,

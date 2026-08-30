@@ -3,6 +3,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { profileUpdateSchema, validateRequest } from '@/lib/validations'
+import { geocodePostcode } from '@/lib/geo'
 
 const ALLOWED_COLUMNS = new Set([
   'full_name','phone','postcode','location','location_country','has_car','role_level','headline','bio','experience_years',
@@ -16,6 +17,19 @@ const ALLOWED_COLUMNS = new Set([
 function stripToAllowed(data: Record<string, unknown>): Record<string, unknown> {
   const clean: Record<string, unknown> = {}
   for (const key of Object.keys(data)) if (ALLOWED_COLUMNS.has(key)) clean[key] = data[key]
+  return clean
+}
+
+// Distance-based matching needs coordinates, and web signups never had them:
+// whenever a postcode is saved, geocode it. A failed lookup never blocks the
+// save - the profile just stays text-matched until the postcode is corrected.
+async function withCoordinates(clean: Record<string, unknown>): Promise<Record<string, unknown>> {
+  const postcode = typeof clean.postcode === 'string' ? clean.postcode.trim() : ''
+  if (!postcode) return clean
+  try {
+    const coords = await geocodePostcode(postcode)
+    if (coords) return { ...clean, latitude: coords.latitude, longitude: coords.longitude }
+  } catch {}
   return clean
 }
 
@@ -41,7 +55,7 @@ export async function POST(req: NextRequest) {
     const safeData = stripToAllowed(data)
     if (!Object.keys(safeData).length) return NextResponse.json({ error: 'No valid fields provided' }, { status: 400 })
 
-    const attempt = { ...safeData }
+    const attempt = { ...(await withCoordinates(safeData)) }
     const skipped: string[] = []
     let { error } = await admin.from('candidate_profiles').update(attempt).eq('id', profileId)
     for (let i = 0; i < 8 && error; i++) {

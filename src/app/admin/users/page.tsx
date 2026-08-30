@@ -7,7 +7,7 @@ import { Search, Users, Building2, CheckCircle, XCircle, X, FileText, ExternalLi
 import { notify } from '@/lib/notify'
 import Pagination from '@/components/Pagination'
 
-const ADMIN_USER_LIMIT = 250
+const ADMIN_USER_LIMIT = 1000
 
 export default function AdminUsersPage() {
   const supabase = createClient()
@@ -41,7 +41,7 @@ export default function AdminUsersPage() {
 
   const filterByStatus = (items: any[]) => {
     let filtered = items.filter(i => (i.approval_status || 'pending') === tab)
-    if (search) filtered = filtered.filter(i => (i.full_name || i.company_name || '').toLowerCase().includes(search.toLowerCase()) || (i.email || '').toLowerCase().includes(search.toLowerCase()))
+    if (search) filtered = filtered.filter(i => (i.full_name || i.company_name || '').toLowerCase().includes(search.toLowerCase()) || (i.email || i.work_email || i.contact_email || '').toLowerCase().includes(search.toLowerCase()))
     return filtered
   }
 
@@ -124,7 +124,7 @@ export default function AdminUsersPage() {
                 <div className="w-8 h-8 bg-neutral-100 flex items-center justify-center text-xs font-bold text-neutral-400"><Users size={14} /></div>
                 <div>
                   <p className="text-sm font-medium text-ink">{item.full_name} <span className="text-neutral-300 font-normal">— {item.role_level || 'Candidate'}</span></p>
-                  <p className="text-xs text-neutral-400">{item.email} &middot; {new Date(item.created_at).toLocaleDateString()}</p>
+                  <p className="text-xs text-neutral-400">{item.email || item.work_email || item.contact_email || 'no email on profile'} &middot; {new Date(item.created_at).toLocaleDateString()}</p>
                 </div>
               </div>
               <div className="flex items-center space-x-3">
@@ -139,7 +139,7 @@ export default function AdminUsersPage() {
                 <div className="w-8 h-8 bg-neutral-100 flex items-center justify-center text-xs font-bold text-neutral-400"><Building2 size={14} /></div>
                 <div>
                   <p className="text-sm font-medium text-ink">{item.company_name} <span className="text-neutral-300 font-normal">— {item.company_type || 'Employer'}</span></p>
-                  <p className="text-xs text-neutral-400">{item.contact_name} &middot; {item.email} &middot; {new Date(item.created_at).toLocaleDateString()}</p>
+                  <p className="text-xs text-neutral-400">{item.contact_name} &middot; {item.email || item.contact_email || item.work_email || 'no email on profile'} &middot; {new Date(item.created_at).toLocaleDateString()}</p>
                 </div>
               </div>
               <span className={`text-xs font-medium px-2 py-1 ${statusBadge(item.approval_status || 'pending')}`}>{item.approval_status || 'pending'}</span>
@@ -161,7 +161,7 @@ export default function AdminUsersPage() {
             </div>
             <div className="p-6 space-y-4 text-sm">
               <div className="grid grid-cols-2 gap-4">
-                <div><p className="text-xs text-neutral-400 uppercase tracking-wider">Email</p><p className="text-ink">{selected.email}</p></div>
+                <div><p className="text-xs text-neutral-400 uppercase tracking-wider">Email</p><p className="text-ink">{selected.email || selected.work_email || selected.contact_email || 'no email on profile'}</p></div>
                 {selected.phone && <div><p className="text-xs text-neutral-400 uppercase tracking-wider">Phone</p><p className="text-ink">{selected.phone}</p></div>}
                 {selected.work_email && <div><p className="text-xs text-neutral-400 uppercase tracking-wider">Work Email</p><p className="text-ink">{selected.work_email}</p></div>}
                 {selected.postcode && <div><p className="text-xs text-neutral-400 uppercase tracking-wider">Postcode</p><p className="text-ink">{selected.postcode}</p></div>}

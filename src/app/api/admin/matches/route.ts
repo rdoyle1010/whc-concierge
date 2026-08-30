@@ -33,7 +33,7 @@ export async function GET(_req: NextRequest) {
   const rows = matches || []
   const candIds = Array.from(new Set(rows.map(m => m.candidate_id).filter(Boolean)))
   const empIds = Array.from(new Set(rows.map(m => m.employer_id).filter(Boolean)))
-  const jobIds = Array.from(new Set(rows.map(m => m.job_id).filter(Boolean)))
+  const jobIds = Array.from(new Set(rows.map(m => (m as any).job_listing_id || m.job_id).filter(Boolean)))
 
   const [cands, emps, jobs] = await Promise.all([
     candIds.length ? admin.from('candidate_profiles').select('id, full_name, headline').in('id', candIds) : Promise.resolve({ data: [] }),
@@ -53,7 +53,7 @@ export async function GET(_req: NextRequest) {
       return e ? { ...e, company_name: e.property_name || e.company_name } : null
     })(),
     job_listings: (() => {
-      const j = jobMap.get(m.job_id) as any
+      const j = jobMap.get((m as any).job_listing_id || m.job_id) as any
       return j ? { ...j, title: j.job_title } : null
     })(),
   }))
