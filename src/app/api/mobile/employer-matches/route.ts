@@ -4,6 +4,7 @@ import { getRequestUser } from '@/lib/request-user'
 import { calculateMatchScore } from '@/lib/matching'
 import { canEmployerDiscoverCandidate, mutualRadiusResult } from '@/lib/discovery'
 import { createNotification } from '@/lib/notifications'
+import { createMutualMatch } from '@/lib/mutual-match'
 
 const CANDIDATE_FIELDS = [
   'id','user_id','full_name','headline','role_level','location','services_offered','experience_years','years_experience',
@@ -127,8 +128,32 @@ export async function POST(req: NextRequest) {
       .eq('swiper_id', candidate.user_id).eq('swiper_type', 'candidate')
       .eq('target_id', jobId).eq('target_type', 'job').eq('action', 'right').maybeSingle()
     mutual = Boolean(candidateYes)
-    await createNotification(candidate.user_id, 'general', mutual ? "It's a match" : 'A property is interested in you',
-      `${employer.property_name || employer.company_name || 'A property'} is interested in you for ${job.job_title}.`, '/talent/messages')
+    if (mutual) {
+      // A mobile match must behave exactly like a web match: create the
+      // matches row (which unlocks messaging), message both sides, and email
+      // them - not just drop an unactionable notification.
+      const match = calculateMatchScore(candidate, job)
+      let employerEmail: string | null = null
+      let candidateEmail: string | null = null
+      const [{ data: employerUser }, { data: candidateUser }] = await Promise.all([
+        admin.auth.admin.getUserById(user.id),
+        admin.auth.admin.getUserById(candidate.user_id),
+      ])
+      employerEmail = employerUser?.user?.email || null
+      candidateEmail = candidateUser?.user?.email || null
+      try {
+        await createMutualMatch(admin, {
+          candidate, employer, job, score: match.score,
+          candidateUserId: candidate.user_id, employerUserId: user.id,
+          candidateEmail, employerEmail,
+        })
+      } catch (matchError: any) {
+        console.error('Mobile mutual match failed:', matchError?.message)
+      }
+    } else {
+      await createNotification(candidate.user_id, 'general', 'A property is interested in you',
+        `${employer.property_name || employer.company_name || 'A property'} is interested in you for ${job.job_title}.`, '/talent/jobs')
+    }
   }
 
   return NextResponse.json({ success: true, matched: mutual, applicationId, candidateName: candidate.full_name || 'Candidate', jobTitle: job.job_title })
