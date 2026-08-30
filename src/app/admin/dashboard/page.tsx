@@ -12,6 +12,7 @@ import {
 
 const SECTIONS = [
   { group: 'People & operations', label: 'Verification', desc: 'Approve talent and properties.', href: '/admin/verification', icon: <Users size={17} /> },
+  { group: 'People & operations', label: 'Certificates', desc: 'Review and verify submitted qualifications.', href: '/admin/certificates', icon: <GraduationCap size={17} /> },
   { group: 'People & operations', label: 'Messages', desc: 'Review platform conversations.', href: '/admin/messages', icon: <MessageSquare size={17} /> },
   { group: 'People & operations', label: 'Platform Reviews', desc: 'Read Talent and property feedback about Spa Platform.', href: '/admin/platform-reviews', icon: <MessageSquare size={17} /> },
   { group: 'People & operations', label: 'Complaints', desc: 'Resolve reported issues.', href: '/admin/complaints', icon: <AlertTriangle size={17} /> },

@@ -88,6 +88,7 @@ const navItems: Record<string, NavItem[]> = {
     { label: 'Agency Money', href: '/admin/agency', icon: <CreditCard size={17} /> },
     { label: 'Agency Cases', href: '/admin/agency-cases', icon: <AlertTriangle size={17} /> },
     { label: 'Verification', href: '/admin/verification', icon: <Users size={17} /> },
+    { label: 'Certificates', href: '/admin/certificates', icon: <GraduationCap size={17} /> },
     { label: 'Academy', href: '/admin/academy', icon: <GraduationCap size={17} />, section: 'Content & revenue' },
     { label: 'Academy Downloads', href: '/admin/academy/downloads', icon: <Download size={17} /> },
     { label: 'Residency Listings', href: '/admin/residency', icon: <Calendar size={17} /> },

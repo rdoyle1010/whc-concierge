@@ -154,6 +154,21 @@ export async function GET(req: NextRequest) {
     academyByCandidate.set(enrolment.candidate_id, list)
   }
 
+  // Reviewed certificates: verified qualifications with provenance.
+  const { data: certificateRows } = candidateIds.length
+    ? await admin.from('certificate_submissions')
+        .select('candidate_id,title,awarding_body,country,year_awarded,status,verified_at')
+        .in('candidate_id', candidateIds)
+        .in('status', ['verified', 'submitted'])
+        .order('created_at', { ascending: false })
+    : { data: [] as any[] }
+  const certificatesByCandidate = new Map<string, any[]>()
+  for (const certificate of certificateRows || []) {
+    const list = certificatesByCandidate.get(certificate.candidate_id) || []
+    if (list.length < 8) list.push(certificate)
+    certificatesByCandidate.set(certificate.candidate_id, list)
+  }
+
   // Endorsements: recent written reviews left about the candidate.
   const candidateUserIds = Array.from(new Set((candidates || []).map((candidate: any) => candidate.user_id).filter(Boolean)))
   const { data: reviewRows } = candidateUserIds.length
@@ -185,6 +200,7 @@ export async function GET(req: NextRequest) {
       job_listings: job ? { job_title: job.job_title } : null,
       fit: rawCandidate && job ? buildFit(rawCandidate, job) : null,
       academy: candidate ? (academyByCandidate.get(candidate.id) || []) : [],
+      certificates: candidate ? (certificatesByCandidate.get(candidate.id) || []) : [],
       endorsements: candidate?.user_id ? (endorsementsByUser.get(candidate.user_id) || []) : [],
       offer_declined: application.status === 'rejected' && offerStatusByApplication.get(application.id) === 'declined',
       interviews: interviewsByApplication.get(application.id) || [],

@@ -13,6 +13,7 @@ export default function TalentProfilePreviewPage() {
   const supabase = createClient()
   const [profile, setProfile] = useState<any>(null)
   const [badges, setBadges] = useState<Badge[]>([])
+  const [certificates, setCertificates] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -29,6 +30,11 @@ export default function TalentProfilePreviewPage() {
           .order('completed_at', { ascending: false })
         setBadges(completed || [])
       }
+      try {
+        const res = await fetch('/api/talent/certificates')
+        const json = await res.json()
+        if (res.ok) setCertificates((json.certificates || []).filter((c: any) => ['verified', 'submitted'].includes(c.status)))
+      } catch { /* section simply hides */ }
       setLoading(false)
     }
     load()
@@ -79,6 +85,7 @@ export default function TalentProfilePreviewPage() {
           <div className="space-y-5 lg:col-span-2">
             {profile.bio && <section className="rounded-xl border border-border bg-white p-6"><h3 className="mb-3 text-[15px] font-medium text-ink">About</h3><p className="whitespace-pre-wrap text-[13px] leading-7 text-secondary">{profile.bio}</p></section>}
             {[['Services', profile.services_offered], ['Product houses', profile.product_houses], ['Qualifications', [...(profile.qualifications || []), ...(profile.systems_experience || [])]]].map(([label, values]: any) => values?.length ? <section key={label} className="rounded-xl border border-border bg-white p-6"><h3 className="mb-3 text-[15px] font-medium text-ink">{label}</h3><div className="flex flex-wrap gap-2">{values.map((value: string) => <span key={value} className="rounded-full border border-border bg-surface px-3 py-1.5 text-[11px] text-secondary">{value}</span>)}</div></section> : null)}
+            {certificates.length > 0 && <section className="rounded-xl border border-border bg-white p-6"><h3 className="mb-3 text-[15px] font-medium text-ink">Certificates</h3><div className="space-y-2">{certificates.map((certificate: any) => <div key={certificate.id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border px-3 py-2"><div><p className="text-[12.5px] font-medium text-ink">{certificate.title}</p><p className="text-[11px] text-muted">{[certificate.awarding_body, certificate.country ? `trained in ${certificate.country}` : null, certificate.year_awarded].filter(Boolean).join(' · ')}</p></div>{certificate.status === 'verified' ? <span className="rounded-full bg-green-50 px-2 py-0.5 text-[10.5px] font-semibold text-green-700">WHC verified</span> : <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[10.5px] font-semibold text-amber-700">Under review</span>}</div>)}</div></section>}
           </div>
           <div className="space-y-5">
             <section className="rounded-xl border border-border bg-white p-5">
