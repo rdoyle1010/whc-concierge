@@ -7,6 +7,20 @@ export const runtime = 'nodejs'
 
 const limiter = rateLimit('register-init', { windowMs: 60 * 60 * 1000, maxRequests: 10 })
 
+function friendlySignupError(message?: string) {
+  const text = (message || '').toLowerCase()
+  if (text.includes('weak') || text.includes('easy to guess') || text.includes('password')) {
+    return 'That password is too easy to guess. Try a longer phrase or a more unique combination.'
+  }
+  if (text.includes('already registered') || text.includes('already exists') || text.includes('user already')) {
+    return 'An account already exists for that email. Try signing in instead.'
+  }
+  if (text.includes('email')) {
+    return 'Please check your email address and try again.'
+  }
+  return 'We could not create your account. Please check your details and try again.'
+}
+
 export async function POST(req: NextRequest) {
   const { success } = limiter.check(getClientIp(req))
   if (!success) return NextResponse.json({ error: 'Too many registration attempts. Please try again later.' }, { status: 429 })
@@ -38,7 +52,7 @@ export async function POST(req: NextRequest) {
     })
 
     if (error || !data.user) {
-      return NextResponse.json({ error: error?.message || 'Registration failed.' }, { status: 400 })
+      return NextResponse.json({ error: friendlySignupError(error?.message) }, { status: 400 })
     }
 
     return NextResponse.json({
@@ -50,7 +64,7 @@ export async function POST(req: NextRequest) {
         refresh_token: data.session.refresh_token,
       } : null,
     })
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message || 'Registration failed.' }, { status: 500 })
+  } catch {
+    return NextResponse.json({ error: 'We could not create your account. Please try again.' }, { status: 500 })
   }
 }
