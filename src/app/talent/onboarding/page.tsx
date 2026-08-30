@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/client'
 import DashboardShell from '@/components/DashboardShell'
 import Link from 'next/link'
 import { Check, Upload, ArrowRight, ArrowLeft, Search, Zap } from 'lucide-react'
+import { SERVICES_CATEGORIES, BUSINESS_SKILLS_FULL, SYSTEMS_FULL, PRODUCT_HOUSES_FULL, QUALS_CATEGORIES, HOTEL_BRANDS_FULL } from '@/lib/taxonomy'
 
 // ── Chip selector component ──
 function ChipGrid({ items, selected, onToggle, search }: { items: any[]; selected: Map<string, any>; onToggle: (id: string, name: string) => void; search?: string }) {
@@ -147,52 +148,40 @@ export default function OnboardingWizard() {
           until: profile.agency_listed_until || null,
         })
 
-        // Load existing selections
-        const [sk, sy, ph, ce, br] = await Promise.all([
-          supabase.from('candidate_skills').select('*, skills(name)').eq('candidate_id', profile.id),
-          supabase.from('candidate_systems').select('*, systems(name)').eq('candidate_id', profile.id),
-          supabase.from('candidate_product_houses').select('*, product_houses(name)').eq('candidate_id', profile.id),
-          supabase.from('candidate_certifications').select('*, certifications(name)').eq('candidate_id', profile.id),
-          supabase.from('candidate_hotel_brands').select('*, hotel_brands(name)').eq('candidate_id', profile.id),
-        ])
-
+        // Existing selections come from the profile itself - the same arrays
+        // the matching engine and the profile editor use. Items are keyed by
+        // name (names ARE the ids in the shared code taxonomy).
+        const proficiencies: Record<string, string> = profile.skill_proficiencies || {}
         const skMap = new Map<string, any>()
-        for (const s of sk.data || []) skMap.set(s.skill_id, { name: s.skills?.name, proficiency: s.proficiency || 'competent', years_using: s.years_using })
+        for (const name of profile.services_offered || []) skMap.set(name, { name, proficiency: proficiencies[name] || 'intermediate' })
+        for (const name of profile.business_skills || []) skMap.set(name, { name, proficiency: proficiencies[name] || 'intermediate' })
         setSelectedSkills(skMap)
 
         const syMap = new Map<string, any>()
-        for (const s of sy.data || []) syMap.set(s.system_id, { name: s.systems?.name, proficiency: s.proficiency || 'competent' })
+        for (const name of profile.systems_experience || []) syMap.set(name, { name, proficiency: 'intermediate' })
         setSelectedSystems(syMap)
 
         const phMap = new Map<string, any>()
-        for (const p of ph.data || []) phMap.set(p.product_house_id, { name: p.product_houses?.name, years_using: p.years_using })
+        for (const name of profile.product_houses || []) phMap.set(name, { name })
         setSelectedPH(phMap)
 
         const ceMap = new Map<string, any>()
-        for (const c of ce.data || []) ceMap.set(c.certification_id, { name: c.certifications?.name, issued_date: c.issued_date, expiry_date: c.expiry_date })
+        for (const name of profile.qualifications || []) ceMap.set(name, { name })
         setSelectedCerts(ceMap)
 
         const brMap = new Map<string, any>()
-        for (const b of br.data || []) brMap.set(b.hotel_brand_id, { name: b.hotel_brands?.name, years_worked: b.years_worked, role_held: b.role_held })
+        for (const name of profile.hotel_brands_worked || []) brMap.set(name, { name })
         setSelectedBrands(brMap)
       }
 
-      // Load taxonomy
-      const [ts, bs, sys, phs, certs, brands] = await Promise.all([
-        supabase.from('skills').select('*').eq('is_active', true).eq('category', 'treatment').order('sort_order'),
-        supabase.from('skills').select('*').eq('is_active', true).in('category', ['commercial', 'leadership', 'operational']).order('category').order('sort_order'),
-        supabase.from('systems').select('*').eq('is_active', true).order('sort_order'),
-        supabase.from('product_houses').select('*').eq('is_active', true).order('sort_order'),
-        supabase.from('certifications').select('*').eq('is_active', true).order('sort_order'),
-        supabase.from('hotel_brands').select('*').eq('is_active', true).order('sort_order'),
-      ])
-
-      setTreatmentSkills(ts.data || [])
-      setBusinessSkills(bs.data || [])
-      setSystemsList(sys.data || [])
-      setProductHousesList(phs.data || [])
-      setCertsList(certs.data || [])
-      setBrandsList(brands.data || [])
+      // The shared code taxonomy is the single source of truth - the same
+      // lists the profile editor, employers and the matching engine use.
+      setTreatmentSkills(SERVICES_CATEGORIES.flatMap(group => group.items.map(name => ({ id: name, name, category: group.name }))))
+      setBusinessSkills(BUSINESS_SKILLS_FULL.map(name => ({ id: name, name, category: 'Business & Leadership' })))
+      setSystemsList(SYSTEMS_FULL.map(name => ({ id: name, name })))
+      setProductHousesList(PRODUCT_HOUSES_FULL.map(name => ({ id: name, name })))
+      setCertsList(QUALS_CATEGORIES.flatMap(group => group.items.map(name => ({ id: name, name, category: group.name }))))
+      setBrandsList(HOTEL_BRANDS_FULL.map(name => ({ id: name, name })))
       setLoading(false)
     }
     load()
@@ -282,60 +271,48 @@ export default function OnboardingWizard() {
       }
     }
 
+    // Selections save onto the profile itself - the same arrays the
+    // matching engine, employers and the profile editor read.
+    const saveProfileData = async (data: Record<string, unknown>) => {
+      const res = await fetch('/api/profile/update', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ profileId, data }),
+      })
+      return res.ok
+    }
+
     if (step === 3 || step === 4) {
-      // Save skills: delete existing, re-insert
-      const allSkills = Array.from(selectedSkills.entries()).map(([skill_id, data]) => ({
-        candidate_id: profileId, skill_id, proficiency: data.proficiency || 'intermediate', years_using: data.years_using || null,
-      }))
-      if (!(await replaceRows('candidate_skills', allSkills))) {
-        setSaveError(STEP_SAVE_ERROR)
-        setSaving(false)
-        return false
-      }
+      const treatmentNames = new Set(treatmentSkills.map(item => item.name))
+      const businessNames = new Set(businessSkills.map(item => item.name))
+      const selectedNames = Array.from(selectedSkills.values()).map(data => data.name).filter(Boolean)
+      const proficiencies: Record<string, string> = {}
+      for (const data of selectedSkills.values()) if (data.name && data.proficiency) proficiencies[data.name] = data.proficiency
+      const ok = await saveProfileData({
+        services_offered: selectedNames.filter(name => treatmentNames.has(name)),
+        business_skills: selectedNames.filter(name => businessNames.has(name)),
+        skill_proficiencies: proficiencies,
+      })
+      if (!ok) { setSaveError(STEP_SAVE_ERROR); setSaving(false); return false }
     }
 
     if (step === 5) {
-      const rows = Array.from(selectedSystems.entries()).map(([system_id, data]) => ({
-        candidate_id: profileId, system_id, proficiency: data.proficiency || 'intermediate',
-      }))
-      if (!(await replaceRows('candidate_systems', rows))) {
-        setSaveError(STEP_SAVE_ERROR)
-        setSaving(false)
-        return false
-      }
+      const ok = await saveProfileData({ systems_experience: Array.from(selectedSystems.values()).map(data => data.name).filter(Boolean) })
+      if (!ok) { setSaveError(STEP_SAVE_ERROR); setSaving(false); return false }
     }
 
     if (step === 6) {
-      const rows = Array.from(selectedPH.entries()).map(([product_house_id, data]) => ({
-        candidate_id: profileId, product_house_id, years_using: data.years_using || null, proficiency: data.proficiency || 'intermediate',
-      }))
-      if (!(await replaceRows('candidate_product_houses', rows))) {
-        setSaveError(STEP_SAVE_ERROR)
-        setSaving(false)
-        return false
-      }
+      const ok = await saveProfileData({ product_houses: Array.from(selectedPH.values()).map(data => data.name).filter(Boolean) })
+      if (!ok) { setSaveError(STEP_SAVE_ERROR); setSaving(false); return false }
     }
 
     if (step === 7) {
-      const rows = Array.from(selectedCerts.entries()).map(([certification_id, data]) => ({
-        candidate_id: profileId, certification_id, issued_date: data.issued_date || null, expiry_date: data.expiry_date || null, is_verified: false,
-      }))
-      if (!(await replaceRows('candidate_certifications', rows))) {
-        setSaveError(STEP_SAVE_ERROR)
-        setSaving(false)
-        return false
-      }
+      const ok = await saveProfileData({ qualifications: Array.from(selectedCerts.values()).map(data => data.name).filter(Boolean) })
+      if (!ok) { setSaveError(STEP_SAVE_ERROR); setSaving(false); return false }
     }
 
     if (step === 8) {
-      const rows = Array.from(selectedBrands.entries()).map(([hotel_brand_id, data]) => ({
-        candidate_id: profileId, hotel_brand_id, years_worked: data.years_worked || null, role_held: data.role_held || null,
-      }))
-      if (!(await replaceRows('candidate_hotel_brands', rows))) {
-        setSaveError(STEP_SAVE_ERROR)
-        setSaving(false)
-        return false
-      }
+      const ok = await saveProfileData({ hotel_brands_worked: Array.from(selectedBrands.values()).map(data => data.name).filter(Boolean) })
+      if (!ok) { setSaveError(STEP_SAVE_ERROR); setSaving(false); return false }
     }
 
     if (step === 9) {

@@ -11,7 +11,7 @@ const ALLOWED_COLUMNS = new Set([
   'services_offered','product_houses','qualifications','systems_experience','business_skills','career_evidence','travel_availability','travel_radius_miles',
   'has_insurance','employment_types_wanted','skills','certificates_urls','profile_completion_pct','profile_completion_score','profile_image_url','cv_url',
   'insurance_document_url','stealth_mode','sms_opt_in','job_alerts_enabled','job_alerts_frequency','job_alerts_min_score','transport_method','max_commute',
-  'shift_preferences','location_preferences','needs_accommodation',
+  'shift_preferences','location_preferences','needs_accommodation','skill_proficiencies','hotel_brands_worked',
   'salary_expectation_min','salary_expectation_max','salary_expectation_private','commercial_experience','revenue_responsibility','team_size_managed','desired_roles','portfolio_url',
 ])
 

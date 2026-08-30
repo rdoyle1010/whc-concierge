@@ -32,6 +32,21 @@ export const QUALS_CATEGORIES = [
   { name: 'Specialist Certifications', items: ['First Aid','Manual Handling','COSHH','Food Hygiene Level 2','Level 3 Sports Massage','Level 4 Sports Massage','Ayurvedic Practitioner Diploma','Hot Stone Certified','Lymphatic Drainage Certified','Pregnancy Massage Certified','Medical Aesthetics Certificate','Laser/IPL Certified','Dermaplaning Certified','Microneedling Certified','Reflexology Diploma','Aromatherapy Diploma','Reiki Level 1','Reiki Level 2','Reiki Master','Yoga Teacher 200hr','Yoga Teacher 500hr','Pilates Instructor','Personal Training Level 3','Nutrition Advisor','Life Coach Certificate'] },
 ]
 
+// ─── Business & Leadership Skills ───
+export const BUSINESS_SKILLS_FULL = [
+  'Reception & Front of House','Revenue Management','Stock Control','Team Leadership','Staff Training','Rota Management',
+  'KPI Reporting','Health & Safety','COSHH Management','Budget Management','Client Consultation','Upselling & Retail',
+  'Social Media','Event Coordination','Membership Management',
+]
+
+// ─── Hotel & Spa Groups (experience with) ───
+export const HOTEL_BRANDS_FULL = [
+  'Four Seasons','Mandarin Oriental','Rosewood','Fairmont','Raffles','Ritz-Carlton','St. Regis','Waldorf Astoria',
+  'Park Hyatt','Peninsula','Aman','Six Senses','Banyan Tree','One&Only','Belmond','Bulgari Hotels','Dorchester Collection',
+  'Maybourne','Corinthia','Kempinski','Shangri-La','Soho House','Red Carnation','InterContinental','Sofitel','Marriott','Hilton',
+  'Champneys','Center Parcs Aqua Sana','Independent luxury hotel','Destination spa','Day spa group','Cruise line spa','Other',
+]
+
 // ─── Systems ───
 export const SYSTEMS_FULL = [
   'Book4Time','SpaSoft','Mindbody','Spa Booker','Treatwell','Premier Software',
