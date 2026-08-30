@@ -147,6 +147,7 @@ check('all service-role API routes are protected or deliberately public', () => 
     'src/app/api/newsletter/subscribe/route.ts',
     'src/app/api/newsletter/confirm/route.ts',
     'src/app/api/newsletter/unsubscribe/route.ts',
+    'src/app/api/register/init/route.ts',
     'src/app/api/residency/public/route.ts',
     'src/app/api/stripe/sponsored-ad-confirm/route.ts',
   ])
