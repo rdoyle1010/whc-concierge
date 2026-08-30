@@ -33,7 +33,7 @@ export default function TalentDashboard() {
         try {
           const [appsRes, msgsRes] = await Promise.all([
             prof?.id
-              ? supabase.from('applications').select('id', { count: 'exact', head: true }).eq('candidate_id', prof.id)
+              ? supabase.from('applications').select('id', { count: 'exact', head: true }).eq('candidate_id', prof.id).neq('status', 'draft').is('archived_at', null)
               : Promise.resolve({ count: 0 } as any),
             supabase.from('messages').select('id', { count: 'exact', head: true }).eq('recipient_id', user.id).eq('read', false),
           ])

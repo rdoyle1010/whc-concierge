@@ -70,8 +70,11 @@ export async function POST(req: NextRequest) {
     ignoreDuplicates: false,
   })
   if (swipeError) {
+    // The application itself has already been submitted successfully. A failure
+    // recording the secondary interest row must not fail the whole request -
+    // that would show the talent an error (and skip the employer notification)
+    // for an application that actually went through.
     console.error('Could not record submitted application as candidate interest:', swipeError.message)
-    return NextResponse.json({ error: 'Your application was saved but the matching relationship could not be updated. Please contact support.' }, { status: 500 })
   }
 
   const employerName = employer.property_name || employer.company_name || 'the employer'

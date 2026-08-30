@@ -41,7 +41,9 @@ export async function GET(req: NextRequest) {
 
   const [{ data: rows, error, count }, { data: statusRows, error: countsError }] = await Promise.all([
     query,
-    admin.from('applications').select('status').eq('candidate_id', candidate.id).is('archived_at', null).neq('status', 'draft'),
+    // Include drafts here: the counts drive the filter chips, and the draft chip
+    // is the talent's only route back to an unsent "Review & Send" application.
+    admin.from('applications').select('status').eq('candidate_id', candidate.id).is('archived_at', null),
   ])
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   if (countsError) return NextResponse.json({ error: countsError.message }, { status: 500 })
@@ -69,7 +71,8 @@ export async function GET(req: NextRequest) {
   const counts: Record<string, number> = { all: 0 }
   for (const row of statusRows || []) {
     counts[row.status] = (counts[row.status] || 0) + 1
-    counts.all += 1
+    // "All" means applications actually sent; drafts keep their own count only.
+    if (row.status !== 'draft') counts.all += 1
   }
   const total = count || 0
 

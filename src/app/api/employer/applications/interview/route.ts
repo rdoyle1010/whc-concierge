@@ -22,6 +22,35 @@ function roundLabel(round: number) {
   return 'Final interview'
 }
 
+// datetime-local values arrive with no timezone. The server runs in UTC, so a
+// naive `new Date()` shifts every interview by an hour during British Summer
+// Time. Interpret naive values as Europe/London wall-clock time instead.
+function parseLondonSlot(value: string): Date | null {
+  if (!value) return null
+  if (/(?:Z|[+-]\d{2}:?\d{2})$/i.test(value)) {
+    const direct = new Date(value)
+    return Number.isNaN(direct.getTime()) ? null : direct
+  }
+  const match = value.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/)
+  if (!match) {
+    const fallback = new Date(value)
+    return Number.isNaN(fallback.getTime()) ? null : fallback
+  }
+  const [y, mo, d, h, mi] = match.slice(1).map(Number)
+  const target = Date.UTC(y, mo - 1, d, h, mi)
+  let ts = target
+  for (let i = 0; i < 2; i++) {
+    const parts = new Intl.DateTimeFormat('en-GB', {
+      timeZone: 'Europe/London', hour12: false,
+      year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit',
+    }).formatToParts(new Date(ts))
+    const get = (type: string) => Number(parts.find(p => p.type === type)?.value || 0)
+    const wall = Date.UTC(get('year'), get('month') - 1, get('day'), get('hour') % 24, get('minute'))
+    ts += target - wall
+  }
+  return new Date(ts)
+}
+
 export async function POST(req: NextRequest) {
   const user = await getRequestUser(req)
   if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
@@ -46,9 +75,9 @@ export async function POST(req: NextRequest) {
     if (!METHODS.includes(interviewMethod as any)) return NextResponse.json({ error: 'Choose an interview method.' }, { status: 400 })
     if (slots.length < 1 || slots.length > 4) return NextResponse.json({ error: 'Offer between one and four interview times.' }, { status: 400 })
 
-    const parsedSlots: Date[] = slots.map((slot: string) => new Date(slot))
-    if (parsedSlots.some((date: Date) => Number.isNaN(date.getTime()) || date.getTime() <= Date.now())) return NextResponse.json({ error: 'All interview times must be in the future.' }, { status: 400 })
-    const uniqueIso: string[] = Array.from(new Set<string>(parsedSlots.map((date: Date) => date.toISOString())))
+    const parsedSlots: (Date | null)[] = slots.map((slot: string) => parseLondonSlot(slot))
+    if (parsedSlots.some((date: Date | null) => !date || Number.isNaN(date.getTime()) || date.getTime() <= Date.now())) return NextResponse.json({ error: 'All interview times must be in the future.' }, { status: 400 })
+    const uniqueIso: string[] = Array.from(new Set<string>((parsedSlots as Date[]).map((date: Date) => date.toISOString())))
     if (uniqueIso.length !== slots.length) return NextResponse.json({ error: 'Interview times must be unique.' }, { status: 400 })
 
     const admin = createAdminClient()
@@ -58,6 +87,21 @@ export async function POST(req: NextRequest) {
     const { data: application } = await admin.from('applications').select('id,candidate_id,role_id,job_id,status').eq('id', applicationId).maybeSingle()
     if (!application) return NextResponse.json({ error: 'Application not found.' }, { status: 404 })
     if (!['shortlisted','interview'].includes(application.status)) return NextResponse.json({ error: 'Shortlist the candidate before inviting them to interview.' }, { status: 409 })
+
+    // A later round can only be arranged once the previous round has actually
+    // been held: confirmed by the candidate and past its scheduled time.
+    if (roundNumber > 1) {
+      const { data: previousRound } = await admin.from('application_interviews')
+        .select('id,status,selected_slot')
+        .eq('application_id', application.id)
+        .eq('round_number', roundNumber - 1)
+        .maybeSingle()
+      const previousHeld = previousRound && (
+        previousRound.status === 'completed' ||
+        (previousRound.status === 'confirmed' && previousRound.selected_slot && new Date(previousRound.selected_slot).getTime() <= Date.now())
+      )
+      if (!previousHeld) return NextResponse.json({ error: 'The previous interview needs to be confirmed by the candidate and to have taken place before arranging the next one.' }, { status: 409 })
+    }
 
     const jobId = application.role_id || application.job_id
     const [{ data: job }, { data: candidate }] = await Promise.all([

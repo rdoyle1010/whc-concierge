@@ -4,6 +4,13 @@ import { getRequestUser } from '@/lib/request-user'
 import { createNotification } from '@/lib/notifications'
 import { sendSmsIfOptedIn } from '@/lib/sms'
 
+const RESEND_API_KEY = process.env.RESEND_API_KEY
+const FROM_EMAIL = 'WHC Concierge <noreply@mail.wellnesshousecollective.co.uk>'
+
+function escapeHtml(value: string) {
+  return value.replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#039;')
+}
+
 export async function POST(req: NextRequest) {
   const user = await getRequestUser(req)
   if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
@@ -20,7 +27,19 @@ export async function POST(req: NextRequest) {
     if (!employer) return NextResponse.json({ error: 'Employer profile not found.' }, { status: 404 })
     const { data: application } = await admin.from('applications').select('id,candidate_id,role_id,job_id,status').eq('id', applicationId).maybeSingle()
     if (!application) return NextResponse.json({ error: 'Application not found.' }, { status: 404 })
-    if (!['interview','shortlisted','offered'].includes(application.status)) return NextResponse.json({ error: 'Move the candidate through shortlist/interview before making an offer.' }, { status: 409 })
+    if (!['interview','offered'].includes(application.status)) return NextResponse.json({ error: 'Invite the candidate to interview before making an offer.' }, { status: 409 })
+
+    // An offer requires an interview that has actually been held: either marked
+    // completed, or confirmed by the candidate with its time now in the past.
+    const { data: interviews } = await admin.from('application_interviews')
+      .select('id,status,selected_slot')
+      .eq('application_id', applicationId)
+    const interviewHeld = (interviews || []).some((interview: any) =>
+      interview.status === 'completed' ||
+      (interview.status === 'confirmed' && interview.selected_slot && new Date(interview.selected_slot).getTime() <= Date.now()))
+    if (!interviewHeld && application.status !== 'offered') {
+      return NextResponse.json({ error: 'An offer can be made once an interview has been confirmed and has taken place.' }, { status: 409 })
+    }
 
     const jobId = application.role_id || application.job_id
     const [{ data: job }, { data: candidate }] = await Promise.all([
@@ -50,10 +69,36 @@ export async function POST(req: NextRequest) {
     const smsSent = await sendSmsIfOptedIn({
       to: candidate.phone,
       optedIn: candidate.sms_opt_in,
-      body: `Spa Platform: Congratulations - ${propertyName} would like to offer you the ${job.job_title} role. Open My Applications to review and respond.`,
+      body: `WHC Concierge: Congratulations - ${propertyName} would like to offer you the ${job.job_title} role. Open My Applications to review and respond.`,
     })
 
-    return NextResponse.json({ success: true, offer, smsSent })
+    // The offer is the most important email on the platform - send it as well
+    // as the in-app notification and SMS.
+    let emailSent = false
+    if (RESEND_API_KEY) {
+      try {
+        const { data: candidateUser } = await admin.auth.admin.getUserById(candidate.user_id)
+        const candidateEmail = candidateUser?.user?.email
+        if (candidateEmail) {
+          const response = await fetch('https://api.resend.com/emails', {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              from: FROM_EMAIL,
+              to: candidateEmail,
+              subject: `Job offer - ${job.job_title} at ${propertyName}`,
+              html: `<div style="font-family:Georgia,serif;max-width:560px;margin:0 auto;padding:32px 24px;color:#1a1a1a"><h2 style="font-weight:600">Congratulations, ${escapeHtml(candidate.full_name || 'there')}</h2><p style="line-height:1.6">${escapeHtml(propertyName)} would like to offer you the role of <strong>${escapeHtml(job.job_title)}</strong>.</p><div style="background:#faf8f3;border:1px solid #e8e0d0;border-radius:12px;padding:16px 20px;margin:20px 0;line-height:1.6;white-space:pre-wrap">${escapeHtml(note)}</div><p style="line-height:1.6">Sign in to review the offer and respond.</p><p style="margin:28px 0"><a href="https://talent.wellnesshousecollective.co.uk/talent/applications" style="background:#0b2f4d;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none">Review your offer</a></p><p style="color:#777;font-size:13px">Wellness House Collective</p></div>`,
+            }),
+          })
+          emailSent = response.ok
+          if (!response.ok) console.error('Offer email failed:', await response.text().catch(() => response.status))
+        }
+      } catch (emailError: any) {
+        console.error('Offer email failed:', emailError?.message)
+      }
+    }
+
+    return NextResponse.json({ success: true, offer, smsSent, emailSent })
   } catch (error: any) {
     return NextResponse.json({ error: error?.message || 'Could not create the offer.' }, { status: 500 })
   }

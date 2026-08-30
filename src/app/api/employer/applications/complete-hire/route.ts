@@ -65,11 +65,12 @@ export async function POST(req: NextRequest) {
       .or(`job_id.eq.${job.id},role_id.eq.${job.id}`)
       .neq('id', application.id)
       .is('archived_at', null)
+      .in('status', ['pending','reviewed','shortlisted','interview','offered'])
 
     const otherRows = otherApplications || []
     const otherIds = otherRows.map(row => row.id)
     if (otherIds.length) {
-      await admin.from('applications').update({ status:'rejected', archived_at:now, updated_at:now }).in('id', otherIds)
+      await admin.from('applications').update({ status:'rejected', updated_at:now }).in('id', otherIds)
       const otherCandidateIds = Array.from(new Set(otherRows.map(row => row.candidate_id).filter(Boolean))) as string[]
       if (otherCandidateIds.length) {
         const { data: others } = await admin.from('candidate_profiles').select('id,user_id,full_name').in('id', otherCandidateIds)
@@ -82,7 +83,7 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    await createNotification(candidate.user_id, 'general', `Congratulations - you have been hired`, `${propertyName} has completed your hire for ${job.job_title}. Your formal employment documents will follow directly from the employer.`, '/talent/applications')
+    await createNotification(candidate.user_id, 'general', `Congratulations - you have been hired`, `${propertyName} has completed your hire for ${job.job_title}. Your formal employment documents will follow directly from the employer.`, '/talent/hired')
     const { data: candidateAuth } = await admin.auth.admin.getUserById(candidate.user_id)
     const emailSent = candidateAuth.user?.email ? await sendHireConfirmation(candidateAuth.user.email, candidate.full_name || '', job.job_title || 'Role', propertyName) : false
 

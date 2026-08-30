@@ -19,6 +19,7 @@ export async function GET() {
     .select('id,candidate_id,role_id,job_id,status,match_score,cover_note,cover_letter,created_at,updated_at,hired_at,archived_at')
     .in('role_id', jobIds)
     .not('archived_at', 'is', null)
+    .not('hired_at', 'is', null)
     .order('archived_at', { ascending: false })
 
   if (error) return NextResponse.json({ error: 'Could not load hired placements.' }, { status: 500 })

@@ -50,6 +50,7 @@ export default function EmployerAnalyticsPage() {
         .from('applications')
         .select('*')
         .in('role_id', jobIds)
+        .neq('status', 'draft')
       const candIdsForApps = Array.from(new Set((rawApps || []).map((a: any) => a.candidate_id).filter(Boolean)))
       const { data: appCands } = candIdsForApps.length
         ? await supabase.from('candidate_profiles').select('*').in('id', candIdsForApps)

@@ -48,7 +48,7 @@ export function applicantConfirmationHtml({ applicantName, jobTitle, propertyNam
           <!-- CTA -->
           <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
             <tr><td align="center">
-              <a href="https://talent.wellnesshousecollective.co.uk/talent/dashboard" style="display: inline-block; padding: 14px 32px; background-color: #1a1a1a; color: #FFFFFF; font-size: 14px; font-weight: 600; text-decoration: none; border-radius: 8px; letter-spacing: 0.3px;">View Your Applications</a>
+              <a href="https://talent.wellnesshousecollective.co.uk/talent/applications" style="display: inline-block; padding: 14px 32px; background-color: #1a1a1a; color: #FFFFFF; font-size: 14px; font-weight: 600; text-decoration: none; border-radius: 8px; letter-spacing: 0.3px;">View Your Applications</a>
             </td></tr>
           </table>
         </td></tr>

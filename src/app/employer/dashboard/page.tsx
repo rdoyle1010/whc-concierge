@@ -37,13 +37,14 @@ export default function EmployerDashboard() {
 
       let appCount = 0
       if (jobIds.length > 0) {
-        const { count } = await supabase.from('applications').select('id', { count: 'exact', head: true }).in('role_id', jobIds)
+        const { count } = await supabase.from('applications').select('id', { count: 'exact', head: true }).in('role_id', jobIds).neq('status', 'draft')
         appCount = count || 0
 
         const { data: apps } = await supabase
           .from('applications')
           .select('*, candidate_profiles(full_name, headline)')
           .in('role_id', jobIds)
+          .neq('status', 'draft')
           .order('created_at', { ascending: false })
           .limit(5)
         setRecentApps((apps || []).map((a: any) => {

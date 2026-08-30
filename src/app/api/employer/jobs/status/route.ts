@@ -2,6 +2,12 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { sendRoleFilledEmail } from '@/lib/emails'
 import { getRequestUser } from '@/lib/request-user'
+import { createNotification } from '@/lib/notifications'
+
+// Only these applications are still "in play" and need closing + notifying
+// when the role ends. Drafts were never sent; withdrawn/rejected/accepted are
+// already settled.
+const ACTIVE_STATUSES = ['pending', 'reviewed', 'shortlisted', 'interview', 'offered']
 
 export async function POST(req: NextRequest) {
   const user = await getRequestUser(req)
@@ -22,19 +28,33 @@ export async function POST(req: NextRequest) {
   if (updateError) return NextResponse.json({ error: 'Could not update role' }, { status: 500 })
 
   let notified = 0
-  if (action === 'filled') {
-    const { data: applications } = await admin.from('applications').select('candidate_id').or(`job_id.eq.${jobId},role_id.eq.${jobId}`)
-    const candidateIds = Array.from(new Set((applications || []).map((a: any) => a.candidate_id).filter(Boolean))) as string[]
-    if (candidateIds.length) {
-      const { data: candidates } = await admin.from('candidate_profiles').select('id, user_id, full_name').in('id', candidateIds)
-      for (const candidate of candidates || []) {
-        if (!candidate.user_id) continue
-        const { data: authUser } = await admin.auth.admin.getUserById(candidate.user_id)
-        const email = authUser.user?.email
-        if (!email) continue
-        await sendRoleFilledEmail(email, candidate.full_name || '', job.job_title || 'Role', employer.property_name || employer.company_name || 'the property')
-        notified += 1
-      }
+  const propertyName = employer.property_name || employer.company_name || 'the property'
+  const { data: applications } = await admin.from('applications')
+    .select('id, candidate_id, status')
+    .or(`job_id.eq.${jobId},role_id.eq.${jobId}`)
+    .in('status', ACTIVE_STATUSES)
+
+  const activeApplications = applications || []
+  if (activeApplications.length) {
+    // Close the applications so neither side is left with a live-looking
+    // application against a dead role.
+    await admin.from('applications')
+      .update({ status: 'rejected', updated_at: new Date().toISOString() })
+      .in('id', activeApplications.map((a: any) => a.id))
+
+    const candidateIds = Array.from(new Set(activeApplications.map((a: any) => a.candidate_id).filter(Boolean))) as string[]
+    const { data: candidates } = await admin.from('candidate_profiles').select('id, user_id, full_name').in('id', candidateIds)
+    const message = action === 'filled'
+      ? `${job.job_title || 'The role'} at ${propertyName} has been filled. Thank you for your interest - your other applications are unaffected.`
+      : `${job.job_title || 'The role'} at ${propertyName} has been closed by the property. Thank you for your interest - your other applications are unaffected.`
+    for (const candidate of candidates || []) {
+      if (!candidate.user_id) continue
+      await createNotification(candidate.user_id, 'general', action === 'filled' ? 'Role filled' : 'Role closed', message, '/talent/applications')
+      const { data: authUser } = await admin.auth.admin.getUserById(candidate.user_id)
+      const email = authUser.user?.email
+      if (!email) continue
+      await sendRoleFilledEmail(email, candidate.full_name || '', job.job_title || 'Role', propertyName, action === 'filled' ? 'filled' : 'closed')
+      notified += 1
     }
   }
 

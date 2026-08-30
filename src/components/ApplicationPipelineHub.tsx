@@ -167,7 +167,7 @@ export default function ApplicationPipelineHub({ role }: { role: Role }) {
             {item.offer && <div className="mt-3 rounded-xl border border-[#e1d4b9] bg-[#fffaf0] p-3"><div className="flex items-center gap-2"><Briefcase size={14} className="text-[#9c7a42]"/><span className="text-[12px] font-semibold text-ink">Job offer</span><span className="ml-auto text-[10px] font-semibold uppercase text-[#9c7a42]">{item.offer.status}</span></div>{item.offer.employer_note && <p className="mt-2 whitespace-pre-wrap text-[11px] leading-5 text-secondary">{item.offer.employer_note}</p>}{item.offer.status === 'offered' && <p className="mt-2 text-[10px] text-muted">Formal offer letter / contract with salary, start date and employment terms will be issued separately by the employer.</p>}</div>}
           </div>
           <div className="w-full shrink-0 lg:w-[240px]">
-            {role === 'employer' && item.status === 'interview' && latestInterview?.status === 'confirmed' && !item.offer && <div className="grid gap-2">
+            {role === 'employer' && item.status === 'interview' && latestInterview?.status === 'confirmed' && latestInterview?.selected_slot && new Date(latestInterview.selected_slot).getTime() <= Date.now() && !item.offer && <div className="grid gap-2">
               {latestInterview.round_number < 3 && <button type="button" onClick={()=>setInterviewDraft({applicationId:item.id,roundNumber:latestInterview.round_number+1,method:'teams',slots:['','','',''],note:''})} className="btn-secondary w-full">Arrange Interview {latestInterview.round_number+1}</button>}
               <button type="button" onClick={()=>openOffer(item.id)} className="btn-primary w-full">Make offer</button>
             </div>}

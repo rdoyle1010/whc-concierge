@@ -41,6 +41,8 @@ export async function POST(req: NextRequest) {
     if (applicationError) return NextResponse.json({ error: `Could not load application: ${applicationError.message}` }, { status: 500 })
     if (!application) return NextResponse.json({ error: 'Application not found' }, { status: 404 })
     if (['withdrawn', 'accepted'].includes(application.status) && decision !== application.status) return NextResponse.json({ error: 'This application can no longer be changed from its current stage.' }, { status: 409 })
+    // A draft has not been sent by the candidate - it must never be actioned.
+    if (application.status === 'draft') return NextResponse.json({ error: 'This candidate has not sent their application yet.' }, { status: 409 })
 
     const { data: liveOffer, error: offerError } = await admin.from('application_offers').select('id,status').eq('application_id', application.id).in('status', ['offered', 'accepted']).maybeSingle()
     if (offerError) return NextResponse.json({ error: `Could not check live offer: ${offerError.message}` }, { status: 500 })

@@ -19,7 +19,7 @@ export default function EmployerJobsPage() {
 
   const emptyJob = {
     title: '', description: '', job_image_url: '', location: '', job_type: 'Full-time',
-    specialism: '', salary_min: '', salary_max: '', tier: 'Silver',
+    specialism: '', salary_min: '', salary_max: '', tier: 'Bronze',
     benefits: '', requirements: '', status: 'active',
   }
   const [form, setForm] = useState(emptyJob)
@@ -74,7 +74,6 @@ export default function EmployerJobsPage() {
       job_type: form.job_type,
       salary_min: form.salary_min ? parseInt(form.salary_min as string) : null,
       salary_max: form.salary_max ? parseInt(form.salary_max as string) : null,
-      tier: form.tier,
       benefits: form.benefits ? (form.benefits as string).split('\n').filter(Boolean) : null,
       requirements: form.requirements ? (form.requirements as string).split('\n').filter(Boolean) : null,
       status: wantsActive && !wasLive ? 'draft' : form.status,
@@ -103,7 +102,7 @@ export default function EmployerJobsPage() {
   const handleEdit = (job: any) => {
     setForm({
       title: job.title, description: job.description, job_image_url: job.job_image_url || '', location: job.location,
-      job_type: job.job_type, specialism: job.specialism || '', tier: job.tier || 'Silver',
+      job_type: job.job_type, specialism: job.specialism || '', tier: job.tier || 'Bronze',
       salary_min: job.salary_min?.toString() || '', salary_max: job.salary_max?.toString() || '',
       benefits: job.benefits?.join('\n') || '', requirements: job.requirements?.join('\n') || '',
       status: job.status,
@@ -134,6 +133,17 @@ export default function EmployerJobsPage() {
       }
     }
     const newStatus = newIsLive ? 'active' : 'closed'
+    if (!newIsLive) {
+      // Taking a role down must go through the API so open applications are
+      // closed and every applicant is told - a silent client-side write left
+      // candidates holding live-looking applications against a dead role.
+      if (!confirm(`Take ${job.title} down? Applicants with open applications will be notified that the role has closed.`)) return
+      const res = await fetch('/api/employer/jobs/status', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ jobId: job.id, action: 'closed' }) })
+      const result = await res.json().catch(() => ({}))
+      if (!res.ok) { alert(result.error || 'Could not update listing status. Please try again.'); return }
+      setJobs(jobs.map(j => j.id === job.id ? { ...j, status: 'closed', is_live: false } : j))
+      return
+    }
     const { data: updated, error } = await supabase.from('job_listings').update({ is_live: newIsLive, status: newStatus }).eq('id', job.id).select('id')
     if (error || !updated?.length) {
       alert('Could not update listing status' + (error ? ': ' + error.message : '') + '. Please try again.')
@@ -170,7 +180,7 @@ export default function EmployerJobsPage() {
           <div><label className="mb-1.5 block text-[12px] font-semibold text-secondary">Job title *</label><input type="text" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} className="input-field" placeholder="e.g. Senior Spa Therapist" /></div>
           <div><label className="mb-1.5 block text-[12px] font-semibold text-secondary">Job image</label><div className="grid sm:grid-cols-[180px_1fr] gap-4 items-center rounded-xl border border-border bg-white p-4">{form.job_image_url ? <div className="aspect-[16/10] overflow-hidden rounded-lg"><img src={form.job_image_url} alt="Job preview" className="h-full w-full object-cover" /></div> : <div className="aspect-[16/10] rounded-lg border border-dashed border-border flex items-center justify-center text-muted"><ImageIcon size={26}/></div>}<div className="flex flex-wrap gap-2"><label className="btn-secondary inline-flex items-center gap-2 cursor-pointer"><Upload size={13}/>{uploadingImage?'Uploading...':form.job_image_url?'Replace image':'Upload image'}<input type="file" accept="image/jpeg,image/png,image/webp" className="hidden" disabled={uploadingImage} onChange={e=>{const file=e.target.files?.[0];if(file)uploadJobImage(file);e.target.value=''}}/></label>{form.job_image_url && <button type="button" onClick={()=>setForm(current=>({...current,job_image_url:''}))} className="btn-secondary inline-flex items-center gap-2"><X size={13}/>Remove</button>}</div></div></div>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2"><div><label className="mb-1.5 block text-[12px] font-semibold text-secondary">Location *</label><input type="text" value={form.location} onChange={(e) => setForm({ ...form, location: e.target.value })} className="input-field" /></div><div><label className="mb-1.5 block text-[12px] font-semibold text-secondary">Job type</label><select value={form.job_type} onChange={(e) => setForm({ ...form, job_type: e.target.value })} className="input-field"><option>Full-time</option><option>Part-time</option><option>Contract</option><option>Temporary</option><option>Freelance</option></select></div></div>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3"><div><label className="mb-1.5 block text-[12px] font-semibold text-secondary">Min salary (£)</label><input type="number" value={form.salary_min} onChange={(e) => setForm({ ...form, salary_min: e.target.value })} className="input-field" /></div><div><label className="mb-1.5 block text-[12px] font-semibold text-secondary">Max salary (£)</label><input type="number" value={form.salary_max} onChange={(e) => setForm({ ...form, salary_max: e.target.value })} className="input-field" /></div><div><label className="mb-1.5 block text-[12px] font-semibold text-secondary">Tier</label><select value={form.tier} onChange={(e) => setForm({ ...form, tier: e.target.value })} className="input-field"><option>Silver</option><option>Gold</option><option>Platinum</option></select></div></div>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3"><div><label className="mb-1.5 block text-[12px] font-semibold text-secondary">Min salary (£)</label><input type="number" value={form.salary_min} onChange={(e) => setForm({ ...form, salary_min: e.target.value })} className="input-field" /></div><div><label className="mb-1.5 block text-[12px] font-semibold text-secondary">Max salary (£)</label><input type="number" value={form.salary_max} onChange={(e) => setForm({ ...form, salary_max: e.target.value })} className="input-field" /></div><div><label className="mb-1.5 block text-[12px] font-semibold text-secondary">Tier</label><div className="input-field bg-gray-50 text-gray-500">{form.tier || 'Bronze'}</div><p className="mt-1 text-[10px] text-muted">Set when the listing is purchased.</p></div></div>
           <div><label className="mb-1.5 block text-[12px] font-semibold text-secondary">Specialism</label><input type="text" value={form.specialism} onChange={(e) => setForm({ ...form, specialism: e.target.value })} className="input-field" placeholder="e.g. Massage Therapy" /></div>
           <div><label className="mb-1.5 block text-[12px] font-semibold text-secondary">Description *</label><textarea rows={5} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} className="input-field" /></div>
           <div><label className="mb-1.5 block text-[12px] font-semibold text-secondary">Requirements <span className="font-normal text-muted">— one per line</span></label><textarea rows={3} value={form.requirements} onChange={(e) => setForm({ ...form, requirements: e.target.value })} className="input-field" /></div>

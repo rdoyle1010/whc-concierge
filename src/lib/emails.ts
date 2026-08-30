@@ -76,11 +76,12 @@ export async function sendNewMessageEmail(email: string, name: string, senderNam
   `))
 }
 
-export async function sendRoleFilledEmail(email: string, name: string, roleTitle: string, propertyName: string) {
-  await sendEmail(email, `${roleTitle} at ${propertyName} has now been filled`, wrapper(`
+export async function sendRoleFilledEmail(email: string, name: string, roleTitle: string, propertyName: string, variant: 'filled' | 'closed' = 'filled') {
+  const outcome = variant === 'filled' ? 'filled this position' : 'closed this position'
+  await sendEmail(email, `${roleTitle} at ${propertyName} has now been ${variant}`, wrapper(`
     <p style="font-size: 24px; font-weight: 700; margin-bottom: 16px;">Role update</p>
     <p style="color: #6B7280;">Hi ${name || 'there'},</p>
-    <p style="color: #6B7280;">Thank you for your interest in <strong>${roleTitle}</strong> at <strong>${propertyName}</strong>. The property has now filled this position, so it is no longer accepting applications.</p>
+    <p style="color: #6B7280;">Thank you for your interest in <strong>${roleTitle}</strong> at <strong>${propertyName}</strong>. The property has now ${outcome}, so it is no longer accepting applications.</p>
     <p style="color: #6B7280;">Your profile remains available for other suitable opportunities on WHC Concierge.</p>
     <p style="margin-top: 24px;"><a href="https://talent.wellnesshousecollective.co.uk/jobs" style="display: inline-block; background: #111; color: #fff; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600;">Browse current roles</a></p>
   `))

@@ -40,7 +40,7 @@ export default function EmployerApplicationsPage() {
       if (!prof) { setLoading(false); return }
       const { data:jobIds } = await supabase.from('job_listings').select('id').eq('employer_id', prof.id)
       if (!jobIds?.length) { setLoading(false); return }
-      const { data,error } = await supabase.from('applications').select('*, job_listings(job_title)').in('role_id', jobIds.map(j=>j.id)).order('created_at',{ascending:false})
+      const { data,error } = await supabase.from('applications').select('*, job_listings(job_title)').in('role_id', jobIds.map(j=>j.id)).neq('status','draft').order('created_at',{ascending:false})
       if (error) { console.error('Applications load failed:',error.message); setLoadError('We could not load your applications just now. Please refresh the page.') }
       let apps=data||[]
       const candidateIds=Array.from(new Set(apps.map((a:any)=>a.candidate_id).filter(Boolean)))
