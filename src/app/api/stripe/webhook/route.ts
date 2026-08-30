@@ -212,6 +212,18 @@ export async function POST(req: NextRequest) {
             const therapistName = cand?.full_name || 'The therapist'
             const shiftDate = booking.shift_date || 'the agreed date'
 
+            try {
+              const { trackEvent, recordSalary } = await import('@/lib/analytics')
+              await trackEvent('shift_confirmed', { candidateId: booking.candidate_id, employerId: booking.employer_id }, { shift_date: booking.shift_date, rate: booking.rate, gross, fee })
+              if (booking.rate) {
+                await recordSalary({
+                  kind: 'agency_rate', source: 'platform_transaction', period: 'hourly',
+                  amountMin: Number(booking.rate), amountMax: Number(booking.rate),
+                  candidateId: booking.candidate_id, employerId: booking.employer_id,
+                })
+              }
+            } catch { /* best-effort */ }
+
             if (cand?.user_id) {
               await createNotification(cand.user_id, 'general', 'Booking confirmed - payment received',
                 `Your shift at ${propertyName} on ${shiftDate} at £${booking.rate}/hr is confirmed. WHC pays you after the shift.`,

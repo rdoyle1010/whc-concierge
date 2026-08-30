@@ -37,7 +37,7 @@ export async function POST(req: NextRequest) {
 
     const stripe = getStripe()
     const site = 'https://talent.wellnesshousecollective.co.uk'
-    const feePct = Math.round(AGENCY_PLATFORM_FEE_PCT * 100)
+    const feePct = Math.round((fee / Math.max(1, gross)) * 100)
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       line_items: [{

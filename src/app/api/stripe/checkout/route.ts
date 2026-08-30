@@ -280,7 +280,7 @@ export async function POST(req: NextRequest) {
             currency: 'gbp',
             product_data: {
               name: 'WHC Concierge - Agency Shift Booking',
-              description: `${booking.shift_date || 'Agreed date'}: £${booking.rate}/hr × ${effHours}h (£${gross}) + 10% WHC fee (£${fee}). The therapist receives the full £${gross} agreed shift amount after the completed shift.`,
+              description: `${booking.shift_date || 'Agreed date'}: £${booking.rate}/hr × ${effHours}h (£${gross}) + ${Math.round((fee / Math.max(1, gross)) * 100)}% WHC fee (£${fee}). The therapist receives the full £${gross} agreed shift amount after the completed shift.`,
             },
             unit_amount: totalPounds * 100, // pounds → pence
           },

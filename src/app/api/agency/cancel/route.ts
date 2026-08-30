@@ -40,6 +40,13 @@ export async function POST(req: NextRequest) {
   const gross = Math.max(0, Number(booking.rate || 0) * Number(booking.hours || 8))
   const paid = Boolean(booking.paid_at)
 
+  // Late-cancellation policy: a property cancelling within 24 hours of the
+  // shift is asking a professional to absorb a day they held for the booking.
+  // Policy default: 50% refund to the property, 50% compensates the
+  // professional. Admin reviews every case and can override either way.
+  const tomorrow = (() => { const d = new Date(`${londonToday()}T12:00:00Z`); d.setUTCDate(d.getUTCDate() + 1); return d.toISOString().slice(0, 10) })()
+  const lateEmployerCancellation = role === 'employer' && String(booking.shift_date) <= tomorrow
+
   // Before payment there is no money to retain. After payment WHC's agreed
   // admin/platform fee remains earned; the shift money is frozen for Admin to
   // decide any refund/compensation under the cancellation policy.
@@ -69,8 +76,10 @@ export async function POST(req: NextRequest) {
         issue_type: role === 'candidate' ? 'professional_cancelled' : 'property_cancelled',
         description: reason,
         requested_adjustment_type: role === 'employer' ? 'refund' : 'none',
-        requested_amount: role === 'employer' ? gross : null,
-        requested_reason: `Pre-shift cancellation. WHC admin fee of £${fee} is retained.`,
+        requested_amount: role === 'employer' ? (lateEmployerCancellation ? Math.round(gross / 2) : gross) : null,
+        requested_reason: lateEmployerCancellation
+          ? `Late cancellation by the property within 24 hours of the shift. Policy default: 50% refund (£${Math.round(gross / 2)}), 50% (£${gross - Math.round(gross / 2)}) compensates the professional for the held day. WHC admin fee of £${fee} is retained.`
+          : `Pre-shift cancellation. WHC admin fee of £${fee} is retained.`,
         status: 'under_review',
       })
     }

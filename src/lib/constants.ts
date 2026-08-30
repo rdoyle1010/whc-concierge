@@ -124,6 +124,20 @@ export const EXECUTIVE_SEARCH_RATE_RANGE = [0.15, 0.20] as const
 // WHC charges the property 15% on top of the shift value.
 export const AGENCY_COMMISSION_RATE = 0.15
 export const AGENCY_PLATFORM_FEE_PCT = 0.15
+// Same-day and next-day cover carries an urgency premium on the WHC fee -
+// the professional still receives the full agreed rate; the premium prices
+// the emergency service the property is buying.
+export const AGENCY_URGENT_FEE_SURCHARGE = 0.05
+
+// The WHC fee percentage for a shift, judged by how close the shift date is
+// to today (both YYYY-MM-DD, Europe/London). Same-day or next-day => premium.
+export function agencyFeePctForShift(shiftDate: string | null | undefined, todayLondon: string): number {
+  if (!shiftDate || !todayLondon) return AGENCY_PLATFORM_FEE_PCT
+  const d = new Date(`${todayLondon}T12:00:00Z`)
+  d.setUTCDate(d.getUTCDate() + 1)
+  const tomorrow = d.toISOString().slice(0, 10)
+  return String(shiftDate) <= tomorrow ? AGENCY_PLATFORM_FEE_PCT + AGENCY_URGENT_FEE_SURCHARGE : AGENCY_PLATFORM_FEE_PCT
+}
 
 // Kept as a legacy alias for old Featured Profile code. New one-off featured
 // options are £9.99 / 7 days and £24.99 / 30 days.
