@@ -3,23 +3,9 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { createNotification } from '@/lib/notifications'
-import { applicantConfirmationHtml, employerNotificationHtml } from '@/lib/application-email-templates'
 import { sendNewMatchEmail } from '@/lib/emails'
 import { calculateMatchScore } from '@/lib/matching'
 import { canEmployerDiscoverCandidate, mutualRadiusResult } from '@/lib/discovery'
-
-const RESEND_API_KEY = process.env.RESEND_API_KEY
-const FROM_EMAIL = 'WHC Concierge <noreply@mail.wellnesshousecollective.co.uk>'
-
-async function sendEmail(to: string, subject: string, html: string) {
-  if (!RESEND_API_KEY) return
-  const res = await fetch('https://api.resend.com/emails', {
-    method: 'POST',
-    headers: { Authorization: `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ from: FROM_EMAIL, to, subject, html }),
-  })
-  if (!res.ok) console.error(`[Email FAILED ${res.status}] ${subject}`)
-}
 
 async function getAuthedUser() {
   const cookieStore = await cookies()
@@ -29,30 +15,6 @@ async function getAuthedUser() {
     { cookies: { getAll() { return cookieStore.getAll() }, setAll() {} } },
   )
   return supabase.auth.getUser()
-}
-
-async function insertApplicationDefensively(admin: any, row: Record<string, any>) {
-  const attempt: Record<string, any> = { ...row }
-  let lastError: any = null
-  for (let strips = 0; strips <= 6; strips++) {
-    const { data, error } = await admin.from('applications').insert(attempt).select('id').single()
-    if (!error) return { data, error: null }
-    lastError = error
-    const match = /Could not find the '([^']+)' column/.exec(error.message || '')
-    if (match && Object.prototype.hasOwnProperty.call(attempt, match[1])) {
-      delete attempt[match[1]]
-      continue
-    }
-    break
-  }
-  return { data: null, error: lastError }
-}
-
-async function findExistingApplication(admin: any, candidateId: string, jobId: string) {
-  const byRole = await admin.from('applications').select('id').eq('candidate_id', candidateId).eq('role_id', jobId).limit(1).maybeSingle()
-  if (!byRole.error && byRole.data) return byRole.data
-  const byJob = await admin.from('applications').select('id').eq('candidate_id', candidateId).eq('job_id', jobId).limit(1).maybeSingle()
-  return !byJob.error ? byJob.data : null
 }
 
 type SwipeRow = {
@@ -70,16 +32,6 @@ async function replaceSwipe(admin: any, row: SwipeRow) {
     ignoreDuplicates: false,
   }).select('action').single()
   return { error, changed: !error && data?.action === row.action }
-}
-
-async function removeSwipe(admin: any, row: Omit<SwipeRow, 'action'>) {
-  let query = admin.from('swipes').delete()
-    .eq('swiper_id', row.swiper_id)
-    .eq('swiper_type', row.swiper_type)
-    .eq('target_id', row.target_id)
-    .eq('target_type', row.target_type)
-  query = row.context_job_id ? query.eq('context_job_id', row.context_job_id) : query.is('context_job_id', null)
-  return query
 }
 
 async function createMutualMatch(admin: any, opts: {
@@ -190,11 +142,7 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ matched: false })
       }
 
-      // Candidate matching is advisory. We keep the score and any gap/hard-stop
-      // explanation for the application assistant, but do not prevent a candidate
-      // from applying to a live role.
       const result = calculateMatchScore(candidate, job)
-
       const saved = await replaceSwipe(admin, {
         swiper_id: user.id, swiper_type: 'candidate', target_id: job.id, target_type: 'job', action: 'right', context_job_id: context,
       })
@@ -202,33 +150,18 @@ export async function POST(req: NextRequest) {
 
       const { data: employer } = await admin.from('employer_profiles').select('*').eq('id', job.employer_id).maybeSingle()
       if (!employer) return NextResponse.json({ error: 'Employer profile not found' }, { status: 404 })
-      const employerName = employer.property_name || employer.company_name || 'the employer'
 
-      const existingApplication = await findExistingApplication(admin, candidate.id, job.id)
-      if (!existingApplication) {
-        const { error: appError } = await insertApplicationDefensively(admin, {
-          candidate_id: candidate.id,
-          role_id: job.id,
-          job_id: job.id,
-          status: 'pending',
-          match_score: result.score,
-        })
-        if (appError) return NextResponse.json({ error: 'Your application could not be saved. Please try again.' }, { status: 500 })
-
-        if (employer.user_id) {
-          await createNotification(employer.user_id, 'job_application', 'New interest in your role', `${candidate.full_name || 'A candidate'} is interested in ${job.job_title}.`, '/employer/applications')
-        }
-        try {
-          const emailJobs: Promise<void>[] = []
-          if (user.email) emailJobs.push(sendEmail(user.email, `Application Received - ${job.job_title}`, applicantConfirmationHtml({ applicantName: candidate.full_name || 'there', jobTitle: job.job_title, propertyName: employerName })))
-          let employerEmail = employer.contact_email || null
-          if (!employerEmail && employer.user_id) {
-            const { data: employerUser } = await admin.auth.admin.getUserById(employer.user_id)
-            employerEmail = employerUser?.user?.email || null
-          }
-          if (employerEmail) emailJobs.push(sendEmail(employerEmail, `New Application - ${job.job_title}`, employerNotificationHtml({ applicantName: candidate.full_name || 'A candidate', jobTitle: job.job_title, propertyName: employerName, roleLevel: candidate.role_level || undefined })))
-          await Promise.allSettled(emailJobs)
-        } catch (e: any) { console.error('Application email failed:', e?.message) }
+      // Interest is deliberately separate from a formal application. A right swipe
+      // records mutual-interest intent only; applications are created exclusively
+      // through the dedicated application draft/submit journey.
+      if (employer.user_id) {
+        await createNotification(
+          employer.user_id,
+          'general',
+          'A professional is interested in your role',
+          `${candidate.full_name || 'A professional'} is interested in ${job.job_title}.`,
+          `/employer/candidates?candidate=${candidate.id}`,
+        )
       }
 
       if (!employer.user_id) return NextResponse.json({ matched: false })
@@ -252,7 +185,7 @@ export async function POST(req: NextRequest) {
         candidateUserId: user.id, employerUserId: employer.user_id,
         candidateEmail: user.email, employerEmail,
       })
-      return NextResponse.json({ matched: true, jobTitle: job.job_title, employerName })
+      return NextResponse.json({ matched: true, jobTitle: job.job_title, employerName: employer.property_name || employer.company_name || 'the employer' })
     }
 
     const { data: employer } = await admin.from('employer_profiles').select('*').eq('user_id', user.id).maybeSingle()
