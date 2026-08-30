@@ -96,6 +96,15 @@ export async function GET(req: NextRequest) {
   if (error) return NextResponse.json({ error: 'We could not load your applications just now.' }, { status: 500 })
 
   const rows = applications || []
+
+  // A declined offer is stored as status 'rejected' for pipeline purposes, but
+  // it must never READ as an employer rejection - join the offers to tell them apart.
+  const applicationIds = rows.map((application: any) => application.id)
+  const { data: offers } = applicationIds.length
+    ? await admin.from('application_offers').select('application_id,status').in('application_id', applicationIds)
+    : { data: [] as any[] }
+  const offerStatusByApplication = new Map((offers || []).map((offer: any) => [offer.application_id, offer.status]))
+
   const candidateIds = Array.from(new Set(rows.map((application: any) => application.candidate_id).filter(Boolean)))
   const { data: candidates } = candidateIds.length
     ? await admin.from('candidate_profiles').select(CANDIDATE_FIELDS).in('id', candidateIds)
@@ -147,6 +156,7 @@ export async function GET(req: NextRequest) {
       fit: candidate && job ? buildFit(candidate, job) : null,
       academy: candidate ? (academyByCandidate.get(candidate.id) || []) : [],
       endorsements: candidate?.user_id ? (endorsementsByUser.get(candidate.user_id) || []) : [],
+      offer_declined: application.status === 'rejected' && offerStatusByApplication.get(application.id) === 'declined',
     }
   })
 

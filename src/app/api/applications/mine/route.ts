@@ -48,7 +48,16 @@ export async function GET(req: NextRequest) {
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   if (countsError) return NextResponse.json({ error: countsError.message }, { status: 500 })
 
+  // Distinguish "the employer did not progress you" from "you declined their
+  // offer" - both live as status 'rejected', but must read differently.
+  const rowIds = (rows || []).map((application: any) => application.id)
+  const { data: offerRows } = rowIds.length
+    ? await admin.from('application_offers').select('application_id,status').in('application_id', rowIds)
+    : { data: [] as any[] }
+  const declinedOffers = new Set((offerRows || []).filter((offer: any) => offer.status === 'declined').map((offer: any) => offer.application_id))
+
   let applications = (rows || []).map((application: any) => application.job_listings ? ({
+    offer_declined: application.status === 'rejected' && declinedOffers.has(application.id),
     ...application,
     job_listings: {
       ...application.job_listings,

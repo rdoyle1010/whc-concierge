@@ -357,9 +357,20 @@ export async function POST(req: NextRequest) {
       if (meta?.type === 'job_posting' && meta?.job_id) {
         const days = meta.days ? parseInt(meta.days) : 30
         const expiresAt = new Date(Date.now() + days * 24 * 60 * 60 * 1000).toISOString()
+        // Safety net behind the publish gate: if payment completes while the
+        // employer is still unapproved, keep the paid term but hold the role
+        // as a draft until approval.
+        let employerApproved = true
+        if (meta.employer_id) {
+          const { data: paidEmployer } = await supabase.from('employer_profiles').select('approval_status,user_id').eq('id', meta.employer_id).maybeSingle()
+          employerApproved = paidEmployer?.approval_status === 'approved'
+          if (!employerApproved && paidEmployer?.user_id) {
+            await createNotification(paidEmployer.user_id, 'general', 'Payment received - role held for approval', 'Your role is paid for and will go live automatically as soon as WHC approves your employer account.', '/employer/jobs').catch?.(() => {})
+          }
+        }
         await supabase.from('job_listings').update({
-          is_live: true,
-          status: 'active',
+          is_live: employerApproved,
+          status: employerApproved ? 'active' : 'draft',
           expires_at: expiresAt,
         }).eq('id', meta.job_id)
 
