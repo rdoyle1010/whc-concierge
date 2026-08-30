@@ -16,7 +16,6 @@ async function sleep(ms: number) {
 async function sendWelcomeEmail(email: string, firstName: string) {
   const html = welcomeEmailHtml({ firstName, userType: 'talent', dashboardUrl: 'https://talent.wellnesshousecollective.co.uk/talent/dashboard' })
   if (!RESEND_API_KEY) { console.log(`[Welcome email skipped] To: ${email}`); return }
-  // Awaited by callers (fire-and-forget dies on serverless) and failures logged loudly.
   try {
     const res = await fetch('https://api.resend.com/emails', {
       method: 'POST',
@@ -32,9 +31,6 @@ async function sendWelcomeEmail(email: string, firstName: string) {
   }
 }
 
-
-// Referral link credit: tie the new candidate to their referrer. Best-effort -
-// never blocks registration, and no-ops until migration 025 is live.
 async function recordReferral(supabase: any, userId: string, refCode: string) {
   try {
     const code = String(refCode || '').trim().toUpperCase()
@@ -55,11 +51,13 @@ async function recordReferral(supabase: any, userId: string, refCode: string) {
   }
 }
 
-// Insert, stripping ONLY columns the DB reports as unknown (keeps all other data).
-async function insertStrippingUnknownColumns(supabase: any, table: string, row: Record<string, any>, maxStrips = 8) {
+// Upsert, stripping ONLY columns the DB reports as unknown. This makes the
+// final registration step safe to retry if an auth/database trigger has
+// already created the candidate row for this user.
+async function upsertStrippingUnknownColumns(supabase: any, table: string, row: Record<string, any>, maxStrips = 8) {
   const data = { ...row }
   for (let i = 0; i <= maxStrips; i++) {
-    const { error } = await supabase.from(table).insert(data)
+    const { error } = await supabase.from(table).upsert(data, { onConflict: 'user_id' })
     if (!error) return { ok: true as const, stripped: i }
     const m = error.message.match(/Could not find the '([^']+)' column/) || error.message.match(/column "([^"]+)" of relation/)
     if (m && m[1] && m[1] in data) { delete data[m[1]]; continue }
@@ -77,8 +75,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Missing userId or profileData' }, { status: 400 })
     }
 
-    // The profile must belong to the signed-in browser session. Previously a
-    // caller who learned another auth UUID could create a profile for it.
     const cookieStore = await cookies()
     const authClient = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -93,8 +89,6 @@ export async function POST(req: NextRequest) {
 
     const supabase = createAdminClient()
 
-    // Wait for the user to be fully committed to auth.users
-    // This resolves the foreign key timing issue after signUp()
     let userVerified = false
     let userEmail = signedInUser?.email || proof?.email || ''
     for (let attempt = 0; attempt < 5; attempt++) {
@@ -137,24 +131,11 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'This email is already registered as a hotel or employer account. Please sign in through Hotel / Employer.' }, { status: 409 })
     }
 
-    const { data: existingCandidate } = await supabase
-      .from('candidate_profiles')
-      .select('id')
-      .eq('user_id', userId)
-      .maybeSingle()
-    if (existingCandidate) {
-      return NextResponse.json({ error: 'This registration has already been completed.' }, { status: 409 })
-    }
-
     const safeProfile = sanitiseTalentRegistration(profileData, userId)
     if (!safeProfile.full_name || !safeProfile.role_level || safeProfile.agreed_terms !== true) {
       return NextResponse.json({ error: 'Name, role level and acceptance of the terms are required.' }, { status: 400 })
     }
 
-    // Ensure the shared profiles row exists - messaging FKs, role routing and
-    // notifications all key on it. Live check constraint requires 'candidate'
-    // (not 'talent'); the app's auth helpers recognise both.
-    // ignoreDuplicates keeps this idempotent and never overwrites an existing row.
     try {
       const { error: profErr } = await supabase.from('profiles').upsert(
         {
@@ -170,12 +151,14 @@ export async function POST(req: NextRequest) {
       console.error('profiles upsert failed (talent register):', e?.message)
     }
 
-    // Insert candidate profile with retry loop
+    // Candidate rows can be created by an auth/database trigger before this
+    // final form submission. Upsert on user_id so registration is idempotent
+    // and a retry completes the profile instead of throwing a duplicate-key error.
     let lastError: string | null = null
     for (let attempt = 0; attempt < 3; attempt++) {
       const { error: profileError } = await supabase
         .from('candidate_profiles')
-        .insert(safeProfile)
+        .upsert(safeProfile, { onConflict: 'user_id' })
 
       if (!profileError) {
         if (body.refCode) await recordReferral(supabase, userId, body.refCode)
@@ -185,14 +168,12 @@ export async function POST(req: NextRequest) {
 
       lastError = profileError.message
 
-      // If it's a foreign key error, wait and retry
       if (profileError.message.includes('foreign key') || profileError.message.includes('fkey')) {
         await sleep(1000)
         continue
       }
 
-      // Column mismatch: strip only the offending columns, keep the rest of the data
-      const result = await insertStrippingUnknownColumns(supabase, 'candidate_profiles', safeProfile)
+      const result = await upsertStrippingUnknownColumns(supabase, 'candidate_profiles', safeProfile)
       if (result.ok) {
         if (body.refCode) await recordReferral(supabase, userId, body.refCode)
         if (userEmail) await sendWelcomeEmail(userEmail, String(safeProfile.full_name).split(' ')[0] || 'there')
@@ -202,7 +183,7 @@ export async function POST(req: NextRequest) {
       await sleep(1000)
     }
 
-    return NextResponse.json({ error: lastError || 'Failed to create profile after retries' }, { status: 500 })
+    return NextResponse.json({ error: lastError || 'Failed to save profile after retries' }, { status: 500 })
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
