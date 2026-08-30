@@ -124,7 +124,8 @@ export async function POST(req: NextRequest) {
     if (!Number.isInteger(roundNumber) || roundNumber < 1 || roundNumber > 2) return NextResponse.json({ error: 'Invalid interview round.' }, { status: 400 })
     if (!METHODS.includes(interviewMethod as any)) return NextResponse.json({ error: 'Choose an interview method.' }, { status: 400 })
     if (slots.length < 1 || slots.length > 4) return NextResponse.json({ error: 'Offer between one and four interview times.' }, { status: 400 })
-    if (!['pending', 'reviewed', 'shortlisted', 'interview'].includes(application.status)) return NextResponse.json({ error: 'This application is not available to move to interview.' }, { status: 409 })
+    if (roundNumber === 1 && application.status !== 'shortlisted') return NextResponse.json({ error: 'Shortlist the candidate before arranging the first interview.' }, { status: 409 })
+    if (roundNumber === 2 && application.status !== 'interview') return NextResponse.json({ error: 'Complete the first interview before arranging the second interview.' }, { status: 409 })
     if (!contactName) return NextResponse.json({ error: 'Add the interviewer or contact name.' }, { status: 400 })
     if (['teams', 'google_meet', 'zoom'].includes(interviewMethod)) {
       if (!meetingLink) return NextResponse.json({ error: `Add the ${methodLabel(interviewMethod)} join link before sending.` }, { status: 400 })
@@ -168,7 +169,6 @@ export async function POST(req: NextRequest) {
     }, { onConflict: 'application_id,round_number' }).select('*').single()
     if (interviewError) return NextResponse.json({ error: 'Could not create interview invitation.' }, { status: 500 })
 
-    // Phone instructions share the existing meeting_link field so no schema change is required.
     if (interviewMethod === 'phone' && phoneInstructions) {
       await admin.from('application_interviews').update({ meeting_link: phoneInstructions }).eq('id', interview.id)
       interview.meeting_link = phoneInstructions
