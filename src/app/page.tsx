@@ -23,7 +23,7 @@ export const revalidate = 60
 
 export const metadata: Metadata = {
   title: { absolute: 'WHC Concierge | Luxury Wellness Careers Platform' },
-  description: 'The UK\'s specialist recruitment platform for luxury spa, wellness and hospitality — connecting exceptional professionals with five-star properties.',
+  description: 'The UK\'s specialist recruitment platform for luxury spa, wellness and hospitality - connecting exceptional professionals with five-star properties.',
   alternates: { canonical: 'https://talent.wellnesshousecollective.co.uk' },
 }
 
@@ -151,11 +151,11 @@ function ProductSection({ content: _content }: { content: WebsiteContent }) {
   const examples = [
     {
       label: 'Example professional profile',
-      text: 'Employers can see the person behind the CV — experience, treatment skills, qualifications, location, availability and professional status in one place.',
+      text: 'Employers can see the person behind the CV - experience, treatment skills, qualifications, location, availability and professional status in one place.',
     },
     {
       label: 'Why this match',
-      text: 'We compare the things that genuinely affect fit: skills, treatments, qualifications, experience, location, availability and working preferences — not just keywords.',
+      text: 'We compare the things that genuinely affect fit: skills, treatments, qualifications, experience, location, availability and working preferences - not just keywords.',
     },
     {
       label: 'Example live opportunity',
@@ -174,7 +174,7 @@ function ProductSection({ content: _content }: { content: WebsiteContent }) {
       <div className="mx-auto mb-10 max-w-3xl text-center">
         <Eyebrow>Built for spa & wellness</Eyebrow>
         <h2 className="site-heading mb-5 text-[34px] font-medium leading-[1.05] md:text-[48px]">One platform. Three ways to work.</h2>
-        <p className="text-[15px] leading-[1.8] opacity-65 md:text-[17px]">Permanent careers, flexible agency shifts and residencies — for spa and wellness professionals and the employers looking for them.</p>
+        <p className="text-[15px] leading-[1.8] opacity-65 md:text-[17px]">Permanent careers, flexible agency shifts and residencies - for spa and wellness professionals and the employers looking for them.</p>
       </div>
 
       <div className="mb-20 grid gap-4 md:grid-cols-3">
@@ -188,7 +188,7 @@ function ProductSection({ content: _content }: { content: WebsiteContent }) {
       <div className="mx-auto mb-12 max-w-3xl text-center">
         <Eyebrow>See how it works</Eyebrow>
         <h2 className="site-heading mb-5 text-[32px] font-medium leading-[1.05] md:text-[42px]">From profile to genuine match.</h2>
-        <p className="text-[15px] leading-[1.8] opacity-65">A simple view of what employers and professionals actually see — and how the platform helps both sides make a better decision.</p>
+        <p className="text-[15px] leading-[1.8] opacity-65">A simple view of what employers and professionals actually see - and how the platform helps both sides make a better decision.</p>
       </div>
 
       <div className="grid gap-10 md:grid-cols-2 lg:grid-cols-3 lg:gap-8">
@@ -205,7 +205,7 @@ function ProductSection({ content: _content }: { content: WebsiteContent }) {
       <div className="mx-auto mt-16 max-w-5xl border border-black/10 bg-white px-6 py-8 text-center md:px-10">
         <p className="site-accent mb-3 text-[11px] font-semibold uppercase tracking-[0.16em]">Built for an international industry</p>
         <h3 className="site-heading mb-4 text-[24px] font-medium md:text-[30px]">Trained somewhere else? Your experience should still make sense here.</h3>
-        <p className="mx-auto max-w-3xl text-[13px] leading-[1.8] opacity-65 md:text-[14px]">Spa is a global industry. Profiles can show where someone trained, the treatments they are qualified to perform, qualification review status, right-to-work information and insurance status — helping employers understand international experience without relying on an unfamiliar certificate name alone.</p>
+        <p className="mx-auto max-w-3xl text-[13px] leading-[1.8] opacity-65 md:text-[14px]">Spa is a global industry. Profiles can show where someone trained, the treatments they are qualified to perform, qualification review status, right-to-work information and insurance status - helping employers understand international experience without relying on an unfamiliar certificate name alone.</p>
       </div>
     </div>
   </section>
@@ -347,7 +347,7 @@ export default async function HomePage(props: HomePageProps) {
   return <div className="website-theme min-h-screen" style={websiteCssVariables(content)}>
     <Navbar siteContent={content} />
     <main className="pt-[60px]">
-      {previewingDraft && <div className="site-accent-bg px-5 py-2 text-center text-[12px] font-semibold text-white">Private draft preview — the public website has not changed.</div>}
+      {previewingDraft && <div className="site-accent-bg px-5 py-2 text-center text-[12px] font-semibold text-white">Private draft preview - the public website has not changed.</div>}
       <HeroCarousel siteContent={content} />
       <SponsoredAd placement="homepage_spotlight" />
       <FeaturedTalentSection talent={featuredTalent} />
