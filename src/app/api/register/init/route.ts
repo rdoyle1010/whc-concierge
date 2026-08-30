@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { createRegistrationProof, type RegistrationRole } from '@/lib/registration'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { getClientIp, rateLimit } from '@/lib/rate-limit'
 
 export const runtime = 'nodejs'
@@ -31,6 +32,9 @@ export async function POST(req: NextRequest) {
     const password = typeof body.password === 'string' ? body.password : ''
     const role: RegistrationRole | null = body.role === 'talent' || body.role === 'employer' ? body.role : null
     const displayName = typeof body.displayName === 'string' ? body.displayName.trim().slice(0, 200) : ''
+    const phone = typeof body.phone === 'string' ? body.phone.trim().slice(0, 40) : ''
+    const postcode = typeof body.postcode === 'string' ? body.postcode.trim().slice(0, 20) : ''
+    const hasCar = body.hasCar === true
 
     if (!email || !password || !role || password.length < 8) {
       return NextResponse.json({ error: 'Please provide a valid email and a password of at least 8 characters.' }, { status: 400 })
@@ -53,6 +57,33 @@ export async function POST(req: NextRequest) {
 
     if (error || !data.user) {
       return NextResponse.json({ error: friendlySignupError(error?.message) }, { status: 400 })
+    }
+
+    if (role === 'talent') {
+      const admin = createAdminClient()
+      const { error: sharedProfileError } = await admin.from('profiles').upsert({
+        id: data.user.id,
+        email,
+        role: 'candidate',
+        full_name: displayName || null,
+        location: postcode || null,
+      }, { onConflict: 'id' })
+      if (sharedProfileError) console.error('Talent signup shared profile seed failed:', sharedProfileError.message)
+
+      const { error: candidateError } = await admin.from('candidate_profiles').upsert({
+        user_id: data.user.id,
+        full_name: displayName || null,
+        phone: phone || null,
+        postcode: postcode || null,
+        location: postcode || null,
+        has_car: hasCar,
+        approval_status: 'approved',
+        profile_visible: true,
+      }, { onConflict: 'user_id' })
+      if (candidateError) {
+        console.error('Talent signup candidate profile seed failed:', candidateError.message)
+        return NextResponse.json({ error: 'Your account was created, but we could not open your Talent profile. Please sign in and try again.' }, { status: 500 })
+      }
     }
 
     return NextResponse.json({
