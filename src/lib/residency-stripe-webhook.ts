@@ -44,7 +44,7 @@ async function fulfillResidencyBooking(supabase: any, session: Stripe.Checkout.S
   const alreadyFulfilled = Boolean(booking.paid_at && booking.status === 'confirmed')
   if (!alreadyFulfilled) {
     const payout = Math.max(0, gross)
-    const { error } = await supabase.from('residency_bookings').update({
+    const { data: claimed, error } = await supabase.from('residency_bookings').update({
       status: 'confirmed',
       paid_at: new Date().toISOString(),
       amount_paid: totalPaid || gross + fee,
@@ -52,8 +52,9 @@ async function fulfillResidencyBooking(supabase: any, session: Stripe.Checkout.S
       payout_amount: payout,
       payout_status: 'pending',
       stripe_payment_intent: typeof session.payment_intent === 'string' ? session.payment_intent : session.payment_intent?.id || null,
-    }).eq('id', booking.id)
+    }).eq('id', booking.id).is('paid_at', null).select('id').maybeSingle()
     if (error) throw new Error(`Residency booking fulfilment failed: ${error.message}`)
+    if (!claimed) return true // the redirect confirmation already fulfilled and notified
 
     try {
       const [{ data: candidate }, { data: employer }] = await Promise.all([
@@ -78,6 +79,10 @@ async function fulfillResidencyBooking(supabase: any, session: Stripe.Checkout.S
           'Your Residency booking with the specialist is confirmed and secured through Spa Platform.',
           '/employer/residency',
         )
+        await createNotification(employer.user_id, 'general', 'Complete your Property Fact File', 'Your confirmed specialist receives a Before You Arrive pack built from your Property Fact File - the more complete it is, the better their arrival goes.', '/employer/property-fact-file')
+      }
+      if (candidate?.user_id) {
+        await createNotification(candidate.user_id, 'general', 'Your Before You Arrive pack is ready', `Everything you need for ${propertyName} - travel, arrival and property details - is in your Before You Arrive pack.`, '/talent/before-you-arrive')
       }
     } catch (error: any) {
       console.error('Residency payment notification failed (non-fatal):', error?.message)

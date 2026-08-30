@@ -1,12 +1,12 @@
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: { absolute: 'Spa Residencies & Seasonal Placements | WHC Concierge' },
-  description: 'Browse spa residencies and seasonal placements at iconic UK and international properties — short-term to multi-month engagements.',
+  title: { absolute: 'Residency Specialists for Spas & Resorts | WHC Concierge' },
+  description: 'Book verified spa and wellness residency specialists for seasonal cover, retreats, pop-ups and multi-month programmes - identity-protected until your booking confirms.',
   alternates: { canonical: 'https://talent.wellnesshousecollective.co.uk/residency' },
   openGraph: {
-    title: 'Spa Residencies & Seasonal Placements | WHC Concierge',
-    description: 'Browse spa residencies and seasonal placements at iconic UK and international properties.',
+    title: 'Residency Specialists for Spas & Resorts | WHC Concierge',
+    description: 'Book verified spa and wellness residency specialists for seasonal cover, retreats and programmes.',
   },
 }
 

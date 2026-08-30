@@ -23,6 +23,16 @@ export default function AdminResidencyPage() {
   }
   useEffect(() => { load() }, [])
 
+  async function toggleFeatured(id: string, featured: boolean) {
+    setBusyId(id)
+    const res = await fetch('/api/admin/listings', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'residency_feature', id, featured }),
+    })
+    if (res.ok) setRows(current => current.map((row: any) => row.id === id ? { ...row, is_featured: featured } : row))
+    setBusyId(null)
+  }
+
   async function decide(id: string, decision: 'approved' | 'rejected', why?: string) {
     setError('')
     setBusyId(id)
@@ -65,6 +75,11 @@ export default function AdminResidencyPage() {
           {r.approval_status !== 'approved' && (
             <button onClick={() => decide(r.id, 'approved')} disabled={busyId === r.id}
               className="btn-primary !py-2 text-[12px] flex items-center gap-1 disabled:opacity-50"><Check size={13} /> Approve</button>
+          )}
+          {r.approval_status === 'approved' && (
+            <button onClick={() => toggleFeatured(r.id, !r.is_featured)} disabled={busyId === r.id}
+              className={`!py-2 text-[12px] rounded-lg px-3 font-semibold disabled:opacity-50 ${r.is_featured ? 'bg-[#f5eedd] text-[#8a6d3b] border border-[#e2d6b8]' : 'btn-secondary'}`}>
+              {r.is_featured ? '★ Featured' : 'Feature'}</button>
           )}
           {r.approval_status !== 'rejected' && (
             <button onClick={() => { setRejecting(r); setReason('') }} disabled={busyId === r.id}

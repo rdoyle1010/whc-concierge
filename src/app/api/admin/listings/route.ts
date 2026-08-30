@@ -89,6 +89,13 @@ export async function POST(req: NextRequest) {
     const { action, id } = body
     if (!id) return NextResponse.json({ error: 'id required' }, { status: 400 })
 
+    if (action === 'residency_feature') {
+      const { error } = await admin.from('residency_profiles')
+        .update({ is_featured: Boolean(body.featured) }).eq('id', id)
+      if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+      return NextResponse.json({ success: true })
+    }
+
     if (action === 'residency_decision') {
       const decision = body.decision === 'approved' ? 'approved' : 'rejected'
       const { data: row, error } = await admin.from('residency_profiles')
@@ -105,7 +112,7 @@ export async function POST(req: NextRequest) {
             decision === 'approved'
               ? `Your residency listing "${row.primary_specialism || ''}" has been approved and is now live.`
               : `Your residency listing was not approved${body.reason ? `: ${body.reason}` : ''}. Update it and resubmit.`,
-            '/residency')
+            '/talent/residency')
           const { data: authUser } = await admin.auth.admin.getUserById(row.user_id)
           const email = authUser?.user?.email
           if (email) {

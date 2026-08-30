@@ -1,12 +1,39 @@
 'use client'
 
-import { useMemo, useState, type FormEvent } from 'react'
+import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import { ShieldCheck } from 'lucide-react'
 
 export default function ResidencyEnquiryForm({ specialistName, listingId, suggestedDayRate = 0 }: { specialistName: string; listingId: string; suggestedDayRate?: number }) {
   const [sending, setSending] = useState(false)
   const [done, setDone] = useState(false)
   const [error, setError] = useState('')
+  const [conversationState, setConversationState] = useState<'checking' | 'none' | 'ready'>('checking')
+  const [starting, setStarting] = useState(false)
+
+  useEffect(() => {
+    fetch(`/api/residency/conversation?listing=${encodeURIComponent(listingId)}`)
+      .then(res => res.ok ? res.json() : { exists: false })
+      .then(json => setConversationState(json.exists ? 'ready' : 'none'))
+      .catch(() => setConversationState('none'))
+  }, [listingId])
+
+  async function startConversation() {
+    if (starting) return
+    setStarting(true); setError('')
+    try {
+      const res = await fetch('/api/residency/conversation', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ listingId }),
+      })
+      const json = await res.json().catch(() => ({}))
+      if (res.status === 401) {
+        window.location.href = `/login?role=employer&returnTo=${encodeURIComponent(`/residency/${listingId}#enquire`)}`
+        return
+      }
+      if (!res.ok) { setError(json.error || 'Could not start the conversation.'); return }
+      setConversationState('ready')
+    } catch { setError('Could not start the conversation.') } finally { setStarting(false) }
+  }
   const [days, setDays] = useState(5)
   const [dayRate, setDayRate] = useState(Number(suggestedDayRate || 0))
 
@@ -55,6 +82,22 @@ export default function ResidencyEnquiryForm({ specialistName, listingId, sugges
       <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-5">
         <p className="text-[14px] font-semibold text-emerald-900">Residency offer sent</p>
         <p className="text-[12px] leading-5 text-emerald-800 mt-1">{specialistName} can accept, counter or decline inside Spa Platform. If accepted, you&apos;ll confirm the booking and payment on-platform.</p>
+      </div>
+    )
+  }
+
+  // Conversation first, offer second - the form only opens once a private
+  // conversation with the specialist exists.
+  if (conversationState !== 'ready') {
+    return (
+      <div className="rounded-2xl border border-border bg-white p-5">
+        <p className="text-[13px] font-semibold text-ink">Step 1 of 2: start a private conversation</p>
+        <p className="text-[12px] leading-5 text-muted mt-1 mb-4">Introduce your property and discuss fit with {specialistName} before sending a formal offer. Identity and contact details stay protected until a booking is confirmed.</p>
+        {error && <p className="text-[12px] text-red-600 mb-3">{error}</p>}
+        <button type="button" onClick={startConversation} disabled={starting || conversationState === 'checking'} className="btn-primary w-full text-[13px] disabled:opacity-60">
+          {conversationState === 'checking' ? 'Checking...' : starting ? 'Starting...' : 'Start Private Conversation'}
+        </button>
+        <p className="text-[10.5px] text-muted mt-2">Once started, the structured offer form opens here. No payment is taken at any point before you confirm a booking.</p>
       </div>
     )
   }

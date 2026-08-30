@@ -26,6 +26,11 @@ export async function POST(req: NextRequest) {
     if (!['offered', 'countered'].includes(booking.status)) {
       return NextResponse.json({ error: `This offer is already ${booking.status}.` }, { status: 400 })
     }
+    // A counter can only be accepted by the OTHER side - you cannot accept
+    // your own counter-offer and bind the property to a rate it never agreed.
+    if (action === 'accept' && booking.status === 'countered' && booking.countered_by !== 'employer') {
+      return NextResponse.json({ error: 'You have countered this offer - the property needs to respond before anything can be agreed.' }, { status: 409 })
+    }
 
     let patch: Record<string, any> = { updated_at: new Date().toISOString() }
     if (action === 'accept') {
@@ -41,6 +46,7 @@ export async function POST(req: NextRequest) {
       patch = {
         ...patch,
         status: 'countered',
+        countered_by: 'candidate',
         proposed_day_rate: counterDayRate,
         proposed_total: total,
         platform_fee: Number((total * 0.10).toFixed(2)),

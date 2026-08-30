@@ -70,6 +70,7 @@ const navItems: Record<string, NavItem[]> = {
     { label: 'Shift Resolution', href: '/employer/agency/cases', icon: <AlertTriangle size={17} /> },
     { label: 'Residency', href: '/employer/residency', icon: <MapPin size={17} /> },
     { label: 'Company Profile', href: '/employer/profile', icon: <Building2 size={17} />, section: 'Your property' },
+    { label: 'Property Fact File', href: '/employer/property-fact-file', icon: <FileText size={17} /> },
     { label: 'Analytics', href: '/employer/analytics', icon: <BarChart3 size={17} />, section: 'Visibility', accessKey: 'employer_analytics' },
     { label: 'Social & Advertising', href: '/employer/social', icon: <Megaphone size={17} /> },
     { label: 'Get Featured', href: '/employer/featured', icon: <Star size={17} /> },

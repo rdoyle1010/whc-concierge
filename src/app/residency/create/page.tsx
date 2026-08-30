@@ -46,6 +46,32 @@ export default function ResidencyCreatePage() {
       const { data: candidate } = await supabase.from('candidate_profiles').select('residency_member').eq('user_id', user.id).maybeSingle()
       setMembershipActive(candidate?.residency_member === true || !!sessionId)
       setCheckingMembership(false)
+
+      // Prefill from the existing listing - editing resubmits for review
+      // rather than creating a duplicate.
+      try {
+        const res = await fetch('/api/residency/create')
+        const json = await res.json()
+        const listing = json?.listing
+        if (listing) {
+          setForm(current => ({
+            ...current,
+            title: listing.primary_specialism || current.title,
+            description: listing.bio || current.description,
+            services_offered: listing.secondary_specialisms || current.services_offered,
+            product_houses: listing.brand_experience || current.product_houses,
+            qualifications: listing.qualifications || current.qualifications,
+            availability_start: listing.available_from || current.availability_start,
+            preferred_duration: listing.preferred_duration || current.preferred_duration,
+            day_rate: listing.day_rate ? String(listing.day_rate) : current.day_rate,
+            weekly_rate: listing.weekly_rate ? String(listing.weekly_rate) : current.weekly_rate,
+            monthly_rate: listing.monthly_rate ? String(listing.monthly_rate) : current.monthly_rate,
+            negotiable: listing.negotiable !== false,
+            travel_availability: listing.will_travel_to || current.travel_availability,
+            postcode: listing.current_location || current.postcode,
+          }))
+        }
+      } catch { /* fresh wizard */ }
     })()
   }, [router, supabase])
 

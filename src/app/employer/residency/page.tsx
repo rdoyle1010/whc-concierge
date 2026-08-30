@@ -40,9 +40,16 @@ export default function EmployerResidencyPage() {
     })()
   }, [load])
 
-  async function respond(bookingId: string, action: 'accept' | 'decline') {
+  async function respond(bookingId: string, action: 'accept' | 'decline' | 'counter') {
+    let counterDayRate: number | undefined
+    if (action === 'counter') {
+      const value = window.prompt('Your counter day rate (£/day)')
+      if (!value) return
+      counterDayRate = Number(value.replace(/[^0-9.]/g, ''))
+      if (!counterDayRate || counterDayRate <= 0) { alert('Enter a valid day rate.'); return }
+    }
     setBusy(bookingId)
-    const res = await fetch('/api/residency/employer-respond', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ bookingId, action }) })
+    const res = await fetch('/api/residency/employer-respond', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ bookingId, action, counterDayRate }) })
     const data = await res.json().catch(() => ({}))
     if (!res.ok) alert(data.error || 'Could not update offer.')
     await load(); setBusy(null)
@@ -93,7 +100,8 @@ export default function EmployerResidencyPage() {
                 <div className="flex justify-between text-xs py-1"><span className="text-muted">Residency value</span><span className="text-ink">£{gross.toLocaleString('en-GB')}</span></div>
                 <div className="flex justify-between text-xs py-1"><span className="text-muted">Platform fee</span><span className="text-ink">£{fee.toLocaleString('en-GB')}</span></div>
                 <div className="flex justify-between border-t border-border mt-2 pt-3 font-semibold text-sm"><span>Total</span><span>£{(gross + fee).toLocaleString('en-GB')}</span></div>
-                {b.status === 'countered' && <div className="grid grid-cols-2 gap-2 mt-4"><button disabled={busy===b.id} onClick={() => respond(b.id,'decline')} className="btn-secondary !py-2 text-xs">Decline</button><button disabled={busy===b.id} onClick={() => respond(b.id,'accept')} className="btn-primary !py-2 text-xs">Accept Counter</button></div>}
+                {b.status === 'countered' && b.countered_by !== 'employer' && <div className="grid grid-cols-3 gap-2 mt-4"><button disabled={busy===b.id} onClick={() => respond(b.id,'decline')} className="btn-secondary !py-2 text-xs">Decline</button><button disabled={busy===b.id} onClick={() => respond(b.id,'counter')} className="btn-secondary !py-2 text-xs">Counter</button><button disabled={busy===b.id} onClick={() => respond(b.id,'accept')} className="btn-primary !py-2 text-xs">Accept Counter</button></div>}
+                {b.status === 'countered' && b.countered_by === 'employer' && <p className="mt-4 text-xs text-amber-700">Your counter is with the specialist - you will be notified when they respond.</p>}
                 {b.status === 'accepted' && <button disabled={busy===b.id} onClick={() => pay(b.id)} className="btn-primary w-full !py-2.5 mt-4 text-xs flex items-center justify-center gap-2"><CreditCard size={14}/> Confirm & Pay</button>}
               </div>
             </div>
