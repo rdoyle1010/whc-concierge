@@ -44,9 +44,9 @@ export async function GET() {
     conversationRows,
   ] = await Promise.all([
     admin.from('candidate_profiles').select('id, stripe_customer_id, featured_payment_source', { count: 'exact' }).eq('is_featured', true).gt('featured_until', now),
-    admin.from('candidate_profiles').select('id, stripe_customer_id, agency_payment_source', { count: 'exact' }).eq('agency_available', true).eq('approval_status', 'approved'),
-    admin.from('employer_profiles').select('id, stripe_customer_id, preferred_payment_source', { count: 'exact' }).eq('preferred_employer', true).eq('approval_status', 'approved').gt('preferred_until', now),
-    admin.from('course_enrollments').select('amount_paid, payment_source, paid_at').not('paid_at', 'is', null),
+    admin.from('candidate_profiles').select('id, stripe_customer_id', { count: 'exact' }).eq('agency_available', true).eq('approval_status', 'approved'),
+    admin.from('employer_profiles').select('id, stripe_customer_id', { count: 'exact' }).eq('preferred_employer', true).eq('approval_status', 'approved').gt('preferred_until', now),
+    admin.from('course_enrollments').select('amount_paid, paid_at').not('paid_at', 'is', null),
     admin.from('agency_bookings').select('id, amount_paid, payout_amount, payout_status, refund_amount, paid_at, dispute_status').not('paid_at', 'is', null),
     admin.from('job_listings').select('id', { count: 'exact', head: true }).eq('is_live', true).lt('expires_at', now),
     admin.from('agency_bookings').select('id', { count: 'exact', head: true }).eq('dispute_status', 'open'),

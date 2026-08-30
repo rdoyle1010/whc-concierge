@@ -111,6 +111,15 @@ export default function CertificateManager({ userId }: { userId: string | null }
         <button type="button" onClick={() => openForm()} className="btn-secondary inline-flex items-center gap-1.5 text-[12px]"><Plus size={13} /> Add certificate</button>
       </div>
       <p className="text-[11.5px] text-muted mb-3">Name each certificate so employers understand it - especially if you trained outside the UK. WHC reviews every submission; verified certificates carry a trust badge on your profile.</p>
+      <details className="mb-3 rounded-lg border border-border bg-[#f7f8fa] px-3 py-2">
+        <summary className="cursor-pointer text-[12px] font-semibold text-ink">Help with certificates - lost documents, overseas training, questions</summary>
+        <div className="mt-2 space-y-1.5 text-[11.5px] leading-relaxed text-secondary">
+          <p><strong className="text-ink">Lost or missing certificate?</strong> Contact your awarding body or training school - most (CIDESCO, CIBTAC, ITEC, VTCT, City &amp; Guilds) can reissue certificates or provide a verification letter.</p>
+          <p><strong className="text-ink">Trained outside the UK?</strong> Submit your certificate in its original language with an English translation if you have one. For a formal UK comparison of an international qualification, UK ENIC (enic.org.uk) provides statements of comparability.</p>
+          <p><strong className="text-ink">Not sure what to submit?</strong> Upload what you have and add honest details - the WHC review will tell you exactly what is needed, and asking is never held against you.</p>
+          <p><strong className="text-ink">Anything else:</strong> message us through the Contact page and choose &quot;certification&quot; - a real person reads every one.</p>
+        </div>
+      </details>
 
       {loading ? <p className="text-[12px] text-muted">Loading...</p> : (
         <div className="space-y-2">

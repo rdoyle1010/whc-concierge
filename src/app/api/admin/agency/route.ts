@@ -91,8 +91,8 @@ export async function GET() {
 
     let academy: any = null
     try {
-      const [{ data: summaryRows }, { data: recentEnrols }] = await Promise.all([
-        admin.rpc('get_academy_revenue_summary'),
+      const [{ data: allEnrols }, { data: recentEnrols }] = await Promise.all([
+        admin.from('course_enrollments').select('amount_paid, paid_at, completed_at').not('paid_at', 'is', null),
         admin.from('course_enrollments')
           .select('course_slug, amount_paid, paid_at, completed_at, candidate_id')
           .not('paid_at', 'is', null)
@@ -100,7 +100,11 @@ export async function GET() {
           .limit(RECENT_ENROLMENT_LIMIT),
       ])
 
-      const summary = Array.isArray(summaryRows) ? summaryRows[0] : null
+      const summary = {
+        revenue: (allEnrols || []).reduce((sum: number, row: any) => sum + Number(row.amount_paid || 0), 0),
+        enrolments: (allEnrols || []).length,
+        completions: (allEnrols || []).filter((row: any) => row.completed_at).length,
+      }
       const candIds2 = Array.from(new Set((recentEnrols || []).map((e: any) => e.candidate_id).filter(Boolean)))
       const { data: names } = candIds2.length
         ? await admin.from('candidate_profiles').select('id, full_name').in('id', candIds2)

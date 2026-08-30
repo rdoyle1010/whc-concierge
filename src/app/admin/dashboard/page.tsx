@@ -16,6 +16,7 @@ const SECTIONS = [
   { group: 'People & operations', label: 'Messages', desc: 'Review platform conversations.', href: '/admin/messages', icon: <MessageSquare size={17} /> },
   { group: 'People & operations', label: 'Platform Reviews', desc: 'Read Talent and property feedback about Spa Platform.', href: '/admin/platform-reviews', icon: <MessageSquare size={17} /> },
   { group: 'People & operations', label: 'Complaints', desc: 'Resolve reported issues.', href: '/admin/complaints', icon: <AlertTriangle size={17} /> },
+  { group: 'People & operations', label: 'Managed Search', desc: 'Employer briefs for WHC-run recruitment.', href: '/admin/recruitment', icon: <Briefcase size={17} /> },
   { group: 'Content & revenue', label: 'Website & Brand', desc: 'Control public content and identity.', href: '/admin/website', icon: <Palette size={17} /> },
   { group: 'Content & revenue', label: 'Academy', desc: 'Courses, learners and certificates.', href: '/admin/academy', icon: <GraduationCap size={17} /> },
   { group: 'Content & revenue', label: 'Blog & Journal', desc: 'Write, illustrate and publish editorial content.', href: '/admin/blog', icon: <FileText size={17} /> },

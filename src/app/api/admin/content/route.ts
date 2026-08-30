@@ -16,7 +16,7 @@ const RESEND_API_KEY = process.env.RESEND_API_KEY
 const FROM_EMAIL = 'WHC Concierge <noreply@mail.wellnesshousecollective.co.uk>'
 const DEFAULT_CONTACT_PAGE_SIZE = 25
 const MAX_CONTACT_PAGE_SIZE = 100
-const CONTACT_STATUSES = new Set(['open', 'replied', 'closed'])
+const CONTACT_STATUSES = new Set(['open', 'replied', 'closed', 'investigating', 'resolved', 'dismissed'])
 
 async function requireAdmin() {
   const cookieStore = await cookies()
@@ -108,11 +108,12 @@ export async function GET(req: NextRequest) {
       const from = (page - 1) * perPage
       const to = from + perPage - 1
 
+      const complaintsOnly = req.nextUrl.searchParams.get('view') === 'complaints'
       let query = admin.from('contact_queries')
         .select('id,name,email,subject,message,status,type,created_at', { count: 'exact' })
-        .neq('type', 'complaint')
         .order('created_at', { ascending: false })
         .range(from, to)
+      query = complaintsOnly ? query.eq('type', 'complaint') : query.or('type.neq.complaint,type.is.null')
 
       if (status !== 'all') query = query.eq('status', status)
 

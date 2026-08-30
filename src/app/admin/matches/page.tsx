@@ -74,12 +74,12 @@ export default function AdminMatchesPage() {
                   <td className="px-6 py-4 text-sm text-gray-600">{m.employer_profiles?.company_name || '—'}</td>
                   <td className="px-6 py-4 text-sm text-gray-600">{m.job_listings?.title || '—'}</td>
                   <td className="px-6 py-4">
-                    {m.score != null ? (
+                    {(m.match_score ?? m.score) != null ? (
                       <div className="flex items-center space-x-2">
                         <div className="w-16 bg-gray-100 rounded-full h-2">
-                          <div className="gold-gradient h-2 rounded-full" style={{ width: `${m.score}%` }} />
+                          <div className="gold-gradient h-2 rounded-full" style={{ width: `${(m.match_score ?? m.score)}%` }} />
                         </div>
-                        <span className="text-xs text-gray-500">{m.score}%</span>
+                        <span className="text-xs text-gray-500">{(m.match_score ?? m.score)}%</span>
                       </div>
                     ) : '—'}
                   </td>

@@ -18,9 +18,9 @@ export default function AdminComplaintsPage() {
     async function load() {
       // Complaints come from contact_queries with type='complaint' -
       // fetched through the service-role admin API (table is RLS-locked)
-      const res = await fetch('/api/admin/content?kind=contact_queries')
+      const res = await fetch('/api/admin/content?kind=contact_queries&view=complaints&per_page=100')
       const j = res.ok ? await res.json() : { rows: [] }
-      setComplaints((j.rows || []).filter((q: any) => q.type === 'complaint'))
+      setComplaints(j.rows || [])
       setLoading(false)
     }
     load()

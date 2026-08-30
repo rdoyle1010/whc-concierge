@@ -44,7 +44,7 @@ export default function AdminRevenuePage() {
 
     {loading && !data ? <div className="grid grid-cols-1 md:grid-cols-3 gap-4">{[1,2,3,4,5,6].map(i => <div key={i} className="skeleton h-32 rounded-2xl" />)}</div> : data && <>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        <Metric icon={<Banknote size={18} />} label="Recorded WHC revenue this month" value={pounds(data.recorded_revenue_pence)} note="Academy payments + Agency platform fees currently recorded in the database." emphasis />
+        <Metric icon={<Banknote size={18} />} label="Recorded WHC revenue this month" value={pounds(data.recorded_revenue_pence)} note="Commercial purchases + Academy payments + Agency platform fees recorded in the database." emphasis />
         <Metric icon={<CreditCard size={18} />} label="Agency gross processed" value={pounds(data.agency.gross_pence)} note={`${data.agency.paid_bookings} paid booking${data.agency.paid_bookings === 1 ? '' : 's'} this month`} />
         <Metric icon={<Megaphone size={18} />} label="Advertising booked MRR" value={pounds(data.advertising.booked_mrr_pence)} note={`${data.advertising.live_adverts} paid, approved live advert${data.advertising.live_adverts === 1 ? '' : 's'}`} />
       </div>
@@ -55,6 +55,8 @@ export default function AdminRevenuePage() {
           <div className="grid grid-cols-2 gap-3">
             <SmallMetric label="Academy revenue" value={pounds(data.academy.revenue_pence)} note={`${data.academy.paid_enrolments} paid enrolments`} />
             <SmallMetric label="WHC Agency revenue" value={pounds(data.agency.platform_revenue_pence)} note="Platform fees recorded this month" />
+            <SmallMetric label="Product sales (ledger)" value={pounds(data.purchases?.total_pence || 0)} note={`${data.purchases?.count || 0} purchase${(data.purchases?.count || 0) === 1 ? '' : 's'} this month - memberships, jobs, listings, advertising`} />
+            <SmallMetric label="Managed search" value={String(data.recruitment?.open_requests || 0)} note={`open request${(data.recruitment?.open_requests || 0) === 1 ? '' : 's'} · ${data.recruitment?.new_this_month || 0} new this month`} />
           </div>
         </section>
 

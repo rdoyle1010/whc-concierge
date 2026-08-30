@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import DashboardShell from '@/components/DashboardShell'
-import { BadgeCheck, ExternalLink, ShieldQuestion, X } from 'lucide-react'
+import { BadgeCheck, ExternalLink, ShieldQuestion, Sparkles, X } from 'lucide-react'
 
 // The certificate review queue: every structured submission from talent,
 // newest first, with verify / more info / reject and a note that goes
@@ -36,6 +36,22 @@ export default function AdminCertificatesPage() {
   const [error, setError] = useState('')
   const [busy, setBusy] = useState<string | null>(null)
   const [notes, setNotes] = useState<Record<string, string>>({})
+  const [assist, setAssist] = useState<Record<string, any>>({})
+  const [assistBusy, setAssistBusy] = useState<string | null>(null)
+
+  async function runAssist(id: string) {
+    if (assistBusy) return
+    setAssistBusy(id); setError('')
+    try {
+      const res = await fetch('/api/admin/certificates/assist', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id }),
+      })
+      const json = await res.json()
+      if (!res.ok) { setError(json.error || 'AI assist failed.'); return }
+      setAssist(current => ({ ...current, [id]: json }))
+    } catch { setError('AI assist failed.') } finally { setAssistBusy(null) }
+  }
 
   async function load() {
     try {
@@ -88,6 +104,31 @@ export default function AdminCertificatesPage() {
         </div>
         {row.status === 'submitted' ? (
           <div>
+            {!assist[row.id] && (
+              <button type="button" disabled={assistBusy === row.id} onClick={() => runAssist(row.id)} className="mb-2 inline-flex items-center gap-1.5 rounded-lg border border-[#e2d6b8] bg-[#faf6ec] px-3 py-1.5 text-[12px] font-semibold text-[#8a6d3b] hover:bg-[#f5eedd]">
+                <Sparkles size={13} /> {assistBusy === row.id ? 'Reviewing...' : 'AI review'}
+              </button>
+            )}
+            {assist[row.id] && (
+              <div className="mb-3 rounded-lg border border-[#e2d6b8] bg-[#faf6ec] p-3">
+                <p className="text-[10.5px] font-semibold uppercase tracking-[0.12em] text-[#8a6d3b] mb-1.5 inline-flex items-center gap-1"><Sparkles size={11} /> AI assessment{assist[row.id].recognition ? ` · ${String(assist[row.id].recognition).replace('_', ' ')}` : ''}</p>
+                <p className="text-[12.5px] text-gray-700 leading-relaxed mb-2">{assist[row.id].assessment}</p>
+                {assist[row.id].equivalence_note && <p className="text-[12px] text-gray-600 mb-2"><strong className="text-ink">Equivalence:</strong> {assist[row.id].equivalence_note}</p>}
+                {Array.isArray(assist[row.id].checks) && assist[row.id].checks.length > 0 && (
+                  <ul className="mb-2 space-y-0.5">{assist[row.id].checks.map((check: string, i: number) => <li key={i} className="text-[12px] text-gray-600">☐ {check}</li>)}</ul>
+                )}
+                {assist[row.id].drafts && (
+                  <div className="flex flex-wrap gap-1.5 pt-1 border-t border-[#eee3c8]">
+                    <span className="text-[11px] text-gray-500 py-1">Use drafted message:</span>
+                    {(['verified', 'more_info', 'rejected'] as const).map(kind => assist[row.id].drafts[kind] && (
+                      <button key={kind} type="button" onClick={() => setNotes(current => ({ ...current, [row.id]: assist[row.id].drafts[kind] }))} className="rounded-full border border-[#e2d6b8] bg-white px-2.5 py-1 text-[11px] font-semibold text-[#8a6d3b] hover:bg-[#f5eedd]">
+                        {kind === 'verified' ? 'Verify + congratulate' : kind === 'more_info' ? 'Ask for more info' : 'Decline kindly'}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
             <textarea rows={2} value={notes[row.id] || ''} onChange={e => setNotes(current => ({ ...current, [row.id]: e.target.value }))}
               placeholder="Note to the professional (required for reject / more info) - e.g. The document is cropped, please upload the full certificate showing the awarding body."
               className="input-field text-[12px] w-full mb-2" />

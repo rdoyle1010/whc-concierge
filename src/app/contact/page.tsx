@@ -11,6 +11,7 @@ const TYPES = [
   { value: 'general', label: 'General' },
   { value: 'complaint', label: 'Complaint' },
   { value: 'partnership', label: 'Partnership' },
+  { value: 'certification', label: 'Certification help' },
 ] as const
 
 export default function ContactPage() {
@@ -31,7 +32,9 @@ export default function ContactPage() {
     }
     const { error: insertError } = await supabase.from('contact_queries').insert({
       name: form.name, email: form.email,
-      message: form.subject ? `Subject: ${form.subject}${form.type ? ` [${form.type}]` : ''}\n\n${form.message}` : form.message,
+      subject: form.subject || null,
+      type: form.type || 'general',
+      message: form.message,
       status: 'open',
     })
     if (insertError) { setError(insertError.message); setLoading(false); return }
