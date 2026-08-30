@@ -107,11 +107,13 @@ check('Residency money has payout and dispute controls', () => {
   assert.match(admin, /stripe\.refunds\.create/)
   assert.equal(existsSync(`${root}/supabase/migrations/042_residency_payout_controls.sql`), true)
 })
-check('swipes replace older decisions and remove blocked yeses', () => {
+check('swipes replace older decisions and keep interest separate from applications', () => {
   const source = read('src/app/api/swipe/route.ts')
   assert.match(source, /replaceSwipe/)
-  assert.match(source, /removeSwipe/)
   assert.match(source, /calculateMatchScore/)
+  assert.doesNotMatch(source, /insertApplicationDefensively/)
+  assert.doesNotMatch(source, /from\('applications'\)\.insert/)
+  assert.match(source, /applications are created exclusively/)
 })
 check('mobile application matching advises rather than blocks candidates', () => {
   const mobileSwipe = read('src/app/api/mobile/job-swipes/route.ts')
