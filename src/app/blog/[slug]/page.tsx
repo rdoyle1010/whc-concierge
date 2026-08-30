@@ -7,6 +7,7 @@ import { ArrowLeft } from 'lucide-react'
 import { generateBlogJsonLd } from '@/lib/blog-jsonld'
 import ShareButtons from '@/components/ShareButtons'
 import BlogImage from '@/components/BlogImage'
+import SponsoredAd from '@/components/SponsoredAd'
 
 export const revalidate = 60
 
@@ -48,6 +49,8 @@ export default async function BlogPostPage(props: { params: Promise<{ slug: stri
           </p>
         </div>
       </section>
+
+      <SponsoredAd placement="journal_article_sponsor" />
 
       {post.image_url && (
         <div className="max-w-4xl mx-auto px-4 -mt-8">

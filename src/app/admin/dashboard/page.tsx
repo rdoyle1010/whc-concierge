@@ -22,6 +22,7 @@ const SECTIONS = [
   { group: 'Content & revenue', label: 'Blog & Journal', desc: 'Write, illustrate and publish editorial content.', href: '/admin/blog', icon: <FileText size={17} /> },
   { group: 'Content & revenue', label: 'Newsletters & Campaigns', desc: 'Create, preview, test and send newsletters.', href: '/admin/campaigns', icon: <Megaphone size={17} /> },
   { group: 'Content & revenue', label: 'Sponsored Ads', desc: 'Approve paid brand placements.', href: '/admin/advertising', icon: <Megaphone size={17} /> },
+  { group: 'Content & revenue', label: 'Ad Slots', desc: 'Switch site ad positions on and off; place direct adverts.', href: '/admin/ad-slots', icon: <Megaphone size={17} /> },
   { group: 'Platform', label: 'Job Listings', desc: 'Review live and closed roles.', href: '/admin/jobs', icon: <Briefcase size={17} /> },
   { group: 'Platform', label: 'Residency Listings', desc: 'Review programmes and placements.', href: '/admin/residency', icon: <Calendar size={17} /> },
   { group: 'Platform', label: 'Agency Money', desc: 'Bookings, payouts and disputes.', href: '/admin/agency', icon: <CreditCard size={17} /> },

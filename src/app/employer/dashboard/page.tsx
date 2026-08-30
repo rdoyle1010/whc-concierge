@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/client'
 import { Briefcase, Users, FileText, MessageSquare, ArrowRight, Plus, Clock, Calendar, MapPin } from 'lucide-react'
 import SkeletonTable from '@/components/SkeletonTable'
 import Link from 'next/link'
+import SponsoredAd from '@/components/SponsoredAd'
 
 export default function EmployerDashboard() {
   const supabase = createClient()
@@ -201,6 +202,7 @@ export default function EmployerDashboard() {
           )}
         </section>
       </div>
+          <SponsoredAd placement="employer_dashboard_sponsor" />
     </DashboardShell>
   )
 }

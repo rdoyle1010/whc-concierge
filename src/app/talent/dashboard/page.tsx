@@ -7,6 +7,7 @@ import Link from 'next/link'
 import {
   Briefcase, FileText, MessageSquare, GraduationCap, User, Star, ArrowRight, Search, EyeOff, Calendar, MapPin,
 } from 'lucide-react'
+import SponsoredAd from '@/components/SponsoredAd'
 
 // Talent home - the landing page after login. Greeting, a few live counts
 // (best-effort - failures are silent) and quick links into the main areas.
@@ -147,6 +148,7 @@ export default function TalentDashboard() {
           <Link href="/talent/settings" className="inline-flex items-center gap-2 text-[12px] font-medium text-gold">Review privacy settings <ArrowRight size={13} /></Link>
         </aside>
       </div>
+          <SponsoredAd placement="talent_dashboard_sponsor" />
     </DashboardShell>
   )
 }

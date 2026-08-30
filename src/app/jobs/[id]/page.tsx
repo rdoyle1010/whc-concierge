@@ -7,6 +7,7 @@ import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
 import JobApplyButtons from '@/components/JobApplyButtons'
 import { createAdminClient } from '@/lib/supabase/admin'
+import SponsoredAd from '@/components/SponsoredAd'
 
 export const revalidate = 60
 
@@ -180,6 +181,7 @@ export default async function RoleDetailPage(props: { params: Promise<{ id: stri
 
       <section className="bg-[#0b2f4d] text-white py-14 px-6"><div className="max-w-4xl mx-auto text-center"><h2 className="text-[30px] text-white">Could this be your next move?</h2><p className="text-[14px] text-white/65 mt-3 mb-7">Apply through WHC and the property will receive your profile, experience and match information in one place.</p><div className="flex justify-center"><JobApplyButtons roleId={String(job.id)} /></div></div></section>
     </main>
+    <SponsoredAd placement="job_detail_sponsor" />
     <Footer />
   </>
 }

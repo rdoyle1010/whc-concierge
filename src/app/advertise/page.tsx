@@ -23,6 +23,41 @@ const audienceCopy: Record<AdPlacementKey, { audience: string; where: string; be
     where: 'Alongside role discovery and talent activity',
     bestFor: 'Recruitment brands, uniforms, technology, professional services and industry suppliers',
   },
+  job_detail_sponsor: {
+    audience: 'Candidates reading individual roles in detail',
+    where: 'On job listing pages, beneath the role description',
+    bestFor: 'Recruitment services, insurance, uniforms, training and relocation support',
+  },
+  journal_sponsor: {
+    audience: 'Professionals and leaders reading industry editorial',
+    where: 'At the top of the WHC Journal',
+    bestFor: 'Product houses, education, events and industry announcements',
+  },
+  journal_article_sponsor: {
+    audience: 'Engaged readers inside Journal articles',
+    where: 'Within Journal articles as they are read',
+    bestFor: 'Product houses, books, courses and considered brand campaigns',
+  },
+  talent_dashboard_sponsor: {
+    audience: 'Signed-in spa and wellness professionals',
+    where: 'Inside the talent dashboard',
+    bestFor: 'Training, insurance, products for professionals and career services',
+  },
+  employer_dashboard_sponsor: {
+    audience: 'Spa and hotel employers managing recruitment',
+    where: 'Inside the employer dashboard',
+    bestFor: 'Suppliers, technology, uniforms, agencies and professional services',
+  },
+  agency_page_sponsor: {
+    audience: 'Flexible-work professionals and the properties booking them',
+    where: 'On WHC agency and flexible-work pages',
+    bestFor: 'Insurance, payroll, training and products for freelance professionals',
+  },
+  residency_page_sponsor: {
+    audience: 'Professionals considering international placements',
+    where: 'Alongside residency opportunities',
+    bestFor: 'Relocation, travel, insurance and international education',
+  },
 }
 
 type Confirmation = { brandName: string; placement: string; reviewStatus: string }

@@ -9,6 +9,7 @@ import { Clock, ArrowRight } from 'lucide-react'
 import SkeletonCard from '@/components/SkeletonCard'
 import Pagination from '@/components/Pagination'
 import BlogImage from '@/components/BlogImage'
+import SponsoredAd from '@/components/SponsoredAd'
 
 export default function BlogPage() {
   const supabase = createClient()
@@ -46,6 +47,8 @@ export default function BlogPage() {
           <p className="dashboard-intro mx-auto">Ideas, leadership, careers and industry perspective from across luxury wellness and hospitality.</p>
         </div>
       </section>
+
+      <SponsoredAd placement="journal_sponsor" />
 
       {categories.length > 1 && (
         <section className="bg-white border-b border-border">

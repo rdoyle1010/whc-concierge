@@ -97,6 +97,7 @@ const navItems: Record<string, NavItem[]> = {
     { label: 'Blog & Journal', href: '/admin/blog', icon: <FileText size={17} /> },
     { label: 'Newsletters & Campaigns', href: '/admin/campaigns', icon: <Megaphone size={17} /> },
     { label: 'Sponsored Ads', href: '/admin/advertising', icon: <Megaphone size={17} /> },
+    { label: 'Ad Slots', href: '/admin/ad-slots', icon: <Megaphone size={17} /> },
     { label: 'Taxonomy', href: '/admin/taxonomy', icon: <Briefcase size={17} />, section: 'Controls' },
     { label: 'Complaints', href: '/admin/complaints', icon: <AlertTriangle size={17} /> },
     { label: 'Platform Reviews', href: '/admin/platform-reviews', icon: <MessageSquare size={17} /> },
