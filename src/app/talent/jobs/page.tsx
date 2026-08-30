@@ -172,7 +172,7 @@ export default function TalentJobsPage() {
     const body = await res.json().catch(() => ({} as any))
     if (!res.ok) {
       if (res.status === 409 && body.applicationId) {
-        window.location.href = '/talent/applications'
+        window.location.href = '/talent/applications?review=draft'
         return
       }
       setApplyError(body.error || 'Could not start your application. Please try again.')
@@ -194,7 +194,7 @@ export default function TalentJobsPage() {
         <div>
           <p className="dashboard-eyebrow">Your matches</p>
           <h1 className="dashboard-title">Browse Roles</h1>
-          <p className="dashboard-intro">Roles are ranked from your skills, experience, location and working preferences. Each card shows whether your current profile is eligible to apply.</p>
+          <p className="dashboard-intro">Roles are ranked from your skills, experience, location and working preferences. Your match helps you decide, but you stay in control of whether to apply.</p>
         </div>
         <p className="text-[12px] text-muted whitespace-nowrap">{sorted.length} role{sorted.length !== 1 ? 's' : ''}</p>
       </div>
@@ -228,9 +228,8 @@ export default function TalentJobsPage() {
         <>
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
             {paginatedSorted.map(job => {
-              const eligible = job.matchScore != null && job.matchScore >= 45 && !job.hardStop
+              const eligible = job.matchScore != null && !job.hardStop
               const needsProfile = job.matchScore == null
-              const belowThreshold = job.matchScore != null && job.matchScore < 45 && !job.hardStop
 
               return (
                 <article key={job.id} className="card p-0 overflow-hidden">
@@ -276,23 +275,19 @@ export default function TalentJobsPage() {
                       </div>
                     )}
 
-                    <div className={`mb-4 border-l-2 px-3 py-2.5 ${
-                      eligible ? 'border-emerald-500 bg-emerald-50/60' : job.hardStop ? 'border-red-500 bg-red-50/60' : belowThreshold ? 'border-amber-500 bg-amber-50/60' : 'border-border bg-surface/60'
-                    }`}>
+                    <div className={`mb-4 border-l-2 px-3 py-2.5 ${eligible ? 'border-emerald-500 bg-emerald-50/60' : job.hardStop ? 'border-red-500 bg-red-50/60' : 'border-border bg-surface/60'}`}>
                       <div className="flex items-start gap-2">
-                        {eligible ? <CheckCircle2 size={14} className="text-emerald-700 mt-0.5 shrink-0" /> : <AlertTriangle size={14} className={`${job.hardStop ? 'text-red-600' : belowThreshold ? 'text-amber-700' : 'text-muted'} mt-0.5 shrink-0`} />}
+                        {eligible ? <CheckCircle2 size={14} className="text-emerald-700 mt-0.5 shrink-0" /> : <AlertTriangle size={14} className={`${job.hardStop ? 'text-red-600' : 'text-muted'} mt-0.5 shrink-0`} />}
                         <div>
-                          <p className={`text-[11px] font-semibold ${eligible ? 'text-emerald-800' : job.hardStop ? 'text-red-700' : belowThreshold ? 'text-amber-800' : 'text-secondary'}`}>
-                            {eligible ? 'Eligible to apply' : job.hardStop ? 'Mandatory requirement missing' : belowThreshold ? 'Below match threshold' : 'Eligibility not yet available'}
+                          <p className={`text-[11px] font-semibold ${eligible ? 'text-emerald-800' : job.hardStop ? 'text-red-700' : 'text-secondary'}`}>
+                            {eligible ? 'You can apply' : job.hardStop ? 'Mandatory requirement missing' : 'Complete your profile'}
                           </p>
                           <p className="text-[11px] leading-5 text-secondary mt-0.5">
                             {eligible
-                              ? 'Your profile clears the 45% match threshold and mandatory requirements.'
+                              ? `Your current match is ${job.matchScore}%. Use the score as guidance, then decide whether this role is right for you.`
                               : job.hardStop
                                 ? (job.hardStopReason || 'Your profile does not currently meet one of this role’s mandatory requirements.')
-                                : belowThreshold
-                                  ? `Your current match is ${job.matchScore}%. Applications open at 45%; update your profile or skills if something is missing.`
-                                  : 'Complete your profile so we can calculate the match and application eligibility.'}
+                                : 'Complete your profile so we can calculate your match and show you where you are strongest.'}
                           </p>
                         </div>
                       </div>
@@ -307,17 +302,17 @@ export default function TalentJobsPage() {
                       <a href={`/jobs/${job.id}`} className="btn-secondary inline-flex items-center gap-1">Details <ArrowRight size={12} /></a>
                       <button type="button" onClick={() => handlePass(job.id)} className="btn-secondary inline-flex items-center gap-1" title="Pass and hide this role"><X size={12} />Pass</button>
                       {applied.has(job.id) ? (
-                        <div className="btn-secondary min-w-[130px] flex-1 text-center flex items-center justify-center gap-1 opacity-60 cursor-default"><Check size={12} />Application submitted</div>
+                        <div className="btn-secondary min-w-[150px] flex-1 text-center flex items-center justify-center gap-1 opacity-60 cursor-default"><Check size={12} />Application submitted</div>
                       ) : drafts.has(job.id) ? (
-                        <a href="/talent/applications" className="btn-primary min-w-[130px] flex-1 text-center">Review draft</a>
+                        <button type="button" onClick={() => handleApply(job.id)} className="btn-primary min-w-[150px] flex-1">Continue application</button>
                       ) : eligible ? (
-                        <button type="button" onClick={() => handleApply(job.id)} className="btn-primary min-w-[130px] flex-1">Interested — review application</button>
+                        <button type="button" onClick={() => handleApply(job.id)} className="btn-primary min-w-[150px] flex-1">Apply now</button>
                       ) : (
-                        <button type="button" disabled className="btn-secondary min-w-[130px] flex-1 opacity-55 cursor-not-allowed" title={job.hardStopReason || undefined}>
-                          {job.hardStop ? 'Requirement missing' : belowThreshold ? 'Below 45% match' : needsProfile ? 'Complete profile' : 'Not eligible'}
+                        <button type="button" disabled className="btn-secondary min-w-[150px] flex-1 opacity-55 cursor-not-allowed" title={job.hardStopReason || undefined}>
+                          {job.hardStop ? 'Requirement missing' : needsProfile ? 'Complete profile' : 'Not eligible'}
                         </button>
                       )}
-                      <button type="button" onClick={() => toggleSave(job.id)} className={`p-2 border rounded-md transition-colors ${saved.has(job.id) ? 'bg-[#FDF6EC] border-accent/30 text-accent' : 'border-border text-muted hover:text-accent hover:border-accent/30'}`} title={saved.has(job.id) ? 'Unsave' : 'Save'}>
+                      <button type="button" onClick={() => toggleSave(job.id)} className={`p-2 border rounded-md transition-colors ${saved.has(job.id) ? 'bg-[#FDF6EC] border-accent/30 text-accent' : 'border-border text-muted hover:text-accent hover:border-accent/30'}`} title={saved.has(job.id) ? 'Unsave role' : 'Save role for later'}>
                         <Bookmark size={14} fill={saved.has(job.id) ? 'currentColor' : 'none'} />
                       </button>
                     </div>
