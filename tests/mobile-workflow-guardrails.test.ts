@@ -22,7 +22,7 @@ test('interview rounds are confirmed, completed and ordered before progression',
   assert.match(route, /Finish or cancel the current interview stage/)
   assert.match(route, /roundNumber\s*>\s*2/)
   assert.match(route, /roundNumber\s*===\s*1\s*&&\s*application\.status\s*!==\s*'shortlisted'/)
-  assert.match(route, /Complete interview 1 before scheduling interview 2/)
+  assert.match(route, /Complete interview \$\{roundNumber - 1\} before scheduling interview \$\{roundNumber\}/)
   assert.doesNotMatch(route, /\['pending',\s*'reviewed',\s*'shortlisted',\s*'interview'\]\.includes\(application\.status\)/)
 })
 
