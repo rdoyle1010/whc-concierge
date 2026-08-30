@@ -9,7 +9,7 @@ type RegistrationProof = {
   exp: number
 }
 
-const PROOF_LIFETIME_SECONDS = 15 * 60
+const PROOF_LIFETIME_SECONDS = 24 * 60 * 60
 
 function proofSecret() {
   const secret = process.env.REGISTRATION_PROOF_SECRET || process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -135,7 +135,7 @@ export function sanitiseTalentRegistration(input: unknown, userId: string) {
     cv_url: cvUrl,
     certificates_urls: certificateUrls.length ? certificateUrls : null,
     agreed_terms: source.agreed_terms === true,
-    approval_status: 'pending',
+    approval_status: 'approved',
   }
 
   let score = 0
