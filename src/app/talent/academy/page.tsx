@@ -17,6 +17,7 @@ export default function AcademyPage() {
   const [profileId, setProfileId] = useState<string | null>(null)
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
+  const [career, setCareer] = useState<any>(null)
 
   async function load() {
     try {
@@ -39,6 +40,8 @@ export default function AcademyPage() {
       }
     } catch { /* empty catalogue state */ }
     setLoading(false)
+    // Career intelligence loads after the catalogue so the page renders fast.
+    fetch('/api/academy/career').then(r => r.ok ? r.json() : null).then(setCareer).catch(() => null)
   }
 
   useEffect(() => {
@@ -97,11 +100,80 @@ export default function AcademyPage() {
           <h1 className="text-3xl font-sans font-semibold tracking-tight text-ink">WHC Academy</h1>
         </div>
         <p className="text-[13px] text-gray-500 mb-6 max-w-2xl">
-          Serious courses for luxury spa professionals - core curriculum £{(COURSE_PRICE / 100).toFixed(0)}, brand masterclasses £5, specialist care £{(COURSE_PRICE / 100).toFixed(0)}. Pass the final quiz (80%) and you earn a certificate - and the badge appears on your profile, where properties can see exactly what you&apos;ve trained in before they book you.
+          The Academy exists to move your career forward: learn, pass the assessment, and the verified badge joins your profile - where it strengthens your matches and shows employers exactly what you can do. Core curriculum £{(COURSE_PRICE / 100).toFixed(0)} per course, brand masterclasses £5, leadership programmes with practical toolkits.
         </p>
 
         {notice && <div className="bg-green-50 text-green-700 text-sm px-4 py-3 rounded-lg mb-4">{notice}</div>}
         {error && <div className="bg-red-50 text-red-600 text-sm px-4 py-3 rounded-lg mb-4">{error}</div>}
+
+        {career && (
+          <div className="mb-8 rounded-2xl border border-[#e3dac8] bg-[#fcfaf5] p-6">
+            <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+              <div className="min-w-0">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#9c7a42]">Your career position</p>
+                <h2 className="mt-1 font-sans text-[22px] font-semibold tracking-tight text-ink">{career.position?.current || 'Building your profile'} → {career.position?.next}</h2>
+                <p className="mt-1 text-[12px] leading-5 text-gray-500 max-w-xl">
+                  {career.position?.average_match ? <>Across {career.position.live_roles_assessed} live roles you average a {career.position.average_match}% match{career.position?.top_match ? <> - strongest: {career.position.top_match.score}% for {career.position.top_match.title}</> : null}. The learning below is chosen to move those numbers, not to sell you courses.</> : 'Complete your profile and the Academy will read the live market against your skills to recommend exactly what to learn next.'}
+                </p>
+              </div>
+              <div className="flex shrink-0 gap-6 text-center">
+                <div><p className="text-[22px] font-semibold text-ink">{career.progress?.completed || 0}</p><p className="text-[10px] uppercase tracking-wide text-gray-400">Completed</p></div>
+                <div><p className="text-[22px] font-semibold text-ink">{career.progress?.certificates || 0}</p><p className="text-[10px] uppercase tracking-wide text-gray-400">Certificates</p></div>
+                <div><p className="text-[22px] font-semibold text-ink">{career.progress?.cpd_hours || 0}</p><p className="text-[10px] uppercase tracking-wide text-gray-400">CPD hours</p></div>
+              </div>
+            </div>
+
+            {career.progress?.in_progress?.length > 0 && (
+              <div className="mt-5 border-t border-[#eee6d6] pt-4">
+                <p className="mb-2 text-[11px] font-semibold text-[#8a6d3b]">Continue learning</p>
+                <div className="flex flex-wrap gap-2">
+                  {career.progress.in_progress.map((item: any) => (
+                    <Link key={item.slug} href={`/talent/academy/${item.slug}`} className="inline-flex items-center gap-2 rounded-xl border border-[#dcd4c6] bg-white px-3.5 py-2 text-[12px] font-medium text-ink hover:border-[#9c7a42]">
+                      {item.title}
+                      <span className="text-[10px] text-gray-400">{item.lessons_done}/{item.lessons_total} lessons</span>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {career.gaps?.length > 0 && (
+              <div className="mt-5 border-t border-[#eee6d6] pt-4">
+                <p className="mb-1 text-[11px] font-semibold text-[#8a6d3b]">Skills employers are asking for right now - that your profile doesn&apos;t show yet</p>
+                <p className="mb-3 text-[11px] text-gray-500">From the requirements of live roles you could match. Closing a gap strengthens real applications - directional, honest, no invented percentages.</p>
+                <div className="grid gap-2 sm:grid-cols-2">
+                  {career.gaps.map((gap: any) => (
+                    <div key={gap.skill} className="rounded-xl border border-[#e8e0d0] bg-white p-3.5">
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="text-[13px] font-semibold text-ink truncate">{gap.skill}</p>
+                        <span className="shrink-0 text-[10px] text-gray-400">{gap.demanded_in} live role{gap.demanded_in === 1 ? '' : 's'}</span>
+                      </div>
+                      {gap.courses?.length ? gap.courses.map((c: any) => (
+                        <Link key={c.slug} href={`/talent/academy/${c.slug}`} className="mt-1.5 flex items-center justify-between gap-2 text-[12px] text-[#0b2f4d] hover:underline">
+                          <span className="truncate">→ {c.title}</span><span className="shrink-0 text-[10px] text-gray-400">~{c.minutes} min</span>
+                        </Link>
+                      )) : <p className="mt-1.5 text-[11px] text-gray-400">Evidence this on your profile - no course needed.</p>}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {career.pathway?.length > 0 && (
+              <div className="mt-5 border-t border-[#eee6d6] pt-4">
+                <p className="mb-2 text-[11px] font-semibold text-[#8a6d3b]">Recommended for your step up to {career.position?.next}</p>
+                <div className="flex flex-wrap gap-2">
+                  {career.pathway.map((item: any) => (
+                    <Link key={item.slug} href={`/talent/academy/${item.slug}`} className="inline-flex items-center gap-2 rounded-xl border border-[#dcd4c6] bg-white px-3.5 py-2 text-[12px] font-medium text-ink hover:border-[#9c7a42]">
+                      {item.title}
+                      <span className="rounded-full bg-[#f5eddf] px-2 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-[#9c7a42]">{item.level}</span>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
         {!loading && enrollments.filter(e => e.paid_at && activeCoreSlugs.includes(e.course_slug)).length < activeCoreSlugs.length && activeCoreSlugs.length > 0 && (
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-ink rounded-xl px-5 py-4 mb-6">

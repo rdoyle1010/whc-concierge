@@ -6,6 +6,7 @@ import Link from 'next/link'
 import DashboardShell from '@/components/DashboardShell'
 import { courseBySlug, coursePrice, PASS_MARK, type AcademyCourse } from '@/lib/academy'
 import { courseImage, lessonExtras } from '@/lib/academy-extras'
+import { courseMeta } from '@/lib/academy-meta'
 import { getCourseContent } from '@/lib/academy-content'
 import {
   ArrowLeft, ArrowRight, Check, Award, RotateCcw, Quote, TrendingUp,
@@ -203,6 +204,11 @@ export default function CoursePlayerPage() {
         </div>
       </div>
 
+      <div className="mb-4 flex flex-wrap items-center gap-1.5">
+        <span className="rounded-full bg-ink px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-gold">{courseMeta(String(slug)).level}</span>
+        <span className="rounded-full bg-gray-100 px-2.5 py-1 text-[10px] font-medium text-gray-600">{courseMeta(String(slug)).cpdHours} CPD hour{courseMeta(String(slug)).cpdHours === 1 ? '' : 's'}</span>
+        {courseMeta(String(slug)).skills.map(skill => <span key={skill} className="rounded-full bg-[#f5eddf] px-2.5 py-1 text-[10px] font-medium text-[#8a6d3b]">{skill}</span>)}
+      </div>
       <div className="flex items-center gap-3 mb-6">
         <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
           <div className="h-full bg-gold rounded-full transition-all" style={{ width: `${pct}%` }} />

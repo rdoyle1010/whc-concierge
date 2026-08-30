@@ -3,6 +3,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { getRequestUser } from '@/lib/request-user'
 import { calculateMatchScore } from '@/lib/matching'
 import { ACADEMY } from '@/lib/academy'
+import { coursesForSkill } from '@/lib/academy-meta'
 
 const COURSE_TITLES = new Map(ACADEMY.map(course => [course.slug, course.title]))
 const courseTitle = (slug: string) =>
@@ -44,8 +45,18 @@ function buildFit(candidate: any, job: any) {
   const skillsPool = [...(candidate.services_offered || []), ...(candidate.treatment_skills || [])]
   const gaps: { area: string; items: string[]; advice: string }[] = []
 
+  const academyFor = (items: string[]) => {
+    for (const item of items) {
+      const slug = coursesForSkill(item)[0]
+      if (slug) { const course = ACADEMY.find(c => c.slug === slug); if (course) return course.title }
+    }
+    return null
+  }
   const missingSkills = missingFrom(job.required_skills, skillsPool)
-  if (missingSkills.length) gaps.push({ area: 'Treatments & skills', items: missingSkills, advice: 'Usually closed with in-house training or shadowing during the first weeks.' })
+  if (missingSkills.length) {
+    const covering = academyFor(missingSkills)
+    gaps.push({ area: 'Treatments & skills', items: missingSkills, advice: covering ? `WHC Academy covers this: "${covering}" - or in-house training and shadowing.` : 'Usually closed with in-house training or shadowing during the first weeks.' })
+  }
 
   const missingQuals = missingFrom(job.required_qualifications, candidate.qualifications || [])
   if (missingQuals.length) gaps.push({ area: 'Qualifications', items: missingQuals, advice: 'Ask whether an equivalent qualification or enrolment on a course would satisfy this.' })
@@ -54,7 +65,10 @@ function buildFit(candidate: any, job: any) {
   if (missingSystems.length) gaps.push({ area: 'Systems', items: missingSystems, advice: 'Booking systems are typically learned in days - prior experience on any system transfers well.' })
 
   const missingBrands = missingFrom(job.required_brands, candidate.product_houses || [])
-  if (missingBrands.length) gaps.push({ area: 'Product houses', items: missingBrands, advice: 'Brand houses run their own product training; experience with comparable houses shortens it.' })
+  if (missingBrands.length) {
+    const covering = academyFor(missingBrands)
+    gaps.push({ area: 'Product houses', items: missingBrands, advice: covering ? `WHC Academy covers this: "${covering}" - brand familiarisation before day one.` : 'Brand houses run their own product training; experience with comparable houses shortens it.' })
+  }
 
   const requiredYears = Number(job.min_years_experience || 0)
   const candidateYears = Number(candidate.experience_years ?? candidate.years_experience ?? 0)
