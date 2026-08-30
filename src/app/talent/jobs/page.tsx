@@ -192,8 +192,9 @@ export default function TalentJobsPage() {
     <DashboardShell role="talent" userName={profile?.full_name}>
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between mb-7">
         <div>
-          <p className="dashboard-eyebrow">Your matches</p>
-          <h1 className="dashboard-title">Browse Roles</h1>
+          <p className="dashboard-eyebrow">Jobs & matches</p>
+          <h1 className="dashboard-title">Find your next role</h1>
+          <div className="mb-0 mt-3 inline-flex rounded-xl border border-[#dcd4c6] bg-white p-1 text-[12px] font-semibold"><span className="rounded-lg bg-[#0b2f4d] px-4 py-2 text-white">Browse list</span><a href="/roles/match" className="rounded-lg px-4 py-2 text-[#5c6a75] hover:text-[#0b2f4d]">Match deck</a></div>
           <p className="dashboard-intro">Roles are ranked from your skills, experience, location and working preferences. Your match helps you decide, but you stay in control of whether to apply.</p>
         </div>
         <p className="text-[12px] text-muted whitespace-nowrap">{sorted.length} role{sorted.length !== 1 ? 's' : ''}</p>

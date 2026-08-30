@@ -418,6 +418,16 @@ export default function EmployerProfilePage() {
           />
         </div>
 
+        <div className="dashboard-card mb-6">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h3 className="font-serif text-lg font-semibold">Property Fact File</h3>
+              <p className="text-sm text-gray-500 mt-1">Arrival, parking, uniform and on-the-day details shown to agency professionals before a shift. Part of your property profile - kept on its own page so it's quick to update.</p>
+            </div>
+            <a href="/employer/property-fact-file" className="btn-secondary whitespace-nowrap text-center">Open fact file →</a>
+          </div>
+        </div>
+
         {/* Agency */}
         <div className="dashboard-card mb-6 space-y-5">
           <h3 className="font-serif text-lg font-semibold">Agency & Temporary Cover</h3>

@@ -217,8 +217,9 @@ export default function SwipeMatchPage() {
       <main className="max-w-6xl mx-auto px-6 py-9 md:py-12">
         <div className="mb-8 md:flex md:items-end md:justify-between">
           <div>
-            <p className="dashboard-eyebrow">Intelligent matching</p>
+            <p className="dashboard-eyebrow">Jobs & matches</p>
             <h1 className="dashboard-title !text-[32px] md:!text-[40px]">Roles that genuinely fit your profile.</h1>
+            <div className="mb-0 mt-3 inline-flex rounded-xl border border-[#dcd4c6] bg-white p-1 text-[12px] font-semibold"><a href="/talent/jobs" className="rounded-lg px-4 py-2 text-[#5c6a75] hover:text-[#0b2f4d]">Browse list</a><span className="rounded-lg bg-[#0b2f4d] px-4 py-2 text-white">Match deck</span></div>
             <p className="dashboard-intro">We rank live roles using your experience, skills, qualifications, brand knowledge, systems, location and working preferences.</p>
           </div>
           <Link href="/talent/applications" className="mt-4 md:mt-0 text-[12px] font-semibold text-[#9c7a42] hover:underline">View My Applications →</Link>
