@@ -74,7 +74,7 @@ test('employer mobile application UI mirrors the website recruitment sequence', 
 
 test('AI recruitment messaging cannot skip website stages', () => {
   const route = read('src/app/api/employer/applications/message-ai/route.ts')
-  assert.match(route, /intent === 'interview' && status !== 'shortlisted'/)
+  assert.match(route, /intent === 'interview' && !\['shortlisted', 'interview'\]\.includes\(status\)/)
   assert.match(route, /intent === 'offer'/)
   assert.match(route, /completedInterviews < 1/)
 })
