@@ -2,6 +2,11 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getRequestUser } from '@/lib/request-user'
 import { calculateMatchScore } from '@/lib/matching'
+import { ACADEMY } from '@/lib/academy'
+
+const COURSE_TITLES = new Map(ACADEMY.map(course => [course.slug, course.title]))
+const courseTitle = (slug: string) =>
+  COURSE_TITLES.get(slug) || slug.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')
 
 // The employer's applications inbox. Served through the service role because an
 // applicant has chosen to share their profile with THIS employer by applying -
@@ -59,8 +64,12 @@ function buildFit(candidate: any, job: any) {
   return {
     score: match.score,
     label: match.label,
+    colour: match.colour,
     explanation: match.matchExplanation || '',
     strengths: match.matchingSkills || [],
+    // The same factor-by-factor breakdown the talent sees when they match -
+    // both sides of a placement should be reading from one algorithm.
+    breakdown: match.breakdown || null,
     progression: match.progression || null,
     gaps,
   }
@@ -93,6 +102,41 @@ export async function GET(req: NextRequest) {
     : { data: [] as any[] }
   const candidateMap = new Map((candidates || []).map((candidate: any) => [candidate.id, candidate]))
 
+  // Academy training: completed courses with certificates and quiz scores.
+  const { data: enrolments } = candidateIds.length
+    ? await admin.from('course_enrollments')
+        .select('candidate_id,course_slug,quiz_score,completed_at,certificate_code')
+        .in('candidate_id', candidateIds)
+        .not('completed_at', 'is', null)
+    : { data: [] as any[] }
+  const academyByCandidate = new Map<string, any[]>()
+  for (const enrolment of enrolments || []) {
+    const list = academyByCandidate.get(enrolment.candidate_id) || []
+    list.push({
+      title: courseTitle(enrolment.course_slug),
+      quiz_score: enrolment.quiz_score,
+      completed_at: enrolment.completed_at,
+      certificate_code: enrolment.certificate_code,
+    })
+    academyByCandidate.set(enrolment.candidate_id, list)
+  }
+
+  // Endorsements: recent written reviews left about the candidate.
+  const candidateUserIds = Array.from(new Set((candidates || []).map((candidate: any) => candidate.user_id).filter(Boolean)))
+  const { data: reviewRows } = candidateUserIds.length
+    ? await admin.from('reviews')
+        .select('reviewed_id,rating,comment,created_at')
+        .in('reviewed_id', candidateUserIds)
+        .order('created_at', { ascending: false })
+        .limit(60)
+    : { data: [] as any[] }
+  const endorsementsByUser = new Map<string, any[]>()
+  for (const review of reviewRows || []) {
+    const list = endorsementsByUser.get(review.reviewed_id) || []
+    if (list.length < 3 && review.comment) list.push({ rating: review.rating, comment: String(review.comment).slice(0, 300), created_at: review.created_at })
+    endorsementsByUser.set(review.reviewed_id, list)
+  }
+
   const enriched = rows.map((application: any) => {
     const candidate = candidateMap.get(application.candidate_id) || null
     const job = jobMap.get(application.role_id) || jobMap.get(application.job_id) || null
@@ -101,6 +145,8 @@ export async function GET(req: NextRequest) {
       candidate_profiles: candidate,
       job_listings: job ? { job_title: job.job_title } : null,
       fit: candidate && job ? buildFit(candidate, job) : null,
+      academy: candidate ? (academyByCandidate.get(candidate.id) || []) : [],
+      endorsements: candidate?.user_id ? (endorsementsByUser.get(candidate.user_id) || []) : [],
     }
   })
 
