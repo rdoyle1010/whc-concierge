@@ -19,6 +19,7 @@ import {
   Settings, LogOut, Menu, X, Users, FileText, Megaphone,
   AlertTriangle, Heart, Building2, ChevronRight, BarChart3, CreditCard, GraduationCap,
   Palette, Banknote, Download, MapPin, Brain, ClipboardList, ShieldCheck, Lock,
+  Search,
 } from 'lucide-react'
 
 interface NavItem {
@@ -63,6 +64,7 @@ const navItems: Record<string, NavItem[]> = {
     { label: 'Applications', href: '/employer/applications', icon: <FileText size={17} /> },
     { label: 'Discover Talent', href: '/employer/candidates', icon: <Users size={17} />, accessKey: 'employer_talent_search' },
     { label: 'Hired', href: '/employer/hired', icon: <Star size={17} /> },
+    { label: 'Managed Search', href: '/employer/recruitment', icon: <Search size={17} /> },
     { label: 'Messages', href: '/employer/messages', icon: <MessageSquare size={17} /> },
     { label: 'Agency Bookings', href: '/employer/agency', icon: <Calendar size={17} />, section: 'Flexible staffing' },
     { label: 'Shift Resolution', href: '/employer/agency/cases', icon: <AlertTriangle size={17} /> },
