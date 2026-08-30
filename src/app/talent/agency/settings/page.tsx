@@ -283,11 +283,13 @@ export default function AgencySettingsPage() {
                 const isPast = key < dayKey(new Date())
                 const isToday = key === dayKey(new Date())
                 const state = days[key]
+                const window = state === 'available' ? windows[key]?.[0] : undefined
                 return (
-                  <button key={key} type="button" disabled={isPast || dayBusy === key} onClick={() => chooseDate(key)} title={state === 'available' ? 'Available - tap to edit' : state === 'unavailable' ? 'Not available - tap to edit' : 'Not set - tap to add availability'} className={`relative min-h-[58px] border px-1 py-2 text-[11px] font-medium transition-colors ${isPast ? 'bg-gray-50 text-gray-300 border-transparent cursor-default' : state === 'available' ? 'bg-green-50 text-green-800 border-green-300' : state === 'unavailable' ? 'bg-red-50 text-red-600 border-red-200' : 'bg-white text-ink border-border hover:border-ink/30'} ${selectedDate === key ? 'ring-2 ring-[#0b2f4d]/20 border-[#0b2f4d]' : ''} ${isToday ? 'font-bold' : ''}`}>
+                  <button key={key} type="button" disabled={isPast || dayBusy === key} onClick={() => chooseDate(key)} title={state === 'available' ? (window ? `Available ${window.start_time.slice(0, 5)}–${window.end_time.slice(0, 5)} - tap to edit` : 'Available - tap to edit') : state === 'unavailable' ? 'Not available - tap to edit' : 'Not set - tap to add availability'} className={`relative min-h-[64px] border px-1 py-2 text-[11px] font-medium transition-colors ${isPast ? 'bg-gray-50 text-gray-300 border-transparent cursor-default' : state === 'available' ? 'bg-green-50 text-green-800 border-green-300' : state === 'unavailable' ? 'bg-red-50 text-red-600 border-red-200' : 'bg-white text-ink border-border hover:border-ink/30'} ${selectedDate === key ? 'ring-2 ring-[#0b2f4d]/20 border-[#0b2f4d]' : ''} ${isToday ? 'font-bold' : ''}`}>
                     <span className="block text-[9px] uppercase tracking-wide opacity-65">{day.toLocaleDateString('en-GB', { weekday: 'short' })}</span>
                     <span className="block mt-0.5 text-[13px]">{day.getDate()}</span>
                     <span className="block text-[8px] uppercase opacity-60">{day.toLocaleDateString('en-GB', { month: 'short' })}</span>
+                    {window && <span className="block mt-0.5 text-[8.5px] font-semibold tabular-nums text-green-700 whitespace-nowrap">{window.start_time.slice(0, 5)}–{window.end_time.slice(0, 5)}</span>}
                   </button>
                 )
               })}
