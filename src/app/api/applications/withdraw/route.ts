@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getRequestUser } from '@/lib/request-user'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createNotification } from '@/lib/notifications'
+import { trackEvent } from '@/lib/analytics'
 
 export async function POST(req: NextRequest) {
   const user = await getRequestUser(req)
@@ -45,5 +46,6 @@ export async function POST(req: NextRequest) {
       }
     }
   }
+  await trackEvent('application_withdrawn', { actorUserId: user.id, candidateId: candidate.id, jobId: jobId, applicationId: application.id })
   return NextResponse.json({ success: true })
 }

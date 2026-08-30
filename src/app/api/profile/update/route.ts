@@ -3,6 +3,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { getRequestUser } from '@/lib/request-user'
 import { profileUpdateSchema, validateRequest } from '@/lib/validations'
 import { geocodePostcode } from '@/lib/geo'
+import { recordSalary } from '@/lib/analytics'
 
 const ALLOWED_COLUMNS = new Set([
   'full_name','phone','postcode','location','location_country','has_car','role_level','headline','bio','experience_years',
@@ -44,7 +45,7 @@ export async function POST(req: NextRequest) {
     const { profileId, data } = validation.data!
 
     const admin = createAdminClient()
-    const { data: profile } = await admin.from('candidate_profiles').select('user_id').eq('id', profileId).single()
+    const { data: profile } = await admin.from('candidate_profiles').select('user_id,salary_expectation_min,salary_expectation_max,role_level').eq('id', profileId).single()
     if (!profile || profile.user_id !== user.id) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
     const safeData = stripToAllowed(data)
@@ -62,6 +63,24 @@ export async function POST(req: NextRequest) {
     }
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
     if (skipped.length) console.error('[profile/update] columns missing in live DB, values dropped:', skipped.join(', '))
+
+    // Salary history with provenance: a changed expectation is a dated row,
+    // never an overwrite. History is what makes salary intelligence possible.
+    const newMin = 'salary_expectation_min' in attempt ? Number(attempt.salary_expectation_min) || null : undefined
+    const newMax = 'salary_expectation_max' in attempt ? Number(attempt.salary_expectation_max) || null : undefined
+    if (newMin !== undefined || newMax !== undefined) {
+      const changed = (newMin !== undefined && newMin !== (profile.salary_expectation_min ?? null))
+        || (newMax !== undefined && newMax !== (profile.salary_expectation_max ?? null))
+      if (changed && (newMin || newMax)) {
+        await recordSalary({
+          kind: 'expectation', source: 'candidate_declared',
+          amountMin: newMin ?? profile.salary_expectation_min ?? null,
+          amountMax: newMax ?? profile.salary_expectation_max ?? null,
+          candidateId: profileId,
+          roleLevel: typeof attempt.role_level === 'string' ? attempt.role_level : profile.role_level || null,
+        })
+      }
+    }
     return NextResponse.json({ success: true, skipped })
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 })

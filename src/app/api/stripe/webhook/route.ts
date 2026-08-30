@@ -374,6 +374,23 @@ export async function POST(req: NextRequest) {
           expires_at: expiresAt,
         }).eq('id', meta.job_id)
 
+        // Instrumentation: the paid posting is the moment a role truly enters
+        // the market. Record the event and the advertised salary history row.
+        try {
+          const { trackEvent, recordSalary } = await import('@/lib/analytics')
+          const { data: postedJob } = await supabase.from('job_listings').select('id,salary_min,salary_max,required_role_level').eq('id', meta.job_id).maybeSingle()
+          await trackEvent('job_posted', { employerId: meta.employer_id || null, jobId: meta.job_id }, { tier: meta.tier || null, held_for_approval: !employerApproved })
+          if (postedJob && (postedJob.salary_min || postedJob.salary_max)) {
+            await recordSalary({
+              kind: 'advertised', source: 'employer_advertised',
+              amountMin: postedJob.salary_min ? Number(postedJob.salary_min) : null,
+              amountMax: postedJob.salary_max ? Number(postedJob.salary_max) : null,
+              employerId: meta.employer_id || null, jobId: meta.job_id,
+              roleLevel: postedJob.required_role_level ? String(postedJob.required_role_level) : null,
+            })
+          }
+        } catch { /* best-effort */ }
+
         if (meta.employer_id) {
           await supabase.from('employer_profiles').update({
             subscription_tier: meta.tier,

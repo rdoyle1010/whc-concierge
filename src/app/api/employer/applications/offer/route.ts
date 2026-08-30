@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getRequestUser } from '@/lib/request-user'
+import { trackEvent } from '@/lib/analytics'
 import { createNotification } from '@/lib/notifications'
 import { sendSmsIfOptedIn } from '@/lib/sms'
 
@@ -98,6 +99,7 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    await trackEvent('offer_created', { actorUserId: user.id, candidateId: application.candidate_id, employerId: employer.id, jobId: job.id, applicationId: application.id })
     return NextResponse.json({ success: true, offer, smsSent, emailSent })
   } catch (error: any) {
     return NextResponse.json({ error: error?.message || 'Could not create the offer.' }, { status: 500 })

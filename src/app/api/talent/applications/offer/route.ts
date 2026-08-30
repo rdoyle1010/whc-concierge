@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createNotification } from '@/lib/notifications'
 import { getRequestUser } from '@/lib/request-user'
+import { trackEvent } from '@/lib/analytics'
 
 const RESEND_API_KEY = process.env.RESEND_API_KEY
 const FROM_EMAIL = 'WHC Concierge <noreply@mail.wellnesshousecollective.co.uk>'
@@ -75,6 +76,7 @@ export async function POST(req: NextRequest) {
         }
       }
     }
+    await trackEvent(action === 'accept' ? 'offer_accepted' : 'offer_declined', { actorUserId: user.id, candidateId: candidate.id, jobId: job?.id, applicationId: application.id })
     return NextResponse.json({ success: true, offer, applicationStatus: nextApplicationStatus })
   } catch (error: any) {
     return NextResponse.json({ error: error?.message || 'Could not respond to the offer.' }, { status: 500 })

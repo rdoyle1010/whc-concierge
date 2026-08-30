@@ -3,6 +3,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { getRequestUser } from '@/lib/request-user'
 import { createNotification } from '@/lib/notifications'
 import { sendRoleFilledEmail } from '@/lib/emails'
+import { trackEvent, recordSalary } from '@/lib/analytics'
 
 const RESEND_API_KEY = process.env.RESEND_API_KEY
 const FROM_EMAIL = 'WHC Concierge <noreply@mail.wellnesshousecollective.co.uk>'
@@ -45,7 +46,7 @@ export async function POST(req: NextRequest) {
     const [{ data: job }, { data: candidate }, { data: acceptedOffer }] = await Promise.all([
       admin.from('job_listings').select('id,job_title,employer_id').eq('id', jobId).maybeSingle(),
       admin.from('candidate_profiles').select('id,user_id,full_name').eq('id', application.candidate_id).maybeSingle(),
-      admin.from('application_offers').select('id,status').eq('application_id', application.id).maybeSingle(),
+      admin.from('application_offers').select('id,status,salary_amount,salary_period,start_date').eq('application_id', application.id).maybeSingle(),
     ])
     if (!job || job.employer_id !== employer.id || !candidate?.user_id) return NextResponse.json({ error:'Forbidden' }, { status:403 })
     if (acceptedOffer?.status !== 'accepted') return NextResponse.json({ error:'The offer has not been accepted yet.' }, { status:409 })
@@ -58,6 +59,33 @@ export async function POST(req: NextRequest) {
 
     const { error: jobError } = await admin.from('job_listings').update({ is_live:false, status:'filled' }).eq('id', job.id)
     if (jobError) return NextResponse.json({ error:'The hire was recorded, but the role could not be closed.' }, { status:500 })
+
+    // The permanent placement record - the platform's most valuable data
+    // point. Best-effort: a recording failure never blocks the hire itself.
+    try {
+      const { data: placement } = await admin.from('placements').upsert({
+        application_id: application.id,
+        candidate_id: application.candidate_id,
+        employer_id: employer.id,
+        job_id: job.id,
+        job_title: job.job_title || null,
+        source: 'direct',
+        salary_amount: acceptedOffer?.salary_amount ?? null,
+        salary_period: acceptedOffer?.salary_period || 'annual',
+        start_date: acceptedOffer?.start_date || null,
+        hired_at: now,
+      }, { onConflict: 'application_id' }).select('id').maybeSingle()
+      if (acceptedOffer?.salary_amount) {
+        await recordSalary({
+          kind: 'confirmed', source: 'platform_transaction',
+          amountMin: Number(acceptedOffer.salary_amount), amountMax: Number(acceptedOffer.salary_amount),
+          period: (acceptedOffer.salary_period as any) || 'annual',
+          candidateId: application.candidate_id, employerId: employer.id, jobId: job.id,
+          placementId: placement?.id || null,
+        })
+      }
+    } catch { /* best-effort */ }
+    await trackEvent('hire_confirmed', { actorUserId: user.id, candidateId: application.candidate_id, employerId: employer.id, jobId: job.id, applicationId: application.id })
 
     const { data: otherApplications } = await admin.from('applications')
       .select('id,candidate_id,status')

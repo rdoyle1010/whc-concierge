@@ -107,6 +107,10 @@ export async function POST(req: NextRequest) {
 
       if (passed && !enrolment.completed_at) {
         try {
+          const { trackEvent } = await import('@/lib/analytics')
+          await trackEvent('course_completed', { actorUserId: user.id, candidateId: cand.id }, { course_slug: slug, score })
+        } catch { /* best-effort */ }
+        try {
           await createNotification(user.id, 'general', 'Course complete - certificate earned',
             `Congratulations - you passed ${course.title} with ${score}%. Your certificate is ready, and the badge now shows on your profile for employers to see.`,
             '/talent/academy')

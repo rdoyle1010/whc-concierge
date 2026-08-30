@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getRequestUser } from '@/lib/request-user'
+import { trackEvent } from '@/lib/analytics'
 import { createNotification } from '@/lib/notifications'
 import { sendSmsIfOptedIn } from '@/lib/sms'
 
@@ -58,6 +59,10 @@ export async function POST(req: NextRequest) {
       .eq('id', application.id)
       .select('id,status')
       .maybeSingle()
+    if (updated) {
+      const eventName = decision === 'shortlisted' ? 'candidate_shortlisted' : decision === 'rejected' ? 'application_rejected' : 'application_progressed'
+      await trackEvent(eventName, { actorUserId: user.id, candidateId: application.candidate_id, employerId: employer.id, jobId: job.id, applicationId: application.id })
+    }
     if (updateError || !updated) return NextResponse.json({ error: updateError?.message || 'Could not save the application decision.' }, { status: 500 })
 
     const { data: candidate } = await admin.from('candidate_profiles').select('id,user_id,full_name').eq('id', application.candidate_id).maybeSingle()

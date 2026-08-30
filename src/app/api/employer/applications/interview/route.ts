@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getRequestUser } from '@/lib/request-user'
+import { trackEvent } from '@/lib/analytics'
 import { createNotification } from '@/lib/notifications'
 import { sendSmsIfOptedIn } from '@/lib/sms'
 
@@ -152,6 +153,7 @@ export async function POST(req: NextRequest) {
       body: `WHC Concierge: ${propertyName} has invited you to the ${stageLabel.toLowerCase()} for ${job.job_title}. Open My Applications to choose a time.`,
     })
 
+    await trackEvent('interview_scheduled', { actorUserId: user.id, candidateId: application.candidate_id, employerId: employer.id, jobId: job.id, applicationId: application.id }, { round: interview.round || 1 })
     return NextResponse.json({ success: true, interview, smsSent })
   } catch (error: any) {
     return NextResponse.json({ error: error?.message || 'Could not create interview invitation.' }, { status: 500 })

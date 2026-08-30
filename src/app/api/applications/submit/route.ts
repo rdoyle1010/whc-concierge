@@ -3,6 +3,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { getRequestUser } from '@/lib/request-user'
 import { createNotification } from '@/lib/notifications'
 import { applicantConfirmationHtml, employerNotificationHtml } from '@/lib/application-email-templates'
+import { trackEvent } from '@/lib/analytics'
 
 const RESEND_API_KEY = process.env.RESEND_API_KEY
 const FROM_EMAIL = 'WHC Concierge <noreply@mail.wellnesshousecollective.co.uk>'
@@ -93,6 +94,8 @@ export async function POST(req: NextRequest) {
     if (employerEmail) jobs.push(sendEmail(employerEmail, `New Application - ${job.job_title}`, employerNotificationHtml({ applicantName: candidate.full_name || 'A candidate', jobTitle: job.job_title, propertyName: employerName, roleLevel: candidate.role_level || undefined })))
     await Promise.allSettled(jobs)
   } catch (e: any) { console.error('Application email failed:', e?.message) }
+
+  await trackEvent('application_submitted', { actorUserId: user.id, candidateId: candidate.id, jobId: application.role_id, applicationId: application.id })
 
   return NextResponse.json({
     success: true,
