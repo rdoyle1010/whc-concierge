@@ -194,7 +194,10 @@ function ProductSection({ content: _content }: { content: WebsiteContent }) {
       <div className="grid gap-10 md:grid-cols-2 lg:grid-cols-3 lg:gap-8">
         {examples.map((card, index) => <div key={card.label} className="flex flex-col">
           <p className="site-accent mb-5 text-center text-[11px] font-semibold uppercase tracking-[0.15em]">{card.label}</p>
-          {mockups[index]}
+          <div className="relative">
+            <span className="absolute -top-2 left-1/2 z-10 -translate-x-1/2 rounded-full bg-[#10283b] px-3 py-1 text-[9px] font-semibold uppercase tracking-[0.14em] text-white shadow-sm">Sample - for illustration</span>
+            {mockups[index]}
+          </div>
           <p className="mx-auto mt-5 max-w-xs text-center text-[13px] leading-[1.75] opacity-65">{card.text}</p>
         </div>)}
       </div>
@@ -237,7 +240,7 @@ function RolesSection({ content, roles }: { content: WebsiteContent; roles: Feat
                 style={{ objectPosition: `${image.focalX}% ${image.focalY}%` }} />
             </div>
             <div className="p-6">
-              <div className="mb-5 flex items-center justify-between"><span className="site-accent text-[10px] font-semibold uppercase tracking-[0.12em]">{role.tier}</span><span className="text-[11px] capitalize opacity-70">{role.type}</span></div>
+              <div className="mb-5 flex items-center justify-between"><span className="site-accent text-[10px] font-semibold uppercase tracking-[0.12em]">{['Platinum','Gold'].includes(String(role.tier))?'Featured role':'Live role'}</span><span className="text-[11px] capitalize opacity-70">{role.type}</span></div>
               <p className="mb-1 text-[10px] uppercase tracking-[0.12em] opacity-70">{role.property}</p>
               <h3 className="site-heading mb-4 text-[19px]">{role.title}</h3>
               <div className="flex items-center gap-3 text-[12px] opacity-60">{role.location && <span className="flex items-center gap-1"><MapPin size={12} />{role.location}</span>}<span>{role.salary}</span></div>
