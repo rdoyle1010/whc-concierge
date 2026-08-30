@@ -15,7 +15,7 @@ function extractResponseText(payload: any): string {
 
 function stageError(intent: Intent, status: string, completedInterviews: number) {
   if (intent === 'shortlist' && !['pending', 'reviewed', 'shortlisted'].includes(status)) return 'A shortlist message is only available while reviewing an application.'
-  if (intent === 'interview' && !['pending', 'reviewed', 'shortlisted', 'interview'].includes(status)) return 'An interview message is only available while this application can progress to interview.'
+  if (intent === 'interview' && !['shortlisted', 'interview'].includes(status)) return 'Shortlist the candidate before creating an interview message.'
   if (intent === 'offer' && (!['interview', 'offered'].includes(status) || completedInterviews < 1)) return 'Complete at least one confirmed interview before creating an offer message.'
   if (intent === 'decline' && !['pending', 'reviewed', 'shortlisted', 'interview'].includes(status)) return 'This application is no longer at a stage where a decline message can be created.'
   return null
