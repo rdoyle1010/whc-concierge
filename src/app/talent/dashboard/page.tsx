@@ -12,14 +12,30 @@ import SponsoredAd from '@/components/SponsoredAd'
 // Talent home - the landing page after login. Greeting, a few live counts
 // (best-effort - failures are silent) and quick links into the main areas.
 
+// Time-of-day greeting for the personal brief. Computed on the client so it
+// reflects the professional's own clock.
+function timeOfDayGreeting(): string {
+  const hour = new Date().getHours()
+  if (hour < 12) return 'Good morning'
+  if (hour < 18) return 'Good afternoon'
+  return 'Good evening'
+}
+
 export default function TalentDashboard() {
   const supabase = createClient()
   const [profile, setProfile] = useState<any>(null)
   const [stats, setStats] = useState({ applications: 0, messages: 0 })
+  const [brief, setBrief] = useState<any>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     async function load() {
+      // The personal brief loads alongside the page data; if it fails the
+      // dashboard simply renders without it.
+      fetch('/api/talent/brief')
+        .then(res => (res.ok ? res.json() : null))
+        .then(data => { if (data && !data.error) setBrief(data) })
+        .catch(() => { /* the brief is optional */ })
       try {
         const { data: { user } } = await supabase.auth.getUser()
         if (!user) { setLoading(false); return }
@@ -76,8 +92,71 @@ export default function TalentDashboard() {
     </DashboardShell>
   )
 
+  const briefRoles: any[] = brief?.newMatchingRoles || []
+  const briefCourses: any[] = brief?.strengthenCourses || []
+  const briefInterview = brief?.upcomingInterview || null
+  const briefOffers: number = brief?.offersAwaiting || 0
+  const briefViews: number | null = typeof brief?.profileViews === 'number' ? brief.profileViews : null
+  const briefFirstName = brief?.firstName || (profile?.full_name ? profile.full_name.split(' ')[0] : null)
+  const briefHasContent = briefRoles.length > 0 || briefCourses.length > 0 || !!briefInterview || briefOffers > 0 || (briefViews !== null && briefViews > 0)
+
   return (
     <DashboardShell role="talent" userName={profile?.full_name}>
+      {briefHasContent && (
+        <section className="dashboard-card mb-8">
+          <p className="dashboard-eyebrow">Your brief</p>
+          <h2 className="dashboard-section-title mb-2">{timeOfDayGreeting()}{briefFirstName ? `, ${briefFirstName}` : ''}.</h2>
+          <div>
+            {briefRoles.length > 0 && (
+              <div className="dashboard-list-row">
+                <div>
+                  <p className="text-[13px] font-medium text-ink">{briefRoles.length} new role{briefRoles.length === 1 ? '' : 's'} match your profile</p>
+                  <p className="text-[12px] text-muted mt-0.5">
+                    {briefRoles.map((role: any, index: number) => (
+                      <span key={role.jobId}>
+                        {index > 0 && <span> · </span>}
+                        <Link href={`/jobs/${role.jobId}`} className="text-accent hover:underline">{role.property} - {role.score}%</Link>
+                      </span>
+                    ))}
+                  </p>
+                </div>
+              </div>
+            )}
+            {briefCourses.map((course: any) => (
+              <div key={course.slug} className="dashboard-list-row">
+                <p className="text-[13px] text-ink">
+                  Complete <Link href={`/talent/academy/${course.slug}`} className="font-medium text-accent hover:underline">{course.title}</Link> to strengthen {course.strengthens} application{course.strengthens === 1 ? '' : 's'}
+                </p>
+              </div>
+            ))}
+            {briefInterview && (
+              <div className="dashboard-list-row">
+                <p className="text-[13px] text-ink">
+                  Interview ahead: <span className="font-medium">{briefInterview.jobTitle}</span>
+                  {briefInterview.property ? ` at ${briefInterview.property}` : ''}
+                  {briefInterview.selectedSlot ? ` on ${new Date(briefInterview.selectedSlot).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })}` : ''}
+                  {briefInterview.method ? ` (${briefInterview.method})` : ''}.{' '}
+                  <Link href="/talent/applications" className="text-accent hover:underline">View details</Link>
+                </p>
+              </div>
+            )}
+            {briefViews !== null && briefViews > 0 && (
+              <div className="dashboard-list-row">
+                <p className="text-[13px] text-ink">{briefViews} employer view{briefViews === 1 ? '' : 's'} of your profile in the last fortnight</p>
+              </div>
+            )}
+            {briefOffers > 0 && (
+              <div className="dashboard-list-row">
+                <p className="text-[13px] text-ink">
+                  {briefOffers} agency shift offer{briefOffers === 1 ? '' : 's'} awaiting your response.{' '}
+                  <Link href="/talent/agency" className="text-accent hover:underline">Respond</Link>
+                </p>
+              </div>
+            )}
+          </div>
+        </section>
+      )}
+
       <div className="mb-9">
         <p className="dashboard-eyebrow">Your career</p>
         <h1 className="dashboard-title">

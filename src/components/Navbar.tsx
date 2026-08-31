@@ -7,6 +7,7 @@ import Wordmark from '@/components/Wordmark'
 import { createClient } from '@/lib/supabase/client'
 import { Menu, X, User, ChevronDown, LayoutDashboard, Settings, LogOut, MessageSquare, Building2, ShieldCheck } from 'lucide-react'
 import NotificationBell from '@/components/NotificationBell'
+import UniversalSearch from '@/components/UniversalSearch'
 import { type WebsiteContent } from '@/lib/site-content'
 import { usePublicSiteContent } from '@/lib/use-site-content'
 
@@ -149,6 +150,7 @@ export default function Navbar({ siteContent }: { siteContent?: WebsiteContent }
         </div>
 
         <div className="hidden items-center justify-end lg:flex">
+          <div className="mr-3"><UniversalSearch variant="navbar" /></div>
           {user ? (
             <>
               <Link href={dashboardHref} className="mr-3 inline-flex items-center gap-2 rounded-lg bg-white px-3.5 py-2 text-[10px] font-semibold uppercase tracking-[0.1em] text-[#0b2f4d] hover:bg-[#f3f6f8]"><LayoutDashboard size={13}/>My dashboard</Link>
@@ -189,6 +191,10 @@ export default function Navbar({ siteContent }: { siteContent?: WebsiteContent }
       {mobileOpen && (
         <div id="mobile-navigation" className="max-h-[calc(100vh-76px)] overflow-y-auto border-t border-white/10 bg-[#0b2f4d] lg:hidden">
           <div className="px-6 py-5">
+            <div className="mb-4 flex items-center justify-between border-b border-white/12 pb-4">
+              <p className="text-[9px] font-semibold uppercase tracking-[.18em] text-white/55">Search the platform</p>
+              <UniversalSearch variant="navbar" onNavigate={() => setMobileOpen(false)} />
+            </div>
             {user ? loggedInSiteLinks.map(link => <Link key={link.href} href={link.href} className={`block border-b border-white/8 py-3 text-[13px] font-medium ${isActive(link.href) ? 'text-white' : 'text-white/70 hover:text-white'}`} onClick={() => setMobileOpen(false)}>{link.label}</Link>) : (
               <>
                 <p className="pb-2 text-[9px] font-semibold uppercase tracking-[.18em] text-white/55">Careers</p>

@@ -8,16 +8,31 @@ import SkeletonTable from '@/components/SkeletonTable'
 import Link from 'next/link'
 import SponsoredAd from '@/components/SponsoredAd'
 
+// Time-of-day greeting for the property brief, computed on the client clock.
+function timeOfDayGreeting(): string {
+  const hour = new Date().getHours()
+  if (hour < 12) return 'Good morning'
+  if (hour < 18) return 'Good afternoon'
+  return 'Good evening'
+}
+
 export default function EmployerDashboard() {
   const supabase = createClient()
   const [profile, setProfile] = useState<any>(null)
   const [listings, setListings] = useState<any[]>([])
   const [stats, setStats] = useState({ active: 0, applications: 0, matches: 0, messages: 0 })
   const [recentApps, setRecentApps] = useState<any[]>([])
+  const [brief, setBrief] = useState<any>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     async function load() {
+      // The property brief loads alongside the page data; if it fails the
+      // dashboard simply renders without it.
+      fetch('/api/employer/brief')
+        .then(res => (res.ok ? res.json() : null))
+        .then(data => { if (data && !data.error) setBrief(data) })
+        .catch(() => { /* the brief is optional */ })
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { setLoading(false); return }
 
@@ -100,6 +115,76 @@ export default function EmployerDashboard() {
           </div>
         </div>
       )}
+
+      {(() => {
+        const newCandidates: number = brief?.newCandidates || 0
+        const awaiting = brief?.applicantsAwaitingReview || { count: 0, byJob: [] }
+        const quietRoles = brief?.rolesWithNoApplications || { count: 0, titles: [] }
+        const unfilledShifts: number = brief?.unfilledAgencyShifts || 0
+        const counters: number = brief?.countersAwaiting || 0
+        const hasContent = newCandidates > 0 || awaiting.count > 0 || quietRoles.count > 0 || unfilledShifts > 0 || counters > 0
+        if (!hasContent) return null
+        return (
+          <section className="dashboard-card mb-8">
+            <p className="dashboard-eyebrow">Your brief</p>
+            <h2 className="dashboard-section-title mb-2">{timeOfDayGreeting()}{brief?.propertyName ? `, ${brief.propertyName}` : ''}.</h2>
+            <div>
+              {newCandidates > 0 && (
+                <div className="dashboard-list-row">
+                  <p className="text-[13px] text-ink">
+                    <span className="font-medium">{newCandidates}</span> new candidate{newCandidates === 1 ? '' : 's'} this fortnight.{' '}
+                    <Link href="/employer/candidates" className="text-accent hover:underline">Browse talent</Link>
+                  </p>
+                </div>
+              )}
+              {awaiting.count > 0 && (
+                <div className="dashboard-list-row">
+                  <div>
+                    <p className="text-[13px] text-ink">
+                      <span className="font-medium">{awaiting.count}</span> applicant{awaiting.count === 1 ? '' : 's'} awaiting review.{' '}
+                      <Link href="/employer/applications" className="text-accent hover:underline">Review now</Link>
+                    </p>
+                    {awaiting.byJob.length > 0 && (
+                      <p className="text-[12px] text-muted mt-0.5">
+                        {awaiting.byJob.map((row: any) => `${row.jobTitle} (${row.count})`).join(' · ')}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )}
+              {quietRoles.count > 0 && (
+                <div className="dashboard-list-row">
+                  <div>
+                    <p className="text-[13px] text-ink">
+                      <span className="font-medium">{quietRoles.count}</span> role{quietRoles.count === 1 ? '' : 's'} with no applications yet.{' '}
+                      <Link href="/employer/jobs" className="text-accent hover:underline">Review listings</Link>
+                    </p>
+                    {quietRoles.titles.length > 0 && (
+                      <p className="text-[12px] text-muted mt-0.5">{quietRoles.titles.join(' · ')}</p>
+                    )}
+                  </div>
+                </div>
+              )}
+              {unfilledShifts > 0 && (
+                <div className="dashboard-list-row">
+                  <p className="text-[13px] text-ink">
+                    <span className="font-medium">{unfilledShifts}</span> agency shift{unfilledShifts === 1 ? '' : 's'} unfilled.{' '}
+                    <Link href="/employer/agency" className="text-accent hover:underline">Arrange cover</Link>
+                  </p>
+                </div>
+              )}
+              {counters > 0 && (
+                <div className="dashboard-list-row">
+                  <p className="text-[13px] text-ink">
+                    <span className="font-medium">{counters}</span> counter{counters === 1 ? '' : 's'} awaiting your response.{' '}
+                    <Link href="/employer/agency" className="text-accent hover:underline">Respond</Link>
+                  </p>
+                </div>
+              )}
+            </div>
+          </section>
+        )
+      })()}
 
       <div className="mb-9">
         <p className="dashboard-eyebrow">Property recruitment</p>
