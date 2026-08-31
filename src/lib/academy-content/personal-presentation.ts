@@ -10,9 +10,19 @@ const content: CourseContent = {
     'Adapt personal grooming to house policy on tattoos, piercings and uniform when working across multiple venues or agency shifts',
     'Explain how a therapist\'s own skin, posture and visible energy function as commercial signals that support retail sales and guest confidence',
   ],
+  prerequisites: `None. The course assumes treatment competence but no prior experience of five-star grooming standards.`,
+  author: { name: 'WHC Academy', role: 'Developed by Wellness House Collective' },
+  references: [
+    { label: 'UK Spa Association - industry resources and operational guidance', url: 'https://www.spa-uk.org' },
+    { label: `Your spa's own grooming and uniform policy - house standards vary and always take precedence on shift` },
+    { label: `Your qualification awarding body's professional presentation and hygiene guidance` },
+  ],
+  lastReviewed: '2026-08-31',
+  version: '1.0',
   lessons: [
     {
       title: 'Why presentation is professional, not personal',
+      whyThisMatters: `A guest decides whether to trust your hands in the first few seconds of meeting you, and luxury spas price their treatments on that trust. Presentation failures also carry direct operational cost - a scratched guest, a waived treatment charge, a logged incident, a lost audit point - and each one traces back to a standard that was not run as habit. This lesson sets the baseline every five-star house will hold you to from your first shift.`,
       objectives: [
         'Explain why presentation standards in luxury wellness are clinical and commercial requirements rather than matters of personal style',
         'Apply the baseline uniform, hair, nail and jewellery standard expected at every shift in a five-star spa',
@@ -36,6 +46,25 @@ const content: CourseContent = {
           body: `The fragrance rule surprises new therapists more than any other: on shift, wear none, or so little that it is undetectable at close range. The reasoning is threefold. First, the guest booked the spa\'s sensory world, its signature candle, its oil blends, its carefully specified scent journey from reception to relaxation room, and your personal perfume competes with and contaminates that composition. Second, physiology: a relaxed, face-down guest in a warm, enclosed room is breathing slowly and deeply, and a strong perfume in that setting can genuinely trigger headaches or nausea. What smells pleasant at a dinner party can be overwhelming eight inches from a face cradle for sixty minutes. Third, product integrity: aromatherapy treatments depend on the guest perceiving the essential oil blend you selected in the consultation; your fragrance sitting on top of it muddles the very product they are paying for. The same discipline extends to heavily scented deodorants, hand creams and hair products. Freshly clean, with no competing scent, is the luxury standard.`,
         },
       ],
+      visuals: [
+        { kind: 'table', title: 'The pre-shift baseline checklist', headers: ['Element', 'Standard', 'Why it exists'], rows: [
+          ['Uniform', 'Clean, pressed, correctly worn - spare in locker', 'Oil spills are a matter of when, not if'],
+          ['Name badge', 'On, straight, legible', 'Anonymity reads as evasion in a five-star environment'],
+          ['Shoes', 'Closed-toe, clean, quiet', 'Safety around hot stones and glass; guests look down in a spa'],
+          ['Hair', 'Clean, secured back off the face', 'Hair touching a guest mid-massage is a viscerally disliked sensation'],
+          ['Nails', 'Short, smooth, unvarnished', 'A catching edge undoes an hour of skill; varnish chips and hides dirt'],
+          ['Jewellery', 'Rings, bracelets and watch off before uniform goes on', 'Traps oil and bacteria; can catch and scrape skin mid-stroke'],
+          ['Fragrance', 'None, or undetectable at close range', 'Competes with the spa\'s scent design and can overwhelm a face-down guest'],
+        ], caption: 'Run it as a checklist at the locker, every shift, before touching your uniform - standards exist for the mornings you are late, tired or distracted.' },
+      ],
+      scenario: `You arrive twenty minutes late after a cancelled train. Your first guest, a ninety-minute deep tissue, is already in the relaxation room. Your spare uniform is pressed in your locker, your usual pre-shift routine takes about six minutes, and skipping it would let you start almost on time.\n\nDecide what you actually do, in what order, and what you say to the coordinator - then compare your answer with what happened to Amira in this lesson's case study when the routine was skipped.`,
+      activity: `Write your own pre-shift ritual as a fixed sequence at the locker: jewellery off and stored, uniform check, hair secured, nails inspected, fragrance check. Run it in that order before your next three shifts without deviation, and time it - most therapists find the full ritual takes under five minutes, which is the whole cost of making the case-study incident impossible.`,
+      knowledgeCheck: [
+        { q: 'The nail standard for hands-on work is short, smooth and unvarnished. Varnish specifically is excluded because it:', options: ['Looks unprofessional under treatment room lighting', 'Chips into product, harbours micro-organisms in its cracks and prevents inspection underneath', 'Reacts with most massage media', 'Distracts guests during face-down work'], answer: 1, why: 'The rule is clinical, not aesthetic: chipped varnish contaminates product, cracks harbour micro-organisms, and a varnished nail cannot be visually inspected for cleanliness - the same logic that governs clinical practice in healthcare.' },
+        { q: 'A guest has booked an aromatherapy treatment. Wearing your own fragrance is a problem chiefly because:', options: ['It may linger on the towels', 'Reception may comment on it', 'House policies always ban it in writing', 'It sits on top of the essential oil blend chosen in consultation, muddling the very product the guest is paying for'], answer: 3, why: 'Aromatherapy depends on the guest perceiving the selected blend. Your scent competes with the treatment itself - alongside the wider risks of headache and nausea for a relaxed, face-down guest breathing deeply at close range.' },
+        { q: 'Why must presentation standards run as habit rather than daily judgement?', options: ['Habits are easier for managers to audit', 'Judgement varies too much between therapists', 'Standards exist precisely for the mornings you are late, tired or distracted - the days judgement fails first', 'Because guests notice inconsistency between visits'], answer: 2, why: 'The case study turned on exactly this: the ring stayed on because a fixed routine did not exist. A ritual run in the same order every shift makes the failure impossible on the days you are least able to think about it.' },
+      ],
+      nextStep: `Before your next shift, run your written locker ritual in full and notice which step you would previously have skipped when rushed - that step is the one the ritual exists to protect.`,
       keyTerms: [
         { term: 'Personal space standard', definition: 'The principle that because a therapist works within a guest\'s intimate physical space for extended periods, presentation is governed by clinical and commercial rules, not personal preference.' },
         { term: 'Baseline presentation checklist', definition: 'The minimum shift-ready standard: clean pressed uniform with a spare available, name badge on, closed-toe clean quiet shoes, hair secured off the face, nails short smooth and unvarnished.' },
@@ -51,6 +80,7 @@ const content: CourseContent = {
     },
     {
       title: 'The details guests notice at close range',
+      whyThisMatters: `Cold hands are the most complained-about sensation in massage, breath is noticed before anything else at consultation distance, and your own skin either supports or quietly contradicts every retail recommendation you make. These close-range details drive tips, rebooking, retail conversion and audit scores. For agency therapists, whose every shift is effectively an interview, they decide whether a venue asks for you by name.`,
       objectives: [
         'Conduct a close-range self-audit covering breath, hands, skin and grooming before every treatment',
         'Apply hand care routines that keep hands warm, soft and immaculately clean despite constant washing',
@@ -74,6 +104,18 @@ const content: CourseContent = {
           body: `Presentation is not only what you wear; it is how you carry it. In guest areas the standard is constant: stand tall, move calmly and deliberately, never yawn where a guest might see, never lean on walls or the reception desk, never cluster with colleagues in guest sightlines. Tiredness is human and every therapist on a six-treatment day feels it, but visible tiredness in a luxury spa reads to the guest as disinterest in them personally, which is fatal to the atmosphere the price is paying for. Energy management is therefore a professional skill: eat properly on breaks, hydrate, and build a reset ritual, thirty seconds of breath and posture outside the door, before each guest. Finally, the performance boundary is wider than most new therapists assume. The standard applies from the car park, because the guest journey can begin anywhere: the person you pass at the entrance, share a lift with or queue behind in the coffee shop may be this afternoon\'s guest, and in hotels running quality audits, the mystery inspector\'s scoring starts the moment they can see a staff member, not the moment they reach the spa desk.`,
         },
       ],
+      visuals: [
+        { kind: 'flow', title: 'The between-guests reset', steps: ['Wash hands thoroughly, including under the nails with a brush', 'Moisturise - equipment maintenance, not indulgence', 'Water and a mint, every time after coffee', 'Thirty seconds of breath and posture outside the door', 'Warm the hands before first contact'], caption: 'Five steps, a few minutes, before every guest - the routine that keeps close-range standards constant across a six-treatment day.' },
+        { kind: 'image_placeholder', title: 'IMAGE: Professional hand condition example', description: 'A close-up photograph of well-maintained therapist hands - short, smooth, unvarnished nails and cared-for skin - showing new team members exactly what guests see from inches away for an hour.' },
+      ],
+      scenario: `You are an agency therapist confirmed for a Saturday at a five-star hotel spa you have never worked in. You know nothing about the house policy on tattoos, piercings or uniform, and you have a small visible wrist tattoo.\n\nDecide when and how you raise the policy question, what you pack to cover every likely answer, and what your first thirty minutes on site look like - remembering that the mystery inspector's scoring, and the guest journey, can begin in the car park.`,
+      activity: `Run a full close-range audit on yourself before your next shift, to the standard of someone who will be observed from inches away for an hour: breath, hands (warmth, softness, nails), skin, brows and facial hair, posture. Fix the weakest item today, and put mints and hand cream where your consultation cards live so they become working equipment rather than afterthoughts.`,
+      knowledgeCheck: [
+        { q: 'The most complained-about sensation in massage is:', options: ['Pressure that is too deep', 'Room temperature faults', 'Cold hands at first contact', 'Talking during the treatment'], answer: 2, why: 'It ranks ahead of pressure faults and room temperature, and the fix costs nothing: warm the hands under water or by rubbing them with a little oil before first contact, every treatment without exception.' },
+        { q: 'Genuinely using the retail range your spa sells matters commercially because:', options: ['Staff discounts make it inexpensive to do', 'Your own skin becomes a live demonstration, and your recommendations carry personal experience rather than script', 'House policy usually requires it', 'It helps you memorise the price list'], answer: 1, why: 'When you recommend a product, the guest\'s eyes go to your skin, and what they see either confirms or quietly contradicts the recommendation. Personal use lets you speak honestly about texture, routine and how long a jar lasts - and guests hear the difference.' },
+        { q: 'On an agency shift at an unfamiliar venue, the professional way to handle tattoo and piercing policy is:', options: ['Cover everything by default at every venue', 'Follow the policy of your most recent venue', 'Wait to see whether anyone comments', 'Ask when the booking is confirmed, or on arrival at the latest, and follow the house answer'], answer: 3, why: 'House policy decides, not personal preference, and policies vary widely across UK spas. Asking early avoids being asked to change in front of colleagues.' },
+      ],
+      nextStep: `On your next shift, treat the standard as starting in the car park: hold your full guest-area bearing from the moment you arrive on site, and notice how little extra effort constancy actually costs.`,
       keyTerms: [
         { term: 'Close-range audit', definition: 'A therapist\'s habitual self-check of breath, hands, skin and grooming before each guest, done to the standard of someone who will be observed from inches away for an hour.' },
         { term: 'First-touch warmth', definition: 'The discipline of warming the hands before any guest contact, addressing cold hands, the most complained-about sensation in massage, and making the first touch a promise of care.' },

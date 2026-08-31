@@ -29,7 +29,7 @@ export const ACADEMY: AcademyCourse[] = [
     title: 'The Perfect Consultation',
     tagline: 'Turn the first five minutes into the whole treatment',
     category: 'Guest Experience',
-    minutes: 35,
+    minutes: 75,
     lessons: [
       { title: 'Why the consultation is the treatment', content: `A five-star treatment does not start at the massage couch. It starts the moment the guest sits down opposite you. The consultation is where trust is built, expectations are set and the treatment is personalised - and it is the single part of the experience most often rushed.
 
@@ -72,7 +72,7 @@ Finally, record anything useful for next time on the guest's record: preferences
     title: 'Retail & Recommendation',
     tagline: 'Sell like a therapist, not a salesperson',
     category: 'Commercial',
-    minutes: 30,
+    minutes: 75,
     lessons: [
       { title: 'Reframing retail', content: `Most therapists dislike "selling". Good ones realise they are not selling - they are finishing the treatment.
 
@@ -119,7 +119,7 @@ And remember the quiet rule of luxury retail: the guest should leave feeling loo
     title: 'Five-Star Customer Service',
     tagline: 'The details that separate good from unforgettable',
     category: 'Guest Experience',
-    minutes: 35,
+    minutes: 75,
     lessons: [
       { title: 'What five-star actually means', content: `Five-star service is not politeness. Politeness is the entry ticket. Five-star service is anticipation: solving needs the guest has not voiced yet.
 
@@ -158,7 +158,7 @@ Cues are everywhere: short answers mean wind down the talk; a guest checking the
     title: 'LQA & Forbes Standards',
     tagline: 'How the world’s toughest inspectors score your spa',
     category: 'Standards',
-    minutes: 40,
+    minutes: 75,
     lessons: [
       { title: 'Who inspects, and why it matters to you', content: `Two names dominate luxury hospitality auditing: LQA (Leading Quality Assurance) and Forbes Travel Guide. Both send anonymous inspectors who book, arrive, experience and score every touchpoint of a spa visit against hundreds of detailed standards. Forbes star ratings and LQA scores decide marketing claims, management bonuses and, bluntly, careers.
 
@@ -203,7 +203,7 @@ When something conflicts, guest wellbeing beats the checklist - and the great op
     title: 'Health, Safety & Hygiene in the Spa',
     tagline: 'The non-negotiables that protect every guest and your licence',
     category: 'Standards',
-    minutes: 40,
+    minutes: 75,
     lessons: [
       { title: 'Your legal and professional duty', content: `Health and safety in a UK spa is not optional culture - it is law. Under the Health and Safety at Work Act, employers must provide a safe environment, and every worker has a personal legal duty to take reasonable care of themselves and others, follow training, and report hazards. "I was busy" is not a defence for anyone.
 
@@ -245,7 +245,7 @@ Fire: know the alarm sound, the exits from every room you work in, and the assem
     title: 'Treatment Room Standards',
     tagline: 'Set the stage before the guest ever walks in',
     category: 'Standards',
-    minutes: 25,
+    minutes: 60,
     lessons: [
       { title: 'The room speaks first', content: `Before you say a word, the room has already told the guest what kind of hour this will be. Luxury guests read rooms instantly: temperature, scent, light, sound, order. A perfect treatment in a sloppy room scores like a sloppy treatment.
 
@@ -285,7 +285,7 @@ If turnaround time is genuinely impossible - back-to-back bookings with no gap -
     title: 'Upgrading Treatments',
     tagline: 'Grow every booking with integrity',
     category: 'Commercial',
-    minutes: 25,
+    minutes: 60,
     lessons: [
       { title: 'The economics of the upgrade', content: `A spa's costliest asset is an empty treatment room; its second costliest is a booked hour that could have been worth more. Upgrades - lengthening a treatment, adding an enhancement, moving to a superior product line - are the highest-margin revenue in the building, because the guest, the room and your hands are already there.
 
@@ -323,7 +323,7 @@ And accept the no beautifully: "Of course - I will make the sixty minutes count.
     title: 'Personal Presentation & Hygiene',
     tagline: 'You are part of the product',
     category: 'Standards',
-    minutes: 20,
+    minutes: 45,
     lessons: [
       { title: 'Why presentation is professional, not personal', content: `In luxury wellness, the therapist is inside the guest's personal space for a full hour. Your presentation is not about vanity; it is a clinical and commercial standard, exactly like a chef's whites.
 
@@ -354,7 +354,7 @@ Posture and energy: stand tall, move calmly, never yawn in guest areas, never le
     title: 'The Perfect Massage',
     tagline: 'Structure, flow and the details that get you requested by name',
     category: 'Treatments',
-    minutes: 40,
+    minutes: 75,
     lessons: [
       { title: 'The architecture of a great massage', content: `Every memorable massage has the same architecture: a settled beginning, a purposeful middle, and an unhurried ending - inside an unbroken flow.
 
@@ -399,7 +399,7 @@ Outside, close the loop with substance: what you found ("a lot of holding in the
     title: 'The Perfect Facial',
     tagline: 'Skin analysis, protocol and results guests can see',
     category: 'Treatments',
-    minutes: 40,
+    minutes: 60,
     lessons: [
       { title: 'Analysis before everything', content: `A facial without proper skin analysis is a product demonstration. The analysis is where the expert earns the title.
 
@@ -437,7 +437,7 @@ Record everything: analysis, products used, skin's response, recommendations. Th
     title: 'Product House Knowledge',
     tagline: 'Speak ESPA, Elemis and Dermalogica like a native',
     category: 'Brands',
-    minutes: 35,
+    minutes: 60,
     lessons: [
       { title: 'Why brands are a language', content: `Luxury spas do not buy products; they buy partnerships with product houses - ESPA, Elemis, Dermalogica, Comfort Zone, Aromatherapy Associates, Natura Bissé, Bamford, VOYA and their peers. The house defines the treatment menu, the training, the retail wall and much of the spa's identity.
 

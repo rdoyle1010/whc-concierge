@@ -10,9 +10,19 @@ const content: CourseContent = {
     'Construct upgrade recommendations using outcome-led professional language, with price stated last, plainly and confidently',
     'Apply the integrity rule to every offer, accept a decline gracefully, and record forward recommendations on the guest record for future visits',
   ],
+  prerequisites: `None beyond professional treatment competence; no prior sales training is assumed and the method is built from first principles.`,
+  author: { name: 'WHC Academy', role: 'Developed by Wellness House Collective' },
+  references: [
+    { label: 'UK Spa Association - industry resources and operational guidance', url: 'https://www.spa-uk.org' },
+    { label: `Your spa's own treatment menu, upgrade price list and brand training - offers only convert when quoted accurately` },
+    { label: `Your spa's guest record system guidance - forward recommendations depend on how notes are recorded and shared` },
+  ],
+  lastReviewed: '2026-08-31',
+  version: '1.0',
   lessons: [
     {
       title: 'The economics of the upgrade',
+      whyThisMatters: `Upgrade revenue converts to margin at a rate no new booking can match, because the guest, the room and your booked time are already paid for. Average spend per guest is tracked by therapist in every serious spa and read alongside your complaint record when VIP allocations and promotions are decided. Understanding the economics is what lets you offer with confidence rather than apology.`,
       objectives: [
         'Explain why an upgrade earns exceptional margin compared with a new booking',
         'Describe how average spend per guest is used to evaluate therapist performance',
@@ -36,6 +46,21 @@ const content: CourseContent = {
           body: `Upgrades take three main forms, and a fluent therapist holds all three in mind. The first is duration: moving a sixty-minute booking to ninety, which suits guests whose needs simply cannot be resolved in the shorter slot, particularly deep tension work. The second is the enhancement: a discrete addition such as a scalp massage, a foot ritual or hot stones layered into the existing treatment, usually adding fifteen to thirty minutes or slotting inside the booked time. The third is the product-line upgrade: delivering the same treatment with a superior range, where the guest pays for measurably better actives, textures and results. Each form answers a different guest situation. Duration answers depth of need, enhancements answer a specific complaint the guest has voiced, and product-line upgrades answer a guest who cares about results and quality more than time. Matching the form of upgrade to the guest's actual situation is the practical expression of the integrity rule, and it is why the consultation, covered in the next lesson, is where the strongest upgrades are born.`,
         },
       ],
+      visuals: [
+        { kind: 'table', title: 'The three upgrade forms at a glance', headers: ['Form', 'Typical example', 'Added time', 'Guest situation it answers'], rows: [
+          ['Duration', '60 minutes moved to 90', '+30 min', 'Depth of need - tension that cannot resolve in the shorter slot'],
+          ['Enhancement', 'Scalp massage, foot ritual, hot stones', '+15-30 min, or within the booked time', 'A specific complaint the guest has voiced'],
+          ['Product line', 'Same treatment, superior range', 'None', 'A guest who cares about results and quality more than time'],
+        ], caption: 'Matching the form to the guest\'s actual situation is the practical expression of the integrity rule. Prices vary by house; know yours before the shift starts.' },
+      ],
+      scenario: `Your 3pm guest has booked a sixty-minute massage and mentions in the corridor that her lower back has been troubling her for weeks and she has the whole afternoon free. Your column shows the 4pm slot unbooked, and you know ninety minutes would let you work the surrounding areas properly rather than rushing the back itself.\n\nBefore you speak, run the integrity test: what is she trying to achieve today, and does the extension genuinely serve it? Then decide exactly what you would say - and what you would do instead if her next words were that she is meeting a friend at 4.15.`,
+      activity: `Before your next shift, find out your spa's current average spend per guest and, if it is tracked, your own figure. Then list the three upgrade forms as they exist on your menu - the duration moves, the enhancements and any product-line steps - with the exact price of each. Say each price aloud once, plainly, until it sounds as routine as a treatment time.`,
+      knowledgeCheck: [
+        { q: 'Why does upgrade revenue carry a higher margin than the same value from a new booking?', options: ['Because upgrades are priced higher than standard treatments', 'Because upgrades avoid marketing and booking costs only', 'Because the room, the guest and the therapist\'s booked time are already paid for, leaving largely product cost', 'Because upgrades are exempt from therapist commission'], answer: 2, why: 'Almost every cost of the hour was incurred by the original booking; the upgrade asks the committed hour to do more, so the additional revenue converts to margin at a rate a new booking cannot match.' },
+        { q: 'A therapist lifts average spend per guest sharply, but her complaint rate rises in the same quarter. Management will most likely read this as:', options: ['Strong commercial performance worth rewarding', 'Evidence of pressure selling that is spending guest trust', 'A coincidence - the two figures are read separately', 'Proof that upgrade prices are set too high'], answer: 1, why: 'Spend is read alongside the complaint and rebooking record precisely to catch this pattern. Rising spend with rising complaints signals pressure; rising spend with a clean record signals trusted recommendation.' },
+        { q: 'A guest has told you she must leave on time for a lunch booking. The ninety-minute extension would genuinely help her shoulders. The integrity rule says:', options: ['Say nothing today and note the recommendation on her record for next time', 'Offer it anyway - she can decide for herself', 'Offer a cheaper enhancement instead so something is sold', 'Ask reception to raise it when she pays'], answer: 0, why: 'The upgrade must serve what the guest is trying to achieve today. She cannot use the time, so the professional response is silence now and a forward note, converting the need on a visit when it can genuinely be met.' },
+      ],
+      nextStep: `On your next shift, apply the integrity test silently to every guest before deciding whether to offer anything - and notice how often the honest answer is that an upgrade genuinely would help.`,
       keyTerms: [
         { term: 'Average spend per guest', definition: `The total revenue a guest generates across treatment, upgrades and retail, tracked per therapist in every serious spa and read alongside complaint and rebooking records as a core performance measure.` },
         { term: 'Margin', definition: `The portion of revenue left after costs. Upgrade revenue carries exceptional margin because the room, the guest and the therapist's booked time are already paid for.` },
@@ -51,6 +76,7 @@ const content: CourseContent = {
     },
     {
       title: 'The three natural moments',
+      whyThisMatters: `Most declined upgrades fail on timing, not wording: the right offer at the wrong moment reads as pressure, and the same offer at the right moment reads as care. The forward plant also protects revenue the spa would otherwise lose entirely, converting upgrades weeks later, through colleagues, on visits you may never work. Timing discipline is what separates a therapist who sells more over a year from one who pushes in an afternoon.`,
       objectives: [
         'Identify the three natural upgrade moments in the guest journey and what makes each one work',
         `Construct a consultation-based upgrade offer that answers the guest's own words`,
@@ -74,6 +100,17 @@ const content: CourseContent = {
           body: `The three moments come with a strict professional limit: one offer per moment, made warmly, then accepted or declined without a flicker. The arithmetic of trust is unforgiving here. A single well-timed offer reads as attentiveness; the same offer repeated reads as pressure, and pressure in a relaxation environment is a category error the guest never forgets. If the extension was declined at arrival, it is not raised again in consultation; if the enhancement was declined in consultation, it does not reappear at the till. Declining must cost the guest nothing, not a beat of hesitation in your voice, not a shadow of disappointment on your face, because the moment saying no becomes uncomfortable, every future offer becomes a threat rather than a service. The three-moment structure exists partly to make this discipline easy: because you know another legitimate moment is coming, on this visit or the next, no single offer has to carry the weight of desperation. Therapists who trust the structure sell more over a year than those who push in an afternoon.`,
         },
       ],
+      visuals: [
+        { kind: 'flow', title: 'The three moments in the guest journey', steps: ['BOOKING / ARRIVAL - the schedule moment: the day still feels open, so offer time', 'CONSULTATION - the diagnosis moment: the guest names the need, so offer the answer', 'TREATMENT - no offers; deliver', 'CLOSE - the next-visit moment: plant forward, then write it on the record'], caption: 'One offer per moment at most, and a decline closes that moment completely. The treatment itself is never an upgrade moment.' },
+      ],
+      scenario: `At arrival, your guest declines the offer of a ninety-minute extension - she is short of time today. During consultation she mentions that her scalp aches from screen work, and your menu carries a fifteen-minute scalp enhancement that fits inside her booked hour.\n\nThe extension was declined only minutes ago. Decide: does the one-offer-per-moment rule permit the scalp recommendation, and why? Then decide what you will do at the close of the visit if she declines that too.`,
+      activity: `On your next three treatments, mark on your consultation card which of the three moments you used and what you offered, if anything. For any guest where no offer was right on the day, write one forward plant on their record in a format your colleagues could act on: the recommendation, the reason, and the guest's own words that prompted it.`,
+      knowledgeCheck: [
+        { q: 'The consultation is the strongest upgrade moment in the journey because:', options: ['An offer tied to the guest\'s own stated need functions as prescription rather than selling', 'The guest is at her most relaxed then', 'Prices sound lower before the treatment begins', 'It is the only moment reception cannot reach'], answer: 0, why: 'The guest raised the problem; the professional supplies the remedy. Structurally it is not selling, which is why consultation-based offers never feel like selling and are the easiest to hold to the integrity rule.' },
+        { q: 'A guest declined an extension at arrival. During consultation she describes tension that a fifteen-minute enhancement would answer. You should:', options: ['Re-offer the extension - the new information justifies it', 'Offer the enhancement if it genuinely answers her stated need - it is a new moment and a different offer', 'Make no further offers for the rest of the visit', 'Ask her why she declined the extension earlier'], answer: 1, why: 'The declined offer stays closed for good - repetition is what turns an offer into pressure. But consultation is a distinct moment, and a different offer answering her own words is legitimate prescription, not repetition.' },
+        { q: 'What turns a forward plant from a wish into a plan?', options: ['Repeating the recommendation to the guest at the till', 'Offering a small discount against the next visit', 'Mentioning it verbally to the coordinator at shift end', 'Writing the recommendation on the guest\'s record so any colleague can honour it at the next booking'], answer: 3, why: 'A plant that lives only in your memory converts only if you happen to treat that guest again. On the record, reception and any colleague can complete the sale weeks later, and the guest experiences a spa that remembers her.' },
+      ],
+      nextStep: `On your next shift, write at least one forward plant on a guest record in a form a colleague could act on without asking you anything.`,
       keyTerms: [
         { term: 'Schedule moment', definition: `The upgrade window at booking or arrival, when the guest's day still feels open and extensions of time convert best.` },
         { term: 'Diagnosis moment', definition: `The upgrade window during consultation, when a recommendation tied to the guest's own stated need functions as prescription rather than selling.` },
@@ -89,6 +126,7 @@ const content: CourseContent = {
     },
     {
       title: 'Language that upgrades',
+      whyThisMatters: `Two phrasings of the same offer convert at entirely different rates: the words decide whether the guest hears a professional prescribing or a cashier soliciting. How you state the price is equally commercial, because hesitation on your side is heard as doubt about the value, and doubt is contagious. The decline, handled well, is where next visit's yes is earned - which makes this the lesson with the most direct effect on your conversion rate.`,
       objectives: [
         'Construct upgrade offers using recommending language rather than transactional questions',
         'Sequence an offer so the outcome leads and the price comes last, stated plainly and confidently',
@@ -112,6 +150,22 @@ const content: CourseContent = {
           body: `Every offer has two possible endings, and the decline is the one that reveals the professional. The response is short, warm and total: of course, I will make the sixty minutes count. Then, and this is the substance of the skill, you do exactly that. The guest who declines and still receives your absolute best has just run an experiment on you, whether she meant to or not, and your treatment is the result. If the quality after a no is indistinguishable from the quality after a yes, she has learned something valuable: the offer was real, made for her benefit, with nothing riding on her answer. That guest upgrades next time at remarkable rates, because the risk has been removed from saying yes and from saying no alike. The inverse is career poison: a flicker of disappointment, a slightly flatter treatment, a second mention at the end, and the guest learns that offers from you carry a social bill. Handled beautifully, a no is not a lost sale; it is a deposit in the account every future yes is drawn from.`,
         },
       ],
+      visuals: [
+        { kind: 'flow', title: 'The shape of a professional offer', steps: ['OUTCOME - the benefit the guest will feel, anchored to her own words', 'EVIDENCE - brief mechanism or duration that makes the outcome credible', 'PRICE - stated last, plainly, at normal volume, then stop', 'ANSWER - accept a yes warmly; accept a no completely, and deliver your best either way'], caption: 'The sequence does the persuading. Reversed - price first, outcome last - the same offer becomes a till transaction.' },
+        { kind: 'table', title: 'Soliciting versus recommending', headers: ['Soliciting (avoid)', 'Recommending (use)', 'Why it works'], rows: [
+          ['Do you want to add anything?', 'May I recommend...', 'Places your expertise between the guest and the price'],
+          ['Our premium option is available', 'The deeper work your shoulders need', 'Specific to this guest - proves you listened'],
+          ['It\'s only twenty-five pounds more...', 'That is an additional twenty-five pounds.', 'A plain, confident price signals the value is real'],
+        ], caption: 'Generic language is the fingerprint of a script; specific language is the fingerprint of an expert.' },
+      ],
+      scenario: `In consultation, your guest mentions dull, dehydrated skin after a winter of central heating. Your spa's facial can be delivered with the superior product line for an additional eighteen pounds.\n\nDraft your offer in your head before reading on: which of her words will you anchor it to, what outcome leads, what brief evidence follows, and exactly how will you say the price? Now imagine she pauses and says not today, thanks. Rehearse your reply in full - and what you will do with the remaining hour.`,
+      activity: `Write out one complete upgrade offer for the treatment you deliver most often: outcome first, brief evidence, price last. Say it aloud until the price lands in the same warm register as the rest of the sentence, with no softening words. Then rehearse the decline response - of course, I will make the sixty minutes count - until it comes without a beat of hesitation.`,
+      knowledgeCheck: [
+        { q: 'Why does the price come last in a professional offer?', options: ['Guests remember the last thing said most clearly', 'So the outcome and evidence have established the value before the cost is weighed against it', 'It gives the guest less time to object', 'Because most house scripts require it'], answer: 1, why: 'Lead with the outcome the guest will feel, support it briefly, and only then state the price - plainly and confidently. The sequence lets the value do the persuading before the number arrives.' },
+        { q: 'A guest declines your offer. The most commercially valuable response is:', options: ['A brief, warm acceptance, then your absolute best work inside the booked scope', 'A gentle second mention at the end, in case she reconsiders', 'Immediately offering a smaller, cheaper alternative', 'Noting warmly that most guests do take it'], answer: 0, why: 'The declined guest is running an experiment on you. If your quality after a no is indistinguishable from after a yes, she learns the offer was genuine - and guests treated this way upgrade next time at remarkable rates. Any second mention converts the offer into pressure.' },
+        { q: 'Which offer best demonstrates the specificity principle?', options: ['You would love our most popular enhancement', 'Many guests add the hot stones at this time of year', 'For the tightness on the right side of your neck, fifteen minutes of focused work would let it release properly', 'Our premium range gives visibly superior results'], answer: 2, why: 'It could only be said to this guest by someone who has assessed her - the finding from her own consultation is in the sentence. The others could be said to anyone by anyone, which is exactly what guests have learned to deflect.' },
+      ],
+      nextStep: `Make one outcome-led, specifically anchored offer on your next shift, state the price plainly, and whatever the answer, deliver the treatment that proves the offer was genuine.`,
       keyTerms: [
         { term: 'Recommending language', definition: `Offer phrasing built on professional prescription, such as 'may I recommend', which places the therapist's expertise at the centre of the offer, in contrast to transactional questions about adding or spending.` },
         { term: 'Outcome-led framing', definition: `Structuring an offer so the benefit the guest will feel comes first, supporting detail second, and price last, stated plainly and confidently.` },
