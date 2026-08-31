@@ -136,7 +136,7 @@ export default function TalentDashboard() {
         </section>
 
         <aside className="dashboard-panel bg-[#0b2f4d] !border-[#0b2f4d] text-white">
-          <EyeOff size={19} className="text-gold mb-5" />
+          <EyeOff size={19} className="text-white/80 mb-5" />
           <p className="text-[9px] uppercase tracking-[.2em] text-white/48 mb-2">Profile privacy</p>
           <h2 className="text-[28px] !text-white mb-3">{profile?.stealth_mode ? 'Stealth Mode is on' : 'Control who sees you'}</h2>
           <p className="text-[12px] leading-6 text-white/65 mb-5">
@@ -145,7 +145,7 @@ export default function TalentDashboard() {
               : 'Hide from a current employer without disappearing from suitable opportunities elsewhere.'}
           </p>
           {profile?.travel_radius_miles && <p className="text-[11px] text-white/52 mb-5">Agency travel limit: {profile.travel_radius_miles} miles</p>}
-          <Link href="/talent/settings" className="inline-flex items-center gap-2 text-[12px] font-medium text-gold">Review privacy settings <ArrowRight size={13} /></Link>
+          <Link href="/talent/settings" className="inline-flex items-center gap-2 text-[12px] font-medium text-white/80 hover:text-white">Review privacy settings <ArrowRight size={13} /></Link>
         </aside>
       </div>
           <SponsoredAd placement="talent_dashboard_sponsor" />

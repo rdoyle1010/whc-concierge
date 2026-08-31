@@ -37,7 +37,7 @@ export default async function BlogOGImage({ params }: { params: Promise<{ slug: 
         style={{
           width: '100%', height: '100%', display: 'flex', flexDirection: 'column',
           justifyContent: 'space-between', padding: '60px 70px',
-          background: 'linear-gradient(145deg, #0a0a14 0%, #1a1a2e 50%, #0f0f1e 100%)',
+          background: 'linear-gradient(145deg, #07243b 0%, #10283b 50%, #07243b 100%)',
         }}
       >
         {/* Top: branding + category */}
@@ -55,8 +55,8 @@ export default async function BlogOGImage({ params }: { params: Promise<{ slug: 
             <div
               style={{
                 fontSize: 14, fontWeight: 500, letterSpacing: '1px',
-                color: 'rgba(201, 169, 110, 0.7)',
-                border: '1px solid rgba(201, 169, 110, 0.3)',
+                color: 'rgba(16, 47, 77, 0.7)',
+                border: '1px solid rgba(16, 47, 77, 0.3)',
                 borderRadius: 20, padding: '6px 16px',
                 textTransform: 'uppercase' as const,
                 display: 'flex',

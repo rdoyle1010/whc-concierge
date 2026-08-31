@@ -32,7 +32,7 @@ export function LessonVisualBlock({ visual }: { visual: Visual }) {
         <div className="overflow-x-auto">
           <table className="w-full text-[12.5px] border-collapse min-w-[420px]">
             <thead><tr>{visual.headers.map(header => <th key={header} className="border-b-2 border-[#0b2f4d]/20 bg-[#fafafa] px-3 py-2 text-left font-semibold text-ink">{header}</th>)}</tr></thead>
-            <tbody>{visual.rows.map((row, ri) => <tr key={ri}>{row.map((cell, ci) => <td key={ci} className={`border-b border-[#eee9df] px-3 py-2 text-gray-700 ${ci > 0 ? 'tabular-nums' : ''}`}>{cell}</td>)}</tr>)}</tbody>
+            <tbody>{visual.rows.map((row, ri) => <tr key={ri}>{row.map((cell, ci) => <td key={ci} className={`border-b border-[#ececec] px-3 py-2 text-gray-700 ${ci > 0 ? 'tabular-nums' : ''}`}>{cell}</td>)}</tr>)}</tbody>
           </table>
         </div>
         {visual.caption && <p className="mt-3 text-[11.5px] text-gray-500 leading-5">{visual.caption}</p>}
@@ -49,7 +49,7 @@ export function LessonVisualBlock({ visual }: { visual: Visual }) {
           <div className="flex-1">
             <div className="grid grid-cols-2 gap-1.5">
               {visual.quadrants.map((quadrant, index) => (
-                <div key={index} className={`rounded-lg px-3 py-4 text-center text-[12px] font-medium leading-5 ${index === 0 ? 'bg-[#e7f2ec] text-[#2e5b45]' : index === 3 ? 'bg-[#f7ece2] text-[#8a4f26]' : 'bg-[#f2f0eb] text-gray-700'}`}>{quadrant}</div>
+                <div key={index} className={`rounded-lg px-3 py-4 text-center text-[12px] font-medium leading-5 ${index === 0 ? 'bg-[#e7f2ec] text-[#2e5b45]' : index === 3 ? 'bg-[#f5f6f8] text-[#10283b]' : 'bg-[#f0f0f0] text-gray-700'}`}>{quadrant}</div>
               ))}
             </div>
             <p className="mt-2 text-center text-[10px] font-semibold uppercase tracking-wide text-gray-500">{visual.xLabel} →</p>
@@ -63,7 +63,7 @@ export function LessonVisualBlock({ visual }: { visual: Visual }) {
   // image_placeholder: an honest slot the admin fills through the Academy
   // Downloads/media flow - never a stock photo pasted for decoration.
   return (
-    <div className="rounded-xl border border-dashed border-[#d8cfc0] bg-[#f7f7f7] p-5 my-4 text-center">
+    <div className="rounded-xl border border-dashed border-[#d9d9d9] bg-[#f7f7f7] p-5 my-4 text-center">
       <ImageIcon size={20} className="mx-auto text-[#8a8a8a] mb-2" />
       <p className="text-[12px] font-semibold text-[#10283b]">{visual.title}</p>
       <p className="text-[11.5px] text-gray-500 mt-1">{visual.description}</p>

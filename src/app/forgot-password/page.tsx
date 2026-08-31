@@ -29,7 +29,7 @@ export default function ForgotPasswordPage() {
         <div className="w-full max-w-[430px] public-panel p-7 md:p-9">
           <Link href="/"><Image src="/images/whc-logo.jpg" alt="Wellness House Collective" width={150} height={50} className="object-contain mix-blend-multiply" /></Link>
           {sent ? <>
-            <div className="w-12 h-12 bg-[#FDF6EC] rounded-xl flex items-center justify-center mt-9 mb-6"><MailCheck size={22} className="text-accent" /></div>
+            <div className="w-12 h-12 bg-[#f5f6f8] rounded-xl flex items-center justify-center mt-9 mb-6"><MailCheck size={22} className="text-accent" /></div>
             <p className="public-eyebrow mb-3">Account recovery</p><h1 className="text-[30px] font-semibold text-ink mb-2">Check your email</h1>
             <p className="text-[14px] text-secondary leading-7 mb-7">If an account exists for <span className="font-semibold text-ink">{email}</span>, a password reset link is on its way.</p>
             <button type="button" onClick={() => setSent(false)} className="btn-secondary w-full">Try another email</button>

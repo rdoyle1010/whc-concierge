@@ -146,7 +146,7 @@ function HowItWorksSection({ content }: { content: WebsiteContent }) {
   </section>
 }
 
-function ProductSection({ content: _content }: { content: WebsiteContent }) {
+function ProductSection({ content }: { content: WebsiteContent }) {
   const mockups = [<CandidateProfileMockup key="candidate" />, <MatchScoreMockup key="matching" />, <RoleListingMockup key="role" />]
   const examples = [
     {
@@ -163,18 +163,24 @@ function ProductSection({ content: _content }: { content: WebsiteContent }) {
     },
   ]
 
-  const waysToWork = [
-    { title: 'Permanent careers', text: 'Find long-term spa and wellness roles matched to your experience and ambitions.', href: '/jobs', action: 'Browse roles' },
-    { title: 'Agency shifts', text: 'Choose flexible shifts when you are available, with skills and requirements made clear before you accept.', href: '/agency', action: 'Explore agency' },
-    { title: 'Residencies', text: 'Discover temporary, seasonal and specialist placements in remarkable properties.', href: '/residency', action: 'Explore residencies' },
+  const wayLinks = [
+    { href: '/jobs', action: 'Browse roles' },
+    { href: '/agency/about', action: 'Explore agency' },
+    { href: '/residency', action: 'Explore residencies' },
   ]
+  const waysToWork = content.product.cards.map((card, index) => ({
+    title: card.label,
+    text: card.text,
+    href: wayLinks[index]?.href ?? '/jobs',
+    action: wayLinks[index]?.action ?? 'Learn more',
+  }))
 
   return <section className="site-section site-surface">
     <div className="mx-auto max-w-7xl px-6 lg:px-8">
       <div className="mx-auto mb-10 max-w-3xl text-center">
-        <Eyebrow>Built for spa & wellness</Eyebrow>
-        <h2 className="site-heading mb-5 text-[34px] font-medium leading-[1.05] md:text-[48px]">One platform. Three ways to work.</h2>
-        <p className="text-[15px] leading-[1.8] opacity-65 md:text-[17px]">Permanent careers, flexible agency shifts and residencies - for spa and wellness professionals and the employers looking for them.</p>
+        <Eyebrow>{content.product.eyebrow}</Eyebrow>
+        <h2 className="site-heading mb-5 text-[34px] font-medium leading-[1.05] md:text-[48px]">{content.product.heading}</h2>
+        <p className="text-[15px] leading-[1.8] opacity-65 md:text-[17px]">{content.product.intro}</p>
       </div>
 
       <div className="mb-20 grid gap-4 md:grid-cols-3">
@@ -318,7 +324,7 @@ function ServicesSection({ content }: { content: WebsiteContent }) {
 function TestimonialsSection({ content }: { content: WebsiteContent }) {
   return <section className="site-section" style={{ background: 'var(--site-background)' }}>
     <div className="mx-auto max-w-7xl px-6 lg:px-8">
-      <div className="mb-12 text-center"><Eyebrow>{content.testimonials.eyebrow}</Eyebrow><h2 className="site-heading text-[34px] font-medium md:text-[48px]">{content.testimonials.heading}</h2></div>
+      <div className="mb-12 text-center"><Eyebrow>{content.testimonials.eyebrow}</Eyebrow><h2 className="site-heading text-[34px] font-medium md:text-[48px]">{content.testimonials.heading}</h2><span className="mt-4 inline-block bg-[#10283b] px-3 py-1 text-[9px] font-semibold uppercase tracking-[0.14em] text-white">Illustrative</span></div>
       <TestimonialCarousel />
       <div className="mt-9 text-center"><Link href="/testimonials" className="text-[13px] underline underline-offset-4 opacity-60 hover:opacity-100">{content.testimonials.linkLabel}</Link></div>
     </div>
@@ -346,7 +352,7 @@ export default async function HomePage(props: HomePageProps) {
 
   return <div className="website-theme min-h-screen" style={websiteCssVariables(content)}>
     <Navbar siteContent={content} />
-    <main className="pt-[60px]">
+    <main className="pt-[76px]">
       {previewingDraft && <div className="site-accent-bg px-5 py-2 text-center text-[12px] font-semibold text-white">Private draft preview - the public website has not changed.</div>}
       <HeroCarousel siteContent={content} />
       <SponsoredAd placement="homepage_spotlight" />

@@ -16,7 +16,7 @@ export default function VerifyPage() {
   return (
     <div className="min-h-screen bg-surface flex flex-col">
       <Navbar />
-      <div className="flex-1 flex items-center justify-center px-6 pt-16">
+      <div className="flex-1 flex items-center justify-center px-6 pt-[76px]">
         <div className="bg-white border border-border rounded-2xl p-10 max-w-md w-full text-center">
           <ShieldCheck size={32} className="mx-auto text-accent mb-4" />
           <h1 className="font-serif text-[24px] font-bold text-ink mb-2">Verify a Certificate</h1>

@@ -158,7 +158,11 @@ export default function EmployerSettingsPage() {
   }
   return (
     <DashboardShell role="employer">
-      <h1 className="text-2xl font-serif font-bold text-ink mb-6">Settings</h1>
+      <div className="mb-6">
+        <p className="dashboard-eyebrow">Account</p>
+        <h1 className="dashboard-title">Settings</h1>
+        <p className="dashboard-intro">Notifications, password and your data in one place.</p>
+      </div>
       <div className="max-w-2xl space-y-6">
         {message && <div className={`px-4 py-3 rounded-lg text-sm ${messageType === 'success' ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'}`}>{message}</div>}
 

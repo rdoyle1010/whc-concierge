@@ -36,7 +36,7 @@ function VerifyInner() {
   }, [])
 
   return (
-    <div className="min-h-screen bg-[#f7f5f1]">
+    <div className="min-h-screen bg-[#f7f7f7]">
       <Navbar />
       <div className="mx-auto max-w-2xl px-6 pt-32 pb-24">
         <p className="text-[11px] uppercase tracking-[0.18em] text-[#10283b] font-semibold mb-2">WHC Academy</p>
@@ -77,5 +77,5 @@ function VerifyInner() {
 }
 
 export default function VerifyCertificatePage() {
-  return <Suspense fallback={<div className="min-h-screen bg-[#f7f5f1]" />}><VerifyInner /></Suspense>
+  return <Suspense fallback={<div className="min-h-screen bg-[#f7f7f7]" />}><VerifyInner /></Suspense>
 }

@@ -51,10 +51,11 @@ export async function GET() {
   if (!await requireAdmin()) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
 
   const admin = createAdminClient()
+  const BOOKING_LIMIT = 250
   const { data: bookings, error } = await admin.from('residency_bookings')
     .select('id,candidate_id,employer_id,property_name,start_date,end_date,days_required,agreed_day_rate,agreed_total,proposed_total,platform_fee,amount_paid,payout_amount,payout_status,payout_at,status,paid_at,dispute_status,dispute_reason,refund_amount,refunded_at,stripe_payment_intent,created_at')
     .order('created_at', { ascending: false })
-    .limit(250)
+    .limit(BOOKING_LIMIT)
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
   const candidateIds = Array.from(new Set((bookings || []).map(row => row.candidate_id).filter(Boolean)))
@@ -73,7 +74,10 @@ export async function GET() {
     payout_ready: payoutReady(booking),
   }))
 
-  return NextResponse.json({ bookings: rows })
+  return NextResponse.json({
+    bookings: rows,
+    pagination: { limit: BOOKING_LIMIT, returned: rows.length, capped: rows.length >= BOOKING_LIMIT },
+  })
 }
 
 export async function POST(req: NextRequest) {

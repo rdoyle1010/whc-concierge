@@ -135,7 +135,7 @@ export default function AdvertisePage() {
 
   return <div className="min-h-screen bg-[#f5f5f5]">
     <Navbar />
-    <main className="pt-[68px]">
+    <main className="pt-[76px]">
       <section className="bg-[#0b2f4d] text-white">
         <div className="max-w-7xl mx-auto px-6 lg:px-8 py-16 md:py-20">
           <p className="text-[10px] uppercase tracking-[0.2em] text-[#555555] font-semibold mb-4">Advertise with Wellness House Collective</p>
@@ -165,7 +165,7 @@ export default function AdvertisePage() {
             return <button key={key} type="button" onClick={() => setPlacement(key)} className={`text-left rounded-[22px] p-6 transition-all ${active ? 'bg-[#10283b] text-white border border-[#10283b] shadow-lg' : 'bg-white border border-[#e0e0e0] text-[#10283b] hover:border-[#555555]'}`}>
               <div className="flex items-start justify-between gap-4"><div><p className={`text-[10px] uppercase tracking-[.15em] font-semibold ${active ? 'text-[#555555]' : 'text-[#10283b]'}`}>{config.label}</p><p className={`text-[31px] font-semibold mt-2 ${active ? 'text-white' : 'text-[#10283b]'}`}>£{formatPounds(priceFor(key))}<span className={`text-[11px] font-normal ${active ? 'text-white/55' : 'text-[#8a8a8a]'}`}> / month</span></p></div>{active && <Check size={18} className="text-[#555555]" />}</div>
               <p className={`text-[12px] leading-6 mt-4 ${active ? 'text-white/66' : 'text-[#65727c]'}`}>{config.description}</p>
-              <div className={`mt-5 pt-4 border-t space-y-2 ${active ? 'border-white/12' : 'border-[#ece8e1]'}`}>
+              <div className={`mt-5 pt-4 border-t space-y-2 ${active ? 'border-white/12' : 'border-[#e9e9e9]'}`}>
                 <p className={`text-[11px] ${active ? 'text-white/78' : 'text-[#4d4d4d]'}`}><strong>Audience:</strong> {copy.audience}</p>
                 <p className={`text-[11px] ${active ? 'text-white/78' : 'text-[#4d4d4d]'}`}><strong>Best for:</strong> {copy.bestFor}</p>
               </div>
@@ -186,7 +186,7 @@ export default function AdvertisePage() {
               </div>
             </div>
 
-            <div className="rounded-[22px] bg-[#f8f5ee] border border-[#e0e0e0] p-7 text-[12px] leading-6 text-[#65727c]">
+            <div className="rounded-[22px] bg-[#f7f7f7] border border-[#e0e0e0] p-7 text-[12px] leading-6 text-[#65727c]">
               <p className="text-[10px] uppercase tracking-[.16em] font-semibold text-[#10283b] mb-3">Approval journey</p>
               <p><strong className="text-[#10283b]">1.</strong> Submit your creative and accept the Advertising Terms.</p>
               <p><strong className="text-[#10283b]">2.</strong> Complete Stripe checkout. Promotion codes can reduce the first checkout amount, including to £0 where valid.</p>
@@ -197,7 +197,7 @@ export default function AdvertisePage() {
           </div>
 
           <form onSubmit={submit} className="bg-white border border-[#e0e0e0] rounded-[22px] p-7 md:p-8 shadow-sm">
-            <div className="flex items-start justify-between gap-4 pb-6 mb-6 border-b border-[#ece8e1]"><div><p className="text-[10px] uppercase tracking-[.16em] font-semibold text-[#10283b]">Book this placement</p><h2 className="text-[27px] font-semibold tracking-[-.03em] text-[#10283b] mt-2">{selected.label}</h2></div><p className="text-right text-[24px] font-semibold text-[#10283b]">£{formatPounds(selectedPrice)}<span className="block text-[10px] font-normal text-[#8a8a8a]">per month · recurring</span></p></div>
+            <div className="flex items-start justify-between gap-4 pb-6 mb-6 border-b border-[#e9e9e9]"><div><p className="text-[10px] uppercase tracking-[.16em] font-semibold text-[#10283b]">Book this placement</p><h2 className="text-[27px] font-semibold tracking-[-.03em] text-[#10283b] mt-2">{selected.label}</h2></div><p className="text-right text-[24px] font-semibold text-[#10283b]">£{formatPounds(selectedPrice)}<span className="block text-[10px] font-normal text-[#8a8a8a]">per month · recurring</span></p></div>
             <div className="space-y-4">
               <label className="block text-[12px] text-[#4d4d4d]">Brand name<input required value={form.brandName} onChange={event => setForm({ ...form, brandName: event.target.value })} className="input-field mt-1" /></label>
               <label className="block text-[12px] text-[#4d4d4d]">Contact email<input required type="email" value={form.contactEmail} onChange={event => setForm({ ...form, contactEmail: event.target.value })} className="input-field mt-1" /></label>
@@ -206,7 +206,7 @@ export default function AdvertisePage() {
               <label className="block text-[12px] text-[#4d4d4d]">Logo image link<input required type="url" value={form.logoUrl} onChange={event => setForm({ ...form, logoUrl: event.target.value })} placeholder="https://yourbrand.com/logo.png" className="input-field mt-1" /><span className="block mt-1 text-[10px] text-[#8a8a8a]">Direct public HTTPS link to a PNG, JPG, WebP or SVG logo.</span></label>
             </div>
 
-            <div className="mt-6 rounded-xl border border-[#e3ddd2] bg-[#f7f7f7] p-4">
+            <div className="mt-6 rounded-xl border border-[#e3e7eb] bg-[#f7f7f7] p-4">
               <label className="flex gap-3 cursor-pointer text-[12px] leading-5 text-[#4d4d4d]">
                 <input required type="checkbox" checked={termsAccepted} onChange={event => setTermsAccepted(event.target.checked)} className="mt-1 h-4 w-4" />
                 <span>I have read and agree to the <Link href="/advertising-terms" target="_blank" className="font-semibold text-[#10283b] underline">Advertising Terms & Conditions</Link>. I understand this is a rolling monthly subscription, billing starts at checkout, and publication is subject to WHC approval.</span>

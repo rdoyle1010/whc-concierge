@@ -28,6 +28,7 @@ export default function EmployerProfilePage() {
         data.systems_used = data.systems_used || []
         data.services_offered = data.services_offered || []
         data.brand_partners = data.brand_partners || []
+        data.qualifications_sought = data.qualifications_sought || []
         data.sector_tags = data.sector_tags || []
         data.culture_points = data.culture_points || []
         data.highlights = data.highlights || []
@@ -65,6 +66,7 @@ export default function EmployerProfilePage() {
         systems_used: profile.systems_used,
         services_offered: profile.services_offered,
         brand_partners: profile.brand_partners,
+        qualifications_sought: profile.qualifications_sought,
         num_treatment_rooms: profile.num_treatment_rooms ? parseInt(profile.num_treatment_rooms) : null,
         team_size: profile.team_size ? parseInt(profile.team_size) : null,
         // Travel information shown to professionals. It is supplied by the
@@ -105,6 +107,7 @@ export default function EmployerProfilePage() {
         property_type: profile.property_type, star_rating: profile.star_rating, about_text: profile.about_text,
         tagline: profile.tagline, product_houses_used: profile.product_houses_used, systems_used: profile.systems_used,
         services_offered: profile.services_offered, brand_partners: profile.brand_partners,
+        qualifications_sought: profile.qualifications_sought,
         num_treatment_rooms: profile.num_treatment_rooms ? parseInt(profile.num_treatment_rooms) : null,
         team_size: profile.team_size ? parseInt(profile.team_size) : null,
         commute_car_required: profile.commute_car_required, nearest_transport: profile.nearest_transport,
@@ -131,7 +134,7 @@ export default function EmployerProfilePage() {
       // Best-effort: geocode the postcode so distance features work
       fetch('/api/employer/geocode', { method: 'POST' }).catch(() => {})
       if (stripped.length > 0) {
-        setMessage(`Profile saved, but these fields could not be stored yet: ${stripped.join(', ')}. Please contact support.`)
+        setMessage(`Some fields could not be saved: ${stripped.join(', ')}. Please try again or contact support.`)
       } else {
         setMessage('Profile saved successfully!')
       }
@@ -175,7 +178,8 @@ export default function EmployerProfilePage() {
     const res = await fetch('/api/upload', { method: 'POST', body: formData })
     const data = await res.json()
     if (!res.ok) { setMessage(`Upload failed: ${data.error}`); return }
-    await supabase.from('employer_profiles').update({ logo_url: data.url }).eq('id', profile.id)
+    const { error: logoError } = await supabase.from('employer_profiles').update({ logo_url: data.url }).eq('id', profile.id)
+    if (logoError) { setMessage(`Could not save the logo: ${logoError.message}`); return }
 
     update('logo_url', data.url)
     setMessage('Logo updated!')
@@ -188,8 +192,12 @@ export default function EmployerProfilePage() {
   return (
     <DashboardShell role="employer" userName={profile.company_name}>
       <div className="max-w-3xl">
-        <div className="flex items-center justify-between mb-8">
-          <h1 className="text-2xl font-serif font-bold text-ink">Company Profile</h1>
+        <div className="flex items-end justify-between mb-8 gap-4">
+          <div>
+            <p className="dashboard-eyebrow">Account</p>
+            <h1 className="dashboard-title">Company Profile</h1>
+            <p className="dashboard-intro">Keep your property details, operations and travel information up to date for candidates.</p>
+          </div>
           <button onClick={handleSave} disabled={saving} className="btn-primary flex items-center space-x-2 disabled:opacity-50">
             <Save size={16} /><span>{saving ? 'Saving...' : 'Save Changes'}</span>
           </button>
@@ -406,8 +414,8 @@ export default function EmployerProfilePage() {
           <CollapsibleCheckboxSection
             title="Qualifications We Look For"
             categories={QUALS_CATEGORIES}
-            selected={profile.brand_partners || []}
-            onChange={(v) => update('brand_partners', v)}
+            selected={profile.qualifications_sought || []}
+            onChange={(v) => update('qualifications_sought', v)}
           />
 
           <CollapsibleCheckboxSection

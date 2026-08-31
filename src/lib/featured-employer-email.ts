@@ -12,10 +12,10 @@ export async function sendFeaturedEmployerEmail(email: string, talentName: strin
     <div style="font-family: Inter, -apple-system, sans-serif; max-width: 560px; margin: 0 auto; padding: 40px 20px;">
       <p style="font-size:16px;font-weight:600;margin-bottom:32px;">WHC Concierge</p>
       <p style="font-size:24px;font-weight:700;margin-bottom:16px;">A featured property to discover</p>
-      <p style="color:#6B7280;">Hi ${talentName || 'there'}, <strong>${propertyName}</strong>${location ? ` in ${location}` : ''} is now featured on WHC Concierge.</p>
-      <p style="color:#6B7280;">Explore the property, view its live opportunities and decide whether it could be your next move.</p>
+      <p style="color:#5a6a76;">Hi ${talentName || 'there'}, <strong>${propertyName}</strong>${location ? ` in ${location}` : ''} is now featured on WHC Concierge.</p>
+      <p style="color:#5a6a76;">Explore the property, view its live opportunities and decide whether it could be your next move.</p>
       <p style="margin-top:24px;"><a href="https://talent.wellnesshousecollective.co.uk/properties" style="display:inline-block;background:#0b2f4d;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600;">View featured properties</a></p>
-      <p style="margin-top:40px;font-size:12px;color:#9CA3AF;">Wellness House Collective &middot; wellnesshousecollective.co.uk</p>
+      <p style="margin-top:40px;font-size:12px;color:#8a949b;">Wellness House Collective &middot; wellnesshousecollective.co.uk</p>
     </div>
   `
 

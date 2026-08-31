@@ -27,11 +27,11 @@ export default function CandidateProfileMockup() {
       <p className="mb-3 text-xs text-gray-400">Travels up to 25 miles</p>
 
       <div className="mb-3 flex flex-wrap gap-1">
-        {['Deep Tissue', 'Facials', 'Hot Stone'].map(skill => <span key={skill} className="rounded-full bg-gold/10 px-2 py-0.5 text-xs text-gold">{skill}</span>)}
+        {['Deep Tissue', 'Facials', 'Hot Stone'].map(skill => <span key={skill} className="rounded-full bg-accent/10 px-2 py-0.5 text-xs text-accent">{skill}</span>)}
       </div>
       <p className="mb-3 text-xs text-gray-400">6 years experience</p>
 
-      <button type="button" className="mb-2 w-full rounded-lg border border-[rgba(201,169,110,0.35)] bg-[#FDF6EC] py-2 text-[12px] font-medium text-[#555555]">View Full Profile</button>
+      <button type="button" className="mb-2 w-full rounded-lg border border-[rgba(16,47,77,0.35)] bg-[#f5f6f8] py-2 text-[12px] font-medium text-accent">View Full Profile</button>
       <div className="grid grid-cols-3 gap-2 border-t border-gray-100 pt-3">
         <button type="button" className="flex items-center justify-center gap-1 rounded-lg bg-gray-50 py-2 text-xs text-gray-400"><X size={13} />Pass</button>
         <button type="button" className="flex items-center justify-center gap-1 rounded-lg bg-gray-50 py-2 text-xs text-gray-500"><Star size={13} />Save</button>

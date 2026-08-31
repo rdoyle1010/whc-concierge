@@ -70,16 +70,16 @@ export default function AdminPlatformReviewsPage() {
           <div>
             <div className="flex flex-wrap items-center gap-2">
               <h2 className="text-[16px] font-semibold text-ink">{item.reviewer_name}</h2>
-              <span className="rounded-full bg-[#f5f1e9] px-2.5 py-1 text-[9px] font-semibold uppercase tracking-[.12em] text-[#10283b]">{item.reviewer_role === 'talent' ? 'Talent' : 'Property'}</span>
+              <span className="rounded-full bg-[#f5f6f8] px-2.5 py-1 text-[9px] font-semibold uppercase tracking-[.12em] text-[#10283b]">{item.reviewer_role === 'talent' ? 'Talent' : 'Property'}</span>
             </div>
             <p className="mt-1 text-[12px] text-muted">Completed placement · {item.job_title}</p>
           </div>
           <div className="text-left md:text-right">
-            <div className="flex gap-0.5 md:justify-end">{Array.from({length:5}).map((_, index) => <Star key={index} size={15} className={index < item.rating ? 'fill-[#d5a72b] text-[#d5a72b]' : 'text-[#d8d3ca]'}/>)}</div>
+            <div className="flex gap-0.5 md:justify-end">{Array.from({length:5}).map((_, index) => <Star key={index} size={15} className={index < item.rating ? 'fill-[#0b2f4d] text-[#0b2f4d]' : 'text-border'}/>)}</div>
             <p className="mt-1 text-[10px] text-muted">{new Date(item.created_at).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'})}</p>
           </div>
         </div>
-        {item.comment?.trim() ? <blockquote className="mt-4 rounded-xl border border-[#e5e5e5] bg-[#fcfbf8] px-4 py-4 text-[13px] leading-6 text-secondary">“{item.comment.trim()}”</blockquote> : <p className="mt-4 text-[11px] italic text-muted">Rating submitted without a written comment.</p>}
+        {item.comment?.trim() ? <blockquote className="mt-4 rounded-xl border border-[#e5e5e5] bg-[#fafafa] px-4 py-4 text-[13px] leading-6 text-secondary">“{item.comment.trim()}”</blockquote> : <p className="mt-4 text-[11px] italic text-muted">Rating submitted without a written comment.</p>}
       </article>)}</div>}
   </DashboardShell>
 }

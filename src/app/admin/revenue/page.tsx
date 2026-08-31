@@ -44,7 +44,7 @@ export default function AdminRevenuePage() {
 
     {loading && !data ? <div className="grid grid-cols-1 md:grid-cols-3 gap-4">{[1,2,3,4,5,6].map(i => <div key={i} className="skeleton h-32 rounded-2xl" />)}</div> : data && <>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        <Metric icon={<Banknote size={18} />} label="Recorded WHC revenue this month" value={pounds(data.recorded_revenue_pence)} note="Commercial purchases + Academy payments + Agency platform fees recorded in the database." emphasis />
+        <Metric icon={<Banknote size={18} />} label="Recorded WHC revenue this month" value={pounds(data.recorded_revenue_pence)} note="Commercial purchases + Academy payments + Agency platform revenue + Residency platform fees recorded in the database." emphasis />
         <Metric icon={<CreditCard size={18} />} label="Agency gross processed" value={pounds(data.agency.gross_pence)} note={`${data.agency.paid_bookings} paid booking${data.agency.paid_bookings === 1 ? '' : 's'} this month`} />
         <Metric icon={<Megaphone size={18} />} label="Advertising booked MRR" value={pounds(data.advertising.booked_mrr_pence)} note={`${data.advertising.live_adverts} paid, approved live advert${data.advertising.live_adverts === 1 ? '' : 's'}`} />
       </div>
@@ -54,7 +54,8 @@ export default function AdminRevenuePage() {
           <div className="flex items-center gap-2 mb-5"><BookOpen size={17} className="text-accent" /><h2 className="text-[16px] font-semibold text-ink">Academy & Agency</h2></div>
           <div className="grid grid-cols-2 gap-3">
             <SmallMetric label="Academy revenue" value={pounds(data.academy.revenue_pence)} note={`${data.academy.paid_enrolments} paid enrolments`} />
-            <SmallMetric label="WHC Agency revenue" value={pounds(data.agency.platform_revenue_pence)} note="Platform fees recorded this month" />
+            <SmallMetric label="WHC Agency revenue" value={pounds(data.agency.platform_revenue_pence)} note="Collected minus payouts and refunds this month" />
+            <SmallMetric label="Residency platform fees" value={pounds(data.residency?.platform_fee_pence || 0)} note={`${data.residency?.paid_bookings || 0} paid Residency booking${(data.residency?.paid_bookings || 0) === 1 ? '' : 's'} this month`} />
             <SmallMetric label="Product sales (ledger)" value={pounds(data.purchases?.total_pence || 0)} note={`${data.purchases?.count || 0} purchase${(data.purchases?.count || 0) === 1 ? '' : 's'} this month - memberships, jobs, listings, advertising`} />
             <SmallMetric label="Managed search" value={String(data.recruitment?.open_requests || 0)} note={`open request${(data.recruitment?.open_requests || 0) === 1 ? '' : 's'} · ${data.recruitment?.new_this_month || 0} new this month`} />
           </div>
@@ -79,13 +80,13 @@ export default function AdminRevenuePage() {
         </div>
       </section>
 
-      <div className="rounded-xl border border-[#e6dfd3] bg-[#fbf8f1] px-4 py-3 text-[11px] leading-5 text-[#10283b]">{data.note}</div>
+      <div className="rounded-xl border border-[#e3e7eb] bg-[#fafafa] px-4 py-3 text-[11px] leading-5 text-[#10283b]">{data.note}</div>
     </>}
   </DashboardShell>
 }
 
 function Metric({ icon, label, value, note, emphasis = false }: { icon: React.ReactNode; label: string; value: string; note: string; emphasis?: boolean }) {
-  return <div className={`dashboard-card ${emphasis ? 'ring-1 ring-accent/20' : ''}`}><div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#f7f1e7] text-accent mb-4">{icon}</div><p className="text-[10px] uppercase tracking-[0.12em] text-muted">{label}</p><p className="text-[27px] font-semibold tracking-tight text-ink mt-1">{value}</p><p className="text-[11px] leading-5 text-muted mt-2">{note}</p></div>
+  return <div className={`dashboard-card ${emphasis ? 'ring-1 ring-accent/20' : ''}`}><div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#f5f6f8] text-accent mb-4">{icon}</div><p className="text-[10px] uppercase tracking-[0.12em] text-muted">{label}</p><p className="text-[27px] font-semibold tracking-tight text-ink mt-1">{value}</p><p className="text-[11px] leading-5 text-muted mt-2">{note}</p></div>
 }
 
 function SmallMetric({ label, value, note }: { label: string; value: string; note: string }) {

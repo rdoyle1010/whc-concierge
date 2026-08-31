@@ -23,7 +23,7 @@ export default function AboutPage() {
   return (
     <div className="public-page">
       <Navbar />
-      <main className="pt-[60px]">
+      <main className="pt-[76px]">
         <section className="public-hero py-16 md:py-20 px-6">
           <div className="max-w-4xl mx-auto text-center">
             <p className="public-eyebrow mb-4">About</p>
@@ -59,7 +59,7 @@ export default function AboutPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {values.map(([Icon, title, copy]) => (
                 <div key={title} className="public-panel p-7">
-                  <div className="w-11 h-11 rounded-xl bg-[#FDF6EC] flex items-center justify-center mb-5"><Icon className="w-5 h-5 text-accent" /></div>
+                  <div className="w-11 h-11 rounded-xl bg-[#f5f6f8] flex items-center justify-center mb-5"><Icon className="w-5 h-5 text-accent" /></div>
                   <h3 className="text-[18px] font-semibold text-ink mb-2">{title}</h3>
                   <p className="text-[13px] text-secondary leading-7">{copy}</p>
                 </div>

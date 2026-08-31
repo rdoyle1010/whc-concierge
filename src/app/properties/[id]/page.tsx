@@ -93,7 +93,7 @@ export default async function PropertyDetailPage({ params }: { params: Promise<{
     <div className="min-h-screen bg-white">
       <Navbar />
 
-      <section className="border-b border-[#e5e5e5] bg-white pt-[68px]">
+      <section className="border-b border-[#e5e5e5] bg-white pt-[76px]">
         <div className="max-w-7xl mx-auto px-6 py-4">
           <Link href="/properties" className="inline-flex items-center text-[12px] font-semibold text-[#555555] hover:text-[#0b2f4d]"><ArrowLeft size={14} className="mr-2"/>Properties</Link>
         </div>

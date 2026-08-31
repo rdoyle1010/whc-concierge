@@ -132,11 +132,16 @@ export default function AdminAdSlotsPage() {
   }
 
   async function advertStatus(id: string, status: string) {
-    const res = await fetch('/api/admin/ad-slots', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'advert_status', id, status }),
-    })
-    if (res.ok) setAdverts(current => current.map(advert => advert.id === id ? { ...advert, status } : advert))
+    setError('')
+    try {
+      const res = await fetch('/api/admin/ad-slots', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'advert_status', id, status }),
+      })
+      const json = await res.json().catch(() => ({}))
+      if (!res.ok) { setError(json.error || `Could not ${status === 'paused' ? 'pause' : 'activate'} the advert.`); return }
+      setAdverts(current => current.map(advert => advert.id === id ? { ...advert, status } : advert))
+    } catch { setError('Could not update the advert - please try again.') }
   }
 
   const pages = useMemo(() => {
@@ -157,12 +162,12 @@ export default function AdminAdSlotsPage() {
       <div className="max-w-4xl">
         <div className="flex flex-wrap items-start justify-between gap-3 mb-2">
           <div>
-            <p className="text-[11px] uppercase tracking-[0.18em] text-accent font-semibold mb-1.5">Content & revenue</p>
-            <h1 className="font-serif text-[26px] font-bold text-ink">Ad slots</h1>
+            <p className="dashboard-eyebrow">Content & revenue</p>
+            <h1 className="dashboard-title">Ad Slots</h1>
           </div>
           <button type="button" onClick={() => setFormOpen(true)} className="btn-primary inline-flex items-center gap-1.5 text-[12.5px]"><Plus size={14} /> Place a direct advert</button>
         </div>
-        <p className="text-[13.5px] text-secondary mb-6 max-w-2xl">
+        <p className="dashboard-intro mb-6 max-w-2xl">
           Every advertising position on the site, grouped by page. A slot shows nothing to anyone until you switch it on,
           and switches off again the moment you say so. When a brand emails you, place a direct advert and pin it to a slot -
           no payment flow involved. Self-serve paid adverts still arrive through Sponsored Ads for approval as before.
@@ -195,11 +200,11 @@ export default function AdminAdSlotsPage() {
                           </select>
                           <button type="button" disabled={busy === slot.slot_key}
                             onClick={() => setSlot(slot.slot_key, { enabled: !slot.enabled })}
-                            className={`relative h-6 w-11 rounded-full transition-colors ${slot.enabled ? 'bg-green-500' : 'bg-gray-300'}`}
+                            className={`relative h-6 w-11 rounded-full transition-colors ${slot.enabled ? 'bg-accent' : 'bg-[#e3e7eb]'}`}
                             aria-label={slot.enabled ? 'Switch slot off' : 'Switch slot on'}>
                             <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-all ${slot.enabled ? 'left-[22px]' : 'left-0.5'}`} />
                           </button>
-                          <span className={`text-[11px] font-semibold w-10 ${slot.enabled ? 'text-green-700' : 'text-gray-400'}`}>{slot.enabled ? 'Live' : 'Hidden'}</span>
+                          <span className={`text-[11px] font-semibold w-10 ${slot.enabled ? 'text-accent' : 'text-muted'}`}>{slot.enabled ? 'Live' : 'Hidden'}</span>
                         </div>
                       </div>
                     )
@@ -236,7 +241,7 @@ export default function AdminAdSlotsPage() {
         )}
 
         {formOpen && (
-          <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setFormOpen(false)}>
+          <div className="fixed inset-0 bg-[#07243b]/70 z-50 flex items-center justify-center p-4" onClick={() => setFormOpen(false)}>
             <div className="bg-white rounded-2xl max-w-md w-full max-h-[90vh] overflow-y-auto p-6" onClick={e => e.stopPropagation()}>
               <div className="flex items-center justify-between mb-1">
                 <h2 className="font-serif text-lg font-bold text-ink">Place a direct advert</h2>

@@ -13,23 +13,32 @@ export default function AdminComplaintsPage() {
   const [reply, setReply] = useState('')
   const [sendingReply, setSendingReply] = useState(false)
   const [replyMsg, setReplyMsg] = useState('')
+  const [error, setError] = useState('')
 
   useEffect(() => {
     async function load() {
       // Complaints come from contact_queries with type='complaint' -
       // fetched through the service-role admin API (table is RLS-locked)
-      const res = await fetch('/api/admin/content?kind=contact_queries&view=complaints&per_page=100')
-      const j = res.ok ? await res.json() : { rows: [] }
-      setComplaints(j.rows || [])
+      try {
+        const res = await fetch('/api/admin/content?kind=contact_queries&view=complaints&per_page=100')
+        const j = await res.json().catch(() => ({}))
+        if (!res.ok) setError(j.error || 'Could not load complaints.')
+        else setComplaints(j.rows || [])
+      } catch { setError('Could not load complaints.') }
       setLoading(false)
     }
     load()
   }, [])
 
   const updateStatus = async (id: string, status: string) => {
-    await fetch('/api/admin/content', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'query_status', id, status }) })
-    setComplaints(complaints.map(c => c.id === id ? { ...c, status } : c))
-    if (selected?.id === id) setSelected({ ...selected, status })
+    setError('')
+    try {
+      const res = await fetch('/api/admin/content', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'query_status', id, status }) })
+      const j = await res.json().catch(() => ({}))
+      if (!res.ok) { setError(j.error || 'Could not update the complaint status.'); return }
+      setComplaints(current => current.map(c => c.id === id ? { ...c, status } : c))
+      if (selected?.id === id) setSelected({ ...selected, status })
+    } catch { setError('Could not update the complaint status - please try again.') }
   }
 
   const filtered = complaints.filter(c => filter === 'all' || c.status === filter)
@@ -41,7 +50,13 @@ export default function AdminComplaintsPage() {
 
   return (
     <DashboardShell role="admin" userName="Admin">
-      <h1 className="text-2xl font-serif font-bold text-ink mb-6">Complaint Handling</h1>
+      <div className="mb-7">
+        <p className="dashboard-eyebrow">People & operations</p>
+        <h1 className="dashboard-title">Complaint Handling</h1>
+        <p className="dashboard-intro">Complaints raised through the contact form. Track each one from open through to resolved or dismissed.</p>
+      </div>
+
+      {error && <div className="bg-red-50 text-red-600 text-sm px-4 py-3 mb-6 border border-red-100">{error}</div>}
 
       <div className="flex space-x-2 mb-6 overflow-x-auto">
         {['all', 'open', 'investigating', 'resolved', 'dismissed'].map((f) => (
@@ -90,7 +105,7 @@ export default function AdminComplaintsPage() {
 
       {/* Detail modal */}
       {selected && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setSelected(null)}>
+        <div className="fixed inset-0 bg-[#07243b]/70 z-50 flex items-center justify-center p-4" onClick={() => setSelected(null)}>
           <div className="bg-white rounded-3xl max-w-lg w-full p-8 animate-fade-in-up" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-start justify-between mb-4">
               <h2 className="font-serif text-xl font-bold text-ink">{selected.subject || selected.message}</h2>

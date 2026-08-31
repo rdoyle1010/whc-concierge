@@ -65,7 +65,7 @@ export default function EmployerHiredPage() {
             <p className="mt-1 text-[13px] text-gray-500">{job.job_title || 'Role'}{candidate.headline ? ` · ${candidate.headline}` : ''}</p>
             <p className="mt-2 text-[11px] text-gray-400">Hired {formatDate(item.hired_at)} · Archived {formatDate(item.archived_at)}{candidate.location ? ` · ${candidate.location}` : ''}</p>
             <div className="mt-4 flex flex-wrap gap-3">
-              {candidate.user_id && <a href={`/employer/messages?to=${candidate.user_id}`} className="inline-flex items-center gap-1.5 text-[12px] font-medium text-[#17344d] hover:underline"><MessageSquare size={13}/> View communication</a>}
+              {candidate.user_id && <a href={`/employer/messages?to=${candidate.user_id}`} className="inline-flex items-center gap-1.5 text-[12px] font-medium text-[#10283b] hover:underline"><MessageSquare size={13}/> View communication</a>}
               <button type="button" onClick={() => setExpanded(isOpen ? null : item.id)} className="inline-flex items-center gap-1.5 text-[12px] font-medium text-[#10283b] hover:underline"><FileText size={13}/>{isOpen ? 'Hide recruitment history' : 'View recruitment history'}</button>
             </div>
           </div>
@@ -75,7 +75,7 @@ export default function EmployerHiredPage() {
         {isOpen && <div className="mt-5 border-t border-[#e5e5e5] pt-5">
           {(item.cover_note || item.cover_letter) && <div className="rounded-xl bg-[#fafafa] p-4"><p className="mb-2 text-[10px] font-semibold uppercase tracking-[.14em] text-[#10283b]">Original covering letter</p><p className="whitespace-pre-wrap text-[12px] leading-6 text-gray-600">{item.cover_note || item.cover_letter}</p></div>}
           {(item.interviews || []).length > 0 && <div className="mt-4"><p className="mb-2 text-[10px] font-semibold uppercase tracking-[.14em] text-[#10283b]">Interview history</p><div className="space-y-2">{item.interviews.map((interview:any)=><div key={interview.id} className="rounded-xl border border-[#e5e5e5] bg-white p-3"><div className="flex items-center gap-2 text-[12px] font-semibold text-ink"><CalendarDays size={13}/> Interview {interview.round_number} · {methodLabel(interview.interview_method)}</div><p className="mt-1 text-[11px] text-gray-500">{interview.selected_slot ? new Date(interview.selected_slot).toLocaleString('en-GB',{dateStyle:'medium',timeStyle:'short'}) : 'No confirmed time recorded'}</p>{interview.employer_note && <p className="mt-2 text-[11px] leading-5 text-gray-600">{interview.employer_note}</p>}</div>)}</div></div>}
-          {item.offer && <div className="mt-4 rounded-xl border border-[#e5e5e5] bg-[#fffaf0] p-4"><div className="flex items-center gap-2"><Briefcase size={13}/><p className="text-[12px] font-semibold text-ink">Offer communication</p></div>{item.offer.employer_note && <p className="mt-2 whitespace-pre-wrap text-[11px] leading-5 text-gray-600">{item.offer.employer_note}</p>}</div>}
+          {item.offer && <div className="mt-4 rounded-xl border border-[#e5e5e5] bg-[#fafafa] p-4"><div className="flex items-center gap-2"><Briefcase size={13}/><p className="text-[12px] font-semibold text-ink">Offer communication</p></div>{item.offer.employer_note && <p className="mt-2 whitespace-pre-wrap text-[11px] leading-5 text-gray-600">{item.offer.employer_note}</p>}</div>}
         </div>}
       </div>
     })}</div>}

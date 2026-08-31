@@ -56,8 +56,9 @@ export default function EmployerDashboard() {
 
       let matchCount = 0
       if (jobIds.length > 0) {
-        // Matches are written with job_listing_id; older rows may carry job_id.
-        // Try the current column first and fall back for legacy data.
+        // Matches are written with job_listing_id (added by migration). The
+        // job_id query is a fallback for environments where that migration has
+        // not been applied yet, so the count never errors out to zero.
         const current = await supabase.from('matches').select('id', { count: 'exact', head: true }).in('job_listing_id', jobIds)
         if (!current.error) matchCount = current.count || 0
         else {
@@ -116,7 +117,7 @@ export default function EmployerDashboard() {
         {[
           { label: 'Active listings', value: stats.active, icon: <Briefcase size={16} /> },
           { label: 'Applications', value: stats.applications, icon: <FileText size={16} /> },
-          { label: 'Candidates matched', value: stats.matches || '\u2014', icon: <Users size={16} /> },
+          { label: 'Candidates matched', value: stats.matches || '-', icon: <Users size={16} /> },
           { label: 'Unread messages', value: stats.messages, icon: <MessageSquare size={16} /> },
         ].map(s => (
           <div key={s.label} className="dashboard-metric">
@@ -166,9 +167,9 @@ export default function EmployerDashboard() {
                   <div>
                     <div className="flex items-center gap-2 mb-0.5">
                       <p className="text-[13px] font-medium text-ink">{job.title}</p>
-                      <span className={tierClass(job.tier || 'Standard')}>{job.tier || '\u2014'}</span>
+                      <span className={tierClass(job.tier || 'Standard')}>{job.tier || '-'}</span>
                     </div>
-                    <p className="text-[11px] text-muted">{job.location} \u00b7 {job.contract_type?.replace('_', ' ') || job.job_type}</p>
+                    <p className="text-[11px] text-muted">{job.location} · {job.contract_type?.replace('_', ' ') || job.job_type}</p>
                   </div>
                   <span className={`text-[10px] font-semibold uppercase tracking-[.08em] ${job.is_live ? 'text-emerald-700' : 'text-muted'}`}>{job.is_live ? 'Live' : 'Closed'}</span>
                 </div>
@@ -193,7 +194,7 @@ export default function EmployerDashboard() {
                 <div key={app.id} className="dashboard-list-row">
                   <div>
                     <p className="text-[13px] font-medium text-ink">{app.candidate_profiles?.full_name || 'Candidate'}</p>
-                    <p className="text-[11px] text-muted">For: {app.jobTitle} {app.match_score ? `\u00b7 ${app.match_score}% match` : ''}</p>
+                    <p className="text-[11px] text-muted">For: {app.jobTitle} {app.match_score ? `· ${app.match_score}% match` : ''}</p>
                   </div>
                   <span className={`text-[10px] font-semibold uppercase tracking-[.08em] ${app.status === 'pending' ? 'text-amber-700' : app.status === 'shortlisted' ? 'text-emerald-700' : 'text-muted'}`}>{app.status}</span>
                 </div>

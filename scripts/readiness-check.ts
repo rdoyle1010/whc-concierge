@@ -151,6 +151,9 @@ check('all service-role API routes are protected or deliberately public', () => 
     'src/app/api/privacy/marketing/confirm/route.ts',
     'src/app/api/privacy/marketing/unsubscribe/route.ts',
     'src/app/api/newsletter/config/route.ts',
+    // Public by design: the contact form's admin notification email. Rate
+    // limited; the service role only reads the configured contact_email key.
+    'src/app/api/contact-notify/route.ts',
     'src/app/api/newsletter/subscribe/route.ts',
     'src/app/api/newsletter/confirm/route.ts',
     'src/app/api/newsletter/unsubscribe/route.ts',

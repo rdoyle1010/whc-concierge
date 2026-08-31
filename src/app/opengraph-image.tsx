@@ -71,7 +71,7 @@ export default function OGImage() {
             display: 'flex',
             fontSize: 24,
             fontWeight: 400,
-            color: '#6B7280',
+            color: '#5a6a76',
             textAlign: 'center',
             maxWidth: 760,
             lineHeight: 1.5,
@@ -89,7 +89,7 @@ export default function OGImage() {
             right: 80,
             display: 'flex',
             fontSize: 16,
-            color: '#9CA3AF',
+            color: '#8a949b',
             letterSpacing: '1px',
             fontFamily: 'system-ui, -apple-system, "Segoe UI", sans-serif',
           }}

@@ -99,23 +99,23 @@ export default function EmployerRegisterPage() {
 
   return (
     <div className="min-h-screen bg-white">
-      <div className="border-b border-neutral-100 px-4 py-4 flex items-center justify-between max-w-3xl mx-auto">
+      <div className="border-b border-border px-4 py-4 flex items-center justify-between max-w-3xl mx-auto">
         <Wordmark />
-        <Link href="/login?role=employer" className="text-sm text-neutral-400 hover:text-black">Already registered?</Link>
+        <Link href="/login?role=employer" className="text-sm text-muted hover:text-ink">Already registered?</Link>
       </div>
 
       <div className="max-w-2xl mx-auto px-4 py-12">
-        <h1 className="text-3xl font-bold text-black mb-2">Register your property</h1>
-        <p className="text-neutral-400 mb-10">Access the finest wellness talent in the industry</p>
+        <h1 className="text-3xl font-bold text-ink mb-2">Register your property</h1>
+        <p className="text-muted mb-10">Access the finest wellness talent in the industry</p>
 
         {/* Progress */}
         <div className="flex items-center space-x-2 mb-10">
           {[1,2,3].map((s) => (
             <div key={s} className="flex items-center flex-1">
               <div className={`w-8 h-8 flex items-center justify-center text-sm font-medium ${
-                step > s ? 'bg-black text-white' : step === s ? 'border-2 border-black text-black' : 'border border-neutral-200 text-neutral-300'
+                step > s ? 'bg-accent text-white' : step === s ? 'border-2 border-accent text-accent' : 'border border-border text-muted'
               }`}>{step > s ? <Check size={14} /> : s}</div>
-              {s < 3 && <div className={`flex-1 h-px mx-2 ${step > s ? 'bg-black' : 'bg-neutral-200'}`} />}
+              {s < 3 && <div className={`flex-1 h-px mx-2 ${step > s ? 'bg-accent' : 'bg-border'}`} />}
             </div>
           ))}
         </div>
@@ -125,20 +125,20 @@ export default function EmployerRegisterPage() {
         {/* Step 1: Company Details */}
         {step === 1 && (
           <div className="space-y-5">
-            <p className="text-xs font-medium text-neutral-400 uppercase tracking-widest mb-6">Step 1 - Company Details</p>
+            <p className="text-xs font-medium text-muted uppercase tracking-widest mb-6">Step 1 - Company Details</p>
             <div className="grid grid-cols-2 gap-4">
-              <div className="col-span-2"><label className="block text-xs font-medium text-neutral-500 uppercase tracking-wider mb-1.5">Company / Property Name *</label><input type="text" value={form.company_name} onChange={(e) => update('company_name', e.target.value)} className="input-field" /></div>
-              <div><label className="block text-xs font-medium text-neutral-500 uppercase tracking-wider mb-1.5">Contact Name *</label><input type="text" value={form.contact_name} onChange={(e) => update('contact_name', e.target.value)} className="input-field" /></div>
-              <div><label className="block text-xs font-medium text-neutral-500 uppercase tracking-wider mb-1.5">Email *</label><input type="email" value={form.email} onChange={(e) => update('email', e.target.value)} className="input-field" /></div>
-              <div><label className="block text-xs font-medium text-neutral-500 uppercase tracking-wider mb-1.5">Password *</label><input type="password" value={form.password} onChange={(e) => update('password', e.target.value)} className="input-field" /></div>
-              <div><label className="block text-xs font-medium text-neutral-500 uppercase tracking-wider mb-1.5">Confirm *</label><input type="password" value={form.confirmPassword} onChange={(e) => update('confirmPassword', e.target.value)} className="input-field" /></div>
-              <div><label className="block text-xs font-medium text-neutral-500 uppercase tracking-wider mb-1.5">Company Type</label>
+              <div className="col-span-2"><label className="block text-xs font-medium text-secondary uppercase tracking-wider mb-1.5">Company / Property Name *</label><input type="text" value={form.company_name} onChange={(e) => update('company_name', e.target.value)} className="input-field" /></div>
+              <div><label className="block text-xs font-medium text-secondary uppercase tracking-wider mb-1.5">Contact Name *</label><input type="text" value={form.contact_name} onChange={(e) => update('contact_name', e.target.value)} className="input-field" /></div>
+              <div><label className="block text-xs font-medium text-secondary uppercase tracking-wider mb-1.5">Email *</label><input type="email" value={form.email} onChange={(e) => update('email', e.target.value)} className="input-field" /></div>
+              <div><label className="block text-xs font-medium text-secondary uppercase tracking-wider mb-1.5">Password *</label><input type="password" value={form.password} onChange={(e) => update('password', e.target.value)} className="input-field" /></div>
+              <div><label className="block text-xs font-medium text-secondary uppercase tracking-wider mb-1.5">Confirm *</label><input type="password" value={form.confirmPassword} onChange={(e) => update('confirmPassword', e.target.value)} className="input-field" /></div>
+              <div><label className="block text-xs font-medium text-secondary uppercase tracking-wider mb-1.5">Company Type</label>
                 <select value={form.company_type} onChange={(e) => update('company_type', e.target.value)} className="input-field"><option value="">Select</option>{COMPANY_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}</select></div>
-              <div><label className="block text-xs font-medium text-neutral-500 uppercase tracking-wider mb-1.5">Postcode</label><input type="text" value={form.postcode} onChange={(e) => update('postcode', e.target.value)} className="input-field" /></div>
-              <div><label className="block text-xs font-medium text-neutral-500 uppercase tracking-wider mb-1.5">Website</label><input type="url" value={form.website} onChange={(e) => update('website', e.target.value)} className="input-field" /></div>
-              <div><label className="block text-xs font-medium text-neutral-500 uppercase tracking-wider mb-1.5">Phone</label><input type="tel" value={form.phone} onChange={(e) => update('phone', e.target.value)} className="input-field" /></div>
+              <div><label className="block text-xs font-medium text-secondary uppercase tracking-wider mb-1.5">Postcode</label><input type="text" value={form.postcode} onChange={(e) => update('postcode', e.target.value)} className="input-field" /></div>
+              <div><label className="block text-xs font-medium text-secondary uppercase tracking-wider mb-1.5">Website</label><input type="url" value={form.website} onChange={(e) => update('website', e.target.value)} className="input-field" /></div>
+              <div><label className="block text-xs font-medium text-secondary uppercase tracking-wider mb-1.5">Phone</label><input type="tel" value={form.phone} onChange={(e) => update('phone', e.target.value)} className="input-field" /></div>
             </div>
-            <div><label className="block text-xs font-medium text-neutral-500 uppercase tracking-wider mb-1.5">Description</label><textarea rows={3} value={form.description} onChange={(e) => update('description', e.target.value)} className="input-field" /></div>
+            <div><label className="block text-xs font-medium text-secondary uppercase tracking-wider mb-1.5">Description</label><textarea rows={3} value={form.description} onChange={(e) => update('description', e.target.value)} className="input-field" /></div>
             <button type="button" onClick={() => setStep(2)} disabled={!form.company_name || !form.email || !form.password} className="btn-primary w-full disabled:opacity-40">Continue</button>
           </div>
         )}
@@ -146,12 +146,12 @@ export default function EmployerRegisterPage() {
         {/* Step 2: Spa Operations */}
         {step === 2 && (
           <div className="space-y-8">
-            <p className="text-xs font-medium text-neutral-400 uppercase tracking-widest mb-2">Step 2 - Spa Operations</p>
+            <p className="text-xs font-medium text-muted uppercase tracking-widest mb-2">Step 2 - Spa Operations</p>
             <CheckboxGroup label="Product Houses Used" options={PRODUCT_HOUSES} selected={form.product_houses_used} onChange={(v) => update('product_houses_used', v)} />
             <CheckboxGroup label="Systems Used" options={SYSTEMS} selected={form.systems_used} onChange={(v) => update('systems_used', v)} columns={2} />
             <div className="grid grid-cols-2 gap-4">
-              <div><label className="block text-xs font-medium text-neutral-500 uppercase tracking-wider mb-1.5">Treatment Rooms</label><input type="number" value={form.treatment_rooms} onChange={(e) => update('treatment_rooms', e.target.value)} className="input-field" /></div>
-              <div><label className="block text-xs font-medium text-neutral-500 uppercase tracking-wider mb-1.5">Team Size</label><input type="number" value={form.team_size} onChange={(e) => update('team_size', e.target.value)} className="input-field" /></div>
+              <div><label className="block text-xs font-medium text-secondary uppercase tracking-wider mb-1.5">Treatment Rooms</label><input type="number" value={form.treatment_rooms} onChange={(e) => update('treatment_rooms', e.target.value)} className="input-field" /></div>
+              <div><label className="block text-xs font-medium text-secondary uppercase tracking-wider mb-1.5">Team Size</label><input type="number" value={form.team_size} onChange={(e) => update('team_size', e.target.value)} className="input-field" /></div>
             </div>
             <div className="flex gap-3"><button type="button" onClick={() => setStep(1)} className="btn-secondary flex-1">Back</button><button type="button" onClick={() => setStep(3)} className="btn-primary flex-1">Continue</button></div>
           </div>
@@ -160,8 +160,8 @@ export default function EmployerRegisterPage() {
         {/* Step 3: Verification */}
         {step === 3 && (
           <div className="space-y-6">
-            <p className="text-xs font-medium text-neutral-400 uppercase tracking-widest mb-2">Step 3 - Verification</p>
-            <div><label className="block text-xs font-medium text-neutral-500 uppercase tracking-wider mb-1.5">Work Email (for verification)</label><input type="email" value={form.work_email} onChange={(e) => update('work_email', e.target.value)} className="input-field" placeholder="name@property.com" /></div>
+            <p className="text-xs font-medium text-muted uppercase tracking-widest mb-2">Step 3 - Verification</p>
+            <div><label className="block text-xs font-medium text-secondary uppercase tracking-wider mb-1.5">Work Email (for verification)</label><input type="email" value={form.work_email} onChange={(e) => update('work_email', e.target.value)} className="input-field" placeholder="name@property.com" /></div>
             {/* Terms & Conditions */}
             <div className="border border-border rounded-lg p-4 max-h-48 overflow-y-auto text-[12px] text-secondary leading-relaxed">
               <p className="font-medium text-ink mb-2">Terms &amp; Conditions - Employer</p>

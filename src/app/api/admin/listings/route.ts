@@ -7,10 +7,13 @@ import { sendApprovalEmail, sendRejectionEmail } from '@/lib/emails'
 
 const DEFAULT_LIMIT = 250
 const MAX_LIMIT = 500
+// Real residency_profiles columns only (001_add_matching_columns.sql, 023,
+// and the audit-repairs migration that added is_featured). The person's name
+// lives on candidate_profiles and is joined in below.
 const RESIDENCY_FIELDS = [
-  'id', 'user_id', 'full_name', 'primary_specialism', 'secondary_specialisms', 'qualifications',
-  'current_location', 'weekly_rate', 'day_rate', 'monthly_rate', 'negotiable', 'bio',
-  'available_from', 'approval_status', 'created_at',
+  'id', 'user_id', 'title', 'description', 'duration', 'day_rate', 'weekly_rate', 'monthly_rate',
+  'negotiable', 'services_offered', 'product_houses', 'availability_start', 'availability_end',
+  'travel_availability', 'is_featured', 'approval_status', 'created_at',
 ].join(',')
 
 async function requireAdmin() {
@@ -46,7 +49,18 @@ export async function GET(req: NextRequest) {
         .order('created_at', { ascending: false })
         .limit(limit)
       if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-      return NextResponse.json({ rows: data || [], pagination: { limit, returned: data?.length || 0, capped: (data?.length || 0) >= limit } })
+
+      const userIds = Array.from(new Set((data || []).map((row: any) => row.user_id).filter(Boolean)))
+      const { data: people, error: peopleError } = userIds.length
+        ? await admin.from('candidate_profiles').select('user_id, full_name').in('user_id', userIds)
+        : { data: [] as any[], error: null }
+      if (peopleError) return NextResponse.json({ error: peopleError.message }, { status: 500 })
+      const nameMap = new Map((people || []).map((person: any) => [person.user_id, person.full_name]))
+
+      return NextResponse.json({
+        rows: (data || []).map((row: any) => ({ ...row, candidate_name: nameMap.get(row.user_id) || null })),
+        pagination: { limit, returned: data?.length || 0, capped: (data?.length || 0) >= limit },
+      })
     }
 
     if (kind === 'jobs') {
@@ -101,23 +115,25 @@ export async function POST(req: NextRequest) {
       const { data: row, error } = await admin.from('residency_profiles')
         .update({ approval_status: decision })
         .eq('id', id)
-        .select('id,user_id,full_name,primary_specialism,approval_status')
+        .select('id,user_id,title,approval_status')
         .single()
       if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
       try {
         if (row?.user_id) {
+          const { data: person } = await admin.from('candidate_profiles')
+            .select('full_name').eq('user_id', row.user_id).maybeSingle()
           await createNotification(row.user_id, 'general',
             decision === 'approved' ? 'Your residency listing is live' : 'Your residency listing needs attention',
             decision === 'approved'
-              ? `Your residency listing "${row.primary_specialism || ''}" has been approved and is now live.`
+              ? `Your residency listing "${row.title || ''}" has been approved and is now live.`
               : `Your residency listing was not approved${body.reason ? `: ${body.reason}` : ''}. Update it and resubmit.`,
             '/talent/residency')
           const { data: authUser } = await admin.auth.admin.getUserById(row.user_id)
           const email = authUser?.user?.email
           if (email) {
-            if (decision === 'approved') await sendApprovalEmail(email, row.full_name || 'there')
-            else await sendRejectionEmail(email, row.full_name || 'there', body.reason || 'Please review your listing details and resubmit.')
+            if (decision === 'approved') await sendApprovalEmail(email, person?.full_name || 'there')
+            else await sendRejectionEmail(email, person?.full_name || 'there', body.reason || 'Please review your listing details and resubmit.')
           }
         }
       } catch (e: any) { console.error('Residency decision notify failed:', e?.message) }

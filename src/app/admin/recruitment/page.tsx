@@ -81,9 +81,9 @@ export default function AdminRecruitmentPage() {
   return (
     <DashboardShell role="admin">
       <div className="max-w-3xl">
-        <p className="text-[11px] uppercase tracking-[0.18em] text-accent font-semibold mb-1.5">Recruitment services</p>
-        <h1 className="font-serif text-[26px] font-bold text-ink mb-2">Managed search requests</h1>
-        <p className="text-[13.5px] text-secondary mb-5 max-w-2xl">Every brief employers send lands here. Changing the status tells the employer where their search stands; your notes stay private to admin.</p>
+        <p className="dashboard-eyebrow">Recruitment services</p>
+        <h1 className="dashboard-title">Managed search requests</h1>
+        <p className="dashboard-intro mb-5 max-w-2xl">Every brief employers send lands here. Changing the status tells the employer where their search stands; your notes stay private to admin.</p>
 
         <div className="flex flex-wrap gap-1.5 mb-5">
           {[{ value: 'active', label: 'Active' }, ...STATUSES, { value: 'all', label: 'All' }].map(option => (

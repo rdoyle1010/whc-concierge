@@ -17,20 +17,26 @@ export default function AdminJobsPage() {
   async function load() {
     try {
       const res = await fetch('/api/admin/listings?kind=jobs')
-      const j = res.ok ? await res.json() : { rows: [] }
-      setRows(j.rows || [])
-    } catch { /* empty */ }
+      const j = await res.json().catch(() => ({}))
+      if (!res.ok) { setError(j.error || 'Could not load job listings.'); setRows([]) }
+      else setRows(j.rows || [])
+    } catch { setError('Could not load job listings.') }
     setLoading(false)
   }
   useEffect(() => { load() }, [])
 
   async function toggleLive(id: string) {
     setError('')
+    const row = rows.find(r => r.id === id)
+    // Relisting a filled role must be an explicit, acknowledged act - the API
+    // refuses it without confirmReopenFilled.
+    const reopeningFilled = Boolean(row && !row.is_live && row.status === 'filled')
+    if (reopeningFilled && !window.confirm('This role was filled through a completed hire. Are you sure you want to relist it? Consider asking the employer to repost the role instead.')) return
     setBusyId(id)
     try {
       const res = await fetch('/api/admin/listings', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'job_toggle_live', id }),
+        body: JSON.stringify({ action: 'job_toggle_live', id, ...(reopeningFilled ? { confirmReopenFilled: true } : {}) }),
       })
       const j = await res.json()
       if (!res.ok) { setError(j.error || 'Could not update.'); return }
@@ -47,8 +53,12 @@ export default function AdminJobsPage() {
 
   return (
     <DashboardShell role="admin" userName="Admin">
-      <h1 className="text-2xl font-serif font-bold text-ink mb-6">Job Listings</h1>
-      {error && <div className="bg-red-50 text-red-600 text-sm px-4 py-3 rounded-lg mb-6">{error}</div>}
+      <div className="mb-7">
+        <p className="dashboard-eyebrow">Platform</p>
+        <h1 className="dashboard-title">Job Listings</h1>
+        <p className="dashboard-intro">Every job listing on the platform. Pause anything inappropriate instantly, and relist when resolved.</p>
+      </div>
+      {error && <div className="bg-red-50 text-red-600 text-sm px-4 py-3 mb-6 border border-red-100">{error}</div>}
 
       <div className="flex space-x-2 mb-6">
         {['all', 'live', 'paused', 'pending_payment'].map(f => (

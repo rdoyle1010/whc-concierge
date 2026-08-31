@@ -95,11 +95,12 @@ export default function AcademyPage() {
   return (
     <DashboardShell role="talent">
       <div className="max-w-6xl">
+        <p className="dashboard-eyebrow">Learning &amp; development</p>
         <div className="flex items-center gap-2 mb-2">
           <GraduationCap size={22} className="text-accent" />
-          <h1 className="text-3xl font-sans font-semibold tracking-tight text-ink">WHC Academy</h1>
+          <h1 className="dashboard-title">WHC Academy</h1>
         </div>
-        <p className="text-[13px] text-gray-500 mb-6 max-w-2xl">
+        <p className="dashboard-intro mb-6 max-w-2xl">
           The Academy exists to move your career forward: learn, pass the assessment, and the verified badge joins your profile - where it strengthens your matches and shows employers exactly what you can do. Core curriculum £{(COURSE_PRICE / 100).toFixed(0)} per course, brand masterclasses £5, leadership programmes with practical toolkits.
         </p>
 
@@ -124,11 +125,11 @@ export default function AcademyPage() {
             </div>
 
             {career.progress?.in_progress?.length > 0 && (
-              <div className="mt-5 border-t border-[#eee6d6] pt-4">
+              <div className="mt-5 border-t border-[#e9e9e9] pt-4">
                 <p className="mb-2 text-[11px] font-semibold text-[#10283b]">Continue learning</p>
                 <div className="flex flex-wrap gap-2">
                   {career.progress.in_progress.map((item: any) => (
-                    <Link key={item.slug} href={`/talent/academy/${item.slug}`} className="inline-flex items-center gap-2 rounded-xl border border-[#dcd4c6] bg-white px-3.5 py-2 text-[12px] font-medium text-ink hover:border-[#10283b]">
+                    <Link key={item.slug} href={`/talent/academy/${item.slug}`} className="inline-flex items-center gap-2 rounded-xl border border-[#e0e0e0] bg-white px-3.5 py-2 text-[12px] font-medium text-ink hover:border-[#10283b]">
                       {item.title}
                       <span className="text-[10px] text-gray-400">{item.lessons_done}/{item.lessons_total} lessons</span>
                     </Link>
@@ -138,12 +139,12 @@ export default function AcademyPage() {
             )}
 
             {career.gaps?.length > 0 && (
-              <div className="mt-5 border-t border-[#eee6d6] pt-4">
+              <div className="mt-5 border-t border-[#e9e9e9] pt-4">
                 <p className="mb-1 text-[11px] font-semibold text-[#10283b]">Skills employers are asking for right now - that your profile doesn&apos;t show yet</p>
                 <p className="mb-3 text-[11px] text-gray-500">From the requirements of live roles you could match. Closing a gap strengthens real applications - directional, honest, no invented percentages.</p>
                 <div className="grid gap-2 sm:grid-cols-2">
                   {career.gaps.map((gap: any) => (
-                    <div key={gap.skill} className="rounded-xl border border-[#e8e0d0] bg-white p-3.5">
+                    <div key={gap.skill} className="rounded-xl border border-[#e5e5e5] bg-white p-3.5">
                       <div className="flex items-center justify-between gap-2">
                         <p className="text-[13px] font-semibold text-ink truncate">{gap.skill}</p>
                         <span className="shrink-0 text-[10px] text-gray-400">{gap.demanded_in} live role{gap.demanded_in === 1 ? '' : 's'}</span>
@@ -160,11 +161,11 @@ export default function AcademyPage() {
             )}
 
             {career.pathway?.length > 0 && (
-              <div className="mt-5 border-t border-[#eee6d6] pt-4">
+              <div className="mt-5 border-t border-[#e9e9e9] pt-4">
                 <p className="mb-2 text-[11px] font-semibold text-[#10283b]">Recommended for your step up to {career.position?.next}</p>
                 <div className="flex flex-wrap gap-2">
                   {career.pathway.map((item: any) => (
-                    <Link key={item.slug} href={`/talent/academy/${item.slug}`} className="inline-flex items-center gap-2 rounded-xl border border-[#dcd4c6] bg-white px-3.5 py-2 text-[12px] font-medium text-ink hover:border-[#10283b]">
+                    <Link key={item.slug} href={`/talent/academy/${item.slug}`} className="inline-flex items-center gap-2 rounded-xl border border-[#e0e0e0] bg-white px-3.5 py-2 text-[12px] font-medium text-ink hover:border-[#10283b]">
                       {item.title}
                       <span className="rounded-full bg-[#f5f5f5] px-2 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-[#10283b]">{item.level}</span>
                     </Link>
@@ -181,7 +182,7 @@ export default function AcademyPage() {
               <p className="text-[14px] font-medium text-white">The Core Curriculum - all {activeCoreSlugs.length} core courses for £{(BUNDLE_PRICE / 100).toFixed(0)}</p>
               <p className="text-[12px] text-white/60 mt-0.5">Save £{Math.max(0, (coreCourses.reduce((sum, course) => sum + coursePrice(course), 0) - BUNDLE_PRICE) / 100).toFixed(0)} against buying individually. Certificates and profile badges are included. Brand masterclasses and specialist care are priced separately.</p>
             </div>
-            <button type="button" onClick={buyBundle} disabled={busySlug === '__bundle__'} className="btn-primary !bg-gold !text-ink text-[12px] shrink-0 disabled:opacity-50">
+            <button type="button" onClick={buyBundle} disabled={busySlug === '__bundle__'} className="btn-primary !bg-white !text-ink text-[12px] shrink-0 disabled:opacity-50">
               {busySlug === '__bundle__' ? 'Taking you to payment...' : `Get the bundle - £${(BUNDLE_PRICE / 100).toFixed(0)}`}
             </button>
           </div>
@@ -211,12 +212,12 @@ export default function AcademyPage() {
                       <div className="relative h-28 shrink-0">
                         <img src={course.image_url || courseImage(course.slug)} alt="" className="absolute inset-0 w-full h-full object-cover" />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
-                        {isManagement && <span className="absolute left-3 top-3 rounded-full bg-ink/90 px-2.5 py-1 text-[9px] font-semibold uppercase tracking-[0.14em] text-gold">Leadership programme</span>}
+                        {isManagement && <span className="absolute left-3 top-3 rounded-full bg-ink/90 px-2.5 py-1 text-[9px] font-semibold uppercase tracking-[0.14em] text-white/80">Leadership programme</span>}
                       </div>
                       <div className="p-5 flex flex-col flex-1">
                         <div className="flex items-start justify-between gap-2 mb-1">
                           <h3 className="font-sans text-[17px] font-semibold tracking-tight text-ink leading-snug">{course.title}</h3>
-                          {done ? <span className="inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide bg-green-600 text-white px-2 py-0.5 rounded-full shrink-0"><Check size={10} /> Certified</span> : enr ? <span className="inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide bg-gold text-ink px-2 py-0.5 rounded-full shrink-0">Yours - in progress</span> : null}
+                          {done ? <span className="inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide bg-green-600 text-white px-2 py-0.5 rounded-full shrink-0"><Check size={10} /> Certified</span> : enr ? <span className="inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide bg-gold text-white px-2 py-0.5 rounded-full shrink-0">Yours - in progress</span> : null}
                         </div>
                         <p className="text-[12px] text-gray-500 mb-2">{course.tagline}</p>
                         <p className="text-[11px] text-gray-400 mb-4 inline-flex items-center gap-1"><Clock size={11} /> {course.lessons.length} modules · objectives, case studies &amp; assessment · ~{course.minutes} min</p>

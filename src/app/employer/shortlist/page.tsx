@@ -17,7 +17,7 @@ export default function EmployerShortlistPage() {
   useEffect(() => {
     async function load() {
       const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return
+      if (!user) { setLoading(false); return }
       const { data: prof } = await supabase.from('employer_profiles').select('*').eq('user_id', user.id).single()
       setProfile(prof)
 
@@ -58,7 +58,11 @@ export default function EmployerShortlistPage() {
 
   return (
     <DashboardShell role="employer" userName={profile?.company_name}>
-      <h1 className="text-[24px] font-medium text-ink mb-6">Shortlist</h1>
+      <div className="mb-6">
+        <p className="dashboard-eyebrow">Talent pipeline</p>
+        <h1 className="dashboard-title">Shortlist</h1>
+        <p className="dashboard-intro">Your saved candidates, grouped by role, with private notes.</p>
+      </div>
 
       {loading ? (
         <div className="flex items-center justify-center h-64"><div className="animate-spin w-8 h-8 border-2 border-ink border-t-transparent rounded-full" /></div>
@@ -82,7 +86,7 @@ export default function EmployerShortlistPage() {
                   const c = s.candidate_profiles
                   if (!c) return null
                   return (
-                    <div key={s.id} className="bg-white border border-border rounded-xl p-4 hover:shadow-sm transition-all">
+                    <div key={s.id} className="dashboard-card !p-4">
                       <div className="flex items-start justify-between">
                         <div className="flex items-center gap-3">
                           <div className="w-10 h-10 rounded-full bg-surface flex items-center justify-center overflow-hidden shrink-0">
@@ -117,7 +121,7 @@ export default function EmployerShortlistPage() {
                       {c.services_offered?.length > 0 && (
                         <div className="flex flex-wrap gap-1 mt-2 ml-[52px]">
                           {c.services_offered.slice(0, 4).map((sk: string) => (
-                            <span key={sk} className="text-[10px] bg-[#FDF6EC] text-accent border border-accent/20 px-2 py-0.5 rounded-full">{sk}</span>
+                            <span key={sk} className="text-[10px] bg-[#f5f6f8] text-accent border border-accent/20 px-2 py-0.5 rounded-full">{sk}</span>
                           ))}
                         </div>
                       )}

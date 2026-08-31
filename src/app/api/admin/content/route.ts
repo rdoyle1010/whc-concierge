@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { revalidateTag } from 'next/cache'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
@@ -207,6 +208,9 @@ export async function POST(req: NextRequest) {
         saveConfigValue(admin, WEBSITE_PUBLISHED_KEY, JSON.stringify(parsed.data), now),
         saveConfigValue(admin, WEBSITE_HISTORY_KEY, JSON.stringify(history), now),
       ])
+      // Bust the cached published content immediately - without this the
+      // public site keeps serving the old version for up to 60 seconds.
+      revalidateTag('website-content', 'max')
       return NextResponse.json({ success: true, publishedAt: now, history })
     }
 
@@ -227,6 +231,9 @@ export async function POST(req: NextRequest) {
     }
 
     if (action === 'query_status') {
+      if (!CONTACT_STATUSES.has(String(body.status))) {
+        return NextResponse.json({ error: 'Invalid status.' }, { status: 400 })
+      }
       const { error } = await admin.from('contact_queries').update({ status: body.status }).eq('id', body.id)
       if (error) return NextResponse.json({ error: error.message }, { status: 500 })
       return NextResponse.json({ success: true })
@@ -258,8 +265,8 @@ export async function POST(req: NextRequest) {
             <div style="font-family: Inter, -apple-system, sans-serif; max-width: 560px; margin: 0 auto; padding: 40px 20px;">
               <p style="font-size: 16px; font-weight: 600; margin-bottom: 24px;">WHC Concierge</p>
               <p style="color: #374151; white-space: pre-wrap;">${replyText.replace(/</g, '&lt;')}</p>
-              <hr style="border: none; border-top: 1px solid #E5E7EB; margin: 24px 0;" />
-              <p style="font-size: 12px; color: #9CA3AF;">Your original message: ${String(q.message || '').slice(0, 500).replace(/</g, '&lt;')}</p>
+              <hr style="border: none; border-top: 1px solid #e3e7eb; margin: 24px 0;" />
+              <p style="font-size: 12px; color: #8a949b;">Your original message: ${String(q.message || '').slice(0, 500).replace(/</g, '&lt;')}</p>
             </div>`,
         }),
       })
@@ -268,7 +275,8 @@ export async function POST(req: NextRequest) {
         console.error(`[Admin reply email FAILED ${res.status}] ${detail.slice(0, 300)}`)
         return NextResponse.json({ error: 'The email could not be sent - check resend.com/logs.' }, { status: 502 })
       }
-      await admin.from('contact_queries').update({ status: body.markStatus || 'replied' }).eq('id', q.id)
+      const markStatus = CONTACT_STATUSES.has(String(body.markStatus)) ? body.markStatus : 'replied'
+      await admin.from('contact_queries').update({ status: markStatus }).eq('id', q.id)
       return NextResponse.json({ success: true })
     }
 

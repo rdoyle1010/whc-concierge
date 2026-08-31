@@ -34,7 +34,11 @@ export default function TalentReviewsPage() {
 
   return (
     <DashboardShell role="talent">
-      <h1 className="text-2xl font-serif font-bold text-ink mb-6">My Reviews</h1>
+      <div className="mb-6">
+        <p className="dashboard-eyebrow">Reputation</p>
+        <h1 className="dashboard-title">My Reviews</h1>
+        <p className="dashboard-intro">Feedback from employers you have worked with.</p>
+      </div>
 
       <div className="dashboard-card mb-6 flex items-center space-x-8">
         <div className="text-center">

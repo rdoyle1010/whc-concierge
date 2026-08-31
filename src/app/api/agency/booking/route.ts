@@ -12,7 +12,7 @@ const BOOKING_FIELDS = [
   'id', 'candidate_id', 'employer_id', 'shift_date', 'shift_start_time', 'shift_end_time',
   'shift_type', 'hours', 'rate', 'status', 'platform_fee', 'created_at', 'urgent', 'expires_at',
   'paid_at', 'amount_paid', 'payout_amount', 'payout_status', 'payout_at', 'dispute_status',
-  'refund_amount', 'cascade_queue', 'cascade_index', 'cascade_deadline', 'cascade_notes', 'booking_group',
+  'refund_amount', 'refunded_at', 'cascade_queue', 'cascade_index', 'cascade_deadline', 'cascade_notes', 'booking_group',
 ].join(',')
 
 function employerDisplayName(emp: any) { return emp?.property_name || emp?.company_name || 'A property' }

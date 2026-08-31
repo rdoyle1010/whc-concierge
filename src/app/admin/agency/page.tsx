@@ -16,17 +16,23 @@ export default function AdminAgencyPage() {
   const [resolveInputs, setResolveInputs] = useState<Record<string, { refund: string; payout: string }>>({})
   const [credits, setCredits] = useState<any[]>([])
   const [academy, setAcademy] = useState<any>(null)
+  const [loadError, setLoadError] = useState('')
+  const [bookingsCapped, setBookingsCapped] = useState(false)
 
   async function load() {
+    setLoadError('')
     try {
       const res = await fetch('/api/admin/agency')
-      if (res.ok) {
-        const j = await res.json()
+      const j = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        setLoadError(j.error || 'Could not load Agency money.')
+      } else {
         setBookings(j.bookings || [])
         setCredits(j.referral_credits || [])
         setAcademy(j.academy || null)
+        setBookingsCapped(Boolean(j.pagination?.bookings_capped))
       }
-    } catch { /* empty state */ }
+    } catch { setLoadError('Could not load Agency money.') }
     setLoading(false)
   }
 
@@ -97,14 +103,23 @@ export default function AdminAgencyPage() {
 
   return (
     <DashboardShell role="admin">
-      <h1 className="text-2xl font-serif font-bold text-ink mb-6">Agency Money</h1>
+      <div className="mb-7">
+        <p className="dashboard-eyebrow">Platform</p>
+        <h1 className="dashboard-title">Agency Money</h1>
+        <p className="dashboard-intro">What each property has paid in, what each therapist is owed, and a one-click mark paid out once the bank transfer has been made.</p>
+      </div>
 
       {error && <div className="bg-red-50 text-red-600 text-sm px-4 py-3 rounded-lg mb-6">{error}</div>}
 
       {loading ? (
         <div className="flex items-center justify-center h-64"><div className="animate-spin w-8 h-8 border-2 border-gold border-t-transparent rounded-full" /></div>
+      ) : loadError ? (
+        <div className="bg-red-50 text-red-600 text-sm px-4 py-3 border border-red-100">Could not load Agency money - {loadError} Refresh the page to try again.</div>
       ) : (
         <>
+          {bookingsCapped && (
+            <div className="bg-amber-50 text-amber-800 border border-amber-200 text-sm px-4 py-3 mb-6">Totals below cover the most recent 250 rows.</div>
+          )}
           {/* WHC Academy revenue */}
           {academy && academy.enrolments > 0 && (
             <div className="dashboard-card mb-6">

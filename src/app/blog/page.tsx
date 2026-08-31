@@ -42,7 +42,7 @@ export default function BlogPage() {
     <div className="min-h-screen bg-[#f5f5f5]">
       <Navbar />
 
-      <section className="pt-16 bg-white border-b border-border">
+      <section className="pt-[76px] bg-white border-b border-border">
         <div className="max-w-[1440px] mx-auto px-6 lg:px-10 py-16 text-center">
           <p className="dashboard-eyebrow">Insights &amp; Industry</p>
           <h1 className="dashboard-title">The Journal</h1>
@@ -79,7 +79,7 @@ export default function BlogPage() {
               {heroPost && (
                 <Link href={`/blog/${heroPost.slug}`} className="dashboard-card block mb-10 group !p-0 overflow-hidden">
                   <div className="grid grid-cols-1 lg:grid-cols-2 items-stretch">
-                    <div className="aspect-[4/3] lg:aspect-auto min-h-[340px] bg-[#e9e6df] overflow-hidden">
+                    <div className="aspect-[4/3] lg:aspect-auto min-h-[340px] bg-[#e9e9e9] overflow-hidden">
                       <BlogImage src={heroPost.image_url} alt={heroPost.title} className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-700" />
                     </div>
                     <div className="p-7 lg:p-10 flex flex-col justify-center">
@@ -101,7 +101,7 @@ export default function BlogPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 stagger-children">
                   {gridPosts.map((post) => (
                     <Link key={post.id} href={`/blog/${post.slug}`} className="dashboard-card group !p-0 overflow-hidden">
-                      <div className="aspect-[16/10] bg-[#e9e6df] overflow-hidden">
+                      <div className="aspect-[16/10] bg-[#e9e9e9] overflow-hidden">
                         <BlogImage src={post.image_url} alt={post.title} className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-500" />
                       </div>
                       <div className="p-5">

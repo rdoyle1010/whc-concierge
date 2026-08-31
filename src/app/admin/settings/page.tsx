@@ -66,11 +66,12 @@ export default function AdminSettingsPage() {
     setSaving(false); setTimeout(() => setMessage(''), 3500)
   }
 
+  // Only settings something actually reads belong here. contact_email is
+  // used by the contact-form notification route; the old site_name,
+  // site_description and maintenance_mode keys were written but never read
+  // anywhere, so they have been removed rather than pretending they work.
   const configFields = [
-    { key: 'site_name', label: 'Site Name', placeholder: 'WHC Concierge' },
-    { key: 'site_description', label: 'Site Description', placeholder: 'The specialist careers platform for luxury wellness' },
-    { key: 'contact_email', label: 'Contact Email', placeholder: 'hello@wellnesshousecollective.co.uk' },
-    { key: 'maintenance_mode', label: 'Maintenance Mode (true/false)', placeholder: 'false' },
+    { key: 'contact_email', label: 'Contact Email (contact-form notifications are sent here)', placeholder: 'hello@wellnesshousecollective.co.uk' },
   ]
   const socialFields: { key:keyof SocialLinks; label:string; placeholder:string }[] = [
     { key:'instagram_url', label:'Instagram public profile', placeholder:'https://www.instagram.com/...' },

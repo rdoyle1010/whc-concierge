@@ -63,7 +63,7 @@ function LoginForm() {
             <p className="dashboard-intro !mt-2 mb-7">Choose the workspace linked to your account, then sign in.</p>
 
             {safeDestination === '/roles/match' && (
-              <div className="mb-5 rounded-xl border border-[#e9e9e9] bg-[#f5f5f5] px-4 py-3 text-[12px] leading-5 text-[#6d6559]">
+              <div className="mb-5 rounded-xl border border-[#e9e9e9] bg-[#f5f5f5] px-4 py-3 text-[12px] leading-5 text-[#5a6a76]">
                 Sign in as Talent to continue to your role matches. We&apos;ll take you straight back to Match after sign-in.
               </div>
             )}

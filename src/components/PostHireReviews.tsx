@@ -47,7 +47,7 @@ export default function PostHireReviews() {
 
       <div className="mt-5 space-y-4">
         {placements.map(placement => (
-          <div key={placement.applicationId} className="rounded-2xl border border-[#e4ddd1] bg-white p-5">
+          <div key={placement.applicationId} className="rounded-2xl border border-[#e3e7eb] bg-white p-5">
             <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
               <div>
                 <div className="flex flex-wrap items-center gap-2">

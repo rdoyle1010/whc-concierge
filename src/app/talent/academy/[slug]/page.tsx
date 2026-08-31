@@ -211,13 +211,13 @@ export default function CoursePlayerPage() {
         <img src={course.image_url || courseImage(slug)} alt="" className="absolute inset-0 w-full h-full object-cover" />
         <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/35 to-transparent" />
         <div className="absolute bottom-0 left-0 right-0 p-6">
-          <p className="text-[10px] uppercase tracking-[0.25em] text-gold font-semibold mb-1.5">WHC Academy · {course.category}</p>
+          <p className="text-[10px] uppercase tracking-[0.25em] text-white/80 font-semibold mb-1.5">WHC Academy · {course.category}</p>
           <h1 className="text-2xl md:text-3xl font-serif font-bold text-white">{course.title}</h1>
         </div>
       </div>
 
       <div className="mb-4 flex flex-wrap items-center gap-1.5">
-        <span className="rounded-full bg-ink px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-gold">{courseMeta(String(slug)).level}</span>
+        <span className="rounded-full bg-ink px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-white/80">{courseMeta(String(slug)).level}</span>
         <span className="rounded-full bg-gray-100 px-2.5 py-1 text-[10px] font-medium text-gray-600">{courseMeta(String(slug)).cpdHours} CPD hour{courseMeta(String(slug)).cpdHours === 1 ? '' : 's'}</span>
         {courseMeta(String(slug)).skills.map(skill => <span key={skill} className="rounded-full bg-[#f5f5f5] px-2.5 py-1 text-[10px] font-medium text-[#10283b]">{skill}</span>)}
       </div>
@@ -366,7 +366,7 @@ export default function CoursePlayerPage() {
                 )}
 
                 {richLesson?.scenario && (
-                  <div className="rounded-xl border border-[#e5e5e5] bg-[#faf6ec] p-5 mb-4">
+                  <div className="rounded-xl border border-[#e5e5e5] bg-[#f5f6f8] p-5 mb-4">
                     <p className="text-[10px] uppercase tracking-[0.16em] text-[#10283b] font-semibold mb-1.5">Scenario - think it through</p>
                     <p className="text-[13px] text-gray-700 leading-[1.8] whitespace-pre-line">{richLesson.scenario}</p>
                   </div>
@@ -413,7 +413,7 @@ export default function CoursePlayerPage() {
 
                 {extra && (
                   <div className="space-y-3 mb-6">
-                    <div className="bg-[#FDF6EC] border border-accent/20 rounded-xl p-4">
+                    <div className="bg-[#f5f6f8] border border-accent/20 rounded-xl p-4">
                       <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-accent mb-1.5 inline-flex items-center gap-1.5"><Quote size={12} /> Through the guest&apos;s eyes</p>
                       <p className="text-[13px] text-gray-700 italic leading-[1.7]">{extra.guestView}</p>
                     </div>

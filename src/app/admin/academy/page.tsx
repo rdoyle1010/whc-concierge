@@ -135,8 +135,9 @@ export default function AdminAcademyPage() {
     <DashboardShell role="admin" userName="Admin">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between mb-6">
         <div>
-          <div className="flex items-center gap-2 mb-1"><GraduationCap size={22} className="text-accent" /><h1 className="text-2xl font-serif font-bold text-ink">Academy</h1></div>
-          <p className="text-[13px] text-gray-500 max-w-2xl">Add courses, change wording, prices and course imagery, or archive courses without breaking certificates already issued.</p>
+          <p className="dashboard-eyebrow">Content & revenue</p>
+          <div className="flex items-center gap-2 mb-1"><GraduationCap size={22} className="text-accent" /><h1 className="dashboard-title">Academy</h1></div>
+          <p className="dashboard-intro max-w-2xl">Add courses, change wording, prices and course imagery, or archive courses without breaking certificates already issued.</p>
         </div>
         <button onClick={() => { setOriginalSlug(''); setEditing(blankCourse()); setError(''); setNotice('') }} className="btn-primary text-[13px] inline-flex items-center gap-2"><Plus size={14} /> Add course</button>
       </div>

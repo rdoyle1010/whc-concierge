@@ -27,7 +27,7 @@ export default function GlobalError({ error, reset }: { error: Error & { digest?
               <span style={{ fontSize: 20, color: '#555555' }}>!</span>
             </div>
             <h1 style={{ fontSize: 28, fontWeight: 500, color: '#10283b', margin: '0 0 12px' }}>Something went wrong</h1>
-            <p style={{ fontSize: 14, color: '#6B7280', lineHeight: 1.6, margin: '0 0 40px' }}>
+            <p style={{ fontSize: 14, color: '#5a6a76', lineHeight: 1.6, margin: '0 0 40px' }}>
               An unexpected error occurred. Please try again or return to the home page.
             </p>
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
@@ -44,7 +44,7 @@ export default function GlobalError({ error, reset }: { error: Error & { digest?
                 href="/"
                 style={{
                   padding: '10px 24px', background: '#FFFFFF',
-                  color: '#6B7280', fontSize: 13, fontWeight: 500,
+                  color: '#5a6a76', fontSize: 13, fontWeight: 500,
                   borderRadius: 8, border: '1px solid #E5E5E5',
                   textDecoration: 'none', cursor: 'pointer',
                 }}

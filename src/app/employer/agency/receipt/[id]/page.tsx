@@ -42,7 +42,9 @@ export default function AgencyReceiptPage() {
   const hours = booking.hours && booking.hours > 0 ? booking.hours : 8
   const subtotal = booking.rate * hours
   const fee = booking.platform_fee || Math.ceil(subtotal * AGENCY_PLATFORM_FEE_PCT)
-  const feePct = Math.round(AGENCY_PLATFORM_FEE_PCT * 100)
+  // Derive the percentage from the stored amounts so urgent bookings (which
+  // carry a higher fee) show their real rate, not the standard default.
+  const feePct = subtotal > 0 && fee > 0 ? Math.round((fee / subtotal) * 100) : Math.round(AGENCY_PLATFORM_FEE_PCT * 100)
   const total = booking.amount_paid || subtotal + fee
   const ref = `WHC-${String(booking.id).slice(0, 8).toUpperCase()}`
 

@@ -72,7 +72,7 @@ export default function PublicAcademyPage() {
     <div className="min-h-screen bg-white">
       <Navbar />
 
-      <section className="pt-[68px] bg-[#0b2f4d] text-white overflow-hidden">
+      <section className="pt-[76px] bg-[#0b2f4d] text-white overflow-hidden">
         <div className="mx-auto max-w-[1440px] px-6 py-18 lg:px-10 lg:py-24 grid lg:grid-cols-[1.05fr_.95fr] gap-12 items-center">
           <div>
             <p className="mb-4 text-[10px] font-semibold uppercase tracking-[0.2em] text-white/55">WHC Academy</p>

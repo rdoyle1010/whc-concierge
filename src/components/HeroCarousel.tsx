@@ -50,7 +50,7 @@ export default function HeroCarousel({ siteContent }: { siteContent?: WebsiteCon
   const slide = slides[current] || slides[0]
 
   return (
-    <div className="relative w-full min-h-[680px] h-[calc(100vh-60px)] overflow-hidden bg-black"
+    <div className="relative w-full min-h-[680px] h-[calc(100vh-76px)] overflow-hidden bg-black"
       onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)}>
       <div key={current} className="absolute inset-0 animate-fade-in">
         <Image

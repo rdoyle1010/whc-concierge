@@ -5,6 +5,9 @@ import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
 import Link from 'next/link'
 import { ChevronDown } from 'lucide-react'
+import { FEATURED_TALENT } from '@/lib/constants'
+
+const formatPrice = (pence: number) => `£${(pence / 100).toFixed(2)}`
 
 interface FAQItem { question: string; answer: string }
 interface FAQSection { title: string; items: FAQItem[] }
@@ -12,7 +15,7 @@ interface FAQSection { title: string; items: FAQItem[] }
 const faqSections: FAQSection[] = [
   { title: 'For Therapists & Wellness Professionals', items: [
     { question: 'How do I create a profile?', answer: 'Sign up free, complete the onboarding wizard covering your skills, qualifications, product house experience, and availability. Takes about 10 minutes.' },
-    { question: 'Is it free to use?', answer: 'Yes, basic profiles are always free. Featured profiles cost £10/month for priority visibility in search results.' },
+    { question: 'Is it free to use?', answer: `Yes, basic profiles are always free. If you want priority visibility in search results, you can purchase a one-off featured boost: ${formatPrice(FEATURED_TALENT.seven_days.price)} for ${FEATURED_TALENT.seven_days.days} days or ${formatPrice(FEATURED_TALENT.thirty_days.price)} for ${FEATURED_TALENT.thirty_days.days} days.` },
     { question: 'How does matching work?', answer: 'Matching considers role level, treatment skills, qualifications, product-house knowledge, availability and location. A score is a guide for both sides, not an automatic hiring decision.' },
     { question: 'Can I hide my profile from my current employer?', answer: 'Yes. In Talent Settings, Stealth Mode lets you block a specific employer. That business will not receive your profile in new searches, matching results, agency results or shortlists. It cannot withdraw information you already chose to send in an application or message, and authorised WHC administrators can still access accounts when needed for safety and support.' },
     { question: 'What qualifications do you accept?', answer: 'CIDESCO, CIBTAC, VTCT, NVQ, ITEC, and more. Add any recognised qualification during onboarding.' },
@@ -21,7 +24,7 @@ const faqSections: FAQSection[] = [
   ]},
   { title: 'For Employers & Properties', items: [
     { question: 'How do I post a role?', answer: 'Create an employer account, complete your property profile, then post a role by selecting a tier.' },
-    { question: 'What are the job posting tiers?', answer: 'The current tiers are Bronze, Silver, Gold and Platinum, with different listing lengths and visibility. Please use the Pricing page for the live price and inclusions before purchasing, as offers may change.' },
+    { question: 'What are the job posting tiers?', answer: 'The current tiers are Bronze and Platinum, with different listing lengths and visibility. Please use the Pricing page for the live price and inclusions before purchasing, as offers may change.' },
     { question: 'How long does approval take?', answer: 'Employer accounts are reviewed before they can view private talent profiles. Timing depends on whether the information supplied can be verified; contact support if your review appears to be delayed.' },
     { question: 'Can I search for candidates?', answer: 'Yes. Browse the talent pool, filter by skills and qualifications, and shortlist candidates directly.' },
     { question: "What's included in the match score?", answer: 'The score compares relevant role requirements with the professional’s profile, including skills, product houses, qualifications, role level, availability and location. Employers should still review the full profile and speak with the person.' },
@@ -72,7 +75,7 @@ export default function FAQPage() {
   return (
     <div className="public-page">
       <Navbar />
-      <main className="pt-[60px]">
+      <main className="pt-[76px]">
         <section className="public-hero py-16 md:py-20 px-6">
           <div className="max-w-3xl mx-auto text-center">
             <p className="public-eyebrow mb-4">Help & Support</p>

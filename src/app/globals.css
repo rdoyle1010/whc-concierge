@@ -3,11 +3,10 @@
 @tailwind utilities;
 
 /* ---------------------------------------------------------------------------
-   WHC brand system - matches wellnesshousecollective.co.uk:
-   Manrope headings, Poppins body, black ink on white, soft grey surfaces,
-   square corners, no decorative colour. The Website & Brand admin settings
-   feed the --site-* variables (set on the root wrapper in layout.tsx) and
-   every shared class below reads them with brand-correct fallbacks.
+   WHC brand system: navy ink and accent on white, Manrope headings,
+   Poppins body, soft grey surfaces, square corners. The Website & Brand
+   admin settings feed the --site-* variables (set on the root wrapper in
+   layout.tsx) and every shared class below reads them with fallbacks.
    --------------------------------------------------------------------------- */
 
 @layer base {
@@ -38,9 +37,9 @@
   .section-heading { @apply text-[34px] md:text-[44px] font-semibold text-ink leading-[1.08]; font-family: var(--site-heading-font, var(--font-manrope), sans-serif); letter-spacing: -.02em; }
 
   .badge-platinum { @apply bg-ink text-white text-[10px] font-semibold px-2.5 py-0.5 rounded-full; }
-  .badge-gold { background:#555555; color:#fff; @apply text-[10px] font-semibold px-2.5 py-0.5 rounded-full; }
+  .badge-gold { background:#0b2f4d; color:#fff; @apply text-[10px] font-semibold px-2.5 py-0.5 rounded-full; }
   .badge-silver { @apply bg-neutral-400 text-white text-[10px] font-semibold px-2.5 py-0.5 rounded-full; }
-  .badge-bronze { background:#777777; color:#fff; @apply text-[10px] font-semibold px-2.5 py-0.5 rounded-full; }
+  .badge-bronze { background:#5a6a76; color:#fff; @apply text-[10px] font-semibold px-2.5 py-0.5 rounded-full; }
 
   .match-perfect { @apply bg-match-perfect-bg text-match-perfect-text text-[11px] font-semibold px-2.5 py-1 rounded-full; }
   .match-strong { @apply bg-match-strong-bg text-match-strong-text text-[11px] font-semibold px-2.5 py-1 rounded-full; }
@@ -48,12 +47,12 @@
   .match-partial { @apply bg-match-partial-bg text-match-partial-text text-[11px] font-semibold px-2.5 py-1 rounded-full; }
 
   .gold-gradient { background:#0b2f4d; }
-  .gradient-text-gold { color:#555555; }
+  .gradient-text-gold { color:#0b2f4d; }
   .animate-pulse-gold {}
 
   .public-page { @apply min-h-screen bg-white text-body; }
   .public-hero { @apply bg-white border-b border-border; }
-  .public-eyebrow { color:#555555; @apply text-[10px] uppercase tracking-[0.18em] font-semibold; }
+  .public-eyebrow { color:var(--site-accent, #0b2f4d); @apply text-[10px] uppercase tracking-[0.18em] font-semibold; }
   .public-title { @apply text-ink font-semibold leading-[1.06]; font-family: var(--site-heading-font, var(--font-manrope), sans-serif); letter-spacing: -0.02em; font-size: clamp(2.1rem, 3.6vw, 3.2rem); }
   .public-intro { @apply text-secondary text-[15px] leading-7; }
   .public-panel { @apply bg-white border border-border; border-radius: 0; box-shadow: none; }
@@ -97,7 +96,7 @@
 }
 .dashboard-eyebrow {
   margin-bottom: .65rem;
-  color: #8a8a8a;
+  color: #8a949b;
   font-size: 9px;
   line-height: 1.4;
   font-weight: 700;
@@ -140,7 +139,7 @@
   border-top: 1px solid #e5e5e5;
   border-bottom: 1px solid #e5e5e5;
 }
-.dashboard-metric { min-height: 112px; padding: 1.25rem; border-right: 1px solid #e9e9e9; }
+.dashboard-metric { min-height: 112px; padding: 1.25rem; border-right: 1px solid #e3e7eb; }
 .dashboard-metric:nth-child(2n) { border-right: 0; }
 .dashboard-metric-value {
   color: #10283b;
@@ -235,5 +234,7 @@ html { scroll-behavior:smooth; }
 .website-theme .site-button:hover { transform: translateY(-1px); opacity: .92; }
 
 /* Square corners across the platform - the WHC brand does not round cards,
-   inputs or buttons. Circles (rounded-full) are untouched. */
-.rounded, .rounded-md, .rounded-lg, .rounded-xl, .rounded-2xl, .rounded-3xl { border-radius: 0; }
+   inputs or buttons. Circles (rounded-full) are untouched; arbitrary values
+   like rounded-[22px] are neutralised by the attribute selector. */
+.rounded, .rounded-md, .rounded-lg, .rounded-xl, .rounded-2xl, .rounded-3xl,
+[class*="rounded-["] { border-radius: 0; }

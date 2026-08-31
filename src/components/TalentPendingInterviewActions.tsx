@@ -142,12 +142,12 @@ export default function TalentPendingInterviewActions() {
             const action = confirmLabel(interview.round_number)
             const selected = selectedSlots[interview.id] || ''
             return (
-              <div key={interview.id} className="rounded-2xl border border-[#ded6c7] bg-[#fcfbf8] p-5">
+              <div key={interview.id} className="rounded-2xl border border-[#ded6c7] bg-[#fafafa] p-5">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                   <div>
                     <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#10283b]">Stage {interview.round_number} of 3</p>
                     <h3 className="mt-1 text-[21px] font-semibold text-ink">{label}</h3>
-                    <p className="mt-1 text-[13px] font-medium text-[#17344d]">{item.job?.job_title || 'Role'}</p>
+                    <p className="mt-1 text-[13px] font-medium text-[#10283b]">{item.job?.job_title || 'Role'}</p>
                     <p className="mt-0.5 text-[11px] text-muted">{item.employer?.property_name || item.employer?.company_name || 'Property'}</p>
                   </div>
                   <span className="w-fit rounded-full bg-amber-50 px-3 py-1.5 text-[9px] font-semibold uppercase tracking-wide text-amber-700">Not yet confirmed</span>
@@ -170,7 +170,7 @@ export default function TalentPendingInterviewActions() {
                           onClick={() => setSelectedSlots(current => ({ ...current, [interview.id]: slot }))}
                           className={`rounded-xl border px-4 py-3 text-left transition ${isSelected ? 'border-[#0b2f4d] bg-[#f3f7f8] shadow-sm' : 'border-[#555555] bg-white hover:border-[#10283b]'}`}
                         >
-                          <span className="flex items-center gap-2 text-[12px] font-semibold text-[#17344d]"><Clock size={13} />{when(slot)}</span>
+                          <span className="flex items-center gap-2 text-[12px] font-semibold text-[#10283b]"><Clock size={13} />{when(slot)}</span>
                           <span className={`mt-2 flex items-center gap-1.5 text-[11px] font-semibold ${isSelected ? 'text-emerald-700' : 'text-muted'}`}><CheckCircle size={13} />{isSelected ? 'Selected' : 'Click to select this time'}</span>
                         </button>
                       )

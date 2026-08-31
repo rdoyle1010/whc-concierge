@@ -73,13 +73,16 @@ function UpgradeContent() {
   return (
     <DashboardShell role="talent">
       <div className="max-w-2xl">
-        <div className="flex items-center gap-2 mb-2">
-          <Sparkles size={22} className="text-accent" />
-          <h1 className="text-2xl font-serif font-bold text-ink">Go Featured</h1>
+        <div className="mb-6">
+          <p className="dashboard-eyebrow">Visibility</p>
+          <div className="flex items-center gap-2">
+            <Sparkles size={22} className="text-accent" />
+            <h1 className="dashboard-title">Go Featured</h1>
+          </div>
+          <p className="dashboard-intro max-w-xl">
+            Put your profile in front of the properties that matter. Featured profiles sit at the top of every search and carry the Featured badge employers look for.
+          </p>
         </div>
-        <p className="text-[13px] text-gray-500 mb-6 max-w-xl">
-          Put your profile in front of the properties that matter. Featured profiles sit at the top of every search and carry the gold star employers look for.
-        </p>
 
         {success && (
           <div className="bg-green-50 text-green-700 text-sm px-4 py-3 rounded-lg mb-4">

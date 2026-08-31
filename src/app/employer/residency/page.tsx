@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
+import DashboardShell from '@/components/DashboardShell'
 import { createClient } from '@/lib/supabase/client'
 import { CalendarDays, CheckCircle2, CreditCard, Hotel, ShieldCheck } from 'lucide-react'
 
@@ -64,7 +65,7 @@ export default function EmployerResidencyPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F7F5F1] px-5 py-10 lg:px-10">
+    <DashboardShell role="employer">
       <div className="max-w-6xl mx-auto">
         <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-5 mb-8">
           <div>
@@ -79,7 +80,7 @@ export default function EmployerResidencyPage() {
 
         <div className="rounded-2xl border border-border bg-white p-5 mb-7 flex items-start gap-3">
           <ShieldCheck size={20} className="text-accent mt-0.5" />
-          <div><p className="font-medium text-ink text-sm">Protected platform booking</p><p className="text-xs text-muted mt-1 leading-5">Payment is only requested after both sides agree the rate and dates. Spa Platform records the terms and charges the property a 10% booking fee.</p></div>
+          <div><p className="font-medium text-ink text-sm">Protected platform booking</p><p className="text-xs text-muted mt-1 leading-5">Payment is only requested after both sides agree the rate and dates. WHC Concierge records the terms and charges the property a 10% booking fee.</p></div>
         </div>
 
         {loading ? <div className="skeleton h-44 rounded-2xl" /> : bookings.length === 0 ? (
@@ -87,7 +88,7 @@ export default function EmployerResidencyPage() {
         ) : <div className="space-y-4">{bookings.map(b => {
           const gross = Number(b.agreed_total || b.proposed_total || 0)
           const fee = Number(b.platform_fee || gross * .1)
-          return <div key={b.id} className="bg-white border border-border rounded-2xl p-6 shadow-sm">
+          return <div key={b.id} className="dashboard-card">
             <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-5">
               <div className="min-w-0">
                 <div className="flex flex-wrap items-center gap-2 mb-3"><span className="text-xs font-semibold uppercase tracking-[.12em] text-accent">{b.status}</span>{b.status === 'confirmed' && <span className="inline-flex items-center gap-1 text-xs text-emerald-700"><CheckCircle2 size={13}/> Paid & confirmed</span>}</div>
@@ -108,6 +109,6 @@ export default function EmployerResidencyPage() {
           </div>
         })}</div>}
       </div>
-    </div>
+    </DashboardShell>
   )
 }

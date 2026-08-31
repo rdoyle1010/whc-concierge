@@ -187,8 +187,9 @@ export default function AgencySettingsPage() {
   return (
     <DashboardShell role="talent">
       <div className="max-w-3xl">
-        <h1 className="text-2xl font-serif font-bold text-ink mb-2">Agency Settings</h1>
-        <p className="text-[13px] text-gray-500 mb-6">Be bookable for agency shifts - planned cover and urgent same-day work. You set the rate; properties pay Wellness House Collective, and you receive 100% of the agreed shift rate after the shift. Urgent offers reach you by text.</p>
+        <p className="dashboard-eyebrow">Agency register</p>
+        <h1 className="dashboard-title">Agency Settings</h1>
+        <p className="dashboard-intro mb-6">Be bookable for agency shifts - planned cover and urgent same-day work. You set the rate; properties pay Wellness House Collective, and you receive 100% of the agreed shift rate after the shift. Urgent offers reach you by text.</p>
 
         {notice && <div className="bg-green-50 text-green-700 text-sm px-4 py-3 rounded-lg mb-4">{notice}</div>}
         {error && <div className="bg-red-50 text-red-600 text-sm px-4 py-3 rounded-lg mb-4">{error}</div>}

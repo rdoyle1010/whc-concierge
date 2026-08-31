@@ -54,6 +54,7 @@ const navItems: Record<string, NavItem[]> = {
     { label: 'Get Verified', href: '/talent/verification', icon: <Star size={17} /> },
     { label: 'Reviews', href: '/talent/reviews', icon: <Star size={17} /> },
     { label: 'Go Featured', href: '/talent/upgrade', icon: <Heart size={17} /> },
+    { label: 'Membership', href: '/talent/membership', icon: <CreditCard size={17} /> },
     { label: 'My Profile', href: '/talent/profile', icon: <User size={17} />, section: 'Account' },
     { label: 'Billing', href: '/talent/billing', icon: <CreditCard size={17} /> },
     { label: 'Privacy & Preferences', href: '/talent/privacy', icon: <ShieldCheck size={17} /> },
@@ -64,6 +65,7 @@ const navItems: Record<string, NavItem[]> = {
     { label: 'Job Listings', href: '/employer/jobs', icon: <Briefcase size={17} />, section: 'Recruitment' },
     { label: 'Applications', href: '/employer/applications', icon: <FileText size={17} /> },
     { label: 'Discover Talent', href: '/employer/candidates', icon: <Users size={17} />, accessKey: 'employer_talent_search' },
+    { label: 'Saved Talent', href: '/employer/shortlist', icon: <Heart size={17} /> },
     { label: 'Hired', href: '/employer/hired', icon: <Star size={17} /> },
     { label: 'Managed Search', href: '/employer/recruitment', icon: <Search size={17} /> },
     { label: 'Messages', href: '/employer/messages', icon: <MessageSquare size={17} /> },
@@ -75,6 +77,7 @@ const navItems: Record<string, NavItem[]> = {
     { label: 'Analytics', href: '/employer/analytics', icon: <BarChart3 size={17} />, section: 'Visibility', accessKey: 'employer_analytics' },
     { label: 'Social & Advertising', href: '/employer/social', icon: <Megaphone size={17} /> },
     { label: 'Get Featured', href: '/employer/featured', icon: <Star size={17} /> },
+    { label: 'Membership', href: '/employer/membership', icon: <CreditCard size={17} /> },
     { label: 'Billing', href: '/employer/billing', icon: <CreditCard size={17} />, section: 'Account' },
     { label: 'Privacy & Preferences', href: '/employer/privacy', icon: <ShieldCheck size={17} /> },
     { label: 'Settings', href: '/employer/settings', icon: <Settings size={17} /> },
@@ -173,7 +176,7 @@ export default function DashboardShell({ children, role, userName }: DashboardSh
 
   return <div className="dashboard-shell min-h-screen">
     <header className="lg:hidden sticky top-0 z-30 bg-[#0b2f4d] text-white px-4 py-3.5 flex items-center justify-between border-b border-white/10"><button type="button" onClick={() => setSidebarOpen(true)} aria-label="Open dashboard navigation" className="p-1 -ml-1 text-white/85"><Menu size={22}/></button><div className="text-center leading-none"><Wordmark dark compact href={null}/><p className="mt-1.5 text-[8px] uppercase tracking-[0.2em] text-white/55">{workspaceLabel[role]}</p></div><div className="w-6"/></header>
-    {sidebarOpen && <div className="fixed inset-0 bg-[#071d2d]/60 backdrop-blur-[1px] z-40 lg:hidden" onClick={() => setSidebarOpen(false)} />}
+    {sidebarOpen && <div className="fixed inset-0 bg-[#07243b]/60 backdrop-blur-[1px] z-40 lg:hidden" onClick={() => setSidebarOpen(false)} />}
     <aside className={`dashboard-sidebar fixed top-0 left-0 h-full w-[264px] text-white z-50 transform transition-transform duration-200 lg:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
       <div className="px-7 pt-7 pb-4"><div className="flex items-center justify-between"><Wordmark dark/><button type="button" onClick={() => setSidebarOpen(false)} className="lg:hidden text-white/55 hover:text-white p-1" aria-label="Close dashboard navigation"><X size={19}/></button></div><div className="mt-7 pb-5 border-b border-white/10"><p className="text-white/55 text-[8px] uppercase tracking-[0.22em] font-semibold">{workspaceLabel[role]}</p>{userName && <p className="font-serif text-white text-[22px] leading-tight mt-2 truncate">{userName}</p>}</div></div>
       <nav className="px-4 pb-20 overflow-y-auto h-[calc(100vh-156px)]">{items.map((item,index)=>{const active=isActive(item.href);const itemAccess=item.accessKey?access[item.accessKey]:undefined;const locked=itemAccess?.state==='locked';const limited=itemAccess?.state==='limited';const href=locked?(itemAccess?.upgradeHref||item.href):item.href;return <div key={item.href}>{item.section&&<p className={`${index===0?'mt-1':'mt-5'} mb-1.5 px-3 text-[8px] font-semibold uppercase tracking-[0.2em] text-white/32`}>{item.section}</p>}<Link href={href} onClick={()=>setSidebarOpen(false)} title={locked ? itemAccess?.label || 'Upgrade to unlock' : limited ? itemAccess?.label : undefined} aria-label={locked ? `${item.label}. ${itemAccess?.label || 'Locked feature'}` : item.label} className={`dashboard-nav-item relative flex items-center gap-3 px-3 py-2 text-[12.5px] transition-colors border-l ${active&&!locked?'text-white bg-white/[0.055] border-[#93a4ae]':locked?'text-white/42 hover:text-white/70 hover:bg-white/[0.025] border-transparent':'text-white/58 hover:text-white hover:bg-white/[0.035] border-transparent'}`}><span className={active&&!locked?'text-white/80':locked?'text-white/30':'text-white/44'}>{item.icon}</span><span className="tracking-[-0.01em]">{item.label}</span>{locked?<span className="ml-auto flex items-center gap-1 text-[9px] uppercase tracking-[0.08em] text-white/45"><Lock size={11}/></span>:limited?<span className="ml-auto text-[9px] text-white/45">{itemAccess?.label}</span>:active?<ChevronRight size={12} className="ml-auto text-white/70"/>:null}</Link></div>})}</nav>

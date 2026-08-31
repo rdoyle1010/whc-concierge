@@ -58,9 +58,9 @@ export default function TaxonomyPage() {
   return (
     <DashboardShell role="admin">
       <div className="max-w-4xl">
-        <p className="text-[11px] uppercase tracking-[0.18em] text-accent font-semibold mb-1.5">Controls</p>
-        <h1 className="font-serif text-[26px] font-bold text-ink mb-2">Platform taxonomy</h1>
-        <p className="text-[13.5px] text-secondary mb-5 max-w-2xl">
+        <p className="dashboard-eyebrow">Controls</p>
+        <h1 className="dashboard-title">Platform taxonomy</h1>
+        <p className="dashboard-intro mb-5 max-w-2xl">
           These are the live lists talent and employers pick from, and the vocabulary the matching engine joins on.
           They are held in the platform code as a single source of truth, so both sides always use identical terms.
           To add or change an item, ask for a platform update - a change has to reach profiles, job posting and

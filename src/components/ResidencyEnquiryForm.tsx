@@ -81,7 +81,7 @@ export default function ResidencyEnquiryForm({ specialistName, listingId, sugges
     return (
       <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-5">
         <p className="text-[14px] font-semibold text-emerald-900">Residency offer sent</p>
-        <p className="text-[12px] leading-5 text-emerald-800 mt-1">{specialistName} can accept, counter or decline inside Spa Platform. If accepted, you&apos;ll confirm the booking and payment on-platform.</p>
+        <p className="text-[12px] leading-5 text-emerald-800 mt-1">{specialistName} can accept, counter or decline inside WHC Concierge. If accepted, you&apos;ll confirm the booking and payment on-platform.</p>
       </div>
     )
   }
@@ -108,7 +108,7 @@ export default function ResidencyEnquiryForm({ specialistName, listingId, sugges
         <div className="flex items-start gap-2.5">
           <ShieldCheck size={17} className="text-accent mt-0.5 shrink-0" />
           <div>
-            <p className="text-[12px] font-semibold text-ink">Book securely through Spa Platform</p>
+            <p className="text-[12px] font-semibold text-ink">Book securely through WHC Concierge</p>
             <p className="text-[11px] text-muted leading-5 mt-0.5">Your dates, rate and inclusions are recorded here. A 10% platform booking fee is charged to the property only when the residency is accepted and confirmed.</p>
           </div>
         </div>
@@ -135,7 +135,7 @@ export default function ResidencyEnquiryForm({ specialistName, listingId, sugges
       {therapistTotal > 0 && (
         <div className="rounded-xl border border-border bg-surface/70 p-4 text-[12px]">
           <div className="flex justify-between py-1"><span className="text-muted">Residency value</span><span className="font-medium text-ink">£{therapistTotal.toLocaleString('en-GB')}</span></div>
-          <div className="flex justify-between py-1"><span className="text-muted">Spa Platform fee (10%)</span><span className="font-medium text-ink">£{platformFee.toLocaleString('en-GB')}</span></div>
+          <div className="flex justify-between py-1"><span className="text-muted">WHC Concierge fee (10%)</span><span className="font-medium text-ink">£{platformFee.toLocaleString('en-GB')}</span></div>
           <div className="flex justify-between pt-2 mt-1 border-t border-border"><span className="font-semibold text-ink">Estimated property total</span><span className="font-semibold text-ink">£{(therapistTotal + platformFee).toLocaleString('en-GB')}</span></div>
           <p className="text-[10px] text-muted mt-2">No payment is taken when you send this offer.</p>
         </div>
@@ -145,7 +145,7 @@ export default function ResidencyEnquiryForm({ specialistName, listingId, sugges
       <button type="submit" disabled={sending || days < 1 || dayRate <= 0} className="btn-primary w-full disabled:opacity-50">
         {sending ? 'Sending Offer...' : `Invite ${specialistName.split(' ')[0] || 'Specialist'} to Residency`}
       </button>
-      <p className="text-[10px] leading-4 text-muted text-center">Keep the booking on Spa Platform to retain the agreed terms, secure payment record and eligibility for a verified residency review.</p>
+      <p className="text-[10px] leading-4 text-muted text-center">Keep the booking on WHC Concierge to retain the agreed terms, secure payment record and eligibility for a verified residency review.</p>
     </form>
   )
 }

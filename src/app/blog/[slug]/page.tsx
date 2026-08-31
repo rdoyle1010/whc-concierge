@@ -41,10 +41,10 @@ export default async function BlogPostPage(props: { params: Promise<{ slug: stri
       <Navbar />
       <section className="bg-ink pt-32 pb-16">
         <div className="max-w-3xl mx-auto px-4">
-          <Link href="/blog" className="text-gold text-sm flex items-center mb-6 hover:text-gold-light">
-            <ArrowLeft size={16} className="mr-1" /> Back to Blog
+          <Link href="/blog" className="text-white/80 text-sm flex items-center mb-6 hover:text-white">
+            <ArrowLeft size={16} className="mr-1" /> Back to Journal
           </Link>
-          {post.category && <span className="text-gold/60 text-sm uppercase tracking-wider">{post.category}</span>}
+          {post.category && <span className="text-white/80 text-sm uppercase tracking-wider">{post.category}</span>}
           <h1 className="text-3xl md:text-5xl font-serif font-bold text-white mt-2 mb-4">{post.title}</h1>
           <p className="text-white/50 text-sm">
             {post.author} &middot; {new Date(publishedDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}
@@ -56,14 +56,14 @@ export default async function BlogPostPage(props: { params: Promise<{ slug: stri
 
       {post.image_url && (
         <div className="max-w-4xl mx-auto px-4 -mt-8">
-          <div className="aspect-video rounded-2xl overflow-hidden shadow-lg">
+          <div className="aspect-video overflow-hidden">
             <BlogImage src={post.image_url} alt={post.title} className="w-full h-full object-cover" />
           </div>
         </div>
       )}
 
       <article className="max-w-3xl mx-auto px-4 py-16">
-        <div className="prose prose-lg max-w-none prose-headings:font-serif prose-a:text-gold">
+        <div className="prose prose-lg max-w-none prose-headings:font-serif prose-a:text-accent">
           {post.content.split('\n').map((paragraph: string, i: number) => (
             paragraph.trim() ? <p key={i}>{paragraph}</p> : null
           ))}

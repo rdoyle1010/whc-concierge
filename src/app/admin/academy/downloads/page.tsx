@@ -125,8 +125,9 @@ export default function AcademyDownloadsAdminPage() {
   return (
     <DashboardShell role="admin" userName="Admin">
       <div className="mb-6">
-        <div className="mb-2 flex items-center gap-2"><Download size={21} className="text-accent" /><h1 className="text-2xl font-semibold tracking-tight text-ink">Academy Downloads</h1></div>
-        <p className="max-w-3xl text-[13px] leading-6 text-gray-500">Upload your own workbooks, templates, PDFs, spreadsheets or guides and attach them to a whole course or to a specific module. Files are stored privately.</p>
+        <p className="dashboard-eyebrow">Content & revenue</p>
+        <div className="mb-2 flex items-center gap-2"><Download size={21} className="text-accent" /><h1 className="dashboard-title">Academy Downloads</h1></div>
+        <p className="dashboard-intro max-w-3xl">Upload your own workbooks, templates, PDFs, spreadsheets or guides and attach them to a whole course or to a specific module. Files are stored privately.</p>
       </div>
 
       {notice && <div className="mb-4 rounded-lg bg-green-50 px-4 py-3 text-sm text-green-700">{notice}</div>}

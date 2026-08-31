@@ -60,7 +60,7 @@ export default function EmployerSocialPage() {
     { name: 'LinkedIn', icon: Linkedin, status: 'Share now', text: 'Share the live WHC job link into your company or personal LinkedIn feed.' },
     { name: 'Facebook', icon: Facebook, status: 'Share now', text: 'Share live vacancies directly to Facebook with the WHC application link.' },
     { name: 'Instagram', icon: Instagram, status: 'Caption ready', text: 'Copy a recruitment-ready caption and job link for your Instagram post or Story.' },
-    { name: 'Meta Ads', icon: Megaphone, status: 'Connection ready', text: 'Architecture is ready for a future Meta Business connection for paid Facebook and Instagram recruitment campaigns.' },
+    { name: 'Meta Ads', icon: Megaphone, status: 'Planned', text: 'Paid Facebook and Instagram recruitment campaigns through a Meta Business connection are planned.' },
   ]
 
   return <DashboardShell role="employer" userName={profile?.company_name}>
@@ -108,14 +108,17 @@ export default function EmployerSocialPage() {
       })}</div>}
     </section>
 
-    <section className="mt-9 grid lg:grid-cols-3 gap-4">
-      <div className="dashboard-card"><Sparkles size={18} className="text-[#555555]"/><h3 className="text-[19px] mt-4">WHC Social Feature</h3><p className="text-[12px] leading-5 text-secondary mt-2">Designed for a future paid option where WHC features the vacancy through its own LinkedIn, Instagram, Facebook and employer newsletter channels.</p><p className="text-[22px] text-ink mt-4">£49 <span className="text-[11px] text-muted">planned</span></p></div>
-      <div className="dashboard-card"><Megaphone size={18} className="text-[#555555]"/><h3 className="text-[19px] mt-4">Meta Recruitment Campaign</h3><p className="text-[12px] leading-5 text-secondary mt-2">Connection-ready for a managed Facebook + Instagram recruitment advert using the live WHC application link.</p><p className="text-[22px] text-ink mt-4">£99 <span className="text-[11px] text-muted">+ ad spend · planned</span></p></div>
-      <div className="dashboard-card"><CheckCircle2 size={18} className="text-[#555555]"/><h3 className="text-[19px] mt-4">Multi-channel campaign</h3><p className="text-[12px] leading-5 text-secondary mt-2">Prepared for future LinkedIn/Meta partner integrations so one WHC job can be distributed and measured across channels.</p><p className="text-[22px] text-ink mt-4">£199 <span className="text-[11px] text-muted">+ ad spend · planned</span></p></div>
+    <section className="mt-9">
+      <div className="mb-4"><p className="dashboard-eyebrow">Managed campaigns - coming soon</p><h2 className="dashboard-section-title">Let WHC run the promotion for you</h2><p className="text-[12px] text-secondary mt-1 max-w-2xl">These managed options are not available to purchase yet. Register your interest and we will contact you when they launch.</p></div>
+      <div className="grid lg:grid-cols-3 gap-4">
+        <div className="dashboard-card"><Sparkles size={18} className="text-[#555555]"/><h3 className="text-[19px] mt-4">WHC Social Feature</h3><p className="text-[12px] leading-5 text-secondary mt-2">WHC features your vacancy through its own LinkedIn, Instagram, Facebook and employer newsletter channels.</p><a href="/contact" className="btn-secondary inline-flex mt-4 text-[12px]">Register interest</a></div>
+        <div className="dashboard-card"><Megaphone size={18} className="text-[#555555]"/><h3 className="text-[19px] mt-4">Meta Recruitment Campaign</h3><p className="text-[12px] leading-5 text-secondary mt-2">A managed Facebook and Instagram recruitment advert using the live WHC application link.</p><a href="/contact" className="btn-secondary inline-flex mt-4 text-[12px]">Register interest</a></div>
+        <div className="dashboard-card"><CheckCircle2 size={18} className="text-[#555555]"/><h3 className="text-[19px] mt-4">Multi-channel campaign</h3><p className="text-[12px] leading-5 text-secondary mt-2">One WHC job distributed and measured across LinkedIn and Meta channels.</p><a href="/contact" className="btn-secondary inline-flex mt-4 text-[12px]">Register interest</a></div>
+      </div>
     </section>
 
     <div className="mt-8 border border-[#e5e5e5] bg-[#f7f7f7] p-5 text-[12px] leading-6 text-secondary">
-      <strong className="text-ink">About account connections:</strong> WHC currently provides safe sharing and social-ready content. Direct posting into a company’s LinkedIn Jobs account or paid Meta Ads account requires the employer to authorise those external platforms through their official integration/partner permissions. Until that connection is enabled, WHC will not claim that an account is connected when it is not.
+      <strong className="text-ink">About account connections:</strong> Sharing tools and social-ready content are available now. Posting directly into your company LinkedIn Jobs account or a paid Meta Ads account requires you to authorise those platforms first - we will let you know when those connections become available.
     </div>
   </DashboardShell>
 }

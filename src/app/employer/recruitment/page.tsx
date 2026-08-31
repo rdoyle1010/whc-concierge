@@ -84,9 +84,9 @@ export default function EmployerRecruitmentPage() {
   return (
     <DashboardShell role="employer">
       <div className="max-w-3xl">
-        <p className="text-[11px] uppercase tracking-[0.18em] text-accent font-semibold mb-1.5">Recruitment service</p>
-        <h1 className="font-serif text-[26px] font-bold text-ink mb-2">Let WHC run the search</h1>
-        <p className="text-[13.5px] text-secondary leading-relaxed mb-6 max-w-2xl">
+        <p className="dashboard-eyebrow">Recruitment service</p>
+        <h1 className="dashboard-title">Let WHC run the search</h1>
+        <p className="dashboard-intro mb-6 max-w-2xl">
           For roles you would rather not run yourself, WHC manages the whole search: we work your brief against the verified
           register, screen for qualifications, brands and commercial fit, and send you a shortlist worth interviewing.
           You pay only on placement.

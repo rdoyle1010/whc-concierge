@@ -67,7 +67,9 @@ async function readWebsiteContent(key: string): Promise<WebsiteContent> {
 const getCachedPublishedWebsiteContent = unstable_cache(
   () => readWebsiteContent(WEBSITE_PUBLISHED_KEY),
   ['website-content-published-v1'],
-  { revalidate: 60 }
+  // Tagged so the admin publish action can revalidate it instantly instead
+  // of waiting out the 60-second window.
+  { revalidate: 60, tags: ['website-content'] }
 )
 
 export async function getWebsiteContent(useDraft = false): Promise<WebsiteContent> {

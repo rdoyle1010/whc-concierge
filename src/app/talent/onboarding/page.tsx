@@ -31,7 +31,7 @@ function ChipGrid({ items, selected, onToggle, search }: { items: any[]; selecte
 function ProficiencySelect({ value, onChange }: { value: string; onChange: (v: string) => void }) {
   return (
     <select value={value} onChange={e => onChange(e.target.value)}
-      className="input-field !py-1 !px-2 text-[11px] w-32 focus:border-[#555555] focus:ring-[#555555]/20">
+      className="input-field !py-1 !px-2 text-[11px] w-32 focus:border-accent focus:ring-accent/20">
       <option value="beginner">Beginner</option>
       <option value="intermediate">Intermediate</option>
       <option value="advanced">Advanced</option>
@@ -200,18 +200,6 @@ export default function OnboardingWizard() {
     const existing = next.get(id) || {}
     next.set(id, { ...existing, [field]: value })
     setMap(next)
-  }
-
-  // Delete-then-insert for a selections table, checking both results so a
-  // failed write can never silently wipe previously saved rows.
-  const replaceRows = async (table: string, rows: any[]) => {
-    const del = await supabase.from(table).delete().eq('candidate_id', profileId)
-    if (del.error) return false
-    if (rows.length > 0) {
-      const ins = await supabase.from(table).insert(rows)
-      if (ins.error) return false
-    }
-    return true
   }
 
   const STEP_SAVE_ERROR = 'This step could not be saved - please try again before continuing.'
@@ -447,9 +435,10 @@ export default function OnboardingWizard() {
             <div><label className="eyebrow block mb-1.5">Short Bio</label><textarea rows={3} value={basic.bio} onChange={e => setBasic({ ...basic, bio: e.target.value })} className="input-field" /></div>
             <div className="grid grid-cols-3 gap-4">
               <div><label className="eyebrow block mb-1.5">Availability Date</label><input type="date" value={basic.availability_date} onChange={e => setBasic({ ...basic, availability_date: e.target.value })} className="input-field" /></div>
-              <div><label className="eyebrow block mb-1.5">Salary Min (£)</label><input type="number" value={basic.salary_min} onChange={e => setBasic({ ...basic, salary_min: e.target.value })} className="input-field" /></div>
-              <div><label className="eyebrow block mb-1.5">Salary Max (£)</label><input type="number" value={basic.salary_max} onChange={e => setBasic({ ...basic, salary_max: e.target.value })} className="input-field" /></div>
+              <div><label className="eyebrow block mb-1.5">Agency day rate min (£ per day)</label><input type="number" value={basic.salary_min} onChange={e => setBasic({ ...basic, salary_min: e.target.value })} className="input-field" /></div>
+              <div><label className="eyebrow block mb-1.5">Agency day rate max (£ per day)</label><input type="number" value={basic.salary_max} onChange={e => setBasic({ ...basic, salary_max: e.target.value })} className="input-field" /></div>
             </div>
+            <p className="text-[11px] text-muted -mt-3">Your day rate for agency work - properties see it on your listing as &quot;£X /day&quot;. It is not a salary expectation.</p>
             <div><label className="eyebrow block mb-1.5">Languages (comma separated)</label><input type="text" value={basic.languages} onChange={e => setBasic({ ...basic, languages: e.target.value })} className="input-field" placeholder="English, French, Spanish" /></div>
             <label className="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked={basic.willing_to_relocate} onChange={e => setBasic({ ...basic, willing_to_relocate: e.target.checked })} className="w-3.5 h-3.5 border-border rounded text-ink" /><span className="text-[13px] text-secondary">Willing to relocate</span></label>
           </div>
@@ -513,7 +502,7 @@ export default function OnboardingWizard() {
                 {Array.from(selectedSkills.entries()).map(([id, data]) => (
                   <div key={id} className="flex items-center justify-between p-2 bg-surface rounded-lg">
                     <span className="text-[13px] text-ink">{data.name}</span>
-                    <ProficiencySelect value={data.proficiency || 'competent'} onChange={v => updateInMap(selectedSkills, setSelectedSkills, id, 'proficiency', v)} />
+                    <ProficiencySelect value={data.proficiency || 'intermediate'} onChange={v => updateInMap(selectedSkills, setSelectedSkills, id, 'proficiency', v)} />
                   </div>
                 ))}
               </div>
@@ -537,7 +526,7 @@ export default function OnboardingWizard() {
                 {Array.from(selectedSkills.entries()).filter(([id]) => businessSkills.some(s => s.id === id)).map(([id, data]) => (
                   <div key={id} className="flex items-center justify-between p-2 bg-surface rounded-lg">
                     <span className="text-[13px] text-ink">{data.name}</span>
-                    <ProficiencySelect value={data.proficiency || 'competent'} onChange={v => updateInMap(selectedSkills, setSelectedSkills, id, 'proficiency', v)} />
+                    <ProficiencySelect value={data.proficiency || 'intermediate'} onChange={v => updateInMap(selectedSkills, setSelectedSkills, id, 'proficiency', v)} />
                   </div>
                 ))}
               </div>
@@ -550,17 +539,7 @@ export default function OnboardingWizard() {
           <div className="space-y-5">
             <p className="text-[14px] text-secondary">Select the booking, POS and management systems you&apos;ve used.</p>
             <ChipGrid items={systemsList} selected={selectedSystems} onToggle={(id, name) => toggleInMap(selectedSystems, setSelectedSystems, id, name)} />
-            {selectedSystems.size > 0 && (
-              <div className="space-y-2 pt-4 border-t border-border">
-                <p className="eyebrow">Selected ({selectedSystems.size})</p>
-                {Array.from(selectedSystems.entries()).map(([id, data]) => (
-                  <div key={id} className="flex items-center justify-between p-2 bg-surface rounded-lg">
-                    <span className="text-[13px] text-ink">{data.name}</span>
-                    <ProficiencySelect value={data.proficiency || 'competent'} onChange={v => updateInMap(selectedSystems, setSelectedSystems, id, 'proficiency', v)} />
-                  </div>
-                ))}
-              </div>
-            )}
+            {selectedSystems.size > 0 && <p className="eyebrow pt-4 border-t border-border">Selected ({selectedSystems.size})</p>}
           </div>
         )}
 
@@ -568,28 +547,9 @@ export default function OnboardingWizard() {
         {step === 6 && (
           <div className="space-y-5">
             <p className="text-[14px] text-secondary">Select the product houses and skincare brands you have experience with.</p>
-            {['ultra_luxury', 'luxury', 'professional', 'mass'].map(tier => {
-              const items = productHousesList.filter(p => p.tier === tier)
-              if (items.length === 0) return null
-              return (
-                <div key={tier}>
-                  <p className="eyebrow mb-2 capitalize">{tier.replace('_', ' ')}</p>
-                  <ChipGrid items={items} selected={selectedPH} onToggle={(id, name) => toggleInMap(selectedPH, setSelectedPH, id, name)} />
-                </div>
-              )
-            })}
-            {selectedPH.size > 0 && (
-              <div className="space-y-2 pt-4 border-t border-border">
-                <p className="eyebrow">Selected ({selectedPH.size}) - set proficiency &amp; years</p>
-                {Array.from(selectedPH.entries()).map(([id, data]) => (
-                  <div key={id} className="flex items-center gap-3 p-2 bg-surface rounded-lg">
-                    <span className="text-[13px] text-ink flex-1">{data.name}</span>
-                    <ProficiencySelect value={data.proficiency || 'intermediate'} onChange={v => updateInMap(selectedPH, setSelectedPH, id, 'proficiency', v)} />
-                    <input type="number" placeholder="Years" value={data.years_using || ''} onChange={e => updateInMap(selectedPH, setSelectedPH, id, 'years_using', e.target.value ? parseInt(e.target.value) : null)} className="input-field !py-1 !px-2 text-[11px] w-20" />
-                  </div>
-                ))}
-              </div>
-            )}
+            <div className="relative"><Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" /><input type="text" placeholder="Search product houses..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="input-field pl-9 !py-2 text-[13px]" /></div>
+            <ChipGrid items={productHousesList} selected={selectedPH} onToggle={(id, name) => toggleInMap(selectedPH, setSelectedPH, id, name)} search={searchTerm} />
+            {selectedPH.size > 0 && <p className="eyebrow pt-4 border-t border-border">Selected ({selectedPH.size})</p>}
           </div>
         )}
 
@@ -603,17 +563,7 @@ export default function OnboardingWizard() {
                 <ChipGrid items={items} selected={selectedCerts} onToggle={(id, name) => toggleInMap(selectedCerts, setSelectedCerts, id, name)} />
               </div>
             ))}
-            {selectedCerts.size > 0 && (
-              <div className="space-y-2 pt-4 border-t border-border">
-                <p className="eyebrow">Selected ({selectedCerts.size})</p>
-                {Array.from(selectedCerts.entries()).map(([id, data]) => (
-                  <div key={id} className="flex items-center gap-3 p-2 bg-surface rounded-lg">
-                    <span className="text-[13px] text-ink flex-1">{data.name}</span>
-                    <input type="date" placeholder="Issued" value={data.issued_date || ''} onChange={e => updateInMap(selectedCerts, setSelectedCerts, id, 'issued_date', e.target.value)} className="input-field !py-1 !px-2 text-[11px] w-32" />
-                  </div>
-                ))}
-              </div>
-            )}
+            {selectedCerts.size > 0 && <p className="eyebrow pt-4 border-t border-border">Selected ({selectedCerts.size})</p>}
           </div>
         )}
 
@@ -621,35 +571,16 @@ export default function OnboardingWizard() {
         {step === 8 && (
           <div className="space-y-5">
             <p className="text-[14px] text-secondary">Select the hotel and spa brands you&apos;ve worked with.</p>
-            {['ultra_luxury', 'luxury', 'lifestyle', 'boutique', 'independent'].map(tier => {
-              const items = brandsList.filter(b => b.tier === tier)
-              if (items.length === 0) return null
-              return (
-                <div key={tier}>
-                  <p className="eyebrow mb-2 capitalize">{tier.replace('_', ' ')}</p>
-                  <ChipGrid items={items} selected={selectedBrands} onToggle={(id, name) => toggleInMap(selectedBrands, setSelectedBrands, id, name)} />
-                </div>
-              )
-            })}
-            {selectedBrands.size > 0 && (
-              <div className="space-y-2 pt-4 border-t border-border">
-                <p className="eyebrow">Selected ({selectedBrands.size})</p>
-                {Array.from(selectedBrands.entries()).map(([id, data]) => (
-                  <div key={id} className="flex items-center gap-3 p-2 bg-surface rounded-lg">
-                    <span className="text-[13px] text-ink flex-1">{data.name}</span>
-                    <input type="number" placeholder="Years" value={data.years_worked || ''} onChange={e => updateInMap(selectedBrands, setSelectedBrands, id, 'years_worked', e.target.value ? parseInt(e.target.value) : null)} className="input-field !py-1 !px-2 text-[11px] w-20" />
-                    <input type="text" placeholder="Role held" value={data.role_held || ''} onChange={e => updateInMap(selectedBrands, setSelectedBrands, id, 'role_held', e.target.value)} className="input-field !py-1 !px-2 text-[11px] w-36" />
-                  </div>
-                ))}
-              </div>
-            )}
+            <div className="relative"><Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" /><input type="text" placeholder="Search brands..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="input-field pl-9 !py-2 text-[13px]" /></div>
+            <ChipGrid items={brandsList} selected={selectedBrands} onToggle={(id, name) => toggleInMap(selectedBrands, setSelectedBrands, id, name)} search={searchTerm} />
+            {selectedBrands.size > 0 && <p className="eyebrow pt-4 border-t border-border">Selected ({selectedBrands.size})</p>}
           </div>
         )}
 
         {/* ═══ STEP 9: Agency Work ═══ */}
         {step === 9 && (
           <div className="space-y-5">
-            <div className="flex items-start gap-3 p-4 bg-[#FDF6EC] rounded-xl">
+            <div className="flex items-start gap-3 p-4 bg-[#f5f6f8] rounded-xl">
               <Zap size={18} className="text-accent mt-0.5 shrink-0" />
               <div>
                 <p className="text-[14px] font-medium text-ink">Join the agency register</p>
@@ -717,8 +648,8 @@ export default function OnboardingWizard() {
             <div className="flex items-center gap-4 p-4 bg-surface rounded-xl">
               <div className="relative w-16 h-16">
                 <svg className="w-16 h-16 -rotate-90" viewBox="0 0 36 36">
-                  <circle cx="18" cy="18" r="16" fill="none" stroke="#E5E5E3" strokeWidth="3" />
-                  <circle cx="18" cy="18" r="16" fill="none" stroke={completionPct >= 80 ? '#16A34A' : completionPct >= 50 ? '#555555' : '#E5E5E3'} strokeWidth="3" strokeDasharray={`${completionPct} ${100 - completionPct}`} strokeLinecap="round" />
+                  <circle cx="18" cy="18" r="16" fill="none" stroke="#e5e5e5" strokeWidth="3" />
+                  <circle cx="18" cy="18" r="16" fill="none" stroke={completionPct >= 80 ? '#16A34A' : completionPct >= 50 ? '#0b2f4d' : '#e5e5e5'} strokeWidth="3" strokeDasharray={`${completionPct} ${100 - completionPct}`} strokeLinecap="round" />
                 </svg>
                 <span className="absolute inset-0 flex items-center justify-center text-[13px] font-semibold text-ink">{completionPct}%</span>
               </div>

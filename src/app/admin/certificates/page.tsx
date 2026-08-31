@@ -105,12 +105,12 @@ export default function AdminCertificatesPage() {
         {row.status === 'submitted' ? (
           <div>
             {!assist[row.id] && (
-              <button type="button" disabled={assistBusy === row.id} onClick={() => runAssist(row.id)} className="mb-2 inline-flex items-center gap-1.5 rounded-lg border border-[#e5e5e5] bg-[#faf6ec] px-3 py-1.5 text-[12px] font-semibold text-[#10283b] hover:bg-[#f5eedd]">
+              <button type="button" disabled={assistBusy === row.id} onClick={() => runAssist(row.id)} className="mb-2 inline-flex items-center gap-1.5 rounded-lg border border-[#e5e5e5] bg-[#f5f6f8] px-3 py-1.5 text-[12px] font-semibold text-[#10283b] hover:bg-[#f5f6f8]">
                 <Sparkles size={13} /> {assistBusy === row.id ? 'Reviewing...' : 'AI review'}
               </button>
             )}
             {assist[row.id] && (
-              <div className="mb-3 rounded-lg border border-[#e5e5e5] bg-[#faf6ec] p-3">
+              <div className="mb-3 rounded-lg border border-[#e5e5e5] bg-[#f5f6f8] p-3">
                 <p className="text-[10.5px] font-semibold uppercase tracking-[0.12em] text-[#10283b] mb-1.5 inline-flex items-center gap-1"><Sparkles size={11} /> AI assessment{assist[row.id].recognition ? ` · ${String(assist[row.id].recognition).replace('_', ' ')}` : ''}</p>
                 <p className="text-[12.5px] text-gray-700 leading-relaxed mb-2">{assist[row.id].assessment}</p>
                 {assist[row.id].equivalence_note && <p className="text-[12px] text-gray-600 mb-2"><strong className="text-ink">Equivalence:</strong> {assist[row.id].equivalence_note}</p>}
@@ -121,7 +121,7 @@ export default function AdminCertificatesPage() {
                   <div className="flex flex-wrap gap-1.5 pt-1 border-t border-[#eeeeee]">
                     <span className="text-[11px] text-gray-500 py-1">Use drafted message:</span>
                     {(['verified', 'more_info', 'rejected'] as const).map(kind => assist[row.id].drafts[kind] && (
-                      <button key={kind} type="button" onClick={() => setNotes(current => ({ ...current, [row.id]: assist[row.id].drafts[kind] }))} className="rounded-full border border-[#e5e5e5] bg-white px-2.5 py-1 text-[11px] font-semibold text-[#10283b] hover:bg-[#f5eedd]">
+                      <button key={kind} type="button" onClick={() => setNotes(current => ({ ...current, [row.id]: assist[row.id].drafts[kind] }))} className="rounded-full border border-[#e5e5e5] bg-white px-2.5 py-1 text-[11px] font-semibold text-[#10283b] hover:bg-[#f5f6f8]">
                         {kind === 'verified' ? 'Verify + congratulate' : kind === 'more_info' ? 'Ask for more info' : 'Decline kindly'}
                       </button>
                     ))}
@@ -148,9 +148,9 @@ export default function AdminCertificatesPage() {
   return (
     <DashboardShell role="admin">
       <div className="max-w-3xl">
-        <p className="text-[11px] uppercase tracking-[0.18em] text-accent font-semibold mb-1.5">People & operations</p>
-        <h1 className="font-serif text-[26px] font-bold text-ink mb-2">Certificate review</h1>
-        <p className="text-[13.5px] text-secondary mb-6 max-w-2xl">Every certificate a professional submits lands here with its details and document. Verify it, ask for more information, or reject it - your note goes straight to the professional, and verified certificates carry a trust badge on their profile.</p>
+        <p className="dashboard-eyebrow">People & operations</p>
+        <h1 className="dashboard-title">Certificate review</h1>
+        <p className="dashboard-intro mb-6 max-w-2xl">Every certificate a professional submits lands here with its details and document. Verify it, ask for more information, or reject it - your note goes straight to the professional, and verified certificates carry a trust badge on their profile.</p>
 
         {error && <p className="text-[12.5px] text-red-600 font-medium mb-4">{error}</p>}
         {loading ? <p className="text-[13px] text-secondary">Loading...</p> : (

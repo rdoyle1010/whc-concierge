@@ -205,9 +205,9 @@ export default function WebsiteEditorPage() {
       <div className="max-w-[1500px] mx-auto">
         <div className="flex flex-col xl:flex-row xl:items-end justify-between gap-4 mb-7">
           <div>
-            <p className="text-[11px] uppercase tracking-[0.16em] text-muted mb-2">Website control</p>
-            <h1 className="text-[30px] font-medium text-ink">Website & Brand</h1>
-            <p className="text-[13px] text-muted mt-1">Change the homepage wording, photos, fonts, colours, buttons and menu from one place.</p>
+            <p className="dashboard-eyebrow">Website control</p>
+            <h1 className="dashboard-title">Website & Brand</h1>
+            <p className="dashboard-intro mt-1">Change the homepage wording, photos, fonts, colours, buttons and menu from one place.</p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             {changed && <span className="text-[11px] text-amber-700 bg-amber-50 px-3 py-2">Unpublished changes</span>}

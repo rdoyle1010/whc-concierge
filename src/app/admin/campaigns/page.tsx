@@ -139,7 +139,7 @@ export default function AdminCampaignsPage() {
       </div>)}
     </section>
 
-    {showForm && <div className="fixed inset-0 z-[70] bg-[#071d2d]/70 p-3 md:p-6 overflow-y-auto"><div className="mx-auto max-w-6xl rounded-[24px] bg-white shadow-2xl overflow-hidden">
+    {showForm && <div className="fixed inset-0 z-[70] bg-[#07243b]/70 p-3 md:p-6 overflow-y-auto"><div className="mx-auto max-w-6xl rounded-[24px] bg-white shadow-2xl overflow-hidden">
       <div className="flex items-center justify-between border-b border-border px-6 py-4"><div><p className="text-[10px] uppercase tracking-[.16em] text-muted">Newsletter studio</p><h2 className="text-[24px] text-[#10283b] mt-1">{editing?'Edit newsletter':'Create newsletter'}</h2></div><button onClick={()=>setShowForm(false)} className="p-2 text-muted"><X size={20}/></button></div>
       <div className="grid lg:grid-cols-[1.05fr_.95fr]">
         <div className="p-6 md:p-8 space-y-7 border-r border-border">
@@ -155,7 +155,7 @@ export default function AdminCampaignsPage() {
       </div>
     </div></div>}
 
-    {showPreview && <div className="fixed inset-0 z-[90] bg-[#071d2d]/80 p-4 md:p-8 overflow-y-auto"><div className="max-w-4xl mx-auto"><div className="flex justify-between items-center mb-3 text-white"><span className="text-[12px] uppercase tracking-[.15em]">Newsletter preview</span><button onClick={()=>setShowPreview(false)} className="p-2"><X/></button></div><iframe title="Full newsletter preview" srcDoc={previewHtml} className="w-full min-h-[850px] bg-white rounded-[20px]"/></div></div>}
+    {showPreview && <div className="fixed inset-0 z-[90] bg-[#07243b]/80 p-4 md:p-8 overflow-y-auto"><div className="max-w-4xl mx-auto"><div className="flex justify-between items-center mb-3 text-white"><span className="text-[12px] uppercase tracking-[.15em]">Newsletter preview</span><button onClick={()=>setShowPreview(false)} className="p-2"><X/></button></div><iframe title="Full newsletter preview" srcDoc={previewHtml} className="w-full min-h-[850px] bg-white rounded-[20px]"/></div></div>}
   </DashboardShell>
 }
 

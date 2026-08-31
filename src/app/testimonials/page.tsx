@@ -73,7 +73,7 @@ export default function TestimonialsPage() {
   return (
     <>
       <Navbar />
-      <main className="pt-[60px] bg-surface">
+      <main className="pt-[76px] bg-surface">
         {/* Hero */}
         <section className="bg-white border-b border-border">
           <div className="max-w-3xl mx-auto px-6 lg:px-8 py-16 text-center">
@@ -81,6 +81,9 @@ export default function TestimonialsPage() {
             <h1 className="text-[36px] md:text-[48px] font-medium text-ink tracking-tight leading-[1.08] mb-4">
               What Our Users Say
             </h1>
+            <p className="text-[11px] tracking-[0.12em] uppercase font-semibold text-accent mb-4">
+              Illustrative examples of the feedback we work for - named case studies will appear here as they complete
+            </p>
             <p className="text-[15px] text-secondary leading-relaxed max-w-xl mx-auto">
               Hear from the spa professionals and hospitality leaders who&apos;ve found success on WHC Concierge.
             </p>
@@ -100,7 +103,7 @@ export default function TestimonialsPage() {
                   className="bg-white border border-border rounded-xl p-6 relative"
                 >
                   {/* Gold quotation mark */}
-                  <div className="absolute top-2 left-4 text-5xl leading-none select-none" style={{ color: 'rgba(201, 169, 110, 0.3)' }} aria-hidden="true">
+                  <div className="absolute top-2 left-4 text-5xl leading-none select-none" style={{ color: 'rgba(16, 47, 77, 0.3)' }} aria-hidden="true">
                     &ldquo;
                   </div>
 
@@ -141,7 +144,7 @@ export default function TestimonialsPage() {
               Ready to find your next opportunity?
             </h2>
             <p className="text-[14px] text-secondary mb-8">
-              Join hundreds of spa and wellness professionals on WHC Concierge.
+              Join the spa and wellness professionals building their careers on WHC Concierge.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
               <Link href="/jobs" className="px-6 py-2.5 rounded-lg text-[13px] font-semibold text-white transition-all hover:shadow-lg" style={{ backgroundColor: '#555555' }}>

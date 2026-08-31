@@ -81,7 +81,7 @@ export default function TalentAgencyPage() {
 
   const statusColors: Record<string, string> = {
     pending: 'bg-amber-50 text-amber-700',
-    countered: 'bg-[#FDF6EC] text-accent',
+    countered: 'bg-[#f5f6f8] text-accent',
     accepted: 'bg-green-50 text-green-700',
     confirmed: 'bg-green-50 text-green-700',
     completed: 'bg-blue-50 text-blue-700',
@@ -102,7 +102,11 @@ export default function TalentAgencyPage() {
 
   return (
     <DashboardShell role="talent">
-      <h1 className="text-2xl font-serif font-bold text-ink mb-6">Agency Shifts</h1>
+      <div className="mb-6">
+        <p className="dashboard-eyebrow">Agency register</p>
+        <h1 className="dashboard-title">Agency Shifts</h1>
+        <p className="dashboard-intro">Shift offers from properties that need cover, matched to your rate and travel area.</p>
+      </div>
 
       {listing && (
         listing.available ? (
@@ -120,7 +124,7 @@ export default function TalentAgencyPage() {
             <Link href="/talent/agency/settings" className="text-[12px] font-medium text-green-800 underline shrink-0 ml-4">Manage</Link>
           </div>
         ) : (
-          <div className="flex items-center justify-between bg-[#FDF6EC] border border-border rounded-xl px-5 py-4 mb-6">
+          <div className="flex items-center justify-between bg-[#f5f6f8] border border-border rounded-xl px-5 py-4 mb-6">
             <div>
               <p className="text-[14px] font-medium text-ink">You&apos;re not on the agency register yet</p>
               <p className="text-[12px] text-gray-500 mt-0.5">Join from {AGENCY_LISTING_TIERS.basic.display} to appear in the directory and receive shift offers - urgent same-day offers arrive by text.</p>

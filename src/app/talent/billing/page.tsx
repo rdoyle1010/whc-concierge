@@ -5,7 +5,7 @@ import DashboardShell from '@/components/DashboardShell'
 import { createClient } from '@/lib/supabase/client'
 import { CreditCard, ExternalLink, AlertCircle, Zap } from 'lucide-react'
 import Link from 'next/link'
-import { AGENCY_LISTING_TIERS } from '@/lib/constants'
+import { AGENCY_LISTING_TIERS, FEATURED_PROFILE_PRICE, TALENT_MEMBERSHIPS } from '@/lib/constants'
 
 export default function TalentBillingPage() {
   const supabase = createClient()
@@ -44,15 +44,23 @@ export default function TalentBillingPage() {
     }
   }
 
-  const hasSubscription = profile?.stripe_customer_id && profile?.is_featured
+  // Paid memberships are written by /api/commercial/confirm as membership_tier
+  // + membership_stripe_customer_id - is_featured is a separate one-off product.
+  const membershipTier = (profile?.membership_tier === 'standard' || profile?.membership_tier === 'pro') && profile?.membership_stripe_customer_id
+    ? (profile.membership_tier as 'standard' | 'pro')
+    : null
+  const membership = membershipTier ? TALENT_MEMBERSHIPS[membershipTier] : null
+  const isFeatured = Boolean(profile?.is_featured)
+  const hasSubscription = Boolean(membership) || isFeatured
 
   if (loading) return <DashboardShell role="talent"><div className="space-y-4"><div className="skeleton h-12 w-1/3 mb-6" /><div className="skeleton h-64 w-full" /></div></DashboardShell>
 
   return (
     <DashboardShell role="talent" userName={profile?.full_name}>
       <div className="mb-8">
-        <h1 className="text-[24px] font-medium text-ink">Billing & Subscription</h1>
-        <p className="text-[13px] text-muted mt-1">Manage your subscription and billing settings</p>
+        <p className="dashboard-eyebrow">Account</p>
+        <h1 className="dashboard-title">Billing &amp; Subscription</h1>
+        <p className="dashboard-intro">Manage your membership, featured placement and billing settings.</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
@@ -65,10 +73,12 @@ export default function TalentBillingPage() {
               </div>
               <div>
                 <p className="text-[14px] font-medium text-ink">
-                  {hasSubscription ? 'Featured Profile - Active' : 'Free Plan'}
+                  {membership ? `${membership.label} - Active` : isFeatured ? 'Featured Profile - Active' : 'Free Plan'}
                 </p>
                 <p className="text-[12px] text-muted mt-0.5">
-                  {hasSubscription ? 'Your profile has premium visibility' : 'No active subscription'}
+                  {membership
+                    ? 'Manage or cancel your membership through the billing portal below.'
+                    : isFeatured ? 'Your profile has premium visibility' : 'No active subscription'}
                 </p>
               </div>
             </div>
@@ -79,16 +89,36 @@ export default function TalentBillingPage() {
 
           {hasSubscription && (
             <div className="space-y-3 pb-6 border-b border-border">
-              <div className="flex justify-between items-baseline text-sm">
-                <span className="text-muted">Monthly price</span>
-                <span className="text-ink font-medium">£10/month</span>
-              </div>
-              <div className="flex justify-between items-baseline text-sm">
-                <span className="text-muted">Next billing date</span>
-                <span className="text-ink font-medium">
-                  {profile.featured_until ? new Date(profile.featured_until).toLocaleDateString('en-GB', { year: 'numeric', month: 'long', day: 'numeric' }) : '-'}
-                </span>
-              </div>
+              {membership && (
+                <>
+                  <div className="flex justify-between items-baseline text-sm">
+                    <span className="text-muted">Monthly price</span>
+                    <span className="text-ink font-medium">£{(membership.price / 100).toFixed(2)}/month</span>
+                  </div>
+                  {profile.membership_renews_at && (
+                    <div className="flex justify-between items-baseline text-sm">
+                      <span className="text-muted">Renews</span>
+                      <span className="text-ink font-medium">
+                        {new Date(profile.membership_renews_at).toLocaleDateString('en-GB', { year: 'numeric', month: 'long', day: 'numeric' })}
+                      </span>
+                    </div>
+                  )}
+                </>
+              )}
+              {isFeatured && (
+                <>
+                  <div className="flex justify-between items-baseline text-sm">
+                    <span className="text-muted">Featured Profile</span>
+                    <span className="text-ink font-medium">£{(FEATURED_PROFILE_PRICE / 100).toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between items-baseline text-sm">
+                    <span className="text-muted">Featured until</span>
+                    <span className="text-ink font-medium">
+                      {profile.featured_until ? new Date(profile.featured_until).toLocaleDateString('en-GB', { year: 'numeric', month: 'long', day: 'numeric' }) : '-'}
+                    </span>
+                  </div>
+                </>
+              )}
               <div className="flex justify-between items-baseline text-sm">
                 <span className="text-muted">Status</span>
                 <span className="text-emerald-600 font-medium">Active</span>
@@ -156,7 +186,7 @@ export default function TalentBillingPage() {
                 {profile?.agency_available
                   ? profile?.agency_listed_until
                     ? `${profile?.agency_tier === 'featured' ? AGENCY_LISTING_TIERS.featured.display : AGENCY_LISTING_TIERS.basic.display} · renews ${new Date(profile.agency_listed_until).toLocaleDateString('en-GB', { year: 'numeric', month: 'long', day: 'numeric' })}`
-                    : 'Complimentary listing during launch - no charge, nothing to manage.'
+                    : 'No charge for your listing.'
                   : `Join from ${AGENCY_LISTING_TIERS.basic.display} to receive agency shift offers.`}
               </p>
             </div>
@@ -188,22 +218,10 @@ export default function TalentBillingPage() {
       {/* Billing History */}
       <div className="dashboard-card">
         <p className="text-[14px] font-medium text-ink mb-4">Billing History</p>
-        {hasSubscription ? (
-          <div className="space-y-3 mb-4">
-            <div className="flex items-center justify-between p-3 border border-border rounded-lg bg-neutral-50/50">
-              <div>
-                <p className="text-[13px] font-medium text-ink">Featured Profile Subscription</p>
-                <p className="text-[11px] text-muted mt-0.5">Renews monthly</p>
-              </div>
-              <p className="text-[13px] font-semibold text-ink">£10.00</p>
-            </div>
-          </div>
-        ) : (
-          <div className="flex items-center gap-3 p-4 bg-neutral-50 border border-border rounded-lg">
-            <AlertCircle size={16} className="text-muted shrink-0" />
-            <p className="text-[13px] text-muted">Your billing history will appear here once you have an active subscription.</p>
-          </div>
-        )}
+        <div className="flex items-center gap-3 p-4 bg-neutral-50 border border-border rounded-lg">
+          <AlertCircle size={16} className="text-muted shrink-0" />
+          <p className="text-[13px] text-muted">Payments appear here after checkout.</p>
+        </div>
       </div>
     </DashboardShell>
   )

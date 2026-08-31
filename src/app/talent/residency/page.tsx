@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
+import DashboardShell from '@/components/DashboardShell'
 import { Banknote, CalendarDays, CheckCircle2, Crown, MapPin, ShieldCheck } from 'lucide-react'
 
 export default function TalentResidencyPage() {
@@ -75,10 +76,10 @@ export default function TalentResidencyPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F7F5F1] px-5 py-10 lg:px-10">
-      <div className="max-w-6xl mx-auto">
+    <DashboardShell role="talent" userName={profile?.full_name}>
+      <div className="max-w-6xl">
         <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-5 mb-8">
-          <div><p className="eyebrow mb-2">Residency Marketplace</p><h1 className="text-3xl md:text-4xl font-semibold text-ink tracking-tight">Residency offers</h1><p className="text-sm text-muted mt-2">Review hotel invitations and keep your agreed terms protected on Spa Platform.</p></div>
+          <div><p className="dashboard-eyebrow mb-2">Residency Marketplace</p><h1 className="dashboard-title">Residency offers</h1><p className="dashboard-intro mt-2">Review hotel invitations and keep your agreed terms protected on WHC Concierge.</p></div>
           <div className="flex flex-wrap gap-2">
             <Link href="/talent/before-you-arrive" className="btn-secondary">Before You Arrive</Link>
             <Link href="/residency/create" className="btn-primary">{memberActive ? 'Manage Residency Listing' : 'Join Residency'}</Link>
@@ -162,6 +163,6 @@ export default function TalentResidencyPage() {
           </div>
         </div>})}</div>}
       </div>
-    </div>
+    </DashboardShell>
   )
 }

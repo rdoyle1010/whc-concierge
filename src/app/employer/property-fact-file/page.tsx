@@ -237,7 +237,7 @@ export default function PropertyFactFilePage() {
       <p className="dashboard-intro max-w-3xl">Create the operational information every Agency worker and Residency specialist needs before arriving at your property.</p>
 
       <div className="my-7 border-l-2 border-[#0b2f4d] bg-white px-5 py-4">
-        <div className="flex gap-3"><Sparkles size={17} className="text-ink shrink-0 mt-0.5" /><div><p className="text-[13px] font-medium text-ink">One master file. Automatic Before You Arrive packs.</p><p className="text-[12px] text-muted mt-1 leading-5">When a booking is confirmed, Spa Platform takes a snapshot of this file and adds the booking-specific date, times and details. Agency receives the concise operational version; Residency receives the extended stay information too.</p></div></div>
+        <div className="flex gap-3"><Sparkles size={17} className="text-ink shrink-0 mt-0.5" /><div><p className="text-[13px] font-medium text-ink">One master file. Automatic Before You Arrive packs.</p><p className="text-[12px] text-muted mt-1 leading-5">When a booking is confirmed, WHC Concierge takes a snapshot of this file and adds the booking-specific date, times and details. Agency receives the concise operational version; Residency receives the extended stay information too.</p></div></div>
       </div>
 
       {notice && <div className="mb-5 bg-green-50 text-green-700 px-4 py-3 text-sm flex items-center gap-2"><CheckCircle2 size={16}/>{notice}</div>}
@@ -288,7 +288,7 @@ export default function PropertyFactFilePage() {
 
       <FactFileSection title="Residency extended stay" intro="Only shown in the richer Residency Before You Arrive pack." items={fields.residency} form={form} onChange={set} />
 
-      <div className="sticky bottom-4 z-10 flex justify-end"><button type="button" onClick={save} disabled={saving} className="btn-primary px-7 py-3 shadow-lg disabled:opacity-50">{saving ? 'Saving...' : 'Save Property Fact File'}</button></div>
+      <div className="sticky bottom-4 z-10 flex justify-end"><button type="button" onClick={save} disabled={saving} className="btn-primary px-7 py-3 disabled:opacity-50">{saving ? 'Saving...' : 'Save Property Fact File'}</button></div>
     </div>
   </DashboardShell>
 }

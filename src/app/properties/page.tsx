@@ -56,12 +56,12 @@ export default async function PropertiesPage({ searchParams }: { searchParams?: 
 
   return <div className="min-h-screen bg-white">
     <Navbar />
-    <section className="pt-[68px] bg-white border-b border-border overflow-hidden">
+    <section className="pt-[76px] bg-white border-b border-border overflow-hidden">
       <div className="max-w-7xl mx-auto px-6 lg:px-8 py-10 md:py-14 grid lg:grid-cols-[.9fr_1.1fr] gap-9 items-center">
         <div className="py-6 lg:py-12">
           <p className="text-[10px] uppercase tracking-[0.18em] font-semibold text-[#555555] mb-4">{cms.hero.eyebrow}</p>
           <h1 className="text-[42px] md:text-[56px] font-semibold tracking-[-0.045em] leading-[1.02] text-[#10283b]">{cms.hero.heading}</h1>
-          <p className="text-[14px] text-muted max-w-xl mt-5 leading-7">Meet WHC-approved hotels, spas and wellness destinations. Explore the property, its reputation and current opportunities before you apply.</p>
+          <p className="text-[14px] text-muted max-w-xl mt-5 leading-7">{cms.hero.text}</p>
         </div>
         <div className="h-[360px] md:h-[430px] overflow-hidden rounded-[26px]"><img src={cms.hero.image.url} alt={cms.hero.image.alt} className="w-full h-full object-cover" style={{objectPosition:`${cms.hero.image.focalX}% ${cms.hero.image.focalY}%`}}/></div>
       </div>

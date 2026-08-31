@@ -44,7 +44,7 @@ export default function TalentProfilePreviewPage() {
   if (!profile) return <DashboardShell role="talent"><p className="text-muted">Profile not found.</p></DashboardShell>
 
   const postcodeArea = profile.postcode?.split(' ')[0] || profile.location || ''
-  const hidden = profile.stealth_mode || profile.profile_visibility === 'hidden' || profile.is_visible === false
+  const hidden = profile.stealth_mode || profile.profile_visible === false
 
   return (
     <DashboardShell role="talent" userName={profile.full_name}>
@@ -52,8 +52,9 @@ export default function TalentProfilePreviewPage() {
         <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
           <div>
             <Link href="/talent/profile" className="mb-2 inline-flex items-center gap-1 text-[12px] text-muted hover:text-ink"><ArrowLeft size={13} />Back to edit profile</Link>
-            <h1 className="font-serif text-[26px] font-semibold text-ink">Preview my profile</h1>
-            <p className="text-[12px] text-muted">This is the professional information approved employers see. Booking and review controls are hidden in your preview.</p>
+            <p className="dashboard-eyebrow">Career profile</p>
+            <h1 className="dashboard-title">Preview my profile</h1>
+            <p className="dashboard-intro">This is the professional information approved employers see. Booking and review controls are hidden in your preview.</p>
           </div>
           <Link href="/talent/profile" className="btn-primary">Edit profile</Link>
         </div>
@@ -65,7 +66,7 @@ export default function TalentProfilePreviewPage() {
 
         <div className="mb-5 rounded-xl border border-border bg-white p-7">
           <div className="flex flex-col gap-5 sm:flex-row">
-            <div className="flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-full bg-ink">
+            <div className="flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-full border border-border bg-surface">
               {profile.profile_image_url ? <img src={profile.profile_image_url} alt="" className="h-full w-full object-cover" /> : <span className="text-[32px] font-semibold text-accent">{profile.full_name?.[0]}</span>}
             </div>
             <div className="flex-1">
@@ -90,7 +91,7 @@ export default function TalentProfilePreviewPage() {
           <div className="space-y-5">
             <section className="rounded-xl border border-border bg-white p-5">
               <div className="mb-3 flex items-center gap-2"><Award size={16} className="text-accent" /><h3 className="text-[14px] font-medium text-ink">WHC Academy</h3></div>
-              {badges.length ? <div className="space-y-2">{badges.map(badge => <div key={badge.course_slug} className="rounded-lg border border-accent/20 bg-[#FDF6EC] p-3"><p className="text-[12px] font-medium text-ink">{courseTitle(badge.course_slug)}</p><p className="mt-1 text-[10px] text-muted">Verified completion on {new Date(badge.completed_at).toLocaleDateString('en-GB')}</p><Link href={`/talent/academy/certificate/${badge.course_slug}`} className="mt-1 inline-block text-[10px] font-medium text-accent hover:underline">View certificate</Link></div>)}</div> : <p className="text-[11px] text-muted">Completed Academy courses will always appear here.</p>}
+              {badges.length ? <div className="space-y-2">{badges.map(badge => <div key={badge.course_slug} className="rounded-lg border border-accent/20 bg-[#f5f6f8] p-3"><p className="text-[12px] font-medium text-ink">{courseTitle(badge.course_slug)}</p><p className="mt-1 text-[10px] text-muted">Verified completion on {new Date(badge.completed_at).toLocaleDateString('en-GB')}</p><Link href={`/talent/academy/certificate/${badge.course_slug}`} className="mt-1 inline-block text-[10px] font-medium text-accent hover:underline">View certificate</Link></div>)}</div> : <p className="text-[11px] text-muted">Completed Academy courses will always appear here.</p>}
             </section>
             {profile.agency_available && (profile.day_rate_min || profile.day_rate_max) ? <section className="rounded-xl border border-border bg-white p-5"><p className="eyebrow mb-2">Agency day rate</p><p className="text-[18px] font-semibold text-accent">&#163;{Number(profile.day_rate_min||profile.day_rate_max).toLocaleString()}{profile.day_rate_max && profile.day_rate_min ? ` - \u00A3${Number(profile.day_rate_max).toLocaleString()}` : ''}<span className="text-[11px] font-normal text-muted"> /day</span></p></section> : null}
             {profile.salary_expectation_min && profile.salary_expectation_private === false ? <section className="rounded-xl border border-border bg-white p-5"><p className="eyebrow mb-2">Salary expectation</p><p className="text-[18px] font-semibold text-accent">&#163;{Number(profile.salary_expectation_min).toLocaleString()}{profile.salary_expectation_max ? ` - \u00A3${Number(profile.salary_expectation_max).toLocaleString()}` : ''}<span className="text-[11px] font-normal text-muted"> /year</span></p></section> : null}

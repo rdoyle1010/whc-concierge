@@ -29,7 +29,7 @@ export default async function MatchExplainerPage() {
             <div className="max-w-2xl">
               <p className="mb-4 text-[10px] font-semibold uppercase tracking-[0.18em] text-[#61707b]">WHC Match</p>
               <h1 className="site-heading text-[48px] font-semibold leading-[0.98] md:text-[68px]">Roles come to you. You decide what feels right.</h1>
-              <p className="mt-7 max-w-xl text-[16px] leading-7 text-[#555555]">Think of it like a dating app for your career. Spa Platform ranks live roles around your real experience and preferences, then lets you review them one at a time.</p>
+              <p className="mt-7 max-w-xl text-[16px] leading-7 text-[#555555]">Think of it like a dating app for your career. WHC Concierge ranks live roles around your real experience and preferences, then lets you review them one at a time.</p>
               <div className="mt-8 flex flex-wrap gap-3">
                 <Link href="/login?role=talent&next=%2Froles%2Fmatch" className="inline-flex items-center gap-2 bg-[#0b2f4d] px-6 py-3.5 text-[13px] font-semibold text-white">Sign in to start matching <ArrowRight size={15}/></Link>
                 <Link href="/register/talent" className="inline-flex items-center gap-2 border border-[#cfd5da] bg-white px-6 py-3.5 text-[13px] font-semibold text-[#10283b]">Create free profile</Link>
@@ -41,9 +41,10 @@ export default async function MatchExplainerPage() {
               <div className="absolute left-2 top-12 h-[470px] w-[90%] -rotate-3 border border-[#e5e5e5] bg-[#fafafa]" />
               <div className="absolute right-2 top-10 h-[470px] w-[90%] rotate-3 border border-[#e5e5e5] bg-white" />
               <div className="relative overflow-hidden border border-[#d9dee3] bg-white shadow-[0_24px_70px_rgba(16,40,59,.14)]">
+                <span className="absolute left-1/2 top-3 z-10 -translate-x-1/2 rounded-full bg-[#10283b] px-3 py-1 text-[9px] font-semibold uppercase tracking-[0.14em] text-white">Sample - for illustration</span>
                 <div className="relative h-[235px] bg-[#0b2f4d]">
                   <img src="https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&q=82&w=1200" alt="Luxury spa interior" className="h-full w-full object-cover opacity-85" />
-                  <div className="absolute inset-0 bg-gradient-to-t from-[#071d2d]/70 via-transparent to-transparent" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-[#07243b]/70 via-transparent to-transparent" />
                   <div className="absolute bottom-5 left-5 right-5 text-white">
                     <p className="text-[10px] uppercase tracking-[.15em] text-white/70">The Grand Spa Hotel</p>
                     <p className="mt-1 text-[25px] font-semibold">Senior Spa Therapist</p>

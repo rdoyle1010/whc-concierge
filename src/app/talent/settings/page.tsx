@@ -238,7 +238,11 @@ export default function TalentSettingsPage() {
 
   return (
     <DashboardShell role="talent">
-      <h1 className="text-2xl font-serif font-bold text-ink mb-6">Settings</h1>
+      <div className="mb-6">
+        <p className="dashboard-eyebrow">Account</p>
+        <h1 className="dashboard-title">Settings</h1>
+        <p className="dashboard-intro">Manage your password, privacy, alerts and data.</p>
+      </div>
 
       <div className="max-w-2xl space-y-6">
         <div className="dashboard-card">
@@ -344,11 +348,7 @@ export default function TalentSettingsPage() {
               <div>
                 <label className="eyebrow block mb-2">Frequency</label>
                 <div className="flex flex-wrap gap-2">
-                  {[
-                    { value: 'instant', label: 'Instant' },
-                    { value: 'daily', label: 'Daily digest' },
-                    { value: 'weekly', label: 'Weekly digest' },
-                  ].map(opt => (
+                  {[{ value: 'instant', label: 'Instant' }].map(opt => (
                     <button key={opt.value} type="button"
                       onClick={() => { setAlertsFrequency(opt.value); saveAlertPref('job_alerts_frequency', opt.value) }}
                       className={`px-4 py-2 rounded-lg text-[12px] font-medium transition-colors ${alertsFrequency === opt.value ? 'bg-ink text-white' : 'bg-surface border border-border text-muted hover:border-ink/20'}`}>
@@ -356,6 +356,7 @@ export default function TalentSettingsPage() {
                     </button>
                   ))}
                 </div>
+                <p className="text-[11px] text-muted mt-2">Digest options are coming. Use the toggle above to pause alerts entirely.</p>
               </div>
 
               {/* Minimum match score */}
@@ -390,14 +391,20 @@ export default function TalentSettingsPage() {
         <div className="dashboard-card border-red-100">
           <h3 className="font-serif text-lg font-semibold text-red-600 mb-2">Danger Zone</h3>
           <p className="text-sm text-gray-500 mb-4">Once you delete your account, there is no going back.</p>
-          <div className="flex flex-wrap gap-3">
-            <button onClick={handleDeleteAccount} disabled={deleting} className="px-4 py-2 bg-red-50 text-red-600 rounded-lg text-sm font-medium hover:bg-red-100 transition-colors disabled:opacity-50">
-              {deleting ? 'Deleting...' : 'Delete Account'}
-            </button>
-            <button type="button" onClick={() => setShowDeleteRequest(true)} disabled={deleteRequested}
-              className="px-4 py-2 border border-red-200 text-red-500 rounded-lg text-sm font-medium hover:bg-red-50 transition-colors disabled:opacity-50">
-              {deleteRequested ? 'Request Sent' : 'Request Account Deletion'}
-            </button>
+          <div className="flex flex-wrap items-start gap-x-6 gap-y-3">
+            <div>
+              <button onClick={handleDeleteAccount} disabled={deleting} className="px-4 py-2 bg-red-50 text-red-600 rounded-lg text-sm font-medium hover:bg-red-100 transition-colors disabled:opacity-50">
+                {deleting ? 'Deleting...' : 'Delete Account'}
+              </button>
+              <p className="text-[11px] text-muted mt-1.5">Deletes your account and data immediately - this cannot be undone.</p>
+            </div>
+            <div>
+              <button type="button" onClick={() => setShowDeleteRequest(true)} disabled={deleteRequested}
+                className="px-4 py-2 border border-red-200 text-red-500 rounded-lg text-sm font-medium hover:bg-red-50 transition-colors disabled:opacity-50">
+                {deleteRequested ? 'Request Sent' : 'Request Account Deletion'}
+              </button>
+              <p className="text-[11px] text-muted mt-1.5">Sends a request our support team reviews before anything is removed.</p>
+            </div>
           </div>
         </div>
 

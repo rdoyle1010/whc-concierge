@@ -83,7 +83,7 @@ export default async function RoleDetailPage(props: { params: Promise<{ id: stri
   return <>
     <Navbar />
     <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jobPostingLd) }} />
-    <main className="pt-[68px] bg-white">
+    <main className="pt-[76px] bg-white">
       <section className="border-b border-[#e5e5e5] bg-white">
         <div className="max-w-6xl mx-auto px-6 py-4"><Link href="/jobs" className="text-[12px] text-[#555555] hover:text-[#0b2f4d]">← All roles</Link></div>
       </section>
@@ -161,7 +161,7 @@ export default async function RoleDetailPage(props: { params: Promise<{ id: stri
               <div>
                 <p className="text-[14px] leading-7 text-[#4d4d4d]">{employer.about_text || employer.description || employer.tagline || `Explore the full WHC property profile for ${propertyName} to see its spa operation, staff reviews, property rating, brands, travel information and current opportunities.`}</p>
                 <div className="flex flex-wrap gap-3 mt-4 text-[12px] text-[#555555]">{employer.star_rating && <span>{isNaN(Number(employer.star_rating)) ? employer.star_rating : `${employer.star_rating}★ property`}</span>}{reviewScore > 0 && <span>{reviewScore.toFixed(1)} WHC staff rating</span>}{employer.hotel_group && <span>{employer.hotel_group}</span>}{employer.room_count && <span>{employer.room_count} rooms</span>}{employer.spa_size && <span>{employer.spa_size}</span>}{employer.num_treatment_rooms && <span>{employer.num_treatment_rooms} treatment rooms</span>}{employer.team_size && <span>{employer.team_size} spa team</span>}{employer.opening_year && <span>Opened {employer.opening_year}</span>}</div>
-                {Array.isArray(employer.facilities) && employer.facilities.length > 0 && <div className="flex flex-wrap gap-1.5 mt-4">{employer.facilities.map((facility: string) => <span key={facility} className="text-[11px] bg-[#f2f0ea] text-[#5c5646] px-2.5 py-1 rounded-full">{facility}</span>)}</div>}
+                {Array.isArray(employer.facilities) && employer.facilities.length > 0 && <div className="flex flex-wrap gap-1.5 mt-4">{employer.facilities.map((facility: string) => <span key={facility} className="text-[11px] bg-[#f0f0f0] text-[#5a6a76] px-2.5 py-1 rounded-full">{facility}</span>)}</div>}
                 {employer.culture_statement && <div className="mt-5"><p className="text-[10px] uppercase tracking-[.14em] text-[#10283b] font-semibold mb-1.5">Working here</p><p className="text-[13px] leading-6 text-[#4d4d4d] whitespace-pre-line">{employer.culture_statement}</p></div>}
                 {Array.isArray(employer.staff_benefits) && employer.staff_benefits.length > 0 && <div className="mt-4"><p className="text-[10px] uppercase tracking-[.14em] text-[#10283b] font-semibold mb-1.5">Staff benefits</p><div className="flex flex-wrap gap-1.5">{employer.staff_benefits.map((benefit: string) => <span key={benefit} className="text-[11px] bg-emerald-50 text-emerald-700 px-2.5 py-1 rounded-full">{benefit}</span>)}</div></div>}
                 {employer.progression_notes && <div className="mt-4"><p className="text-[10px] uppercase tracking-[.14em] text-[#10283b] font-semibold mb-1.5">Progression</p><p className="text-[13px] leading-6 text-[#4d4d4d] whitespace-pre-line">{employer.progression_notes}</p></div>}

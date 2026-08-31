@@ -4,8 +4,7 @@ export default function RoleListingMockup() {
   return (
     <div className="mx-auto w-full max-w-sm overflow-hidden rounded-3xl border border-border bg-white shadow-[0_18px_55px_rgba(16,40,59,.08)]">
       <div className="relative min-h-[170px] overflow-hidden bg-[#0b2f4d]">
-        <div className="absolute inset-0 bg-gradient-to-br from-[#0b2f4d] via-[#123f64] to-[#10283b]" />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-black/15" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
         <div className="absolute left-4 top-4"><span className="badge-gold">Gold</span></div>
         <div className="absolute inset-x-0 bottom-0 p-5 text-white">
           <p className="mb-1 text-[10px] uppercase tracking-[.14em] text-white/70">Property</p>

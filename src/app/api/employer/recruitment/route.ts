@@ -18,18 +18,18 @@ async function alertAdmin(propertyName: string, request: { job_title: string; se
   const salary = request.salary_min || request.salary_max
     ? `£${Number(request.salary_min || 0).toLocaleString()}${request.salary_max ? ` - £${Number(request.salary_max).toLocaleString()}` : ''}`
     : 'Not stated'
-  const html = `<div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;padding:32px 20px;color:#17344d;">
+  const html = `<div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;padding:32px 20px;color:#10283b;">
     <p style="font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:#10283b;">New managed search request</p>
     <h2 style="font-family:Georgia,serif;font-weight:500;">${esc(propertyName)} wants WHC to run a search</h2>
     <table style="width:100%;border-collapse:collapse;font-size:14px;">
-      <tr><td style="padding:6px 0;color:#9CA3AF;width:110px;">Service</td><td style="text-transform:capitalize;">${esc(request.service)}</td></tr>
-      <tr><td style="padding:6px 0;color:#9CA3AF;">Role</td><td><strong>${esc(request.job_title)}</strong>${request.role_level ? ` (${esc(String(request.role_level))})` : ''}</td></tr>
-      <tr><td style="padding:6px 0;color:#9CA3AF;">Salary</td><td>${esc(salary)}</td></tr>
-      <tr><td style="padding:6px 0;color:#9CA3AF;">Location</td><td>${esc(String(request.location || 'Not stated'))}</td></tr>
-      <tr><td style="padding:6px 0;color:#9CA3AF;">Timeline</td><td>${esc(String(request.timeline || 'Not stated'))}</td></tr>
+      <tr><td style="padding:6px 0;color:#8a949b;width:110px;">Service</td><td style="text-transform:capitalize;">${esc(request.service)}</td></tr>
+      <tr><td style="padding:6px 0;color:#8a949b;">Role</td><td><strong>${esc(request.job_title)}</strong>${request.role_level ? ` (${esc(String(request.role_level))})` : ''}</td></tr>
+      <tr><td style="padding:6px 0;color:#8a949b;">Salary</td><td>${esc(salary)}</td></tr>
+      <tr><td style="padding:6px 0;color:#8a949b;">Location</td><td>${esc(String(request.location || 'Not stated'))}</td></tr>
+      <tr><td style="padding:6px 0;color:#8a949b;">Timeline</td><td>${esc(String(request.timeline || 'Not stated'))}</td></tr>
     </table>
-    <div style="background:#F9FAFB;border-radius:8px;padding:14px 16px;margin:18px 0;">
-      <p style="font-size:11px;color:#9CA3AF;text-transform:uppercase;letter-spacing:.05em;margin:0 0 6px;">Brief</p>
+    <div style="background:#fafafa;border-radius:8px;padding:14px 16px;margin:18px 0;">
+      <p style="font-size:11px;color:#8a949b;text-transform:uppercase;letter-spacing:.05em;margin:0 0 6px;">Brief</p>
       <p style="font-size:14px;line-height:1.7;white-space:pre-wrap;margin:0;">${esc(request.brief)}</p>
     </div>
     <p style="font-size:13px;color:#516371;">Reply to the employer within one working day - this is the highest-value enquiry the platform takes.</p>

@@ -45,7 +45,7 @@ export default async function BrowseRolesPage() {
     <div className="min-h-screen bg-surface">
       <Navbar />
 
-      <section className="pt-16 bg-white border-b border-border">
+      <section className="pt-[76px] bg-white border-b border-border">
         <div className="max-w-[1440px] mx-auto px-6 lg:px-10 py-16">
           <div className="max-w-3xl">
             <p className="text-[11px] font-semibold tracking-[0.15em] uppercase text-accent mb-3">Luxury spa & hospitality careers</p>

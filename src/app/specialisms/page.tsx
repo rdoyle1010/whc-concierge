@@ -24,7 +24,7 @@ export default function SpecialismsPage() {
       <Navbar />
 
       {/* Hero */}
-      <section className="pt-16 bg-white border-b border-border">
+      <section className="pt-[76px] bg-white border-b border-border">
         <div className="max-w-5xl mx-auto px-6 lg:px-8 py-16 text-center">
           <p className="text-[11px] tracking-[0.15em] uppercase font-medium mb-4" style={{ color: '#555555' }}>Every Discipline</p>
           <h1 className="text-[36px] md:text-[48px] font-medium text-ink tracking-tight leading-[1.08] mb-4">Specialisms</h1>

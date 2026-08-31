@@ -12,10 +12,10 @@ type JobRow = {
 
 const STATUS_LABELS: Record<string, string> = {
   total: 'Applications received', pending: 'Pending review',
-  shortlisted: 'Shortlisted', accepted: 'Accepted',
+  shortlisted: 'Shortlisted', interview: 'Interview', offered: 'Offer made', accepted: 'Accepted',
 }
-const FUNNEL_ORDER = ['total', 'pending', 'shortlisted', 'accepted']
-const FUNNEL_COLOURS = ['#10283b', '#D97706', '#555555', '#16A34A']
+const FUNNEL_ORDER = ['total', 'pending', 'shortlisted', 'interview', 'offered', 'accepted']
+const FUNNEL_COLOURS = ['#10283b', '#123f64', '#315675', '#0b2f4d', '#123f64', '#16a34a']
 
 export default function EmployerAnalyticsPage() {
   const supabase = createClient()
@@ -106,7 +106,7 @@ export default function EmployerAnalyticsPage() {
           tier: job.tier || 'Standard',
           daysLive,
           totalApps: jobApps.length,
-          shortlisted: jobApps.filter(a => a.status === 'shortlisted' || a.status === 'accepted').length,
+          shortlisted: jobApps.filter(a => ['shortlisted', 'interview', 'offered', 'accepted'].includes(a.status)).length,
           avgScore: jobScores.length > 0 ? Math.round(jobScores.reduce((a, b) => a + b, 0) / jobScores.length) : 0,
           status: jobStatus,
         }
@@ -160,7 +160,11 @@ export default function EmployerAnalyticsPage() {
 
   return (
     <DashboardShell role="employer" userName={profile?.company_name}>
-      <h1 className="text-[24px] font-medium text-ink mb-6">Analytics</h1>
+      <div className="mb-8">
+        <p className="dashboard-eyebrow">Insight</p>
+        <h1 className="dashboard-title">Analytics</h1>
+        <p className="dashboard-intro">Track applications, funnel progress and per-role performance across your listings.</p>
+      </div>
 
       {/* Overview Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
@@ -229,7 +233,7 @@ export default function EmployerAnalyticsPage() {
             <div className="space-y-2.5">
               {topSkills.map((skill, i) => (
                 <div key={skill} className="flex items-center gap-3">
-                  <span className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-semibold shrink-0" style={{ backgroundColor: '#FDF6EC', color: '#555555' }}>{i + 1}</span>
+                  <span className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-semibold shrink-0" style={{ backgroundColor: '#f5f6f8', color: '#555555' }}>{i + 1}</span>
                   <span className="text-[13px] text-ink">{skill}</span>
                 </div>
               ))}
@@ -269,7 +273,7 @@ export default function EmployerAnalyticsPage() {
                   <tr key={row.id} className="hover:bg-surface/50 transition-colors">
                     <td className="px-5 py-3 text-[13px] font-medium text-ink max-w-[200px] truncate">{row.title}</td>
                     <td className="px-5 py-3">
-                      <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${row.tier === 'Platinum' ? 'bg-ink text-white' : row.tier === 'Gold' ? 'bg-[#FDF6EC] text-accent' : row.tier === 'Silver' ? 'bg-neutral-100 text-neutral-600' : 'bg-surface text-muted'}`}>{row.tier}</span>
+                      <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${row.tier === 'Platinum' ? 'bg-ink text-white' : row.tier === 'Gold' ? 'bg-[#f5f6f8] text-accent' : row.tier === 'Silver' ? 'bg-neutral-100 text-neutral-600' : 'bg-surface text-muted'}`}>{row.tier}</span>
                     </td>
                     <td className="px-5 py-3">
                       <span className={`text-[11px] font-medium px-2 py-0.5 rounded-full ${row.status === 'live' ? 'bg-emerald-50 text-emerald-700' : row.status === 'filled' ? 'bg-blue-50 text-blue-700' : 'bg-neutral-100 text-neutral-500'}`}>{row.status}</span>
@@ -279,7 +283,7 @@ export default function EmployerAnalyticsPage() {
                     <td className="px-5 py-3 text-[13px] text-ink">{row.shortlisted}</td>
                     <td className="px-5 py-3">
                       {row.avgScore > 0 ? (
-                        <span className="text-[13px] font-medium" style={{ color: row.avgScore >= 80 ? '#16A34A' : row.avgScore >= 60 ? '#555555' : '#6B7280' }}>{row.avgScore}%</span>
+                        <span className="text-[13px] font-medium" style={{ color: row.avgScore >= 80 ? '#16A34A' : row.avgScore >= 60 ? '#555555' : '#5a6a76' }}>{row.avgScore}%</span>
                       ) : <span className="text-[11px] text-muted">-</span>}
                     </td>
                   </tr>

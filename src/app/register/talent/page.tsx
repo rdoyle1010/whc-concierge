@@ -97,51 +97,51 @@ export default function TalentRegisterPage() {
 
   return (
     <div className="min-h-screen bg-white">
-      <div className="border-b border-neutral-100 px-4 py-4 flex items-center justify-between max-w-3xl mx-auto">
+      <div className="border-b border-border px-4 py-4 flex items-center justify-between max-w-3xl mx-auto">
         <Wordmark />
-        <Link href="/login?role=talent" className="text-sm text-neutral-400 hover:text-black">Already have an account?</Link>
+        <Link href="/login?role=talent" className="text-sm text-muted hover:text-ink">Already have an account?</Link>
       </div>
 
       <div className="max-w-2xl mx-auto px-4 py-12">
-        <h1 className="text-3xl font-bold text-black mb-2">Create your Talent account</h1>
-        <p className="text-neutral-500 mb-2">Get your account set up first. You will build your professional profile once you are inside.</p>
-        <p className="text-sm text-neutral-400 mb-8">No duplicated forms. The information you add to your profile is saved directly to your Talent account.</p>
+        <h1 className="text-3xl font-bold text-ink mb-2">Create your Talent account</h1>
+        <p className="text-secondary mb-2">Get your account set up first. You will build your professional profile once you are inside.</p>
+        <p className="text-sm text-muted mb-8">No duplicated forms. The information you add to your profile is saved directly to your Talent account.</p>
 
         {error && <div className="bg-red-50 text-red-600 text-sm px-4 py-3 mb-6">{error}</div>}
 
         <div className="space-y-5">
           <div>
-            <label className="block text-xs font-medium text-neutral-500 uppercase tracking-wider mb-1.5">Full Name *</label>
+            <label className="block text-xs font-medium text-secondary uppercase tracking-wider mb-1.5">Full Name *</label>
             <input type="text" value={form.full_name} onChange={(e) => update('full_name', e.target.value)} className="input-field" autoComplete="name" />
           </div>
           <div>
-            <label className="block text-xs font-medium text-neutral-500 uppercase tracking-wider mb-1.5">Email *</label>
+            <label className="block text-xs font-medium text-secondary uppercase tracking-wider mb-1.5">Email *</label>
             <input type="email" value={form.email} onChange={(e) => update('email', e.target.value)} className="input-field" autoComplete="email" />
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-medium text-neutral-500 uppercase tracking-wider mb-1.5">Password *</label>
+              <label className="block text-xs font-medium text-secondary uppercase tracking-wider mb-1.5">Password *</label>
               <input type="password" value={form.password} onChange={(e) => update('password', e.target.value)} className="input-field" maxLength={MAX_PASSWORD_LENGTH} autoComplete="new-password" />
             </div>
             <div>
-              <label className="block text-xs font-medium text-neutral-500 uppercase tracking-wider mb-1.5">Confirm *</label>
+              <label className="block text-xs font-medium text-secondary uppercase tracking-wider mb-1.5">Confirm *</label>
               <input type="password" value={form.confirmPassword} onChange={(e) => update('confirmPassword', e.target.value)} className="input-field" maxLength={MAX_PASSWORD_LENGTH} autoComplete="new-password" />
             </div>
           </div>
-          <div className="text-xs text-neutral-400">Use {MIN_PASSWORD_LENGTH}-{MAX_PASSWORD_LENGTH} characters.</div>
+          <div className="text-xs text-muted">Use {MIN_PASSWORD_LENGTH}-{MAX_PASSWORD_LENGTH} characters.</div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-medium text-neutral-500 uppercase tracking-wider mb-1.5">Phone</label>
+              <label className="block text-xs font-medium text-secondary uppercase tracking-wider mb-1.5">Phone</label>
               <input type="tel" value={form.phone} onChange={(e) => update('phone', e.target.value)} className="input-field" autoComplete="tel" />
             </div>
             <div>
-              <label className="block text-xs font-medium text-neutral-500 uppercase tracking-wider mb-1.5">Postcode</label>
+              <label className="block text-xs font-medium text-secondary uppercase tracking-wider mb-1.5">Postcode</label>
               <input type="text" value={form.postcode} onChange={(e) => update('postcode', e.target.value)} className="input-field" autoComplete="postal-code" />
             </div>
           </div>
           <label className="flex items-center space-x-3 cursor-pointer py-2">
-            <input type="checkbox" checked={form.has_car} onChange={(e) => update('has_car', e.target.checked)} className="w-4 h-4 border-neutral-300 text-black focus:ring-black rounded-sm" />
-            <span className="text-sm text-neutral-600">I have access to a car</span>
+            <input type="checkbox" checked={form.has_car} onChange={(e) => update('has_car', e.target.checked)} className="w-4 h-4 border-border text-accent focus:ring-accent rounded-sm" />
+            <span className="text-sm text-secondary">I have access to a car</span>
           </label>
           <button type="button" onClick={createAccount} disabled={loading} className="btn-primary w-full disabled:opacity-40">
             {loading ? 'Creating account...' : 'Create account & build profile'}

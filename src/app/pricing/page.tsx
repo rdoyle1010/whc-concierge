@@ -51,13 +51,13 @@ export default function PricingPage() {
 
   return <div className="public-page">
     <Navbar />
-    <main className="pt-[68px]">
+    <main className="pt-[76px]">
       <section className="bg-[#0b2f4d] text-white">
         <div className="max-w-7xl mx-auto px-6 py-14 md:py-20 grid lg:grid-cols-[1fr_.85fr] gap-10 items-center">
           <div>
-            <p className="text-[10px] uppercase tracking-[.2em] font-semibold text-[#555555] mb-4">Simple, transparent pricing</p>
-            <h1 className="text-[44px] md:text-[62px] leading-[1.01] tracking-[-.05em] font-semibold text-white mb-5">Choose what you need. Pay for what creates value.</h1>
-            <p className="text-[15px] md:text-[17px] leading-7 text-white/68 max-w-3xl">Free entry for Talent and Employers, clear paid upgrades, transparent Agency fees and specialist recruitment when you want WHC to do more.</p>
+            <p className="text-[10px] uppercase tracking-[.2em] font-semibold text-white/80 mb-4">{cms.hero.eyebrow || 'Simple, transparent pricing'}</p>
+            <h1 className="text-[44px] md:text-[62px] leading-[1.01] tracking-[-.05em] font-semibold text-white mb-5">{cms.hero.heading || 'Choose what you need. Pay for what creates value.'}</h1>
+            <p className="text-[15px] md:text-[17px] leading-7 text-white/68 max-w-3xl">{cms.hero.text || 'Free entry for Talent and Employers, clear paid upgrades, transparent Agency fees and specialist recruitment when you want WHC to do more.'}</p>
           </div>
           <div className="aspect-[4/3] overflow-hidden rounded-[26px]"><img src={cms.hero.image.url} alt={cms.hero.image.alt} className="w-full h-full object-cover" style={{objectPosition:`${cms.hero.image.focalX}% ${cms.hero.image.focalY}%`}}/></div>
         </div>
@@ -91,7 +91,7 @@ export default function PricingPage() {
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-5">
             <article className="rounded-[22px] bg-white border border-[#e0e0e0] p-6"><BriefcaseBusiness size={19} className="text-[#10283b]"/><p className="text-[9px] uppercase tracking-[.16em] font-semibold text-[#10283b] mt-5">Job advertising</p><h3 className="text-[20px] font-semibold text-[#10283b] mt-2">Standard Job</h3><p className="text-[31px] font-semibold text-[#10283b] mt-4">{JOB_TIERS.Bronze.display}</p><p className="text-[11px] text-[#65727c] mt-2">30 days · matching · applications · shortlist · filled-role notifications</p></article>
             <article className="rounded-[22px] bg-white border border-[#555555] ring-1 ring-[#555555]/20 p-6"><Sparkles size={19} className="text-[#10283b]"/><p className="text-[9px] uppercase tracking-[.16em] font-semibold text-[#10283b] mt-5">More visibility</p><h3 className="text-[20px] font-semibold text-[#10283b] mt-2">Featured Job</h3><p className="text-[31px] font-semibold text-[#10283b] mt-4">{JOB_TIERS.Platinum.display}</p><p className="text-[11px] text-[#65727c] mt-2">30 days · priority placement · featured badge · talent email · enhanced branding</p></article>
-            <article className="rounded-[22px] bg-white border border-[#e0e0e0] p-6"><Building2 size={19} className="text-[#10283b]"/><p className="text-[9px] uppercase tracking-[.16em] font-semibold text-[#10283b] mt-5">Annual membership</p><h3 className="text-[20px] font-semibold text-[#10283b] mt-2">Employer Pro</h3><p className="text-[31px] font-semibold text-[#10283b] mt-4">{pounds(EMPLOYER_MEMBERSHIPS.pro.price)}<span className="text-[12px] text-[#7a858c] font-normal">/year</span></p><p className="text-[11px] text-[#65727c] mt-2">Full talent search, analytics, shortlisting, Property Fact Files and £99 Standard Jobs.</p></article>
+            <article className="rounded-[22px] bg-white border border-[#e0e0e0] p-6"><Building2 size={19} className="text-[#10283b]"/><p className="text-[9px] uppercase tracking-[.16em] font-semibold text-[#10283b] mt-5">Annual membership</p><h3 className="text-[20px] font-semibold text-[#10283b] mt-2">Employer Pro</h3><p className="text-[31px] font-semibold text-[#10283b] mt-4">{pounds(EMPLOYER_MEMBERSHIPS.pro.price)}<span className="text-[12px] text-[#7a858c] font-normal">/year</span></p><p className="text-[11px] text-[#65727c] mt-2">Full talent search, analytics, shortlisting, Property Fact Files and {pounds(EMPLOYER_MEMBERSHIPS.pro.discountedStandardJobPrice)} Standard Jobs.</p></article>
             <article className="rounded-[22px] bg-[#10283b] text-white p-6"><Building2 size={19} className="text-[#555555]"/><p className="text-[9px] uppercase tracking-[.16em] font-semibold text-[#555555] mt-5">Groups & regular recruiters</p><h3 className="text-[20px] font-semibold mt-2">Employer Group</h3><p className="text-[31px] font-semibold mt-4">{pounds(EMPLOYER_MEMBERSHIPS.group.price)}<span className="text-[12px] text-white/55 font-normal">/year</span></p><p className="text-[11px] text-white/60 mt-2">Up to 20 job listings per year, multiple properties, multiple hiring managers and advanced talent access.</p></article>
           </div>
         </div>

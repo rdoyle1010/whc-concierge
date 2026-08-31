@@ -52,9 +52,9 @@ export default function AdminNewsletterPage() {
   const [popupMessage, setPopupMessage] = useState('')
   const [popupError, setPopupError] = useState('')
 
-  async function load() {
+  async function load(q = '') {
     try {
-      const res = await fetch('/api/admin/newsletter')
+      const res = await fetch(q ? `/api/admin/newsletter?q=${encodeURIComponent(q)}` : '/api/admin/newsletter')
       const json = await res.json()
       if (!res.ok) { setError(json.error || 'Could not load subscribers.'); return }
       setRows(json.subscribers || [])
@@ -62,12 +62,19 @@ export default function AdminNewsletterPage() {
   }
 
   useEffect(() => {
-    load()
     fetch('/api/newsletter/config', { cache: 'no-store' })
       .then(res => res.ok ? res.json() : null)
       .then(data => { if (data) setPopup(data) })
       .catch(() => setPopupError('Could not load popup settings.'))
   }, [])
+
+  // Server-side search: the API filters the full table, not just the loaded
+  // rows. Debounced so we do not fire a request per keystroke.
+  useEffect(() => {
+    const timer = setTimeout(() => { load(search.trim()) }, search ? 300 : 0)
+    return () => clearTimeout(timer)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [search])
 
   const counts = useMemo(() => ({
     confirmed: rows.filter(row => row.status === 'confirmed').length,
@@ -75,11 +82,8 @@ export default function AdminNewsletterPage() {
     unsubscribed: rows.filter(row => row.status === 'unsubscribed').length,
   }), [rows])
 
-  const filtered = useMemo(() => {
-    const q = search.trim().toLowerCase()
-    if (!q) return rows
-    return rows.filter(row => row.email.toLowerCase().includes(q))
-  }, [rows, search])
+  // Rows arrive already filtered server-side by the ?q= email search.
+  const filtered = rows
 
   async function removeSubscriber(id: string) {
     if (removingId) return
@@ -132,9 +136,9 @@ export default function AdminNewsletterPage() {
   return (
     <DashboardShell role="admin">
       <div className="max-w-5xl">
-        <p className="text-[11px] uppercase tracking-[0.18em] text-accent font-semibold mb-1.5">Content &amp; revenue</p>
-        <h1 className="font-serif text-[26px] font-bold text-ink mb-2">Newsletter</h1>
-        <p className="text-[13.5px] text-secondary mb-6 max-w-2xl">Everyone who has signed up to the mailing list, with double opt-in status. Export confirmed addresses for a send, remove anyone who asks, and manage the signup popup shown across the public site.</p>
+        <p className="dashboard-eyebrow">Content &amp; revenue</p>
+        <h1 className="dashboard-title">Newsletter</h1>
+        <p className="dashboard-intro mb-6 max-w-2xl">Everyone who has signed up to the mailing list, with double opt-in status. Export confirmed addresses for a send, remove anyone who asks, and manage the signup popup shown across the public site.</p>
 
         {error && <p className="text-[12.5px] text-red-600 font-medium mb-4">{error}</p>}
 
@@ -167,9 +171,12 @@ export default function AdminNewsletterPage() {
                   className="input-field !pl-9 text-[12.5px] w-56"
                 />
               </div>
-              <button type="button" onClick={exportCsv} disabled={counts.confirmed === 0} className="btn-secondary text-[12px] inline-flex items-center gap-1.5 disabled:opacity-50">
-                <Download size={13} /> Export confirmed CSV
-              </button>
+              <div className="flex flex-col items-end gap-1">
+                <button type="button" onClick={exportCsv} disabled={counts.confirmed === 0} className="btn-secondary text-[12px] inline-flex items-center gap-1.5 disabled:opacity-50">
+                  <Download size={13} /> Export confirmed CSV
+                </button>
+                <p className="text-[10px] text-muted">The CSV covers the loaded rows only.</p>
+              </div>
             </div>
           </div>
 

@@ -114,7 +114,7 @@ export const DEFAULT_WEBSITE_CONTENT: WebsiteContent = {
   },
   services: {
     cards: [
-      { eyebrow: 'Agency marketplace', heading: 'Fill shifts fast. One transparent fee.', text: 'Find verified practitioners near you and book hourly or same-day cover with clear rates.', buttonLabel: 'Browse practitioners', buttonHref: '/agency' },
+      { eyebrow: 'Agency marketplace', heading: 'Fill shifts fast. One transparent fee.', text: 'Find verified practitioners near you and book hourly or same-day cover with clear rates.', buttonLabel: 'Browse practitioners', buttonHref: '/agency/about' },
       { eyebrow: 'WHC Academy', heading: 'Training that gets you booked.', text: 'Practical courses in five-star standards, consultation, retail, treatments and brand knowledge.', buttonLabel: 'Explore the Academy', buttonHref: '/academy' },
       { eyebrow: 'Residency programme', heading: 'Discover visiting specialists.', text: 'Connect with exceptional practitioners for focused placements at remarkable properties.', buttonLabel: 'Explore residencies', buttonHref: '/residency' },
     ],

@@ -53,11 +53,11 @@ export const DEFAULT_PUBLIC_PAGES_CONTENT: PublicPagesContent = {
       hero: {
         eyebrow: 'WHC properties',
         heading: 'Exceptional places to work.',
-        text: 'Meet verified hotels, spas and wellness destinations using Spa Platform to find exceptional people. Featured properties appear first.',
+        text: 'Meet verified hotels, spas and wellness destinations using WHC Concierge to find exceptional people. Featured properties appear first.',
         image: image('https://images.unsplash.com/photo-1759038086403-c607d67bb245?auto=format&fit=crop&q=82&w=1800', 'Luxury hospitality interior'),
       },
       blocks: [
-        block('Verified partners', 'Properties building their teams with us.', 'Discover properties using Spa Platform to recruit and book exceptional wellness professionals.', 'https://images.unsplash.com/photo-1600334129128-685c5582fd35?auto=format&fit=crop&q=82&w=1600', 'Luxury spa treatment'),
+        block('Verified partners', 'Properties building their teams with us.', 'Discover properties using WHC Concierge to recruit and book exceptional wellness professionals.', 'https://images.unsplash.com/photo-1600334129128-685c5582fd35?auto=format&fit=crop&q=82&w=1600', 'Luxury spa treatment'),
         block('A better first impression', 'See the place behind the role.', 'Property photography, brand information, reviews and live opportunities help professionals understand where they could work.', 'https://images.unsplash.com/photo-1779956511234-963c515b0516?auto=format&fit=crop&q=82&w=1600', 'Contemporary wellness space'),
         block('For exceptional properties', 'Your employer brand should be visible.', 'Verified properties can build a richer profile so talent sees more than a job title.', 'https://images.unsplash.com/photo-1751972788348-3360f69603f6?auto=format&fit=crop&q=82&w=1600', 'Luxury destination hospitality'),
       ],
@@ -71,7 +71,7 @@ export const DEFAULT_PUBLIC_PAGES_CONTENT: PublicPagesContent = {
         image: image('https://images.unsplash.com/photo-1600334129128-685c5582fd35?auto=format&fit=crop&q=82&w=1800', 'Spa professional delivering a treatment'),
       },
       blocks: [
-        block('For employers', 'Post the shift. See who is genuinely available.', 'Choose the date, hours, location and treatments you need. Spa Platform shows suitable professionals whose availability fits the whole shift, together with their experience, skills, rate, location and verification information. Review the profile, make an offer and confirm the cover.', 'https://images.unsplash.com/photo-1564501049412-61c2a3083791?auto=format&fit=crop&q=82&w=1600', 'Luxury hotel spa team'),
+        block('For employers', 'Post the shift. See who is genuinely available.', 'Choose the date, hours, location and treatments you need. WHC Concierge shows suitable professionals whose availability fits the whole shift, together with their experience, skills, rate, location and verification information. Review the profile, make an offer and confirm the cover.', 'https://images.unsplash.com/photo-1564501049412-61c2a3083791?auto=format&fit=crop&q=82&w=1600', 'Luxury hotel spa team'),
         block('For professionals', 'Tell us when you are free. You decide what you accept.', 'Set your exact availability, hourly rate, travel radius, treatment skills and preferred working area. Suitable properties can find you for the hours you have chosen. You review the opportunity and decide whether the shift works for you.', 'https://images.unsplash.com/photo-1515377905703-c4788e51af15?auto=format&fit=crop&q=82&w=1600', 'Wellness professional'),
         block('Verification made clearer', 'Qualified abroad? Your experience should still make sense here.', 'Spa is an international industry. Profiles can show where a professional trained, the treatments they are qualified to perform, qualification review status, right-to-work information and insurance status. Where a formal UK equivalence has not been established, the platform does not pretend that it has.', 'https://images.unsplash.com/photo-1544161515-4ab6ce6db874?auto=format&fit=crop&q=82&w=1600', 'Spa therapist at work'),
       ],
@@ -81,7 +81,7 @@ export const DEFAULT_PUBLIC_PAGES_CONTENT: PublicPagesContent = {
       hero: {
         eyebrow: 'Curated Residency Marketplace',
         heading: 'Bring exceptional wellness talent into your property.',
-        text: 'Discover experienced specialists for seasonal, short-term and signature residencies. Identity stays protected while you discuss fit, then agreed terms and payment stay securely on Spa Platform.',
+        text: 'Discover experienced specialists for seasonal, short-term and signature residencies. Identity stays protected while you discuss fit, then agreed terms and payment stay securely on WHC Concierge.',
         image: image('https://images.unsplash.com/photo-1779956511234-963c515b0516?auto=format&fit=crop&q=82&w=1800', 'Destination wellness setting'),
       },
       blocks: [
@@ -108,7 +108,7 @@ export const DEFAULT_PUBLIC_PAGES_CONTENT: PublicPagesContent = {
       label: 'Coming Soon',
       hero: {
         eyebrow: 'Coming next',
-        heading: 'Spa Platform is only the beginning.',
+        heading: 'WHC Concierge is only the beginning.',
         text: 'We are building the talent, flexible staffing and career-confidence platform for hospitality - starting with spa and wellness, then expanding into the departments every great property depends on.',
         image: image('https://images.unsplash.com/photo-1751972788348-3360f69603f6?auto=format&fit=crop&q=82&w=1800', 'Luxury hospitality destination'),
       },

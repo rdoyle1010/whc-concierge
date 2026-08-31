@@ -15,9 +15,10 @@ export default function AdminVerificationPage() {
   async function load() {
     try {
       const res = await fetch('/api/admin/verification')
-      const j = res.ok ? await res.json() : { rows: [] }
-      setRows(j.rows || [])
-    } catch { /* empty */ }
+      const j = await res.json().catch(() => ({}))
+      if (!res.ok) { setError(j.error || 'Could not load verification submissions.'); setRows([]) }
+      else setRows(j.rows || [])
+    } catch { setError('Could not load verification submissions.') }
     setLoading(false)
   }
   useEffect(() => { load() }, [])
@@ -57,7 +58,23 @@ export default function AdminVerificationPage() {
             {r.whc_verified && <ShieldCheck size={15} className="text-green-600" />}
           </div>
           <p className="text-sm text-gray-500">{r.role_level || 'Therapist'}{r.review_score ? ` · ${Number(r.review_score).toFixed(1)}★ (${r.review_count})` : ''}</p>
-          <p className="text-sm text-gray-500 mt-0.5">
+          <div className="mt-2 border border-border bg-surface px-3 py-2.5 max-w-xl">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.1em] text-ink">Right to work</p>
+            <p className="text-[12px] text-gray-600 mt-1">
+              {r.right_to_work_uk || r.right_to_work_ireland
+                ? <>Declared: {[r.right_to_work_uk ? 'United Kingdom' : null, r.right_to_work_ireland ? 'Ireland' : null].filter(Boolean).join(' and ')}</>
+                : 'No country declared yet'}
+              {' · '}Expiry: {r.right_to_work_expiry_date ? new Date(r.right_to_work_expiry_date).toLocaleDateString('en-GB') : 'none given'}
+              {r.right_to_work_expiry_date && new Date(r.right_to_work_expiry_date).getTime() < Date.now() && <span className="text-red-600 font-medium"> - EXPIRED</span>}
+            </p>
+            {r.right_to_work_document_url ? (
+              <a href={r.right_to_work_document_url} target="_blank" rel="noreferrer"
+                className="mt-1.5 inline-flex items-center gap-1 text-[12px] font-medium text-accent hover:underline"><FileText size={12} /> Right-to-work evidence</a>
+            ) : (
+              <p className="text-[12px] text-amber-700 mt-1.5">No right-to-work document uploaded - do not verify without evidence.</p>
+            )}
+          </div>
+          <p className="text-sm text-gray-500 mt-2">
             Insurance expiry: {r.insurance_expiry_date ? new Date(r.insurance_expiry_date).toLocaleDateString('en-GB') : 'not given'}
             {r.insurance_expiry_date && new Date(r.insurance_expiry_date).getTime() < Date.now() + 30 * 86400000 && (
               <span className="text-amber-600 font-medium"> - {new Date(r.insurance_expiry_date).getTime() < Date.now() ? 'EXPIRED' : 'expires within 30 days'}</span>
@@ -97,7 +114,7 @@ export default function AdminVerificationPage() {
       <div className="mb-8">
         <p className="dashboard-eyebrow">Trust & compliance</p>
         <h1 className="dashboard-title">Verification</h1>
-        <p className="dashboard-intro">Review insurance and qualification evidence before awarding WHC Verified. Expired insurance automatically pauses the badge until valid cover is supplied.</p>
+        <p className="dashboard-intro">Review right-to-work evidence alongside insurance and qualification documents before awarding WHC Verified. Your decision covers right-to-work AND insurance evidence together. Expired insurance automatically pauses the badge until valid cover is supplied.</p>
       </div>
 
       {!loading && rows.length > 0 && (
@@ -138,13 +155,13 @@ export default function AdminVerificationPage() {
       )}
 
       {rejecting && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setRejecting(null)}>
+        <div className="fixed inset-0 bg-[#07243b]/70 z-50 flex items-center justify-center p-4" onClick={() => setRejecting(null)}>
           <div className="bg-white max-w-md w-full p-6 border border-border" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-2">
               <h2 className="text-xl font-semibold text-ink">{rejecting.whc_verified ? 'Revoke badge' : 'Reject verification'}</h2>
               <button onClick={() => setRejecting(null)} className="text-gray-300 hover:text-ink"><X size={20} /></button>
             </div>
-            <p className="text-sm text-gray-500 mb-4">{rejecting.full_name} will be told why by email and in-app so they can correct the issue and resubmit.</p>
+            <p className="text-sm text-gray-500 mb-4">This decision covers both the right-to-work and insurance evidence. {rejecting.full_name} will be told why by email and in-app so they can correct the issue and resubmit.</p>
             <textarea rows={3} value={reason} onChange={(e) => setReason(e.target.value)} className="input-field mb-4" placeholder="Reason shown to the therapist..." />
             <div className="flex gap-3">
               <button onClick={() => setRejecting(null)} className="btn-secondary flex-1">Cancel</button>

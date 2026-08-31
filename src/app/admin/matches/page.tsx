@@ -10,6 +10,7 @@ export default function AdminMatchesPage() {
   const supabase = createClient()
   const [matches, setMatches] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
   const [search, setSearch] = useState('')
   const [page, setPage] = useState(1)
   const [perPage, setPerPage] = useState(25)
@@ -18,7 +19,8 @@ export default function AdminMatchesPage() {
     async function load() {
       // Service-role API: RLS hides other users' matches from the browser client
       const res = await fetch('/api/admin/matches').catch(() => null)
-      const data = res && res.ok ? await res.json().catch(() => null) : null
+      const data = res ? await res.json().catch(() => null) : null
+      if (!res || !res.ok) setError(data?.error || 'Could not load matches.')
       setMatches(data?.matches || [])
       setLoading(false)
     }
@@ -35,7 +37,13 @@ export default function AdminMatchesPage() {
 
   return (
     <DashboardShell role="admin" userName="Admin">
-      <h1 className="text-2xl font-serif font-bold text-ink mb-6">Match Viewer</h1>
+      <div className="mb-7">
+        <p className="dashboard-eyebrow">Platform</p>
+        <h1 className="dashboard-title">Match Viewer</h1>
+        <p className="dashboard-intro">Every mutual match between talent and properties across the platform.</p>
+      </div>
+
+      {error && <div className="bg-red-50 text-red-600 text-sm px-4 py-3 mb-6 border border-red-100">{error}</div>}
 
       <div className="relative mb-6 max-w-md">
         <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
