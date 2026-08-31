@@ -76,9 +76,9 @@ export default function PlatformExperienceReview({ applicationId }: { applicatio
           </button>
         ))}
       </div>
-      <textarea value={comment} onChange={e=>setComment(e.target.value)} maxLength={1000} rows={3} className="input-field mt-4 resize-y text-[12px] leading-5" placeholder="Tell us what worked well or what we could improve..." />
+      <textarea aria-label="Your review comment" value={comment} onChange={e=>setComment(e.target.value)} maxLength={1000} rows={3} className="input-field mt-4 resize-y text-[12px] leading-5" placeholder="Tell us what worked well or what we could improve..." />
       <div className="mt-2 flex items-center justify-between gap-3"><span className="text-[10px] text-muted">{comment.length}/1000</span><button type="button" onClick={submit} disabled={!rating || submitting} className="btn-primary !py-2.5 !px-4 disabled:opacity-40">{submitting ? 'Submitting…' : 'Submit platform review'}</button></div>
-      {error && <div className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-[11px] text-red-600">{error}</div>}
+      {error && <div role="alert" className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-[11px] text-red-600">{error}</div>}
     </div>
   )
 }

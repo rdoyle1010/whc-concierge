@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import DashboardShell from '@/components/DashboardShell'
 import { createClient } from '@/lib/supabase/client'
-import { Save, Search, ShieldOff, X, Download, AlertTriangle } from 'lucide-react'
+import { Save, Search, ShieldOff, X, Download, AlertTriangle, Lock } from 'lucide-react'
 import Link from 'next/link'
 
 // Square-cornered toggle for the notification preference centre (brand rule:
@@ -55,6 +55,15 @@ export default function TalentSettingsPage() {
   const [stealthLoading, setStealthLoading] = useState(true)
   const [userId, setUserId] = useState<string | null>(null)
   const [candidateId, setCandidateId] = useState<string | null>(null)
+
+  // Private Career Mode state
+  const [privateMode, setPrivateMode] = useState(false)
+  const [privateHidePhoto, setPrivateHidePhoto] = useState(false)
+  const [firstNameOnly, setFirstNameOnly] = useState(false)
+  const [pcmBlocks, setPcmBlocks] = useState<any[]>([])
+  const [pcmSearch, setPcmSearch] = useState('')
+  const [pcmResults, setPcmResults] = useState<any[]>([])
+  const [pcmMessage, setPcmMessage] = useState('')
 
   // Job alerts state
   const [alertsEnabled, setAlertsEnabled] = useState(true)
@@ -151,7 +160,7 @@ export default function TalentSettingsPage() {
       setUserId(user.id)
 
       const [profileRes, employersRes] = await Promise.all([
-        supabase.from('candidate_profiles').select('id, stealth_mode, job_alerts_enabled, job_alerts_frequency, job_alerts_min_score').eq('user_id', user.id).single(),
+        supabase.from('candidate_profiles').select('id, stealth_mode, show_first_name_only, job_alerts_enabled, job_alerts_frequency, job_alerts_min_score').eq('user_id', user.id).single(),
         supabase.from('employer_profiles').select('id, company_name, property_name').order('company_name'),
       ])
 
@@ -159,6 +168,25 @@ export default function TalentSettingsPage() {
       if (profile) {
         setCandidateId(profile.id)
         setStealthEnabled(!!profile.stealth_mode)
+        setFirstNameOnly(!!profile.show_first_name_only)
+
+        // The private-mode columns may not be migrated yet - a failed select
+        // simply leaves both toggles off.
+        try {
+          const { data: priv } = await supabase.from('candidate_profiles').select('private_mode, private_hide_photo').eq('id', profile.id).maybeSingle()
+          if (priv) {
+            setPrivateMode(!!(priv as any).private_mode)
+            setPrivateHidePhoto(!!(priv as any).private_hide_photo)
+          }
+        } catch { /* toggles stay off */ }
+
+        try {
+          const res = await fetch('/api/talent/blocked-employers')
+          if (res.ok) {
+            const json = await res.json()
+            setPcmBlocks(json.blocks || [])
+          }
+        } catch { /* blocklist simply shows empty */ }
         setAlertsEnabled(profile.job_alerts_enabled !== false)
         setAlertsFrequency(profile.job_alerts_frequency || 'instant')
         setAlertsMinScore(profile.job_alerts_min_score || 60)
@@ -216,6 +244,65 @@ export default function TalentSettingsPage() {
     })
     if (!res.ok) { alert('Could not unblock - please try again.'); return }
     setBlockedEmployers(blockedEmployers.filter(e => e.id !== employerId))
+  }
+
+  // Private Career Mode: each toggle saves through the profile update route,
+  // which strips unknown columns and retries, so the new columns are safe even
+  // before the migration runs.
+  const savePrivatePref = async (field: 'private_mode' | 'private_hide_photo' | 'show_first_name_only', value: boolean, revert: (previous: boolean) => void) => {
+    if (!candidateId) return
+    try {
+      const res = await fetch('/api/profile/update', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ profileId: candidateId, data: { [field]: value } }),
+      })
+      if (!res.ok) throw new Error('save failed')
+    } catch {
+      revert(!value)
+      alert('Could not save your privacy preference - please try again.')
+    }
+  }
+
+  // Employer blocklist search for the Private Career Mode card, debounced so
+  // typing does not hammer the endpoint.
+  useEffect(() => {
+    const term = pcmSearch.trim()
+    if (term.length < 2) { setPcmResults([]); return }
+    const timer = setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/talent/blocked-employers?q=${encodeURIComponent(term)}`)
+        if (res.ok) {
+          const json = await res.json()
+          setPcmResults(json.results || [])
+        }
+      } catch { /* results simply stay empty */ }
+    }, 250)
+    return () => clearTimeout(timer)
+  }, [pcmSearch])
+
+  const pcmBlockEmployer = async (employer: any) => {
+    if (pcmBlocks.some(b => b.employer_id === employer.id)) return
+    setPcmMessage('')
+    const res = await fetch('/api/talent/blocked-employers', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ employerId: employer.id, action: 'add' }),
+    }).catch(() => null)
+    if (!res?.ok) { setPcmMessage('Could not block this employer - please try again.'); return }
+    setPcmBlocks([...pcmBlocks, { employer_id: employer.id, name: employer.name }])
+    setBlockedEmployers(prev => prev.some((b: any) => b.id === employer.id) ? prev : [...prev, { id: employer.id, property_name: employer.name }])
+    setPcmSearch('')
+    setPcmResults([])
+  }
+
+  const pcmUnblockEmployer = async (employerId: string) => {
+    setPcmMessage('')
+    const res = await fetch('/api/talent/blocked-employers', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ employerId, action: 'remove' }),
+    }).catch(() => null)
+    if (!res?.ok) { setPcmMessage('Could not remove this block - please try again.'); return }
+    setPcmBlocks(pcmBlocks.filter(b => b.employer_id !== employerId))
+    setBlockedEmployers(prev => prev.filter((b: any) => b.id !== employerId))
   }
 
   const saveAlertPref = async (field: string, value: any) => {
@@ -443,6 +530,97 @@ export default function TalentSettingsPage() {
               )}
             </div>
           )}
+        </div>
+
+        {/* Private Career Mode */}
+        <div className="dashboard-card">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <h3 className="font-serif text-lg font-semibold flex items-center gap-2"><Lock size={18} /> Private Career Mode</h3>
+              <p className="text-sm text-gray-500 mt-1">
+                Your profile appears to employers anonymised - first name and initial, no photograph, headline and experience visible - and employers must request an introduction which you approve before they see who you are.
+              </p>
+            </div>
+            <PrefSwitch
+              on={privateMode}
+              onClick={() => {
+                const next = !privateMode
+                setPrivateMode(next)
+                savePrivatePref('private_mode', next, setPrivateMode)
+              }}
+              disabled={stealthLoading || !candidateId}
+              label="Private Career Mode"
+            />
+          </div>
+
+          <div className="mt-4 pt-1 border-t border-border">
+            <PrefRow
+              title="Show first name only"
+              description="Your name appears as first name and surname initial wherever employers see it."
+              on={firstNameOnly}
+              disabled={stealthLoading || !candidateId}
+              onToggle={() => {
+                const next = !firstNameOnly
+                setFirstNameOnly(next)
+                savePrivatePref('show_first_name_only', next, setFirstNameOnly)
+              }}
+            />
+            <PrefRow
+              title="Hide my photograph"
+              description="Employers see a quiet monogram in place of your photograph."
+              on={privateHidePhoto}
+              disabled={stealthLoading || !candidateId}
+              onToggle={() => {
+                const next = !privateHidePhoto
+                setPrivateHidePhoto(next)
+                savePrivatePref('private_hide_photo', next, setPrivateHidePhoto)
+              }}
+            />
+
+            <div className="py-3">
+              <p className="text-[13px] font-medium text-ink">Hide me from specific employers</p>
+              <p className="text-[12px] leading-5 text-muted mt-0.5">Blocked employers can never see your profile anywhere on WHC - use this for your current employer.</p>
+              {pcmMessage && <p className="text-[12px] text-red-600 mt-2">{pcmMessage}</p>}
+
+              <div className="relative mt-3">
+                <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
+                <input type="text" placeholder="Search properties by name..." value={pcmSearch}
+                  onChange={e => setPcmSearch(e.target.value)}
+                  className="w-full border border-border bg-white pl-9 pr-3 py-2 text-[13px] text-ink" />
+                {pcmResults.length > 0 && (
+                  <div className="absolute z-10 top-full mt-1 left-0 right-0 bg-white border border-border shadow-lg max-h-48 overflow-y-auto">
+                    {pcmResults.map(e => (
+                      <button key={e.id} type="button" onClick={() => pcmBlockEmployer(e)}
+                        className="w-full text-left px-3 py-2 text-[13px] hover:bg-surface transition-colors flex items-center justify-between gap-3">
+                        <span className="min-w-0">
+                          <span className="block text-ink truncate">{e.name}</span>
+                          {e.location && <span className="block text-[11px] text-muted truncate">{e.location}</span>}
+                        </span>
+                        <span className="text-[11px] text-muted shrink-0">Block</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {pcmBlocks.length > 0 ? (
+                <div className="mt-3 space-y-2">
+                  <p className="text-[11px] font-semibold tracking-[1.5px] uppercase text-ink">Blocked employers ({pcmBlocks.length})</p>
+                  {pcmBlocks.map(b => (
+                    <div key={b.employer_id} className="flex items-center justify-between gap-3 bg-surface border border-border px-3 py-2.5">
+                      <span className="text-[13px] text-ink truncate">{b.name}</span>
+                      <button type="button" onClick={() => pcmUnblockEmployer(b.employer_id)}
+                        className="text-[11px] text-secondary hover:text-ink flex items-center gap-1 font-medium shrink-0">
+                        <X size={12} /> Remove
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-[12px] text-muted mt-3">No employers blocked yet.</p>
+              )}
+            </div>
+          </div>
         </div>
 
         {/* Notification preference centre */}

@@ -52,7 +52,7 @@ export default function PostHireActions() {
         <p className="mt-1 text-[12px] leading-5 text-muted">Close the vacancy, archive the successful placement and send the final candidate communications in one action.</p>
       </div>
     </div>
-    {error && <div className="mt-4 rounded-xl bg-red-50 px-3 py-2 text-[12px] text-red-600">{error}</div>}
+    {error && <div role="alert" className="mt-4 rounded-xl bg-red-50 px-3 py-2 text-[12px] text-red-600">{error}</div>}
     <div className="mt-4 space-y-3">{items.map(item => <div key={item.id} className="flex flex-col gap-4 rounded-2xl border border-emerald-100 bg-white p-4 md:flex-row md:items-center md:justify-between">
       <div><p className="text-[14px] font-semibold text-ink">{item.job?.job_title || 'Role'}</p><p className="mt-1 text-[12px] text-muted">{item.candidate?.full_name || 'Candidate'} has accepted the offer.</p><div className="mt-2 flex flex-wrap gap-3 text-[10px] text-muted"><span className="inline-flex items-center gap-1"><Archive size={11}/>Placement archived</span><span className="inline-flex items-center gap-1"><Mail size={11}/>Congratulations + role-filled emails</span></div></div>
       <button type="button" disabled={busy===item.id} onClick={()=>complete(item)} className="btn-primary shrink-0">{busy===item.id ? 'Completing…' : 'Complete hire & close role'}</button>

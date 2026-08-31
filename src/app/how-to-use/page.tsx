@@ -29,7 +29,7 @@ export default function HowToUsePage(){
   const [role,setRole]=useState<Role>('talent')
   const steps=role==='talent'?talent:employer
 
-  return <main className="min-h-screen bg-white text-[#10283b]">
+  return <main id="main-content" className="min-h-screen bg-white text-[#10283b]">
     <section className="mx-auto max-w-6xl px-6 py-16 md:py-24">
       <div className="mb-12 max-w-3xl">
         <p className="mb-4 text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">How Wellness House works</p>

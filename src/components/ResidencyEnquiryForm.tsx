@@ -114,14 +114,14 @@ export default function ResidencyEnquiryForm({ specialistName, listingId, sugges
         </div>
       </div>
 
-      <div><label className="eyebrow block mb-1.5">Property *</label><input name="propertyName" required placeholder="Hotel, resort or spa" className="input-field text-[13px]" /></div>
+      <div><label className="eyebrow block mb-1.5">Property *</label><input aria-label="Property" name="propertyName" required placeholder="Hotel, resort or spa" className="input-field text-[13px]" /></div>
       <div className="grid grid-cols-2 gap-3">
-        <div><label className="eyebrow block mb-1.5">Start Date *</label><input name="startDate" type="date" required className="input-field text-[13px]" /></div>
-        <div><label className="eyebrow block mb-1.5">End Date *</label><input name="endDate" type="date" required className="input-field text-[13px]" /></div>
+        <div><label className="eyebrow block mb-1.5">Start Date *</label><input aria-label="Start Date" name="startDate" type="date" required className="input-field text-[13px]" /></div>
+        <div><label className="eyebrow block mb-1.5">End Date *</label><input aria-label="End Date" name="endDate" type="date" required className="input-field text-[13px]" /></div>
       </div>
       <div className="grid grid-cols-2 gap-3">
-        <div><label className="eyebrow block mb-1.5">Working Days *</label><input min={1} max={180} type="number" value={days} onChange={e => setDays(Number(e.target.value))} required className="input-field text-[13px]" /></div>
-        <div><label className="eyebrow block mb-1.5">Offer / Day (£) *</label><input min={1} step="1" type="number" value={dayRate || ''} onChange={e => setDayRate(Number(e.target.value))} required className="input-field text-[13px]" /></div>
+        <div><label className="eyebrow block mb-1.5">Working Days *</label><input aria-label="Working Days" min={1} max={180} type="number" value={days} onChange={e => setDays(Number(e.target.value))} required className="input-field text-[13px]" /></div>
+        <div><label className="eyebrow block mb-1.5">Offer / Day (£) *</label><input aria-label="Offer / Day (£)" min={1} step="1" type="number" value={dayRate || ''} onChange={e => setDayRate(Number(e.target.value))} required className="input-field text-[13px]" /></div>
       </div>
 
       <div className="grid grid-cols-2 gap-3">
@@ -129,8 +129,8 @@ export default function ResidencyEnquiryForm({ specialistName, listingId, sugges
         <label className="flex items-center gap-2 rounded-xl border border-border p-3 cursor-pointer"><input name="travelIncluded" type="checkbox" className="rounded" /><span className="text-[12px] text-secondary">Travel included</span></label>
       </div>
 
-      <div><label className="eyebrow block mb-1.5">Treatments / Services</label><textarea name="servicesRequired" rows={2} placeholder="What would you like the specialist to deliver?" className="input-field text-[13px]" /></div>
-      <div><label className="eyebrow block mb-1.5">Additional Notes</label><textarea name="notes" rows={3} placeholder="Hours, uniform, facilities, expectations or other details..." className="input-field text-[13px]" /></div>
+      <div><label className="eyebrow block mb-1.5">Treatments / Services</label><textarea aria-label="Treatments / Services" name="servicesRequired" rows={2} placeholder="What would you like the specialist to deliver?" className="input-field text-[13px]" /></div>
+      <div><label className="eyebrow block mb-1.5">Additional Notes</label><textarea aria-label="Additional Notes" name="notes" rows={3} placeholder="Hours, uniform, facilities, expectations or other details..." className="input-field text-[13px]" /></div>
 
       {therapistTotal > 0 && (
         <div className="rounded-xl border border-border bg-surface/70 p-4 text-[12px]">

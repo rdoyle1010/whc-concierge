@@ -39,7 +39,7 @@ export default function AdminSignInPage() {
   }
 
   return (
-    <main className="min-h-screen bg-[#f5f6f8] flex items-center justify-center px-6 py-12">
+    <main id="main-content" className="min-h-screen bg-[#f5f6f8] flex items-center justify-center px-6 py-12">
       <div className="w-full max-w-[430px]">
         <Wordmark />
         <div className="mt-10 dashboard-card !p-8">
@@ -55,7 +55,7 @@ export default function AdminSignInPage() {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="dashboard-eyebrow block mb-1.5 !text-[9px]">Email</label>
-              <input type="email" required autoComplete="email" value={email} onChange={e => setEmail(e.target.value)} className="input-field" />
+              <input aria-label="Email" type="email" required autoComplete="email" value={email} onChange={e => setEmail(e.target.value)} className="input-field" />
             </div>
             <div>
               <label className="dashboard-eyebrow block mb-1.5 !text-[9px]">Password</label>

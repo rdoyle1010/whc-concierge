@@ -56,6 +56,7 @@ export default async function PropertiesPage({ searchParams }: { searchParams?: 
 
   return <div className="min-h-screen bg-white">
     <Navbar />
+      <main id="main-content">
     <section className="pt-[76px] bg-white border-b border-border overflow-hidden">
       <div className="max-w-7xl mx-auto px-6 lg:px-8 py-10 md:py-14 grid lg:grid-cols-[.9fr_1.1fr] gap-9 items-center">
         <div className="py-6 lg:py-12">
@@ -68,8 +69,8 @@ export default async function PropertiesPage({ searchParams }: { searchParams?: 
     </section>
 
     <section className="py-14 bg-white"><div className="max-w-7xl mx-auto px-6 lg:px-8">
-      {properties.length === 0 ? <div className="grid lg:grid-cols-[.85fr_1.15fr] overflow-hidden bg-white border border-border rounded-[26px]"><div className="min-h-[280px]"><img src={cms.blocks[0].image.url} alt={cms.blocks[0].image.alt} className="w-full h-full object-cover" /></div><div className="px-8 py-14 md:px-12 flex flex-col justify-center"><Building2 size={30} className="text-[#5a6a76] mb-4" /><p className="text-[10px] uppercase tracking-[.16em] font-semibold text-[#5a6a76] mb-3">Properties</p><p className="text-[20px] font-medium text-[#10283b]">New properties are joining WHC.</p><p className="text-[13px] text-muted mt-3 leading-6 max-w-lg">Approved property profiles will appear here as soon as they are ready for professionals to explore.</p></div></div> : <>
-        <div className="flex items-end justify-between gap-5 mb-7"><div><p className="text-[10px] uppercase tracking-[0.16em] font-semibold text-[#5a6a76]">WHC properties</p><h2 className="text-[27px] md:text-[34px] font-semibold tracking-[-0.03em] text-[#10283b] mt-1">Explore places to work</h2><p className="text-[13px] text-muted mt-2 max-w-2xl">See the property profile, ratings, spa information and live roles before deciding whether it is right for you.</p></div><p className="hidden md:block text-[12px] text-muted">{properties.length} approved propert{properties.length === 1 ? 'y' : 'ies'}</p></div>
+      {properties.length === 0 ? <div className="grid lg:grid-cols-[.85fr_1.15fr] overflow-hidden bg-white border border-border rounded-[26px]"><div className="min-h-[280px]"><img src={cms.blocks[0].image.url} alt={cms.blocks[0].image.alt} className="w-full h-full object-cover" /></div><div className="px-8 py-14 md:px-12 flex flex-col justify-center"><Building2 size={30} className="text-[#5a6a76] mb-4" /><p className="text-[10px] uppercase tracking-[.16em] font-semibold text-[#5a6a76] mb-3">Properties</p><p className="text-[20px] font-medium text-[#10283b]">New properties are joining WHC.</p><p className="text-[13px] text-secondary mt-3 leading-6 max-w-lg">Approved property profiles will appear here as soon as they are ready for professionals to explore.</p></div></div> : <>
+        <div className="flex items-end justify-between gap-5 mb-7"><div><p className="text-[10px] uppercase tracking-[0.16em] font-semibold text-[#5a6a76]">WHC properties</p><h2 className="text-[27px] md:text-[34px] font-semibold tracking-[-0.03em] text-[#10283b] mt-1">Explore places to work</h2><p className="text-[13px] text-secondary mt-2 max-w-2xl">See the property profile, ratings, spa information and live roles before deciding whether it is right for you.</p></div><p className="hidden md:block text-[12px] text-muted">{properties.length} approved propert{properties.length === 1 ? 'y' : 'ies'}</p></div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">{properties.map((p:any)=>{
           const featured=p.featured_employer&&(!p.featured_until||new Date(p.featured_until).getTime()>now)
           const image=p.property_photos?.[0]||p.logo_url
@@ -87,6 +88,7 @@ export default async function PropertiesPage({ searchParams }: { searchParams?: 
     </div></section>
 
     {cms.blocks.slice(1).filter(b=>b.visible).map((b,i)=><section key={i} className="bg-white border-t border-border"><div className="max-w-7xl mx-auto px-6 lg:px-8 py-12 md:py-16 grid md:grid-cols-2 gap-8 items-center"><div className={i%2?'md:order-2':''}><p className="text-[10px] uppercase tracking-[.18em] font-semibold text-[#5a6a76]">{b.eyebrow}</p><h2 className="text-[30px] md:text-[40px] tracking-[-.04em] font-semibold text-[#10283b] mt-3">{b.heading}</h2><p className="text-[14px] leading-7 text-muted mt-4">{b.text}</p></div><div className={`aspect-[4/3] overflow-hidden ${i%2?'md:order-1':''}`}><img src={b.image.url} alt={b.image.alt} className="w-full h-full object-cover" style={{objectPosition:`${b.image.focalX}% ${b.image.focalY}%`}}/></div></div></section>)}
-    <Footer />
+    </main>
+      <Footer />
   </div>
 }

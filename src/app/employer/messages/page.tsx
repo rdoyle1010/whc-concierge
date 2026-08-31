@@ -239,7 +239,7 @@ export default function EmployerMessagesPage() {
             ) : (
               <>
                 <header className="flex min-h-[76px] items-center gap-3 border-b border-[#e3e7eb] bg-white px-4 md:px-6">
-                  <button type="button" onClick={() => setActiveConvo(null)} className="flex h-9 w-9 items-center justify-center rounded-full border border-[#e3e7eb] text-[#5a6a76] md:hidden"><ChevronLeft size={17} /></button>
+                  <button type="button" onClick={() => setActiveConvo(null)} aria-label="Back to conversations" className="flex h-9 w-9 items-center justify-center rounded-full border border-[#e3e7eb] text-[#5a6a76] md:hidden"><ChevronLeft size={17} /></button>
                   <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#0b2f4d] text-[11px] font-semibold text-white">{String(activePartner?.partnerName || 'U').split(' ').map((part: string) => part[0]).join('').slice(0,2).toUpperCase()}</div>
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-[14px] font-semibold text-[#10283b]">{activePartner?.partnerName || 'Unknown User'}</p>
@@ -287,10 +287,10 @@ export default function EmployerMessagesPage() {
                   )}
                   <div className="flex items-end gap-2">
                     <div className="flex min-w-0 flex-1 items-center rounded-2xl border border-[#e3e7eb] bg-[#f5f6f8] px-3 py-1.5 focus-within:border-[#5a6a76] focus-within:bg-white">
-                      <input type="text" value={newMsg} onChange={(e) => setNewMsg(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && !attachmentUploading && sendMessage()} className="min-w-0 flex-1 bg-transparent px-1 py-2 text-[13px] text-[#10283b] outline-none placeholder:text-[#8a949b]" placeholder={residencyPrivate ? 'Discuss the Residency without sharing contact details…' : 'Write a message…'} disabled={attachmentUploading} />
-                      {!residencyPrivate && <><input ref={fileInputRef} type="file" onChange={handleFileSelected} accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" style={{ display: 'none' }} /><button type="button" onClick={handleAttachmentClick} className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[#8a949b] transition hover:bg-[#f5f6f8] hover:text-[#0b2f4d]" disabled={attachmentUploading} title="Attach file"><Paperclip size={17} /></button></>}
+                      <input type="text" aria-label="Write a message" value={newMsg} onChange={(e) => setNewMsg(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && !attachmentUploading && sendMessage()} className="min-w-0 flex-1 bg-transparent px-1 py-2 text-[13px] text-[#10283b] outline-none placeholder:text-[#8a949b]" placeholder={residencyPrivate ? 'Discuss the Residency without sharing contact details…' : 'Write a message…'} disabled={attachmentUploading} />
+                      {!residencyPrivate && <><input ref={fileInputRef} type="file" aria-label="Attach a file" onChange={handleFileSelected} accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" style={{ display: 'none' }} /><button type="button" onClick={handleAttachmentClick} aria-label="Attach a file" className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[#8a949b] transition hover:bg-[#f5f6f8] hover:text-[#0b2f4d]" disabled={attachmentUploading} title="Attach file"><Paperclip size={17} /></button></>}
                     </div>
-                    <button type="button" onClick={sendMessage} className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-accent text-white transition hover:bg-[#123f64] disabled:opacity-50" disabled={attachmentUploading || (!newMsg.trim() && !attachmentFile)}><Send size={17} /></button>
+                    <button type="button" onClick={sendMessage} aria-label="Send message" className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-accent text-white transition hover:bg-[#123f64] disabled:opacity-50" disabled={attachmentUploading || (!newMsg.trim() && !attachmentFile)}><Send size={17} /></button>
                   </div>
                 </div>
               </>

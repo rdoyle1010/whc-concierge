@@ -39,6 +39,7 @@ export default async function BlogPostPage(props: { params: Promise<{ slug: stri
     <div className="min-h-screen">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       <Navbar />
+      <main id="main-content">
       <section className="bg-ink pt-32 pb-16">
         <div className="max-w-3xl mx-auto px-4">
           <Link href="/blog" className="text-white/80 text-sm flex items-center mb-6 hover:text-white">
@@ -82,6 +83,7 @@ export default async function BlogPostPage(props: { params: Promise<{ slug: stri
           <ShareButtons url={`https://talent.wellnesshousecollective.co.uk/blog/${post.slug}`} title={post.title} />
         </div>
       </article>
+      </main>
       <Footer />
     </div>
   )

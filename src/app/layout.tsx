@@ -87,8 +87,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     brandStyle = websiteCssVariables(await getWebsiteContent(false))
   } catch { /* fall back to CSS defaults */ }
   return (
-    <html lang="en" className={`${manrope.variable} ${editorial.variable} ${poppins.variable}`}>
+    <html lang="en-GB" className={`${manrope.variable} ${editorial.variable} ${poppins.variable}`}>
       <body>
+        <a href="#main-content" className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:bg-white focus:px-5 focus:py-3 focus:text-[13px] focus:font-semibold focus:text-[#0b2f4d] focus:shadow-xl focus:border focus:border-[#0b2f4d]">Skip to main content</a>
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }} />
         <div className="website-theme min-h-screen" style={brandStyle}>
           {children}

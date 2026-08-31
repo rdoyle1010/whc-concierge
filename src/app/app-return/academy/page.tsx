@@ -23,7 +23,7 @@ export default function AcademyAppReturnPage() {
   const deepLink = `whctalent://academy?status=${encodeURIComponent(status)}&result=${encodeURIComponent(result)}`
 
   return (
-    <main style={{minHeight:'100vh',display:'grid',placeItems:'center',background:'#fff',padding:'24px'}}>
+    <main id="main-content" style={{minHeight:'100vh',display:'grid',placeItems:'center',background:'#fff',padding:'24px'}}>
       <section style={{maxWidth:'420px',textAlign:'center'}}>
         <p style={{fontSize:'11px',letterSpacing:'0.18em',color:'#71808a'}}>WELLNESS HOUSE</p>
         <h1 style={{fontSize:'28px',lineHeight:1.2,color:'#0b2f4d',margin:'12px 0'}}>{status === 'cancelled' ? 'Checkout cancelled.' : 'Payment complete.'}</h1>

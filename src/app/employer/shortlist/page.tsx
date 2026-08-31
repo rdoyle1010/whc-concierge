@@ -70,7 +70,7 @@ export default function EmployerShortlistPage() {
         <div className="dashboard-card text-center py-16">
           <Star size={40} className="mx-auto mb-3 text-muted/40" />
           <p className="text-[15px] font-medium text-ink mb-1">No shortlisted candidates</p>
-          <p className="text-[13px] text-muted mb-6">Browse candidates and shortlist those you&apos;re interested in.</p>
+          <p className="text-[13px] text-secondary mb-6">Browse candidates and shortlist those you&apos;re interested in.</p>
           <Link href="/employer/candidates" className="btn-primary">Browse Candidates</Link>
         </div>
       ) : (
@@ -110,8 +110,8 @@ export default function EmployerShortlistPage() {
                             className="p-1.5 rounded-lg hover:bg-surface text-muted hover:text-ink transition-colors" title="Add note">
                             <Edit3 size={14} />
                           </button>
-                          <button type="button" onClick={() => removeFromShortlist(s.id)}
-                            className="p-1.5 rounded-lg hover:bg-red-50 text-muted hover:text-red-500 transition-colors" title="Remove">
+                          <button type="button" onClick={() => removeFromShortlist(s.id)} aria-label="Remove from shortlist"
+                            className="p-2.5 rounded-lg hover:bg-red-50 text-muted hover:text-red-500 transition-colors" title="Remove">
                             <Trash2 size={14} />
                           </button>
                         </div>
@@ -129,10 +129,10 @@ export default function EmployerShortlistPage() {
                       {/* Notes */}
                       {editingNote === s.id ? (
                         <div className="mt-3 ml-[52px] flex items-center gap-2">
-                          <input type="text" value={noteText} onChange={e => setNoteText(e.target.value)}
+                          <input type="text" aria-label="Note about this candidate" value={noteText} onChange={e => setNoteText(e.target.value)}
                             className="input-field text-[12px] flex-1" placeholder="Add a note about this candidate..." autoFocus />
-                          <button type="button" onClick={() => saveNote(s.id)} className="p-1.5 text-emerald-600 hover:bg-emerald-50 rounded-lg"><Check size={14} /></button>
-                          <button type="button" onClick={() => setEditingNote(null)} className="p-1.5 text-muted hover:bg-surface rounded-lg"><X size={14} /></button>
+                          <button type="button" onClick={() => saveNote(s.id)} aria-label="Save note" className="p-2.5 text-emerald-600 hover:bg-emerald-50 rounded-lg"><Check size={14} /></button>
+                          <button type="button" onClick={() => setEditingNote(null)} aria-label="Cancel note" className="p-2.5 text-muted hover:bg-surface rounded-lg"><X size={14} /></button>
                         </div>
                       ) : s.notes ? (
                         <p className="mt-2 ml-[52px] text-[12px] text-muted italic">&ldquo;{s.notes}&rdquo;</p>

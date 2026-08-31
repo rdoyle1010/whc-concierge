@@ -17,6 +17,7 @@ export default function TermsPage() {
   return (
     <div className="min-h-screen bg-white">
       <Navbar />
+      <main id="main-content">
       <section className="pt-28 pb-16 px-4">
         <div className="max-w-3xl mx-auto">
           <p className="text-[11px] tracking-[0.08em] uppercase text-muted font-medium mb-3">Legal</p>
@@ -86,6 +87,7 @@ export default function TermsPage() {
           <p>For questions about these terms, contact <a href="mailto:hello@wellnesshousecollective.co.uk" className="underline text-ink">hello@wellnesshousecollective.co.uk</a>.</p>
         </div>
       </section>
+      </main>
       <Footer />
     </div>
   )

@@ -23,6 +23,7 @@ export default function EmployerDashboard() {
   const [stats, setStats] = useState({ active: 0, applications: 0, matches: 0, messages: 0 })
   const [recentApps, setRecentApps] = useState<any[]>([])
   const [brief, setBrief] = useState<any>(null)
+  const [intel, setIntel] = useState<any>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -33,6 +34,12 @@ export default function EmployerDashboard() {
         .then(res => (res.ok ? res.json() : null))
         .then(data => { if (data && !data.error) setBrief(data) })
         .catch(() => { /* the brief is optional */ })
+      // Role intelligence is computed live on the server; like the brief,
+      // a failure simply means the panel does not render.
+      fetch('/api/employer/intelligence')
+        .then(res => (res.ok ? res.json() : null))
+        .then(data => { if (data && !data.error) setIntel(data) })
+        .catch(() => { /* intelligence is optional */ })
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { setLoading(false); return }
 
@@ -180,6 +187,83 @@ export default function EmployerDashboard() {
                     <Link href="/employer/agency" className="text-accent hover:underline">Respond</Link>
                   </p>
                 </div>
+              )}
+            </div>
+          </section>
+        )
+      })()}
+
+      {intel && Array.isArray(intel.roles) && intel.roles.length > 0 && (() => {
+        const thresholds = intel.thresholds || { conversionViews: 20, comparableRoles: 3, hires: 2, viewWindowDays: 30, abandonedAfterHours: 48 }
+        const aggregate = intel.aggregate || {}
+        return (
+          <section className="dashboard-card mb-8">
+            <p className="dashboard-eyebrow">Role intelligence</p>
+            <p className="text-[13px] text-secondary mb-5">Computed from live platform activity. Figures appear once samples are large enough to be truthful.</p>
+
+            <div className="space-y-4">
+              {intel.roles.map((role: any) => (
+                <div key={role.id} className="border border-border p-4">
+                  <p className="text-[13px] font-medium text-ink mb-1">{role.title}</p>
+                  <div>
+                    <div className="flex items-baseline justify-between gap-4 border-t border-border py-2">
+                      <span className="text-[12px] text-secondary">Views, last {thresholds.viewWindowDays} days</span>
+                      <span className="text-[13px] font-semibold text-ink">{role.views}</span>
+                    </div>
+                    <div className="flex items-baseline justify-between gap-4 border-t border-border py-2">
+                      <span className="text-[12px] text-secondary">Applications received</span>
+                      <span className="text-[13px] font-semibold text-ink">{role.applications}</span>
+                    </div>
+                    <div className="flex items-baseline justify-between gap-4 border-t border-border py-2">
+                      <span className="text-[12px] text-secondary">View-to-application conversion</span>
+                      {role.conversionPct != null
+                        ? <span className="text-[13px] font-semibold text-ink">{role.conversionPct}%</span>
+                        : <span className="text-[12px] text-muted">Publishes at {thresholds.conversionViews} role views - currently {role.views}</span>}
+                    </div>
+                    <div className="flex items-baseline justify-between gap-4 border-t border-border py-2">
+                      <span className="text-[12px] text-secondary">Applications started, never submitted ({thresholds.abandonedAfterHours}h+)</span>
+                      <span className="text-[13px] font-semibold text-ink">{role.abandoned}</span>
+                    </div>
+                    {role.quality && (
+                      <div className="flex items-baseline justify-between gap-4 border-t border-border py-2">
+                        <span className="text-[12px] text-secondary">Average applicant match</span>
+                        <span className="text-[13px] font-semibold text-ink">{role.quality.avgScore}% <span className="font-normal text-muted">({role.quality.sample} applicant{role.quality.sample === 1 ? '' : 's'})</span></span>
+                      </div>
+                    )}
+                  </div>
+                  <div className="mt-3 space-y-1.5">
+                    {role.benchmark ? (
+                      <p className="text-[13px] text-ink leading-6">
+                        {role.benchmark.pctDiff === 0
+                          ? <>Your {role.title} role is receiving applications in line with comparable roles.</>
+                          : <>Your {role.title} role is receiving <span className="font-semibold">{Math.abs(role.benchmark.pctDiff)}% {role.benchmark.pctDiff < 0 ? 'fewer' : 'more'}</span> applications than comparable roles.</>}
+                        {' '}<span className="text-[11.5px] text-muted">Based on {role.benchmark.comparableCount} comparable live roles at this level.</span>
+                      </p>
+                    ) : (
+                      <p className="text-[12px] text-muted">Benchmark publishes at {thresholds.comparableRoles} comparable live roles - currently {role.benchmarkComparables}.</p>
+                    )}
+                    {role.salary ? (
+                      <p className="text-[13px] text-ink leading-6">
+                        {role.salary.pctDiff === 0
+                          ? <>Salary is in line with the market median.</>
+                          : <>Salary is approximately <span className="font-semibold">{Math.abs(role.salary.pctDiff)}% {role.salary.pctDiff < 0 ? 'below' : 'above'}</span> the market median.</>}
+                        {' '}<span className="text-[11.5px] text-muted">Market median £{Number(role.salary.marketMedian).toLocaleString('en-GB')} from {role.salary.sample} advertised salary points at this level, last 12 months.</span>
+                      </p>
+                    ) : !role.hasSalaryBand ? (
+                      <p className="text-[12px] text-muted">Add a salary band to this role to see how it compares with the market.</p>
+                    ) : (
+                      <p className="text-[12px] text-muted">Salary comparison publishes at {thresholds.comparableRoles} comparable salary points - currently {role.salaryComparables}.</p>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-4 border-t border-border pt-3">
+              {aggregate.timeToHire ? (
+                <p className="text-[13px] text-ink">Median time to hire across your filled roles: <span className="font-semibold">{aggregate.timeToHire.medianDays} day{aggregate.timeToHire.medianDays === 1 ? '' : 's'}</span> <span className="text-[11.5px] text-muted">({aggregate.timeToHire.hires} hires)</span></p>
+              ) : (
+                <p className="text-[12px] text-muted">Time to hire publishes at {thresholds.hires} completed hires - currently {aggregate.hiresRecorded ?? 0}.</p>
               )}
             </div>
           </section>

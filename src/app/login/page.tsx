@@ -53,7 +53,7 @@ function LoginForm() {
   const registerHref = `/register/${role}${safeDestination ? `?redirect=${encodeURIComponent(safeDestination)}` : ''}`
 
   return (
-    <div className="min-h-screen bg-[#f5f6f8] flex items-stretch">
+    <main id="main-content" className="min-h-screen bg-[#f5f6f8] flex items-stretch">
       <div className="flex-1 flex items-center justify-center px-6 py-10 lg:py-16">
         <div className="w-full max-w-[430px]">
           <Wordmark />
@@ -73,16 +73,16 @@ function LoginForm() {
               <button type="button" onClick={() => { setRole('employer'); setError('') }} className={`flex items-center justify-center gap-2 py-2.5 rounded-lg text-[12px] font-semibold transition-all ${role === 'employer' ? 'bg-[#0b2f4d] text-white shadow-sm' : 'text-secondary hover:text-[#0b2f4d]'}`}><BriefcaseBusiness size={13} />Hotel / Employer</button>
             </div>
 
-            {confirmationPending && <div className="bg-emerald-50 border border-emerald-100 text-emerald-700 text-[13px] px-3 py-2.5 rounded-xl mb-5">Your profile is saved. Check your email to confirm your account, then sign in here.</div>}
-            {error && <div className="bg-red-50 border border-red-100 text-red-600 text-[13px] px-3 py-2.5 rounded-xl mb-5">{error}</div>}
+            {confirmationPending && <div role="status" className="bg-emerald-50 border border-emerald-100 text-emerald-700 text-[13px] px-3 py-2.5 rounded-xl mb-5">Your profile is saved. Check your email to confirm your account, then sign in here.</div>}
+            {error && <div role="alert" className="bg-red-50 border border-red-100 text-red-600 text-[13px] px-3 py-2.5 rounded-xl mb-5">{error}</div>}
 
             <form onSubmit={handleLogin} className="space-y-4">
-              <div><label className="dashboard-eyebrow block mb-1.5 !text-[9px]">Email</label><input type="email" required autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} className="input-field" placeholder="your@email.com" /></div>
+              <div><label htmlFor="login-email" className="dashboard-eyebrow block mb-1.5 !text-[9px]">Email</label><input id="login-email" type="email" required autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} className="input-field" placeholder="your@email.com" /></div>
               <div>
-                <label className="dashboard-eyebrow block mb-1.5 !text-[9px]">Password</label>
+                <label htmlFor="login-password" className="dashboard-eyebrow block mb-1.5 !text-[9px]">Password</label>
                 <div className="relative">
-                  <input type={show ? 'text' : 'password'} required autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} className="input-field pr-10" />
-                  <button type="button" onClick={() => setShow(!show)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted hover:text-[#0b2f4d]">{show ? <EyeOff size={15} /> : <Eye size={15} />}</button>
+                  <input id="login-password" type={show ? 'text' : 'password'} required autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} className="input-field pr-10" />
+                  <button type="button" onClick={() => setShow(!show)} aria-label={show ? 'Hide password' : 'Show password'} className="absolute right-1 top-1/2 -translate-y-1/2 p-2 text-muted hover:text-[#0b2f4d]">{show ? <EyeOff size={15} /> : <Eye size={15} />}</button>
                 </div>
               </div>
               <div className="flex items-center justify-between">
@@ -106,6 +106,6 @@ function LoginForm() {
           <p className="text-white/55 text-[13px] mt-4 leading-6">Live roles, agency cover, residencies and the Academy - one account, one platform.</p>
         </div>
       </div>
-    </div>
+    </main>
   )
 }

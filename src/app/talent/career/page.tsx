@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import DashboardShell from '@/components/DashboardShell'
-import { TrendingUp, Lock, Check, X, GraduationCap, Target, BarChart3 } from 'lucide-react'
+import { TrendingUp, Lock, Check, X, GraduationCap, Target, BarChart3, Eye, ArrowUpRight } from 'lucide-react'
 
 // Career Intelligence: the Pro tool that answers three questions with live
 // platform data - where do I sit, what is the market asking for, and which
@@ -51,6 +51,25 @@ export default function CareerIntelligencePage() {
               </div>
             ) : (
               <>
+                {data.profileViews && (
+                  <div className="dashboard-card">
+                    <p className="text-[10px] uppercase tracking-[0.16em] font-semibold text-accent mb-2 inline-flex items-center gap-1.5"><Eye size={13} /> Who is looking at you</p>
+                    {data.profileViews.week.employers > 0 ? (
+                      <>
+                        <p className="text-[13px] text-ink">Your profile was viewed by <span className="font-semibold">{data.profileViews.week.employers} employer{data.profileViews.week.employers === 1 ? '' : 's'}</span> this week.</p>
+                        <p className="mt-1 text-[11.5px] text-muted">{data.profileViews.week.views} view{data.profileViews.week.views === 1 ? '' : 's'} in the last 7 days · {data.profileViews.month.views} in the last 30 days from {data.profileViews.month.employers} employer{data.profileViews.month.employers === 1 ? '' : 's'}. Counted from verified employer accounts only.</p>
+                      </>
+                    ) : data.profileViews.month.employers > 0 ? (
+                      <>
+                        <p className="text-[13px] text-ink">Your profile was viewed by <span className="font-semibold">{data.profileViews.month.employers} employer{data.profileViews.month.employers === 1 ? '' : 's'}</span> in the last 30 days.</p>
+                        <p className="mt-1 text-[11.5px] text-muted">{data.profileViews.month.views} view{data.profileViews.month.views === 1 ? '' : 's'} in total. Counted from verified employer accounts only.</p>
+                      </>
+                    ) : (
+                      <p className="text-[13px] text-secondary">No employer views yet this week - a complete portfolio changes this.</p>
+                    )}
+                  </div>
+                )}
+
                 <div className="dashboard-card">
                   <p className="text-[10px] uppercase tracking-[0.16em] font-semibold text-accent mb-3 inline-flex items-center gap-1.5"><TrendingUp size={13} /> Live market demand</p>
                   <div className="mb-4 grid grid-cols-3 gap-3 text-center">
@@ -88,12 +107,29 @@ export default function CareerIntelligencePage() {
                   ) : <p className="text-[13px] text-secondary">No gaps against current market demand - your profile covers the most requested skills. Keep an eye here as new roles arrive.</p>}
                 </div>
 
+                {(data.matchUplift?.skills || []).length > 0 && (
+                  <div className="dashboard-card">
+                    <p className="text-[10px] uppercase tracking-[0.16em] font-semibold text-accent mb-3 inline-flex items-center gap-1.5"><ArrowUpRight size={13} /> What one skill changes</p>
+                    <div>
+                      {data.matchUplift.skills.map((entry: any) => (
+                        <div key={entry.skill} className="border-t border-border/60 py-2 first:border-t-0">
+                          <p className="text-[13px] text-ink">Adding <span className="font-semibold">{entry.skill}</span> would raise your {data.matchUplift.threshold}%+ matches from <span className="font-semibold">{entry.from}</span> to <span className="font-semibold">{entry.to}</span>.</p>
+                        </div>
+                      ))}
+                    </div>
+                    <p className="mt-2 text-[11.5px] text-muted">Recomputed with the real matching engine against {data.matchUplift.sampledJobs === data.matchUplift.totalLiveJobs ? `all ${data.matchUplift.totalLiveJobs} live roles` : `the ${data.matchUplift.sampledJobs} most recent of ${data.matchUplift.totalLiveJobs} live roles`} - not an estimate.</p>
+                  </div>
+                )}
+
                 <div className="dashboard-card">
                   <p className="text-[10px] uppercase tracking-[0.16em] font-semibold text-accent mb-2 inline-flex items-center gap-1.5"><BarChart3 size={13} /> Salary signal</p>
                   {data.salary?.suppressed ? (
                     <p className="text-[13px] text-secondary leading-6">Not enough advertised-salary data at your level yet to show an honest figure ({data.salary.sample} record{data.salary.sample === 1 ? '' : 's'} so far; we publish nothing below 30). This fills in automatically as roles are posted - an empty state here is deliberate, because we never show a number we cannot defend.</p>
                   ) : (
                     <div className="text-[13px] text-secondary leading-6">
+                      {data.salary.p25 != null && data.salary.p75 != null && data.salary.p25 !== data.salary.p75 && (
+                        <p className="mb-2 text-ink">Candidates at your level are typically earning <span className="text-[17px] font-semibold">£{Number(data.salary.p25).toLocaleString('en-GB')}-£{Number(data.salary.p75).toLocaleString('en-GB')}</span> <span className="text-[11.5px] text-muted font-normal">(the middle half of {data.salary.sample} advertised roles on WHC, last 12 months)</span></p>
+                      )}
                       <p>Median advertised salary at your level over the last 12 months: <span className="text-[17px] font-semibold text-ink">£{Number(data.salary.median).toLocaleString('en-GB')}</span></p>
                       <p className="mt-1 text-[11.5px] text-muted">Based on {data.salary.sample} advertised roles{data.salary.confidence === 'early_signal' ? ' - early signal, treat as directional' : ''}.</p>
                       {data.salary.yourExpectation && <p className="mt-2">Your stated expectation: £{Number(data.salary.yourExpectation).toLocaleString('en-GB')} (private to you).</p>}

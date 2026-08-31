@@ -134,7 +134,7 @@ export default function TalentPendingInterviewActions() {
       </div>
 
       <div className="p-5">
-        {error && <div className="mb-4 rounded-xl bg-red-50 px-3 py-2 text-[12px] text-red-600">{error}</div>}
+        {error && <div role="alert" className="mb-4 rounded-xl bg-red-50 px-3 py-2 text-[12px] text-red-600">{error}</div>}
 
         <div className="space-y-4">
           {pending.map(({ item, interview }) => {

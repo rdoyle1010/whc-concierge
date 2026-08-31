@@ -52,6 +52,8 @@ analytics failure must never break the emitting request).
 | hire_confirmed | Employer completes the hire (placement row created) | `api/employer/applications/complete-hire` |
 | job_posted | Paid role activates (payload: tier, held_for_approval) | Stripe webhook `job_posting` branch |
 | course_completed | First pass of a course assessment (payload: course_slug, score) | `api/academy` quiz action |
+| job_viewed | A visitor views a live role page (deduped per viewer per 6 hours; `actor_user_id` when signed in) | `api/track-view` |
+| candidate_profile_viewed | An approved employer views a professional's profile (never self-views; deduped per employer per 6 hours) | `api/track-view` |
 
 Funnel metrics derive from these: application→interview, interview→offer,
 offer acceptance, time to hire. Add new event names to this table in the

@@ -4,7 +4,7 @@ import Footer from '@/components/Footer'
 export default function AdvertisingTermsPage() {
   return <div className="min-h-screen bg-[#f5f6f8] text-[#10283b]">
     <Navbar />
-    <main className="pt-[76px]">
+    <main id="main-content" className="pt-[76px]">
       <section className="bg-[#0b2f4d] text-white">
         <div className="mx-auto max-w-4xl px-6 py-16 lg:px-8">
           <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#5a6a76]">Wellness House Collective</p>

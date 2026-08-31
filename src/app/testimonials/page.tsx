@@ -73,7 +73,7 @@ export default function TestimonialsPage() {
   return (
     <>
       <Navbar />
-      <main className="pt-[76px] bg-surface">
+      <main id="main-content" className="pt-[76px] bg-surface">
         {/* Hero */}
         <section className="bg-white border-b border-border">
           <div className="max-w-3xl mx-auto px-6 lg:px-8 py-16 text-center">
@@ -93,7 +93,7 @@ export default function TestimonialsPage() {
         {/* Testimonials Grid */}
         <section className="py-14 px-6">
           <div className="max-w-6xl mx-auto">
-            <p className="text-[13px] italic text-muted mb-8 text-center">
+            <p className="text-[13px] italic text-secondary mb-8 text-center">
               Composite testimonials representative of early platform feedback. Named case studies coming soon as our first cohort completes their hires.
             </p>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

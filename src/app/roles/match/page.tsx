@@ -160,7 +160,7 @@ export default function SwipeMatchPage() {
         <div className="w-14 h-14 rounded-2xl bg-[#f5f6f8] flex items-center justify-center mx-auto mb-5"><Sparkles size={22} className="text-[#10283b]" /></div>
         <p className="dashboard-eyebrow">Matching needs your profile</p>
         <h1 className="text-[28px] font-semibold text-ink mb-3">Finish your profile to unlock meaningful matches.</h1>
-        <p className="text-[14px] leading-6 text-muted mb-7">We use your role level, experience, treatments, qualifications, brands, systems, location and preferences to rank roles. We will not show made-up match scores.</p>
+        <p className="text-[14px] leading-6 text-secondary mb-7">We use your role level, experience, treatments, qualifications, brands, systems, location and preferences to rank roles. We will not show made-up match scores.</p>
         <Link href="/talent/profile" className="btn-primary inline-flex items-center gap-2">Complete profile <ArrowRight size={14}/></Link>
       </div>
     </div>
@@ -171,7 +171,7 @@ export default function SwipeMatchPage() {
       <div className="max-w-md text-center">
         <div className="w-16 h-16 bg-white border border-border rounded-2xl flex items-center justify-center mx-auto mb-5"><Sparkles size={24} className="text-[#10283b]" /></div>
         <h1 className="text-[28px] font-semibold text-ink mb-2">{jobs.length ? 'You’ve reviewed all current matches' : 'No eligible roles right now'}</h1>
-        <p className="text-[14px] leading-6 text-muted mb-7">All roles that pass mandatory requirements are ranked here, strongest to weakest. Roles under 45% stay visible for comparison but cannot be applied to.</p>
+        <p className="text-[14px] leading-6 text-secondary mb-7">All roles that pass mandatory requirements are ranked here, strongest to weakest. Roles under 45% stay visible for comparison but cannot be applied to.</p>
         {error && <div className="mb-5 rounded-xl bg-red-50 px-4 py-3 text-[12px] text-red-600">{error}</div>}
         <div className="flex justify-center gap-2"><Link href="/talent/applications" className="btn-primary">My Applications</Link><Link href="/jobs" className="btn-secondary">Browse all roles</Link></div>
       </div>
@@ -214,7 +214,7 @@ export default function SwipeMatchPage() {
         </div>
       </header>
 
-      <main className="max-w-6xl mx-auto px-6 py-9 md:py-12">
+      <main id="main-content" className="max-w-6xl mx-auto px-6 py-9 md:py-12">
         <div className="mb-8 md:flex md:items-end md:justify-between">
           <div>
             <p className="dashboard-eyebrow">Jobs & matches</p>

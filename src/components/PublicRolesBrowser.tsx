@@ -31,12 +31,12 @@ export default function PublicRolesBrowser({ jobs }: { jobs: any[] }) {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
             <div className="md:col-span-2 relative">
               <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
-              <input type="text" placeholder="Search roles, skills or locations..." value={search} onChange={e => { setSearch(e.target.value); setPage(1) }} className="input-field pl-9 !py-2 text-[13px]" />
+              <input type="text" placeholder="Search roles, skills or locations..." aria-label="Search roles, skills or locations" value={search} onChange={e => { setSearch(e.target.value); setPage(1) }} className="input-field pl-9 !py-2 text-[13px]" />
             </div>
-            <select value={roleType} onChange={e => { setRoleType(e.target.value); setPage(1) }} className="input-field !py-2 text-[13px]">
+            <select value={roleType} aria-label="Filter by role type" onChange={e => { setRoleType(e.target.value); setPage(1) }} className="input-field !py-2 text-[13px]">
               {ROLE_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
             </select>
-            <input type="text" placeholder="Location..." value={locationFilter} onChange={e => { setLocationFilter(e.target.value); setPage(1) }} className="input-field !py-2 text-[13px]" />
+            <input type="text" placeholder="Location..." aria-label="Filter by location" value={locationFilter} onChange={e => { setLocationFilter(e.target.value); setPage(1) }} className="input-field !py-2 text-[13px]" />
           </div>
           <p className="text-[11px] text-muted mt-2">{filtered.length} opportunity{filtered.length !== 1 ? 'ies' : 'y'} available</p>
         </div>

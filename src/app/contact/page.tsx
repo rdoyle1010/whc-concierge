@@ -45,7 +45,7 @@ export default function ContactPage() {
   return (
     <div className="public-page">
       <Navbar />
-      <main className="pt-[76px]">
+      <main id="main-content" className="pt-[76px]">
         <section className="public-hero py-16 md:py-20 px-6">
           <div className="max-w-4xl mx-auto text-center">
             <p className="public-eyebrow mb-4">Contact</p>
@@ -71,14 +71,14 @@ export default function ContactPage() {
 
             <div className="lg:col-span-2">
               {sent ? (
-                <div className="public-panel p-12 text-center">
+                <div role="status" className="public-panel p-12 text-center">
                   <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6 bg-[#f5f6f8]"><Check size={28} className="text-accent" /></div>
                   <h3 className="text-[22px] font-semibold text-ink mb-2">Thank you</h3>
                   <p className="text-[14px] leading-7 text-secondary">We&apos;ve received your message and will be in touch shortly.</p>
                 </div>
               ) : (
                 <div className="public-panel p-6 md:p-8">
-                  {error && <div className="bg-red-50 text-red-600 text-[13px] px-4 py-3 rounded-xl mb-6">{error}</div>}
+                  {error && <div role="alert" className="bg-red-50 text-red-600 text-[13px] px-4 py-3 rounded-xl mb-6">{error}</div>}
                   <div className="flex flex-wrap gap-2 mb-7">
                     {TYPES.map((t) => {
                       const active = form.type === t.value
@@ -87,11 +87,11 @@ export default function ContactPage() {
                   </div>
                   <form onSubmit={handleSubmit} className="space-y-5">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <Field label="Name" error={fieldErrors.name}><input type="text" required value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} className={`input-field ${fieldErrors.name ? 'border-red-300' : ''}`} /></Field>
-                      <Field label="Email" error={fieldErrors.email} help="We'll only use this to reply."><input type="email" required value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} className={`input-field ${fieldErrors.email ? 'border-red-300' : ''}`} /></Field>
+                      <Field label="Name" error={fieldErrors.name}><input type="text" required aria-label="Name" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} className={`input-field ${fieldErrors.name ? 'border-red-300' : ''}`} /></Field>
+                      <Field label="Email" error={fieldErrors.email} help="We'll only use this to reply."><input type="email" required aria-label="Email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} className={`input-field ${fieldErrors.email ? 'border-red-300' : ''}`} /></Field>
                     </div>
-                    <Field label="Subject" error={fieldErrors.subject}><input type="text" required value={form.subject} onChange={e => setForm({ ...form, subject: e.target.value })} className={`input-field ${fieldErrors.subject ? 'border-red-300' : ''}`} /></Field>
-                    <Field label="Message" error={fieldErrors.message} help="The more detail you share, the faster we can help."><textarea rows={6} required value={form.message} onChange={e => setForm({ ...form, message: e.target.value })} className={`input-field ${fieldErrors.message ? 'border-red-300' : ''}`} /></Field>
+                    <Field label="Subject" error={fieldErrors.subject}><input type="text" required aria-label="Subject" value={form.subject} onChange={e => setForm({ ...form, subject: e.target.value })} className={`input-field ${fieldErrors.subject ? 'border-red-300' : ''}`} /></Field>
+                    <Field label="Message" error={fieldErrors.message} help="The more detail you share, the faster we can help."><textarea rows={6} required aria-label="Message" value={form.message} onChange={e => setForm({ ...form, message: e.target.value })} className={`input-field ${fieldErrors.message ? 'border-red-300' : ''}`} /></Field>
                     <div className="pt-2"><button type="submit" disabled={loading} className="btn-primary inline-flex items-center gap-2 disabled:opacity-50"><Send size={15} /><span>{loading ? 'Sending…' : 'Send message'}</span></button></div>
                   </form>
                 </div>

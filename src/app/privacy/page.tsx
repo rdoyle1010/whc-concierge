@@ -3,6 +3,7 @@ import Footer from '@/components/Footer'
 
 export default function PrivacyPage() {
   return <div className="min-h-screen bg-white"><Navbar />
+    <main id="main-content">
     <section className="bg-[#0b2f4d] pt-32 pb-16"><div className="max-w-3xl mx-auto px-6 text-center"><h1 className="text-4xl font-semibold text-white">Privacy Policy</h1><p className="text-white/70 mt-3 text-[14px]">Last updated: 26 August 2026</p></div></section>
     <section className="py-16 bg-white"><div className="max-w-3xl mx-auto px-6 prose prose-lg prose-headings:text-[#10283b] prose-p:text-[#5a6a76] prose-li:text-[#5a6a76]">
       <h2>1. Who we are</h2><p>Wellness House Collective (&ldquo;WHC&rdquo;, &ldquo;we&rdquo;, &ldquo;us&rdquo;) operates a UK recruitment, flexible-work and professional-development platform for spa and wellness professionals and employers. We act as data controller for personal data processed through the platform. Privacy enquiries and data-rights requests can be sent to <a href="mailto:hello@wellnesshousecollective.co.uk">hello@wellnesshousecollective.co.uk</a>.</p>
@@ -30,5 +31,5 @@ export default function PrivacyPage() {
       <h2>12. Cookies</h2><p>WHC uses necessary authentication and security cookies to provide logged-in services. Optional analytics or advertising cookies must not be introduced without the appropriate consent mechanism. Payment providers may set cookies necessary for fraud prevention and payment security.</p>
 
       <h2>13. Changes</h2><p>We may update this policy as the platform, service providers or law change. Material changes will be communicated where required, and fresh consent will be sought when the law requires it for a new processing purpose.</p>
-    </div></section><Footer /></div>
+    </div></section></main><Footer /></div>
 }

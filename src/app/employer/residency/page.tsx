@@ -71,7 +71,7 @@ export default function EmployerResidencyPage() {
           <div>
             <p className="eyebrow mb-2">Residency Marketplace</p>
             <h1 className="text-3xl md:text-4xl font-semibold text-ink tracking-tight">Your residency bookings</h1>
-            <p className="text-sm text-muted mt-2 max-w-2xl">Manage offers, counter-offers and confirmed specialist residencies in one place.</p>
+            <p className="text-sm text-secondary mt-2 max-w-2xl">Manage offers, counter-offers and confirmed specialist residencies in one place.</p>
           </div>
           <Link href="/residency" className="btn-primary">Find a Specialist</Link>
         </div>
@@ -84,7 +84,7 @@ export default function EmployerResidencyPage() {
         </div>
 
         {loading ? <div className="skeleton h-44 rounded-2xl" /> : bookings.length === 0 ? (
-          <div className="bg-white border border-border rounded-2xl p-12 text-center"><Hotel size={28} className="mx-auto text-muted mb-3" /><p className="font-medium text-ink">No residency offers yet</p><p className="text-sm text-muted mt-2 mb-5">Browse specialists and send a structured invitation when you find the right fit.</p><Link href="/residency" className="btn-primary inline-block">Browse Residency Talent</Link></div>
+          <div className="bg-white border border-border rounded-2xl p-12 text-center"><Hotel size={28} className="mx-auto text-muted mb-3" /><p className="font-medium text-ink">No residency offers yet</p><p className="text-sm text-secondary mt-2 mb-5">Browse specialists and send a structured invitation when you find the right fit.</p><Link href="/residency" className="btn-primary inline-block">Browse Residency Talent</Link></div>
         ) : <div className="space-y-4">{bookings.map(b => {
           const gross = Number(b.agreed_total || b.proposed_total || 0)
           const fee = Number(b.platform_fee || gross * .1)

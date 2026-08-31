@@ -9,6 +9,7 @@ import JobApplyButtons from '@/components/JobApplyButtons'
 import { createAdminClient } from '@/lib/supabase/admin'
 import SponsoredAd from '@/components/SponsoredAd'
 import JobMatchPanel from '@/components/JobMatchPanel'
+import TrackView from '@/components/TrackView'
 
 export const revalidate = 60
 
@@ -83,6 +84,7 @@ export default async function RoleDetailPage(props: { params: Promise<{ id: stri
 
   return <>
     <Navbar />
+    <TrackView kind="job" id={String(job.id)} />
     <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jobPostingLd) }} />
     <main className="pt-[76px] bg-white">
       <section className="border-b border-[#e3e7eb] bg-white">

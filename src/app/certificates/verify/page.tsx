@@ -45,12 +45,12 @@ function VerifyInner() {
 
         <div className="flex gap-2 mb-8">
           <input value={code} onChange={e => setCode(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') verify(code) }}
-            placeholder="e.g. WHC-XXXX-XXXX" className="input-field flex-1 text-[14px] font-mono" />
+            placeholder="e.g. WHC-XXXX-XXXX" aria-label="Certificate verification code" className="input-field flex-1 text-[14px] font-mono" />
           <button type="button" onClick={() => verify(code)} disabled={state === 'loading'} className="btn-primary inline-flex items-center gap-1.5 text-[13px]"><Search size={14} /> {state === 'loading' ? 'Checking...' : 'Verify'}</button>
         </div>
 
         {state === 'done' && result && (
-          <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-6">
+          <div role="status" className="rounded-2xl border border-emerald-200 bg-emerald-50 p-6">
             <p className="inline-flex items-center gap-2 text-[14px] font-semibold text-emerald-900 mb-3"><BadgeCheck size={18} /> Genuine WHC Academy certificate</p>
             <div className="space-y-1.5 text-[13.5px] text-emerald-900">
               <p><span className="text-emerald-700">Awarded to:</span> <strong>{result.learner_name}</strong></p>

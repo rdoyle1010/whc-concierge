@@ -65,7 +65,7 @@ export default function PrivacyPreferences() {
   const marketingPending = prefs.marketing_email_status === 'pending'
 
   return <div className="space-y-6">
-    {message && <div className="border border-[#e3e7eb] bg-[#f5f6f8] px-4 py-3 text-[13px] text-[#5a6a76]">{message}</div>}
+    {message && <div role="status" className="border border-[#e3e7eb] bg-[#f5f6f8] px-4 py-3 text-[13px] text-[#5a6a76]">{message}</div>}
 
     <section className="dashboard-card">
       <div className="flex gap-3"><ShieldCheck size={20} className="text-[#0b2f4d] mt-0.5"/><div><h2 className="text-[22px]">Privacy & contact preferences</h2><p className="text-[13px] leading-6 text-[#5a6a76] mt-2">Marketing is optional and separate from the service messages needed to run your account, applications, bookings, payments and security. You can change optional preferences at any time.</p></div></div>

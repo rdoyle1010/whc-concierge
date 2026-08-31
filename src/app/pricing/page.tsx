@@ -51,7 +51,7 @@ export default function PricingPage() {
 
   return <div className="public-page">
     <Navbar />
-    <main className="pt-[76px]">
+    <main id="main-content" className="pt-[76px]">
       <section className="bg-[#0b2f4d] text-white">
         <div className="max-w-7xl mx-auto px-6 py-14 md:py-20 grid lg:grid-cols-[1fr_.85fr] gap-10 items-center">
           <div>

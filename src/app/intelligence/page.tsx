@@ -193,7 +193,7 @@ export default async function IntelligencePage() {
         </div>
       </header>
 
-      <main className="max-w-6xl mx-auto px-6">
+      <main id="main-content" className="max-w-6xl mx-auto px-6">
         {/* The market this month */}
         <section className="py-14 md:py-20">
           <p className="public-eyebrow">The market this month</p>
@@ -292,7 +292,7 @@ export default async function IntelligencePage() {
                       ))}
                     </div>
                   ) : (
-                    <p className="mt-3 border-t border-border pt-4 max-w-4xl text-[13px] italic text-muted">
+                    <p className="mt-3 border-t border-border pt-4 max-w-4xl text-[13px] italic text-secondary">
                       In research - published when there is something worth saying.
                     </p>
                   )}

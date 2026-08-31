@@ -205,17 +205,17 @@ export default function TalentJobsPage() {
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-7">
         <div className="md:col-span-2 relative">
           <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
-          <input type="text" placeholder="Search roles or properties..." value={search} onChange={e => setSearch(e.target.value)} className="input-field pl-9 !py-2 text-[13px]" />
+          <input type="text" placeholder="Search roles or properties..." aria-label="Search roles or properties" value={search} onChange={e => setSearch(e.target.value)} className="input-field pl-9 !py-2 text-[13px]" />
         </div>
-        <select value={roleFilter} onChange={e => setRoleFilter(e.target.value)} className="input-field !py-2 text-[13px]">
+        <select aria-label="Filter by role level" value={roleFilter} onChange={e => setRoleFilter(e.target.value)} className="input-field !py-2 text-[13px]">
           <option value="">All levels</option>
           {ROLE_LEVELS.map(r => <option key={r} value={r}>{r}</option>)}
         </select>
-        <select value={contractFilter} onChange={e => setContractFilter(e.target.value)} className="input-field !py-2 text-[13px]">
+        <select aria-label="Filter by contract type" value={contractFilter} onChange={e => setContractFilter(e.target.value)} className="input-field !py-2 text-[13px]">
           <option value="">All contracts</option>
           {CONTRACT_TYPES.map(c => <option key={c} value={c}>{c.replace('_', ' ')}</option>)}
         </select>
-        <select value={sortBy} onChange={e => setSortBy(e.target.value)} className="input-field !py-2 text-[13px]">
+        <select aria-label="Sort roles" value={sortBy} onChange={e => setSortBy(e.target.value)} className="input-field !py-2 text-[13px]">
           <option value="match">Best match</option>
           <option value="newest">Newest</option>
           <option value="salary_high">Salary: high-low</option>

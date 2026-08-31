@@ -122,7 +122,7 @@ export default function Footer({ siteContent }: { siteContent?: WebsiteContent }
       <p className="text-[9px] uppercase tracking-[0.2em] text-white/55 font-semibold">Join our mailing list</p>
       <p className="mt-2 text-[12px] leading-5 text-white/60">Jobs, industry insight and opportunities from Wellness House Collective, straight to your inbox.</p>
       {newsletterState === 'success' ? (
-        <p className="mt-3 text-[12px] font-semibold text-white/85">Check your inbox to confirm your subscription.</p>
+        <p role="status" className="mt-3 text-[12px] font-semibold text-white/85">Check your inbox to confirm your subscription.</p>
       ) : (
         <form onSubmit={subscribeToNewsletter} className="mt-3">
           <div className="flex gap-2">
@@ -142,7 +142,7 @@ export default function Footer({ siteContent }: { siteContent?: WebsiteContent }
             </button>
           </div>
           <input type="text" name="company" value={newsletterHoneypot} onChange={e => setNewsletterHoneypot(e.target.value)} tabIndex={-1} autoComplete="off" aria-hidden="true" className="hidden" />
-          {newsletterState === 'error' && <p className="mt-2 text-[11.5px] text-white/70">{newsletterError}</p>}
+          {newsletterState === 'error' && <p role="alert" className="mt-2 text-[11.5px] text-white/70">{newsletterError}</p>}
         </form>
       )}
     </div>

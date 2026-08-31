@@ -27,6 +27,33 @@ export default function TalentDashboard() {
   const [stats, setStats] = useState({ applications: 0, messages: 0 })
   const [brief, setBrief] = useState<any>(null)
   const [loading, setLoading] = useState(true)
+  const [approaches, setApproaches] = useState<any[]>([])
+  const [approachBusy, setApproachBusy] = useState('')
+  const [approachNote, setApproachNote] = useState('')
+
+  // Confidential approaches: a property has asked for an introduction to this
+  // private profile. Accepting reveals the full profile and opens messaging.
+  async function respondToApproach(employerId: string, action: 'accept' | 'decline') {
+    if (approachBusy) return
+    setApproachBusy(`${action}:${employerId}`)
+    setApproachNote('')
+    try {
+      const res = await fetch('/api/private-approach', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action, employerId }),
+      })
+      const body = await res.json().catch(() => ({}))
+      if (!res.ok) { setApproachNote(body.error || 'Could not record your response - please try again.'); return }
+      setApproaches(prev => prev.filter(a => a.employer_id !== employerId))
+      setApproachNote(action === 'accept'
+        ? 'Introduction accepted. The property can now see your full profile and message you.'
+        : 'Approach declined. The property learns nothing about who you are.')
+    } catch {
+      setApproachNote('Could not record your response - please try again.')
+    } finally {
+      setApproachBusy('')
+    }
+  }
 
   useEffect(() => {
     async function load() {
@@ -36,6 +63,10 @@ export default function TalentDashboard() {
         .then(res => (res.ok ? res.json() : null))
         .then(data => { if (data && !data.error) setBrief(data) })
         .catch(() => { /* the brief is optional */ })
+      fetch('/api/private-approach')
+        .then(res => (res.ok ? res.json() : null))
+        .then(data => { if (data && Array.isArray(data.approaches)) setApproaches(data.approaches) })
+        .catch(() => { /* the card simply does not render */ })
       try {
         const { data: { user } } = await supabase.auth.getUser()
         if (!user) { setLoading(false); return }
@@ -153,6 +184,38 @@ export default function TalentDashboard() {
                 </p>
               </div>
             )}
+          </div>
+        </section>
+      )}
+
+      {(approaches.length > 0 || approachNote) && (
+        <section className="dashboard-card mb-8">
+          <p className="dashboard-eyebrow">Private Career Mode</p>
+          <h2 className="dashboard-section-title mb-1">Confidential approaches</h2>
+          <p className="text-[12px] text-muted mb-2">A property would like an introduction. Accepting reveals your full profile to that property and opens messaging - declining tells them nothing about who you are.</p>
+          {approachNote && <p className="text-[12px] text-ink border border-border bg-surface px-3 py-2 mb-2">{approachNote}</p>}
+          <div>
+            {approaches.map(approach => (
+              <div key={approach.employer_id} className="dashboard-list-row flex-wrap gap-3">
+                <div className="min-w-0">
+                  <p className="text-[13px] font-medium text-ink truncate">{approach.property_name}</p>
+                  <p className="text-[12px] text-muted mt-0.5">
+                    {approach.location ? `${approach.location} · ` : ''}
+                    <Link href={`/properties/${approach.employer_id}`} className="text-accent hover:underline">View property</Link>
+                  </p>
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  <button type="button" disabled={!!approachBusy} onClick={() => respondToApproach(approach.employer_id, 'accept')}
+                    className="px-3 py-2 bg-[#0b2f4d] text-white text-[12px] font-medium disabled:opacity-50">
+                    {approachBusy === `accept:${approach.employer_id}` ? 'Accepting...' : 'Accept introduction'}
+                  </button>
+                  <button type="button" disabled={!!approachBusy} onClick={() => respondToApproach(approach.employer_id, 'decline')}
+                    className="px-3 py-2 border border-border bg-white text-secondary text-[12px] font-medium hover:text-ink disabled:opacity-50">
+                    {approachBusy === `decline:${approach.employer_id}` ? 'Declining...' : 'Decline'}
+                  </button>
+                </div>
+              </div>
+            ))}
           </div>
         </section>
       )}

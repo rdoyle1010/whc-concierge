@@ -41,6 +41,7 @@ export default function BlogPage() {
   return (
     <div className="min-h-screen bg-[#f5f6f8]">
       <Navbar />
+      <main id="main-content">
 
       <section className="pt-[76px] bg-white border-b border-border">
         <div className="max-w-[1440px] mx-auto px-6 lg:px-10 py-16 text-center">
@@ -122,6 +123,7 @@ export default function BlogPage() {
         </div>
       </section>
 
+      </main>
       <Footer />
     </div>
   )

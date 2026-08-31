@@ -97,20 +97,20 @@ export default function HotelJobsPage() {
           <div className="bg-white border border-border rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6 animate-fade-in-up" onClick={e => e.stopPropagation()}>
             <h2 className="text-[18px] font-medium text-ink mb-6">Post a New Role</h2>
             <div className="space-y-4">
-              <div><label className="eyebrow block mb-1.5">Job Title *</label><input type="text" value={form.job_title} onChange={e => setForm({ ...form, job_title: e.target.value })} className="input-field" placeholder="e.g. Senior Spa Therapist" /></div>
-              <div><label className="eyebrow block mb-1.5">Description</label><textarea rows={4} value={form.job_description} onChange={e => setForm({ ...form, job_description: e.target.value })} className="input-field" /></div>
+              <div><label className="eyebrow block mb-1.5">Job Title *</label><input aria-label="Job Title" type="text" value={form.job_title} onChange={e => setForm({ ...form, job_title: e.target.value })} className="input-field" placeholder="e.g. Senior Spa Therapist" /></div>
+              <div><label className="eyebrow block mb-1.5">Description</label><textarea aria-label="Description" rows={4} value={form.job_description} onChange={e => setForm({ ...form, job_description: e.target.value })} className="input-field" /></div>
               <div className="grid grid-cols-2 gap-4">
-                <div><label className="eyebrow block mb-1.5">Location *</label><input type="text" value={form.location} onChange={e => setForm({ ...form, location: e.target.value })} className="input-field" /></div>
-                <div><label className="eyebrow block mb-1.5">Postcode</label><input type="text" value={form.location_postcode} onChange={e => setForm({ ...form, location_postcode: e.target.value })} className="input-field" /></div>
+                <div><label className="eyebrow block mb-1.5">Location *</label><input aria-label="Location" type="text" value={form.location} onChange={e => setForm({ ...form, location: e.target.value })} className="input-field" /></div>
+                <div><label className="eyebrow block mb-1.5">Postcode</label><input aria-label="Postcode" type="text" value={form.location_postcode} onChange={e => setForm({ ...form, location_postcode: e.target.value })} className="input-field" /></div>
               </div>
               <div className="grid grid-cols-3 gap-4">
-                <div><label className="eyebrow block mb-1.5">Role Level</label><select value={form.required_role_level} onChange={e => setForm({ ...form, required_role_level: e.target.value })} className="input-field"><option value="">Any</option>{ROLE_LEVELS.map(r => <option key={r} value={r}>{r}</option>)}</select></div>
-                <div><label className="eyebrow block mb-1.5">Contract</label><select value={form.contract_type} onChange={e => setForm({ ...form, contract_type: e.target.value })} className="input-field">{CONTRACT_TYPES.map(c => <option key={c} value={c}>{c.replace('_', ' ')}</option>)}</select></div>
-                <div><label className="eyebrow block mb-1.5">Tier</label><select value={selectedTier} onChange={e => setSelectedTier(e.target.value)} className="input-field"><option>Bronze</option><option>Silver</option><option>Gold</option><option>Platinum</option></select></div>
+                <div><label className="eyebrow block mb-1.5">Role Level</label><select aria-label="Role Level" value={form.required_role_level} onChange={e => setForm({ ...form, required_role_level: e.target.value })} className="input-field"><option value="">Any</option>{ROLE_LEVELS.map(r => <option key={r} value={r}>{r}</option>)}</select></div>
+                <div><label className="eyebrow block mb-1.5">Contract</label><select aria-label="Contract" value={form.contract_type} onChange={e => setForm({ ...form, contract_type: e.target.value })} className="input-field">{CONTRACT_TYPES.map(c => <option key={c} value={c}>{c.replace('_', ' ')}</option>)}</select></div>
+                <div><label className="eyebrow block mb-1.5">Tier</label><select aria-label="Tier" value={selectedTier} onChange={e => setSelectedTier(e.target.value)} className="input-field"><option>Bronze</option><option>Silver</option><option>Gold</option><option>Platinum</option></select></div>
               </div>
               <div className="grid grid-cols-2 gap-4">
-                <div><label className="eyebrow block mb-1.5">Min Salary (£)</label><input type="number" value={form.salary_min} onChange={e => setForm({ ...form, salary_min: e.target.value })} className="input-field" /></div>
-                <div><label className="eyebrow block mb-1.5">Max Salary (£)</label><input type="number" value={form.salary_max} onChange={e => setForm({ ...form, salary_max: e.target.value })} className="input-field" /></div>
+                <div><label className="eyebrow block mb-1.5">Min Salary (£)</label><input aria-label="Min Salary (£)" type="number" value={form.salary_min} onChange={e => setForm({ ...form, salary_min: e.target.value })} className="input-field" /></div>
+                <div><label className="eyebrow block mb-1.5">Max Salary (£)</label><input aria-label="Max Salary (£)" type="number" value={form.salary_max} onChange={e => setForm({ ...form, salary_max: e.target.value })} className="input-field" /></div>
               </div>
               <CollapsibleCheckboxSection title="Required Brands" flatItems={[...PRODUCT_HOUSES]} selected={form.required_brands} onChange={v => setForm({ ...form, required_brands: v })} />
               <CollapsibleCheckboxSection title="Required Qualifications" flatItems={[...QUALIFICATIONS]} selected={form.required_qualifications} onChange={v => setForm({ ...form, required_qualifications: v })} />
@@ -142,7 +142,7 @@ export default function HotelJobsPage() {
               </div>
               <div className="flex items-center gap-2">
                 <button type="button" onClick={() => toggleLive(job)} className="p-2 rounded-lg hover:bg-surface text-muted" title={job.is_live ? 'Pause' : 'Go live'}>{job.is_live ? <EyeOff size={16} /> : <Eye size={16} />}</button>
-                <button type="button" onClick={() => deleteJob(job.id)} className="p-2 rounded-lg hover:bg-red-50 text-muted hover:text-red-500"><Trash2 size={16} /></button>
+                <button type="button" onClick={() => deleteJob(job.id)} aria-label="Delete job" className="p-2.5 rounded-lg hover:bg-red-50 text-muted hover:text-red-500"><Trash2 size={16} /></button>
                 <span className={`text-[11px] font-medium px-2 py-0.5 rounded-full ${job.is_live ? 'bg-emerald-50 text-emerald-700' : 'bg-neutral-100 text-muted'}`}>{job.is_live ? 'Live' : 'Paused'}</span>
               </div>
             </div>

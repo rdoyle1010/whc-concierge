@@ -102,41 +102,41 @@ export default function TalentRegisterPage() {
         <Link href="/login?role=talent" className="text-sm text-muted hover:text-ink">Already have an account?</Link>
       </div>
 
-      <div className="max-w-2xl mx-auto px-4 py-12">
+      <main id="main-content" className="max-w-2xl mx-auto px-4 py-12">
         <h1 className="text-3xl font-bold text-ink mb-2">Create your Talent account</h1>
         <p className="text-secondary mb-2">Get your account set up first. You will build your professional profile once you are inside.</p>
-        <p className="text-sm text-muted mb-8">No duplicated forms. The information you add to your profile is saved directly to your Talent account.</p>
+        <p className="text-sm text-secondary mb-8">No duplicated forms. The information you add to your profile is saved directly to your Talent account.</p>
 
-        {error && <div className="bg-red-50 text-red-600 text-sm px-4 py-3 mb-6">{error}</div>}
+        {error && <div role="alert" className="bg-red-50 text-red-600 text-sm px-4 py-3 mb-6">{error}</div>}
 
         <div className="space-y-5">
           <div>
-            <label className="block text-xs font-medium text-secondary uppercase tracking-wider mb-1.5">Full Name *</label>
-            <input type="text" value={form.full_name} onChange={(e) => update('full_name', e.target.value)} className="input-field" autoComplete="name" />
+            <label htmlFor="reg-full-name" className="block text-xs font-medium text-secondary uppercase tracking-wider mb-1.5">Full Name *</label>
+            <input id="reg-full-name" type="text" value={form.full_name} onChange={(e) => update('full_name', e.target.value)} className="input-field" autoComplete="name" />
           </div>
           <div>
-            <label className="block text-xs font-medium text-secondary uppercase tracking-wider mb-1.5">Email *</label>
-            <input type="email" value={form.email} onChange={(e) => update('email', e.target.value)} className="input-field" autoComplete="email" />
+            <label htmlFor="reg-email" className="block text-xs font-medium text-secondary uppercase tracking-wider mb-1.5">Email *</label>
+            <input id="reg-email" type="email" value={form.email} onChange={(e) => update('email', e.target.value)} className="input-field" autoComplete="email" />
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-medium text-secondary uppercase tracking-wider mb-1.5">Password *</label>
-              <input type="password" value={form.password} onChange={(e) => update('password', e.target.value)} className="input-field" maxLength={MAX_PASSWORD_LENGTH} autoComplete="new-password" />
+              <label htmlFor="reg-password" className="block text-xs font-medium text-secondary uppercase tracking-wider mb-1.5">Password *</label>
+              <input id="reg-password" type="password" value={form.password} onChange={(e) => update('password', e.target.value)} className="input-field" maxLength={MAX_PASSWORD_LENGTH} autoComplete="new-password" />
             </div>
             <div>
-              <label className="block text-xs font-medium text-secondary uppercase tracking-wider mb-1.5">Confirm *</label>
-              <input type="password" value={form.confirmPassword} onChange={(e) => update('confirmPassword', e.target.value)} className="input-field" maxLength={MAX_PASSWORD_LENGTH} autoComplete="new-password" />
+              <label htmlFor="reg-confirm" className="block text-xs font-medium text-secondary uppercase tracking-wider mb-1.5">Confirm *</label>
+              <input id="reg-confirm" type="password" value={form.confirmPassword} onChange={(e) => update('confirmPassword', e.target.value)} className="input-field" maxLength={MAX_PASSWORD_LENGTH} autoComplete="new-password" />
             </div>
           </div>
           <div className="text-xs text-muted">Use {MIN_PASSWORD_LENGTH}-{MAX_PASSWORD_LENGTH} characters.</div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-medium text-secondary uppercase tracking-wider mb-1.5">Phone</label>
-              <input type="tel" value={form.phone} onChange={(e) => update('phone', e.target.value)} className="input-field" autoComplete="tel" />
+              <label htmlFor="reg-phone" className="block text-xs font-medium text-secondary uppercase tracking-wider mb-1.5">Phone</label>
+              <input id="reg-phone" type="tel" value={form.phone} onChange={(e) => update('phone', e.target.value)} className="input-field" autoComplete="tel" />
             </div>
             <div>
-              <label className="block text-xs font-medium text-secondary uppercase tracking-wider mb-1.5">Postcode</label>
-              <input type="text" value={form.postcode} onChange={(e) => update('postcode', e.target.value)} className="input-field" autoComplete="postal-code" />
+              <label htmlFor="reg-postcode" className="block text-xs font-medium text-secondary uppercase tracking-wider mb-1.5">Postcode</label>
+              <input id="reg-postcode" type="text" value={form.postcode} onChange={(e) => update('postcode', e.target.value)} className="input-field" autoComplete="postal-code" />
             </div>
           </div>
           <label className="flex items-center space-x-3 cursor-pointer py-2">
@@ -147,7 +147,7 @@ export default function TalentRegisterPage() {
             {loading ? 'Creating account...' : 'Create account & build profile'}
           </button>
         </div>
-      </div>
+      </main>
     </div>
   )
 }

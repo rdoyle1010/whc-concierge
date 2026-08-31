@@ -30,7 +30,7 @@ function ChipGrid({ items, selected, onToggle, search }: { items: any[]; selecte
 // ── Proficiency selector ──
 function ProficiencySelect({ value, onChange }: { value: string; onChange: (v: string) => void }) {
   return (
-    <select value={value} onChange={e => onChange(e.target.value)}
+    <select value={value} aria-label="Proficiency level" onChange={e => onChange(e.target.value)}
       className="input-field !py-1 !px-2 text-[11px] w-32 focus:border-accent focus:ring-accent/20">
       <option value="beginner">Beginner</option>
       <option value="intermediate">Intermediate</option>
@@ -413,12 +413,12 @@ export default function OnboardingWizard() {
         {step === 1 && (
           <div className="space-y-5">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="col-span-2"><label className="eyebrow block mb-1.5">Full Name *</label><input type="text" value={basic.full_name} onChange={e => setBasic({ ...basic, full_name: e.target.value })} className="input-field" /></div>
-              <div><label className="eyebrow block mb-1.5">City / Location *</label><input type="text" value={basic.location_city} onChange={e => setBasic({ ...basic, location_city: e.target.value })} className="input-field" /></div>
-              <div><label className="eyebrow block mb-1.5">Country</label><input type="text" value={basic.location_country} onChange={e => setBasic({ ...basic, location_country: e.target.value })} className="input-field" /></div>
+              <div className="col-span-2"><label className="eyebrow block mb-1.5">Full Name *</label><input aria-label="Full Name" type="text" value={basic.full_name} onChange={e => setBasic({ ...basic, full_name: e.target.value })} className="input-field" /></div>
+              <div><label className="eyebrow block mb-1.5">City / Location *</label><input aria-label="City / Location" type="text" value={basic.location_city} onChange={e => setBasic({ ...basic, location_city: e.target.value })} className="input-field" /></div>
+              <div><label className="eyebrow block mb-1.5">Country</label><input aria-label="Country" type="text" value={basic.location_country} onChange={e => setBasic({ ...basic, location_country: e.target.value })} className="input-field" /></div>
             </div>
             <div><label className="eyebrow block mb-1.5">Right to Work</label>
-              <select value={basic.right_to_work} onChange={e => setBasic({ ...basic, right_to_work: e.target.value })} className="input-field">
+              <select aria-label="Right to Work" value={basic.right_to_work} onChange={e => setBasic({ ...basic, right_to_work: e.target.value })} className="input-field">
                 <option value="citizen">UK Citizen</option><option value="visa_holder">Visa Holder</option><option value="visa_required">Visa Required</option><option value="open_to_work">Open to Work (Any)</option>
               </select>
             </div>
@@ -434,18 +434,18 @@ export default function OnboardingWizard() {
               </div>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div><label className="eyebrow block mb-1.5">Years of Experience</label><input type="number" value={basic.years_experience} onChange={e => setBasic({ ...basic, years_experience: e.target.value })} className="input-field" /></div>
-              <div><label className="eyebrow block mb-1.5">Current Job Title</label><input type="text" value={basic.current_job_title} onChange={e => setBasic({ ...basic, current_job_title: e.target.value })} className="input-field" /></div>
+              <div><label className="eyebrow block mb-1.5">Years of Experience</label><input aria-label="Years of Experience" type="number" value={basic.years_experience} onChange={e => setBasic({ ...basic, years_experience: e.target.value })} className="input-field" /></div>
+              <div><label className="eyebrow block mb-1.5">Current Job Title</label><input aria-label="Current Job Title" type="text" value={basic.current_job_title} onChange={e => setBasic({ ...basic, current_job_title: e.target.value })} className="input-field" /></div>
             </div>
-            <div><label className="eyebrow block mb-1.5">Headline</label><input type="text" value={basic.headline} onChange={e => setBasic({ ...basic, headline: e.target.value })} className="input-field" placeholder="e.g. Senior Spa Therapist | CIDESCO | 6 Years Luxury" /></div>
-            <div><label className="eyebrow block mb-1.5">Short Bio</label><textarea rows={3} value={basic.bio} onChange={e => setBasic({ ...basic, bio: e.target.value })} className="input-field" /></div>
+            <div><label className="eyebrow block mb-1.5">Headline</label><input aria-label="Headline" type="text" value={basic.headline} onChange={e => setBasic({ ...basic, headline: e.target.value })} className="input-field" placeholder="e.g. Senior Spa Therapist | CIDESCO | 6 Years Luxury" /></div>
+            <div><label className="eyebrow block mb-1.5">Short Bio</label><textarea aria-label="Short Bio" rows={3} value={basic.bio} onChange={e => setBasic({ ...basic, bio: e.target.value })} className="input-field" /></div>
             <div className="grid grid-cols-3 gap-4">
-              <div><label className="eyebrow block mb-1.5">Availability Date</label><input type="date" value={basic.availability_date} onChange={e => setBasic({ ...basic, availability_date: e.target.value })} className="input-field" /></div>
-              <div><label className="eyebrow block mb-1.5">Agency day rate min (£ per day)</label><input type="number" value={basic.salary_min} onChange={e => setBasic({ ...basic, salary_min: e.target.value })} className="input-field" /></div>
-              <div><label className="eyebrow block mb-1.5">Agency day rate max (£ per day)</label><input type="number" value={basic.salary_max} onChange={e => setBasic({ ...basic, salary_max: e.target.value })} className="input-field" /></div>
+              <div><label className="eyebrow block mb-1.5">Availability Date</label><input aria-label="Availability Date" type="date" value={basic.availability_date} onChange={e => setBasic({ ...basic, availability_date: e.target.value })} className="input-field" /></div>
+              <div><label className="eyebrow block mb-1.5">Agency day rate min (£ per day)</label><input aria-label="Agency day rate min (£ per day)" type="number" value={basic.salary_min} onChange={e => setBasic({ ...basic, salary_min: e.target.value })} className="input-field" /></div>
+              <div><label className="eyebrow block mb-1.5">Agency day rate max (£ per day)</label><input aria-label="Agency day rate max (£ per day)" type="number" value={basic.salary_max} onChange={e => setBasic({ ...basic, salary_max: e.target.value })} className="input-field" /></div>
             </div>
             <p className="text-[11px] text-muted -mt-3">Your day rate for agency work - properties see it on your listing as &quot;£X /day&quot;. It is not a salary expectation.</p>
-            <div><label className="eyebrow block mb-1.5">Languages (comma separated)</label><input type="text" value={basic.languages} onChange={e => setBasic({ ...basic, languages: e.target.value })} className="input-field" placeholder="English, French, Spanish" /></div>
+            <div><label className="eyebrow block mb-1.5">Languages (comma separated)</label><input aria-label="Languages (comma separated)" type="text" value={basic.languages} onChange={e => setBasic({ ...basic, languages: e.target.value })} className="input-field" placeholder="English, French, Spanish" /></div>
             <label className="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked={basic.willing_to_relocate} onChange={e => setBasic({ ...basic, willing_to_relocate: e.target.checked })} className="w-3.5 h-3.5 border-border rounded text-ink" /><span className="text-[13px] text-secondary">Willing to relocate</span></label>
           </div>
         )}
@@ -455,14 +455,14 @@ export default function OnboardingWizard() {
           <div className="space-y-5">
             <div>
               <label className="eyebrow block mb-1.5">Transport Method</label>
-              <select value={basic.transport_method} onChange={e => setBasic({ ...basic, transport_method: e.target.value })} className="input-field">
+              <select aria-label="Transport Method" value={basic.transport_method} onChange={e => setBasic({ ...basic, transport_method: e.target.value })} className="input-field">
                 <option value="">Select...</option>
                 {TRANSPORT_OPTIONS.map(t => <option key={t} value={t}>{t}</option>)}
               </select>
             </div>
             <div>
               <label className="eyebrow block mb-1.5">Maximum Commute</label>
-              <select value={basic.max_commute} onChange={e => setBasic({ ...basic, max_commute: e.target.value })} className="input-field">
+              <select aria-label="Maximum Commute" value={basic.max_commute} onChange={e => setBasic({ ...basic, max_commute: e.target.value })} className="input-field">
                 <option value="">Select...</option>
                 {COMMUTE_OPTIONS.map(t => <option key={t} value={t}>{t}</option>)}
               </select>
@@ -500,7 +500,7 @@ export default function OnboardingWizard() {
         {step === 3 && (
           <div className="space-y-5">
             <p className="text-[14px] text-secondary">Select the treatment skills you can deliver. Set your proficiency level for each.</p>
-            <div className="relative"><Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" /><input type="text" placeholder="Search skills..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="input-field pl-9 !py-2 text-[13px]" /></div>
+            <div className="relative"><Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" /><input type="text" placeholder="Search skills..." aria-label="Search skills" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="input-field pl-9 !py-2 text-[13px]" /></div>
             <ChipGrid items={treatmentSkills} selected={selectedSkills} onToggle={(id, name) => toggleInMap(selectedSkills, setSelectedSkills, id, name)} search={searchTerm} />
             {selectedSkills.size > 0 && (
               <div className="space-y-2 mt-4 pt-4 border-t border-border">
@@ -553,7 +553,7 @@ export default function OnboardingWizard() {
         {step === 6 && (
           <div className="space-y-5">
             <p className="text-[14px] text-secondary">Select the product houses and skincare brands you have experience with.</p>
-            <div className="relative"><Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" /><input type="text" placeholder="Search product houses..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="input-field pl-9 !py-2 text-[13px]" /></div>
+            <div className="relative"><Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" /><input type="text" placeholder="Search product houses..." aria-label="Search product houses" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="input-field pl-9 !py-2 text-[13px]" /></div>
             <ChipGrid items={productHousesList} selected={selectedPH} onToggle={(id, name) => toggleInMap(selectedPH, setSelectedPH, id, name)} search={searchTerm} />
             {selectedPH.size > 0 && <p className="eyebrow pt-4 border-t border-border">Selected ({selectedPH.size})</p>}
           </div>
@@ -577,7 +577,7 @@ export default function OnboardingWizard() {
         {step === 8 && (
           <div className="space-y-5">
             <p className="text-[14px] text-secondary">Select the hotel and spa brands you&apos;ve worked with.</p>
-            <div className="relative"><Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" /><input type="text" placeholder="Search brands..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="input-field pl-9 !py-2 text-[13px]" /></div>
+            <div className="relative"><Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" /><input type="text" placeholder="Search brands..." aria-label="Search brands" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="input-field pl-9 !py-2 text-[13px]" /></div>
             <ChipGrid items={brandsList} selected={selectedBrands} onToggle={(id, name) => toggleInMap(selectedBrands, setSelectedBrands, id, name)} search={searchTerm} />
             {selectedBrands.size > 0 && <p className="eyebrow pt-4 border-t border-border">Selected ({selectedBrands.size})</p>}
           </div>
@@ -613,23 +613,23 @@ export default function OnboardingWizard() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="eyebrow block mb-1.5">Hourly Rate (£) *</label>
-                    <input type="number" min={1} value={agency.hourly_rate} onChange={e => setAgency({ ...agency, hourly_rate: e.target.value })} className="input-field" placeholder="e.g. 25" />
+                    <input aria-label="Hourly Rate (£)" type="number" min={1} value={agency.hourly_rate} onChange={e => setAgency({ ...agency, hourly_rate: e.target.value })} className="input-field" placeholder="e.g. 25" />
                     <p className="text-[11px] text-muted mt-1">What properties see when they make you an offer. You receive this in full.</p>
                   </div>
                   <div>
                     <label className="eyebrow block mb-1.5">Mobile Number *</label>
-                    <input type="tel" value={agency.phone} onChange={e => setAgency({ ...agency, phone: e.target.value })} className="input-field" placeholder="07700 900123" />
+                    <input aria-label="Mobile Number" type="tel" value={agency.phone} onChange={e => setAgency({ ...agency, phone: e.target.value })} className="input-field" placeholder="07700 900123" />
                     <p className="text-[11px] text-muted mt-1">Urgent same-day offers are sent by text.</p>
                   </div>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="eyebrow block mb-1.5">Postcode</label>
-                    <input type="text" value={agency.postcode} onChange={e => setAgency({ ...agency, postcode: e.target.value })} className="input-field" placeholder="SW1A 1AA" />
+                    <input aria-label="Postcode" type="text" value={agency.postcode} onChange={e => setAgency({ ...agency, postcode: e.target.value })} className="input-field" placeholder="SW1A 1AA" />
                   </div>
                   <div>
                     <label className="eyebrow block mb-1.5">Travel Radius (miles)</label>
-                    <input type="number" min={1} value={agency.travel_radius_miles} onChange={e => setAgency({ ...agency, travel_radius_miles: e.target.value })} className="input-field" placeholder="e.g. 15" />
+                    <input aria-label="Travel Radius (miles)" type="number" min={1} value={agency.travel_radius_miles} onChange={e => setAgency({ ...agency, travel_radius_miles: e.target.value })} className="input-field" placeholder="e.g. 15" />
                     <p className="text-[11px] text-muted mt-1">How far you&apos;ll travel for a shift.</p>
                   </div>
                 </div>

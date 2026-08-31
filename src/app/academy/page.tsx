@@ -102,7 +102,7 @@ export default function PublicAcademyPage() {
             <h1 className="max-w-4xl text-[44px] font-semibold leading-[1.01] tracking-[-0.05em] text-white md:text-[64px]">Learn what luxury spas actually expect from you.</h1>
             <p className="mt-6 max-w-3xl text-[16px] leading-8 text-white/70 md:text-[18px]">Professional courses with assessments, verified certificates and CPD hours - built for spa careers, from the treatment room to director level.</p>
             <div className="flex flex-col sm:flex-row gap-3 mt-8">
-              <a href="#courses" className="inline-flex items-center justify-center gap-2 rounded-xl bg-white px-6 py-3.5 text-[13px] font-semibold text-[#0b2f4d] hover:bg-white/90 transition-colors">Explore courses <ArrowRight size={14} /></a>
+              <a href="#main-content" className="inline-flex items-center justify-center gap-2 rounded-xl bg-white px-6 py-3.5 text-[13px] font-semibold text-[#0b2f4d] hover:bg-white/90 transition-colors">Explore courses <ArrowRight size={14} /></a>
               <Link href={isCandidate ? '/talent/academy' : '/register/talent'} className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/25 px-6 py-3.5 text-[13px] font-semibold text-white hover:bg-white/10 transition-colors">Build my career profile <ArrowRight size={14} /></Link>
             </div>
             <p className="mt-4 text-[11px] text-white/45">No membership required. WHC members receive member pricing.</p>
@@ -136,7 +136,7 @@ export default function PublicAcademyPage() {
 
       <SponsoredAd placement="academy_sponsor" />
 
-      <main id="courses" className="mx-auto max-w-[1440px] px-6 py-12 lg:px-10 lg:py-16 bg-white">
+      <main id="main-content" className="mx-auto max-w-[1440px] px-6 py-12 lg:px-10 lg:py-16 bg-white">
         {purchased && (
           <div className="mb-8 rounded-xl border border-green-200 bg-green-50 px-5 py-4 text-sm text-green-800">
             <p className="font-medium">Payment received - check your email.</p>
@@ -246,15 +246,15 @@ export default function PublicAcademyPage() {
             <h2 className="mt-2 text-[24px] font-semibold text-ink">Train the whole team, track every completion</h2>
             <p className="mt-2 max-w-2xl text-[13px] leading-6 text-secondary">Put your property&apos;s therapists, reception and management through the same professional curriculum - service standards, revenue, retail, leadership - with team pricing from £15 per seat per year (minimum 10 seats) and a property onboarding pathway built from the course library. Completion and CPD records for every team member, ready for your quality audits.</p>
             {teamSent ? (
-              <p className="mt-5 text-[13px] font-medium text-green-700">Thank you - your enquiry is with the WHC team and we will come back to you within one working day.</p>
+              <p role="status" className="mt-5 text-[13px] font-medium text-green-700">Thank you - your enquiry is with the WHC team and we will come back to you within one working day.</p>
             ) : (
               <div className="mt-5 grid gap-3 md:grid-cols-2">
-                <input type="text" value={teamForm.name} onChange={e => setTeamForm({ ...teamForm, name: e.target.value })} placeholder="Your name" className="input-field" />
-                <input type="email" value={teamForm.email} onChange={e => setTeamForm({ ...teamForm, email: e.target.value })} placeholder="Work email" className="input-field" />
-                <input type="text" value={teamForm.property} onChange={e => setTeamForm({ ...teamForm, property: e.target.value })} placeholder="Property or group" className="input-field" />
-                <input type="text" value={teamForm.teamSize} onChange={e => setTeamForm({ ...teamForm, teamSize: e.target.value })} placeholder="Team size (approx.)" className="input-field" />
-                <textarea rows={2} value={teamForm.message} onChange={e => setTeamForm({ ...teamForm, message: e.target.value })} placeholder="Anything specific - onboarding, standards, leadership development..." className="input-field md:col-span-2" />
-                {teamError && <p className="text-[12px] text-red-600 md:col-span-2">{teamError}</p>}
+                <input type="text" aria-label="Your name" value={teamForm.name} onChange={e => setTeamForm({ ...teamForm, name: e.target.value })} placeholder="Your name" className="input-field" />
+                <input type="email" aria-label="Work email" value={teamForm.email} onChange={e => setTeamForm({ ...teamForm, email: e.target.value })} placeholder="Work email" className="input-field" />
+                <input type="text" aria-label="Property or group" value={teamForm.property} onChange={e => setTeamForm({ ...teamForm, property: e.target.value })} placeholder="Property or group" className="input-field" />
+                <input type="text" aria-label="Team size" value={teamForm.teamSize} onChange={e => setTeamForm({ ...teamForm, teamSize: e.target.value })} placeholder="Team size (approx.)" className="input-field" />
+                <textarea rows={2} aria-label="Anything specific to cover" value={teamForm.message} onChange={e => setTeamForm({ ...teamForm, message: e.target.value })} placeholder="Anything specific - onboarding, standards, leadership development..." className="input-field md:col-span-2" />
+                {teamError && <p role="alert" className="text-[12px] text-red-600 md:col-span-2">{teamError}</p>}
                 <button type="button" onClick={submitTeamEnquiry} disabled={teamBusy} className="btn-primary w-fit text-[13px] disabled:opacity-50 md:col-span-2">{teamBusy ? 'Sending...' : 'Enquire about team training'}</button>
               </div>
             )}
@@ -269,12 +269,12 @@ export default function PublicAcademyPage() {
           <div className="w-full max-w-md rounded-2xl bg-white p-6" onClick={e => e.stopPropagation()}>
             <div className="mb-2 flex items-center justify-between">
               <h2 className="flex items-center gap-2 text-lg font-semibold tracking-tight text-[#10283b]"><GraduationCap size={17} className="text-[#5a6a76]" /> {buying.title}</h2>
-              <button type="button" onClick={() => setBuying(null)} className="text-gray-300 hover:text-[#10283b]"><X size={20} /></button>
+              <button type="button" onClick={() => setBuying(null)} aria-label="Close" className="p-2 -m-2 text-gray-300 hover:text-[#10283b]"><X size={20} /></button>
             </div>
             <p className="mb-4 text-[12px] leading-5 text-[#5a6a76]">£{(buying.price / 100).toFixed(0)} one-off. After payment your access link arrives by email. Your certificate is issued when you complete the learning and pass the assessment.</p>
-            <label className="mb-1.5 block text-sm font-medium text-gray-700">Your email</label>
-            <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="you@example.com" className="input-field mb-3" />
-            {error && <p className="mb-3 text-[12px] text-red-600">{error}</p>}
+            <label htmlFor="academy-buy-email" className="mb-1.5 block text-sm font-medium text-gray-700">Your email</label>
+            <input id="academy-buy-email" type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="you@example.com" className="input-field mb-3" />
+            {error && <p role="alert" className="mb-3 text-[12px] text-red-600">{error}</p>}
             <button type="button" onClick={buyAsGuest} disabled={busy || !email.trim()} className="btn-primary w-full disabled:opacity-50">{busy ? 'Taking you to payment...' : `Pay £${(buying.price / 100).toFixed(0)} & start`}</button>
             <p className="mt-3 text-center text-[11px] text-muted">Already a WHC member? <Link href="/login" className="underline">Sign in</Link> and pay the member price instead.</p>
           </div>

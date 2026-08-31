@@ -22,7 +22,7 @@ export default function AcademyResourcesPage() {
       </div>
 
       {resources.length === 0 ? (
-        <div className="dashboard-card text-[13px] text-muted">No downloadable resources are available for this programme yet.</div>
+        <div className="dashboard-card text-[13px] text-secondary">No downloadable resources are available for this programme yet.</div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {resources.map(resource => {

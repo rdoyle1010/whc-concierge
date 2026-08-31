@@ -25,9 +25,9 @@ function StarSelector({ value, onChange }: { value: number; onChange: (v: number
   return (
     <div className="flex items-center gap-0.5">
       {[1, 2, 3, 4, 5].map(i => (
-        <button key={i} type="button"
+        <button key={i} type="button" aria-label={`Rate ${i} star${i === 1 ? '' : 's'}`} aria-pressed={value === i}
           onMouseEnter={() => setHover(i)} onMouseLeave={() => setHover(0)}
-          onClick={() => onChange(i)} className="p-0.5">
+          onClick={() => onChange(i)} className="p-1.5">
           <Star size={18} className={(hover || value) >= i ? 'text-amber-400 fill-amber-400' : 'text-gray-200'} />
         </button>
       ))}
@@ -127,7 +127,7 @@ export default function ReviewForm({ reviewedId, reviewedName, type = 'candidate
     <div className="space-y-5">
       {reviewedName && <p className="text-[14px] text-secondary">How was your experience with <strong className="text-ink">{reviewedName}</strong>?</p>}
 
-      {error && <div className="bg-red-50 text-red-600 text-[13px] px-4 py-3 rounded-lg">{error}</div>}
+      {error && <div role="alert" className="bg-red-50 text-red-600 text-[13px] px-4 py-3 rounded-lg">{error}</div>}
 
       <div className="space-y-3">
         {criteria.map(c => (
@@ -152,7 +152,7 @@ export default function ReviewForm({ reviewedId, reviewedName, type = 'candidate
 
       <div>
         <label className="eyebrow block mb-1.5">Comment (optional)</label>
-        <textarea rows={3} value={comment} onChange={e => setComment(e.target.value)}
+        <textarea aria-label="Comment (optional)" rows={3} value={comment} onChange={e => setComment(e.target.value)}
           className="input-field text-[13px]" placeholder="Share your experience..." maxLength={500} />
         <p className="text-[11px] text-muted mt-1">{comment.length}/500</p>
       </div>

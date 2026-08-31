@@ -3,6 +3,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { normaliseAccountRole } from '@/lib/role-access'
 import { getRequestUser } from '@/lib/request-user'
 import { ACADEMY } from '@/lib/academy'
+import { isMissingColumnError } from '@/lib/private-mode'
 
 export const dynamic = 'force-dynamic'
 
@@ -129,15 +130,24 @@ export async function GET(req: NextRequest) {
   ).limit(RESULT_CAP)
 
   // People: over-fetch so block filtering cannot leak a shortfall into the cap.
+  // private_mode (20260831190000) may not exist in the live database yet, so
+  // the select retries without it rather than losing people results entirely.
+  const buildPeopleQuery = (fields: string) => applyTermFilters(
+    admin.from('candidate_profiles')
+      .select(fields)
+      .eq('approval_status', 'approved')
+      .or('profile_visible.eq.true,profile_visible.is.null'),
+    terms,
+    ['full_name', 'headline', 'role_level', 'location'],
+  ).limit(RESULT_CAP * 4)
+
+  const PEOPLE_FIELDS = 'id, full_name, headline, role_level, location, show_first_name_only, approval_status, profile_visible'
   const peopleQuery = canSeePeople
-    ? applyTermFilters(
-        admin.from('candidate_profiles')
-          .select('id, full_name, headline, role_level, location, show_first_name_only, approval_status, profile_visible')
-          .eq('approval_status', 'approved')
-          .or('profile_visible.eq.true,profile_visible.is.null'),
-        terms,
-        ['full_name', 'headline', 'role_level', 'location'],
-      ).limit(RESULT_CAP * 4)
+    ? (async () => {
+        let result = await buildPeopleQuery(`${PEOPLE_FIELDS}, private_mode`)
+        if (isMissingColumnError(result.error)) result = await buildPeopleQuery(PEOPLE_FIELDS)
+        return result
+      })()
     : Promise.resolve({ data: [] as any[], error: null })
 
   const blocksQuery = canSeePeople && employerId
@@ -165,7 +175,7 @@ export async function GET(req: NextRequest) {
     .slice(0, RESULT_CAP)
     .map((row: any) => ({
       type: 'person',
-      title: displayName(row.full_name, row.show_first_name_only === true),
+      title: displayName(row.full_name, row.show_first_name_only === true || row.private_mode === true),
       subtitle: joinParts(row.role_level, row.location) || row.headline || '',
       href: `/employer/candidates?candidate=${row.id}`,
     }))

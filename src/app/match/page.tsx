@@ -23,7 +23,7 @@ export default async function MatchExplainerPage() {
   return (
     <div className="website-theme min-h-screen bg-white text-[#10283b]" style={websiteCssVariables(content)}>
       <Navbar siteContent={content} />
-      <main className="pt-[76px]">
+      <main id="main-content" className="pt-[76px]">
         <section className="border-b border-[#e3e7eb] bg-white">
           <div className="mx-auto grid max-w-7xl gap-12 px-6 py-16 lg:grid-cols-[1fr_0.9fr] lg:items-center lg:px-8 lg:py-24">
             <div className="max-w-2xl">

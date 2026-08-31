@@ -56,7 +56,7 @@ export default function PayoutStatementPage() {
         <Link href="/talent/agency" className="text-[13px] text-secondary hover:text-black inline-flex items-center gap-1.5"><ArrowLeft size={14} /> Agency Shifts</Link>
         <div className="flex items-center gap-3">
           {months.length > 0 && (
-            <select value={month} onChange={e => setMonth(e.target.value)} className="input-field !w-auto !py-1.5 text-[12px]">
+            <select aria-label="Statement month" value={month} onChange={e => setMonth(e.target.value)} className="input-field !w-auto !py-1.5 text-[12px]">
               {months.map(m => <option key={m} value={m}>{new Date(`${m}-01T12:00:00Z`).toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })}</option>)}
             </select>
           )}

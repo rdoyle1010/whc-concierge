@@ -250,35 +250,35 @@ export default function AdminAdSlotsPage() {
               <p className="text-[12px] text-secondary mb-4">For brands that come to you directly - no payment flow, live as soon as you pin it to a slot that is switched on.</p>
 
               <label className="block text-[12px] font-semibold text-ink mb-1.5">Brand name *</label>
-              <input value={brandName} onChange={e => setBrandName(e.target.value)} placeholder="e.g. ESPA" className="input-field text-[13px] w-full mb-3" />
+              <input aria-label="Brand name" value={brandName} onChange={e => setBrandName(e.target.value)} placeholder="e.g. ESPA" className="input-field text-[13px] w-full mb-3" />
               <label className="block text-[12px] font-semibold text-ink mb-1.5">Tagline</label>
-              <input value={tagline} onChange={e => setTagline(e.target.value)} placeholder="One line shown under the brand name" className="input-field text-[13px] w-full mb-3" />
+              <input aria-label="Tagline" value={tagline} onChange={e => setTagline(e.target.value)} placeholder="One line shown under the brand name" className="input-field text-[13px] w-full mb-3" />
               <div className="grid grid-cols-2 gap-3 mb-3">
                 <div>
                   <label className="block text-[12px] font-semibold text-ink mb-1.5">Website link</label>
-                  <input value={websiteUrl} onChange={e => setWebsiteUrl(e.target.value)} placeholder="https://..." className="input-field text-[13px] w-full" />
+                  <input aria-label="Website link" value={websiteUrl} onChange={e => setWebsiteUrl(e.target.value)} placeholder="https://..." className="input-field text-[13px] w-full" />
                 </div>
                 <div>
                   <label className="block text-[12px] font-semibold text-ink mb-1.5">Contact email</label>
-                  <input value={contactEmail} onChange={e => setContactEmail(e.target.value)} placeholder="brand contact" className="input-field text-[13px] w-full" />
+                  <input aria-label="Contact email" value={contactEmail} onChange={e => setContactEmail(e.target.value)} placeholder="brand contact" className="input-field text-[13px] w-full" />
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-3 mb-3">
                 <div>
                   <label className="block text-[12px] font-semibold text-ink mb-1.5">Placement *</label>
-                  <select value={placement} onChange={e => setPlacement(e.target.value)} className="input-field text-[13px] w-full">
+                  <select aria-label="Placement" value={placement} onChange={e => setPlacement(e.target.value)} className="input-field text-[13px] w-full">
                     <option value="">Choose...</option>
                     {slots.map(slot => <option key={slot.slot_key} value={slot.slot_key}>{slot.page} - {slot.label}</option>)}
                   </select>
                 </div>
                 <div>
                   <label className="block text-[12px] font-semibold text-ink mb-1.5">Runs until (optional)</label>
-                  <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} className="input-field text-[13px] w-full" />
+                  <input aria-label="Runs until (optional)" type="date" value={endDate} onChange={e => setEndDate(e.target.value)} className="input-field text-[13px] w-full" />
                 </div>
               </div>
               <div className="mb-3">
                 <label className="block text-[12px] font-semibold text-ink mb-1.5">Monthly rate (£) (optional)</label>
-                <input type="number" min="0" step="1" value={monthlyRate} onChange={e => setMonthlyRate(e.target.value)} placeholder="What the brand pays per month" className="input-field text-[13px] w-full" />
+                <input aria-label="Monthly rate (£) (optional)" type="number" min="0" step="1" value={monthlyRate} onChange={e => setMonthlyRate(e.target.value)} placeholder="What the brand pays per month" className="input-field text-[13px] w-full" />
                 <p className="text-[11px] text-muted mt-1">Counted in the monthly booked value on the Sponsored Ads page.</p>
               </div>
               <label className="block text-[12px] font-semibold text-ink mb-1.5">Logo</label>

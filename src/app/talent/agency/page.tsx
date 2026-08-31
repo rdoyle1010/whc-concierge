@@ -235,7 +235,7 @@ export default function TalentAgencyPage() {
                       {b.status === 'pending' ? (
                         counteringId === b.id ? (
                           <div className="flex items-center gap-2">
-                            <input type="number" min={1} value={counterRate} onChange={(e) => setCounterRate(e.target.value)} placeholder="Your rate (£/hour)" className="input-field text-[13px] w-36" />
+                            <input type="number" min={1} aria-label="Counter offer rate in pounds per hour" value={counterRate} onChange={(e) => setCounterRate(e.target.value)} placeholder="Your rate (£/hour)" className="input-field text-[13px] w-36" />
                             <button type="button" onClick={() => act(b.id, 'counter', counterRate)} disabled={busyId === b.id} className="btn-primary text-[12px] disabled:opacity-50">Send</button>
                             <button type="button" onClick={() => { setCounteringId(null); setCounterRate(''); setActionError('') }} className="btn-secondary text-[12px]">Cancel</button>
                           </div>
@@ -296,7 +296,7 @@ export default function TalentAgencyPage() {
                     {canCancel(b) && (
                       cancellingId === b.id ? (
                         <div className="mt-2 flex flex-col items-end gap-1.5">
-                          <input type="text" value={cancelReason} onChange={(e) => setCancelReason(e.target.value)} placeholder="Reason for cancelling - a few words" className="input-field text-[12px] w-56" />
+                          <input type="text" aria-label="Reason for cancelling" value={cancelReason} onChange={(e) => setCancelReason(e.target.value)} placeholder="Reason for cancelling - a few words" className="input-field text-[12px] w-56" />
                           {cancelError && <p className="text-[11px] text-red-600 max-w-[240px]">{cancelError}</p>}
                           <div className="flex items-center gap-3">
                             <button type="button" onClick={() => cancelShift(b.id)} disabled={busyId === b.id || cancelReason.trim().length < 5} className="text-[12px] font-medium text-red-600 hover:text-red-700 disabled:opacity-50">Confirm cancellation</button>
@@ -320,7 +320,7 @@ export default function TalentAgencyPage() {
           <div className="bg-white rounded-2xl max-w-md w-full max-h-[90vh] overflow-y-auto p-6" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
               <h2 className="font-serif text-lg font-bold text-ink">Review {reviewing.name}</h2>
-              <button type="button" onClick={() => setReviewing(null)} className="text-gray-300 hover:text-ink"><X size={20} /></button>
+              <button type="button" onClick={() => setReviewing(null)} aria-label="Close" className="p-2 -m-2 text-gray-300 hover:text-ink"><X size={20} /></button>
             </div>
             <ReviewForm
               reviewedId={reviewing.userId}

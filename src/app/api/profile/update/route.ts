@@ -13,6 +13,9 @@ const ALLOWED_COLUMNS = new Set([
   'insurance_document_url','stealth_mode','sms_opt_in','job_alerts_enabled','job_alerts_frequency','job_alerts_min_score','transport_method','max_commute',
   'shift_preferences','location_preferences','needs_accommodation','skill_proficiencies','hotel_brands_worked',
   'salary_expectation_min','salary_expectation_max','salary_expectation_private','commercial_experience','revenue_responsibility','team_size_managed','desired_roles','portfolio_url',
+  // Private Career Mode (20260831190000) - the retry loop below drops the two
+  // new columns harmlessly if the live database has not been migrated yet.
+  'show_first_name_only','private_mode','private_hide_photo',
 ])
 
 function stripToAllowed(data: Record<string, unknown>): Record<string, unknown> {

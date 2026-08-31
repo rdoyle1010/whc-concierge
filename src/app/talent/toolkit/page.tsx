@@ -36,7 +36,7 @@ export default function TalentToolkitPage() {
           <div className="dashboard-card py-14 text-center">
             <Wrench size={22} className="mx-auto text-muted mb-3" />
             <p className="font-medium text-ink">Your toolkit is waiting to be earned</p>
-            <p className="text-[13px] text-muted mt-2 mb-5 max-w-md mx-auto">Academy courses come with working tools - calculators, checklists, templates. Everything you unlock stays here for good.</p>
+            <p className="text-[13px] text-secondary mt-2 mb-5 max-w-md mx-auto">Academy courses come with working tools - calculators, checklists, templates. Everything you unlock stays here for good.</p>
             <Link href="/talent/academy" className="btn-primary inline-block">Browse the Academy</Link>
           </div>
         ) : (

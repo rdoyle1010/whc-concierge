@@ -110,7 +110,7 @@ export default function Navbar({ siteContent }: { siteContent?: WebsiteContent }
   const groupActive = (paths: string[]) => paths.some(path => pathname === path || pathname.startsWith(`${path}/`))
 
   return (
-    <nav className="fixed top-0 z-50 h-[76px] w-full border-b border-white/10 bg-[#0b2f4d] text-white shadow-[0_8px_24px_rgba(7,36,59,0.10)]">
+    <nav aria-label="Main navigation" className="fixed top-0 z-50 h-[76px] w-full border-b border-white/10 bg-[#0b2f4d] text-white shadow-[0_8px_24px_rgba(7,36,59,0.10)]">
       <div className="mx-auto grid h-full max-w-[1440px] grid-cols-[auto_1fr_auto] items-center gap-10 px-6 lg:px-10">
         <div className="shrink-0"><Wordmark dark compact /></div>
 

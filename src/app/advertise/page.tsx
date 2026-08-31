@@ -135,7 +135,7 @@ export default function AdvertisePage() {
 
   return <div className="min-h-screen bg-[#f5f6f8]">
     <Navbar />
-    <main className="pt-[76px]">
+    <main id="main-content" className="pt-[76px]">
       <section className="bg-[#0b2f4d] text-white">
         <div className="max-w-7xl mx-auto px-6 lg:px-8 py-16 md:py-20">
           <p className="text-[10px] uppercase tracking-[0.2em] text-[#5a6a76] font-semibold mb-4">Advertise with Wellness House Collective</p>

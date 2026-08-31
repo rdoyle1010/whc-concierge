@@ -142,7 +142,7 @@ export default function CertificateManager({ userId }: { userId: string | null }
                 <div className="flex items-center gap-2 shrink-0">
                   <span className={`px-2 py-0.5 rounded-full text-[10.5px] font-semibold ${STATUS_META[certificate.status].className}`}>{STATUS_META[certificate.status].label}</span>
                   <a href={certificate.document_url} target="_blank" rel="noopener noreferrer" className="text-[11px] underline text-secondary">View</a>
-                  {certificate.status !== 'verified' && <button type="button" onClick={() => remove(certificate)} className="text-gray-300 hover:text-red-600"><X size={14} /></button>}
+                  {certificate.status !== 'verified' && <button type="button" onClick={() => remove(certificate)} aria-label="Remove certificate" className="p-2 -m-2 text-gray-300 hover:text-red-600"><X size={14} /></button>}
                 </div>
               </div>
               {(certificate.status === 'rejected' || certificate.status === 'more_info') && certificate.review_note && (
@@ -171,25 +171,25 @@ export default function CertificateManager({ userId }: { userId: string | null }
           <div className="bg-white rounded-2xl max-w-md w-full max-h-[90vh] overflow-y-auto p-6" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-1">
               <h2 className="font-serif text-lg font-bold text-ink">Add a certificate</h2>
-              <button type="button" onClick={() => setFormOpen(false)} className="text-gray-300 hover:text-ink"><X size={20} /></button>
+              <button type="button" onClick={() => setFormOpen(false)} aria-label="Close" className="p-2 -m-2 text-gray-300 hover:text-ink"><X size={20} /></button>
             </div>
             <p className="text-[12px] text-secondary mb-4">Tell us what this certificate is. WHC reviews it, and once verified it shows to employers with a trust badge.</p>
 
             <label className="block text-[12px] font-semibold text-ink mb-1.5">Qualification name *</label>
-            <input value={title} onChange={e => setTitle(e.target.value)} placeholder="e.g. CIDESCO Diploma in Beauty & Spa Therapy" className="input-field text-[13px] w-full mb-3" />
+            <input aria-label="Qualification name" value={title} onChange={e => setTitle(e.target.value)} placeholder="e.g. CIDESCO Diploma in Beauty & Spa Therapy" className="input-field text-[13px] w-full mb-3" />
 
             <div className="grid grid-cols-2 gap-3 mb-3">
               <div>
                 <label className="block text-[12px] font-semibold text-ink mb-1.5">Awarding body</label>
-                <input value={awardingBody} onChange={e => setAwardingBody(e.target.value)} placeholder="e.g. CIDESCO, CIBTAC, VTCT" className="input-field text-[13px] w-full" />
+                <input aria-label="Awarding body" value={awardingBody} onChange={e => setAwardingBody(e.target.value)} placeholder="e.g. CIDESCO, CIBTAC, VTCT" className="input-field text-[13px] w-full" />
               </div>
               <div>
                 <label className="block text-[12px] font-semibold text-ink mb-1.5">Country of training</label>
-                <input value={country} onChange={e => setCountry(e.target.value)} placeholder="e.g. South Africa" className="input-field text-[13px] w-full" />
+                <input aria-label="Country of training" value={country} onChange={e => setCountry(e.target.value)} placeholder="e.g. South Africa" className="input-field text-[13px] w-full" />
               </div>
             </div>
             <label className="block text-[12px] font-semibold text-ink mb-1.5">Year awarded</label>
-            <input value={yearAwarded} onChange={e => setYearAwarded(e.target.value.replace(/[^0-9]/g, '').slice(0, 4))} inputMode="numeric" placeholder="e.g. 2019" className="input-field text-[13px] w-full mb-3" />
+            <input aria-label="Year awarded" value={yearAwarded} onChange={e => setYearAwarded(e.target.value.replace(/[^0-9]/g, '').slice(0, 4))} inputMode="numeric" placeholder="e.g. 2019" className="input-field text-[13px] w-full mb-3" />
 
             <label className="block text-[12px] font-semibold text-ink mb-1.5">Certificate document *</label>
             {formDoc ? (

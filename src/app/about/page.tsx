@@ -23,7 +23,7 @@ export default function AboutPage() {
   return (
     <div className="public-page">
       <Navbar />
-      <main className="pt-[76px]">
+      <main id="main-content" className="pt-[76px]">
         <section className="public-hero py-16 md:py-20 px-6">
           <div className="max-w-4xl mx-auto text-center">
             <p className="public-eyebrow mb-4">About</p>

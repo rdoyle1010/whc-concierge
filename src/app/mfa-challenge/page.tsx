@@ -51,7 +51,7 @@ function MfaChallenge() {
     window.location.replace('/login')
   }
 
-  return <div className="min-h-screen bg-[#f5f6f8] flex items-center justify-center px-5 py-10">
+  return <main id="main-content" className="min-h-screen bg-[#f5f6f8] flex items-center justify-center px-5 py-10">
     <div className="w-full max-w-[430px]">
       <Wordmark />
       <div className="dashboard-card !p-7 lg:!p-8 mt-9">
@@ -59,13 +59,13 @@ function MfaChallenge() {
         <p className="dashboard-eyebrow">Two-step verification</p>
         <h1 className="dashboard-title !text-[32px]">Confirm it’s you</h1>
         <p className="dashboard-intro !mt-2 mb-6">Open your authenticator app and enter the current six-digit code for WHC Concierge.</p>
-        {error && <div className="bg-red-50 border border-red-100 text-red-600 text-[13px] px-3 py-2.5 rounded-xl mb-5">{error}</div>}
+        {error && <div role="alert" className="bg-red-50 border border-red-100 text-red-600 text-[13px] px-3 py-2.5 rounded-xl mb-5">{error}</div>}
         {loading ? <p className="text-sm text-muted py-4">Checking your security settings…</p> : <form onSubmit={verify} className="space-y-4">
-          <div><label className="dashboard-eyebrow block mb-1.5 !text-[9px]">Authenticator code</label><input autoFocus inputMode="numeric" autoComplete="one-time-code" maxLength={6} value={code} onChange={e => setCode(e.target.value.replace(/\D/g,''))} className="input-field text-center text-xl tracking-[0.35em]" placeholder="000000" /></div>
+          <div><label htmlFor="mfa-code" className="dashboard-eyebrow block mb-1.5 !text-[9px]">Authenticator code</label><input id="mfa-code" autoFocus inputMode="numeric" autoComplete="one-time-code" maxLength={6} value={code} onChange={e => setCode(e.target.value.replace(/\D/g,''))} className="input-field text-center text-xl tracking-[0.35em]" placeholder="000000" /></div>
           <button type="submit" disabled={busy || code.length !== 6} className="btn-primary w-full disabled:opacity-50">{busy ? 'Verifying…' : 'Verify & continue'}</button>
         </form>}
         <button type="button" onClick={signOut} className="mt-5 text-xs text-muted hover:text-ink underline">Use a different account</button>
       </div>
     </div>
-  </div>
+  </main>
 }

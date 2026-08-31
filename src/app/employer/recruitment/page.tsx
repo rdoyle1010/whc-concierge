@@ -126,40 +126,40 @@ export default function EmployerRecruitmentPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
             <div>
               <label className="block text-[12px] font-semibold text-ink mb-1.5">Role title *</label>
-              <input value={jobTitle} onChange={e => setJobTitle(e.target.value)} placeholder="e.g. Spa Manager" className="input-field text-[13px] w-full" />
+              <input aria-label="Role title" value={jobTitle} onChange={e => setJobTitle(e.target.value)} placeholder="e.g. Spa Manager" className="input-field text-[13px] w-full" />
             </div>
             <div>
               <label className="block text-[12px] font-semibold text-ink mb-1.5">Role level</label>
-              <select value={roleLevel} onChange={e => setRoleLevel(e.target.value)} className="input-field text-[13px] w-full">
+              <select aria-label="Role level" value={roleLevel} onChange={e => setRoleLevel(e.target.value)} className="input-field text-[13px] w-full">
                 <option value="">Select...</option>
                 {ROLE_LEVELS.map(level => <option key={level} value={level}>{level}</option>)}
               </select>
             </div>
             <div>
               <label className="block text-[12px] font-semibold text-ink mb-1.5">Salary from (£/year)</label>
-              <input value={salaryMin} onChange={e => setSalaryMin(e.target.value.replace(/[^0-9]/g, ''))} inputMode="numeric" placeholder="e.g. 32000" className="input-field text-[13px] w-full" />
+              <input aria-label="Salary from (£/year)" value={salaryMin} onChange={e => setSalaryMin(e.target.value.replace(/[^0-9]/g, ''))} inputMode="numeric" placeholder="e.g. 32000" className="input-field text-[13px] w-full" />
             </div>
             <div>
               <label className="block text-[12px] font-semibold text-ink mb-1.5">Salary to (£/year)</label>
-              <input value={salaryMax} onChange={e => setSalaryMax(e.target.value.replace(/[^0-9]/g, ''))} inputMode="numeric" placeholder="e.g. 38000" className="input-field text-[13px] w-full" />
+              <input aria-label="Salary to (£/year)" value={salaryMax} onChange={e => setSalaryMax(e.target.value.replace(/[^0-9]/g, ''))} inputMode="numeric" placeholder="e.g. 38000" className="input-field text-[13px] w-full" />
             </div>
             <div>
               <label className="block text-[12px] font-semibold text-ink mb-1.5">Location</label>
-              <input value={location} onChange={e => setLocation(e.target.value)} placeholder="e.g. Mayfair, London" className="input-field text-[13px] w-full" />
+              <input aria-label="Location" value={location} onChange={e => setLocation(e.target.value)} placeholder="e.g. Mayfair, London" className="input-field text-[13px] w-full" />
             </div>
             <div>
               <label className="block text-[12px] font-semibold text-ink mb-1.5">When do you need them?</label>
-              <input value={timeline} onChange={e => setTimeline(e.target.value)} placeholder="e.g. Within 8 weeks" className="input-field text-[13px] w-full" />
+              <input aria-label="When do you need them?" value={timeline} onChange={e => setTimeline(e.target.value)} placeholder="e.g. Within 8 weeks" className="input-field text-[13px] w-full" />
             </div>
           </div>
 
           <label className="block text-[12px] font-semibold text-ink mb-1.5">The brief *</label>
-          <textarea value={brief} onChange={e => setBrief(e.target.value)} rows={5} className="input-field text-[13px] w-full mb-1"
+          <textarea aria-label="The brief" value={brief} onChange={e => setBrief(e.target.value)} rows={5} className="input-field text-[13px] w-full mb-1"
             placeholder="Tell us about the role and your property: treatments and brands, the team they will join, what a great hire looks like, and anything that has made this role hard to fill." />
           <p className="text-[11px] text-muted mb-4">The better the brief, the better the shortlist. A few honest sentences beat a formal job description.</p>
 
-          {error && <p className="text-[12.5px] text-red-600 font-medium mb-3">{error}</p>}
-          {notice && <p className="text-[12.5px] text-green-700 font-medium mb-3 inline-flex items-center gap-1.5"><Check size={14} /> {notice}</p>}
+          {error && <p role="alert" className="text-[12.5px] text-red-600 font-medium mb-3">{error}</p>}
+          {notice && <p role="status" className="text-[12.5px] text-green-700 font-medium mb-3 inline-flex items-center gap-1.5"><Check size={14} /> {notice}</p>}
 
           <button type="button" onClick={submit} disabled={submitting} className="btn-primary text-[13px]">
             {submitting ? 'Sending...' : 'Send the brief to WHC'}

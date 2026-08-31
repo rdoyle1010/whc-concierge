@@ -22,6 +22,7 @@ export default function SpecialismsPage() {
   return (
     <div className="min-h-screen bg-surface">
       <Navbar />
+      <main id="main-content">
 
       {/* Hero */}
       <section className="pt-[76px] bg-white border-b border-border">
@@ -45,6 +46,7 @@ export default function SpecialismsPage() {
           ))}
         </div>
       </section>
+      </main>
       <Footer />
     </div>
   )

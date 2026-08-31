@@ -297,7 +297,7 @@ export default async function PropertyDestinationPage({ params }: { params: Prom
         </header>
       )}
 
-      <main className="max-w-6xl mx-auto px-6">
+      <main id="main-content" className="max-w-6xl mx-auto px-6">
         {/* Why work here */}
         {showWhy && (
           <section className="py-14 md:py-20">

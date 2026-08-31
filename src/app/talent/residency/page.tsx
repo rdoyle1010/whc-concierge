@@ -203,7 +203,7 @@ export default function TalentResidencyPage() {
 
         {error && <p className="text-[13px] text-red-600 font-medium mb-4">{error}</p>}
 
-        {loading ? <div className="skeleton h-44 rounded-2xl"/> : bookings.length === 0 ? <div className="bg-white border border-border rounded-2xl p-12 text-center"><p className="font-medium text-ink">No residency offers yet</p><p className="text-sm text-muted mt-2 mb-5">Keep your availability and specialist profile up to date so the right properties can find you.</p><Link href="/residency/create" className="btn-primary inline-block">{memberActive ? 'Update Residency Profile' : 'Join Residency'}</Link></div> : <div className="space-y-4">{bookings.map(b => {
+        {loading ? <div className="skeleton h-44 rounded-2xl"/> : bookings.length === 0 ? <div className="bg-white border border-border rounded-2xl p-12 text-center"><p className="font-medium text-ink">No residency offers yet</p><p className="text-sm text-secondary mt-2 mb-5">Keep your availability and specialist profile up to date so the right properties can find you.</p><Link href="/residency/create" className="btn-primary inline-block">{memberActive ? 'Update Residency Profile' : 'Join Residency'}</Link></div> : <div className="space-y-4">{bookings.map(b => {
           const awaitingMe = b.status === 'offered' || (b.status === 'countered' && b.countered_by === 'employer')
           const awaitingThem = b.status === 'countered' && b.countered_by !== 'employer'
           return <div key={b.id} className="bg-white border border-border rounded-2xl p-6 shadow-sm">
@@ -213,7 +213,7 @@ export default function TalentResidencyPage() {
               {awaitingMe && (counterOpen === b.id ? (
                 <div className="mt-4">
                   <label className="block text-[11px] font-semibold text-ink mb-1">Your counter (£/day)</label>
-                  <input value={counterRate} onChange={e => setCounterRate(e.target.value.replace(/[^0-9.]/g, ''))} inputMode="decimal" placeholder={`e.g. ${Math.round(Number(b.proposed_day_rate) * 1.1)}`} className="input-field text-[13px] w-full mb-2" />
+                  <input aria-label="Counter offer rate" value={counterRate} onChange={e => setCounterRate(e.target.value.replace(/[^0-9.]/g, ''))} inputMode="decimal" placeholder={`e.g. ${Math.round(Number(b.proposed_day_rate) * 1.1)}`} className="input-field text-[13px] w-full mb-2" />
                   <div className="grid grid-cols-2 gap-2">
                     <button disabled={busy===b.id} onClick={() => { setCounterOpen(null); setCounterRate('') }} className="btn-secondary !px-2 !py-2 text-[11px]">Back</button>
                     <button disabled={busy===b.id || !Number(counterRate)} onClick={() => respond(b.id, 'counter', Number(counterRate))} className="btn-primary !px-2 !py-2 text-[11px]">{busy===b.id ? 'Sending...' : 'Send counter'}</button>

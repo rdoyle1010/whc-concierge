@@ -395,7 +395,7 @@ export default async function HomePage(props: HomePageProps) {
 
   return <div className="website-theme min-h-screen" style={websiteCssVariables(content)}>
     <Navbar siteContent={content} />
-    <main className="pt-[76px]">
+    <main id="main-content" className="pt-[76px]">
       {previewingDraft && <div className="site-accent-bg px-5 py-2 text-center text-[12px] font-semibold text-white">Private draft preview - the public website has not changed.</div>}
       <HeroCarousel siteContent={content} />
       <RoutesSection />

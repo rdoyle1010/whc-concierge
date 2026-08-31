@@ -66,7 +66,7 @@ export default function ProfileAwardsEditor({ kind }: { kind: Kind }) {
 
     <div className="mt-5 space-y-3">
       {awards.length === 0 ? <div className="rounded-xl border border-dashed border-border bg-surface/50 p-5 text-[12px] text-muted">No awards added yet.</div> : awards.map((award, index) => <div key={index} className="rounded-xl border border-border p-4">
-        <div className="mb-3 flex items-center justify-between"><p className="text-[11px] font-semibold uppercase tracking-[.12em] text-muted">Award {index + 1}</p><button type="button" onClick={() => setAwards(current => current.filter((_, i) => i !== index))} className="text-red-500"><Trash2 size={14}/></button></div>
+        <div className="mb-3 flex items-center justify-between"><p className="text-[11px] font-semibold uppercase tracking-[.12em] text-muted">Award {index + 1}</p><button type="button" onClick={() => setAwards(current => current.filter((_, i) => i !== index))} aria-label="Remove award" className="p-2 -m-2 text-red-500"><Trash2 size={14}/></button></div>
         <div className="grid gap-3 sm:grid-cols-2">
           <label className="text-[11px] text-muted">Award name<input className="input-field mt-1" value={award.name || ''} onChange={e => update(index, 'name', e.target.value)} placeholder="e.g. Best Hotel Spa UK"/></label>
           <label className="text-[11px] text-muted">Awarding body<input className="input-field mt-1" value={award.issuer || ''} onChange={e => update(index, 'issuer', e.target.value)} placeholder="e.g. Good Spa Guide"/></label>

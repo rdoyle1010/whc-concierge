@@ -44,6 +44,7 @@ export default async function BrowseRolesPage() {
   return (
     <div className="min-h-screen bg-surface">
       <Navbar />
+      <main id="main-content">
 
       <section className="pt-[76px] bg-white border-b border-border">
         <div className="max-w-[1440px] mx-auto px-6 lg:px-10 py-16">
@@ -62,6 +63,7 @@ export default async function BrowseRolesPage() {
 
       <SponsoredAd placement="jobs_talent_sponsor" />
       <PublicRolesBrowser jobs={jobs} />
+      </main>
       <Footer />
     </div>
   )

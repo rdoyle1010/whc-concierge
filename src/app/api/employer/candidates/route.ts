@@ -3,6 +3,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { createServerSupabaseClient } from '@/lib/supabase/server'
 import { canEmployerDiscoverCandidate, mutualRadiusResult, travelAccessSummary } from '@/lib/discovery'
 import { calculateMatchScore } from '@/lib/matching'
+import { anonymiseDisplayName, PRIVATE_MODE_COLUMNS, isMissingColumnError } from '@/lib/private-mode'
 
 export const dynamic = 'force-dynamic'
 
@@ -12,7 +13,18 @@ const EMPLOYER_CANDIDATE_FIELDS = [
   'product_houses', 'systems_experience', 'business_skills', 'career_evidence', 'cv_url', 'has_insurance', 'awards',
   'availability_status', 'travel_radius_miles', 'has_car', 'latitude', 'longitude',
   'approval_status', 'profile_visible', 'is_featured', 'featured_until', 'created_at',
+  'show_first_name_only',
 ].join(',')
+
+// Private Career Mode columns may not be migrated yet: select with them first,
+// and retry without them if the live database rejects the column list.
+const FIELDS_WITH_PRIVATE = `${EMPLOYER_CANDIDATE_FIELDS},${PRIVATE_MODE_COLUMNS.join(',')}`
+
+async function selectWithPrivateColumns(build: (fields: string) => PromiseLike<{ data: any; error: any }>) {
+  let result = await build(FIELDS_WITH_PRIVATE)
+  if (isMissingColumnError(result.error)) result = await build(EMPLOYER_CANDIDATE_FIELDS)
+  return result
+}
 
 const DEFAULT_LIMIT = 60
 const MAX_LIMIT = 100
@@ -41,32 +53,53 @@ export async function GET(req: NextRequest) {
   const requestedCandidateId = req.nextUrl.searchParams.get('candidate')
   const now = new Date().toISOString()
 
-  const candidatePageQuery = admin.from('candidate_profiles')
-    .select(EMPLOYER_CANDIDATE_FIELDS)
+  const candidatePageQuery = selectWithPrivateColumns(fields => admin.from('candidate_profiles')
+    .select(fields)
     .eq('approval_status', 'approved')
     .or('profile_visible.eq.true,profile_visible.is.null')
     .order('is_featured', { ascending: false })
     .order('created_at', { ascending: false })
-    .range(offset, offset + limit - 1)
+    .range(offset, offset + limit - 1))
 
   const requestedCandidatePromise = requestedCandidateId
-    ? admin.from('candidate_profiles').select(EMPLOYER_CANDIDATE_FIELDS).eq('id', requestedCandidateId).eq('approval_status', 'approved').or('profile_visible.eq.true,profile_visible.is.null').maybeSingle()
+    ? selectWithPrivateColumns(fields => admin.from('candidate_profiles').select(fields).eq('id', requestedCandidateId).eq('approval_status', 'approved').or('profile_visible.eq.true,profile_visible.is.null').maybeSingle())
     : Promise.resolve({ data: null, error: null })
 
-  const [{ data: blocks }, { data: pageRows, error }, { data: requestedCandidate }, { data: liveJobs }] = await Promise.all([
+  const [{ data: blocks }, { data: pageRows, error }, { data: requestedCandidate }, { data: liveJobs }, { data: matchRows }] = await Promise.all([
     admin.from('profile_blocks').select('candidate_id').eq('blocked_employer_id', employer.id),
     candidatePageQuery,
     requestedCandidatePromise,
     admin.from('job_listings')
       .select('id,job_title,required_skills,required_brands,required_qualifications,salary_min,salary_max,job_type,work_setting,sector,location,min_years_experience,required_systems,required_management_skills,required_role_level,candidate_scope,location_postcode,radius_miles,contract_type,insurance_required,preferred_business_skills,shift_pattern,offers_accommodation,latitude,longitude')
       .eq('employer_id', employer.id).eq('is_live', true).or(`expires_at.is.null,expires_at.gt.${now}`).limit(25),
+    // An accepted confidential introduction (or any match) reveals the full
+    // profile to this employer, and only this employer.
+    admin.from('matches').select('candidate_id').eq('employer_id', employer.id),
   ])
 
   if (error) return NextResponse.json({ error: 'Talent directory unavailable' }, { status: 500 })
 
   const jobs = (liveJobs || []).map((job: any) => ({ ...job, title: job.job_title, required_product_houses: job.required_brands }))
   const blocked = new Set((blocks || []).map((row: any) => row.candidate_id))
+  const revealedTo = new Set((matchRows || []).map((row: any) => row.candidate_id))
   const origin = { latitude: employer.latitude, longitude: employer.longitude }
+
+  // Private Career Mode enforcement, server-side only: an anonymised name,
+  // no photograph and no CV ever leave this route for a private profile,
+  // unless this employer's introduction has already been accepted (a match).
+  const presentCandidate = (candidate: any) => {
+    const isPrivate = candidate.private_mode === true && !revealedTo.has(candidate.id)
+    const hideName = isPrivate || candidate.show_first_name_only === true
+    const hidePhoto = isPrivate || candidate.private_hide_photo === true
+    return {
+      ...candidate,
+      full_name: hideName ? anonymiseDisplayName(candidate.full_name) : candidate.full_name,
+      profile_image_url: hidePhoto ? null : candidate.profile_image_url,
+      cv_url: isPrivate ? null : candidate.cv_url,
+      private_mode: isPrivate,
+      private_hide_photo: undefined,
+    }
+  }
 
   const scoreCandidate = (candidate: any) => {
     if (!canEmployerDiscoverCandidate(candidate, blocked)) return null
@@ -85,7 +118,7 @@ export async function GET(req: NextRequest) {
     }
     eligibleJobs.sort((a, b) => b.matchScore - a.matchScore)
 
-    return { ...candidate, ...(best || {}), eligibleJobs, latitude: undefined, longitude: undefined, distance_miles: radiusResult.distanceMiles, distance_status: radiusResult.reason, within_radius: radiusResult.withinRadius }
+    return { ...presentCandidate(candidate), ...(best || {}), eligibleJobs, latitude: undefined, longitude: undefined, distance_miles: radiusResult.distanceMiles, distance_status: radiusResult.reason, within_radius: radiusResult.withinRadius }
   }
 
   const pageCandidates = (pageRows || []).map(scoreCandidate).filter(Boolean).sort((a: any, b: any) => {
