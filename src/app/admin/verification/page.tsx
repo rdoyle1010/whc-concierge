@@ -96,9 +96,9 @@ export default function AdminVerificationPage() {
           {r.verification_notes && <p className="text-[12px] text-gray-400 mt-3">Last decision note: {r.verification_notes}</p>}
         </div>
         <div className="flex flex-wrap items-center gap-2 lg:justify-end shrink-0">
-          {!r.whc_verified && (
+          {(!r.whc_verified || r.verification_status === 'pending' || r.right_to_work_status === 'pending') && (
             <button onClick={() => decide(r.id, 'verified')} disabled={busyId === r.id}
-              className="btn-primary !py-2 text-[12px] flex items-center gap-1 disabled:opacity-50"><ShieldCheck size={13} /> Verify</button>
+              className="btn-primary !py-2 text-[12px] flex items-center gap-1 disabled:opacity-50"><ShieldCheck size={13} /> {r.whc_verified ? 'Approve resubmission' : 'Verify'}</button>
           )}
           {r.verification_status !== 'rejected' && (
             <button onClick={() => { setRejecting(r); setReason('') }} disabled={busyId === r.id}
