@@ -11,7 +11,7 @@ import { LessonVisualBlock, KnowledgeCheckBlock } from '@/components/LessonVisua
 import { getCourseContent } from '@/lib/academy-content'
 import {
   ArrowLeft, ArrowRight, Check, Award, RotateCcw, Quote, TrendingUp,
-  Lightbulb, BookOpen, Target, GraduationCap, FileText, Users
+  Lightbulb, BookOpen, Target, GraduationCap, FileText, Users, Download
 } from 'lucide-react'
 
 type View = 'overview' | number | 'quiz'
@@ -81,7 +81,9 @@ export default function CoursePlayerPage() {
   const slug = Array.isArray(params?.slug) ? params.slug[0] : (params?.slug as string)
   const fallbackCourse = courseBySlug(slug)
   const [course, setCourse] = useState<(AcademyCourse & { image_url?: string; managed?: boolean }) | null>(fallbackCourse || null)
-  const rich = course?.managed ? null : getCourseContent(slug)
+  // Rich content always comes from code when it exists - admin-managed rows
+  // control price/image/visibility, never the authored course content.
+  const rich = getCourseContent(slug)
 
   const [loading, setLoading] = useState(true)
   const [enrolled, setEnrolled] = useState(false)
@@ -92,6 +94,15 @@ export default function CoursePlayerPage() {
   const [result, setResult] = useState<{ score: number; passed: boolean; correct: number; total: number } | null>(null)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
+  const [uploads, setUploads] = useState<{ id: string; title: string; description: string | null; file_name: string | null }[]>([])
+
+  useEffect(() => {
+    if (!enrolled || !slug) return
+    fetch(`/api/academy/uploads?course=${encodeURIComponent(String(slug))}`)
+      .then(res => res.ok ? res.json() : { resources: [] })
+      .then(json => setUploads(json.resources || []))
+      .catch(() => {})
+  }, [enrolled, slug])
 
   useEffect(() => {
     async function load() {
@@ -238,7 +249,7 @@ export default function CoursePlayerPage() {
         </aside>
 
         <div className="min-w-0">
-          {view === 'overview' && (
+          {view === 'overview' && (<>
             <div className="dashboard-card">
               <p className="text-[10px] uppercase tracking-[0.18em] text-accent font-semibold mb-2 inline-flex items-center gap-1.5"><BookOpen size={13} /> Course overview</p>
               <h2 className="font-serif text-[22px] font-bold text-ink mb-3">{course.title}</h2>
@@ -277,10 +288,26 @@ export default function CoursePlayerPage() {
                   className="btn-primary text-[13px] inline-flex items-center gap-2">
                   {done === 0 ? 'Begin Module 1' : allLessonsDone ? 'Review the modules' : `Continue - Module ${course.lessons.findIndex((_, i) => !progress[i]) + 1}`} <ArrowRight size={14} />
                 </button>
-                {rich && <a href={`/api/academy/manual?course=${encodeURIComponent(String(slug))}`} target="_blank" rel="noopener noreferrer" className="btn-secondary text-[13px] inline-flex items-center gap-1.5"><BookOpen size={14} /> Course Manual</a>}
+                {rich && <a href={`/api/academy/manual?course=${encodeURIComponent(String(slug))}`} className="btn-secondary text-[13px] inline-flex items-center gap-1.5"><BookOpen size={14} /> Course Manual (PDF)</a>}
               </div>
             </div>
-          )}
+
+            {uploads.length > 0 && (
+              <div className="dashboard-card mt-5">
+                <p className="text-[10px] uppercase tracking-[0.18em] text-accent font-semibold mb-1.5 inline-flex items-center gap-1.5"><Download size={13} /> Resources &amp; tools</p>
+                <p className="text-[13px] text-gray-600 mb-4">Working files for this course - download them and use them with your own figures. Everything here also lives permanently in <Link href="/talent/toolkit" className="underline">My Toolkit</Link>.</p>
+                <div className="grid gap-3 md:grid-cols-2">
+                  {uploads.map(upload => (
+                    <div key={upload.id} className="flex flex-col rounded-xl border border-border p-4">
+                      <p className="text-[13px] font-semibold text-ink">{upload.title}</p>
+                      {upload.description && <p className="mt-0.5 mb-2 text-[11.5px] leading-5 text-muted">{upload.description}</p>}
+                      <a href={`/api/academy/uploads?course=${encodeURIComponent(String(slug))}&id=${encodeURIComponent(upload.id)}`} className="btn-secondary mt-auto inline-flex w-fit items-center gap-1.5 text-[12px]"><Download size={12} /> Download{upload.file_name ? ` (${String(upload.file_name).split('.').pop()?.toUpperCase()})` : ''}</a>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </>)}
 
           {typeof view === 'number' && (() => {
             const i = view

@@ -11,7 +11,9 @@ export default function AcademyToolkitPage() {
   const params = useParams()
   const slug = Array.isArray(params?.slug) ? params.slug[0] : String(params?.slug || '')
   const resources = academyResources(slug)
-  const title = slug === 'spa-director-programme' ? 'Spa Director Toolkit' : 'Spa Manager Toolkit'
+  const title = slug === 'spa-director-programme' ? 'Spa Director Toolkit'
+    : slug === 'spa-manager-programme' ? 'Spa Manager Toolkit'
+    : 'Course Toolkit'
   const [uploads, setUploads] = useState<any[]>([])
   useEffect(() => {
     if (!slug) return

@@ -75,7 +75,22 @@ export async function getAcademyCatalog(includeArchived = false): Promise<Manage
     if (error) throw error
     const rows = (data || []).map(rowCourse)
     const overrides = new Map(rows.map(course => [course.slug, course]))
-    const merged = base.map(course => overrides.get(course.slug) || course)
+    // Courses defined in code are authored and maintained in the platform:
+    // their content (title, lessons, quiz, answer key, duration) always comes
+    // from code so upgrades ship with every deploy. A database row for a code
+    // course only carries the commercial controls an admin can change - price,
+    // image and visibility. Courses created in admin (custom) are database-only.
+    const merged = base.map(course => {
+      const row = overrides.get(course.slug)
+      if (!row) return course
+      return {
+        ...course,
+        price: row.price ?? course.price,
+        image_url: row.image_url || course.image_url,
+        is_active: row.is_active,
+        managed: true,
+      }
+    })
     const baseSlugs = new Set(base.map(course => course.slug))
     merged.push(...rows.filter(course => !baseSlugs.has(course.slug)))
     return includeArchived ? merged : merged.filter(course => course.is_active)
