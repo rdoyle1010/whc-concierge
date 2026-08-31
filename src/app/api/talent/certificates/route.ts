@@ -35,7 +35,8 @@ export async function POST(req: NextRequest) {
     const title = String(body.title || '').trim()
     const documentUrl = String(body.documentUrl || '').trim()
     if (title.length < 3) return NextResponse.json({ error: 'Please name the qualification (e.g. CIDESCO Diploma in Beauty & Spa Therapy).' }, { status: 400 })
-    if (!documentUrl.startsWith('http')) return NextResponse.json({ error: 'Please upload the certificate document first.' }, { status: 400 })
+    const validDocument = documentUrl.startsWith('http') || documentUrl.startsWith('/api/files?')
+    if (!validDocument) return NextResponse.json({ error: 'Please upload the certificate document first.' }, { status: 400 })
     const year = body.yearAwarded ? parseInt(String(body.yearAwarded), 10) : null
     if (year && (year < 1960 || year > new Date().getFullYear())) return NextResponse.json({ error: 'Please check the year awarded.' }, { status: 400 })
 
