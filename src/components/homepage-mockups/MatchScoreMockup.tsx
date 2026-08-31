@@ -11,11 +11,11 @@ export default function MatchScoreMockup() {
     <div className="bg-white rounded-2xl border border-[#E5E5E5] shadow-sm p-5 max-w-sm w-full mx-auto relative overflow-hidden">
       <div
         className="absolute top-0 left-0 right-0 h-[3px]"
-        style={{ background: 'linear-gradient(90deg, transparent, #C9A96E, transparent)' }}
+        style={{ background: 'linear-gradient(90deg, transparent, #555555, transparent)' }}
       />
 
       <div className="text-center mt-1 mb-5">
-        <p className="font-serif text-[44px] leading-none" style={{ color: '#C9A96E' }}>94%</p>
+        <p className="font-serif text-[44px] leading-none" style={{ color: '#555555' }}>94%</p>
         <p className="text-[11px] tracking-[0.15em] uppercase mt-1.5" style={{ color: '#6B7280' }}>
           Match score
         </p>
@@ -31,7 +31,7 @@ export default function MatchScoreMockup() {
             <div className="h-1.5 rounded-full overflow-hidden" style={{ background: '#F0EEEA' }}>
               <div
                 className="h-full rounded-full"
-                style={{ width: `${c.pct}%`, background: '#C9A96E' }}
+                style={{ width: `${c.pct}%`, background: '#555555' }}
               />
             </div>
           </div>

@@ -19,7 +19,7 @@ import {
   Settings, LogOut, Menu, X, Users, FileText, Megaphone,
   AlertTriangle, Heart, Building2, ChevronRight, BarChart3, CreditCard, GraduationCap,
   Palette, Banknote, Download, MapPin, Brain, ClipboardList, ShieldCheck, Lock,
-  Search,
+  Search, Mail,
 } from 'lucide-react'
 
 interface NavItem {
@@ -98,6 +98,7 @@ const navItems: Record<string, NavItem[]> = {
     { label: 'Job Listings', href: '/admin/jobs', icon: <Briefcase size={17} /> },
     { label: 'Blog & Journal', href: '/admin/blog', icon: <FileText size={17} /> },
     { label: 'Newsletters & Campaigns', href: '/admin/campaigns', icon: <Megaphone size={17} /> },
+    { label: 'Newsletter', href: '/admin/newsletter', icon: <Mail size={17} /> },
     { label: 'Sponsored Ads', href: '/admin/advertising', icon: <Megaphone size={17} /> },
     { label: 'Ad Slots', href: '/admin/ad-slots', icon: <Megaphone size={17} /> },
     { label: 'Taxonomy', href: '/admin/taxonomy', icon: <Briefcase size={17} />, section: 'Controls' },
@@ -167,16 +168,16 @@ export default function DashboardShell({ children, role, userName }: DashboardSh
   const isActive = (href: string) => pathname === href || (href.split('/').length > 3 && pathname.startsWith(`${href}/`))
 
   if (isPublicAgencyRoute && agencyShell !== 'employer') {
-    return <div className="min-h-screen bg-white"><Navbar /><main className="pt-[68px]"><div className="p-5 md:p-8 lg:p-10 xl:p-12 max-w-[1560px] mx-auto">{agencyShell === 'checking' ? <div className="flex min-h-[55vh] items-center justify-center"><div className="h-8 w-8 animate-spin rounded-full border-2 border-[#6f7f88] border-t-transparent" /></div> : children}</div></main></div>
+    return <div className="min-h-screen bg-white"><Navbar /><main className="pt-[68px]"><div className="p-5 md:p-8 lg:p-10 xl:p-12 max-w-[1560px] mx-auto">{agencyShell === 'checking' ? <div className="flex min-h-[55vh] items-center justify-center"><div className="h-8 w-8 animate-spin rounded-full border-2 border-[#555555] border-t-transparent" /></div> : children}</div></main></div>
   }
 
   return <div className="dashboard-shell min-h-screen">
-    <header className="lg:hidden sticky top-0 z-30 bg-[#092b45] text-white px-4 py-3.5 flex items-center justify-between border-b border-white/10"><button type="button" onClick={() => setSidebarOpen(true)} aria-label="Open dashboard navigation" className="p-1 -ml-1 text-white/85"><Menu size={22}/></button><div className="text-center leading-none"><Wordmark dark compact href={null}/><p className="mt-1.5 text-[8px] uppercase tracking-[0.2em] text-white/55">{workspaceLabel[role]}</p></div><div className="w-6"/></header>
+    <header className="lg:hidden sticky top-0 z-30 bg-[#111111] text-white px-4 py-3.5 flex items-center justify-between border-b border-white/10"><button type="button" onClick={() => setSidebarOpen(true)} aria-label="Open dashboard navigation" className="p-1 -ml-1 text-white/85"><Menu size={22}/></button><div className="text-center leading-none"><Wordmark dark compact href={null}/><p className="mt-1.5 text-[8px] uppercase tracking-[0.2em] text-white/55">{workspaceLabel[role]}</p></div><div className="w-6"/></header>
     {sidebarOpen && <div className="fixed inset-0 bg-[#071d2d]/60 backdrop-blur-[1px] z-40 lg:hidden" onClick={() => setSidebarOpen(false)} />}
     <aside className={`dashboard-sidebar fixed top-0 left-0 h-full w-[264px] text-white z-50 transform transition-transform duration-200 lg:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
       <div className="px-7 pt-7 pb-4"><div className="flex items-center justify-between"><Wordmark dark/><button type="button" onClick={() => setSidebarOpen(false)} className="lg:hidden text-white/55 hover:text-white p-1" aria-label="Close dashboard navigation"><X size={19}/></button></div><div className="mt-7 pb-5 border-b border-white/10"><p className="text-white/55 text-[8px] uppercase tracking-[0.22em] font-semibold">{workspaceLabel[role]}</p>{userName && <p className="font-serif text-white text-[22px] leading-tight mt-2 truncate">{userName}</p>}</div></div>
       <nav className="px-4 pb-20 overflow-y-auto h-[calc(100vh-156px)]">{items.map((item,index)=>{const active=isActive(item.href);const itemAccess=item.accessKey?access[item.accessKey]:undefined;const locked=itemAccess?.state==='locked';const limited=itemAccess?.state==='limited';const href=locked?(itemAccess?.upgradeHref||item.href):item.href;return <div key={item.href}>{item.section&&<p className={`${index===0?'mt-1':'mt-5'} mb-1.5 px-3 text-[8px] font-semibold uppercase tracking-[0.2em] text-white/32`}>{item.section}</p>}<Link href={href} onClick={()=>setSidebarOpen(false)} title={locked ? itemAccess?.label || 'Upgrade to unlock' : limited ? itemAccess?.label : undefined} aria-label={locked ? `${item.label}. ${itemAccess?.label || 'Locked feature'}` : item.label} className={`dashboard-nav-item relative flex items-center gap-3 px-3 py-2 text-[12.5px] transition-colors border-l ${active&&!locked?'text-white bg-white/[0.055] border-[#93a4ae]':locked?'text-white/42 hover:text-white/70 hover:bg-white/[0.025] border-transparent':'text-white/58 hover:text-white hover:bg-white/[0.035] border-transparent'}`}><span className={active&&!locked?'text-white/80':locked?'text-white/30':'text-white/44'}>{item.icon}</span><span className="tracking-[-0.01em]">{item.label}</span>{locked?<span className="ml-auto flex items-center gap-1 text-[9px] uppercase tracking-[0.08em] text-white/45"><Lock size={11}/></span>:limited?<span className="ml-auto text-[9px] text-white/45">{itemAccess?.label}</span>:active?<ChevronRight size={12} className="ml-auto text-white/70"/>:null}</Link></div>})}</nav>
-      <div className="absolute bottom-0 left-0 right-0 px-4 py-4 bg-[#092b45] border-t border-white/[0.07]"><button type="button" onClick={handleSignOut} className="dashboard-nav-item flex items-center gap-3 px-3 py-2.5 text-[12.5px] text-white/48 hover:text-white hover:bg-white/[0.035] w-full transition-colors"><LogOut size={17}/><span>Sign out</span></button></div>
+      <div className="absolute bottom-0 left-0 right-0 px-4 py-4 bg-[#111111] border-t border-white/[0.07]"><button type="button" onClick={handleSignOut} className="dashboard-nav-item flex items-center gap-3 px-3 py-2.5 text-[12.5px] text-white/48 hover:text-white hover:bg-white/[0.035] w-full transition-colors"><LogOut size={17}/><span>Sign out</span></button></div>
     </aside>
     <main className="lg:ml-[264px] min-h-screen"><div className="p-5 sm:p-6 md:p-8 lg:p-10 xl:p-12 max-w-[1540px] mx-auto">{showJobsTalentSponsor?<div className="mb-7"><SponsoredAd placement="jobs_talent_sponsor" /></div>:null}{showPostHireActions?<PostHireActions/>:null}{showRecruitmentPipeline?<ApplicationPipelineHub role={role as 'talent'|'employer'}/>:null}{activityRole?<DashboardActivityCentre role={activityRole}/>:null}{showPostHireReviews?<PostHireReviews/>:null}{children}</div></main>
   </div>

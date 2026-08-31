@@ -68,11 +68,11 @@ export default function AdminMatchesPage() {
               {filtered.slice((page - 1) * perPage, page * perPage).map((m) => (
                 <tr key={m.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4">
-                    <p className="text-sm font-medium text-ink">{m.candidate_profiles?.full_name || '—'}</p>
+                    <p className="text-sm font-medium text-ink">{m.candidate_profiles?.full_name || '-'}</p>
                     <p className="text-xs text-gray-400">{m.candidate_profiles?.headline}</p>
                   </td>
-                  <td className="px-6 py-4 text-sm text-gray-600">{m.employer_profiles?.company_name || '—'}</td>
-                  <td className="px-6 py-4 text-sm text-gray-600">{m.job_listings?.title || '—'}</td>
+                  <td className="px-6 py-4 text-sm text-gray-600">{m.employer_profiles?.company_name || '-'}</td>
+                  <td className="px-6 py-4 text-sm text-gray-600">{m.job_listings?.title || '-'}</td>
                   <td className="px-6 py-4">
                     {(m.match_score ?? m.score) != null ? (
                       <div className="flex items-center space-x-2">
@@ -81,7 +81,7 @@ export default function AdminMatchesPage() {
                         </div>
                         <span className="text-xs text-gray-500">{(m.match_score ?? m.score)}%</span>
                       </div>
-                    ) : '—'}
+                    ) : '-'}
                   </td>
                   <td className="px-6 py-4">
                     <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${

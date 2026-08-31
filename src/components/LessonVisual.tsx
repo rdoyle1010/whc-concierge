@@ -10,13 +10,13 @@ import { ArrowDown, Check, ImageIcon, X } from 'lucide-react'
 export function LessonVisualBlock({ visual }: { visual: Visual }) {
   if (visual.kind === 'flow') {
     return (
-      <div className="rounded-xl border border-[#e7e1d7] bg-white p-5 my-4">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#8a6d3b] mb-3">{visual.title}</p>
+      <div className="rounded-xl border border-[#e5e5e5] bg-white p-5 my-4">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#1a1a1a] mb-3">{visual.title}</p>
         <div className="flex flex-col items-stretch gap-1">
           {visual.steps.map((step, index) => (
             <div key={index} className="flex flex-col items-center">
-              <div className="w-full rounded-lg bg-[#eef2f4] border border-[#d8e0e6] px-4 py-2.5 text-center text-[13px] font-medium text-[#0b2f4d]">{step}</div>
-              {index < visual.steps.length - 1 && <ArrowDown size={14} className="text-[#8a6d3b] my-0.5" />}
+              <div className="w-full rounded-lg bg-[#eef2f4] border border-[#d8e0e6] px-4 py-2.5 text-center text-[13px] font-medium text-[#111111]">{step}</div>
+              {index < visual.steps.length - 1 && <ArrowDown size={14} className="text-[#1a1a1a] my-0.5" />}
             </div>
           ))}
         </div>
@@ -27,11 +27,11 @@ export function LessonVisualBlock({ visual }: { visual: Visual }) {
 
   if (visual.kind === 'table') {
     return (
-      <div className="rounded-xl border border-[#e7e1d7] bg-white p-5 my-4">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#8a6d3b] mb-3">{visual.title}</p>
+      <div className="rounded-xl border border-[#e5e5e5] bg-white p-5 my-4">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#1a1a1a] mb-3">{visual.title}</p>
         <div className="overflow-x-auto">
           <table className="w-full text-[12.5px] border-collapse min-w-[420px]">
-            <thead><tr>{visual.headers.map(header => <th key={header} className="border-b-2 border-[#0b2f4d]/20 bg-[#f7f8fa] px-3 py-2 text-left font-semibold text-ink">{header}</th>)}</tr></thead>
+            <thead><tr>{visual.headers.map(header => <th key={header} className="border-b-2 border-[#111111]/20 bg-[#fafafa] px-3 py-2 text-left font-semibold text-ink">{header}</th>)}</tr></thead>
             <tbody>{visual.rows.map((row, ri) => <tr key={ri}>{row.map((cell, ci) => <td key={ci} className={`border-b border-[#eee9df] px-3 py-2 text-gray-700 ${ci > 0 ? 'tabular-nums' : ''}`}>{cell}</td>)}</tr>)}</tbody>
           </table>
         </div>
@@ -42,8 +42,8 @@ export function LessonVisualBlock({ visual }: { visual: Visual }) {
 
   if (visual.kind === 'matrix') {
     return (
-      <div className="rounded-xl border border-[#e7e1d7] bg-white p-5 my-4">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#8a6d3b] mb-3">{visual.title}</p>
+      <div className="rounded-xl border border-[#e5e5e5] bg-white p-5 my-4">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#1a1a1a] mb-3">{visual.title}</p>
         <div className="flex gap-2">
           <div className="flex items-center"><p className="text-[10px] font-semibold uppercase tracking-wide text-gray-500 [writing-mode:vertical-rl] rotate-180">{visual.yLabel} →</p></div>
           <div className="flex-1">
@@ -63,9 +63,9 @@ export function LessonVisualBlock({ visual }: { visual: Visual }) {
   // image_placeholder: an honest slot the admin fills through the Academy
   // Downloads/media flow - never a stock photo pasted for decoration.
   return (
-    <div className="rounded-xl border border-dashed border-[#d8cfc0] bg-[#faf8f4] p-5 my-4 text-center">
-      <ImageIcon size={20} className="mx-auto text-[#b3a58e] mb-2" />
-      <p className="text-[12px] font-semibold text-[#8a6d3b]">{visual.title}</p>
+    <div className="rounded-xl border border-dashed border-[#d8cfc0] bg-[#f7f7f7] p-5 my-4 text-center">
+      <ImageIcon size={20} className="mx-auto text-[#8a8a8a] mb-2" />
+      <p className="text-[12px] font-semibold text-[#1a1a1a]">{visual.title}</p>
       <p className="text-[11.5px] text-gray-500 mt-1">{visual.description}</p>
     </div>
   )
@@ -78,7 +78,7 @@ export function KnowledgeCheckBlock({ checks }: { checks: KnowledgeCheck[] }) {
   if (!checks.length) return null
   return (
     <div className="rounded-xl border border-[#dbe4ea] bg-[#f4f8fa] p-5 my-4">
-      <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#0b2f4d] mb-3">Knowledge check</p>
+      <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#111111] mb-3">Knowledge check</p>
       <div className="space-y-4">
         {checks.map((check, qi) => {
           const chosen = answers[qi]
@@ -95,7 +95,7 @@ export function KnowledgeCheckBlock({ checks }: { checks: KnowledgeCheck[] }) {
                       onClick={() => setAnswers(current => ({ ...current, [qi]: oi }))}
                       className={`w-full rounded-lg border px-3 py-2 text-left text-[12.5px] transition-colors ${revealed
                         ? isRight ? 'border-green-300 bg-green-50 text-green-800' : isChosen ? 'border-red-300 bg-red-50 text-red-700' : 'border-transparent bg-white/60 text-gray-500'
-                        : 'border-[#d8e0e6] bg-white hover:border-[#0b2f4d]/40 text-gray-700'}`}>
+                        : 'border-[#d8e0e6] bg-white hover:border-[#111111]/40 text-gray-700'}`}>
                       {revealed && isRight && <Check size={12} className="inline mr-1.5 -mt-0.5" />}
                       {revealed && isChosen && !isRight && <X size={12} className="inline mr-1.5 -mt-0.5" />}
                       {option}

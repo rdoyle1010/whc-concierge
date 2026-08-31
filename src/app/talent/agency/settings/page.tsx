@@ -230,8 +230,8 @@ export default function AgencySettingsPage() {
             <div className="mt-5 border-t border-border pt-5">
               <p className="text-[11px] font-semibold text-ink mb-2">Can you work this day?</p>
               <div className="inline-flex border border-border bg-surface p-1">
-                <button type="button" onClick={() => setAvailabilityMode('available')} className={`px-5 py-2.5 text-[12px] font-semibold transition-colors ${availabilityMode === 'available' ? 'bg-[#0b2f4d] text-white' : 'text-secondary hover:text-ink'}`}>Available</button>
-                <button type="button" onClick={() => setAvailabilityMode('unavailable')} className={`px-5 py-2.5 text-[12px] font-semibold transition-colors ${availabilityMode === 'unavailable' ? 'bg-[#0b2f4d] text-white' : 'text-secondary hover:text-ink'}`}>Not available</button>
+                <button type="button" onClick={() => setAvailabilityMode('available')} className={`px-5 py-2.5 text-[12px] font-semibold transition-colors ${availabilityMode === 'available' ? 'bg-[#111111] text-white' : 'text-secondary hover:text-ink'}`}>Available</button>
+                <button type="button" onClick={() => setAvailabilityMode('unavailable')} className={`px-5 py-2.5 text-[12px] font-semibold transition-colors ${availabilityMode === 'unavailable' ? 'bg-[#111111] text-white' : 'text-secondary hover:text-ink'}`}>Not available</button>
               </div>
             </div>
 
@@ -248,7 +248,7 @@ export default function AgencySettingsPage() {
                   <button type="button" onClick={() => { setStartTime('09:00'); setEndTime('17:00') }} className="btn-secondary !px-3 !py-2 text-[11px]">Full day · 09:00–17:00</button>
                   <span className="self-center text-[11px] text-muted">or enter any custom hours</span>
                 </div>
-                <div className="mt-4 bg-[#f7f8fa] border border-border px-4 py-3">
+                <div className="mt-4 bg-[#fafafa] border border-border px-4 py-3">
                   <p className="text-[12px] font-semibold text-ink">You are setting: {startTime}–{endTime}{selectedDuration > 0 ? ` · ${selectedDuration % 1 === 0 ? selectedDuration : selectedDuration.toFixed(1)} hours` : ''}</p>
                   <p className="mt-1 text-[11px] leading-5 text-muted">Example: if you set 09:00–13:00, you can be matched to a 4-hour shift inside that window. If you set 09:00–17:00, you can be matched to shifts that start and finish within that full window.</p>
                 </div>
@@ -265,7 +265,7 @@ export default function AgencySettingsPage() {
             {days[selectedDate] === 'unavailable' && <p className="mt-3 text-[12px] font-medium text-secondary">Saved: Not available</p>}
           </div>
 
-          <div className="mb-4 border border-border bg-[#f7f8fa] p-4">
+          <div className="mb-4 border border-border bg-[#fafafa] p-4">
             <p className="text-[11px] font-semibold text-ink mb-2">How availability works</p>
             <div className="grid gap-2 text-[11px] leading-5 text-secondary sm:grid-cols-2">
               <p><strong className="text-ink">Available:</strong> set the real start and finish time you could accept work.</p>
@@ -285,7 +285,7 @@ export default function AgencySettingsPage() {
                 const state = days[key]
                 const window = state === 'available' ? windows[key]?.[0] : undefined
                 return (
-                  <button key={key} type="button" disabled={isPast || dayBusy === key} onClick={() => chooseDate(key)} title={state === 'available' ? (window ? `Available ${window.start_time.slice(0, 5)}–${window.end_time.slice(0, 5)} - tap to edit` : 'Available - tap to edit') : state === 'unavailable' ? 'Not available - tap to edit' : 'Not set - tap to add availability'} className={`relative min-h-[64px] border px-1 py-2 text-[11px] font-medium transition-colors ${isPast ? 'bg-gray-50 text-gray-300 border-transparent cursor-default' : state === 'available' ? 'bg-green-50 text-green-800 border-green-300' : state === 'unavailable' ? 'bg-red-50 text-red-600 border-red-200' : 'bg-white text-ink border-border hover:border-ink/30'} ${selectedDate === key ? 'ring-2 ring-[#0b2f4d]/20 border-[#0b2f4d]' : ''} ${isToday ? 'font-bold' : ''}`}>
+                  <button key={key} type="button" disabled={isPast || dayBusy === key} onClick={() => chooseDate(key)} title={state === 'available' ? (window ? `Available ${window.start_time.slice(0, 5)}–${window.end_time.slice(0, 5)} - tap to edit` : 'Available - tap to edit') : state === 'unavailable' ? 'Not available - tap to edit' : 'Not set - tap to add availability'} className={`relative min-h-[64px] border px-1 py-2 text-[11px] font-medium transition-colors ${isPast ? 'bg-gray-50 text-gray-300 border-transparent cursor-default' : state === 'available' ? 'bg-green-50 text-green-800 border-green-300' : state === 'unavailable' ? 'bg-red-50 text-red-600 border-red-200' : 'bg-white text-ink border-border hover:border-ink/30'} ${selectedDate === key ? 'ring-2 ring-[#111111]/20 border-[#111111]' : ''} ${isToday ? 'font-bold' : ''}`}>
                     <span className="block text-[9px] uppercase tracking-wide opacity-65">{day.toLocaleDateString('en-GB', { weekday: 'short' })}</span>
                     <span className="block mt-0.5 text-[13px]">{day.getDate()}</span>
                     <span className="block text-[8px] uppercase opacity-60">{day.toLocaleDateString('en-GB', { month: 'short' })}</span>

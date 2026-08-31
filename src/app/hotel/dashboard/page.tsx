@@ -75,7 +75,7 @@ export default function HotelDashboard() {
         {[
           { label: 'Active Jobs', value: stats.active, icon: <Briefcase size={16} /> },
           { label: 'Total Applications', value: stats.applications, icon: <FileText size={16} /> },
-          { label: 'New Matches', value: stats.matches || '—', icon: <Users size={16} /> },
+          { label: 'New Matches', value: stats.matches || '-', icon: <Users size={16} /> },
           { label: 'Messages', value: stats.messages, icon: <MessageSquare size={16} /> },
         ].map(s => (
           <div key={s.label} className="dashboard-card">

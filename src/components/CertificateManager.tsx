@@ -111,7 +111,7 @@ export default function CertificateManager({ userId }: { userId: string | null }
         <button type="button" onClick={() => openForm()} className="btn-secondary inline-flex items-center gap-1.5 text-[12px]"><Plus size={13} /> Add certificate</button>
       </div>
       <p className="text-[11.5px] text-muted mb-3">Name each certificate so employers understand it - especially if you trained outside the UK. WHC reviews every submission; verified certificates carry a trust badge on your profile.</p>
-      <details className="mb-3 rounded-lg border border-border bg-[#f7f8fa] px-3 py-2">
+      <details className="mb-3 rounded-lg border border-border bg-[#fafafa] px-3 py-2">
         <summary className="cursor-pointer text-[12px] font-semibold text-ink">Help with certificates - lost documents, overseas training, questions</summary>
         <div className="mt-2 space-y-1.5 text-[11.5px] leading-relaxed text-secondary">
           <p><strong className="text-ink">Lost or missing certificate?</strong> Contact your awarding body or training school - most (CIDESCO, CIBTAC, ITEC, VTCT, City &amp; Guilds) can reissue certificates or provide a verification letter.</p>
@@ -146,7 +146,7 @@ export default function CertificateManager({ userId }: { userId: string | null }
                 </div>
               </div>
               {(certificate.status === 'rejected' || certificate.status === 'more_info') && certificate.review_note && (
-                <p className="mt-1.5 text-[11.5px] text-secondary bg-[#f7f8fa] rounded px-2.5 py-1.5"><ShieldQuestion size={12} className="inline mr-1 -mt-0.5" />WHC: {certificate.review_note} <button type="button" onClick={() => openForm(certificate.document_url, certificate.title)} className="underline font-medium">Resubmit</button></p>
+                <p className="mt-1.5 text-[11.5px] text-secondary bg-[#fafafa] rounded px-2.5 py-1.5"><ShieldQuestion size={12} className="inline mr-1 -mt-0.5" />WHC: {certificate.review_note} <button type="button" onClick={() => openForm(certificate.document_url, certificate.title)} className="underline font-medium">Resubmit</button></p>
               )}
             </div>
           ))}

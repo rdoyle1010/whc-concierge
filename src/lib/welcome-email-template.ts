@@ -34,7 +34,7 @@ export function welcomeEmailHtml({ firstName, userType, dashboardUrl }: {
         <!-- Header -->
         <tr><td style="background: linear-gradient(145deg, #0a0a14, #1a1a2e); border-radius: 12px 12px 0 0; padding: 40px 40px 32px; text-align: center;">
           <p style="margin: 0 0 8px; font-size: 11px; letter-spacing: 3px; text-transform: uppercase; color: rgba(201, 169, 110, 0.6);">Welcome to</p>
-          <h1 style="margin: 0; font-size: 28px; font-weight: 700; color: #C9A96E; letter-spacing: -0.5px;">WHC Concierge</h1>
+          <h1 style="margin: 0; font-size: 28px; font-weight: 700; color: #555555; letter-spacing: -0.5px;">WHC Concierge</h1>
         </td></tr>
 
         <!-- Body -->
@@ -47,7 +47,7 @@ export function welcomeEmailHtml({ firstName, userType, dashboardUrl }: {
           <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-bottom: 32px;">
             ${nextSteps.map((step, i) => `
             <tr><td style="padding: 8px 0; font-size: 14px; line-height: 1.6; color: #4B5563;">
-              <span style="display: inline-block; width: 22px; height: 22px; line-height: 22px; text-align: center; background-color: #FDF6EC; color: #C9A96E; border-radius: 50%; font-size: 11px; font-weight: 600; margin-right: 10px; vertical-align: middle;">${i + 1}</span>
+              <span style="display: inline-block; width: 22px; height: 22px; line-height: 22px; text-align: center; background-color: #FDF6EC; color: #555555; border-radius: 50%; font-size: 11px; font-weight: 600; margin-right: 10px; vertical-align: middle;">${i + 1}</span>
               ${step}
             </td></tr>`).join('')}
           </table>
@@ -63,7 +63,7 @@ export function welcomeEmailHtml({ firstName, userType, dashboardUrl }: {
         <!-- Footer -->
         <tr><td style="background-color: #F9FAFB; border-radius: 0 0 12px 12px; padding: 28px 40px; border-top: 1px solid #E5E7EB;">
           <p style="margin: 0 0 4px; font-size: 12px; color: #9CA3AF;">Wellness House Collective</p>
-          <p style="margin: 0 0 12px; font-size: 12px; color: #9CA3AF;">United Kingdom &middot; <a href="mailto:rebecca.whc@outlook.com" style="color: #C9A96E; text-decoration: none;">rebecca.whc@outlook.com</a></p>
+          <p style="margin: 0 0 12px; font-size: 12px; color: #9CA3AF;">United Kingdom &middot; <a href="mailto:rebecca.whc@outlook.com" style="color: #555555; text-decoration: none;">rebecca.whc@outlook.com</a></p>
           <p style="margin: 0; font-size: 11px; color: #D1D5DB;">You received this email because you created an account on WHC Concierge. To stop receiving emails, you can delete your account from your settings page.</p>
         </td></tr>
 

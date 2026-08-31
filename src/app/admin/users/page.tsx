@@ -123,7 +123,7 @@ export default function AdminUsersPage() {
               <div className="flex items-center space-x-3">
                 <div className="w-8 h-8 bg-neutral-100 flex items-center justify-center text-xs font-bold text-neutral-400"><Users size={14} /></div>
                 <div>
-                  <p className="text-sm font-medium text-ink">{item.full_name} <span className="text-neutral-300 font-normal">— {item.role_level || 'Candidate'}</span></p>
+                  <p className="text-sm font-medium text-ink">{item.full_name} <span className="text-neutral-300 font-normal">- {item.role_level || 'Candidate'}</span></p>
                   <p className="text-xs text-neutral-400">{item.email || item.work_email || item.contact_email || 'no email on profile'} &middot; {new Date(item.created_at).toLocaleDateString()}</p>
                 </div>
               </div>
@@ -138,7 +138,7 @@ export default function AdminUsersPage() {
               <div className="flex items-center space-x-3">
                 <div className="w-8 h-8 bg-neutral-100 flex items-center justify-center text-xs font-bold text-neutral-400"><Building2 size={14} /></div>
                 <div>
-                  <p className="text-sm font-medium text-ink">{item.company_name} <span className="text-neutral-300 font-normal">— {item.company_type || 'Employer'}</span></p>
+                  <p className="text-sm font-medium text-ink">{item.company_name} <span className="text-neutral-300 font-normal">- {item.company_type || 'Employer'}</span></p>
                   <p className="text-xs text-neutral-400">{item.contact_name} &middot; {item.email || item.contact_email || item.work_email || 'no email on profile'} &middot; {new Date(item.created_at).toLocaleDateString()}</p>
                 </div>
               </div>

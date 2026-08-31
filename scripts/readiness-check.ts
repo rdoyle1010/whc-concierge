@@ -135,6 +135,8 @@ check('all service-role API routes are protected or deliberately public', () => 
     'src/app/api/certificates/verify/route.ts',
     'src/app/api/advertising/route.ts',
     'src/app/api/advertising/click/route.ts',
+    // Public by design: read-only advert price list (label + pence only).
+    'src/app/api/advertising/prices/route.ts',
     'src/app/api/agency/directory/route.ts',
     'src/app/api/fix-employer-columns/route.ts',
     'src/app/api/fix-null-live/route.ts',

@@ -31,11 +31,11 @@ export default function CandidateProfileMockup() {
       </div>
       <p className="mb-3 text-xs text-gray-400">6 years experience</p>
 
-      <button type="button" className="mb-2 w-full rounded-lg border border-[rgba(201,169,110,0.35)] bg-[#FDF6EC] py-2 text-[12px] font-medium text-[#C9A96E]">View Full Profile</button>
+      <button type="button" className="mb-2 w-full rounded-lg border border-[rgba(201,169,110,0.35)] bg-[#FDF6EC] py-2 text-[12px] font-medium text-[#555555]">View Full Profile</button>
       <div className="grid grid-cols-3 gap-2 border-t border-gray-100 pt-3">
         <button type="button" className="flex items-center justify-center gap-1 rounded-lg bg-gray-50 py-2 text-xs text-gray-400"><X size={13} />Pass</button>
         <button type="button" className="flex items-center justify-center gap-1 rounded-lg bg-gray-50 py-2 text-xs text-gray-500"><Star size={13} />Save</button>
-        <button type="button" className="flex items-center justify-center gap-1 rounded-lg bg-[#0b2f4d] py-2 text-xs text-white"><Heart size={13} />Interested</button>
+        <button type="button" className="flex items-center justify-center gap-1 rounded-lg bg-[#111111] py-2 text-xs text-white"><Heart size={13} />Interested</button>
       </div>
     </div>
   )

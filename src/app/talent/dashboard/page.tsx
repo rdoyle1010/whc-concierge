@@ -135,7 +135,7 @@ export default function TalentDashboard() {
           </div>
         </section>
 
-        <aside className="dashboard-panel bg-[#092b45] !border-[#092b45] text-white">
+        <aside className="dashboard-panel bg-[#111111] !border-[#111111] text-white">
           <EyeOff size={19} className="text-gold mb-5" />
           <p className="text-[9px] uppercase tracking-[.2em] text-white/48 mb-2">Profile privacy</p>
           <h2 className="text-[28px] !text-white mb-3">{profile?.stealth_mode ? 'Stealth Mode is on' : 'Control who sees you'}</h2>

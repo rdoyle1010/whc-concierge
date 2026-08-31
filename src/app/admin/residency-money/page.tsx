@@ -110,7 +110,7 @@ export default function AdminResidencyMoneyPage() {
                   <div><p className="text-[10px] uppercase tracking-[.12em] text-muted">Collected</p><p className="mt-1 font-semibold text-ink">£{Number(booking.amount_paid || 0).toLocaleString('en-GB')}</p></div>
                   <div><p className="text-[10px] uppercase tracking-[.12em] text-muted">Platform fee</p><p className="mt-1 font-semibold text-accent">£{fee.toLocaleString('en-GB')}</p></div>
                   <div><p className="text-[10px] uppercase tracking-[.12em] text-muted">Specialist</p><p className="mt-1 font-semibold text-ink">£{payout.toLocaleString('en-GB')}</p></div>
-                  <div><p className="text-[10px] uppercase tracking-[.12em] text-muted">Payout</p><p className="mt-1 font-semibold text-ink">{booking.payout_status || '—'}</p></div>
+                  <div><p className="text-[10px] uppercase tracking-[.12em] text-muted">Payout</p><p className="mt-1 font-semibold text-ink">{booking.payout_status || '-'}</p></div>
                 </div>
               </div>
 

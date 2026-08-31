@@ -14,7 +14,7 @@ const STEP_MAP: Record<string, number> = {
 export default function ProfileStrength({ profile }: { profile: any }) {
   const { score, missing, nudge } = calculateProfileStrength(profile)
 
-  const colour = score >= 80 ? '#22C55E' : score >= 50 ? '#C9A96E' : '#E5E5E3'
+  const colour = score >= 80 ? '#22C55E' : score >= 50 ? '#555555' : '#E5E5E3'
 
   // Build quick-link buttons for incomplete sections
   const missingSteps = new Map<number, string>()

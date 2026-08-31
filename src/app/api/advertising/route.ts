@@ -17,12 +17,16 @@ export async function GET(req: NextRequest) {
   if (!slot?.enabled) return NextResponse.json({ advert: null })
 
   // A pinned advert (usually a direct deal placed by admin) wins the slot.
+  // It must still meet the same bar as rotation: paid or direct, approved,
+  // active and inside its start/end date window.
   let data: any = null
   if (slot.pinned_placement_id) {
     const { data: pinned } = await admin.from('ad_placements')
-      .select('id, brand_name, tagline, logo_url, placement, impression_count, status, review_status')
+      .select('id, brand_name, tagline, logo_url, placement, impression_count, status, review_status, payment_status, start_date, end_date')
       .eq('id', slot.pinned_placement_id).maybeSingle()
-    if (pinned && pinned.status === 'active' && pinned.review_status === 'approved') data = pinned
+    const withinWindow = Boolean(pinned && pinned.start_date && pinned.start_date <= today && (!pinned.end_date || pinned.end_date >= today))
+    if (pinned && pinned.status === 'active' && pinned.review_status === 'approved'
+      && ['paid', 'direct'].includes(pinned.payment_status) && withinWindow) data = pinned
   }
   if (!data) {
     const { data: found } = await admin.from('ad_placements')

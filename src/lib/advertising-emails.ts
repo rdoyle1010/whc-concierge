@@ -18,7 +18,7 @@ async function sendEmail(to: string, subject: string, html: string) {
   return true
 }
 
-const wrap = (content: string) => `<div style="font-family:Inter,-apple-system,sans-serif;max-width:600px;margin:0 auto;padding:40px 22px;color:#10283b"><p style="font-weight:700">Wellness House Collective</p>${content}<p style="margin-top:36px;font-size:12px;color:#7a858c">WHC Concierge · talent.wellnesshousecollective.co.uk</p></div>`
+const wrap = (content: string) => `<div style="font-family:Inter,-apple-system,sans-serif;max-width:600px;margin:0 auto;padding:40px 22px;color:#1a1a1a"><p style="font-weight:700">Wellness House Collective</p>${content}<p style="margin-top:36px;font-size:12px;color:#7a858c">WHC Concierge · talent.wellnesshousecollective.co.uk</p></div>`
 
 export async function sendAdvertSubmittedEmail(email: string, brand: string, placement: string, monthlyRate: number) {
   return sendEmail(email, `We received your ${placement} advert`, wrap(`

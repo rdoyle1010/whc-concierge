@@ -71,6 +71,12 @@ export async function POST(req: NextRequest) {
       if (!isAdPlacement(placement)) return NextResponse.json({ error: 'Choose a placement.' }, { status: 400 })
       const websiteUrl = String(body.websiteUrl || '').trim()
       if (websiteUrl && !/^https?:\/\//.test(websiteUrl)) return NextResponse.json({ error: 'The website link must start with http(s)://' }, { status: 400 })
+      // monthly_rate is stored in pounds, matching the Stripe webhook and
+      // sponsored-ad-confirm, which both write monthly_pence / 100.
+      const monthlyRate = Math.round(Number(body.monthlyRate))
+      if (body.monthlyRate !== undefined && String(body.monthlyRate).trim() !== '' && (!Number.isFinite(monthlyRate) || monthlyRate < 0)) {
+        return NextResponse.json({ error: 'The monthly rate must be a positive number of pounds.' }, { status: 400 })
+      }
       const { data: advert, error } = await admin.from('ad_placements').insert({
         brand_name: brandName,
         tagline: String(body.tagline || '').trim().slice(0, 160) || null,
@@ -78,6 +84,7 @@ export async function POST(req: NextRequest) {
         logo_url: String(body.logoUrl || '').trim() || null,
         contact_email: String(body.contactEmail || '').trim() || null,
         placement,
+        monthly_rate: String(body.monthlyRate ?? '').trim() !== '' && Number.isFinite(monthlyRate) && monthlyRate > 0 ? monthlyRate : null,
         status: 'active',
         payment_status: 'direct',
         review_status: 'approved',

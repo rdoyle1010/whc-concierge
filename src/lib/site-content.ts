@@ -66,7 +66,7 @@ export const DEFAULT_WEBSITE_CONTENT: WebsiteContent = {
   version: 1,
   brand: {
     headingFont: 'modern', bodyFont: 'system', accent: '#111111', ink: '#111111',
-    background: '#FFFFFF', surface: '#F5F4F2', buttonStyle: 'square', spacing: 'airy',
+    background: '#FFFFFF', surface: '#F5F5F5', buttonStyle: 'square', spacing: 'airy',
   },
   navigation: {
     jobs: 'Browse Roles', agency: 'Agency', academy: 'Academy', residency: 'Residency', blog: 'Journal',
@@ -141,13 +141,13 @@ export function parseWebsiteContent(value: unknown): WebsiteContent {
 export function websiteCssVariables(content: WebsiteContent): CSSProperties {
   const headings = {
     modern: 'var(--font-manrope), "Segoe UI", sans-serif',
-    editorial: 'var(--font-playfair), "Playfair Display", Georgia, serif',
+    editorial: 'var(--font-editorial), Georgia, serif',
     classic: 'Georgia, "Times New Roman", serif',
   }
   const bodies = {
-    system: 'var(--font-manrope), "Segoe UI", sans-serif',
-    clean: 'Arial, Helvetica, sans-serif',
-    friendly: 'Trebuchet MS, Arial, sans-serif',
+    system: 'var(--font-poppins), "Segoe UI", sans-serif',
+    clean: 'var(--font-manrope), "Segoe UI", sans-serif',
+    friendly: 'Arial, Helvetica, sans-serif',
   }
   const radii = { square: '0px', soft: '8px', pill: '999px' }
   const spaces = { compact: '0.75', balanced: '1', airy: '1.18' }

@@ -135,8 +135,8 @@ export default function JobApplyButtons({ roleId }: Props) {
       {!auth.loggedIn ? (
         <Link
           href={applyHref}
-          className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg text-[14px] font-semibold text-white transition-all hover:shadow-lg hover:shadow-[#C9A96E]/25"
-          style={{ backgroundColor: '#C9A96E' }}
+          className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg text-[14px] font-semibold text-white transition-all hover:shadow-lg hover:shadow-[#555555]/25"
+          style={{ backgroundColor: '#555555' }}
         >
           Apply for this role <ArrowRight size={16} />
         </Link>
@@ -145,8 +145,8 @@ export default function JobApplyButtons({ roleId }: Props) {
           type="button"
           onClick={handleApplyClick}
           disabled={applying}
-          className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg text-[14px] font-semibold text-white transition-all hover:shadow-lg hover:shadow-[#C9A96E]/25 disabled:opacity-70"
-          style={{ backgroundColor: '#C9A96E' }}
+          className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg text-[14px] font-semibold text-white transition-all hover:shadow-lg hover:shadow-[#555555]/25 disabled:opacity-70"
+          style={{ backgroundColor: '#555555' }}
         >
           {applying ? 'Preparing application...' : 'Review application'} <ArrowRight size={16} />
         </button>
@@ -165,8 +165,8 @@ export default function JobApplyButtons({ roleId }: Props) {
           onClick={handleSaveClick}
           className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg text-[14px] font-semibold transition-all bg-white"
           style={{
-            border: `1px solid ${saved ? '#C9A96E' : '#E5E5E5'}`,
-            color: saved ? '#C9A96E' : '#1a1a1a',
+            border: `1px solid ${saved ? '#555555' : '#E5E5E5'}`,
+            color: saved ? '#555555' : '#1a1a1a',
           }}
         >
           <Bookmark size={16} fill={saved ? 'currentColor' : 'none'} />

@@ -36,9 +36,15 @@ type Advert = {
   created_at: string
 }
 
+function formatPounds(pence: number) {
+  const pounds = pence / 100
+  return Number.isInteger(pounds) ? String(pounds) : pounds.toFixed(2)
+}
+
 export default function AdminAdSlotsPage() {
   const [slots, setSlots] = useState<Slot[]>([])
   const [adverts, setAdverts] = useState<Advert[]>([])
+  const [prices, setPrices] = useState<Record<string, number>>({})
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [busy, setBusy] = useState<string | null>(null)
@@ -49,6 +55,7 @@ export default function AdminAdSlotsPage() {
   const [websiteUrl, setWebsiteUrl] = useState('')
   const [contactEmail, setContactEmail] = useState('')
   const [placement, setPlacement] = useState('')
+  const [monthlyRate, setMonthlyRate] = useState('')
   const [endDate, setEndDate] = useState('')
   const [logoUrl, setLogoUrl] = useState('')
   const [uploading, setUploading] = useState(false)
@@ -64,6 +71,15 @@ export default function AdminAdSlotsPage() {
     } catch { setError('Could not load ad slots.') } finally { setLoading(false) }
   }
   useEffect(() => { load() }, [])
+
+  useEffect(() => {
+    // Live self-serve prices come from commercial_settings, the figures
+    // Stripe actually charges - not the hardcoded defaults.
+    fetch('/api/advertising/prices')
+      .then(res => res.json())
+      .then(json => { if (json?.prices) setPrices(json.prices) })
+      .catch(() => {})
+  }, [])
 
   async function setSlot(slotKey: string, payload: Record<string, unknown>) {
     if (busy) return
@@ -105,13 +121,13 @@ export default function AdminAdSlotsPage() {
     try {
       const res = await fetch('/api/admin/ad-slots', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'create_direct', brandName, tagline, websiteUrl, contactEmail, placement, endDate, logoUrl }),
+        body: JSON.stringify({ action: 'create_direct', brandName, tagline, websiteUrl, contactEmail, placement, endDate, logoUrl, monthlyRate }),
       })
       const json = await res.json()
       if (!res.ok) { setError(json.error || 'Could not create the advert.'); return }
       setAdverts(current => [json.advert, ...current])
       setFormOpen(false)
-      setBrandName(''); setTagline(''); setWebsiteUrl(''); setContactEmail(''); setPlacement(''); setEndDate(''); setLogoUrl('')
+      setBrandName(''); setTagline(''); setWebsiteUrl(''); setContactEmail(''); setPlacement(''); setMonthlyRate(''); setEndDate(''); setLogoUrl('')
     } catch { setError('Could not create the advert.') } finally { setCreating(false) }
   }
 
@@ -164,9 +180,9 @@ export default function AdminAdSlotsPage() {
                     return (
                       <div key={slot.slot_key} className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border px-3.5 py-3">
                         <div className="min-w-0">
-                          <p className="text-[13px] font-semibold text-ink inline-flex items-center gap-1.5"><Megaphone size={13} className="text-[#8a6d3b]" /> {slot.label}</p>
+                          <p className="text-[13px] font-semibold text-ink inline-flex items-center gap-1.5"><Megaphone size={13} className="text-[#1a1a1a]" /> {slot.label}</p>
                           <p className="text-[11.5px] text-muted mt-0.5">
-                            £{Math.round(slot.monthly_pence / 100)}/month self-serve
+                            £{formatPounds(prices[slot.slot_key] ?? slot.monthly_pence)}/month self-serve price
                             {slot.pinned_placement_id ? ` · pinned: ${advertName(slot.pinned_placement_id) || 'unknown advert'}` : candidates.length ? ` · ${candidates.length} advert${candidates.length === 1 ? '' : 's'} available` : ' · no adverts yet'}
                           </p>
                         </div>
@@ -254,6 +270,11 @@ export default function AdminAdSlotsPage() {
                   <label className="block text-[12px] font-semibold text-ink mb-1.5">Runs until (optional)</label>
                   <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} className="input-field text-[13px] w-full" />
                 </div>
+              </div>
+              <div className="mb-3">
+                <label className="block text-[12px] font-semibold text-ink mb-1.5">Monthly rate (£) (optional)</label>
+                <input type="number" min="0" step="1" value={monthlyRate} onChange={e => setMonthlyRate(e.target.value)} placeholder="What the brand pays per month" className="input-field text-[13px] w-full" />
+                <p className="text-[11px] text-muted mt-1">Counted in the monthly booked value on the Sponsored Ads page.</p>
               </div>
               <label className="block text-[12px] font-semibold text-ink mb-1.5">Logo</label>
               {logoUrl ? (

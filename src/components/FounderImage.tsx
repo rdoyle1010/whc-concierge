@@ -15,7 +15,7 @@ export default function FounderImage() {
         }}
         aria-label="Founder portrait placeholder"
       >
-        <span className="text-[64px] font-serif" style={{ color: '#C9A96E' }}>RD</span>
+        <span className="text-[64px] font-serif" style={{ color: '#555555' }}>RD</span>
       </div>
     )
   }

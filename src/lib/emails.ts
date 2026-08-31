@@ -179,7 +179,7 @@ export async function sendFeaturedExpiringEmail(email: string, name: string) {
 export async function sendFeaturedTalentEmail(email: string, employerName: string, talentName: string, headline: string) {
   await sendEmail(email, `Featured talent: ${talentName}`, wrapper(`
     <p style="font-size: 24px; font-weight: 700; margin-bottom: 16px;">New featured professional</p>
-    <p style="color: #6B7280;">Hi ${employerName || 'there'}, <strong>${talentName}</strong>${headline ? ` — ${headline}` : ''} is now featured on WHC Concierge.</p>
+    <p style="color: #6B7280;">Hi ${employerName || 'there'}, <strong>${talentName}</strong>${headline ? ` - ${headline}` : ''} is now featured on WHC Concierge.</p>
     <p style="color: #6B7280;">View their profile, check their experience against your live roles and add them to your shortlist.</p>
     <p style="margin-top: 24px;"><a href="https://talent.wellnesshousecollective.co.uk/employer/candidates" style="display: inline-block; background: #111; color: #fff; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600;">View featured talent</a></p>
   `))

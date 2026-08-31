@@ -14,7 +14,7 @@ export default function ProficiencyBadge({ level }: { level: string }) {
   const normalized = level?.toLowerCase() || 'beginner'
   const mapped = normalized === 'expert' ? 'master' : normalized === 'competent' ? 'intermediate' : normalized === 'basic' ? 'beginner' : normalized
   return (
-    <span className={STYLES[mapped] || STYLES.beginner} style={mapped === 'master' ? { backgroundColor: '#C9A96E' } : undefined}>
+    <span className={STYLES[mapped] || STYLES.beginner} style={mapped === 'master' ? { backgroundColor: '#555555' } : undefined}>
       {LABELS[normalized] || level}
     </span>
   )

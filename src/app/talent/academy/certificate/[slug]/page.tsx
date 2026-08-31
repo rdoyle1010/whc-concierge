@@ -60,9 +60,9 @@ export default function CertificatePage() {
       </div>
 
       <div className="max-w-3xl mx-auto px-6 py-10 print:py-0">
-        <div className="bg-white border-[3px] border-double p-12 md:p-16 text-center" style={{ borderColor: '#C9A96E' }}>
+        <div className="bg-white border-[3px] border-double p-12 md:p-16 text-center" style={{ borderColor: '#555555' }}>
           <p className="font-serif text-[20px] font-semibold text-black leading-none">Wellness House</p>
-          <p className="uppercase text-[9px] font-medium tracking-[0.42em] mt-1 mb-10" style={{ color: '#C9A96E' }}>Collective</p>
+          <p className="uppercase text-[9px] font-medium tracking-[0.42em] mt-1 mb-10" style={{ color: '#555555' }}>Collective</p>
 
           <p className="text-[11px] uppercase tracking-[0.3em] text-gray-400 mb-6">Certificate of Completion</p>
 
@@ -73,7 +73,7 @@ export default function CertificatePage() {
 
           <p className="text-[12px] text-gray-500 mb-10">including assessment passed at {enr.quiz_score}% &middot; {date}</p>
 
-          <div className="w-[80px] h-[1px] mx-auto mb-6" style={{ backgroundColor: '#C9A96E' }} />
+          <div className="w-[80px] h-[1px] mx-auto mb-6" style={{ backgroundColor: '#555555' }} />
           <p className="text-[11px] text-gray-400">Verification code: <span className="font-mono text-gray-600">{enr.certificate_code}</span> · anyone can verify this certificate at <span className="text-gray-600">talent.wellnesshousecollective.co.uk/certificates/verify</span></p>
           <p className="text-[10px] text-gray-400 mt-1">Verify this certificate at talent.wellnesshousecollective.co.uk/verify</p>
           <p className="text-[10px] text-gray-400 mt-0.5">Issued by Wellness House Collective</p>

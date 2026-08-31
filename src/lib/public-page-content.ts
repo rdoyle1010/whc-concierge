@@ -109,7 +109,7 @@ export const DEFAULT_PUBLIC_PAGES_CONTENT: PublicPagesContent = {
       hero: {
         eyebrow: 'Coming next',
         heading: 'Spa Platform is only the beginning.',
-        text: 'We are building the talent, flexible staffing and career-confidence platform for hospitality — starting with spa and wellness, then expanding into the departments every great property depends on.',
+        text: 'We are building the talent, flexible staffing and career-confidence platform for hospitality - starting with spa and wellness, then expanding into the departments every great property depends on.',
         image: image('https://images.unsplash.com/photo-1751972788348-3360f69603f6?auto=format&fit=crop&q=82&w=1800', 'Luxury hospitality destination'),
       },
       blocks: [

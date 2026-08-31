@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { Cormorant_Garamond, Manrope } from 'next/font/google'
+import { Cormorant_Garamond, Manrope, Poppins } from 'next/font/google'
 import './globals.css'
 import './public-clean.css'
 import './portal-clean.css'
@@ -17,6 +17,13 @@ const editorial = Cormorant_Garamond({
   variable: '--font-editorial',
   display: 'swap',
   weight: ['500', '600', '700'],
+})
+
+const poppins = Poppins({
+  subsets: ['latin'],
+  variable: '--font-poppins',
+  display: 'swap',
+  weight: ['400', '500', '600'],
 })
 
 export const metadata: Metadata = {
@@ -55,6 +62,10 @@ export const metadata: Metadata = {
   },
 }
 
+// Static pages inherit this: brand changes published in admin reach every
+// page within five minutes without a redeploy.
+export const revalidate = 300
+
 const organizationJsonLd = {
   '@context': 'https://schema.org',
   '@type': 'Organization',
@@ -65,12 +76,23 @@ const organizationJsonLd = {
   sameAs: [],
 }
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  // The Website & Brand settings (fonts, colours, button shape, spacing)
+  // apply to the whole platform, not just the homepage: the published brand
+  // is resolved once here and exposed as CSS variables on the root wrapper.
+  let brandStyle: React.CSSProperties = {}
+  try {
+    const { getWebsiteContent } = await import('@/lib/site-content-server')
+    const { websiteCssVariables } = await import('@/lib/site-content')
+    brandStyle = websiteCssVariables(await getWebsiteContent(false))
+  } catch { /* fall back to CSS defaults */ }
   return (
-    <html lang="en" className={`${manrope.variable} ${editorial.variable}`}>
+    <html lang="en" className={`${manrope.variable} ${editorial.variable} ${poppins.variable}`}>
       <body>
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }} />
-        {children}
+        <div className="website-theme min-h-screen" style={brandStyle}>
+          {children}
+        </div>
         <NewsletterSignupBar />
         <CookieConsent />
       </body>

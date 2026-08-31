@@ -130,14 +130,14 @@ export default function EmployerSettingsPage() {
     if (!user) return
     await fetch('/api/contact-notify', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: 'Account Deletion Request', email: user.email, subject: `Account Deletion Request — ${user.id}`, message: `User ${user.email} (ID: ${user.id}) has requested account deletion via employer settings.`, type: 'general' }),
+      body: JSON.stringify({ name: 'Account Deletion Request', email: user.email, subject: `Account Deletion Request - ${user.id}`, message: `User ${user.email} (ID: ${user.id}) has requested account deletion via employer settings.`, type: 'general' }),
     }).catch(() => {})
     setDeleteRequested(true)
     setShowDeleteRequest(false)
   }
 
   const handleDeleteAccount = async () => {
-    if (!confirm('Are you sure you want to delete your account? All your data — profile, job listings, applications, and messages — will be permanently removed. This cannot be undone.')) return
+    if (!confirm('Are you sure you want to delete your account? All your data - profile, job listings, applications, and messages - will be permanently removed. This cannot be undone.')) return
     if (!confirm('Final confirmation: delete your account and all associated data?')) return
 
     setDeleting(true)

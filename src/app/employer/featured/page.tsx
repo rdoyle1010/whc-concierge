@@ -93,9 +93,9 @@ export default function EmployerFeaturedPage() {
 
       <div className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
         <div className="dashboard-card !p-0 overflow-hidden">
-          <div className="bg-[#0b2f4d] px-7 py-8 text-white">
-            <div className="mb-5 flex h-11 w-11 items-center justify-center rounded-full bg-white/10 text-[#d4b477]"><Crown size={20} /></div>
-            <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#d4b477]">Featured Hotel / Employer</p>
+          <div className="bg-[#111111] px-7 py-8 text-white">
+            <div className="mb-5 flex h-11 w-11 items-center justify-center rounded-full bg-white/10 text-[#555555]"><Crown size={20} /></div>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#555555]">Featured Hotel / Employer</p>
             <div className="mt-2 flex flex-wrap items-end gap-3">
               <h2 className="!text-white text-[34px] font-semibold tracking-[-0.03em]">{priceLabel(setting)}</h2>
               <span className="mb-1 !text-white/70 text-[12px]">cancel through billing</span>
@@ -110,8 +110,8 @@ export default function EmployerFeaturedPage() {
               [Users, 'Talent announcement', 'Approved Talent receive a one-time in-app and email announcement when your Featured subscription first starts.'],
               [Megaphone, 'Extra role prominence', 'Your property brand is more visible wherever candidates are researching employers and opportunities.'],
             ].map(([Icon, title, copy]: any) => (
-              <div key={title} className="rounded-2xl border border-border bg-[#f7f5f0] p-5">
-                <Icon size={17} className="mb-3 text-[#9c7a42]" />
+              <div key={title} className="rounded-2xl border border-border bg-[#f5f5f5] p-5">
+                <Icon size={17} className="mb-3 text-[#1a1a1a]" />
                 <p className="text-[13px] font-semibold text-ink">{title}</p>
                 <p className="mt-1.5 text-[12px] leading-5 text-muted">{copy}</p>
               </div>
@@ -126,14 +126,14 @@ export default function EmployerFeaturedPage() {
               <>
                 <div className="mt-3 flex items-center gap-2 text-[18px] font-semibold text-ink"><Check size={18} className="text-emerald-600" /> Featured is active</div>
                 <p className="mt-2 text-[12px] leading-5 text-muted">{profile?.featured_until ? `Current paid period runs until ${new Date(profile.featured_until).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}.` : 'Your property is currently featured.'}</p>
-                <a href="/employer/billing" className="mt-5 inline-flex items-center gap-1 text-[12px] font-semibold text-[#0b2f4d]">Manage billing <ArrowRight size={13} /></a>
+                <a href="/employer/billing" className="mt-5 inline-flex items-center gap-1 text-[12px] font-semibold text-[#111111]">Manage billing <ArrowRight size={13} /></a>
               </>
             ) : (
               <>
                 <p className="mt-3 text-[18px] font-semibold text-ink">Standard visibility</p>
                 <p className="mt-2 text-[12px] leading-5 text-muted">Upgrade whenever you want. The price shown here is controlled by WHC Admin and is the exact amount sent to Stripe at checkout.</p>
-                <button type="button" onClick={startCheckout} disabled={!setting || checkoutLoading} className="mt-5 w-full rounded-xl bg-[#0b2f4d] px-5 py-3 text-[13px] font-semibold text-white transition-colors hover:bg-[#123f64] disabled:opacity-50">
-                  {checkoutLoading ? 'Opening secure checkout…' : `Go Featured — ${priceLabel(setting)}`}
+                <button type="button" onClick={startCheckout} disabled={!setting || checkoutLoading} className="mt-5 w-full rounded-xl bg-[#111111] px-5 py-3 text-[13px] font-semibold text-white transition-colors hover:bg-[#333333] disabled:opacity-50">
+                  {checkoutLoading ? 'Opening secure checkout…' : `Go Featured - ${priceLabel(setting)}`}
                 </button>
               </>
             )}

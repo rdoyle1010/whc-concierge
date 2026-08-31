@@ -1,5 +1,5 @@
 /**
- * WHC CONCIERGE — STRUCTURED TAXONOMY MATCHING ENGINE v2
+ * WHC CONCIERGE - STRUCTURED TAXONOMY MATCHING ENGINE v2
  *
  * Weights:
  *   Required Skills:          30%
@@ -205,7 +205,7 @@ function scoreEligibility(candidate: CandidateData, job: JobData): CategoryResul
     else if (diffDays >= -90) { points += 10; matched.push('Available within 90 days') }
     else { missing.push('Not available within 90 days') }
   } else {
-    points += 15 // No dates specified — assume reasonable
+    points += 15 // No dates specified - assume reasonable
     matched.push('Availability assumed')
   }
 

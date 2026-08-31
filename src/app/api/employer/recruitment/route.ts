@@ -19,7 +19,7 @@ async function alertAdmin(propertyName: string, request: { job_title: string; se
     ? `£${Number(request.salary_min || 0).toLocaleString()}${request.salary_max ? ` - £${Number(request.salary_max).toLocaleString()}` : ''}`
     : 'Not stated'
   const html = `<div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;padding:32px 20px;color:#17344d;">
-    <p style="font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:#9c7a42;">New managed search request</p>
+    <p style="font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:#1a1a1a;">New managed search request</p>
     <h2 style="font-family:Georgia,serif;font-weight:500;">${esc(propertyName)} wants WHC to run a search</h2>
     <table style="width:100%;border-collapse:collapse;font-size:14px;">
       <tr><td style="padding:6px 0;color:#9CA3AF;width:110px;">Service</td><td style="text-transform:capitalize;">${esc(request.service)}</td></tr>

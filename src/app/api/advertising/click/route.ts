@@ -8,7 +8,7 @@ export async function GET(req: NextRequest) {
     .select('id, website_url, click_count')
     .eq('id', id)
     .eq('status', 'active')
-    .eq('payment_status', 'paid')
+    .in('payment_status', ['paid', 'direct'])
     .eq('review_status', 'approved')
     .maybeSingle()
   if (!data?.website_url) return NextResponse.redirect(new URL('/', req.url))

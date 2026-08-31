@@ -33,21 +33,21 @@ function LearningFramework({ title }: { title: string }) {
     ['Apply it', 'Use the scenario or management lab to translate the lesson into your own spa.'],
   ]
   return (
-    <div className="mb-6 rounded-2xl border border-[#ded8cd] bg-[#f7f4ed] p-5">
+    <div className="mb-6 rounded-2xl border border-[#e0e0e0] bg-[#f5f5f5] p-5">
       <div className="mb-4 flex items-start justify-between gap-3">
         <div>
-          <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#9c7a42]">WHC learning framework</p>
-          <p className="mt-1 text-[14px] font-semibold text-[#10283b]">Do more than read {title.toLowerCase()}.</p>
+          <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#1a1a1a]">WHC learning framework</p>
+          <p className="mt-1 text-[14px] font-semibold text-[#1a1a1a]">Do more than read {title.toLowerCase()}.</p>
           <p className="mt-1 text-[12px] leading-5 text-[#687681]">Work through the reason, the method, the judgement calls and the practical application.</p>
         </div>
-        <Target size={20} className="mt-1 shrink-0 text-[#9c7a42]" />
+        <Target size={20} className="mt-1 shrink-0 text-[#1a1a1a]" />
       </div>
       <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
         {steps.map(([heading, copy], index) => (
-          <div key={heading} className="rounded-xl border border-[#e7e1d7] bg-white p-3.5">
-            <div className="mb-2 flex h-6 w-6 items-center justify-center rounded-full bg-[#10283b] text-[10px] font-semibold text-white">{index + 1}</div>
-            <p className="text-[11px] font-semibold text-[#10283b]">{heading}</p>
-            <p className="mt-1 text-[10px] leading-4 text-[#73808a]">{copy}</p>
+          <div key={heading} className="rounded-xl border border-[#e5e5e5] bg-white p-3.5">
+            <div className="mb-2 flex h-6 w-6 items-center justify-center rounded-full bg-[#1a1a1a] text-[10px] font-semibold text-white">{index + 1}</div>
+            <p className="text-[11px] font-semibold text-[#1a1a1a]">{heading}</p>
+            <p className="mt-1 text-[10px] leading-4 text-[#8a8a8a]">{copy}</p>
           </div>
         ))}
       </div>
@@ -63,12 +63,12 @@ function ManagedLessonContent({ content }: { content: string }) {
       {paragraphs.map((paragraph, index) => {
         const isLab = /lab|project|exercise|case|scenario/i.test(paragraph)
         return (
-          <section key={index} className={`rounded-xl border p-5 ${isLab ? 'border-[#c9a96e]/40 bg-[#faf6ed]' : 'border-[#e7e1d7] bg-white'}`}>
+          <section key={index} className={`rounded-xl border p-5 ${isLab ? 'border-[#555555]/40 bg-[#f5f5f5]' : 'border-[#e5e5e5] bg-white'}`}>
             <div className="mb-2 flex items-center gap-2">
-              <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[10px] font-semibold ${isLab ? 'bg-[#9c7a42] text-white' : 'bg-[#10283b] text-white'}`}>{index + 1}</span>
-              <h3 className="text-[15px] font-semibold text-[#10283b]">{isLab ? 'Management lab' : headings[Math.min(index, headings.length - 1)]}</h3>
+              <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[10px] font-semibold ${isLab ? 'bg-[#1a1a1a] text-white' : 'bg-[#1a1a1a] text-white'}`}>{index + 1}</span>
+              <h3 className="text-[15px] font-semibold text-[#1a1a1a]">{isLab ? 'Management lab' : headings[Math.min(index, headings.length - 1)]}</h3>
             </div>
-            <p className="text-[13px] leading-7 text-[#53636f] whitespace-pre-line">{paragraph}</p>
+            <p className="text-[13px] leading-7 text-[#4d4d4d] whitespace-pre-line">{paragraph}</p>
           </section>
         )
       })}
@@ -219,7 +219,7 @@ export default function CoursePlayerPage() {
       <div className="mb-4 flex flex-wrap items-center gap-1.5">
         <span className="rounded-full bg-ink px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-gold">{courseMeta(String(slug)).level}</span>
         <span className="rounded-full bg-gray-100 px-2.5 py-1 text-[10px] font-medium text-gray-600">{courseMeta(String(slug)).cpdHours} CPD hour{courseMeta(String(slug)).cpdHours === 1 ? '' : 's'}</span>
-        {courseMeta(String(slug)).skills.map(skill => <span key={skill} className="rounded-full bg-[#f5eddf] px-2.5 py-1 text-[10px] font-medium text-[#8a6d3b]">{skill}</span>)}
+        {courseMeta(String(slug)).skills.map(skill => <span key={skill} className="rounded-full bg-[#f5f5f5] px-2.5 py-1 text-[10px] font-medium text-[#1a1a1a]">{skill}</span>)}
       </div>
       <div className="flex items-center gap-3 mb-6">
         <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
@@ -277,9 +277,9 @@ export default function CoursePlayerPage() {
                 <>
                   <p className="text-[14px] text-gray-700 leading-[1.8] mb-5">{course.tagline}. This programme is designed to be used as a working management course rather than a reading exercise.</p>
                   <div className="grid gap-3 md:grid-cols-3 mb-6">
-                    <div className="rounded-xl bg-surface p-4"><Target size={15} className="mb-2 text-[#9c7a42]" /><p className="text-[11px] font-semibold text-ink">Understand the reason</p><p className="mt-1 text-[11px] leading-5 text-gray-600">Each module connects the topic to guest experience, people, profit or operational risk.</p></div>
-                    <div className="rounded-xl bg-surface p-4"><Lightbulb size={15} className="mb-2 text-[#9c7a42]" /><p className="text-[11px] font-semibold text-ink">Make the judgement</p><p className="mt-1 text-[11px] leading-5 text-gray-600">Consider trade-offs, unintended consequences and the numbers behind the decision.</p></div>
-                    <div className="rounded-xl bg-surface p-4"><FileText size={15} className="mb-2 text-[#9c7a42]" /><p className="text-[11px] font-semibold text-ink">Apply the learning</p><p className="mt-1 text-[11px] leading-5 text-gray-600">Use the management labs and final assessment to turn theory into a plan you could use at work.</p></div>
+                    <div className="rounded-xl bg-surface p-4"><Target size={15} className="mb-2 text-[#1a1a1a]" /><p className="text-[11px] font-semibold text-ink">Understand the reason</p><p className="mt-1 text-[11px] leading-5 text-gray-600">Each module connects the topic to guest experience, people, profit or operational risk.</p></div>
+                    <div className="rounded-xl bg-surface p-4"><Lightbulb size={15} className="mb-2 text-[#1a1a1a]" /><p className="text-[11px] font-semibold text-ink">Make the judgement</p><p className="mt-1 text-[11px] leading-5 text-gray-600">Consider trade-offs, unintended consequences and the numbers behind the decision.</p></div>
+                    <div className="rounded-xl bg-surface p-4"><FileText size={15} className="mb-2 text-[#1a1a1a]" /><p className="text-[11px] font-semibold text-ink">Apply the learning</p><p className="mt-1 text-[11px] leading-5 text-gray-600">Use the management labs and final assessment to turn theory into a plan you could use at work.</p></div>
                   </div>
                 </>
               )}
@@ -321,9 +321,9 @@ export default function CoursePlayerPage() {
 
                 <div className="relative mb-6 h-48 overflow-hidden rounded-2xl md:h-56">
                   <img src={MODULE_VISUALS[i % MODULE_VISUALS.length]} alt="" className="absolute inset-0 h-full w-full object-cover" />
-                  <div className="absolute inset-0 bg-gradient-to-t from-[#0b2f4d]/80 via-[#0b2f4d]/20 to-transparent" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-[#111111]/80 via-[#111111]/20 to-transparent" />
                   <div className="absolute bottom-0 left-0 right-0 p-5">
-                    <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#e8c98c]">Think like a spa professional</p>
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#d9d9d9]">Think like a spa professional</p>
                     <p className="mt-1 max-w-2xl text-[13px] leading-5 text-white/90">Connect the principle to what a guest, therapist, manager or owner would actually experience.</p>
                   </div>
                 </div>
@@ -331,8 +331,8 @@ export default function CoursePlayerPage() {
                 <LearningFramework title={lesson.title} />
 
                 {richLesson?.whyThisMatters && (
-                  <div className="bg-[#0b2f4d] rounded-xl p-4 mb-4">
-                    <p className="text-[10px] uppercase tracking-[0.16em] text-[#e8c98c] font-semibold mb-1.5">Why this matters</p>
+                  <div className="bg-[#111111] rounded-xl p-4 mb-4">
+                    <p className="text-[10px] uppercase tracking-[0.16em] text-[#d9d9d9] font-semibold mb-1.5">Why this matters</p>
                     <p className="text-[13.5px] text-white/90 leading-[1.75]">{richLesson.whyThisMatters}</p>
                   </div>
                 )}
@@ -351,7 +351,7 @@ export default function CoursePlayerPage() {
                 {richLesson ? (
                   <div className="space-y-5 mb-6">
                     {richLesson.sections.map((s, si) => (
-                      <section key={si} className="rounded-xl border border-[#e7e1d7] bg-white p-5">
+                      <section key={si} className="rounded-xl border border-[#e5e5e5] bg-white p-5">
                         <h3 className="font-serif text-[16px] font-semibold text-ink mb-2">{s.heading}</h3>
                         <p className="text-[14px] text-gray-700 leading-[1.85] whitespace-pre-line">{s.body}</p>
                       </section>
@@ -366,14 +366,14 @@ export default function CoursePlayerPage() {
                 )}
 
                 {richLesson?.scenario && (
-                  <div className="rounded-xl border border-[#e2d6b8] bg-[#faf6ec] p-5 mb-4">
-                    <p className="text-[10px] uppercase tracking-[0.16em] text-[#8a6d3b] font-semibold mb-1.5">Scenario - think it through</p>
+                  <div className="rounded-xl border border-[#e5e5e5] bg-[#faf6ec] p-5 mb-4">
+                    <p className="text-[10px] uppercase tracking-[0.16em] text-[#1a1a1a] font-semibold mb-1.5">Scenario - think it through</p>
                     <p className="text-[13px] text-gray-700 leading-[1.8] whitespace-pre-line">{richLesson.scenario}</p>
                   </div>
                 )}
 
                 {richLesson?.activity && (
-                  <div className="rounded-xl border border-[#cfdcd4] bg-[#f0f6f2] p-5 mb-4">
+                  <div className="rounded-xl border border-[#e0e0e0] bg-[#f5f5f5] p-5 mb-4">
                     <p className="text-[10px] uppercase tracking-[0.16em] text-[#2e5b45] font-semibold mb-1.5">Practical activity - do this</p>
                     <p className="text-[13px] text-gray-700 leading-[1.8] whitespace-pre-line">{richLesson.activity}</p>
                   </div>
@@ -434,7 +434,7 @@ export default function CoursePlayerPage() {
 
                 {!richLesson && (
                   <div className="mb-6 rounded-2xl border border-[#d9d1c3] bg-[#f8f4eb] p-5">
-                    <p className="text-[10px] font-semibold uppercase tracking-[0.15em] text-[#9c7a42]">Put this into practice</p>
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.15em] text-[#1a1a1a]">Put this into practice</p>
                     <p className="mt-2 text-[13px] leading-6 text-[#566671]">Use your current or most recent spa as the example. What is happening now? What would you change? What could go wrong? Which number or guest outcome would tell you whether your decision worked? Write one action, one owner and one measure before moving on.</p>
                   </div>
                 )}

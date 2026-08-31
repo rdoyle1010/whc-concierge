@@ -31,7 +31,7 @@ function ChipGrid({ items, selected, onToggle, search }: { items: any[]; selecte
 function ProficiencySelect({ value, onChange }: { value: string; onChange: (v: string) => void }) {
   return (
     <select value={value} onChange={e => onChange(e.target.value)}
-      className="input-field !py-1 !px-2 text-[11px] w-32 focus:border-[#C9A96E] focus:ring-[#C9A96E]/20">
+      className="input-field !py-1 !px-2 text-[11px] w-32 focus:border-[#555555] focus:ring-[#555555]/20">
       <option value="beginner">Beginner</option>
       <option value="intermediate">Intermediate</option>
       <option value="advanced">Advanced</option>
@@ -718,7 +718,7 @@ export default function OnboardingWizard() {
               <div className="relative w-16 h-16">
                 <svg className="w-16 h-16 -rotate-90" viewBox="0 0 36 36">
                   <circle cx="18" cy="18" r="16" fill="none" stroke="#E5E5E3" strokeWidth="3" />
-                  <circle cx="18" cy="18" r="16" fill="none" stroke={completionPct >= 80 ? '#16A34A' : completionPct >= 50 ? '#C9A96E' : '#E5E5E3'} strokeWidth="3" strokeDasharray={`${completionPct} ${100 - completionPct}`} strokeLinecap="round" />
+                  <circle cx="18" cy="18" r="16" fill="none" stroke={completionPct >= 80 ? '#16A34A' : completionPct >= 50 ? '#555555' : '#E5E5E3'} strokeWidth="3" strokeDasharray={`${completionPct} ${100 - completionPct}`} strokeLinecap="round" />
                 </svg>
                 <span className="absolute inset-0 flex items-center justify-center text-[13px] font-semibold text-ink">{completionPct}%</span>
               </div>

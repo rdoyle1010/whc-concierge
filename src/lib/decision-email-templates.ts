@@ -13,7 +13,7 @@ export function approvalEmailHtml({ applicantName, jobTitle, propertyName }: {
 
         <tr><td style="background: linear-gradient(145deg, #0a0a14, #1a1a2e); border-radius: 12px 12px 0 0; padding: 40px 40px 32px; text-align: center;">
           <p style="margin: 0 0 8px; font-size: 11px; letter-spacing: 3px; text-transform: uppercase; color: rgba(201, 169, 110, 0.6);">Great News</p>
-          <h1 style="margin: 0; font-size: 28px; font-weight: 700; color: #C9A96E; letter-spacing: -0.5px;">WHC Concierge</h1>
+          <h1 style="margin: 0; font-size: 28px; font-weight: 700; color: #555555; letter-spacing: -0.5px;">WHC Concierge</h1>
         </td></tr>
 
         <tr><td style="background-color: #FFFFFF; padding: 40px;">
@@ -51,7 +51,7 @@ export function approvalEmailHtml({ applicantName, jobTitle, propertyName }: {
 
         <tr><td style="background-color: #F9FAFB; border-radius: 0 0 12px 12px; padding: 28px 40px; border-top: 1px solid #E5E7EB;">
           <p style="margin: 0 0 4px; font-size: 12px; color: #9CA3AF;">Wellness House Collective</p>
-          <p style="margin: 0 0 12px; font-size: 12px; color: #9CA3AF;">United Kingdom &middot; <a href="mailto:rebecca.whc@outlook.com" style="color: #C9A96E; text-decoration: none;">rebecca.whc@outlook.com</a></p>
+          <p style="margin: 0 0 12px; font-size: 12px; color: #9CA3AF;">United Kingdom &middot; <a href="mailto:rebecca.whc@outlook.com" style="color: #555555; text-decoration: none;">rebecca.whc@outlook.com</a></p>
           <p style="margin: 0; font-size: 11px; color: #D1D5DB;">You received this email because you applied for a role on WHC Concierge.</p>
         </td></tr>
 
@@ -77,7 +77,7 @@ export function rejectionEmailHtml({ applicantName, jobTitle, propertyName }: {
 
         <tr><td style="background: linear-gradient(145deg, #0a0a14, #1a1a2e); border-radius: 12px 12px 0 0; padding: 40px 40px 32px; text-align: center;">
           <p style="margin: 0 0 8px; font-size: 11px; letter-spacing: 3px; text-transform: uppercase; color: rgba(201, 169, 110, 0.6);">Application Update</p>
-          <h1 style="margin: 0; font-size: 28px; font-weight: 700; color: #C9A96E; letter-spacing: -0.5px;">WHC Concierge</h1>
+          <h1 style="margin: 0; font-size: 28px; font-weight: 700; color: #555555; letter-spacing: -0.5px;">WHC Concierge</h1>
         </td></tr>
 
         <tr><td style="background-color: #FFFFFF; padding: 40px;">
@@ -111,7 +111,7 @@ export function rejectionEmailHtml({ applicantName, jobTitle, propertyName }: {
 
         <tr><td style="background-color: #F9FAFB; border-radius: 0 0 12px 12px; padding: 28px 40px; border-top: 1px solid #E5E7EB;">
           <p style="margin: 0 0 4px; font-size: 12px; color: #9CA3AF;">Wellness House Collective</p>
-          <p style="margin: 0 0 12px; font-size: 12px; color: #9CA3AF;">United Kingdom &middot; <a href="mailto:rebecca.whc@outlook.com" style="color: #C9A96E; text-decoration: none;">rebecca.whc@outlook.com</a></p>
+          <p style="margin: 0 0 12px; font-size: 12px; color: #9CA3AF;">United Kingdom &middot; <a href="mailto:rebecca.whc@outlook.com" style="color: #555555; text-decoration: none;">rebecca.whc@outlook.com</a></p>
           <p style="margin: 0; font-size: 11px; color: #D1D5DB;">You received this email because you applied for a role on WHC Concierge.</p>
         </td></tr>
 

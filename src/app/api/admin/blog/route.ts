@@ -37,18 +37,27 @@ function pickEditable(body: Record<string, unknown>) {
   return out
 }
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   const user = await requireAdmin()
   if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
 
+  // The admin UI sends per_page/page (per_page=200 by default).
+  const perPageRaw = Number(req.nextUrl.searchParams.get('per_page') || 200)
+  const pageRaw = Number(req.nextUrl.searchParams.get('page') || 1)
+  const perPage = Number.isFinite(perPageRaw) ? Math.min(Math.max(Math.floor(perPageRaw), 1), 500) : 200
+  const page = Number.isFinite(pageRaw) ? Math.max(Math.floor(pageRaw), 1) : 1
+  const from = (page - 1) * perPage
+  const to = from + perPage - 1
+
   const admin = createAdminClient()
-  const { data, error } = await admin
+  const { data, error, count } = await admin
     .from('blog_posts')
-    .select('*')
+    .select('*', { count: 'exact' })
     .order('created_at', { ascending: false })
+    .range(from, to)
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-  return NextResponse.json({ posts: data || [] })
+  return NextResponse.json({ posts: data || [], total: count ?? 0, page, per_page: perPage })
 }
 
 export async function POST(req: NextRequest) {

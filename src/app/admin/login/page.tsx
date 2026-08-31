@@ -38,11 +38,11 @@ export default function AdminLoginPage() {
   }
 
   return (
-    <main className="min-h-screen bg-[#f3f1ec] flex items-center justify-center px-6 py-12">
+    <main className="min-h-screen bg-[#f5f5f5] flex items-center justify-center px-6 py-12">
       <div className="w-full max-w-[430px]">
         <Wordmark />
         <div className="mt-10 dashboard-card !p-8">
-          <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[#0b2f4d] text-white mb-5">
+          <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[#111111] text-white mb-5">
             <ShieldCheck size={20} />
           </div>
           <p className="dashboard-eyebrow">WHC internal</p>
@@ -60,17 +60,17 @@ export default function AdminLoginPage() {
               <label className="dashboard-eyebrow block mb-1.5 !text-[9px]">Password</label>
               <div className="relative">
                 <input type={show ? 'text' : 'password'} required autoComplete="current-password" value={password} onChange={e => setPassword(e.target.value)} className="input-field pr-10" />
-                <button type="button" onClick={() => setShow(!show)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted hover:text-[#0b2f4d]" aria-label={show ? 'Hide password' : 'Show password'}>
+                <button type="button" onClick={() => setShow(!show)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted hover:text-[#111111]" aria-label={show ? 'Hide password' : 'Show password'}>
                   {show ? <EyeOff size={15} /> : <Eye size={15} />}
                 </button>
               </div>
             </div>
-            <button type="submit" disabled={loading} className="w-full rounded-xl bg-[#0b2f4d] hover:bg-[#123f64] text-white px-5 py-3 text-[13px] font-semibold transition-colors disabled:opacity-50">
+            <button type="submit" disabled={loading} className="w-full rounded-xl bg-[#111111] hover:bg-[#333333] text-white px-5 py-3 text-[13px] font-semibold transition-colors disabled:opacity-50">
               {loading ? 'Signing in...' : 'Sign in to Admin'}
             </button>
           </form>
 
-          <p className="text-[12px] text-muted mt-6">Talent or employer? <Link href="/login" className="text-[#0b2f4d] font-semibold hover:underline">Use the main sign in</Link>.</p>
+          <p className="text-[12px] text-muted mt-6">Talent or employer? <Link href="/login" className="text-[#111111] font-semibold hover:underline">Use the main sign in</Link>.</p>
         </div>
       </div>
     </main>

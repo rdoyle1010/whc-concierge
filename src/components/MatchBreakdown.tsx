@@ -41,7 +41,7 @@ const CATEGORIES: { key: keyof BreakdownData; label: string; weight: number }[] 
 
 function barColour(score: number): string {
   if (score >= 80) return '#22C55E'
-  if (score >= 60) return '#C9A96E'
+  if (score >= 60) return '#555555'
   if (score >= 40) return '#D97706'
   return '#E5E5E3'
 }

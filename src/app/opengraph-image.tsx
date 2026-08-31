@@ -1,7 +1,7 @@
 import { ImageResponse } from 'next/og'
 
 export const runtime = 'edge'
-export const alt = 'WHC Concierge — Luxury Wellness Careers Platform'
+export const alt = 'WHC Concierge - Luxury Wellness Careers Platform'
 export const size = { width: 1200, height: 630 }
 export const contentType = 'image/png'
 
@@ -19,7 +19,7 @@ export default function OGImage() {
           background: '#F8F7F5',
           padding: '80px',
           position: 'relative',
-          fontFamily: 'Georgia, "Times New Roman", serif',
+          fontFamily: 'Helvetica, Arial, sans-serif',
         }}
       >
         {/* Brand eyebrow */}
@@ -28,7 +28,7 @@ export default function OGImage() {
             display: 'flex',
             fontSize: 18,
             fontWeight: 600,
-            color: '#C9A96E',
+            color: '#555555',
             letterSpacing: '6px',
             textTransform: 'uppercase',
             marginBottom: 56,
@@ -43,7 +43,7 @@ export default function OGImage() {
             display: 'flex',
             width: 80,
             height: 1,
-            background: '#C9A96E',
+            background: '#555555',
             marginBottom: 40,
           }}
         />

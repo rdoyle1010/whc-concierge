@@ -3,8 +3,8 @@ import { MapPin, Star } from 'lucide-react'
 export default function RoleListingMockup() {
   return (
     <div className="mx-auto w-full max-w-sm overflow-hidden rounded-3xl border border-border bg-white shadow-[0_18px_55px_rgba(16,40,59,.08)]">
-      <div className="relative min-h-[170px] overflow-hidden bg-[#0b2f4d]">
-        <div className="absolute inset-0 bg-gradient-to-br from-[#0b2f4d] via-[#123f64] to-[#765d34]" />
+      <div className="relative min-h-[170px] overflow-hidden bg-[#111111]">
+        <div className="absolute inset-0 bg-gradient-to-br from-[#111111] via-[#333333] to-[#1a1a1a]" />
         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-black/15" />
         <div className="absolute left-4 top-4"><span className="badge-gold">Gold</span></div>
         <div className="absolute inset-x-0 bottom-0 p-5 text-white">
@@ -24,14 +24,14 @@ export default function RoleListingMockup() {
             <h3 className="text-[22px] font-semibold leading-[1.08] tracking-[-.03em] text-ink">Senior Spa Therapist</h3>
             <p className="mt-2 text-[12px] text-muted">Full time · £34k–£38k</p>
           </div>
-          <div className="shrink-0 rounded-2xl border border-[#e4dccd] bg-[#fcfaf5] px-3 py-2 text-center">
+          <div className="shrink-0 rounded-2xl border border-[#e5e5e5] bg-[#fafafa] px-3 py-2 text-center">
             <div className="text-[26px] font-semibold tracking-[-.04em] text-[#287548]">94%</div>
             <div className="text-[9px] font-semibold uppercase tracking-[.08em] text-[#287548]">Excellent</div>
           </div>
         </div>
 
-        <div className="mb-4 rounded-2xl border border-[#e6dece] bg-[#fcfaf5] p-4">
-          <p className="mb-1 text-[9px] font-semibold uppercase tracking-[.14em] text-[#9c7a42]">Why this role is showing</p>
+        <div className="mb-4 rounded-2xl border border-[#e5e5e5] bg-[#fafafa] p-4">
+          <p className="mb-1 text-[9px] font-semibold uppercase tracking-[.14em] text-[#1a1a1a]">Why this role is showing</p>
           <p className="text-[11px] leading-5 text-secondary">Your treatment skills, qualifications, experience and location align strongly with this role.</p>
         </div>
 

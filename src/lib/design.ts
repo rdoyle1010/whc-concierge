@@ -2,7 +2,7 @@ export const colors = {
   black: '#0A0A0A',
   white: '#FFFFFF',
   background: '#FAFAF9',
-  gold: '#C9A96E',
+  gold: '#555555',
   success: '#22C55E',
   warning: '#F59E0B',
   error: '#EF4444',

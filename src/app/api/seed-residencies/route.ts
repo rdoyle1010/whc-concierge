@@ -24,7 +24,7 @@ const SEED_RESIDENCIES = [
     profile_photo_url: 'https://images.pexels.com/photos/6724313/pexels-photo-6724313.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&dpr=1',
   },
   {
-    primary_specialism: 'Senior Spa Therapist — Luxury Facial & Body Specialist',
+    primary_specialism: 'Senior Spa Therapist - Luxury Facial & Body Specialist',
     bio: '12 years\' experience across five-star London hotels and destination spas. CIDESCO and CIBTAC qualified with advanced training in Biologique Recherche, 111SKIN, and Dr Barbara Sturm protocols. I\'ve worked at five-star London hotels and luxury country estate spas. My speciality is results-driven facial treatments and luxury body rituals. Available for short-term cover, seasonal placements, and product launch residencies.',
     secondary_specialisms: ['Advanced Facials', 'Body Rituals', 'Skincare Consultations', 'Aromatherapy', 'Hot Stone Massage'],
     qualifications: ['CIDESCO', 'CIBTAC'],
@@ -63,7 +63,7 @@ export async function GET() {
     .select('id', { count: 'exact', head: true })
 
   if ((count || 0) > 0) {
-    return NextResponse.json({ message: `Table already has ${count} rows — skipping seed`, count })
+    return NextResponse.json({ message: `Table already has ${count} rows - skipping seed`, count })
   }
 
   const { data, error } = await supabase

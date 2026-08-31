@@ -23,7 +23,7 @@ const FIELDS: { key: string; label: string; weight: number; check: (p: any) => b
 ]
 
 export function calculateProfileStrength(profile: any): StrengthResult {
-  if (!profile) return { score: 0, missing: FIELDS.map(f => f.label), nudge: 'Get started by completing your profile — employers prefer candidates with complete profiles.' }
+  if (!profile) return { score: 0, missing: FIELDS.map(f => f.label), nudge: 'Get started by completing your profile - employers prefer candidates with complete profiles.' }
 
   let earned = 0
   const missing: string[] = []
@@ -43,18 +43,18 @@ export function calculateProfileStrength(profile: any): StrengthResult {
 }
 
 function buildNudge(score: number, missing: string[]): string {
-  if (score >= 100) return 'Your profile is fully complete — you\'re at the top of employer searches.'
-  if (missing.length === 0) return 'Great work — your profile is looking strong.'
+  if (score >= 100) return 'Your profile is fully complete - you\'re at the top of employer searches.'
+  if (missing.length === 0) return 'Great work - your profile is looking strong.'
 
   // Pick the highest-impact missing items (up to 2)
   const highImpact = missing.slice(0, 2)
   const target = Math.min(100, score + highImpact.length * 10)
   const items = highImpact.map(m => m.toLowerCase()).join(' and ')
 
-  if (score >= 80) return `Add ${items} to reach ${target}% — you're almost there.`
-  if (score >= 60) return `Add ${items} to reach ${target}% — employers are 3x more likely to shortlist complete profiles.`
-  if (score >= 40) return `Add ${items} to boost your score — complete profiles get significantly more matches.`
-  return `Start with ${items} — even a few details help employers find you.`
+  if (score >= 80) return `Add ${items} to reach ${target}% - you're almost there.`
+  if (score >= 60) return `Add ${items} to reach ${target}% - employers are 3x more likely to shortlist complete profiles.`
+  if (score >= 40) return `Add ${items} to boost your score - complete profiles get significantly more matches.`
+  return `Start with ${items} - even a few details help employers find you.`
 }
 
 export const PROFILE_FIELDS = FIELDS

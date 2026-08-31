@@ -4,17 +4,19 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        ink: '#10283b',
-        body: '#4f5d67',
-        muted: '#8a949b',
-        secondary: '#65717a',
-        surface: '#f7f8fa',
-        border: '#e3e7eb',
+        // WHC brand: monochrome editorial - black ink, white ground, soft
+        // grey surfaces. Matches wellnesshousecollective.co.uk.
+        ink: '#1a1a1a',
+        body: '#3d3d3d',
+        muted: '#8a8a8a',
+        secondary: '#555555',
+        surface: '#f5f5f5',
+        border: '#e5e5e5',
         parchment: '#ffffff',
-        accent: '#0b2f4d',
+        accent: '#111111',
         success: '#22C55E',
-        gold: { DEFAULT: '#0b2f4d', light: '#315675', dark: '#07243b' },
-        navy: { DEFAULT: '#0b2f4d', light: '#123f64', dark: '#07243b' },
+        gold: { DEFAULT: '#111111', light: '#333333', dark: '#000000' },
+        navy: { DEFAULT: '#111111', light: '#333333', dark: '#000000' },
         match: {
           perfect: { bg: '#dcfce7', text: '#166534' },
           strong: { bg: '#dbeafe', text: '#1e40af' },
@@ -23,8 +25,10 @@ module.exports = {
         },
       },
       fontFamily: {
-        sans: ['var(--font-manrope)', 'Manrope', 'Segoe UI', 'sans-serif'],
-        serif: ['var(--font-editorial)', 'Georgia', 'serif'],
+        sans: ['var(--font-poppins)', 'Poppins', 'Segoe UI', 'sans-serif'],
+        // The platform's display face is Manrope, as on the main WHC site.
+        // Legacy font-serif usages resolve to it so nothing looks templated.
+        serif: ['var(--font-manrope)', 'Manrope', 'Segoe UI', 'sans-serif'],
       },
       fontSize: { eyebrow: ['11px', { letterSpacing: '0.08em', lineHeight: '1.4' }] },
     },

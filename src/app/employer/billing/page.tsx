@@ -87,23 +87,23 @@ export default function EmployerBillingPage() {
         <div className="dashboard-card"><div className="text-muted mb-2"><Briefcase size={16} /></div><p className="text-[24px] font-semibold text-ink">{listings.length}</p><p className="text-[11px] text-muted">Total job posts</p></div>
         <div className="dashboard-card"><div className="text-muted mb-2"><CreditCard size={16} /></div><p className="text-[24px] font-semibold text-ink">{listings.filter(l => l.is_live).length}</p><p className="text-[11px] text-muted">Active listings</p></div>
         <div className="dashboard-card"><p className="text-[14px] font-medium text-ink mb-1">Job tier</p><p className={`text-[13px] font-medium ${tierClass(profile?.subscription_tier || 'Standard')}`}>{profile?.subscription_tier || 'Standard'}</p></div>
-        <div className={`dashboard-card ${featuredActive ? 'border-[#c9a96e]' : ''}`}><div className="text-[#9c7a42] mb-2"><Star size={16} fill={featuredActive ? 'currentColor' : 'none'} /></div><p className="text-[14px] font-semibold text-ink">{featuredActive ? 'Featured active' : 'Standard profile'}</p><p className="text-[11px] text-muted mt-1">{featuredActive && profile?.featured_until ? `Until ${new Date(profile.featured_until).toLocaleDateString('en-GB')}` : featuredPrice || 'Featured upgrade available'}</p></div>
+        <div className={`dashboard-card ${featuredActive ? 'border-[#555555]' : ''}`}><div className="text-[#1a1a1a] mb-2"><Star size={16} fill={featuredActive ? 'currentColor' : 'none'} /></div><p className="text-[14px] font-semibold text-ink">{featuredActive ? 'Featured active' : 'Standard profile'}</p><p className="text-[11px] text-muted mt-1">{featuredActive && profile?.featured_until ? `Until ${new Date(profile.featured_until).toLocaleDateString('en-GB')}` : featuredPrice || 'Featured upgrade available'}</p></div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
         <div className="dashboard-card lg:col-span-2">
           <p className="text-[14px] font-medium text-ink mb-6">Payment Methods</p>
-          <div className="flex items-center justify-between p-4 border border-border rounded-xl bg-[#f7f5f0]">
-            <div className="flex items-center gap-3"><div className="w-10 h-10 rounded-lg bg-[#9c7a42]/10 flex items-center justify-center text-[#9c7a42]"><CreditCard size={18} /></div><div><p className="text-[13px] font-medium text-ink">Stripe Payment Methods</p><p className="text-[12px] text-muted mt-0.5">Manage stored cards and active subscriptions</p></div></div>
+          <div className="flex items-center justify-between p-4 border border-border rounded-xl bg-[#f5f5f5]">
+            <div className="flex items-center gap-3"><div className="w-10 h-10 rounded-lg bg-[#1a1a1a]/10 flex items-center justify-center text-[#1a1a1a]"><CreditCard size={18} /></div><div><p className="text-[13px] font-medium text-ink">Stripe Payment Methods</p><p className="text-[12px] text-muted mt-0.5">Manage stored cards and active subscriptions</p></div></div>
             {profile?.stripe_customer_id ? <button type="button" onClick={handleManagePayment} disabled={redirecting} className="btn-secondary text-[12px] flex items-center gap-1">{redirecting ? 'Redirecting...' : 'Manage'}<ExternalLink size={12} /></button> : <p className="text-[12px] text-muted text-right max-w-[200px]">Billing portal becomes available after your first payment.</p>}
           </div>
         </div>
 
-        <div className="dashboard-card border-[#c9a96e]/50">
-          <div className="flex items-center gap-2 text-[#9c7a42]"><Star size={16} /><p className="text-[14px] font-semibold">Featured Hotel</p></div>
+        <div className="dashboard-card border-[#555555]/50">
+          <div className="flex items-center gap-2 text-[#1a1a1a]"><Star size={16} /><p className="text-[14px] font-semibold">Featured Hotel</p></div>
           <p className="mt-3 text-[13px] text-ink">{featuredActive ? 'Your property currently receives premium visibility.' : 'Put your property in front of approved WHC Talent.'}</p>
           <p className="mt-2 text-[12px] leading-5 text-muted">{featuredPrice ? `Current new-subscription price: ${featuredPrice}.` : ''} WHC Admin can change this price without a deployment.</p>
-          <Link href="/employer/featured" className="mt-5 inline-flex rounded-xl bg-[#0b2f4d] px-4 py-2.5 text-[12px] font-semibold text-white">{featuredActive ? 'View Featured status' : 'Get Featured'}</Link>
+          <Link href="/employer/featured" className="mt-5 inline-flex rounded-xl bg-[#111111] px-4 py-2.5 text-[12px] font-semibold text-white">{featuredActive ? 'View Featured status' : 'Get Featured'}</Link>
         </div>
       </div>
 
@@ -115,7 +115,7 @@ export default function EmployerBillingPage() {
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead><tr className="border-b border-border"><th className="text-left text-[12px] font-medium text-muted py-3">Job Title</th><th className="text-left text-[12px] font-medium text-muted py-3">Tier</th><th className="text-left text-[12px] font-medium text-muted py-3">Posted Date</th><th className="text-left text-[12px] font-medium text-muted py-3">Amount</th><th className="text-left text-[12px] font-medium text-muted py-3">Status</th></tr></thead>
-              <tbody>{listings.map(job => <tr key={job.id} className="border-b border-border hover:bg-neutral-50/50 transition-colors"><td className="text-[13px] text-ink font-medium py-3">{job.title}</td><td className="text-[13px] py-3"><span className={`text-[11px] font-medium px-2 py-1 rounded-full ${tierClass(job.tier || 'Standard')}`}>{job.tier || '—'}</span></td><td className="text-[13px] text-muted py-3">{job.posted_date ? new Date(job.posted_date).toLocaleDateString('en-GB', { year: 'numeric', month: 'short', day: 'numeric' }) : '—'}</td><td className="text-[13px] font-medium text-ink py-3">{jobAmount(job)}</td><td className="text-[13px] py-3"><span className={`text-[11px] font-medium px-2 py-1 rounded-full ${job.is_live ? 'bg-emerald-50 text-emerald-700' : 'bg-neutral-100 text-muted'}`}>{job.is_live ? 'Live' : 'Closed'}</span></td></tr>)}</tbody>
+              <tbody>{listings.map(job => <tr key={job.id} className="border-b border-border hover:bg-neutral-50/50 transition-colors"><td className="text-[13px] text-ink font-medium py-3">{job.title}</td><td className="text-[13px] py-3"><span className={`text-[11px] font-medium px-2 py-1 rounded-full ${tierClass(job.tier || 'Standard')}`}>{job.tier || '-'}</span></td><td className="text-[13px] text-muted py-3">{job.posted_date ? new Date(job.posted_date).toLocaleDateString('en-GB', { year: 'numeric', month: 'short', day: 'numeric' }) : '-'}</td><td className="text-[13px] font-medium text-ink py-3">{jobAmount(job)}</td><td className="text-[13px] py-3"><span className={`text-[11px] font-medium px-2 py-1 rounded-full ${job.is_live ? 'bg-emerald-50 text-emerald-700' : 'bg-neutral-100 text-muted'}`}>{job.is_live ? 'Live' : 'Closed'}</span></td></tr>)}</tbody>
             </table>
           </div>
         )}

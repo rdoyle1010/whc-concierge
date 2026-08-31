@@ -6,7 +6,8 @@ export const alt = 'WHC Blog'
 export const size = { width: 1200, height: 630 }
 export const contentType = 'image/png'
 
-export default async function BlogOGImage({ params }: { params: { slug: string } }) {
+export default async function BlogOGImage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params
   let title = 'WHC Blog'
   let category = ''
 
@@ -18,7 +19,8 @@ export default async function BlogOGImage({ params }: { params: { slug: string }
     const { data: post } = await supabase
       .from('blog_posts')
       .select('title, category')
-      .eq('slug', params.slug)
+      .eq('slug', slug)
+      .eq('status', 'published')
       .single()
 
     if (post) {
@@ -43,7 +45,7 @@ export default async function BlogOGImage({ params }: { params: { slug: string }
           <div
             style={{
               fontSize: 20, fontWeight: 600, letterSpacing: '2px',
-              color: '#C9A96E', textTransform: 'uppercase' as const,
+              color: '#555555', textTransform: 'uppercase' as const,
               display: 'flex',
             }}
           >
@@ -79,7 +81,7 @@ export default async function BlogOGImage({ params }: { params: { slug: string }
 
         {/* Bottom: URL + decorative line */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-          <div style={{ width: 40, height: 2, background: '#C9A96E', display: 'flex' }} />
+          <div style={{ width: 40, height: 2, background: '#555555', display: 'flex' }} />
           <div
             style={{
               fontSize: 14, color: 'rgba(255, 255, 255, 0.25)',

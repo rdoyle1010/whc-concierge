@@ -23,13 +23,15 @@ export default async function BlogPostPage(props: { params: Promise<{ slug: stri
 
   if (!post) notFound()
 
+  const publishedDate = post.published_at || post.created_at
+
   const jsonLd = generateBlogJsonLd({
     title: post.title,
     slug: post.slug,
     excerpt: post.excerpt || post.content?.slice(0, 160),
     category: post.category,
-    publishedAt: post.created_at,
-    updatedAt: post.updated_at,
+    publishedAt: publishedDate,
+    updatedAt: publishedDate,
     authorName: post.author,
   })
 
@@ -45,7 +47,7 @@ export default async function BlogPostPage(props: { params: Promise<{ slug: stri
           {post.category && <span className="text-gold/60 text-sm uppercase tracking-wider">{post.category}</span>}
           <h1 className="text-3xl md:text-5xl font-serif font-bold text-white mt-2 mb-4">{post.title}</h1>
           <p className="text-white/50 text-sm">
-            {post.author} &middot; {new Date(post.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}
+            {post.author} &middot; {new Date(publishedDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}
           </p>
         </div>
       </section>

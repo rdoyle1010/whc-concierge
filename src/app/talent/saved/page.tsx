@@ -53,7 +53,7 @@ export default function SavedJobsPage() {
             return (
               <div key={saved.id} className="bg-white border border-border rounded-xl p-5 hover:shadow-sm transition-all">
                 <div className="flex items-center justify-between mb-3">
-                  <span className={`text-[10px] font-semibold px-2.5 py-1 rounded-full ${job.tier === 'Platinum' ? 'bg-ink text-white' : job.tier === 'Gold' ? 'bg-[#FDF6EC] text-[#C9A96E]' : 'bg-surface text-muted'}`}>{job.tier || 'Standard'}</span>
+                  <span className={`text-[10px] font-semibold px-2.5 py-1 rounded-full ${job.tier === 'Platinum' ? 'bg-ink text-white' : job.tier === 'Gold' ? 'bg-[#FDF6EC] text-[#555555]' : 'bg-surface text-muted'}`}>{job.tier || 'Standard'}</span>
                   <button type="button" onClick={() => removeSaved(saved.job_id)}
                     className="p-1 text-muted hover:text-red-500 transition-colors" title="Remove">
                     <Trash2 size={14} />

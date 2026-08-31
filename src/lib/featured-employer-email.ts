@@ -14,7 +14,7 @@ export async function sendFeaturedEmployerEmail(email: string, talentName: strin
       <p style="font-size:24px;font-weight:700;margin-bottom:16px;">A featured property to discover</p>
       <p style="color:#6B7280;">Hi ${talentName || 'there'}, <strong>${propertyName}</strong>${location ? ` in ${location}` : ''} is now featured on WHC Concierge.</p>
       <p style="color:#6B7280;">Explore the property, view its live opportunities and decide whether it could be your next move.</p>
-      <p style="margin-top:24px;"><a href="https://talent.wellnesshousecollective.co.uk/properties" style="display:inline-block;background:#0b2f4d;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600;">View featured properties</a></p>
+      <p style="margin-top:24px;"><a href="https://talent.wellnesshousecollective.co.uk/properties" style="display:inline-block;background:#111111;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600;">View featured properties</a></p>
       <p style="margin-top:40px;font-size:12px;color:#9CA3AF;">Wellness House Collective &middot; wellnesshousecollective.co.uk</p>
     </div>
   `

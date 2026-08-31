@@ -126,9 +126,9 @@ export default function TalentPendingInterviewActions() {
   if (!pending.length && !error) return null
 
   return (
-    <section className="mb-7 overflow-hidden rounded-[22px] border border-[#cfb77f] bg-white shadow-[0_16px_40px_rgba(22,40,55,0.07)]">
-      <div className="border-b border-[#e8deca] bg-[#fff8e9] px-5 py-4">
-        <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#9c7a42]">Action required</p>
+    <section className="mb-7 overflow-hidden rounded-[22px] border border-[#555555] bg-white shadow-[0_16px_40px_rgba(22,40,55,0.07)]">
+      <div className="border-b border-[#e5e5e5] bg-[#fff8e9] px-5 py-4">
+        <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#1a1a1a]">Action required</p>
         <h2 className="mt-1 text-[24px] font-semibold tracking-[-.025em] text-ink">Confirm your next interview</h2>
         <p className="mt-1 max-w-2xl text-[12px] leading-5 text-secondary">Select the interview time you want, add a note to the property if needed, then click the confirmation button. Your interview is not confirmed until you press confirm.</p>
       </div>
@@ -145,7 +145,7 @@ export default function TalentPendingInterviewActions() {
               <div key={interview.id} className="rounded-2xl border border-[#ded6c7] bg-[#fcfbf8] p-5">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                   <div>
-                    <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#a48752]">Stage {interview.round_number} of 3</p>
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#1a1a1a]">Stage {interview.round_number} of 3</p>
                     <h3 className="mt-1 text-[21px] font-semibold text-ink">{label}</h3>
                     <p className="mt-1 text-[13px] font-medium text-[#17344d]">{item.job?.job_title || 'Role'}</p>
                     <p className="mt-0.5 text-[11px] text-muted">{item.employer?.property_name || item.employer?.company_name || 'Property'}</p>
@@ -154,7 +154,7 @@ export default function TalentPendingInterviewActions() {
                 </div>
 
                 <div className="mt-4 flex items-center gap-2 rounded-xl bg-white px-3 py-2 text-[12px] text-secondary">
-                  <CalendarDays size={14} className="text-[#9c7a42]" />
+                  <CalendarDays size={14} className="text-[#1a1a1a]" />
                   <span><strong className="text-ink">Format:</strong> {methodLabel(interview.interview_method)}</span>
                 </div>
 
@@ -168,7 +168,7 @@ export default function TalentPendingInterviewActions() {
                           key={slot}
                           type="button"
                           onClick={() => setSelectedSlots(current => ({ ...current, [interview.id]: slot }))}
-                          className={`rounded-xl border px-4 py-3 text-left transition ${isSelected ? 'border-[#0b2f4d] bg-[#f3f7f8] shadow-sm' : 'border-[#cdb98f] bg-white hover:border-[#9c7a42]'}`}
+                          className={`rounded-xl border px-4 py-3 text-left transition ${isSelected ? 'border-[#111111] bg-[#f3f7f8] shadow-sm' : 'border-[#555555] bg-white hover:border-[#1a1a1a]'}`}
                         >
                           <span className="flex items-center gap-2 text-[12px] font-semibold text-[#17344d]"><Clock size={13} />{when(slot)}</span>
                           <span className={`mt-2 flex items-center gap-1.5 text-[11px] font-semibold ${isSelected ? 'text-emerald-700' : 'text-muted'}`}><CheckCircle size={13} />{isSelected ? 'Selected' : 'Click to select this time'}</span>
@@ -180,7 +180,7 @@ export default function TalentPendingInterviewActions() {
 
                 <div className="mt-4">
                   <label htmlFor={`note-${interview.id}`} className="mb-2 flex items-center gap-2 text-[11px] font-semibold text-ink">
-                    <MessageSquare size={13} className="text-[#9c7a42]" />2. Add a note to the property <span className="font-normal text-muted">(optional)</span>
+                    <MessageSquare size={13} className="text-[#1a1a1a]" />2. Add a note to the property <span className="font-normal text-muted">(optional)</span>
                   </label>
                   <textarea
                     id={`note-${interview.id}`}
@@ -189,7 +189,7 @@ export default function TalentPendingInterviewActions() {
                     maxLength={1500}
                     rows={3}
                     placeholder="For example: Thank you, I look forward to meeting you."
-                    className="w-full rounded-xl border border-[#d8cdb8] bg-white px-3 py-3 text-[12px] text-ink outline-none transition placeholder:text-muted focus:border-[#9c7a42]"
+                    className="w-full rounded-xl border border-[#dddddd] bg-white px-3 py-3 text-[12px] text-ink outline-none transition placeholder:text-muted focus:border-[#1a1a1a]"
                   />
                 </div>
 
@@ -199,7 +199,7 @@ export default function TalentPendingInterviewActions() {
                     type="button"
                     disabled={!selected || busy === interview.id}
                     onClick={() => accept(interview.id)}
-                    className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-[#0b2f4d] px-5 py-3 text-[12px] font-semibold text-white transition hover:bg-[#133d5e] disabled:cursor-not-allowed disabled:opacity-40"
+                    className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-[#111111] px-5 py-3 text-[12px] font-semibold text-white transition hover:bg-[#133d5e] disabled:cursor-not-allowed disabled:opacity-40"
                   >
                     <CheckCircle size={15} />
                     {busy === interview.id ? 'Confirming interview…' : action}
@@ -208,7 +208,7 @@ export default function TalentPendingInterviewActions() {
                     type="button"
                     disabled={busy === interview.id}
                     onClick={() => requestAlternative(interview.id)}
-                    className="mt-2 block text-[11px] font-semibold text-[#9c7a42] underline disabled:opacity-40 sm:ml-3 sm:mt-0 sm:inline-block"
+                    className="mt-2 block text-[11px] font-semibold text-[#1a1a1a] underline disabled:opacity-40 sm:ml-3 sm:mt-0 sm:inline-block"
                   >
                     None of these times work - request alternatives
                   </button>

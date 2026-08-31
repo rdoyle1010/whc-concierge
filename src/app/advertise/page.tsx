@@ -62,8 +62,14 @@ const audienceCopy: Record<AdPlacementKey, { audience: string; where: string; be
 
 type Confirmation = { brandName: string; placement: string; reviewStatus: string }
 
+function formatPounds(pence: number) {
+  const pounds = pence / 100
+  return Number.isInteger(pounds) ? String(pounds) : pounds.toFixed(2)
+}
+
 export default function AdvertisePage() {
   const [placement, setPlacement] = useState<AdPlacementKey>('homepage_spotlight')
+  const [prices, setPrices] = useState<Record<string, number>>({})
   const [form, setForm] = useState({ brandName: '', contactEmail: '', tagline: '', websiteUrl: '', logoUrl: '' })
   const [termsAccepted, setTermsAccepted] = useState(false)
   const [busy, setBusy] = useState(false)
@@ -72,6 +78,15 @@ export default function AdvertisePage() {
   const [confirmation, setConfirmation] = useState<Confirmation | null>(null)
   const [confirmationError, setConfirmationError] = useState('')
   const [cancelled, setCancelled] = useState(false)
+
+  useEffect(() => {
+    // The price Stripe actually charges lives in commercial_settings, so the
+    // page shows those live prices rather than the hardcoded defaults.
+    fetch('/api/advertising/prices')
+      .then(response => response.json())
+      .then(json => { if (json?.prices) setPrices(json.prices) })
+      .catch(() => {})
+  }, [])
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
@@ -115,13 +130,15 @@ export default function AdvertisePage() {
 
   const selected = AD_PLACEMENTS[placement]
   const selectedAudience = audienceCopy[placement]
+  const priceFor = (key: AdPlacementKey) => prices[key] ?? AD_PLACEMENTS[key].monthlyPence
+  const selectedPrice = priceFor(placement)
 
-  return <div className="min-h-screen bg-[#f4f1ea]">
+  return <div className="min-h-screen bg-[#f5f5f5]">
     <Navbar />
     <main className="pt-[68px]">
-      <section className="bg-[#0b2f4d] text-white">
+      <section className="bg-[#111111] text-white">
         <div className="max-w-7xl mx-auto px-6 lg:px-8 py-16 md:py-20">
-          <p className="text-[10px] uppercase tracking-[0.2em] text-[#d4b477] font-semibold mb-4">Advertise with Wellness House Collective</p>
+          <p className="text-[10px] uppercase tracking-[0.2em] text-[#555555] font-semibold mb-4">Advertise with Wellness House Collective</p>
           <h1 className="text-[42px] md:text-[58px] leading-[1.02] tracking-[-0.05em] font-semibold text-white max-w-4xl">A real placement, with a clear audience and clear terms.</h1>
           <p className="text-[15px] leading-7 text-white/70 max-w-2xl mt-5">Choose where your brand appears, pay securely through Stripe, then WHC reviews the creative before publication.</p>
         </div>
@@ -136,8 +153,8 @@ export default function AdvertisePage() {
 
       <section className="max-w-7xl mx-auto px-6 lg:px-8 py-12 md:py-16">
         <div className="max-w-3xl mb-8">
-          <p className="text-[10px] uppercase tracking-[.18em] font-semibold text-[#9c7a42]">Choose your placement</p>
-          <h2 className="text-[32px] md:text-[42px] font-semibold tracking-[-.04em] text-[#10283b] mt-2">Where do you want your brand to live?</h2>
+          <p className="text-[10px] uppercase tracking-[.18em] font-semibold text-[#1a1a1a]">Choose your placement</p>
+          <h2 className="text-[32px] md:text-[42px] font-semibold tracking-[-.04em] text-[#1a1a1a] mt-2">Where do you want your brand to live?</h2>
           <p className="text-[13px] leading-6 text-[#65727c] mt-3">All placements are rolling monthly subscriptions. They renew each month until cancelled.</p>
         </div>
 
@@ -145,12 +162,12 @@ export default function AdvertisePage() {
           {(Object.entries(AD_PLACEMENTS) as [AdPlacementKey, (typeof AD_PLACEMENTS)[AdPlacementKey]][]).map(([key, config]) => {
             const copy = audienceCopy[key]
             const active = placement === key
-            return <button key={key} type="button" onClick={() => setPlacement(key)} className={`text-left rounded-[22px] p-6 transition-all ${active ? 'bg-[#10283b] text-white border border-[#10283b] shadow-lg' : 'bg-white border border-[#ddd9d1] text-[#10283b] hover:border-[#c9a96e]'}`}>
-              <div className="flex items-start justify-between gap-4"><div><p className={`text-[10px] uppercase tracking-[.15em] font-semibold ${active ? 'text-[#d4b477]' : 'text-[#9c7a42]'}`}>{config.label}</p><p className={`text-[31px] font-semibold mt-2 ${active ? 'text-white' : 'text-[#10283b]'}`}>£{config.monthlyPence / 100}<span className={`text-[11px] font-normal ${active ? 'text-white/55' : 'text-[#8a949b]'}`}> / month</span></p></div>{active && <Check size={18} className="text-[#d4b477]" />}</div>
+            return <button key={key} type="button" onClick={() => setPlacement(key)} className={`text-left rounded-[22px] p-6 transition-all ${active ? 'bg-[#1a1a1a] text-white border border-[#1a1a1a] shadow-lg' : 'bg-white border border-[#e0e0e0] text-[#1a1a1a] hover:border-[#555555]'}`}>
+              <div className="flex items-start justify-between gap-4"><div><p className={`text-[10px] uppercase tracking-[.15em] font-semibold ${active ? 'text-[#555555]' : 'text-[#1a1a1a]'}`}>{config.label}</p><p className={`text-[31px] font-semibold mt-2 ${active ? 'text-white' : 'text-[#1a1a1a]'}`}>£{formatPounds(priceFor(key))}<span className={`text-[11px] font-normal ${active ? 'text-white/55' : 'text-[#8a8a8a]'}`}> / month</span></p></div>{active && <Check size={18} className="text-[#555555]" />}</div>
               <p className={`text-[12px] leading-6 mt-4 ${active ? 'text-white/66' : 'text-[#65727c]'}`}>{config.description}</p>
               <div className={`mt-5 pt-4 border-t space-y-2 ${active ? 'border-white/12' : 'border-[#ece8e1]'}`}>
-                <p className={`text-[11px] ${active ? 'text-white/78' : 'text-[#53636f]'}`}><strong>Audience:</strong> {copy.audience}</p>
-                <p className={`text-[11px] ${active ? 'text-white/78' : 'text-[#53636f]'}`}><strong>Best for:</strong> {copy.bestFor}</p>
+                <p className={`text-[11px] ${active ? 'text-white/78' : 'text-[#4d4d4d]'}`}><strong>Audience:</strong> {copy.audience}</p>
+                <p className={`text-[11px] ${active ? 'text-white/78' : 'text-[#4d4d4d]'}`}><strong>Best for:</strong> {copy.bestFor}</p>
               </div>
             </button>
           })}
@@ -158,47 +175,47 @@ export default function AdvertisePage() {
 
         <div className="grid grid-cols-1 lg:grid-cols-[.9fr_1.1fr] gap-8 items-start">
           <div className="space-y-5">
-            <div className="rounded-[22px] bg-white border border-[#ddd9d1] p-7">
-              <p className="text-[10px] uppercase tracking-[.16em] font-semibold text-[#9c7a42]">Your selected placement</p>
-              <h2 className="text-[27px] font-semibold tracking-[-.03em] text-[#10283b] mt-2">{selected.label}</h2>
+            <div className="rounded-[22px] bg-white border border-[#e0e0e0] p-7">
+              <p className="text-[10px] uppercase tracking-[.16em] font-semibold text-[#1a1a1a]">Your selected placement</p>
+              <h2 className="text-[27px] font-semibold tracking-[-.03em] text-[#1a1a1a] mt-2">{selected.label}</h2>
               <div className="space-y-4 mt-6 text-[12px] leading-6 text-[#65727c]">
-                <div><p className="font-semibold text-[#10283b]">Where it appears</p><p>{selectedAudience.where}</p></div>
-                <div><p className="font-semibold text-[#10283b]">Who sees it</p><p>{selectedAudience.audience}</p></div>
-                <div><p className="font-semibold text-[#10283b]">How long it runs</p><p>{AD_BILLING_COPY.short}</p></div>
-                <div><p className="font-semibold text-[#10283b]">When it starts</p><p>{AD_BILLING_COPY.start}</p></div>
+                <div><p className="font-semibold text-[#1a1a1a]">Where it appears</p><p>{selectedAudience.where}</p></div>
+                <div><p className="font-semibold text-[#1a1a1a]">Who sees it</p><p>{selectedAudience.audience}</p></div>
+                <div><p className="font-semibold text-[#1a1a1a]">How long it runs</p><p>{AD_BILLING_COPY.short}</p></div>
+                <div><p className="font-semibold text-[#1a1a1a]">When it starts</p><p>{AD_BILLING_COPY.start}</p></div>
               </div>
             </div>
 
-            <div className="rounded-[22px] bg-[#f8f5ee] border border-[#ddd9d1] p-7 text-[12px] leading-6 text-[#65727c]">
-              <p className="text-[10px] uppercase tracking-[.16em] font-semibold text-[#9c7a42] mb-3">Approval journey</p>
-              <p><strong className="text-[#10283b]">1.</strong> Submit your creative and accept the Advertising Terms.</p>
-              <p><strong className="text-[#10283b]">2.</strong> Complete Stripe checkout. Promotion codes can reduce the first checkout amount, including to £0 where valid.</p>
-              <p><strong className="text-[#10283b]">3.</strong> The booking is written to Admin as <strong>Pending Approval</strong>.</p>
-              <p><strong className="text-[#10283b]">4.</strong> WHC reviews it, then approval makes the advert live in the placement you bought.</p>
-              <p><strong className="text-[#10283b]">5.</strong> You receive an email when it is submitted and another when it goes live.</p>
+            <div className="rounded-[22px] bg-[#f8f5ee] border border-[#e0e0e0] p-7 text-[12px] leading-6 text-[#65727c]">
+              <p className="text-[10px] uppercase tracking-[.16em] font-semibold text-[#1a1a1a] mb-3">Approval journey</p>
+              <p><strong className="text-[#1a1a1a]">1.</strong> Submit your creative and accept the Advertising Terms.</p>
+              <p><strong className="text-[#1a1a1a]">2.</strong> Complete Stripe checkout. Promotion codes can reduce the first checkout amount, including to £0 where valid.</p>
+              <p><strong className="text-[#1a1a1a]">3.</strong> The booking is written to Admin as <strong>Pending Approval</strong>.</p>
+              <p><strong className="text-[#1a1a1a]">4.</strong> WHC reviews it, then approval makes the advert live in the placement you bought.</p>
+              <p><strong className="text-[#1a1a1a]">5.</strong> You receive an email when it is submitted and another when it goes live.</p>
             </div>
           </div>
 
-          <form onSubmit={submit} className="bg-white border border-[#ddd9d1] rounded-[22px] p-7 md:p-8 shadow-sm">
-            <div className="flex items-start justify-between gap-4 pb-6 mb-6 border-b border-[#ece8e1]"><div><p className="text-[10px] uppercase tracking-[.16em] font-semibold text-[#9c7a42]">Book this placement</p><h2 className="text-[27px] font-semibold tracking-[-.03em] text-[#10283b] mt-2">{selected.label}</h2></div><p className="text-right text-[24px] font-semibold text-[#10283b]">£{selected.monthlyPence / 100}<span className="block text-[10px] font-normal text-[#8a949b]">per month · recurring</span></p></div>
+          <form onSubmit={submit} className="bg-white border border-[#e0e0e0] rounded-[22px] p-7 md:p-8 shadow-sm">
+            <div className="flex items-start justify-between gap-4 pb-6 mb-6 border-b border-[#ece8e1]"><div><p className="text-[10px] uppercase tracking-[.16em] font-semibold text-[#1a1a1a]">Book this placement</p><h2 className="text-[27px] font-semibold tracking-[-.03em] text-[#1a1a1a] mt-2">{selected.label}</h2></div><p className="text-right text-[24px] font-semibold text-[#1a1a1a]">£{formatPounds(selectedPrice)}<span className="block text-[10px] font-normal text-[#8a8a8a]">per month · recurring</span></p></div>
             <div className="space-y-4">
-              <label className="block text-[12px] text-[#53636f]">Brand name<input required value={form.brandName} onChange={event => setForm({ ...form, brandName: event.target.value })} className="input-field mt-1" /></label>
-              <label className="block text-[12px] text-[#53636f]">Contact email<input required type="email" value={form.contactEmail} onChange={event => setForm({ ...form, contactEmail: event.target.value })} className="input-field mt-1" /></label>
-              <label className="block text-[12px] text-[#53636f]">Advert wording<input required maxLength={220} value={form.tagline} onChange={event => setForm({ ...form, tagline: event.target.value })} placeholder="A short line shown beside your logo" className="input-field mt-1" /></label>
-              <label className="block text-[12px] text-[#53636f]">Website link<input required type="url" value={form.websiteUrl} onChange={event => setForm({ ...form, websiteUrl: event.target.value })} placeholder="https://yourbrand.com" className="input-field mt-1" /></label>
-              <label className="block text-[12px] text-[#53636f]">Logo image link<input required type="url" value={form.logoUrl} onChange={event => setForm({ ...form, logoUrl: event.target.value })} placeholder="https://yourbrand.com/logo.png" className="input-field mt-1" /><span className="block mt-1 text-[10px] text-[#8a949b]">Direct public HTTPS link to a PNG, JPG, WebP or SVG logo.</span></label>
+              <label className="block text-[12px] text-[#4d4d4d]">Brand name<input required value={form.brandName} onChange={event => setForm({ ...form, brandName: event.target.value })} className="input-field mt-1" /></label>
+              <label className="block text-[12px] text-[#4d4d4d]">Contact email<input required type="email" value={form.contactEmail} onChange={event => setForm({ ...form, contactEmail: event.target.value })} className="input-field mt-1" /></label>
+              <label className="block text-[12px] text-[#4d4d4d]">Advert wording<input required maxLength={220} value={form.tagline} onChange={event => setForm({ ...form, tagline: event.target.value })} placeholder="A short line shown beside your logo" className="input-field mt-1" /></label>
+              <label className="block text-[12px] text-[#4d4d4d]">Website link<input required type="url" value={form.websiteUrl} onChange={event => setForm({ ...form, websiteUrl: event.target.value })} placeholder="https://yourbrand.com" className="input-field mt-1" /></label>
+              <label className="block text-[12px] text-[#4d4d4d]">Logo image link<input required type="url" value={form.logoUrl} onChange={event => setForm({ ...form, logoUrl: event.target.value })} placeholder="https://yourbrand.com/logo.png" className="input-field mt-1" /><span className="block mt-1 text-[10px] text-[#8a8a8a]">Direct public HTTPS link to a PNG, JPG, WebP or SVG logo.</span></label>
             </div>
 
-            <div className="mt-6 rounded-xl border border-[#e3ddd2] bg-[#faf8f3] p-4">
-              <label className="flex gap-3 cursor-pointer text-[12px] leading-5 text-[#53636f]">
+            <div className="mt-6 rounded-xl border border-[#e3ddd2] bg-[#f7f7f7] p-4">
+              <label className="flex gap-3 cursor-pointer text-[12px] leading-5 text-[#4d4d4d]">
                 <input required type="checkbox" checked={termsAccepted} onChange={event => setTermsAccepted(event.target.checked)} className="mt-1 h-4 w-4" />
-                <span>I have read and agree to the <Link href="/advertising-terms" target="_blank" className="font-semibold text-[#10283b] underline">Advertising Terms & Conditions</Link>. I understand this is a rolling monthly subscription, billing starts at checkout, and publication is subject to WHC approval.</span>
+                <span>I have read and agree to the <Link href="/advertising-terms" target="_blank" className="font-semibold text-[#1a1a1a] underline">Advertising Terms & Conditions</Link>. I understand this is a rolling monthly subscription, billing starts at checkout, and publication is subject to WHC approval.</span>
               </label>
             </div>
 
             {error && <p className="text-[12px] text-red-600 mt-4">{error}</p>}
-            <button disabled={busy || !termsAccepted} className="btn-primary w-full mt-6 disabled:opacity-50 inline-flex items-center justify-center gap-2">{busy ? 'Opening secure payment...' : <>Continue to Stripe — £{selected.monthlyPence / 100}/month <ArrowRight size={13}/></>}</button>
-            <div className="flex gap-2 mt-4 text-[10px] leading-5 text-[#7a858c]"><ShieldCheck size={14} className="text-[#9c7a42] shrink-0 mt-0.5" /><p>Payment does not automatically publish the advert. WHC approval is required before the placement can go live.</p></div>
+            <button disabled={busy || !termsAccepted} className="btn-primary w-full mt-6 disabled:opacity-50 inline-flex items-center justify-center gap-2">{busy ? 'Opening secure payment...' : <>Continue to Stripe - £{formatPounds(selectedPrice)}/month <ArrowRight size={13}/></>}</button>
+            <div className="flex gap-2 mt-4 text-[10px] leading-5 text-[#7a858c]"><ShieldCheck size={14} className="text-[#1a1a1a] shrink-0 mt-0.5" /><p>Payment does not automatically publish the advert. WHC approval is required before the placement can go live.</p></div>
           </form>
         </div>
       </section>

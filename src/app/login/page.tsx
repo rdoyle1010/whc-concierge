@@ -7,7 +7,7 @@ import { Eye, EyeOff, BriefcaseBusiness, Sparkles } from 'lucide-react'
 import Wordmark from '@/components/Wordmark'
 
 export default function LoginPage() {
-  return <Suspense fallback={<div className="min-h-screen bg-[#f3f1ec]" />}><LoginForm /></Suspense>
+  return <Suspense fallback={<div className="min-h-screen bg-[#f5f5f5]" />}><LoginForm /></Suspense>
 }
 
 function LoginForm() {
@@ -53,7 +53,7 @@ function LoginForm() {
   const registerHref = `/register/${role}${safeDestination ? `?redirect=${encodeURIComponent(safeDestination)}` : ''}`
 
   return (
-    <div className="min-h-screen bg-[#f3f1ec] flex items-stretch">
+    <div className="min-h-screen bg-[#f5f5f5] flex items-stretch">
       <div className="flex-1 flex items-center justify-center px-6 py-10 lg:py-16">
         <div className="w-full max-w-[430px]">
           <Wordmark />
@@ -63,14 +63,14 @@ function LoginForm() {
             <p className="dashboard-intro !mt-2 mb-7">Choose the workspace linked to your account, then sign in.</p>
 
             {safeDestination === '/roles/match' && (
-              <div className="mb-5 rounded-xl border border-[#eadfc9] bg-[#faf6ed] px-4 py-3 text-[12px] leading-5 text-[#6d6559]">
+              <div className="mb-5 rounded-xl border border-[#e9e9e9] bg-[#f5f5f5] px-4 py-3 text-[12px] leading-5 text-[#6d6559]">
                 Sign in as Talent to continue to your role matches. We&apos;ll take you straight back to Match after sign-in.
               </div>
             )}
 
-            <div className="grid grid-cols-2 gap-2 bg-[#f3f1ec] rounded-xl p-1.5 mb-7">
-              <button type="button" onClick={() => { setRole('talent'); setError('') }} className={`flex items-center justify-center gap-2 py-2.5 rounded-lg text-[12px] font-semibold transition-all ${role === 'talent' ? 'bg-[#0b2f4d] text-white shadow-sm' : 'text-secondary hover:text-[#0b2f4d]'}`}><Sparkles size={13} />Talent</button>
-              <button type="button" onClick={() => { setRole('employer'); setError('') }} className={`flex items-center justify-center gap-2 py-2.5 rounded-lg text-[12px] font-semibold transition-all ${role === 'employer' ? 'bg-[#0b2f4d] text-white shadow-sm' : 'text-secondary hover:text-[#0b2f4d]'}`}><BriefcaseBusiness size={13} />Hotel / Employer</button>
+            <div className="grid grid-cols-2 gap-2 bg-[#f5f5f5] rounded-xl p-1.5 mb-7">
+              <button type="button" onClick={() => { setRole('talent'); setError('') }} className={`flex items-center justify-center gap-2 py-2.5 rounded-lg text-[12px] font-semibold transition-all ${role === 'talent' ? 'bg-[#111111] text-white shadow-sm' : 'text-secondary hover:text-[#111111]'}`}><Sparkles size={13} />Talent</button>
+              <button type="button" onClick={() => { setRole('employer'); setError('') }} className={`flex items-center justify-center gap-2 py-2.5 rounded-lg text-[12px] font-semibold transition-all ${role === 'employer' ? 'bg-[#111111] text-white shadow-sm' : 'text-secondary hover:text-[#111111]'}`}><BriefcaseBusiness size={13} />Hotel / Employer</button>
             </div>
 
             {confirmationPending && <div className="bg-emerald-50 border border-emerald-100 text-emerald-700 text-[13px] px-3 py-2.5 rounded-xl mb-5">Your profile is saved. Check your email to confirm your account, then sign in here.</div>}
@@ -82,26 +82,26 @@ function LoginForm() {
                 <label className="dashboard-eyebrow block mb-1.5 !text-[9px]">Password</label>
                 <div className="relative">
                   <input type={show ? 'text' : 'password'} required autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} className="input-field pr-10" />
-                  <button type="button" onClick={() => setShow(!show)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted hover:text-[#0b2f4d]">{show ? <EyeOff size={15} /> : <Eye size={15} />}</button>
+                  <button type="button" onClick={() => setShow(!show)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted hover:text-[#111111]">{show ? <EyeOff size={15} /> : <Eye size={15} />}</button>
                 </div>
               </div>
               <div className="flex items-center justify-between">
-                <label className="flex items-center gap-2 cursor-pointer"><input type="checkbox" className="w-3.5 h-3.5 border-border rounded text-[#0b2f4d] focus:ring-[#0b2f4d]" /><span className="text-[12px] text-muted">Remember me</span></label>
-                <Link href="/forgot-password" className="text-[12px] text-[#9c7a42] hover:underline">Forgot password?</Link>
+                <label className="flex items-center gap-2 cursor-pointer"><input type="checkbox" className="w-3.5 h-3.5 border-border rounded text-[#111111] focus:ring-[#111111]" /><span className="text-[12px] text-muted">Remember me</span></label>
+                <Link href="/forgot-password" className="text-[12px] text-[#1a1a1a] hover:underline">Forgot password?</Link>
               </div>
-              <button type="submit" disabled={loading} className="w-full rounded-xl bg-[#0b2f4d] hover:bg-[#123f64] text-white px-5 py-3 text-[13px] font-semibold transition-colors disabled:opacity-50">{loading ? 'Signing in...' : `Sign in as ${role === 'employer' ? 'Hotel / Employer' : 'Talent'}`}</button>
+              <button type="submit" disabled={loading} className="w-full rounded-xl bg-[#111111] hover:bg-[#333333] text-white px-5 py-3 text-[13px] font-semibold transition-colors disabled:opacity-50">{loading ? 'Signing in...' : `Sign in as ${role === 'employer' ? 'Hotel / Employer' : 'Talent'}`}</button>
             </form>
 
-            <p className="text-[13px] text-muted mt-7">New to WHC Concierge? <Link href={registerHref} className="text-[#0b2f4d] font-semibold hover:underline">Create an account →</Link></p>
+            <p className="text-[13px] text-muted mt-7">New to WHC Concierge? <Link href={registerHref} className="text-[#111111] font-semibold hover:underline">Create an account →</Link></p>
           </div>
         </div>
       </div>
 
-      <div className="hidden lg:flex w-[42%] bg-[#0b2f4d] relative overflow-hidden items-end">
+      <div className="hidden lg:flex w-[42%] bg-[#111111] relative overflow-hidden items-end">
         <div className="absolute inset-0 opacity-35"><img src="https://images.pexels.com/photos/7587466/pexels-photo-7587466.jpeg?auto=compress&cs=tinysrgb&w=1200&h=900&dpr=1" alt="" className="w-full h-full object-cover" /></div>
-        <div className="absolute inset-0 bg-gradient-to-t from-[#0b2f4d] via-[#0b2f4d]/65 to-[#0b2f4d]/25" />
+        <div className="absolute inset-0 bg-gradient-to-t from-[#111111] via-[#111111]/65 to-[#111111]/25" />
         <div className="relative p-12 xl:p-16 max-w-xl">
-          <p className="text-[10px] uppercase tracking-[0.2em] text-[#d4b477] font-semibold mb-4">Wellness House Collective</p>
+          <p className="text-[10px] uppercase tracking-[0.2em] text-[#555555] font-semibold mb-4">Wellness House Collective</p>
           <p className="text-white text-[30px] leading-tight tracking-[-0.03em] font-semibold">Where exceptional talent meets exceptional opportunity.</p>
           <p className="text-white/55 text-[13px] mt-4 leading-6">One premium platform for luxury wellness careers, recruitment, residency and trusted agency cover.</p>
         </div>

@@ -29,11 +29,11 @@ async function featuredCardsHtml(admin: any, featuredIds: any[]): Promise<string
   ])
   const site = 'https://talent.wellnesshousecollective.co.uk'
   const esc = (t: any) => String(t || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-  const card = (img: string | null, title: string, sub: string, href: string) => `<a href="${href}" style="display:flex;align-items:center;gap:14px;padding:14px;border:1px solid #e3e7eb;border-radius:12px;text-decoration:none;margin-bottom:10px;background:#fff">${img ? `<img src="${img}" width="52" height="52" style="border-radius:50%;object-fit:cover" alt="" />` : `<div style="width:52px;height:52px;border-radius:50%;background:#0b2f4d;color:#fff;text-align:center;line-height:52px;font-weight:600">${esc(title)[0] || 'W'}</div>`}<span><span style="display:block;font-weight:600;color:#10283b">${esc(title)}</span><span style="display:block;font-size:12px;color:#65717a;margin-top:2px">${esc(sub)}</span></span></a>`
+  const card = (img: string | null, title: string, sub: string, href: string) => `<a href="${href}" style="display:flex;align-items:center;gap:14px;padding:14px;border:1px solid #e5e5e5;border-radius:12px;text-decoration:none;margin-bottom:10px;background:#fff">${img ? `<img src="${img}" width="52" height="52" style="border-radius:50%;object-fit:cover" alt="" />` : `<div style="width:52px;height:52px;border-radius:50%;background:#111111;color:#fff;text-align:center;line-height:52px;font-weight:600">${esc(title)[0] || 'W'}</div>`}<span><span style="display:block;font-weight:600;color:#1a1a1a">${esc(title)}</span><span style="display:block;font-size:12px;color:#555555;margin-top:2px">${esc(sub)}</span></span></a>`
   let html = ''
   for (const c of cands || []) html += card(c.profile_image_url, c.full_name || 'Professional', `${c.headline || c.role_level || 'Wellness professional'}${c.hourly_rate ? ` · £${c.hourly_rate}/hr agency` : ''}`, `${site}/agency/${c.id}`)
   for (const e of emps || []) html += card(e.logo_url, e.property_name || e.company_name || 'Property', e.tagline || 'Preferred Employer', `${site}/properties/${e.id}`)
-  return html ? `<div style="margin:28px 0"><p style="font-size:11px;letter-spacing:1px;text-transform:uppercase;color:#6f7f88;font-weight:600;margin-bottom:12px">Featured this week</p>${html}</div>` : ''
+  return html ? `<div style="margin:28px 0"><p style="font-size:11px;letter-spacing:1px;text-transform:uppercase;color:#555555;font-weight:600;margin-bottom:12px">Featured this week</p>${html}</div>` : ''
 }
 
 export async function GET() {
@@ -57,7 +57,15 @@ export async function GET() {
   return NextResponse.json({
     campaigns: campaigns || [],
     promotion: { featured_candidates: (cands || []).filter((c: any) => c.is_featured), agency_featured: (cands || []).filter((c: any) => c.agency_tier === 'featured'), preferred_employers: emps || [] },
-    audiences: { all: eligible.length + newsletterOnly.length, candidates: roles.filter((r: string) => r === 'candidate').length, employers: roles.filter((r: string) => r === 'employer').length, newsletter: (newsletter || []).length, excluded_without_confirmed_consent, note: 'Counts include confirmed WHC marketing users and confirmed standalone newsletter subscribers.' },
+    audiences: {
+      all: eligible.length + newsletterOnly.length,
+      candidates: roles.filter((r: string) => r === 'candidate').length,
+      employers: roles.filter((r: string) => r === 'employer').length,
+      newsletterOnly: newsletterOnly.length,
+      newsletter: (newsletter || []).length,
+      excluded_without_confirmed_consent,
+      note: 'newsletterOnly counts confirmed standalone subscribers with no WHC profile - they are only reached by sends to All.',
+    },
   })
 }
 
@@ -71,9 +79,13 @@ export async function POST(req: NextRequest) {
 
     if (action === 'save') {
       const { id, data } = body
+      if (id) {
+        const { data: existing } = await admin.from('campaigns').select('status').eq('id', id).maybeSingle()
+        if (existing?.status === 'sent') return NextResponse.json({ error: 'This newsletter has been sent and can no longer be edited. Duplicate it instead.' }, { status: 400 })
+      }
       const clean = {
         name: data?.name || 'Untitled newsletter', description: data?.description || null, type: data?.type || 'Email', status: data?.status || 'draft',
-        start_date: data?.start_date || null, end_date: data?.end_date || null, target_audience: data?.target_audience || 'All', content: data?.content || null,
+        target_audience: data?.target_audience || 'All', content: data?.content || null,
         preheader: data?.preheader || null, header_image_url: data?.header_image_url || null, body_image_url: data?.body_image_url || null,
         cta_label: data?.cta_label || null, cta_url: data?.cta_url || null, footer_text: data?.footer_text || null, layout_style: data?.layout_style || 'editorial',
         featured_ids: Array.isArray(data?.featured_ids) ? data.featured_ids : null,

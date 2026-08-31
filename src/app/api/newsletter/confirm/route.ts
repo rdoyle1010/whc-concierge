@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { hashToken } from '@/lib/privacy-consent'
 
-const SITE = 'https://talent.wellnesshousecollective.co.uk'
+const SITE = process.env.NEXT_PUBLIC_SITE_URL || 'https://talent.wellnesshousecollective.co.uk'
 
 export async function GET(req: NextRequest) {
   const token = String(req.nextUrl.searchParams.get('token') || '')
