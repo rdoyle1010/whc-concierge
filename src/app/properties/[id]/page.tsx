@@ -416,9 +416,15 @@ export default async function PropertyDestinationPage({ params }: { params: Prom
           <section className="border-t border-border py-14 md:py-20">
             <p className="public-eyebrow">Culture</p>
             {property.culture_statement && (
-              <blockquote className="mt-7 max-w-4xl text-[22px] md:text-[28px] font-serif font-medium leading-[1.5] text-accent whitespace-pre-line">
-                {property.culture_statement}
-              </blockquote>
+              String(property.culture_statement).length <= 260 ? (
+                // A short statement earns the display treatment.
+                <blockquote className="mt-7 max-w-4xl text-[22px] md:text-[28px] font-serif font-medium leading-[1.5] text-accent whitespace-pre-line">
+                  {property.culture_statement}
+                </blockquote>
+              ) : (
+                // A full paragraph at display size becomes a wall - set it as prose.
+                <p className="mt-6 text-[16px] leading-8 text-body max-w-3xl whitespace-pre-line">{property.culture_statement}</p>
+              )
             )}
             {culturePoints.length > 0 && (
               <div className="mt-9 grid md:grid-cols-2 gap-x-12 gap-y-4 max-w-4xl">
