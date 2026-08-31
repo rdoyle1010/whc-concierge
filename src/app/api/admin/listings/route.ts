@@ -7,14 +7,23 @@ import { sendApprovalEmail, sendRejectionEmail } from '@/lib/emails'
 
 const DEFAULT_LIMIT = 250
 const MAX_LIMIT = 500
-// Real residency_profiles columns only (001_add_matching_columns.sql, 023,
-// and the audit-repairs migration that added is_featured). The person's name
-// lives on candidate_profiles and is joined in below.
-const RESIDENCY_FIELDS = [
-  'id', 'user_id', 'title', 'description', 'duration', 'day_rate', 'weekly_rate', 'monthly_rate',
-  'negotiable', 'services_offered', 'product_houses', 'availability_start', 'availability_end',
-  'travel_availability', 'is_featured', 'approval_status', 'created_at',
-].join(',')
+// The live residency_profiles table predates the migrations folder and its
+// column names differ from them (the create flow writes primary_specialism,
+// bio, available_from...). Never enumerate its columns in a select - read *
+// and map defensively so the admin queue works whatever shape is live.
+function mapResidencyRow(row: Record<string, any>) {
+  return {
+    ...row,
+    title: row.title ?? row.primary_specialism ?? null,
+    description: row.description ?? row.bio ?? null,
+    duration: row.duration ?? row.preferred_duration ?? null,
+    services_offered: row.services_offered ?? row.secondary_specialisms ?? null,
+    product_houses: row.product_houses ?? row.brand_experience ?? null,
+    availability_start: row.availability_start ?? row.available_from ?? null,
+    travel_availability: row.travel_availability ?? row.will_travel_to ?? null,
+    is_featured: Boolean(row.is_featured),
+  }
+}
 
 async function requireAdmin() {
   const cookieStore = await cookies()
@@ -45,7 +54,7 @@ export async function GET(req: NextRequest) {
   try {
     if (kind === 'residency') {
       const { data, error } = await admin.from('residency_profiles')
-        .select(RESIDENCY_FIELDS)
+        .select('*')
         .order('created_at', { ascending: false })
         .limit(limit)
       if (error) return NextResponse.json({ error: error.message }, { status: 500 })
@@ -58,7 +67,7 @@ export async function GET(req: NextRequest) {
       const nameMap = new Map((people || []).map((person: any) => [person.user_id, person.full_name]))
 
       return NextResponse.json({
-        rows: (data || []).map((row: any) => ({ ...row, candidate_name: nameMap.get(row.user_id) || null })),
+        rows: (data || []).map((row: any) => ({ ...mapResidencyRow(row), candidate_name: row.full_name || nameMap.get(row.user_id) || null })),
         pagination: { limit, returned: data?.length || 0, capped: (data?.length || 0) >= limit },
       })
     }
@@ -115,7 +124,7 @@ export async function POST(req: NextRequest) {
       const { data: row, error } = await admin.from('residency_profiles')
         .update({ approval_status: decision })
         .eq('id', id)
-        .select('id,user_id,title,approval_status')
+        .select('*')
         .single()
       if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
@@ -126,7 +135,7 @@ export async function POST(req: NextRequest) {
           await createNotification(row.user_id, 'general',
             decision === 'approved' ? 'Your residency listing is live' : 'Your residency listing needs attention',
             decision === 'approved'
-              ? `Your residency listing "${row.title || ''}" has been approved and is now live.`
+              ? `Your residency listing "${row.title || row.primary_specialism || ''}" has been approved and is now live.`
               : `Your residency listing was not approved${body.reason ? `: ${body.reason}` : ''}. Update it and resubmit.`,
             '/talent/residency')
           const { data: authUser } = await admin.auth.admin.getUserById(row.user_id)
