@@ -14,8 +14,29 @@ const readPublicJobs = unstable_cache(async (search: string, location: string, o
     p_limit: perPage,
   })
   if (error) throw new Error(error.message)
-  return data || []
-}, ['public-jobs-page-v3'], { revalidate: 60 })
+  const rows: any[] = data || []
+  // The RPC returns no job_image_url or is_residency_role - merge them in
+  // from job_listings so Browse Roles can show them. Best-effort: on failure
+  // the rows simply go out without them.
+  if (rows.length) {
+    try {
+      const ids = rows.map((row: any) => row.id).filter(Boolean)
+      const { data: extras } = await admin
+        .from('job_listings')
+        .select('id, job_image_url, is_residency_role')
+        .in('id', ids)
+      const extraMap = new Map((extras || []).map((row: any) => [row.id, row]))
+      for (const row of rows) {
+        const extra = extraMap.get(row.id)
+        if (extra) {
+          row.job_image_url = extra.job_image_url
+          row.is_residency_role = extra.is_residency_role
+        }
+      }
+    } catch { /* best-effort merge */ }
+  }
+  return rows
+}, ['public-jobs-page-v4'], { revalidate: 60 })
 
 export async function GET(req: NextRequest) {
   const pageParam = Number(req.nextUrl.searchParams.get('page'))
@@ -35,6 +56,7 @@ export async function GET(req: NextRequest) {
       job_title: row.job_title,
       job_description: row.job_description,
       job_image_url: row.job_image_url,
+      is_residency_role: row.is_residency_role,
       salary_min: row.salary_min,
       salary_max: row.salary_max,
       salary_display_text: row.salary_display_text,

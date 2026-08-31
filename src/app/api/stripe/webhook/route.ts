@@ -8,6 +8,7 @@ import { sendFeaturedEmployerEmail } from '@/lib/featured-employer-email'
 import Stripe from 'stripe'
 import { getInternalApiSecret } from '@/lib/internal-request'
 import { handleResidencyStripeEvent } from '@/lib/residency-stripe-webhook'
+import { fulfilCommercialPurchase } from '@/lib/commercial-fulfilment'
 
 async function convertReferral(supabase: any, candidateId: string) {
   try {
@@ -102,6 +103,16 @@ export async function POST(req: NextRequest) {
     case 'checkout.session.completed': {
       const session = event.data.object as Stripe.Checkout.Session
       const meta = session.metadata
+
+      if (meta?.type === 'commercial_product' && meta?.product) {
+        // Guaranteed fulfilment for memberships and featured products - the
+        // redirect to /api/commercial/confirm never fires if the tab closes.
+        const result = await fulfilCommercialPurchase(supabase, stripe, session)
+        if (!result.ok) {
+          console.error('[Commercial product] fulfilment failed:', result.error)
+          return NextResponse.json({ error: 'commercial_product fulfilment failed' }, { status: 500 })
+        }
+      }
 
       if (meta?.type === 'sponsored_ad' && meta?.placement && meta?.brand_name) {
         const subscriptionId = typeof session.subscription === 'string' ? session.subscription : session.subscription?.id
@@ -391,6 +402,9 @@ export async function POST(req: NextRequest) {
           is_live: employerApproved,
           status: employerApproved ? 'active' : 'draft',
           expires_at: expiresAt,
+          // The free publish path stamps posted_date too - without it paid
+          // roles sort and display as undated.
+          posted_date: new Date().toISOString(),
         }).eq('id', meta.job_id)
 
         // Instrumentation: the paid posting is the moment a role truly enters
@@ -523,6 +537,19 @@ export async function POST(req: NextRequest) {
         is_featured: true,
         featured_until: monthEnd,
       }).eq('stripe_customer_id', customerId).eq('is_featured', true)
+
+      // Commercial memberships carry no recognised metadata.type on their
+      // invoices, so advance their renewal date here on every paid invoice.
+      const invoiceLineEnd = Number((invoice.lines?.data?.[0] as any)?.period?.end || 0)
+      const membershipRenewsAt = invoiceLineEnd > 0 ? new Date(invoiceLineEnd * 1000).toISOString() : monthEnd
+      await supabase.from('candidate_profiles')
+        .update({ membership_renews_at: membershipRenewsAt })
+        .or(`stripe_customer_id.eq.${customerId},membership_stripe_customer_id.eq.${customerId}`)
+        .not('membership_tier', 'is', null)
+      await supabase.from('employer_profiles')
+        .update({ membership_renews_at: membershipRenewsAt })
+        .or(`stripe_customer_id.eq.${customerId},membership_stripe_customer_id.eq.${customerId}`)
+        .not('membership_tier', 'is', null)
       break
     }
 
@@ -674,6 +701,17 @@ export async function POST(req: NextRequest) {
       }
 
       await supabase.from('candidate_profiles').update({ is_featured: false, featured_until: null }).eq('stripe_customer_id', customerId)
+
+      // Commercial memberships have no dedicated branch, so revoke the tier
+      // here - otherwise benefits outlive the cancelled subscription.
+      await supabase.from('candidate_profiles')
+        .update({ membership_tier: null, membership_renews_at: null })
+        .or(`stripe_customer_id.eq.${customerId},membership_stripe_customer_id.eq.${customerId}`)
+        .not('membership_tier', 'is', null)
+      await supabase.from('employer_profiles')
+        .update({ membership_tier: null, membership_renews_at: null, annual_job_allowance: 0 })
+        .or(`stripe_customer_id.eq.${customerId},membership_stripe_customer_id.eq.${customerId}`)
+        .not('membership_tier', 'is', null)
       break
     }
   }

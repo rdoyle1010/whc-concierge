@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getRequestUser } from '@/lib/request-user'
 import { createNotification } from '@/lib/notifications'
-import { AGENCY_PLATFORM_FEE_PCT } from '@/lib/constants'
+import { feePctForEmployerShift } from '@/app/api/agency/booking/core'
 import { sendSms } from '@/lib/sms'
 import { sendAgencyOfferEmail } from '@/lib/emails'
 import { profileDistanceMiles } from '@/lib/geo'
@@ -101,7 +101,7 @@ export async function POST(req: NextRequest) {
 
     const hours = shiftHours(shiftStartTime, shiftEndTime) || 0
     const effectiveHours = hours || 8
-    const platformFee = Math.ceil(rate * effectiveHours * AGENCY_PLATFORM_FEE_PCT)
+    const platformFee = Math.ceil(rate * effectiveHours * await feePctForEmployerShift(admin, employer.id, shiftDate))
     const urgent = shiftDate === todayInLondon()
     const groupId = repeatWeeks > 1 && globalThis.crypto?.randomUUID ? globalThis.crypto.randomUUID() : null
     const baseRow: Record<string, any> = {

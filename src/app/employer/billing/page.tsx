@@ -96,7 +96,7 @@ export default function EmployerBillingPage() {
           <p className="text-[14px] font-medium text-ink mb-6">Payment Methods</p>
           <div className="dashboard-card flex items-center justify-between !p-4">
             <div className="flex items-center gap-3"><div className="w-10 h-10 rounded-lg bg-[#10283b]/10 flex items-center justify-center text-[#10283b]"><CreditCard size={18} /></div><div><p className="text-[13px] font-medium text-ink">Stripe Payment Methods</p><p className="text-[12px] text-muted mt-0.5">Manage stored cards and active subscriptions</p></div></div>
-            {profile?.stripe_customer_id ? <button type="button" onClick={handleManagePayment} disabled={redirecting} className="btn-secondary text-[12px] flex items-center gap-1">{redirecting ? 'Redirecting...' : 'Manage'}<ExternalLink size={12} /></button> : <p className="text-[12px] text-muted text-right max-w-[200px]">Billing portal becomes available after your first payment.</p>}
+            {(profile?.stripe_customer_id || profile?.membership_stripe_customer_id) ? <button type="button" onClick={handleManagePayment} disabled={redirecting} className="btn-secondary text-[12px] flex items-center gap-1">{redirecting ? 'Redirecting...' : 'Manage'}<ExternalLink size={12} /></button> : <p className="text-[12px] text-muted text-right max-w-[200px]">Billing portal becomes available after your first payment.</p>}
           </div>
         </div>
 

@@ -5,14 +5,19 @@ import { getRequestUser } from '@/lib/request-user'
 async function loadReviews(admin: ReturnType<typeof createAdminClient>, employerUserId?: string | null) {
   if (!employerUserId) return []
   // Old rows predate the type column, so a null type on a review of this
-  // employer still counts as an employer review.
-  const { data: reviewRows } = await admin
-    .from('reviews')
-    .select('id,reviewer_id,rating,text,booking_id,created_at,type')
-    .eq('reviewee_id', employerUserId)
-    .or('type.eq.employer,type.is.null')
-    .order('created_at', { ascending: false })
-    .limit(20)
+  // employer still counts as an employer review. The type column itself is
+  // newer than some environments, so fall back to a plain select if the
+  // typed query fails.
+  const buildReviewQuery = (withType: boolean) => {
+    let query = admin
+      .from('reviews')
+      .select(withType ? 'id,reviewer_id,rating,text,booking_id,created_at,type' : 'id,reviewer_id,rating,text,booking_id,created_at')
+      .eq('reviewee_id', employerUserId)
+    if (withType) query = query.or('type.eq.employer,type.is.null')
+    return query.order('created_at', { ascending: false }).limit(20)
+  }
+  let { data: reviewRows, error: reviewError } = await buildReviewQuery(true)
+  if (reviewError) ({ data: reviewRows } = await buildReviewQuery(false))
   const rows: any[] = reviewRows || []
   const reviewerIds = [...new Set(rows.map(row => row.reviewer_id).filter(Boolean))]
   const { data: candidates } = reviewerIds.length

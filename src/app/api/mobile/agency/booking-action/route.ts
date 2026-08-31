@@ -3,6 +3,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { getRequestUser } from '@/lib/request-user'
 import { createNotification } from '@/lib/notifications'
 import { AGENCY_PLATFORM_FEE_PCT } from '@/lib/constants'
+import { feePctForEmployerShift } from '@/app/api/agency/booking/core'
 import { sendSms } from '@/lib/sms'
 import { sendAgencyOfferEmail, sendAgencyUpdateEmail } from '@/lib/emails'
 
@@ -71,7 +72,13 @@ async function advanceCascade(admin: ReturnType<typeof createAdminClient>, booki
   const effectiveHours = hours || 8
   const rate = parseInt(String(entry.rate), 10) || booking.rate
   const deadline = new Date(Date.now() + CASCADE_WINDOW_MS).toISOString()
-  const { data: updated } = await admin.from('agency_bookings').update({ candidate_id: entry.id, rate, platform_fee: Math.ceil(rate * effectiveHours * AGENCY_PLATFORM_FEE_PCT), status: 'pending', cascade_index: next, cascade_deadline: deadline, expires_at: deadline }).eq('id', booking.id).eq('cascade_index', index).in('status', OPEN_STATUSES).select('*').maybeSingle()
+  const { data: updated, error: advanceError } = await admin.from('agency_bookings').update({ candidate_id: entry.id, rate, platform_fee: Math.ceil(rate * effectiveHours * await feePctForEmployerShift(admin, booking.employer_id, booking.shift_date)), status: 'pending', cascade_index: next, cascade_deadline: deadline, expires_at: deadline }).eq('id', booking.id).eq('cascade_index', index).in('status', OPEN_STATUSES).select('*').maybeSingle()
+  if (advanceError) {
+    // A rejected update must not strand the cascade mid-queue: log it and end
+    // the cascade so the property is told cover was not filled.
+    console.error('Cascade advance failed:', advanceError.message)
+    return endCascade('the next offer could not be issued')
+  }
   if (!updated) return null
 
   const { data: candidate } = await admin.from('candidate_profiles').select('id,user_id,full_name,phone').eq('id', entry.id).maybeSingle()
@@ -138,7 +145,7 @@ export async function POST(req: NextRequest) {
       const rate = parseInt(String(body.rate || ''), 10)
       if (!rate || rate <= 0) return NextResponse.json({ error: 'Enter a valid hourly rate.' }, { status: 400 })
       const effectiveHours = booking.hours && booking.hours > 0 ? booking.hours : 8
-      const update: Record<string, any> = { rate, platform_fee: Math.ceil(rate * effectiveHours * AGENCY_PLATFORM_FEE_PCT), status: 'countered' }
+      const update: Record<string, any> = { rate, platform_fee: Math.ceil(rate * effectiveHours * await feePctForEmployerShift(admin, booking.employer_id, booking.shift_date)), status: 'countered' }
       if (Array.isArray(booking.cascade_queue)) {
         const fresh = new Date(Date.now() + CASCADE_WINDOW_MS).toISOString()
         update.cascade_deadline = fresh

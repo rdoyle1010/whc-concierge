@@ -20,6 +20,7 @@ export default function TalentResidencyPage() {
   const [openRoles, setOpenRoles] = useState<any[]>([])
   const [listing, setListing] = useState<any>(null)
   const [featureBusy, setFeatureBusy] = useState(false)
+  const [featuredPrice, setFeaturedPrice] = useState('£99')
   const [notice, setNotice] = useState('')
 
   useEffect(() => {
@@ -28,9 +29,24 @@ export default function TalentResidencyPage() {
     if (params.get('checkout') === 'success' && sessionId) {
       fetch('/api/commercial/confirm', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sessionId }) })
         .then(async res => ({ ok: res.ok, body: await res.json().catch(() => ({})) }))
-        .then(x => x.ok ? setNotice('Payment confirmed - your listing is now featured for 30 days.') : setError(x.body.error || 'Payment could not be confirmed.'))
+        .then(x => x.ok ? setNotice(x.body.message || 'Payment confirmed - your listing is now featured for 30 days.') : setError(x.body.error || 'Payment could not be confirmed.'))
         .catch(() => {})
     }
+  }, [])
+
+  useEffect(() => {
+    // Checkout charges the admin-set commercial_settings price - £99 is only
+    // the fallback if the lookup fails.
+    fetch('/api/commercial-settings?product=residency_featured', { cache: 'no-store' })
+      .then(r => r.ok ? r.json() : null)
+      .then(json => {
+        const pence = Number(json?.setting?.price_pence || 0)
+        if (pence > 0) {
+          const pounds = pence / 100
+          setFeaturedPrice(Number.isInteger(pounds) ? `£${pounds}` : `£${pounds.toFixed(2)}`)
+        }
+      })
+      .catch(() => {})
   }, [])
 
   async function buyFeatured() {
@@ -164,7 +180,7 @@ export default function TalentResidencyPage() {
                   <p className="text-xs text-muted mt-1 leading-5">30 days at the top of the Residency marketplace with the Featured badge - seen first by every property browsing for specialists.</p>
                 </div>
               </div>
-              <button type="button" onClick={buyFeatured} disabled={featureBusy} className="btn-primary shrink-0 text-[12px] disabled:opacity-50">{featureBusy ? 'Opening payment...' : 'Go Featured - £99 / 30 days'}</button>
+              <button type="button" onClick={buyFeatured} disabled={featureBusy} className="btn-primary shrink-0 text-[12px] disabled:opacity-50">{featureBusy ? 'Opening payment...' : `Go Featured - ${featuredPrice} / 30 days`}</button>
             </div>
           )
         )}

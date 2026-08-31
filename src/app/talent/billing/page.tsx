@@ -50,8 +50,12 @@ export default function TalentBillingPage() {
     ? (profile.membership_tier as 'standard' | 'pro')
     : null
   const membership = membershipTier ? TALENT_MEMBERSHIPS[membershipTier] : null
-  const isFeatured = Boolean(profile?.is_featured)
-  const hasSubscription = Boolean(membership) || isFeatured
+  // A featured placement is only active until featured_until passes - a row
+  // without the field is treated as still active.
+  const featuredUntil = profile?.featured_until
+  const isFeatured = Boolean(profile?.is_featured) && (featuredUntil == null || new Date(featuredUntil).getTime() > Date.now())
+  const residencyMember = Boolean(profile?.residency_member)
+  const hasSubscription = Boolean(membership) || isFeatured || residencyMember
 
   if (loading) return <DashboardShell role="talent"><div className="space-y-4"><div className="skeleton h-12 w-1/3 mb-6" /><div className="skeleton h-64 w-full" /></div></DashboardShell>
 
@@ -73,12 +77,14 @@ export default function TalentBillingPage() {
               </div>
               <div>
                 <p className="text-[14px] font-medium text-ink">
-                  {membership ? `${membership.label} - Active` : isFeatured ? 'Featured Profile - Active' : 'Free Plan'}
+                  {membership ? `${membership.label} - Active` : isFeatured ? 'Featured Profile - Active' : residencyMember ? 'Residency Membership - Active' : 'Free Plan'}
                 </p>
                 <p className="text-[12px] text-muted mt-0.5">
                   {membership
                     ? 'Manage or cancel your membership through the billing portal below.'
-                    : isFeatured ? 'Your profile has premium visibility' : 'No active subscription'}
+                    : isFeatured ? 'Your profile has premium visibility'
+                      : residencyMember ? 'Manage or cancel your Residency membership through the billing portal below.'
+                        : 'No active subscription'}
                 </p>
               </div>
             </div>

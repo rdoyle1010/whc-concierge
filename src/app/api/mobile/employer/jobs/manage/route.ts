@@ -5,15 +5,21 @@ import { getStripe } from '@/lib/stripe'
 import { JOB_TIERS, EMPLOYER_MEMBERSHIPS } from '@/lib/constants'
 import { geocodePostcode } from '@/lib/geo'
 
+// Job storytelling columns (20260831170000). Optional narrative fields; if the
+// live database does not have them yet, the edit retries without them.
+const STORY_FIELDS = [
+  'why_role_exists', 'success_90_days', 'reporting_line', 'team_size', 'opening_hours',
+  'commercial_responsibility', 'membership_size', 'key_kpis', 'why_move',
+  'career_progression', 'interview_process',
+] as const
+
 const EDITABLE_FIELDS = [
   'job_title', 'job_description', 'location', 'location_postcode', 'radius_miles',
   'job_type', 'contract_type', 'required_role_level', 'candidate_scope', 'salary_min', 'salary_max',
   'required_skills', 'required_brands', 'required_qualifications', 'required_systems',
   'preferred_business_skills', 'min_years_experience', 'shift_pattern', 'offers_accommodation',
   'requirements', 'benefits', 'insurance_required', 'is_agency_role', 'is_residency_role',
-  'why_role_exists', 'success_90_days', 'reporting_line', 'team_size', 'opening_hours',
-  'commercial_responsibility', 'membership_size', 'key_kpis', 'why_move',
-  'career_progression', 'interview_process',
+  ...STORY_FIELDS,
 ] as const
 
 const CANDIDATE_SCOPES = new Set(['same_level', 'step_up', 'emerging', 'open_transferable'])
@@ -61,7 +67,18 @@ export async function POST(req: NextRequest) {
       if (coords) { payload.latitude = coords.latitude; payload.longitude = coords.longitude }
     }
 
-    const { data: updated, error } = await admin.from('job_listings').update(payload).eq('id', job.id).eq('employer_id', employer.id).select('*').single()
+    let { data: updated, error } = await admin.from('job_listings').update(payload).eq('id', job.id).eq('employer_id', employer.id).select('*').single()
+    if (error && /column/i.test(error.message) && STORY_FIELDS.some(field => field in payload)) {
+      // Storytelling columns not migrated yet: save the edit without them.
+      const trimmed = { ...payload }
+      for (const field of STORY_FIELDS) delete trimmed[field]
+      if (Object.keys(trimmed).length) {
+        ;({ data: updated, error } = await admin.from('job_listings').update(trimmed).eq('id', job.id).eq('employer_id', employer.id).select('*').single())
+      } else {
+        // The edit carried only storytelling fields - nothing else to save.
+        return NextResponse.json({ success: true, job })
+      }
+    }
     if (error) return NextResponse.json({ error: error.message }, { status: 400 })
     return NextResponse.json({ success: true, job: updated })
   }
@@ -101,6 +118,23 @@ export async function POST(req: NextRequest) {
       await admin.from('employer_profiles').update({ annual_jobs_used: used }).eq('id', employer.id).eq('annual_jobs_used', used + 1)
       return NextResponse.json({ error: 'Could not publish this role.' }, { status: 500 })
     }
+
+    // Instrumentation: an included publish is the moment the role truly
+    // enters the market, exactly like the paid webhook path. Best-effort.
+    try {
+      const { trackEvent, recordSalary } = await import('@/lib/analytics')
+      await trackEvent('job_posted', { employerId: employer.id, jobId: job.id }, { tier: 'Bronze', included: true })
+      if (job.salary_min || job.salary_max) {
+        await recordSalary({
+          kind: 'advertised', source: 'employer_advertised',
+          amountMin: job.salary_min ? Number(job.salary_min) : null,
+          amountMax: job.salary_max ? Number(job.salary_max) : null,
+          employerId: employer.id, jobId: job.id,
+          roleLevel: job.required_role_level ? String(job.required_role_level) : null,
+        })
+      }
+    } catch { /* best-effort */ }
+
     return NextResponse.json({ success: true, included: true, status: 'active', remainingJobs: Math.max(0, allowance - used - 1) })
   }
 

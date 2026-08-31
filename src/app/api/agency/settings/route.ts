@@ -98,13 +98,20 @@ export async function POST(req: NextRequest) {
     // Agency setting is saved. Only write it when the caller actually sent it.
     if (typeof body.sms_opt_in === 'boolean') update.sms_opt_in = body.sms_opt_in
 
+    let warning: string | null = null
     if (update.postcode) {
       const coords = await geocodePostcode(update.postcode)
       if (coords) {
         update.latitude = coords.latitude
         update.longitude = coords.longitude
-      } else {
+      } else if (body.joining) {
+        // A register listing genuinely needs a mapped location.
         return NextResponse.json({ error: `We couldn't find the postcode "${update.postcode}" - please check it and try again.` }, { status: 400 })
+      } else {
+        // Not joining the register: keep the existing stored postcode and
+        // coordinates rather than blocking the whole save over the postcode.
+        warning = `We couldn't find the postcode "${update.postcode}" - your other details were saved. Please check the postcode in Agency Settings.`
+        delete update.postcode
       }
     }
 
@@ -118,7 +125,7 @@ export async function POST(req: NextRequest) {
     }
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-    return NextResponse.json({ success: true })
+    return NextResponse.json(warning ? { success: true, warning } : { success: true })
   } catch (e: any) {
     return NextResponse.json({ error: e.message }, { status: 500 })
   }

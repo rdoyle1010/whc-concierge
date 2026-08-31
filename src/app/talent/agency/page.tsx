@@ -27,6 +27,9 @@ export default function TalentAgencyPage() {
   const [actionError, setActionError] = useState('')
   const [reviewing, setReviewing] = useState<{ userId: string; name: string; bookingId?: string } | null>(null)
   const [listing, setListing] = useState<{ available: boolean; tier: string | null; until: string | null } | null>(null)
+  const [cancellingId, setCancellingId] = useState<string | null>(null)
+  const [cancelReason, setCancelReason] = useState('')
+  const [cancelError, setCancelError] = useState('')
 
   async function load() {
     try {
@@ -79,6 +82,31 @@ export default function TalentAgencyPage() {
     }
   }
 
+  // Accepted or confirmed shifts that have not yet started can be cancelled
+  // via /api/agency/cancel (past shifts go through Shift Resolution instead).
+  const todayLondon = new Date().toLocaleDateString('en-CA', { timeZone: 'Europe/London' })
+  const canCancel = (b: any) => ['accepted', 'confirmed'].includes(b.status) && b.shift_date && String(b.shift_date) >= todayLondon
+
+  async function cancelShift(bookingId: string) {
+    setCancelError('')
+    setBusyId(bookingId)
+    try {
+      const res = await fetch('/api/agency/cancel', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ bookingId, reason: cancelReason.trim() }),
+      })
+      const j = await res.json().catch(() => ({}))
+      if (!res.ok) { setCancelError(j.error || 'Could not cancel this shift - please try again.'); return }
+      setCancellingId(null)
+      setCancelReason('')
+      await load()
+    } catch {
+      setCancelError('Could not cancel this shift - please try again.')
+    } finally {
+      setBusyId(null)
+    }
+  }
+
   const statusColors: Record<string, string> = {
     pending: 'bg-amber-50 text-amber-700',
     countered: 'bg-[#f5f6f8] text-accent',
@@ -96,7 +124,9 @@ export default function TalentAgencyPage() {
     .sort((a, b) => Number(Boolean(b.employer_agency_plus)) - Number(Boolean(a.employer_agency_plus)))
   const shifts = bookings.filter((b) => b.status !== 'pending' && b.status !== 'countered')
 
-  const expectedPayout = (b: any) => b.payout_amount ?? Math.max(0, b.rate * (b.hours && b.hours > 0 ? b.hours : 8) - Math.ceil(b.rate * (b.hours && b.hours > 0 ? b.hours : 8) * 0.05))
+  // The professional keeps the full agreed rate - the WHC fee is paid by the
+  // property on top, so nothing is deducted from the payout.
+  const expectedPayout = (b: any) => b.payout_amount ?? Math.max(0, b.rate * (b.hours && b.hours > 0 ? b.hours : 8))
   const paidOut = shifts.filter((b) => b.payout_status === 'paid').reduce((s, b) => s + expectedPayout(b), 0)
   const awaitingPayout = shifts.filter((b) => b.paid_at && b.payout_status === 'pending' && b.dispute_status !== 'open').reduce((s, b) => s + expectedPayout(b), 0)
   const onHold = shifts.filter((b) => b.dispute_status === 'open').reduce((s, b) => s + expectedPayout(b), 0)
@@ -255,6 +285,20 @@ export default function TalentAgencyPage() {
                         <span className="flex items-center justify-end gap-1 mt-2 text-[12px] font-medium text-green-700"><Check size={12} /> Reviewed</span>
                       ) : (
                         <button type="button" onClick={() => setReviewing({ userId: b.employer_user_id, name: b.employer_name || 'this property', bookingId: b.id })} className="block ml-auto mt-2 text-[12px] font-medium text-amber-500 hover:underline"><span className="inline-flex items-center gap-1"><Star size={11} /> Review property</span></button>
+                      )
+                    )}
+                    {canCancel(b) && (
+                      cancellingId === b.id ? (
+                        <div className="mt-2 flex flex-col items-end gap-1.5">
+                          <input type="text" value={cancelReason} onChange={(e) => setCancelReason(e.target.value)} placeholder="Reason for cancelling" className="input-field text-[12px] w-56" />
+                          {cancelError && <p className="text-[11px] text-red-600 max-w-[240px]">{cancelError}</p>}
+                          <div className="flex items-center gap-3">
+                            <button type="button" onClick={() => cancelShift(b.id)} disabled={busyId === b.id || !cancelReason.trim()} className="text-[12px] font-medium text-red-600 hover:text-red-700 disabled:opacity-50">Confirm cancellation</button>
+                            <button type="button" onClick={() => { setCancellingId(null); setCancelReason(''); setCancelError('') }} className="text-[12px] text-gray-400 hover:text-ink">Keep shift</button>
+                          </div>
+                        </div>
+                      ) : (
+                        <button type="button" onClick={() => { setCancellingId(b.id); setCancelReason(''); setCancelError('') }} className="block ml-auto mt-2 text-[12px] text-gray-400 underline hover:text-red-600">Cancel shift</button>
                       )
                     )}
                   </div>

@@ -110,15 +110,21 @@ export async function GET(req: NextRequest) {
       const to = from + perPage - 1
 
       const complaintsOnly = req.nextUrl.searchParams.get('view') === 'complaints'
-      let query = admin.from('contact_queries')
-        .select('id,name,email,subject,message,status,type,created_at', { count: 'exact' })
-        .order('created_at', { ascending: false })
-        .range(from, to)
-      query = complaintsOnly ? query.eq('type', 'complaint') : query.or('type.neq.complaint,type.is.null')
-
-      if (status !== 'all') query = query.eq('status', status)
-
-      const { data, count, error } = await query
+      // subject and type arrive with today's migration - retry without them
+      // (and without the type-based filters) so the inboxes work either way.
+      const buildQuery = (withNewColumns: boolean) => {
+        let query = admin.from('contact_queries')
+          .select(withNewColumns
+            ? 'id,name,email,subject,message,status,type,created_at,admin_reply,replied_at'
+            : 'id,name,email,message,status,created_at,admin_reply,replied_at', { count: 'exact' })
+          .order('created_at', { ascending: false })
+          .range(from, to)
+        if (withNewColumns) query = complaintsOnly ? query.eq('type', 'complaint') : query.or('type.neq.complaint,type.is.null')
+        if (status !== 'all') query = query.eq('status', status)
+        return query
+      }
+      let { data, count, error } = await buildQuery(true)
+      if (error) ({ data, count, error } = await buildQuery(false))
       if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
       const total = count || 0
@@ -276,7 +282,9 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: 'The email could not be sent - check resend.com/logs.' }, { status: 502 })
       }
       const markStatus = CONTACT_STATUSES.has(String(body.markStatus)) ? body.markStatus : 'replied'
-      await admin.from('contact_queries').update({ status: markStatus }).eq('id', q.id)
+      await admin.from('contact_queries')
+        .update({ status: markStatus, admin_reply: replyText, replied_at: new Date().toISOString() })
+        .eq('id', q.id)
       return NextResponse.json({ success: true })
     }
 

@@ -97,7 +97,7 @@ export default function AdminMatchesPage() {
                       m.status === 'pending' ? 'bg-amber-50 text-amber-700' : 'bg-gray-100 text-gray-500'
                     }`}>{m.status}</span>
                   </td>
-                  <td className="px-6 py-4 text-sm text-gray-400">{new Date(m.created_at).toLocaleDateString()}</td>
+                  <td className="px-6 py-4 text-sm text-gray-400">{new Date(m.matched_at || m.created_at).toLocaleDateString()}</td>
                 </tr>
               ))}
             </tbody>

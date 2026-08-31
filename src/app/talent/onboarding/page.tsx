@@ -61,6 +61,7 @@ export default function OnboardingWizard() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState('')
+  const [saveWarning, setSaveWarning] = useState('')
   const [userId, setUserId] = useState<string | null>(null)
   const [profileId, setProfileId] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
@@ -213,6 +214,7 @@ export default function OnboardingWizard() {
     setSaving(true)
 
     setSaveError('')
+    setSaveWarning('')
     setPayError('')
     if (step === 1) {
       const res1 = await fetch('/api/profile/update', {
@@ -340,6 +342,10 @@ export default function OnboardingWizard() {
         setPayError(j.error || 'Your agency details could not be saved - please try again.')
         return false
       }
+      // A warning means everything else saved but the postcode could not be
+      // mapped - tell the person without blocking the wizard.
+      const j = await res.json().catch(() => ({}))
+      if (j.warning) setSaveWarning(String(j.warning))
       return true
     } catch {
       setPayError('Your agency details could not be saved - please check your connection and try again.')
@@ -672,6 +678,7 @@ export default function OnboardingWizard() {
 
         {/* ═══ Navigation ═══ */}
         {saveError && <div className="bg-red-50 text-red-600 text-sm px-4 py-3 rounded-lg mt-6">{saveError}</div>}
+        {saveWarning && <div className="bg-amber-50 text-amber-700 text-sm px-4 py-3 rounded-lg mt-6">{saveWarning}</div>}
         <div className="flex gap-3 mt-8 pt-6 border-t border-border">
           {step > 1 && <button type="button" onClick={goBack} className="btn-secondary flex items-center gap-2 flex-1"><ArrowLeft size={14} />Back</button>}
           {step < STEPS.length ? (

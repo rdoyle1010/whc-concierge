@@ -7,7 +7,7 @@ import { AGENCY_PLATFORM_FEE_PCT, agencyFeePctForShift, agencyFeePctForShiftPlus
 
 // Agency Plus members pay a reduced base fee. Judged at booking time so the
 // subscription state on the day of booking decides the fee that is stored.
-async function feePctForEmployerShift(admin: any, employerId: string | null | undefined, shiftDate: string | null | undefined): Promise<number> {
+export async function feePctForEmployerShift(admin: any, employerId: string | null | undefined, shiftDate: string | null | undefined): Promise<number> {
   let plus = false
   try {
     if (employerId) {
@@ -211,7 +211,7 @@ async function advanceCascade(admin: any, booking: any): Promise<any | null> {
   const rate = parseInt(String(entry.rate), 10) || booking.rate
   const deadline = new Date(Date.now() + CASCADE_WINDOW_MS).toISOString()
 
-  const { data: updated } = await admin.from('agency_bookings')
+  const { data: updated, error: advanceError } = await admin.from('agency_bookings')
     .update({
       candidate_id: entry.id,
       rate,
@@ -226,6 +226,13 @@ async function advanceCascade(admin: any, booking: any): Promise<any | null> {
     .in('status', OPEN_STATUSES)
     .select('*')
     .maybeSingle()
+  if (advanceError) {
+    // A rejected update (e.g. an overlap exclusion constraint on the next
+    // therapist) must not strand the request mid-queue: log it and end the
+    // cascade so the property is told cover was not filled.
+    console.error('Cascade advance failed:', advanceError.message)
+    return giveUp('the next offer could not be issued')
+  }
   if (!updated) return null // someone else advanced or the offer closed - do not notify
 
   const { data: nextCand } = await admin.from('candidate_profiles')
@@ -272,7 +279,7 @@ async function maintenanceSweep(admin: any) {
   try {
     const { data: doneShifts } = await admin.from('agency_bookings')
       .select('id, candidate_id, employer_id, shift_date, review_requested')
-      .eq('status', 'confirmed')
+      .in('status', ['confirmed', 'completed'])
       .not('paid_at', 'is', null)
       .lt('shift_date', todayLondon)
       .or('review_requested.is.null,review_requested.eq.false')

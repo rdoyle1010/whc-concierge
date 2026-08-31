@@ -79,6 +79,9 @@ export default function AgencyPage() {
   const shiftParams = () => shiftDate
     ? new URLSearchParams({ shiftDate, shiftStartTime, shiftEndTime })
     : new URLSearchParams()
+  // Explicit UK-wide marker so the API never falls back to a stored radius
+  // (or 400s when no radius has ever been stored).
+  const ukWideParams = () => { const params = shiftParams(); params.set('radius', 'uk'); return params }
 
   async function loadDirectory(params = shiftParams()) {
     setLoading(true)
@@ -94,7 +97,7 @@ export default function AgencyPage() {
   }
 
   useEffect(() => {
-    loadDirectory()
+    loadDirectory(ukWideParams())
     supabase.from('course_enrollments').select('candidate_id, course_slug').not('completed_at', 'is', null).then(({ data }) => {
       if (!data) return
       const m = new Map<string, string[]>()
@@ -105,10 +108,10 @@ export default function AgencyPage() {
   }, [])
 
   const toggleFilter = (arr: string[], set: (v: string[]) => void, val: string) => set(arr.includes(val) ? arr.filter(v => v !== val) : [...arr, val])
-  async function clearFilters() { setServices([]); setBrands([]); setRoles([]); setInsuredOnly(false); setConfirmedOnly(false); setAcademySel([]); setPostcode(''); setAppliedSearch(null); setPostcodeError(''); setDirectoryError(''); setRadius('UK-wide'); await loadDirectory() }
+  async function clearFilters() { setServices([]); setBrands([]); setRoles([]); setInsuredOnly(false); setConfirmedOnly(false); setAcademySel([]); setPostcode(''); setAppliedSearch(null); setPostcodeError(''); setDirectoryError(''); setRadius('UK-wide'); await loadDirectory(ukWideParams()) }
   async function handleSearch() {
     const params = shiftParams()
-    if (radius === 'UK-wide') { setAppliedSearch(null); setPostcodeError(''); setVisible(12); await loadDirectory(params); return }
+    if (radius === 'UK-wide') { setAppliedSearch(null); setPostcodeError(''); setVisible(12); params.set('radius', 'uk'); await loadDirectory(params); return }
     const outward = normaliseOutward(postcode)
     if (!outward) { setPostcodeError('Please enter a valid UK postcode, e.g. BS1 or SW1A 1AA'); return }
     const coords = await geocodeSearch(postcode)
@@ -116,7 +119,7 @@ export default function AgencyPage() {
     params.set('lat', String(coords.lat)); params.set('lng', String(coords.lng)); params.set('radius', String(parseInt(radius, 10)))
     setAppliedSearch({ outward: areaOf(outward) === outward ? outward : outward, radius }); setPostcodeError(''); setVisible(12); await loadDirectory(params)
   }
-  async function searchUkWide() { setRadius('UK-wide'); setAppliedSearch(null); setPostcodeError(''); setVisible(12); await loadDirectory(shiftParams()) }
+  async function searchUkWide() { setRadius('UK-wide'); setAppliedSearch(null); setPostcodeError(''); setVisible(12); await loadDirectory(ukWideParams()) }
 
   const filtered = useMemo(() => candidates.filter(c => {
     if (c.agency_available === false) return false

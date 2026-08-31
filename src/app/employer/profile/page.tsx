@@ -43,9 +43,9 @@ export default function EmployerProfilePage() {
 
   const handleSave = async () => {
     setSaving(true)
-    const { error } = await supabase
-      .from('employer_profiles')
-      .update({
+    // Single source of truth for the save - the retry loop below strips only
+    // the columns the DB rejects, so no field is ever silently dropped.
+    const payload: Record<string, any> = {
         // Company basics
         company_name: profile.company_name,
         property_name: profile.property_name,
@@ -96,40 +96,22 @@ export default function EmployerProfilePage() {
         // Agency
         agency_available: profile.agency_available,
         agency_note: profile.agency_note,
-      })
+    }
+    const { error } = await supabase
+      .from('employer_profiles')
+      .update(payload)
       .eq('id', profile.id)
 
     // If a column doesn't exist in the DB, strip just that field and retry
     let finalError = error
     const stripped: string[] = []
-    if (error) {
-      const payload: Record<string, any> = {
-        company_name: profile.company_name, property_name: profile.property_name, contact_name: profile.contact_name,
-        contact_phone: profile.contact_phone, contact_email: profile.contact_email, website: profile.website,
-        location: profile.location, postcode: profile.postcode, company_type: profile.company_type,
-        property_type: profile.property_type, star_rating: profile.star_rating, about_text: profile.about_text,
-        tagline: profile.tagline, product_houses_used: profile.product_houses_used, systems_used: profile.systems_used,
-        services_offered: profile.services_offered, brand_partners: profile.brand_partners,
-        qualifications_sought: profile.qualifications_sought,
-        num_treatment_rooms: profile.num_treatment_rooms ? parseInt(profile.num_treatment_rooms) : null,
-        team_size: profile.team_size ? parseInt(profile.team_size) : null,
-        commute_car_required: profile.commute_car_required, nearest_transport: profile.nearest_transport,
-        transport_walk_minutes: profile.transport_walk_minutes ? parseInt(profile.transport_walk_minutes) : null,
-        parking_available: profile.parking_available, taxi_support: profile.taxi_support,
-        taxi_notes: profile.taxi_notes, travel_notes: profile.travel_notes,
-        location_guide: profile.location_guide || null,
-        relocation_support: profile.relocation_support || null,
-        culture_points: profile.culture_points, highlights: profile.highlights,
-        agency_available: profile.agency_available, agency_note: profile.agency_note,
-      }
-      for (let i = 0; i < 10 && finalError; i++) {
-        const m = finalError.message.match(/Could not find the '([^']+)' column/) || finalError.message.match(/column "([^"]+)" of relation/)
-        if (!m || !(m[1] in payload)) break
-        stripped.push(m[1])
-        delete payload[m[1]]
-        const { error: retryErr } = await supabase.from('employer_profiles').update(payload).eq('id', profile.id)
-        finalError = retryErr || null
-      }
+    for (let i = 0; i < 10 && finalError; i++) {
+      const m = finalError.message.match(/Could not find the '([^']+)' column/) || finalError.message.match(/column "([^"]+)" of relation/)
+      if (!m || !(m[1] in payload)) break
+      stripped.push(m[1])
+      delete payload[m[1]]
+      const { error: retryErr } = await supabase.from('employer_profiles').update(payload).eq('id', profile.id)
+      finalError = retryErr || null
     }
 
     setSaving(false)

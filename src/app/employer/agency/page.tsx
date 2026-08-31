@@ -17,6 +17,9 @@ export default function EmployerAgencyPage() {
   const [reviewing, setReviewing] = useState<{ userId: string; name: string; bookingId?: string } | null>(null)
   const [disputing, setDisputing] = useState<any>(null)
   const [disputeReason, setDisputeReason] = useState('')
+  const [cancellingId, setCancellingId] = useState<string | null>(null)
+  const [cancelReason, setCancelReason] = useState('')
+  const [cancelError, setCancelError] = useState('')
   const [disputeRequested, setDisputeRequested] = useState('Refund minus the WHC admin fee')
   const [urgentOpen, setUrgentOpen] = useState(false)
   const [urgentBusy, setUrgentBusy] = useState(false)
@@ -123,6 +126,32 @@ export default function EmployerAgencyPage() {
     }
   }
 
+  // Accepted or confirmed shifts that have not yet started can be cancelled
+  // via /api/agency/cancel (past shifts go through Shift Resolution instead).
+  const todayLondon = new Date().toLocaleDateString('en-CA', { timeZone: 'Europe/London' })
+  const canCancel = (b: any) => ['accepted', 'confirmed'].includes(b.status) && b.shift_date && String(b.shift_date) >= todayLondon
+
+  async function cancelShift(bookingId: string) {
+    setCancelError('')
+    setBusyId(bookingId)
+    try {
+      const res = await fetch('/api/agency/cancel', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ bookingId, reason: cancelReason.trim() }),
+      })
+      const j = await res.json().catch(() => ({}))
+      if (!res.ok) { setCancelError(j.error || 'Could not cancel this shift - please try again.'); return }
+      setCancellingId(null)
+      setCancelReason('')
+      setNotice('The shift has been cancelled and the professional has been notified.')
+      await load()
+    } catch {
+      setCancelError('Could not cancel this shift - please try again.')
+    } finally {
+      setBusyId(null)
+    }
+  }
+
   const statusColors: Record<string, string> = {
     pending: 'bg-amber-50 text-amber-700', countered: 'bg-[#f5f6f8] text-accent', accepted: 'bg-blue-50 text-blue-700', confirmed: 'bg-green-50 text-green-700', completed: 'bg-blue-50 text-blue-700', declined: 'bg-red-50 text-red-700', cancelled: 'bg-red-50 text-red-700', expired: 'bg-gray-100 text-gray-500',
   }
@@ -150,7 +179,7 @@ export default function EmployerAgencyPage() {
           {b.status === 'confirmed' && b.dispute_status === 'resolved' && <p className="text-[12px] text-gray-600 mt-1.5">Issue resolved{b.refund_amount ? ` - £${b.refund_amount} refund agreed` : ' - no refund agreed'}.</p>}
           {b.status === 'confirmed' && !b.dispute_status && <p className="text-[12px] text-green-700 mt-1.5">Paid{b.amount_paid ? ` £${b.amount_paid}` : ''}{b.paid_at ? ` on ${new Date(b.paid_at).toLocaleDateString('en-GB')}` : ''} - booking confirmed. The professional is paid by WHC after the shift; nothing more to do.</p>}
         </div>
-        <div className="flex flex-col items-end gap-2 shrink-0">{b.status === 'accepted' && <button type="button" onClick={() => { setBusyId(b.id); startCheckout('agency_booking', { bookingId: b.id }) }} disabled={busyId === b.id} className="btn-primary text-[12px] disabled:opacity-50">{busyId === b.id ? 'Opening payment...' : `Pay £${totalDue(b)} now`}</button>}<div className="flex items-center gap-3"><Link href="/employer/messages" className="text-[12px] font-medium text-gray-500 hover:text-ink inline-flex items-center gap-1"><MessageSquare size={12} /> Messages</Link>{b.paid_at && <Link href={`/employer/agency/receipt/${b.id}`} className="text-[12px] font-medium text-gray-500 hover:text-ink">Receipt</Link>}{(b.status === 'confirmed' || b.status === 'completed') && b.candidate_user_id && (b.reviewed_by_viewer ? <span className="text-[12px] font-medium text-green-700 inline-flex items-center gap-1"><Check size={12} /> Reviewed</span> : <button type="button" onClick={() => setReviewing({ userId: b.candidate_user_id, name: b.candidate_name || 'this candidate', bookingId: b.id })} className="text-[12px] font-medium text-amber-500 hover:underline inline-flex items-center gap-1"><Star size={11} /> Review</button>)}{(b.status === 'confirmed' || b.status === 'completed') && b.paid_at && !b.dispute_status && <button type="button" onClick={() => { setDisputing(b); setDisputeReason(''); setError('') }} className="text-[12px] font-medium text-red-500 hover:underline">Report an issue</button>}</div></div>
+        <div className="flex flex-col items-end gap-2 shrink-0">{b.status === 'accepted' && <button type="button" onClick={() => { setBusyId(b.id); startCheckout('agency_booking', { bookingId: b.id }) }} disabled={busyId === b.id} className="btn-primary text-[12px] disabled:opacity-50">{busyId === b.id ? 'Opening payment...' : `Pay £${totalDue(b)} now`}</button>}<div className="flex items-center gap-3"><Link href="/employer/messages" className="text-[12px] font-medium text-gray-500 hover:text-ink inline-flex items-center gap-1"><MessageSquare size={12} /> Messages</Link>{b.paid_at && <Link href={`/employer/agency/receipt/${b.id}`} className="text-[12px] font-medium text-gray-500 hover:text-ink">Receipt</Link>}{(b.status === 'confirmed' || b.status === 'completed') && b.candidate_user_id && (b.reviewed_by_viewer ? <span className="text-[12px] font-medium text-green-700 inline-flex items-center gap-1"><Check size={12} /> Reviewed</span> : <button type="button" onClick={() => setReviewing({ userId: b.candidate_user_id, name: b.candidate_name || 'this candidate', bookingId: b.id })} className="text-[12px] font-medium text-amber-500 hover:underline inline-flex items-center gap-1"><Star size={11} /> Review</button>)}{(b.status === 'confirmed' || b.status === 'completed') && b.paid_at && !b.dispute_status && <button type="button" onClick={() => { setDisputing(b); setDisputeReason(''); setError('') }} className="text-[12px] font-medium text-red-500 hover:underline">Report an issue</button>}</div>{canCancel(b) && (cancellingId === b.id ? <div className="flex flex-col items-end gap-1.5"><input type="text" value={cancelReason} onChange={e => setCancelReason(e.target.value)} placeholder="Reason for cancelling" className="input-field text-[12px] w-56" />{cancelError && <p className="text-[11px] text-red-600 max-w-[240px]">{cancelError}</p>}<div className="flex items-center gap-3"><button type="button" onClick={() => cancelShift(b.id)} disabled={busyId === b.id || !cancelReason.trim()} className="text-[12px] font-medium text-red-600 hover:text-red-700 disabled:opacity-50">Confirm cancellation</button><button type="button" onClick={() => { setCancellingId(null); setCancelReason(''); setCancelError('') }} className="text-[12px] text-gray-400 hover:text-ink">Keep shift</button></div></div> : <button type="button" onClick={() => { setCancellingId(b.id); setCancelReason(''); setCancelError('') }} className="text-[12px] text-gray-400 underline hover:text-red-600">Cancel shift</button>)}</div>
       </div>
     </div>
   )

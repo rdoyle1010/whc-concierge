@@ -9,6 +9,28 @@ export const runtime = 'nodejs'
 
 const limiter = rateLimit('register-init', { windowMs: 60 * 60 * 1000, maxRequests: 10 })
 
+// Best-effort referral credit: look up the referrer by their code, record the
+// referral and mark the new candidate as referred. Never fails registration.
+async function recordReferral(admin: ReturnType<typeof createAdminClient>, userId: string, refCode: string) {
+  try {
+    const code = String(refCode || '').trim().toUpperCase()
+    if (!code) return
+    const { data: referrer } = await admin.from('candidate_profiles')
+      .select('id, user_id, full_name').eq('referral_code', code).maybeSingle()
+    if (!referrer) return
+    const { data: newCand } = await admin.from('candidate_profiles')
+      .select('id').eq('user_id', userId).maybeSingle()
+    if (!newCand || newCand.id === referrer.id) return
+    await admin.from('candidate_profiles').update({ referred_by: referrer.id }).eq('id', newCand.id)
+    await admin.from('referrals').upsert(
+      { referrer_candidate_id: referrer.id, referred_candidate_id: newCand.id, status: 'pending' },
+      { onConflict: 'referred_candidate_id', ignoreDuplicates: true }
+    )
+  } catch (e: any) {
+    console.error('Referral record failed (non-fatal):', e?.message)
+  }
+}
+
 function friendlySignupError(message?: string) {
   const text = (message || '').toLowerCase()
   if (text.includes('weak') || text.includes('easy to guess') || text.includes('password')) {
@@ -93,6 +115,29 @@ export async function POST(req: NextRequest) {
       if (candidateError) {
         console.error('Talent signup candidate profile seed failed:', candidateError.message)
         return NextResponse.json({ error: 'Your account was created, but we could not open your Talent profile. Please sign in and try again.' }, { status: 500 })
+      }
+
+      if (typeof body.refCode === 'string' && body.refCode.trim()) {
+        await recordReferral(admin, data.user.id, body.refCode)
+      }
+    } else {
+      // Employers need the shared profiles row too: if the second registration
+      // step never completes, an auth user with no profiles row can never pass
+      // the role gate at login and the email reads as already registered.
+      const admin = createAdminClient()
+      const { error: sharedProfileError } = await admin.from('profiles').upsert({
+        id: data.user.id,
+        email,
+        role: 'employer',
+        full_name: displayName || null,
+        location: postcode || null,
+      }, { onConflict: 'id' })
+      if (sharedProfileError) {
+        // Without a profiles row the account can never pass the role gate at
+        // login - reporting success here would create a permanently locked
+        // account. Fail loudly instead so the person can retry.
+        console.error('Employer signup shared profile seed failed:', sharedProfileError.message)
+        return NextResponse.json({ error: 'Your account could not be fully set up. Please try again in a moment.' }, { status: 500 })
       }
     }
 

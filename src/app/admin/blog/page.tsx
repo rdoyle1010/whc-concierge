@@ -86,7 +86,9 @@ export default function AdminBlogPage() {
       title: post.title || '', slug: post.slug || '', content: post.content || '', excerpt: post.excerpt || '',
       image_url: post.image_url || '', author: post.author || 'WHC Concierge', category: post.category || '',
       tags: post.tags?.join(', ') || '', status: post.status || 'draft',
-      published_at: post.published_at ? post.published_at.slice(0, 10) : '',
+      // Keep the full timestamp - saving a date-only value would silently
+      // reset the publish time to midnight and reshuffle the Journal order.
+      published_at: post.published_at || '',
     })
     setEditing(post); setFormError(''); setShowForm(true)
   }

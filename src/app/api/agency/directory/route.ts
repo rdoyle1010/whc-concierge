@@ -46,12 +46,18 @@ export async function GET(req: NextRequest) {
   const lngParam = req.nextUrl.searchParams.get('lng')
   const requestedLat = Number(latParam)
   const requestedLng = Number(lngParam)
-  const requestedRadius = Number(req.nextUrl.searchParams.get('radius'))
+  const radiusParam = req.nextUrl.searchParams.get('radius')
+  // 'uk' is an explicit UK-wide search: no radius cap, no mandatory-radius
+  // error, and the stored radius preference is left untouched.
+  const ukWide = radiusParam === 'uk'
+  const requestedRadius = Number(radiusParam)
   const hasSearchPoint = latParam != null && lngParam != null
     && Number.isFinite(requestedLat) && Number.isFinite(requestedLng)
-  const radius = Number.isFinite(requestedRadius) && requestedRadius > 0
-    ? Math.min(requestedRadius, 250)
-    : (Number(employer?.agency_search_radius_miles) > 0 ? Number(employer?.agency_search_radius_miles) : null)
+  const radius = ukWide
+    ? null
+    : Number.isFinite(requestedRadius) && requestedRadius > 0
+      ? Math.min(requestedRadius, 250)
+      : (Number(employer?.agency_search_radius_miles) > 0 ? Number(employer?.agency_search_radius_miles) : null)
 
   if (!isAdmin && employer && radius != null && radius !== Number(employer.agency_search_radius_miles || 0)) {
     await admin.from('employer_profiles').update({ agency_search_radius_miles: radius }).eq('id', employer.id)
@@ -64,7 +70,7 @@ export async function GET(req: NextRequest) {
   if (hasShiftSearch && !validShiftWindow(shiftDate, shiftStartTime, shiftEndTime)) {
     return NextResponse.json({ error: 'Choose a valid shift date, start time and finish time' }, { status: 400 })
   }
-  if (!isAdmin && !radius) {
+  if (!isAdmin && !ukWide && !radius) {
     return NextResponse.json({ error: 'Set a search radius before looking for Agency Talent.' }, { status: 400 })
   }
 

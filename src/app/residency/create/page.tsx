@@ -38,13 +38,19 @@ export default function ResidencyCreatePage() {
 
       const params = new URLSearchParams(window.location.search)
       const sessionId = params.get('membership_session')
+      let confirmedNow = false
       if (sessionId) {
         const res = await fetch('/api/residency/confirm-membership', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sessionId }) })
-        if (res.ok) window.history.replaceState({}, '', '/residency/create?membership=active')
+        if (res.ok) {
+          confirmedNow = true
+          window.history.replaceState({}, '', '/residency/create?membership=active')
+        }
       }
 
+      // A raw session id in the URL proves nothing - only a successful
+      // confirmation or an already-active membership unlocks the wizard.
       const { data: candidate } = await supabase.from('candidate_profiles').select('residency_member').eq('user_id', user.id).maybeSingle()
-      setMembershipActive(candidate?.residency_member === true || !!sessionId)
+      setMembershipActive(candidate?.residency_member === true || confirmedNow)
       setCheckingMembership(false)
 
       // Prefill from the existing listing - editing resubmits for review

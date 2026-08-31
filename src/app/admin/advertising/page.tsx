@@ -14,6 +14,7 @@ function formatPounds(pence: number) {
 export default function AdminAdvertisingPage() {
   const [adverts, setAdverts] = useState<any[]>([])
   const [prices, setPrices] = useState<Record<string, number>>({})
+  const [slotEnabled, setSlotEnabled] = useState<Record<string, boolean>>({})
   const [loading, setLoading] = useState(true)
   const [busy, setBusy] = useState('')
   const [error, setError] = useState('')
@@ -35,6 +36,21 @@ export default function AdminAdvertisingPage() {
     fetch('/api/advertising/prices')
       .then(response => response.json())
       .then(json => { if (json?.prices) setPrices(json.prices) })
+      .catch(() => {})
+  }, [])
+
+  useEffect(() => {
+    // Slot on/off state from Ad Slots - an approved advert whose placement
+    // slot is switched off renders nowhere, so warn on the advert card.
+    fetch('/api/admin/ad-slots')
+      .then(response => response.json())
+      .then(json => {
+        if (Array.isArray(json?.slots)) {
+          const map: Record<string, boolean> = {}
+          for (const slot of json.slots) map[slot.slot_key] = Boolean(slot.enabled)
+          setSlotEnabled(map)
+        }
+      })
       .catch(() => {})
   }, [])
 
@@ -66,7 +82,7 @@ export default function AdminAdvertisingPage() {
       return <article key={advert.id} className="dashboard-card">
         <div className="flex flex-col lg:flex-row gap-4 lg:items-center">
           <div className="w-32 h-16 bg-white border border-border rounded-lg flex items-center justify-center shrink-0">{advert.logo_url ? <img src={advert.logo_url} alt="" className="max-w-full max-h-full object-contain p-2" /> : <Megaphone size={20} className="text-gray-300" />}</div>
-          <div className="flex-1 min-w-0"><div className="flex flex-wrap items-center gap-2"><h3 className="text-[15px] font-medium text-ink">{advert.brand_name}</h3><span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold uppercase ${advert.payment_status === 'paid' ? 'bg-green-50 text-green-700' : 'bg-gray-100 text-gray-500'}`}>{advert.payment_status || 'unpaid'}</span><span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold uppercase ${advert.review_status === 'approved' ? 'bg-green-50 text-green-700' : advert.review_status === 'pending' ? 'bg-amber-50 text-amber-700' : 'bg-gray-100 text-gray-500'}`}>{advert.review_status || 'legacy'}</span></div><p className="text-[12px] text-gray-600 mt-1">{advert.tagline || 'No advert wording supplied'}</p><p className="text-[11px] text-gray-400 mt-1">{placement?.label || `Legacy location: ${advert.placement}`} · £{Number(advert.monthly_rate || 0).toFixed(2)}/month · {advert.contact_email || 'no contact email'}</p><p className="text-[11px] text-gray-400 mt-1 inline-flex items-center gap-1"><BarChart3 size={11} /> {advert.impression_count || 0} impressions · {advert.click_count || 0} clicks</p>{isLegacy && <p className="text-[11px] text-amber-700 mt-1">Imported legacy record - it will not display or be treated as paid.</p>}</div>
+          <div className="flex-1 min-w-0"><div className="flex flex-wrap items-center gap-2"><h3 className="text-[15px] font-medium text-ink">{advert.brand_name}</h3><span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold uppercase ${advert.payment_status === 'paid' ? 'bg-green-50 text-green-700' : 'bg-gray-100 text-gray-500'}`}>{advert.payment_status || 'unpaid'}</span><span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold uppercase ${advert.review_status === 'approved' ? 'bg-green-50 text-green-700' : advert.review_status === 'pending' ? 'bg-amber-50 text-amber-700' : 'bg-gray-100 text-gray-500'}`}>{advert.review_status || 'legacy'}</span></div><p className="text-[12px] text-gray-600 mt-1">{advert.tagline || 'No advert wording supplied'}</p><p className="text-[11px] text-gray-400 mt-1">{placement?.label || `Legacy location: ${advert.placement}`} · £{Number(advert.monthly_rate || 0).toFixed(2)}/month · {advert.contact_email || 'no contact email'}</p><p className="text-[11px] text-gray-400 mt-1 inline-flex items-center gap-1"><BarChart3 size={11} /> {advert.impression_count || 0} impressions · {advert.click_count || 0} clicks</p>{isLegacy && <p className="text-[11px] text-amber-700 mt-1">Imported legacy record - it will not display or be treated as paid.</p>}{!isLegacy && slotEnabled[advert.placement] === false && <p className="text-[11px] text-amber-700 mt-1">This placement is switched off in <Link href="/admin/ad-slots" className="underline">Ad Slots</Link> - the advert will not appear until it is enabled.</p>}</div>
           <div className="flex flex-wrap items-center gap-2 shrink-0">{advert.review_status === 'pending' && <><button onClick={() => act(advert.id, 'approve', 'Advert approved and live.')} disabled={busy !== ''} className="btn-primary text-[11px] inline-flex items-center gap-1"><Check size={12} /> Approve</button><button onClick={() => act(advert.id, 'reject', 'Advert rejected and kept offline.')} disabled={busy !== ''} className="text-[11px] font-medium text-red-500 inline-flex items-center gap-1"><X size={12} /> Reject</button></>}{advert.review_status === 'approved' && advert.status === 'active' && <button onClick={() => act(advert.id, 'pause', 'Advert paused.')} className="btn-secondary text-[11px] inline-flex items-center gap-1"><Pause size={12} /> Pause</button>}{advert.review_status === 'approved' && advert.status === 'paused' && <button onClick={() => act(advert.id, 'resume', 'Advert resumed.')} className="btn-primary text-[11px] inline-flex items-center gap-1"><Play size={12} /> Resume</button>}<button onClick={() => act(advert.id, 'archive', 'Advert archived.')} className="text-[11px] font-medium text-gray-500">Archive</button></div>
         </div>
       </article>

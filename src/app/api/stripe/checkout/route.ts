@@ -133,7 +133,7 @@ export async function POST(req: NextRequest) {
       // The paying user must own the candidate profile being enrolled
       const { createAdminClient } = await import('@/lib/supabase/admin')
       const admin = createAdminClient()
-      const { data: cand } = await admin.from('candidate_profiles').select('id, user_id').eq('id', candidateId).maybeSingle()
+      const { data: cand } = await admin.from('candidate_profiles').select('id, user_id, academy_discount_pct').eq('id', candidateId).maybeSingle()
       if (!cand || cand.user_id !== user.id) {
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
       }
@@ -148,6 +148,10 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: 'You already own every course in the core curriculum bundle.' }, { status: 400 })
       }
 
+      // Member Academy discount, applied the same way as the mobile checkout.
+      const discountPct = Math.max(0, Math.min(50, Number(cand.academy_discount_pct || 0)))
+      const amountPence = Math.max(100, Math.round(BUNDLE_PRICE * (1 - discountPct / 100)))
+
       const session = await stripe.checkout.sessions.create({
         payment_method_types: ['card'],
         line_items: [{
@@ -157,7 +161,7 @@ export async function POST(req: NextRequest) {
               name: `WHC Academy - Core Curriculum Bundle (${coreCourses.length} courses)`,
               description: `All ${coreCourses.length} active core curriculum courses, with a certificate and profile badge for each on completion. Brand masterclasses and specialist care courses sold separately.`,
             },
-            unit_amount: BUNDLE_PRICE,
+            unit_amount: amountPence,
           },
           quantity: 1,
         }],
@@ -179,10 +183,14 @@ export async function POST(req: NextRequest) {
       // The paying user must own the candidate profile being enrolled
       const { createAdminClient } = await import('@/lib/supabase/admin')
       const admin = createAdminClient()
-      const { data: cand } = await admin.from('candidate_profiles').select('id, user_id').eq('id', candidateId).maybeSingle()
+      const { data: cand } = await admin.from('candidate_profiles').select('id, user_id, academy_discount_pct').eq('id', candidateId).maybeSingle()
       if (!cand || cand.user_id !== user.id) {
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
       }
+
+      // Member Academy discount, applied the same way as the mobile checkout.
+      const discountPct = Math.max(0, Math.min(50, Number(cand.academy_discount_pct || 0)))
+      const amountPence = Math.max(100, Math.round(coursePrice(courseDef) * (1 - discountPct / 100)))
 
       const session = await stripe.checkout.sessions.create({
         payment_method_types: ['card'],
@@ -193,7 +201,7 @@ export async function POST(req: NextRequest) {
               name: `WHC Academy - ${courseDef.title.slice(0, 80)}`,
               description: 'Online course with certificate and profile badge on completion',
             },
-            unit_amount: coursePrice(courseDef),
+            unit_amount: amountPence,
           },
           quantity: 1,
         }],

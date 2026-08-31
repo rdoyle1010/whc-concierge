@@ -18,7 +18,8 @@ export async function POST(req: NextRequest) {
   let description = ''
   let mode: 'payment' | 'subscription' = 'payment'
   let successPath = '/'
-  let metadata: Record<string,string> = { user_id: user.id, product }
+  // type routes the webhook to shared fulfilment when the redirect never lands.
+  let metadata: Record<string,string> = { type: 'commercial_product', user_id: user.id, product }
 
   if (product === 'talent_standard' || product === 'talent_pro') {
     const tier = product === 'talent_standard' ? 'standard' : 'pro'
