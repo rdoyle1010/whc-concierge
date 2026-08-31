@@ -28,8 +28,13 @@ type MatchData = {
   score: number
   label: string
   breakdown: Record<string, number>
+  dimensions?: { key: string; label: string; value: number }[]
   matchingSkills: string[]
   missingRequiredSkills: string[]
+  strongestEvidence?: string[]
+  hasEvidenceBank?: boolean
+  employerMayQuestion?: string[]
+  interviewReadyHref?: string
   mode: string
   courseSuggestions?: CourseSuggestion[]
 }
@@ -96,18 +101,36 @@ export default function JobMatchPanel({ jobId }: { jobId: string }) {
       <span className="text-[13px] font-semibold text-[#10283b]">{data.label}</span>
     </div>
 
-    {strengths.length > 0 && <div className="mt-5 border-t border-[#e5e5e5] pt-4">
-      <p className="text-[10px] uppercase tracking-[.14em] font-semibold text-[#10283b]">Strong alignment</p>
-      <ul className="mt-2 space-y-1.5">
-        {strengths.map(([key]) => <li key={key} className="text-[12px] leading-5 text-[#4d4d4d] pl-3 border-l-2 border-[#0b2f4d]">{CATEGORY_LABELS[key]}</li>)}
+    {(data.dimensions || []).length > 0 && <div className="mt-5 border-t border-[#e5e5e5] pt-4">
+      <p className="text-[10px] uppercase tracking-[.14em] font-semibold text-[#10283b]">Why you match</p>
+      <ul className="mt-3 space-y-2.5">
+        {(data.dimensions || []).map(dim => <li key={dim.key}>
+          <div className="flex items-baseline justify-between gap-3">
+            <span className="text-[12px] text-[#4d4d4d]">{dim.label}</span>
+            <span className={`text-[12px] font-semibold tabular-nums ${dim.value >= 70 ? 'text-[#0b2f4d]' : dim.value < 60 ? 'text-[#8a949b]' : 'text-[#10283b]'}`}>{dim.value}%</span>
+          </div>
+          <div className="mt-1 h-[3px] w-full bg-[#eef1f3]"><div className="h-full bg-[#0b2f4d]" style={{ width: `${Math.min(100, dim.value)}%`, opacity: dim.value >= 70 ? 1 : 0.45 }} /></div>
+        </li>)}
       </ul>
     </div>}
 
-    {gaps.length > 0 && <div className="mt-5 border-t border-[#e5e5e5] pt-4">
-      <p className="text-[10px] uppercase tracking-[.14em] font-semibold text-[#10283b]">Potential gaps</p>
-      <ul className="mt-2 space-y-1.5">
-        {gaps.map(([key]) => <li key={key} className="text-[12px] leading-5 text-[#4d4d4d] pl-3 border-l-2 border-[#c7ced3]">{CATEGORY_LABELS[key]}</li>)}
+    {(data.strongestEvidence || []).length > 0 && <div className="mt-5 border-t border-[#e5e5e5] pt-4">
+      <p className="text-[10px] uppercase tracking-[.14em] font-semibold text-[#10283b]">Your strongest evidence</p>
+      <p className="text-[11px] leading-5 text-[#7d8990] mt-1">From your own CV - lead with these.</p>
+      <ul className="mt-2 space-y-2">
+        {(data.strongestEvidence || []).map(line => <li key={line} className="border-l-2 border-[#0b2f4d] pl-3 text-[12px] leading-5 text-[#10283b]">&ldquo;{line}&rdquo;</li>)}
       </ul>
+    </div>}
+    {data.hasEvidenceBank === false && <div className="mt-5 border-t border-[#e5e5e5] pt-4">
+      <p className="text-[11px] leading-5 text-[#7d8990]"><Link href="/talent/profile" className="font-semibold text-[#0b2f4d] underline">Upload your CV</Link> and WHC will extract the evidence statements worth leading with on applications like this.</p>
+    </div>}
+
+    {(data.employerMayQuestion || []).length > 0 && <div className="mt-5 border-t border-[#e5e5e5] pt-4">
+      <p className="text-[10px] uppercase tracking-[.14em] font-semibold text-[#10283b]">What the employer may question</p>
+      <ul className="mt-2 space-y-2">
+        {(data.employerMayQuestion || []).map(item => <li key={item} className="border-l-2 border-[#c7ced3] pl-3 text-[12px] leading-5 text-[#4d4d4d]">{item}</li>)}
+      </ul>
+      {data.interviewReadyHref && <Link href={data.interviewReadyHref} className="btn-primary mt-4 inline-block !py-2 text-[12px]">Prepare answers in Interview Ready</Link>}
     </div>}
 
     {actions.length > 0 && <div className="mt-5 border-t border-[#e5e5e5] pt-4">

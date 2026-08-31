@@ -113,7 +113,12 @@ export default function InterviewReadyPage() {
   const [profile, setProfile] = useState<any>(null)
   const [jobs, setJobs] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
-  const [jobId, setJobId] = useState('')
+  // Arriving from a role page ("Prepare answers in Interview Ready")
+  // preselects that role, closing the job -> match -> preparation loop.
+  const [jobId, setJobId] = useState(() => {
+    if (typeof window === 'undefined') return ''
+    return new URLSearchParams(window.location.search).get('job') || ''
+  })
   const [targetRole, setTargetRole] = useState('')
   const [companyName, setCompanyName] = useState('')
   const [jobDescription, setJobDescription] = useState('')
