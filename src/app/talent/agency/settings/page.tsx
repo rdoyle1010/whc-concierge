@@ -223,6 +223,13 @@ export default function AgencySettingsPage() {
           <div className="flex items-center gap-2 mb-1"><CalendarDays size={17} className="text-ink" /><h3 className="font-serif text-lg font-semibold">Your Availability</h3></div>
           <p className="text-[12px] text-gray-500 mb-5">Choose the day, say whether you are available, then add the exact hours you can genuinely work. A property only sees you as available when its entire shift fits inside the hours you have set.</p>
 
+          {!live.available && (
+            <div className="mb-5 border border-amber-300 bg-amber-50 px-4 py-3">
+              <p className="text-[13px] font-semibold text-amber-900">Properties cannot see any of this yet</p>
+              <p className="mt-1 text-[12px] leading-5 text-amber-800">Your hours are saved, but you are not on the agency register, so you do not appear in any property&apos;s search. Subscribe below and everything you have set here goes live immediately.</p>
+            </div>
+          )}
+
           <div className="border border-border bg-white p-5 mb-5">
             <p className="text-[10px] uppercase tracking-[.14em] text-muted font-semibold">Selected day</p>
             <p className="mt-1 text-[24px] font-serif font-semibold text-ink">{prettyDate(selectedDate)}</p>

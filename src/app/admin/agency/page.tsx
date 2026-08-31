@@ -18,6 +18,7 @@ export default function AdminAgencyPage() {
   const [academy, setAcademy] = useState<any>(null)
   const [loadError, setLoadError] = useState('')
   const [bookingsCapped, setBookingsCapped] = useState(false)
+  const [registerRows, setRegisterRows] = useState<any[]>([])
 
   async function load() {
     setLoadError('')
@@ -30,6 +31,7 @@ export default function AdminAgencyPage() {
         setBookings(j.bookings || [])
         setCredits(j.referral_credits || [])
         setAcademy(j.academy || null)
+        setRegisterRows(j.register || [])
         setBookingsCapped(Boolean(j.pagination?.bookings_capped))
       }
     } catch { setLoadError('Could not load Agency money.') }
@@ -51,6 +53,20 @@ export default function AdminAgencyPage() {
   }
 
   useEffect(() => { load() }, [])
+
+  async function registerAction(candidateId: string, action: 'register_list' | 'register_delist') {
+    setError('')
+    setBusyId(candidateId)
+    try {
+      const res = await fetch('/api/admin/agency', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action, candidateId }),
+      })
+      const j = await res.json()
+      if (!res.ok) { setError(j.error || 'Could not update the register.'); return }
+      await load()
+    } catch { setError('Something went wrong - please try again.') } finally { setBusyId(null) }
+  }
 
   async function markPaidOut(bookingId: string) {
     setError('')
@@ -168,6 +184,46 @@ export default function AdminAgencyPage() {
             <div className="dashboard-card"><p className="eyebrow mb-1">Refunded</p><p className="text-[22px] font-semibold text-gray-600">£{totalRefunded}</p></div>
             <div className="dashboard-card"><p className="eyebrow mb-1">WHC margin</p><p className="text-[22px] font-semibold text-green-700">£{margin}</p></div>
           </div>
+
+          {/* The register: who employers can actually find, and why not */}
+          {registerRows.length > 0 && (
+            <div className="dashboard-card mb-8 overflow-x-auto">
+              <h2 className="text-[16px] font-medium text-ink mb-1">Agency register ({registerRows.filter(r => r.listed).length} listed)</h2>
+              <p className="text-[12px] text-gray-500 mb-4">Employers only see professionals who are listed, approved, location-mapped and within mutual travel radius. Anything red below is why someone is invisible.</p>
+              <table className="w-full text-left text-[13px]">
+                <thead>
+                  <tr className="text-[11px] uppercase tracking-wide text-gray-400 border-b border-border">
+                    <th className="py-2 pr-4">Professional</th>
+                    <th className="py-2 pr-4">Listed</th>
+                    <th className="py-2 pr-4">Rate</th>
+                    <th className="py-2 pr-4">Location</th>
+                    <th className="py-2 pr-4">Radius</th>
+                    <th className="py-2 pr-4">Upcoming shifts set</th>
+                    <th className="py-2"></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {registerRows.map(r => (
+                    <tr key={r.id} className="border-b border-border/60">
+                      <td className="py-2.5 pr-4 font-medium text-ink">{r.full_name}{!r.approved && <span className="ml-2 text-[10px] text-red-600 font-semibold uppercase">Not approved</span>}{!r.visible && <span className="ml-2 text-[10px] text-red-600 font-semibold uppercase">Hidden</span>}</td>
+                      <td className="py-2.5 pr-4">{r.listed
+                        ? <span className="text-green-700 font-medium">Yes{r.agency_tier === 'featured' ? ' · Featured' : ''}{r.agency_listed_until ? ` · until ${new Date(r.agency_listed_until).toLocaleDateString('en-GB')}` : ''}</span>
+                        : <span className="text-red-600 font-medium">No - invisible to employers</span>}</td>
+                      <td className="py-2.5 pr-4">{r.hourly_rate ? `£${r.hourly_rate}/hr` : <span className="text-red-600">Not set</span>}</td>
+                      <td className="py-2.5 pr-4">{r.location_mapped ? 'Mapped' : <span className="text-red-600">Not mapped</span>}</td>
+                      <td className="py-2.5 pr-4">{r.travel_radius_miles ? `${r.travel_radius_miles} mi` : '-'}</td>
+                      <td className="py-2.5 pr-4">{r.upcoming_windows}</td>
+                      <td className="py-2.5 text-right whitespace-nowrap">
+                        {r.listed
+                          ? <button onClick={() => registerAction(r.id, 'register_delist')} disabled={busyId === r.id} className="text-[12px] underline text-gray-500 disabled:opacity-50">{busyId === r.id ? 'Working...' : 'Remove from register'}</button>
+                          : <button onClick={() => registerAction(r.id, 'register_list')} disabled={busyId === r.id} className="btn-secondary text-[11px] !px-3 !py-1.5 disabled:opacity-50">{busyId === r.id ? 'Working...' : 'List for 30 days (no charge)'}</button>}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
 
           {/* Open disputes - resolve before paying out */}
           {disputes.length > 0 && (

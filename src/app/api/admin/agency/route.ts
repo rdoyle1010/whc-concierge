@@ -125,10 +125,42 @@ export async function GET() {
       }
     } catch { /* table/function not live yet */ }
 
+    // The register itself: who is listed, who has set up but never joined,
+    // and the reasons someone who thinks they are visible is not.
+    let register: any[] = []
+    try {
+      const { data: regRows } = await admin.from('candidate_profiles')
+        .select('id, full_name, agency_available, agency_tier, agency_listed_until, hourly_rate, postcode, travel_radius_miles, latitude, approval_status, profile_visible')
+        .or('agency_available.eq.true,hourly_rate.not.is.null')
+        .order('full_name')
+        .limit(200)
+      const regIds = (regRows || []).map((row: any) => row.id)
+      const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Europe/London' })
+      const { data: windowRows } = regIds.length
+        ? await admin.from('agency_availability_windows').select('candidate_id').in('candidate_id', regIds).gte('date', today)
+        : { data: [] as any[] }
+      const windowCount = new Map<string, number>()
+      for (const row of windowRows || []) windowCount.set(row.candidate_id, (windowCount.get(row.candidate_id) || 0) + 1)
+      register = (regRows || []).map((row: any) => ({
+        id: row.id,
+        full_name: row.full_name,
+        listed: Boolean(row.agency_available) && (!row.agency_listed_until || new Date(row.agency_listed_until).getTime() >= Date.now()),
+        agency_tier: row.agency_tier || null,
+        agency_listed_until: row.agency_listed_until || null,
+        hourly_rate: row.hourly_rate || null,
+        location_mapped: row.latitude != null,
+        travel_radius_miles: row.travel_radius_miles || null,
+        approved: row.approval_status === 'approved',
+        visible: row.profile_visible !== false,
+        upcoming_windows: windowCount.get(row.id) || 0,
+      }))
+    } catch { /* columns not live yet - panel simply not shown */ }
+
     return NextResponse.json({
       bookings: rows,
       referral_credits: referralCredits,
       academy,
+      register,
       pagination: {
         bookings_limit: BOOKING_LIMIT,
         bookings_returned: rows.length,
@@ -155,6 +187,30 @@ export async function POST(req: NextRequest) {
       const { error } = await adminC.from('referrals')
         .update({ credit_applied: true })
         .eq('id', body.referralId).eq('status', 'converted')
+      if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+      return NextResponse.json({ success: true })
+    }
+
+    // List or delist a professional on the register without a charge - for
+    // testing, goodwill or comped listings. Clearly labelled in the UI so it
+    // is never mistaken for the paid route.
+    if (body.action === 'register_list' && body.candidateId) {
+      const adminC = createAdminClient()
+      const { error } = await adminC.from('candidate_profiles')
+        .update({
+          agency_available: true,
+          agency_tier: 'basic',
+          agency_listed_until: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+        })
+        .eq('id', body.candidateId)
+      if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+      return NextResponse.json({ success: true })
+    }
+    if (body.action === 'register_delist' && body.candidateId) {
+      const adminC = createAdminClient()
+      const { error } = await adminC.from('candidate_profiles')
+        .update({ agency_available: false, agency_listed_until: null })
+        .eq('id', body.candidateId)
       if (error) return NextResponse.json({ error: error.message }, { status: 500 })
       return NextResponse.json({ success: true })
     }
