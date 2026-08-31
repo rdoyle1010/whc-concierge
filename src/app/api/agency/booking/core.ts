@@ -877,17 +877,20 @@ export async function POST(req: NextRequest) {
     }
 
     if (action === 'counter') {
-      if (!isCandidateParty) {
-        return NextResponse.json({ error: 'Only the candidate can counter an offer' }, { status: 403 })
-      }
+      // Negotiation runs both ways and can go multiple rounds. The status
+      // carries whose turn it is: 'countered' means the ball is with the
+      // property, 'pending' means it is with the professional - so a
+      // property countering back simply returns the offer to 'pending'
+      // at the new rate, and either side can keep going until someone
+      // accepts or declines.
       const rate = parseInt(String(body.rate), 10)
       if (!rate || rate <= 0) return NextResponse.json({ error: 'A valid counter rate is required' }, { status: 400 })
 
       // Recalculate the platform fee against the countered hourly rate.
       // On a cascade offer the counter resets the 30-minute window so the
-      // property gets a fresh clock to accept it before the queue moves on.
+      // other side gets a fresh clock before the queue moves on.
       const counterFee = Math.ceil(rate * (booking.hours && booking.hours > 0 ? booking.hours : 8) * await feePctForEmployerShift(admin, booking.employer_id, booking.shift_date))
-      const counterUpdate: Record<string, any> = { rate, platform_fee: counterFee, status: 'countered' }
+      const counterUpdate: Record<string, any> = { rate, platform_fee: counterFee, status: isCandidateParty ? 'countered' : 'pending' }
       if (Array.isArray(booking.cascade_queue)) {
         const fresh = new Date(Date.now() + CASCADE_WINDOW_MS).toISOString()
         counterUpdate.cascade_deadline = fresh
@@ -897,14 +900,16 @@ export async function POST(req: NextRequest) {
         .from('agency_bookings')
         .update(counterUpdate)
         .eq('id', booking.id)
+        .in('status', OPEN_STATUSES)
         .select('*')
-        .single()
+        .maybeSingle()
       if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+      if (!updated) return NextResponse.json({ error: 'This offer is no longer open - it may have just been actioned elsewhere.' }, { status: 409 })
 
       await notifyOtherParty(
         admin, otherUserId, user.id,
         'Counter-offer received',
-        `${actorName} has countered your agency offer for ${shiftDate} with a rate of £${rate} per hour. You can accept or decline from their profile page.`,
+        `${actorName} has come back at £${rate} per hour for the ${shiftDate} shift. Accept, counter again or decline from your Agency page.`,
         otherLink,
       )
       return NextResponse.json({ success: true, booking: updated })

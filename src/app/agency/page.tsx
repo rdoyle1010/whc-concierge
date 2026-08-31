@@ -5,7 +5,7 @@ import { createClient } from '@/lib/supabase/client'
 import DashboardShell from '@/components/DashboardShell'
 import SwipeDeck from '@/components/SwipeDeck'
 import Link from 'next/link'
-import { Search, MapPin, Star, Shield, ShieldCheck, ChevronDown, X, SlidersHorizontal, GraduationCap, CheckCircle2, Rows3, Layers3 } from 'lucide-react'
+import { Search, MapPin, Star, Shield, ShieldCheck, ChevronDown, X, SlidersHorizontal, GraduationCap, CheckCircle2, Rows3, Layers3, Heart } from 'lucide-react'
 import { ACADEMY, courseTitle } from '@/lib/academy'
 import { shiftHours } from '@/lib/agency-time'
 import { AGENCY_PLATFORM_FEE_PCT } from '@/lib/constants'
@@ -70,6 +70,11 @@ export default function AgencyPage() {
   const [academySel, setAcademySel] = useState<string[]>([])
   const [academyMap, setAcademyMap] = useState<Map<string, string[]>>(new Map())
   const [requiresSignIn, setRequiresSignIn] = useState(false)
+  // Favourites reuse the Saved Talent shortlist, so a heart here also
+  // appears on the employer's Saved Talent page.
+  const [favourites, setFavourites] = useState<Map<string, string>>(new Map())
+  const [favBusy, setFavBusy] = useState<string | null>(null)
+  const [favouritesOnly, setFavouritesOnly] = useState(false)
   const [directoryError, setDirectoryError] = useState('')
   const [originGeocoded, setOriginGeocoded] = useState(true)
 
@@ -96,8 +101,34 @@ export default function AgencyPage() {
     finally { setLoading(false) }
   }
 
+  async function loadFavourites() {
+    try {
+      const res = await fetch('/api/shortlist')
+      if (!res.ok) return
+      const j = await res.json()
+      const map = new Map<string, string>()
+      for (const entry of j.shortlisted || []) if (entry.candidate_id) map.set(entry.candidate_id, entry.id)
+      setFavourites(map)
+    } catch { /* signed out or talent viewer - hearts simply stay empty */ }
+  }
+
+  async function toggleFavourite(candidateId: string) {
+    setFavBusy(candidateId)
+    try {
+      const existingId = favourites.get(candidateId)
+      if (existingId) {
+        const res = await fetch('/api/shortlist', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: existingId }) })
+        if (res.ok) { const next = new Map(favourites); next.delete(candidateId); setFavourites(next) }
+      } else {
+        const res = await fetch('/api/shortlist', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ candidateId }) })
+        if (res.ok) await loadFavourites()
+      }
+    } catch { /* leave the heart as it was */ } finally { setFavBusy(null) }
+  }
+
   useEffect(() => {
     loadDirectory(ukWideParams())
+    loadFavourites()
     supabase.from('course_enrollments').select('candidate_id, course_slug').not('completed_at', 'is', null).then(({ data }) => {
       if (!data) return
       const m = new Map<string, string[]>()
@@ -124,13 +155,14 @@ export default function AgencyPage() {
   const filtered = useMemo(() => candidates.filter(c => {
     if (c.agency_available === false) return false
     if (insuredOnly && !c.has_insurance) return false
+    if (favouritesOnly && !favourites.has(c.id)) return false
     if (confirmedOnly && shiftDate && c.availability_match !== 'confirmed') return false
     if (services.length && !services.some(s => (c.services_offered || []).some((sp: string) => sp.toLowerCase().includes(s.toLowerCase())))) return false
     if (brands.length && !brands.some(b => (c.product_houses || []).some((ph: string) => ph.toLowerCase().includes(b.toLowerCase())))) return false
     if (roles.length && !roles.includes(c.role_level)) return false
     if (academySel.length && !academySel.every(s => (academyMap.get(c.id) || []).includes(s))) return false
     return c.within_radius !== false
-  }), [candidates, insuredOnly, confirmedOnly, services, brands, roles, academySel, academyMap])
+  }), [candidates, insuredOnly, confirmedOnly, shiftDate, services, brands, roles, academySel, academyMap, favouritesOnly, favourites])
 
   const sorted = useMemo(() => [...filtered].sort((a, b) => {
     const aFeat = a.agency_tier === 'featured' || a.is_featured ? 1 : 0
@@ -145,13 +177,13 @@ export default function AgencyPage() {
     return (b.review_score || 0) - (a.review_score || 0)
   }), [filtered, sortBy])
 
-  const filterPanel = <div className="bg-white border border-border rounded-2xl p-5 shadow-sm"><div className="flex items-center justify-between mb-4"><p className="text-[14px] font-medium text-ink">Filters</p><button type="button" onClick={clearFilters} className="text-[11px] text-muted hover:text-ink">Clear all</button></div><FilterSection title="Availability" defaultOpen><label className="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked={confirmedOnly} onChange={() => setConfirmedOnly(!confirmedOnly)} className="w-3.5 h-3.5" /><span className="text-[12px] text-secondary">Confirmed for selected shift</span></label></FilterSection><FilterSection title="Services Offered" defaultOpen>{SERVICE_FILTERS.map(s => <label key={s} className="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked={services.includes(s)} onChange={() => toggleFilter(services, setServices, s)} className="w-3.5 h-3.5" /><span className="text-[12px] text-secondary">{s}</span></label>)}</FilterSection><FilterSection title="Product Houses">{BRAND_FILTERS.map(b => <label key={b} className="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked={brands.includes(b)} onChange={() => toggleFilter(brands, setBrands, b)} className="w-3.5 h-3.5" /><span className="text-[12px] text-secondary">{b}</span></label>)}</FilterSection><FilterSection title="Role Level">{ROLE_FILTERS.map(r => <label key={r} className="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked={roles.includes(r)} onChange={() => toggleFilter(roles, setRoles, r)} className="w-3.5 h-3.5" /><span className="text-[12px] text-secondary">{r}</span></label>)}</FilterSection><FilterSection title="Insurance"><label className="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked={insuredOnly} onChange={() => setInsuredOnly(!insuredOnly)} className="w-3.5 h-3.5" /><span className="text-[12px] text-secondary">Insured only</span></label></FilterSection><FilterSection title="WHC Academy">{ACADEMY.map(course => <label key={course.slug} className="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked={academySel.includes(course.slug)} onChange={() => toggleFilter(academySel, setAcademySel, course.slug)} className="w-3.5 h-3.5" /><span className="text-[12px] text-secondary">{course.title}</span></label>)}</FilterSection></div>
+  const filterPanel = <div className="bg-white border border-border rounded-2xl p-5 shadow-sm"><div className="flex items-center justify-between mb-4"><p className="text-[14px] font-medium text-ink">Filters</p><button type="button" onClick={clearFilters} className="text-[11px] text-muted hover:text-ink">Clear all</button></div><FilterSection title="Availability" defaultOpen><label className="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked={confirmedOnly} onChange={() => setConfirmedOnly(!confirmedOnly)} className="w-3.5 h-3.5" /><span className="text-[12px] text-secondary">Confirmed for selected shift</span></label></FilterSection><FilterSection title="Favourites" defaultOpen><label className="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked={favouritesOnly} onChange={() => setFavouritesOnly(!favouritesOnly)} className="w-3.5 h-3.5" /><span className="text-[12px] text-secondary">My favourites only{favourites.size ? ` (${favourites.size})` : ''}</span></label></FilterSection><FilterSection title="Services Offered" defaultOpen>{SERVICE_FILTERS.map(s => <label key={s} className="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked={services.includes(s)} onChange={() => toggleFilter(services, setServices, s)} className="w-3.5 h-3.5" /><span className="text-[12px] text-secondary">{s}</span></label>)}</FilterSection><FilterSection title="Product Houses">{BRAND_FILTERS.map(b => <label key={b} className="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked={brands.includes(b)} onChange={() => toggleFilter(brands, setBrands, b)} className="w-3.5 h-3.5" /><span className="text-[12px] text-secondary">{b}</span></label>)}</FilterSection><FilterSection title="Role Level">{ROLE_FILTERS.map(r => <label key={r} className="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked={roles.includes(r)} onChange={() => toggleFilter(roles, setRoles, r)} className="w-3.5 h-3.5" /><span className="text-[12px] text-secondary">{r}</span></label>)}</FilterSection><FilterSection title="Insurance"><label className="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked={insuredOnly} onChange={() => setInsuredOnly(!insuredOnly)} className="w-3.5 h-3.5" /><span className="text-[12px] text-secondary">Insured only</span></label></FilterSection><FilterSection title="WHC Academy">{ACADEMY.map(course => <label key={course.slug} className="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked={academySel.includes(course.slug)} onChange={() => toggleFilter(academySel, setAcademySel, course.slug)} className="w-3.5 h-3.5" /><span className="text-[12px] text-secondary">{course.title}</span></label>)}</FilterSection></div>
 
   function profileParams(c:any){ const p=new URLSearchParams({shiftDate,shiftStartTime,shiftEndTime}); return `/agency/${c.id}?${p.toString()}` }
   function candidateCard(c:any){
     const therapistCost = c.hourly_rate && selectedHours ? c.hourly_rate * selectedHours : null
     const fee = therapistCost ? Math.ceil(therapistCost * AGENCY_PLATFORM_FEE_PCT) : null
-    return <div className={`h-[500px] overflow-hidden rounded-3xl border bg-white shadow-xl ${c.is_featured?'border-accent ring-1 ring-accent/20':'border-border'}`}><div className="p-7"><div className="flex items-start gap-4 mb-4"><div className="w-20 h-20 rounded-full bg-[#f0f0f0] border border-[#e5e5e5] overflow-hidden flex items-center justify-center shrink-0">{c.profile_image_url?<img src={c.profile_image_url} alt="" className="w-full h-full object-cover" draggable={false}/>:<span className="text-[24px] font-semibold text-[#12354D]">{c.full_name?.[0]}</span>}</div><div className="min-w-0 flex-1"><div className="flex items-center gap-2"><h3 className="text-[24px] font-semibold text-ink truncate">{c.full_name}</h3>{c.is_featured&&<span className="text-[9px] font-semibold bg-accent text-white px-2 py-0.5 rounded-full">FEATURED</span>}</div>{c.role_level&&<p className="mt-1 text-[12px] font-medium text-secondary">{c.role_level}</p>}{c.headline&&<p className="text-[12px] text-muted line-clamp-2 mt-1">{c.headline}</p>}</div></div><div className="flex flex-wrap items-center gap-3 mb-4">{c.review_score>0?<span className="flex items-center gap-1 text-[12px]"><Star size={12} className="text-amber-400" fill="currentColor"/>{c.review_score} ({c.review_count})</span>:<span className="text-[11px] text-muted">New</span>}{(c.location||c.distance_miles!=null)&&<span className="text-[11px] text-muted flex items-center gap-1"><MapPin size={11}/>{c.location||'Location available'}{c.distance_miles!=null?` · ${c.distance_miles} mi away`:''}</span>}{c.whc_verified&&<span className="text-[10px] font-semibold text-green-700 flex items-center gap-1"><ShieldCheck size={11}/>WHC Verified</span>}{c.has_insurance&&<span className="text-[10px] text-green-700 flex items-center gap-1"><Shield size={11}/>Insured</span>}</div>{(academyMap.get(c.id)?.length||0)>0&&<p className="text-[11px] text-accent mb-3 flex items-center gap-1"><GraduationCap size={12}/>{academyMap.get(c.id)!.length} WHC Academy completion{academyMap.get(c.id)!.length===1?'':'s'}</p>}{c.services_offered?.length>0&&<div className="flex flex-wrap gap-1.5 mb-4">{c.services_offered.slice(0,5).map((s:string)=><span key={s} className="text-[10px] bg-gray-100 text-gray-700 px-2 py-1 rounded-full">{s}</span>)}</div>}{c.hourly_rate&&<div className="mb-4"><p className="text-[20px] font-semibold text-accent">£{c.hourly_rate}<span className="text-[11px] font-normal text-muted"> / hour</span></p>{therapistCost!=null&&<p className="text-[11px] text-muted">£{therapistCost} therapist cost for {selectedHours}h{fee!=null?` · £${fee} WHC fee at booking`:''}</p>}</div>}{c.availability_match!=null&&<div className="mb-5">{c.availability_match==='confirmed'?<span className="text-[12px] text-success font-semibold flex items-center gap-1"><CheckCircle2 size={13}/>Available {shiftStartTime}–{shiftEndTime}</span>:<span className="text-[11px] text-amber-600">Availability not confirmed for this shift</span>}</div>}<Link href={profileParams(c)} onPointerDown={e=>e.stopPropagation()} className="btn-primary block w-full text-center text-[12px]">View Profile & Make an Offer</Link></div></div>
+    return <div className={`h-[500px] overflow-hidden rounded-3xl border bg-white shadow-xl ${c.is_featured?'border-accent ring-1 ring-accent/20':'border-border'}`}><div className="p-7"><div className="flex items-start gap-4 mb-4"><div className="w-20 h-20 rounded-full bg-[#f0f0f0] border border-[#e5e5e5] overflow-hidden flex items-center justify-center shrink-0">{c.profile_image_url?<img src={c.profile_image_url} alt="" className="w-full h-full object-cover" draggable={false}/>:<span className="text-[24px] font-semibold text-[#12354D]">{c.full_name?.[0]}</span>}</div><div className="min-w-0 flex-1"><div className="flex items-center gap-2"><h3 className="text-[24px] font-semibold text-ink truncate">{c.full_name}</h3>{c.is_featured&&<span className="text-[9px] font-semibold bg-accent text-white px-2 py-0.5 rounded-full">FEATURED</span>}<button type="button" title={favourites.has(c.id)?'Remove from favourites':'Save to favourites'} onPointerDown={e=>e.stopPropagation()} onClick={e=>{e.preventDefault();e.stopPropagation();toggleFavourite(c.id)}} disabled={favBusy===c.id} className="ml-auto shrink-0 text-accent disabled:opacity-50"><Heart size={18} className={favourites.has(c.id)?'fill-current':''}/></button></div>{c.role_level&&<p className="mt-1 text-[12px] font-medium text-secondary">{c.role_level}</p>}{c.headline&&<p className="text-[12px] text-muted line-clamp-2 mt-1">{c.headline}</p>}</div></div><div className="flex flex-wrap items-center gap-3 mb-4">{c.review_score>0?<span className="flex items-center gap-1 text-[12px]"><Star size={12} className="text-amber-400" fill="currentColor"/>{c.review_score} ({c.review_count})</span>:<span className="text-[11px] text-muted">New</span>}{(c.location||c.distance_miles!=null)&&<span className="text-[11px] text-muted flex items-center gap-1"><MapPin size={11}/>{c.location||'Location available'}{c.distance_miles!=null?` · ${c.distance_miles} mi away`:''}</span>}{c.whc_verified&&<span className="text-[10px] font-semibold text-green-700 flex items-center gap-1"><ShieldCheck size={11}/>WHC Verified</span>}{c.has_insurance&&<span className="text-[10px] text-green-700 flex items-center gap-1"><Shield size={11}/>Insured</span>}</div>{(academyMap.get(c.id)?.length||0)>0&&<p className="text-[11px] text-accent mb-3 flex items-center gap-1"><GraduationCap size={12}/>{academyMap.get(c.id)!.length} WHC Academy completion{academyMap.get(c.id)!.length===1?'':'s'}</p>}{c.services_offered?.length>0&&<div className="flex flex-wrap gap-1.5 mb-4">{c.services_offered.slice(0,5).map((s:string)=><span key={s} className="text-[10px] bg-gray-100 text-gray-700 px-2 py-1 rounded-full">{s}</span>)}</div>}{c.hourly_rate&&<div className="mb-4"><p className="text-[20px] font-semibold text-accent">£{c.hourly_rate}<span className="text-[11px] font-normal text-muted"> / hour</span></p>{therapistCost!=null&&<p className="text-[11px] text-muted">£{therapistCost} therapist cost for {selectedHours}h{fee!=null?` · £${fee} WHC fee at booking`:''}</p>}</div>}{c.availability_match!=null&&<div className="mb-5">{c.availability_match==='confirmed'?<span className="text-[12px] text-success font-semibold flex items-center gap-1"><CheckCircle2 size={13}/>Available {shiftStartTime}–{shiftEndTime}</span>:<span className="text-[11px] text-amber-600">Availability not confirmed for this shift</span>}</div>}<Link href={profileParams(c)} onPointerDown={e=>e.stopPropagation()} className="btn-primary block w-full text-center text-[12px]">View Profile & Make an Offer</Link></div></div>
   }
 
   return <DashboardShell role="employer">

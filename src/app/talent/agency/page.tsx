@@ -96,7 +96,7 @@ export default function TalentAgencyPage() {
         body: JSON.stringify({ bookingId, reason: cancelReason.trim() }),
       })
       const j = await res.json().catch(() => ({}))
-      if (!res.ok) { setCancelError(j.error || 'Could not cancel this shift - please try again.'); return }
+      if (!res.ok) { setCancelError(j.error || 'Could not cancel this shift - please try again.'); await load(); return }
       setCancellingId(null)
       setCancelReason('')
       await load()
@@ -223,6 +223,12 @@ export default function TalentAgencyPage() {
                             {b.taxi_support && <span className="flex items-center gap-1">Taxi / shuttle help{b.taxi_notes ? ` · ${b.taxi_notes}` : ''}</span>}
                             {b.travel_notes && <span className="w-full text-gray-500">Property-supplied access note: {b.travel_notes}</span>}
                           </div>
+                        )}
+                        {b.employer_description && <p className="mt-2 max-w-2xl text-[12px] leading-5 text-gray-500 line-clamp-2">{b.employer_description}</p>}
+                        {b.employer_profile_id && (
+                          <Link href={`/properties/${b.employer_profile_id}`} target="_blank" className="mt-2 inline-flex items-center gap-1 text-[12px] font-semibold text-accent hover:underline">
+                            View the full property profile - the spa, team, culture and reviews
+                          </Link>
                         )}
                       </div>
 
