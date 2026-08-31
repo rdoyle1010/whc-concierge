@@ -11,6 +11,9 @@ const EDITABLE_FIELDS = [
   'required_skills', 'required_brands', 'required_qualifications', 'required_systems',
   'preferred_business_skills', 'min_years_experience', 'shift_pattern', 'offers_accommodation',
   'requirements', 'benefits', 'insurance_required', 'is_agency_role', 'is_residency_role',
+  'why_role_exists', 'success_90_days', 'reporting_line', 'team_size', 'opening_hours',
+  'commercial_responsibility', 'membership_size', 'key_kpis', 'why_move',
+  'career_progression', 'interview_process',
 ] as const
 
 const CANDIDATE_SCOPES = new Set(['same_level', 'step_up', 'emerging', 'open_transferable'])

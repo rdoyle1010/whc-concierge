@@ -3,6 +3,14 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { geocodePostcode } from '@/lib/geo'
 import { getRequestUser } from '@/lib/request-user'
 
+// Job storytelling columns (20260831170000). Optional narrative fields; if the
+// live database does not have them yet, the insert retries without them.
+const STORY_FIELDS = [
+  'why_role_exists', 'success_90_days', 'reporting_line', 'team_size', 'opening_hours',
+  'commercial_responsibility', 'membership_size', 'key_kpis', 'why_move',
+  'career_progression', 'interview_process',
+] as const
+
 const ALLOWED_FIELDS = [
   'job_title', 'job_description', 'job_image_url', 'location', 'location_postcode', 'radius_miles',
   'job_type', 'contract_type', 'required_role_level', 'candidate_scope', 'salary_min', 'salary_max',
@@ -10,6 +18,7 @@ const ALLOWED_FIELDS = [
   'preferred_business_skills', 'min_years_experience', 'shift_pattern',
   'offers_accommodation', 'requirements', 'benefits', 'insurance_required',
   'is_agency_role', 'is_residency_role', 'tier', 'is_live', 'status',
+  ...STORY_FIELDS,
 ] as const
 
 const CANDIDATE_SCOPES = new Set(['same_level', 'step_up', 'emerging', 'open_transferable'])
@@ -49,7 +58,13 @@ export async function POST(req: NextRequest) {
   if (!coords && employer.postcode) coords = await geocodePostcode(employer.postcode)
   if (coords) { payload.latitude = coords.latitude; payload.longitude = coords.longitude }
 
-  const { data: job, error } = await admin.from('job_listings').insert(payload).select('id').single()
+  let { data: job, error } = await admin.from('job_listings').insert(payload).select('id').single()
+  if (error && /column/i.test(error.message) && STORY_FIELDS.some(field => field in payload)) {
+    // Storytelling columns not migrated yet: post the role without them.
+    const trimmed = { ...payload }
+    for (const field of STORY_FIELDS) delete trimmed[field]
+    ;({ data: job, error } = await admin.from('job_listings').insert(trimmed).select('id').single())
+  }
   if (error) return NextResponse.json({ error: error.message }, { status: 400 })
   return NextResponse.json({ job })
 }

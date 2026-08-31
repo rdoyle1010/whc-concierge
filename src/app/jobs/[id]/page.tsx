@@ -8,6 +8,7 @@ import Footer from '@/components/Footer'
 import JobApplyButtons from '@/components/JobApplyButtons'
 import { createAdminClient } from '@/lib/supabase/admin'
 import SponsoredAd from '@/components/SponsoredAd'
+import JobMatchPanel from '@/components/JobMatchPanel'
 
 export const revalidate = 60
 
@@ -136,7 +137,37 @@ export default async function RoleDetailPage(props: { params: Promise<{ id: stri
 
       <section className="max-w-6xl mx-auto px-6 py-14 md:py-16 grid lg:grid-cols-[minmax(0,1fr)_290px] gap-12">
         <div className="space-y-14">
-          {description && <JobSection eyebrow="The role" title="What you'll be doing"><div className="text-[15px] leading-8 text-[#465761] whitespace-pre-line">{description}</div></JobSection>}
+          {job.why_role_exists && <JobSection eyebrow="The story" title="Why this role exists"><Prose text={job.why_role_exists}/></JobSection>}
+
+          {description && <JobSection eyebrow="The role" title="What you'll be doing"><Prose text={description}/></JobSection>}
+
+          {job.success_90_days && <JobSection eyebrow="The first 90 days" title="What success looks like"><Prose text={job.success_90_days}/></JobSection>}
+
+          {hasAny([job.commercial_responsibility, job.key_kpis, job.membership_size, job.opening_hours]) &&
+            <JobSection eyebrow="The commercial picture" title="Commercial responsibility">
+              {job.commercial_responsibility && <Prose text={job.commercial_responsibility}/>}
+              {Array.isArray(job.key_kpis) && job.key_kpis.length > 0 && <div className={job.commercial_responsibility ? 'mt-6' : ''}><p className="text-[11px] uppercase tracking-[.12em] font-semibold text-[#7d8990] mb-3">The numbers this role owns</p><ul className="space-y-2">{job.key_kpis.map((kpi: string) => <li key={kpi} className="text-[13px] leading-6 text-[#4d4d4d] pl-3 border-l-2 border-[#0b2f4d]">{kpi}</li>)}</ul></div>}
+              {(job.membership_size || job.opening_hours) && <div className="grid sm:grid-cols-2 gap-3 mt-6">{job.membership_size && <Fact label="Membership" value={String(job.membership_size)}/>} {job.opening_hours && <Fact label="Opening hours" value={String(job.opening_hours)}/>}</div>}
+            </JobSection>}
+
+          {hasAny([employer.num_treatment_rooms, employer.spa_size, employer.facilities, employer.product_houses_used || employer.product_houses, employer.team_size]) &&
+            <JobSection eyebrow="The spa" title={`Inside the spa at ${propertyName}`}>
+              {(employer.num_treatment_rooms || employer.spa_size || employer.team_size) && <div className="grid sm:grid-cols-3 gap-3">{employer.num_treatment_rooms && <Fact label="Treatment rooms" value={String(employer.num_treatment_rooms)}/>} {employer.spa_size && <Fact label="Spa size" value={String(employer.spa_size)}/>} {employer.team_size && <Fact label="Spa team" value={`${employer.team_size} people`}/>}</div>}
+              {Array.isArray(employer.facilities) && employer.facilities.length > 0 && <div className="mt-6"><p className="text-[11px] uppercase tracking-[.12em] font-semibold text-[#7d8990] mb-3">Facilities</p><div className="flex flex-wrap gap-1.5">{employer.facilities.map((facility: string) => <span key={facility} className="text-[12px] bg-[#f1f4f6] text-[#4d4d4d] px-3 py-1.5">{facility}</span>)}</div></div>}
+              {(() => { const partners = employer.product_houses_used || employer.product_houses; return Array.isArray(partners) && partners.length > 0 ? <div className="mt-6"><p className="text-[11px] uppercase tracking-[.12em] font-semibold text-[#7d8990] mb-3">Product partners</p><div className="flex flex-wrap gap-1.5">{partners.map((house: string) => <span key={house} className="text-[12px] border border-[#e5e5e5] bg-white text-[#10283b] px-3 py-1.5">{house}</span>)}</div></div> : null })()}
+            </JobSection>}
+
+          {(job.reporting_line || job.team_size) && <JobSection eyebrow="The team" title="Team & reporting">
+            <div className="grid sm:grid-cols-2 gap-3">{job.reporting_line && <Fact label="Reporting line" value={String(job.reporting_line)}/>} {job.team_size && <Fact label="Team size" value={`${job.team_size} in this team`}/>}</div>
+          </JobSection>}
+
+          {hasAny([salaryRange, job.three_things, job.perks, job.benefits, ...packageItems]) && <JobSection eyebrow="The package" title="Salary & benefits">
+            {salaryRange && <div className="grid sm:grid-cols-2 gap-3 mb-6"><Fact label="Salary" value={salaryRange}/>{job.offers_accommodation && <Fact label="Accommodation" value="Provided"/>}</div>}
+            {Array.isArray(job.three_things) && job.three_things.length > 0 && <TickList items={job.three_things}/>}
+            {Array.isArray(job.benefits) && job.benefits.length > 0 && <div className="mt-6"><p className="text-[11px] uppercase tracking-[.12em] font-semibold text-[#7d8990] mb-3">Benefits</p><TickList items={job.benefits}/></div>}
+            {Array.isArray(job.perks) && job.perks.length > 0 && <div className="mt-6"><p className="text-[11px] uppercase tracking-[.12em] font-semibold text-[#7d8990] mb-3">Perks</p><TickList items={job.perks}/></div>}
+            {packageItems.length > 0 && <div className="flex flex-wrap gap-2 mt-6">{packageItems.map((item: any) => <span key={String(item)} className="bg-[#f1f4f6] px-3 py-1.5 text-[12px] text-[#4d4d4d]">{String(item)}</span>)}</div>}
+          </JobSection>}
 
           {hasAny([job.required_skills, job.required_qualifications, job.required_brands, job.required_systems, job.required_management_skills, job.required_role_level, job.min_years_experience]) &&
             <JobSection eyebrow="What we're looking for" title="Experience, skills & qualifications">
@@ -150,11 +181,11 @@ export default async function RoleDetailPage(props: { params: Promise<{ id: stri
               </div>
             </JobSection>}
 
-          {hasAny([job.three_things, job.perks, ...packageItems]) && <JobSection eyebrow="The package" title="What you'll get">
-            {Array.isArray(job.three_things) && job.three_things.length > 0 && <TickList items={job.three_things}/>} 
-            {Array.isArray(job.perks) && job.perks.length > 0 && <div className="mt-6"><p className="text-[11px] uppercase tracking-[.12em] font-semibold text-[#7d8990] mb-3">Benefits & perks</p><TickList items={job.perks}/></div>}
-            {packageItems.length > 0 && <div className="flex flex-wrap gap-2 mt-6">{packageItems.map((item: any) => <span key={String(item)} className="rounded-full bg-[#f1f4f6] px-3 py-1.5 text-[12px] text-[#4d4d4d]">{String(item)}</span>)}</div>}
-          </JobSection>}
+          {job.why_move && <JobSection eyebrow="The honest pitch" title="Why make the move"><Prose text={job.why_move}/></JobSection>}
+
+          {job.career_progression && <JobSection eyebrow="Progression" title="Where this role can take you"><Prose text={job.career_progression}/></JobSection>}
+
+          {job.interview_process && <JobSection eyebrow="The process" title="How interviewing works"><Prose text={job.interview_process}/></JobSection>}
 
           <JobSection eyebrow="The employer" title={`Why ${propertyName}`}>
             <div className="grid md:grid-cols-[1fr_auto] gap-6 items-start border border-[#e5e5e5] rounded-[20px] p-6">
@@ -172,6 +203,7 @@ export default async function RoleDetailPage(props: { params: Promise<{ id: stri
         </div>
 
         <aside className="space-y-4">
+          <JobMatchPanel jobId={String(job.id)} />
           <div className="border border-[#e5e5e5] rounded-[18px] p-5">
             <p className="text-[10px] uppercase tracking-[.14em] text-[#7d8990]">Role at a glance</p>
             <div className="space-y-4 mt-4">{salaryRange && <MiniFact icon={BriefcaseBusiness} label="Salary" value={salaryRange}/>} {(job.location || employer.location) && <MiniFact icon={MapPin} label="Location" value={job.location || employer.location}/>} {job.shift_pattern && <MiniFact icon={CalendarDays} label="Shift pattern" value={prettyChip(String(job.shift_pattern))}/>} {employer.star_rating && <MiniFact icon={Star} label="Property" value={isNaN(Number(employer.star_rating)) ? employer.star_rating : `${employer.star_rating} star`}/>}</div>
@@ -186,6 +218,7 @@ export default async function RoleDetailPage(props: { params: Promise<{ id: stri
   </>
 }
 
+function Prose({ text }: { text: string }) { return <div className="text-[15px] leading-8 text-[#465761] whitespace-pre-line">{text}</div> }
 function JobSection({ eyebrow, title, children }: { eyebrow: string; title: string; children: React.ReactNode }) {
   return <section><p className="text-[10px] uppercase tracking-[.16em] font-semibold text-[#555555]">{eyebrow}</p><h2 className="text-[30px] md:text-[36px] mt-2 mb-5">{title}</h2>{children}</section>
 }
