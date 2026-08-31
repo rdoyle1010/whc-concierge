@@ -91,7 +91,7 @@ export default async function RoleDetailPage(props: { params: Promise<{ id: stri
       <section className="bg-white">
         <div className="max-w-6xl mx-auto px-6 py-10 md:py-14 grid lg:grid-cols-[1fr_320px] gap-8 lg:gap-12 items-start">
           <div>
-            <span className="inline-flex rounded-full bg-[#eef2f4] px-3 py-1 text-[10px] uppercase tracking-[.12em] font-semibold text-[#53636f]">{job.tier === 'Platinum' ? 'Featured role' : 'Standard role'}</span>
+            <span className="inline-flex rounded-full bg-[#eef2f4] px-3 py-1 text-[10px] uppercase tracking-[.12em] font-semibold text-[#53636f]">{job.tier === 'Platinum' ? 'Featured role' : 'Standard role'}</span>{job.is_residency_role && <span className="ml-2 inline-flex rounded-full bg-[#e8eef4] px-3 py-1 text-[10px] uppercase tracking-[.12em] font-semibold text-[#0b2f4d]">Residency</span>}
             <h1 className="text-[42px] md:text-[58px] leading-[1.02] tracking-[-.045em] text-[#10283b] mt-4">{titleText}</h1>
             <Link href={employer.id ? `/properties/${employer.id}` : '#'} className="inline-flex items-center gap-2 mt-4 text-[17px] font-semibold text-[#0b2f4d] hover:underline">
               <Building2 size={17}/>{propertyName}<ArrowRight size={14}/>

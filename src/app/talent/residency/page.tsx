@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
-import { CalendarDays, CheckCircle2, Crown, MapPin, ShieldCheck } from 'lucide-react'
+import { Banknote, CalendarDays, CheckCircle2, Crown, MapPin, ShieldCheck } from 'lucide-react'
 
 export default function TalentResidencyPage() {
   const supabase = createClient()
@@ -14,6 +14,37 @@ export default function TalentResidencyPage() {
   const [error, setError] = useState('')
   const [counterOpen, setCounterOpen] = useState<string | null>(null)
   const [counterRate, setCounterRate] = useState('')
+  const [payoutState, setPayoutState] = useState<'loading' | 'not_started' | 'incomplete' | 'active' | 'unavailable'>('loading')
+  const [payoutBusy, setPayoutBusy] = useState(false)
+  const [openRoles, setOpenRoles] = useState<any[]>([])
+
+  useEffect(() => {
+    fetch('/api/residency/open-roles')
+      .then(res => res.ok ? res.json() : { roles: [] })
+      .then(json => setOpenRoles(json.roles || []))
+      .catch(() => {})
+  }, [])
+
+  useEffect(() => {
+    fetch('/api/talent/payouts')
+      .then(res => res.ok ? res.json() : { state: 'unavailable' })
+      .then(json => setPayoutState(json.state || 'unavailable'))
+      .catch(() => setPayoutState('unavailable'))
+  }, [])
+
+  async function startPayouts() {
+    if (payoutBusy) return
+    setPayoutBusy(true); setError('')
+    try {
+      const res = await fetch('/api/talent/payouts', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ returnUrl: window.location.origin }),
+      })
+      const json = await res.json()
+      if (!res.ok) { setError(json.error || 'Could not start payout setup.'); return }
+      window.location.href = json.url
+    } catch { setError('Could not start payout setup.') } finally { setPayoutBusy(false) }
+  }
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -68,7 +99,36 @@ export default function TalentResidencyPage() {
           </div>
         </div>}
 
+        {payoutState !== 'loading' && payoutState !== 'unavailable' && <div className={`rounded-2xl border p-5 mb-7 flex items-start gap-3 ${payoutState === 'active' ? 'border-emerald-200 bg-emerald-50' : 'border-border bg-white'}`}>
+          <Banknote size={20} className={payoutState === 'active' ? 'text-emerald-700 mt-0.5' : 'text-accent mt-0.5'}/>
+          <div className="flex-1">
+            <p className="font-medium text-ink text-sm">{payoutState === 'active' ? 'Payouts active' : payoutState === 'incomplete' ? 'Finish your payout setup' : 'Set up payouts'}</p>
+            <p className="text-xs text-muted mt-1 leading-5">
+              {payoutState === 'active'
+                ? 'Your bank account is connected. Residency payouts are sent to it automatically once a booking completes.'
+                : payoutState === 'incomplete'
+                  ? 'Your Stripe setup is not finished yet - complete it so payouts can reach your bank account automatically.'
+                  : 'Connect your bank account securely through Stripe so residency payouts reach you automatically when a booking completes. Takes about two minutes.'}
+            </p>
+            {payoutState !== 'active' && <button type="button" onClick={startPayouts} disabled={payoutBusy} className="btn-primary mt-3 text-[12px]">{payoutBusy ? 'Opening Stripe...' : payoutState === 'incomplete' ? 'Continue setup' : 'Set up payouts with Stripe'}</button>}
+          </div>
+        </div>}
+
         <div className="rounded-2xl border border-border bg-white p-5 mb-7 flex items-start gap-3"><ShieldCheck size={20} className="text-accent mt-0.5"/><div><p className="font-medium text-ink text-sm">Why keep the booking here?</p><p className="text-xs text-muted mt-1 leading-5">Accepted rates, dates, accommodation and travel terms are recorded before payment. Completed platform residencies can qualify for verified reviews, and once a booking confirms you get a Before You Arrive pack with the property&apos;s details.</p></div></div>
+
+        {openRoles.length > 0 && <div className="rounded-2xl border border-border bg-white p-5 mb-7">
+          <p className="font-medium text-ink text-sm mb-1">Open residency roles matched to you</p>
+          <p className="text-xs text-muted mb-3">Properties advertising residency roles right now, ranked by your match.</p>
+          <div className="flex flex-wrap gap-2">
+            {openRoles.map(role => (
+              <Link key={role.id} href={`/jobs/${role.id}`} className="inline-flex items-center gap-2 rounded-full border border-border bg-surface px-3 py-1.5 text-[12px] hover:border-ink/30">
+                <span className="font-semibold text-ink">{role.job_title}</span>
+                <span className="text-muted">{role.property_name}{role.location ? ` · ${role.location}` : ''}</span>
+                <span className="rounded-full bg-[#e8eef4] px-1.5 py-0.5 text-[10px] font-bold text-[#0b2f4d]">{role.score}%</span>
+              </Link>
+            ))}
+          </div>
+        </div>}
 
         {error && <p className="text-[13px] text-red-600 font-medium mb-4">{error}</p>}
 

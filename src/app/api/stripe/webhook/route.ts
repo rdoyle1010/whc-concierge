@@ -422,6 +422,19 @@ export async function POST(req: NextRequest) {
       break
     }
 
+    case 'account.updated': {
+      // Stripe Connect: keep the specialist's payout-readiness in step.
+      const account = event.data.object as Stripe.Account
+      const candidateId = account.metadata?.candidate_id
+      const enabled = Boolean(account.payouts_enabled)
+      if (candidateId) {
+        await supabase.from('candidate_profiles').update({ connect_payouts_enabled: enabled }).eq('id', candidateId)
+      } else if (account.id) {
+        await supabase.from('candidate_profiles').update({ connect_payouts_enabled: enabled }).eq('stripe_connect_account_id', account.id)
+      }
+      break
+    }
+
     case 'checkout.session.expired': {
       const session = event.data.object as Stripe.Checkout.Session
       const meta = session.metadata
