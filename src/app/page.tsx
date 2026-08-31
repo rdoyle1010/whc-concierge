@@ -331,6 +331,49 @@ function TestimonialsSection({ content }: { content: WebsiteContent }) {
   </section>
 }
 
+// The first ten seconds, made structural: what this is, who it is for and
+// where to go next - in plain language, before any product name appears.
+function RoutesSection() {
+  const routes = [
+    {
+      title: "I'm hiring",
+      copy: 'Post roles to matched, vetted professionals, book flexible cover by the hour, or have WHC run the whole search.',
+      href: '/register?role=employer',
+      cta: 'Find exceptional people',
+    },
+    {
+      title: "I'm looking for my next move",
+      copy: 'Browse live roles at exceptional properties, match on your real skills, and keep your salary private until you choose.',
+      href: '/jobs',
+      cta: 'See live roles',
+    },
+    {
+      title: "I'm developing my career",
+      copy: 'Professional courses with verified certificates, CPD hours, and intelligence on what the market is asking for next.',
+      href: '/academy',
+      cta: 'Explore the Academy',
+    },
+  ]
+  return (
+    <section className="border-b border-black/10 bg-white">
+      <div className="mx-auto max-w-7xl px-6 py-14 lg:px-8">
+        <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-accent">WHC Concierge</p>
+        <h2 className="site-heading mt-2 max-w-3xl text-[26px] font-semibold leading-tight md:text-[32px]">The professional platform for spa and wellness careers.</h2>
+        <p className="mt-2 max-w-2xl text-[14px] leading-6 text-secondary">Find exceptional people. Build better careers. Develop stronger spa businesses.</p>
+        <div className="mt-8 grid gap-4 md:grid-cols-3">
+          {routes.map(route => (
+            <Link key={route.title} href={route.href} className="group flex flex-col border border-border bg-white p-6 transition-colors hover:border-accent">
+              <h3 className="text-[18px] font-semibold text-ink">{route.title}</h3>
+              <p className="mt-2 flex-1 text-[13px] leading-6 text-secondary">{route.copy}</p>
+              <span className="mt-5 inline-flex items-center gap-2 text-[13px] font-semibold text-accent">{route.cta} <span aria-hidden className="transition-transform group-hover:translate-x-0.5">&rarr;</span></span>
+            </Link>
+          ))}
+        </div>
+      </div>
+    </section>
+  )
+}
+
 type HomePageProps = { searchParams?: Promise<{ websitePreview?: string | string[] }> }
 
 export default async function HomePage(props: HomePageProps) {
@@ -355,6 +398,7 @@ export default async function HomePage(props: HomePageProps) {
     <main className="pt-[76px]">
       {previewingDraft && <div className="site-accent-bg px-5 py-2 text-center text-[12px] font-semibold text-white">Private draft preview - the public website has not changed.</div>}
       <HeroCarousel siteContent={content} />
+      <RoutesSection />
       <SponsoredAd placement="homepage_spotlight" />
       <FeaturedTalentSection talent={featuredTalent} />
       <FeaturedPropertiesSection />

@@ -74,7 +74,7 @@ export const DEFAULT_WEBSITE_CONTENT: WebsiteContent = {
   },
   hero: {
     slides: [
-      { image: image('https://images.unsplash.com/photo-1720678418766-2628e52f4634?w=1920&q=80&auto=format&fit=crop', 'Luxury spa interior'), eyebrow: 'WHC Concierge', heading: 'Where luxury wellness meets exceptional talent', text: 'The UK’s specialist platform connecting outstanding spa and wellness professionals with exceptional employers.' },
+      { image: image('https://images.unsplash.com/photo-1720678418766-2628e52f4634?w=1920&q=80&auto=format&fit=crop', 'Luxury spa interior'), eyebrow: 'WHC Concierge', heading: 'The professional platform for spa and wellness careers', text: 'Find exceptional people. Build better careers. Develop stronger spa businesses.' },
       { image: image('https://images.unsplash.com/photo-1590490360836-2e3b067c082b?w=1920&q=80&auto=format&fit=crop', 'Calm luxury treatment space'), eyebrow: 'Intelligent matching', heading: 'Precision matching, not guesswork', text: 'Match roles and people by skills, qualifications, brands, location, experience and availability.' },
       { image: image('https://images.unsplash.com/photo-1540555700478-4be289fbecef?w=1920&q=80&auto=format&fit=crop', 'Wellness treatment setting'), eyebrow: 'Personally vetted', heading: 'Every profile tells the full story', text: 'Qualifications, experience and professional standards are reviewed so employers can hire with confidence.' },
     ],
