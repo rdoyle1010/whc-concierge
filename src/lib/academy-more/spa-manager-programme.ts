@@ -4,7 +4,7 @@ import type { CourseContent } from '../academy-types'
 
 export const course: AcademyCourse = {
   slug: 'spa-manager-programme',
-  title: 'Spa Manager Programme',
+  title: 'WHC Professional Certificate in Spa Management',
   tagline: 'Run the floor, lead the team and understand the numbers behind a high-performing spa',
   category: 'Commercial',
   minutes: 180,

@@ -96,6 +96,11 @@ export async function POST(req: NextRequest) {
       const correct = key.reduce((n, k, i) => n + (answers[i] === k ? 1 : 0), 0)
       const score = Math.round((correct / key.length) * 100)
       const passed = score >= PASS_MARK
+      try {
+        await admin.from('assessment_attempts').insert({
+          enrollment_id: enrolment.id, candidate_id: cand.id, course_slug: slug, score, passed,
+        })
+      } catch { /* attempt history is best-effort */ }
       const update: Record<string, any> = { quiz_score: Math.max(score, enrolment.quiz_score || 0) }
       if (passed && !enrolment.completed_at) {
         update.completed_at = new Date().toISOString()

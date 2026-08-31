@@ -74,7 +74,7 @@ export default function CertificatePage() {
           <p className="text-[12px] text-gray-500 mb-10">including assessment passed at {enr.quiz_score}% &middot; {date}</p>
 
           <div className="w-[80px] h-[1px] mx-auto mb-6" style={{ backgroundColor: '#C9A96E' }} />
-          <p className="text-[11px] text-gray-400">Verification code: <span className="font-mono text-gray-600">{enr.certificate_code}</span></p>
+          <p className="text-[11px] text-gray-400">Verification code: <span className="font-mono text-gray-600">{enr.certificate_code}</span> · anyone can verify this certificate at <span className="text-gray-600">talent.wellnesshousecollective.co.uk/certificates/verify</span></p>
           <p className="text-[10px] text-gray-400 mt-1">Verify this certificate at talent.wellnesshousecollective.co.uk/verify</p>
           <p className="text-[10px] text-gray-400 mt-0.5">Issued by Wellness House Collective</p>
         </div>

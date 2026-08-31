@@ -468,6 +468,33 @@ The universal rule across all houses: never blag a brand. "I trained with Elemis
       { q: 'You are offered an agency shift at a house you have never trained with. The professional move is...', options: ['Improvise their signature ritual', 'Be honest about your training and learn their house rather than blag it', 'Decline all such shifts forever', 'Perform your usual routine and rename it'] },
     ],
   },
+  {
+    slug: 'spa-revenue-fundamentals',
+    title: 'Spa Revenue Fundamentals',
+    tagline: 'Capacity, utilisation, rate and RevPATH - read your spa the way a director does',
+    category: 'Commercial',
+    minutes: 75,
+    lessons: [
+      { title: 'Understanding Spa Capacity', content: 'Two ceilings - room-hours and honest sellable therapist-hours - and why the lower one caps revenue at every moment.' },
+      { title: 'Utilisation', content: 'Booked hours over sellable hours, read by daypart: the earning rate of the capacity you pay for, and the ten-second revenue diagnosis.' },
+      { title: 'Average Treatment Rate', content: 'Value per treatment versus value per hour, and the three forces that move the rate: mix, discounting and duration.' },
+      { title: 'RevPATH', content: 'Revenue per available treatment hour - the one number that combines everything and cannot be flattered - and how to decompose it.' },
+      { title: 'Pricing and Demand', content: 'The diary as a pricing report: protect the peak, fence every offer, and fill the trough with products rather than discounts.' },
+      { title: 'Commercial Case Study', content: 'The full diagnosis run on a realistic 12-room spa - quantified, prioritised, and written up the way an owner approves.' },
+    ],
+    quiz: [
+      { q: 'A spa has 8 rooms open 12 hours a day and rosters 7 therapists on 8-hour shifts (5.75 sellable hours each). Today\'s sellable capacity is:', options: ['96 hours', '56 hours', '40.25 hours', '84 hours'] },
+      { q: 'Booked treatment hours 31; sellable hours 40.25. Utilisation is closest to:', options: ['67%', '82%', '77%', '91%'] },
+      { q: 'A daypart runs at 96% utilisation for six straight weeks with logged refusals. The evidence-led response is:', options: ['A loyalty discount at that time', 'Extend opening hours immediately', 'A measured price rise or premium tier at that daypart', 'Nothing - full is the target'] },
+      { q: 'Revenue £26,400; 288 treatments; 262 booked hours; 340 sellable hours. Rate per treatment HOUR is closest to:', options: ['£91.67', '£100.76', '£77.65', '£110.20'] },
+      { q: 'Using the same figures, RevPATH is closest to:', options: ['£100.76', '£91.67', '£77.65', '£84.20'] },
+      { q: 'RevPATH fell 6% while utilisation held. Which family of causes CANNOT be responsible?', options: ['A mix shift toward cheaper treatments', 'Discount leakage into full-price demand', 'Treatments habitually over-running at the same price', 'Fewer bookings arriving'] },
+      { q: 'A blanket 20% discount applied to all bookings must lift volume by at least roughly what to break even?', options: ['20%', 'A quarter', 'A third', 'Half'] },
+      { q: 'The primary purpose of a fence on an offer is to:', options: ['Meet advertising regulations', 'Keep the lower price away from demand that would have paid full rate', 'Simplify reception\'s scripts', 'Cap total redemptions'] },
+      { q: 'Moving one rostered therapist-hour weekly from a £30-RevPATH daypart to a therapist-constrained £105-RevPATH daypart is worth roughly:', options: ['Nothing - revenue just relocates', '£75 a week', '£135 a week', '£30 a week'] },
+      { q: 'A 14-month unfenced midweek discount has pulled achieved rate £30 below menu. The professional repair is:', options: ['Cancel it overnight and hold firm', 'Deepen it to drive more volume', 'Replace it with fenced, value-led products and rebuild the rate over a quarter', 'Extend it to weekends for fairness'] },
+    ],
+  },
 ]
 
 // The original core curriculum - the £79 bundle covers exactly these.

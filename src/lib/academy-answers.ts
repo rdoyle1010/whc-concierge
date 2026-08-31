@@ -17,4 +17,5 @@ export const ACADEMY_ANSWERS: Record<string, number[]> = {
   'perfect-massage': [1, 1, 1, 1, 1, 0, 1, 1],
   'perfect-facial': [1, 1, 1, 1, 0, 1, 1, 1],
   'brand-knowledge': [1, 1, 1, 1, 0, 1, 1, 1],
+  'spa-revenue-fundamentals': [2, 2, 2, 1, 2, 3, 1, 1, 1, 2],
 }

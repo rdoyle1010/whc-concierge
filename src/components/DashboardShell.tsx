@@ -49,6 +49,7 @@ const navItems: Record<string, NavItem[]> = {
     { label: 'Residency', href: '/talent/residency', icon: <MapPin size={17} /> },
     { label: 'Before You Arrive', href: '/talent/before-you-arrive', icon: <ClipboardList size={17} /> },
     { label: 'Academy', href: '/talent/academy', icon: <GraduationCap size={17} />, section: 'Grow' },
+    { label: 'My Toolkit', href: '/talent/toolkit', icon: <ClipboardList size={17} /> },
     { label: 'Interview Ready', href: '/talent/interview-ready', icon: <Brain size={17} />, accessKey: 'talent_interview_ready' },
     { label: 'Get Verified', href: '/talent/verification', icon: <Star size={17} /> },
     { label: 'Reviews', href: '/talent/reviews', icon: <Star size={17} /> },

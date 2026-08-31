@@ -7,6 +7,7 @@ import DashboardShell from '@/components/DashboardShell'
 import { courseBySlug, coursePrice, PASS_MARK, type AcademyCourse } from '@/lib/academy'
 import { courseImage, lessonExtras } from '@/lib/academy-extras'
 import { courseMeta } from '@/lib/academy-meta'
+import { LessonVisualBlock, KnowledgeCheckBlock } from '@/components/LessonVisual'
 import { getCourseContent } from '@/lib/academy-content'
 import {
   ArrowLeft, ArrowRight, Check, Award, RotateCcw, Quote, TrendingUp,
@@ -271,10 +272,13 @@ export default function CoursePlayerPage() {
                   </div>
                 </>
               )}
-              <button type="button" onClick={() => setView(course.lessons.findIndex((_, i) => !progress[i]) === -1 ? 0 : course.lessons.findIndex((_, i) => !progress[i]))}
-                className="btn-primary text-[13px] inline-flex items-center gap-2">
-                {done === 0 ? 'Begin Module 1' : allLessonsDone ? 'Review the modules' : `Continue - Module ${course.lessons.findIndex((_, i) => !progress[i]) + 1}`} <ArrowRight size={14} />
-              </button>
+              <div className="flex flex-wrap items-center gap-3">
+                <button type="button" onClick={() => setView(course.lessons.findIndex((_, i) => !progress[i]) === -1 ? 0 : course.lessons.findIndex((_, i) => !progress[i]))}
+                  className="btn-primary text-[13px] inline-flex items-center gap-2">
+                  {done === 0 ? 'Begin Module 1' : allLessonsDone ? 'Review the modules' : `Continue - Module ${course.lessons.findIndex((_, i) => !progress[i]) + 1}`} <ArrowRight size={14} />
+                </button>
+                {rich && <a href={`/api/academy/manual?course=${encodeURIComponent(String(slug))}`} target="_blank" rel="noopener noreferrer" className="btn-secondary text-[13px] inline-flex items-center gap-1.5"><BookOpen size={14} /> Course Manual</a>}
+              </div>
             </div>
           )}
 
@@ -298,6 +302,13 @@ export default function CoursePlayerPage() {
                 </div>
 
                 <LearningFramework title={lesson.title} />
+
+                {richLesson?.whyThisMatters && (
+                  <div className="bg-[#0b2f4d] rounded-xl p-4 mb-4">
+                    <p className="text-[10px] uppercase tracking-[0.16em] text-[#e8c98c] font-semibold mb-1.5">Why this matters</p>
+                    <p className="text-[13.5px] text-white/90 leading-[1.75]">{richLesson.whyThisMatters}</p>
+                  </div>
+                )}
 
                 {richLesson && (
                   <div className="border-l-2 border-gold bg-surface rounded-r-xl p-4 mb-6">
@@ -323,6 +334,26 @@ export default function CoursePlayerPage() {
                   <ManagedLessonContent content={lesson.content} />
                 )}
 
+                {richLesson?.visuals && richLesson.visuals.length > 0 && (
+                  <div className="mb-6">{richLesson.visuals.map((visual, vi) => <LessonVisualBlock key={vi} visual={visual} />)}</div>
+                )}
+
+                {richLesson?.scenario && (
+                  <div className="rounded-xl border border-[#e2d6b8] bg-[#faf6ec] p-5 mb-4">
+                    <p className="text-[10px] uppercase tracking-[0.16em] text-[#8a6d3b] font-semibold mb-1.5">Scenario - think it through</p>
+                    <p className="text-[13px] text-gray-700 leading-[1.8] whitespace-pre-line">{richLesson.scenario}</p>
+                  </div>
+                )}
+
+                {richLesson?.activity && (
+                  <div className="rounded-xl border border-[#cfdcd4] bg-[#f0f6f2] p-5 mb-4">
+                    <p className="text-[10px] uppercase tracking-[0.16em] text-[#2e5b45] font-semibold mb-1.5">Practical activity - do this</p>
+                    <p className="text-[13px] text-gray-700 leading-[1.8] whitespace-pre-line">{richLesson.activity}</p>
+                  </div>
+                )}
+
+                {richLesson?.knowledgeCheck && richLesson.knowledgeCheck.length > 0 && <KnowledgeCheckBlock checks={richLesson.knowledgeCheck} />}
+
                 {richLesson && richLesson.keyTerms.length > 0 && (
                   <div className="mb-6">
                     <p className="text-[10px] uppercase tracking-[0.14em] text-gray-500 font-semibold mb-2">Key terms</p>
@@ -343,6 +374,13 @@ export default function CoursePlayerPage() {
                     <p className="text-[13px] text-white/85 leading-[1.8] mb-3">{richLesson.caseStudy.scenario}</p>
                     <p className="text-[12px] text-white/60 uppercase tracking-wide font-semibold mb-1">The professional response</p>
                     <p className="text-[13px] text-white/85 leading-[1.8]">{richLesson.caseStudy.insight}</p>
+                  </div>
+                )}
+
+                {richLesson?.nextStep && (
+                  <div className="rounded-xl border border-border bg-white p-4 mb-6">
+                    <p className="text-[10px] uppercase tracking-[0.16em] text-gray-500 font-semibold mb-1.5">Your next step at work</p>
+                    <p className="text-[13px] text-gray-700 leading-[1.7]">{richLesson.nextStep}</p>
                   </div>
                 )}
 

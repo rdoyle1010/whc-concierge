@@ -130,6 +130,9 @@ check('match page ranks roles instead of hiding low scores', () => {
 check('all service-role API routes are protected or deliberately public', () => {
   const files = listFiles('src/app/api', 'route.ts').filter(file => /createAdminClient|SUPABASE_SERVICE_ROLE_KEY/.test(read(file)))
   const deliberatePublic = new Set([
+    // Public by design: exact-code certificate verification, rate limited,
+    // reveals only what the certificate itself states.
+    'src/app/api/certificates/verify/route.ts',
     'src/app/api/advertising/route.ts',
     'src/app/api/advertising/click/route.ts',
     'src/app/api/agency/directory/route.ts',
