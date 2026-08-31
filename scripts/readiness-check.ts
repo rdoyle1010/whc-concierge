@@ -160,6 +160,12 @@ check('all service-role API routes are protected or deliberately public', () => 
     'src/app/api/register/init/route.ts',
     'src/app/api/residency/public/route.ts',
     'src/app/api/stripe/sponsored-ad-confirm/route.ts',
+    // Public by design: aggregate demand counts for the public Academy page -
+    // a map of course slug to live-role count, cached, nothing per-listing.
+    'src/app/api/academy/demand/route.ts',
+    // Public by design: three aggregate integers for the signed-out /agency
+    // marketing page (see the route's own header comment).
+    'src/app/api/agency/public-stats/route.ts',
   ])
   const authMarkers = /getUser\(|getRequestUser\(|requireAdmin|verifyAdmin|stripe-signature|isInternalApiRequest/
   const unguarded = files.filter(file => !authMarkers.test(read(file)) && !deliberatePublic.has(file))

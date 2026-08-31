@@ -7,8 +7,9 @@ import Footer from '@/components/Footer'
 import SponsoredAd from '@/components/SponsoredAd'
 import { createClient } from '@/lib/supabase/client'
 import { ACADEMY, coursePrice, publicCoursePrice, type AcademyCourse } from '@/lib/academy'
+import { courseMeta } from '@/lib/academy-meta'
 import { courseImage } from '@/lib/academy-extras'
-import { GraduationCap, Clock, ShieldCheck, X, ArrowRight, BriefcaseBusiness, ChartNoAxesCombined, CheckCircle2, Award, Sparkles, TrendingUp, BadgeCheck, BrainCircuit } from 'lucide-react'
+import { GraduationCap, ShieldCheck, X, ArrowRight, BriefcaseBusiness, ChartNoAxesCombined, CheckCircle2, Award, Sparkles, TrendingUp, BadgeCheck, BrainCircuit } from 'lucide-react'
 
 const MANAGEMENT_PROGRAMMES = new Set(['spa-manager-programme', 'spa-director-programme'])
 const ACADEMY_ACCENT = '#5a6a76'
@@ -26,6 +27,10 @@ export default function PublicAcademyPage() {
   const [teamBusy, setTeamBusy] = useState(false)
   const [teamSent, setTeamSent] = useState(false)
   const [teamError, setTeamError] = useState('')
+  // Live demand per course slug: how many live WHC roles ask for the skills
+  // the course teaches. Computed server-side and cached; absent counts simply
+  // mean the line does not render.
+  const [demand, setDemand] = useState<Record<string, number>>({})
 
   async function submitTeamEnquiry() {
     setTeamError('')
@@ -54,6 +59,9 @@ export default function PublicAcademyPage() {
     if (params.get('purchased') === 'true') setPurchased(true)
     fetch('/api/academy/catalog').then(response => response.ok ? response.json() : null).then(json => {
       if (json?.courses?.length) setCourses(json.courses)
+    }).catch(() => {})
+    fetch('/api/academy/demand').then(response => response.ok ? response.json() : null).then(json => {
+      if (json && typeof json === 'object' && !Array.isArray(json)) setDemand(json)
     }).catch(() => {})
     supabase.auth.getUser().then(async ({ data: { user } }) => {
       if (!user) return
@@ -170,7 +178,7 @@ export default function PublicAcademyPage() {
             </div>
             <div className="grid gap-6 lg:grid-cols-2">
               {managementCourses.map((course, index) => (
-                <article key={course.slug} className="overflow-hidden rounded-[24px] border border-[#e3e7eb] bg-white shadow-sm hover:shadow-lg transition-shadow">
+                <article key={course.slug} className="overflow-hidden border border-[#e3e7eb] bg-white">
                   <div className="relative h-64">
                     <img src={displayCourseImage(course)} alt="" loading="lazy" decoding="async" className="absolute inset-0 h-full w-full object-cover" />
                     <div className="absolute inset-0 bg-gradient-to-t from-[#0b2f4d]/95 via-[#0b2f4d]/35 to-transparent" />
@@ -181,6 +189,9 @@ export default function PublicAcademyPage() {
                   </div>
                   <div className="p-7">
                     <p className="mb-5 text-[13px] leading-6 text-[#5a6a76]">{course.tagline}</p>
+                    {(demand[course.slug] || 0) > 0 && (
+                      <p className="mb-5 border-t border-[#e3e7eb] pt-3 text-[13px] font-serif font-semibold text-[#0b2f4d]">Asked for in {demand[course.slug]} live WHC role{demand[course.slug] === 1 ? '' : 's'} right now</p>
+                    )}
                     <div className="mb-6 grid gap-2 sm:grid-cols-3">
                       <span className="inline-flex items-center gap-1.5 text-[11px] text-[#5a6a76]"><CheckCircle2 size={13} className="text-[#5a6a76]" /> {course.lessons.length} applied modules</span>
                       <span className="inline-flex items-center gap-1.5 text-[11px] text-[#5a6a76]"><CheckCircle2 size={13} className="text-[#5a6a76]" /> Real spa case studies</span>
@@ -209,18 +220,19 @@ export default function PublicAcademyPage() {
               <h3 className="mb-4 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#8a949b]">{cat}</h3>
               <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 xl:grid-cols-3">
                 {standardCourses.filter(c => c.category === cat).map(course => (
-                  <article key={course.slug} className="flex flex-col overflow-hidden rounded-[22px] border border-[#e3e7eb] bg-white transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg">
+                  <article key={course.slug} className="flex flex-col overflow-hidden border border-[#e3e7eb] bg-white">
                     <div className="relative h-44 shrink-0">
                       <img src={displayCourseImage(course)} alt="" loading="lazy" decoding="async" className="absolute inset-0 h-full w-full object-cover" />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/35 to-transparent" />
                     </div>
                     <div className="flex flex-1 flex-col p-6">
                       <h3 className="mb-1 text-[19px] font-semibold leading-snug tracking-tight text-[#10283b]">{course.title}</h3>
-                      <p className="mb-2 text-[12px] text-[#5a6a76]">{course.tagline}</p>
-                      <p className="mb-5 inline-flex items-center gap-1 text-[11px] text-[#8a949b]"><Clock size={11} /> {course.lessons.length} modules · assessment · ~{course.minutes} min</p>
-                      <div className="mt-auto flex items-center justify-between gap-3 border-t border-[#e3e7eb] pt-4">
-                        <div><p className="text-[10px] uppercase tracking-[.12em] text-[#8a949b]">Guest price</p><p className="text-[18px] font-semibold text-[#10283b]">£{(publicCoursePrice(course) / 100).toFixed(0)}</p></div>
-                        {isCandidate ? <Link href="/talent/academy" className="btn-primary text-[12px]">£{(coursePrice(course) / 100).toFixed(0)} member</Link> : <button type="button" onClick={() => { setBuying({ slug: course.slug, title: course.title, price: publicCoursePrice(course) }); setError('') }} className="btn-primary text-[12px]">Start course</button>}
+                      <p className="mb-3 text-[12px] text-[#5a6a76]">{course.tagline}</p>
+                      <p className="text-[11px] text-[#8a949b]">{course.lessons.length} module{course.lessons.length === 1 ? '' : 's'} · ~{course.minutes} min · {courseMeta(course.slug).cpdHours} CPD hour{courseMeta(course.slug).cpdHours === 1 ? '' : 's'} · £{(publicCoursePrice(course) / 100).toFixed(0)}</p>
+                      {(demand[course.slug] || 0) > 0 && (
+                        <p className="mt-2 border-t border-[#e3e7eb] pt-2 text-[12px] font-serif font-semibold text-[#0b2f4d]">Asked for in {demand[course.slug]} live WHC role{demand[course.slug] === 1 ? '' : 's'} right now</p>
+                      )}
+                      <div className="mt-auto border-t border-[#e3e7eb] pt-4">
+                        {isCandidate ? <Link href="/talent/academy" className="btn-primary text-[12px]">Member enrolment · £{(coursePrice(course) / 100).toFixed(0)}</Link> : <button type="button" onClick={() => { setBuying({ slug: course.slug, title: course.title, price: publicCoursePrice(course) }); setError('') }} className="btn-primary text-[12px]">Start course</button>}
                       </div>
                     </div>
                   </article>
@@ -239,9 +251,7 @@ export default function PublicAcademyPage() {
           <Link href="/verify" className="inline-flex items-center justify-center gap-2 rounded-xl border border-[#8a949b] px-5 py-3 text-[12px] font-semibold text-[#5a6a76] hover:bg-[#f5f6f8]">See certificate verification <ArrowRight size={13}/></Link>
         </section>
 
-        <div className="mt-6 flex max-w-4xl items-start gap-3 rounded-2xl border border-[#e3e7eb] bg-white p-5">
-          <ShieldCheck size={18} className="mt-0.5 shrink-0 text-[#5a6a76]" />
-          <section className="mt-14 border border-border bg-[#f5f6f8] p-7 md:p-9">
+        <section className="mt-14 border border-border bg-[#f5f6f8] p-7 md:p-9">
             <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-accent">WHC Academy for Teams</p>
             <h2 className="mt-2 text-[24px] font-semibold text-ink">Train the whole team, track every completion</h2>
             <p className="mt-2 max-w-2xl text-[13px] leading-6 text-secondary">Put your property&apos;s therapists, reception and management through the same professional curriculum - service standards, revenue, retail, leadership - with team pricing from £15 per seat per year (minimum 10 seats) and a property onboarding pathway built from the course library. Completion and CPD records for every team member, ready for your quality audits.</p>
@@ -258,9 +268,11 @@ export default function PublicAcademyPage() {
                 <button type="button" onClick={submitTeamEnquiry} disabled={teamBusy} className="btn-primary w-fit text-[13px] disabled:opacity-50 md:col-span-2">{teamBusy ? 'Sending...' : 'Enquire about team training'}</button>
               </div>
             )}
-          </section>
+        </section>
 
-          <p className="mt-8 text-[11px] leading-5 text-[#5a6a76]">WHC Academy certificates evidence course completion and assessment. They are professional-development records and are not a substitute for regulated qualifications, licences or insurance where those are required.</p>
+        <div className="mt-6 flex max-w-4xl items-start gap-3 border border-[#e3e7eb] bg-white p-5">
+          <ShieldCheck size={18} className="mt-0.5 shrink-0 text-[#5a6a76]" />
+          <p className="text-[11px] leading-5 text-[#5a6a76]">WHC Academy certificates evidence course completion and assessment. They are professional-development records and are not a substitute for regulated qualifications, licences or insurance where those are required.</p>
         </div>
       </main>
 

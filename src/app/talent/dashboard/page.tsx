@@ -4,9 +4,7 @@ import { useEffect, useState } from 'react'
 import DashboardShell from '@/components/DashboardShell'
 import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
-import {
-  Briefcase, FileText, MessageSquare, GraduationCap, User, Star, ArrowRight, Search, EyeOff, Calendar, MapPin,
-} from 'lucide-react'
+import { Star, ArrowRight, EyeOff } from 'lucide-react'
 import SponsoredAd from '@/components/SponsoredAd'
 
 // Talent home - the landing page after login. Greeting, a few live counts
@@ -96,15 +94,15 @@ export default function TalentDashboard() {
     load()
   }, [])
 
+  // The sidebar already navigates everywhere - this list keeps only the
+  // destinations a professional actually opens daily.
   const quickLinks = [
-    { label: 'Browse Jobs', desc: 'Find your next permanent or fixed-term role.', href: '/talent/jobs', icon: <Briefcase size={17} /> },
-    { label: 'Agency Shifts', desc: 'Manage planned cover and urgent shift offers.', href: '/talent/agency', icon: <Calendar size={17} /> },
-    { label: 'Residency', desc: 'Build your specialist profile for short-term residencies.', href: '/talent/residency', icon: <MapPin size={17} /> },
-    { label: 'Applications', desc: 'Track every role you have applied for.', href: '/talent/applications', icon: <FileText size={17} /> },
-    { label: 'Messages', desc: 'Private conversations with properties and matches.', href: '/talent/messages', icon: <MessageSquare size={17} /> },
-    { label: 'Academy', desc: 'Courses, certificates and profile badges.', href: '/talent/academy', icon: <GraduationCap size={17} /> },
-    { label: 'My Profile', desc: 'Keep your professional profile polished and current.', href: '/talent/profile', icon: <User size={17} /> },
-    { label: 'Get Verified', desc: 'Add trust signals for properties reviewing your profile.', href: '/talent/verification', icon: <Star size={17} /> },
+    { label: 'Browse Jobs', desc: 'Find your next permanent or fixed-term role.', href: '/talent/jobs' },
+    { label: 'Agency Shifts', desc: 'Manage planned cover and urgent shift offers.', href: '/talent/agency' },
+    { label: 'Applications', desc: 'Track every role you have applied for.', href: '/talent/applications' },
+    { label: 'Messages', desc: 'Private conversations with properties and matches.', href: '/talent/messages' },
+    { label: 'Academy', desc: 'Courses, certificates and profile badges.', href: '/talent/academy' },
+    { label: 'My Profile', desc: 'Keep your professional profile polished and current.', href: '/talent/profile' },
   ]
 
   if (loading) return (
@@ -129,14 +127,22 @@ export default function TalentDashboard() {
   const briefOffers: number = brief?.offersAwaiting || 0
   const briefViews: number | null = typeof brief?.profileViews === 'number' ? brief.profileViews : null
   const briefFirstName = brief?.firstName || (profile?.full_name ? profile.full_name.split(' ')[0] : null)
-  const briefHasContent = briefRoles.length > 0 || briefCourses.length > 0 || !!briefInterview || briefOffers > 0 || (briefViews !== null && briefViews > 0)
 
   return (
     <DashboardShell role="talent" userName={profile?.full_name}>
-      {briefHasContent && (
-        <section className="dashboard-card mb-8">
+      <section className="dashboard-card mb-8">
           <p className="dashboard-eyebrow">Your brief</p>
           <h2 className="dashboard-section-title mb-2">{timeOfDayGreeting()}{briefFirstName ? `, ${briefFirstName}` : ''}.</h2>
+          <div className="mt-4 mb-2 grid max-w-md grid-cols-2 gap-x-8">
+            <div className="border-t border-border pt-3">
+              <p className="text-[10px] uppercase tracking-[.14em] text-muted">Applications</p>
+              <p className="mt-1 text-[18px] font-serif font-semibold text-ink">{stats.applications}</p>
+            </div>
+            <div className="border-t border-border pt-3">
+              <p className="text-[10px] uppercase tracking-[.14em] text-muted">Unread messages</p>
+              <p className="mt-1 text-[18px] font-serif font-semibold text-ink">{stats.messages}</p>
+            </div>
+          </div>
           <div>
             {briefRoles.length > 0 && (
               <div className="dashboard-list-row">
@@ -185,8 +191,7 @@ export default function TalentDashboard() {
               </div>
             )}
           </div>
-        </section>
-      )}
+      </section>
 
       {(approaches.length > 0 || approachNote) && (
         <section className="dashboard-card mb-8">
@@ -238,28 +243,6 @@ export default function TalentDashboard() {
         </div>
       )}
 
-      <div className="dashboard-metrics mb-8">
-        {[
-          { label: 'Applications', value: stats.applications, icon: <FileText size={16} /> },
-          { label: 'Unread messages', value: stats.messages, icon: <MessageSquare size={16} /> },
-          { label: 'Profile status', value: profile?.approval_status === 'approved' ? 'Approved' : 'In review', icon: <User size={16} /> },
-          { label: 'Featured', value: profile?.is_featured ? 'Active' : 'Off', icon: <Star size={16} /> },
-        ].map(s => (
-          <div key={s.label} className="dashboard-metric">
-            <div className="text-accent mb-3">{s.icon}</div>
-            <p className="dashboard-metric-value">{s.value}</p>
-            <p className="dashboard-metric-label">{s.label}</p>
-          </div>
-        ))}
-      </div>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-2.5 mb-9">
-        <Link href="/talent/jobs" className="btn-primary flex items-center justify-center gap-2 py-3"><Search size={14} />Browse roles</Link>
-        <Link href="/talent/agency" className="btn-secondary flex items-center justify-center gap-2 py-3"><Calendar size={14} />Agency shifts</Link>
-        <Link href="/talent/residency" className="btn-secondary flex items-center justify-center gap-2 py-3"><MapPin size={14} />Residency</Link>
-        <Link href="/talent/profile" className="btn-secondary flex items-center justify-center gap-2 py-3">Update profile</Link>
-      </div>
-
       <div className="grid grid-cols-1 lg:grid-cols-[1.55fr_.85fr] gap-6">
         <section className="dashboard-panel">
           <p className="dashboard-eyebrow">Continue your journey</p>
@@ -267,10 +250,7 @@ export default function TalentDashboard() {
           <div>
             {quickLinks.map(link => (
               <Link key={link.href} href={link.href} className="dashboard-list-row group">
-                <div className="flex items-start gap-3">
-                  <span className="text-accent mt-0.5">{link.icon}</span>
-                  <span><span className="block text-[13px] font-medium text-ink">{link.label}</span><span className="block text-[12px] text-muted mt-0.5">{link.desc}</span></span>
-                </div>
+                <span><span className="block text-[13px] font-medium text-ink">{link.label}</span><span className="block text-[12px] text-muted mt-0.5">{link.desc}</span></span>
                 <ArrowRight size={14} className="text-muted group-hover:text-accent shrink-0" />
               </Link>
             ))}

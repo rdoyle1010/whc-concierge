@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, Suspense } from 'react'
+import { useEffect, useState, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { Eye, EyeOff, BriefcaseBusiness, Sparkles } from 'lucide-react'
@@ -22,6 +22,16 @@ function LoginForm() {
   const [show, setShow] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [liveRoles, setLiveRoles] = useState<number | null>(null)
+
+  useEffect(() => {
+    let cancelled = false
+    fetch('/api/public-stats', { cache: 'no-store' })
+      .then(res => (res.ok ? res.json() : null))
+      .then(data => { if (!cancelled && typeof data?.liveRoles === 'number') setLiveRoles(data.liveRoles) })
+      .catch(() => {})
+    return () => { cancelled = true }
+  }, [])
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -104,6 +114,12 @@ function LoginForm() {
           <p className="text-[10px] uppercase tracking-[0.2em] text-[#5a6a76] font-semibold mb-4">Wellness House Collective</p>
           <p className="text-white text-[30px] leading-tight tracking-[-0.03em] font-semibold">The professional platform for spa and wellness careers.</p>
           <p className="text-white/55 text-[13px] mt-4 leading-6">Live roles, agency cover, residencies and the Academy - one account, one platform.</p>
+          {liveRoles !== null && liveRoles > 0 && (
+            <div className="mt-7 border-t border-white/20 pt-4 flex items-baseline gap-3">
+              <span className="text-[24px] font-serif font-semibold text-white leading-none">{liveRoles}</span>
+              <span className="text-[13px] text-white/70">live role{liveRoles === 1 ? '' : 's'} this week</span>
+            </div>
+          )}
         </div>
       </div>
     </main>

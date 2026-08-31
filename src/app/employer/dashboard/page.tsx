@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import DashboardShell from '@/components/DashboardShell'
 import { createClient } from '@/lib/supabase/client'
-import { Briefcase, Users, FileText, MessageSquare, ArrowRight, Plus, Clock, Calendar, MapPin } from 'lucide-react'
+import { Briefcase, Users, ArrowRight, Plus, Clock, Calendar, MapPin } from 'lucide-react'
 import SkeletonTable from '@/components/SkeletonTable'
 import Link from 'next/link'
 import SponsoredAd from '@/components/SponsoredAd'
@@ -113,6 +113,12 @@ export default function EmployerDashboard() {
 
   return (
     <DashboardShell role="employer" userName={profile?.contact_name || profile?.company_name}>
+      <div className="mb-9">
+        <p className="dashboard-eyebrow">Property recruitment</p>
+        <h1 className="dashboard-title">{profile?.property_name || profile?.company_name || 'Property dashboard'}</h1>
+        <p className="dashboard-intro">Permanent recruitment, urgent agency cover, specialist Residencies and private candidate conversations in one verified property workspace.</p>
+      </div>
+
       {(!profile?.approval_status || profile?.approval_status === 'pending') && (
         <div className="border-l-2 border-amber-500 bg-white/65 px-5 py-4 mb-7 flex items-start gap-3">
           <Clock size={17} className="text-amber-600 shrink-0 mt-0.5" />
@@ -270,23 +276,16 @@ export default function EmployerDashboard() {
         )
       })()}
 
-      <div className="mb-9">
-        <p className="dashboard-eyebrow">Property recruitment</p>
-        <h1 className="dashboard-title">{profile?.property_name || profile?.company_name || 'Property dashboard'}</h1>
-        <p className="dashboard-intro">Permanent recruitment, urgent agency cover, specialist Residencies and private candidate conversations in one verified property workspace.</p>
-      </div>
-
-      <div className="dashboard-metrics mb-8">
+      <div className="mb-8 grid grid-cols-2 gap-x-8 gap-y-6 md:grid-cols-4">
         {[
-          { label: 'Active listings', value: stats.active, icon: <Briefcase size={16} /> },
-          { label: 'Applications', value: stats.applications, icon: <FileText size={16} /> },
-          { label: 'Candidates matched', value: stats.matches || '-', icon: <Users size={16} /> },
-          { label: 'Unread messages', value: stats.messages, icon: <MessageSquare size={16} /> },
+          { label: 'Active listings', value: stats.active },
+          { label: 'Applications', value: stats.applications },
+          { label: 'Candidates matched', value: stats.matches || '-' },
+          { label: 'Unread messages', value: stats.messages },
         ].map(s => (
-          <div key={s.label} className="dashboard-metric">
-            <div className="text-accent mb-3">{s.icon}</div>
-            <p className="dashboard-metric-value">{s.value}</p>
-            <p className="dashboard-metric-label">{s.label}</p>
+          <div key={s.label} className="border-t border-border pt-3">
+            <p className="text-[10px] uppercase tracking-[.14em] text-muted">{s.label}</p>
+            <p className="mt-1 text-[18px] font-serif font-semibold text-ink">{s.value}</p>
           </div>
         ))}
       </div>
