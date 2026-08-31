@@ -24,6 +24,8 @@ export default function AdminResidencyPage() {
   }
   useEffect(() => { load() }, [])
 
+  // Professionals pay £99/30 days to feature via their Residency page; this
+  // admin toggle is the no-charge override for direct deals and comps.
   async function toggleFeatured(id: string, featured: boolean) {
     setError('')
     setBusyId(id)
@@ -84,7 +86,7 @@ export default function AdminResidencyPage() {
           {r.approval_status === 'approved' && (
             <button onClick={() => toggleFeatured(r.id, !r.is_featured)} disabled={busyId === r.id}
               className={`!py-2 text-[12px] rounded-lg px-3 font-semibold disabled:opacity-50 ${r.is_featured ? 'bg-[#f5f6f8] text-[#10283b] border border-[#e5e5e5]' : 'btn-secondary'}`}>
-              {r.is_featured ? '★ Featured' : 'Feature'}</button>
+              {r.is_featured ? '★ Featured' : 'Feature (no charge)'}</button>
           )}
           {r.approval_status !== 'rejected' && (
             <button onClick={() => { setRejecting(r); setReason('') }} disabled={busyId === r.id}

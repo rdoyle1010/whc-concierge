@@ -47,6 +47,17 @@ export async function POST(req: NextRequest) {
     const { data: profile } = await admin.from('employer_profiles').select('id').eq('user_id', user.id).maybeSingle()
     if (!profile) return NextResponse.json({ error: 'Employer profile not found' }, { status: 404 })
     await admin.from('employer_profiles').update({ membership_tier: tier, membership_started_at: now.toISOString(), membership_renews_at: renewsAt, membership_stripe_subscription_id: subscriptionId, membership_stripe_customer_id: customerId, membership_cancel_at_period_end: Boolean(sub?.cancel_at_period_end), annual_job_allowance: tier === 'group' ? 20 : 0, annual_jobs_used: 0 }).eq('id', profile.id)
+  } else if (product === 'residency_featured') {
+    const { data: profile } = await admin.from('candidate_profiles').select('id').eq('user_id', user.id).maybeSingle()
+    if (!profile) return NextResponse.json({ error: 'Talent profile not found' }, { status: 404 })
+    const { data: listing } = await admin.from('residency_profiles')
+      .select('id, is_featured, featured_until').eq('candidate_profile_id', profile.id)
+      .order('created_at', { ascending: false }).limit(1).maybeSingle()
+    if (!listing) return NextResponse.json({ error: 'No residency listing found - create your listing first.' }, { status: 404 })
+    const existing = listing.featured_until ? new Date(listing.featured_until) : null
+    const start = existing && existing > now ? existing : now
+    const until = new Date(start.getTime() + 30 * 86400000)
+    await admin.from('residency_profiles').update({ is_featured: true, featured_until: until.toISOString() }).eq('id', listing.id)
   } else {
     return NextResponse.json({ error: 'Unsupported product' }, { status: 400 })
   }

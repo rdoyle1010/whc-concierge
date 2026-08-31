@@ -9,14 +9,20 @@ export async function GET(req: NextRequest) {
     const admin = createAdminClient()
     const id = req.nextUrl.searchParams.get('id')
 
-    let query = admin.from('residency_profiles')
-      .select('id,bio,full_name,primary_specialism,secondary_specialisms,qualifications,brand_experience,current_location,will_travel_to,preferred_duration,day_rate,weekly_rate,monthly_rate,negotiable,available_from,years_experience,is_featured,approval_status,candidate_profile_id,created_at')
-      .eq('approval_status', 'approved')
+    const FIELDS = 'id,bio,full_name,primary_specialism,secondary_specialisms,qualifications,brand_experience,current_location,will_travel_to,preferred_duration,day_rate,weekly_rate,monthly_rate,negotiable,available_from,years_experience,is_featured,approval_status,candidate_profile_id,created_at'
+    const buildQuery = (withFeaturedUntil: boolean) => {
+      let query = admin.from('residency_profiles')
+        .select(withFeaturedUntil ? `${FIELDS},featured_until` : FIELDS)
+        .eq('approval_status', 'approved')
+      if (id) query = query.eq('id', id)
+      else query = query.order('is_featured', { ascending: false }).order('created_at', { ascending: false })
+      return query
+    }
 
-    if (id) query = query.eq('id', id)
-    else query = query.order('is_featured', { ascending: false }).order('created_at', { ascending: false })
-
-    const { data: profiles, error } = await query
+    // featured_until arrives with the paid-featured migration; fall back
+    // gracefully until it exists so the public directory never breaks.
+    let { data: profiles, error } = await buildQuery(true)
+    if (error) ({ data: profiles, error } = await buildQuery(false))
     if (error) return NextResponse.json({ error: 'Unable to load Residency specialists.' }, { status: 500 })
 
     const rows = profiles || []

@@ -18,6 +18,31 @@ export default function TalentResidencyPage() {
   const [payoutState, setPayoutState] = useState<'loading' | 'not_started' | 'incomplete' | 'active' | 'unavailable'>('loading')
   const [payoutBusy, setPayoutBusy] = useState(false)
   const [openRoles, setOpenRoles] = useState<any[]>([])
+  const [listing, setListing] = useState<any>(null)
+  const [featureBusy, setFeatureBusy] = useState(false)
+  const [notice, setNotice] = useState('')
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const sessionId = params.get('session_id')
+    if (params.get('checkout') === 'success' && sessionId) {
+      fetch('/api/commercial/confirm', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sessionId }) })
+        .then(async res => ({ ok: res.ok, body: await res.json().catch(() => ({})) }))
+        .then(x => x.ok ? setNotice('Payment confirmed - your listing is now featured for 30 days.') : setError(x.body.error || 'Payment could not be confirmed.'))
+        .catch(() => {})
+    }
+  }, [])
+
+  async function buyFeatured() {
+    if (featureBusy) return
+    setFeatureBusy(true); setError('')
+    try {
+      const res = await fetch('/api/commercial/checkout', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ product: 'residency_featured', returnUrl: window.location.origin }) })
+      const json = await res.json()
+      if (!res.ok) { setError(json.error || 'Could not start the payment.'); return }
+      window.location.href = json.url
+    } catch { setError('Could not start the payment.') } finally { setFeatureBusy(false) }
+  }
 
   useEffect(() => {
     fetch('/api/residency/open-roles')
@@ -56,6 +81,11 @@ export default function TalentResidencyPage() {
     if (candidate) {
       const { data } = await supabase.from('residency_bookings').select('*').eq('candidate_id', candidate.id).order('created_at', { ascending: false })
       setBookings(data || [])
+      try {
+        const res = await fetch('/api/residency/create')
+        const json = res.ok ? await res.json() : { listing: null }
+        setListing(json.listing || null)
+      } catch { setListing(null) }
     }
     setLoading(false)
   }, [supabase])
@@ -114,6 +144,30 @@ export default function TalentResidencyPage() {
             {payoutState !== 'active' && <button type="button" onClick={startPayouts} disabled={payoutBusy} className="btn-primary mt-3 text-[12px]">{payoutBusy ? 'Opening Stripe...' : payoutState === 'incomplete' ? 'Continue setup' : 'Set up payouts with Stripe'}</button>}
           </div>
         </div>}
+
+        {notice && <div className="mb-5 border border-emerald-200 bg-emerald-50 px-4 py-3 text-[13px] text-emerald-800">{notice}</div>}
+        {!loading && listing && listing.approval_status === 'approved' && (
+          (listing.is_featured && (!listing.featured_until || new Date(listing.featured_until) > new Date())) ? (
+            <div className="rounded-2xl border border-accent/30 bg-[#f5f6f8] p-5 mb-7 flex items-start gap-3">
+              <Crown size={20} className="text-accent mt-0.5"/>
+              <div>
+                <p className="font-medium text-ink text-sm">Your listing is featured</p>
+                <p className="text-xs text-muted mt-1 leading-5">It sits at the top of the Residency marketplace with the Featured badge{listing.featured_until ? ` until ${new Date(listing.featured_until).toLocaleDateString('en-GB')}` : ''}.</p>
+              </div>
+            </div>
+          ) : (
+            <div className="rounded-2xl border border-border bg-white p-5 mb-7 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-start gap-3">
+                <Crown size={20} className="text-accent mt-0.5"/>
+                <div>
+                  <p className="font-medium text-ink text-sm">Feature your listing</p>
+                  <p className="text-xs text-muted mt-1 leading-5">30 days at the top of the Residency marketplace with the Featured badge - seen first by every property browsing for specialists.</p>
+                </div>
+              </div>
+              <button type="button" onClick={buyFeatured} disabled={featureBusy} className="btn-primary shrink-0 text-[12px] disabled:opacity-50">{featureBusy ? 'Opening payment...' : 'Go Featured - £99 / 30 days'}</button>
+            </div>
+          )
+        )}
 
         <div className="rounded-2xl border border-border bg-white p-5 mb-7 flex items-start gap-3"><ShieldCheck size={20} className="text-accent mt-0.5"/><div><p className="font-medium text-ink text-sm">Why keep the booking here?</p><p className="text-xs text-muted mt-1 leading-5">Accepted rates, dates, accommodation and travel terms are recorded before payment. Completed platform residencies can qualify for verified reviews, and once a booking confirms you get a Before You Arrive pack with the property&apos;s details.</p></div></div>
 

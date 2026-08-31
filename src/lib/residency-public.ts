@@ -73,6 +73,7 @@ export function toPublicResidencyProfile(row: any): PublicResidencyProfile {
     negotiable: row.negotiable === true,
     available_from: row.available_from || row.availability_start || null,
     years_experience: Number(row.years_experience) > 0 ? Number(row.years_experience) : null,
-    is_featured: row.is_featured === true,
+    // Featured is honoured only while the paid (or comped) window is open.
+    is_featured: row.is_featured === true && (!row.featured_until || new Date(row.featured_until).getTime() > Date.now()),
   }
 }

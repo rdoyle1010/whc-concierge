@@ -37,6 +37,18 @@ export async function POST(req: NextRequest) {
     amount = cfg.price; name = `WHC Concierge - ${cfg.label}`; mode = 'subscription'; successPath = '/employer/membership'
     description = tier === 'pro' ? 'Annual employer membership with full talent search, enhanced matching, analytics and £99 Standard Jobs.' : 'Annual multi-property membership with up to 20 included job listings and advanced recruitment tools.'
     metadata = { ...metadata, role: 'employer', tier }
+  } else if (product === 'residency_featured') {
+    // Price editable in admin Settings via the commercial_settings row.
+    amount = 9900
+    try {
+      const { getCommercialSetting } = await import('@/lib/commercial-settings')
+      const setting = await getCommercialSetting('residency_featured')
+      if (setting?.is_active && setting.price_pence > 0) amount = setting.price_pence
+    } catch { /* fall back */ }
+    name = 'WHC Concierge - Featured Residency Listing'
+    mode = 'payment'; successPath = '/talent/residency'
+    description = '30 days at the top of the Residency marketplace with the Featured badge.'
+    metadata = { ...metadata, role: 'talent', featured_days: '30' }
   } else {
     return NextResponse.json({ error: 'Unknown commercial product' }, { status: 400 })
   }

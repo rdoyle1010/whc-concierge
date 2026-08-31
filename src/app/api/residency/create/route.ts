@@ -85,7 +85,7 @@ export async function GET() {
     const { data: cand } = await admin.from('candidate_profiles').select('id').eq('user_id', user.id).maybeSingle()
     if (!cand) return NextResponse.json({ listing: null })
     const { data: listing } = await admin.from('residency_profiles')
-      .select('id,primary_specialism,bio,secondary_specialisms,qualifications,brand_experience,current_location,will_travel_to,preferred_duration,weekly_rate,day_rate,monthly_rate,negotiable,available_from,approval_status')
+      .select('*')
       .eq('candidate_profile_id', cand.id)
       .order('created_at', { ascending: false }).limit(1).maybeSingle()
     return NextResponse.json({ listing: listing || null })
