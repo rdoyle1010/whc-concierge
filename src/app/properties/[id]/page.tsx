@@ -13,6 +13,43 @@ const SITE = 'https://talent.wellnesshousecollective.co.uk'
 const asList = (value: any) => Array.isArray(value) ? value.filter(Boolean) : []
 const prettyType = (value: string) => String(value).replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
 
+// Employers sometimes put a raw postcode in the free-text location field.
+// A postcode is not a place a candidate recognises, so prefer the city and
+// only fall back to the postcode - correctly uppercased - when it is all
+// there is.
+const UK_POSTCODE = /^[A-Za-z]{1,2}\d[A-Za-z\d]?\s*\d[A-Za-z]{2}$/
+function displayPlace(property: any): string | null {
+  const location = String(property.location || '').trim()
+  const city = String(property.city || '').trim()
+  if (location && UK_POSTCODE.test(location)) return city || location.toUpperCase()
+  return location || city || null
+}
+
+// spa_size is free text; when it is just a number, give it its unit.
+function spaSizeDisplay(raw: any): string {
+  const text = String(raw).trim()
+  const numeric = text.replace(/[,\s]/g, '')
+  if (/^\d+$/.test(numeric)) return `${Number(numeric).toLocaleString('en-GB')} sq ft`
+  return text
+}
+
+// Long lists read as luxury when they sit in quiet ruled columns, not a
+// jumble of chips. Capped so a 30-item facilities dump stays composed.
+function QuietList({ items, cap = 18, noun }: { items: string[]; cap?: number; noun: string }) {
+  const shown = items.slice(0, cap)
+  const more = items.length - shown.length
+  return (
+    <div className="max-w-4xl">
+      <ul className="columns-2 md:columns-3 gap-x-10">
+        {shown.map((item: string) => (
+          <li key={item} className="break-inside-avoid border-t border-border py-2.5 pr-4 text-[13px] leading-5 text-body">{item}</li>
+        ))}
+      </ul>
+      {more > 0 && <p className="mt-4 text-[12px] text-muted">and {more} more {noun}</p>}
+    </div>
+  )
+}
+
 // Every column here exists in .live-schema.json for employer_profiles.
 // The two destination columns (location_guide, relocation_support) arrive
 // with the 20260831160000 migration, so they are requested defensively.
@@ -175,7 +212,7 @@ export default async function PropertyDestinationPage({ params }: { params: Prom
     : null
   const heroMeta = [
     property.hotel_group,
-    property.location || property.city,
+    displayPlace(property),
     starLabel,
     property.property_type ? prettyType(property.property_type) : null,
   ].filter(Boolean) as string[]
@@ -189,7 +226,7 @@ export default async function PropertyDestinationPage({ params }: { params: Prom
 
   const spaFacts = [
     property.num_treatment_rooms ? { label: 'Treatment rooms', value: String(property.num_treatment_rooms) } : null,
-    property.spa_size ? { label: 'Spa size', value: String(property.spa_size) } : null,
+    property.spa_size ? { label: 'Spa size', value: spaSizeDisplay(property.spa_size) } : null,
   ].filter(Boolean) as Array<{ label: string; value: string }>
 
   const leadership = [
@@ -292,8 +329,9 @@ export default async function PropertyDestinationPage({ params }: { params: Prom
               </div>
             )}
             {facilities.length > 0 && (
-              <div className="mt-8 flex flex-wrap gap-2">
-                {facilities.map((item: string) => <span key={item} className="border border-border bg-surface px-3 py-1.5 text-[12px] text-secondary">{item}</span>)}
+              <div className="mt-10">
+                <p className="text-[11px] uppercase tracking-[.14em] font-semibold text-muted">Facilities</p>
+                <div className="mt-3"><QuietList items={facilities} noun="facilities" /></div>
               </div>
             )}
           </section>
@@ -324,17 +362,13 @@ export default async function PropertyDestinationPage({ params }: { params: Prom
             {services.length > 0 && (
               <div className="mt-8">
                 <p className="text-[11px] uppercase tracking-[.14em] font-semibold text-muted">Services</p>
-                <div className="mt-3 flex flex-wrap gap-2">
-                  {services.map((item: string) => <span key={item} className="border border-border bg-surface px-3 py-1.5 text-[12px] text-secondary">{item}</span>)}
-                </div>
+                <div className="mt-3"><QuietList items={services} noun="services" /></div>
               </div>
             )}
             {treatments.length > 0 && (
               <div className="mt-8">
                 <p className="text-[11px] uppercase tracking-[.14em] font-semibold text-muted">Treatment menu</p>
-                <div className="mt-3 flex flex-wrap gap-2">
-                  {treatments.map((item: string) => <span key={item} className="border border-border bg-surface px-3 py-1.5 text-[12px] text-secondary">{item}</span>)}
-                </div>
+                <div className="mt-3"><QuietList items={treatments} noun="treatments" /></div>
               </div>
             )}
             {property.treatment_menu_url && (
@@ -349,7 +383,18 @@ export default async function PropertyDestinationPage({ params }: { params: Prom
         {showTeam && (
           <section className="border-t border-border py-14 md:py-20">
             <p className="public-eyebrow">The team</p>
-            {property.team_size && <p className="mt-6 text-[16px] leading-8 text-body max-w-3xl">A spa team of {property.team_size}.</p>}
+            {property.team_size && (
+              <div className="mt-8 grid grid-cols-2 md:grid-cols-4 gap-x-8 gap-y-6 max-w-4xl">
+                <div className="border-t border-border pt-3">
+                  <p className="text-[10px] uppercase tracking-[.14em] text-muted">Spa team</p>
+                  <p className="mt-1 text-[18px] font-serif font-semibold text-ink">
+                    {/^\d+$/.test(String(property.team_size).trim())
+                      ? `${property.team_size} ${Number(property.team_size) === 1 ? 'person' : 'people'}`
+                      : String(property.team_size)}
+                  </p>
+                </div>
+              </div>
+            )}
             {leadership.length > 0 && (
               <div className="mt-8 max-w-2xl">
                 <p className="text-[11px] uppercase tracking-[.14em] font-semibold text-muted">Leadership</p>
@@ -397,7 +442,7 @@ export default async function PropertyDestinationPage({ params }: { params: Prom
         {benefits.length > 0 && (
           <section className="border-t border-border py-14 md:py-20">
             <p className="public-eyebrow">Employee benefits</p>
-            <div className="mt-8 grid md:grid-cols-2 gap-x-12 max-w-4xl">
+            <div className="mt-8 grid md:grid-cols-2 lg:grid-cols-3 gap-x-12 max-w-5xl">
               {benefits.map((item: string) => (
                 <p key={item} className="border-b border-border py-3.5 text-[14px] leading-6 text-body">{item}</p>
               ))}
@@ -469,8 +514,8 @@ export default async function PropertyDestinationPage({ params }: { params: Prom
             <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6">
               <div>
                 <p className="public-eyebrow">What it&apos;s actually like to work here</p>
-                <p className="mt-5 text-[14px] leading-7 text-secondary max-w-2xl">
-                  These reviews are platform-verified. Only professionals with a completed paid WHC agency shift or an accepted WHC placement here can leave one - they are separate from guest reviews and property marketing.
+                <p className="mt-5 text-[12px] leading-6 italic text-muted max-w-2xl">
+                  Verified reviews from professionals who have worked here through WHC - separate from guest reviews and property marketing.
                 </p>
               </div>
               {reviewSummary.average && (
@@ -516,7 +561,10 @@ export default async function PropertyDestinationPage({ params }: { params: Prom
                         {featured && <span className="bg-accent text-white text-[9px] font-semibold uppercase tracking-[.12em] px-2 py-1">Featured</span>}
                       </div>
                       <p className="mt-1.5 text-[13px] text-secondary">
-                        {[job.location || property.location, salary].filter(Boolean).join(' · ')}
+                        {[
+                          job.location && !UK_POSTCODE.test(String(job.location).trim()) ? job.location : displayPlace(property),
+                          salary,
+                        ].filter(Boolean).join(' · ')}
                       </p>
                     </div>
                     <span className="hidden sm:inline text-[13px] font-semibold text-accent whitespace-nowrap">View role →</span>
