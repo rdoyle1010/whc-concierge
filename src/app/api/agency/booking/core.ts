@@ -736,41 +736,70 @@ export async function POST(req: NextRequest) {
           : `No available therapists found for ${shiftDate}. Try the agency directory to make a direct offer.` }, { status: 400 })
       }
 
-      const queue = ranked.map(({ c, dist }: any) => ({
-        id: c.id,
-        name: c.full_name || 'Therapist',
-        rate: c.hourly_rate,
-        distance: dist != null ? Math.round(dist * 10) / 10 : null,
-      }))
-      const first = ranked[0].c
+      // "I need three therapists next Saturday": one request can ask for up
+      // to five people. The ranked pool is dealt round-robin into that many
+      // independent cascades, so no therapist is queued for two of the
+      // group's slots and each slot hunts in parallel.
+      const requestedCount = Math.min(5, Math.max(1, parseInt(String(body.count), 10) || 1))
+      const count = Math.min(requestedCount, ranked.length)
+      const feePct = await feePctForEmployerShift(admin, emp.id, shiftDate)
       const deadline = new Date(Date.now() + CASCADE_WINDOW_MS).toISOString()
+      const groupId = count > 1 ? `urgent-${Date.now()}-${Math.random().toString(36).slice(2, 8)}` : null
 
-      const row: Record<string, any> = {
-        candidate_id: first.id,
-        employer_id: emp.id,
-        shift_date: shiftDate,
-        shift_start_time: shiftStartTime,
-        shift_end_time: shiftEndTime,
-        shift_type: body.shiftType || null,
-        hours: hours && hours > 0 ? hours : null,
-        rate: first.hourly_rate,
-        platform_fee: Math.ceil(first.hourly_rate * effHours * await feePctForEmployerShift(admin, emp.id, shiftDate)),
-        status: 'pending',
-        urgent: true,
-        expires_at: deadline,
-        cascade_queue: queue,
-        cascade_index: 0,
-        cascade_deadline: deadline,
-        cascade_notes: String(body.notes || '').slice(0, 500) || null,
+      const created: Array<{ first_name: string; queue_size: number }> = []
+      let firstBooking: any = null
+      for (let lane = 0; lane < count; lane++) {
+        const laneRanked = ranked.filter((_: any, index: number) => index % count === lane)
+        const queue = laneRanked.map(({ c, dist }: any) => ({
+          id: c.id,
+          name: c.full_name || 'Therapist',
+          rate: c.hourly_rate,
+          distance: dist != null ? Math.round(dist * 10) / 10 : null,
+        }))
+        const first = laneRanked[0].c
+
+        const row: Record<string, any> = {
+          candidate_id: first.id,
+          employer_id: emp.id,
+          shift_date: shiftDate,
+          shift_start_time: shiftStartTime,
+          shift_end_time: shiftEndTime,
+          shift_type: body.shiftType || null,
+          hours: hours && hours > 0 ? hours : null,
+          rate: first.hourly_rate,
+          platform_fee: Math.ceil(first.hourly_rate * effHours * feePct),
+          status: 'pending',
+          urgent: true,
+          expires_at: deadline,
+          cascade_queue: queue,
+          cascade_index: 0,
+          cascade_deadline: deadline,
+          cascade_notes: String(body.notes || '').slice(0, 500) || null,
+          ...(groupId ? { booking_group: groupId } : {}),
+        }
+        const { data: booking, error } = await insertBookingDefensively(admin, row)
+        if (error) {
+          if (created.length === 0) return NextResponse.json({ error: error.message }, { status: 500 })
+          break
+        }
+        if (!firstBooking) firstBooking = booking
+
+        await alertCascadeHolder(admin, first, employerDisplayName(emp), user.id, {
+          shift_date: shiftDate, rate: first.hourly_rate, hours, expires_at: deadline,
+        })
+        created.push({ first_name: queue[0].name, queue_size: queue.length })
       }
-      const { data: booking, error } = await insertBookingDefensively(admin, row)
-      if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-      await alertCascadeHolder(admin, first, employerDisplayName(emp), user.id, {
-        shift_date: shiftDate, rate: first.hourly_rate, hours, expires_at: deadline,
+      return NextResponse.json({
+        success: true,
+        booking: firstBooking,
+        count: created.length,
+        requested: requestedCount,
+        shortfall: Math.max(0, requestedCount - created.length),
+        offers: created,
+        queue_size: created[0]?.queue_size || 0,
+        first_name: created[0]?.first_name || 'Therapist',
       })
-
-      return NextResponse.json({ success: true, booking, queue_size: queue.length, first_name: queue[0].name })
     }
 
     // ── counter / accept / decline all operate on an existing booking ──

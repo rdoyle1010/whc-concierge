@@ -1,5 +1,6 @@
 import { BadgeCheck, Star } from 'lucide-react'
 import type { CareerValueDimension } from '@/lib/career-value'
+import { candidateBadges } from '@/lib/verification-badges'
 
 // The candidate portfolio: a private professional portfolio, set in the same
 // flat editorial language as the public destination pages - eyebrows, ruled
@@ -15,6 +16,7 @@ type Props = {
   academy: PortfolioAcademyEntry[]
   reviews: PortfolioReview[]
   careerValue: CareerValueDimension[]
+  manualVerifications?: string[]
 }
 
 const asList = (value: any): string[] =>
@@ -107,7 +109,7 @@ function FactRow({ label, value }: { label: string; value: string }) {
   )
 }
 
-export default function CandidatePortfolio({ candidate, academy, reviews, careerValue }: Props) {
+export default function CandidatePortfolio({ candidate, academy, reviews, careerValue, manualVerifications = [] }: Props) {
   if (!candidate) return null
 
   const name = displayName(candidate)
@@ -122,11 +124,7 @@ export default function CandidatePortfolio({ candidate, academy, reviews, career
     candidate.experience_years ? `${candidate.experience_years} years experience` : null,
   ].filter(Boolean) as string[]
 
-  const verifications = [
-    candidate.whc_verified ? 'WHC Verified' : null,
-    candidate.has_insurance ? 'Insured' : null,
-    candidate.right_to_work_status === 'verified' ? 'Right to work verified' : null,
-  ].filter(Boolean) as string[]
+  const verifications = candidateBadges(candidate, manualVerifications)
 
   const luxuryBrands = dedupe([...asList(candidate.hotel_brands_worked), ...asList(candidate.product_houses)])
   const evidence = evidenceLines(candidate.career_evidence)
@@ -200,10 +198,14 @@ export default function CandidatePortfolio({ candidate, academy, reviews, career
               </p>
             )}
             {verifications.length > 0 && (
-              <p className="mt-5 flex flex-wrap gap-x-6 gap-y-2">
-                {verifications.map(item => (
-                  <span key={item} className="inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[.12em] text-accent">
-                    <BadgeCheck size={12} />{item}
+              <p className="mt-5 flex flex-wrap items-center gap-x-5 gap-y-2">
+                {verifications.map(badge => badge.key === 'agency_ready' ? (
+                  <span key={badge.key} className="inline-flex items-center gap-1.5 bg-accent px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[.12em] text-white">
+                    <BadgeCheck size={12} />{badge.label}
+                  </span>
+                ) : (
+                  <span key={badge.key} className="inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[.12em] text-accent">
+                    <BadgeCheck size={12} />{badge.label}
                   </span>
                 ))}
               </p>

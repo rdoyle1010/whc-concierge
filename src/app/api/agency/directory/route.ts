@@ -15,7 +15,7 @@ const SAFE_FIELDS = [
   'travel_availability', 'travel_radius_miles', 'hourly_rate', 'day_rate_min',
   'day_rate_max', 'agency_tier', 'is_featured', 'latitude', 'longitude',
   'approval_status', 'profile_visible', 'created_at',
-  'agency_listed_until',
+  'agency_listed_until', 'right_to_work_status', 'insurance_expiry_date',
 ].join(',')
 
 export async function GET(req: NextRequest) {
@@ -101,14 +101,23 @@ export async function GET(req: NextRequest) {
   if (error) return NextResponse.json({ error: 'Directory unavailable' }, { status: 500 })
   const blockedIds = new Set((blocks || []).map((row: any) => row.candidate_id))
   const candidateIds = (data || []).map((row: any) => row.id)
-  const [{ data: dayRows }, { data: windows }, { data: bookings }, { data: completedShifts }] = hasShiftSearch && candidateIds.length
+  const [{ data: dayRows }, { data: windows }, { data: bookings }] = hasShiftSearch && candidateIds.length
     ? await Promise.all([
         admin.from('agency_availability').select('candidate_id, available').in('candidate_id', candidateIds).eq('date', shiftDate),
         admin.from('agency_availability_windows').select('candidate_id, start_time, end_time').in('candidate_id', candidateIds).eq('date', shiftDate),
         admin.from('agency_bookings').select('candidate_id, shift_start_time, shift_end_time').in('candidate_id', candidateIds).eq('shift_date', shiftDate).in('status', ['pending', 'countered', 'accepted', 'confirmed']),
-        admin.from('agency_bookings').select('candidate_id').in('candidate_id', candidateIds).eq('status', 'completed'),
       ])
-    : [{ data: [] }, { data: [] }, { data: [] }, { data: [] }]
+    : [{ data: [] }, { data: [] }, { data: [] }]
+
+  // Shift history and reliability travel on every card, not just shift
+  // searches - a property is buying reduced risk, and a professional's
+  // track record of honoured shifts is the evidence.
+  const [{ data: completedShifts }, { data: candidateCancellations }] = candidateIds.length
+    ? await Promise.all([
+        admin.from('agency_bookings').select('candidate_id').in('candidate_id', candidateIds).eq('status', 'completed'),
+        admin.from('agency_bookings').select('candidate_id').in('candidate_id', candidateIds).eq('status', 'cancelled').eq('cancellation_requested_by', 'candidate'),
+      ])
+    : [{ data: [] }, { data: [] }]
   const unavailableIds = new Set((dayRows || []).filter((row: any) => row.available === false).map((row: any) => row.candidate_id))
   const windowsByCandidate = new Map<string, any[]>()
   for (const window of windows || []) windowsByCandidate.set(window.candidate_id, [...(windowsByCandidate.get(window.candidate_id) || []), window])
@@ -116,6 +125,8 @@ export async function GET(req: NextRequest) {
   for (const booking of bookings || []) bookingsByCandidate.set(booking.candidate_id, [...(bookingsByCandidate.get(booking.candidate_id) || []), booking])
   const completedCount = new Map<string, number>()
   for (const booking of completedShifts || []) completedCount.set(booking.candidate_id, (completedCount.get(booking.candidate_id) || 0) + 1)
+  const cancelledCount = new Map<string, number>()
+  for (const booking of candidateCancellations || []) cancelledCount.set(booking.candidate_id, (cancelledCount.get(booking.candidate_id) || 0) + 1)
 
   const candidates = (data || [])
     .filter((candidate: any) => !candidate.agency_listed_until || new Date(candidate.agency_listed_until).getTime() >= Date.now())
@@ -137,14 +148,29 @@ export async function GET(req: NextRequest) {
           : coversShift ? 'confirmed'
           : 'not_confirmed'
       }
-      const { latitude: _latitude, longitude: _longitude, postcode: _postcode, approval_status: _approval, profile_visible: _visible, agency_listed_until: _listedUntil, ...safe } = candidate
+      // Agency Ready: identity verified, insured (and not expired), right to
+      // work verified, a rate set, and a mapped location. Computed here so
+      // the raw compliance fields never leave the server.
+      const insuranceCurrent = Boolean(candidate.has_insurance)
+        && (!candidate.insurance_expiry_date || new Date(candidate.insurance_expiry_date).getTime() >= Date.now())
+      const agencyReady = Boolean(candidate.whc_verified)
+        && insuranceCurrent
+        && candidate.right_to_work_status === 'verified'
+        && Number(candidate.hourly_rate) > 0
+        && candidate.latitude != null
+      const completed = completedCount.get(candidate.id) || 0
+      const cancelled = cancelledCount.get(candidate.id) || 0
+      const { latitude: _latitude, longitude: _longitude, postcode: _postcode, approval_status: _approval, profile_visible: _visible, agency_listed_until: _listedUntil, right_to_work_status: _rtw, insurance_expiry_date: _insExpiry, ...safe } = candidate
       return {
         ...safe,
         distance_miles: result.distanceMiles,
         within_radius: result.withinRadius,
         distance_status: result.reason,
         availability_match: availabilityMatch,
-        completed_shift_count: completedCount.get(candidate.id) || 0,
+        completed_shift_count: completed,
+        agency_ready: agencyReady,
+        // Reliability is only stated once there is a real track record.
+        reliability_pct: completed + cancelled >= 3 ? Math.round((completed / (completed + cancelled)) * 100) : null,
       }
     })
     .filter((candidate: any) => isAdmin || candidate.within_radius)

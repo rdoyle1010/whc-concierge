@@ -2,12 +2,16 @@
 
 import { useEffect, useState } from 'react'
 import DashboardShell from '@/components/DashboardShell'
+import { MANUAL_VERIFICATION_TYPES } from '@/lib/verification-badges'
 import { ShieldCheck, FileText, X, Clock3 } from 'lucide-react'
 
 export default function AdminVerificationPage() {
   const [rows, setRows] = useState<any[]>([])
+  const [verifications, setVerifications] = useState<Record<string, string[]>>({})
+  const [verificationsAvailable, setVerificationsAvailable] = useState(true)
   const [loading, setLoading] = useState(true)
   const [busyId, setBusyId] = useState<string | null>(null)
+  const [busyMark, setBusyMark] = useState<string | null>(null)
   const [error, setError] = useState('')
   const [rejecting, setRejecting] = useState<any>(null)
   const [reason, setReason] = useState('')
@@ -17,11 +21,33 @@ export default function AdminVerificationPage() {
       const res = await fetch('/api/admin/verification')
       const j = await res.json().catch(() => ({}))
       if (!res.ok) { setError(j.error || 'Could not load verification submissions.'); setRows([]) }
-      else setRows(j.rows || [])
+      else {
+        setRows(j.rows || [])
+        setVerifications(j.verifications || {})
+        setVerificationsAvailable(j.verifications_available !== false)
+      }
     } catch { setError('Could not load verification submissions.') }
     setLoading(false)
   }
   useEffect(() => { load() }, [])
+
+  async function toggleMark(candidateId: string, type: string, granted: boolean) {
+    setError('')
+    setBusyMark(`${candidateId}:${type}`)
+    try {
+      const res = await fetch('/api/admin/verification', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: granted ? 'revoke_verification' : 'grant_verification', candidateId, type }),
+      })
+      const j = await res.json().catch(() => ({}))
+      if (!res.ok) { setError(j.error || 'Could not update verification marks.'); return }
+      setVerifications(prev => {
+        const current = prev[candidateId] || []
+        const next = granted ? current.filter(t => t !== type) : [...current, type]
+        return { ...prev, [candidateId]: next }
+      })
+    } catch { setError('Something went wrong - please try again.') } finally { setBusyMark(null) }
+  }
 
   async function decide(id: string, decision: 'verified' | 'rejected', why?: string) {
     setError('')
@@ -93,6 +119,24 @@ export default function AdminVerificationPage() {
                 className="inline-flex items-center gap-1 text-[12px] font-medium text-accent hover:underline"><FileText size={12} /> {d.name || `Document ${i + 1}`}</a>
             ))}
           </div>
+          {verificationsAvailable && (
+            <div className="mt-3">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-gray-400">Verifications</p>
+              <div className="mt-1.5 flex flex-wrap gap-1.5">
+                {MANUAL_VERIFICATION_TYPES.map(mark => {
+                  const granted = (verifications[r.id] || []).includes(mark.type)
+                  const busy = busyMark === `${r.id}:${mark.type}`
+                  return (
+                    <button key={mark.type} onClick={() => toggleMark(r.id, mark.type, granted)} disabled={busy}
+                      title={granted ? `Revoke: ${mark.label}` : `Grant: ${mark.label}`}
+                      className={`px-2.5 py-1 text-[11px] font-medium border transition-colors disabled:opacity-50 ${granted ? 'bg-accent border-accent text-white' : 'bg-white border-border text-secondary hover:border-accent hover:text-accent'}`}>
+                      {mark.label}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+          )}
           {r.verification_notes && <p className="text-[12px] text-gray-400 mt-3">Last decision note: {r.verification_notes}</p>}
         </div>
         <div className="flex flex-wrap items-center gap-2 lg:justify-end shrink-0">

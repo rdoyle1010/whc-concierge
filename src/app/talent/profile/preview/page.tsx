@@ -39,6 +39,7 @@ export default function TalentProfilePreviewPage() {
   const [profile, setProfile] = useState<any>(null)
   const [enrolments, setEnrolments] = useState<Enrolment[]>([])
   const [reviews, setReviews] = useState<Review[]>([])
+  const [manualVerifications, setManualVerifications] = useState<string[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -71,6 +72,15 @@ export default function TalentProfilePreviewPage() {
       let { data: reviewRows, error } = await buildReviewQuery(true)
       if (error) ({ data: reviewRows } = await buildReviewQuery(false))
       setReviews((reviewRows || []) as unknown as Review[])
+
+      // Manual verification marks granted by WHC admins. Served through the
+      // talent API (the table is service-role only); an absent table or a
+      // failed request simply means no manual badges.
+      try {
+        const res = await fetch('/api/talent/verifications')
+        const j = await res.json().catch(() => ({}))
+        if (res.ok && Array.isArray(j.types)) setManualVerifications(j.types)
+      } catch { /* no manual badges */ }
 
       setLoading(false)
     }
@@ -115,7 +125,7 @@ export default function TalentProfilePreviewPage() {
           </div>
         )}
 
-        <CandidatePortfolio candidate={profile} academy={academy} reviews={reviews} careerValue={value} />
+        <CandidatePortfolio candidate={profile} academy={academy} reviews={reviews} careerValue={value} manualVerifications={manualVerifications} />
 
         {/* Maintenance motivation: the empty high-value sections, as links. */}
         {gaps.length > 0 && (
