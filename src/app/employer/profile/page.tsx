@@ -78,6 +78,9 @@ export default function EmployerProfilePage() {
         taxi_support: profile.taxi_support,
         taxi_notes: profile.taxi_notes,
         travel_notes: profile.travel_notes,
+        // Destination page narrative
+        location_guide: profile.location_guide || null,
+        relocation_support: profile.relocation_support || null,
         // Property intelligence
         hotel_group: profile.hotel_group || null,
         room_count: profile.room_count ? parseInt(profile.room_count) : null,
@@ -114,6 +117,8 @@ export default function EmployerProfilePage() {
         transport_walk_minutes: profile.transport_walk_minutes ? parseInt(profile.transport_walk_minutes) : null,
         parking_available: profile.parking_available, taxi_support: profile.taxi_support,
         taxi_notes: profile.taxi_notes, travel_notes: profile.travel_notes,
+        location_guide: profile.location_guide || null,
+        relocation_support: profile.relocation_support || null,
         culture_points: profile.culture_points, highlights: profile.highlights,
         agency_available: profile.agency_available, agency_note: profile.agency_note,
       }
@@ -327,6 +332,16 @@ export default function EmployerProfilePage() {
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1.5">Other access notes</label>
             <textarea rows={3} value={profile.travel_notes || ''} onChange={(e) => update('travel_notes', e.target.value)} className="input-field" placeholder="e.g. Staff entrance on Park Lane; late-shift transport available by arrangement" />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">Location guide</label>
+            <textarea rows={4} value={profile.location_guide || ''} onChange={(e) => update('location_guide', e.target.value)} className="input-field" />
+            <p className="text-xs text-muted mt-1.5">What is the area like to live and work in - neighbourhood, lifestyle, cost of living, what the team loves about it.</p>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">Relocation support</label>
+            <textarea rows={4} value={profile.relocation_support || ''} onChange={(e) => update('relocation_support', e.target.value)} className="input-field" />
+            <p className="text-xs text-muted mt-1.5">What you offer people relocating - accommodation help, travel, visa sponsorship, settling-in support.</p>
           </div>
         </div>
 

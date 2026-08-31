@@ -166,7 +166,7 @@ export default async function RoleDetailPage(props: { params: Promise<{ id: stri
                 {Array.isArray(employer.staff_benefits) && employer.staff_benefits.length > 0 && <div className="mt-4"><p className="text-[10px] uppercase tracking-[.14em] text-[#10283b] font-semibold mb-1.5">Staff benefits</p><div className="flex flex-wrap gap-1.5">{employer.staff_benefits.map((benefit: string) => <span key={benefit} className="text-[11px] bg-emerald-50 text-emerald-700 px-2.5 py-1 rounded-full">{benefit}</span>)}</div></div>}
                 {employer.progression_notes && <div className="mt-4"><p className="text-[10px] uppercase tracking-[.14em] text-[#10283b] font-semibold mb-1.5">Progression</p><p className="text-[13px] leading-6 text-[#4d4d4d] whitespace-pre-line">{employer.progression_notes}</p></div>}
               </div>
-              {employer.id && <Link href={`/properties/${employer.id}`} className="btn-secondary inline-flex items-center gap-2 whitespace-nowrap">Explore property <ArrowRight size={13}/></Link>}
+              {employer.id && <Link href={`/properties/${employer.id}`} className="btn-primary inline-flex items-center gap-2 whitespace-nowrap">Explore this property <ArrowRight size={13}/></Link>}
             </div>
           </JobSection>
         </div>
