@@ -78,7 +78,7 @@ export default function Navbar({ siteContent }: { siteContent?: WebsiteContent }
     { href: '/agency/about', label: 'Agency' },
     { href: '/academy', label: 'Academy' },
     { href: '/residency', label: 'Residency' },
-    { href: '/blog', label: 'Journal' },
+    { href: '/intelligence', label: 'Intelligence' },
   ]
 
   const publicGroups = [
@@ -143,7 +143,7 @@ export default function Navbar({ siteContent }: { siteContent?: WebsiteContent }
                 )
               })}
               <Link href="/academy" className={`relative flex h-full items-center text-[10px] font-semibold uppercase tracking-[0.16em] transition-colors ${isActive('/academy') ? 'text-white' : 'text-white/68 hover:text-white'}`}>Academy{isActive('/academy') && <span className="absolute inset-x-0 bottom-0 h-[2px] bg-white" />}</Link>
-              <Link href="/blog" className={`relative flex h-full items-center text-[10px] font-semibold uppercase tracking-[0.16em] transition-colors ${isActive('/blog') ? 'text-white' : 'text-white/68 hover:text-white'}`}>Journal{isActive('/blog') && <span className="absolute inset-x-0 bottom-0 h-[2px] bg-white" />}</Link>
+              <Link href="/intelligence" className={`relative flex h-full items-center text-[10px] font-semibold uppercase tracking-[0.16em] transition-colors ${isActive('/intelligence') ? 'text-white' : 'text-white/68 hover:text-white'}`}>Intelligence{isActive('/intelligence') && <span className="absolute inset-x-0 bottom-0 h-[2px] bg-white" />}</Link>
             </div>
           )}
         </div>
@@ -197,7 +197,7 @@ export default function Navbar({ siteContent }: { siteContent?: WebsiteContent }
                 {publicGroups[1].items.map(item => <Link key={item.href} href={item.href} className="block border-b border-white/8 py-3 text-[13px] text-white/78" onClick={() => setMobileOpen(false)}>{item.label}</Link>)}
                 <p className="pb-2 pt-6 text-[9px] font-semibold uppercase tracking-[.18em] text-white/55">Development & Ideas</p>
                 <Link href="/academy" className="block border-b border-white/8 py-3 text-[13px] text-white/78" onClick={() => setMobileOpen(false)}>Academy</Link>
-                <Link href="/blog" className="block border-b border-white/8 py-3 text-[13px] text-white/78" onClick={() => setMobileOpen(false)}>Journal</Link>
+                <Link href="/intelligence" className="block border-b border-white/8 py-3 text-[13px] text-white/78" onClick={() => setMobileOpen(false)}>Intelligence</Link>
               </>
             )}
 

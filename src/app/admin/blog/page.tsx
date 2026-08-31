@@ -5,7 +5,9 @@ import DashboardShell from '@/components/DashboardShell'
 import { Plus, Edit2, Trash2, Eye, EyeOff, FileText, X, Upload, Image as ImageIcon, Share2 } from 'lucide-react'
 import Pagination from '@/components/Pagination'
 
-const CATEGORIES = ['Career Advice', 'Industry Insights', 'Wellness Trends', 'Business Tips', 'Recruitment', 'Leadership', 'Employer Insights', 'Qualifications']
+// The nine WHC Intelligence desks, plus Journal for general pieces. Posts in
+// these categories surface on /intelligence under the matching desk.
+const CATEGORIES = ['Salary reports', 'Industry benchmarks', 'Leadership interviews', 'Spa opening reports', 'Career advice', 'Revenue benchmarks', 'Recruitment trends', 'Role guides', 'Industry analysis', 'Journal']
 
 export default function AdminBlogPage() {
   const [posts, setPosts] = useState<any[]>([])
@@ -131,7 +133,7 @@ export default function AdminBlogPage() {
         <div className="space-y-5">
           <div><label className="dashboard-eyebrow block mb-1.5">Title *</label><input className="input-field" value={form.title} onChange={e => setForm({ ...form, title: e.target.value, slug: editing ? form.slug : generateSlug(e.target.value) })} placeholder="Article title"/></div>
           <div className="grid md:grid-cols-2 gap-4"><div><label className="dashboard-eyebrow block mb-1.5">Slug</label><input className="input-field" value={form.slug} onChange={e => setForm({ ...form, slug: e.target.value })}/></div><div><label className="dashboard-eyebrow block mb-1.5">Author</label><input className="input-field" value={form.author} onChange={e => setForm({ ...form, author: e.target.value })}/></div></div>
-          <div className="grid md:grid-cols-2 gap-4"><div><label className="dashboard-eyebrow block mb-1.5">Category</label><select className="input-field" value={form.category} onChange={e => setForm({ ...form, category: e.target.value })}><option value="">Select category</option>{CATEGORIES.map(c => <option key={c}>{c}</option>)}</select></div><div><label className="dashboard-eyebrow block mb-1.5">Tags</label><input className="input-field" value={form.tags} onChange={e => setForm({ ...form, tags: e.target.value })} placeholder="spa, leadership, careers"/></div></div>
+          <div className="grid md:grid-cols-2 gap-4"><div><label className="dashboard-eyebrow block mb-1.5">Category</label><select className="input-field" value={form.category} onChange={e => setForm({ ...form, category: e.target.value })}><option value="">Select category</option>{form.category && !CATEGORIES.includes(form.category) && <option value={form.category}>{form.category}</option>}{CATEGORIES.map(c => <option key={c}>{c}</option>)}</select></div><div><label className="dashboard-eyebrow block mb-1.5">Tags</label><input className="input-field" value={form.tags} onChange={e => setForm({ ...form, tags: e.target.value })} placeholder="spa, leadership, careers"/></div></div>
 
           <div><label className="dashboard-eyebrow block mb-1.5">Featured image</label><div className="grid md:grid-cols-[240px_1fr] gap-4 rounded-2xl border border-[#e5e5e5] p-4 bg-[#f7f7f7]">
             <div className="aspect-[16/10] overflow-hidden rounded-xl bg-white border border-[#e5e5e5]">{form.image_url ? <img src={form.image_url} alt="Article preview" className="w-full h-full object-cover"/> : <div className="h-full flex items-center justify-center text-[#8a979f]"><ImageIcon size={30}/></div>}</div>
