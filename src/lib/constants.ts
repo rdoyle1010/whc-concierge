@@ -129,14 +129,28 @@ export const AGENCY_PLATFORM_FEE_PCT = 0.15
 // the emergency service the property is buying.
 export const AGENCY_URGENT_FEE_SURCHARGE = 0.05
 
+// Agency Plus: the frequent-employer subscription. A monthly fee buys a
+// reduced booking fee, priority cover and a recognisable badge - converting
+// the best transaction customers into recurring revenue. The professional
+// still keeps 100% of the agreed rate on every model.
+export const AGENCY_PLUS_MONTHLY_PRICE = 9900 // £99/mo
+export const AGENCY_PLUS_FEE_PCT = 0.10      // vs 15% standard
+
 // The WHC fee percentage for a shift, judged by how close the shift date is
 // to today (both YYYY-MM-DD, Europe/London). Same-day or next-day => premium.
-export function agencyFeePctForShift(shiftDate: string | null | undefined, todayLondon: string): number {
-  if (!shiftDate || !todayLondon) return AGENCY_PLATFORM_FEE_PCT
+// Agency Plus members pay the reduced base; the urgency premium applies to
+// everyone because it prices the emergency, not the relationship.
+export function agencyFeePctForShiftPlus(shiftDate: string | null | undefined, todayLondon: string, plusActive: boolean): number {
+  const base = plusActive ? AGENCY_PLUS_FEE_PCT : AGENCY_PLATFORM_FEE_PCT
+  if (!shiftDate || !todayLondon) return base
   const d = new Date(`${todayLondon}T12:00:00Z`)
   d.setUTCDate(d.getUTCDate() + 1)
   const tomorrow = d.toISOString().slice(0, 10)
-  return String(shiftDate) <= tomorrow ? AGENCY_PLATFORM_FEE_PCT + AGENCY_URGENT_FEE_SURCHARGE : AGENCY_PLATFORM_FEE_PCT
+  return String(shiftDate) <= tomorrow ? base + AGENCY_URGENT_FEE_SURCHARGE : base
+}
+
+export function agencyFeePctForShift(shiftDate: string | null | undefined, todayLondon: string): number {
+  return agencyFeePctForShiftPlus(shiftDate, todayLondon, false)
 }
 
 // Kept as a legacy alias for old Featured Profile code. New one-off featured

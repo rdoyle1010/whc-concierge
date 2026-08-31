@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getStripe } from '@/lib/stripe'
-import { JOB_TIERS, FEATURED_PROFILE_PRICE, AGENCY_LISTING_TIERS, AGENCY_PLATFORM_FEE_PCT, PREFERRED_EMPLOYER_PRICE } from '@/lib/constants'
+import { JOB_TIERS, FEATURED_PROFILE_PRICE, AGENCY_LISTING_TIERS, AGENCY_PLATFORM_FEE_PCT, PREFERRED_EMPLOYER_PRICE, AGENCY_PLUS_MONTHLY_PRICE } from '@/lib/constants'
 import { BUNDLE_PRICE, coursePrice, publicCoursePrice } from '@/lib/academy'
 import { getAcademyCatalog, getAcademyCourseBySlug } from '@/lib/academy-catalog-server'
 import { AD_PLACEMENTS, isAdPlacement } from '@/lib/advertising'
@@ -367,6 +367,52 @@ export async function POST(req: NextRequest) {
         allow_promotion_codes: true,
         success_url: `${origin}/employer/agency?registered=true`,
         cancel_url: `${origin}/employer/agency?registered=cancelled`,
+        metadata: meta,
+        subscription_data: { metadata: meta },
+      })
+      return NextResponse.json({ url: session.url })
+    }
+
+    if (type === 'agency_plus') {
+      const { employerId } = body
+      if (!employerId) return NextResponse.json({ error: 'Missing employerId' }, { status: 400 })
+
+      const { createAdminClient } = await import('@/lib/supabase/admin')
+      const admin = createAdminClient()
+      const { data: emp } = await admin.from('employer_profiles').select('id, user_id, agency_plus_active').eq('id', employerId).maybeSingle()
+      if (!emp || emp.user_id !== user.id) {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+      }
+      if (emp.agency_plus_active) {
+        return NextResponse.json({ error: 'Agency Plus is already active on this account.' }, { status: 400 })
+      }
+
+      let pricePence = AGENCY_PLUS_MONTHLY_PRICE
+      try {
+        const { getCommercialSetting } = await import('@/lib/commercial-settings')
+        const setting = await getCommercialSetting('agency_plus_monthly')
+        if (setting?.is_active && setting.price_pence > 0) pricePence = setting.price_pence
+      } catch { /* fall back to the constant */ }
+
+      const meta = { type: 'agency_plus', employer_id: employerId, user_id: user.id }
+      const session = await stripe.checkout.sessions.create({
+        payment_method_types: ['card'],
+        line_items: [{
+          price_data: {
+            currency: 'gbp',
+            product_data: {
+              name: 'WHC Agency Plus',
+              description: 'Monthly membership: reduced 10% booking fee, priority cover and the Agency Plus badge. Professionals always keep 100% of the agreed rate.',
+            },
+            unit_amount: pricePence,
+            recurring: { interval: 'month' },
+          },
+          quantity: 1,
+        }],
+        mode: 'subscription',
+        allow_promotion_codes: true,
+        success_url: `${origin}/employer/agency?plus=active`,
+        cancel_url: `${origin}/employer/agency?plus=cancelled`,
         metadata: meta,
         subscription_data: { metadata: meta },
       })

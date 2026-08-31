@@ -90,7 +90,10 @@ export default function TalentAgencyPage() {
     expired: 'bg-gray-100 text-gray-500',
   }
 
+  // Agency Plus properties' offers are surfaced first - part of what their
+  // membership buys. The professional's rate and terms are identical.
   const offers = bookings.filter((b) => b.status === 'pending' || b.status === 'countered')
+    .sort((a, b) => Number(Boolean(b.employer_agency_plus)) - Number(Boolean(a.employer_agency_plus)))
   const shifts = bookings.filter((b) => b.status !== 'pending' && b.status !== 'countered')
 
   const expectedPayout = (b: any) => b.payout_amount ?? Math.max(0, b.rate * (b.hours && b.hours > 0 ? b.hours : 8) - Math.ceil(b.rate * (b.hours && b.hours > 0 ? b.hours : 8) * 0.05))
@@ -161,7 +164,7 @@ export default function TalentAgencyPage() {
                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                       <div>
                         <div className="flex items-center gap-2 mb-1 flex-wrap">
-                          <h3 className="font-medium text-ink">{b.employer_name || 'Property'}</h3>
+                          <h3 className="font-medium text-ink">{b.employer_name || 'Property'}{b.employer_agency_plus && <span className="ml-2 inline-flex rounded-full bg-ink px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.1em] text-white align-middle">Priority property</span>}</h3>
                           {b.employer_review_score > 0 && (
                             <span className="inline-flex items-center gap-0.5 text-[11px] font-medium text-amber-500"><Star size={10} className="fill-amber-400 text-amber-400" />{Number(b.employer_review_score).toFixed(1)}{b.employer_review_count ? ` (${b.employer_review_count})` : ''}</span>
                           )}

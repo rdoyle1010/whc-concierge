@@ -3,7 +3,21 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { createNotification } from '@/lib/notifications'
-import { AGENCY_PLATFORM_FEE_PCT, agencyFeePctForShift } from '@/lib/constants'
+import { AGENCY_PLATFORM_FEE_PCT, agencyFeePctForShift, agencyFeePctForShiftPlus } from '@/lib/constants'
+
+// Agency Plus members pay a reduced base fee. Judged at booking time so the
+// subscription state on the day of booking decides the fee that is stored.
+async function feePctForEmployerShift(admin: any, employerId: string | null | undefined, shiftDate: string | null | undefined): Promise<number> {
+  let plus = false
+  try {
+    if (employerId) {
+      const { data } = await admin.from('employer_profiles')
+        .select('agency_plus_active, agency_plus_until').eq('id', employerId).maybeSingle()
+      plus = Boolean(data?.agency_plus_active) && (!data?.agency_plus_until || new Date(data.agency_plus_until).getTime() > Date.now())
+    }
+  } catch { /* fee falls back to standard */ }
+  return agencyFeePctForShiftPlus(shiftDate, todayInLondon(), plus)
+}
 import { sendSms } from '@/lib/sms'
 import { sendAgencyOfferEmail, sendReviewRequestEmail, sendInsuranceExpiryEmail, sendAgencyUpdateEmail, sendFeaturedExpiringEmail } from '@/lib/emails'
 import { profileDistanceMiles } from '@/lib/geo'
@@ -201,7 +215,7 @@ async function advanceCascade(admin: any, booking: any): Promise<any | null> {
     .update({
       candidate_id: entry.id,
       rate,
-      platform_fee: Math.ceil(rate * effHours * agencyFeePctForShift(booking.shift_date, todayInLondon())),
+      platform_fee: Math.ceil(rate * effHours * await feePctForEmployerShift(admin, booking.employer_id, booking.shift_date)),
       status: 'pending',
       cascade_index: next,
       cascade_deadline: deadline,
@@ -528,7 +542,7 @@ export async function POST(req: NextRequest) {
 
       const hours = shiftHours(shiftStartTime, shiftEndTime) || 0
       const effectiveHours = hours || 8
-      const platformFee = Math.ceil(rate * effectiveHours * agencyFeePctForShift(String(body.shiftDate), todayInLondon()))
+      const platformFee = Math.ceil(rate * effectiveHours * await feePctForEmployerShift(admin, emp.id, String(body.shiftDate)))
 
       // Same-day offers are URGENT (sickness cover): tighter expiry + SMS.
       const urgent = String(body.shiftDate) === todayInLondon()
@@ -733,7 +747,7 @@ export async function POST(req: NextRequest) {
         shift_type: body.shiftType || null,
         hours: hours && hours > 0 ? hours : null,
         rate: first.hourly_rate,
-        platform_fee: Math.ceil(first.hourly_rate * effHours * agencyFeePctForShift(shiftDate, todayInLondon())),
+        platform_fee: Math.ceil(first.hourly_rate * effHours * await feePctForEmployerShift(admin, emp.id, shiftDate)),
         status: 'pending',
         urgent: true,
         expires_at: deadline,
@@ -865,7 +879,7 @@ export async function POST(req: NextRequest) {
       // Recalculate the platform fee against the countered hourly rate.
       // On a cascade offer the counter resets the 30-minute window so the
       // property gets a fresh clock to accept it before the queue moves on.
-      const counterFee = Math.ceil(rate * (booking.hours && booking.hours > 0 ? booking.hours : 8) * agencyFeePctForShift(booking.shift_date, todayInLondon()))
+      const counterFee = Math.ceil(rate * (booking.hours && booking.hours > 0 ? booking.hours : 8) * await feePctForEmployerShift(admin, booking.employer_id, booking.shift_date))
       const counterUpdate: Record<string, any> = { rate, platform_fee: counterFee, status: 'countered' }
       if (Array.isArray(booking.cascade_queue)) {
         const fresh = new Date(Date.now() + CASCADE_WINDOW_MS).toISOString()

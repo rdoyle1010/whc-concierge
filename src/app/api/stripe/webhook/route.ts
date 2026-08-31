@@ -366,6 +366,14 @@ export async function POST(req: NextRequest) {
         }).eq('id', meta.employer_id)
       }
 
+      if (meta?.type === 'agency_plus' && meta?.employer_id) {
+        await supabase.from('employer_profiles').update({
+          agency_plus_active: true,
+          agency_plus_until: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+          stripe_customer_id: session.customer as string,
+        }).eq('id', meta.employer_id)
+      }
+
       if (meta?.type === 'job_posting' && meta?.job_id) {
         const days = meta.days ? parseInt(meta.days) : 30
         const expiresAt = new Date(Date.now() + days * 24 * 60 * 60 * 1000).toISOString()
@@ -583,6 +591,17 @@ export async function POST(req: NextRequest) {
         break
       }
 
+      if (subType === 'agency_plus') {
+        if (subscription.metadata?.employer_id && (lapsed || active)) {
+          await supabase.from('employer_profiles').update(
+            lapsed
+              ? { agency_plus_active: false, agency_plus_until: null }
+              : { agency_plus_active: true, agency_plus_until: subscriptionPeriodEnd(subscription, 30) }
+          ).eq('id', subscription.metadata.employer_id)
+        }
+        break
+      }
+
       if (subType === 'featured_employer') {
         if (subscription.metadata?.employer_id && (lapsed || active)) {
           const interval = subscription.items?.data?.[0]?.price?.recurring?.interval
@@ -634,6 +653,14 @@ export async function POST(req: NextRequest) {
         if (subscription.metadata?.employer_id) {
           await supabase.from('employer_profiles')
             .update({ preferred_employer: false, preferred_until: null })
+            .eq('id', subscription.metadata.employer_id)
+        }
+        break
+      }
+      if (subType === 'agency_plus') {
+        if (subscription.metadata?.employer_id) {
+          await supabase.from('employer_profiles')
+            .update({ agency_plus_active: false, agency_plus_until: null })
             .eq('id', subscription.metadata.employer_id)
         }
         break

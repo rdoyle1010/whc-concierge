@@ -5,7 +5,7 @@ import Link from 'next/link'
 import DashboardShell from '@/components/DashboardShell'
 import { Calendar, Clock, Banknote, Star, X, Zap, ShieldCheck, MessageSquare, Check } from 'lucide-react'
 import ReviewForm from '@/components/ReviewForm'
-import { AGENCY_PLATFORM_FEE_PCT } from '@/lib/constants'
+import { AGENCY_PLATFORM_FEE_PCT, AGENCY_PLUS_FEE_PCT } from '@/lib/constants'
 
 export default function EmployerAgencyPage() {
   const [profile, setProfile] = useState<any>(null)
@@ -24,7 +24,8 @@ export default function EmployerAgencyPage() {
     shiftDate: new Date().toLocaleDateString('en-CA'),
     shiftStartTime: '09:00', shiftEndTime: '17:00', radius: '25', maxRate: '', shiftType: '', notes: '',
   })
-  const agencyFeePct = Math.round(AGENCY_PLATFORM_FEE_PCT * 100)
+  const plusActive = Boolean(profile?.agency_plus_active)
+  const agencyFeePct = Math.round((plusActive ? AGENCY_PLUS_FEE_PCT : AGENCY_PLATFORM_FEE_PCT) * 100)
 
   async function load() {
     try {
@@ -49,9 +50,10 @@ export default function EmployerAgencyPage() {
     const params = new URLSearchParams(window.location.search)
     if (params.get('paid') === 'true' || params.get('paid') === 'processing') setNotice('Payment is being confirmed. The booking updates automatically once Stripe completes the payment webhook.')
     if (params.get('registered') === 'true') setNotice('Welcome aboard - you are now a registered Preferred Employer and can book agency cover.')
+    if (params.get('plus') === 'active') setNotice('Agency Plus is active - your booking fee is now 10% and your cover requests take priority.')
   }, [])
 
-  async function startCheckout(type: 'agency_booking' | 'employer_registration', extra: Record<string, any> = {}) {
+  async function startCheckout(type: 'agency_booking' | 'employer_registration' | 'agency_plus', extra: Record<string, any> = {}) {
     setError('')
     try {
       const agencyPayment = type === 'agency_booking'
@@ -164,6 +166,23 @@ export default function EmployerAgencyPage() {
       {error && <div className="bg-red-50 text-red-600 text-sm px-4 py-3 rounded-lg mb-6">{error}</div>}
       {loading ? <div className="flex items-center justify-center h-64"><div className="animate-spin w-8 h-8 border-2 border-gold border-t-transparent rounded-full" /></div> : <>
         {profile && (profile.preferred_employer ? <div className="flex items-center gap-3 bg-green-50 border border-green-200 rounded-xl px-5 py-4 mb-6"><ShieldCheck size={18} className="text-green-700 shrink-0" /><div><p className="text-[14px] font-medium text-green-800">Registered Preferred Employer</p><p className="text-[12px] text-green-700 mt-0.5">{profile.preferred_until ? `Registration renews ${new Date(profile.preferred_until).toLocaleDateString('en-GB')}. ` : ''}You can book agency cover - find talent in the <Link href="/agency" className="underline">agency directory</Link>.</p></div></div> : <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-[#f5f6f8] border border-border rounded-xl px-5 py-4 mb-6"><div><p className="text-[14px] font-medium text-ink">Register as a Preferred Employer</p><p className="text-[12px] text-gray-500 mt-0.5">£150/year. Book vetted agency cover by the hour - including urgent same-day sickness cover - with all payments handled by Wellness House Collective.</p></div><button type="button" onClick={() => { setBusyId('register'); startCheckout('employer_registration', { employerId: profile.id }) }} disabled={busyId === 'register'} className="btn-primary text-[12px] shrink-0 disabled:opacity-50">{busyId === 'register' ? 'Opening payment...' : 'Register - £150/year'}</button></div>)}
+
+        {profile?.preferred_employer && (plusActive ? (
+          <div className="mb-6 flex items-center justify-between gap-3 border border-border bg-[#f5f6f8] px-5 py-4">
+            <div>
+              <p className="text-[10px] font-semibold uppercase tracking-[.14em] text-accent">Agency Plus member</p>
+              <p className="mt-1 text-[13px] text-ink">Your booking fee is 10% instead of 15% and your cover requests are shown to professionals first.{profile.agency_plus_until ? ` Renews ${new Date(profile.agency_plus_until).toLocaleDateString('en-GB')}.` : ''}</p>
+            </div>
+          </div>
+        ) : (
+          <div className="mb-6 flex flex-col gap-3 border border-border px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="text-[14px] font-medium text-ink">Agency Plus - for properties that book cover regularly</p>
+              <p className="mt-0.5 text-[12px] leading-5 text-gray-500">£99/month. Booking fee drops from 15% to 10%, your requests take priority with professionals, and everything stays on one monthly invoice. On a typical £200 shift that is £10 back every time - two shifts a week and it pays for itself. Professionals always keep 100% of the agreed rate.</p>
+            </div>
+            <button type="button" onClick={() => { setBusyId('plus'); startCheckout('agency_plus', { employerId: profile.id }) }} disabled={busyId === 'plus'} className="btn-primary shrink-0 text-[12px] disabled:opacity-50">{busyId === 'plus' ? 'Opening payment...' : 'Join Agency Plus - £99/month'}</button>
+          </div>
+        ))}
 
         {profile?.preferred_employer && <div className="grid gap-3 mb-6 md:grid-cols-2"><Link href="/agency" className="group dashboard-card"><p className="text-[10px] font-semibold uppercase tracking-[.14em] text-accent">Agency directory</p><h2 className="mt-2 text-[18px] font-semibold text-ink">Need cover? See who is available near you</h2><p className="mt-1 text-[12px] leading-5 text-gray-500">Browse local professionals by date, hours and distance, then open a profile and send an offer.</p><span className="mt-4 inline-flex text-[12px] font-semibold text-accent group-hover:underline">Browse available people →</span></Link><button type="button" onClick={() => { setUrgentOpen(true); setError('') }} className="group bg-ink p-5 text-left"><p className="text-[10px] font-semibold uppercase tracking-[.14em] text-white/80">Urgent same-day cover</p><h2 className="mt-2 flex items-center gap-2 text-[18px] font-semibold text-white"><Zap size={16} className="text-white" /> Need someone today?</h2><p className="mt-1 text-[12px] leading-5 text-white/75">Send the shift to the nearest available people automatically. Each person gets 30 minutes before it moves on.</p><span className="mt-4 inline-flex border border-white/30 px-3 py-2 text-[12px] font-semibold text-white group-hover:bg-white/10">Send urgent cover request →</span></button></div>}
 
