@@ -22,7 +22,8 @@ export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => ({}))
   const bookingId = String(body.bookingId || '')
   const reason = String(body.reason || '').trim()
-  if (!bookingId || reason.length < 5) return NextResponse.json({ error: 'Choose a booking and explain the cancellation.' }, { status: 400 })
+  if (!bookingId) return NextResponse.json({ error: 'Choose a booking to cancel.' }, { status: 400 })
+  if (reason.length < 5) return NextResponse.json({ error: 'Please give a short reason for the cancellation - a few words is enough.' }, { status: 400 })
 
   const admin = createAdminClient()
   const [{ data: candidate }, { data: employer }, { data: booking }] = await Promise.all([

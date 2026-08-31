@@ -290,10 +290,10 @@ export default function TalentAgencyPage() {
                     {canCancel(b) && (
                       cancellingId === b.id ? (
                         <div className="mt-2 flex flex-col items-end gap-1.5">
-                          <input type="text" value={cancelReason} onChange={(e) => setCancelReason(e.target.value)} placeholder="Reason for cancelling" className="input-field text-[12px] w-56" />
+                          <input type="text" value={cancelReason} onChange={(e) => setCancelReason(e.target.value)} placeholder="Reason for cancelling - a few words" className="input-field text-[12px] w-56" />
                           {cancelError && <p className="text-[11px] text-red-600 max-w-[240px]">{cancelError}</p>}
                           <div className="flex items-center gap-3">
-                            <button type="button" onClick={() => cancelShift(b.id)} disabled={busyId === b.id || !cancelReason.trim()} className="text-[12px] font-medium text-red-600 hover:text-red-700 disabled:opacity-50">Confirm cancellation</button>
+                            <button type="button" onClick={() => cancelShift(b.id)} disabled={busyId === b.id || cancelReason.trim().length < 5} className="text-[12px] font-medium text-red-600 hover:text-red-700 disabled:opacity-50">Confirm cancellation</button>
                             <button type="button" onClick={() => { setCancellingId(null); setCancelReason(''); setCancelError('') }} className="text-[12px] text-gray-400 hover:text-ink">Keep shift</button>
                           </div>
                         </div>
