@@ -48,6 +48,8 @@ type Prep = {
   likely_questions?: string[]
   star_examples?: StarExample[]
   questions_to_ask?: string[]
+  commercial_talking_points?: string[]
+  plan_30_60_90?: { thirty?: string[]; sixty?: string[]; ninety?: string[] }
   readiness?: {
     overall?: number
     company?: number
@@ -279,6 +281,10 @@ export default function InterviewReadyPage() {
           <section className="dashboard-panel"><div className="flex items-center gap-2 mb-4"><Brain size={17} className="text-accent" /><div><p className="dashboard-eyebrow">Likely interview</p><h2 className="dashboard-section-title">Questions for this exact role</h2></div></div><div className="space-y-3">{(prep.likely_questions || []).map((q, i) => <div key={i} className="flex gap-3 border-b border-border pb-3 last:border-0"><span className="font-serif text-accent text-lg leading-5">{String(i + 1).padStart(2, '0')}</span><p className="text-[12px] text-secondary leading-5">{q}</p></div>)}</div></section>
           <section className="dashboard-panel"><div className="flex items-center gap-2 mb-4"><Users size={17} className="text-accent" /><div><p className="dashboard-eyebrow">Turn the interview around</p><h2 className="dashboard-section-title">Questions to ask them</h2></div></div><BulletList items={prep.questions_to_ask} /></section>
         </div>
+
+        {!!prep.commercial_talking_points?.length && <section className="dashboard-panel"><div className="flex items-center gap-2 mb-4"><Briefcase size={17} className="text-accent" /><div><p className="dashboard-eyebrow">Talk like an operator</p><h2 className="dashboard-section-title">Commercial talking points</h2></div></div><p className="text-[12px] text-muted leading-5 mb-4">Interviewers at every level respect a candidate who understands how a spa makes money. These are pitched at the seniority of this role.</p><BulletList items={prep.commercial_talking_points} /></section>}
+
+        {!!(prep.plan_30_60_90?.thirty?.length || prep.plan_30_60_90?.sixty?.length || prep.plan_30_60_90?.ninety?.length) && <section className="dashboard-panel"><div className="flex items-center gap-2 mb-5"><Target size={17} className="text-accent" /><div><p className="dashboard-eyebrow">Think beyond day one</p><h2 className="dashboard-section-title">Your 30 / 60 / 90-day thinking</h2></div></div><p className="text-[12px] text-muted leading-5 mb-5">Not a script to recite - a structure that shows you think past the start date. Adapt it with what you learn in the interview itself.</p><div className="grid grid-cols-1 lg:grid-cols-3 gap-4">{([['First 30 days', prep.plan_30_60_90?.thirty], ['Days 30-60', prep.plan_30_60_90?.sixty], ['Days 60-90', prep.plan_30_60_90?.ninety]] as Array<[string, string[] | undefined]>).map(([label, items]) => <div key={label} className="border border-border bg-white p-5"><p className="text-[10px] uppercase tracking-[.14em] text-accent font-semibold mb-3">{label}</p><BulletList items={items} /></div>)}</div></section>}
 
         {!!prep.star_examples?.length && <section className="dashboard-panel"><div className="flex items-center gap-2 mb-5"><Star size={17} className="text-accent" /><div><p className="dashboard-eyebrow">Your evidence bank</p><h2 className="dashboard-section-title">STAR examples from your own experience</h2></div></div><div className="grid grid-cols-1 lg:grid-cols-2 gap-4">{prep.star_examples.map((item, i) => <div key={i} className="border border-border bg-white p-5"><p className="text-[13px] font-medium text-ink mb-3">{item.title}</p><p className="text-[11px] text-secondary leading-5"><b>Situation:</b> {item.situation}</p><p className="text-[11px] text-secondary leading-5 mt-1"><b>Task:</b> {item.task}</p><p className="text-[11px] text-secondary leading-5 mt-1"><b>Action:</b> {item.action_prompt}</p><p className="text-[11px] text-secondary leading-5 mt-1"><b>Result:</b> {item.result_prompt}</p></div>)}</div></section>}
 

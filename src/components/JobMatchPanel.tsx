@@ -133,6 +133,11 @@ export default function JobMatchPanel({ jobId }: { jobId: string }) {
       {data.interviewReadyHref && <Link href={data.interviewReadyHref} className="btn-primary mt-4 inline-block !py-2 text-[12px]">Prepare answers in Interview Ready</Link>}
     </div>}
 
+    {(data.employerMayQuestion || []).length === 0 && data.interviewReadyHref && <div className="mt-5 border-t border-[#e5e5e5] pt-4">
+      <Link href={data.interviewReadyHref} className="btn-primary inline-block !py-2 text-[12px]">Prepare for this interview</Link>
+      <p className="text-[11px] leading-5 text-[#7d8990] mt-2">Likely questions, commercial talking points and 30/60/90-day thinking - built for this exact role.</p>
+    </div>}
+
     {actions.length > 0 && <div className="mt-5 border-t border-[#e5e5e5] pt-4">
       <p className="text-[10px] uppercase tracking-[.14em] font-semibold text-[#10283b]">How to strengthen your application</p>
       <ul className="mt-2 space-y-2 text-[12px] leading-5 text-[#4d4d4d] list-none">{actions}</ul>
