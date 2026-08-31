@@ -56,15 +56,9 @@ export default function EmployerDashboard() {
 
       let matchCount = 0
       if (jobIds.length > 0) {
-        // Matches are written with job_listing_id (added by migration). The
-        // job_id query is a fallback for environments where that migration has
-        // not been applied yet, so the count never errors out to zero.
+        // The live matches table keys jobs by job_listing_id.
         const current = await supabase.from('matches').select('id', { count: 'exact', head: true }).in('job_listing_id', jobIds)
-        if (!current.error) matchCount = current.count || 0
-        else {
-          const legacy = await supabase.from('matches').select('id', { count: 'exact', head: true }).in('job_id', jobIds)
-          matchCount = legacy.count || 0
-        }
+        matchCount = current.count || 0
       }
 
       const { count: msgCount } = await supabase.from('messages').select('id', { count: 'exact', head: true }).eq('recipient_id', user.id).eq('read', false)

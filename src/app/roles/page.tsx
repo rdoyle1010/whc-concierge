@@ -11,7 +11,7 @@ async function getPublicRoles() {
     const admin = createAdminClient()
     const { data, error } = await admin
       .from('job_listings')
-      .select('id,job_title,title,job_description,description,location,salary_min,salary_max,contract_type,job_type,tier,required_brands,posted_date,is_live')
+      .select('id,job_title,job_description,location,salary_min,salary_max,contract_type,job_type,tier,required_brands,posted_date,is_live')
       .eq('is_live', true)
       .order('posted_date', { ascending: false })
       .limit(150)

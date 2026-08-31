@@ -3,11 +3,8 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { createServerSupabaseClient } from '@/lib/supabase/server'
 
 async function hasReview(admin: ReturnType<typeof createAdminClient>, reviewerId: string, reviewedId: string) {
-  for (const column of ['reviewed_id', 'reviewee_id']) {
-    const { data, error } = await admin.from('reviews').select('id').eq('reviewer_id', reviewerId).eq(column, reviewedId).limit(1).maybeSingle()
-    if (!error && data) return true
-  }
-  return false
+  const { data, error } = await admin.from('reviews').select('id').eq('reviewer_id', reviewerId).eq('reviewee_id', reviewedId).limit(1).maybeSingle()
+  return Boolean(!error && data)
 }
 
 export async function GET() {

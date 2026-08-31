@@ -38,7 +38,7 @@ export async function GET() {
   const employerIds = Array.from(new Set((rows || []).map(row => row.employer_id)))
   let employers: Record<string, any> = {}
   if (employerIds.length) {
-    const { data } = await admin.from('employer_profiles').select('id,company_name,property_name,contact_email,phone').in('id', employerIds)
+    const { data } = await admin.from('employer_profiles').select('id,company_name,property_name,contact_email,contact_phone').in('id', employerIds)
     employers = Object.fromEntries((data || []).map(e => [e.id, e]))
   }
   return NextResponse.json({ rows: (rows || []).map(row => ({ ...row, employer: employers[row.employer_id] || null })) })

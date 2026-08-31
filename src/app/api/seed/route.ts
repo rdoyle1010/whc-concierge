@@ -115,7 +115,7 @@ export async function POST(req: NextRequest) {
         product_houses_used: ['ESPA', 'Elemis', 'Comfort Zone'],
         systems_used: ['Spa Booker'],
         approval_status: 'approved',
-        description: 'Fairmont is a luxury hotel and spa in the heart of the Cheshire countryside.',
+        property_description: 'Fairmont is a luxury hotel and spa in the heart of the Cheshire countryside.',
       }).select('id').single()
       employerId = newEmp?.id || null
     }

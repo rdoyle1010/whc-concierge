@@ -16,21 +16,20 @@ const asList = (value: any) => Array.isArray(value) ? value.filter(Boolean) : []
 async function loadReviews(admin: ReturnType<typeof createAdminClient>, employerUserId?: string | null) {
   if (!employerUserId) return { reviews: [] as any[], summary: { count: 0, average: null as number | null } }
 
-  let reviews: any[] = []
-  for (const reviewedColumn of ['reviewed_id', 'reviewee_id']) {
-    const { data, error } = await admin
-      .from('reviews')
-      .select('id,reviewer_id,rating,text,comment,criteria_scores,booking_id,created_at,type')
-      .eq(reviewedColumn, employerUserId)
-      .eq('type', 'employer')
-      .order('created_at', { ascending: false })
-      .limit(30)
-    if (!error) { reviews = data || []; break }
-  }
+  // Old rows predate the type column, so a null type on a review of this
+  // employer still counts as an employer review.
+  const { data: reviewRows } = await admin
+    .from('reviews')
+    .select('id,reviewer_id,rating,text,criteria_scores,booking_id,created_at,type')
+    .eq('reviewee_id', employerUserId)
+    .or('type.eq.employer,type.is.null')
+    .order('created_at', { ascending: false })
+    .limit(30)
+  const reviews: any[] = reviewRows || []
 
   const reviewerIds = [...new Set(reviews.map(r => r.reviewer_id).filter(Boolean))]
   const { data: candidates } = reviewerIds.length
-    ? await admin.from('candidate_profiles').select('user_id,full_name,current_role').in('user_id', reviewerIds)
+    ? await admin.from('candidate_profiles').select('user_id,full_name,role_level').in('user_id', reviewerIds)
     : { data: [] as any[] }
   const candidateMap = new Map((candidates || []).map((c: any) => [c.user_id, c]))
 
@@ -41,12 +40,12 @@ async function loadReviews(admin: ReturnType<typeof createAdminClient>, employer
       return {
         id: r.id,
         rating: Number(r.rating),
-        comment: r.comment || r.text || '',
+        comment: r.text || '',
         created_at: r.created_at,
         verified: true,
         source: r.booking_id ? 'Completed WHC agency shift' : 'WHC placement',
         reviewer_name: reviewer?.full_name || 'WHC professional',
-        reviewer_role: reviewer?.current_role || null,
+        reviewer_role: reviewer?.role_level || null,
       }
     })
 

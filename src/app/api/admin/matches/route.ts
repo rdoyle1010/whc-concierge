@@ -26,7 +26,7 @@ export async function GET(_req: NextRequest) {
   const { data: matches, error } = await admin
     .from('matches')
     .select('*')
-    .order('created_at', { ascending: false })
+    .order('matched_at', { ascending: false, nullsFirst: false })
     .limit(500)
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 

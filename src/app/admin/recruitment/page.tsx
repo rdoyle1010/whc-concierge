@@ -20,7 +20,7 @@ type Row = {
   status: string
   admin_notes: string | null
   created_at: string
-  employer: { company_name: string | null; property_name: string | null; contact_email: string | null; phone: string | null } | null
+  employer: { company_name: string | null; property_name: string | null; contact_email: string | null; contact_phone: string | null } | null
 }
 
 const STATUSES = [
@@ -108,7 +108,7 @@ export default function AdminRecruitmentPage() {
                     <p className="text-[11.5px] text-muted mt-0.5">
                       Sent {new Date(row.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
                       {row.employer?.contact_email && <span className="ml-2 inline-flex items-center gap-1"><Mail size={11} /> {row.employer.contact_email}</span>}
-                      {row.employer?.phone && <span className="ml-2 inline-flex items-center gap-1"><Phone size={11} /> {row.employer.phone}</span>}
+                      {row.employer?.contact_phone && <span className="ml-2 inline-flex items-center gap-1"><Phone size={11} /> {row.employer.contact_phone}</span>}
                     </p>
                   </div>
                   <span className={`px-2.5 py-1 rounded-full text-[11px] font-semibold shrink-0 ${STATUS_COLORS[row.status] || 'bg-gray-100 text-gray-500'}`}>{STATUSES.find(option => option.value === row.status)?.label || row.status}</span>

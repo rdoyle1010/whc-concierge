@@ -25,7 +25,7 @@ export async function GET(req: NextRequest) {
   const admin = createAdminClient()
 
   const { data: candidate } = await admin.from('candidate_profiles')
-    .select('id, role_level, membership_tier, treatment_skills, services_offered, business_skills, qualifications, salary_expectation')
+    .select('id, role_level, membership_tier, treatment_skills, services_offered, business_skills, qualifications, salary_expectation_min, salary_expectation_max')
     .eq('user_id', user.id).maybeSingle()
   if (!candidate) return NextResponse.json({ error: 'Talent profile not found' }, { status: 404 })
 
@@ -123,7 +123,11 @@ export async function GET(req: NextRequest) {
         median: median(midpoints),
         sample: salarySample,
         confidence: salarySample >= SALARY_EARLY_BELOW ? 'medium' : 'early_signal',
-        yourExpectation: candidate.salary_expectation ? Number(candidate.salary_expectation) : null,
+        yourExpectation: candidate.salary_expectation_min && candidate.salary_expectation_max
+          ? Math.round((Number(candidate.salary_expectation_min) + Number(candidate.salary_expectation_max)) / 2)
+          : candidate.salary_expectation_min
+            ? Number(candidate.salary_expectation_min)
+            : null,
       }
     : { suppressed: true as const, sample: salarySample }
 

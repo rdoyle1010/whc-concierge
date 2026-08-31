@@ -173,16 +173,16 @@ export async function GET(req: NextRequest) {
   const candidateUserIds = Array.from(new Set((candidates || []).map((candidate: any) => candidate.user_id).filter(Boolean)))
   const { data: reviewRows } = candidateUserIds.length
     ? await admin.from('reviews')
-        .select('reviewed_id,rating,comment,created_at')
-        .in('reviewed_id', candidateUserIds)
+        .select('reviewee_id,rating,text,created_at')
+        .in('reviewee_id', candidateUserIds)
         .order('created_at', { ascending: false })
         .limit(60)
     : { data: [] as any[] }
   const endorsementsByUser = new Map<string, any[]>()
   for (const review of reviewRows || []) {
-    const list = endorsementsByUser.get(review.reviewed_id) || []
-    if (list.length < 3 && review.comment) list.push({ rating: review.rating, comment: String(review.comment).slice(0, 300), created_at: review.created_at })
-    endorsementsByUser.set(review.reviewed_id, list)
+    const list = endorsementsByUser.get(review.reviewee_id) || []
+    if (list.length < 3 && review.text) list.push({ rating: review.rating, comment: String(review.text).slice(0, 300), created_at: review.created_at })
+    endorsementsByUser.set(review.reviewee_id, list)
   }
 
   const enriched = rows.map((application: any) => {

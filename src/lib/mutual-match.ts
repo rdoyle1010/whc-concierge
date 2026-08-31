@@ -28,10 +28,8 @@ export async function createMutualMatch(admin: any, opts: {
     candidate_id: candidate.id,
     employer_id: employer.id,
     job_listing_id: job.id,
-    // Write both column names: newer readers use match_score, older readers
-    // (and the admin matches page fallback) still look at score.
+    // The live matches table only has match_score.
     match_score: score,
-    score: score,
     candidate_swiped_at: now,
     employer_swiped_at: now,
     matched_at: now,

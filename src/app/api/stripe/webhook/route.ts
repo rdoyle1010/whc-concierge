@@ -192,7 +192,6 @@ export async function POST(req: NextRequest) {
         await supabase.from('agency_bookings').update({
           status: 'confirmed',
           paid_at: new Date().toISOString(),
-          fee_paid_at: new Date().toISOString(),
           amount_paid: gross + fee,
           payout_amount: gross,
           payout_status: 'pending',

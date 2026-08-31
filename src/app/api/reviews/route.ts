@@ -23,21 +23,17 @@ async function insertReviewDefensively(admin: any, row: Record<string, any>) {
 }
 
 async function findExistingReview(admin: any, reviewerId: string, reviewedId: string) {
-  for (const col of ['reviewed_id', 'reviewee_id']) {
-    const { data, error } = await admin
-      .from('reviews').select('id')
-      .eq('reviewer_id', reviewerId).eq(col, reviewedId)
-      .limit(1).maybeSingle()
-    if (!error && data) return data
-  }
+  const { data, error } = await admin
+    .from('reviews').select('id')
+    .eq('reviewer_id', reviewerId).eq('reviewee_id', reviewedId)
+    .limit(1).maybeSingle()
+  if (!error && data) return data
   return null
 }
 
 async function fetchRatingsFor(admin: any, reviewedId: string) {
-  for (const col of ['reviewed_id', 'reviewee_id']) {
-    const { data, error } = await admin.from('reviews').select('rating').eq(col, reviewedId)
-    if (!error) return data
-  }
+  const { data, error } = await admin.from('reviews').select('rating').eq('reviewee_id', reviewedId)
+  if (!error) return data
   return null
 }
 
@@ -183,12 +179,10 @@ export async function POST(req: NextRequest) {
 
     const { error: reviewError } = await insertReviewDefensively(supabase, {
       reviewer_id,
-      reviewed_id,
       reviewee_id: reviewed_id,
       rating: ratingInt,
       criteria_scores: criteria_scores || null,
       text: comment || '',
-      comment: comment || null,
       type: type || 'candidate',
       booking_id: booking_id || null,
     })

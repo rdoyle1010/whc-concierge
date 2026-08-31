@@ -82,7 +82,7 @@ export async function GET(req: NextRequest) {
 
     if (ep) {
       // Job listings
-      const { data: jobs } = await admin.from('job_listings').select('*').eq('employer_id', ep.id).order('created_at', { ascending: false })
+      const { data: jobs } = await admin.from('job_listings').select('*').eq('employer_id', ep.id).order('posted_date', { ascending: false })
       exportData.job_listings = jobs || []
 
       // Applications received
