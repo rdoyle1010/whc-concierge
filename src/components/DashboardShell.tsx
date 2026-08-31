@@ -14,7 +14,7 @@ import { createClient } from '@/lib/supabase/client'
 import {
   employerFeatureAccess, FeatureAccess, FeatureKey, talentFeatureAccess,
 } from '@/lib/feature-access'
-import {
+import { TrendingUp,
   LayoutDashboard, User, Briefcase, MessageSquare, Star, Calendar,
   Settings, LogOut, Menu, X, Users, FileText, Megaphone,
   AlertTriangle, Heart, Building2, ChevronRight, BarChart3, CreditCard, GraduationCap,
@@ -49,6 +49,7 @@ const navItems: Record<string, NavItem[]> = {
     { label: 'Residency', href: '/talent/residency', icon: <MapPin size={17} /> },
     { label: 'Before You Arrive', href: '/talent/before-you-arrive', icon: <ClipboardList size={17} /> },
     { label: 'Academy', href: '/talent/academy', icon: <GraduationCap size={17} />, section: 'Grow' },
+    { label: 'Career Intelligence', href: '/talent/career', icon: <TrendingUp size={17} /> },
     { label: 'My Toolkit', href: '/talent/toolkit', icon: <ClipboardList size={17} /> },
     { label: 'Interview Ready', href: '/talent/interview-ready', icon: <Brain size={17} />, accessKey: 'talent_interview_ready' },
     { label: 'Get Verified', href: '/talent/verification', icon: <Star size={17} /> },

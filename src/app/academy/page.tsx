@@ -22,6 +22,29 @@ export default function PublicAcademyPage() {
   const [courses, setCourses] = useState<(AcademyCourse & { image_url?: string })[]>(ACADEMY)
   const [buying, setBuying] = useState<{ slug: string; title: string; price: number } | null>(null)
   const [email, setEmail] = useState('')
+  const [teamForm, setTeamForm] = useState({ name: '', email: '', property: '', teamSize: '', message: '' })
+  const [teamBusy, setTeamBusy] = useState(false)
+  const [teamSent, setTeamSent] = useState(false)
+  const [teamError, setTeamError] = useState('')
+
+  async function submitTeamEnquiry() {
+    setTeamError('')
+    if (!teamForm.name.trim() || !teamForm.email.trim() || !teamForm.property.trim()) {
+      setTeamError('Please give your name, email and property.'); return
+    }
+    setTeamBusy(true)
+    try {
+      const message = `Property: ${teamForm.property}\nTeam size: ${teamForm.teamSize || 'not given'}\n\n${teamForm.message || 'Interested in Academy for Teams.'}`
+      const { error: insertError } = await supabase.from('contact_queries').insert({
+        name: teamForm.name, email: teamForm.email,
+        subject: `Academy for Teams - ${teamForm.property}`,
+        type: 'academy_teams', message, status: 'open',
+      })
+      if (insertError) { setTeamError('Could not send the enquiry - please try again.'); return }
+      fetch('/api/contact-notify', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: teamForm.name, email: teamForm.email, subject: `Academy for Teams - ${teamForm.property}`, message }) }).catch(() => {})
+      setTeamSent(true)
+    } finally { setTeamBusy(false) }
+  }
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [purchased, setPurchased] = useState(false)
@@ -218,7 +241,26 @@ export default function PublicAcademyPage() {
 
         <div className="mt-6 flex max-w-4xl items-start gap-3 rounded-2xl border border-[#e2e6e8] bg-white p-5">
           <ShieldCheck size={18} className="mt-0.5 shrink-0 text-[#555555]" />
-          <p className="text-[11px] leading-5 text-[#687681]">WHC Academy certificates evidence course completion and assessment. They are professional-development records and are not a substitute for regulated qualifications, licences or insurance where those are required.</p>
+          <section className="mt-14 border border-border bg-[#f5f6f8] p-7 md:p-9">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-accent">WHC Academy for Teams</p>
+            <h2 className="mt-2 text-[24px] font-semibold text-ink">Train the whole team, track every completion</h2>
+            <p className="mt-2 max-w-2xl text-[13px] leading-6 text-secondary">Put your property&apos;s therapists, reception and management through the same professional curriculum - service standards, revenue, retail, leadership - with team pricing from £15 per seat per year (minimum 10 seats) and a property onboarding pathway built from the course library. Completion and CPD records for every team member, ready for your quality audits.</p>
+            {teamSent ? (
+              <p className="mt-5 text-[13px] font-medium text-green-700">Thank you - your enquiry is with the WHC team and we will come back to you within one working day.</p>
+            ) : (
+              <div className="mt-5 grid gap-3 md:grid-cols-2">
+                <input type="text" value={teamForm.name} onChange={e => setTeamForm({ ...teamForm, name: e.target.value })} placeholder="Your name" className="input-field" />
+                <input type="email" value={teamForm.email} onChange={e => setTeamForm({ ...teamForm, email: e.target.value })} placeholder="Work email" className="input-field" />
+                <input type="text" value={teamForm.property} onChange={e => setTeamForm({ ...teamForm, property: e.target.value })} placeholder="Property or group" className="input-field" />
+                <input type="text" value={teamForm.teamSize} onChange={e => setTeamForm({ ...teamForm, teamSize: e.target.value })} placeholder="Team size (approx.)" className="input-field" />
+                <textarea rows={2} value={teamForm.message} onChange={e => setTeamForm({ ...teamForm, message: e.target.value })} placeholder="Anything specific - onboarding, standards, leadership development..." className="input-field md:col-span-2" />
+                {teamError && <p className="text-[12px] text-red-600 md:col-span-2">{teamError}</p>}
+                <button type="button" onClick={submitTeamEnquiry} disabled={teamBusy} className="btn-primary w-fit text-[13px] disabled:opacity-50 md:col-span-2">{teamBusy ? 'Sending...' : 'Enquire about team training'}</button>
+              </div>
+            )}
+          </section>
+
+          <p className="mt-8 text-[11px] leading-5 text-[#687681]">WHC Academy certificates evidence course completion and assessment. They are professional-development records and are not a substitute for regulated qualifications, licences or insurance where those are required.</p>
         </div>
       </main>
 
