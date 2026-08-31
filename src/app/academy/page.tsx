@@ -100,7 +100,7 @@ export default function PublicAcademyPage() {
           <div>
             <p className="mb-4 text-[10px] font-semibold uppercase tracking-[0.2em] text-white/55">WHC Academy</p>
             <h1 className="max-w-4xl text-[44px] font-semibold leading-[1.01] tracking-[-0.05em] text-white md:text-[64px]">Learn what luxury spas actually expect from you.</h1>
-            <p className="mt-6 max-w-3xl text-[16px] leading-8 text-white/70 md:text-[18px]">Build stronger treatment-room knowledge, commercial confidence and leadership capability - then prove it with verifiable WHC certificates and profile badges.</p>
+            <p className="mt-6 max-w-3xl text-[16px] leading-8 text-white/70 md:text-[18px]">Professional courses with assessments, verified certificates and CPD hours - built for spa careers, from the treatment room to director level.</p>
             <div className="flex flex-col sm:flex-row gap-3 mt-8">
               <a href="#courses" className="inline-flex items-center justify-center gap-2 rounded-xl bg-white px-6 py-3.5 text-[13px] font-semibold text-[#0b2f4d] hover:bg-white/90 transition-colors">Explore courses <ArrowRight size={14} /></a>
               <Link href={isCandidate ? '/talent/academy' : '/register/talent'} className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/25 px-6 py-3.5 text-[13px] font-semibold text-white hover:bg-white/10 transition-colors">Build my career profile <ArrowRight size={14} /></Link>

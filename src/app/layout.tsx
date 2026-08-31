@@ -28,10 +28,10 @@ const poppins = Poppins({
 
 export const metadata: Metadata = {
   title: {
-    default: 'WHC Concierge | Luxury Wellness Careers Platform',
+    default: 'WHC Concierge | Spa and Wellness Careers',
     template: '%s | WHC Concierge',
   },
-  description: 'The UK\'s premier recruitment platform for luxury spa, wellness and hospitality professionals. Connecting elite therapists with five-star properties.',
+  description: 'The professional platform for spa and wellness careers. Live roles at exceptional properties, matched on real skills, qualifications and brands - not CV keywords.',
   keywords: [
     'luxury spa jobs', 'wellness careers', 'spa therapist recruitment', 'hotel spa jobs UK',
     'spa manager jobs', 'beauty therapist vacancies', 'wellness recruitment platform',
@@ -45,15 +45,15 @@ export const metadata: Metadata = {
     type: 'website',
     locale: 'en_GB',
     siteName: 'WHC Concierge',
-    title: 'WHC Concierge | Luxury Wellness Careers Platform',
-    description: 'The UK\'s premier recruitment platform for luxury spa, wellness and hospitality professionals. Connecting elite therapists with five-star properties.',
+    title: 'WHC Concierge | Spa and Wellness Careers',
+    description: 'The professional platform for spa and wellness careers. Live roles at exceptional properties, matched on real skills, qualifications and brands - not CV keywords.',
     url: 'https://talent.wellnesshousecollective.co.uk',
-    images: [{ url: '/opengraph-image', width: 1200, height: 630, alt: 'WHC Concierge - Luxury Wellness Careers Platform' }],
+    images: [{ url: '/opengraph-image', width: 1200, height: 630, alt: 'WHC Concierge - The professional platform for spa and wellness careers' }],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'WHC Concierge | Luxury Wellness Careers Platform',
-    description: 'The UK\'s premier recruitment platform for luxury spa, wellness and hospitality professionals.',
+    title: 'WHC Concierge | Spa and Wellness Careers',
+    description: 'The professional platform for spa and wellness careers. Live roles, matched on real skills, qualifications and brands.',
     images: ['/opengraph-image'],
   },
   icons: {
@@ -72,7 +72,7 @@ const organizationJsonLd = {
   name: 'WHC Concierge',
   url: 'https://talent.wellnesshousecollective.co.uk',
   logo: 'https://talent.wellnesshousecollective.co.uk/images/whc-logo.jpg',
-  description: 'The UK\'s premier luxury wellness recruitment platform',
+  description: 'The professional platform for spa and wellness careers',
   sameAs: [],
 }
 

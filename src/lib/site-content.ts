@@ -75,8 +75,8 @@ export const DEFAULT_WEBSITE_CONTENT: WebsiteContent = {
   hero: {
     slides: [
       { image: image('https://images.unsplash.com/photo-1720678418766-2628e52f4634?w=1920&q=80&auto=format&fit=crop', 'Luxury spa interior'), eyebrow: 'WHC Concierge', heading: 'The professional platform for spa and wellness careers', text: 'Find exceptional people. Build better careers. Develop stronger spa businesses.' },
-      { image: image('https://images.unsplash.com/photo-1590490360836-2e3b067c082b?w=1920&q=80&auto=format&fit=crop', 'Calm luxury treatment space'), eyebrow: 'Intelligent matching', heading: 'Precision matching, not guesswork', text: 'Match roles and people by skills, qualifications, brands, location, experience and availability.' },
-      { image: image('https://images.unsplash.com/photo-1540555700478-4be289fbecef?w=1920&q=80&auto=format&fit=crop', 'Wellness treatment setting'), eyebrow: 'Personally vetted', heading: 'Every profile tells the full story', text: 'Qualifications, experience and professional standards are reviewed so employers can hire with confidence.' },
+      { image: image('https://images.unsplash.com/photo-1590490360836-2e3b067c082b?w=1920&q=80&auto=format&fit=crop', 'Calm luxury treatment space'), eyebrow: 'Intelligent matching', heading: 'Precision matching, not guesswork', text: 'Skills, qualifications, brands, location and availability, weighted and scored - so both sides can see why a match is right.' },
+      { image: image('https://images.unsplash.com/photo-1540555700478-4be289fbecef?w=1920&q=80&auto=format&fit=crop', 'Wellness treatment setting'), eyebrow: 'Verified by WHC', heading: 'Every profile tells the full story', text: 'Right-to-work, insurance and qualifications reviewed by WHC before the Verified badge is awarded.' },
     ],
     primaryLabel: 'Post a Role', primaryHref: '/register/employer',
     secondaryLabel: 'Join as a Professional', secondaryHref: '/register/talent',
@@ -91,8 +91,8 @@ export const DEFAULT_WEBSITE_CONTENT: WebsiteContent = {
     intro: 'A clear view of the profiles, matching and live opportunities available to professionals and employers.',
     cards: [
       { label: 'For employers', text: 'Browse vetted, agency-available professionals with clear rates, skills and experience.' },
-      { label: 'Our matching', text: 'Weighted categories reveal genuine fit rather than relying on keyword matching.' },
-      { label: 'For talent', text: 'See live roles at properties of genuine calibre and apply with confidence.' },
+      { label: 'Our matching', text: 'Skills, qualifications, brands, location and availability, weighted and scored - so both sides can see why a match is right.' },
+      { label: 'For talent', text: 'Live roles at exceptional properties, matched on real skills, qualifications and brands - not CV keywords.' },
     ],
   },
   trust: {
@@ -109,14 +109,14 @@ export const DEFAULT_WEBSITE_CONTENT: WebsiteContent = {
   },
   cta: {
     background: image('https://images.unsplash.com/photo-1551816646-d64cca8d3ba0?w=1920&q=80&auto=format&fit=crop', 'Quiet luxury spa setting'),
-    talent: { eyebrow: 'For talent', heading: 'Ready to elevate your wellness career?', text: 'Create your free profile, get matched with premium roles and take the next step in your career.', buttonLabel: 'Create free profile', buttonHref: '/register/talent' },
+    talent: { eyebrow: 'For talent', heading: 'Ready for your next role?', text: 'Create your free profile and get matched to live roles at exceptional properties on real skills, not CV keywords.', buttonLabel: 'Create free profile', buttonHref: '/register/talent' },
     employer: { eyebrow: 'For employers', heading: 'Ready to find exceptional talent?', text: 'Post roles, search verified candidates and hire with confidence using intelligent matching.', buttonLabel: 'Post a role', buttonHref: '/register/employer' },
   },
   services: {
     cards: [
-      { eyebrow: 'Agency marketplace', heading: 'Fill shifts fast. One transparent fee.', text: 'Find verified practitioners near you and book hourly or same-day cover with clear rates.', buttonLabel: 'Browse practitioners', buttonHref: '/agency/about' },
-      { eyebrow: 'WHC Academy', heading: 'Training that gets you booked.', text: 'Practical courses in five-star standards, consultation, retail, treatments and brand knowledge.', buttonLabel: 'Explore the Academy', buttonHref: '/academy' },
-      { eyebrow: 'Residency programme', heading: 'Discover visiting specialists.', text: 'Connect with exceptional practitioners for focused placements at remarkable properties.', buttonLabel: 'Explore residencies', buttonHref: '/residency' },
+      { eyebrow: 'Agency marketplace', heading: 'Fill shifts fast. One transparent fee.', text: 'Flexible cover by the hour or day. The professional keeps 100% of the agreed rate; the property pays the rate plus the WHC fee.', buttonLabel: 'Browse practitioners', buttonHref: '/agency/about' },
+      { eyebrow: 'WHC Academy', heading: 'Training that gets you booked.', text: 'Professional courses with assessments, verified certificates and CPD hours - built for spa careers.', buttonLabel: 'Explore the Academy', buttonHref: '/academy' },
+      { eyebrow: 'Residency programme', heading: 'Visiting specialists in residence.', text: 'Placements of one to six months at destination properties, with terms, payments and payouts protected on the platform.', buttonLabel: 'Explore residencies', buttonHref: '/residency' },
     ],
   },
   testimonials: { eyebrow: 'What people say', heading: 'Trusted by the industry.', linkLabel: 'Read all testimonials' },

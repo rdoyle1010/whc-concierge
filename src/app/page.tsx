@@ -22,8 +22,8 @@ import { createServerSupabaseClient } from '@/lib/supabase/server'
 export const revalidate = 60
 
 export const metadata: Metadata = {
-  title: { absolute: 'WHC Concierge | Luxury Wellness Careers Platform' },
-  description: 'The UK\'s specialist recruitment platform for luxury spa, wellness and hospitality - connecting exceptional professionals with five-star properties.',
+  title: { absolute: 'WHC Concierge | Spa and Wellness Careers' },
+  description: 'The professional platform for spa and wellness careers. Live roles at exceptional properties, matched on real skills, qualifications and brands - not CV keywords.',
   alternates: { canonical: 'https://talent.wellnesshousecollective.co.uk' },
 }
 

@@ -85,7 +85,7 @@ export default function TestimonialsPage() {
               Illustrative examples of the feedback we work for - named case studies will appear here as they complete
             </p>
             <p className="text-[15px] text-secondary leading-relaxed max-w-xl mx-auto">
-              Hear from the spa professionals and hospitality leaders who&apos;ve found success on WHC Concierge.
+              What spa professionals and hospitality leaders say about hiring and being hired on WHC Concierge.
             </p>
           </div>
         </section>

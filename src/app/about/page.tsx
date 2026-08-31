@@ -6,10 +6,10 @@ import { Award, Shield, Users, Heart } from 'lucide-react'
 import FounderImage from '@/components/FounderImage'
 
 export const metadata: Metadata = {
-  title: { absolute: 'About WHC Concierge | The UK\'s Specialist Luxury Wellness Recruitment Platform' },
-  description: 'WHC Concierge is the UK\'s specialist recruitment platform for luxury spa and wellness - built by someone who has lived inside it.',
+  title: { absolute: 'About WHC Concierge | The Professional Platform for Spa and Wellness Careers' },
+  description: 'WHC Concierge is the professional platform for spa and wellness careers - built by someone who has lived inside the industry.',
   alternates: { canonical: 'https://talent.wellnesshousecollective.co.uk/about' },
-  openGraph: { title: 'About WHC Concierge | The UK\'s Specialist Luxury Wellness Recruitment Platform', description: 'The story behind the UK\'s specialist recruitment platform for luxury spa and wellness.' },
+  openGraph: { title: 'About WHC Concierge | The Professional Platform for Spa and Wellness Careers', description: 'The story behind the professional platform for spa and wellness careers.' },
 }
 
 export default function AboutPage() {
@@ -28,7 +28,7 @@ export default function AboutPage() {
           <div className="max-w-4xl mx-auto text-center">
             <p className="public-eyebrow mb-4">About</p>
             <h1 className="public-title mb-5">Built for an industry that deserves better.</h1>
-            <p className="public-intro max-w-2xl mx-auto">WHC Concierge is the UK&apos;s specialist recruitment platform for luxury spa and wellness - built by someone who has lived inside it.</p>
+            <p className="public-intro max-w-2xl mx-auto">WHC Concierge is the professional platform for spa and wellness careers - built by someone who has lived inside the industry.</p>
           </div>
         </section>
 
@@ -47,7 +47,7 @@ export default function AboutPage() {
               <p className="public-eyebrow mb-3">Founder</p>
               <h2 className="text-[30px] md:text-[38px] font-semibold tracking-[-0.035em] text-ink mb-6">Founded by Rebecca Doyle</h2>
               <p className="text-[15px] leading-8 text-secondary mb-5">Rebecca built her career inside the luxury spa and wellness sector - watching firsthand how poorly the industry was served by mainstream recruitment. Properties she admired struggled to find the right people. Therapists with extraordinary CVs were stuck in the wrong roles. The disconnect was costing the entire sector its standards.</p>
-              <p className="text-[15px] leading-8 text-secondary mb-8">WHC Concierge is the platform she wished had existed when she was hiring. Built with industry knowledge, not algorithms designed for office workers. Designed to elevate the people who make luxury wellness what it is.</p>
+              <p className="text-[15px] leading-8 text-secondary mb-8">WHC Concierge is the platform she wished had existed when she was hiring. Built with industry knowledge, not algorithms designed for office workers. Made for the people who make luxury wellness what it is.</p>
               <a href="https://www.linkedin.com/in/rebecca-doyle-whc/" target="_blank" rel="noopener noreferrer" className="btn-primary inline-block">Connect on LinkedIn →</a>
             </div>
           </div>

@@ -117,7 +117,7 @@ export default function Footer({ siteContent }: { siteContent?: WebsiteContent }
       </div>
     </section>
 
-    <footer className="bg-[#0b2f4d] text-white border-t border-white/10"><div className="max-w-7xl mx-auto px-6 lg:px-8 py-12"><div className="grid grid-cols-1 md:grid-cols-[1.4fr_1fr_1fr_1fr] gap-9 pb-10"><div><Wordmark dark /><p className="mt-5 max-w-sm text-[13px] leading-6 text-white/60">Luxury wellness recruitment, agency cover and career opportunities for exceptional professionals and properties.</p>
+    <footer className="bg-[#0b2f4d] text-white border-t border-white/10"><div className="max-w-7xl mx-auto px-6 lg:px-8 py-12"><div className="grid grid-cols-1 md:grid-cols-[1.4fr_1fr_1fr_1fr] gap-9 pb-10"><div><Wordmark dark /><p className="mt-5 max-w-sm text-[13px] leading-6 text-white/60">The professional platform for spa and wellness careers. Live roles, agency cover, residencies and the Academy.</p>
     <div className="mt-7 max-w-sm">
       <p className="text-[9px] uppercase tracking-[0.2em] text-white/55 font-semibold">Join our mailing list</p>
       <p className="mt-2 text-[12px] leading-5 text-white/60">Jobs, industry insight and opportunities from Wellness House Collective, straight to your inbox.</p>

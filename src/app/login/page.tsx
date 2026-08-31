@@ -102,8 +102,8 @@ function LoginForm() {
         <div className="absolute inset-0 bg-gradient-to-t from-[#0b2f4d] via-[#0b2f4d]/65 to-[#0b2f4d]/25" />
         <div className="relative p-12 xl:p-16 max-w-xl">
           <p className="text-[10px] uppercase tracking-[0.2em] text-[#555555] font-semibold mb-4">Wellness House Collective</p>
-          <p className="text-white text-[30px] leading-tight tracking-[-0.03em] font-semibold">Where exceptional talent meets exceptional opportunity.</p>
-          <p className="text-white/55 text-[13px] mt-4 leading-6">One premium platform for luxury wellness careers, recruitment, residency and trusted agency cover.</p>
+          <p className="text-white text-[30px] leading-tight tracking-[-0.03em] font-semibold">The professional platform for spa and wellness careers.</p>
+          <p className="text-white/55 text-[13px] mt-4 leading-6">Live roles, agency cover, residencies and the Academy - one account, one platform.</p>
         </div>
       </div>
     </div>
