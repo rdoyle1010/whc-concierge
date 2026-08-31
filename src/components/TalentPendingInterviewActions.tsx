@@ -126,8 +126,8 @@ export default function TalentPendingInterviewActions() {
   if (!pending.length && !error) return null
 
   return (
-    <section className="mb-7 overflow-hidden rounded-[22px] border border-[#555555] bg-white shadow-[0_16px_40px_rgba(22,40,55,0.07)]">
-      <div className="border-b border-[#e5e5e5] bg-[#fff8e9] px-5 py-4">
+    <section className="mb-7 overflow-hidden rounded-[22px] border border-[#5a6a76] bg-white shadow-[0_16px_40px_rgba(22,40,55,0.07)]">
+      <div className="border-b border-[#e3e7eb] bg-amber-50 px-5 py-4">
         <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#10283b]">Action required</p>
         <h2 className="mt-1 text-[24px] font-semibold tracking-[-.025em] text-ink">Confirm your next interview</h2>
         <p className="mt-1 max-w-2xl text-[12px] leading-5 text-secondary">Select the interview time you want, add a note to the property if needed, then click the confirmation button. Your interview is not confirmed until you press confirm.</p>
@@ -142,7 +142,7 @@ export default function TalentPendingInterviewActions() {
             const action = confirmLabel(interview.round_number)
             const selected = selectedSlots[interview.id] || ''
             return (
-              <div key={interview.id} className="rounded-2xl border border-[#ded6c7] bg-[#fafafa] p-5">
+              <div key={interview.id} className="rounded-2xl border border-[#e3e7eb] bg-[#f5f6f8] p-5">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                   <div>
                     <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#10283b]">Stage {interview.round_number} of 3</p>
@@ -168,7 +168,7 @@ export default function TalentPendingInterviewActions() {
                           key={slot}
                           type="button"
                           onClick={() => setSelectedSlots(current => ({ ...current, [interview.id]: slot }))}
-                          className={`rounded-xl border px-4 py-3 text-left transition ${isSelected ? 'border-[#0b2f4d] bg-[#f3f7f8] shadow-sm' : 'border-[#555555] bg-white hover:border-[#10283b]'}`}
+                          className={`rounded-xl border px-4 py-3 text-left transition ${isSelected ? 'border-[#0b2f4d] bg-[#e8eef4] shadow-sm' : 'border-[#5a6a76] bg-white hover:border-[#10283b]'}`}
                         >
                           <span className="flex items-center gap-2 text-[12px] font-semibold text-[#10283b]"><Clock size={13} />{when(slot)}</span>
                           <span className={`mt-2 flex items-center gap-1.5 text-[11px] font-semibold ${isSelected ? 'text-emerald-700' : 'text-muted'}`}><CheckCircle size={13} />{isSelected ? 'Selected' : 'Click to select this time'}</span>
@@ -189,17 +189,17 @@ export default function TalentPendingInterviewActions() {
                     maxLength={1500}
                     rows={3}
                     placeholder="For example: Thank you, I look forward to meeting you."
-                    className="w-full rounded-xl border border-[#dddddd] bg-white px-3 py-3 text-[12px] text-ink outline-none transition placeholder:text-muted focus:border-[#10283b]"
+                    className="w-full rounded-xl border border-[#e3e7eb] bg-white px-3 py-3 text-[12px] text-ink outline-none transition placeholder:text-muted focus:border-[#10283b]"
                   />
                 </div>
 
-                <div className="mt-4 border-t border-[#e8e0d2] pt-4">
+                <div className="mt-4 border-t border-[#e3e7eb] pt-4">
                   <p className="mb-3 text-[11px] text-secondary">3. Confirm your attendance. This will notify the property that you have accepted this interview time.</p>
                   <button
                     type="button"
                     disabled={!selected || busy === interview.id}
                     onClick={() => accept(interview.id)}
-                    className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-[#0b2f4d] px-5 py-3 text-[12px] font-semibold text-white transition hover:bg-[#133d5e] disabled:cursor-not-allowed disabled:opacity-40"
+                    className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-[#0b2f4d] px-5 py-3 text-[12px] font-semibold text-white transition hover:bg-[#123f64] disabled:cursor-not-allowed disabled:opacity-40"
                   >
                     <CheckCircle size={15} />
                     {busy === interview.id ? 'Confirming interview…' : action}

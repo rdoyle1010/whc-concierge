@@ -24,23 +24,23 @@ export default async function MatchExplainerPage() {
     <div className="website-theme min-h-screen bg-white text-[#10283b]" style={websiteCssVariables(content)}>
       <Navbar siteContent={content} />
       <main className="pt-[76px]">
-        <section className="border-b border-[#e6e9ed] bg-white">
+        <section className="border-b border-[#e3e7eb] bg-white">
           <div className="mx-auto grid max-w-7xl gap-12 px-6 py-16 lg:grid-cols-[1fr_0.9fr] lg:items-center lg:px-8 lg:py-24">
             <div className="max-w-2xl">
-              <p className="mb-4 text-[10px] font-semibold uppercase tracking-[0.18em] text-[#61707b]">WHC Match</p>
+              <p className="mb-4 text-[10px] font-semibold uppercase tracking-[0.18em] text-[#5a6a76]">WHC Match</p>
               <h1 className="site-heading text-[48px] font-semibold leading-[0.98] md:text-[68px]">Roles come to you. You decide what feels right.</h1>
-              <p className="mt-7 max-w-xl text-[16px] leading-7 text-[#555555]">Think of it like a dating app for your career. WHC Concierge ranks live roles around your real experience and preferences, then lets you review them one at a time.</p>
+              <p className="mt-7 max-w-xl text-[16px] leading-7 text-[#5a6a76]">Think of it like a dating app for your career. WHC Concierge ranks live roles around your real experience and preferences, then lets you review them one at a time.</p>
               <div className="mt-8 flex flex-wrap gap-3">
                 <Link href="/login?role=talent&next=%2Froles%2Fmatch" className="inline-flex items-center gap-2 bg-[#0b2f4d] px-6 py-3.5 text-[13px] font-semibold text-white">Sign in to start matching <ArrowRight size={15}/></Link>
-                <Link href="/register/talent" className="inline-flex items-center gap-2 border border-[#cfd5da] bg-white px-6 py-3.5 text-[13px] font-semibold text-[#10283b]">Create free profile</Link>
+                <Link href="/register/talent" className="inline-flex items-center gap-2 border border-[#8a949b] bg-white px-6 py-3.5 text-[13px] font-semibold text-[#10283b]">Create free profile</Link>
               </div>
-              <p className="mt-5 text-[11px] leading-5 text-[#87919a]">Nothing is sent to an employer just because you swipe. You stay in control and choose when to submit an application.</p>
+              <p className="mt-5 text-[11px] leading-5 text-[#8a949b]">Nothing is sent to an employer just because you swipe. You stay in control and choose when to submit an application.</p>
             </div>
 
             <div className="relative mx-auto w-full max-w-[440px] py-8">
-              <div className="absolute left-2 top-12 h-[470px] w-[90%] -rotate-3 border border-[#e5e5e5] bg-[#fafafa]" />
-              <div className="absolute right-2 top-10 h-[470px] w-[90%] rotate-3 border border-[#e5e5e5] bg-white" />
-              <div className="relative overflow-hidden border border-[#d9dee3] bg-white shadow-[0_24px_70px_rgba(16,40,59,.14)]">
+              <div className="absolute left-2 top-12 h-[470px] w-[90%] -rotate-3 border border-[#e3e7eb] bg-[#f5f6f8]" />
+              <div className="absolute right-2 top-10 h-[470px] w-[90%] rotate-3 border border-[#e3e7eb] bg-white" />
+              <div className="relative overflow-hidden border border-[#e3e7eb] bg-white shadow-[0_24px_70px_rgba(16,40,59,.14)]">
                 <span className="absolute left-1/2 top-3 z-10 -translate-x-1/2 rounded-full bg-[#10283b] px-3 py-1 text-[9px] font-semibold uppercase tracking-[0.14em] text-white">Sample - for illustration</span>
                 <div className="relative h-[235px] bg-[#0b2f4d]">
                   <img src="https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&q=82&w=1200" alt="Luxury spa interior" className="h-full w-full object-cover opacity-85" />
@@ -53,19 +53,19 @@ export default async function MatchExplainerPage() {
                 </div>
                 <div className="p-6">
                   <div className="mb-5 flex items-start justify-between gap-4">
-                    <div><p className="text-[10px] uppercase tracking-[.14em] text-[#697680]">Your match</p><p className="mt-1 text-[13px] text-[#66737c]">Strong alignment across skills, experience and location.</p></div>
-                    <div className="shrink-0 border border-[#dbe1e5] bg-[#fafafa] px-4 py-2 text-center"><p className="text-[27px] font-semibold text-[#0b2f4d]">86%</p><p className="text-[9px] font-semibold uppercase tracking-[.1em] text-[#61707b]">Strong</p></div>
+                    <div><p className="text-[10px] uppercase tracking-[.14em] text-[#5a6a76]">Your match</p><p className="mt-1 text-[13px] text-[#5a6a76]">Strong alignment across skills, experience and location.</p></div>
+                    <div className="shrink-0 border border-[#e3e7eb] bg-[#f5f6f8] px-4 py-2 text-center"><p className="text-[27px] font-semibold text-[#0b2f4d]">86%</p><p className="text-[9px] font-semibold uppercase tracking-[.1em] text-[#5a6a76]">Strong</p></div>
                   </div>
-                  <div className="border-t border-[#e6eaed] pt-5">
+                  <div className="border-t border-[#e3e7eb] pt-5">
                     <p className="text-[11px] font-semibold text-[#10283b]">Why it fits</p>
-                    <div className="mt-3 space-y-2 text-[12px] text-[#64717a]">
+                    <div className="mt-3 space-y-2 text-[12px] text-[#5a6a76]">
                       <p className="flex gap-2"><Check size={14} className="mt-0.5 text-[#0b2f4d]"/> Luxury spa experience aligns</p>
                       <p className="flex gap-2"><Check size={14} className="mt-0.5 text-[#0b2f4d]"/> Required treatment skills match</p>
                       <p className="flex gap-2"><Check size={14} className="mt-0.5 text-[#0b2f4d]"/> Within your preferred travel radius</p>
                     </div>
                   </div>
                   <div className="mt-6 grid grid-cols-2 gap-3">
-                    <div className="flex items-center justify-center gap-2 border border-[#d8dde1] py-3 text-[12px] font-semibold text-[#56636d]"><X size={17}/> Swipe left</div>
+                    <div className="flex items-center justify-center gap-2 border border-[#e3e7eb] py-3 text-[12px] font-semibold text-[#5a6a76]"><X size={17}/> Swipe left</div>
                     <div className="flex items-center justify-center gap-2 bg-[#0b2f4d] py-3 text-[12px] font-semibold text-white"><Heart size={16}/> Swipe right</div>
                   </div>
                 </div>
@@ -74,12 +74,12 @@ export default async function MatchExplainerPage() {
           </div>
         </section>
 
-        <section className="bg-[#fafafa] py-16 lg:py-20">
+        <section className="bg-[#f5f6f8] py-16 lg:py-20">
           <div className="mx-auto max-w-7xl px-6 lg:px-8">
-            <div className="grid gap-px border border-[#e5e5e5] bg-[#e5e5e5] md:grid-cols-3">
-              <div className="bg-white p-8"><p className="text-[11px] font-semibold uppercase tracking-[.14em] text-[#67747d]">01 · We rank</p><h2 className="mt-4 text-[24px] font-semibold text-[#10283b]">Your strongest roles appear first.</h2><p className="mt-3 text-[13px] leading-6 text-[#68757e]">The score is built from your WHC profile and the employer’s real job requirements, not a generic keyword search.</p></div>
-              <div className="bg-white p-8"><p className="text-[11px] font-semibold uppercase tracking-[.14em] text-[#67747d]">02 · You swipe</p><h2 className="mt-4 text-[24px] font-semibold text-[#10283b]">Left to pass. Right to keep.</h2><p className="mt-3 text-[13px] leading-6 text-[#68757e]">Pass roles that are not for you. Swipe right on ones you want to explore and they move into My Applications.</p></div>
-              <div className="bg-white p-8"><p className="text-[11px] font-semibold uppercase tracking-[.14em] text-[#67747d]">03 · You choose</p><h2 className="mt-4 text-[24px] font-semibold text-[#10283b]">Nothing is sent until you say so.</h2><p className="mt-3 text-[13px] leading-6 text-[#68757e]">Review the full role, prepare your application and submit only when you are ready.</p></div>
+            <div className="grid gap-px border border-[#e3e7eb] bg-[#e3e7eb] md:grid-cols-3">
+              <div className="bg-white p-8"><p className="text-[11px] font-semibold uppercase tracking-[.14em] text-[#5a6a76]">01 · We rank</p><h2 className="mt-4 text-[24px] font-semibold text-[#10283b]">Your strongest roles appear first.</h2><p className="mt-3 text-[13px] leading-6 text-[#5a6a76]">The score is built from your WHC profile and the employer’s real job requirements, not a generic keyword search.</p></div>
+              <div className="bg-white p-8"><p className="text-[11px] font-semibold uppercase tracking-[.14em] text-[#5a6a76]">02 · You swipe</p><h2 className="mt-4 text-[24px] font-semibold text-[#10283b]">Left to pass. Right to keep.</h2><p className="mt-3 text-[13px] leading-6 text-[#5a6a76]">Pass roles that are not for you. Swipe right on ones you want to explore and they move into My Applications.</p></div>
+              <div className="bg-white p-8"><p className="text-[11px] font-semibold uppercase tracking-[.14em] text-[#5a6a76]">03 · You choose</p><h2 className="mt-4 text-[24px] font-semibold text-[#10283b]">Nothing is sent until you say so.</h2><p className="mt-3 text-[13px] leading-6 text-[#5a6a76]">Review the full role, prepare your application and submit only when you are ready.</p></div>
             </div>
           </div>
         </section>
@@ -87,17 +87,17 @@ export default async function MatchExplainerPage() {
         <section className="bg-white py-16 lg:py-20">
           <div className="mx-auto grid max-w-7xl gap-12 px-6 lg:grid-cols-[0.8fr_1.2fr] lg:px-8">
             <div>
-              <p className="text-[10px] font-semibold uppercase tracking-[.17em] text-[#68757e]">What creates your score</p>
+              <p className="text-[10px] font-semibold uppercase tracking-[.17em] text-[#5a6a76]">What creates your score</p>
               <h2 className="site-heading mt-4 text-[38px] leading-[1.02] md:text-[48px]">More than a job title.</h2>
-              <p className="mt-5 text-[14px] leading-7 text-[#66737c]">A Spa Director and a newly qualified therapist should never get the same matching logic. Your score reflects the level and detail of the role you are actually looking at.</p>
+              <p className="mt-5 text-[14px] leading-7 text-[#5a6a76]">A Spa Director and a newly qualified therapist should never get the same matching logic. Your score reflects the level and detail of the role you are actually looking at.</p>
             </div>
-            <div className="grid gap-px border border-[#e5e5e5] bg-[#e5e5e5] sm:grid-cols-2">
-              {signals.map(signal => <div key={signal} className="flex items-center gap-3 bg-white px-5 py-5 text-[13px] font-medium text-[#33424d]"><Sparkles size={14} className="text-[#0b2f4d]"/>{signal}</div>)}
+            <div className="grid gap-px border border-[#e3e7eb] bg-[#e3e7eb] sm:grid-cols-2">
+              {signals.map(signal => <div key={signal} className="flex items-center gap-3 bg-white px-5 py-5 text-[13px] font-medium text-[#3d4b57]"><Sparkles size={14} className="text-[#0b2f4d]"/>{signal}</div>)}
             </div>
           </div>
         </section>
 
-        <section className="border-y border-[#e3e7ea] bg-[#0b2f4d] py-16 text-white">
+        <section className="border-y border-[#e3e7eb] bg-[#0b2f4d] py-16 text-white">
           <div className="mx-auto flex max-w-6xl flex-col gap-7 px-6 md:flex-row md:items-center md:justify-between lg:px-8">
             <div><p className="text-[10px] font-semibold uppercase tracking-[.17em] text-white/55">Ready?</p><h2 className="mt-2 text-[34px] font-semibold">See the roles built around your profile.</h2></div>
             <Link href="/login?role=talent&next=%2Froles%2Fmatch" className="inline-flex w-fit items-center gap-2 bg-white px-6 py-3.5 text-[13px] font-semibold text-[#0b2f4d]">Start matching <ArrowRight size={15}/></Link>

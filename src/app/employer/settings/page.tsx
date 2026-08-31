@@ -5,6 +5,23 @@ import DashboardShell from '@/components/DashboardShell'
 import { createClient } from '@/lib/supabase/client'
 import { Save, Download, AlertTriangle } from 'lucide-react'
 
+// Square-cornered toggle row for the notification preference centre (brand
+// rule: no new rounded corners).
+function PrefRow({ title, description, on, onToggle }: { title: string; description: string; on: boolean; onToggle: () => void }) {
+  return (
+    <div className="flex items-start justify-between gap-4 py-3 border-b border-border last:border-b-0">
+      <div>
+        <p className="text-[13px] font-medium text-ink">{title}</p>
+        <p className="text-[12px] leading-5 text-muted mt-0.5">{description}</p>
+      </div>
+      <button type="button" onClick={onToggle} aria-pressed={on} aria-label={`${on ? 'Turn off' : 'Turn on'} ${title}`}
+        className={`relative inline-flex h-6 w-11 items-center border transition-colors shrink-0 ${on ? 'bg-ink border-ink' : 'bg-gray-200 border-border'}`}>
+        <span className={`inline-block h-4 w-4 transform bg-white transition-transform ${on ? 'translate-x-6' : 'translate-x-1'}`} />
+      </button>
+    </div>
+  )
+}
+
 export default function EmployerSettingsPage() {
   const supabase = createClient()
   const [currentPassword, setCurrentPassword] = useState('')
@@ -18,6 +35,13 @@ export default function EmployerSettingsPage() {
   const [smsPhone, setSmsPhone] = useState('')
   const [smsSaving, setSmsSaving] = useState(false)
 
+  // Email notification preferences (privacy_preferences)
+  const [emailPrefs, setEmailPrefs] = useState<Record<string, boolean>>({
+    application_updates_email: true,
+    booking_updates_email: true,
+    product_news_email: false,
+  })
+
   useEffect(() => {
     async function loadSmsSettings() {
       const { data: { user } } = await supabase.auth.getUser()
@@ -28,8 +52,39 @@ export default function EmployerSettingsPage() {
       setSmsPhone(data.contact_phone || '')
       setSmsEnabled(Boolean(data.sms_opt_in))
     }
+    async function loadEmailPrefs() {
+      try {
+        const res = await fetch('/api/privacy/preferences')
+        if (!res.ok) return
+        const json = await res.json()
+        const p = json.preferences || {}
+        setEmailPrefs(prev => {
+          const next = { ...prev }
+          for (const key of Object.keys(prev)) if (typeof p[key] === 'boolean') next[key] = p[key]
+          return next
+        })
+      } catch { /* defaults stand */ }
+    }
     loadSmsSettings()
+    loadEmailPrefs()
   }, [])
+
+  const saveEmailPref = async (field: string, value: boolean) => {
+    const previous = emailPrefs[field]
+    setEmailPrefs(prev => ({ ...prev, [field]: value }))
+    try {
+      const res = await fetch('/api/privacy/preferences', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ [field]: value }),
+      })
+      if (!res.ok) throw new Error('save failed')
+    } catch {
+      setEmailPrefs(prev => ({ ...prev, [field]: previous }))
+      setMessage('Could not save your notification preference - please try again.')
+      setMessageType('error')
+      setTimeout(() => setMessage(''), 4000)
+    }
+  }
 
   const saveSmsSettings = async (enabled = smsEnabled) => {
     if (!employerId) return
@@ -165,6 +220,30 @@ export default function EmployerSettingsPage() {
       </div>
       <div className="max-w-2xl space-y-6">
         {message && <div className={`px-4 py-3 rounded-lg text-sm ${messageType === 'success' ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'}`}>{message}</div>}
+
+        {/* Email notification preference centre */}
+        <div className="dashboard-card">
+          <h3 className="font-serif text-lg font-semibold">Email Notifications</h3>
+          <p className="text-sm text-gray-500 mt-1 mb-2">In-app notifications always appear here. These controls govern what reaches your inbox.</p>
+          <PrefRow
+            title="Applications and candidate replies"
+            description="An email when a candidate applies, responds to an interview, or messages you."
+            on={emailPrefs.application_updates_email}
+            onToggle={() => saveEmailPref('application_updates_email', !emailPrefs.application_updates_email)}
+          />
+          <PrefRow
+            title="Agency booking updates"
+            description="An email when a therapist accepts, counters or declines a shift, or a booking changes."
+            on={emailPrefs.booking_updates_email}
+            onToggle={() => saveEmailPref('booking_updates_email', !emailPrefs.booking_updates_email)}
+          />
+          <PrefRow
+            title="Market intelligence and featured talent"
+            description="The weekly intelligence email plus occasional featured-professional announcements."
+            on={emailPrefs.product_news_email}
+            onToggle={() => saveEmailPref('product_news_email', !emailPrefs.product_news_email)}
+          />
+        </div>
 
         <div className="dashboard-card">
           <div className="flex items-start justify-between gap-4 mb-4">

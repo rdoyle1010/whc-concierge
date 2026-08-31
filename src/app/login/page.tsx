@@ -7,7 +7,7 @@ import { Eye, EyeOff, BriefcaseBusiness, Sparkles } from 'lucide-react'
 import Wordmark from '@/components/Wordmark'
 
 export default function LoginPage() {
-  return <Suspense fallback={<div className="min-h-screen bg-[#f5f5f5]" />}><LoginForm /></Suspense>
+  return <Suspense fallback={<div className="min-h-screen bg-[#f5f6f8]" />}><LoginForm /></Suspense>
 }
 
 function LoginForm() {
@@ -53,7 +53,7 @@ function LoginForm() {
   const registerHref = `/register/${role}${safeDestination ? `?redirect=${encodeURIComponent(safeDestination)}` : ''}`
 
   return (
-    <div className="min-h-screen bg-[#f5f5f5] flex items-stretch">
+    <div className="min-h-screen bg-[#f5f6f8] flex items-stretch">
       <div className="flex-1 flex items-center justify-center px-6 py-10 lg:py-16">
         <div className="w-full max-w-[430px]">
           <Wordmark />
@@ -63,12 +63,12 @@ function LoginForm() {
             <p className="dashboard-intro !mt-2 mb-7">Choose the workspace linked to your account, then sign in.</p>
 
             {safeDestination === '/roles/match' && (
-              <div className="mb-5 rounded-xl border border-[#e9e9e9] bg-[#f5f5f5] px-4 py-3 text-[12px] leading-5 text-[#5a6a76]">
+              <div className="mb-5 rounded-xl border border-[#e3e7eb] bg-[#f5f6f8] px-4 py-3 text-[12px] leading-5 text-[#5a6a76]">
                 Sign in as Talent to continue to your role matches. We&apos;ll take you straight back to Match after sign-in.
               </div>
             )}
 
-            <div className="grid grid-cols-2 gap-2 bg-[#f5f5f5] rounded-xl p-1.5 mb-7">
+            <div className="grid grid-cols-2 gap-2 bg-[#f5f6f8] rounded-xl p-1.5 mb-7">
               <button type="button" onClick={() => { setRole('talent'); setError('') }} className={`flex items-center justify-center gap-2 py-2.5 rounded-lg text-[12px] font-semibold transition-all ${role === 'talent' ? 'bg-[#0b2f4d] text-white shadow-sm' : 'text-secondary hover:text-[#0b2f4d]'}`}><Sparkles size={13} />Talent</button>
               <button type="button" onClick={() => { setRole('employer'); setError('') }} className={`flex items-center justify-center gap-2 py-2.5 rounded-lg text-[12px] font-semibold transition-all ${role === 'employer' ? 'bg-[#0b2f4d] text-white shadow-sm' : 'text-secondary hover:text-[#0b2f4d]'}`}><BriefcaseBusiness size={13} />Hotel / Employer</button>
             </div>
@@ -101,7 +101,7 @@ function LoginForm() {
         <div className="absolute inset-0 opacity-35"><img src="https://images.pexels.com/photos/7587466/pexels-photo-7587466.jpeg?auto=compress&cs=tinysrgb&w=1200&h=900&dpr=1" alt="" className="w-full h-full object-cover" /></div>
         <div className="absolute inset-0 bg-gradient-to-t from-[#0b2f4d] via-[#0b2f4d]/65 to-[#0b2f4d]/25" />
         <div className="relative p-12 xl:p-16 max-w-xl">
-          <p className="text-[10px] uppercase tracking-[0.2em] text-[#555555] font-semibold mb-4">Wellness House Collective</p>
+          <p className="text-[10px] uppercase tracking-[0.2em] text-[#5a6a76] font-semibold mb-4">Wellness House Collective</p>
           <p className="text-white text-[30px] leading-tight tracking-[-0.03em] font-semibold">The professional platform for spa and wellness careers.</p>
           <p className="text-white/55 text-[13px] mt-4 leading-6">Live roles, agency cover, residencies and the Academy - one account, one platform.</p>
         </div>

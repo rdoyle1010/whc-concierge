@@ -3,6 +3,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { calculateMatchScore } from '@/lib/matching'
 import { jobAlertEmailHtml } from '@/lib/job-alert-email-template'
 import { isInternalApiRequest } from '@/lib/internal-request'
+import { emailAllowed } from '@/lib/notification-prefs'
 
 const RESEND_API_KEY = process.env.RESEND_API_KEY
 const FROM_EMAIL = 'WHC Concierge <noreply@mail.wellnesshousecollective.co.uk>'
@@ -63,6 +64,10 @@ export async function POST(req: NextRequest) {
 
       // Only process instant alerts for MVP
       if (candidate.job_alerts_frequency && candidate.job_alerts_frequency !== 'instant') continue
+
+      // Preference-gated ('job_alerts'): also honour the privacy_preferences
+      // opt-out alongside job_alerts_enabled. Fail-open on lookup errors.
+      if (!(await emailAllowed(supabase, candidate.user_id, 'job_alerts'))) continue
 
       // Calculate match score
       const result = calculateMatchScore(candidate, job)

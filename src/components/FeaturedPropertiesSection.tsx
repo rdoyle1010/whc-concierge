@@ -40,8 +40,8 @@ export default async function FeaturedPropertiesSection() {
               const name = property.property_name || property.company_name || 'WHC property'
               const image = property.property_photos?.[0] || property.logo_url
               return (
-                <Link key={property.id} href={`/properties/${property.id}`} className="group overflow-hidden rounded-2xl border border-[#e5e5e5] bg-white shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md">
-                  <div className="relative h-36 overflow-hidden bg-[#eef2f4]">
+                <Link key={property.id} href={`/properties/${property.id}`} className="group overflow-hidden rounded-2xl border border-[#e3e7eb] bg-white shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md">
+                  <div className="relative h-36 overflow-hidden bg-[#e8eef4]">
                     {image ? <img src={image} alt={name} loading="lazy" decoding="async" className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.02]" /> : <div className="flex h-full items-center justify-center"><Building2 size={32} className="opacity-30" /></div>}
                     <span className="absolute left-4 top-4 inline-flex items-center gap-1 rounded-full bg-[#0b2f4d] px-3 py-1.5 text-[9px] font-semibold uppercase tracking-[0.12em] text-white"><Star size={10} fill="currentColor" /> Featured</span>
                   </div>

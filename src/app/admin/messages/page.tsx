@@ -73,7 +73,7 @@ export default function AdminMessagesPage() {
   const statusColors: Record<string, string> = {
     open: 'border-amber-200 bg-amber-50 text-amber-700',
     replied: 'border-emerald-200 bg-emerald-50 text-emerald-700',
-    closed: 'border-[#e0e0e0] bg-[#f0f0f0] text-[#8a949b]',
+    closed: 'border-[#e3e7eb] bg-[#f5f6f8] text-[#8a949b]',
   }
 
   return (
@@ -92,16 +92,16 @@ export default function AdminMessagesPage() {
 
       {actionError && <div className="bg-red-50 text-red-600 text-sm px-4 py-3 mb-5 border border-red-100">{actionError}</div>}
 
-      <div className="overflow-hidden border border-[#e0e0e0] bg-white">
+      <div className="overflow-hidden border border-[#e3e7eb] bg-white">
         <div className="grid min-h-[640px] grid-cols-1 lg:grid-cols-[360px_minmax(0,1fr)]">
-          <aside className="border-b border-[#e5e5e5] bg-[#fafafa] lg:border-b-0 lg:border-r">
-            <div className="border-b border-[#e5e5e5] px-5 py-5">
+          <aside className="border-b border-[#e3e7eb] bg-[#f5f6f8] lg:border-b-0 lg:border-r">
+            <div className="border-b border-[#e3e7eb] px-5 py-5">
               <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#10283b]">Inbox</p>
-              <p className="mt-1 text-[12px] text-[#7d7972]">{total} message{total === 1 ? '' : 's'}</p>
+              <p className="mt-1 text-[12px] text-[#8a949b]">{total} message{total === 1 ? '' : 's'}</p>
             </div>
             <div className="max-h-[570px] overflow-y-auto">
               {loading ? (
-                <div className="space-y-3 p-4">{[1,2,3,4].map(i => <div key={i} className="h-[86px] animate-pulse rounded-2xl bg-[#f0f0f0]" />)}</div>
+                <div className="space-y-3 p-4">{[1,2,3,4].map(i => <div key={i} className="h-[86px] animate-pulse rounded-2xl bg-[#f5f6f8]" />)}</div>
               ) : queries.length === 0 ? (
                 <div className="flex min-h-[300px] flex-col items-center justify-center px-8 text-center">
                   <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl border border-[#e3e7eb] bg-white text-[#10283b]"><Mail size={20} /></div>
@@ -112,13 +112,13 @@ export default function AdminMessagesPage() {
                 const active = selected?.id === q.id
                 const initials = String(q.name || 'Q').split(' ').map((part: string) => part[0]).join('').slice(0,2).toUpperCase()
                 return (
-                  <button key={q.id} type="button" onClick={() => setSelected(q)} className={`w-full border-b border-[#ececec] px-4 py-4 text-left transition ${active ? 'bg-white' : 'hover:bg-white/70'}`}>
+                  <button key={q.id} type="button" onClick={() => setSelected(q)} className={`w-full border-b border-[#e3e7eb] px-4 py-4 text-left transition ${active ? 'bg-white' : 'hover:bg-white/70'}`}>
                     <div className="flex items-start gap-3">
-                      <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full border text-[11px] font-semibold ${active ? 'border-[#555555] bg-[#f5f5f5] text-[#10283b]' : 'border-[#e0e0e0] bg-white text-[#59636c]'}`}>{initials}</div>
+                      <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full border text-[11px] font-semibold ${active ? 'border-[#5a6a76] bg-[#f5f6f8] text-[#10283b]' : 'border-[#e3e7eb] bg-white text-[#5a6a76]'}`}>{initials}</div>
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2">
                           <p className="min-w-0 flex-1 truncate text-[13px] font-semibold text-[#10283b]">{q.name}</p>
-                          <span className={`rounded-full border px-2 py-0.5 text-[9px] font-semibold capitalize ${statusColors[q.status] || 'border-[#e0e0e0] bg-[#f0f0f0] text-[#8a949b]'}`}>{q.status}</span>
+                          <span className={`rounded-full border px-2 py-0.5 text-[9px] font-semibold capitalize ${statusColors[q.status] || 'border-[#e3e7eb] bg-[#f5f6f8] text-[#8a949b]'}`}>{q.status}</span>
                         </div>
                         <p className="mt-1 truncate text-[11px] font-medium text-[#5a6a76]">{q.subject || 'General enquiry'}</p>
                         <p className="mt-1 truncate text-[10px] text-[#8a949b]">{q.message}</p>
@@ -129,10 +129,10 @@ export default function AdminMessagesPage() {
                 )
               })}
             </div>
-            <div className="border-t border-[#e5e5e5] bg-white px-4 py-3"><Pagination page={page} perPage={perPage} total={total} showPerPage={false} onPageChange={setPage} /></div>
+            <div className="border-t border-[#e3e7eb] bg-white px-4 py-3"><Pagination page={page} perPage={perPage} total={total} showPerPage={false} onPageChange={setPage} /></div>
           </aside>
 
-          <section className="min-w-0 bg-[#fafafa]">
+          <section className="min-w-0 bg-[#f5f6f8]">
             {!selected ? (
               <div className="flex min-h-[640px] flex-col items-center justify-center px-8 text-center">
                 <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-2xl border border-[#e3e7eb] bg-white text-[#10283b]"><MessageSquare size={22} /></div>
@@ -141,34 +141,34 @@ export default function AdminMessagesPage() {
               </div>
             ) : (
               <div className="flex min-h-[640px] flex-col">
-                <header className="flex flex-col gap-4 border-b border-[#e5e5e5] bg-white px-5 py-5 sm:flex-row sm:items-start sm:justify-between md:px-7">
+                <header className="flex flex-col gap-4 border-b border-[#e3e7eb] bg-white px-5 py-5 sm:flex-row sm:items-start sm:justify-between md:px-7">
                   <div className="min-w-0">
                     <div className="mb-2 flex flex-wrap items-center gap-2">
-                      <span className={`rounded-full border px-2.5 py-1 text-[9px] font-semibold capitalize ${statusColors[selected.status] || 'border-[#e0e0e0] bg-[#f0f0f0] text-[#8a949b]'}`}>{selected.status}</span>
-                      {selected.type && <span className="rounded-full border border-[#e5e5e5] bg-[#f7f7f7] px-2.5 py-1 text-[9px] font-semibold text-[#5a6a76]">{selected.type}</span>}
+                      <span className={`rounded-full border px-2.5 py-1 text-[9px] font-semibold capitalize ${statusColors[selected.status] || 'border-[#e3e7eb] bg-[#f5f6f8] text-[#8a949b]'}`}>{selected.status}</span>
+                      {selected.type && <span className="rounded-full border border-[#e3e7eb] bg-[#f5f6f8] px-2.5 py-1 text-[9px] font-semibold text-[#5a6a76]">{selected.type}</span>}
                     </div>
                     <h2 className="text-[24px] font-medium tracking-[-0.03em] text-[#10283b]">{selected.subject || 'General enquiry'}</h2>
                     <p className="mt-2 text-[12px] text-[#5a6a76]">{selected.name} · {selected.email}</p>
                     <p className="mt-1 text-[10px] text-[#8a949b]">{new Date(selected.created_at).toLocaleString('en-GB')}</p>
                   </div>
                   <div className="flex gap-2">
-                    <button type="button" onClick={() => updateStatus(selected.id, 'replied')} className="flex h-10 w-10 items-center justify-center rounded-full border border-[#e0e0e0] bg-white text-[#66717a] transition hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-700" title="Mark replied"><Check size={17} /></button>
-                    <button type="button" onClick={() => deleteQuery(selected.id)} className="flex h-10 w-10 items-center justify-center rounded-full border border-[#e0e0e0] bg-white text-[#8f8a82] transition hover:border-red-200 hover:bg-red-50 hover:text-red-600" title="Delete"><Trash2 size={17} /></button>
+                    <button type="button" onClick={() => updateStatus(selected.id, 'replied')} className="flex h-10 w-10 items-center justify-center rounded-full border border-[#e3e7eb] bg-white text-[#5a6a76] transition hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-700" title="Mark replied"><Check size={17} /></button>
+                    <button type="button" onClick={() => deleteQuery(selected.id)} className="flex h-10 w-10 items-center justify-center rounded-full border border-[#e3e7eb] bg-white text-[#8a949b] transition hover:border-red-200 hover:bg-red-50 hover:text-red-600" title="Delete"><Trash2 size={17} /></button>
                   </div>
                 </header>
 
                 <div className="flex-1 px-5 py-6 md:px-7">
-                  <div className="rounded-[20px] border border-[#e5e5e5] bg-white p-5 shadow-sm md:p-6">
+                  <div className="rounded-[20px] border border-[#e3e7eb] bg-white p-5 shadow-sm md:p-6">
                     <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#10283b]">Enquiry</p>
-                    <p className="mt-4 whitespace-pre-wrap text-[13px] leading-6 text-[#344a5b]">{selected.message}</p>
+                    <p className="mt-4 whitespace-pre-wrap text-[13px] leading-6 text-[#3d4b57]">{selected.message}</p>
                   </div>
 
-                  <div className="mt-6 rounded-[20px] border border-[#e5e5e5] bg-white p-5 md:p-6">
+                  <div className="mt-6 rounded-[20px] border border-[#e3e7eb] bg-white p-5 md:p-6">
                     <div className="mb-4">
                       <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#10283b]">Reply</p>
                       <p className="mt-1 text-[12px] text-[#8a949b]">Reply by email to {selected.email}</p>
                     </div>
-                    <textarea rows={6} value={reply} onChange={(e) => setReply(e.target.value)} className="w-full resize-y rounded-2xl border border-[#e0e0e0] bg-[#fafafa] px-4 py-3 text-[13px] leading-6 text-[#10283b] outline-none transition placeholder:text-[#8a949b] focus:border-[#555555] focus:bg-white" placeholder={`Hi ${selected.name?.split(' ')[0] || 'there'},`} />
+                    <textarea rows={6} value={reply} onChange={(e) => setReply(e.target.value)} className="w-full resize-y rounded-2xl border border-[#e3e7eb] bg-[#f5f6f8] px-4 py-3 text-[13px] leading-6 text-[#10283b] outline-none transition placeholder:text-[#8a949b] focus:border-[#5a6a76] focus:bg-white" placeholder={`Hi ${selected.name?.split(' ')[0] || 'there'},`} />
                     {replyMsg && <p className={`mt-2 text-[11px] ${replyMsg.includes('sent') ? 'text-emerald-600' : 'text-red-600'}`}>{replyMsg}</p>}
                     <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                       <div className="flex flex-wrap gap-2">

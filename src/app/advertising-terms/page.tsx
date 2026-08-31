@@ -2,19 +2,19 @@ import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
 
 export default function AdvertisingTermsPage() {
-  return <div className="min-h-screen bg-[#f5f5f5] text-[#10283b]">
+  return <div className="min-h-screen bg-[#f5f6f8] text-[#10283b]">
     <Navbar />
     <main className="pt-[76px]">
       <section className="bg-[#0b2f4d] text-white">
         <div className="mx-auto max-w-4xl px-6 py-16 lg:px-8">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#555555]">Wellness House Collective</p>
+          <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#5a6a76]">Wellness House Collective</p>
           <h1 className="mt-3 text-[40px] font-semibold tracking-[-0.04em]">Advertising Terms & Conditions</h1>
           <p className="mt-4 text-[13px] text-white/65">Version 25 August 2026</p>
         </div>
       </section>
 
       <section className="mx-auto max-w-4xl px-6 py-12 lg:px-8">
-        <div className="rounded-[22px] border border-[#e0e0e0] bg-white p-7 md:p-10 space-y-7 text-[13px] leading-7 text-[#4d4d4d]">
+        <div className="rounded-[22px] border border-[#e3e7eb] bg-white p-7 md:p-10 space-y-7 text-[13px] leading-7 text-[#5a6a76]">
           <div><h2 className="text-[18px] font-semibold text-[#10283b]">1. The booking</h2><p>A sponsored placement is a rolling monthly advertising subscription for the placement selected at checkout. The price shown at checkout is charged monthly until the subscription is cancelled, subject to any valid promotion or discount applied by Stripe.</p></div>
           <div><h2 className="text-[18px] font-semibold text-[#10283b]">2. Billing and duration</h2><p>Billing begins when Stripe checkout is completed. The subscription renews automatically each month until cancelled. A promotion code may reduce a charge, including to £0 where the code permits, but does not change the recurring nature of the subscription unless Stripe states otherwise.</p></div>
           <div><h2 className="text-[18px] font-semibold text-[#10283b]">3. Approval before publication</h2><p>Payment does not guarantee publication. WHC reviews the supplied brand name, wording, website destination and creative before the advert appears publicly. WHC may request changes or reject material that is inaccurate, unlawful, misleading, unsuitable for the audience, inconsistent with platform standards or technically unsafe.</p></div>

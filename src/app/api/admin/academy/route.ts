@@ -4,6 +4,7 @@ import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { createNotification } from '@/lib/notifications'
 import { sendCourseGiftEmail } from '@/lib/emails'
+import { emailAllowed } from '@/lib/notification-prefs'
 import { getAcademyCatalog, getAcademyCourseBySlug, publicCourse } from '@/lib/academy-catalog-server'
 
 const CATEGORIES = new Set(['Guest Experience', 'Standards', 'Treatments', 'Commercial', 'Brands', 'Specialist Care'])
@@ -179,8 +180,13 @@ export async function POST(req: NextRequest) {
       try {
         if (candidate.user_id) {
           await createNotification(candidate.user_id, 'general', 'A course has been unlocked for you', `Wellness House Collective has enrolled you on ${course.title}, with our compliments.`, '/talent/academy')
-          const { data: authUser } = await admin.auth.admin.getUserById(candidate.user_id)
-          if (authUser?.user?.email) await sendCourseGiftEmail(authUser.user.email, candidate.full_name || 'there', course.title, false)
+          // Preference-gated ('academy_updates'): the gifted-course email is an
+          // Academy notification; the in-app notification above always fires
+          // so the gift is never invisible. Fail-open on lookup errors.
+          if (await emailAllowed(admin, candidate.user_id, 'academy_updates')) {
+            const { data: authUser } = await admin.auth.admin.getUserById(candidate.user_id)
+            if (authUser?.user?.email) await sendCourseGiftEmail(authUser.user.email, candidate.full_name || 'there', course.title, false)
+          }
         }
       } catch { /* best effort */ }
       return NextResponse.json({ success: true })

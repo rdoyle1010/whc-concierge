@@ -227,7 +227,7 @@ export default function AdminAdSlotsPage() {
                         </div>
                       </div>
                       <div className="flex items-center gap-2 shrink-0">
-                        <span className={`px-2 py-0.5 rounded-full text-[10.5px] font-semibold ${advert.status === 'active' ? 'bg-green-50 text-green-700' : 'bg-gray-100 text-gray-500'}`}>{advert.status}</span>
+                        <span className={`px-2 py-0.5 rounded-full text-[10.5px] font-semibold ${advert.status === 'active' ? 'bg-green-50 text-green-700' : 'bg-gray-100 text-secondary'}`}>{advert.status}</span>
                         {advert.status === 'active'
                           ? <button type="button" onClick={() => advertStatus(advert.id, 'paused')} className="text-[11.5px] underline text-secondary">Pause</button>
                           : <button type="button" onClick={() => advertStatus(advert.id, 'active')} className="text-[11.5px] underline text-secondary">Activate</button>}
@@ -247,7 +247,7 @@ export default function AdminAdSlotsPage() {
                 <h2 className="font-serif text-lg font-bold text-ink">Place a direct advert</h2>
                 <button type="button" onClick={() => setFormOpen(false)} className="text-gray-300 hover:text-ink"><X size={20} /></button>
               </div>
-              <p className="text-[12px] text-gray-500 mb-4">For brands that come to you directly - no payment flow, live as soon as you pin it to a slot that is switched on.</p>
+              <p className="text-[12px] text-secondary mb-4">For brands that come to you directly - no payment flow, live as soon as you pin it to a slot that is switched on.</p>
 
               <label className="block text-[12px] font-semibold text-ink mb-1.5">Brand name *</label>
               <input value={brandName} onChange={e => setBrandName(e.target.value)} placeholder="e.g. ESPA" className="input-field text-[13px] w-full mb-3" />

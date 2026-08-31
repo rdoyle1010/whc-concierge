@@ -24,7 +24,7 @@ export default function GlobalError({ error, reset }: { error: Error & { digest?
                 margin: '0 auto 32px',
               }}
             >
-              <span style={{ fontSize: 20, color: '#555555' }}>!</span>
+              <span style={{ fontSize: 20, color: '#5a6a76' }}>!</span>
             </div>
             <h1 style={{ fontSize: 28, fontWeight: 500, color: '#10283b', margin: '0 0 12px' }}>Something went wrong</h1>
             <p style={{ fontSize: 14, color: '#5a6a76', lineHeight: 1.6, margin: '0 0 40px' }}>

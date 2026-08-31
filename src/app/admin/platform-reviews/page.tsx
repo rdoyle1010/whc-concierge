@@ -63,7 +63,7 @@ export default function AdminPlatformReviewsPage() {
     </div>
 
     {error && <div className="mb-5 rounded-xl bg-red-50 px-4 py-3 text-[12px] text-red-600">{error}</div>}
-    {loading ? <div className="dashboard-card flex h-52 items-center justify-center"><div className="h-8 w-8 animate-spin rounded-full border-2 border-gold border-t-transparent"/></div>
+    {loading ? <div className="dashboard-card flex h-52 items-center justify-center"><div className="h-8 w-8 animate-spin rounded-full border-2 border-accent border-t-transparent"/></div>
     : visible.length === 0 ? <div className="dashboard-card py-16 text-center"><MessageSquareText size={32} className="mx-auto mb-3 text-muted/40"/><p className="text-[13px] text-muted">No platform reviews in this view yet.</p></div>
     : <div className="space-y-4">{visible.map(item => <article key={item.id} className="dashboard-card">
         <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
@@ -79,7 +79,7 @@ export default function AdminPlatformReviewsPage() {
             <p className="mt-1 text-[10px] text-muted">{new Date(item.created_at).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'})}</p>
           </div>
         </div>
-        {item.comment?.trim() ? <blockquote className="mt-4 rounded-xl border border-[#e5e5e5] bg-[#fafafa] px-4 py-4 text-[13px] leading-6 text-secondary">“{item.comment.trim()}”</blockquote> : <p className="mt-4 text-[11px] italic text-muted">Rating submitted without a written comment.</p>}
+        {item.comment?.trim() ? <blockquote className="mt-4 rounded-xl border border-[#e3e7eb] bg-[#f5f6f8] px-4 py-4 text-[13px] leading-6 text-secondary">“{item.comment.trim()}”</blockquote> : <p className="mt-4 text-[11px] italic text-muted">Rating submitted without a written comment.</p>}
       </article>)}</div>}
   </DashboardShell>
 }

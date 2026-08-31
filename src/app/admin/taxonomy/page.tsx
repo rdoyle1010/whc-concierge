@@ -77,7 +77,7 @@ export default function TaxonomyPage() {
         </div>
 
         <div className="relative mb-5 max-w-md">
-          <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+          <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
           <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search every list..." className="input-field w-full pl-9 text-[13px]" />
         </div>
 

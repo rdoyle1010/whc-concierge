@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { approvalEmailHtml, rejectionEmailHtml } from '@/lib/decision-email-templates'
+import { emailAllowed } from '@/lib/notification-prefs'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
@@ -48,6 +49,12 @@ export async function POST(req: NextRequest) {
     const isAdmin = callerProfile?.role === 'admin'
     if (!isAdmin && employer?.user_id !== user.id) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+
+    // Preference-gated ('application_updates'): decision emails honour the
+    // candidate's opt-out. Fail-open on lookup errors.
+    if (!(await emailAllowed(admin, candidate.user_id, 'application_updates'))) {
+      return NextResponse.json({ success: true, skipped: true, reason: 'recipient opted out of application update emails' })
     }
 
     const { data: authUser } = await admin.auth.admin.getUserById(candidate.user_id)

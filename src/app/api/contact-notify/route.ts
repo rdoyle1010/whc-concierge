@@ -40,7 +40,7 @@ export async function POST(req: NextRequest) {
         <p style="font-size: 20px; font-weight: 700; margin-bottom: 20px;">New Contact Form Submission</p>
         <table style="width: 100%; border-collapse: collapse; margin-bottom: 24px;">
           <tr><td style="padding: 8px 0; color: #8a949b; font-size: 13px; width: 100px;">Name</td><td style="padding: 8px 0; font-size: 14px; color: #10283b; font-weight: 500;">${name}</td></tr>
-          <tr><td style="padding: 8px 0; color: #8a949b; font-size: 13px;">Email</td><td style="padding: 8px 0; font-size: 14px;"><a href="mailto:${email}" style="color: #555555;">${email}</a></td></tr>
+          <tr><td style="padding: 8px 0; color: #8a949b; font-size: 13px;">Email</td><td style="padding: 8px 0; font-size: 14px;"><a href="mailto:${email}" style="color: #5a6a76;">${email}</a></td></tr>
           <tr><td style="padding: 8px 0; color: #8a949b; font-size: 13px;">Type</td><td style="padding: 8px 0; font-size: 14px; color: #10283b; text-transform: capitalize;">${type || 'general'}</td></tr>
           <tr><td style="padding: 8px 0; color: #8a949b; font-size: 13px;">Subject</td><td style="padding: 8px 0; font-size: 14px; color: #10283b; font-weight: 500;">${subject}</td></tr>
         </table>

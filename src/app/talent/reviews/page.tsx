@@ -42,18 +42,18 @@ export default function TalentReviewsPage() {
 
       <div className="dashboard-card mb-6 flex items-center space-x-8">
         <div className="text-center">
-          <p className="text-4xl font-serif font-bold text-gold">{avgRating}</p>
+          <p className="text-4xl font-serif font-bold text-accent">{avgRating}</p>
           <div className="flex justify-center mt-1">
-            {[1,2,3,4,5].map(i => <Star key={i} size={16} className={i <= Math.round(Number(avgRating)) ? 'text-gold fill-gold' : 'text-gray-200'} />)}
+            {[1,2,3,4,5].map(i => <Star key={i} size={16} className={i <= Math.round(Number(avgRating)) ? 'text-accent fill-accent' : 'text-gray-200'} />)}
           </div>
-          <p className="text-sm text-gray-400 mt-1">{reviews.length} review{reviews.length !== 1 ? 's' : ''}</p>
+          <p className="text-sm text-muted mt-1">{reviews.length} review{reviews.length !== 1 ? 's' : ''}</p>
         </div>
       </div>
 
       {loading ? (
-        <div className="flex items-center justify-center h-32"><div className="animate-spin w-8 h-8 border-2 border-gold border-t-transparent rounded-full" /></div>
+        <div className="flex items-center justify-center h-32"><div className="animate-spin w-8 h-8 border-2 border-accent border-t-transparent rounded-full" /></div>
       ) : reviews.length === 0 ? (
-        <div className="dashboard-card text-center py-16 text-gray-400">
+        <div className="dashboard-card text-center py-16 text-muted">
           <Star size={48} className="mx-auto mb-4 opacity-50" />
           <p>No reviews yet. They&apos;ll appear here after your placements.</p>
         </div>
@@ -63,10 +63,10 @@ export default function TalentReviewsPage() {
             <div key={review.id} className="dashboard-card">
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center space-x-1">
-                  {[1,2,3,4,5].map(i => <Star key={i} size={16} className={i <= review.rating ? 'text-gold fill-gold' : 'text-gray-200'} />)}
+                  {[1,2,3,4,5].map(i => <Star key={i} size={16} className={i <= review.rating ? 'text-accent fill-accent' : 'text-gray-200'} />)}
                   <span className="text-[13px] font-medium text-ink ml-2">{review.rating}</span>
                 </div>
-                <p className="text-xs text-gray-400">{new Date(review.created_at).toLocaleDateString()}</p>
+                <p className="text-xs text-muted">{new Date(review.created_at).toLocaleDateString()}</p>
               </div>
               {review.criteria_scores && (
                 <div className="mb-3 pt-2 border-t border-border">

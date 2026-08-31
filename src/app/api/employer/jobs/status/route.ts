@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { sendRoleFilledEmail } from '@/lib/emails'
+import { emailAllowed } from '@/lib/notification-prefs'
 import { getRequestUser } from '@/lib/request-user'
 import { createNotification } from '@/lib/notifications'
 
@@ -50,6 +51,10 @@ export async function POST(req: NextRequest) {
     for (const candidate of candidates || []) {
       if (!candidate.user_id) continue
       await createNotification(candidate.user_id, 'general', action === 'filled' ? 'Role filled' : 'Role closed', message, '/talent/applications')
+      // Preference-gated ('application_updates'): the role-filled/closed email
+      // honours the applicant's opt-out; the in-app notification above always
+      // fires. Fail-open on lookup errors.
+      if (!(await emailAllowed(admin, candidate.user_id, 'application_updates'))) continue
       const { data: authUser } = await admin.auth.admin.getUserById(candidate.user_id)
       const email = authUser.user?.email
       if (!email) continue

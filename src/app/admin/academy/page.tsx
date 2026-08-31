@@ -146,10 +146,10 @@ export default function AdminAcademyPage() {
       {error && <div className="bg-red-50 text-red-600 text-sm px-4 py-3 rounded-lg mb-4">{error}</div>}
 
       {editing && (
-        <div className="dashboard-card mb-8 border-gold ring-2 ring-gold/20">
+        <div className="dashboard-card mb-8 border-accent ring-2 ring-accent/20">
           <div className="flex items-start justify-between gap-3 mb-5">
-            <div><h2 className="text-[18px] font-semibold text-ink">{originalSlug ? 'Edit course' : 'Add a course'}</h2><p className="text-[12px] text-gray-500">Quiz answers are stored securely and never sent to learners.</p></div>
-            <button onClick={() => setEditing(null)} className="text-gray-400 hover:text-ink"><X size={20} /></button>
+            <div><h2 className="text-[18px] font-semibold text-ink">{originalSlug ? 'Edit course' : 'Add a course'}</h2><p className="text-[12px] text-secondary">Quiz answers are stored securely and never sent to learners.</p></div>
+            <button onClick={() => setEditing(null)} className="text-muted hover:text-ink"><X size={20} /></button>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-5">
@@ -163,13 +163,13 @@ export default function AdminAcademyPage() {
           </div>
 
           <div className="border-t border-border pt-5 mb-6">
-            <div className="mb-3"><h3 className="text-[15px] font-medium text-ink">Course image</h3><p className="text-[11px] text-gray-500">This image appears on the Academy course card and course page. Upload a landscape image for the best result.</p></div>
+            <div className="mb-3"><h3 className="text-[15px] font-medium text-ink">Course image</h3><p className="text-[11px] text-secondary">This image appears on the Academy course card and course page. Upload a landscape image for the best result.</p></div>
             <div className="grid gap-4 md:grid-cols-[260px_1fr] rounded-xl border border-border bg-surface/50 p-4">
               <div className="aspect-[16/10] overflow-hidden rounded-xl border border-border bg-white">
                 {editing.image_url ? <img src={editing.image_url} alt={`${editing.title || 'Course'} preview`} className="h-full w-full object-cover" /> : <div className="flex h-full items-center justify-center text-gray-300"><ImageIcon size={34} /></div>}
               </div>
               <div className="flex flex-col justify-center gap-3">
-                <p className="text-[12px] leading-5 text-gray-500">Choose a JPEG, PNG or WebP from your computer or phone. You no longer need to paste an image URL.</p>
+                <p className="text-[12px] leading-5 text-secondary">Choose a JPEG, PNG or WebP from your computer or phone. You no longer need to paste an image URL.</p>
                 <div className="flex flex-wrap gap-2">
                   <label className="btn-secondary w-fit cursor-pointer inline-flex items-center gap-2"><Upload size={14}/>{uploadingImage ? 'Uploading...' : editing.image_url ? 'Replace image' : 'Upload image'}<input type="file" accept="image/jpeg,image/png,image/webp" className="hidden" disabled={uploadingImage} onChange={event => { const file = event.target.files?.[0]; if (file) uploadCourseImage(file); event.target.value = '' }} /></label>
                   {editing.image_url ? <button type="button" onClick={() => setEditing({ ...editing, image_url: '' })} className="btn-secondary text-[12px]">Remove image</button> : null}
@@ -179,7 +179,7 @@ export default function AdminAcademyPage() {
           </div>
 
           <div className="border-t border-border pt-5 mb-6">
-            <div className="flex items-center justify-between mb-3"><div><h3 className="text-[15px] font-medium text-ink">Course modules</h3><p className="text-[11px] text-gray-500">This is the wording learners read.</p></div><button onClick={addLesson} className="btn-secondary text-[12px] inline-flex items-center gap-1"><Plus size={12} /> Add module</button></div>
+            <div className="flex items-center justify-between mb-3"><div><h3 className="text-[15px] font-medium text-ink">Course modules</h3><p className="text-[11px] text-secondary">This is the wording learners read.</p></div><button onClick={addLesson} className="btn-secondary text-[12px] inline-flex items-center gap-1"><Plus size={12} /> Add module</button></div>
             <div className="space-y-4">
               {editing.lessons.map((lesson: any, index: number) => (
                 <div key={index} className="border border-border rounded-xl p-4">
@@ -192,7 +192,7 @@ export default function AdminAcademyPage() {
           </div>
 
           <div className="border-t border-border pt-5 mb-6">
-            <div className="flex items-center justify-between mb-3"><div><h3 className="text-[15px] font-medium text-ink">Final quiz</h3><p className="text-[11px] text-gray-500">Choose the correct answer under each question.</p></div><button onClick={addQuestion} className="btn-secondary text-[12px] inline-flex items-center gap-1"><Plus size={12} /> Add question</button></div>
+            <div className="flex items-center justify-between mb-3"><div><h3 className="text-[15px] font-medium text-ink">Final quiz</h3><p className="text-[11px] text-secondary">Choose the correct answer under each question.</p></div><button onClick={addQuestion} className="btn-secondary text-[12px] inline-flex items-center gap-1"><Plus size={12} /> Add question</button></div>
             <div className="space-y-4">
               {editing.quiz.map((question: any, index: number) => (
                 <div key={index} className="border border-border rounded-xl p-4">
@@ -209,16 +209,16 @@ export default function AdminAcademyPage() {
         </div>
       )}
 
-      {loading ? <div className="flex items-center justify-center h-64"><div className="animate-spin w-8 h-8 border-2 border-gold border-t-transparent rounded-full" /></div> : <>
+      {loading ? <div className="flex items-center justify-center h-64"><div className="animate-spin w-8 h-8 border-2 border-accent border-t-transparent rounded-full" /></div> : <>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-8">
-          <div className="dashboard-card !py-4"><p className="text-[11px] uppercase tracking-wide text-gray-400 mb-1">Course revenue</p><p className="text-[22px] font-semibold text-ink">£{(totalRevenue / 100).toFixed(2)}</p></div>
-          <div className="dashboard-card !py-4"><p className="text-[11px] uppercase tracking-wide text-gray-400 mb-1">Live courses</p><p className="text-[22px] font-semibold text-ink">{activeCourses.length}</p></div>
-          <div className="dashboard-card !py-4"><p className="text-[11px] uppercase tracking-wide text-gray-400 mb-1">Certificates issued</p><p className="text-[22px] font-semibold text-green-700">{rows.filter(row => row.completed_at).length}</p></div>
+          <div className="dashboard-card !py-4"><p className="text-[11px] uppercase tracking-wide text-muted mb-1">Course revenue</p><p className="text-[22px] font-semibold text-ink">£{(totalRevenue / 100).toFixed(2)}</p></div>
+          <div className="dashboard-card !py-4"><p className="text-[11px] uppercase tracking-wide text-muted mb-1">Live courses</p><p className="text-[22px] font-semibold text-ink">{activeCourses.length}</p></div>
+          <div className="dashboard-card !py-4"><p className="text-[11px] uppercase tracking-wide text-muted mb-1">Certificates issued</p><p className="text-[22px] font-semibold text-green-700">{rows.filter(row => row.completed_at).length}</p></div>
         </div>
 
         <div className="dashboard-card mb-8">
           <h2 className="text-[16px] font-medium text-ink mb-1 flex items-center gap-2"><UserPlus size={16} className="text-accent" /> Enrol a therapist</h2>
-          <p className="text-[12px] text-gray-500 mb-3">Grant a live course free of charge. The therapist is notified immediately.</p>
+          <p className="text-[12px] text-secondary mb-3">Grant a live course free of charge. The therapist is notified immediately.</p>
           <div className="flex flex-col sm:flex-row gap-2"><select value={grantCandidate} onChange={event => setGrantCandidate(event.target.value)} className="input-field text-[13px] flex-1"><option value="">Choose a therapist...</option>{candidates.map(candidate => <option key={candidate.id} value={candidate.id}>{candidate.full_name}</option>)}</select><select value={grantCourse} onChange={event => setGrantCourse(event.target.value)} className="input-field text-[13px] flex-1"><option value="">Choose a course...</option>{activeCourses.map(course => <option key={course.slug} value={course.slug}>{course.title}</option>)}</select><button disabled={!grantCandidate || !grantCourse || busyId === 'grant'} onClick={() => act({ action: 'grant', candidateId: grantCandidate, courseSlug: grantCourse }, 'grant', 'Enrolled - the therapist has been notified.')} className="btn-primary text-[13px] shrink-0 disabled:opacity-50">{busyId === 'grant' ? 'Enrolling...' : 'Enrol free'}</button></div>
         </div>
 
@@ -228,15 +228,15 @@ export default function AdminAcademyPage() {
           return <div key={course.slug} className={`dashboard-card !p-0 overflow-hidden ${course.is_active ? '' : 'opacity-70'}`}>
             <div className="p-4 flex flex-col md:flex-row md:items-center gap-3">
               <div className="h-16 w-24 shrink-0 overflow-hidden rounded-lg border border-border bg-surface">{course.image_url ? <img src={course.image_url} alt="" className="h-full w-full object-cover"/> : <div className="flex h-full items-center justify-center text-gray-300"><ImageIcon size={20}/></div>}</div>
-              <button onClick={() => setOpenCourse(open ? null : course.slug)} className="text-left flex-1 min-w-0"><div className="flex flex-wrap items-center gap-2"><p className="text-[14px] font-medium text-ink">{course.title}</p><span className={`text-[10px] font-semibold uppercase px-2 py-0.5 rounded-full ${course.is_active ? 'bg-green-50 text-green-700' : 'bg-gray-100 text-gray-500'}`}>{course.is_active ? 'Live' : 'Archived'}</span>{course.managed && <span className="text-[10px] text-accent">Edited</span>}</div><p className="text-[11px] text-gray-500 mt-1">{course.category} · {course.lessons.length} modules · £{((course.price || 0) / 100).toFixed(2)} · {course.enrolments} enrolments · £{(course.revenue / 100).toFixed(2)} revenue</p></button>
-              <div className="flex items-center gap-2"><button onClick={() => editCourse(course)} className="btn-secondary text-[11px]">Edit</button><button onClick={() => act({ action: course.is_active ? 'archive_course' : 'restore_course', courseSlug: course.slug }, `toggle-${course.slug}`, course.is_active ? 'Course archived. Existing learners and certificates are preserved.' : 'Course restored to the catalogue.')} className={`text-[11px] font-medium ${course.is_active ? 'text-red-500' : 'text-green-700'}`}>{course.is_active ? 'Archive' : 'Restore'}</button><button onClick={() => setOpenCourse(open ? null : course.slug)} className="text-gray-400">{open ? <ChevronUp size={16} /> : <ChevronDown size={16} />}</button></div>
+              <button onClick={() => setOpenCourse(open ? null : course.slug)} className="text-left flex-1 min-w-0"><div className="flex flex-wrap items-center gap-2"><p className="text-[14px] font-medium text-ink">{course.title}</p><span className={`text-[10px] font-semibold uppercase px-2 py-0.5 rounded-full ${course.is_active ? 'bg-green-50 text-green-700' : 'bg-gray-100 text-secondary'}`}>{course.is_active ? 'Live' : 'Archived'}</span>{course.managed && <span className="text-[10px] text-accent">Edited</span>}</div><p className="text-[11px] text-secondary mt-1">{course.category} · {course.lessons.length} modules · £{((course.price || 0) / 100).toFixed(2)} · {course.enrolments} enrolments · £{(course.revenue / 100).toFixed(2)} revenue</p></button>
+              <div className="flex items-center gap-2"><button onClick={() => editCourse(course)} className="btn-secondary text-[11px]">Edit</button><button onClick={() => act({ action: course.is_active ? 'archive_course' : 'restore_course', courseSlug: course.slug }, `toggle-${course.slug}`, course.is_active ? 'Course archived. Existing learners and certificates are preserved.' : 'Course restored to the catalogue.')} className={`text-[11px] font-medium ${course.is_active ? 'text-red-500' : 'text-green-700'}`}>{course.is_active ? 'Archive' : 'Restore'}</button><button onClick={() => setOpenCourse(open ? null : course.slug)} className="text-muted">{open ? <ChevronUp size={16} /> : <ChevronDown size={16} />}</button></div>
             </div>
-            {open && <div className="border-t border-border bg-surface/50 p-4"><p className="text-[13px] text-gray-600 mb-3">{course.tagline}</p><div className="grid grid-cols-1 md:grid-cols-2 gap-2">{course.lessons.map((lesson: any, index: number) => <div key={index} className="bg-white border border-border rounded-lg p-3"><p className="text-[12px] font-medium text-ink">{index + 1}. {lesson.title}</p><p className="text-[11px] text-gray-500 mt-1 line-clamp-3 whitespace-pre-line">{lesson.content}</p></div>)}</div></div>}
+            {open && <div className="border-t border-border bg-surface/50 p-4"><p className="text-[13px] text-gray-600 mb-3">{course.tagline}</p><div className="grid grid-cols-1 md:grid-cols-2 gap-2">{course.lessons.map((lesson: any, index: number) => <div key={index} className="bg-white border border-border rounded-lg p-3"><p className="text-[12px] font-medium text-ink">{index + 1}. {lesson.title}</p><p className="text-[11px] text-secondary mt-1 line-clamp-3 whitespace-pre-line">{lesson.content}</p></div>)}</div></div>}
           </div>
         })}</div>
 
         <h2 className="text-[16px] font-medium text-ink mb-3">Learners ({rows.filter(row => row.paid_at).length})</h2>
-        {rows.filter(row => row.paid_at).length === 0 ? <div className="dashboard-card text-center py-12 text-gray-400"><GraduationCap size={40} className="mx-auto mb-3 opacity-30" /><p>No enrolments yet.</p></div> : <div className="dashboard-card overflow-x-auto"><table className="w-full text-left text-[13px]"><thead><tr className="text-[11px] uppercase tracking-wide text-gray-400 border-b border-border"><th className="py-2 pr-4">Therapist</th><th className="py-2 pr-4">Course</th><th className="py-2 pr-4">Paid</th><th className="py-2 pr-4">Progress</th><th className="py-2 pr-4">Status</th><th className="py-2" /></tr></thead><tbody>{rows.filter(row => row.paid_at).map(row => <tr key={row.id} className="border-b border-border/60"><td className="py-2.5 pr-4 font-medium text-ink capitalize">{row.candidate_name}</td><td className="py-2.5 pr-4">{row.course_title}</td><td className="py-2.5 pr-4 whitespace-nowrap">£{((row.amount_paid || 0) / 100).toFixed(2)}{row.amount_paid === 0 ? ' (comp)' : ''}</td><td className="py-2.5 pr-4">{row.lessons_done}/{row.lessons_total}{row.quiz_score != null ? ` · quiz ${row.quiz_score}%` : ''}</td><td className="py-2.5 pr-4">{row.completed_at ? <span className="inline-flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-full bg-green-50 text-green-700"><Award size={11} /> Certified</span> : <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-amber-50 text-amber-700">In progress</span>}</td><td className="py-2.5 text-right">{row.completed_at ? <button onClick={() => { const reason = window.prompt('Reason shown to the therapist (optional):') ?? ''; act({ action: 'revoke', id: row.id, reason }, row.id, 'Certificate withdrawn.') }} className="text-[11px] font-medium text-red-500">Revoke</button> : <button onClick={() => act({ action: 'award', id: row.id }, row.id, 'Certificate awarded.')} className="text-[11px] font-medium text-green-700">Award certificate</button>}</td></tr>)}</tbody></table></div>}
+        {rows.filter(row => row.paid_at).length === 0 ? <div className="dashboard-card text-center py-12 text-muted"><GraduationCap size={40} className="mx-auto mb-3 opacity-30" /><p>No enrolments yet.</p></div> : <div className="dashboard-card overflow-x-auto"><table className="w-full text-left text-[13px]"><thead><tr className="text-[11px] uppercase tracking-wide text-muted border-b border-border"><th className="py-2 pr-4">Therapist</th><th className="py-2 pr-4">Course</th><th className="py-2 pr-4">Paid</th><th className="py-2 pr-4">Progress</th><th className="py-2 pr-4">Status</th><th className="py-2" /></tr></thead><tbody>{rows.filter(row => row.paid_at).map(row => <tr key={row.id} className="border-b border-border/60"><td className="py-2.5 pr-4 font-medium text-ink capitalize">{row.candidate_name}</td><td className="py-2.5 pr-4">{row.course_title}</td><td className="py-2.5 pr-4 whitespace-nowrap">£{((row.amount_paid || 0) / 100).toFixed(2)}{row.amount_paid === 0 ? ' (comp)' : ''}</td><td className="py-2.5 pr-4">{row.lessons_done}/{row.lessons_total}{row.quiz_score != null ? ` · quiz ${row.quiz_score}%` : ''}</td><td className="py-2.5 pr-4">{row.completed_at ? <span className="inline-flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-full bg-green-50 text-green-700"><Award size={11} /> Certified</span> : <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-amber-50 text-amber-700">In progress</span>}</td><td className="py-2.5 text-right">{row.completed_at ? <button onClick={() => { const reason = window.prompt('Reason shown to the therapist (optional):') ?? ''; act({ action: 'revoke', id: row.id, reason }, row.id, 'Certificate withdrawn.') }} className="text-[11px] font-medium text-red-500">Revoke</button> : <button onClick={() => act({ action: 'award', id: row.id }, row.id, 'Certificate awarded.')} className="text-[11px] font-medium text-green-700">Award certificate</button>}</td></tr>)}</tbody></table></div>}
       </>}
     </DashboardShell>
   )

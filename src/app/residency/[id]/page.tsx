@@ -47,7 +47,7 @@ export default async function ResidencyDetailPage(props: { params: Promise<{ id:
   const dayRate = Number(r.day_rate || (r.weekly_rate ? Math.round(Number(r.weekly_rate) / 5) : 0))
 
   return (
-    <div className="min-h-screen bg-[#f7f7f7]">
+    <div className="min-h-screen bg-[#f5f6f8]">
       <Navbar />
       <div className="pt-[76px] bg-white border-b border-border"><div className="max-w-6xl mx-auto px-6 lg:px-8 py-3"><Link href="/residency" className="text-[12px] text-muted hover:text-ink flex items-center gap-1"><ArrowLeft size={12}/>Back to Residency</Link></div></div>
 

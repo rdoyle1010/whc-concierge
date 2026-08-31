@@ -88,7 +88,7 @@ export default function EmployerBillingPage() {
         <div className="dashboard-card"><div className="text-muted mb-2"><Briefcase size={16} /></div><p className="text-[24px] font-semibold text-ink">{listings.length}</p><p className="text-[11px] text-muted">Total job posts</p></div>
         <div className="dashboard-card"><div className="text-muted mb-2"><CreditCard size={16} /></div><p className="text-[24px] font-semibold text-ink">{listings.filter(l => l.is_live).length}</p><p className="text-[11px] text-muted">Active listings</p></div>
         <div className="dashboard-card"><p className="text-[14px] font-medium text-ink mb-1">Membership tier</p><p className="text-[13px] font-medium text-ink capitalize">{profile?.membership_tier || 'Free'}</p></div>
-        <div className={`dashboard-card ${featuredActive ? 'border-[#555555]' : ''}`}><div className="text-[#10283b] mb-2"><Star size={16} fill={featuredActive ? 'currentColor' : 'none'} /></div><p className="text-[14px] font-semibold text-ink">{featuredActive ? 'Featured active' : 'Standard profile'}</p><p className="text-[11px] text-muted mt-1">{featuredActive && profile?.featured_until ? `Until ${new Date(profile.featured_until).toLocaleDateString('en-GB')}` : featuredPrice || 'Featured upgrade available'}</p></div>
+        <div className={`dashboard-card ${featuredActive ? 'border-[#5a6a76]' : ''}`}><div className="text-[#10283b] mb-2"><Star size={16} fill={featuredActive ? 'currentColor' : 'none'} /></div><p className="text-[14px] font-semibold text-ink">{featuredActive ? 'Featured active' : 'Standard profile'}</p><p className="text-[11px] text-muted mt-1">{featuredActive && profile?.featured_until ? `Until ${new Date(profile.featured_until).toLocaleDateString('en-GB')}` : featuredPrice || 'Featured upgrade available'}</p></div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
@@ -100,7 +100,7 @@ export default function EmployerBillingPage() {
           </div>
         </div>
 
-        <div className="dashboard-card border-[#555555]/50">
+        <div className="dashboard-card border-[#5a6a76]/50">
           <div className="flex items-center gap-2 text-[#10283b]"><Star size={16} /><p className="text-[14px] font-semibold">Featured Hotel</p></div>
           <p className="mt-3 text-[13px] text-ink">{featuredActive ? 'Your property currently receives premium visibility.' : 'Put your property in front of approved WHC Talent.'}</p>
           <p className="mt-2 text-[12px] leading-5 text-muted">{featuredPrice ? `Current new-subscription price: ${featuredPrice}.` : ''} Pricing shown is current and confirmed at checkout.</p>

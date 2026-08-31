@@ -115,7 +115,7 @@ export default function TalentAgencyPage() {
     completed: 'bg-blue-50 text-blue-700',
     declined: 'bg-red-50 text-red-700',
     cancelled: 'bg-red-50 text-red-700',
-    expired: 'bg-gray-100 text-gray-500',
+    expired: 'bg-gray-100 text-secondary',
   }
 
   // Agency Plus properties' offers are surfaced first - part of what their
@@ -160,7 +160,7 @@ export default function TalentAgencyPage() {
           <div className="flex items-center justify-between bg-[#f5f6f8] border border-border rounded-xl px-5 py-4 mb-6">
             <div>
               <p className="text-[14px] font-medium text-ink">You&apos;re not on the agency register yet</p>
-              <p className="text-[12px] text-gray-500 mt-0.5">Join from {AGENCY_LISTING_TIERS.basic.display} to appear in the directory and receive shift offers - urgent same-day offers arrive by text.</p>
+              <p className="text-[12px] text-secondary mt-0.5">Join from {AGENCY_LISTING_TIERS.basic.display} to appear in the directory and receive shift offers - urgent same-day offers arrive by text.</p>
             </div>
             <Link href="/talent/agency/settings" className="btn-primary text-[12px] shrink-0 ml-4">Join now</Link>
           </div>
@@ -168,15 +168,15 @@ export default function TalentAgencyPage() {
       )}
 
       {loading ? (
-        <div className="flex items-center justify-center h-64"><div className="animate-spin w-8 h-8 border-2 border-gold border-t-transparent rounded-full" /></div>
+        <div className="flex items-center justify-center h-64"><div className="animate-spin w-8 h-8 border-2 border-accent border-t-transparent rounded-full" /></div>
       ) : (
         <>
           {hasEarnings && (
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8">
-              <div className="dashboard-card !py-4"><p className="text-[11px] uppercase tracking-wide text-gray-400 mb-1">Paid to you</p><p className="text-[20px] font-semibold text-green-700">£{paidOut}</p></div>
-              <div className="dashboard-card !py-4"><p className="text-[11px] uppercase tracking-wide text-gray-400 mb-1">Awaiting payout</p><p className="text-[20px] font-semibold text-ink">£{awaitingPayout}</p><p className="text-[10px] text-gray-400">Property has paid - WHC pays you after the shift</p></div>
-              <div className="dashboard-card !py-4"><p className="text-[11px] uppercase tracking-wide text-gray-400 mb-1">Awaiting property payment</p><p className="text-[20px] font-semibold text-amber-600">£{awaitingProperty}</p></div>
-              <div className="dashboard-card !py-4"><p className="text-[11px] uppercase tracking-wide text-gray-400 mb-1">On hold</p><p className="text-[20px] font-semibold text-gray-500">£{onHold}</p><p className="text-[10px] text-gray-400">{onHold > 0 ? 'An issue is being reviewed by WHC' : 'No open issues'}</p></div>
+              <div className="dashboard-card !py-4"><p className="text-[11px] uppercase tracking-wide text-muted mb-1">Paid to you</p><p className="text-[20px] font-semibold text-green-700">£{paidOut}</p></div>
+              <div className="dashboard-card !py-4"><p className="text-[11px] uppercase tracking-wide text-muted mb-1">Awaiting payout</p><p className="text-[20px] font-semibold text-ink">£{awaitingPayout}</p><p className="text-[10px] text-muted">Property has paid - WHC pays you after the shift</p></div>
+              <div className="dashboard-card !py-4"><p className="text-[11px] uppercase tracking-wide text-muted mb-1">Awaiting property payment</p><p className="text-[20px] font-semibold text-amber-600">£{awaitingProperty}</p></div>
+              <div className="dashboard-card !py-4"><p className="text-[11px] uppercase tracking-wide text-muted mb-1">On hold</p><p className="text-[20px] font-semibold text-secondary">£{onHold}</p><p className="text-[10px] text-muted">{onHold > 0 ? 'An issue is being reviewed by WHC' : 'No open issues'}</p></div>
             </div>
           )}
           {hasEarnings && (
@@ -186,7 +186,7 @@ export default function TalentAgencyPage() {
           {offers.length > 0 && (
             <div className="mb-8">
               <h2 className="text-[16px] font-medium text-ink mb-3">Offers</h2>
-              <p className="text-[13px] text-gray-500 mb-4">Properties have offered you these shifts. Accept, decline or counter with a different day rate.</p>
+              <p className="text-[13px] text-secondary mb-4">Properties have offered you these shifts. Accept, decline or counter with a different day rate.</p>
               {actionError && <p className="text-[13px] text-red-600 mb-3">{actionError}</p>}
               <div className="space-y-4">
                 {offers.map((b) => (
@@ -205,7 +205,7 @@ export default function TalentAgencyPage() {
                           <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${statusColors[b.status] || ''}`}>{b.status === 'countered' ? 'counter sent' : b.status}</span>
                           {b.expires_at && <span className={`text-[11px] font-medium ${b.urgent ? 'text-red-600' : 'text-amber-600'}`}>{expiryLabel(b.expires_at)}</span>}
                         </div>
-                        <div className="flex items-center space-x-4 text-sm text-gray-500">
+                        <div className="flex items-center space-x-4 text-sm text-secondary">
                           <span className="flex items-center space-x-1"><Calendar size={14} /><span>{b.shift_date ? new Date(b.shift_date).toLocaleDateString() : 'Date TBC'}</span></span>
                           {b.shift_type && <span className="flex items-center space-x-1"><Clock size={14} /><span>{b.shift_type}</span></span>}
                           {b.hours && <span>{b.hours}h</span>}
@@ -213,7 +213,7 @@ export default function TalentAgencyPage() {
                         </div>
                         {b.cascade_notes && <p className="text-[12px] text-gray-600 mt-1.5 italic">&ldquo;{b.cascade_notes}&rdquo;</p>}
                         {(b.employer_location || b.commute_car_required !== null || b.nearest_transport || b.distance_miles != null || b.taxi_support || b.parking_available) && (
-                          <div className="flex items-center flex-wrap gap-x-4 gap-y-1 text-[12px] text-gray-500 mt-2">
+                          <div className="flex items-center flex-wrap gap-x-4 gap-y-1 text-[12px] text-secondary mt-2">
                             {b.employer_location && <span className="flex items-center gap-1"><MapPin size={12} />{b.employer_location}{b.employer_postcode ? ` (${b.employer_postcode})` : ''}</span>}
                             {b.distance_miles != null && <span className={`flex items-center gap-1 font-medium ${b.within_radius === false ? 'text-amber-700' : 'text-green-700'}`}>{b.distance_miles} miles from you{b.within_radius === false ? ` - outside your ${b.candidate_travel_radius}-mile radius` : b.within_radius === true ? ' - within your radius' : ''}</span>}
                             {b.commute_car_required === true && <span className="flex items-center gap-1 text-amber-700"><Car size={12} /> Car required</span>}
@@ -221,10 +221,10 @@ export default function TalentAgencyPage() {
                             {b.nearest_transport && <span className="flex items-center gap-1"><TrainFront size={12} />{b.nearest_transport}{b.transport_walk_minutes ? ` · about ${b.transport_walk_minutes} min walk` : ''}</span>}
                             {b.parking_available && <span className="flex items-center gap-1"><Car size={12} /> Staff parking</span>}
                             {b.taxi_support && <span className="flex items-center gap-1">Taxi / shuttle help{b.taxi_notes ? ` · ${b.taxi_notes}` : ''}</span>}
-                            {b.travel_notes && <span className="w-full text-gray-500">Property-supplied access note: {b.travel_notes}</span>}
+                            {b.travel_notes && <span className="w-full text-secondary">Property-supplied access note: {b.travel_notes}</span>}
                           </div>
                         )}
-                        {b.employer_description && <p className="mt-2 max-w-2xl text-[12px] leading-5 text-gray-500 line-clamp-2">{b.employer_description}</p>}
+                        {b.employer_description && <p className="mt-2 max-w-2xl text-[12px] leading-5 text-secondary line-clamp-2">{b.employer_description}</p>}
                         {b.employer_profile_id && (
                           <Link href={`/properties/${b.employer_profile_id}`} target="_blank" className="mt-2 inline-flex items-center gap-1 text-[12px] font-semibold text-accent hover:underline">
                             View the full property profile - the spa, team, culture and reviews
@@ -252,7 +252,7 @@ export default function TalentAgencyPage() {
                           </div>
                         )
                       ) : (
-                        <p className="text-[13px] text-gray-500">Counter sent - awaiting the property&apos;s response.</p>
+                        <p className="text-[13px] text-secondary">Counter sent - awaiting the property&apos;s response.</p>
                       )}
                     </div>
                   </div>
@@ -263,16 +263,16 @@ export default function TalentAgencyPage() {
 
           {offers.length > 0 && <h2 className="text-[16px] font-medium text-ink mb-3">Shifts</h2>}
           {shifts.length === 0 && offers.length === 0 ? (
-            <div className="dashboard-card text-center py-16 text-gray-400"><Calendar size={48} className="mx-auto mb-4 opacity-50" /><p>No agency shifts booked yet.</p></div>
+            <div className="dashboard-card text-center py-16 text-muted"><Calendar size={48} className="mx-auto mb-4 opacity-50" /><p>No agency shifts booked yet.</p></div>
           ) : shifts.length === 0 ? (
-            <div className="dashboard-card text-center py-8 text-gray-400"><p className="text-sm">No confirmed shifts yet.</p></div>
+            <div className="dashboard-card text-center py-8 text-muted"><p className="text-sm">No confirmed shifts yet.</p></div>
           ) : (
             <div className="space-y-4">
               {shifts.map((b) => (
                 <div key={b.id} className="dashboard-card flex items-center justify-between">
                   <div>
                     <h3 className="font-medium text-ink">{b.employer_name || 'Property'}{b.employer_review_score > 0 ? <span className="ml-2 inline-flex items-center gap-0.5 text-[11px] font-medium text-amber-500 align-middle"><Star size={10} className="fill-amber-400 text-amber-400" />{Number(b.employer_review_score).toFixed(1)}</span> : null}</h3>
-                    <div className="flex items-center space-x-4 text-sm text-gray-500 mt-1">
+                    <div className="flex items-center space-x-4 text-sm text-secondary mt-1">
                       <span className="flex items-center space-x-1"><Calendar size={14} /><span>{b.shift_date ? new Date(b.shift_date).toLocaleDateString() : 'Date TBC'}</span></span>
                       {b.shift_type && <span className="flex items-center space-x-1"><Clock size={14} /><span>{b.shift_type}</span></span>}
                       {b.hours && <span>{b.hours}h</span>}
@@ -280,7 +280,7 @@ export default function TalentAgencyPage() {
                     {b.status === 'accepted' && <p className="text-[11px] text-blue-700 mt-1.5">Agreed at £{b.rate}/hour - awaiting the property&apos;s payment to WHC. Once paid, your full payout of £{b.rate * (b.hours && b.hours > 0 ? b.hours : 8)} is confirmed. The property pays the WHC fee - nothing is deducted from you.</p>}
                     {(b.status === 'confirmed' || b.status === 'completed') && b.dispute_status === 'open' && <p className="text-[11px] text-amber-700 mt-1.5">The property has raised an issue with this shift - your payout of £{expectedPayout(b)} is on hold while WHC reviews it.</p>}
                     {(b.status === 'confirmed' || b.status === 'completed') && b.dispute_status !== 'open' && (
-                      b.payout_status === 'cancelled' ? <p className="text-[11px] text-gray-500 mt-1.5">Issue resolved - no payout is due for this booking.</p> : <p className="text-[11px] text-green-700 mt-1.5">Paid &amp; confirmed - WHC pays you £{expectedPayout(b)} after the shift{b.payout_status === 'paid' ? ` (payout sent${b.payout_at ? ` ${new Date(b.payout_at).toLocaleDateString('en-GB')}` : ''})` : ''}.</p>
+                      b.payout_status === 'cancelled' ? <p className="text-[11px] text-secondary mt-1.5">Issue resolved - no payout is due for this booking.</p> : <p className="text-[11px] text-green-700 mt-1.5">Paid &amp; confirmed - WHC pays you £{expectedPayout(b)} after the shift{b.payout_status === 'paid' ? ` (payout sent${b.payout_at ? ` ${new Date(b.payout_at).toLocaleDateString('en-GB')}` : ''})` : ''}.</p>
                     )}
                   </div>
                   <div className="text-right">
@@ -300,11 +300,11 @@ export default function TalentAgencyPage() {
                           {cancelError && <p className="text-[11px] text-red-600 max-w-[240px]">{cancelError}</p>}
                           <div className="flex items-center gap-3">
                             <button type="button" onClick={() => cancelShift(b.id)} disabled={busyId === b.id || cancelReason.trim().length < 5} className="text-[12px] font-medium text-red-600 hover:text-red-700 disabled:opacity-50">Confirm cancellation</button>
-                            <button type="button" onClick={() => { setCancellingId(null); setCancelReason(''); setCancelError('') }} className="text-[12px] text-gray-400 hover:text-ink">Keep shift</button>
+                            <button type="button" onClick={() => { setCancellingId(null); setCancelReason(''); setCancelError('') }} className="text-[12px] text-muted hover:text-ink">Keep shift</button>
                           </div>
                         </div>
                       ) : (
-                        <button type="button" onClick={() => { setCancellingId(b.id); setCancelReason(''); setCancelError('') }} className="block ml-auto mt-2 text-[12px] text-gray-400 underline hover:text-red-600">Cancel shift</button>
+                        <button type="button" onClick={() => { setCancellingId(b.id); setCancelReason(''); setCancelError('') }} className="block ml-auto mt-2 text-[12px] text-muted underline hover:text-red-600">Cancel shift</button>
                       )
                     )}
                   </div>

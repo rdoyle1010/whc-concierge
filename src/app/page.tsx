@@ -269,7 +269,7 @@ function FeaturedTalentSection({ talent }: { talent: FeaturedTalent[] }) {
       </div>
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {talent.map(candidate => <Link key={candidate.id} href={`/employer/candidates?candidate=${encodeURIComponent(candidate.id)}`} aria-label={`View featured profile for ${candidate.name}`} className="group flex items-center gap-4 rounded-2xl border border-black/10 bg-white p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:border-black/20 hover:shadow-md">
-          <div className="h-16 w-16 shrink-0 overflow-hidden rounded-full bg-[#eef2f4]">
+          <div className="h-16 w-16 shrink-0 overflow-hidden rounded-full bg-[#e8eef4]">
             {candidate.image ? <Image src={candidate.image} alt={candidate.name} width={64} height={64} sizes="64px" quality={65} className="h-full w-full object-cover" /> : <div className="flex h-full w-full items-center justify-center text-xl font-semibold opacity-40">{candidate.name[0]}</div>}
           </div>
           <div className="min-w-0 flex-1">

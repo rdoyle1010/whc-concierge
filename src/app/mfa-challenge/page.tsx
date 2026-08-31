@@ -7,7 +7,7 @@ import { createClient } from '@/lib/supabase/client'
 import { ShieldCheck } from 'lucide-react'
 
 export default function MfaChallengePage() {
-  return <Suspense fallback={<div className="min-h-screen bg-[#f5f5f5]" />}><MfaChallenge /></Suspense>
+  return <Suspense fallback={<div className="min-h-screen bg-[#f5f6f8]" />}><MfaChallenge /></Suspense>
 }
 
 function MfaChallenge() {
@@ -51,7 +51,7 @@ function MfaChallenge() {
     window.location.replace('/login')
   }
 
-  return <div className="min-h-screen bg-[#f5f5f5] flex items-center justify-center px-5 py-10">
+  return <div className="min-h-screen bg-[#f5f6f8] flex items-center justify-center px-5 py-10">
     <div className="w-full max-w-[430px]">
       <Wordmark />
       <div className="dashboard-card !p-7 lg:!p-8 mt-9">

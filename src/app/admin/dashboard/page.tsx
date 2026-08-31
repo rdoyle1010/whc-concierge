@@ -181,7 +181,7 @@ export default function AdminDashboard() {
             )}
 
             {health.scale && (
-              <div className="border-t border-border bg-[#fafafa] px-5 py-4">
+              <div className="border-t border-border bg-[#f5f6f8] px-5 py-4">
                 <p className="dashboard-eyebrow !mb-2">Platform scale</p>
                 <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-7">
                   <ScaleCell label="Users" value={health.scale.users} />
@@ -232,7 +232,7 @@ function HealthCell({ label, value, detail, alert = false }: { label: string; va
 
 function FunnelCell({ label, value, emphasis = false }: { label: string; value: number; emphasis?: boolean }) {
   return (
-    <div className={emphasis ? 'bg-[#f3f8f5] px-4 py-4' : 'bg-[#fafafa] px-4 py-4'}>
+    <div className={emphasis ? 'bg-[#f3f8f5] px-4 py-4' : 'bg-[#f5f6f8] px-4 py-4'}>
       <p className="text-[9px] uppercase tracking-[0.13em] text-muted">{label}</p>
       <p className={emphasis ? 'mt-1 text-[23px] font-semibold text-emerald-700' : 'mt-1 text-[23px] font-semibold text-ink'}>{value}</p>
     </div>

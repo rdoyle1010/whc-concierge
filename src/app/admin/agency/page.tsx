@@ -128,7 +128,7 @@ export default function AdminAgencyPage() {
       {error && <div className="bg-red-50 text-red-600 text-sm px-4 py-3 rounded-lg mb-6">{error}</div>}
 
       {loading ? (
-        <div className="flex items-center justify-center h-64"><div className="animate-spin w-8 h-8 border-2 border-gold border-t-transparent rounded-full" /></div>
+        <div className="flex items-center justify-center h-64"><div className="animate-spin w-8 h-8 border-2 border-accent border-t-transparent rounded-full" /></div>
       ) : loadError ? (
         <div className="bg-red-50 text-red-600 text-sm px-4 py-3 border border-red-100">Could not load Agency money - {loadError} Refresh the page to try again.</div>
       ) : (
@@ -141,9 +141,9 @@ export default function AdminAgencyPage() {
             <div className="dashboard-card mb-6">
               <h2 className="text-[16px] font-medium text-ink mb-3">WHC Academy</h2>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
-                <div className="bg-surface rounded-xl px-4 py-3"><p className="text-[11px] uppercase tracking-wide text-gray-400 mb-1">Course revenue</p><p className="text-[20px] font-semibold text-ink">£{(academy.revenue / 100).toFixed(2)}</p></div>
-                <div className="bg-surface rounded-xl px-4 py-3"><p className="text-[11px] uppercase tracking-wide text-gray-400 mb-1">Enrolments</p><p className="text-[20px] font-semibold text-ink">{academy.enrolments}</p></div>
-                <div className="bg-surface rounded-xl px-4 py-3"><p className="text-[11px] uppercase tracking-wide text-gray-400 mb-1">Certificates earned</p><p className="text-[20px] font-semibold text-green-700">{academy.completions}</p></div>
+                <div className="bg-surface rounded-xl px-4 py-3"><p className="text-[11px] uppercase tracking-wide text-muted mb-1">Course revenue</p><p className="text-[20px] font-semibold text-ink">£{(academy.revenue / 100).toFixed(2)}</p></div>
+                <div className="bg-surface rounded-xl px-4 py-3"><p className="text-[11px] uppercase tracking-wide text-muted mb-1">Enrolments</p><p className="text-[20px] font-semibold text-ink">{academy.enrolments}</p></div>
+                <div className="bg-surface rounded-xl px-4 py-3"><p className="text-[11px] uppercase tracking-wide text-muted mb-1">Certificates earned</p><p className="text-[20px] font-semibold text-green-700">{academy.completions}</p></div>
               </div>
               {academy.recent?.length > 0 && (
                 <div className="space-y-1.5">
@@ -162,7 +162,7 @@ export default function AdminAgencyPage() {
           {credits.length > 0 && (
             <div className="dashboard-card border-amber-200 ring-1 ring-amber-100 mb-6">
               <h2 className="text-[16px] font-medium text-ink mb-1">Referral credits to apply ({credits.length})</h2>
-              <p className="text-[12px] text-gray-500 mb-3">Each referrer below is owed a free month on their register listing - apply a one-month coupon to their subscription in Stripe, then mark it done.</p>
+              <p className="text-[12px] text-secondary mb-3">Each referrer below is owed a free month on their register listing - apply a one-month coupon to their subscription in Stripe, then mark it done.</p>
               <div className="space-y-2">
                 {credits.map(c => (
                   <div key={c.id} className="flex items-center justify-between gap-3 text-[13px]">
@@ -189,10 +189,10 @@ export default function AdminAgencyPage() {
           {registerRows.length > 0 && (
             <div className="dashboard-card mb-8 overflow-x-auto">
               <h2 className="text-[16px] font-medium text-ink mb-1">Agency register ({registerRows.filter(r => r.listed).length} listed)</h2>
-              <p className="text-[12px] text-gray-500 mb-4">Employers only see professionals who are listed, approved, location-mapped and within mutual travel radius. Anything red below is why someone is invisible.</p>
+              <p className="text-[12px] text-secondary mb-4">Employers only see professionals who are listed, approved, location-mapped and within mutual travel radius. Anything red below is why someone is invisible.</p>
               <table className="w-full text-left text-[13px]">
                 <thead>
-                  <tr className="text-[11px] uppercase tracking-wide text-gray-400 border-b border-border">
+                  <tr className="text-[11px] uppercase tracking-wide text-muted border-b border-border">
                     <th className="py-2 pr-4">Professional</th>
                     <th className="py-2 pr-4">Listed</th>
                     <th className="py-2 pr-4">Rate</th>
@@ -215,7 +215,7 @@ export default function AdminAgencyPage() {
                       <td className="py-2.5 pr-4">{r.upcoming_windows}</td>
                       <td className="py-2.5 text-right whitespace-nowrap">
                         {r.listed
-                          ? <button onClick={() => registerAction(r.id, 'register_delist')} disabled={busyId === r.id} className="text-[12px] underline text-gray-500 disabled:opacity-50">{busyId === r.id ? 'Working...' : 'Remove from register'}</button>
+                          ? <button onClick={() => registerAction(r.id, 'register_delist')} disabled={busyId === r.id} className="text-[12px] underline text-secondary disabled:opacity-50">{busyId === r.id ? 'Working...' : 'Remove from register'}</button>
                           : <button onClick={() => registerAction(r.id, 'register_list')} disabled={busyId === r.id} className="btn-secondary text-[11px] !px-3 !py-1.5 disabled:opacity-50">{busyId === r.id ? 'Working...' : 'List for 30 days (no charge)'}</button>}
                       </td>
                     </tr>
@@ -238,23 +238,23 @@ export default function AdminAgencyPage() {
                     <div key={b.id} className="bg-white border border-red-200 ring-1 ring-red-100 rounded-xl p-5">
                       <div className="flex items-center justify-between mb-2 flex-wrap gap-2">
                         <p className="text-[14px] font-medium text-ink">{b.employer_name} vs {b.candidate_name} - {b.shift_date ? new Date(b.shift_date).toLocaleDateString('en-GB') : 'date TBC'}</p>
-                        <p className="text-[12px] text-gray-500">Paid in £{b.amount_paid || '-'} · payout was £{b.payout_amount || '-'}{b.stripe_payment_intent ? ` · Stripe PI ${b.stripe_payment_intent}` : ''}</p>
+                        <p className="text-[12px] text-secondary">Paid in £{b.amount_paid || '-'} · payout was £{b.payout_amount || '-'}{b.stripe_payment_intent ? ` · Stripe PI ${b.stripe_payment_intent}` : ''}</p>
                       </div>
                       <p className="text-[13px] text-secondary mb-1"><span className="font-medium">What happened:</span> {b.dispute_reason}</p>
                       {b.dispute_requested && <p className="text-[13px] text-secondary mb-3"><span className="font-medium">Property asked for:</span> {b.dispute_requested}</p>}
                       <div className="flex items-end flex-wrap gap-3">
                         <div>
-                          <label className="text-[11px] text-gray-500 block mb-1">Refund to property (£)</label>
+                          <label className="text-[11px] text-secondary block mb-1">Refund to property (£)</label>
                           <input type="number" min={0} value={inputs.refund} onChange={e => setInputs({ refund: e.target.value })} className="input-field !py-1.5 text-[13px] w-36" placeholder="0" />
                         </div>
                         <div>
-                          <label className="text-[11px] text-gray-500 block mb-1">Adjusted payout to therapist (£)</label>
+                          <label className="text-[11px] text-secondary block mb-1">Adjusted payout to therapist (£)</label>
                           <input type="number" min={0} value={inputs.payout} onChange={e => setInputs({ payout: e.target.value })} className="input-field !py-1.5 text-[13px] w-36" />
                         </div>
                         <button onClick={() => resolveDispute(b.id)} disabled={busyId === b.id}
                           className="btn-primary text-[12px] disabled:opacity-50">{busyId === b.id ? 'Resolving...' : 'Resolve'}</button>
                       </div>
-                      <p className="text-[11px] text-gray-400 mt-2">Issue any actual refund in the Stripe dashboard against the payment intent above - the 10% admin fee is normally retained. Set payout to 0 for a no-show.</p>
+                      <p className="text-[11px] text-muted mt-2">Issue any actual refund in the Stripe dashboard against the payment intent above - the 10% admin fee is normally retained. Set payout to 0 for a no-show.</p>
                     </div>
                   )
                 })}
@@ -263,7 +263,7 @@ export default function AdminAgencyPage() {
           )}
 
           {bookings.length === 0 ? (
-            <div className="dashboard-card text-center py-16 text-gray-400">
+            <div className="dashboard-card text-center py-16 text-muted">
               <Banknote size={48} className="mx-auto mb-4 opacity-50" />
               <p>No agency bookings yet.</p>
             </div>
@@ -271,7 +271,7 @@ export default function AdminAgencyPage() {
             <div className="dashboard-card overflow-x-auto">
               <table className="w-full text-left text-[13px]">
                 <thead>
-                  <tr className="text-[11px] uppercase tracking-wide text-gray-400 border-b border-border">
+                  <tr className="text-[11px] uppercase tracking-wide text-muted border-b border-border">
                     <th className="py-2 pr-4">Date</th>
                     <th className="py-2 pr-4">Property</th>
                     <th className="py-2 pr-4">Therapist</th>
@@ -287,14 +287,14 @@ export default function AdminAgencyPage() {
                     <tr key={b.id} className="border-b border-border/60">
                       <td className="py-2.5 pr-4 whitespace-nowrap">{b.shift_date ? new Date(b.shift_date).toLocaleDateString('en-GB') : '-'}</td>
                       <td className="py-2.5 pr-4">{b.employer_name}</td>
-                      <td className="py-2.5 pr-4">{b.candidate_name}{b.candidate_phone ? <span className="block text-[11px] text-gray-400">{b.candidate_phone}</span> : null}</td>
+                      <td className="py-2.5 pr-4">{b.candidate_name}{b.candidate_phone ? <span className="block text-[11px] text-muted">{b.candidate_phone}</span> : null}</td>
                       <td className="py-2.5 pr-4 whitespace-nowrap">£{b.rate}/hr{b.hours ? ` × ${b.hours}h` : ''}</td>
                       <td className="py-2.5 pr-4 capitalize">
                         {b.status}
                         {b.dispute_status === 'open' && <span className="ml-1.5 text-[10px] font-semibold uppercase bg-red-50 text-red-700 px-1.5 py-0.5 rounded-full">dispute</span>}
-                        {b.dispute_status === 'resolved' && <span className="ml-1.5 text-[10px] font-medium uppercase bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded-full">resolved</span>}
+                        {b.dispute_status === 'resolved' && <span className="ml-1.5 text-[10px] font-medium uppercase bg-gray-100 text-secondary px-1.5 py-0.5 rounded-full">resolved</span>}
                       </td>
-                      <td className="py-2.5 pr-4">{b.paid_at ? `£${b.amount_paid || '-'} on ${new Date(b.paid_at).toLocaleDateString('en-GB')}` : <span className="text-gray-400">not paid</span>}</td>
+                      <td className="py-2.5 pr-4">{b.paid_at ? `£${b.amount_paid || '-'} on ${new Date(b.paid_at).toLocaleDateString('en-GB')}` : <span className="text-muted">not paid</span>}</td>
                       <td className="py-2.5 pr-4">{b.payout_amount ? `£${b.payout_amount}` : '-'}</td>
                       <td className="py-2.5 text-right">
                         {b.paid_at && b.payout_status !== 'paid' && (

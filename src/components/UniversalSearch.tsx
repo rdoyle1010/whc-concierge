@@ -136,7 +136,7 @@ export default function UniversalSearch({ variant, onNavigate }: { variant: 'nav
           type="button"
           onClick={() => setOpen(true)}
           aria-label="Search the platform"
-          className={`flex h-9 w-9 items-center justify-center transition-colors ${dark ? 'text-white/70 hover:text-white' : 'border border-border bg-white text-secondary hover:border-[#c4ccd2] hover:text-ink'}`}
+          className={`flex h-9 w-9 items-center justify-center transition-colors ${dark ? 'text-white/70 hover:text-white' : 'border border-border bg-white text-secondary hover:border-[#8a949b] hover:text-ink'}`}
         >
           <Search size={16} />
         </button>
@@ -177,7 +177,7 @@ export default function UniversalSearch({ variant, onNavigate }: { variant: 'nav
           <div
             id="universal-search-results"
             role="listbox"
-            className="z-[80] border border-border bg-white shadow-[0_18px_48px_rgba(5,29,46,.14)] max-lg:mt-2 max-lg:max-h-[calc(100vh-120px)] max-lg:overflow-y-auto lg:absolute lg:right-0 lg:top-[calc(100%+10px)] lg:max-h-[70vh] lg:w-[400px] lg:overflow-y-auto"
+            className="fade-in z-[80] border border-border bg-white shadow-[0_18px_48px_rgba(5,29,46,.14)] max-lg:mt-2 max-lg:max-h-[calc(100vh-120px)] max-lg:overflow-y-auto lg:absolute lg:right-0 lg:top-[calc(100%+10px)] lg:max-h-[70vh] lg:w-[400px] lg:overflow-y-auto"
           >
             {loading && !searched ? (
               <div className="px-4 py-4" aria-hidden="true">

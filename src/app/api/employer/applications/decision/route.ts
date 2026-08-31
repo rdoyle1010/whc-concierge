@@ -4,6 +4,7 @@ import { getRequestUser } from '@/lib/request-user'
 import { trackEvent } from '@/lib/analytics'
 import { createNotification } from '@/lib/notifications'
 import { sendSmsIfOptedIn } from '@/lib/sms'
+import { emailAllowed } from '@/lib/notification-prefs'
 
 const RESEND_API_KEY = process.env.RESEND_API_KEY
 const FROM_EMAIL = 'WHC Concierge <noreply@mail.wellnesshousecollective.co.uk>'
@@ -82,9 +83,13 @@ export async function POST(req: NextRequest) {
       }
 
       try {
+        // Preference-gated ('application_updates'): shortlist/decision emails
+        // honour the candidate's opt-out; the in-app notification above always
+        // fires. Fail-open on lookup errors.
+        const wantsEmail = await emailAllowed(admin, candidate.user_id, 'application_updates')
         const { data: authUser } = await admin.auth.admin.getUserById(candidate.user_id)
         const email = authUser?.user?.email || null
-        if (email && RESEND_API_KEY) {
+        if (email && RESEND_API_KEY && wantsEmail) {
           const subject = decision === 'shortlisted' ? `You have been shortlisted - ${job.job_title}` : decision === 'accepted' ? `Application update - ${job.job_title}` : `Update on your application - ${job.job_title}`
           const res = await fetch('https://api.resend.com/emails', { method: 'POST', headers: { Authorization: `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ from: FROM_EMAIL, to: email, subject, html: messageHtml({ note, jobTitle: job.job_title, propertyName, decision }) }) })
           emailSent = res.ok

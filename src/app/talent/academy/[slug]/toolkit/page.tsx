@@ -58,7 +58,7 @@ export default function AcademyToolkitPage() {
             {resources.map(resource => (
               <article key={resource.id} className="dashboard-card flex flex-col">
                 <div className="mb-4 flex items-start gap-3">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#f5f5f5] text-[#10283b]"><FileSpreadsheet size={18} /></div>
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#f5f6f8] text-[#10283b]"><FileSpreadsheet size={18} /></div>
                   <div>
                     <h2 className="text-[15px] font-semibold text-ink">{resource.title}</h2>
                     <p className="mt-1 text-[12px] leading-5 text-muted">{resource.description}</p>

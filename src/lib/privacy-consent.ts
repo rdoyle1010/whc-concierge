@@ -75,8 +75,8 @@ function confirmationEmailHtml(heading: string, intro: string, wording: string, 
       <p style="font-size:15px;line-height:1.7;color:#4d4d4d">${intro}</p>
       <p style="font-size:14px;line-height:1.7;color:#4d4d4d"><strong>What you are agreeing to:</strong><br>${wording}</p>
       <p style="margin:28px 0"><a href="${url}" style="display:inline-block;background:#0b2f4d;color:#fff;text-decoration:none;padding:13px 20px;border-radius:7px;font-weight:600">Confirm subscription</a></p>
-      <p style="font-size:12px;line-height:1.6;color:#7d8990">If you did not request this, ignore this email. Nothing will be activated. This confirmation link expires in 24 hours.</p>
-      <p style="font-size:12px;line-height:1.6;color:#7d8990;margin-top:30px">WHC Concierge · talent.wellnesshousecollective.co.uk · <a href="${SITE}/privacy" style="color:#4d4d4d">Privacy policy</a></p>
+      <p style="font-size:12px;line-height:1.6;color:#8a949b">If you did not request this, ignore this email. Nothing will be activated. This confirmation link expires in 24 hours.</p>
+      <p style="font-size:12px;line-height:1.6;color:#8a949b;margin-top:30px">WHC Concierge · talent.wellnesshousecollective.co.uk · <a href="${SITE}/privacy" style="color:#4d4d4d">Privacy policy</a></p>
     </div>
   `
 }

@@ -71,7 +71,7 @@ export default function AdminVerificationPage() {
 
   const statusColors: Record<string, string> = {
     pending: 'bg-amber-50 text-amber-700', verified: 'bg-green-50 text-green-700',
-    rejected: 'bg-red-50 text-red-700', lapsed: 'bg-gray-100 text-gray-500',
+    rejected: 'bg-red-50 text-red-700', lapsed: 'bg-gray-100 text-secondary',
   }
 
   const card = (r: any) => (
@@ -80,10 +80,10 @@ export default function AdminVerificationPage() {
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap mb-1">
             <h3 className="text-lg font-semibold text-ink">{r.full_name || 'Therapist'}</h3>
-            <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${statusColors[r.verification_status] || 'bg-gray-100 text-gray-500'}`}>{r.verification_status}</span>
+            <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${statusColors[r.verification_status] || 'bg-gray-100 text-secondary'}`}>{r.verification_status}</span>
             {r.whc_verified && <ShieldCheck size={15} className="text-green-600" />}
           </div>
-          <p className="text-sm text-gray-500">{r.role_level || 'Therapist'}{r.review_score ? ` · ${Number(r.review_score).toFixed(1)}★ (${r.review_count})` : ''}</p>
+          <p className="text-sm text-secondary">{r.role_level || 'Therapist'}{r.review_score ? ` · ${Number(r.review_score).toFixed(1)}★ (${r.review_count})` : ''}</p>
           <div className="mt-2 border border-border bg-surface px-3 py-2.5 max-w-xl">
             <p className="text-[11px] font-semibold uppercase tracking-[0.1em] text-ink">Right to work</p>
             <p className="text-[12px] text-gray-600 mt-1">
@@ -100,14 +100,14 @@ export default function AdminVerificationPage() {
               <p className="text-[12px] text-amber-700 mt-1.5">No right-to-work document uploaded - do not verify without evidence.</p>
             )}
           </div>
-          <p className="text-sm text-gray-500 mt-2">
+          <p className="text-sm text-secondary mt-2">
             Insurance expiry: {r.insurance_expiry_date ? new Date(r.insurance_expiry_date).toLocaleDateString('en-GB') : 'not given'}
             {r.insurance_expiry_date && new Date(r.insurance_expiry_date).getTime() < Date.now() + 30 * 86400000 && (
               <span className="text-amber-600 font-medium"> - {new Date(r.insurance_expiry_date).getTime() < Date.now() ? 'EXPIRED' : 'expires within 30 days'}</span>
             )}
           </p>
           {Array.isArray(r.qualifications) && r.qualifications.length > 0 && (
-            <p className="text-[12px] text-gray-500 mt-1">Claimed qualifications: {r.qualifications.join(', ')}</p>
+            <p className="text-[12px] text-secondary mt-1">Claimed qualifications: {r.qualifications.join(', ')}</p>
           )}
           <div className="flex flex-wrap gap-x-4 gap-y-2 mt-3">
             {r.insurance_document_url && (
@@ -121,7 +121,7 @@ export default function AdminVerificationPage() {
           </div>
           {verificationsAvailable && (
             <div className="mt-3">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-gray-400">Verifications</p>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-muted">Verifications</p>
               <div className="mt-1.5 flex flex-wrap gap-1.5">
                 {MANUAL_VERIFICATION_TYPES.map(mark => {
                   const granted = (verifications[r.id] || []).includes(mark.type)
@@ -137,7 +137,7 @@ export default function AdminVerificationPage() {
               </div>
             </div>
           )}
-          {r.verification_notes && <p className="text-[12px] text-gray-400 mt-3">Last decision note: {r.verification_notes}</p>}
+          {r.verification_notes && <p className="text-[12px] text-muted mt-3">Last decision note: {r.verification_notes}</p>}
         </div>
         <div className="flex flex-wrap items-center gap-2 lg:justify-end shrink-0">
           {(!r.whc_verified || r.verification_status === 'pending' || r.right_to_work_status === 'pending') && (
@@ -173,9 +173,9 @@ export default function AdminVerificationPage() {
       {error && <div className="bg-red-50 text-red-600 text-sm px-4 py-3 mb-6 border border-red-100">{error}</div>}
 
       {loading ? (
-        <div className="flex items-center justify-center h-64"><div className="animate-spin w-8 h-8 border-2 border-gold border-t-transparent rounded-full" /></div>
+        <div className="flex items-center justify-center h-64"><div className="animate-spin w-8 h-8 border-2 border-accent border-t-transparent rounded-full" /></div>
       ) : rows.length === 0 ? (
-        <div className="dashboard-card text-center py-16 text-gray-400">
+        <div className="dashboard-card text-center py-16 text-muted">
           <ShieldCheck size={42} className="mx-auto mb-4 opacity-30" />
           <p>No verification submissions yet.</p>
         </div>
@@ -205,7 +205,7 @@ export default function AdminVerificationPage() {
               <h2 className="text-xl font-semibold text-ink">{rejecting.whc_verified ? 'Revoke badge' : 'Reject verification'}</h2>
               <button onClick={() => setRejecting(null)} className="text-gray-300 hover:text-ink"><X size={20} /></button>
             </div>
-            <p className="text-sm text-gray-500 mb-4">This decision covers both the right-to-work and insurance evidence. {rejecting.full_name} will be told why by email and in-app so they can correct the issue and resubmit.</p>
+            <p className="text-sm text-secondary mb-4">This decision covers both the right-to-work and insurance evidence. {rejecting.full_name} will be told why by email and in-app so they can correct the issue and resubmit.</p>
             <textarea rows={3} value={reason} onChange={(e) => setReason(e.target.value)} className="input-field mb-4" placeholder="Reason shown to the therapist..." />
             <div className="flex gap-3">
               <button onClick={() => setRejecting(null)} className="btn-secondary flex-1">Cancel</button>

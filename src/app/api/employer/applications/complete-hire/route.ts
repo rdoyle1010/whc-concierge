@@ -3,6 +3,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { getRequestUser } from '@/lib/request-user'
 import { createNotification } from '@/lib/notifications'
 import { sendRoleFilledEmail } from '@/lib/emails'
+import { emailAllowed } from '@/lib/notification-prefs'
 import { trackEvent, recordSalary } from '@/lib/analytics'
 
 const RESEND_API_KEY = process.env.RESEND_API_KEY
@@ -104,8 +105,14 @@ export async function POST(req: NextRequest) {
         for (const other of others || []) {
           if (!other.user_id) continue
           await createNotification(other.user_id, 'general', `${job.job_title} has been filled`, `Thank you for your interest in ${job.job_title} at ${propertyName}. The role has now been filled.`, '/talent/applications')
-          const { data: authUser } = await admin.auth.admin.getUserById(other.user_id)
-          if (authUser.user?.email) await sendRoleFilledEmail(authUser.user.email, other.full_name || '', job.job_title || 'Role', propertyName)
+          // Preference-gated ('application_updates'): the role-filled email to
+          // other applicants honours their opt-out; the in-app notification
+          // above always fires. The hire confirmation to the successful
+          // candidate below is contractual and always sends.
+          if (await emailAllowed(admin, other.user_id, 'application_updates')) {
+            const { data: authUser } = await admin.auth.admin.getUserById(other.user_id)
+            if (authUser.user?.email) await sendRoleFilledEmail(authUser.user.email, other.full_name || '', job.job_title || 'Role', propertyName)
+          }
         }
       }
     }

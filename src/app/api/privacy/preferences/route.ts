@@ -15,7 +15,8 @@ async function getUser() {
 }
 
 const BOOLEAN_FIELDS = [
-  'marketing_sms', 'marketing_phone', 'job_alerts_email', 'academy_updates_email',
+  'marketing_sms', 'marketing_phone', 'job_alerts_email', 'application_updates_email',
+  'booking_updates_email', 'academy_updates_email',
   'product_news_email', 'partner_marketing_email', 'share_profile_with_employers',
   'share_profile_with_whc_partners', 'allow_anonymised_research',
 ] as const

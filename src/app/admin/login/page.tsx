@@ -38,7 +38,7 @@ export default function AdminLoginPage() {
   }
 
   return (
-    <main className="min-h-screen bg-[#f5f5f5] flex items-center justify-center px-6 py-12">
+    <main className="min-h-screen bg-[#f5f6f8] flex items-center justify-center px-6 py-12">
       <div className="w-full max-w-[430px]">
         <Wordmark />
         <div className="mt-10 dashboard-card !p-8">

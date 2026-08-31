@@ -38,11 +38,11 @@ export default function SmsPreferencesCard() {
   return <div className="mt-6 max-w-2xl dashboard-card">
     <div className="flex items-start justify-between gap-5">
       <div className="flex min-w-0 gap-3">
-        <div className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#f6f0e5] text-[#10283b]"><MessageSquareText size={18}/></div>
+        <div className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#f5f6f8] text-[#10283b]"><MessageSquareText size={18}/></div>
         <div>
           <h3 className="font-serif text-lg font-semibold text-ink">Important SMS alerts</h3>
-          <p className="mt-1 text-[13px] leading-5 text-gray-500">Receive text alerts for important recruitment milestones such as shortlist, interview invitations and job offers. Email and in-app notifications continue as normal.</p>
-          {phone ? <p className="mt-2 text-[11px] text-gray-400">Mobile on profile: {phone}</p> : <p className="mt-2 text-[11px] font-medium text-amber-700">Add a mobile number to your profile before enabling SMS.</p>}
+          <p className="mt-1 text-[13px] leading-5 text-secondary">Receive text alerts for important recruitment milestones such as shortlist, interview invitations and job offers. Email and in-app notifications continue as normal.</p>
+          {phone ? <p className="mt-2 text-[11px] text-muted">Mobile on profile: {phone}</p> : <p className="mt-2 text-[11px] font-medium text-amber-700">Add a mobile number to your profile before enabling SMS.</p>}
           {message && <p className={`mt-2 text-[11px] ${message.includes('enabled') || message.includes('disabled') ? 'text-emerald-700' : 'text-red-600'}`}>{message}</p>}
         </div>
       </div>

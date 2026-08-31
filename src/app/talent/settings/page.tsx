@@ -4,6 +4,39 @@ import { useEffect, useState } from 'react'
 import DashboardShell from '@/components/DashboardShell'
 import { createClient } from '@/lib/supabase/client'
 import { Save, Search, ShieldOff, X, Download, AlertTriangle } from 'lucide-react'
+import Link from 'next/link'
+
+// Square-cornered toggle for the notification preference centre (brand rule:
+// no new rounded corners).
+function PrefSwitch({ on, onClick, disabled, label }: { on: boolean; onClick: () => void; disabled?: boolean; label: string }) {
+  return (
+    <button type="button" onClick={onClick} disabled={disabled} aria-pressed={on} aria-label={label}
+      className={`relative inline-flex h-6 w-11 items-center border transition-colors shrink-0 disabled:opacity-50 ${on ? 'bg-ink border-ink' : 'bg-gray-200 border-border'}`}>
+      <span className={`inline-block h-4 w-4 transform bg-white transition-transform ${on ? 'translate-x-6' : 'translate-x-1'}`} />
+    </button>
+  )
+}
+
+function PrefRow({ title, description, on, onToggle, disabled }: { title: string; description: string; on: boolean; onToggle: () => void; disabled?: boolean }) {
+  return (
+    <div className="flex items-start justify-between gap-4 py-3 border-b border-border last:border-b-0">
+      <div>
+        <p className="text-[13px] font-medium text-ink">{title}</p>
+        <p className="text-[12px] leading-5 text-muted mt-0.5">{description}</p>
+      </div>
+      <PrefSwitch on={on} onClick={onToggle} disabled={disabled} label={`${on ? 'Turn off' : 'Turn on'} ${title}`} />
+    </div>
+  )
+}
+
+function TierHeading({ label, note }: { label: string; note: string }) {
+  return (
+    <div className="pt-5 first:pt-0">
+      <p className="text-[11px] font-semibold tracking-[1.5px] uppercase text-ink">{label}</p>
+      <p className="text-[11px] text-muted mt-0.5">{note}</p>
+    </div>
+  )
+}
 
 export default function TalentSettingsPage() {
   const supabase = createClient()
@@ -27,6 +60,89 @@ export default function TalentSettingsPage() {
   const [alertsEnabled, setAlertsEnabled] = useState(true)
   const [alertsFrequency, setAlertsFrequency] = useState('instant')
   const [alertsMinScore, setAlertsMinScore] = useState(60)
+
+  // Email notification preferences (privacy_preferences)
+  const [emailPrefs, setEmailPrefs] = useState<Record<string, boolean>>({
+    job_alerts_email: true,
+    application_updates_email: true,
+    booking_updates_email: true,
+    academy_updates_email: false,
+    product_news_email: false,
+  })
+
+  // SMS preference (candidate_profiles via the agency settings API)
+  const [agencySettings, setAgencySettings] = useState<any>(null)
+  const [smsSaving, setSmsSaving] = useState(false)
+
+  useEffect(() => {
+    async function loadNotificationPrefs() {
+      try {
+        const res = await fetch('/api/privacy/preferences')
+        if (res.ok) {
+          const json = await res.json()
+          const p = json.preferences || {}
+          setEmailPrefs(prev => {
+            const next = { ...prev }
+            for (const key of Object.keys(prev)) if (typeof p[key] === 'boolean') next[key] = p[key]
+            return next
+          })
+        }
+      } catch { /* defaults stand */ }
+      try {
+        const res = await fetch('/api/agency/settings')
+        if (res.ok) {
+          const json = await res.json()
+          if (json.settings) setAgencySettings(json.settings)
+        }
+      } catch { /* SMS card simply shows no number */ }
+    }
+    loadNotificationPrefs()
+  }, [])
+
+  const saveEmailPref = async (field: string, value: boolean) => {
+    const previous = emailPrefs[field]
+    setEmailPrefs(prev => ({ ...prev, [field]: value }))
+    try {
+      const res = await fetch('/api/privacy/preferences', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ [field]: value }),
+      })
+      if (!res.ok) throw new Error('save failed')
+    } catch {
+      setEmailPrefs(prev => ({ ...prev, [field]: previous }))
+      alert('Could not save your notification preference - please try again.')
+    }
+  }
+
+  const saveSmsOptIn = async (value: boolean) => {
+    if (!agencySettings) return
+    if (value && !agencySettings.phone) {
+      alert('Add a mobile number in Agency Settings before turning on text alerts.')
+      return
+    }
+    setSmsSaving(true)
+    const previous = agencySettings.sms_opt_in
+    setAgencySettings({ ...agencySettings, sms_opt_in: value })
+    try {
+      // Reuses the agency settings contract: echo the stored practical details
+      // back so only sms_opt_in changes.
+      const res = await fetch('/api/agency/settings', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          hourly_rate: agencySettings.hourly_rate,
+          phone: agencySettings.phone,
+          postcode: agencySettings.postcode,
+          travel_radius_miles: agencySettings.travel_radius_miles,
+          sms_opt_in: value,
+        }),
+      })
+      if (!res.ok) throw new Error('save failed')
+    } catch {
+      setAgencySettings({ ...agencySettings, sms_opt_in: previous })
+      alert('Could not save your SMS preference - please try again.')
+    }
+    setSmsSaving(false)
+  }
 
   useEffect(() => {
     async function loadStealth() {
@@ -329,52 +445,98 @@ export default function TalentSettingsPage() {
           )}
         </div>
 
-        {/* Job Alerts */}
+        {/* Notification preference centre */}
         <div className="dashboard-card">
-          <div className="flex items-start justify-between mb-4">
-            <div>
-              <h3 className="font-serif text-lg font-semibold flex items-center gap-2">Job Alerts</h3>
-              <p className="text-sm text-gray-500 mt-1">Get notified when new roles match your profile.</p>
+          <h3 className="font-serif text-lg font-semibold">Notifications</h3>
+          <p className="text-sm text-gray-500 mt-1 mb-2">In-app notifications always appear here. These controls govern what reaches your inbox and phone.</p>
+
+          {/* INSTANT */}
+          <TierHeading label="Instant" note="Sent the moment something happens." />
+          <PrefRow
+            title="New matched role"
+            description="One email the moment a live role scores above your match threshold."
+            on={emailPrefs.job_alerts_email && alertsEnabled}
+            onToggle={() => {
+              const next = !(emailPrefs.job_alerts_email && alertsEnabled)
+              saveEmailPref('job_alerts_email', next)
+              setAlertsEnabled(next)
+              saveAlertPref('job_alerts_enabled', next)
+            }}
+          />
+          <PrefRow
+            title="Interview requests and employer messages"
+            description="An email when a property invites you to interview, updates your application or messages you."
+            on={emailPrefs.application_updates_email}
+            onToggle={() => saveEmailPref('application_updates_email', !emailPrefs.application_updates_email)}
+          />
+          <PrefRow
+            title="Agency shift requests and booking updates"
+            description="An email when a property offers you a shift, or a booking is accepted, countered, confirmed or declined."
+            on={emailPrefs.booking_updates_email}
+            onToggle={() => saveEmailPref('booking_updates_email', !emailPrefs.booking_updates_email)}
+          />
+
+          {/* DAILY */}
+          <TierHeading label="Daily" note="Batched once a day, so your inbox stays quiet." />
+          <div className="py-3 border-b border-border">
+            <p className="text-[13px] font-medium text-ink">Daily roles digest</p>
+            <p className="text-[12px] leading-5 text-muted mt-0.5">Choose how role alerts arrive: the instant they go live, one daily digest, or a weekly round-up.</p>
+            <div className="flex flex-wrap gap-2 mt-3" role="group" aria-label="Role alert frequency">
+              {[{ value: 'instant', label: 'Instant' }, { value: 'daily', label: 'Daily' }, { value: 'weekly', label: 'Weekly' }].map(opt => (
+                <button key={opt.value} type="button"
+                  onClick={() => { setAlertsFrequency(opt.value); saveAlertPref('job_alerts_frequency', opt.value) }}
+                  className={`px-4 py-2 text-[12px] font-medium border transition-colors ${alertsFrequency === opt.value ? 'bg-ink border-ink text-white' : 'bg-surface border-border text-muted hover:border-ink/20'}`}>
+                  {opt.label}
+                </button>
+              ))}
             </div>
-            <button type="button" onClick={() => { const v = !alertsEnabled; setAlertsEnabled(v); saveAlertPref('job_alerts_enabled', v) }}
-              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors shrink-0 ${alertsEnabled ? 'bg-ink' : 'bg-gray-200'}`}>
-              <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${alertsEnabled ? 'translate-x-6' : 'translate-x-1'}`} />
-            </button>
+            <div className="flex items-center gap-2 mt-3">
+              <label htmlFor="alerts-min-score" className="text-[12px] text-secondary">Only roles above</label>
+              <input id="alerts-min-score" type="number" min={0} max={100} step={5} value={alertsMinScore}
+                onChange={e => setAlertsMinScore(Math.max(0, Math.min(100, parseInt(e.target.value, 10) || 0)))}
+                onBlur={() => saveAlertPref('job_alerts_min_score', alertsMinScore)}
+                className="w-20 border border-border bg-white px-2 py-1.5 text-[12px] text-ink" />
+              <span className="text-[12px] text-secondary">% match</span>
+            </div>
           </div>
+          <PrefRow
+            title="Academy suggestions"
+            description="Occasional emails about courses, gifted enrolments and Academy resources suited to your profile."
+            on={emailPrefs.academy_updates_email}
+            onToggle={() => saveEmailPref('academy_updates_email', !emailPrefs.academy_updates_email)}
+          />
 
-          {alertsEnabled && (
-            <div className="pt-4 border-t border-border space-y-5">
-              {/* Frequency */}
-              <div>
-                <label className="eyebrow block mb-2">Frequency</label>
-                <div className="flex flex-wrap gap-2">
-                  {[{ value: 'instant', label: 'Instant' }].map(opt => (
-                    <button key={opt.value} type="button"
-                      onClick={() => { setAlertsFrequency(opt.value); saveAlertPref('job_alerts_frequency', opt.value) }}
-                      className={`px-4 py-2 rounded-lg text-[12px] font-medium transition-colors ${alertsFrequency === opt.value ? 'bg-ink text-white' : 'bg-surface border border-border text-muted hover:border-ink/20'}`}>
-                      {opt.label}
-                    </button>
-                  ))}
-                </div>
-                <p className="text-[11px] text-muted mt-2">Digest options are coming. Use the toggle above to pause alerts entirely.</p>
-              </div>
+          {/* WEEKLY */}
+          <TierHeading label="Weekly" note="One considered email a week, at most." />
+          <PrefRow
+            title="Career intelligence and market updates"
+            description="The weekly intelligence email: market salary movements, hiring trends and platform news."
+            on={emailPrefs.product_news_email}
+            onToggle={() => saveEmailPref('product_news_email', !emailPrefs.product_news_email)}
+          />
 
-              {/* Minimum match score */}
-              <div>
-                <label className="eyebrow block mb-2">Minimum match score</label>
-                <div className="flex flex-wrap gap-2">
-                  {[60, 70, 80, 90].map(score => (
-                    <button key={score} type="button"
-                      onClick={() => { setAlertsMinScore(score); saveAlertPref('job_alerts_min_score', score) }}
-                      className={`px-4 py-2 rounded-lg text-[12px] font-medium transition-colors ${alertsMinScore === score ? 'bg-ink text-white' : 'bg-surface border border-border text-muted hover:border-ink/20'}`}>
-                      {score}%+
-                    </button>
-                  ))}
-                </div>
-                <p className="text-[11px] text-muted mt-2">Only roles scoring above this threshold will trigger an alert.</p>
-              </div>
+          {/* SMS */}
+          <TierHeading label="SMS" note="Texts are reserved for time-critical agency work." />
+          <div className="flex items-start justify-between gap-4 py-3">
+            <div>
+              <p className="text-[13px] font-medium text-ink">Urgent agency shifts by text</p>
+              <p className="text-[12px] leading-5 text-muted mt-0.5">A short text when a property needs same-day cover and has offered you the shift. Details stay inside your account.</p>
+              {agencySettings ? (
+                <p className="text-[11px] text-muted mt-1.5">
+                  {agencySettings.phone ? <>Number on file: <span className="text-ink font-medium">{agencySettings.phone}</span>. </> : <>No mobile number on file. </>}
+                  <Link href="/talent/agency/settings" className="underline text-ink">Update your number</Link>
+                </p>
+              ) : (
+                <p className="text-[11px] text-muted mt-1.5">Set up your agency profile to receive shift texts.</p>
+              )}
             </div>
-          )}
+            <PrefSwitch
+              on={Boolean(agencySettings?.sms_opt_in)}
+              onClick={() => saveSmsOptIn(!agencySettings?.sms_opt_in)}
+              disabled={smsSaving || !agencySettings}
+              label="Urgent agency shifts by text"
+            />
+          </div>
         </div>
 
         {/* Data & Privacy */}

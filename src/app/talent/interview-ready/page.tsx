@@ -106,7 +106,7 @@ function ReadinessBar({ label, value }: { label: string; value?: number }) {
   const score = Math.max(0, Math.min(100, Number(value) || 0))
   return <div>
     <div className="flex items-center justify-between text-[11px] mb-1.5"><span className="text-secondary">{label}</span><span className="font-medium text-ink">{score}%</span></div>
-    <div className="h-1.5 bg-[#e5e5e5] overflow-hidden"><div className="h-full bg-[#10283b]" style={{ width: `${score}%` }} /></div>
+    <div className="h-1.5 bg-[#e3e7eb] overflow-hidden"><div className="h-full bg-[#10283b]" style={{ width: `${score}%` }} /></div>
   </div>
 }
 
@@ -227,7 +227,7 @@ export default function InterviewReadyPage() {
         <h2 className="dashboard-section-title mb-2">A language for how you naturally work.</h2>
         <p className="text-[12px] text-muted leading-5 mb-6">Our own coaching framework, not a personality test or hiring judgement. Pick what feels most like you at work.</p>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 mb-7">{(Object.keys(styles) as StyleName[]).map(name => <div key={name} className="border border-border bg-white px-3.5 py-3"><p className="text-[12px] font-semibold text-ink">{name}</p><p className="text-[10.5px] text-muted leading-4 mt-1">{styles[name]}</p></div>)}</div>
-        <div className="space-y-6">{styleQuestions.map((q, index) => <div key={q.question}><p className="text-[12px] font-medium text-ink mb-2.5"><span className="text-accent mr-2">{index + 1}.</span>{q.question}</p><div className="grid grid-cols-1 sm:grid-cols-2 gap-2">{(Object.keys(q.options) as StyleName[]).map(name => <button key={name} type="button" onClick={() => selectStyle(index, name)} className={`text-left border px-3.5 py-3 transition-colors ${answers[index] === name ? 'border-accent bg-[#f7f7f7]' : 'border-border bg-white hover:border-accent/60'}`}><span className="block text-[10px] uppercase tracking-[.12em] text-accent mb-1">{name}</span><span className="block text-[11.5px] text-secondary leading-4">{q.options[name]}</span></button>)}</div></div>)}</div>
+        <div className="space-y-6">{styleQuestions.map((q, index) => <div key={q.question}><p className="text-[12px] font-medium text-ink mb-2.5"><span className="text-accent mr-2">{index + 1}.</span>{q.question}</p><div className="grid grid-cols-1 sm:grid-cols-2 gap-2">{(Object.keys(q.options) as StyleName[]).map(name => <button key={name} type="button" onClick={() => selectStyle(index, name)} className={`text-left border px-3.5 py-3 transition-colors ${answers[index] === name ? 'border-accent bg-[#f5f6f8]' : 'border-border bg-white hover:border-accent/60'}`}><span className="block text-[10px] uppercase tracking-[.12em] text-accent mb-1">{name}</span><span className="block text-[11.5px] text-secondary leading-4">{q.options[name]}</span></button>)}</div></div>)}</div>
         {error && <p className="mt-5 border-l-2 border-red-500 pl-3 text-[12px] text-red-700">{error}</p>}
         <button type="button" disabled={preparing} onClick={buildPrep} className="btn-primary mt-7 w-full flex items-center justify-center gap-2 py-3.5 disabled:opacity-50">{preparing ? <><RefreshCw size={14} className="animate-spin" />Building your personalised dossier</> : <>Build my Interview Ready dossier <ArrowRight size={14} /></>}</button>
       </section>

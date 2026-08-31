@@ -70,15 +70,15 @@ export default async function BlogPostPage(props: { params: Promise<{ slug: stri
         </div>
 
         {post.tags?.length > 0 && (
-          <div className="flex flex-wrap gap-2 mt-12 pt-8 border-t border-gray-200">
+          <div className="flex flex-wrap gap-2 mt-12 pt-8 border-t border-[#e3e7eb]">
             {post.tags.map((tag: string) => (
-              <span key={tag} className="text-xs bg-gray-100 text-gray-500 px-3 py-1 rounded-full">{tag}</span>
+              <span key={tag} className="text-xs bg-gray-100 text-secondary px-3 py-1 rounded-full">{tag}</span>
             ))}
           </div>
         )}
 
-        <div className="mt-8 pt-6 border-t border-gray-200">
-          <p className="text-xs text-gray-400 uppercase tracking-wider mb-3">Share this article</p>
+        <div className="mt-8 pt-6 border-t border-[#e3e7eb]">
+          <p className="text-xs text-muted uppercase tracking-wider mb-3">Share this article</p>
           <ShareButtons url={`https://talent.wellnesshousecollective.co.uk/blog/${post.slug}`} title={post.title} />
         </div>
       </article>

@@ -167,7 +167,7 @@ export default function TestimonialCarousel({ testimonials = defaultTestimonials
           ))}
         </div>
       )}
-      <p className="text-center text-[11px] text-gray-400 mt-6">Illustrative examples of member experiences from our launch programme. Verified reviews appear on individual profiles.</p>
+      <p className="text-center text-[11px] text-muted mt-6">Illustrative examples of member experiences from our launch programme. Verified reviews appear on individual profiles.</p>
     </div>
   )
 }

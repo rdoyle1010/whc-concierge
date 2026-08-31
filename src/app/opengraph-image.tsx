@@ -28,7 +28,7 @@ export default function OGImage() {
             display: 'flex',
             fontSize: 18,
             fontWeight: 600,
-            color: '#555555',
+            color: '#5a6a76',
             letterSpacing: '6px',
             textTransform: 'uppercase',
             marginBottom: 56,
@@ -43,7 +43,7 @@ export default function OGImage() {
             display: 'flex',
             width: 80,
             height: 1,
-            background: '#555555',
+            background: '#5a6a76',
             marginBottom: 40,
           }}
         />

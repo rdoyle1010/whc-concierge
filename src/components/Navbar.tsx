@@ -134,10 +134,10 @@ export default function Navbar({ siteContent }: { siteContent?: WebsiteContent }
                       {group.label}<ChevronDown size={11} className="opacity-65 transition-transform group-hover:rotate-180" />
                       {active && <span className="absolute inset-x-0 bottom-0 h-[2px] bg-white" />}
                     </button>
-                    <div className="pointer-events-none absolute left-1/2 top-[64px] w-[290px] -translate-x-1/2 translate-y-2 border border-[#d8dde1] bg-white p-2 opacity-0 shadow-[0_18px_48px_rgba(5,29,46,.16)] transition-all duration-150 group-hover:pointer-events-auto group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:translate-y-0 group-focus-within:opacity-100">
-                      {group.items.map(item => <Link key={item.href} href={item.href} className="block border-b border-[#e8ecef] px-4 py-3.5 last:border-0 hover:bg-[#fafafa]">
+                    <div className="pointer-events-none absolute left-1/2 top-[64px] w-[290px] -translate-x-1/2 translate-y-2 border border-[#e3e7eb] bg-white p-2 opacity-0 shadow-[0_18px_48px_rgba(5,29,46,.16)] transition-all duration-150 group-hover:pointer-events-auto group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:translate-y-0 group-focus-within:opacity-100">
+                      {group.items.map(item => <Link key={item.href} href={item.href} className="block border-b border-[#e3e7eb] px-4 py-3.5 last:border-0 hover:bg-[#f5f6f8]">
                         <span className="block text-[12px] font-semibold text-[#10283b]">{item.label}</span>
-                        <span className="mt-1 block text-[10px] leading-4 text-[#7a858c]">{item.note}</span>
+                        <span className="mt-1 block text-[10px] leading-4 text-[#8a949b]">{item.note}</span>
                       </Link>)}
                     </div>
                   </div>
@@ -153,7 +153,7 @@ export default function Navbar({ siteContent }: { siteContent?: WebsiteContent }
           <div className="mr-3"><UniversalSearch variant="navbar" /></div>
           {user ? (
             <>
-              <Link href={dashboardHref} className="mr-3 inline-flex items-center gap-2 rounded-lg bg-white px-3.5 py-2 text-[10px] font-semibold uppercase tracking-[0.1em] text-[#0b2f4d] hover:bg-[#f3f6f8]"><LayoutDashboard size={13}/>My dashboard</Link>
+              <Link href={dashboardHref} className="mr-3 inline-flex items-center gap-2 rounded-lg bg-white px-3.5 py-2 text-[10px] font-semibold uppercase tracking-[0.1em] text-[#0b2f4d] hover:bg-[#f5f6f8]"><LayoutDashboard size={13}/>My dashboard</Link>
               <div className="mr-2 border-r border-white/12 pr-3 text-white"><NotificationBell userId={user.id} /></div>
               <div className="relative" ref={dropdownRef}>
                 <button type="button" onClick={() => setProfileOpen(!profileOpen)} aria-label="Open account menu" aria-expanded={profileOpen} aria-haspopup="menu" className="flex items-center gap-2 px-1.5 py-1 text-white/75 transition-colors hover:text-white">

@@ -31,9 +31,9 @@ const STATUS_STYLES: Record<RecruitmentRequest['status'], string> = {
   new: 'bg-blue-50 text-blue-700',
   reviewing: 'bg-amber-50 text-amber-700',
   search_active: 'bg-[#e8eef4] text-[#0b2f4d]',
-  shortlist_sent: 'bg-purple-50 text-purple-700',
+  shortlist_sent: 'bg-[#0b2f4d] text-white',
   placed: 'bg-green-50 text-green-700',
-  closed: 'bg-gray-100 text-gray-500',
+  closed: 'bg-gray-100 text-secondary',
 }
 
 export default function EmployerRecruitmentPage() {

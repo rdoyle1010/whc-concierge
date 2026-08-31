@@ -34,8 +34,8 @@ const STATUSES = [
 
 const STATUS_COLORS: Record<string, string> = {
   new: 'bg-blue-50 text-blue-700', reviewing: 'bg-amber-50 text-amber-700',
-  search_active: 'bg-[#e8eef4] text-[#0b2f4d]', shortlist_sent: 'bg-purple-50 text-purple-700',
-  placed: 'bg-green-50 text-green-700', closed: 'bg-gray-100 text-gray-500',
+  search_active: 'bg-[#e8eef4] text-[#0b2f4d]', shortlist_sent: 'bg-[#0b2f4d] text-white',
+  placed: 'bg-green-50 text-green-700', closed: 'bg-gray-100 text-secondary',
 }
 
 export default function AdminRecruitmentPage() {
@@ -111,9 +111,9 @@ export default function AdminRecruitmentPage() {
                       {row.employer?.contact_phone && <span className="ml-2 inline-flex items-center gap-1"><Phone size={11} /> {row.employer.contact_phone}</span>}
                     </p>
                   </div>
-                  <span className={`px-2.5 py-1 rounded-full text-[11px] font-semibold shrink-0 ${STATUS_COLORS[row.status] || 'bg-gray-100 text-gray-500'}`}>{STATUSES.find(option => option.value === row.status)?.label || row.status}</span>
+                  <span className={`px-2.5 py-1 rounded-full text-[11px] font-semibold shrink-0 ${STATUS_COLORS[row.status] || 'bg-gray-100 text-secondary'}`}>{STATUSES.find(option => option.value === row.status)?.label || row.status}</span>
                 </div>
-                <p className="text-[12.5px] text-gray-700 leading-relaxed bg-[#fafafa] rounded-lg px-3 py-2.5 mb-3 whitespace-pre-wrap">{row.brief}</p>
+                <p className="text-[12.5px] text-gray-700 leading-relaxed bg-[#f5f6f8] rounded-lg px-3 py-2.5 mb-3 whitespace-pre-wrap">{row.brief}</p>
                 <textarea rows={2} value={notes[row.id] || ''} onChange={e => setNotes(current => ({ ...current, [row.id]: e.target.value }))}
                   placeholder="Private working notes - candidates approached, conversations, fee agreed..."
                   className="input-field text-[12px] w-full mb-2" />

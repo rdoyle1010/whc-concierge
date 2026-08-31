@@ -23,13 +23,13 @@ export default function RoleListingMockup() {
             <h3 className="text-[22px] font-semibold leading-[1.08] tracking-[-.03em] text-ink">Senior Spa Therapist</h3>
             <p className="mt-2 text-[12px] text-muted">Full time · £34k–£38k</p>
           </div>
-          <div className="shrink-0 rounded-2xl border border-[#e5e5e5] bg-[#fafafa] px-3 py-2 text-center">
+          <div className="shrink-0 rounded-2xl border border-[#e3e7eb] bg-[#f5f6f8] px-3 py-2 text-center">
             <div className="text-[26px] font-semibold tracking-[-.04em] text-[#287548]">94%</div>
             <div className="text-[9px] font-semibold uppercase tracking-[.08em] text-[#287548]">Excellent</div>
           </div>
         </div>
 
-        <div className="mb-4 rounded-2xl border border-[#e5e5e5] bg-[#fafafa] p-4">
+        <div className="mb-4 rounded-2xl border border-[#e3e7eb] bg-[#f5f6f8] p-4">
           <p className="mb-1 text-[9px] font-semibold uppercase tracking-[.14em] text-[#10283b]">Why this role is showing</p>
           <p className="text-[11px] leading-5 text-secondary">Your treatment skills, qualifications, experience and location align strongly with this role.</p>
         </div>

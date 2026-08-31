@@ -214,6 +214,55 @@ check('no literal production secrets are tracked', () => {
   assert.deepEqual(exposed, [])
 })
 
+// --- Design-system rigidity: one typography, one spacing system, one colour
+// system. These checks keep stray neutrals, gold, purple, em-dashes and
+// decorative gradients from creeping back in after the brand sweep. ---
+const designSourceFiles = () => listFiles('src').filter(file => /\.(ts|tsx|css)$/.test(file))
+check('no em-dash characters under src', () => {
+  const offenders = designSourceFiles().filter(file => read(file).includes('—'))
+  assert.deepEqual(offenders, [])
+})
+check('no violet or purple Tailwind classes under src', () => {
+  const offenders = designSourceFiles().filter(file => /(?:violet|purple)-\d/.test(read(file)))
+  assert.deepEqual(offenders, [])
+})
+check('no gold hexes or gold utility classes under src', () => {
+  // The .badge-gold class NAME survives in globals.css (restyled navy);
+  // gold hexes and border-/text-/bg-gold utilities must not.
+  const goldPattern = /#d4af37|#c9a[0-9a-f]{3}|\b(?:border|text|bg|ring|fill|shadow)-gold\b/i
+  const offenders = designSourceFiles().filter(file => goldPattern.test(read(file)))
+  assert.deepEqual(offenders, [])
+})
+check('linear-gradient appears only as image overlays or in allowlisted files', () => {
+  // Allowed gradients: photo overlays for text legibility (rgba( on the same
+  // line), the generated OG image, and inline email CSS - its own world.
+  const gradientAllowlist = new Set([
+    'src/app/blog/[slug]/opengraph-image.tsx',
+    'src/lib/emails.ts',
+    'src/lib/decision-email-templates.ts',
+    'src/lib/application-email-templates.ts',
+    'src/lib/job-alert-email-template.ts',
+    'src/lib/welcome-email-template.ts',
+  ])
+  const offenders: string[] = []
+  for (const file of designSourceFiles()) {
+    if (gradientAllowlist.has(file)) continue
+    for (const [index, line] of read(file).split('\n').entries()) {
+      if (line.includes('linear-gradient') && !line.includes('rgba(')) offenders.push(`${file}:${index + 1}`)
+    }
+  }
+  assert.deepEqual(offenders, [])
+})
+check('no stray cream or off-white surfaces under src', () => {
+  // The neutral system allows white and #f5f6f8 only. globals.css keeps the
+  // legacy .bg-gray-50 mapping selector, so this check covers ts/tsx.
+  const creamPattern = /bg-\[#fafafa\]|bg-\[#f7f7f7\]|bg-gray-50\b/i
+  const offenders = designSourceFiles()
+    .filter(file => /\.(ts|tsx)$/.test(file))
+    .filter(file => creamPattern.test(read(file)))
+  assert.deepEqual(offenders, [])
+})
+
 let passed = 0
 for (const [name, fn] of checks) {
   try { fn(); passed++; console.log(`PASS ${passed.toString().padStart(2, '0')} ${name}`) }

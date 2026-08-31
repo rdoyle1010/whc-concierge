@@ -1,5 +1,6 @@
 import { createNotification } from '@/lib/notifications'
 import { sendNewMatchEmail } from '@/lib/emails'
+import { emailAllowed } from '@/lib/notification-prefs'
 
 // Shared by the web swipe route and the mobile employer-matches route so a
 // mutual match behaves identically wherever it happens: one matches row,
@@ -51,9 +52,16 @@ export async function createMutualMatch(admin: any, opts: {
     createNotification(employerUserId, 'new_match', "It's a match!", `${candidateName} is interested in ${job.job_title}.`, '/employer/messages'),
   ])
 
+  // Preference-gated ('job_alerts'): the new-match email is a matching alert,
+  // so each side's job_alerts_email opt-out is honoured. The in-app
+  // notifications above always fire. Fail-open on lookup errors.
+  const [candidateWantsEmail, employerWantsEmail] = await Promise.all([
+    emailAllowed(admin, candidateUserId, 'job_alerts'),
+    emailAllowed(admin, employerUserId, 'job_alerts'),
+  ])
   await Promise.allSettled([
-    opts.candidateEmail ? sendNewMatchEmail(opts.candidateEmail, candidate.full_name || 'there', employerName) : Promise.resolve(),
-    opts.employerEmail ? sendNewMatchEmail(opts.employerEmail, employerName, candidateName) : Promise.resolve(),
+    opts.candidateEmail && candidateWantsEmail ? sendNewMatchEmail(opts.candidateEmail, candidate.full_name || 'there', employerName) : Promise.resolve(),
+    opts.employerEmail && employerWantsEmail ? sendNewMatchEmail(opts.employerEmail, employerName, candidateName) : Promise.resolve(),
   ])
 
   return { created: true, matchId: match.id }

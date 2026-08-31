@@ -4,6 +4,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { createNotification } from '@/lib/notifications'
 import { getAcademyCatalog, getAcademyCourseBySlug } from '@/lib/academy-catalog-server'
 import { sendCourseAccessEmail, sendBookingConfirmedEmail, sendReferralRewardEmail, sendFeaturedTalentEmail } from '@/lib/emails'
+import { emailAllowed } from '@/lib/notification-prefs'
 import { sendFeaturedEmployerEmail } from '@/lib/featured-employer-email'
 import Stripe from 'stripe'
 import { getInternalApiSecret } from '@/lib/internal-request'
@@ -160,6 +161,9 @@ export async function POST(req: NextRequest) {
               featuredCandidate?.headline || 'A featured professional is available to view and shortlist.',
               '/employer/candidates',
             )
+            // Preference-gated ('product_news'): the featured-talent broadcast
+            // is promotional; the in-app notification above always fires.
+            if (!(await emailAllowed(supabase, employer.user_id, 'product_news'))) return
             const { data: employerUser } = await supabase.auth.admin.getUserById(employer.user_id)
             if (employerUser.user?.email) {
               await sendFeaturedTalentEmail(
@@ -238,10 +242,16 @@ export async function POST(req: NextRequest) {
               await createNotification(cand.user_id, 'general', 'Booking confirmed - payment received',
                 `Your shift at ${propertyName} on ${shiftDate} at £${booking.rate}/hr is confirmed. WHC pays you after the shift.`,
                 '/talent/agency')
-              const { data: u } = await supabase.auth.admin.getUserById(cand.user_id)
-              if (u?.user?.email) {
-                await sendBookingConfirmedEmail(u.user.email, cand.full_name || 'there',
-                  `shift at ${propertyName} on ${shiftDate} at £${booking.rate}/hr. WHC pays you after the shift.`)
+              // Preference-gated ('booking_updates'): the therapist's copy
+              // honours their opt-out; the in-app notification above always
+              // fires. The employer's copy below is a payment receipt for
+              // their own payment, so it always sends (transactional).
+              if (await emailAllowed(supabase, cand.user_id, 'booking_updates')) {
+                const { data: u } = await supabase.auth.admin.getUserById(cand.user_id)
+                if (u?.user?.email) {
+                  await sendBookingConfirmedEmail(u.user.email, cand.full_name || 'there',
+                    `shift at ${propertyName} on ${shiftDate} at £${booking.rate}/hr. WHC pays you after the shift.`)
+                }
               }
             }
             if (emp?.user_id) {

@@ -1,13 +1,13 @@
 export const colors = {
   black: '#0A0A0A',
   white: '#FFFFFF',
-  background: '#FAFAF9',
-  gold: '#555555',
+  background: '#f5f6f8',
+  gold: '#0b2f4d',
   success: '#22C55E',
   warning: '#F59E0B',
   error: '#EF4444',
   cardBg: '#FFFFFF',
-  border: '#e5e5e5',
+  border: '#e3e7eb',
   muted: '#8a949b',
   sidebar: '#0A0A0A',
 }

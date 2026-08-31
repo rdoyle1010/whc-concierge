@@ -69,10 +69,10 @@ export default function AdminResidencyPage() {
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap mb-1">
             <h3 className="text-lg font-semibold text-ink">{r.candidate_name || 'Specialist'}</h3>
-            <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${statusColors[r.approval_status] || 'bg-gray-100 text-gray-500'}`}>{r.approval_status}</span>
+            <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${statusColors[r.approval_status] || 'bg-gray-100 text-secondary'}`}>{r.approval_status}</span>
           </div>
-          <p className="text-sm text-gray-500">{r.title}{r.duration ? ` · ${r.duration}` : ''}</p>
-          <p className="text-sm text-gray-500 mt-0.5">
+          <p className="text-sm text-secondary">{r.title}{r.duration ? ` · ${r.duration}` : ''}</p>
+          <p className="text-sm text-secondary mt-0.5">
             {r.weekly_rate ? `£${r.weekly_rate}/week` : ''}{r.day_rate ? ` · £${r.day_rate}/day` : ''}{r.negotiable ? ' · negotiable' : ''}
           </p>
           {r.description && <p className="text-sm text-gray-600 mt-2 line-clamp-2 max-w-3xl">{r.description}</p>}
@@ -85,7 +85,7 @@ export default function AdminResidencyPage() {
           )}
           {r.approval_status === 'approved' && (
             <button onClick={() => toggleFeatured(r.id, !r.is_featured)} disabled={busyId === r.id}
-              className={`!py-2 text-[12px] rounded-lg px-3 font-semibold disabled:opacity-50 ${r.is_featured ? 'bg-[#f5f6f8] text-[#10283b] border border-[#e5e5e5]' : 'btn-secondary'}`}>
+              className={`!py-2 text-[12px] rounded-lg px-3 font-semibold disabled:opacity-50 ${r.is_featured ? 'bg-[#f5f6f8] text-[#10283b] border border-[#e3e7eb]' : 'btn-secondary'}`}>
               {r.is_featured ? '★ Featured' : 'Feature (no charge)'}</button>
           )}
           {r.approval_status !== 'rejected' && (
@@ -117,9 +117,9 @@ export default function AdminResidencyPage() {
       {error && <div className="bg-red-50 text-red-600 text-sm px-4 py-3 mb-6 border border-red-100">{error}</div>}
 
       {loading ? (
-        <div className="flex items-center justify-center h-64"><div className="animate-spin w-8 h-8 border-2 border-gold border-t-transparent rounded-full" /></div>
+        <div className="flex items-center justify-center h-64"><div className="animate-spin w-8 h-8 border-2 border-accent border-t-transparent rounded-full" /></div>
       ) : rows.length === 0 ? (
-        <div className="dashboard-card text-center py-16 text-gray-400">
+        <div className="dashboard-card text-center py-16 text-muted">
           <CalendarCheck size={42} className="mx-auto mb-4 opacity-30" />
           <p>No residency listings yet.</p>
         </div>
@@ -149,9 +149,9 @@ export default function AdminResidencyPage() {
               <div><p className="dashboard-eyebrow">Specialist listing</p><h2 className="text-2xl font-semibold text-ink">{selected.candidate_name || 'Specialist'}</h2></div>
               <button onClick={() => setSelected(null)} className="text-gray-300 hover:text-ink"><X size={20} /></button>
             </div>
-            <p className="text-sm text-gray-500 mb-4">{selected.title}{selected.duration ? ` · ${selected.duration}` : ''}{selected.travel_availability ? ` · ${String(selected.travel_availability).replace(/_/g, ' ')}` : ''}</p>
+            <p className="text-sm text-secondary mb-4">{selected.title}{selected.duration ? ` · ${selected.duration}` : ''}{selected.travel_availability ? ` · ${String(selected.travel_availability).replace(/_/g, ' ')}` : ''}</p>
             {selected.description && <p className="text-sm text-gray-600 whitespace-pre-wrap mb-5 leading-7">{selected.description}</p>}
-            <div className="dashboard-rule pt-4 text-sm text-gray-500 space-y-2">
+            <div className="dashboard-rule pt-4 text-sm text-secondary space-y-2">
               {selected.weekly_rate && <p>Weekly rate: <span className="text-ink">£{selected.weekly_rate}</span></p>}
               {selected.day_rate && <p>Day rate: <span className="text-ink">£{selected.day_rate}</span></p>}
               {selected.monthly_rate && <p>Monthly rate: <span className="text-ink">£{selected.monthly_rate}</span></p>}
@@ -168,7 +168,7 @@ export default function AdminResidencyPage() {
         <div className="fixed inset-0 bg-[#07243b]/70 z-50 flex items-center justify-center p-4" onClick={() => setRejecting(null)}>
           <div className="bg-white max-w-md w-full p-6 border border-border" onClick={(e) => e.stopPropagation()}>
             <h2 className="text-xl font-semibold text-ink mb-2">Reject listing</h2>
-            <p className="text-sm text-gray-500 mb-4">{rejecting.candidate_name || 'The specialist'} will be told why by email and in-app so they can correct the listing and resubmit.</p>
+            <p className="text-sm text-secondary mb-4">{rejecting.candidate_name || 'The specialist'} will be told why by email and in-app so they can correct the listing and resubmit.</p>
             <textarea rows={3} value={reason} onChange={(e) => setReason(e.target.value)} className="input-field mb-4" placeholder="Reason shown to the specialist..." />
             <div className="flex gap-3">
               <button onClick={() => setRejecting(null)} className="btn-secondary flex-1">Cancel</button>

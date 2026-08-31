@@ -77,7 +77,7 @@ export default function TestimonialsPage() {
         {/* Hero */}
         <section className="bg-white border-b border-border">
           <div className="max-w-3xl mx-auto px-6 lg:px-8 py-16 text-center">
-            <p className="text-[11px] tracking-[0.15em] uppercase font-medium mb-4" style={{ color: '#555555' }}>Testimonials</p>
+            <p className="text-[11px] tracking-[0.15em] uppercase font-medium mb-4" style={{ color: '#5a6a76' }}>Testimonials</p>
             <h1 className="text-[36px] md:text-[48px] font-medium text-ink tracking-tight leading-[1.08] mb-4">
               What Our Users Say
             </h1>
@@ -139,7 +139,7 @@ export default function TestimonialsPage() {
         {/* CTA */}
         <section className="bg-white border-t border-border py-16 px-6">
           <div className="max-w-3xl mx-auto text-center">
-            <p className="text-[11px] tracking-[0.15em] uppercase font-medium mb-4" style={{ color: '#555555' }}>Get Started</p>
+            <p className="text-[11px] tracking-[0.15em] uppercase font-medium mb-4" style={{ color: '#5a6a76' }}>Get Started</p>
             <h2 className="text-[24px] md:text-[28px] font-medium text-ink tracking-tight mb-3">
               Ready to find your next opportunity?
             </h2>
@@ -147,7 +147,7 @@ export default function TestimonialsPage() {
               Join the spa and wellness professionals building their careers on WHC Concierge.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-              <Link href="/jobs" className="px-6 py-2.5 rounded-lg text-[13px] font-semibold text-white transition-all hover:shadow-lg" style={{ backgroundColor: '#555555' }}>
+              <Link href="/jobs" className="px-6 py-2.5 rounded-lg text-[13px] font-semibold text-white transition-all hover:shadow-lg" style={{ backgroundColor: '#5a6a76' }}>
                 Browse Roles
               </Link>
               <Link href="/login?role=talent" className="btn-secondary">

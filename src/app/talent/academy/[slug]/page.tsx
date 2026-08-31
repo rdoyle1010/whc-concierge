@@ -33,21 +33,21 @@ function LearningFramework({ title }: { title: string }) {
     ['Apply it', 'Use the scenario or management lab to translate the lesson into your own spa.'],
   ]
   return (
-    <div className="mb-6 rounded-2xl border border-[#e0e0e0] bg-[#f5f5f5] p-5">
+    <div className="mb-6 rounded-2xl border border-[#e3e7eb] bg-[#f5f6f8] p-5">
       <div className="mb-4 flex items-start justify-between gap-3">
         <div>
           <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#10283b]">WHC learning framework</p>
           <p className="mt-1 text-[14px] font-semibold text-[#10283b]">Do more than read {title.toLowerCase()}.</p>
-          <p className="mt-1 text-[12px] leading-5 text-[#687681]">Work through the reason, the method, the judgement calls and the practical application.</p>
+          <p className="mt-1 text-[12px] leading-5 text-[#5a6a76]">Work through the reason, the method, the judgement calls and the practical application.</p>
         </div>
         <Target size={20} className="mt-1 shrink-0 text-[#10283b]" />
       </div>
       <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
         {steps.map(([heading, copy], index) => (
-          <div key={heading} className="rounded-xl border border-[#e5e5e5] bg-white p-3.5">
+          <div key={heading} className="rounded-xl border border-[#e3e7eb] bg-white p-3.5">
             <div className="mb-2 flex h-6 w-6 items-center justify-center rounded-full bg-[#10283b] text-[10px] font-semibold text-white">{index + 1}</div>
             <p className="text-[11px] font-semibold text-[#10283b]">{heading}</p>
-            <p className="mt-1 text-[10px] leading-4 text-[#8a8a8a]">{copy}</p>
+            <p className="mt-1 text-[10px] leading-4 text-[#8a949b]">{copy}</p>
           </div>
         ))}
       </div>
@@ -63,12 +63,12 @@ function ManagedLessonContent({ content }: { content: string }) {
       {paragraphs.map((paragraph, index) => {
         const isLab = /lab|project|exercise|case|scenario/i.test(paragraph)
         return (
-          <section key={index} className={`rounded-xl border p-5 ${isLab ? 'border-[#555555]/40 bg-[#f5f5f5]' : 'border-[#e5e5e5] bg-white'}`}>
+          <section key={index} className={`rounded-xl border p-5 ${isLab ? 'border-[#5a6a76]/40 bg-[#f5f6f8]' : 'border-[#e3e7eb] bg-white'}`}>
             <div className="mb-2 flex items-center gap-2">
               <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[10px] font-semibold ${isLab ? 'bg-[#10283b] text-white' : 'bg-[#10283b] text-white'}`}>{index + 1}</span>
               <h3 className="text-[15px] font-semibold text-[#10283b]">{isLab ? 'Management lab' : headings[Math.min(index, headings.length - 1)]}</h3>
             </div>
-            <p className="text-[13px] leading-7 text-[#4d4d4d] whitespace-pre-line">{paragraph}</p>
+            <p className="text-[13px] leading-7 text-[#5a6a76] whitespace-pre-line">{paragraph}</p>
           </section>
         )
       })}
@@ -131,11 +131,11 @@ export default function CoursePlayerPage() {
   }, [slug])
 
   if (!course && loading) {
-    return <DashboardShell role="talent"><div className="flex items-center justify-center h-64"><div className="animate-spin w-8 h-8 border-2 border-gold border-t-transparent rounded-full" /></div></DashboardShell>
+    return <DashboardShell role="talent"><div className="flex items-center justify-center h-64"><div className="animate-spin w-8 h-8 border-2 border-accent border-t-transparent rounded-full" /></div></DashboardShell>
   }
 
   if (!course) {
-    return <DashboardShell role="talent"><p className="text-gray-400">Course not found. <Link href="/talent/academy" className="underline">Back to the Academy</Link></p></DashboardShell>
+    return <DashboardShell role="talent"><p className="text-muted">Course not found. <Link href="/talent/academy" className="underline">Back to the Academy</Link></p></DashboardShell>
   }
 
   async function markLesson(idx: number) {
@@ -176,14 +176,14 @@ export default function CoursePlayerPage() {
   const allLessonsDone = done === total
   const pct = Math.round(((done + (completedAt ? 1 : 0)) / (total + 1)) * 100)
 
-  if (loading) return <DashboardShell role="talent"><div className="flex items-center justify-center h-64"><div className="animate-spin w-8 h-8 border-2 border-gold border-t-transparent rounded-full" /></div></DashboardShell>
+  if (loading) return <DashboardShell role="talent"><div className="flex items-center justify-center h-64"><div className="animate-spin w-8 h-8 border-2 border-accent border-t-transparent rounded-full" /></div></DashboardShell>
 
   if (!enrolled) {
     return (
       <DashboardShell role="talent">
         <div className="max-w-2xl dashboard-card text-center py-12">
           <p className="text-[15px] text-ink font-medium mb-2">You&apos;re not enrolled on this course yet</p>
-          <p className="text-[13px] text-gray-500 mb-4">{course.title} - £{(coursePrice(course) / 100).toFixed(0)} with certificate and profile badge on completion.</p>
+          <p className="text-[13px] text-secondary mb-4">{course.title} - £{(coursePrice(course) / 100).toFixed(0)} with certificate and profile badge on completion.</p>
           <Link href="/talent/academy" className="btn-primary inline-block text-[13px]">Enrol from the Academy</Link>
         </div>
       </DashboardShell>
@@ -193,12 +193,12 @@ export default function CoursePlayerPage() {
   const navItem = (label: string, active: boolean, complete: boolean, onClick: () => void, sub?: string) => (
     <button key={label} type="button" onClick={onClick}
       className={`w-full text-left px-3 py-2.5 rounded-lg transition-colors flex items-start gap-2.5 ${active ? 'bg-ink text-white' : 'hover:bg-surface text-ink'}`}>
-      <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-semibold shrink-0 mt-0.5 ${complete ? 'bg-green-600 text-white' : active ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-500'}`}>
+      <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-semibold shrink-0 mt-0.5 ${complete ? 'bg-green-600 text-white' : active ? 'bg-white/20 text-white' : 'bg-gray-100 text-secondary'}`}>
         {complete ? <Check size={11} /> : ''}
       </span>
       <span className="min-w-0">
         <span className={`block text-[12px] font-medium leading-snug ${active ? 'text-white' : 'text-ink'}`}>{label}</span>
-        {sub && <span className={`block text-[10px] mt-0.5 ${active ? 'text-white/60' : 'text-gray-400'}`}>{sub}</span>}
+        {sub && <span className={`block text-[10px] mt-0.5 ${active ? 'text-white/60' : 'text-muted'}`}>{sub}</span>}
       </span>
     </button>
   )
@@ -219,13 +219,13 @@ export default function CoursePlayerPage() {
       <div className="mb-4 flex flex-wrap items-center gap-1.5">
         <span className="rounded-full bg-ink px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-white/80">{courseMeta(String(slug)).level}</span>
         <span className="rounded-full bg-gray-100 px-2.5 py-1 text-[10px] font-medium text-gray-600">{courseMeta(String(slug)).cpdHours} CPD hour{courseMeta(String(slug)).cpdHours === 1 ? '' : 's'}</span>
-        {courseMeta(String(slug)).skills.map(skill => <span key={skill} className="rounded-full bg-[#f5f5f5] px-2.5 py-1 text-[10px] font-medium text-[#10283b]">{skill}</span>)}
+        {courseMeta(String(slug)).skills.map(skill => <span key={skill} className="rounded-full bg-[#f5f6f8] px-2.5 py-1 text-[10px] font-medium text-[#10283b]">{skill}</span>)}
       </div>
       <div className="flex items-center gap-3 mb-6">
         <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
-          <div className="h-full bg-gold rounded-full transition-all" style={{ width: `${pct}%` }} />
+          <div className="h-full bg-accent rounded-full transition-all" style={{ width: `${pct}%` }} />
         </div>
-        <p className="text-[12px] text-gray-500 shrink-0">{completedAt ? 'Complete - certified' : `${done}/${total} modules · assessment ${allLessonsDone ? 'unlocked' : 'locked'}`}</p>
+        <p className="text-[12px] text-secondary shrink-0">{completedAt ? 'Complete - certified' : `${done}/${total} modules · assessment ${allLessonsDone ? 'unlocked' : 'locked'}`}</p>
       </div>
 
       {completedAt && (
@@ -240,7 +240,7 @@ export default function CoursePlayerPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-[240px_1fr] gap-6 items-start">
         <aside className="bg-white border border-border rounded-xl p-3 lg:sticky lg:top-6">
-          <p className="text-[10px] uppercase tracking-[0.18em] text-gray-400 font-semibold px-3 pt-1 pb-2">Syllabus</p>
+          <p className="text-[10px] uppercase tracking-[0.18em] text-muted font-semibold px-3 pt-1 pb-2">Syllabus</p>
           <div className="space-y-0.5">
             {navItem('Course overview', view === 'overview', false, () => { setView('overview') })}
             {course.lessons.map((l, i) => navItem(`${i + 1}. ${l.title}`, view === i, Boolean(progress[i]), () => { setView(i); setResult(null) }))}
@@ -258,15 +258,15 @@ export default function CoursePlayerPage() {
                   <p className="text-[14px] text-gray-700 leading-[1.8] mb-5">{rich.aims}</p>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-5">
                     <div className="bg-surface rounded-xl p-4">
-                      <p className="text-[10px] uppercase tracking-[0.14em] text-gray-500 font-semibold mb-1.5 inline-flex items-center gap-1.5"><Users size={12} /> Who this course is for</p>
+                      <p className="text-[10px] uppercase tracking-[0.14em] text-secondary font-semibold mb-1.5 inline-flex items-center gap-1.5"><Users size={12} /> Who this course is for</p>
                       <p className="text-[13px] text-gray-700 leading-[1.7]">{rich.audience}</p>
                     </div>
                     <div className="bg-surface rounded-xl p-4">
-                      <p className="text-[10px] uppercase tracking-[0.14em] text-gray-500 font-semibold mb-1.5 inline-flex items-center gap-1.5"><FileText size={12} /> Assessment</p>
+                      <p className="text-[10px] uppercase tracking-[0.14em] text-secondary font-semibold mb-1.5 inline-flex items-center gap-1.5"><FileText size={12} /> Assessment</p>
                       <p className="text-[13px] text-gray-700 leading-[1.7]">{course.quiz.length}-question assessment. {PASS_MARK}% required to pass. Unlimited retakes. Passing issues your certificate with a unique verification code and places the badge on your professional profile.</p>
                     </div>
                   </div>
-                  <p className="text-[10px] uppercase tracking-[0.14em] text-gray-500 font-semibold mb-2 inline-flex items-center gap-1.5"><GraduationCap size={12} /> On completion you will be able to</p>
+                  <p className="text-[10px] uppercase tracking-[0.14em] text-secondary font-semibold mb-2 inline-flex items-center gap-1.5"><GraduationCap size={12} /> On completion you will be able to</p>
                   <ul className="space-y-1.5 mb-6">
                     {rich.outcomes.map((o, i) => (
                       <li key={i} className="text-[13px] text-gray-700 flex items-start gap-2"><Check size={14} className="text-green-600 mt-0.5 shrink-0" />{o}</li>
@@ -323,7 +323,7 @@ export default function CoursePlayerPage() {
                   <img src={MODULE_VISUALS[i % MODULE_VISUALS.length]} alt="" className="absolute inset-0 h-full w-full object-cover" />
                   <div className="absolute inset-0 bg-gradient-to-t from-[#0b2f4d]/80 via-[#0b2f4d]/20 to-transparent" />
                   <div className="absolute bottom-0 left-0 right-0 p-5">
-                    <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#d9d9d9]">Think like a spa professional</p>
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#e3e7eb]">Think like a spa professional</p>
                     <p className="mt-1 max-w-2xl text-[13px] leading-5 text-white/90">Connect the principle to what a guest, therapist, manager or owner would actually experience.</p>
                   </div>
                 </div>
@@ -332,17 +332,17 @@ export default function CoursePlayerPage() {
 
                 {richLesson?.whyThisMatters && (
                   <div className="bg-[#0b2f4d] rounded-xl p-4 mb-4">
-                    <p className="text-[10px] uppercase tracking-[0.16em] text-[#d9d9d9] font-semibold mb-1.5">Why this matters</p>
+                    <p className="text-[10px] uppercase tracking-[0.16em] text-[#e3e7eb] font-semibold mb-1.5">Why this matters</p>
                     <p className="text-[13.5px] text-white/90 leading-[1.75]">{richLesson.whyThisMatters}</p>
                   </div>
                 )}
 
                 {richLesson && (
-                  <div className="border-l-2 border-gold bg-surface rounded-r-xl p-4 mb-6">
-                    <p className="text-[10px] uppercase tracking-[0.14em] text-gray-500 font-semibold mb-2 inline-flex items-center gap-1.5"><Target size={12} /> Learning objectives</p>
+                  <div className="border-l-2 border-accent bg-surface rounded-r-xl p-4 mb-6">
+                    <p className="text-[10px] uppercase tracking-[0.14em] text-secondary font-semibold mb-2 inline-flex items-center gap-1.5"><Target size={12} /> Learning objectives</p>
                     <ul className="space-y-1">
                       {richLesson.objectives.map((o, oi) => (
-                        <li key={oi} className="text-[13px] text-gray-700 flex items-start gap-2"><span className="text-gold mt-0.5">•</span>{o}</li>
+                        <li key={oi} className="text-[13px] text-gray-700 flex items-start gap-2"><span className="text-accent mt-0.5">•</span>{o}</li>
                       ))}
                     </ul>
                   </div>
@@ -351,7 +351,7 @@ export default function CoursePlayerPage() {
                 {richLesson ? (
                   <div className="space-y-5 mb-6">
                     {richLesson.sections.map((s, si) => (
-                      <section key={si} className="rounded-xl border border-[#e5e5e5] bg-white p-5">
+                      <section key={si} className="rounded-xl border border-[#e3e7eb] bg-white p-5">
                         <h3 className="font-serif text-[16px] font-semibold text-ink mb-2">{s.heading}</h3>
                         <p className="text-[14px] text-gray-700 leading-[1.85] whitespace-pre-line">{s.body}</p>
                       </section>
@@ -366,14 +366,14 @@ export default function CoursePlayerPage() {
                 )}
 
                 {richLesson?.scenario && (
-                  <div className="rounded-xl border border-[#e5e5e5] bg-[#f5f6f8] p-5 mb-4">
+                  <div className="rounded-xl border border-[#e3e7eb] bg-[#f5f6f8] p-5 mb-4">
                     <p className="text-[10px] uppercase tracking-[0.16em] text-[#10283b] font-semibold mb-1.5">Scenario - think it through</p>
                     <p className="text-[13px] text-gray-700 leading-[1.8] whitespace-pre-line">{richLesson.scenario}</p>
                   </div>
                 )}
 
                 {richLesson?.activity && (
-                  <div className="rounded-xl border border-[#e0e0e0] bg-[#f5f5f5] p-5 mb-4">
+                  <div className="rounded-xl border border-[#e3e7eb] bg-[#f5f6f8] p-5 mb-4">
                     <p className="text-[10px] uppercase tracking-[0.16em] text-[#2e5b45] font-semibold mb-1.5">Practical activity - do this</p>
                     <p className="text-[13px] text-gray-700 leading-[1.8] whitespace-pre-line">{richLesson.activity}</p>
                   </div>
@@ -383,7 +383,7 @@ export default function CoursePlayerPage() {
 
                 {richLesson && richLesson.keyTerms.length > 0 && (
                   <div className="mb-6">
-                    <p className="text-[10px] uppercase tracking-[0.14em] text-gray-500 font-semibold mb-2">Key terms</p>
+                    <p className="text-[10px] uppercase tracking-[0.14em] text-secondary font-semibold mb-2">Key terms</p>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                       {richLesson.keyTerms.map((kt, ki) => (
                         <div key={ki} className="border border-border rounded-lg p-3">
@@ -397,7 +397,7 @@ export default function CoursePlayerPage() {
 
                 {richLesson?.caseStudy && (
                   <div className="bg-ink rounded-xl p-5 mb-6">
-                    <p className="text-[10px] uppercase tracking-[0.18em] text-gold font-semibold mb-2">Case study · {richLesson.caseStudy.title}</p>
+                    <p className="text-[10px] uppercase tracking-[0.18em] text-accent font-semibold mb-2">Case study · {richLesson.caseStudy.title}</p>
                     <p className="text-[13px] text-white/85 leading-[1.8] mb-3">{richLesson.caseStudy.scenario}</p>
                     <p className="text-[12px] text-white/60 uppercase tracking-wide font-semibold mb-1">The professional response</p>
                     <p className="text-[13px] text-white/85 leading-[1.8]">{richLesson.caseStudy.insight}</p>
@@ -406,7 +406,7 @@ export default function CoursePlayerPage() {
 
                 {richLesson?.nextStep && (
                   <div className="rounded-xl border border-border bg-white p-4 mb-6">
-                    <p className="text-[10px] uppercase tracking-[0.16em] text-gray-500 font-semibold mb-1.5">Your next step at work</p>
+                    <p className="text-[10px] uppercase tracking-[0.16em] text-secondary font-semibold mb-1.5">Your next step at work</p>
                     <p className="text-[13px] text-gray-700 leading-[1.7]">{richLesson.nextStep}</p>
                   </div>
                 )}
@@ -418,11 +418,11 @@ export default function CoursePlayerPage() {
                       <p className="text-[13px] text-gray-700 italic leading-[1.7]">{extra.guestView}</p>
                     </div>
                     <div className="bg-surface rounded-xl p-4">
-                      <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-gray-500 mb-1.5 inline-flex items-center gap-1.5"><TrendingUp size={12} /> Why this matters for your career</p>
+                      <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-secondary mb-1.5 inline-flex items-center gap-1.5"><TrendingUp size={12} /> Why this matters for your career</p>
                       <p className="text-[13px] text-gray-700 leading-[1.7]">{extra.helpsYou}</p>
                     </div>
                     <div className="border border-border rounded-xl p-4">
-                      <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-gray-500 mb-2 inline-flex items-center gap-1.5"><Lightbulb size={12} className="text-amber-500" /> Things to consider</p>
+                      <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-secondary mb-2 inline-flex items-center gap-1.5"><Lightbulb size={12} className="text-amber-500" /> Things to consider</p>
                       <ul className="space-y-1.5">
                         {extra.tips.map((t, ti) => (
                           <li key={ti} className="text-[13px] text-gray-700 flex items-start gap-2"><Check size={13} className="text-green-600 mt-0.5 shrink-0" />{t}</li>
@@ -433,15 +433,15 @@ export default function CoursePlayerPage() {
                 )}
 
                 {!richLesson && (
-                  <div className="mb-6 rounded-2xl border border-[#d9d1c3] bg-[#f8f4eb] p-5">
+                  <div className="mb-6 rounded-2xl border border-[#e3e7eb] bg-[#f5f6f8] p-5">
                     <p className="text-[10px] font-semibold uppercase tracking-[0.15em] text-[#10283b]">Put this into practice</p>
-                    <p className="mt-2 text-[13px] leading-6 text-[#566671]">Use your current or most recent spa as the example. What is happening now? What would you change? What could go wrong? Which number or guest outcome would tell you whether your decision worked? Write one action, one owner and one measure before moving on.</p>
+                    <p className="mt-2 text-[13px] leading-6 text-[#5a6a76]">Use your current or most recent spa as the example. What is happening now? What would you change? What could go wrong? Which number or guest outcome would tell you whether your decision worked? Write one action, one owner and one measure before moving on.</p>
                   </div>
                 )}
 
                 {richLesson?.summary && (
-                  <div className="border border-gold/30 bg-gold/5 rounded-xl p-4 mb-6">
-                    <p className="text-[10px] uppercase tracking-[0.14em] text-gold font-semibold mb-1.5">Module summary</p>
+                  <div className="border border-accent/30 bg-accent/5 rounded-xl p-4 mb-6">
+                    <p className="text-[10px] uppercase tracking-[0.14em] text-accent font-semibold mb-1.5">Module summary</p>
                     <p className="text-[13px] text-gray-700 leading-[1.7]">{richLesson.summary}</p>
                   </div>
                 )}
@@ -466,7 +466,7 @@ export default function CoursePlayerPage() {
                   <>
                     <Award size={40} className="mx-auto text-green-600 mb-3" />
                     <p className="font-serif text-xl font-bold text-ink mb-1">Passed - {result.score}%</p>
-                    <p className="text-[13px] text-gray-500 mb-6">{result.correct} of {result.total} correct. Your certificate is ready and the badge is live on your profile.</p>
+                    <p className="text-[13px] text-secondary mb-6">{result.correct} of {result.total} correct. Your certificate is ready and the badge is live on your profile.</p>
                     <div className="flex items-center justify-center gap-3">
                       <Link href={`/talent/academy/certificate/${slug}`} className="btn-primary text-[13px]">View certificate</Link>
                       <Link href="/talent/academy" className="btn-secondary text-[13px]">Back to Academy</Link>
@@ -476,7 +476,7 @@ export default function CoursePlayerPage() {
                   <>
                     <RotateCcw size={36} className="mx-auto text-amber-500 mb-3" />
                     <p className="font-serif text-xl font-bold text-ink mb-1">{result.score}% - not quite</p>
-                    <p className="text-[13px] text-gray-500 mb-6">{result.correct} of {result.total} correct; you need {PASS_MARK}%. Revisit the modules and try again - there is no limit on retakes.</p>
+                    <p className="text-[13px] text-secondary mb-6">{result.correct} of {result.total} correct; you need {PASS_MARK}%. Revisit the modules and try again - there is no limit on retakes.</p>
                     <div className="flex items-center justify-center gap-3">
                       <button type="button" onClick={() => { setResult(null); setAnswers({}) }} className="btn-primary text-[13px]">Retake now</button>
                       <button type="button" onClick={() => setView(0)} className="btn-secondary text-[13px]">Back to Module 1</button>
@@ -489,7 +489,7 @@ export default function CoursePlayerPage() {
                 <div className="dashboard-card">
                   <p className="text-[10px] uppercase tracking-[0.18em] text-accent font-semibold mb-1.5">Final assessment</p>
                   <h2 className="font-serif text-[20px] font-bold text-ink mb-1">{course.title}</h2>
-                  <p className="text-[12px] text-gray-500">{course.quiz.length} questions · {PASS_MARK}% to pass · unlimited retakes · marked instantly</p>
+                  <p className="text-[12px] text-secondary">{course.quiz.length} questions · {PASS_MARK}% to pass · unlimited retakes · marked instantly</p>
                 </div>
                 {course.quiz.map((q, i) => (
                   <div key={i} className="dashboard-card">

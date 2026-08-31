@@ -187,7 +187,7 @@ export default function EmployerAnalyticsPage() {
         </div>
         <div className="dashboard-card">
           <div className="text-muted mb-2"><TrendingUp size={16} /></div>
-          <p className="text-[28px] font-semibold" style={{ color: '#555555' }}>{stats.avgMatch > 0 ? `${stats.avgMatch}%` : '-'}</p>
+          <p className="text-[28px] font-semibold" style={{ color: '#5a6a76' }}>{stats.avgMatch > 0 ? `${stats.avgMatch}%` : '-'}</p>
           <p className="text-[11px] text-muted">{stats.avgMatch > 0 ? 'Avg match score' : 'Avg match score (no scored applications yet)'}</p>
         </div>
         <div className="dashboard-card">
@@ -233,7 +233,7 @@ export default function EmployerAnalyticsPage() {
             <div className="space-y-2.5">
               {topSkills.map((skill, i) => (
                 <div key={skill} className="flex items-center gap-3">
-                  <span className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-semibold shrink-0" style={{ backgroundColor: '#f5f6f8', color: '#555555' }}>{i + 1}</span>
+                  <span className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-semibold shrink-0" style={{ backgroundColor: '#f5f6f8', color: '#5a6a76' }}>{i + 1}</span>
                   <span className="text-[13px] text-ink">{skill}</span>
                 </div>
               ))}
@@ -283,7 +283,7 @@ export default function EmployerAnalyticsPage() {
                     <td className="px-5 py-3 text-[13px] text-ink">{row.shortlisted}</td>
                     <td className="px-5 py-3">
                       {row.avgScore > 0 ? (
-                        <span className="text-[13px] font-medium" style={{ color: row.avgScore >= 80 ? '#16A34A' : row.avgScore >= 60 ? '#555555' : '#5a6a76' }}>{row.avgScore}%</span>
+                        <span className="text-[13px] font-medium" style={{ color: row.avgScore >= 80 ? '#16A34A' : row.avgScore >= 60 ? '#5a6a76' : '#5a6a76' }}>{row.avgScore}%</span>
                       ) : <span className="text-[11px] text-muted">-</span>}
                     </td>
                   </tr>

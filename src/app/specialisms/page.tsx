@@ -26,7 +26,7 @@ export default function SpecialismsPage() {
       {/* Hero */}
       <section className="pt-[76px] bg-white border-b border-border">
         <div className="max-w-5xl mx-auto px-6 lg:px-8 py-16 text-center">
-          <p className="text-[11px] tracking-[0.15em] uppercase font-medium mb-4" style={{ color: '#555555' }}>Every Discipline</p>
+          <p className="text-[11px] tracking-[0.15em] uppercase font-medium mb-4" style={{ color: '#5a6a76' }}>Every Discipline</p>
           <h1 className="text-[36px] md:text-[48px] font-medium text-ink tracking-tight leading-[1.08] mb-4">Specialisms</h1>
           <p className="text-[15px] text-secondary max-w-xl mx-auto">We cover every discipline within luxury spa, wellness and hospitality.</p>
         </div>
@@ -38,7 +38,7 @@ export default function SpecialismsPage() {
             <div key={s.name} className="bg-white border border-border rounded-xl p-6 hover:shadow-md hover:-translate-y-0.5 transition-all">
               <h3 className="text-[16px] font-medium text-ink">{s.name}</h3>
               <p className="text-[13px] text-secondary leading-[1.7] mt-2">{s.desc}</p>
-              <Link href={`/jobs?specialism=${encodeURIComponent(s.name)}`} className="inline-flex items-center gap-1.5 text-[13px] font-medium mt-4" style={{ color: '#555555' }}>
+              <Link href={`/jobs?specialism=${encodeURIComponent(s.name)}`} className="inline-flex items-center gap-1.5 text-[13px] font-medium mt-4" style={{ color: '#5a6a76' }}>
                 View Roles <ArrowRight size={13} />
               </Link>
             </div>

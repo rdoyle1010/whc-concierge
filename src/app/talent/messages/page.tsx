@@ -148,14 +148,14 @@ export default function TalentMessagesPage() {
 
       <div className="dashboard-card !p-0 overflow-hidden" style={{ height: 'calc(100vh - 245px)', minHeight: 560 }}>
         <div className="flex h-full">
-          <aside className={`${activeConvo ? 'hidden md:flex' : 'flex'} w-full md:w-[330px] lg:w-[360px] flex-col border-r border-[#e5e5e5] bg-[#fafafa]`}>
-            <div className="border-b border-[#e5e5e5] px-5 py-5">
+          <aside className={`${activeConvo ? 'hidden md:flex' : 'flex'} w-full md:w-[330px] lg:w-[360px] flex-col border-r border-[#e3e7eb] bg-[#f5f6f8]`}>
+            <div className="border-b border-[#e3e7eb] px-5 py-5">
               <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#10283b]">Conversations</p>
               <p className="mt-1 text-[12px] text-[#8a949b]">{conversations.length} active thread{conversations.length === 1 ? '' : 's'}</p>
             </div>
             <div className="flex-1 overflow-y-auto">
               {loading ? (
-                <div className="space-y-3 p-4">{[1,2,3].map(i => <div key={i} className="h-[76px] animate-pulse rounded-2xl bg-[#f0f0f0]" />)}</div>
+                <div className="space-y-3 p-4">{[1,2,3].map(i => <div key={i} className="h-[76px] animate-pulse rounded-2xl bg-[#f5f6f8]" />)}</div>
               ) : conversations.length === 0 ? (
                 <div className="flex h-full flex-col items-center justify-center px-8 text-center">
                   <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl border border-[#e3e7eb] bg-white text-[#10283b]"><MessageSquare size={20} /></div>
@@ -166,7 +166,7 @@ export default function TalentMessagesPage() {
                 const selected = activeConvo === convo.partnerId
                 const initials = String(convo.partnerName || 'U').split(' ').map((part: string) => part[0]).join('').slice(0,2).toUpperCase()
                 return (
-                  <button type="button" key={convo.partnerId} onClick={() => setActiveConvo(convo.partnerId)} className={`group w-full border-b border-[#ececec] px-4 py-4 text-left transition ${selected ? 'bg-white' : 'hover:bg-white/70'}`}>
+                  <button type="button" key={convo.partnerId} onClick={() => setActiveConvo(convo.partnerId)} className={`group w-full border-b border-[#e3e7eb] px-4 py-4 text-left transition ${selected ? 'bg-white' : 'hover:bg-white/70'}`}>
                     <div className="flex items-start gap-3">
                       <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full border text-[11px] font-semibold ${selected ? 'border-accent bg-surface text-ink' : 'border-border bg-white text-secondary'}`}>{initials}</div>
                       <div className="min-w-0 flex-1">
@@ -184,7 +184,7 @@ export default function TalentMessagesPage() {
             </div>
           </aside>
 
-          <section className={`${activeConvo ? 'flex' : 'hidden md:flex'} min-w-0 flex-1 flex-col bg-[#fafafa]`}>
+          <section className={`${activeConvo ? 'flex' : 'hidden md:flex'} min-w-0 flex-1 flex-col bg-[#f5f6f8]`}>
             {!activeConvo ? (
               <div className="flex flex-1 flex-col items-center justify-center px-8 text-center">
                 <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-2xl border border-[#e3e7eb] bg-white text-[#10283b]"><MessageSquare size={22} /></div>
@@ -193,8 +193,8 @@ export default function TalentMessagesPage() {
               </div>
             ) : (
               <>
-                <header className="flex min-h-[76px] items-center gap-3 border-b border-[#e5e5e5] bg-white px-4 md:px-6">
-                  <button type="button" onClick={() => setActiveConvo(null)} className="flex h-9 w-9 items-center justify-center rounded-full border border-[#e5e5e5] text-[#59636c] md:hidden"><ChevronLeft size={17} /></button>
+                <header className="flex min-h-[76px] items-center gap-3 border-b border-[#e3e7eb] bg-white px-4 md:px-6">
+                  <button type="button" onClick={() => setActiveConvo(null)} className="flex h-9 w-9 items-center justify-center rounded-full border border-[#e3e7eb] text-[#5a6a76] md:hidden"><ChevronLeft size={17} /></button>
                   <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#0b2f4d] text-[11px] font-semibold text-white">{String(activePartner?.partnerName || 'U').split(' ').map((part: string) => part[0]).join('').slice(0,2).toUpperCase()}</div>
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-[14px] font-semibold text-[#10283b]">{activePartner?.partnerName || 'Unknown User'}</p>
@@ -203,7 +203,7 @@ export default function TalentMessagesPage() {
                 </header>
 
                 {residencyPrivate && (
-                  <div className="mx-4 mt-4 flex items-start gap-3 rounded-2xl border border-[#e5e5e5] bg-[#f5f6f8] px-4 py-3 md:mx-6">
+                  <div className="mx-4 mt-4 flex items-start gap-3 rounded-2xl border border-[#e3e7eb] bg-[#f5f6f8] px-4 py-3 md:mx-6">
                     <ShieldCheck size={16} className="mt-0.5 shrink-0 text-[#10283b]" />
                     <p className="text-[11px] leading-5 text-[#5a6a76]">Discuss dates, treatments, hours and rate here. Direct contact details, links and attachments remain restricted until the Residency booking is confirmed.</p>
                   </div>
@@ -233,17 +233,17 @@ export default function TalentMessagesPage() {
                   )}
                 </div>
 
-                <div className="border-t border-[#e5e5e5] bg-white p-3 md:p-4">
+                <div className="border-t border-[#e3e7eb] bg-white p-3 md:p-4">
                   {!residencyPrivate && attachmentFile && (
-                    <div className="mb-3 flex items-center justify-between rounded-xl border border-[#e5e5e5] bg-[#fafafa] px-3 py-2.5">
-                      <div className="flex min-w-0 items-center gap-2 text-[12px] text-[#334b5d]"><FileText size={15} /><span className="truncate">{attachmentFile.name}</span></div>
+                    <div className="mb-3 flex items-center justify-between rounded-xl border border-[#e3e7eb] bg-[#f5f6f8] px-3 py-2.5">
+                      <div className="flex min-w-0 items-center gap-2 text-[12px] text-[#3d4b57]"><FileText size={15} /><span className="truncate">{attachmentFile.name}</span></div>
                       <button type="button" onClick={removeAttachment} className="ml-3 text-[#8a949b] hover:text-[#10283b]">×</button>
                     </div>
                   )}
                   <div className="flex items-end gap-2">
-                    <div className="flex min-w-0 flex-1 items-center border border-[#e0e0e0] bg-[#fafafa] px-3 py-1.5 focus-within:border-accent focus-within:bg-white">
+                    <div className="flex min-w-0 flex-1 items-center border border-[#e3e7eb] bg-[#f5f6f8] px-3 py-1.5 focus-within:border-accent focus-within:bg-white">
                       <input type="text" value={newMsg} onChange={e => setNewMsg(e.target.value)} onKeyDown={e => e.key === 'Enter' && !attachmentUploading && sendMessage()} className="min-w-0 flex-1 bg-transparent px-1 py-2 text-[13px] text-[#10283b] outline-none placeholder:text-[#8a949b]" placeholder={residencyPrivate ? 'Discuss the Residency without sharing contact details…' : 'Write a message…'} disabled={attachmentUploading} />
-                      {!residencyPrivate && <><input ref={fileInputRef} type="file" onChange={handleFileSelected} accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" style={{ display: 'none' }} /><button type="button" onClick={handleAttachmentClick} className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[#8a949b] transition hover:bg-[#f0f0f0] hover:text-[#0b2f4d]" disabled={attachmentUploading} title="Attach file"><Paperclip size={17} /></button></>}
+                      {!residencyPrivate && <><input ref={fileInputRef} type="file" onChange={handleFileSelected} accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" style={{ display: 'none' }} /><button type="button" onClick={handleAttachmentClick} className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[#8a949b] transition hover:bg-[#f5f6f8] hover:text-[#0b2f4d]" disabled={attachmentUploading} title="Attach file"><Paperclip size={17} /></button></>}
                     </div>
                     <button type="button" onClick={sendMessage} className="flex h-11 w-11 shrink-0 items-center justify-center bg-accent text-white transition hover:bg-[#123f64] disabled:opacity-50" disabled={attachmentUploading || (!newMsg.trim() && !attachmentFile)}><Send size={17} /></button>
                   </div>

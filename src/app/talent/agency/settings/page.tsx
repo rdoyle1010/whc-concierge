@@ -221,7 +221,7 @@ export default function AgencySettingsPage() {
 
         <div className="dashboard-card mb-6">
           <div className="flex items-center gap-2 mb-1"><CalendarDays size={17} className="text-ink" /><h3 className="font-serif text-lg font-semibold">Your Availability</h3></div>
-          <p className="text-[12px] text-gray-500 mb-5">Choose the day, say whether you are available, then add the exact hours you can genuinely work. A property only sees you as available when its entire shift fits inside the hours you have set.</p>
+          <p className="text-[12px] text-secondary mb-5">Choose the day, say whether you are available, then add the exact hours you can genuinely work. A property only sees you as available when its entire shift fits inside the hours you have set.</p>
 
           {!live.available && (
             <div className="mb-5 border border-amber-300 bg-amber-50 px-4 py-3">
@@ -256,7 +256,7 @@ export default function AgencySettingsPage() {
                   <button type="button" onClick={() => { setStartTime('09:00'); setEndTime('17:00') }} className="btn-secondary !px-3 !py-2 text-[11px]">Full day · 09:00–17:00</button>
                   <span className="self-center text-[11px] text-muted">or enter any custom hours</span>
                 </div>
-                <div className="mt-4 bg-[#fafafa] border border-border px-4 py-3">
+                <div className="mt-4 bg-[#f5f6f8] border border-border px-4 py-3">
                   <p className="text-[12px] font-semibold text-ink">You are setting: {startTime}–{endTime}{selectedDuration > 0 ? ` · ${selectedDuration % 1 === 0 ? selectedDuration : selectedDuration.toFixed(1)} hours` : ''}</p>
                   <p className="mt-1 text-[11px] leading-5 text-muted">Example: if you set 09:00–13:00, you can be matched to a 4-hour shift inside that window. If you set 09:00–17:00, you can be matched to shifts that start and finish within that full window.</p>
                 </div>
@@ -273,7 +273,7 @@ export default function AgencySettingsPage() {
             {days[selectedDate] === 'unavailable' && <p className="mt-3 text-[12px] font-medium text-secondary">Saved: Not available</p>}
           </div>
 
-          <div className="mb-4 border border-border bg-[#fafafa] p-4">
+          <div className="mb-4 border border-border bg-[#f5f6f8] p-4">
             <p className="text-[11px] font-semibold text-ink mb-2">How availability works</p>
             <div className="grid gap-2 text-[11px] leading-5 text-secondary sm:grid-cols-2">
               <p><strong className="text-ink">Available:</strong> set the real start and finish time you could accept work.</p>
@@ -283,7 +283,7 @@ export default function AgencySettingsPage() {
             </div>
           </div>
 
-          <div className="grid grid-cols-7 gap-1.5 mb-1.5">{WEEKDAY_LABELS.map(l => <div key={l} className="text-center text-[10px] uppercase tracking-wide text-gray-400">{l}</div>)}</div>
+          <div className="grid grid-cols-7 gap-1.5 mb-1.5">{WEEKDAY_LABELS.map(l => <div key={l} className="text-center text-[10px] uppercase tracking-wide text-muted">{l}</div>)}</div>
           {calendarWeeks().map((week, wi) => (
             <div key={wi} className="grid grid-cols-7 gap-1.5 mb-1.5">
               {week.map(day => {
@@ -293,7 +293,7 @@ export default function AgencySettingsPage() {
                 const state = days[key]
                 const window = state === 'available' ? windows[key]?.[0] : undefined
                 return (
-                  <button key={key} type="button" disabled={isPast || dayBusy === key} onClick={() => chooseDate(key)} title={state === 'available' ? (window ? `Available ${window.start_time.slice(0, 5)}–${window.end_time.slice(0, 5)} - tap to edit` : 'Available - tap to edit') : state === 'unavailable' ? 'Not available - tap to edit' : 'Not set - tap to add availability'} className={`relative min-h-[64px] border px-1 py-2 text-[11px] font-medium transition-colors ${isPast ? 'bg-gray-50 text-gray-300 border-transparent cursor-default' : state === 'available' ? 'bg-green-50 text-green-800 border-green-300' : state === 'unavailable' ? 'bg-red-50 text-red-600 border-red-200' : 'bg-white text-ink border-border hover:border-ink/30'} ${selectedDate === key ? 'ring-2 ring-[#0b2f4d]/20 border-[#0b2f4d]' : ''} ${isToday ? 'font-bold' : ''}`}>
+                  <button key={key} type="button" disabled={isPast || dayBusy === key} onClick={() => chooseDate(key)} title={state === 'available' ? (window ? `Available ${window.start_time.slice(0, 5)}–${window.end_time.slice(0, 5)} - tap to edit` : 'Available - tap to edit') : state === 'unavailable' ? 'Not available - tap to edit' : 'Not set - tap to add availability'} className={`relative min-h-[64px] border px-1 py-2 text-[11px] font-medium transition-colors ${isPast ? 'bg-[#f5f6f8] text-gray-300 border-transparent cursor-default' : state === 'available' ? 'bg-green-50 text-green-800 border-green-300' : state === 'unavailable' ? 'bg-red-50 text-red-600 border-red-200' : 'bg-white text-ink border-border hover:border-ink/30'} ${selectedDate === key ? 'ring-2 ring-[#0b2f4d]/20 border-[#0b2f4d]' : ''} ${isToday ? 'font-bold' : ''}`}>
                     <span className="block text-[9px] uppercase tracking-wide opacity-65">{day.toLocaleDateString('en-GB', { weekday: 'short' })}</span>
                     <span className="block mt-0.5 text-[13px]">{day.getDate()}</span>
                     <span className="block text-[8px] uppercase opacity-60">{day.toLocaleDateString('en-GB', { month: 'short' })}</span>
@@ -303,15 +303,15 @@ export default function AgencySettingsPage() {
               })}
             </div>
           ))}
-          <div className="flex flex-wrap items-center gap-4 mt-3 text-[11px] text-gray-500"><span className="inline-flex items-center gap-1.5"><span className="w-3 h-3 bg-green-50 border border-green-300 inline-block" /> Available</span><span className="inline-flex items-center gap-1.5"><span className="w-3 h-3 bg-red-50 border border-red-200 inline-block" /> Not available</span><span className="inline-flex items-center gap-1.5"><span className="w-3 h-3 bg-white border border-border inline-block" /> Not set</span></div>
+          <div className="flex flex-wrap items-center gap-4 mt-3 text-[11px] text-secondary"><span className="inline-flex items-center gap-1.5"><span className="w-3 h-3 bg-green-50 border border-green-300 inline-block" /> Available</span><span className="inline-flex items-center gap-1.5"><span className="w-3 h-3 bg-red-50 border border-red-200 inline-block" /> Not available</span><span className="inline-flex items-center gap-1.5"><span className="w-3 h-3 bg-white border border-border inline-block" /> Not set</span></div>
         </div>
 
         {referral.code && (
           <div className="dashboard-card mb-6">
             <h3 className="font-serif text-lg font-semibold mb-1">Refer a Friend</h3>
-            <p className="text-[12px] text-gray-500 mb-3">Know a brilliant therapist? When they join the register with your link and subscribe, you get a <span className="font-medium text-ink">free month</span> on your listing. No limit.</p>
+            <p className="text-[12px] text-secondary mb-3">Know a brilliant therapist? When they join the register with your link and subscribe, you get a <span className="font-medium text-ink">free month</span> on your listing. No limit.</p>
             <div className="flex items-center gap-2"><input readOnly value={`https://talent.wellnesshousecollective.co.uk/register/talent?ref=${referral.code}`} className="input-field text-[12px] flex-1" onFocus={e => e.currentTarget.select()} /><button type="button" className="btn-secondary text-[12px] shrink-0" onClick={() => { navigator.clipboard?.writeText(`https://talent.wellnesshousecollective.co.uk/register/talent?ref=${referral.code}`); setCopied(true); setTimeout(() => setCopied(false), 2000) }}>{copied ? 'Copied' : 'Copy link'}</button></div>
-            {referral.total > 0 && <p className="text-[12px] text-gray-500 mt-2">{referral.total} friend{referral.total > 1 ? 's' : ''} signed up · {referral.converted} joined the register{referral.converted > 0 ? ' - free months on their way' : ''}.</p>}
+            {referral.total > 0 && <p className="text-[12px] text-secondary mt-2">{referral.total} friend{referral.total > 1 ? 's' : ''} signed up · {referral.converted} joined the register{referral.converted > 0 ? ' - free months on their way' : ''}.</p>}
           </div>
         )}
 

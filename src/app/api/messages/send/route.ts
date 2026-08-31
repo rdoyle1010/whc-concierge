@@ -3,6 +3,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { getRequestUser } from '@/lib/request-user'
 import { createNotification } from '@/lib/notifications'
 import { sendNewMessageEmail } from '@/lib/emails'
+import { emailAllowed } from '@/lib/notification-prefs'
 
 function containsRestrictedContactDetails(value: string) {
   const text = value || ''
@@ -148,7 +149,10 @@ export async function POST(req: NextRequest) {
           .maybeSingle()
         alreadyNudged = Boolean(recentUnread)
       } catch { }
-      if (!alreadyNudged) {
+      // Preference-gated ('application_updates'): the employer-message email
+      // nudge respects the recipient's opt-out. The in-app notification above
+      // is always created. Fail-open so the message itself is never blocked.
+      if (!alreadyNudged && await emailAllowed(admin, recipientId, 'application_updates')) {
         const { data: recipUser } = await admin.auth.admin.getUserById(recipientId)
         const recipEmail = recipUser?.user?.email
         if (recipEmail) await sendNewMessageEmail(recipEmail, '', senderName)

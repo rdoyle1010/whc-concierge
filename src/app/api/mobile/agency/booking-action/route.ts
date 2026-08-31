@@ -6,6 +6,7 @@ import { AGENCY_PLATFORM_FEE_PCT } from '@/lib/constants'
 import { feePctForEmployerShift } from '@/app/api/agency/booking/core'
 import { sendSms } from '@/lib/sms'
 import { sendAgencyOfferEmail, sendAgencyUpdateEmail } from '@/lib/emails'
+import { emailAllowed, smsAllowed } from '@/lib/notification-prefs'
 
 const OPEN_STATUSES = ['pending', 'countered']
 const CASCADE_WINDOW_MS = 30 * 60 * 1000
@@ -24,27 +25,37 @@ async function notifyOtherParty(admin: ReturnType<typeof createAdminClient>, rec
   await Promise.allSettled([
     createNotification(recipientUserId, 'general', title, body, link),
     admin.from('messages').insert({ sender_id: senderUserId, recipient_id: recipientUserId, content: body, read: false }).then(() => null),
-    admin.auth.admin.getUserById(recipientUserId).then(({ data }: any) => {
-      const email = data?.user?.email
-      return email ? sendAgencyUpdateEmail(email, 'there', title, body, link) : null
-    }),
+    // Preference-gated ('booking_updates'): booking update emails honour the
+    // recipient's opt-out; bell + inbox always fire. Fail-open.
+    emailAllowed(admin, recipientUserId, 'booking_updates').then(allowed => allowed
+      ? admin.auth.admin.getUserById(recipientUserId).then(({ data }: any) => {
+          const email = data?.user?.email
+          return email ? sendAgencyUpdateEmail(email, 'there', title, body, link) : null
+        })
+      : null),
   ])
 }
 
-async function alertCascadeHolder(admin: ReturnType<typeof createAdminClient>, candidate: { user_id?: string | null; full_name?: string | null; phone?: string | null }, empName: string, empUserId: string, booking: { shift_date: string; rate: number; hours: number | null; expires_at: string }) {
+async function alertCascadeHolder(admin: ReturnType<typeof createAdminClient>, candidate: { user_id?: string | null; full_name?: string | null; phone?: string | null; sms_opt_in?: boolean | null }, empName: string, empUserId: string, booking: { shift_date: string; rate: number; hours: number | null; expires_at: string }) {
   const mins = Math.max(1, Math.round((new Date(booking.expires_at).getTime() - Date.now()) / 60000))
   const body = `URGENT: ${empName} needs cover TODAY and has offered you a shift at £${booking.rate} per hour${booking.hours ? ` (${booking.hours} hours - £${booking.rate * booking.hours} total)` : ''}. You have ${mins} minutes before the offer moves to the next therapist.`
   if (candidate.user_id) {
+    const userId = candidate.user_id
     await Promise.allSettled([
-      createNotification(candidate.user_id, 'general', 'URGENT: shift offer for today', body, '/talent/agency'),
-      admin.from('messages').insert({ sender_id: empUserId, recipient_id: candidate.user_id, content: body, read: false }).then(() => null),
-      admin.auth.admin.getUserById(candidate.user_id).then(({ data }: any) => {
-        const email = data?.user?.email
-        return email ? sendAgencyOfferEmail(email, candidate.full_name || 'there', { propertyName: empName, shiftDate: booking.shift_date, rate: booking.rate, hours: booking.hours, urgent: true, expiresAt: booking.expires_at }) : null
-      }),
+      createNotification(userId, 'general', 'URGENT: shift offer for today', body, '/talent/agency'),
+      admin.from('messages').insert({ sender_id: empUserId, recipient_id: userId, content: body, read: false }).then(() => null),
+      // Preference-gated ('booking_updates'): offer email honours the opt-out;
+      // bell + inbox always fire. Fail-open.
+      emailAllowed(admin, userId, 'booking_updates').then(allowed => allowed
+        ? admin.auth.admin.getUserById(userId).then(({ data }: any) => {
+            const email = data?.user?.email
+            return email ? sendAgencyOfferEmail(email, candidate.full_name || 'there', { propertyName: empName, shiftDate: booking.shift_date, rate: booking.rate, hours: booking.hours, urgent: true, expiresAt: booking.expires_at }) : null
+          })
+        : null),
     ])
   }
-  await sendSms(candidate.phone, `WHC Concierge: ${empName} needs cover TODAY - £${booking.rate}/hr. You have ${mins} mins to respond in Agency.`).catch(() => null)
+  // SMS is consent-gated: sms_opt_in plus a phone number on file.
+  if (smsAllowed(candidate)) await sendSms(candidate.phone, `WHC Concierge: ${empName} needs cover TODAY - £${booking.rate}/hr. You have ${mins} mins to respond in Agency.`).catch(() => null)
 }
 
 async function advanceCascade(admin: ReturnType<typeof createAdminClient>, booking: any) {
@@ -81,7 +92,7 @@ async function advanceCascade(admin: ReturnType<typeof createAdminClient>, booki
   }
   if (!updated) return null
 
-  const { data: candidate } = await admin.from('candidate_profiles').select('id,user_id,full_name,phone').eq('id', entry.id).maybeSingle()
+  const { data: candidate } = await admin.from('candidate_profiles').select('id,user_id,full_name,phone,sms_opt_in').eq('id', entry.id).maybeSingle()
   if (candidate && employer?.user_id) {
     await alertCascadeHolder(admin, candidate, empName, employer.user_id, { shift_date: booking.shift_date, rate, hours, expires_at: deadline })
   }

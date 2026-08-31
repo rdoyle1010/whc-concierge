@@ -29,7 +29,7 @@ export default function HowToUsePage(){
   const [role,setRole]=useState<Role>('talent')
   const steps=role==='talent'?talent:employer
 
-  return <main className="min-h-screen bg-white text-[#173246]">
+  return <main className="min-h-screen bg-white text-[#10283b]">
     <section className="mx-auto max-w-6xl px-6 py-16 md:py-24">
       <div className="mb-12 max-w-3xl">
         <p className="mb-4 text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">How Wellness House works</p>
@@ -45,13 +45,13 @@ export default function HowToUsePage(){
       <div className="grid gap-px overflow-hidden border border-slate-200 bg-slate-200 md:grid-cols-2">
         {steps.map(step=><div key={step.n} className="bg-white p-7 md:p-9">
           <p className="text-xs font-semibold tracking-[0.2em] text-slate-400">{step.n}</p>
-          <h2 className="mt-4 text-xl font-semibold text-[#173246]">{step.title}</h2>
+          <h2 className="mt-4 text-xl font-semibold text-[#10283b]">{step.title}</h2>
           <p className="mt-3 text-sm leading-6 text-slate-600">{step.copy}</p>
         </div>)}
       </div>
 
-      <div className="mt-12 flex flex-col gap-4 bg-[#f4f7f8] p-7 md:flex-row md:items-center md:justify-between">
-        <div><h2 className="text-lg font-semibold text-[#173246]">You do not have to learn the platform first.</h2><p className="mt-2 text-sm leading-6 text-slate-600">Start with the next thing you need to do. The app now includes the same 60-second guide from Home whenever you want it.</p></div>
+      <div className="mt-12 flex flex-col gap-4 bg-[#f5f6f8] p-7 md:flex-row md:items-center md:justify-between">
+        <div><h2 className="text-lg font-semibold text-[#10283b]">You do not have to learn the platform first.</h2><p className="mt-2 text-sm leading-6 text-slate-600">Start with the next thing you need to do. The app now includes the same 60-second guide from Home whenever you want it.</p></div>
         <Link href="/" className="shrink-0 bg-[#0b2f4d] px-5 py-3 text-center text-sm font-semibold text-white">Go to Wellness House</Link>
       </div>
     </section>

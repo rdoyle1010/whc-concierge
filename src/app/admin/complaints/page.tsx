@@ -45,7 +45,7 @@ export default function AdminComplaintsPage() {
 
   const statusColors: Record<string, string> = {
     open: 'bg-red-50 text-red-700', investigating: 'bg-amber-50 text-amber-700',
-    resolved: 'bg-green-50 text-green-700', dismissed: 'bg-gray-100 text-gray-500',
+    resolved: 'bg-green-50 text-green-700', dismissed: 'bg-gray-100 text-secondary',
   }
 
   return (
@@ -62,15 +62,15 @@ export default function AdminComplaintsPage() {
         {['all', 'open', 'investigating', 'resolved', 'dismissed'].map((f) => (
           <button key={f} onClick={() => setFilter(f)}
             className={`px-4 py-2 text-sm font-medium rounded-xl transition-colors capitalize whitespace-nowrap ${
-              filter === f ? 'bg-ink text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+              filter === f ? 'bg-ink text-white' : 'bg-gray-100 text-secondary hover:bg-gray-200'
             }`}>{f} {f !== 'all' && `(${complaints.filter(c => c.status === f).length})`}</button>
         ))}
       </div>
 
       {loading ? (
-        <div className="flex items-center justify-center h-64"><div className="animate-spin w-8 h-8 border-2 border-gold border-t-transparent rounded-full" /></div>
+        <div className="flex items-center justify-center h-64"><div className="animate-spin w-8 h-8 border-2 border-accent border-t-transparent rounded-full" /></div>
       ) : filtered.length === 0 ? (
-        <div className="dashboard-card text-center py-16 text-gray-400">
+        <div className="dashboard-card text-center py-16 text-muted">
           <AlertTriangle size={48} className="mx-auto mb-4 opacity-30" />
           <p>No complaints found.</p>
         </div>
@@ -82,19 +82,19 @@ export default function AdminComplaintsPage() {
                 <div className="flex-1">
                   <div className="flex items-center space-x-3 mb-2">
                     <h3 className="font-serif text-lg font-semibold text-ink">{c.subject || c.message}</h3>
-                    <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${statusColors[c.status] || 'bg-gray-100 text-gray-500'}`}>{c.status}</span>
+                    <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${statusColors[c.status] || 'bg-gray-100 text-secondary'}`}>{c.status}</span>
                   </div>
-                  <p className="text-sm text-gray-500">From: {c.name} ({c.email})</p>
+                  <p className="text-sm text-secondary">From: {c.name} ({c.email})</p>
                   <p className="text-sm text-gray-600 mt-2 line-clamp-2">{c.message}</p>
                   <p className="text-xs text-gray-300 mt-2">{new Date(c.created_at).toLocaleDateString()}</p>
                 </div>
-                <button onClick={() => setSelected(c)} className="p-2 rounded-lg hover:bg-gray-100 text-gray-400 ml-4"><Eye size={18} /></button>
+                <button onClick={() => setSelected(c)} className="p-2 rounded-lg hover:bg-gray-100 text-muted ml-4"><Eye size={18} /></button>
               </div>
-              <div className="flex space-x-2 mt-4 pt-4 border-t border-gray-100">
+              <div className="flex space-x-2 mt-4 pt-4 border-t border-[#e3e7eb]">
                 {['open', 'investigating', 'resolved', 'dismissed'].map((s) => (
                   <button key={s} onClick={() => updateStatus(c.id, s)}
                     className={`text-xs px-3 py-1.5 rounded-lg capitalize transition-colors ${
-                      c.status === s ? 'bg-gold/10 text-gold' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+                      c.status === s ? 'bg-accent/10 text-accent' : 'bg-gray-100 text-secondary hover:bg-gray-200'
                     }`}>{s}</button>
                 ))}
               </div>
@@ -109,19 +109,19 @@ export default function AdminComplaintsPage() {
           <div className="bg-white rounded-3xl max-w-lg w-full p-8 animate-fade-in-up" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-start justify-between mb-4">
               <h2 className="font-serif text-xl font-bold text-ink">{selected.subject || selected.message}</h2>
-              <button onClick={() => setSelected(null)} className="text-gray-300 hover:text-gray-500"><X size={20} /></button>
+              <button onClick={() => setSelected(null)} className="text-gray-300 hover:text-secondary"><X size={20} /></button>
             </div>
             <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${statusColors[selected.status] || ''}`}>{selected.status}</span>
-            <div className="mt-4 p-4 bg-gray-50 rounded-xl">
+            <div className="mt-4 p-4 bg-[#f5f6f8] rounded-xl">
               <p className="text-gray-600 whitespace-pre-wrap leading-relaxed">{selected.message}</p>
             </div>
-            <div className="mt-4 text-sm text-gray-400">
+            <div className="mt-4 text-sm text-muted">
               <p>From: {selected.name} ({selected.email})</p>
               <p>Filed: {new Date(selected.created_at).toLocaleString()}</p>
             </div>
 
             {/* Real reply - emails the complainant directly */}
-            <div className="mt-5 pt-5 border-t border-gray-100">
+            <div className="mt-5 pt-5 border-t border-[#e3e7eb]">
               <label className="block text-sm font-medium text-gray-700 mb-1.5">Reply by email to {selected.email}</label>
               <textarea rows={4} value={reply} onChange={(e) => setReply(e.target.value)} className="input-field mb-2"
                 placeholder={`Hi ${selected.name?.split(' ')[0] || 'there'}, thank you for raising this...`} />

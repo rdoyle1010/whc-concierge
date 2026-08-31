@@ -3,6 +3,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { getRequestUser } from '@/lib/request-user'
 import { createNotification } from '@/lib/notifications'
 import { applicantConfirmationHtml, employerNotificationHtml } from '@/lib/application-email-templates'
+import { emailAllowed } from '@/lib/notification-prefs'
 import { trackEvent } from '@/lib/analytics'
 
 const RESEND_API_KEY = process.env.RESEND_API_KEY
@@ -85,13 +86,19 @@ export async function POST(req: NextRequest) {
 
   try {
     const jobs: Promise<void>[] = []
+    // Always-send (transactional): the applicant's confirmation is a receipt
+    // of their own action, so no preference gate applies to it.
     if (user.email) jobs.push(sendEmail(user.email, `Application Received - ${job.job_title}`, applicantConfirmationHtml({ applicantName: candidate.full_name || 'there', jobTitle: job.job_title, propertyName: employerName })))
-    let employerEmail = employer.contact_email || null
-    if (!employerEmail && employer.user_id) {
-      const { data: employerUser } = await admin.auth.admin.getUserById(employer.user_id)
-      employerEmail = employerUser?.user?.email || null
+    // Preference-gated ('application_updates'): the employer's new-application
+    // email honours their opt-out; the in-app notification above always fires.
+    if (await emailAllowed(admin, employer.user_id, 'application_updates')) {
+      let employerEmail = employer.contact_email || null
+      if (!employerEmail && employer.user_id) {
+        const { data: employerUser } = await admin.auth.admin.getUserById(employer.user_id)
+        employerEmail = employerUser?.user?.email || null
+      }
+      if (employerEmail) jobs.push(sendEmail(employerEmail, `New Application - ${job.job_title}`, employerNotificationHtml({ applicantName: candidate.full_name || 'A candidate', jobTitle: job.job_title, propertyName: employerName, roleLevel: candidate.role_level || undefined })))
     }
-    if (employerEmail) jobs.push(sendEmail(employerEmail, `New Application - ${job.job_title}`, employerNotificationHtml({ applicantName: candidate.full_name || 'A candidate', jobTitle: job.job_title, propertyName: employerName, roleLevel: candidate.role_level || undefined })))
     await Promise.allSettled(jobs)
   } catch (e: any) { console.error('Application email failed:', e?.message) }
 

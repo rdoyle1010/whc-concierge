@@ -64,8 +64,8 @@ export default function JobApplyButtons({ roleId }: Props) {
   if (auth.loading) {
     return (
       <div className="flex flex-col sm:flex-row gap-3">
-        <div className="h-12 w-44 rounded-lg bg-[#f0f0f0] animate-pulse" />
-        <div className="h-12 w-36 rounded-lg bg-[#f0f0f0] animate-pulse" />
+        <div className="h-12 w-44 rounded-lg bg-[#f5f6f8] animate-pulse" />
+        <div className="h-12 w-36 rounded-lg bg-[#f5f6f8] animate-pulse" />
       </div>
     )
   }
@@ -143,8 +143,8 @@ export default function JobApplyButtons({ roleId }: Props) {
       {!auth.loggedIn ? (
         <Link
           href={applyHref}
-          className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg text-[14px] font-semibold text-white transition-all hover:shadow-lg hover:shadow-[#555555]/25"
-          style={{ backgroundColor: '#555555' }}
+          className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg text-[14px] font-semibold text-white transition-all hover:shadow-lg hover:shadow-[#5a6a76]/25"
+          style={{ backgroundColor: '#5a6a76' }}
         >
           Apply for this role <ArrowRight size={16} />
         </Link>
@@ -153,8 +153,8 @@ export default function JobApplyButtons({ roleId }: Props) {
           type="button"
           onClick={handleApplyClick}
           disabled={applying}
-          className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg text-[14px] font-semibold text-white transition-all hover:shadow-lg hover:shadow-[#555555]/25 disabled:opacity-70"
-          style={{ backgroundColor: '#555555' }}
+          className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg text-[14px] font-semibold text-white transition-all hover:shadow-lg hover:shadow-[#5a6a76]/25 disabled:opacity-70"
+          style={{ backgroundColor: '#5a6a76' }}
         >
           {applying ? 'Preparing application...' : 'Review application'} <ArrowRight size={16} />
         </button>
@@ -173,8 +173,8 @@ export default function JobApplyButtons({ roleId }: Props) {
           onClick={handleSaveClick}
           className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg text-[14px] font-semibold transition-all bg-white"
           style={{
-            border: `1px solid ${saved ? '#555555' : '#E5E5E5'}`,
-            color: saved ? '#555555' : '#10283b',
+            border: `1px solid ${saved ? '#5a6a76' : '#E5E5E5'}`,
+            color: saved ? '#5a6a76' : '#10283b',
           }}
         >
           <Bookmark size={16} fill={saved ? 'currentColor' : 'none'} />

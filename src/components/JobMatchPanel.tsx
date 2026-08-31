@@ -94,54 +94,54 @@ export default function JobMatchPanel({ jobId }: { jobId: string }) {
     The employer asked for more years of experience than your profile shows. Evidence of real responsibility can count for a lot, but be straightforward about where you are.
   </li>)
 
-  return <div className="border border-[#e5e5e5] bg-white p-5">
-    <p className="text-[10px] uppercase tracking-[.14em] text-[#7d8990]">Your match with this role</p>
+  return <div className="border border-[#e3e7eb] bg-white p-5">
+    <p className="text-[10px] uppercase tracking-[.14em] text-[#8a949b]">Your match with this role</p>
     <div className="flex items-baseline gap-3 mt-3">
       <span className="text-[44px] leading-none font-semibold tracking-[-.03em] text-[#0b2f4d]">{data.score}%</span>
       <span className="text-[13px] font-semibold text-[#10283b]">{data.label}</span>
     </div>
 
-    {(data.dimensions || []).length > 0 && <div className="mt-5 border-t border-[#e5e5e5] pt-4">
+    {(data.dimensions || []).length > 0 && <div className="mt-5 border-t border-[#e3e7eb] pt-4">
       <p className="text-[10px] uppercase tracking-[.14em] font-semibold text-[#10283b]">Why you match</p>
       <ul className="mt-3 space-y-2.5">
         {(data.dimensions || []).map(dim => <li key={dim.key}>
           <div className="flex items-baseline justify-between gap-3">
-            <span className="text-[12px] text-[#4d4d4d]">{dim.label}</span>
+            <span className="text-[12px] text-[#5a6a76]">{dim.label}</span>
             <span className={`text-[12px] font-semibold tabular-nums ${dim.value >= 70 ? 'text-[#0b2f4d]' : dim.value < 60 ? 'text-[#8a949b]' : 'text-[#10283b]'}`}>{dim.value}%</span>
           </div>
-          <div className="mt-1 h-[3px] w-full bg-[#eef1f3]"><div className="h-full bg-[#0b2f4d]" style={{ width: `${Math.min(100, dim.value)}%`, opacity: dim.value >= 70 ? 1 : 0.45 }} /></div>
+          <div className="mt-1 h-[3px] w-full bg-[#f5f6f8]"><div className="h-full bg-[#0b2f4d]" style={{ width: `${Math.min(100, dim.value)}%`, opacity: dim.value >= 70 ? 1 : 0.45 }} /></div>
         </li>)}
       </ul>
     </div>}
 
-    {(data.strongestEvidence || []).length > 0 && <div className="mt-5 border-t border-[#e5e5e5] pt-4">
+    {(data.strongestEvidence || []).length > 0 && <div className="mt-5 border-t border-[#e3e7eb] pt-4">
       <p className="text-[10px] uppercase tracking-[.14em] font-semibold text-[#10283b]">Your strongest evidence</p>
-      <p className="text-[11px] leading-5 text-[#7d8990] mt-1">From your own CV - lead with these.</p>
+      <p className="text-[11px] leading-5 text-[#8a949b] mt-1">From your own CV - lead with these.</p>
       <ul className="mt-2 space-y-2">
         {(data.strongestEvidence || []).map(line => <li key={line} className="border-l-2 border-[#0b2f4d] pl-3 text-[12px] leading-5 text-[#10283b]">&ldquo;{line}&rdquo;</li>)}
       </ul>
     </div>}
-    {data.hasEvidenceBank === false && <div className="mt-5 border-t border-[#e5e5e5] pt-4">
-      <p className="text-[11px] leading-5 text-[#7d8990]"><Link href="/talent/profile" className="font-semibold text-[#0b2f4d] underline">Upload your CV</Link> and WHC will extract the evidence statements worth leading with on applications like this.</p>
+    {data.hasEvidenceBank === false && <div className="mt-5 border-t border-[#e3e7eb] pt-4">
+      <p className="text-[11px] leading-5 text-[#8a949b]"><Link href="/talent/profile" className="font-semibold text-[#0b2f4d] underline">Upload your CV</Link> and WHC will extract the evidence statements worth leading with on applications like this.</p>
     </div>}
 
-    {(data.employerMayQuestion || []).length > 0 && <div className="mt-5 border-t border-[#e5e5e5] pt-4">
+    {(data.employerMayQuestion || []).length > 0 && <div className="mt-5 border-t border-[#e3e7eb] pt-4">
       <p className="text-[10px] uppercase tracking-[.14em] font-semibold text-[#10283b]">What the employer may question</p>
       <ul className="mt-2 space-y-2">
-        {(data.employerMayQuestion || []).map(item => <li key={item} className="border-l-2 border-[#c7ced3] pl-3 text-[12px] leading-5 text-[#4d4d4d]">{item}</li>)}
+        {(data.employerMayQuestion || []).map(item => <li key={item} className="border-l-2 border-[#8a949b] pl-3 text-[12px] leading-5 text-[#5a6a76]">{item}</li>)}
       </ul>
       {data.interviewReadyHref && <Link href={data.interviewReadyHref} className="btn-primary mt-4 inline-block !py-2 text-[12px]">Prepare answers in Interview Ready</Link>}
     </div>}
 
-    {(data.employerMayQuestion || []).length === 0 && data.interviewReadyHref && <div className="mt-5 border-t border-[#e5e5e5] pt-4">
+    {(data.employerMayQuestion || []).length === 0 && data.interviewReadyHref && <div className="mt-5 border-t border-[#e3e7eb] pt-4">
       <Link href={data.interviewReadyHref} className="btn-primary inline-block !py-2 text-[12px]">Prepare for this interview</Link>
-      <p className="text-[11px] leading-5 text-[#7d8990] mt-2">Likely questions, commercial talking points and 30/60/90-day thinking - built for this exact role.</p>
+      <p className="text-[11px] leading-5 text-[#8a949b] mt-2">Likely questions, commercial talking points and 30/60/90-day thinking - built for this exact role.</p>
     </div>}
 
-    {actions.length > 0 && <div className="mt-5 border-t border-[#e5e5e5] pt-4">
+    {actions.length > 0 && <div className="mt-5 border-t border-[#e3e7eb] pt-4">
       <p className="text-[10px] uppercase tracking-[.14em] font-semibold text-[#10283b]">How to strengthen your application</p>
-      <ul className="mt-2 space-y-2 text-[12px] leading-5 text-[#4d4d4d] list-none">{actions}</ul>
-      <p className="text-[11px] leading-5 text-[#7d8990] mt-3">Honest development, not box-ticking: only add skills and experience you genuinely hold.</p>
+      <ul className="mt-2 space-y-2 text-[12px] leading-5 text-[#5a6a76] list-none">{actions}</ul>
+      <p className="text-[11px] leading-5 text-[#8a949b] mt-3">Honest development, not box-ticking: only add skills and experience you genuinely hold.</p>
     </div>}
   </div>
 }

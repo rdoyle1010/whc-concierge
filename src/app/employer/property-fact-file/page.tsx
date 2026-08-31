@@ -255,7 +255,7 @@ export default function PropertyFactFilePage() {
         <h2 className="dashboard-section-title">Getting here & arrival</h2>
         <p className="text-[12px] text-muted mt-1 mb-5 max-w-3xl">Remove the uncertainty before someone travels to you.</p>
 
-        <div className="border border-border bg-[#fafafa] p-4 mb-5">
+        <div className="border border-border bg-[#f5f6f8] p-4 mb-5">
           <div className="flex items-center gap-2 mb-3"><MapPin size={15} className="text-ink"/><p className="text-[12px] font-semibold text-ink">Find the property address</p></div>
           <div className="flex flex-col sm:flex-row gap-2">
             <input className="input-field text-[13px] flex-1" value={postcode} onChange={e => setPostcode(e.target.value.toUpperCase())} placeholder="Enter postcode, e.g. BD20 5QG" />
@@ -265,7 +265,7 @@ export default function PropertyFactFilePage() {
           {addressLookupMessage && <p className="mt-2 text-[11px] text-muted">{addressLookupMessage}</p>}
           <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
             <div><label className="block text-[11px] font-medium text-ink mb-1.5">Property address</label><input className="input-field text-[13px]" value={form.property_address || ''} onChange={e => set('property_address', e.target.value)} placeholder="Full address" /></div>
-            <div><label className="block text-[11px] font-medium text-ink mb-1.5">Map link</label><input className="input-field text-[13px] bg-[#fafafa]" value={form.map_url || ''} onChange={e => set('map_url', e.target.value)} placeholder="Created automatically after address selection" /></div>
+            <div><label className="block text-[11px] font-medium text-ink mb-1.5">Map link</label><input className="input-field text-[13px] bg-[#f5f6f8]" value={form.map_url || ''} onChange={e => set('map_url', e.target.value)} placeholder="Created automatically after address selection" /></div>
           </div>
         </div>
 

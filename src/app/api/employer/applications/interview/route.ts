@@ -4,6 +4,7 @@ import { getRequestUser } from '@/lib/request-user'
 import { trackEvent } from '@/lib/analytics'
 import { createNotification } from '@/lib/notifications'
 import { sendSmsIfOptedIn } from '@/lib/sms'
+import { emailAllowed } from '@/lib/notification-prefs'
 
 const RESEND_API_KEY = process.env.RESEND_API_KEY
 const FROM_EMAIL = 'WHC Concierge <noreply@mail.wellnesshousecollective.co.uk>'
@@ -138,9 +139,13 @@ export async function POST(req: NextRequest) {
     const note = `${propertyName} has invited you to the ${stageLabel.toLowerCase()} for ${job.job_title}. Choose one of the proposed times in My Applications.`
     await createNotification(candidate.user_id, 'general', title, note, '/talent/applications')
 
+    // Preference-gated ('application_updates'): the interview invitation email
+    // honours the candidate's opt-out; the in-app notification above (and the
+    // opted-in SMS below) always carry the invitation. Fail-open.
+    const wantsEmail = await emailAllowed(admin, candidate.user_id, 'application_updates')
     const { data: authUser } = await admin.auth.admin.getUserById(candidate.user_id)
     const email = authUser?.user?.email || null
-    if (email && RESEND_API_KEY) {
+    if (email && RESEND_API_KEY && wantsEmail) {
       const slotHtml = uniqueIso.map((slot: string) => `<li style="margin:7px 0;">${escapeHtml(new Date(slot).toLocaleString('en-GB',{dateStyle:'full',timeStyle:'short',timeZone:'Europe/London'}))}</li>`).join('')
       const html = `<!doctype html><html><body style="margin:0;background:#ffffff;font-family:Arial,Helvetica,sans-serif;color:#10283b;"><div style="max-width:560px;margin:32px auto;background:#ffffff;border:1px solid #e5e5e5;"><div style="background:#0b2f4d;padding:24px 32px;"><p style="margin:0 0 6px;color:#ffffff;opacity:.8;font-size:11px;text-transform:uppercase;letter-spacing:1.5px;">${escapeHtml(stageLabel)} invitation</p><h1 style="margin:0;color:#ffffff;font-family:Arial,Helvetica,sans-serif;font-size:23px;font-weight:600;">WHC Concierge</h1></div><div style="padding:28px 32px;"><h2 style="margin:0 0 12px;font-family:Arial,Helvetica,sans-serif;font-weight:600;font-size:19px;">${escapeHtml(job.job_title)}</h2><p>${escapeHtml(propertyName)} would like to invite you to the <strong>${escapeHtml(stageLabel.toLowerCase())}</strong> via ${escapeHtml(methodLabel(interviewMethod))}.</p><p>Please choose one of the proposed times below to confirm your attendance:</p><ul>${slotHtml}</ul>${employerNote ? `<p>${escapeHtml(employerNote)}</p>` : ''}<p><a href="https://talent.wellnesshousecollective.co.uk/talent/applications" style="display:inline-block;background:#0b2f4d;color:#ffffff;text-decoration:none;padding:12px 18px;">Choose ${escapeHtml(stageLabel.toLowerCase())} time</a></p></div></div></body></html>`
       const res = await fetch('https://api.resend.com/emails',{method:'POST',headers:{Authorization:`Bearer ${RESEND_API_KEY}`,'Content-Type':'application/json'},body:JSON.stringify({from:FROM_EMAIL,to:email,subject:title,html})})

@@ -52,18 +52,18 @@ export default function VerifyResultPage() {
       <div className="flex-1 flex items-center justify-center px-6 pt-[76px]">
         <div className="bg-white border border-border rounded-2xl p-10 max-w-md w-full text-center">
           {loading ? (
-            <div className="animate-spin w-8 h-8 border-2 border-gold border-t-transparent rounded-full mx-auto" />
+            <div className="animate-spin w-8 h-8 border-2 border-accent border-t-transparent rounded-full mx-auto" />
           ) : cert ? (
             <>
               <ShieldCheck size={36} className="mx-auto text-green-600 mb-4" />
               <p className="text-[11px] uppercase tracking-[0.25em] text-green-700 font-semibold mb-3">Certificate verified</p>
               <p className="font-serif text-[22px] font-bold text-ink capitalize mb-1">{name || 'WHC Professional'}</p>
               <p className="text-[14px] text-gray-600 mb-1">{courseName || cert.course_slug}</p>
-              <p className="text-[12px] text-gray-500 mb-4">
+              <p className="text-[12px] text-secondary mb-4">
                 Completed {new Date(cert.completed_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}
               </p>
-              <p className="text-[11px] text-gray-400 font-mono mb-6">{cert.certificate_code}</p>
-              <p className="text-[11px] text-gray-400">Issued by Wellness House Collective. This certificate evidences completion of a WHC Academy course and its assessment.</p>
+              <p className="text-[11px] text-muted font-mono mb-6">{cert.certificate_code}</p>
+              <p className="text-[11px] text-muted">Issued by Wellness House Collective. This certificate evidences completion of a WHC Academy course and its assessment.</p>
             </>
           ) : (
             <>

@@ -48,12 +48,12 @@ export default function PayoutStatementPage() {
 
   const monthLabel = month ? new Date(`${month}-01T12:00:00Z`).toLocaleDateString('en-GB', { month: 'long', year: 'numeric' }) : ''
 
-  if (loading) return <div className="min-h-screen bg-white flex items-center justify-center"><div className="animate-spin w-8 h-8 border-2 border-gold border-t-transparent rounded-full" /></div>
+  if (loading) return <div className="min-h-screen bg-white flex items-center justify-center"><div className="animate-spin w-8 h-8 border-2 border-accent border-t-transparent rounded-full" /></div>
 
   return (
     <div className="min-h-screen bg-white">
-      <div className="print:hidden border-b border-gray-100 px-6 py-4 flex items-center justify-between max-w-3xl mx-auto">
-        <Link href="/talent/agency" className="text-[13px] text-gray-500 hover:text-black inline-flex items-center gap-1.5"><ArrowLeft size={14} /> Agency Shifts</Link>
+      <div className="print:hidden border-b border-[#e3e7eb] px-6 py-4 flex items-center justify-between max-w-3xl mx-auto">
+        <Link href="/talent/agency" className="text-[13px] text-secondary hover:text-black inline-flex items-center gap-1.5"><ArrowLeft size={14} /> Agency Shifts</Link>
         <div className="flex items-center gap-3">
           {months.length > 0 && (
             <select value={month} onChange={e => setMonth(e.target.value)} className="input-field !w-auto !py-1.5 text-[12px]">
@@ -68,21 +68,21 @@ export default function PayoutStatementPage() {
         <div className="flex items-start justify-between mb-10">
           <div>
             <p className="text-[22px] font-serif font-bold text-black">Wellness House Collective</p>
-            <p className="text-[12px] text-gray-500">talent.wellnesshousecollective.co.uk</p>
+            <p className="text-[12px] text-secondary">talent.wellnesshousecollective.co.uk</p>
           </div>
           <div className="text-right">
             <p className="text-[13px] font-semibold text-black">PAYOUT STATEMENT</p>
-            <p className="text-[12px] text-gray-500">{monthLabel}</p>
+            <p className="text-[12px] text-secondary">{monthLabel}</p>
           </div>
         </div>
 
         {rows.length === 0 ? (
-          <p className="text-gray-400 text-center py-16">No paid shifts {monthLabel ? `in ${monthLabel}` : 'yet'}.</p>
+          <p className="text-muted text-center py-16">No paid shifts {monthLabel ? `in ${monthLabel}` : 'yet'}.</p>
         ) : (
           <>
             <table className="w-full text-left text-[13px] mb-8">
               <thead>
-                <tr className="text-[11px] uppercase tracking-wide text-gray-400 border-b border-gray-200">
+                <tr className="text-[11px] uppercase tracking-wide text-muted border-b border-[#e3e7eb]">
                   <th className="py-2 pr-3">Date</th>
                   <th className="py-2 pr-3">Property</th>
                   <th className="py-2 pr-3 text-right">Hours</th>
@@ -93,14 +93,14 @@ export default function PayoutStatementPage() {
               </thead>
               <tbody>
                 {rows.map(b => (
-                  <tr key={b.id} className="border-b border-gray-100">
+                  <tr key={b.id} className="border-b border-[#e3e7eb]">
                     <td className="py-2.5 pr-3 whitespace-nowrap">{b.shift_date ? new Date(b.shift_date).toLocaleDateString('en-GB') : '-'}</td>
                     <td className="py-2.5 pr-3">{b.employer_name}</td>
                     <td className="py-2.5 pr-3 text-right">{effHours(b)}</td>
                     <td className="py-2.5 pr-3 text-right">£{gross(b).toFixed(2)}</td>
                     <td className="py-2.5 pr-3 text-right font-medium text-black">£{payoutOf(b).toFixed(2)}</td>
                     <td className="py-2.5 text-right">
-                      <span className={`text-[11px] font-medium ${statusOf(b) === 'Paid' ? 'text-green-700' : statusOf(b) === 'On hold' ? 'text-amber-600' : 'text-gray-500'}`}>{statusOf(b)}</span>
+                      <span className={`text-[11px] font-medium ${statusOf(b) === 'Paid' ? 'text-green-700' : statusOf(b) === 'On hold' ? 'text-amber-600' : 'text-secondary'}`}>{statusOf(b)}</span>
                     </td>
                   </tr>
                 ))}
@@ -116,11 +116,11 @@ export default function PayoutStatementPage() {
             </table>
 
             <div className="grid grid-cols-2 gap-3 mb-8 print:hidden">
-              <div className="dashboard-card !py-4"><p className="text-[11px] uppercase tracking-wide text-gray-400 mb-1">Paid to you this month</p><p className="text-[20px] font-semibold text-green-700">£{totals.paid.toFixed(2)}</p></div>
-              <div className="dashboard-card !py-4"><p className="text-[11px] uppercase tracking-wide text-gray-400 mb-1">Still to come</p><p className="text-[20px] font-semibold text-amber-600">£{totals.pending.toFixed(2)}</p></div>
+              <div className="dashboard-card !py-4"><p className="text-[11px] uppercase tracking-wide text-muted mb-1">Paid to you this month</p><p className="text-[20px] font-semibold text-green-700">£{totals.paid.toFixed(2)}</p></div>
+              <div className="dashboard-card !py-4"><p className="text-[11px] uppercase tracking-wide text-muted mb-1">Still to come</p><p className="text-[20px] font-semibold text-amber-600">£{totals.pending.toFixed(2)}</p></div>
             </div>
 
-            <div className="text-[11px] text-gray-400 space-y-1 border-t border-gray-100 pt-6">
+            <div className="text-[11px] text-muted space-y-1 border-t border-[#e3e7eb] pt-6">
               <p>Your agreed earnings are your hourly rate × hours. Properties pay Wellness House Collective, and WHC pays you 100% of that agreed shift amount after each completed shift. You are responsible for your own tax and National Insurance as a self-employed professional.</p>
             </div>
           </>

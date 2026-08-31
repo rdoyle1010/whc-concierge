@@ -123,7 +123,7 @@ export default function EmployerProfilePage() {
       if (stripped.length > 0) {
         setMessage(`Some fields could not be saved: ${stripped.join(', ')}. Please try again or contact support.`)
       } else {
-        setMessage('Profile saved successfully!')
+        setMessage('Profile saved.')
       }
     }
     setTimeout(() => setMessage(''), stripped.length > 0 ? 8000 : 3000)
@@ -144,7 +144,7 @@ export default function EmployerProfilePage() {
     const { error } = await supabase.from('employer_profiles').update({ property_photos: next }).eq('id', profile.id)
     if (error) { setMessage(error.message); return }
     update('property_photos', next)
-    setMessage('Photo added!')
+    setMessage('Photo added.')
   }
 
   const removeGalleryPhoto = async (url: string) => {
@@ -169,12 +169,12 @@ export default function EmployerProfilePage() {
     if (logoError) { setMessage(`Could not save the logo: ${logoError.message}`); return }
 
     update('logo_url', data.url)
-    setMessage('Logo updated!')
+    setMessage('Logo updated.')
     setTimeout(() => setMessage(''), 3000)
   }
 
-  if (loading) return <DashboardShell role="employer"><div className="flex items-center justify-center h-64"><div className="animate-spin w-8 h-8 border-2 border-gold border-t-transparent rounded-full" /></div></DashboardShell>
-  if (!profile) return <DashboardShell role="employer"><p className="text-gray-500">Profile not found. Please contact support.</p></DashboardShell>
+  if (loading) return <DashboardShell role="employer"><div className="flex items-center justify-center h-64"><div className="animate-spin w-8 h-8 border-2 border-accent border-t-transparent rounded-full" /></div></DashboardShell>
+  if (!profile) return <DashboardShell role="employer"><p className="text-secondary">Profile not found. Please contact support.</p></DashboardShell>
 
   return (
     <DashboardShell role="employer" userName={profile.company_name}>
@@ -279,7 +279,7 @@ export default function EmployerProfilePage() {
         <div className="dashboard-card mb-6 space-y-5">
           <div>
             <h3 className="font-serif text-lg font-semibold">Travel &amp; Access for Staff</h3>
-            <p className="text-sm text-gray-500 mt-1">Give professionals practical, property-supplied information. Mileage is calculated separately; these details explain the real journey.</p>
+            <p className="text-sm text-secondary mt-1">Give professionals practical, property-supplied information. Mileage is calculated separately; these details explain the real journey.</p>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
@@ -344,7 +344,7 @@ export default function EmployerProfilePage() {
         <div className="dashboard-card mb-6 space-y-5">
           <div>
             <h3 className="font-serif text-lg font-semibold">Spa Operations</h3>
-            <p className="text-sm text-gray-500 mt-1">This builds your property profile for candidates. Role-specific matching uses the requirements you set on each job listing.</p>
+            <p className="text-sm text-secondary mt-1">This builds your property profile for candidates. Role-specific matching uses the requirements you set on each job listing.</p>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -427,7 +427,7 @@ export default function EmployerProfilePage() {
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h3 className="font-serif text-lg font-semibold">Property Fact File</h3>
-              <p className="text-sm text-gray-500 mt-1">Arrival, parking, uniform and on-the-day details shown to agency professionals before a shift. Part of your property profile - kept on its own page so it's quick to update.</p>
+              <p className="text-sm text-secondary mt-1">Arrival, parking, uniform and on-the-day details shown to agency professionals before a shift. Part of your property profile - kept on its own page so it's quick to update.</p>
             </div>
             <a href="/employer/property-fact-file" className="btn-secondary whitespace-nowrap text-center">Open fact file →</a>
           </div>
@@ -463,7 +463,7 @@ export default function EmployerProfilePage() {
             ))}
             {(profile.property_photos || []).length < 6 && (
               <label className="aspect-[4/3] rounded-lg border-2 border-dashed border-border flex flex-col items-center justify-center cursor-pointer hover:border-ink/30 transition-colors text-muted">
-                <span className="text-[22px] leading-none mb-1" style={{ color: '#555555' }}>+</span>
+                <span className="text-[22px] leading-none mb-1" style={{ color: '#5a6a76' }}>+</span>
                 <span className="text-[11px]">Add photo</span>
                 <input type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) handleGalleryUpload(f); e.target.value = '' }} />
               </label>

@@ -8,10 +8,10 @@ const CATEGORIES = [
 
 export default function MatchScoreMockup() {
   return (
-    <div className="bg-white rounded-2xl border border-[#E5E5E5] shadow-sm p-5 max-w-sm w-full mx-auto relative overflow-hidden">
+    <div className="bg-white rounded-2xl border border-[#e3e7eb] shadow-sm p-5 max-w-sm w-full mx-auto relative overflow-hidden">
       <div
         className="absolute top-0 left-0 right-0 h-[3px]"
-        style={{ background: 'linear-gradient(90deg, transparent, #0b2f4d, transparent)' }}
+        style={{ background: '#0b2f4d' }}
       />
 
       <div className="text-center mt-1 mb-5">
@@ -25,10 +25,10 @@ export default function MatchScoreMockup() {
         {CATEGORIES.map((c) => (
           <div key={c.label}>
             <div className="flex items-center justify-between text-[12px] mb-1">
-              <span style={{ color: '#374151' }}>{c.label}</span>
+              <span style={{ color: '#5a6a76' }}>{c.label}</span>
               <span className="font-medium tabular-nums" style={{ color: '#10283b' }}>{c.pct}%</span>
             </div>
-            <div className="h-1.5 rounded-full overflow-hidden" style={{ background: '#f0f0f0' }}>
+            <div className="h-1.5 rounded-full overflow-hidden" style={{ background: '#f5f6f8' }}>
               <div
                 className="h-full rounded-full"
                 style={{ width: `${c.pct}%`, background: '#0b2f4d' }}
@@ -38,7 +38,7 @@ export default function MatchScoreMockup() {
         ))}
       </div>
 
-      <p className="text-[11px] text-center mt-5 pt-4 border-t border-[#f0f0f0]" style={{ color: '#5a6a76' }}>
+      <p className="text-[11px] text-center mt-5 pt-4 border-t border-[#e3e7eb]" style={{ color: '#5a6a76' }}>
         +10 more categories
       </p>
     </div>

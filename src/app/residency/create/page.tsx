@@ -106,7 +106,7 @@ export default function ResidencyCreatePage() {
   if (checkingMembership) return <div className="min-h-screen bg-white flex items-center justify-center"><div className="skeleton h-36 w-full max-w-xl rounded-2xl" /></div>
 
   if (!membershipActive) return (
-    <div className="min-h-screen bg-[#f7f7f7]">
+    <div className="min-h-screen bg-[#f5f6f8]">
       <div className="border-b border-border bg-white px-6 py-4"><div className="max-w-3xl mx-auto flex items-center gap-4"><Link href="/residency" className="text-muted hover:text-ink"><ArrowLeft size={18}/></Link><span className="text-ink font-semibold">Join Residency</span></div></div>
       <div className="max-w-3xl mx-auto px-6 py-14">
         <div className="bg-white border border-border rounded-[28px] p-8 md:p-10 shadow-sm">

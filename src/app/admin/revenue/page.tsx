@@ -80,7 +80,7 @@ export default function AdminRevenuePage() {
         </div>
       </section>
 
-      <div className="rounded-xl border border-[#e3e7eb] bg-[#fafafa] px-4 py-3 text-[11px] leading-5 text-[#10283b]">{data.note}</div>
+      <div className="rounded-xl border border-[#e3e7eb] bg-[#f5f6f8] px-4 py-3 text-[11px] leading-5 text-[#10283b]">{data.note}</div>
     </>}
   </DashboardShell>
 }
@@ -90,5 +90,5 @@ function Metric({ icon, label, value, note, emphasis = false }: { icon: React.Re
 }
 
 function SmallMetric({ label, value, note }: { label: string; value: string; note: string }) {
-  return <div className="rounded-xl border border-border bg-[#fafafa] p-4"><p className="text-[10px] uppercase tracking-[0.1em] text-muted">{label}</p><p className="text-[20px] font-semibold text-ink mt-1">{value}</p><p className="text-[11px] text-muted mt-1">{note}</p></div>
+  return <div className="rounded-xl border border-border bg-[#f5f6f8] p-4"><p className="text-[10px] uppercase tracking-[0.1em] text-muted">{label}</p><p className="text-[20px] font-semibold text-ink mt-1">{value}</p><p className="text-[11px] text-muted mt-1">{note}</p></div>
 }

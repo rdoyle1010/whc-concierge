@@ -111,7 +111,7 @@ export default function CertificateManager({ userId }: { userId: string | null }
         <button type="button" onClick={() => openForm()} className="btn-secondary inline-flex items-center gap-1.5 text-[12px]"><Plus size={13} /> Add certificate</button>
       </div>
       <p className="text-[11.5px] text-muted mb-3">Name each certificate so employers understand it - especially if you trained outside the UK. WHC reviews every submission; verified certificates carry a trust badge on your profile.</p>
-      <details className="mb-3 rounded-lg border border-border bg-[#fafafa] px-3 py-2">
+      <details className="mb-3 rounded-lg border border-border bg-[#f5f6f8] px-3 py-2">
         <summary className="cursor-pointer text-[12px] font-semibold text-ink">Help with certificates - lost documents, overseas training, questions</summary>
         <div className="mt-2 space-y-1.5 text-[11.5px] leading-relaxed text-secondary">
           <p><strong className="text-ink">Lost or missing certificate?</strong> Contact your awarding body or training school - most (CIDESCO, CIBTAC, ITEC, VTCT, City &amp; Guilds) can reissue certificates or provide a verification letter.</p>
@@ -146,7 +146,7 @@ export default function CertificateManager({ userId }: { userId: string | null }
                 </div>
               </div>
               {(certificate.status === 'rejected' || certificate.status === 'more_info') && certificate.review_note && (
-                <p className="mt-1.5 text-[11.5px] text-secondary bg-[#fafafa] rounded px-2.5 py-1.5"><ShieldQuestion size={12} className="inline mr-1 -mt-0.5" />WHC: {certificate.review_note} <button type="button" onClick={() => openForm(certificate.document_url, certificate.title)} className="underline font-medium">Resubmit</button></p>
+                <p className="mt-1.5 text-[11.5px] text-secondary bg-[#f5f6f8] rounded px-2.5 py-1.5"><ShieldQuestion size={12} className="inline mr-1 -mt-0.5" />WHC: {certificate.review_note} <button type="button" onClick={() => openForm(certificate.document_url, certificate.title)} className="underline font-medium">Resubmit</button></p>
               )}
             </div>
           ))}
@@ -173,7 +173,7 @@ export default function CertificateManager({ userId }: { userId: string | null }
               <h2 className="font-serif text-lg font-bold text-ink">Add a certificate</h2>
               <button type="button" onClick={() => setFormOpen(false)} className="text-gray-300 hover:text-ink"><X size={20} /></button>
             </div>
-            <p className="text-[12px] text-gray-500 mb-4">Tell us what this certificate is. WHC reviews it, and once verified it shows to employers with a trust badge.</p>
+            <p className="text-[12px] text-secondary mb-4">Tell us what this certificate is. WHC reviews it, and once verified it shows to employers with a trust badge.</p>
 
             <label className="block text-[12px] font-semibold text-ink mb-1.5">Qualification name *</label>
             <input value={title} onChange={e => setTitle(e.target.value)} placeholder="e.g. CIDESCO Diploma in Beauty & Spa Therapy" className="input-field text-[13px] w-full mb-3" />

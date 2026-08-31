@@ -157,7 +157,7 @@ export default function SwipeMatchPage() {
   if (profileIncomplete) return (
     <div className="min-h-screen bg-surface flex items-center justify-center px-6">
       <div className="max-w-lg dashboard-card text-center">
-        <div className="w-14 h-14 rounded-2xl bg-[#f5f5f5] flex items-center justify-center mx-auto mb-5"><Sparkles size={22} className="text-[#10283b]" /></div>
+        <div className="w-14 h-14 rounded-2xl bg-[#f5f6f8] flex items-center justify-center mx-auto mb-5"><Sparkles size={22} className="text-[#10283b]" /></div>
         <p className="dashboard-eyebrow">Matching needs your profile</p>
         <h1 className="text-[28px] font-semibold text-ink mb-3">Finish your profile to unlock meaningful matches.</h1>
         <p className="text-[14px] leading-6 text-muted mb-7">We use your role level, experience, treatments, qualifications, brands, systems, location and preferences to rank roles. We will not show made-up match scores.</p>
@@ -181,7 +181,7 @@ export default function SwipeMatchPage() {
   if (savedDraft) return (
     <div className="min-h-screen bg-surface flex items-center justify-center px-6">
       <div className="w-full max-w-xl rounded-3xl border border-border bg-white p-8 shadow-xl">
-        <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-[#f5f5f5]"><FileText size={23} className="text-[#10283b]" /></div>
+        <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-[#f5f6f8]"><FileText size={23} className="text-[#10283b]" /></div>
         <p className="dashboard-eyebrow">Ready to send</p>
         <h1 className="text-[28px] font-semibold tracking-[-0.03em] text-ink mb-3">{job?.title} is now in My Applications.</h1>
         <p className="text-[14px] leading-6 text-muted mb-6">Nothing has been sent to {job?.employer_profiles?.company_name} yet. Review the full role, add your covering letter, then choose Send Application when you are ready.</p>
@@ -219,7 +219,7 @@ export default function SwipeMatchPage() {
           <div>
             <p className="dashboard-eyebrow">Jobs & matches</p>
             <h1 className="dashboard-title !text-[32px] md:!text-[40px]">Roles that genuinely fit your profile.</h1>
-            <div className="mb-0 mt-3 inline-flex rounded-xl border border-[#e0e0e0] bg-white p-1 text-[12px] font-semibold"><a href="/talent/jobs" className="rounded-lg px-4 py-2 text-[#5c6a75] hover:text-[#0b2f4d]">Browse list</a><span className="rounded-lg bg-[#0b2f4d] px-4 py-2 text-white">Match deck</span></div>
+            <div className="mb-0 mt-3 inline-flex rounded-xl border border-[#e3e7eb] bg-white p-1 text-[12px] font-semibold"><a href="/talent/jobs" className="rounded-lg px-4 py-2 text-[#5a6a76] hover:text-[#0b2f4d]">Browse list</a><span className="rounded-lg bg-[#0b2f4d] px-4 py-2 text-white">Match deck</span></div>
             <p className="dashboard-intro">We rank live roles using your experience, skills, qualifications, brand knowledge, systems, location and working preferences.</p>
           </div>
           <Link href="/talent/applications" className="mt-4 md:mt-0 text-[12px] font-semibold text-[#10283b] hover:underline">View My Applications →</Link>
@@ -227,7 +227,7 @@ export default function SwipeMatchPage() {
 
         <article className="overflow-hidden rounded-3xl border border-border bg-white shadow-[0_18px_55px_rgba(16,40,59,.08)] lg:grid lg:grid-cols-[42%_58%]">
           <div className="relative min-h-[300px] lg:min-h-[620px] bg-[#0b2f4d] overflow-hidden">
-            {photo ? <img src={photo} alt={property} className="absolute inset-0 h-full w-full object-cover" /> : <div className="absolute inset-0 bg-gradient-to-br from-[#0b2f4d] via-[#123f64] to-[#10283b]" />}
+            {photo ? <img src={photo} alt={property} className="absolute inset-0 h-full w-full object-cover" /> : <div className="absolute inset-0 bg-[#0b2f4d]" />}
             <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-black/15" />
             <div className="absolute left-5 top-5 flex gap-2"><span className={tierClass(job.tier || 'Standard')}>{job.tier || 'Standard'}</span></div>
             <div className="absolute bottom-0 inset-x-0 p-6 text-white">
@@ -249,16 +249,16 @@ export default function SwipeMatchPage() {
                 <h2 className="text-[28px] md:text-[34px] leading-[1.08] font-semibold tracking-[-.035em] text-ink">{job.title}</h2>
                 <p className="mt-2 text-[13px] text-muted">{job.contract_type?.replaceAll('_',' ') || job.job_type || 'Role'} · {salaryText(job)}</p>
               </div>
-              <div className="shrink-0 text-center rounded-2xl border border-[#e5e5e5] bg-[#fafafa] px-4 py-3">
+              <div className="shrink-0 text-center rounded-2xl border border-[#e3e7eb] bg-[#f5f6f8] px-4 py-3">
                 <div className="text-[30px] font-semibold tracking-[-.04em]" style={{color:job.matchColour}}>{score}%</div>
                 <div className="text-[10px] font-semibold uppercase tracking-[.08em]" style={{color:job.matchColour}}>{job.matchLabel}</div>
               </div>
             </div>
 
-            <div className="rounded-2xl border border-[#e5e5e5] bg-[#fafafa] p-5 mb-5">
+            <div className="rounded-2xl border border-[#e3e7eb] bg-[#f5f6f8] p-5 mb-5">
               <p className="text-[10px] uppercase tracking-[.16em] text-[#10283b] font-semibold mb-2">Why this role is showing</p>
               <p className="text-[13px] leading-6 text-secondary">{job.matchExplanation || 'Your profile aligns with several of the requirements for this role.'}</p>
-              {job.matchingSkills?.length > 0 && <div className="flex flex-wrap gap-1.5 mt-3">{job.matchingSkills.slice(0,5).map((skill:string)=><span key={skill} className="text-[10px] border border-[#e5e5e5] bg-white text-[#10283b] px-2.5 py-1 rounded-full inline-flex items-center gap-1"><Check size={9}/>{skill}</span>)}</div>}
+              {job.matchingSkills?.length > 0 && <div className="flex flex-wrap gap-1.5 mt-3">{job.matchingSkills.slice(0,5).map((skill:string)=><span key={skill} className="text-[10px] border border-[#e3e7eb] bg-white text-[#10283b] px-2.5 py-1 rounded-full inline-flex items-center gap-1"><Check size={9}/>{skill}</span>)}</div>}
             </div>
 
             {!canApply && <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-[12px] text-amber-800 mb-4">This role is below the 45% application threshold. You can review or pass it, but you cannot apply unless your profile becomes a stronger match.</div>}

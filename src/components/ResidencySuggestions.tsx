@@ -37,7 +37,7 @@ export default function ResidencySuggestions({ jobId }: { jobId: string }) {
             : (
               <div className="flex flex-wrap gap-2">
                 {suggestions.map(specialist => (
-                  <Link key={specialist.id} href={`/residency/${specialist.id}`} className="inline-flex items-center gap-2 rounded-full border border-[#e5e5e5] bg-[#f5f6f8] px-3 py-1.5 text-[11.5px] hover:bg-[#f5f6f8]">
+                  <Link key={specialist.id} href={`/residency/${specialist.id}`} className="inline-flex items-center gap-2 rounded-full border border-[#e3e7eb] bg-[#f5f6f8] px-3 py-1.5 text-[11.5px] hover:bg-[#f5f6f8]">
                     <span className="font-semibold text-ink">{specialist.primary_specialism || specialist.reference}</span>
                     <span className="text-muted">{specialist.reference}</span>
                     <span className="rounded-full bg-white px-1.5 py-0.5 text-[10px] font-bold text-[#0b2f4d]">{specialist.match_score}%</span>

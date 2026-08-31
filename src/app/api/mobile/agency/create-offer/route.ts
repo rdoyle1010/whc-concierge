@@ -5,6 +5,7 @@ import { createNotification } from '@/lib/notifications'
 import { feePctForEmployerShift } from '@/app/api/agency/booking/core'
 import { sendSms } from '@/lib/sms'
 import { sendAgencyOfferEmail } from '@/lib/emails'
+import { emailAllowed, smsAllowed } from '@/lib/notification-prefs'
 import { profileDistanceMiles } from '@/lib/geo'
 import { shiftHours, validShiftWindow, windowCovers, windowsOverlap } from '@/lib/agency-time'
 
@@ -68,7 +69,7 @@ export async function POST(req: NextRequest) {
     if (employer.preferred_until && new Date(employer.preferred_until).getTime() < Date.now()) return NextResponse.json({ error: 'Your Preferred Employer registration has expired.' }, { status: 403 })
 
     const { data: candidate } = await admin.from('candidate_profiles')
-      .select('id,user_id,full_name,phone,approval_status,profile_visible,agency_available,agency_listed_until,latitude,longitude,travel_radius_miles')
+      .select('id,user_id,full_name,phone,sms_opt_in,approval_status,profile_visible,agency_available,agency_listed_until,latitude,longitude,travel_radius_miles')
       .eq('id', candidateId).maybeSingle()
     if (!candidate) return NextResponse.json({ error: 'Professional not found.' }, { status: 404 })
     if (candidate.approval_status !== 'approved' || candidate.profile_visible === false || !candidate.agency_available) {
@@ -141,23 +142,28 @@ export async function POST(req: NextRequest) {
       : `${propertyName} has offered you an Agency shift on ${shiftDate} at £${rate} per hour${hours ? ` for ${hours} hours` : ''}. Respond from Agency in the app.${standingLine}`
 
     if (candidate.user_id) {
+      // Offer email is preference-gated ('booking_updates'); bell + inbox
+      // always fire. Fail-open on lookup errors.
       await Promise.allSettled([
         createNotification(candidate.user_id, 'general', urgent ? 'URGENT: shift offer for today' : 'New Agency offer', offerBody, '/talent/agency'),
         admin.from('messages').insert({ sender_id: user.id, recipient_id: candidate.user_id, content: offerBody, read: false }).then(() => null),
-        admin.auth.admin.getUserById(candidate.user_id).then(({ data }: any) => {
-          const email = data?.user?.email
-          return email ? sendAgencyOfferEmail(email, candidate.full_name || 'there', {
-            propertyName,
-            shiftDate,
-            rate,
-            hours: hours || null,
-            urgent,
-            expiresAt: baseRow.expires_at,
-          }) : null
-        }),
+        emailAllowed(admin, candidate.user_id, 'booking_updates').then(allowed => allowed
+          ? admin.auth.admin.getUserById(candidate.user_id).then(({ data }: any) => {
+              const email = data?.user?.email
+              return email ? sendAgencyOfferEmail(email, candidate.full_name || 'there', {
+                propertyName,
+                shiftDate,
+                rate,
+                hours: hours || null,
+                urgent,
+                expiresAt: baseRow.expires_at,
+              }) : null
+            })
+          : null),
       ])
     }
-    if (urgent) await sendSms(candidate.phone, `WHC Concierge: ${propertyName} needs cover TODAY - £${rate}/hr. Open Agency in the app to respond.`).catch(() => null)
+    // SMS is consent-gated: sms_opt_in plus a phone number on file.
+    if (urgent && smsAllowed(candidate)) await sendSms(candidate.phone, `WHC Concierge: ${propertyName} needs cover TODAY - £${rate}/hr. Open Agency in the app to respond.`).catch(() => null)
 
     return NextResponse.json({ success: true, booking, created, urgent })
   } catch (error: any) {

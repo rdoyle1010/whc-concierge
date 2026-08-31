@@ -39,7 +39,7 @@ export default function BlogPage() {
   const readTime = (content: string) => Math.max(1, Math.ceil((content?.length || 0) / 1200))
 
   return (
-    <div className="min-h-screen bg-[#f5f5f5]">
+    <div className="min-h-screen bg-[#f5f6f8]">
       <Navbar />
 
       <section className="pt-[76px] bg-white border-b border-border">
@@ -58,7 +58,7 @@ export default function BlogPage() {
             {categories.map((cat) => (
               <button key={cat} onClick={() => { setFilter(cat); setPage(1) }}
                 className={`px-4 py-2 rounded-xl text-[12px] font-semibold whitespace-nowrap transition-colors ${
-                  filter === cat ? 'bg-[#0b2f4d] text-white' : 'bg-[#f5f5f5] text-secondary hover:text-[#0b2f4d]'
+                  filter === cat ? 'bg-[#0b2f4d] text-white' : 'bg-[#f5f6f8] text-secondary hover:text-[#0b2f4d]'
                 }`}>{cat}</button>
             ))}
           </div>
@@ -79,7 +79,7 @@ export default function BlogPage() {
               {heroPost && (
                 <Link href={`/blog/${heroPost.slug}`} className="dashboard-card block mb-10 group !p-0 overflow-hidden">
                   <div className="grid grid-cols-1 lg:grid-cols-2 items-stretch">
-                    <div className="aspect-[4/3] lg:aspect-auto min-h-[340px] bg-[#e9e9e9] overflow-hidden">
+                    <div className="aspect-[4/3] lg:aspect-auto min-h-[340px] bg-[#f5f6f8] overflow-hidden">
                       <BlogImage src={heroPost.image_url} alt={heroPost.title} className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-700" />
                     </div>
                     <div className="p-7 lg:p-10 flex flex-col justify-center">
@@ -101,7 +101,7 @@ export default function BlogPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 stagger-children">
                   {gridPosts.map((post) => (
                     <Link key={post.id} href={`/blog/${post.slug}`} className="dashboard-card group !p-0 overflow-hidden">
-                      <div className="aspect-[16/10] bg-[#e9e9e9] overflow-hidden">
+                      <div className="aspect-[16/10] bg-[#f5f6f8] overflow-hidden">
                         <BlogImage src={post.image_url} alt={post.title} className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-500" />
                       </div>
                       <div className="p-5">

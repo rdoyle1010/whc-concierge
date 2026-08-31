@@ -20,6 +20,7 @@ export async function feePctForEmployerShift(admin: any, employerId: string | nu
 }
 import { sendSms } from '@/lib/sms'
 import { sendAgencyOfferEmail, sendReviewRequestEmail, sendInsuranceExpiryEmail, sendAgencyUpdateEmail, sendFeaturedExpiringEmail } from '@/lib/emails'
+import { emailAllowed, smsAllowed } from '@/lib/notification-prefs'
 import { profileDistanceMiles } from '@/lib/geo'
 import { shiftHours, validShiftWindow, windowCovers, windowsOverlap } from '@/lib/agency-time'
 
@@ -128,9 +129,13 @@ async function notifyOtherParty(
   } catch { /* non-fatal */ }
   if (sendEmailToo) {
     try {
-      const { data: u } = await admin.auth.admin.getUserById(recipientUserId)
-      const em = u?.user?.email
-      if (em) await sendAgencyUpdateEmail(em, 'there', title, body, link)
+      // Preference-gated ('booking_updates'): agency booking update emails
+      // honour the recipient's opt-out; bell + inbox above always fire.
+      if (await emailAllowed(admin, recipientUserId, 'booking_updates')) {
+        const { data: u } = await admin.auth.admin.getUserById(recipientUserId)
+        const em = u?.user?.email
+        if (em) await sendAgencyUpdateEmail(em, 'there', title, body, link)
+      }
     } catch { /* non-fatal */ }
   }
 }
@@ -139,7 +144,7 @@ async function notifyOtherParty(
 // email + SMS, all awaited (fire-and-forget dies on serverless), none fatal.
 async function alertCascadeHolder(
   admin: any,
-  candidate: { user_id?: string | null; full_name?: string | null; phone?: string | null },
+  candidate: { user_id?: string | null; full_name?: string | null; phone?: string | null; sms_opt_in?: boolean | null },
   empName: string,
   empUserId: string,
   b: { shift_date: string; rate: number; hours: number | null; expires_at: string },
@@ -150,7 +155,9 @@ async function alertCascadeHolder(
   await notifyOtherParty(admin, candidate.user_id, empUserId, 'URGENT: shift offer for today', body, '/talent/agency', false)
   try {
     const jobs: Promise<unknown>[] = []
-    if (candidate.user_id) {
+    // Preference-gated ('booking_updates'): the shift-offer email honours the
+    // therapist's opt-out; bell + inbox above always fire. Fail-open.
+    if (candidate.user_id && await emailAllowed(admin, candidate.user_id, 'booking_updates')) {
       const { data: candUser } = await admin.auth.admin.getUserById(candidate.user_id)
       const candEmail = candUser?.user?.email
       if (candEmail) {
@@ -159,10 +166,13 @@ async function alertCascadeHolder(
         }))
       }
     }
-    jobs.push(sendSms(
-      candidate.phone,
-      `WHC Concierge: ${empName} needs cover TODAY - £${b.rate}/hr${b.hours ? ` for ${b.hours}h` : ''}. You have ${mins} mins before this offer moves on. Accept: https://talent.wellnesshousecollective.co.uk/talent/agency`,
-    ))
+    // SMS is consent-gated: only texts therapists with sms_opt_in and a phone.
+    if (smsAllowed(candidate)) {
+      jobs.push(sendSms(
+        candidate.phone,
+        `WHC Concierge: ${empName} needs cover TODAY - £${b.rate}/hr${b.hours ? ` for ${b.hours}h` : ''}. You have ${mins} mins before this offer moves on. Accept: https://talent.wellnesshousecollective.co.uk/talent/agency`,
+      ))
+    }
     await Promise.allSettled(jobs)
   } catch (e: any) { console.error('Cascade alert failed:', e?.message) }
 }
@@ -236,7 +246,7 @@ async function advanceCascade(admin: any, booking: any): Promise<any | null> {
   if (!updated) return null // someone else advanced or the offer closed - do not notify
 
   const { data: nextCand } = await admin.from('candidate_profiles')
-    .select('id, full_name, user_id, phone').eq('id', entry.id).maybeSingle()
+    .select('id, full_name, user_id, phone, sms_opt_in').eq('id', entry.id).maybeSingle()
   if (nextCand && bookingEmp?.user_id) {
     await alertCascadeHolder(admin, nextCand, empName, bookingEmp.user_id, {
       shift_date: booking.shift_date, rate, hours, expires_at: deadline,
@@ -299,21 +309,27 @@ async function maintenanceSweep(admin: any) {
       const empName = employerDisplayName(e)
       const candName = c?.full_name || 'the therapist'
       const jobs: Promise<unknown>[] = []
+      // Review-nudge emails are preference-gated ('booking_updates') - they
+      // follow a booking; the in-app nudges are always created.
       if (c?.user_id) {
         jobs.push(createNotification(c.user_id, 'general', 'How was your shift?',
           `How was your shift at ${empName} on ${b.shift_date}? Leave a review - properties with reviews book faster, and so do therapists.`, '/talent/agency'))
-        jobs.push(admin.auth.admin.getUserById(c.user_id).then(({ data }: any) => {
-          const email = data?.user?.email
-          return email ? sendReviewRequestEmail(email, c.full_name || 'there', empName) : null
-        }))
+        jobs.push(emailAllowed(admin, c.user_id, 'booking_updates').then(allowed => allowed
+          ? admin.auth.admin.getUserById(c.user_id).then(({ data }: any) => {
+              const email = data?.user?.email
+              return email ? sendReviewRequestEmail(email, c.full_name || 'there', empName) : null
+            })
+          : null))
       }
       if (e?.user_id) {
         jobs.push(createNotification(e.user_id, 'general', 'How did the shift go?',
           `How did ${candName}'s shift on ${b.shift_date} go? Leave a review to help other properties - and keep your own score strong.`, '/employer/agency'))
-        jobs.push(admin.auth.admin.getUserById(e.user_id).then(({ data }: any) => {
-          const email = data?.user?.email
-          return email ? sendReviewRequestEmail(email, empName, candName) : null
-        }))
+        jobs.push(emailAllowed(admin, e.user_id, 'booking_updates').then(allowed => allowed
+          ? admin.auth.admin.getUserById(e.user_id).then(({ data }: any) => {
+              const email = data?.user?.email
+              return email ? sendReviewRequestEmail(email, empName, candName) : null
+            })
+          : null))
       }
       await Promise.allSettled(jobs)
     }
@@ -528,7 +544,7 @@ export async function POST(req: NextRequest) {
 
       const { data: targetCand } = await admin
         .from('candidate_profiles')
-        .select('id, full_name, user_id, phone, approval_status, profile_visible, agency_available, agency_listed_until, latitude, longitude, travel_radius_miles')
+        .select('id, full_name, user_id, phone, sms_opt_in, approval_status, profile_visible, agency_available, agency_listed_until, latitude, longitude, travel_radius_miles')
         .eq('id', body.candidateId)
         .maybeSingle()
       if (!targetCand) return NextResponse.json({ error: 'Candidate not found' }, { status: 404 })
@@ -627,7 +643,9 @@ export async function POST(req: NextRequest) {
       // on serverless. None of these may fail the offer itself.
       try {
         const jobs: Promise<unknown>[] = []
-        if (targetCand.user_id) {
+        // Preference-gated ('booking_updates'): the offer email honours the
+        // therapist's opt-out; bell + inbox above always fire. Fail-open.
+        if (targetCand.user_id && await emailAllowed(admin, targetCand.user_id, 'booking_updates')) {
           const { data: candUser } = await admin.auth.admin.getUserById(targetCand.user_id)
           const candEmail = candUser?.user?.email
           if (candEmail) {
@@ -641,7 +659,8 @@ export async function POST(req: NextRequest) {
             }))
           }
         }
-        if (urgent) {
+        // SMS is consent-gated: sms_opt_in plus a phone number on file.
+        if (urgent && smsAllowed(targetCand)) {
           jobs.push(sendSms(
             targetCand.phone,
             `WHC Concierge: ${empName} needs cover TODAY - £${rate}/hr${hours ? ` for ${hours}h` : ''}. Offer expires in 4 hrs. Accept or counter: https://talent.wellnesshousecollective.co.uk/talent/agency`,
@@ -676,7 +695,7 @@ export async function POST(req: NextRequest) {
 
       // Everyone on the register with a rate set (and within the cap, if any)
       const { data: pool } = await admin.from('candidate_profiles')
-        .select('id, full_name, user_id, phone, hourly_rate, latitude, longitude, travel_radius_miles, review_score, approval_status, profile_visible, agency_listed_until')
+        .select('id, full_name, user_id, phone, sms_opt_in, hourly_rate, latitude, longitude, travel_radius_miles, review_score, approval_status, profile_visible, agency_listed_until')
         .eq('agency_available', true)
         .not('hourly_rate', 'is', null)
       let eligible = (pool || []).filter((c: any) => c.hourly_rate > 0
