@@ -32,7 +32,7 @@ const CORE_META: Record<string, CourseMeta> = {
   'pregnancy-postnatal-spa': { level: 'Professional', skills: ['Pregnancy Massage', 'Postnatal Care', 'Specialist Care'], cpdHours: 1.5 },
   'spa-revenue-fundamentals': { level: 'Professional', skills: ['Revenue Management', 'Commercial Performance', 'KPIs', 'Yield Management'], cpdHours: 1.5 },
   'spa-manager-programme': { level: 'Leadership', skills: ['Leadership', 'People Management', 'Commercial Performance', 'Rota Management', 'KPIs', 'Revenue Management'], cpdHours: 3 },
-  'spa-director-programme': { level: 'Leadership', skills: ['Leadership', 'Strategy', 'Budgeting', 'P&L Management', 'Revenue Management', 'Pre-opening', 'Commercial Performance'], cpdHours: 4 },
+  'spa-director-programme': { level: 'Leadership', skills: ['Leadership', 'Strategy', 'Budgeting', 'P&L Management', 'Revenue Management', 'Pre-opening', 'Commercial Performance'], cpdHours: 5 },
 }
 
 const metaCache = new Map<string, CourseMeta>()
