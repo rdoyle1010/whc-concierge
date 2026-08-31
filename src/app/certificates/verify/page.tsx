@@ -39,8 +39,8 @@ function VerifyInner() {
     <div className="min-h-screen bg-[#f7f5f1]">
       <Navbar />
       <div className="mx-auto max-w-2xl px-6 pt-32 pb-24">
-        <p className="text-[11px] uppercase tracking-[0.18em] text-[#1a1a1a] font-semibold mb-2">WHC Academy</p>
-        <h1 className="font-serif text-[32px] font-semibold text-[#1a1a1a] mb-2">Verify a certificate</h1>
+        <p className="text-[11px] uppercase tracking-[0.18em] text-[#10283b] font-semibold mb-2">WHC Academy</p>
+        <h1 className="font-serif text-[32px] font-semibold text-[#10283b] mb-2">Verify a certificate</h1>
         <p className="text-[13.5px] text-[#65727c] leading-relaxed mb-6">Every WHC Academy certificate carries a unique verification code. Enter it below to confirm the certificate is genuine and see exactly what was awarded.</p>
 
         <div className="flex gap-2 mb-8">

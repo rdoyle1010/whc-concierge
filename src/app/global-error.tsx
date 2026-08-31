@@ -26,7 +26,7 @@ export default function GlobalError({ error, reset }: { error: Error & { digest?
             >
               <span style={{ fontSize: 20, color: '#555555' }}>!</span>
             </div>
-            <h1 style={{ fontSize: 28, fontWeight: 500, color: '#1a1a1a', margin: '0 0 12px' }}>Something went wrong</h1>
+            <h1 style={{ fontSize: 28, fontWeight: 500, color: '#10283b', margin: '0 0 12px' }}>Something went wrong</h1>
             <p style={{ fontSize: 14, color: '#6B7280', lineHeight: 1.6, margin: '0 0 40px' }}>
               An unexpected error occurred. Please try again or return to the home page.
             </p>
@@ -34,7 +34,7 @@ export default function GlobalError({ error, reset }: { error: Error & { digest?
               <button
                 onClick={reset}
                 style={{
-                  padding: '10px 24px', background: '#1a1a1a', color: '#FFFFFF',
+                  padding: '10px 24px', background: '#10283b', color: '#FFFFFF',
                   fontSize: 13, fontWeight: 500, borderRadius: 8, border: 'none', cursor: 'pointer',
                 }}
               >

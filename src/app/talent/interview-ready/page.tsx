@@ -104,7 +104,7 @@ function ReadinessBar({ label, value }: { label: string; value?: number }) {
   const score = Math.max(0, Math.min(100, Number(value) || 0))
   return <div>
     <div className="flex items-center justify-between text-[11px] mb-1.5"><span className="text-secondary">{label}</span><span className="font-medium text-ink">{score}%</span></div>
-    <div className="h-1.5 bg-[#e8e3d9] overflow-hidden"><div className="h-full bg-[#1a1a1a]" style={{ width: `${score}%` }} /></div>
+    <div className="h-1.5 bg-[#e8e3d9] overflow-hidden"><div className="h-full bg-[#10283b]" style={{ width: `${score}%` }} /></div>
   </div>
 }
 
@@ -226,12 +226,12 @@ export default function InterviewReadyPage() {
       </section>
     </div> : <>
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-7">
-        <div className="inline-flex border border-border bg-white p-1 w-fit"><button onClick={() => setTab('dossier')} className={`px-4 py-2 text-[12px] ${tab === 'dossier' ? 'bg-[#111111] text-white' : 'text-secondary'}`}>My dossier</button><button onClick={() => setTab('practice')} className={`px-4 py-2 text-[12px] ${tab === 'practice' ? 'bg-[#111111] text-white' : 'text-secondary'}`}>Practice interview</button></div>
+        <div className="inline-flex border border-border bg-white p-1 w-fit"><button onClick={() => setTab('dossier')} className={`px-4 py-2 text-[12px] ${tab === 'dossier' ? 'bg-[#0b2f4d] text-white' : 'text-secondary'}`}>My dossier</button><button onClick={() => setTab('practice')} className={`px-4 py-2 text-[12px] ${tab === 'practice' ? 'bg-[#0b2f4d] text-white' : 'text-secondary'}`}>Practice interview</button></div>
         <button onClick={() => { setPrep(null); setError(''); setFeedback(null) }} className="btn-secondary text-[12px]">Prepare for another role</button>
       </div>
 
       {tab === 'dossier' ? <div className="space-y-6">
-        <section className="dashboard-panel bg-[#111111] !border-[#111111] text-white">
+        <section className="dashboard-panel bg-[#0b2f4d] !border-[#0b2f4d] text-white">
           <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-7 items-start">
             <div><p className="text-[9px] uppercase tracking-[.2em] text-[#555555] mb-2">Your preparation</p><h2 className="text-[30px] !text-white mb-3">{prep.company_intelligence?.name || selectedJob?.job_title || targetRole}</h2><p className="text-[13px] leading-6 text-white/70 max-w-3xl">{prep.role_intelligence?.role_summary}</p>{prep.style && <p className="text-[12px] text-white/55 mt-4">Working style: <span className="text-white">{prep.style.primary}</span> with {prep.style.secondary} · {prep.style.summary}</p>}</div>
             <div className="bg-white/[0.06] border border-white/10 p-5"><p className="text-[9px] uppercase tracking-[.18em] text-white/45 mb-2">Interview Readiness</p><p className="text-[46px] leading-none text-[#555555] font-serif">{prep.readiness?.overall ?? 0}%</p><p className="text-[11px] leading-5 text-white/55 mt-3">Preparation score, not a hiring prediction.</p></div>
@@ -280,7 +280,7 @@ export default function InterviewReadyPage() {
         <section className="dashboard-panel"><p className="dashboard-eyebrow">Interview Readiness</p><div className="grid grid-cols-1 lg:grid-cols-[240px_1fr] gap-7 items-start"><div><p className="text-[52px] leading-none font-serif text-accent">{prep.readiness?.overall ?? 0}%</p><p className="text-[11px] text-muted leading-5 mt-3">Preparation completeness only. It is not a prediction of whether you will be hired.</p></div><div className="space-y-4"><ReadinessBar label="Know the company" value={prep.readiness?.company} /><ReadinessBar label="Understand the role" value={prep.readiness?.role} /><ReadinessBar label="Evidence prepared" value={prep.readiness?.evidence} /><ReadinessBar label="Difficult questions" value={prep.readiness?.difficult_questions} /><ReadinessBar label="Practice" value={prep.readiness?.practice} />{prep.readiness?.message && <p className="text-[12px] text-secondary leading-5 pt-2">{prep.readiness.message}</p>}</div></div><button onClick={() => setTab('practice')} className="btn-primary mt-6 inline-flex items-center gap-2">Start practice interview <ArrowRight size={14} /></button></section>
       </div> : <section className="dashboard-panel max-w-4xl">
         <div className="flex items-center justify-between gap-4 mb-6"><div><p className="dashboard-eyebrow">Practice interview</p><h2 className="dashboard-section-title">One question at a time.</h2></div><span className="text-[11px] text-muted">Question {questionIndex + 1} of {prep.likely_questions?.length || 0}</span></div>
-        <div className="bg-[#111111] text-white p-6 mb-5"><MessageSquareText size={18} className="text-[#555555] mb-3" /><p className="font-serif text-[24px] leading-8">{currentQuestion}</p></div>
+        <div className="bg-[#0b2f4d] text-white p-6 mb-5"><MessageSquareText size={18} className="text-[#555555] mb-3" /><p className="font-serif text-[24px] leading-8">{currentQuestion}</p></div>
         <p className="text-[12px] text-muted leading-5 mb-3">Answer naturally as if you were in the interview. Do not try to sound perfect. The coach will show you what is strong and what evidence is missing.</p>
         <textarea value={practiceAnswer} onChange={e => setPracticeAnswer(e.target.value)} rows={8} placeholder="Type your answer in your own words..." className="input-field text-[13px] resize-y" />
         {error && <p className="mt-4 border-l-2 border-red-500 pl-3 text-[12px] text-red-700">{error}</p>}

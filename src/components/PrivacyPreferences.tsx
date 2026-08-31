@@ -68,7 +68,7 @@ export default function PrivacyPreferences() {
     {message && <div className="border border-[#e5e5e5] bg-[#f7f7f7] px-4 py-3 text-[13px] text-[#4d4d4d]">{message}</div>}
 
     <section className="dashboard-card">
-      <div className="flex gap-3"><ShieldCheck size={20} className="text-[#111111] mt-0.5"/><div><h2 className="text-[22px]">Privacy & contact preferences</h2><p className="text-[13px] leading-6 text-[#555555] mt-2">Marketing is optional and separate from the service messages needed to run your account, applications, bookings, payments and security. You can change optional preferences at any time.</p></div></div>
+      <div className="flex gap-3"><ShieldCheck size={20} className="text-[#0b2f4d] mt-0.5"/><div><h2 className="text-[22px]">Privacy & contact preferences</h2><p className="text-[13px] leading-6 text-[#555555] mt-2">Marketing is optional and separate from the service messages needed to run your account, applications, bookings, payments and security. You can change optional preferences at any time.</p></div></div>
     </section>
 
     <section className="dashboard-card">
@@ -102,7 +102,7 @@ export default function PrivacyPreferences() {
 }
 
 function Toggle({ label, description, checked, onChange }: { label: string; description: string; checked: boolean; onChange: (v: boolean) => void }) {
-  return <label className="flex items-start justify-between gap-5 py-4 cursor-pointer"><div><p className="text-[13px] font-semibold text-[#1a1a1a]">{label}</p><p className="text-[11px] leading-5 text-[#555555] mt-1 max-w-2xl">{description}</p></div><input type="checkbox" className="mt-1 h-4 w-4" checked={checked} onChange={e => onChange(e.target.checked)}/></label>
+  return <label className="flex items-start justify-between gap-5 py-4 cursor-pointer"><div><p className="text-[13px] font-semibold text-[#10283b]">{label}</p><p className="text-[11px] leading-5 text-[#555555] mt-1 max-w-2xl">{description}</p></div><input type="checkbox" className="mt-1 h-4 w-4" checked={checked} onChange={e => onChange(e.target.checked)}/></label>
 }
 
 function Status({ value }: { value: Preferences['marketing_email_status'] }) {

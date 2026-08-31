@@ -236,7 +236,7 @@ export default function PropertyFactFilePage() {
       <h1 className="dashboard-title">Property Fact File</h1>
       <p className="dashboard-intro max-w-3xl">Create the operational information every Agency worker and Residency specialist needs before arriving at your property.</p>
 
-      <div className="my-7 border-l-2 border-[#111111] bg-white px-5 py-4">
+      <div className="my-7 border-l-2 border-[#0b2f4d] bg-white px-5 py-4">
         <div className="flex gap-3"><Sparkles size={17} className="text-ink shrink-0 mt-0.5" /><div><p className="text-[13px] font-medium text-ink">One master file. Automatic Before You Arrive packs.</p><p className="text-[12px] text-muted mt-1 leading-5">When a booking is confirmed, Spa Platform takes a snapshot of this file and adds the booking-specific date, times and details. Agency receives the concise operational version; Residency receives the extended stay information too.</p></div></div>
       </div>
 

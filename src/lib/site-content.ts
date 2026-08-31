@@ -65,7 +65,7 @@ const image = (url: string, alt: string): WebsiteContent['howItWorks']['image'] 
 export const DEFAULT_WEBSITE_CONTENT: WebsiteContent = {
   version: 1,
   brand: {
-    headingFont: 'modern', bodyFont: 'system', accent: '#111111', ink: '#111111',
+    headingFont: 'modern', bodyFont: 'system', accent: '#0B2F4D', ink: '#102838',
     background: '#FFFFFF', surface: '#F5F5F5', buttonStyle: 'square', spacing: 'airy',
   },
   navigation: {

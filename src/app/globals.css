@@ -14,7 +14,7 @@
   html { font-family: var(--font-poppins), "Segoe UI", sans-serif; }
   body { @apply bg-white text-body antialiased font-sans; font-size: 15px; line-height: 1.7; }
   h1, h2, h3, h4 {
-    color: var(--site-ink, #1a1a1a);
+    color: var(--site-ink, #10283b);
     font-family: var(--site-heading-font, var(--font-manrope), "Segoe UI", sans-serif);
     font-weight: 600;
     letter-spacing: -0.02em;
@@ -24,11 +24,11 @@
 }
 
 @layer components {
-  .btn-primary { @apply text-white px-5 py-2.5 text-[13px] font-semibold transition-all duration-150; background: var(--site-accent, #111111); border-radius: var(--site-button-radius, 0px); }
-  .btn-primary:hover { background: #000000; }
+  .btn-primary { @apply text-white px-5 py-2.5 text-[13px] font-semibold transition-all duration-150; background: var(--site-accent, #0b2f4d); border-radius: var(--site-button-radius, 0px); }
+  .btn-primary:hover { background: #123f64; }
   .btn-secondary { @apply bg-white text-ink border border-border px-5 py-2.5 text-[13px] font-semibold hover:bg-surface transition-all duration-150; border-radius: var(--site-button-radius, 0px); }
-  .btn-accent { @apply text-white px-5 py-2.5 text-[13px] font-semibold transition-all duration-150; background: var(--site-accent, #111111); border-radius: var(--site-button-radius, 0px); }
-  .btn-accent:hover { background: #000000; }
+  .btn-accent { @apply text-white px-5 py-2.5 text-[13px] font-semibold transition-all duration-150; background: var(--site-accent, #0b2f4d); border-radius: var(--site-button-radius, 0px); }
+  .btn-accent:hover { background: #123f64; }
   .btn-ghost { @apply text-secondary text-[13px] font-medium hover:text-ink transition-colors; }
   .input-field { @apply w-full px-3.5 py-2.5 bg-white border border-border text-[14px] text-ink focus:outline-none focus:ring-2 focus:ring-ink/10 focus:border-ink/40 transition-all duration-150 placeholder:text-muted; border-radius: 0; }
   .card { @apply bg-white border border-border p-6 transition-all duration-200 hover:shadow-sm; border-radius: 0; }
@@ -47,7 +47,7 @@
   .match-good { @apply bg-match-good-bg text-match-good-text text-[11px] font-semibold px-2.5 py-1 rounded-full; }
   .match-partial { @apply bg-match-partial-bg text-match-partial-text text-[11px] font-semibold px-2.5 py-1 rounded-full; }
 
-  .gold-gradient { background:#111111; }
+  .gold-gradient { background:#0b2f4d; }
   .gradient-text-gold { color:#555555; }
   .animate-pulse-gold {}
 
@@ -62,10 +62,10 @@
 }
 
 /* Legacy public utilities inherit the monochrome language. */
-.text-black { color: #1a1a1a !important; }
-.bg-black { background-color: #111111 !important; }
-.hover\:text-black:hover { color: #000000 !important; }
-.hover\:bg-black:hover { background-color: #000000 !important; }
+.text-black { color: #10283b !important; }
+.bg-black { background-color: #0b2f4d !important; }
+.hover\:text-black:hover { color: #07243b !important; }
+.hover\:bg-black:hover { background-color: #123f64 !important; }
 .border-neutral-100 { border-color: #e9e9e9 !important; }
 .text-neutral-400 { color: #8a8a8a !important; }
 .text-neutral-600 { color: #555555 !important; }
@@ -74,11 +74,11 @@
 /* Editorial workspace shared by Talent, Employer and Admin. */
 .dashboard-shell {
   background: #ffffff;
-  color: #1f1f1f;
+  color: #17202a;
   font-family: var(--font-poppins), "Segoe UI", sans-serif;
 }
 .dashboard-sidebar {
-  background: #111111;
+  background: #0b2f4d;
   border-right: 1px solid rgba(255,255,255,.10);
   box-shadow: none;
 }
@@ -89,7 +89,7 @@
   font-family: var(--site-heading-font, var(--font-manrope), "Segoe UI", sans-serif);
 }
 .dashboard-title {
-  color: #1a1a1a;
+  color: #10283b;
   font-size: clamp(2rem, 3vw, 2.9rem);
   line-height: 1.05;
   font-weight: 600;
@@ -129,9 +129,9 @@
 .dashboard-shell input:not([type="checkbox"]):not([type="radio"]) { border-radius: 0; }
 .dashboard-shell table { border-radius: 0; }
 .dashboard-shell .btn-primary,
-.dashboard-shell .btn-accent { background: var(--site-accent, #111111); color:#fff; }
+.dashboard-shell .btn-accent { background: var(--site-accent, #0b2f4d); color:#fff; }
 .dashboard-shell .btn-primary:hover,
-.dashboard-shell .btn-accent:hover { background: #000000; }
+.dashboard-shell .btn-accent:hover { background: #123f64; }
 .dashboard-shell .input-field:focus { border-color: #8a8a8a; box-shadow: 0 0 0 2px rgba(0,0,0,.06); }
 .dashboard-metrics {
   display: grid;
@@ -143,7 +143,7 @@
 .dashboard-metric { min-height: 112px; padding: 1.25rem; border-right: 1px solid #e9e9e9; }
 .dashboard-metric:nth-child(2n) { border-right: 0; }
 .dashboard-metric-value {
-  color: #1a1a1a;
+  color: #10283b;
   font-family: var(--site-heading-font, var(--font-manrope), sans-serif);
   font-size: 2.3rem;
   line-height: .98;
@@ -155,7 +155,7 @@
 .dashboard-list-row { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 1rem 0; border-top: 1px solid #ececec; }
 .dashboard-list-row:first-child { border-top: 0; }
 .dashboard-rule { border-top: 1px solid #e5e5e5; }
-.dashboard-section-title { font-family: var(--site-heading-font, var(--font-manrope), sans-serif); font-size: 1.45rem; font-weight: 600; color: #1a1a1a; letter-spacing: -.015em; }
+.dashboard-section-title { font-family: var(--site-heading-font, var(--font-manrope), sans-serif); font-size: 1.45rem; font-weight: 600; color: #10283b; letter-spacing: -.015em; }
 
 /* Older portal screens fold into the same monochrome system. */
 .dashboard-shell .bg-gray-50 { background-color: #f7f7f7; }
@@ -213,16 +213,16 @@ html { scroll-behavior:smooth; }
    admin-published values on the root wrapper override them everywhere. */
 .website-theme {
   font-family: var(--site-body-font, var(--font-poppins), "Segoe UI", sans-serif);
-  color: var(--site-ink, #1a1a1a);
+  color: var(--site-ink, #10283b);
   background: var(--site-background, #ffffff);
 }
 .website-theme .site-heading {
   font-family: var(--site-heading-font, var(--font-manrope), sans-serif);
-  color: var(--site-ink, #1a1a1a);
+  color: var(--site-ink, #10283b);
   letter-spacing: -0.02em;
 }
-.website-theme .site-accent { color: var(--site-accent, #111111); }
-.website-theme .site-accent-bg { background-color: var(--site-accent, #111111); }
+.website-theme .site-accent { color: var(--site-accent, #0b2f4d); }
+.website-theme .site-accent-bg { background-color: var(--site-accent, #0b2f4d); }
 .website-theme .site-surface { background-color: var(--site-surface, #f5f5f5); }
 .website-theme .site-section {
   padding-top: calc(5rem * var(--site-space, 1));

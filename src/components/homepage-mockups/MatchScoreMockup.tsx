@@ -26,7 +26,7 @@ export default function MatchScoreMockup() {
           <div key={c.label}>
             <div className="flex items-center justify-between text-[12px] mb-1">
               <span style={{ color: '#374151' }}>{c.label}</span>
-              <span className="font-medium tabular-nums" style={{ color: '#1a1a1a' }}>{c.pct}%</span>
+              <span className="font-medium tabular-nums" style={{ color: '#10283b' }}>{c.pct}%</span>
             </div>
             <div className="h-1.5 rounded-full overflow-hidden" style={{ background: '#F0EEEA' }}>
               <div

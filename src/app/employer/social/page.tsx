@@ -72,12 +72,12 @@ export default function EmployerSocialPage() {
 
     <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4 mb-9">
       {platforms.map(({ name, icon: Icon, status, text }) => <div key={name} className="dashboard-card">
-        <div className="flex items-start justify-between gap-3"><div className="h-10 w-10 rounded-lg bg-[#f1f4f6] text-[#111111] flex items-center justify-center"><Icon size={18}/></div><span className="text-[10px] uppercase tracking-[.12em] text-[#555555]">{status}</span></div>
+        <div className="flex items-start justify-between gap-3"><div className="h-10 w-10 rounded-lg bg-[#f1f4f6] text-[#0b2f4d] flex items-center justify-center"><Icon size={18}/></div><span className="text-[10px] uppercase tracking-[.12em] text-[#555555]">{status}</span></div>
         <h2 className="text-[20px] mt-4">{name}</h2><p className="text-[12px] leading-5 text-secondary mt-2">{text}</p>
       </div>)}
     </div>
 
-    <div className="dashboard-card mb-8 bg-[#111111] text-white border-[#111111]">
+    <div className="dashboard-card mb-8 bg-[#0b2f4d] text-white border-[#0b2f4d]">
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5">
         <div><p className="text-[9px] uppercase tracking-[.18em] text-white/55">One role. Multiple channels.</p><h2 className="text-white text-[26px] mt-2">Every share sends candidates back to WHC.</h2><p className="text-[13px] leading-6 text-white/65 mt-2 max-w-3xl">That means the property keeps one applicant list, one shortlist, one set of messages and one source of truth instead of losing applications across several social platforms.</p></div>
         <div className="flex flex-wrap gap-2 text-[11px]"><span className="rounded-full border border-white/15 px-3 py-1.5">LinkedIn</span><span className="rounded-full border border-white/15 px-3 py-1.5">Facebook</span><span className="rounded-full border border-white/15 px-3 py-1.5">Instagram</span><span className="rounded-full border border-white/15 px-3 py-1.5">WhatsApp</span></div>

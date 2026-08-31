@@ -55,7 +55,7 @@ export default function OGImage() {
             textAlign: 'center',
             fontSize: 68,
             fontWeight: 500,
-            color: '#1a1a1a',
+            color: '#10283b',
             lineHeight: 1.12,
             letterSpacing: '-1px',
             maxWidth: 940,

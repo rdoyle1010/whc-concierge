@@ -35,7 +35,7 @@ export default function CandidateProfileMockup() {
       <div className="grid grid-cols-3 gap-2 border-t border-gray-100 pt-3">
         <button type="button" className="flex items-center justify-center gap-1 rounded-lg bg-gray-50 py-2 text-xs text-gray-400"><X size={13} />Pass</button>
         <button type="button" className="flex items-center justify-center gap-1 rounded-lg bg-gray-50 py-2 text-xs text-gray-500"><Star size={13} />Save</button>
-        <button type="button" className="flex items-center justify-center gap-1 rounded-lg bg-[#111111] py-2 text-xs text-white"><Heart size={13} />Interested</button>
+        <button type="button" className="flex items-center justify-center gap-1 rounded-lg bg-[#0b2f4d] py-2 text-xs text-white"><Heart size={13} />Interested</button>
       </div>
     </div>
   )

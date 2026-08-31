@@ -3,8 +3,8 @@ import Footer from '@/components/Footer'
 
 export default function PrivacyPage() {
   return <div className="min-h-screen bg-white"><Navbar />
-    <section className="bg-[#111111] pt-32 pb-16"><div className="max-w-3xl mx-auto px-6 text-center"><h1 className="text-4xl font-semibold text-white">Privacy Policy</h1><p className="text-white/70 mt-3 text-[14px]">Last updated: 26 August 2026</p></div></section>
-    <section className="py-16 bg-white"><div className="max-w-3xl mx-auto px-6 prose prose-lg prose-headings:text-[#1a1a1a] prose-p:text-[#4d4d4d] prose-li:text-[#4d4d4d]">
+    <section className="bg-[#0b2f4d] pt-32 pb-16"><div className="max-w-3xl mx-auto px-6 text-center"><h1 className="text-4xl font-semibold text-white">Privacy Policy</h1><p className="text-white/70 mt-3 text-[14px]">Last updated: 26 August 2026</p></div></section>
+    <section className="py-16 bg-white"><div className="max-w-3xl mx-auto px-6 prose prose-lg prose-headings:text-[#10283b] prose-p:text-[#4d4d4d] prose-li:text-[#4d4d4d]">
       <h2>1. Who we are</h2><p>Wellness House Collective (&ldquo;WHC&rdquo;, &ldquo;we&rdquo;, &ldquo;us&rdquo;) operates a UK recruitment, flexible-work and professional-development platform for spa and wellness professionals and employers. We act as data controller for personal data processed through the platform. Privacy enquiries and data-rights requests can be sent to <a href="mailto:rebecca.whc@outlook.com">rebecca.whc@outlook.com</a>.</p>
 
       <h2>2. Data we process</h2><p>Depending on the service you use, this can include account and contact information, professional profile information, CVs, qualifications and certificates, right-to-work information, optional insurance documents, skills, career history, availability, location and travel preferences, job applications, interviews, messages, reviews, Agency and Residency booking records, payment records, communication preferences, consent records and security/audit information.</p><p>Employer data can include company and property details, job descriptions, salaries, role requirements, candidate-search preferences and recruitment activity.</p>

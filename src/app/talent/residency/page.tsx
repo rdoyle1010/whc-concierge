@@ -124,7 +124,7 @@ export default function TalentResidencyPage() {
               <Link key={role.id} href={`/jobs/${role.id}`} className="inline-flex items-center gap-2 rounded-full border border-border bg-surface px-3 py-1.5 text-[12px] hover:border-ink/30">
                 <span className="font-semibold text-ink">{role.job_title}</span>
                 <span className="text-muted">{role.property_name}{role.location ? ` · ${role.location}` : ''}</span>
-                <span className="rounded-full bg-[#e8eef4] px-1.5 py-0.5 text-[10px] font-bold text-[#111111]">{role.score}%</span>
+                <span className="rounded-full bg-[#e8eef4] px-1.5 py-0.5 text-[10px] font-bold text-[#0b2f4d]">{role.score}%</span>
               </Link>
             ))}
           </div>
@@ -157,7 +157,7 @@ export default function TalentResidencyPage() {
               ))}
               {awaitingThem && <p className="mt-4 text-xs text-amber-700">Your counter is with the property - you will be notified when they respond.</p>}
               {b.status === 'accepted' && <p className="mt-4 text-xs text-amber-700">Accepted - awaiting property payment.</p>}
-              {b.status === 'confirmed' && <div className="mt-4"><p className="text-xs text-emerald-700 font-medium">Confirmed - payment received.</p><Link href="/talent/before-you-arrive" className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-[#111111] underline"><MapPin size={11}/> Your Before You Arrive pack</Link></div>}
+              {b.status === 'confirmed' && <div className="mt-4"><p className="text-xs text-emerald-700 font-medium">Confirmed - payment received.</p><Link href="/talent/before-you-arrive" className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-[#0b2f4d] underline"><MapPin size={11}/> Your Before You Arrive pack</Link></div>}
             </div>
           </div>
         </div>})}</div>}

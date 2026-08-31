@@ -79,7 +79,7 @@ export default function AdminRevenuePage() {
         </div>
       </section>
 
-      <div className="rounded-xl border border-[#e6dfd3] bg-[#fbf8f1] px-4 py-3 text-[11px] leading-5 text-[#1a1a1a]">{data.note}</div>
+      <div className="rounded-xl border border-[#e6dfd3] bg-[#fbf8f1] px-4 py-3 text-[11px] leading-5 text-[#10283b]">{data.note}</div>
     </>}
   </DashboardShell>
 }

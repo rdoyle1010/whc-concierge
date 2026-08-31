@@ -19,7 +19,7 @@ export function applicantConfirmationHtml({ applicantName, jobTitle, propertyNam
 
         <!-- Body -->
         <tr><td style="background-color: #FFFFFF; padding: 40px;">
-          <h2 style="margin: 0 0 16px; font-size: 22px; font-weight: 600; color: #1a1a1a;">Good news, ${firstName}</h2>
+          <h2 style="margin: 0 0 16px; font-size: 22px; font-weight: 600; color: #10283b;">Good news, ${firstName}</h2>
           <p style="margin: 0 0 24px; font-size: 15px; line-height: 1.7; color: #4B5563;">Your application has been submitted successfully. Here are the details:</p>
 
           <!-- Application details -->
@@ -28,11 +28,11 @@ export function applicantConfirmationHtml({ applicantName, jobTitle, propertyNam
               <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
                 <tr>
                   <td style="padding: 6px 0; font-size: 12px; color: #9CA3AF; width: 90px; vertical-align: top;">Role</td>
-                  <td style="padding: 6px 0; font-size: 14px; color: #1a1a1a; font-weight: 500;">${jobTitle}</td>
+                  <td style="padding: 6px 0; font-size: 14px; color: #10283b; font-weight: 500;">${jobTitle}</td>
                 </tr>
                 <tr>
                   <td style="padding: 6px 0; font-size: 12px; color: #9CA3AF; vertical-align: top;">Property</td>
-                  <td style="padding: 6px 0; font-size: 14px; color: #1a1a1a; font-weight: 500;">${propertyName}</td>
+                  <td style="padding: 6px 0; font-size: 14px; color: #10283b; font-weight: 500;">${propertyName}</td>
                 </tr>
                 <tr>
                   <td style="padding: 6px 0; font-size: 12px; color: #9CA3AF; vertical-align: top;">Status</td>
@@ -42,13 +42,13 @@ export function applicantConfirmationHtml({ applicantName, jobTitle, propertyNam
             </td></tr>
           </table>
 
-          <p style="margin: 0 0 8px; font-size: 13px; font-weight: 600; color: #1a1a1a; text-transform: uppercase; letter-spacing: 0.5px;">What happens next</p>
+          <p style="margin: 0 0 8px; font-size: 13px; font-weight: 600; color: #10283b; text-transform: uppercase; letter-spacing: 0.5px;">What happens next</p>
           <p style="margin: 0 0 32px; font-size: 14px; line-height: 1.7; color: #4B5563;">The employer will review your profile and respond within 5 working days. You'll receive a notification when there's an update on your application.</p>
 
           <!-- CTA -->
           <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
             <tr><td align="center">
-              <a href="https://talent.wellnesshousecollective.co.uk/talent/applications" style="display: inline-block; padding: 14px 32px; background-color: #1a1a1a; color: #FFFFFF; font-size: 14px; font-weight: 600; text-decoration: none; border-radius: 8px; letter-spacing: 0.3px;">View Your Applications</a>
+              <a href="https://talent.wellnesshousecollective.co.uk/talent/applications" style="display: inline-block; padding: 14px 32px; background-color: #10283b; color: #FFFFFF; font-size: 14px; font-weight: 600; text-decoration: none; border-radius: 8px; letter-spacing: 0.3px;">View Your Applications</a>
             </td></tr>
           </table>
         </td></tr>
@@ -87,7 +87,7 @@ export function employerNotificationHtml({ applicantName, jobTitle, propertyName
 
         <!-- Body -->
         <tr><td style="background-color: #FFFFFF; padding: 40px;">
-          <h2 style="margin: 0 0 16px; font-size: 22px; font-weight: 600; color: #1a1a1a;">New applicant for ${jobTitle}</h2>
+          <h2 style="margin: 0 0 16px; font-size: 22px; font-weight: 600; color: #10283b;">New applicant for ${jobTitle}</h2>
           <p style="margin: 0 0 24px; font-size: 15px; line-height: 1.7; color: #4B5563;">A new candidate has expressed interest in your role at ${propertyName}.</p>
 
           <!-- Applicant details -->
@@ -96,15 +96,15 @@ export function employerNotificationHtml({ applicantName, jobTitle, propertyName
               <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
                 <tr>
                   <td style="padding: 6px 0; font-size: 12px; color: #9CA3AF; width: 90px; vertical-align: top;">Applicant</td>
-                  <td style="padding: 6px 0; font-size: 14px; color: #1a1a1a; font-weight: 500;">${applicantName}</td>
+                  <td style="padding: 6px 0; font-size: 14px; color: #10283b; font-weight: 500;">${applicantName}</td>
                 </tr>
                 ${roleLevel ? `<tr>
                   <td style="padding: 6px 0; font-size: 12px; color: #9CA3AF; vertical-align: top;">Role Level</td>
-                  <td style="padding: 6px 0; font-size: 14px; color: #1a1a1a; font-weight: 500;">${roleLevel}</td>
+                  <td style="padding: 6px 0; font-size: 14px; color: #10283b; font-weight: 500;">${roleLevel}</td>
                 </tr>` : ''}
                 <tr>
                   <td style="padding: 6px 0; font-size: 12px; color: #9CA3AF; vertical-align: top;">Role</td>
-                  <td style="padding: 6px 0; font-size: 14px; color: #1a1a1a; font-weight: 500;">${jobTitle}</td>
+                  <td style="padding: 6px 0; font-size: 14px; color: #10283b; font-weight: 500;">${jobTitle}</td>
                 </tr>
               </table>
             </td></tr>
@@ -115,7 +115,7 @@ export function employerNotificationHtml({ applicantName, jobTitle, propertyName
           <!-- CTA -->
           <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
             <tr><td align="center">
-              <a href="https://talent.wellnesshousecollective.co.uk/employer/applications" style="display: inline-block; padding: 14px 32px; background-color: #1a1a1a; color: #FFFFFF; font-size: 14px; font-weight: 600; text-decoration: none; border-radius: 8px; letter-spacing: 0.3px;">Review Applicant</a>
+              <a href="https://talent.wellnesshousecollective.co.uk/employer/applications" style="display: inline-block; padding: 14px 32px; background-color: #10283b; color: #FFFFFF; font-size: 14px; font-weight: 600; text-decoration: none; border-radius: 8px; letter-spacing: 0.3px;">Review Applicant</a>
             </td></tr>
           </table>
         </td></tr>

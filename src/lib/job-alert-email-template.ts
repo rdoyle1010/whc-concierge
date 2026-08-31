@@ -19,7 +19,7 @@ export function jobAlertEmailHtml({ firstName, jobTitle, propertyName, matchScor
         </td></tr>
 
         <tr><td style="background-color: #FFFFFF; padding: 40px;">
-          <h2 style="margin: 0 0 16px; font-size: 22px; font-weight: 600; color: #1a1a1a;">Hi ${firstName}, a new role matches your profile</h2>
+          <h2 style="margin: 0 0 16px; font-size: 22px; font-weight: 600; color: #10283b;">Hi ${firstName}, a new role matches your profile</h2>
           <p style="margin: 0 0 24px; font-size: 15px; line-height: 1.7; color: #4B5563;">A role has just been posted that aligns with your skills and experience.</p>
 
           <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color: #F9FAFB; border-radius: 8px; margin-bottom: 24px;">
@@ -27,19 +27,19 @@ export function jobAlertEmailHtml({ firstName, jobTitle, propertyName, matchScor
               <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
                 <tr>
                   <td style="padding: 6px 0; font-size: 12px; color: #9CA3AF; width: 90px; vertical-align: top;">Role</td>
-                  <td style="padding: 6px 0; font-size: 14px; color: #1a1a1a; font-weight: 500;">${jobTitle}</td>
+                  <td style="padding: 6px 0; font-size: 14px; color: #10283b; font-weight: 500;">${jobTitle}</td>
                 </tr>
                 <tr>
                   <td style="padding: 6px 0; font-size: 12px; color: #9CA3AF; vertical-align: top;">Property</td>
-                  <td style="padding: 6px 0; font-size: 14px; color: #1a1a1a; font-weight: 500;">${propertyName}</td>
+                  <td style="padding: 6px 0; font-size: 14px; color: #10283b; font-weight: 500;">${propertyName}</td>
                 </tr>
                 ${location ? `<tr>
                   <td style="padding: 6px 0; font-size: 12px; color: #9CA3AF; vertical-align: top;">Location</td>
-                  <td style="padding: 6px 0; font-size: 14px; color: #1a1a1a;">${location}</td>
+                  <td style="padding: 6px 0; font-size: 14px; color: #10283b;">${location}</td>
                 </tr>` : ''}
                 ${salary ? `<tr>
                   <td style="padding: 6px 0; font-size: 12px; color: #9CA3AF; vertical-align: top;">Salary</td>
-                  <td style="padding: 6px 0; font-size: 14px; color: #1a1a1a; font-weight: 500;">${salary}</td>
+                  <td style="padding: 6px 0; font-size: 14px; color: #10283b; font-weight: 500;">${salary}</td>
                 </tr>` : ''}
                 <tr>
                   <td style="padding: 6px 0; font-size: 12px; color: #9CA3AF; vertical-align: top;">Match</td>
@@ -51,7 +51,7 @@ export function jobAlertEmailHtml({ firstName, jobTitle, propertyName, matchScor
 
           <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
             <tr><td align="center">
-              <a href="https://talent.wellnesshousecollective.co.uk/roles/match" style="display: inline-block; padding: 14px 32px; background-color: #1a1a1a; color: #FFFFFF; font-size: 14px; font-weight: 600; text-decoration: none; border-radius: 8px;">View This Role</a>
+              <a href="https://talent.wellnesshousecollective.co.uk/roles/match" style="display: inline-block; padding: 14px 32px; background-color: #10283b; color: #FFFFFF; font-size: 14px; font-weight: 600; text-decoration: none; border-radius: 8px;">View This Role</a>
             </td></tr>
           </table>
         </td></tr>

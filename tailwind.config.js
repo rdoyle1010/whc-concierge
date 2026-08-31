@@ -4,19 +4,19 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        // WHC brand: monochrome editorial - black ink, white ground, soft
-        // grey surfaces. Matches wellnesshousecollective.co.uk.
-        ink: '#1a1a1a',
-        body: '#3d3d3d',
-        muted: '#8a8a8a',
-        secondary: '#555555',
-        surface: '#f5f5f5',
-        border: '#e5e5e5',
+        // WHC brand: navy ink and accent on white, soft grey surfaces,
+        // Manrope + Poppins. Navy is the brand colour - never black.
+        ink: '#10283b',
+        body: '#3d4b57',
+        muted: '#8a949b',
+        secondary: '#5a6a76',
+        surface: '#f5f6f8',
+        border: '#e3e7eb',
         parchment: '#ffffff',
-        accent: '#111111',
+        accent: '#0b2f4d',
         success: '#22C55E',
-        gold: { DEFAULT: '#111111', light: '#333333', dark: '#000000' },
-        navy: { DEFAULT: '#111111', light: '#333333', dark: '#000000' },
+        gold: { DEFAULT: '#0b2f4d', light: '#315675', dark: '#07243b' },
+        navy: { DEFAULT: '#0b2f4d', light: '#123f64', dark: '#07243b' },
         match: {
           perfect: { bg: '#dcfce7', text: '#166534' },
           strong: { bg: '#dbeafe', text: '#1e40af' },

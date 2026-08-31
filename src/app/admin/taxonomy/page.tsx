@@ -70,7 +70,7 @@ export default function TaxonomyPage() {
         <div className="flex flex-wrap gap-1.5 mb-4">
           {TABS.map(t => (
             <button key={t.key} type="button" onClick={() => setActiveTab(t.key)}
-              className={`px-3.5 py-2 rounded-lg text-[12px] font-semibold transition-colors ${activeTab === t.key ? 'bg-[#111111] text-white' : 'bg-white border border-border text-secondary hover:text-ink'}`}>
+              className={`px-3.5 py-2 rounded-lg text-[12px] font-semibold transition-colors ${activeTab === t.key ? 'bg-[#0b2f4d] text-white' : 'bg-white border border-border text-secondary hover:text-ink'}`}>
               {t.label} <span className={activeTab === t.key ? 'opacity-70' : 'text-muted'}>({tabCount(t)})</span>
             </button>
           ))}

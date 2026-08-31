@@ -57,7 +57,7 @@ export default function AuthenticatorSecurity({ required = false }: { required?:
 
   return <div className={`dashboard-card ${required && !factor ? 'border-amber-300 ring-1 ring-amber-100' : ''}`}>
     <div className="flex items-start gap-3">
-      <div className="w-10 h-10 rounded-xl bg-[#f5f5f5] flex items-center justify-center text-[#1a1a1a]"><ShieldCheck size={18}/></div>
+      <div className="w-10 h-10 rounded-xl bg-[#f5f5f5] flex items-center justify-center text-[#10283b]"><ShieldCheck size={18}/></div>
       <div className="flex-1"><h3 className="font-serif text-lg font-semibold">Authenticator app</h3><p className="text-sm text-gray-500 mt-1">Add a second sign-in check using Microsoft Authenticator, Google Authenticator, 1Password or another TOTP app. This protects sensitive personal information, bookings and money even if a password is stolen.</p></div>
     </div>
 

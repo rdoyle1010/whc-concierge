@@ -78,7 +78,7 @@ export default function PropertyAddressLookup({
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
         <div className="md:col-span-2"><label className="block text-[11px] font-medium text-ink mb-1.5">Selected property address</label><textarea rows={2} className="input-field text-[13px] resize-y" value={address || ''} onChange={e => onSelect({ postcode: query, address: e.target.value, mapUrl: mapUrl || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(e.target.value)}` })} placeholder="Full property address" /></div>
-        {mapUrl && <div className="md:col-span-2"><a href={mapUrl} target="_blank" rel="noreferrer" className="text-[12px] font-medium text-[#111111] underline">Open generated map link</a></div>}
+        {mapUrl && <div className="md:col-span-2"><a href={mapUrl} target="_blank" rel="noreferrer" className="text-[12px] font-medium text-[#0b2f4d] underline">Open generated map link</a></div>}
       </div>
     </div>
   )

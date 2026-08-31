@@ -180,7 +180,7 @@ export default function AdminAdSlotsPage() {
                     return (
                       <div key={slot.slot_key} className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border px-3.5 py-3">
                         <div className="min-w-0">
-                          <p className="text-[13px] font-semibold text-ink inline-flex items-center gap-1.5"><Megaphone size={13} className="text-[#1a1a1a]" /> {slot.label}</p>
+                          <p className="text-[13px] font-semibold text-ink inline-flex items-center gap-1.5"><Megaphone size={13} className="text-[#10283b]" /> {slot.label}</p>
                           <p className="text-[11.5px] text-muted mt-0.5">
                             £{formatPounds(prices[slot.slot_key] ?? slot.monthly_pence)}/month self-serve price
                             {slot.pinned_placement_id ? ` · pinned: ${advertName(slot.pinned_placement_id) || 'unknown advert'}` : candidates.length ? ` · ${candidates.length} advert${candidates.length === 1 ? '' : 's'} available` : ' · no adverts yet'}

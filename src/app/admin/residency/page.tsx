@@ -78,7 +78,7 @@ export default function AdminResidencyPage() {
           )}
           {r.approval_status === 'approved' && (
             <button onClick={() => toggleFeatured(r.id, !r.is_featured)} disabled={busyId === r.id}
-              className={`!py-2 text-[12px] rounded-lg px-3 font-semibold disabled:opacity-50 ${r.is_featured ? 'bg-[#f5eedd] text-[#1a1a1a] border border-[#e5e5e5]' : 'btn-secondary'}`}>
+              className={`!py-2 text-[12px] rounded-lg px-3 font-semibold disabled:opacity-50 ${r.is_featured ? 'bg-[#f5eedd] text-[#10283b] border border-[#e5e5e5]' : 'btn-secondary'}`}>
               {r.is_featured ? '★ Featured' : 'Feature'}</button>
           )}
           {r.approval_status !== 'rejected' && (

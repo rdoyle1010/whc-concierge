@@ -59,7 +59,7 @@ export default function AdminPlatformReviewsPage() {
     </div>
 
     <div className="mb-5 flex flex-wrap gap-2">
-      {(['all','talent','employer'] as const).map(value => <button key={value} type="button" onClick={() => setFilter(value)} className={`rounded-lg px-3 py-2 text-[11px] font-semibold ${filter === value ? 'bg-[#111111] text-white' : 'border border-border bg-white text-secondary'}`}>{value === 'all' ? 'All reviews' : value === 'talent' ? 'Talent reviews' : 'Property reviews'}</button>)}
+      {(['all','talent','employer'] as const).map(value => <button key={value} type="button" onClick={() => setFilter(value)} className={`rounded-lg px-3 py-2 text-[11px] font-semibold ${filter === value ? 'bg-[#0b2f4d] text-white' : 'border border-border bg-white text-secondary'}`}>{value === 'all' ? 'All reviews' : value === 'talent' ? 'Talent reviews' : 'Property reviews'}</button>)}
     </div>
 
     {error && <div className="mb-5 rounded-xl bg-red-50 px-4 py-3 text-[12px] text-red-600">{error}</div>}
@@ -70,7 +70,7 @@ export default function AdminPlatformReviewsPage() {
           <div>
             <div className="flex flex-wrap items-center gap-2">
               <h2 className="text-[16px] font-semibold text-ink">{item.reviewer_name}</h2>
-              <span className="rounded-full bg-[#f5f1e9] px-2.5 py-1 text-[9px] font-semibold uppercase tracking-[.12em] text-[#1a1a1a]">{item.reviewer_role === 'talent' ? 'Talent' : 'Property'}</span>
+              <span className="rounded-full bg-[#f5f1e9] px-2.5 py-1 text-[9px] font-semibold uppercase tracking-[.12em] text-[#10283b]">{item.reviewer_role === 'talent' ? 'Talent' : 'Property'}</span>
             </div>
             <p className="mt-1 text-[12px] text-muted">Completed placement · {item.job_title}</p>
           </div>

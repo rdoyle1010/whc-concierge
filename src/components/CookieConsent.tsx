@@ -33,7 +33,7 @@ export default function CookieConsent() {
             </button>
             <button type="button" onClick={() => respond('accepted')}
               className="px-4 py-1.5 text-[12px] font-semibold rounded-lg transition-all hover:shadow-lg hover:shadow-[#555555]/20"
-              style={{ background: 'linear-gradient(135deg, #555555, #e0e0e0)', color: '#1a1a1a' }}>
+              style={{ background: 'linear-gradient(135deg, #555555, #e0e0e0)', color: '#10283b' }}>
               Accept
             </button>
           </div>

@@ -29,7 +29,7 @@ export default function AcademyResourcesPage() {
             const spreadsheet = resource.contentType.startsWith('text/csv')
             return (
               <article key={resource.id} className="dashboard-card flex flex-col">
-                <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-[#f5f5f5] text-[#1a1a1a]">
+                <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-[#f5f5f5] text-[#10283b]">
                   {spreadsheet ? <FileSpreadsheet size={19} /> : <FileText size={19} />}
                 </div>
                 <h2 className="text-[16px] font-semibold text-ink">{resource.title}</h2>

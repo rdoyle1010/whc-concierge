@@ -195,7 +195,7 @@ function ProductSection({ content: _content }: { content: WebsiteContent }) {
         {examples.map((card, index) => <div key={card.label} className="flex flex-col">
           <p className="site-accent mb-5 text-center text-[11px] font-semibold uppercase tracking-[0.15em]">{card.label}</p>
           <div className="relative">
-            <span className="absolute -top-2 left-1/2 z-10 -translate-x-1/2 rounded-full bg-[#1a1a1a] px-3 py-1 text-[9px] font-semibold uppercase tracking-[0.14em] text-white shadow-sm">Sample - for illustration</span>
+            <span className="absolute -top-2 left-1/2 z-10 -translate-x-1/2 rounded-full bg-[#10283b] px-3 py-1 text-[9px] font-semibold uppercase tracking-[0.14em] text-white shadow-sm">Sample - for illustration</span>
             {mockups[index]}
           </div>
           <p className="mx-auto mt-5 max-w-xs text-center text-[13px] leading-[1.75] opacity-65">{card.text}</p>

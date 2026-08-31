@@ -30,7 +30,7 @@ const STATUS_LABELS: Record<RecruitmentRequest['status'], string> = {
 const STATUS_STYLES: Record<RecruitmentRequest['status'], string> = {
   new: 'bg-blue-50 text-blue-700',
   reviewing: 'bg-amber-50 text-amber-700',
-  search_active: 'bg-[#e8eef4] text-[#111111]',
+  search_active: 'bg-[#e8eef4] text-[#0b2f4d]',
   shortlist_sent: 'bg-purple-50 text-purple-700',
   placed: 'bg-green-50 text-green-700',
   closed: 'bg-gray-100 text-gray-500',
@@ -94,17 +94,17 @@ export default function EmployerRecruitmentPage() {
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-8">
           <div className="dashboard-card">
-            <ShieldCheck size={18} className="text-[#111111] mb-2" />
+            <ShieldCheck size={18} className="text-[#0b2f4d] mb-2" />
             <p className="text-[13px] font-semibold text-ink mb-1">Pay on placement</p>
             <p className="text-[12px] text-secondary leading-relaxed">12.5% of first-year salary for managed recruitment; 15-20% for executive search. Nothing up front.</p>
           </div>
           <div className="dashboard-card">
-            <Award size={18} className="text-[#111111] mb-2" />
+            <Award size={18} className="text-[#0b2f4d] mb-2" />
             <p className="text-[13px] font-semibold text-ink mb-1">Replacement guarantee</p>
             <p className="text-[12px] text-secondary leading-relaxed">If the placement leaves within 8 weeks, we run the search again at no charge.</p>
           </div>
           <div className="dashboard-card">
-            <Users size={18} className="text-[#111111] mb-2" />
+            <Users size={18} className="text-[#0b2f4d] mb-2" />
             <p className="text-[13px] font-semibold text-ink mb-1">Specialist pool</p>
             <p className="text-[12px] text-secondary leading-relaxed">Every candidate comes from the WHC register: spa, wellness and luxury hospitality only.</p>
           </div>
@@ -114,8 +114,8 @@ export default function EmployerRecruitmentPage() {
           <h2 className="font-serif text-lg font-semibold text-ink mb-4">Start a search</h2>
 
           <div className="inline-flex border border-border rounded-lg overflow-hidden mb-5">
-            <button type="button" onClick={() => setService('managed')} className={`px-4 py-2 text-[12px] font-semibold transition-colors ${service === 'managed' ? 'bg-[#111111] text-white' : 'text-secondary hover:text-ink'}`}>Managed recruitment</button>
-            <button type="button" onClick={() => setService('executive')} className={`px-4 py-2 text-[12px] font-semibold transition-colors ${service === 'executive' ? 'bg-[#111111] text-white' : 'text-secondary hover:text-ink'}`}>Executive search</button>
+            <button type="button" onClick={() => setService('managed')} className={`px-4 py-2 text-[12px] font-semibold transition-colors ${service === 'managed' ? 'bg-[#0b2f4d] text-white' : 'text-secondary hover:text-ink'}`}>Managed recruitment</button>
+            <button type="button" onClick={() => setService('executive')} className={`px-4 py-2 text-[12px] font-semibold transition-colors ${service === 'executive' ? 'bg-[#0b2f4d] text-white' : 'text-secondary hover:text-ink'}`}>Executive search</button>
           </div>
           <p className="text-[12px] text-secondary mb-5">
             {service === 'managed'

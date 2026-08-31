@@ -55,7 +55,7 @@ function MfaChallenge() {
     <div className="w-full max-w-[430px]">
       <Wordmark />
       <div className="dashboard-card !p-7 lg:!p-8 mt-9">
-        <div className="h-11 w-11 rounded-full bg-[#111111] text-white flex items-center justify-center mb-5"><ShieldCheck size={20}/></div>
+        <div className="h-11 w-11 rounded-full bg-[#0b2f4d] text-white flex items-center justify-center mb-5"><ShieldCheck size={20}/></div>
         <p className="dashboard-eyebrow">Two-step verification</p>
         <h1 className="dashboard-title !text-[32px]">Confirm it’s you</h1>
         <p className="dashboard-intro !mt-2 mb-6">Open your authenticator app and enter the current six-digit code for WHC Concierge.</p>

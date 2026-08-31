@@ -68,7 +68,7 @@ export default function AboutPage() {
           </div>
         </section>
 
-        <section className="py-20 px-6 bg-[#111111] text-white">
+        <section className="py-20 px-6 bg-[#0b2f4d] text-white">
           <div className="max-w-3xl mx-auto text-center">
             <p className="text-[10px] uppercase tracking-[0.2em] text-[#555555] font-semibold mb-8">What we believe</p>
             <div className="space-y-8 text-[22px] md:text-[28px] leading-[1.4] font-medium text-white/90">

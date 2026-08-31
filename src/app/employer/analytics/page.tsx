@@ -15,7 +15,7 @@ const STATUS_LABELS: Record<string, string> = {
   shortlisted: 'Shortlisted', accepted: 'Accepted',
 }
 const FUNNEL_ORDER = ['total', 'pending', 'shortlisted', 'accepted']
-const FUNNEL_COLOURS = ['#1a1a1a', '#D97706', '#555555', '#16A34A']
+const FUNNEL_COLOURS = ['#10283b', '#D97706', '#555555', '#16A34A']
 
 export default function EmployerAnalyticsPage() {
   const supabase = createClient()

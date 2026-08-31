@@ -155,7 +155,7 @@ export default function JobApplyButtons({ roleId }: Props) {
         <Link
           href={`/login?next=${encodeURIComponent(`/jobs/${roleId}`)}`}
           className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg text-[14px] font-semibold transition-all bg-white"
-          style={{ border: '1px solid #E5E5E5', color: '#1a1a1a' }}
+          style={{ border: '1px solid #E5E5E5', color: '#10283b' }}
         >
           <Bookmark size={16} /> Save for later
         </Link>
@@ -166,7 +166,7 @@ export default function JobApplyButtons({ roleId }: Props) {
           className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg text-[14px] font-semibold transition-all bg-white"
           style={{
             border: `1px solid ${saved ? '#555555' : '#E5E5E5'}`,
-            color: saved ? '#555555' : '#1a1a1a',
+            color: saved ? '#555555' : '#10283b',
           }}
         >
           <Bookmark size={16} fill={saved ? 'currentColor' : 'none'} />

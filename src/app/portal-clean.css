@@ -3,7 +3,7 @@
 
 .dashboard-shell {
   background: #fafafa;
-  color: #1f1f1f;
+  color: #17202a;
 }
 
 .dashboard-shell main {
@@ -14,13 +14,13 @@
 .dashboard-shell input:focus,
 .dashboard-shell select:focus,
 .dashboard-shell textarea:focus {
-  border-color: #1a1a1a;
+  border-color: #10283b;
   box-shadow: 0 0 0 2px rgba(0,0,0,.06);
 }
 
 /* Sidebar: black, with white/grey states - never coloured. */
 .dashboard-sidebar {
-  background: #111111;
+  background: #0b2f4d;
   border-right-color: rgba(255,255,255,.10);
 }
 

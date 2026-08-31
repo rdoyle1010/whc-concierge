@@ -17,7 +17,7 @@ export function approvalEmailHtml({ applicantName, jobTitle, propertyName }: {
         </td></tr>
 
         <tr><td style="background-color: #FFFFFF; padding: 40px;">
-          <h2 style="margin: 0 0 16px; font-size: 22px; font-weight: 600; color: #1a1a1a;">Congratulations, ${firstName}</h2>
+          <h2 style="margin: 0 0 16px; font-size: 22px; font-weight: 600; color: #10283b;">Congratulations, ${firstName}</h2>
           <p style="margin: 0 0 24px; font-size: 15px; line-height: 1.7; color: #4B5563;">Your application has been shortlisted. Here are the details:</p>
 
           <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color: #F9FAFB; border-radius: 8px; margin-bottom: 24px;">
@@ -25,11 +25,11 @@ export function approvalEmailHtml({ applicantName, jobTitle, propertyName }: {
               <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
                 <tr>
                   <td style="padding: 6px 0; font-size: 12px; color: #9CA3AF; width: 90px; vertical-align: top;">Role</td>
-                  <td style="padding: 6px 0; font-size: 14px; color: #1a1a1a; font-weight: 500;">${jobTitle}</td>
+                  <td style="padding: 6px 0; font-size: 14px; color: #10283b; font-weight: 500;">${jobTitle}</td>
                 </tr>
                 <tr>
                   <td style="padding: 6px 0; font-size: 12px; color: #9CA3AF; vertical-align: top;">Property</td>
-                  <td style="padding: 6px 0; font-size: 14px; color: #1a1a1a; font-weight: 500;">${propertyName}</td>
+                  <td style="padding: 6px 0; font-size: 14px; color: #10283b; font-weight: 500;">${propertyName}</td>
                 </tr>
                 <tr>
                   <td style="padding: 6px 0; font-size: 12px; color: #9CA3AF; vertical-align: top;">Status</td>
@@ -39,12 +39,12 @@ export function approvalEmailHtml({ applicantName, jobTitle, propertyName }: {
             </td></tr>
           </table>
 
-          <p style="margin: 0 0 8px; font-size: 13px; font-weight: 600; color: #1a1a1a; text-transform: uppercase; letter-spacing: 0.5px;">What happens next</p>
+          <p style="margin: 0 0 8px; font-size: 13px; font-weight: 600; color: #10283b; text-transform: uppercase; letter-spacing: 0.5px;">What happens next</p>
           <p style="margin: 0 0 32px; font-size: 14px; line-height: 1.7; color: #4B5563;">The employer would like to take your application further. They&rsquo;ll be in touch shortly to arrange next steps. Keep an eye on your messages and notifications.</p>
 
           <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
             <tr><td align="center">
-              <a href="https://talent.wellnesshousecollective.co.uk/talent/applications" style="display: inline-block; padding: 14px 32px; background-color: #1a1a1a; color: #FFFFFF; font-size: 14px; font-weight: 600; text-decoration: none; border-radius: 8px;">View Your Applications</a>
+              <a href="https://talent.wellnesshousecollective.co.uk/talent/applications" style="display: inline-block; padding: 14px 32px; background-color: #10283b; color: #FFFFFF; font-size: 14px; font-weight: 600; text-decoration: none; border-radius: 8px;">View Your Applications</a>
             </td></tr>
           </table>
         </td></tr>
@@ -81,7 +81,7 @@ export function rejectionEmailHtml({ applicantName, jobTitle, propertyName }: {
         </td></tr>
 
         <tr><td style="background-color: #FFFFFF; padding: 40px;">
-          <h2 style="margin: 0 0 16px; font-size: 22px; font-weight: 600; color: #1a1a1a;">Hi ${firstName}</h2>
+          <h2 style="margin: 0 0 16px; font-size: 22px; font-weight: 600; color: #10283b;">Hi ${firstName}</h2>
           <p style="margin: 0 0 24px; font-size: 15px; line-height: 1.7; color: #4B5563;">Thank you for your interest in the following role:</p>
 
           <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color: #F9FAFB; border-radius: 8px; margin-bottom: 24px;">
@@ -89,11 +89,11 @@ export function rejectionEmailHtml({ applicantName, jobTitle, propertyName }: {
               <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
                 <tr>
                   <td style="padding: 6px 0; font-size: 12px; color: #9CA3AF; width: 90px; vertical-align: top;">Role</td>
-                  <td style="padding: 6px 0; font-size: 14px; color: #1a1a1a; font-weight: 500;">${jobTitle}</td>
+                  <td style="padding: 6px 0; font-size: 14px; color: #10283b; font-weight: 500;">${jobTitle}</td>
                 </tr>
                 <tr>
                   <td style="padding: 6px 0; font-size: 12px; color: #9CA3AF; vertical-align: top;">Property</td>
-                  <td style="padding: 6px 0; font-size: 14px; color: #1a1a1a; font-weight: 500;">${propertyName}</td>
+                  <td style="padding: 6px 0; font-size: 14px; color: #10283b; font-weight: 500;">${propertyName}</td>
                 </tr>
               </table>
             </td></tr>
@@ -104,7 +104,7 @@ export function rejectionEmailHtml({ applicantName, jobTitle, propertyName }: {
 
           <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
             <tr><td align="center">
-              <a href="https://talent.wellnesshousecollective.co.uk/roles" style="display: inline-block; padding: 14px 32px; background-color: #1a1a1a; color: #FFFFFF; font-size: 14px; font-weight: 600; text-decoration: none; border-radius: 8px;">Browse New Roles</a>
+              <a href="https://talent.wellnesshousecollective.co.uk/roles" style="display: inline-block; padding: 14px 32px; background-color: #10283b; color: #FFFFFF; font-size: 14px; font-weight: 600; text-decoration: none; border-radius: 8px;">Browse New Roles</a>
             </td></tr>
           </table>
         </td></tr>

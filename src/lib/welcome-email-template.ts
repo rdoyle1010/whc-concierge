@@ -39,11 +39,11 @@ export function welcomeEmailHtml({ firstName, userType, dashboardUrl }: {
 
         <!-- Body -->
         <tr><td style="background-color: #FFFFFF; padding: 40px;">
-          <h2 style="margin: 0 0 16px; font-size: 22px; font-weight: 600; color: #1a1a1a;">Hello, ${firstName}</h2>
+          <h2 style="margin: 0 0 16px; font-size: 22px; font-weight: 600; color: #10283b;">Hello, ${firstName}</h2>
           <p style="margin: 0 0 24px; font-size: 15px; line-height: 1.7; color: #4B5563;">${mainMessage}</p>
 
           <!-- Next steps -->
-          <p style="margin: 0 0 12px; font-size: 13px; font-weight: 600; color: #1a1a1a; text-transform: uppercase; letter-spacing: 0.5px;">Your next steps</p>
+          <p style="margin: 0 0 12px; font-size: 13px; font-weight: 600; color: #10283b; text-transform: uppercase; letter-spacing: 0.5px;">Your next steps</p>
           <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-bottom: 32px;">
             ${nextSteps.map((step, i) => `
             <tr><td style="padding: 8px 0; font-size: 14px; line-height: 1.6; color: #4B5563;">
@@ -55,7 +55,7 @@ export function welcomeEmailHtml({ firstName, userType, dashboardUrl }: {
           <!-- CTA -->
           <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
             <tr><td align="center">
-              <a href="${dashboardUrl}" style="display: inline-block; padding: 14px 32px; background-color: #1a1a1a; color: #FFFFFF; font-size: 14px; font-weight: 600; text-decoration: none; border-radius: 8px; letter-spacing: 0.3px;">${ctaText}</a>
+              <a href="${dashboardUrl}" style="display: inline-block; padding: 14px 32px; background-color: #10283b; color: #FFFFFF; font-size: 14px; font-weight: 600; text-decoration: none; border-radius: 8px; letter-spacing: 0.3px;">${ctaText}</a>
             </td></tr>
           </table>
         </td></tr>
