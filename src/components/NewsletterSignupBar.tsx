@@ -45,6 +45,15 @@ export default function NewsletterSignupBar() {
 
     let active = true
     let timer: number | undefined
+    let poll: number | undefined
+
+    // Never two interruptions at once. The cookie banner is a legal
+    // requirement and owns the bottom of the screen until it is answered;
+    // the newsletter invitation waits its turn, then starts its own delay.
+    const cookieAnswered = () => {
+      try { return Boolean(localStorage.getItem('whc-cookie-consent')) } catch { return true }
+    }
+
     fetch('/api/newsletter/config')
       .then(res => res.ok ? res.json() : null)
       .then((data: Config | null) => {
@@ -52,12 +61,21 @@ export default function NewsletterSignupBar() {
         setConfig(data)
         const dismissedUntil = Number(localStorage.getItem(STORAGE_KEY) || 0)
         if (dismissedUntil > Date.now()) return
-        timer = window.setTimeout(() => { if (active) setVisible(true) }, Math.max(0, data.delaySeconds) * 1000)
+
+        const start = () => {
+          timer = window.setTimeout(() => { if (active) setVisible(true) }, Math.max(0, data.delaySeconds) * 1000)
+        }
+        if (cookieAnswered()) { start(); return }
+        poll = window.setInterval(() => {
+          if (!active) return
+          if (cookieAnswered()) { window.clearInterval(poll); poll = undefined; start() }
+        }, 500)
       })
       .catch(() => {})
     return () => {
       active = false
       if (timer) window.clearTimeout(timer)
+      if (poll) window.clearInterval(poll)
     }
   }, [pathname])
 

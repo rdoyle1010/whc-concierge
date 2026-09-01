@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import DashboardShell from '@/components/DashboardShell'
 import AuthenticatorSecurity from '@/components/AuthenticatorSecurity'
+import RetentionPanel from '@/components/RetentionPanel'
 import { Save, Settings, CreditCard, Share2, ExternalLink } from 'lucide-react'
 
 type CommercialSetting = { product_key: string; label: string; description: string; price_pence: number; billing_interval: 'month' | 'year' | 'one_off'; is_active: boolean }
@@ -88,6 +89,8 @@ export default function AdminSettingsPage() {
       {message && <div className={`rounded-xl px-4 py-3 text-[13px] ${message.includes('Error') ? 'bg-red-50 text-red-600' : 'bg-emerald-50 text-emerald-700'}`}>{message}</div>}
 
       <AuthenticatorSecurity required />
+
+      <RetentionPanel />
 
       <div className="dashboard-card">
         <div className="mb-5 flex items-start gap-3"><div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#e8eef4] text-[#0b2f4d]"><Share2 size={18}/></div><div><p className="text-[15px] font-semibold text-ink">Public social media links</p><p className="mt-1 max-w-2xl text-[12px] leading-5 text-muted">These are simple public profile links shown on the front end. WHC does not need access to your social inbox, DMs, password or account management. Paste only the public page you want visitors to see.</p></div></div>

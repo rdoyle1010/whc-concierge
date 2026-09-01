@@ -5,9 +5,23 @@ import { cookies } from 'next/headers'
 import { createNotification } from '@/lib/notifications'
 import { sendCourseGiftEmail } from '@/lib/emails'
 import { emailAllowed } from '@/lib/notification-prefs'
-import { getAcademyCatalog, getAcademyCourseBySlug, publicCourse, saveAcademyCourseSettings } from '@/lib/academy-catalog-server'
+import {
+  getAcademyCatalog,
+  getAcademyCourseBySlug,
+  platformContentDoc,
+  publicCourse,
+  saveAcademyCourseContent,
+  saveAcademyCourseSettings,
+  setAcademyContentSource,
+} from '@/lib/academy-catalog-server'
 import { courseMeta } from '@/lib/academy-meta'
 import { publicCoursePrice } from '@/lib/academy'
+import {
+  buildContentDoc,
+  contentStats,
+  normaliseContent,
+  validateContent,
+} from '@/lib/academy-course-content'
 
 const CATEGORIES = new Set(['Guest Experience', 'Standards', 'Treatments', 'Commercial', 'Brands', 'Specialist Care'])
 
@@ -73,11 +87,42 @@ function validateCourse(body: any) {
   return { slug, title, tagline, category, minutes, price, imageUrl, lessons, quiz, answerKey }
 }
 
-export async function GET() {
+// One course, with its editable document, for the content editor.
+async function courseDetail(slug: string) {
+  const course = await getAcademyCourseBySlug(slug, true)
+  if (!course) return null
+  const meta = courseMeta(course.slug)
+  return {
+    course: {
+      ...publicCourse(course),
+      answer_key: course.answer_key,
+      override: course.override,
+      level: meta.level,
+      cpd_hours: meta.cpdHours,
+      member_price: course.price ?? 0,
+      guest_price: publicCoursePrice(course),
+    },
+    content: course.content_doc,
+    content_source: course.content_source,
+    content_error: course.content_error,
+    // What the platform version currently is, so the editor can say plainly
+    // what "take editorial control" would copy in.
+    platform_stats: contentStats(platformContentDoc(course)),
+  }
+}
+
+export async function GET(req: NextRequest) {
   const user = await requireAdmin()
   if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
   const admin = createAdminClient()
   try {
+    const single = cleanSlug(req.nextUrl.searchParams.get('slug') || '')
+    if (single) {
+      const detail = await courseDetail(single)
+      return detail
+        ? NextResponse.json(detail)
+        : NextResponse.json({ error: 'Course not found' }, { status: 404 })
+    }
     const catalogue = await getAcademyCatalog(true)
     const { data: enrolments, error: enrolError } = await admin.from('course_enrollments').select('*').order('created_at', { ascending: false })
     if (enrolError) throw enrolError
@@ -100,7 +145,6 @@ export async function GET() {
     const courses = catalogue.map(course => {
       const courseRows = rows.filter((row: any) => row.course_slug === course.slug && row.paid_at)
       const meta = courseMeta(course.slug)
-      const codeTitle = course.title
       return {
         ...publicCourse(course),
         answer_key: course.answer_key,
@@ -112,10 +156,12 @@ export async function GET() {
         questions: course.quiz.length,
         member_price: course.price ?? 0,
         guest_price: publicCoursePrice(course),
-        code_title: codeTitle,
-        // A saved title that no longer matches the code title is dead weight:
-        // talent always sees the code title, so admin gets told plainly.
-        title_differs: Boolean(course.code_defined && course.override?.title && course.override.title !== codeTitle),
+        content_source: course.content_source,
+        content_error: course.content_error,
+        // Whether a saved document exists at all, so the list can offer
+        // "publish your version" after a revert without shipping the document
+        // itself (it carries the answer key).
+        has_saved_content: Boolean(course.content_doc),
         enrolments: courseRows.length,
         completions: courseRows.filter((row: any) => row.completed_at).length,
         revenue: courseRows.reduce((sum: number, row: any) => sum + (row.amount_paid || 0), 0),
@@ -169,16 +215,61 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true, slug, sort_order_saved: result.sortOrderSaved !== false })
     }
 
+    // --- Editorial control of course content -----------------------------
+    // Taking control COPIES the full current platform content into the course
+    // document first, so the admin always starts from a complete working copy
+    // and an empty row can never replace a good course.
+    if (action === 'take_content_control') {
+      const slug = cleanSlug(body.slug || body.courseSlug)
+      const course = await getAcademyCourseBySlug(slug, true)
+      if (!course) return NextResponse.json({ error: 'Course not found' }, { status: 404 })
+      const doc = course.content_doc && !validateContent(course.content_doc)
+        ? course.content_doc
+        : platformContentDoc(course)
+      const problem = validateContent(doc)
+      if (problem) {
+        return NextResponse.json({ error: `The platform version of this course could not be copied: ${problem}` }, { status: 400 })
+      }
+      const result = await saveAcademyCourseContent(admin, slug, doc, 'custom', user.id)
+      if (result.error) return NextResponse.json({ error: result.error }, { status: 400 })
+      return NextResponse.json({ success: true, slug, content: doc, content_source: 'custom' })
+    }
+
+    if (action === 'save_content') {
+      const slug = cleanSlug(body.slug || body.courseSlug)
+      const course = await getAcademyCourseBySlug(slug, true)
+      if (!course) return NextResponse.json({ error: 'Course not found' }, { status: 404 })
+      const doc = normaliseContent(body.content)
+      // The same validator the editor runs, so nothing can be saved here that
+      // the editor would have refused.
+      const problem = validateContent(doc)
+      if (problem) return NextResponse.json({ error: problem }, { status: 400 })
+      const source = body.publish === false ? course.content_source : 'custom'
+      const result = await saveAcademyCourseContent(admin, slug, doc, source, user.id)
+      if (result.error) return NextResponse.json({ error: result.error }, { status: 400 })
+      return NextResponse.json({ success: true, slug, content_source: source, stats: contentStats(doc) })
+    }
+
+    // Reverting is not destructive: the document stays in the database and can
+    // be published again.
+    if (action === 'revert_content' || action === 'publish_content') {
+      const slug = cleanSlug(body.slug || body.courseSlug)
+      const source = action === 'publish_content' ? 'custom' : 'platform'
+      const result = await setAcademyContentSource(admin, slug, source, user.id)
+      if (result.error) return NextResponse.json({ error: result.error }, { status: 400 })
+      return NextResponse.json({ success: true, slug, content_source: source })
+    }
+
     if (action === 'save_course') {
       const course = validateCourse(body.course || {})
       if ('error' in course) return NextResponse.json({ error: course.error }, { status: 400 })
       const existing = await getAcademyCourseBySlug(course.slug, true)
-      // Content for a platform course is authored in code so every release
-      // ships the newest teaching material. Writing it here would look like it
+      // A platform course is edited through the content editor, which copies
+      // the code content in first. Writing raw columns here would look like it
       // worked and change nothing for learners - so it is refused, plainly.
       if (existing?.code_defined) {
         return NextResponse.json({
-          error: 'This is a platform course: its modules, assessment and title come from the WHC course library. Use Course settings to change the price, image, summary, order or visibility.',
+          error: 'This is a platform course. Open it in the course content editor and choose "Take editorial control of this course" - that copies the current WHC content in for you to edit, so nothing is ever lost.',
         }, { status: 400 })
       }
       const { error } = await admin.from('academy_courses').upsert({
@@ -199,7 +290,22 @@ export async function POST(req: NextRequest) {
         updated_at: new Date().toISOString(),
       }, { onConflict: 'slug' })
       if (error) throw error
-      return NextResponse.json({ success: true, slug: course.slug })
+      // A course created here is immediately a full editorial document, so the
+      // content editor (modules, lessons, key terms, knowledge checks) works on
+      // it straight away. Best-effort: if the content migration has not run,
+      // the course still exists and is served from its own columns.
+      const doc = buildContentDoc({
+        title: course.title,
+        tagline: course.tagline,
+        category: course.category,
+        minutes: course.minutes,
+        lessons: course.lessons,
+        quiz: course.quiz,
+        answerKey: course.answerKey,
+        rich: null,
+      })
+      const contentResult = validateContent(doc) ? { error: null } : await saveAcademyCourseContent(admin, course.slug, doc, 'custom', user.id)
+      return NextResponse.json({ success: true, slug: course.slug, content_saved: !contentResult.error })
     }
 
     if (action === 'archive_course' || action === 'restore_course') {

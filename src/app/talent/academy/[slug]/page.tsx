@@ -9,6 +9,7 @@ import { courseImage, lessonExtras } from '@/lib/academy-extras'
 import { courseMeta } from '@/lib/academy-meta'
 import { LessonVisualBlock, KnowledgeCheckBlock } from '@/components/LessonVisual'
 import { getCourseContent } from '@/lib/academy-content'
+import type { CourseContent } from '@/lib/academy-types'
 import {
   ArrowLeft, ArrowRight, Check, Award, RotateCcw, Quote, TrendingUp,
   Lightbulb, BookOpen, Target, GraduationCap, FileText, Users, Download
@@ -80,10 +81,13 @@ export default function CoursePlayerPage() {
   const params = useParams()
   const slug = Array.isArray(params?.slug) ? params.slug[0] : (params?.slug as string)
   const fallbackCourse = courseBySlug(slug)
-  const [course, setCourse] = useState<(AcademyCourse & { image_url?: string; managed?: boolean }) | null>(fallbackCourse || null)
-  // Rich content always comes from code when it exists - admin-managed rows
-  // control price/image/visibility, never the authored course content.
-  const rich = getCourseContent(slug)
+  const [course, setCourse] = useState<(AcademyCourse & { image_url?: string; managed?: boolean; rich?: CourseContent | null }) | null>(fallbackCourse || null)
+  // Course content comes from code unless an admin has taken editorial control
+  // of this course AND her version passes validation - in which case the
+  // catalogue serves her content, including the rich layer below. A partial or
+  // broken admin version never reaches here: the catalogue falls back to the
+  // platform version, so this page can never render an empty course.
+  const rich = course?.rich || getCourseContent(slug)
 
   const [loading, setLoading] = useState(true)
   const [enrolled, setEnrolled] = useState(false)
@@ -255,23 +259,25 @@ export default function CoursePlayerPage() {
               <h2 className="font-serif text-[22px] font-bold text-ink mb-3">{course.title}</h2>
               {rich ? (
                 <>
-                  <p className="text-[14px] text-gray-700 leading-[1.8] mb-5">{rich.aims}</p>
+                  <p className="text-[14px] text-gray-700 leading-[1.8] mb-5">{rich.aims || course.tagline}</p>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-5">
                     <div className="bg-surface rounded-xl p-4">
                       <p className="text-[10px] uppercase tracking-[0.14em] text-secondary font-semibold mb-1.5 inline-flex items-center gap-1.5"><Users size={12} /> Who this course is for</p>
-                      <p className="text-[13px] text-gray-700 leading-[1.7]">{rich.audience}</p>
+                      <p className="text-[13px] text-gray-700 leading-[1.7]">{rich.audience || 'Spa and wellness professionals working to a luxury standard.'}</p>
                     </div>
                     <div className="bg-surface rounded-xl p-4">
                       <p className="text-[10px] uppercase tracking-[0.14em] text-secondary font-semibold mb-1.5 inline-flex items-center gap-1.5"><FileText size={12} /> Assessment</p>
                       <p className="text-[13px] text-gray-700 leading-[1.7]">{course.quiz.length}-question assessment. {PASS_MARK}% required to pass. Unlimited retakes. Passing issues your certificate with a unique verification code and places the badge on your professional profile.</p>
                     </div>
                   </div>
-                  <p className="text-[10px] uppercase tracking-[0.14em] text-secondary font-semibold mb-2 inline-flex items-center gap-1.5"><GraduationCap size={12} /> On completion you will be able to</p>
-                  <ul className="space-y-1.5 mb-6">
-                    {rich.outcomes.map((o, i) => (
-                      <li key={i} className="text-[13px] text-gray-700 flex items-start gap-2"><Check size={14} className="text-green-600 mt-0.5 shrink-0" />{o}</li>
-                    ))}
-                  </ul>
+                  {rich.outcomes.length > 0 && (<>
+                    <p className="text-[10px] uppercase tracking-[0.14em] text-secondary font-semibold mb-2 inline-flex items-center gap-1.5"><GraduationCap size={12} /> On completion you will be able to</p>
+                    <ul className="space-y-1.5 mb-6">
+                      {rich.outcomes.map((o, i) => (
+                        <li key={i} className="text-[13px] text-gray-700 flex items-start gap-2"><Check size={14} className="text-green-600 mt-0.5 shrink-0" />{o}</li>
+                      ))}
+                    </ul>
+                  </>)}
                 </>
               ) : (
                 <>
@@ -337,7 +343,7 @@ export default function CoursePlayerPage() {
                   </div>
                 )}
 
-                {richLesson && (
+                {richLesson && richLesson.objectives.length > 0 && (
                   <div className="border-l-2 border-accent bg-surface rounded-r-xl p-4 mb-6">
                     <p className="text-[10px] uppercase tracking-[0.14em] text-secondary font-semibold mb-2 inline-flex items-center gap-1.5"><Target size={12} /> Learning objectives</p>
                     <ul className="space-y-1">
@@ -348,7 +354,7 @@ export default function CoursePlayerPage() {
                   </div>
                 )}
 
-                {richLesson ? (
+                {richLesson && richLesson.sections.length > 0 ? (
                   <div className="space-y-5 mb-6">
                     {richLesson.sections.map((s, si) => (
                       <section key={si} className="rounded-xl border border-[#e3e7eb] bg-white p-5">
@@ -395,7 +401,7 @@ export default function CoursePlayerPage() {
                   </div>
                 )}
 
-                {richLesson?.caseStudy && (
+                {richLesson?.caseStudy?.scenario && (
                   <div className="bg-ink rounded-xl p-5 mb-6">
                     <p className="text-[10px] uppercase tracking-[0.18em] text-accent font-semibold mb-2">Case study · {richLesson.caseStudy.title}</p>
                     <p className="text-[13px] text-white/85 leading-[1.8] mb-3">{richLesson.caseStudy.scenario}</p>

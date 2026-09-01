@@ -143,14 +143,16 @@ function ModulePages({ lesson, index, courseTitle }: { lesson: RichLesson; index
         <Paragraphs text={lesson.whyThisMatters} style={{ fontFamily: 'Times-Italic' }} />
       ) : null}
 
-      <Block label="Learning outcomes">
-        {lesson.objectives.map((objective, objectiveIndex) => (
-          <View key={objectiveIndex} style={styles.bulletRow}>
-            <Text style={styles.bulletDot}>•</Text>
-            <Text style={styles.bulletText}>{objective}</Text>
-          </View>
-        ))}
-      </Block>
+      {lesson.objectives.length ? (
+        <Block label="Learning outcomes">
+          {lesson.objectives.map((objective, objectiveIndex) => (
+            <View key={objectiveIndex} style={styles.bulletRow}>
+              <Text style={styles.bulletDot}>•</Text>
+              <Text style={styles.bulletText}>{objective}</Text>
+            </View>
+          ))}
+        </Block>
+      ) : null}
 
       {lesson.sections.map((section, sectionIndex) => (
         <View key={sectionIndex}>
@@ -179,13 +181,15 @@ function ModulePages({ lesson, index, courseTitle }: { lesson: RichLesson; index
         </Block>
       ) : null}
 
-      <Block label={`Case study - ${lesson.caseStudy.title}`}>
-        <Paragraphs text={lesson.caseStudy.scenario} />
-        <Text style={[styles.blockLabel, { marginTop: 4 }]}>The professional response</Text>
-        <Paragraphs text={lesson.caseStudy.insight} />
-      </Block>
+      {lesson.caseStudy?.scenario ? (
+        <Block label={lesson.caseStudy.title ? `Case study - ${lesson.caseStudy.title}` : 'Case study'}>
+          <Paragraphs text={lesson.caseStudy.scenario} />
+          <Text style={[styles.blockLabel, { marginTop: 4 }]}>The professional response</Text>
+          <Paragraphs text={lesson.caseStudy.insight} />
+        </Block>
+      ) : null}
 
-      <Block label="Key takeaway"><Paragraphs text={lesson.summary} /></Block>
+      {lesson.summary ? <Block label="Key takeaway"><Paragraphs text={lesson.summary} /></Block> : null}
 
       {lesson.nextStep ? (
         <Block label="Your next step at work"><Paragraphs text={lesson.nextStep} /></Block>

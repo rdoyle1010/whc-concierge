@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerSupabaseClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { getAcademyCourseBySlug } from '@/lib/academy-catalog-server'
-import { getCourseContent } from '@/lib/academy-content'
+import { academyRichContent, getAcademyCourseBySlug } from '@/lib/academy-catalog-server'
 import { courseMeta } from '@/lib/academy-meta'
 import { renderCourseManualPdf } from '@/lib/academy-manual-pdf'
 
@@ -28,7 +27,11 @@ export async function GET(req: NextRequest) {
     .not('paid_at', 'is', null).limit(1).maybeSingle()
   if (!enrolment) return NextResponse.json({ error: 'Paid course access required' }, { status: 403 })
 
-  const [course, content] = [await getAcademyCourseBySlug(slug, true), getCourseContent(slug)]
+  // The manual is generated from whatever the learner is actually studying:
+  // the admin's own version when she has taken editorial control, the platform
+  // content pack otherwise.
+  const course = await getAcademyCourseBySlug(slug, true)
+  const content = academyRichContent(course, slug)
   if (!course) return NextResponse.json({ error: 'Course not found' }, { status: 404 })
   if (!content) return NextResponse.json({ error: 'The manual for this course is being prepared.' }, { status: 404 })
   const meta = courseMeta(slug)

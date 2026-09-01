@@ -207,11 +207,16 @@ check('Academy catalogue never returns quiz answer keys', () => {
   assert.match(read('src/app/api/academy/catalog/route.ts'), /publicCourse/)
   assert.match(read('src/lib/academy-catalog-server.ts'), /answer_key: _answerKey/)
 })
-check('Academy admin overrides never replace code-authored course content', () => {
-  // The earlier bug: academy_courses rows replaced code content, so courses
-  // stopped improving with releases. The merge for a code-defined course must
-  // therefore read ONLY the commercial fields from the row.
+check('Academy course content leaves the database only when it is owned and complete', () => {
+  // The earlier bug: academy_courses rows replaced code content, so rows with
+  // empty or partial content silently blanked good courses. The contract now
+  // is narrower and enforceable rather than a blanket ban - database content
+  // reaches a learner ONLY when the admin has taken editorial control
+  // (content_source = 'custom') AND the stored document passes validation.
   const source = read('src/lib/academy-catalog-server.ts')
+
+  // 1. The raw content columns are never read for a code-defined course. The
+  //    single route from database to learner is the validated document.
   const merge = source.split('const merged = base.map')[1].split('const baseSlugs')[0]
   for (const frozen of ['row.lessons', 'row.quiz', 'row.answer_key', 'row.title', 'row.minutes', 'row.category']) {
     assert.equal(merge.includes(frozen), false, `code course content must not come from ${frozen}`)
@@ -219,12 +224,55 @@ check('Academy admin overrides never replace code-authored course content', () =
   for (const editable of ['row.price', 'row.image_url', 'row.is_active', 'row.tagline', 'row.sort_order']) {
     assert.equal(merge.includes(editable), true, `admin must still control ${editable}`)
   }
-  // Admin edits those fields through one action that works for every course.
+  // The merge serves content only through the validated decision document.
+  assert.match(merge, /decideContent\(row\)/)
+  assert.match(merge, /if \(!decision\.doc\) return settled/)
+  assert.match(merge, /contentFields\(course\.slug, decision\.doc/)
+
+  // 2. Both gates live in one decision function: declared ownership, then
+  //    validation. A document that fails either is refused there.
+  const decide = source.split('function decideContent(')[1].split('\n}')[0]
+  assert.match(decide, /content_source/)
+  assert.match(decide, /=== 'custom'/)
+  assert.match(decide, /validateContent\(stored\)/)
+  assert.match(decide, /doc: error \? null : stored/)
+
+  // 3. The answer key and the admin document that carries it never go public.
+  assert.match(source, /content_doc: _contentDoc/)
+
+  // 4. The same shared validator guards the API route and the editor UI, so a
+  //    problem is named before a save rather than after one.
+  const validator = read('src/lib/academy-course-content.ts')
+  assert.match(validator, /export function validateContent/)
   const adminRoute = read('src/app/api/admin/academy/route.ts')
+  const editor = read('src/app/admin/academy/[slug]/page.tsx')
+  for (const consumer of [adminRoute, editor]) assert.match(consumer, /validateContent/)
+
+  // 5. Taking control copies the platform content in first, and reverting is
+  //    not destructive - both are explicit, named actions.
+  assert.match(adminRoute, /take_content_control/)
+  assert.match(adminRoute, /platformContentDoc/)
+  assert.match(adminRoute, /revert_content/)
+  assert.match(editor, /Take editorial control of this course/)
+  assert.match(editor, /Revert to the platform version/)
+
+  // 6. The commercial settings path is unchanged and still works everywhere.
   assert.match(adminRoute, /save_course_settings/)
   assert.match(adminRoute, /saveAcademyCourseSettings/)
   // An admin-set image is never overruled by a hard-coded page image.
   assert.match(read('src/app/academy/page.tsx'), /course\.image_admin_set && course\.image_url/)
+
+  // 7. Every course surface reads the same merged catalogue, so custom content
+  //    reaches talent, the public page and the app together.
+  assert.match(read('src/app/api/academy/catalog/route.ts'), /getAcademyCatalog/)
+  assert.match(read('src/app/talent/academy/[slug]/page.tsx'), /course\?\.rich \|\| getCourseContent\(slug\)/)
+  assert.match(read('src/app/api/academy/manual/route.ts'), /academyRichContent/)
+
+  // 8. The additive migration exists and reloads PostgREST.
+  const migration = read('supabase/migrations/20260901130000_academy_course_content.sql')
+  assert.match(migration, /ADD COLUMN IF NOT EXISTS content_source/)
+  assert.match(migration, /ADD COLUMN IF NOT EXISTS content jsonb/)
+  assert.match(migration, /NOTIFY pgrst/)
 })
 check('homepage hero is prioritised and public controls are accessible', () => {
   const hero = read('src/components/HeroCarousel.tsx')

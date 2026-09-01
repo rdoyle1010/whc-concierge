@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import DashboardShell from '@/components/DashboardShell'
-import { Award, BookOpen, ChevronDown, ChevronUp, Download, GraduationCap, Image as ImageIcon, Lock, Plus, Save, SlidersHorizontal, Trash2, Upload, UserPlus, X } from 'lucide-react'
+import { AlertTriangle, Award, BookOpen, ChevronDown, ChevronUp, Download, GraduationCap, Image as ImageIcon, Lock, PencilLine, Plus, Save, SlidersHorizontal, Trash2, Upload, UserPlus, X } from 'lucide-react'
 
 const CATEGORIES = ['Guest Experience', 'Standards', 'Treatments', 'Commercial', 'Brands', 'Specialist Care']
 
@@ -149,13 +149,6 @@ export default function AdminAcademyPage() {
     if (result) closeSettings()
   }
 
-  function editCourse(course: any) {
-    setOriginalSlug(course.slug)
-    setEditing(JSON.parse(JSON.stringify({ ...course, answer_key: course.answer_key || course.quiz.map(() => 0) })))
-    setError(''); setNotice('')
-    window.scrollTo({ top: 0, behavior: 'smooth' })
-  }
-
   function addLesson() {
     setEditing((course: any) => ({ ...course, lessons: [...course.lessons, { title: '', content: '' }] }))
   }
@@ -212,7 +205,7 @@ export default function AdminAcademyPage() {
       {editing && (
         <div className="dashboard-card mb-8 border-accent ring-2 ring-accent/20">
           <div className="flex items-start justify-between gap-3 mb-5">
-            <div><h2 className="text-[18px] font-semibold text-ink">{originalSlug ? 'Edit course content' : 'Add a course'}</h2><p className="text-[12px] text-secondary">For courses you write here in admin. Platform courses take their modules and assessment from the WHC course library - use Course settings for those. Quiz answers are stored securely and never sent to learners.</p></div>
+            <div><h2 className="text-[18px] font-semibold text-ink">Add a course</h2><p className="text-[12px] text-secondary">Give the new course a name, a summary, a price and at least one module and assessment question. Once it is saved, open Edit content on it to write the full syllabus - lessons, key terms, knowledge checks and learning outcomes. Assessment answers are stored securely and never sent to learners.</p></div>
             <button onClick={() => setEditing(null)} className="text-muted hover:text-ink"><X size={20} /></button>
           </div>
 
@@ -289,7 +282,8 @@ export default function AdminAcademyPage() {
         <h2 className="text-[16px] font-medium text-ink mb-1 flex items-center gap-2"><BookOpen size={16} className="text-accent" /> Course catalogue ({courses.length})</h2>
         <div className="mb-3 border border-border bg-surface p-4">
           <p className="text-[12px] font-semibold text-ink">This is the same catalogue talent sees.</p>
-          <p className="mt-1 text-[12px] leading-5 text-secondary">Every course on the Talent Academy, the public Academy page and the app is listed below. <span className="font-medium text-ink">You control:</span> member price, course image, the summary line, display order and whether a course is live. <span className="font-medium text-ink">The platform controls:</span> course title, modules, lesson content, CPD hours and the assessment - these are part of the WHC course library and improve with every release, which is why they are not edited here.</p>
+          <p className="mt-1 text-[12px] leading-5 text-secondary">Every course on the Talent Academy, the public Academy page and the app is listed below. <span className="font-medium text-ink">Course settings</span> covers price, image, summary line, display order and whether a course is live. <span className="font-medium text-ink">Edit content</span> opens the full course: modules, lessons, written content, key terms, knowledge checks and the assessment.</p>
+          <p className="mt-1 text-[12px] leading-5 text-secondary">A course marked <span className="font-medium text-ink">Platform version</span> is the WHC library version and improves with every release. In the editor you can take editorial control of it: the whole current course is copied across first, so you always edit a complete copy and never an empty page. You can hand a course back to the platform version at any time without losing your writing.</p>
         </div>
         <div className="space-y-3 mb-8">{courses.map(course => {
           const open = openCourse === course.slug
@@ -302,16 +296,19 @@ export default function AdminAcademyPage() {
                   <p className="text-[14px] font-medium text-ink">{course.title}</p>
                   <span className={`text-[10px] font-semibold uppercase px-2 py-0.5 ${course.is_active ? 'bg-green-50 text-green-700' : 'bg-gray-100 text-secondary'}`}>{course.is_active ? 'Live' : 'Archived'}</span>
                   {course.level && <span className="text-[10px] font-semibold uppercase px-2 py-0.5 bg-[#f5f6f8] text-[#10283b]">{course.level}</span>}
-                  <span className="inline-flex items-center gap-1 text-[10px] text-muted">{course.code_defined ? <><Lock size={10} /> Platform course</> : 'Admin-created course'}</span>
+                  {course.content_source === 'custom'
+                    ? <span className="inline-flex items-center gap-1 text-[10px] font-semibold uppercase px-2 py-0.5 bg-[#0b2f4d] text-white"><PencilLine size={10} /> Your version</span>
+                    : <span className="inline-flex items-center gap-1 text-[10px] text-muted">{course.code_defined ? <><Lock size={10} /> Platform version</> : 'Admin-created course'}</span>}
+                  {course.content_source !== 'custom' && course.has_saved_content && <span className="text-[10px] text-secondary">Your version saved, not live</span>}
                   {course.managed && <span className="text-[10px] text-accent">Admin settings saved</span>}
                 </div>
                 <p className="text-[11px] text-secondary mt-1">{course.category} · {course.modules ?? course.lessons.length} module{(course.modules ?? course.lessons.length) === 1 ? '' : 's'} · ~{course.minutes} min · {course.cpd_hours} CPD hour{course.cpd_hours === 1 ? '' : 's'} · {course.slug}</p>
                 <p className="text-[11px] text-secondary mt-0.5">Member £{((course.member_price ?? course.price ?? 0) / 100).toFixed(2)} · Guest £{((course.guest_price ?? 0) / 100).toFixed(2)} · {course.enrolments} enrolment{course.enrolments === 1 ? '' : 's'} · {course.completions} completion{course.completions === 1 ? '' : 's'} · £{((course.revenue || 0) / 100).toFixed(2)} revenue</p>
-                {course.title_differs && <p className="text-[11px] text-amber-700 mt-1">Saved title &quot;{course.override?.title}&quot; is not used. Talent sees the platform title &quot;{course.code_title}&quot;.</p>}
+                {course.content_error && <p className="text-[11px] text-amber-700 mt-1 inline-flex items-start gap-1"><AlertTriangle size={11} className="mt-0.5 shrink-0" /> Learners are seeing the platform version because your version is not complete: {course.content_error}</p>}
               </button>
               <div className="flex items-center gap-2">
                 <button onClick={() => (editingSettings ? closeSettings() : openSettings(course))} className="btn-secondary text-[11px] inline-flex items-center gap-1"><SlidersHorizontal size={12} /> {editingSettings ? 'Close settings' : 'Course settings'}</button>
-                {!course.code_defined && <button onClick={() => editCourse(course)} className="btn-secondary text-[11px]">Edit content</button>}
+                <Link href={`/admin/academy/${course.slug}`} className="btn-secondary text-[11px] inline-flex items-center gap-1"><PencilLine size={12} /> Edit content</Link>
                 <button onClick={() => act({ action: course.is_active ? 'archive_course' : 'restore_course', courseSlug: course.slug }, `toggle-${course.slug}`, course.is_active ? 'Course archived. Existing learners and certificates are preserved.' : 'Course restored to the catalogue.')} className={`text-[11px] font-medium ${course.is_active ? 'text-red-500' : 'text-green-700'}`}>{course.is_active ? 'Archive' : 'Restore'}</button>
                 <button onClick={() => setOpenCourse(open ? null : course.slug)} className="text-muted">{open ? <ChevronUp size={16} /> : <ChevronDown size={16} />}</button>
               </div>
@@ -320,7 +317,7 @@ export default function AdminAcademyPage() {
             {editingSettings && (
               <div className="border-t border-border bg-surface p-4">
                 <p className="text-[12px] font-semibold text-ink mb-1">Course settings</p>
-                <p className="text-[11px] leading-5 text-secondary mb-4">These five fields are yours and take effect everywhere as soon as you save: the Talent Academy, the public Academy page and the app. Modules, lesson content and the assessment for this course come from the platform.</p>
+                <p className="text-[11px] leading-5 text-secondary mb-4">These five fields take effect everywhere as soon as you save: the Talent Academy, the public Academy page and the app. Modules, lesson content and the assessment live in Edit content.</p>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <label className="text-[12px] text-secondary">Member price (£)<input type="number" min="0" step="0.01" value={(Number(settings.price) || 0) / 100} onChange={event => setSettings({ ...settings, price: Math.round(Number(event.target.value) * 100) })} className="input-field mt-1" /><span className="mt-1 block text-[11px] text-muted">Guests buying from the public page pay £{(((Number(settings.price) || 0) + 500) / 100).toFixed(2)} - £5 above the member price.</span></label>
                   <label className="text-[12px] text-secondary">Display order<input type="number" min="0" max="9999" value={settings.sort_order} onChange={event => setSettings({ ...settings, sort_order: event.target.value })} placeholder="Leave blank for the standard order" className="input-field mt-1" /><span className="mt-1 block text-[11px] text-muted">Lowest number appears first. Blank keeps the standard catalogue order.</span></label>
@@ -352,7 +349,7 @@ export default function AdminAcademyPage() {
 
             {open && <div className="border-t border-border bg-surface p-4">
               <p className="text-[13px] text-gray-600 mb-2">{course.tagline}</p>
-              {course.code_defined && <p className="text-[11px] text-muted mb-3 inline-flex items-center gap-1"><Lock size={11} /> Modules and assessment below are the platform&apos;s and are shown for reference. {course.questions} assessment question{course.questions === 1 ? '' : 's'}.</p>}
+              <p className="text-[11px] text-muted mb-3 inline-flex items-center gap-1">{course.content_source === 'custom' ? <><PencilLine size={11} /> Your own version of this course, exactly as learners see it.</> : <><Lock size={11} /> The WHC platform version of this course. Use Edit content to take editorial control.</>} {course.questions} assessment question{course.questions === 1 ? '' : 's'}.</p>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-2">{course.lessons.map((lesson: any, index: number) => <div key={index} className="bg-white border border-border p-3"><p className="text-[12px] font-medium text-ink">{index + 1}. {lesson.title}</p><p className="text-[11px] text-secondary mt-1 line-clamp-3 whitespace-pre-line">{lesson.content}</p></div>)}</div>
             </div>}
           </div>

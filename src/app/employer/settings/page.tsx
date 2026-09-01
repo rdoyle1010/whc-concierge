@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import DashboardShell from '@/components/DashboardShell'
 import { createClient } from '@/lib/supabase/client'
 import { Save, Download, AlertTriangle } from 'lucide-react'
+import { deletionSummary } from '@/lib/account-deletion'
 
 // Square-cornered toggle row for the notification preference centre (brand
 // rule: no new rounded corners).
@@ -192,18 +193,19 @@ export default function EmployerSettingsPage() {
   }
 
   const handleDeleteAccount = async () => {
-    if (!confirm('Are you sure you want to delete your account? All your data - profile, job listings, applications, and messages - will be permanently removed. This cannot be undone.')) return
+    if (!confirm('Are you sure you want to delete your account? Your property profile, job listings, applications, shortlists and messages are permanently removed. Booking and payment records are kept with the property link removed from them, because UK company and tax law requires it. This cannot be undone.')) return
     if (!confirm('Final confirmation: delete your account and all associated data?')) return
 
     setDeleting(true)
     try {
       const res = await fetch('/api/account/delete', { method: 'POST' })
+      const data = await res.json().catch(() => ({} as any))
       if (!res.ok) {
-        const data = await res.json()
         alert(data.error || 'Failed to delete account. Please contact support.')
         setDeleting(false)
         return
       }
+      alert(deletionSummary(data))
       await supabase.auth.signOut()
       window.location.href = '/?deleted=true'
     } catch {
