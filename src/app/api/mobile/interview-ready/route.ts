@@ -155,6 +155,18 @@ export async function POST(req: NextRequest) {
   const { data: { user }, error: authError } = await authClient.auth.getUser(token)
   if (authError || !user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
 
+  // Two-step verification applies to bearer tokens here exactly as in
+  // getRequestUser: an account with a verified authenticator must present an
+  // aal2 token - a password-only token is refused.
+  try {
+    const hasVerifiedFactor = Array.isArray((user as any).factors)
+      && (user as any).factors.some((factor: any) => factor?.status === 'verified')
+    if (hasVerifiedFactor) {
+      const payload = JSON.parse(Buffer.from((token.split('.')[1] || ''), 'base64url').toString('utf8'))
+      if (payload?.aal !== 'aal2') return NextResponse.json({ error: 'Two-step verification required' }, { status: 401 })
+    }
+  } catch { return NextResponse.json({ error: 'Unauthorised' }, { status: 401 }) }
+
   const supabase = createClient(url, key, {
     accessToken: async () => token,
     auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },

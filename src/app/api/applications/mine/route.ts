@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { createServerSupabaseClient } from '@/lib/supabase/server'
+import { getRequestUser } from '@/lib/request-user'
 
 const DEFAULT_PER_PAGE = 25
 const MAX_PER_PAGE = 100
@@ -9,8 +9,10 @@ const APPLICATION_SELECT = `id,status,match_score,cover_note,cover_letter,create
 const CANDIDATE_MATCH_FIELDS = 'id,role_level,has_insurance,treatment_skills,services_offered,product_houses,qualifications,experience_years,years_experience,systems_experience,latitude,longitude,travel_radius_miles,max_commute,transport_method,location_preferences,shift_preferences,needs_accommodation,profile_completion_score,profile_completion_pct,review_score'
 
 export async function GET(req: NextRequest) {
-  const supabase = await createServerSupabaseClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  // getRequestUser accepts both browser cookies and the mobile app's Bearer
+  // tokens, and enforces two-step verification on both - this route was
+  // cookie-only, which left the app's Applications tab unable to load.
+  const user = await getRequestUser(req)
   if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
 
   const pageParam = Number(req.nextUrl.searchParams.get('page'))
