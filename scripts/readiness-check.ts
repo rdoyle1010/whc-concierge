@@ -166,6 +166,10 @@ check('all service-role API routes are protected or deliberately public', () => 
     // Public by design: three aggregate integers for the signed-out /agency
     // marketing page (see the route's own header comment).
     'src/app/api/agency/public-stats/route.ts',
+    // Public by design: three aggregate integers for the login and register
+    // pages. Reviews are private to their parties, so only the count - never
+    // a row - is read with the service role.
+    'src/app/api/public-stats/route.ts',
   ])
   const authMarkers = /getUser\(|getRequestUser\(|requireAdmin|verifyAdmin|stripe-signature|isInternalApiRequest/
   const unguarded = files.filter(file => !authMarkers.test(read(file)) && !deliberatePublic.has(file))

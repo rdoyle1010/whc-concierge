@@ -5,6 +5,12 @@ import { createAdminClient } from '@/lib/supabase/admin'
 
 const PRIVATE_BUCKETS = new Set(['talent-documents', 'message-attachments'])
 
+// A candidate's CV, insurance certificate and right-to-work document open
+// only where the candidate took part in creating the relationship: a mutual
+// match, an agency booking, or an application they submitted themselves.
+// Shortlisting is deliberately not on this list - it is employer-initiated,
+// the candidate is never told it happened, and it must not unlock identity
+// documents on its own.
 async function hasCandidateRelationship(admin: ReturnType<typeof createAdminClient>, viewerId: string, candidateUserId: string) {
   const [{ data: employer }, { data: candidate }] = await Promise.all([
     admin.from('employer_profiles').select('id, approval_status').eq('user_id', viewerId).maybeSingle(),
@@ -12,12 +18,11 @@ async function hasCandidateRelationship(admin: ReturnType<typeof createAdminClie
   ])
   if (!employer || employer.approval_status !== 'approved' || !candidate) return false
 
-  const [{ data: match }, { data: booking }, { data: shortlist }] = await Promise.all([
+  const [{ data: match }, { data: booking }] = await Promise.all([
     admin.from('matches').select('id').eq('candidate_id', candidate.id).eq('employer_id', employer.id).limit(1).maybeSingle(),
     admin.from('agency_bookings').select('id').eq('candidate_id', candidate.id).eq('employer_id', employer.id).limit(1).maybeSingle(),
-    admin.from('shortlisted_candidates').select('id').eq('candidate_id', candidate.id).eq('employer_id', employer.id).limit(1).maybeSingle(),
   ])
-  if (match || booking || shortlist) return true
+  if (match || booking) return true
 
   const { data: jobs } = await admin.from('job_listings').select('id').eq('employer_id', employer.id)
   const jobIds = (jobs || []).map(job => job.id)

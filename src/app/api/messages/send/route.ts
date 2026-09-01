@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getRequestUser } from '@/lib/request-user'
+import { isOwnedFileReference } from '@/lib/file-references'
 import { createNotification } from '@/lib/notifications'
 import { sendNewMessageEmail } from '@/lib/emails'
 import { emailAllowed } from '@/lib/notification-prefs'
@@ -94,6 +95,15 @@ export async function POST(req: NextRequest) {
     }
     if (typeof content === 'string' && content.length > 5000) {
       return NextResponse.json({ error: 'Message is too long' }, { status: 400 })
+    }
+
+    // Both message composers upload through /api/upload with a path of
+    // `${userId}/messages/...` and send back the /api/files reference it
+    // returns. Anything else - another person's attachment path, or a raw
+    // storage URL - is refused, so a message can never hand its recipient a
+    // file the sender does not own.
+    if (attachmentUrl && !isOwnedFileReference(attachmentUrl, user.id, 'message-attachments')) {
+      return NextResponse.json({ error: 'That attachment does not belong to this account' }, { status: 400 })
     }
 
     const admin = createAdminClient()

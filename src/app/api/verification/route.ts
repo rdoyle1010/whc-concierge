@@ -3,6 +3,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { createNotification } from '@/lib/notifications'
+import { isOwnedFileReference } from '@/lib/file-references'
 
 async function getAuthedUser() {
   const cookieStore = await cookies()
@@ -42,10 +43,27 @@ export async function POST(req: NextRequest) {
     if (!cand) return NextResponse.json({ error: 'No candidate profile found' }, { status: 404 })
 
     const body = await req.json()
+
+    // Verification documents are uploaded through /api/upload to
+    // `${user.id}/verification/...` in the private talent-documents bucket,
+    // which returns the /api/files reference stored here. Accepting a
+    // free-form string would let one professional file another person's
+    // identity evidence - or any URL at all - against their own record.
+    const ownDocument = (value: unknown) => isOwnedFileReference(value, user.id, 'talent-documents')
+
     const docs = Array.isArray(body.docs)
       ? body.docs.filter((d: any) => d && typeof d.url === 'string').slice(0, 10)
           .map((d: any) => ({ name: String(d.name || 'Document').slice(0, 120), url: String(d.url) }))
       : []
+    if (docs.some((doc: { url: string }) => !ownDocument(doc.url))) {
+      return NextResponse.json({ error: 'One of those documents is not a file you uploaded - please upload it again.' }, { status: 400 })
+    }
+    if (body.right_to_work_document_url && !ownDocument(body.right_to_work_document_url)) {
+      return NextResponse.json({ error: 'That right-to-work document is not a file you uploaded - please upload it again.' }, { status: 400 })
+    }
+    if (body.insurance_document_url && !ownDocument(body.insurance_document_url)) {
+      return NextResponse.json({ error: 'That insurance certificate is not a file you uploaded - please upload it again.' }, { status: 400 })
+    }
 
     const rightToWorkUk = Boolean(body.right_to_work_uk)
     const rightToWorkIreland = Boolean(body.right_to_work_ireland)

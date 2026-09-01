@@ -67,8 +67,10 @@ export default function AgencyProfilePage() {
       setProfile(data)
       if (data?.hourly_rate) setOfferRate(String(data.hourly_rate))
       if (data) {
-        const { data: revs } = await supabase.from('reviews').select('*').eq('reviewee_id', data.user_id || data.id).order('created_at', { ascending: false }).limit(100)
-        setReviews(revs || [])
+        // Reviews arrive with the directory response. They are private to
+        // their two parties in the database, so the browser no longer reads
+        // the reviews table itself.
+        setReviews(directoryJson?.reviews || [])
         const { data: courses } = await supabase.from('course_enrollments').select('course_slug, completed_at').eq('candidate_id', data.id).not('completed_at', 'is', null)
         setAcademyBadges(courses || [])
       }

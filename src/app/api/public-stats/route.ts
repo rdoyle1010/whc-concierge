@@ -1,14 +1,16 @@
 import { NextResponse } from 'next/server'
 import { unstable_cache } from 'next/cache'
 import { createClient } from '@supabase/supabase-js'
+import { createAdminClient } from '@/lib/supabase/admin'
 
 export const runtime = 'nodejs'
 
-// Public marketplace counts for the login and registration pages. Uses the
-// anon key only - every count is readable under the public RLS policies
-// (anon reads live jobs, approved employer profiles and reviews), so the
-// service role is never needed here. Cached for five minutes; a count that
-// cannot be read comes back null and the pages simply omit that fact.
+// Public marketplace counts for the login and registration pages. The live
+// role and approved property counts use the anon key, which the public RLS
+// policies allow. Reviews are private to their two parties and admins, so the
+// review count - a single integer, no rows - is read with the service role
+// here rather than exposing review rows to anon. Cached for five minutes; a
+// count that cannot be read comes back null and the pages simply omit it.
 function createPublicSupabaseClient() {
   return createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -23,7 +25,7 @@ const getPublicStats = unstable_cache(async () => {
     const [jobs, properties, reviews] = await Promise.all([
       supabase.from('job_listings').select('id', { count: 'exact', head: true }).eq('is_live', true).eq('status', 'active'),
       supabase.from('employer_profiles').select('id', { count: 'exact', head: true }).eq('approval_status', 'approved'),
-      supabase.from('reviews').select('id', { count: 'exact', head: true }),
+      createAdminClient().from('reviews').select('id', { count: 'exact', head: true }),
     ])
     return {
       liveRoles: jobs.error ? null : jobs.count ?? 0,

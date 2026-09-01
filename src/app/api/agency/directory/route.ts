@@ -176,7 +176,25 @@ export async function GET(req: NextRequest) {
     .filter((candidate: any) => isAdmin || candidate.within_radius)
     .filter((candidate: any) => !hasShiftSearch || candidate.availability_match === 'confirmed')
   if (id && candidates.length === 0) return NextResponse.json({ error: 'Profile not found' }, { status: 404 })
-  return NextResponse.json(id ? { candidate: candidates[0] } : {
+
+  // Reviews of a professional are private to their two parties in the
+  // database. The agency profile page used to read them with the browser's
+  // anon key; it now receives them here, already checked for an approved
+  // employer viewer and shaped to rating, comment and date - never the
+  // reviewer's identity.
+  if (id) {
+    const candidate = candidates[0]
+    const { data: reviewRows } = await admin
+      .from('reviews')
+      .select('id,rating,text,criteria_scores,created_at')
+      .eq('reviewee_id', candidate.user_id || candidate.id)
+      .order('created_at', { ascending: false })
+      .limit(100)
+    const reviews = (reviewRows || []).filter((review: any) => Number(review.rating) >= 1 && Number(review.rating) <= 5)
+    return NextResponse.json({ candidate, reviews })
+  }
+
+  return NextResponse.json({
     candidates,
     origin: {
       postcode: employer?.postcode || null,
