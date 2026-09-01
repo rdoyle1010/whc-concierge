@@ -112,6 +112,11 @@ begin
 end;
 $$;
 
+-- Dropped first so this whole migration can be run twice without an error.
+-- These are pasted into the SQL editor by hand, and a block that fails
+-- halfway is worse than one that is simply run again.
+DROP TRIGGER IF EXISTS trg_enforce_agency_full_rate_payout ON public.agency_bookings;
+
 CREATE TRIGGER trg_enforce_agency_full_rate_payout
   BEFORE INSERT OR UPDATE OF paid_at, payout_amount, rate, hours, payout_status
   ON public.agency_bookings
