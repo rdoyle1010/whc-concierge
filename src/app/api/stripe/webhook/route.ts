@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getStripe } from '@/lib/stripe'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { createNotification } from '@/lib/notifications'
+import { createNotification, notifyAdmins } from '@/lib/notifications'
 import { getAcademyCatalog, getAcademyCourseBySlug } from '@/lib/academy-catalog-server'
 import { sendCourseAccessEmail, sendBookingConfirmedEmail, sendReferralRewardEmail, sendFeaturedTalentEmail } from '@/lib/emails'
 import { emailAllowed } from '@/lib/notification-prefs'
@@ -10,6 +10,7 @@ import Stripe from 'stripe'
 import { getInternalApiSecret } from '@/lib/internal-request'
 import { handleResidencyStripeEvent } from '@/lib/residency-stripe-webhook'
 import { fulfilCommercialPurchase } from '@/lib/commercial-fulfilment'
+import { applyAgencyCaseAdjustment } from '@/lib/agency-case-adjustment'
 
 async function convertReferral(supabase: any, candidateId: string) {
   try {
@@ -237,9 +238,42 @@ export async function POST(req: NextRequest) {
         await announceFeaturedEmployer(supabase, meta.employer_id)
       }
 
+      // Extra money agreed in a shift resolution. This branch did not exist:
+      // the credit was applied only by a browser redirect, so a closed tab
+      // meant Stripe held the property's money, the case never closed and
+      // the professional was never paid.
+      if (meta?.type === 'agency_case_adjustment' && meta?.case_id) {
+        const result = await applyAgencyCaseAdjustment(supabase, {
+          caseId: String(meta.case_id),
+          bookingId: meta.booking_id ? String(meta.booking_id) : null,
+          extra: Number(meta.extra || 0),
+          fee: Number(meta.fee || 0),
+          sessionId: session.id,
+          actorUserId: meta.user_id ? String(meta.user_id) : null,
+          actorRole: 'employer',
+        })
+        if (!result.applied && result.reason === 'write_failed') {
+          console.error('[Agency case adjustment] could not record the payment:', result.message)
+          return await fulfilmentFailed('agency_case_adjustment fulfilment failed')
+        }
+        if (!result.applied && (result.reason === 'case_not_found' || result.reason === 'booking_not_found')) {
+          await notifyAdmins('Adjustment payment needs review',
+            `An extra shift payment was received for case ${meta.case_id} but the case or booking could not be found. Check Stripe.`,
+            '/admin/agency')
+        }
+      }
+
       if (meta?.type === 'agency_booking' && meta?.booking_id) {
-        const gross = meta.gross ? parseInt(meta.gross) : 0
-        const fee = meta.fee ? parseInt(meta.fee) : 0
+        // Pence are authoritative. parseInt on a pound string silently
+        // truncated every half-hour shift - "382.5" became 382 - so the
+        // recorded amount_paid sat up to 99p below what was actually
+        // collected, and every refund was then capped at the wrong figure.
+        // The pound fields are still read as a fallback, for sessions created
+        // before pence metadata existed.
+        const grossPence = meta.gross_pence ? Math.round(Number(meta.gross_pence)) : Math.round(Number(meta.gross || 0) * 100)
+        const feePence = meta.fee_pence ? Math.round(Number(meta.fee_pence)) : Math.round(Number(meta.fee || 0) * 100)
+        const gross = grossPence / 100
+        const fee = feePence / 100
         // Which money model this booking used. 'stripe_connect' means the
         // shift money was transferred to the professional by the destination
         // charge itself; 'manual' means WHC holds it until it settles.
@@ -253,14 +287,51 @@ export async function POST(req: NextRequest) {
           stripe_payment_intent: (session.payment_intent as string) || null,
           payout_method: payoutMethod,
         }
-        let { error: paidError } = await supabase.from('agency_bookings').update(paidUpdate).eq('id', meta.booking_id)
+        // Claim the booking rather than overwrite it. Two things this stops.
+        // A second payment for the same shift (a stale checkout tab paid an
+        // hour later) no longer silently overwrites the first with identical
+        // values, leaving the property charged twice and nothing recording
+        // it. And a shift the professional cancelled while the property was
+        // on the Stripe page can no longer be flipped back to confirmed - a
+        // paid, confirmed shift that nobody is working.
+        const claim = () => supabase.from('agency_bookings')
+          .update(paidUpdate)
+          .eq('id', meta.booking_id)
+          .is('paid_at', null)
+          .in('status', ['accepted', 'confirmed'])
+          .select('id')
+        let { data: claimed, error: paidError } = await claim()
         if (paidError && /column|payout_method/i.test(paidError.message || '')) {
           // payout_method arrives with migration 20260901100000; the payment
           // must land regardless of whether it has been run yet.
           delete paidUpdate.payout_method
-          ;({ error: paidError } = await supabase.from('agency_bookings').update(paidUpdate).eq('id', meta.booking_id))
+          ;({ data: claimed, error: paidError } = await claim())
         }
-        if (paidError) console.error('[Agency booking] payment record update failed:', paidError.message)
+        // A write failure here means Stripe holds the property's money and
+        // nothing records it. Returning 500 releases the ledger row so Stripe
+        // retries, instead of swallowing it with a 200 and leaving a real
+        // person unpaid with only a log line to show for it.
+        if (paidError) {
+          console.error('[Agency booking] payment record update failed:', paidError.message)
+          return await fulfilmentFailed('agency_booking fulfilment failed')
+        }
+        if (!claimed || claimed.length === 0) {
+          // Nothing to claim: already paid, or cancelled while the property
+          // was paying. Either way this payment needs a human, so flag it
+          // rather than acknowledging it silently.
+          console.error('[Agency booking] payment arrived for a booking that could not be claimed:', meta.booking_id)
+          try {
+            await supabase.from('agency_bookings')
+              .update({ dispute_status: 'open', payout_status: 'on_hold' })
+              .eq('id', meta.booking_id)
+          } catch { }
+          try {
+            await notifyAdmins('Payment needs review',
+              `A shift payment was received for booking ${meta.booking_id}, which was already paid or no longer open. Check Stripe and refund it if it is a duplicate.`,
+              '/admin/agency')
+          } catch { }
+          return NextResponse.json({ received: true, unclaimed: true })
+        }
 
         try {
           const { data: booking } = await supabase.from('agency_bookings')
@@ -528,6 +599,93 @@ export async function POST(req: NextRequest) {
           .eq('status', 'pending_payment')
           .eq('is_live', false)
       }
+      break
+    }
+
+    // Money leaving again. Until now the platform heard only about money
+    // arriving, so a refund issued in the Stripe dashboard and a chargeback
+    // raised by a property were both invisible: the admin money page went on
+    // showing the booking as ready to pay out, and an administrator could
+    // bank-transfer a professional money Stripe had already taken back.
+    case 'charge.refunded':
+    case 'charge.dispute.created':
+    case 'charge.dispute.closed': {
+      const isDispute = event.type.startsWith('charge.dispute')
+      const object = event.data.object as any
+      const paymentIntent = typeof object?.payment_intent === 'string'
+        ? object.payment_intent
+        : object?.payment_intent?.id
+      if (!paymentIntent) break
+
+      const disputeStatus = event.type === 'charge.dispute.closed'
+        ? (object?.status === 'won' ? 'resolved' : 'open')
+        : 'open'
+
+      // Agency bookings.
+      try {
+        const { data: bookings } = await supabase.from('agency_bookings')
+          .select('id, candidate_id, employer_id, shift_date, payout_status, amount_paid')
+          .eq('stripe_payment_intent', paymentIntent)
+        for (const booking of bookings || []) {
+          const update: Record<string, any> = { dispute_status: disputeStatus }
+          if (disputeStatus === 'open') {
+            // Freeze the payout. A booking under dispute or refunded must
+            // never appear on the admin page as ready to pay.
+            if (booking.payout_status !== 'paid') update.payout_status = 'on_hold'
+          }
+          if (event.type === 'charge.refunded') {
+            const refundedPence = Number(object?.amount_refunded || 0)
+            if (refundedPence > 0) update.refund_amount = refundedPence / 100
+            update.refunded_at = new Date().toISOString()
+          }
+          let { error } = await supabase.from('agency_bookings').update(update).eq('id', booking.id)
+          if (error && /column|refunded_at|refund_amount/i.test(error.message || '')) {
+            delete update.refunded_at
+            delete update.refund_amount
+            ;({ error } = await supabase.from('agency_bookings').update(update).eq('id', booking.id))
+          }
+          if (error) console.error('[Stripe reversal] agency booking update failed:', error.message)
+
+          const alreadyPaidOut = booking.payout_status === 'paid'
+          await notifyAdmins(
+            isDispute ? 'Chargeback raised on a shift' : 'Refund issued on a shift',
+            `${isDispute ? 'A property has disputed' : 'A refund was issued on'} the payment for the shift on ${booking.shift_date || 'an agreed date'} (booking ${booking.id}). The payout is on hold.${alreadyPaidOut ? ' WARNING: this shift has already been paid out, so the money is out of the account.' : ''}`,
+            '/admin/agency',
+          )
+        }
+      } catch (reversalError: any) {
+        console.error('[Stripe reversal] agency lookup failed:', reversalError?.message)
+      }
+
+      // Residency bookings hold money the same way.
+      try {
+        const { data: residencies } = await supabase.from('residency_bookings')
+          .select('id, payout_status')
+          .eq('stripe_payment_intent', paymentIntent)
+        for (const booking of residencies || []) {
+          const update: Record<string, any> = { dispute_status: disputeStatus }
+          if (disputeStatus === 'open' && booking.payout_status !== 'paid') update.payout_status = 'on_hold'
+          const { error } = await supabase.from('residency_bookings').update(update).eq('id', booking.id)
+          if (error) console.error('[Stripe reversal] residency booking update failed:', error.message)
+          await notifyAdmins(
+            isDispute ? 'Chargeback raised on a Residency booking' : 'Refund issued on a Residency booking',
+            `Residency booking ${booking.id} has a ${isDispute ? 'chargeback' : 'refund'} against it. The payout is on hold.`,
+            '/admin/residency-money',
+          )
+        }
+      } catch (reversalError: any) {
+        console.error('[Stripe reversal] residency lookup failed:', reversalError?.message)
+      }
+      break
+    }
+
+    // A payout to a professional's connected account bounced. Silent failure
+    // here means somebody believes they have been paid and has not been.
+    case 'payout.failed': {
+      const payout = event.data.object as any
+      await notifyAdmins('A Stripe payout failed',
+        `Stripe could not pay out ${payout?.amount ? `£${(Number(payout.amount) / 100).toFixed(2)}` : 'an amount'}${payout?.failure_message ? `: ${payout.failure_message}` : ''}. Check the connected account's bank details.`,
+        '/admin/agency')
       break
     }
 

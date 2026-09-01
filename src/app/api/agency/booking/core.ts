@@ -5,19 +5,40 @@ import { cookies } from 'next/headers'
 import { getRequestUser } from '@/lib/request-user'
 import { createNotification } from '@/lib/notifications'
 import { AGENCY_PLATFORM_FEE_PCT, agencyFeePctForShift, agencyFeePctForShiftPlus } from '@/lib/constants'
+import { agencyFeeBpsForShift, agencyShiftMoney } from '@/lib/agency-money'
 
 // Agency Plus members pay a reduced base fee. Judged at booking time so the
 // subscription state on the day of booking decides the fee that is stored.
-export async function feePctForEmployerShift(admin: any, employerId: string | null | undefined, shiftDate: string | null | undefined): Promise<number> {
-  let plus = false
+async function employerHasAgencyPlus(admin: any, employerId: string | null | undefined): Promise<boolean> {
   try {
-    if (employerId) {
-      const { data } = await admin.from('employer_profiles')
-        .select('agency_plus_active, agency_plus_until').eq('id', employerId).maybeSingle()
-      plus = Boolean(data?.agency_plus_active) && (!data?.agency_plus_until || new Date(data.agency_plus_until).getTime() > Date.now())
-    }
-  } catch { /* fee falls back to standard */ }
+    if (!employerId) return false
+    const { data } = await admin.from('employer_profiles')
+      .select('agency_plus_active, agency_plus_until').eq('id', employerId).maybeSingle()
+    return Boolean(data?.agency_plus_active) && (!data?.agency_plus_until || new Date(data.agency_plus_until).getTime() > Date.now())
+  } catch {
+    return false
+  }
+}
+
+export async function feePctForEmployerShift(admin: any, employerId: string | null | undefined, shiftDate: string | null | undefined): Promise<number> {
+  const plus = await employerHasAgencyPlus(admin, employerId)
   return agencyFeePctForShiftPlus(shiftDate, todayInLondon(), plus)
+}
+
+// The fee in basis points, which is what the money maths actually uses.
+// Percentages as floats produced 0.10 + 0.05 = 0.15000000000000002, and that
+// tipped Math.ceil into an extra whole pound on one gross in twenty - always
+// against an Agency Plus member, who is paying £99 a month precisely to be
+// charged less.
+export async function feeBpsForEmployerShift(admin: any, employerId: string | null | undefined, shiftDate: string | null | undefined): Promise<number> {
+  const plus = await employerHasAgencyPlus(admin, employerId)
+  return agencyFeeBpsForShift(shiftDate, todayInLondon(), plus)
+}
+
+// The stored whole-pound fee for a shift, computed in integers end to end.
+export async function shiftFeePounds(admin: any, employerId: string | null | undefined, shiftDate: string | null | undefined, rate: number, hours: number | null | undefined): Promise<number> {
+  const feeBps = await feeBpsForEmployerShift(admin, employerId, shiftDate)
+  return agencyShiftMoney({ ratePounds: rate, hours, feeBps }).feePounds
 }
 import { sendSms } from '@/lib/sms'
 import { sendAgencyOfferEmail, sendReviewRequestEmail, sendInsuranceExpiryEmail, sendAgencyUpdateEmail, sendFeaturedExpiringEmail } from '@/lib/emails'
@@ -236,7 +257,7 @@ async function advanceCascade(admin: any, booking: any): Promise<any | null> {
     .update({
       candidate_id: entry.id,
       rate,
-      platform_fee: Math.ceil(rate * effHours * await feePctForEmployerShift(admin, booking.employer_id, booking.shift_date)),
+      platform_fee: await shiftFeePounds(admin, booking.employer_id, booking.shift_date, rate, effHours),
       status: 'pending',
       cascade_index: next,
       cascade_deadline: deadline,
@@ -576,7 +597,7 @@ export async function POST(req: NextRequest) {
 
       const hours = shiftHours(shiftStartTime, shiftEndTime) || 0
       const effectiveHours = hours || 8
-      const platformFee = Math.ceil(rate * effectiveHours * await feePctForEmployerShift(admin, emp.id, String(body.shiftDate)))
+      const platformFee = await shiftFeePounds(admin, emp.id, String(body.shiftDate), rate, effectiveHours)
 
       // Same-day offers are URGENT (sickness cover): tighter expiry + SMS.
       const urgent = String(body.shiftDate) === todayInLondon()
@@ -948,7 +969,7 @@ export async function POST(req: NextRequest) {
       // Recalculate the platform fee against the countered hourly rate.
       // On a cascade offer the counter resets the 30-minute window so the
       // other side gets a fresh clock before the queue moves on.
-      const counterFee = Math.ceil(rate * (booking.hours && booking.hours > 0 ? booking.hours : 8) * await feePctForEmployerShift(admin, booking.employer_id, booking.shift_date))
+      const counterFee = await shiftFeePounds(admin, booking.employer_id, booking.shift_date, rate, booking.hours)
       const counterUpdate: Record<string, any> = { rate, platform_fee: counterFee, status: isCandidateParty ? 'countered' : 'pending' }
       if (Array.isArray(booking.cascade_queue)) {
         const fresh = new Date(Date.now() + CASCADE_WINDOW_MS).toISOString()
@@ -988,7 +1009,7 @@ export async function POST(req: NextRequest) {
       if (!updated) return NextResponse.json({ error: 'This offer is no longer open - it may have just been actioned elsewhere.' }, { status: 409 })
 
       const effHours = booking.hours && booking.hours > 0 ? booking.hours : 8
-      const totalDue = booking.rate * effHours + (updated.platform_fee || Math.ceil(booking.rate * effHours * AGENCY_PLATFORM_FEE_PCT))
+      const totalDue = agencyShiftMoney({ ratePounds: booking.rate, hours: effHours, storedFeePounds: updated.platform_fee }).totalPounds
       const acceptBody = isCandidateParty
         // Candidate accepted → the property now pays WHC in full to confirm
         ? `${actorName} has accepted the agency offer for ${shiftDate} at £${booking.rate} per hour. To confirm the booking, pay £${totalDue} (rate plus the WHC fee) from your Agency Bookings page. WHC pays the therapist after the shift.`

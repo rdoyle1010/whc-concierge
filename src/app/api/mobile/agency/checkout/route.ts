@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getStripe } from '@/lib/stripe'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getRequestUser } from '@/lib/request-user'
-import { AGENCY_PLATFORM_FEE_PCT } from '@/lib/constants'
+import { agencyShiftMoney, bpsToPercentLabel, formatPence } from '@/lib/agency-money'
 
 const RETURN_PATHS = new Set(['/agency', '/employer/agency'])
 
@@ -27,17 +27,34 @@ export async function POST(req: NextRequest) {
     }
     if (booking.paid_at || booking.fee_paid_at) return NextResponse.json({ error: 'This booking has already been paid.' }, { status: 400 })
 
-    const effectiveHours = booking.hours && booking.hours > 0 ? booking.hours : 8
-    const gross = (booking.rate || 0) * effectiveHours
-    const fee = booking.platform_fee && booking.platform_fee > 0
-      ? booking.platform_fee
-      : Math.ceil(gross * AGENCY_PLATFORM_FEE_PCT)
-    const totalPounds = gross + fee
-    if (!gross || totalPounds <= 0) return NextResponse.json({ error: 'Could not work out the total for this booking.' }, { status: 400 })
+    // Integer pence throughout. A shift that is not a whole number of
+    // quarter-hours used to produce a fractional unit_amount that Stripe
+    // refused, so the property simply could not pay.
+    const money = agencyShiftMoney({
+      ratePounds: booking.rate,
+      hours: booking.hours,
+      storedFeePounds: booking.platform_fee,
+    })
+    if (money.grossPence <= 0 || money.totalPence <= 0) {
+      return NextResponse.json({ error: 'Could not work out the total for this booking.' }, { status: 400 })
+    }
 
     const stripe = getStripe()
     const site = 'https://talent.wellnesshousecollective.co.uk'
-    const feePct = Math.round((fee / Math.max(1, gross)) * 100)
+
+    // One shift, one live checkout. Without this a property that goes back
+    // and clicks Pay again ends up with two valid sessions, and paying both
+    // charges them twice for the same shift with nothing recording it.
+    if (booking.stripe_checkout_session_id) {
+      try {
+        const existing = await stripe.checkout.sessions.retrieve(String(booking.stripe_checkout_session_id))
+        if (existing?.status === 'open' && existing.url) {
+          return NextResponse.json({ url: existing.url, reused: true })
+        }
+      } catch { }
+    }
+
+    const feePctLabel = bpsToPercentLabel(Math.round((money.feePence / Math.max(1, money.grossPence)) * 10000))
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       line_items: [{
@@ -45,9 +62,9 @@ export async function POST(req: NextRequest) {
           currency: 'gbp',
           product_data: {
             name: 'WHC Concierge - Agency Shift Booking',
-            description: `${booking.shift_date || 'Agreed date'}: £${booking.rate}/hr × ${effectiveHours}h (£${gross}) + ${feePct}% WHC fee (£${fee}). The professional receives the full £${gross} agreed shift amount after the completed shift.`,
+            description: `${booking.shift_date || 'Agreed date'}: £${booking.rate}/hr × ${money.hours}h (${formatPence(money.grossPence)}) + ${feePctLabel}% WHC fee (${formatPence(money.feePence)}). The professional receives the full ${formatPence(money.grossPence)} agreed shift amount after the completed shift.`,
           },
-          unit_amount: totalPounds * 100,
+          unit_amount: money.totalPence,
         },
         quantity: 1,
       }],
@@ -60,13 +77,29 @@ export async function POST(req: NextRequest) {
         booking_id: booking.id,
         employer_id: employer.id,
         user_id: user.id,
-        gross: String(gross),
-        fee: String(fee),
-        fee_pct: String(AGENCY_PLATFORM_FEE_PCT),
+        // Pence are authoritative. The pound fields stay for older sessions
+        // still in flight when this deploys.
+        gross_pence: String(money.grossPence),
+        fee_pence: String(money.feePence),
+        gross: String(money.grossPounds),
+        fee: String(money.feePounds),
+        fee_bps: String(money.feeBps),
       },
     })
 
-    return NextResponse.json({ url: session.url, gross, fee, total: totalPounds, feePct })
+    // Recording the session lets a second payment attempt be recognised
+    // rather than silently creating a second live checkout for one shift.
+    try {
+      await admin.from('agency_bookings').update({ stripe_checkout_session_id: session.id }).eq('id', booking.id)
+    } catch { }
+
+    return NextResponse.json({
+      url: session.url,
+      gross: money.grossPounds,
+      fee: money.feePounds,
+      total: money.totalPounds,
+      feePct: Number(feePctLabel),
+    })
   } catch (error: any) {
     return NextResponse.json({ error: error?.message || 'Could not start payment.' }, { status: 500 })
   }

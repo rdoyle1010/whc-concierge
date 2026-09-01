@@ -122,3 +122,25 @@ export async function markAllRead(userId: string) {
     .eq('is_read', false)
   return { error }
 }
+
+// Money that needs a person to look at it.
+//
+// Some failures cannot be resolved in code - a payment that arrives for a
+// booking that was already paid, a chargeback on a shift that is queued for
+// payout, a Stripe payout that bounces. Each of those is a real amount of
+// real money in the wrong place, and the only honest response is to put it
+// in front of an administrator rather than write a line to a log nobody
+// reads. Best-effort by design: alerting must never be the reason a webhook
+// fails.
+export async function notifyAdmins(title: string, message: string, link?: string) {
+  try {
+    const supabase = createAdminClient()
+    const { data: admins } = await supabase.from('profiles').select('id').eq('role', 'admin')
+    if (!admins || admins.length === 0) return
+    await Promise.allSettled(
+      admins.map((row: any) => createNotification(row.id, 'general', title, message, link)),
+    )
+  } catch (error) {
+    console.error('[Admin alert failed]', error)
+  }
+}
