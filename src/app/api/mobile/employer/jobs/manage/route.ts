@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { triggerJobAlerts } from '@/lib/job-alerts-trigger'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getRequestUser } from '@/lib/request-user'
 import { getStripe } from '@/lib/stripe'
@@ -118,6 +119,10 @@ export async function POST(req: NextRequest) {
       await admin.from('employer_profiles').update({ annual_jobs_used: used }).eq('id', employer.id).eq('annual_jobs_used', used + 1)
       return NextResponse.json({ error: 'Could not publish this role.' }, { status: 500 })
     }
+
+    // A role published from the included allowance reaches the market exactly
+    // as a paid one does, and used to send no alerts at all.
+    triggerJobAlerts(job.id, req.url)
 
     // Instrumentation: an included publish is the moment the role truly
     // enters the market, exactly like the paid webhook path. Best-effort.

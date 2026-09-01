@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { createNotification } from '@/lib/notifications'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { calculateMatchScore } from '@/lib/matching'
 import { jobAlertEmailHtml } from '@/lib/job-alert-email-template'
@@ -36,11 +37,20 @@ export async function POST(req: NextRequest) {
       ? `£${Math.round(job.salary_min / 1000)}k-£${Math.round(job.salary_max / 1000)}k`
       : undefined
 
-    // Get all candidates with job alerts enabled
+    // Candidates who want job alerts.
+    //
+    // job_alerts_enabled has no default, so it is NULL for every account ever
+    // created. The settings page reads NULL as ON - `!== false` - and told
+    // the professional their alerts were switched on, while this query
+    // required a literal true and excluded them. The result is that nobody
+    // has ever received a job alert, and the only way to actually enable one
+    // was to toggle the setting off and back on again.
+    //
+    // NULL now means on, matching what the settings page has always shown.
     const { data: candidates } = await supabase
       .from('candidate_profiles')
       .select('*, auth_email:user_id')
-      .eq('job_alerts_enabled', true)
+      .or('job_alerts_enabled.is.null,job_alerts_enabled.eq.true')
 
     if (!candidates || candidates.length === 0) {
       return NextResponse.json({ sent: 0, message: 'No candidates with alerts enabled' })
@@ -76,6 +86,20 @@ export async function POST(req: NextRequest) {
       // Check against candidate's minimum score threshold
       const minScore = candidate.job_alerts_min_score || 60
       if (result.score < minScore) continue
+
+      // The in-app notification always fires. The settings page promises
+      // exactly this - "In-app notifications always appear here. These
+      // controls govern what reaches your inbox and phone" - and this route
+      // was email-only, so a matched role appeared nowhere on the platform.
+      try {
+        await createNotification(
+          candidate.user_id,
+          'new_match',
+          `New role matching your profile - ${result.score}%`,
+          `${jobTitle}${propertyName ? ` at ${propertyName}` : ''}${job.location ? `, ${job.location}` : ''}.`,
+          `/jobs/${job.id}`,
+        )
+      } catch { /* the email below still goes */ }
 
       // Send email
       const firstName = candidate.full_name?.split(' ')[0] || 'there'

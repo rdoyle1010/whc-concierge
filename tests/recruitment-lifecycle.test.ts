@@ -57,9 +57,15 @@ test('completed talent placements leave active applications and move to the arch
   const pipeline = read('src/app/api/talent/applications/pipeline-list/route.ts')
   const archive = read('src/app/api/talent/hired/route.ts')
   const archivePage = read('src/app/talent/hired/page.tsx')
+  // hired_at is the fact; archived_at is the EMPLOYER's own filing state,
+  // which they can clear from their Hired page. Reading archived_at on the
+  // talent side meant "reopen record" silently deleted a placement from the
+  // professional's history and pushed it back into their active
+  // applications. Both sides now key on hired_at.
   assert.match(mine, /\.is\('archived_at', null\)/)
+  assert.match(mine, /\.is\('hired_at', null\)/)
   assert.match(pipeline, /\.is\('archived_at', null\)/)
-  assert.match(archive, /\.not\('archived_at', 'is', null\)/)
+  assert.match(pipeline, /\.is\('hired_at', null\)/)
   assert.match(archive, /\.not\('hired_at', 'is', null\)/)
   assert.match(archivePage, /PostHireReviews/)
   assert.match(archivePage, /View communication/)

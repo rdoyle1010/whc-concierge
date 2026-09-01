@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { triggerJobAlerts } from '@/lib/job-alerts-trigger'
 import { getStripe } from '@/lib/stripe'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createNotification, notifyAdmins } from '@/lib/notifications'
@@ -565,14 +566,7 @@ export async function POST(req: NextRequest) {
           }).eq('id', meta.employer_id)
         }
 
-        fetch(new URL('/api/job-alerts', req.url).toString(), {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'x-whc-internal-secret': getInternalApiSecret(),
-          },
-          body: JSON.stringify({ jobId: meta.job_id }),
-        }).catch(() => {})
+        triggerJobAlerts(meta.job_id, req.url)
       }
       break
     }

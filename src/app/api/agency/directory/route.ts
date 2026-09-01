@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { rightToWorkVerified } from '@/lib/verification-badges'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { normaliseAccountRole } from '@/lib/role-access'
 import { canEmployerDiscoverCandidate, mutualRadiusResult } from '@/lib/discovery'
@@ -168,7 +169,7 @@ export async function GET(req: NextRequest) {
         && (!candidate.insurance_expiry_date || new Date(candidate.insurance_expiry_date).getTime() >= Date.now())
       const agencyReady = Boolean(candidate.whc_verified)
         && insuranceCurrent
-        && candidate.right_to_work_status === 'verified'
+        && rightToWorkVerified(candidate)
         && Number(candidate.hourly_rate) > 0
         && candidate.latitude != null
       const completed = completedCount.get(candidate.id) || 0

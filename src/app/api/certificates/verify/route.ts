@@ -32,6 +32,7 @@ export async function GET(req: NextRequest) {
   return NextResponse.json({
     certificate: {
       code: enrolment.certificate_code,
+      course_slug: enrolment.course_slug,
       learner_name: candidate?.full_name || 'Name unavailable',
       course_title: course?.title || enrolment.course_slug,
       completed_at: enrolment.completed_at,

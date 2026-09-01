@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { triggerJobAlerts } from '@/lib/job-alerts-trigger'
 import { adminRequestUser } from '@/lib/admin-api-auth'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createNotification } from '@/lib/notifications'
@@ -153,6 +154,10 @@ export async function POST(req: NextRequest) {
         .update({ is_live: next, status: next ? 'active' : 'paused' })
         .eq('id', id)
       if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+      // Every paid role from an employer approved AFTER payment is written
+      // is_live false by the webhook, so the alert it fired was refused. This
+      // is the moment those roles actually reach the market.
+      if (next) triggerJobAlerts(id, req.url)
       return NextResponse.json({ success: true, is_live: next })
     }
 

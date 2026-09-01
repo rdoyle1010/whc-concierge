@@ -26,6 +26,20 @@ function insuredNow(candidate: any): boolean {
   return expiry.getTime() >= Date.now()
 }
 
+// Right to work: one reading of the column, used everywhere.
+//
+// The admin review route writes 'approved' - which is the vocabulary the
+// migration itself documents (not_submitted / pending / approved / rejected)
+// - while the badge logic and the Agency directory both compared against
+// 'verified'. So "Right to work verified" never rendered for anybody, and
+// because the Agency Ready badge requires it, that composite was unreachable
+// for every professional on the platform. Both spellings are accepted so a
+// row written either way is honoured, and there is now one place to change.
+export function rightToWorkVerified(candidate: any): boolean {
+  const status = String(candidate?.right_to_work_status || '').toLowerCase()
+  return status === 'approved' || status === 'verified'
+}
+
 // Every badge this candidate has earned, derived badges first, then the
 // manual marks, then the composite "Agency ready" when the full set of
 // agency prerequisites is genuinely met.
@@ -34,7 +48,7 @@ export function candidateBadges(candidate: any, manualTypes: string[]): Verifica
   const badges: VerificationBadge[] = []
 
   const insured = insuredNow(candidate)
-  const rightToWork = candidate.right_to_work_status === 'verified'
+  const rightToWork = rightToWorkVerified(candidate)
 
   if (candidate.whc_verified) badges.push({ key: 'identity', label: 'Identity verified' })
   if (rightToWork) badges.push({ key: 'right_to_work', label: 'Right to work verified' })

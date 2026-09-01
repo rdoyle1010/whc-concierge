@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import Wordmark from '@/components/Wordmark'
+import NotificationBell from '@/components/NotificationBell'
 import Navbar from '@/components/Navbar'
 import ApplicationPipelineHub from '@/components/ApplicationPipelineHub'
 import PostHireActions from '@/components/PostHireActions'
@@ -126,6 +127,12 @@ export default function DashboardShell({ children, role, userName }: DashboardSh
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [agencyShell, setAgencyShell] = useState<'checking' | 'employer' | 'public'>('checking')
   const [access, setAccess] = useState<Partial<Record<FeatureKey, FeatureAccess>>>({})
+  // The notification bell lived only in the public Navbar, which the
+  // signed-in shell never renders - so every offer, interview invitation,
+  // hire confirmation and verification result the platform carefully creates
+  // was invisible to anybody working inside their dashboard, unless they
+  // happened to navigate back to the dashboard home page.
+  const [viewerId, setViewerId] = useState<string | null>(null)
   const pathname = usePathname()
   const supabase = createClient()
   const items = navItems[role]
@@ -135,6 +142,12 @@ export default function DashboardShell({ children, role, userName }: DashboardSh
   const showPostHireReviews = (role === 'talent' && pathname === '/talent/applications') || (role === 'employer' && pathname === '/employer/hired')
   const showJobsTalentSponsor = (role === 'talent' && pathname === '/talent/jobs') || (role === 'employer' && pathname === '/employer/candidates')
   const activityRole: 'talent' | 'employer' | null = role === 'talent' && pathname === '/talent/dashboard' ? 'talent' : role === 'employer' && pathname === '/employer/dashboard' ? 'employer' : null
+
+  useEffect(() => {
+    let active = true
+    supabase.auth.getUser().then(({ data }) => { if (active) setViewerId(data.user?.id || null) }).catch(() => { })
+    return () => { active = false }
+  }, [])
 
   useEffect(() => {
     let active = true
@@ -179,13 +192,13 @@ export default function DashboardShell({ children, role, userName }: DashboardSh
   }
 
   return <div className="dashboard-shell min-h-screen">
-    <header className="lg:hidden sticky top-0 z-30 bg-[#0b2f4d] text-white px-4 py-3.5 flex items-center justify-between border-b border-white/10"><button type="button" onClick={() => setSidebarOpen(true)} aria-label="Open dashboard navigation" className="p-1 -ml-1 text-white/85"><Menu size={22}/></button><div className="text-center leading-none"><Wordmark dark compact href={null}/><p className="mt-1.5 text-[8px] uppercase tracking-[0.2em] text-white/55">{workspaceLabel[role]}</p></div><UniversalSearch variant="navbar" /></header>
+    <header className="lg:hidden sticky top-0 z-30 bg-[#0b2f4d] text-white px-4 py-3.5 flex items-center justify-between border-b border-white/10"><button type="button" onClick={() => setSidebarOpen(true)} aria-label="Open dashboard navigation" className="p-1 -ml-1 text-white/85"><Menu size={22}/></button><div className="text-center leading-none"><Wordmark dark compact href={null}/><p className="mt-1.5 text-[8px] uppercase tracking-[0.2em] text-white/55">{workspaceLabel[role]}</p></div><div className="flex items-center gap-2">{viewerId && <NotificationBell userId={viewerId} />}<UniversalSearch variant="navbar" /></div></header>
     {sidebarOpen && <div className="fixed inset-0 bg-[#07243b]/60 backdrop-blur-[1px] z-40 lg:hidden" onClick={() => setSidebarOpen(false)} />}
     <aside className={`dashboard-sidebar fixed top-0 left-0 h-full w-[264px] text-white z-50 transform transition-transform duration-200 lg:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
       <div className="px-7 pt-7 pb-4"><div className="flex items-center justify-between"><Wordmark dark/><button type="button" onClick={() => setSidebarOpen(false)} className="lg:hidden text-white/55 hover:text-white p-1" aria-label="Close dashboard navigation"><X size={19}/></button></div><div className="mt-7 pb-5 border-b border-white/10"><p className="text-white/55 text-[8px] uppercase tracking-[0.22em] font-semibold">{workspaceLabel[role]}</p>{userName && <p className="font-serif text-white text-[22px] leading-tight mt-2 truncate">{userName}</p>}</div></div>
       <nav aria-label="Dashboard navigation" className="px-4 pb-20 overflow-y-auto h-[calc(100vh-156px)]">{items.map((item,index)=>{const active=isActive(item.href);const itemAccess=item.accessKey?access[item.accessKey]:undefined;const locked=itemAccess?.state==='locked';const limited=itemAccess?.state==='limited';const href=locked?(itemAccess?.upgradeHref||item.href):item.href;return <div key={item.href}>{item.section&&<p className={`${index===0?'mt-1':'mt-5'} mb-1.5 px-3 text-[8px] font-semibold uppercase tracking-[0.2em] text-white/32`}>{item.section}</p>}<Link href={href} onClick={()=>setSidebarOpen(false)} title={locked ? itemAccess?.label || 'Upgrade to unlock' : limited ? itemAccess?.label : undefined} aria-label={locked ? `${item.label}. ${itemAccess?.label || 'Locked feature'}` : item.label} className={`dashboard-nav-item relative flex items-center gap-3 px-3 py-2 text-[12.5px] transition-colors border-l ${active&&!locked?'text-white bg-white/[0.055] border-[#6b7580]':locked?'text-white/42 hover:text-white/70 hover:bg-white/[0.025] border-transparent':'text-white/58 hover:text-white hover:bg-white/[0.035] border-transparent'}`}><span className={active&&!locked?'text-white/80':locked?'text-white/30':'text-white/44'}>{item.icon}</span><span className="tracking-[-0.01em]">{item.label}</span>{locked?<span className="ml-auto flex items-center gap-1 text-[9px] uppercase tracking-[0.08em] text-white/45"><Lock size={11}/></span>:limited?<span className="ml-auto text-[9px] text-white/45">{itemAccess?.label}</span>:active?<ChevronRight size={12} className="ml-auto text-white/70"/>:null}</Link></div>})}</nav>
       <div className="absolute bottom-0 left-0 right-0 px-4 py-4 bg-[#0b2f4d] border-t border-white/[0.07]"><button type="button" onClick={handleSignOut} className="dashboard-nav-item flex items-center gap-3 px-3 py-2.5 text-[12.5px] text-white/48 hover:text-white hover:bg-white/[0.035] w-full transition-colors"><LogOut size={17}/><span>Sign out</span></button></div>
     </aside>
-    <main id="main-content" className="lg:ml-[264px] min-h-screen"><div className="hidden lg:flex h-[52px] items-center justify-end border-b border-border bg-white px-10 xl:px-12"><UniversalSearch variant="dashboard" /></div><div className="p-5 sm:p-6 md:p-8 lg:p-10 xl:p-12 max-w-[1540px] mx-auto">{showJobsTalentSponsor?<div className="mb-7"><SponsoredAd placement="jobs_talent_sponsor" /></div>:null}{showPostHireActions?<PostHireActions/>:null}{showRecruitmentPipeline?<ApplicationPipelineHub role={role as 'talent'|'employer'}/>:null}{activityRole?<DashboardActivityCentre role={activityRole}/>:null}{showPostHireReviews?<PostHireReviews/>:null}{children}</div></main>
+    <main id="main-content" className="lg:ml-[264px] min-h-screen"><div className="hidden lg:flex h-[52px] items-center justify-end gap-4 border-b border-border bg-white px-10 xl:px-12">{viewerId && <NotificationBell userId={viewerId} />}<UniversalSearch variant="dashboard" /></div><div className="p-5 sm:p-6 md:p-8 lg:p-10 xl:p-12 max-w-[1540px] mx-auto">{showJobsTalentSponsor?<div className="mb-7"><SponsoredAd placement="jobs_talent_sponsor" /></div>:null}{showPostHireActions?<PostHireActions/>:null}{showRecruitmentPipeline?<ApplicationPipelineHub role={role as 'talent'|'employer'}/>:null}{activityRole?<DashboardActivityCentre role={activityRole}/>:null}{showPostHireReviews?<PostHireReviews/>:null}{children}</div></main>
   </div>
 }

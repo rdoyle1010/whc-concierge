@@ -24,21 +24,30 @@ export default function VerifyResultPage() {
   useEffect(() => {
     async function load() {
       try {
-        const { data } = await supabase.from('course_enrollments')
-          .select('course_slug, completed_at, candidate_id, certificate_code')
-          .eq('certificate_code', code)
-          .not('completed_at', 'is', null)
-          .maybeSingle()
-        if (data) {
-          setCert(data)
-          setCourseName(courseTitle(data.course_slug))
-          fetch(`/api/academy/catalog?slug=${encodeURIComponent(data.course_slug)}`)
-            .then(response => response.ok ? response.json() : null)
-            .then(json => { if (json?.course?.title) setCourseName(json.course.title) })
-            .catch(() => {})
-          const { data: cand } = await supabase.from('candidate_profiles')
-            .select('full_name').eq('id', data.candidate_id).maybeSingle()
-          setName(cand?.full_name || '')
+        // Read through the server, not the browser client.
+        //
+        // This page used to query candidate_profiles directly for the
+        // holder's name. Locking that table down to own-row-or-admin - which
+        // was right - meant the lookup silently returned nothing, and a
+        // hiring manager following the URL printed on a certificate saw
+        // "Certificate verified - WHC Professional" with no name at all,
+        // verifying precisely nothing about who earned it.
+        //
+        // /api/certificates/verify already does this properly with the
+        // service role, rate limited, returning only what the certificate
+        // itself states. The other URL printed on the same certificate
+        // already used it; this one now does too.
+        const response = await fetch(`/api/certificates/verify?code=${encodeURIComponent(code)}`)
+        const body = response.ok ? await response.json() : null
+        const certificate = body?.certificate
+        if (certificate) {
+          setCert({
+            course_slug: certificate.course_slug,
+            completed_at: certificate.completed_at,
+            certificate_code: certificate.code,
+          })
+          setCourseName(certificate.course_title || courseTitle(certificate.course_slug))
+          setName(certificate.learner_name && certificate.learner_name !== 'Name unavailable' ? certificate.learner_name : '')
         }
       } catch { /* shown as not found */ }
       setLoading(false)

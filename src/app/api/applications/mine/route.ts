@@ -32,6 +32,9 @@ export async function GET(req: NextRequest) {
   let query = admin.from('applications').select(APPLICATION_SELECT, { count: 'exact' })
     .eq('candidate_id', candidate.id)
     .is('archived_at', null)
+    // A completed hire belongs on the Hired page, not among active
+    // applications - even if the employer has cleared their own archive flag.
+    .is('hired_at', null)
     .order('created_at', { ascending: false })
     .range(from, to)
 

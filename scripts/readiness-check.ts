@@ -67,7 +67,17 @@ check('profile photo uses the owned path convention', () => {
   assert.doesNotMatch(source, /profiles\/\$\{userId\}\/photo/)
 })
 check('job alerts require a server-only secret', () => assert.match(read('src/app/api/job-alerts/route.ts'), /isInternalApiRequest/))
-check('Stripe webhook supplies the job-alert secret', () => assert.match(read('src/app/api/stripe/webhook/route.ts'), /x-whc-internal-secret/))
+// The header moved into the shared trigger, so the check follows it there -
+// and now also asserts that every path putting a role on the market calls it,
+// which is the defect that made job alerts reach almost nobody.
+check('Job alerts are fired with the internal secret', () => assert.match(read('src/lib/job-alerts-trigger.ts'), /x-whc-internal-secret/))
+check('Every path that publishes a role fires its job alerts', () => {
+  for (const path of [
+    'src/app/api/stripe/webhook/route.ts',
+    'src/app/api/mobile/employer/jobs/manage/route.ts',
+    'src/app/api/admin/listings/route.ts',
+  ]) assert.match(read(path), /triggerJobAlerts/)
+})
 check('public jobs use the sanitised public RPC', () => {
   const source = read('src/app/api/jobs/public/route.ts')
   assert.match(source, /get_public_jobs_page/)

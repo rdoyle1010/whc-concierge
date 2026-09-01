@@ -12,7 +12,7 @@ const EMPLOYER_CANDIDATE_FIELDS = [
   'experience_years', 'profile_image_url', 'review_score', 'bio', 'qualifications',
   'product_houses', 'systems_experience', 'business_skills', 'career_evidence', 'cv_url', 'has_insurance', 'awards',
   'availability_status', 'travel_radius_miles', 'has_car', 'latitude', 'longitude',
-  'approval_status', 'profile_visible', 'stealth_mode', 'is_featured', 'featured_until', 'created_at',
+  'approval_status', 'profile_visible', 'stealth_mode', 'whc_verified', 'right_to_work_status', 'insurance_expiry_date', 'has_insurance', 'is_featured', 'featured_until', 'created_at',
   'show_first_name_only',
 ].join(',')
 

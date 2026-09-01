@@ -38,9 +38,16 @@ export async function POST(req: NextRequest) {
     const { data: employer } = await admin.from('employer_profiles').select('id,user_id,company_name,property_name').eq('user_id', user.id).maybeSingle()
     if (!employer) return NextResponse.json({ error:'Employer profile not found.' }, { status:404 })
 
-    const { data: application } = await admin.from('applications').select('id,candidate_id,role_id,job_id,status,archived_at').eq('id', applicationId).maybeSingle()
+    const { data: application } = await admin.from('applications').select('id,candidate_id,role_id,job_id,status,archived_at,hired_at').eq('id', applicationId).maybeSingle()
     if (!application) return NextResponse.json({ error:'Application not found.' }, { status:404 })
-    if (application.archived_at) return NextResponse.json({ success:true, alreadyCompleted:true })
+    // Guarded on hired_at, not archived_at.
+    //
+    // "Reopen record" on the employer's Hired page nulls archived_at, which
+    // used to put a completed hire straight back into the pipeline as
+    // "Complete successful hire" - and running it again re-sent the
+    // congratulations email to the person hired and rejection emails to every
+    // other applicant on the role. A hire that has happened has happened.
+    if (application.hired_at || application.archived_at) return NextResponse.json({ success:true, alreadyCompleted:true })
     if (application.status !== 'accepted') return NextResponse.json({ error:'The candidate must accept the offer before the hire can be completed.' }, { status:409 })
 
     const jobId = application.role_id || application.job_id
