@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useDialog } from '@/components/useDialog'
 import DashboardShell from '@/components/DashboardShell'
 import { createClient } from '@/lib/supabase/client'
 import { Save, Search, ShieldOff, X, Download, AlertTriangle, Lock } from 'lucide-react'
@@ -390,6 +391,7 @@ export default function TalentSettingsPage() {
   const [deleting, setDeleting] = useState(false)
   const [exporting, setExporting] = useState(false)
   const [showDeleteRequest, setShowDeleteRequest] = useState(false)
+  const deleteDialog = useDialog(() => setShowDeleteRequest(false), 'delete-account-heading')
   const [deleteRequested, setDeleteRequested] = useState(false)
 
   const handleExportData = async () => {
@@ -753,11 +755,11 @@ export default function TalentSettingsPage() {
         {/* Deletion Request Modal */}
         {showDeleteRequest && (
           <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setShowDeleteRequest(false)}>
-            <div className="bg-white rounded-xl max-w-sm w-full p-6 text-center" onClick={e => e.stopPropagation()}>
+            <div {...deleteDialog.panelProps} className="bg-white rounded-xl max-w-sm w-full p-6 text-center">
               <div className="w-12 h-12 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-4">
                 <AlertTriangle size={20} className="text-red-500" />
               </div>
-              <h3 className="text-[16px] font-medium text-ink mb-2">Request Account Deletion</h3>
+              <h3 id="delete-account-heading" className="text-[16px] font-medium text-ink mb-2">Request Account Deletion</h3>
               <p className="text-[13px] text-muted mb-2">This will send a deletion request to our team. We will:</p>
               <ul className="text-[12px] text-muted text-left mb-6 space-y-1 pl-4">
                 <li>&bull; Verify your identity</li>

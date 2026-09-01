@@ -127,12 +127,22 @@ export default function TalentDashboard() {
   const briefOffers: number = brief?.offersAwaiting || 0
   const briefViews: number | null = typeof brief?.profileViews === 'number' ? brief.profileViews : null
   const briefFirstName = brief?.firstName || (profile?.full_name ? profile.full_name.split(' ')[0] : null)
+  // Every row in the brief is conditional, so with nothing to say it rendered
+  // a greeting, two zeros and blank space.
+  const hasBriefContent = briefRoles.length > 0 || briefCourses.length > 0 || Boolean(briefInterview)
+    || (briefViews !== null && briefViews > 0) || briefOffers > 0
 
   return (
     <DashboardShell role="talent" userName={profile?.full_name}>
+      <div className="mb-8">
+        <p className="dashboard-eyebrow">Your career</p>
+        <h1 className="dashboard-title">{timeOfDayGreeting()}{briefFirstName ? `, ${briefFirstName}` : ''}.</h1>
+        <p className="dashboard-intro">Permanent roles, flexible work, private conversations and your professional profile in one workspace.</p>
+      </div>
+
       <section className="dashboard-card mb-8">
           <p className="dashboard-eyebrow">Your brief</p>
-          <h2 className="dashboard-section-title mb-2">{timeOfDayGreeting()}{briefFirstName ? `, ${briefFirstName}` : ''}.</h2>
+          <h2 className="dashboard-section-title mb-2">What has moved</h2>
           <div className="mt-4 mb-2 grid max-w-md grid-cols-2 gap-x-8">
             <div className="border-t border-border pt-3">
               <p className="text-[10px] uppercase tracking-[.14em] text-muted">Applications</p>
@@ -190,6 +200,17 @@ export default function TalentDashboard() {
                 </p>
               </div>
             )}
+            {!hasBriefContent && (
+              <div className="dashboard-list-row">
+                <p className="text-[13px] text-ink">Nothing has moved yet.</p>
+                <p className="text-[12px] text-secondary mt-1 max-w-[54ch]">
+                  Matching runs on what your profile says about your skills, qualifications and
+                  product houses. The more of it that is filled in, the more this brief has to tell
+                  you. <Link href="/talent/profile" className="text-accent hover:underline">Complete your profile</Link>
+                  {' '}or <Link href="/jobs" className="text-accent hover:underline">browse live roles</Link>.
+                </p>
+              </div>
+            )}
           </div>
       </section>
 
@@ -224,14 +245,6 @@ export default function TalentDashboard() {
           </div>
         </section>
       )}
-
-      <div className="mb-9">
-        <p className="dashboard-eyebrow">Your career</p>
-        <h1 className="dashboard-title">
-          {profile?.full_name ? `Welcome back, ${profile.full_name.split(' ')[0]}` : 'Welcome back'}
-        </h1>
-        <p className="dashboard-intro">Permanent roles, flexible work, private conversations and your professional profile in one workspace.</p>
-      </div>
 
       {profile && profile.approval_status && profile.approval_status !== 'approved' && (
         <div className="border-l-2 border-amber-500 bg-white/65 px-5 py-4 mb-7 flex items-start gap-3">

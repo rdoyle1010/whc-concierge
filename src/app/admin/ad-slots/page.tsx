@@ -15,6 +15,8 @@ type Slot = {
   monthly_pence: number
   enabled: boolean
   pinned_placement_id: string | null
+  carousel_size?: number
+  rotate_seconds?: number
 }
 
 type Advert = {
@@ -58,6 +60,10 @@ export default function AdminAdSlotsPage() {
   const [monthlyRate, setMonthlyRate] = useState('')
   const [endDate, setEndDate] = useState('')
   const [logoUrl, setLogoUrl] = useState('')
+  const [mediaUrl, setMediaUrl] = useState('')
+  const [mediaType, setMediaType] = useState<'logo' | 'image' | 'video'>('logo')
+  const [ctaLabel, setCtaLabel] = useState('')
+  const [rotationWeight, setRotationWeight] = useState('1')
   const [uploading, setUploading] = useState(false)
   const [creating, setCreating] = useState(false)
 
@@ -95,8 +101,21 @@ export default function AdminAdSlotsPage() {
         ...slot,
         enabled: payload.enabled !== undefined ? Boolean(payload.enabled) : slot.enabled,
         pinned_placement_id: payload.pinnedPlacementId !== undefined ? (payload.pinnedPlacementId as string | null) : slot.pinned_placement_id,
+        carousel_size: payload.carouselSize !== undefined ? Number(payload.carouselSize) : slot.carousel_size,
+        rotate_seconds: payload.rotateSeconds !== undefined ? Number(payload.rotateSeconds) : slot.rotate_seconds,
       } : slot))
     } catch { setError('Could not save.') } finally { setBusy(null) }
+  }
+
+  async function uploadAsset(file: File): Promise<string | null> {
+    const fd = new FormData()
+    fd.append('file', file)
+    fd.append('bucket', 'site-images')
+    fd.append('path', `adverts/${Date.now()}-${file.name.replace(/[^a-zA-Z0-9._-]+/g, '-')}`)
+    const res = await fetch('/api/upload', { method: 'POST', body: fd })
+    const json = await res.json()
+    if (!res.ok) { setError(json.error || 'Upload failed.'); return null }
+    return json.url as string
   }
 
   async function uploadLogo(e: React.ChangeEvent<HTMLInputElement>) {
@@ -104,15 +123,24 @@ export default function AdminAdSlotsPage() {
     if (!file) return
     setUploading(true); setError('')
     try {
-      const fd = new FormData()
-      fd.append('file', file)
-      fd.append('bucket', 'site-images')
-      fd.append('path', `adverts/${Date.now()}-${file.name.replace(/[^a-zA-Z0-9._-]+/g, '-')}`)
-      const res = await fetch('/api/upload', { method: 'POST', body: fd })
-      const json = await res.json()
-      if (!res.ok) { setError(json.error || 'Logo upload failed.'); return }
-      setLogoUrl(json.url)
+      const url = await uploadAsset(file)
+      if (url) setLogoUrl(url)
     } catch { setError('Logo upload failed.') } finally { setUploading(false) }
+  }
+
+  // The advert itself: a still or a video. The logo stays as the fallback and
+  // as the poster frame while a video loads.
+  async function uploadCreative(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setUploading(true); setError('')
+    try {
+      const url = await uploadAsset(file)
+      if (url) {
+        setMediaUrl(url)
+        setMediaType(file.type.startsWith('video/') ? 'video' : 'image')
+      }
+    } catch { setError('Creative upload failed.') } finally { setUploading(false) }
   }
 
   async function createDirect() {
@@ -121,13 +149,13 @@ export default function AdminAdSlotsPage() {
     try {
       const res = await fetch('/api/admin/ad-slots', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'create_direct', brandName, tagline, websiteUrl, contactEmail, placement, endDate, logoUrl, monthlyRate }),
+        body: JSON.stringify({ action: 'create_direct', brandName, tagline, websiteUrl, contactEmail, placement, endDate, logoUrl, monthlyRate, mediaUrl, mediaType, ctaLabel, rotationWeight }),
       })
       const json = await res.json()
       if (!res.ok) { setError(json.error || 'Could not create the advert.'); return }
       setAdverts(current => [json.advert, ...current])
       setFormOpen(false)
-      setBrandName(''); setTagline(''); setWebsiteUrl(''); setContactEmail(''); setPlacement(''); setMonthlyRate(''); setEndDate(''); setLogoUrl('')
+      setBrandName(''); setTagline(''); setWebsiteUrl(''); setContactEmail(''); setPlacement(''); setMonthlyRate(''); setEndDate(''); setLogoUrl(''); setMediaUrl(''); setMediaType('logo'); setCtaLabel(''); setRotationWeight('1')
     } catch { setError('Could not create the advert.') } finally { setCreating(false) }
   }
 
@@ -194,10 +222,25 @@ export default function AdminAdSlotsPage() {
                         <div className="flex flex-wrap items-center gap-2 shrink-0">
                           <select value={slot.pinned_placement_id || ''} disabled={busy === slot.slot_key}
                             onChange={e => setSlot(slot.slot_key, { pinnedPlacementId: e.target.value || null })}
+                            aria-label={`Lead advert for ${slot.label}`}
                             className="input-field text-[11.5px] w-auto max-w-[180px]">
                             <option value="">Auto (rotate paid adverts)</option>
                             {candidates.map(advert => <option key={advert.id} value={advert.id}>{advert.brand_name}{advert.source === 'direct' ? ' (direct)' : ''}</option>)}
                           </select>
+                          <select value={String(slot.carousel_size || 1)} disabled={busy === slot.slot_key}
+                            onChange={e => setSlot(slot.slot_key, { carouselSize: Number(e.target.value) })}
+                            aria-label={`How many brands share ${slot.label}`}
+                            className="input-field text-[11.5px] w-auto">
+                            {[1,2,3,4,5,6,8].map(size => <option key={size} value={String(size)}>{size === 1 ? 'One brand' : `${size} brands`}</option>)}
+                          </select>
+                          {Number(slot.carousel_size || 1) > 1 && (
+                            <select value={String(slot.rotate_seconds || 8)} disabled={busy === slot.slot_key}
+                              onChange={e => setSlot(slot.slot_key, { rotateSeconds: Number(e.target.value) })}
+                              aria-label={`How long each brand is shown in ${slot.label}`}
+                              className="input-field text-[11.5px] w-auto">
+                              {[5,8,10,15,20,30].map(seconds => <option key={seconds} value={String(seconds)}>{seconds}s each</option>)}
+                            </select>
+                          )}
                           <button type="button" disabled={busy === slot.slot_key}
                             onClick={() => setSlot(slot.slot_key, { enabled: !slot.enabled })}
                             className={`relative h-6 w-11 rounded-full transition-colors ${slot.enabled ? 'bg-accent' : 'bg-[#e3e7eb]'}`}
@@ -287,6 +330,33 @@ export default function AdminAdSlotsPage() {
               ) : (
                 <label className="btn-secondary inline-flex cursor-pointer items-center gap-1.5 text-[12px] mb-3"><Upload size={13} /> {uploading ? 'Uploading...' : 'Upload logo'}<input type="file" accept="image/*" className="hidden" onChange={uploadLogo} disabled={uploading} /></label>
               )}
+
+              <label className="block text-[12px] font-semibold text-ink mb-1.5">Advert creative (optional)</label>
+              <p className="text-[11px] text-muted mb-2">A still or a video shown above the brand line. MP4 or WebM up to 60 MB; video plays muted and loops, with the logo as its poster frame. Leave it empty for the logo-and-text treatment.</p>
+              {mediaUrl ? (
+                <div className="mb-3 flex items-center gap-3">
+                  {mediaType === 'video'
+                    ? <video src={mediaUrl} muted playsInline className="h-16 w-28 object-cover border border-border" />
+                    : <img src={mediaUrl} alt="" className="h-16 w-28 object-cover border border-border" />}
+                  <span className="text-[12px] text-green-700">{mediaType === 'video' ? 'Video' : 'Image'} uploaded</span>
+                  <button type="button" onClick={() => { setMediaUrl(''); setMediaType('logo') }} className="text-[12px] underline text-secondary">remove</button>
+                </div>
+              ) : (
+                <label className="btn-secondary inline-flex cursor-pointer items-center gap-1.5 text-[12px] mb-3"><Upload size={13} /> {uploading ? 'Uploading...' : 'Upload image or video'}<input type="file" accept="image/*,video/mp4,video/webm" className="hidden" onChange={uploadCreative} disabled={uploading} /></label>
+              )}
+
+              <div className="grid grid-cols-2 gap-3 mb-3">
+                <div>
+                  <label htmlFor="advert-cta" className="block text-[12px] font-semibold text-ink mb-1.5">Button wording</label>
+                  <input id="advert-cta" type="text" maxLength={40} value={ctaLabel} onChange={e => setCtaLabel(e.target.value)} placeholder="Discover more" className="input-field text-[13px] w-full" />
+                </div>
+                <div>
+                  <label htmlFor="advert-weight" className="block text-[12px] font-semibold text-ink mb-1.5">Share of rotation</label>
+                  <select id="advert-weight" value={rotationWeight} onChange={e => setRotationWeight(e.target.value)} className="input-field text-[13px] w-full">
+                    {[1,2,3,4,5,6,7,8,9,10].map(weight => <option key={weight} value={String(weight)}>{weight}{weight === 1 ? ' (equal share)' : ' x'}</option>)}
+                  </select>
+                </div>
+              </div>
 
               {error && <p className="text-[12px] text-red-600 mb-3">{error}</p>}
               <button type="button" onClick={createDirect} disabled={creating || uploading || brandName.trim().length < 2 || !placement} className="btn-primary w-full text-[13px] disabled:opacity-50">{creating ? 'Placing...' : 'Create advert'}</button>

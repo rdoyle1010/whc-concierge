@@ -42,6 +42,16 @@ export async function POST(req: NextRequest) {
     update = { status: 'active', start_date: advert.start_date || today }
   }
   if (action === 'archive') update = { review_status: 'archived', status: 'archived', end_date: today }
+  // Archiving used to be a one-way door: an archived advert showed only an
+  // Archive control, so a brand that had paid and been archived by mistake
+  // could never be put back. Restore returns it to live, on the same terms
+  // Approve applies.
+  if (action === 'restore') {
+    if (!['paid', 'direct'].includes(String(advert.payment_status))) {
+      return NextResponse.json({ error: 'Only paid or direct adverts can be restored.' }, { status: 400 })
+    }
+    update = { review_status: 'approved', status: 'active', approved_at: now.toISOString(), start_date: advert.start_date || today, end_date: null }
+  }
   if (!update) return NextResponse.json({ error: 'Unknown action' }, { status: 400 })
 
   const { error } = await admin.from('ad_placements').update({ ...update, updated_at: now.toISOString() }).eq('id', id)

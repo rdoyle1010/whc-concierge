@@ -6,6 +6,11 @@
   NODE_VERSION = "22"
   NEXT_PRIVATE_STANDALONE = "true"
 
+# The nightly retention sweep lives in netlify/functions and declares its own
+# schedule. Named here so the directory is unambiguous.
+[functions]
+  directory = "netlify/functions"
+
 [[plugins]]
   package = "@netlify/plugin-nextjs"
 

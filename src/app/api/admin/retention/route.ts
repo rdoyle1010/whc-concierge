@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { isAdminRequest as requireAdmin, adminRequestUserId } from '@/lib/admin-api-auth'
 import { RETENTION_CATEGORIES, RETENTION_EXCLUDED, retentionCutoff } from '@/lib/retention'
+import { isInternalApiRequest } from '@/lib/internal-request'
 
 type Admin = ReturnType<typeof createAdminClient>
 
@@ -210,9 +211,21 @@ export async function GET(_req: NextRequest) {
   }
 }
 
-export async function POST(_req: NextRequest) {
-  const ranBy = await adminRequestUserId()
-  if (!ranBy) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+// The sweep runs two ways.
+//
+// An administrator presses the button, and the run is attributed to them.
+// Or the nightly scheduled function calls it with the internal secret, and
+// the run is attributed to the schedule.
+//
+// Until now only the first existed, which meant the retention policy - 13
+// months for behavioural analytics, 24 for applications and messages, 12 for
+// notifications and contact enquiries - applied on the days somebody
+// remembered. A period nobody enforces is not a retention period, and the
+// privacy policy states these as facts.
+export async function POST(req: NextRequest) {
+  const scheduled = isInternalApiRequest(req)
+  const ranBy = scheduled ? null : await adminRequestUserId()
+  if (!scheduled && !ranBy) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
 
   const admin = createAdminClient()
   try {
@@ -221,7 +234,10 @@ export async function POST(_req: NextRequest) {
     const total = categories.reduce((sum, item) => sum + item.count, 0)
     const problems = categories.filter(item => item.error).map(item => `${item.key}: ${item.error}`)
 
-    const summary = { total, categories, problems, scanLimit: SCAN_LIMIT }
+    // A category that filled the scan limit has more waiting, and the run
+    // must say so rather than quietly leaving a backlog that never clears.
+    const saturated = categories.filter(item => item.count >= SCAN_LIMIT).map(item => item.key)
+    const summary = { total, categories, problems, scanLimit: SCAN_LIMIT, saturated, trigger: scheduled ? 'scheduled' : 'admin' }
     let recorded = true
     try {
       // run_by arrives with 20260901140000_data_retention.sql. Before that

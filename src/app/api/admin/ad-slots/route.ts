@@ -31,6 +31,8 @@ export async function GET() {
     monthly_pence: config.monthlyPence,
     enabled: Boolean(settings.get(key)?.enabled),
     pinned_placement_id: settings.get(key)?.pinned_placement_id || null,
+    carousel_size: Number((settings.get(key) as any)?.carousel_size) || 1,
+    rotate_seconds: Number((settings.get(key) as any)?.rotate_seconds) || 8,
   }))
   return NextResponse.json({ slots, adverts: adverts || [] })
 }
@@ -50,7 +52,16 @@ export async function POST(req: NextRequest) {
       const update: Record<string, any> = { slot_key: slotKey, updated_at: now }
       if (body.enabled !== undefined) update.enabled = Boolean(body.enabled)
       if (body.pinnedPlacementId !== undefined) update.pinned_placement_id = body.pinnedPlacementId || null
-      const { error } = await admin.from('ad_slot_settings').upsert(update, { onConflict: 'slot_key' })
+      if (body.carouselSize !== undefined) update.carousel_size = Math.max(1, Math.min(8, Number(body.carouselSize) || 1))
+      if (body.rotateSeconds !== undefined) update.rotate_seconds = Math.max(4, Math.min(60, Number(body.rotateSeconds) || 8))
+      let { error } = await admin.from('ad_slot_settings').upsert(update, { onConflict: 'slot_key' })
+      if (error && /column|carousel_size|rotate_seconds/i.test(error.message || '')) {
+        // The carousel columns arrive with 20260901180000_advert_creative.sql.
+        // Until it runs, saving a slot must still work.
+        delete update.carousel_size
+        delete update.rotate_seconds
+        ;({ error } = await admin.from('ad_slot_settings').upsert(update, { onConflict: 'slot_key' }))
+      }
       if (error) return NextResponse.json({ error: 'Could not save the slot.' }, { status: 500 })
       return NextResponse.json({ success: true })
     }
@@ -68,8 +79,11 @@ export async function POST(req: NextRequest) {
       if (body.monthlyRate !== undefined && String(body.monthlyRate).trim() !== '' && (!Number.isFinite(monthlyRate) || monthlyRate < 0)) {
         return NextResponse.json({ error: 'The monthly rate must be a positive number of pounds.' }, { status: 400 })
       }
-      const { data: advert, error } = await admin.from('ad_placements').insert({
+      const row: Record<string, any> = {
         brand_name: brandName,
+        // NOT NULL on the live table. Omitting it failed every direct advert
+        // with a raw Postgres constraint error shown to the administrator.
+        category: 'Direct',
         tagline: String(body.tagline || '').trim().slice(0, 160) || null,
         website_url: websiteUrl || null,
         logo_url: String(body.logoUrl || '').trim() || null,
@@ -84,7 +98,23 @@ export async function POST(req: NextRequest) {
         end_date: String(body.endDate || '').trim() || null,
         approved_at: now,
         updated_at: now,
-      }).select('*').single()
+      }
+      // Creative arrives with 20260901180000_advert_creative.sql. A brand
+      // paying for the homepage supplies a still or a video; the logo stays
+      // as the fallback and as the poster frame for video.
+      const mediaUrl = String(body.mediaUrl || '').trim()
+      const mediaType = ['image', 'video'].includes(String(body.mediaType)) ? String(body.mediaType) : 'logo'
+      const creative: Record<string, any> = {
+        media_url: mediaUrl || null,
+        media_type: mediaUrl ? mediaType : 'logo',
+        cta_label: String(body.ctaLabel || '').trim().slice(0, 40) || null,
+        rotation_weight: Math.max(1, Math.min(10, Number(body.rotationWeight) || 1)),
+      }
+
+      let { data: advert, error } = await admin.from('ad_placements').insert({ ...row, ...creative }).select('*').single()
+      if (error && /column|media_url|media_type|cta_label|rotation_weight/i.test(error.message || '')) {
+        ;({ data: advert, error } = await admin.from('ad_placements').insert(row).select('*').single())
+      }
       if (error) return NextResponse.json({ error: error.message }, { status: 500 })
       return NextResponse.json({ success: true, advert })
     }
@@ -93,8 +123,17 @@ export async function POST(req: NextRequest) {
       const id = String(body.id || '')
       const status = String(body.status || '')
       if (!id || !['active', 'paused', 'ended'].includes(status)) return NextResponse.json({ error: 'Invalid advert status.' }, { status: 400 })
-      const { error } = await admin.from('ad_placements').update({ status, updated_at: now }).eq('id', id)
-      if (error) return NextResponse.json({ error: 'Could not update the advert.' }, { status: 500 })
+      const update: Record<string, any> = { status, updated_at: now }
+      if (status === 'active') {
+        // Activating means "put this live", so it has to satisfy every
+        // condition the slot checks, not just one of them.
+        update.review_status = 'approved'
+        update.approved_at = now
+        const { data: existing } = await admin.from('ad_placements').select('start_date').eq('id', id).maybeSingle()
+        if (!existing?.start_date) update.start_date = now.slice(0, 10)
+      }
+      const { error } = await admin.from('ad_placements').update(update).eq('id', id)
+      if (error) return NextResponse.json({ error: error.message || 'Could not update the advert.' }, { status: 500 })
       return NextResponse.json({ success: true })
     }
 

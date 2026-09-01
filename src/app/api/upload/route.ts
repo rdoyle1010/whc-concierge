@@ -19,9 +19,15 @@ const ALLOWED_BUCKETS = new Set([
 
 const PRIVATE_BUCKETS = new Set(['talent-documents', 'message-attachments'])
 const MAX_FILE_SIZE = 10 * 1024 * 1024
+// Advert creative is the one thing on this platform that is legitimately a
+// video, and a 10 MB cap would refuse almost every one. Only an administrator
+// can write to site-images, and only advert creative uses this ceiling.
+const MAX_VIDEO_SIZE = 60 * 1024 * 1024
+const ALLOWED_VIDEO_TYPES = new Set(['video/mp4', 'video/webm'])
 const ALLOWED_FILE_TYPES = new Set([
-  'image/jpeg', 'image/png', 'image/webp', 'image/gif',
-  'application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+  'image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/svg+xml',
+  'application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  ...ALLOWED_VIDEO_TYPES,
 ])
 
 export async function POST(req: NextRequest) {
@@ -48,9 +54,18 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Registration uploads are limited to private talent documents.' }, { status: 403 })
     }
 
-    if (file.size > MAX_FILE_SIZE) return NextResponse.json({ error: 'File too large. Maximum size is 10 MB.' }, { status: 400 })
+    const isVideo = Boolean(file.type && ALLOWED_VIDEO_TYPES.has(file.type))
+    const sizeLimit = isVideo ? MAX_VIDEO_SIZE : MAX_FILE_SIZE
+    if (file.size > sizeLimit) {
+      return NextResponse.json({ error: `File too large. Maximum size is ${Math.round(sizeLimit / (1024 * 1024))} MB.` }, { status: 400 })
+    }
     if (file.type && !ALLOWED_FILE_TYPES.has(file.type)) {
-      return NextResponse.json({ error: 'File type not allowed. Accepted: JPEG, PNG, WebP, GIF, PDF, DOC, DOCX.' }, { status: 400 })
+      return NextResponse.json({ error: 'File type not allowed. Accepted: JPEG, PNG, WebP, GIF, SVG, MP4, WebM, PDF, DOC, DOCX.' }, { status: 400 })
+    }
+    // Video belongs only in advert creative, which lives in the public
+    // site-images bucket and is writable by administrators alone.
+    if (isVideo && bucket !== 'site-images') {
+      return NextResponse.json({ error: 'Video can only be uploaded as advert creative.' }, { status: 400 })
     }
     if (!ALLOWED_BUCKETS.has(bucket)) return NextResponse.json({ error: 'Invalid bucket' }, { status: 400 })
     if (column && !ALLOWED_COLUMNS.has(column)) return NextResponse.json({ error: 'Invalid column' }, { status: 400 })

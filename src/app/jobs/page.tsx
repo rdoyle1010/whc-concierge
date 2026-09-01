@@ -1,6 +1,7 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { Suspense, useEffect, useState } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
@@ -29,10 +30,16 @@ function postedLabel(value: any): string | null {
 }
 
 export default function PublicJobsPage() {
+  return <Suspense fallback={null}><PublicJobsBrowser/></Suspense>
+}
+
+function PublicJobsBrowser() {
   const supabase = createClient()
   const [jobs, setJobs] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
-  const [search, setSearch] = useState('')
+  const searchParams = useSearchParams()
+  const initialSearch = searchParams.get('specialism') || searchParams.get('search') || ''
+  const [search, setSearch] = useState(initialSearch)
   const [location, setLocation] = useState('')
   // An empty result means two different things, and the page should not say
   // the same thing for both.
