@@ -1,14 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { adminRequestUser } from '@/lib/admin-api-auth'
 import { createServerSupabaseClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 
+// Delegated to the shared admin guard, which enforces two-step
+// verification as well as the admin role.
 async function requireAdmin() {
-  const supabase = await createServerSupabaseClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return null
-  const admin = createAdminClient()
-  const { data: profile } = await admin.from('profiles').select('role').eq('id', user.id).maybeSingle()
-  return profile?.role === 'admin' ? { user, admin } : null
+  const user = await adminRequestUser()
+  return user ? { user, admin: createAdminClient() } : null
 }
 
 export async function GET() {

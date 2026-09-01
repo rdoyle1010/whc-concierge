@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { adminRequestUser } from '@/lib/admin-api-auth'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { createServerClient } from '@supabase/ssr'
-import { cookies } from 'next/headers'
 import { marketingUnsubscribeUrl, newsletterUnsubscribeUrl } from '@/lib/privacy-consent'
 import { renderNewsletterHtml } from '@/lib/newsletter-template'
 
@@ -9,14 +8,10 @@ const RESEND_API_KEY = process.env.RESEND_API_KEY
 const FROM_EMAIL = 'WHC Concierge <noreply@mail.wellnesshousecollective.co.uk>'
 const MAX_RECIPIENTS_PER_SEND = 500
 
+// Delegated to the shared admin guard, which enforces two-step
+// verification as well as the admin role.
 async function requireAdmin() {
-  const cookieStore = await cookies()
-  const supabase = createServerClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, { cookies: { getAll() { return cookieStore.getAll() }, setAll() {} } })
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return null
-  const admin = createAdminClient()
-  const { data: profile } = await admin.from('profiles').select('role').eq('id', user.id).single()
-  return profile?.role === 'admin' ? user : null
+  return adminRequestUser()
 }
 
 async function featuredCardsHtml(admin: any, featuredIds: any[]): Promise<string> {

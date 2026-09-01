@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { adminRequestUser } from '@/lib/admin-api-auth'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { createServerClient } from '@supabase/ssr'
-import { cookies } from 'next/headers'
 
 // Admin newsletter management - the newsletter_subscribers table holds
 // personal data, so everything comes through this service-role route with
@@ -9,19 +8,10 @@ import { cookies } from 'next/headers'
 // at 500 rows, newest first). POST handles { action: 'remove', id } and
 // { action: 'save_popup', ...settings } for the signup popup configuration.
 
+// Delegated to the shared admin guard, which enforces two-step
+// verification as well as the admin role.
 async function requireAdmin() {
-  const cookieStore = await cookies()
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    { cookies: { getAll() { return cookieStore.getAll() }, setAll() {} } }
-  )
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return null
-  const admin = createAdminClient()
-  const { data: profile } = await admin.from('profiles').select('role').eq('id', user.id).single()
-  if (profile?.role !== 'admin') return null
-  return user
+  return adminRequestUser()
 }
 
 const POPUP_KEYS = {

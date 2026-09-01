@@ -1,26 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { adminRequestUser } from '@/lib/admin-api-auth'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { createServerClient } from '@supabase/ssr'
-import { cookies } from 'next/headers'
 
 // Admin blog management - the blog_posts table is RLS-locked to public reads
 // of published posts only (migration 023), so all writes come through this
 // service-role route. The admin page expects GET to return { posts } and
 // sends POST (create), PATCH ({ id, ...updates }) and DELETE ({ id }).
 
+// Delegated to the shared admin guard, which enforces two-step
+// verification as well as the admin role.
 async function requireAdmin() {
-  const cookieStore = await cookies()
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    { cookies: { getAll() { return cookieStore.getAll() }, setAll() {} } }
-  )
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return null
-  const admin = createAdminClient()
-  const { data: profile } = await admin.from('profiles').select('role').eq('id', user.id).single()
-  if (profile?.role !== 'admin') return null
-  return user
+  return adminRequestUser()
 }
 
 // Columns the admin page may set - everything else is dropped.
