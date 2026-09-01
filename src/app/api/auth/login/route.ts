@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerSupabaseClient } from '@/lib/supabase/server'
 import { canRoleAccessPath, dashboardForRole, normaliseAccountRole } from '@/lib/role-access'
+import { enforceRateLimit } from '@/lib/rate-limit'
 
 export const dynamic = 'force-dynamic'
 
@@ -14,6 +15,35 @@ export async function POST(request: NextRequest) {
 
     if (!email || !password) {
       return NextResponse.json({ error: 'Enter your email and password.' }, { status: 400 })
+    }
+
+    // Two limits, because they stop different attacks.
+    //
+    // Per address, because signInWithPassword runs on the server: Supabase's
+    // own per-IP throttle sees the Netlify function's address, not the
+    // caller's, so without this there was no brake anywhere in the path on
+    // guessing passwords against the whole user base.
+    //
+    // Per account, because a patient attacker spread across many addresses
+    // would otherwise walk straight past an address limit while hammering one
+    // person's account.
+    const byAddress = await enforceRateLimit(request, 'login-ip', { windowMs: 15 * 60_000, maxRequests: 20 })
+    if (byAddress) {
+      return NextResponse.json(
+        { error: 'Too many sign-in attempts. Wait a few minutes and try again.' },
+        { status: 429, headers: { 'Retry-After': String(byAddress.retryAfterSeconds) } },
+      )
+    }
+    const byAccount = await enforceRateLimit(request, 'login-account', {
+      windowMs: 15 * 60_000,
+      maxRequests: 10,
+      key: email.toLowerCase(),
+    })
+    if (byAccount) {
+      return NextResponse.json(
+        { error: 'Too many sign-in attempts for this account. Wait a few minutes and try again.' },
+        { status: 429, headers: { 'Retry-After': String(byAccount.retryAfterSeconds) } },
+      )
     }
 
     const supabase = await createServerSupabaseClient()

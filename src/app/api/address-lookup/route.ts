@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { enforceRateLimit } from '@/lib/rate-limit'
 
 const API_KEY = process.env.GETADDRESS_API_KEY
 const BASE = 'https://api.getAddress.io'
@@ -65,6 +66,9 @@ async function nominatimSuggestions(postcode: string, propertyName: string) {
 }
 
 export async function GET(req: NextRequest) {
+  const limited = await enforceRateLimit(req as unknown as Request, 'address-lookup', { windowMs: 60_000, maxRequests: 12 })
+  if (limited) return NextResponse.json({ error: 'Too many requests. Try again shortly.' }, { status: 429, headers: { 'Retry-After': String(limited.retryAfterSeconds) } })
+
   try {
     const postcode = clean(req.nextUrl.searchParams.get('postcode')).toUpperCase()
     const propertyName = clean(req.nextUrl.searchParams.get('propertyName'))

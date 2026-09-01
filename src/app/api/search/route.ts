@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { enforceRateLimit } from '@/lib/rate-limit'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { normaliseAccountRole } from '@/lib/role-access'
 import { getRequestUser } from '@/lib/request-user'
@@ -81,6 +82,9 @@ function formatSalary(min: number | null, max: number | null): string {
 }
 
 export async function GET(req: NextRequest) {
+  const limited = await enforceRateLimit(req as unknown as Request, 'search-public', { windowMs: 60_000, maxRequests: 40 })
+  if (limited) return NextResponse.json({ error: 'Too many requests. Try again shortly.' }, { status: 429, headers: { 'Retry-After': String(limited.retryAfterSeconds) } })
+
   const raw = (req.nextUrl.searchParams.get('q') || '').trim().slice(0, 80)
   if (raw.length < 2) return NextResponse.json({ results: [], counts: {} })
   const terms = toTerms(raw)

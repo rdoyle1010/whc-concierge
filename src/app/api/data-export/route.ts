@@ -84,7 +84,7 @@ export async function GET(_req: NextRequest) {
   const unavailable: string[] = []
 
   // Determine role
-  const { data: profile } = await admin.from('profiles').select('role').eq('id', user.id).maybeSingle()
+  const { data: profile } = await admin.from('profiles').select('*').eq('id', user.id).maybeSingle()
   const role = profile?.role || 'talent'
 
   const exportData: Record<string, any> = {
@@ -103,6 +103,10 @@ export async function GET(_req: NextRequest) {
       email: user.email,
       created_at: user.created_at,
       last_sign_in_at: user.last_sign_in_at,
+      // The profiles row was read for its role and then discarded, so the
+      // name, avatar, location and account status held on it never appeared
+      // in an export whose own header calls itself complete.
+      profile: profile || null,
     },
   }
 
@@ -203,6 +207,36 @@ export async function GET(_req: NextRequest) {
     // Reviews given
     await section(exportData, 'reviews_given', unavailable, () =>
       admin.from('reviews').select('*').eq('reviewer_id', user.id).order('created_at', { ascending: false }))
+
+    if (cp) {
+      // References written ABOUT this person by somebody else. Among the most
+      // consequential records WHC holds on a professional, and the export
+      // never mentioned them.
+      await section(exportData, 'references_about_you', unavailable, () =>
+        admin.from('reference_requests').select('*').eq('candidate_id', cp.id).order('created_at', { ascending: false }))
+      await section(exportData, 'reference_requests_you_sent', unavailable, () =>
+        admin.from('review_requests').select('*').eq('candidate_id', cp.id).order('created_at', { ascending: false }))
+      await section(exportData, 'residency_profile', unavailable, () =>
+        admin.from('residency_profiles').select('*').eq('candidate_profile_id', cp.id))
+      await section(exportData, 'residency_conversations', unavailable, () =>
+        admin.from('residency_conversations').select('*').eq('candidate_id', cp.id).order('created_at', { ascending: false }))
+      await section(exportData, 'agency_availability', unavailable, () =>
+        admin.from('agency_availability').select('*').eq('candidate_id', cp.id))
+      await section(exportData, 'agency_availability_windows', unavailable, () =>
+        admin.from('agency_availability_windows').select('*').eq('candidate_id', cp.id).order('date', { ascending: false }))
+      await section(exportData, 'employers_you_blocked', unavailable, () =>
+        admin.from('blocked_employers').select('*').eq('candidate_id', cp.id))
+      await section(exportData, 'mutual_blocks', unavailable, () =>
+        admin.from('agency_mutual_blocks').select('*').eq('candidate_id', cp.id))
+      // Decisions employers made about this person. Their own outbound swipes
+      // were exported; the record of a named property passing on them is
+      // equally personal data about them, and was not.
+      await section(exportData, 'employer_decisions_about_you', unavailable, () =>
+        admin.from('swipes').select('*').eq('target_id', cp.id).eq('target_type', 'candidate').order('swiped_at', { ascending: false }))
+    }
+
+    await section(exportData, 'residency_applications', unavailable, () =>
+      admin.from('residency_applications').select('*').eq('user_id', user.id).order('created_at', { ascending: false }))
   }
 
   if (role === 'employer') {
@@ -289,6 +323,23 @@ export async function GET(_req: NextRequest) {
   // Stored files. Listed, not streamed - the bytes stay where they are and
   // can be downloaded from the profile pages.
   // ---------------------------------------------------------------------
+  // Held on every account regardless of role.
+  if (user.email) {
+    await section(exportData, 'contact_enquiries', unavailable, () =>
+      admin.from('contact_queries').select('*').eq('email', user.email as string).order('created_at', { ascending: false }))
+  }
+  await section(exportData, 'purchases', unavailable, () =>
+    admin.from('commercial_purchases').select('*').eq('user_id', user.id).order('created_at', { ascending: false }))
+  await section(exportData, 'referrals', unavailable, () =>
+    admin.from('referrals').select('*').or(`referrer_user_id.eq.${user.id},referred_user_id.eq.${user.id}`))
+  // Dispute narratives: the person's own words, and admin notes about them.
+  await section(exportData, 'agency_cases', unavailable, () =>
+    admin.from('agency_cases').select('*')
+      .or(`opened_by_user_id.eq.${user.id},counterparty_response_user_id.eq.${user.id}`)
+      .order('created_at', { ascending: false }))
+  await section(exportData, 'agency_case_messages', unavailable, () =>
+    admin.from('agency_case_messages').select('*').eq('sender_user_id', user.id).order('created_at', { ascending: false }))
+
   const documents: StoredFile[] = []
   for (const bucket of OWNED_BUCKETS) {
     try {

@@ -85,13 +85,22 @@ export async function POST(_req: NextRequest) {
     // Anonymisation is reported separately: if the column is still NOT NULL
     // because the retention migration has not run yet, the record is listed as
     // one that could not be anonymised rather than silently destroyed.
-    async function anonymise(label: string, run: () => PromiseLike<{ error?: { message?: string } | null }>) {
+    // Returns whether the record was actually detached from the person, so a
+    // caller can refuse to delete the row it hangs off. Reporting success on
+    // a failed anonymisation and then cascading the record away is how a
+    // deletion request quietly became a records breach.
+    async function anonymise(label: string, run: () => PromiseLike<{ error?: { message?: string } | null }>): Promise<boolean> {
       try {
         const { error } = await run()
-        if (error) failures.push(`${label} could not be anonymised: ${error.message || 'database error'}`)
-        else anonymised.push(label)
+        if (error) {
+          failures.push(`${label} could not be anonymised: ${error.message || 'database error'}`)
+          return false
+        }
+        anonymised.push(label)
+        return true
       } catch (stepError: any) {
         failures.push(`${label} could not be anonymised: ${stepError?.message || 'unexpected error'}`)
+        return false
       }
     }
 
@@ -171,17 +180,43 @@ export async function POST(_req: NextRequest) {
         await step('arrival packs', () => admin.from('booking_arrival_packs').delete().eq('candidate_id', cid))
         await step('behavioural analytics', () => admin.from('analytics_events').delete().eq('candidate_id', cid))
         await step('residency conversations', () => admin.from('residency_conversations').delete().eq('candidate_id', cid))
-        await step('residency profile', () => admin.from('residency_profiles').delete().eq('candidate_profile_id', cid))
 
-        // Financial and statutory records survive with the person removed.
-        await anonymise('Agency booking records', () => admin.from('agency_bookings').update({ candidate_id: null }).eq('candidate_id', cid))
-        await anonymise('Residency booking records', () => admin.from('residency_bookings').update({ candidate_id: null }).eq('candidate_id', cid))
-        await anonymise('Academy enrolment records', () => admin.from('course_enrollments').update({ candidate_id: null }).eq('candidate_id', cid))
+        // ORDER MATTERS HERE, and it did not before.
+        //
+        // residency_bookings.residency_profile_id is NOT NULL and cascades
+        // from residency_profiles. Deleting the residency profile first
+        // therefore CASCADE-deleted every paid residency booking - amount,
+        // platform fee, payout, Stripe payment intent, all of it - and the
+        // anonymise call that followed then matched zero rows, succeeded, and
+        // reported the records as safely kept. The user was told their
+        // financial records had been preserved while they were being
+        // destroyed. Six years of company and tax law says otherwise.
+        //
+        // The same shape applied to Academy enrolments, which cascade from
+        // candidate_profiles: the profile delete at the end took every paid
+        // enrolment and certificate with it.
+        //
+        // So every statutory record is anonymised BEFORE anything it hangs
+        // off is deleted, and a failure to anonymise now blocks the delete
+        // that would destroy it rather than merely being logged.
+        const agencyOk = await anonymise('Agency booking records', () => admin.from('agency_bookings').update({ candidate_id: null }).eq('candidate_id', cid))
+        const residencyOk = await anonymise('Residency booking records', () => admin.from('residency_bookings').update({ candidate_id: null, residency_profile_id: null }).eq('candidate_id', cid))
+        const enrolmentsOk = await anonymise('Academy enrolment records', () => admin.from('course_enrollments').update({ candidate_id: null }).eq('candidate_id', cid))
         await anonymise('Placement records', () => admin.from('placements').update({ candidate_id: null }).eq('candidate_id', cid))
         await anonymise('Salary records', () => admin.from('salary_records').update({ candidate_id: null }).eq('candidate_id', cid))
 
-        // Remove the candidate profile
-        await step('candidate profile', () => admin.from('candidate_profiles').delete().eq('id', cid))
+        // Only now, and only if the records that hang off them are safe.
+        if (residencyOk) {
+          await step('residency profile', () => admin.from('residency_profiles').delete().or(`candidate_profile_id.eq.${cid},user_id.eq.${user.id}`))
+        } else {
+          failures.push('Residency profile kept: its booking records could not be anonymised first.')
+        }
+
+        if (agencyOk && enrolmentsOk) {
+          await step('candidate profile', () => admin.from('candidate_profiles').delete().eq('id', cid))
+        } else {
+          failures.push('Professional profile kept: financial records that depend on it could not be anonymised first. WHC support has been notified.')
+        }
       }
 
       await step('residency applications', () => admin.from('residency_applications').delete().eq('user_id', user.id))
@@ -260,6 +295,27 @@ export async function POST(_req: NextRequest) {
     await anonymise('Residency booking records', () => admin.from('residency_bookings').update({ created_by: null }).eq('created_by', user.id))
 
     // Remove profiles row
+    // contact_queries has no user foreign key, so nothing has ever removed
+    // it: every enquiry the person ever sent, with their name and email,
+    // survived a deletion the privacy policy says removes their data. It is
+    // keyed by the address they used, which is the only link there is.
+    if (user.email) {
+      await step('contact enquiries', () => admin.from('contact_queries').delete().eq('email', user.email as string))
+    }
+
+    // Agency dispute threads carry the person's own words and their user id
+    // on columns with no foreign key, so nothing cascaded them either - and
+    // because they join to an "anonymised" booking, that booking stayed
+    // linkable to the individual. Detached rather than deleted: the case
+    // itself is part of a financial record.
+    await anonymise('Agency case records', () => admin.from('agency_cases')
+      .update({ opened_by_user_id: null, counterparty_response_user_id: null, candidate_agreed_by: null, employer_agreed_by: null })
+      .or(`opened_by_user_id.eq.${user.id},counterparty_response_user_id.eq.${user.id},candidate_agreed_by.eq.${user.id},employer_agreed_by.eq.${user.id}`))
+    await anonymise('Agency case messages', () => admin.from('agency_case_messages')
+      .update({ sender_user_id: null }).eq('sender_user_id', user.id))
+    await anonymise('Agency case history', () => admin.from('agency_case_events')
+      .update({ actor_user_id: null }).eq('actor_user_id', user.id))
+
     await step('account profile', () => admin.from('profiles').delete().eq('id', user.id))
 
     // Finally, delete the auth user. Privacy preferences, the consent ledger
