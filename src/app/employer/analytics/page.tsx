@@ -51,14 +51,10 @@ export default function EmployerAnalyticsPage() {
         .select('*')
         .in('role_id', jobIds)
         .neq('status', 'draft')
-      const candIdsForApps = Array.from(new Set((rawApps || []).map((a: any) => a.candidate_id).filter(Boolean)))
-      const { data: appCands } = candIdsForApps.length
-        ? await supabase.from('candidate_profiles').select('*').in('id', candIdsForApps)
-        : { data: [] as any[] }
-      const candByIdForApps = new Map((appCands || []).map((c: any) => [c.id, c]))
-      const allApps = (rawApps || []).map((a: any) => ({ ...a, candidate_profiles: candByIdForApps.get(a.candidate_id) || null }))
-
-      const apps = allApps || []
+      // Applicant skills are counted on the server and returned as five
+      // words. This page used to fetch every column of every applicant's
+      // record to do that counting in the browser.
+      const apps = rawApps || []
       const now = new Date()
       const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1)
       const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1)
@@ -118,14 +114,14 @@ export default function EmployerAnalyticsPage() {
       for (const app of apps) funnelCounts[app.status] = (funnelCounts[app.status] || 0) + 1
       setFunnel(funnelCounts)
 
-      // Top skills across applicants
-      const skillCounts: Record<string, number> = {}
-      for (const app of apps) {
-        const skills = app.candidate_profiles?.services_offered || app.candidate_profiles?.treatment_skills || []
-        for (const s of skills) skillCounts[s] = (skillCounts[s] || 0) + 1
-      }
-      const sorted = Object.entries(skillCounts).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([s]) => s)
-      setTopSkills(sorted)
+      // Top skills across applicants, counted server-side.
+      try {
+        const response = await fetch('/api/employer/analytics/applicant-skills')
+        if (response.ok) {
+          const body = await response.json()
+          setTopSkills(Array.isArray(body.skills) ? body.skills : [])
+        }
+      } catch { /* the panel simply stays empty */ }
 
       setLoading(false)
     }

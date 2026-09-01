@@ -141,7 +141,7 @@ export async function GET(req: NextRequest) {
     ['full_name', 'headline', 'role_level', 'location'],
   ).limit(RESULT_CAP * 4)
 
-  const PEOPLE_FIELDS = 'id, full_name, headline, role_level, location, show_first_name_only, approval_status, profile_visible'
+  const PEOPLE_FIELDS = 'id, full_name, headline, role_level, location, show_first_name_only, approval_status, profile_visible, stealth_mode'
   const peopleQuery = canSeePeople
     ? (async () => {
         let result = await buildPeopleQuery(`${PEOPLE_FIELDS}, private_mode`)
@@ -171,7 +171,7 @@ export async function GET(req: NextRequest) {
 
   const blockedIds = new Set(blockRows.map((row: any) => row.candidate_id))
   const people: SearchResult[] = peopleRows
-    .filter((row: any) => row.approval_status === 'approved' && row.profile_visible !== false && !blockedIds.has(row.id))
+    .filter((row: any) => row.approval_status === 'approved' && row.profile_visible !== false && row.stealth_mode !== true && !blockedIds.has(row.id))
     .slice(0, RESULT_CAP)
     .map((row: any) => ({
       type: 'person',

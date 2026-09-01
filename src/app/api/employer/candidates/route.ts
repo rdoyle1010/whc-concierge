@@ -3,7 +3,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { createServerSupabaseClient } from '@/lib/supabase/server'
 import { canEmployerDiscoverCandidate, mutualRadiusResult, travelAccessSummary } from '@/lib/discovery'
 import { calculateMatchScore } from '@/lib/matching'
-import { anonymiseDisplayName, PRIVATE_MODE_COLUMNS, isMissingColumnError } from '@/lib/private-mode'
+import { PRIVATE_MODE_COLUMNS, isMissingColumnError, presentCandidateForEmployer } from '@/lib/private-mode'
 
 export const dynamic = 'force-dynamic'
 
@@ -12,7 +12,7 @@ const EMPLOYER_CANDIDATE_FIELDS = [
   'experience_years', 'profile_image_url', 'review_score', 'bio', 'qualifications',
   'product_houses', 'systems_experience', 'business_skills', 'career_evidence', 'cv_url', 'has_insurance', 'awards',
   'availability_status', 'travel_radius_miles', 'has_car', 'latitude', 'longitude',
-  'approval_status', 'profile_visible', 'is_featured', 'featured_until', 'created_at',
+  'approval_status', 'profile_visible', 'stealth_mode', 'is_featured', 'featured_until', 'created_at',
   'show_first_name_only',
 ].join(',')
 
@@ -87,19 +87,8 @@ export async function GET(req: NextRequest) {
   // Private Career Mode enforcement, server-side only: an anonymised name,
   // no photograph and no CV ever leave this route for a private profile,
   // unless this employer's introduction has already been accepted (a match).
-  const presentCandidate = (candidate: any) => {
-    const isPrivate = candidate.private_mode === true && !revealedTo.has(candidate.id)
-    const hideName = isPrivate || candidate.show_first_name_only === true
-    const hidePhoto = isPrivate || candidate.private_hide_photo === true
-    return {
-      ...candidate,
-      full_name: hideName ? anonymiseDisplayName(candidate.full_name) : candidate.full_name,
-      profile_image_url: hidePhoto ? null : candidate.profile_image_url,
-      cv_url: isPrivate ? null : candidate.cv_url,
-      private_mode: isPrivate,
-      private_hide_photo: undefined,
-    }
-  }
+  const presentCandidate = (candidate: any) =>
+    presentCandidateForEmployer(candidate, revealedTo.has(candidate.id))
 
   const scoreCandidate = (candidate: any) => {
     if (!canEmployerDiscoverCandidate(candidate, blocked)) return null

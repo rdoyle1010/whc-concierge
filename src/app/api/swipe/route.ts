@@ -6,6 +6,7 @@ import { createNotification } from '@/lib/notifications'
 import { calculateMatchScore } from '@/lib/matching'
 import { createMutualMatch } from '@/lib/mutual-match'
 import { canEmployerDiscoverCandidate, mutualRadiusResult } from '@/lib/discovery'
+import { candidateNameForEmployer } from '@/lib/private-mode'
 
 async function getAuthedUser() {
   const cookieStore = await cookies()
@@ -113,7 +114,7 @@ export async function POST(req: NextRequest) {
           employer.user_id,
           'general',
           'A professional is interested in your role',
-          `${candidate.full_name || 'A professional'} is interested in ${job.job_title}.`,
+          `${candidateNameForEmployer(candidate)} is interested in ${job.job_title}.`,
           `/employer/candidates?candidate=${candidate.id}`,
         )
       }
@@ -193,7 +194,9 @@ export async function POST(req: NextRequest) {
       .eq('context_job_id', job.id)
       .maybeSingle()
 
-    if (!candidateYes) return NextResponse.json({ matched: false, candidateName: candidate.full_name, jobTitle: job.job_title })
+    // Not a match yet, so a private profile stays private: the employer
+    // learns who this is only once the introduction is accepted.
+    if (!candidateYes) return NextResponse.json({ matched: false, candidateName: candidateNameForEmployer(candidate), jobTitle: job.job_title })
 
     const { data: candidateUser } = await admin.auth.admin.getUserById(candidate.user_id)
     await createMutualMatch(admin, {

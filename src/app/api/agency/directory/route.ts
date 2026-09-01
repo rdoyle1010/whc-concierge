@@ -4,6 +4,7 @@ import { normaliseAccountRole } from '@/lib/role-access'
 import { canEmployerDiscoverCandidate, mutualRadiusResult } from '@/lib/discovery'
 import { validShiftWindow, windowCovers, windowsOverlap } from '@/lib/agency-time'
 import { getRequestUser } from '@/lib/request-user'
+import { presentCandidateForEmployer } from '@/lib/private-mode'
 
 export const dynamic = 'force-dynamic'
 
@@ -14,7 +15,7 @@ const SAFE_FIELDS = [
   'review_count', 'whc_verified', 'has_insurance', 'availability_status',
   'travel_availability', 'travel_radius_miles', 'hourly_rate', 'day_rate_min',
   'day_rate_max', 'agency_tier', 'is_featured', 'latitude', 'longitude',
-  'approval_status', 'profile_visible', 'created_at',
+  'approval_status', 'profile_visible', 'stealth_mode', 'show_first_name_only', 'created_at',
   'agency_listed_until', 'right_to_work_status', 'insurance_expiry_date',
 ].join(',')
 
@@ -128,9 +129,21 @@ export async function GET(req: NextRequest) {
   const cancelledCount = new Map<string, number>()
   for (const booking of candidateCancellations || []) cancelledCount.set(booking.candidate_id, (cancelledCount.get(booking.candidate_id) || 0) + 1)
 
+  // Private Career Mode. Looked up separately and tolerantly: the column
+  // arrives with migration 20260831190000, and a directory must not break
+  // before it runs. A failed read means nobody is treated as private, which
+  // is the state the platform was already in.
+  const privateIds = new Set<string>()
+  try {
+    const { data: privateRows, error: privateError } = await admin.from('candidate_profiles')
+      .select('id').eq('private_mode', true)
+    if (!privateError) for (const row of privateRows || []) privateIds.add(row.id)
+  } catch { }
+
   const candidates = (data || [])
     .filter((candidate: any) => !candidate.agency_listed_until || new Date(candidate.agency_listed_until).getTime() >= Date.now())
     .filter((candidate: any) => isAdmin || canEmployerDiscoverCandidate(candidate, blockedIds))
+    .map((candidate: any) => privateIds.has(candidate.id) ? { ...candidate, private_mode: true } : candidate)
     .map((candidate: any) => {
       const result = mutualRadiusResult(origin, candidate, radius)
       let availabilityMatch: 'confirmed' | 'already_booked' | 'unavailable' | 'not_confirmed' | null = null
@@ -160,9 +173,9 @@ export async function GET(req: NextRequest) {
         && candidate.latitude != null
       const completed = completedCount.get(candidate.id) || 0
       const cancelled = cancelledCount.get(candidate.id) || 0
-      const { latitude: _latitude, longitude: _longitude, postcode: _postcode, approval_status: _approval, profile_visible: _visible, agency_listed_until: _listedUntil, right_to_work_status: _rtw, insurance_expiry_date: _insExpiry, ...safe } = candidate
+      const { latitude: _latitude, longitude: _longitude, postcode: _postcode, approval_status: _approval, profile_visible: _visible, stealth_mode: _stealth, agency_listed_until: _listedUntil, right_to_work_status: _rtw, insurance_expiry_date: _insExpiry, ...safe } = candidate
       return {
-        ...safe,
+        ...presentCandidateForEmployer(safe),
         distance_miles: result.distanceMiles,
         within_radius: result.withinRadius,
         distance_status: result.reason,

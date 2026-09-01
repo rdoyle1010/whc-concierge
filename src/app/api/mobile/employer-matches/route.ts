@@ -5,12 +5,13 @@ import { calculateMatchScore } from '@/lib/matching'
 import { canEmployerDiscoverCandidate, mutualRadiusResult } from '@/lib/discovery'
 import { createNotification } from '@/lib/notifications'
 import { createMutualMatch } from '@/lib/mutual-match'
+import { candidateNameForEmployer, presentCandidateForEmployer } from '@/lib/private-mode'
 
 const CANDIDATE_FIELDS = [
   'id','user_id','full_name','headline','role_level','location','services_offered','experience_years','years_experience',
   'profile_image_url','review_score','bio','qualifications','treatment_skills','product_houses','systems_experience',
   'business_skills','career_evidence','has_insurance','awards','availability_status','travel_radius_miles','has_car',
-  'latitude','longitude','approval_status','profile_visible','is_featured','featured_until','created_at',
+  'latitude','longitude','approval_status','profile_visible','stealth_mode','show_first_name_only','is_featured','featured_until','created_at',
 ].join(',')
 
 async function getEmployer(admin: any, userId: string) {
@@ -45,8 +46,17 @@ export async function GET(req: NextRequest) {
   if (error) return NextResponse.json({ error: 'Talent matches are unavailable.' }, { status: 500 })
 
   const blocked = new Set((blocks || []).map((row: any) => row.candidate_id))
+  // Private Career Mode, read tolerantly - the column arrives with migration
+  // 20260831190000 and the feed must not break before it runs.
+  const privateIds = new Set<string>()
+  try {
+    const { data: privateRows, error: privateError } = await admin.from('candidate_profiles')
+      .select('id').eq('private_mode', true)
+    if (!privateError) for (const row of privateRows || []) privateIds.add(row.id)
+  } catch { }
   const reviewedForRole = new Set((swipes || []).filter((row: any) => row.action === 'left' || row.context_job_id === selectedJob.id).map((row: any) => row.target_id))
-  const candidates = (rows || []).map((candidate: any) => {
+  const candidates = (rows || []).map((raw: any) => {
+    const candidate = privateIds.has(raw.id) ? { ...raw, private_mode: true } : raw
     if (reviewedForRole.has(candidate.id)) return null
     if (!canEmployerDiscoverCandidate(candidate, blocked)) return null
     const travel = mutualRadiusResult(employer, candidate, null)
@@ -54,7 +64,7 @@ export async function GET(req: NextRequest) {
     const match = calculateMatchScore(candidate, selectedJob)
     if (match.hardStop) return null
     return {
-      ...candidate,
+      ...presentCandidateForEmployer(candidate),
       latitude: undefined,
       longitude: undefined,
       match_score: match.score,
