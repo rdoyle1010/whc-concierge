@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { agencyResolutionExceedsCollected } from '@/lib/agency-payouts'
 import { adminRequestUser } from '@/lib/admin-api-auth'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createNotification } from '@/lib/notifications'
@@ -63,6 +64,20 @@ export async function POST(req: NextRequest) {
   const resolution = String(body.resolution || '').trim().slice(0, 4000)
   if (!resolution) return NextResponse.json({ error: 'Add a proposed resolution.' }, { status: 400 })
   if (refund > Number(booking.amount_paid || 0)) return NextResponse.json({ error: 'Refund exceeds the amount collected.' }, { status: 400 })
+  // The same invariant the admin dispute route enforces, and this one was
+  // missing it: refund plus payout cannot exceed what the property actually
+  // paid in. Without it an administrator could propose a full refund AND the
+  // full shift value, both parties could sign, and WHC would pay the
+  // professional out of its own money on top of refunding the property.
+  //
+  // The extra the property is being asked to pay counts as collected, since
+  // the resolution only completes once that payment clears.
+  if (agencyResolutionExceedsCollected(Number(booking.amount_paid || 0) + extra, refund, adjustedPayout)) {
+    return NextResponse.json(
+      { error: `The refund (£${refund.toFixed(2)}) plus the payout (£${adjustedPayout.toFixed(2)}) is more than the £${(Number(booking.amount_paid || 0) + extra).toFixed(2)} this booking will have collected. WHC cannot hand out more than it took in.` },
+      { status: 400 },
+    )
+  }
   if (refund > 0 && (!booking.stripe_payment_intent || booking.stripe_payment_intent === 'manual_audit_no_charge')) return NextResponse.json({ error: 'This audit booking has no real Stripe payment to refund. Set the refund to £0 for this test case.' }, { status: 400 })
 
   const { error } = await admin.from('agency_cases').update({

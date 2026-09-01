@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { agencyResolutionExceedsCollected, bookingPaidByConnect } from '@/lib/agency-payouts'
 import { cookies } from 'next/headers'
 import { createServerClient } from '@supabase/ssr'
 import { createAdminClient } from '@/lib/supabase/admin'
@@ -149,7 +150,18 @@ export async function POST(req: NextRequest) {
     if (refund > 0) {
       if (!row.booking?.stripe_payment_intent || row.booking.stripe_payment_intent === 'manual_audit_no_charge') return NextResponse.json({ error: 'This audit booking has no real Stripe payment to refund. Ask WHC Admin to amend the proposal.' }, { status: 400 })
       const stripe = getStripe()
-      const result = await stripe.refunds.create({ payment_intent: row.booking.stripe_payment_intent, amount: Math.round(refund * 100), reason: 'requested_by_customer', metadata: { whc_booking_id: row.booking.id, whc_case_id: row.id } }, { idempotencyKey: `agency-case-agreed-${row.id}-${Math.round(refund * 100)}` })
+      // Same reasoning as the admin dispute path: on a destination charge the
+      // professional was paid when the property paid, so a refund without
+      // reverse_transfer comes out of WHC's own balance while they keep the
+      // shift money.
+      const viaConnect = bookingPaidByConnect(row.booking)
+      const result = await stripe.refunds.create({
+        payment_intent: row.booking.stripe_payment_intent,
+        amount: Math.round(refund * 100),
+        reason: 'requested_by_customer',
+        ...(viaConnect ? { reverse_transfer: true, refund_application_fee: true } : {}),
+        metadata: { whc_booking_id: row.booking.id, whc_case_id: row.id, whc_payout_model: viaConnect ? 'stripe_connect' : 'manual' },
+      }, { idempotencyKey: `agency-case-agreed-${row.id}-${Math.round(refund * 100)}` })
       refundId = result.id
     }
 

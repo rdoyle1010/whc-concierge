@@ -754,21 +754,38 @@ export async function POST(req: NextRequest) {
         break
       }
 
-      await supabase.from('candidate_profiles').update({
-        is_featured: true,
-        featured_until: monthEnd,
-      }).eq('stripe_customer_id', customerId).eq('is_featured', true)
+      // Featured Talent is a separate one-off purchase (£9.99 for 7 days,
+      // £24.99 for 30). This fall-through used to extend it on EVERY paid
+      // invoice for the same Stripe customer - so a professional holding any
+      // £9.99 monthly membership had their £24.99 featured placement renewed
+      // free, every month, forever. The product became free for anyone with a
+      // membership.
+      //
+      // Featured is now extended only by the branch above, which fires on an
+      // invoice whose subscription actually says featured_profile.
 
       // Commercial memberships carry no recognised metadata.type on their
       // invoices, so advance their renewal date here on every paid invoice.
       const invoiceLineEnd = Number((invoice.lines?.data?.[0] as any)?.period?.end || 0)
       const membershipRenewsAt = invoiceLineEnd > 0 ? new Date(invoiceLineEnd * 1000).toISOString() : monthEnd
-      await supabase.from('candidate_profiles')
-        .update({ membership_renews_at: membershipRenewsAt })
+      // A cleared payment lifts the suspension in the same statement that
+      // advances the renewal date, so a member who was past due is whole
+      // again the moment the money arrives.
+      const renewal: Record<string, any> = { membership_renews_at: membershipRenewsAt, membership_past_due: false }
+      let { error: candidateRenewalError } = await supabase.from('candidate_profiles')
+        .update(renewal)
         .or(`stripe_customer_id.eq.${customerId},membership_stripe_customer_id.eq.${customerId}`)
         .not('membership_tier', 'is', null)
+      if (candidateRenewalError && /column|membership_past_due/i.test(candidateRenewalError.message || '')) {
+        // membership_past_due arrives with 20260901210000_membership_dunning.sql.
+        delete renewal.membership_past_due
+        await supabase.from('candidate_profiles')
+          .update(renewal)
+          .or(`stripe_customer_id.eq.${customerId},membership_stripe_customer_id.eq.${customerId}`)
+          .not('membership_tier', 'is', null)
+      }
       await supabase.from('employer_profiles')
-        .update({ membership_renews_at: membershipRenewsAt })
+        .update(renewal)
         .or(`stripe_customer_id.eq.${customerId},membership_stripe_customer_id.eq.${customerId}`)
         .not('membership_tier', 'is', null)
       break
@@ -793,6 +810,28 @@ export async function POST(req: NextRequest) {
           featured_employer: false,
           featured_until: null,
         }).eq('stripe_customer_id', customerId).eq('featured_employer', true)
+
+        // A failing card used to leave every membership benefit switched on
+        // until Stripe's dunning finally gave up - typically two to three
+        // weeks of Interview Ready credits, Academy discount, agency
+        // bookability and Agency Plus fee reduction, all unpaid for.
+        //
+        // The account is not closed and the tier is not deleted: the member
+        // keeps their profile, their history and their place. Only the
+        // benefits that cost WHC money are suspended, and invoice.paid
+        // restores them the moment the card clears.
+        await supabase.from('candidate_profiles')
+          .update({ membership_past_due: true, agency_available: false })
+          .or(`stripe_customer_id.eq.${customerId},membership_stripe_customer_id.eq.${customerId}`)
+          .not('membership_tier', 'is', null)
+        await supabase.from('employer_profiles')
+          .update({ membership_past_due: true, agency_plus_active: false })
+          .or(`stripe_customer_id.eq.${customerId},membership_stripe_customer_id.eq.${customerId}`)
+          .not('membership_tier', 'is', null)
+
+        await notifyAdmins('A membership payment is failing',
+          `Stripe has failed to collect a membership payment ${attemptCount} times for customer ${customerId}. Benefits are suspended until it clears.`,
+          '/admin/revenue')
       }
       break
     }
@@ -921,7 +960,17 @@ export async function POST(req: NextRequest) {
         break
       }
 
-      await supabase.from('candidate_profiles').update({ is_featured: false, featured_until: null }).eq('stripe_customer_id', customerId)
+      // Deliberately NOT revoking is_featured here.
+      //
+      // This used to switch off Featured Talent for every profile sharing the
+      // cancelled subscription's Stripe customer. A professional who paid
+      // £24.99 for thirty days of featured placement on the first of the
+      // month and then cancelled their separate £9.99 membership on the fifth
+      // lost twenty-five days she had already paid for. One purchase must
+      // never be revoked by the cancellation of another.
+      //
+      // Featured expires on its own: featured_until is set at purchase and
+      // the maintenance sweep clears it when it passes.
 
       // Commercial memberships have no dedicated branch, so revoke the tier
       // here - otherwise benefits outlive the cancelled subscription.

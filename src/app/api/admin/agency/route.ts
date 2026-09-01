@@ -7,6 +7,7 @@ import {
   AGENCY_PAYOUT_MANUAL,
   MIN_PAYOUT_REFERENCE_LENGTH,
   agencyResolutionExceedsCollected,
+  bookingPaidByConnect,
 } from '@/lib/agency-payouts'
 
 const BOOKING_LIMIT = 250
@@ -294,12 +295,32 @@ export async function POST(req: NextRequest) {
         payout_reference: paidByConnect ? null : payoutReference,
         payout_confirmed_by: user.id,
       }
-      let { error } = await admin.from('agency_bookings').update(fullUpdate).eq('id', booking.id)
+      // Claim the booking rather than overwrite it. The check further up reads
+      // payout_status and this writes it, and between those two statements
+      // another administrator can do exactly the same thing - so two people
+      // working the money page at once both passed the check, both wrote
+      // 'paid', and the second silently destroyed the reference and the name
+      // of whoever confirmed the first. On a manual payout that is an
+      // invitation to make the same bank transfer twice with no record that
+      // it happened.
+      const claim = (update: Record<string, any>) => admin.from('agency_bookings')
+        .update(update)
+        .eq('id', booking.id)
+        .neq('payout_status', 'paid')
+        .select('id')
+
+      let { data: claimed, error } = await claim(fullUpdate)
       if (error && /column|payout_method|payout_reference|payout_confirmed_by/i.test(error.message || '')) {
         // Integrity columns not live yet - record the status honestly anyway.
-        ;({ error } = await admin.from('agency_bookings').update(baseUpdate).eq('id', booking.id))
+        ;({ data: claimed, error } = await claim(baseUpdate))
       }
       if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+      if (!claimed || claimed.length === 0) {
+        return NextResponse.json(
+          { error: 'This payout was recorded by someone else a moment ago. Refresh before paying anything.' },
+          { status: 409 },
+        )
+      }
       return NextResponse.json({ success: true, payout_method: paidByConnect ? AGENCY_PAYOUT_CONNECT : AGENCY_PAYOUT_MANUAL })
     }
 
@@ -307,13 +328,16 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'No open dispute on this booking.' }, { status: 400 })
     }
 
-    const refundAmount = Math.max(0, parseInt(String(body.refundAmount ?? 0), 10) || 0)
-    const payoutAmount = Math.max(0, parseInt(String(body.payoutAmount ?? booking.payout_amount ?? 0), 10) || 0)
+    // Pounds and pence, not whole pounds. A half-hour shift collects £x.50,
+    // and parseInt made a "full refund" £x - short-changing the property by
+    // up to 99p on every fractional-hour cancellation.
+    const refundAmount = Math.round(Math.max(0, Number(body.refundAmount ?? 0) || 0) * 100) / 100
+    const payoutAmount = Math.round(Math.max(0, Number(body.payoutAmount ?? booking.payout_amount ?? 0) || 0) * 100) / 100
     const amountPaid = Math.max(0, Number(booking.amount_paid || 0))
     const resolutionReason = String(body.reason || '').trim().slice(0, 1000)
 
     if (refundAmount > amountPaid) {
-      return NextResponse.json({ error: `Refund cannot exceed the £${amountPaid} collected for this booking.` }, { status: 400 })
+      return NextResponse.json({ error: `Refund cannot exceed the £${amountPaid.toFixed(2)} collected for this booking.` }, { status: 400 })
     }
     // Money invariant: WHC can never pay out more than it took in. The refund
     // to the property plus the payout to the therapist must fit inside it.
@@ -328,13 +352,23 @@ export async function POST(req: NextRequest) {
       }
       try {
         const stripe = getStripe()
+        // On a destination charge the professional was paid at the moment the
+        // property paid - WHC only ever held its own fee. Refunding without
+        // reverse_transfer therefore takes the whole refund out of WHC's own
+        // balance while the professional keeps the lot: on a £600 shift, a
+        // £600 loss. reverse_transfer pulls the shift money back from the
+        // connected account, and refund_application_fee returns the WHC fee
+        // so the property is made whole from the right pockets.
+        const viaConnect = bookingPaidByConnect(booking)
         const refund = await stripe.refunds.create({
           payment_intent: booking.stripe_payment_intent,
-          amount: refundAmount * 100,
+          amount: Math.round(refundAmount * 100),
           reason: 'requested_by_customer',
+          ...(viaConnect ? { reverse_transfer: true, refund_application_fee: true } : {}),
           metadata: {
             whc_booking_id: booking.id,
             whc_dispute_resolution: 'true',
+            whc_payout_model: viaConnect ? 'stripe_connect' : 'manual',
           },
         }, {
           idempotencyKey: `agency-dispute-${booking.id}-${refundAmount}`,
