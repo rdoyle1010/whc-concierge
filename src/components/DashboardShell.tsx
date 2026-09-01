@@ -60,6 +60,7 @@ const navItems: Record<string, NavItem[]> = {
     { label: 'My Profile', href: '/talent/profile', icon: <User size={17} />, section: 'Account' },
     { label: 'Billing', href: '/talent/billing', icon: <CreditCard size={17} /> },
     { label: 'Privacy & Preferences', href: '/talent/privacy', icon: <ShieldCheck size={17} /> },
+    { label: 'Security', href: '/talent/security', icon: <ShieldCheck size={17} /> },
     { label: 'Settings', href: '/talent/settings', icon: <Settings size={17} /> },
   ],
   employer: [
@@ -82,6 +83,7 @@ const navItems: Record<string, NavItem[]> = {
     { label: 'Membership', href: '/employer/membership', icon: <CreditCard size={17} /> },
     { label: 'Billing', href: '/employer/billing', icon: <CreditCard size={17} />, section: 'Account' },
     { label: 'Privacy & Preferences', href: '/employer/privacy', icon: <ShieldCheck size={17} /> },
+    { label: 'Security', href: '/employer/security', icon: <ShieldCheck size={17} /> },
     { label: 'Settings', href: '/employer/settings', icon: <Settings size={17} /> },
   ],
   admin: [

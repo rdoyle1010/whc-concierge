@@ -78,6 +78,24 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(loginUrl)
   }
 
+  // Two-step verification gate: an account with a verified authenticator
+  // must complete the challenge before any protected page renders. Without
+  // this, a stolen password could ignore the challenge redirect and browse
+  // anyway. The assurance level is read from the session token - no extra
+  // network round trip.
+  if (user && isProtected) {
+    try {
+      const { data: assurance } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel()
+      if (assurance?.nextLevel === 'aal2' && assurance.currentLevel !== 'aal2') {
+        const challengeUrl = request.nextUrl.clone()
+        challengeUrl.pathname = '/mfa-challenge'
+        challengeUrl.search = ''
+        challengeUrl.searchParams.set('next', `${request.nextUrl.pathname}${request.nextUrl.search}`)
+        return NextResponse.redirect(challengeUrl)
+      }
+    } catch { /* assurance unavailable - do not lock users out */ }
+  }
+
   if (user) {
     const premiumEntry = Object.entries(EMPLOYER_PREMIUM_ROUTES).find(([route]) => matchesRoutePrefix(pathname, route))
     if (premiumEntry) {
