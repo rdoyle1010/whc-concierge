@@ -7,6 +7,18 @@ import { websiteCssVariables } from '@/lib/site-content'
 
 export const revalidate = 60
 
+// The image on the sample role card.
+//
+// This was a hotlinked Unsplash photograph of towels and tulips: generic, off
+// the navy palette, and outside WHC's control, so a photo taken down at source
+// would have left a hole in the middle of the page a professional lands on
+// first. It is now a WHC image, served from this site.
+//
+// To change it: drop a new file into public/images and change this one line.
+// The panel behind it is brand navy, so the card still reads if the image is
+// ever slow or missing.
+const SAMPLE_CARD_IMAGE = '/images/spa-therapist-facial.jpg'
+
 const signals = [
   'Role level & experience',
   'Treatments & technical skills',
@@ -43,8 +55,11 @@ export default async function MatchExplainerPage() {
               <div className="relative overflow-hidden border border-[#e3e7eb] bg-white shadow-[0_24px_70px_rgba(16,40,59,.14)]">
                 <span className="absolute left-1/2 top-3 z-10 -translate-x-1/2 rounded-full bg-[#10283b] px-3 py-1 text-[9px] font-semibold uppercase tracking-[0.14em] text-white">Sample - for illustration</span>
                 <div className="relative h-[235px] bg-[#0b2f4d]">
-                  <img src="https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&q=82&w=1200" alt="Luxury spa interior" className="h-full w-full object-cover opacity-85" />
-                  <div className="absolute inset-0 bg-gradient-to-t from-[#07243b]/70 via-transparent to-transparent" />
+                  <img src={SAMPLE_CARD_IMAGE} alt="A spa therapist giving a facial in a treatment room" width={472} height={264} className="h-full w-full object-cover" />
+                  {/* Deeper than it was. The previous image was dark at the foot,
+                      this one is bright white towels exactly where the role title
+                      sits, and white on white does not read. */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-[#07243b]/85 via-[#07243b]/25 to-transparent" />
                   <div className="absolute bottom-5 left-5 right-5 text-white">
                     <p className="text-[10px] uppercase tracking-[.15em] text-white/70">The Grand Spa Hotel</p>
                     <p className="mt-1 text-[25px] font-semibold">Senior Spa Therapist</p>
