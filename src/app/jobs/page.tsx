@@ -153,19 +153,32 @@ export default function PublicJobsPage() {
     const employer = job.employer_profiles || {}
     const title = job.job_title || 'Wellness role'
     const score = scores[job.id]
+    const image = imageFor(job, employer)
     return (
-      <div key={job.id} className="group relative flex items-baseline justify-between gap-6 border-t border-border py-6">
-        <div className="min-w-0">
-          <div className="flex flex-wrap items-baseline gap-3">
-            {isFeatured(job) && <span className="bg-accent px-2 py-1 text-[9px] font-semibold uppercase tracking-[.12em] text-white">Featured</span>}
-            <h3 className="text-[20px] md:text-[23px] font-serif font-semibold tracking-tight text-ink transition-colors group-hover:text-accent">
-              <Link href={`/jobs/${job.id}`} aria-label={`View role: ${title}`} className="focus:outline-none">
-                {title}
-                <span className="absolute inset-0" aria-hidden />
-              </Link>
-            </h3>
+      <div key={job.id} className="group relative flex items-center justify-between gap-6 border-t border-border py-6">
+        <div className="flex min-w-0 items-center gap-5">
+          {/* The property, not a stock illustration - a square plate keeps the
+              ruled ledger intact while giving the page the photography a
+              luxury spa listing needs. */}
+          <div className="hidden h-[92px] w-[92px] shrink-0 overflow-hidden bg-surface sm:block md:h-[108px] md:w-[108px]">
+            {image
+              ? <img src={image} alt={`${employer.property_name || employer.company_name || 'Property'}`} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]" loading="lazy" />
+              : <div className="flex h-full w-full items-center justify-center border border-border">
+                  <span className="font-serif text-[22px] text-muted">{(employer.property_name || employer.company_name || 'W').trim().charAt(0).toUpperCase()}</span>
+                </div>}
           </div>
-          <p className="mt-1.5 text-[13px] leading-6 text-secondary">{metaLine(job, employer)}</p>
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-baseline gap-3">
+              {isFeatured(job) && <span className="bg-accent px-2 py-1 text-[9px] font-semibold uppercase tracking-[.12em] text-white">Featured</span>}
+              <h3 className="text-[20px] md:text-[23px] font-serif font-semibold tracking-tight text-ink transition-colors group-hover:text-accent">
+                <Link href={`/jobs/${job.id}`} aria-label={`View role: ${title}`} className="focus:outline-none">
+                  {title}
+                  <span className="absolute inset-0" aria-hidden />
+                </Link>
+              </h3>
+            </div>
+            <p className="mt-1.5 text-[13px] leading-6 text-secondary">{metaLine(job, employer)}</p>
+          </div>
         </div>
         <div className="flex shrink-0 items-baseline gap-5">
           {typeof score === 'number' && (
