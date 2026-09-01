@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import { Alert, Linking, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native'
 import { router, useLocalSearchParams } from 'expo-router'
+import Constants from 'expo-constants'
+import * as Updates from 'expo-updates'
 import { supabase } from '../src/lib/supabase'
 
 const SITE='https://talent.wellnesshousecollective.co.uk'
@@ -8,12 +10,30 @@ const SITE='https://talent.wellnesshousecollective.co.uk'
 export default function SecurityLegalScreen(){
   const params=useLocalSearchParams<{required?:string;role?:string}>()
   const [factor,setFactor]=useState<any>(null);const [enrollment,setEnrollment]=useState<any>(null);const [code,setCode]=useState('');const [busy,setBusy]=useState(false);const [loading,setLoading]=useState(true)
+  const [updateState,setUpdateState]=useState<'idle'|'checking'|'downloading'|'current'|'ready'>('idle')
   useEffect(()=>{refresh()},[])
   async function refresh(){setLoading(true);const {data,error}=await supabase.auth.mfa.listFactors();if(error){Alert.alert('Security',error.message);setLoading(false);return}setFactor((data?.totp||[]).find((f:any)=>f.status==='verified')||null);setLoading(false)}
   async function start(){setBusy(true);const {data,error}=await supabase.auth.mfa.enroll({factorType:'totp',friendlyName:'WHC Authenticator'});setBusy(false);if(error){Alert.alert('Authenticator',error.message);return}setEnrollment(data)}
   async function verify(){if(!enrollment?.id||code.length!==6)return;setBusy(true);const {error}=await supabase.auth.mfa.challengeAndVerify({factorId:enrollment.id,code});setBusy(false);if(error){Alert.alert('Code not accepted','Check the current six-digit code and try again.');return}setEnrollment(null);setCode('');await refresh();Alert.alert('Authenticator enabled','Two-step verification is now active on this account.');if(params.required==='1'&&params.role==='admin')router.replace('/admin')}
   async function remove(){if(!factor?.id)return;if(params.required==='1'||params.role==='admin'){Alert.alert('Required','Administrator accounts must keep Authenticator enabled.');return}const {error}=await supabase.auth.mfa.unenroll({factorId:factor.id});if(error){Alert.alert('Security',error.message);return}await refresh()}
   const open=(path:string)=>Linking.openURL(`${SITE}${path}`)
+
+  // Over-the-air updates. Updates.isEnabled is false in Expo Go and in any
+  // build made before the update channel existed, so the button explains that
+  // rather than failing silently against a runtime that cannot serve updates.
+  async function checkForUpdate(){
+    if(!Updates.isEnabled){Alert.alert('App updates','This build cannot receive over-the-air updates. Install the latest build from TestFlight instead.');return}
+    try{
+      setUpdateState('checking')
+      const result=await Updates.checkForUpdateAsync()
+      if(!result.isAvailable){setUpdateState('current');return}
+      setUpdateState('downloading')
+      await Updates.fetchUpdateAsync()
+      setUpdateState('ready')
+      Alert.alert('Update ready','Restart the app to load it now?',[{text:'Later',style:'cancel'},{text:'Restart',onPress:()=>{Updates.reloadAsync().catch(()=>{})}}])
+    }catch(e:any){setUpdateState('idle');Alert.alert('App updates',e?.message||'Could not check for updates just now.')}
+  }
+  const updateLabel=updateState==='checking'?'Checking…':updateState==='downloading'?'Downloading…':updateState==='ready'?'Restart to apply':updateState==='current'?'You are up to date':'Check for updates'
 
   return <ScrollView style={styles.scroll} contentContainerStyle={styles.page}>
     <Pressable onPress={()=>router.back()}><Text style={styles.back}>‹ Back</Text></Pressable><Text style={styles.eyebrow}>ACCOUNT PROTECTION</Text><Text style={styles.title}>Security, Safety & Legal</Text><Text style={styles.intro}>Your account protection, Agency safety guidance and legal rights are part of the product - not hidden in small print.</Text>
@@ -25,6 +45,8 @@ export default function SecurityLegalScreen(){
     <View style={styles.card}><Text style={styles.cardEyebrow}>PRIVACY</Text><Text style={styles.cardTitle}>Privacy & GDPR</Text><Text style={styles.copy}>See how personal data is used, manage Stealth Mode and blocked employers, and access your data rights.</Text><Pressable onPress={()=>router.push('/privacy-stealth')} style={styles.linkRow}><Text style={styles.linkText}>Stealth Mode & blocked employers</Text><Text>›</Text></Pressable><Pressable onPress={()=>open('/privacy')} style={styles.linkRow}><Text style={styles.linkText}>Privacy policy</Text><Text>›</Text></Pressable><Pressable onPress={()=>open('/talent/privacy')} style={styles.linkRow}><Text style={styles.linkText}>Privacy controls & data rights</Text><Text>›</Text></Pressable></View>
 
     <View style={styles.card}><Text style={styles.cardEyebrow}>PLATFORM RULES</Text><Text style={styles.cardTitle}>Terms, copyright & acceptable use</Text><Text style={styles.copy}>Your use of Wellness House Talent is subject to the platform terms, acceptable-use rules and intellectual-property protections.</Text><Pressable onPress={()=>open('/terms')} style={styles.linkRow}><Text style={styles.linkText}>Terms & conditions</Text><Text>›</Text></Pressable><Pressable onPress={()=>open('/privacy')} style={styles.linkRow}><Text style={styles.linkText}>Data & privacy information</Text><Text>›</Text></Pressable><Text style={styles.legal}>© Wellness House Collective. Platform branding, original editorial content, course materials and proprietary platform content are protected by applicable copyright and intellectual-property law. Employer and Talent content remains subject to the rights stated in the Terms.</Text></View>
+
+    <View style={styles.card}><Text style={styles.cardEyebrow}>APP VERSION</Text><Text style={styles.cardTitle}>Wellness House Talent {Constants.expoConfig?.version||''}</Text><Text style={styles.copy}>{Updates.isEnabled?'Improvements arrive automatically. Check here if you want the newest version straight away.':'This build takes updates through TestFlight or the App Store.'}</Text><Pressable onPress={checkForUpdate} disabled={updateState==='checking'||updateState==='downloading'} style={[styles.secondary,(updateState==='checking'||updateState==='downloading')&&styles.disabled]}><Text style={styles.secondaryText}>{updateLabel}</Text></Pressable><Text style={styles.legal}>{Updates.channel?`Channel ${Updates.channel}. `:''}{Updates.updateId?`Build reference ${Updates.updateId.slice(0,8)}.`:'Running the version installed from the store.'}</Text></View>
   </ScrollView>
 }
 
