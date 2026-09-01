@@ -23,12 +23,17 @@ function LoginForm() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [liveRoles, setLiveRoles] = useState<number | null>(null)
+  const [properties, setProperties] = useState<number | null>(null)
 
   useEffect(() => {
     let cancelled = false
     fetch('/api/public-stats', { cache: 'no-store' })
       .then(res => (res.ok ? res.json() : null))
-      .then(data => { if (!cancelled && typeof data?.liveRoles === 'number') setLiveRoles(data.liveRoles) })
+      .then(data => {
+        if (cancelled) return
+        if (typeof data?.liveRoles === 'number') setLiveRoles(data.liveRoles)
+        if (typeof data?.properties === 'number') setProperties(data.properties)
+      })
       .catch(() => {})
     return () => { cancelled = true }
   }, [])
@@ -96,7 +101,7 @@ function LoginForm() {
                 </div>
               </div>
               <div className="flex items-center justify-between">
-                <label className="flex items-center gap-2 cursor-pointer"><input type="checkbox" className="w-3.5 h-3.5 border-border rounded text-[#0b2f4d] focus:ring-[#0b2f4d]" /><span className="text-[12px] text-muted">Remember me</span></label>
+                <p className="text-[12px] text-secondary">You will stay signed in on this device.</p>
                 <Link href="/forgot-password" className="text-[12px] text-[#10283b] hover:underline">Forgot password?</Link>
               </div>
               <button type="submit" disabled={loading} className="w-full rounded-xl bg-[#0b2f4d] hover:bg-[#123f64] text-white px-5 py-3 text-[13px] font-semibold transition-colors disabled:opacity-50">{loading ? 'Signing in...' : `Sign in as ${role === 'employer' ? 'Hotel / Employer' : 'Talent'}`}</button>
@@ -107,19 +112,36 @@ function LoginForm() {
         </div>
       </div>
 
-      <div className="hidden lg:flex w-[42%] bg-[#0b2f4d] relative overflow-hidden items-end">
-        <div className="absolute inset-0 opacity-35"><img src="https://images.pexels.com/photos/7587466/pexels-photo-7587466.jpeg?auto=compress&cs=tinysrgb&w=1200&h=900&dpr=1" alt="" className="w-full h-full object-cover" /></div>
-        <div className="absolute inset-0 bg-gradient-to-t from-[#0b2f4d] via-[#0b2f4d]/65 to-[#0b2f4d]/25" />
+      {/* The brand panel carries facts, not a stock photograph hotlinked from
+          a third-party CDN with its URL in view-source. The registration page
+          already does it this way and it reads considerably more expensive. */}
+      <div className="hidden lg:flex w-[42%] bg-[#0b2f4d] relative items-end">
         <div className="relative p-12 xl:p-16 max-w-xl">
-          <p className="text-[10px] uppercase tracking-[0.2em] text-[#5a6a76] font-semibold mb-4">Wellness House Collective</p>
+          <p className="text-[10px] uppercase tracking-[0.2em] text-white/70 font-semibold mb-4">Wellness House Collective</p>
           <p className="text-white text-[30px] leading-tight tracking-[-0.03em] font-semibold">The professional platform for spa and wellness careers.</p>
-          <p className="text-white/55 text-[13px] mt-4 leading-6">Live roles, agency cover, residencies and the Academy - one account, one platform.</p>
-          {liveRoles !== null && liveRoles > 0 && (
-            <div className="mt-7 border-t border-white/20 pt-4 flex items-baseline gap-3">
-              <span className="text-[24px] font-serif font-semibold text-white leading-none">{liveRoles}</span>
-              <span className="text-[13px] text-white/70">live role{liveRoles === 1 ? '' : 's'} this week</span>
+          <p className="text-white/80 text-[13px] mt-4 leading-6">Live roles, Agency cover, Residency and the Academy - one account, one platform.</p>
+          <dl className="mt-9 border-t border-white/20">
+            {liveRoles !== null && liveRoles > 0 && (
+              <div className="flex items-baseline gap-3 border-b border-white/15 py-4">
+                <dt className="sr-only">Live roles this week</dt>
+                <dd className="text-[24px] font-serif font-semibold text-white leading-none tabular-nums">{liveRoles}</dd>
+                <p className="text-[13px] text-white/80">live role{liveRoles === 1 ? '' : 's'} this week</p>
+              </div>
+            )}
+            {properties !== null && properties > 0 && (
+              <div className="flex items-baseline gap-3 border-b border-white/15 py-4">
+                <dt className="sr-only">Approved properties</dt>
+                <dd className="text-[24px] font-serif font-semibold text-white leading-none tabular-nums">{properties}</dd>
+                <p className="text-[13px] text-white/80">approved propert{properties === 1 ? 'y' : 'ies'}</p>
+              </div>
+            )}
+            <div className="py-4">
+              <dt className="sr-only">How reviews work</dt>
+              <dd className="text-[13px] text-white/80 leading-6">
+                Every review comes from a completed, paid engagement between two verified accounts.
+              </dd>
             </div>
-          )}
+          </dl>
         </div>
       </div>
     </main>

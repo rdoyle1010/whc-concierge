@@ -262,7 +262,7 @@ export async function POST(req: NextRequest) {
               <p style="font-size: 16px; font-weight: 600; margin-bottom: 24px;">WHC Concierge</p>
               <p style="color: #374151; white-space: pre-wrap;">${replyText.replace(/</g, '&lt;')}</p>
               <hr style="border: none; border-top: 1px solid #e3e7eb; margin: 24px 0;" />
-              <p style="font-size: 12px; color: #8a949b;">Your original message: ${String(q.message || '').slice(0, 500).replace(/</g, '&lt;')}</p>
+              <p style="font-size: 12px; color: #6b7580;">Your original message: ${String(q.message || '').slice(0, 500).replace(/</g, '&lt;')}</p>
             </div>`,
         }),
       })

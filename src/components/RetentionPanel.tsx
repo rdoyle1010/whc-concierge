@@ -96,7 +96,7 @@ export default function RetentionPanel() {
           </p>
 
           <div className="mt-4 border-t border-border pt-4">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#8a949b]">Never swept</p>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#6b7580]">Never swept</p>
             <ul className="mt-2 space-y-1">
               {data.excluded.map(item => (
                 <li key={item.table} className="text-[11px] leading-4 text-muted"><span className="font-medium text-secondary">{item.table}</span> - {item.reason}</li>

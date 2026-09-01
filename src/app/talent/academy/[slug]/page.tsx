@@ -48,7 +48,7 @@ function LearningFramework({ title }: { title: string }) {
           <div key={heading} className="rounded-xl border border-[#e3e7eb] bg-white p-3.5">
             <div className="mb-2 flex h-6 w-6 items-center justify-center rounded-full bg-[#10283b] text-[10px] font-semibold text-white">{index + 1}</div>
             <p className="text-[11px] font-semibold text-[#10283b]">{heading}</p>
-            <p className="mt-1 text-[10px] leading-4 text-[#8a949b]">{copy}</p>
+            <p className="mt-1 text-[10px] leading-4 text-[#6b7580]">{copy}</p>
           </div>
         ))}
       </div>

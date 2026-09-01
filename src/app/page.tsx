@@ -124,7 +124,7 @@ const getVerifiedReviews = unstable_cache(async (): Promise<VerifiedReview[]> =>
     const rows = (data || []).filter((row: any) => String(row.text || '').trim()).slice(0, 3)
     const reviewerIds = [...new Set(rows.map((row: any) => row.reviewer_id).filter(Boolean))]
     const { data: candidates } = reviewerIds.length
-      ? await admin.from('candidate_profiles').select('user_id, full_name, role_level').in('user_id', reviewerIds)
+      ? await admin.from('candidate_profiles').select('user_id, role_level').in('user_id', reviewerIds)
       : { data: [] as any[] }
     const candidateMap = new Map((candidates || []).map((candidate: any) => [candidate.user_id, candidate]))
 
@@ -136,8 +136,11 @@ const getVerifiedReviews = unstable_cache(async (): Promise<VerifiedReview[]> =>
         comment: String(row.text).trim(),
         createdAt: row.created_at || null,
         source: row.booking_id ? 'Completed WHC agency shift' : 'WHC placement',
-        reviewerName: reviewer?.full_name || 'WHC professional',
-        reviewerRole: reviewer?.role_level || null,
+        // Published by role, never by name. Nobody consented to having their
+        // legal name attached, on the open web, to a public opinion of a
+        // named former employer.
+        reviewerName: reviewer?.role_level || 'Verified WHC professional',
+        reviewerRole: null,
       }
     })
   } catch {

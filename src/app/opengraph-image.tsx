@@ -89,7 +89,7 @@ export default function OGImage() {
             right: 80,
             display: 'flex',
             fontSize: 16,
-            color: '#8a949b',
+            color: '#6b7580',
             letterSpacing: '1px',
             fontFamily: 'system-ui, -apple-system, "Segoe UI", sans-serif',
           }}

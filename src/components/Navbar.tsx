@@ -137,7 +137,7 @@ export default function Navbar({ siteContent }: { siteContent?: WebsiteContent }
                     <div className="pointer-events-none absolute left-1/2 top-[64px] w-[290px] -translate-x-1/2 translate-y-2 border border-[#e3e7eb] bg-white p-2 opacity-0 shadow-[0_18px_48px_rgba(5,29,46,.16)] transition-all duration-150 group-hover:pointer-events-auto group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:translate-y-0 group-focus-within:opacity-100">
                       {group.items.map(item => <Link key={item.href} href={item.href} className="block border-b border-[#e3e7eb] px-4 py-3.5 last:border-0 hover:bg-[#f5f6f8]">
                         <span className="block text-[12px] font-semibold text-[#10283b]">{item.label}</span>
-                        <span className="mt-1 block text-[10px] leading-4 text-[#8a949b]">{item.note}</span>
+                        <span className="mt-1 block text-[10px] leading-4 text-[#6b7580]">{item.note}</span>
                       </Link>)}
                     </div>
                   </div>

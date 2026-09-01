@@ -163,7 +163,7 @@ export default function AdvertisePage() {
             const copy = audienceCopy[key]
             const active = placement === key
             return <button key={key} type="button" onClick={() => setPlacement(key)} className={`text-left rounded-[22px] p-6 transition-all ${active ? 'bg-[#10283b] text-white border border-[#10283b] shadow-lg' : 'bg-white border border-[#e3e7eb] text-[#10283b] hover:border-[#5a6a76]'}`}>
-              <div className="flex items-start justify-between gap-4"><div><p className={`text-[10px] uppercase tracking-[.15em] font-semibold ${active ? 'text-[#5a6a76]' : 'text-[#10283b]'}`}>{config.label}</p><p className={`text-[31px] font-semibold mt-2 ${active ? 'text-white' : 'text-[#10283b]'}`}>£{formatPounds(priceFor(key))}<span className={`text-[11px] font-normal ${active ? 'text-white/55' : 'text-[#8a949b]'}`}> / month</span></p></div>{active && <Check size={18} className="text-[#5a6a76]" />}</div>
+              <div className="flex items-start justify-between gap-4"><div><p className={`text-[10px] uppercase tracking-[.15em] font-semibold ${active ? 'text-white/70' : 'text-[#10283b]'}`}>{config.label}</p><p className={`text-[31px] font-semibold mt-2 ${active ? 'text-white' : 'text-[#10283b]'}`}>£{formatPounds(priceFor(key))}<span className={`text-[11px] font-normal ${active ? 'text-white/55' : 'text-[#6b7580]'}`}> / month</span></p></div>{active && <Check size={18} className="text-white" />}</div>
               <p className={`text-[12px] leading-6 mt-4 ${active ? 'text-white/66' : 'text-[#5a6a76]'}`}>{config.description}</p>
               <div className={`mt-5 pt-4 border-t space-y-2 ${active ? 'border-white/12' : 'border-[#e3e7eb]'}`}>
                 <p className={`text-[11px] ${active ? 'text-white/78' : 'text-[#5a6a76]'}`}><strong>Audience:</strong> {copy.audience}</p>
@@ -197,13 +197,13 @@ export default function AdvertisePage() {
           </div>
 
           <form onSubmit={submit} className="bg-white border border-[#e3e7eb] rounded-[22px] p-7 md:p-8 shadow-sm">
-            <div className="flex items-start justify-between gap-4 pb-6 mb-6 border-b border-[#e3e7eb]"><div><p className="text-[10px] uppercase tracking-[.16em] font-semibold text-[#10283b]">Book this placement</p><h2 className="text-[27px] font-semibold tracking-[-.03em] text-[#10283b] mt-2">{selected.label}</h2></div><p className="text-right text-[24px] font-semibold text-[#10283b]">£{formatPounds(selectedPrice)}<span className="block text-[10px] font-normal text-[#8a949b]">per month · recurring</span></p></div>
+            <div className="flex items-start justify-between gap-4 pb-6 mb-6 border-b border-[#e3e7eb]"><div><p className="text-[10px] uppercase tracking-[.16em] font-semibold text-[#10283b]">Book this placement</p><h2 className="text-[27px] font-semibold tracking-[-.03em] text-[#10283b] mt-2">{selected.label}</h2></div><p className="text-right text-[24px] font-semibold text-[#10283b]">£{formatPounds(selectedPrice)}<span className="block text-[10px] font-normal text-[#6b7580]">per month · recurring</span></p></div>
             <div className="space-y-4">
               <label className="block text-[12px] text-[#5a6a76]">Brand name<input required value={form.brandName} onChange={event => setForm({ ...form, brandName: event.target.value })} className="input-field mt-1" /></label>
               <label className="block text-[12px] text-[#5a6a76]">Contact email<input required type="email" value={form.contactEmail} onChange={event => setForm({ ...form, contactEmail: event.target.value })} className="input-field mt-1" /></label>
               <label className="block text-[12px] text-[#5a6a76]">Advert wording<input required maxLength={220} value={form.tagline} onChange={event => setForm({ ...form, tagline: event.target.value })} placeholder="A short line shown beside your logo" className="input-field mt-1" /></label>
               <label className="block text-[12px] text-[#5a6a76]">Website link<input required type="url" value={form.websiteUrl} onChange={event => setForm({ ...form, websiteUrl: event.target.value })} placeholder="https://yourbrand.com" className="input-field mt-1" /></label>
-              <label className="block text-[12px] text-[#5a6a76]">Logo image link<input required type="url" value={form.logoUrl} onChange={event => setForm({ ...form, logoUrl: event.target.value })} placeholder="https://yourbrand.com/logo.png" className="input-field mt-1" /><span className="block mt-1 text-[10px] text-[#8a949b]">Direct public HTTPS link to a PNG, JPG, WebP or SVG logo.</span></label>
+              <label className="block text-[12px] text-[#5a6a76]">Logo image link<input required type="url" value={form.logoUrl} onChange={event => setForm({ ...form, logoUrl: event.target.value })} placeholder="https://yourbrand.com/logo.png" className="input-field mt-1" /><span className="block mt-1 text-[10px] text-[#6b7580]">Direct public HTTPS link to a PNG, JPG, WebP or SVG logo.</span></label>
             </div>
 
             <div className="mt-6 rounded-xl border border-[#e3e7eb] bg-[#f5f6f8] p-4">
@@ -215,7 +215,7 @@ export default function AdvertisePage() {
 
             {error && <p className="text-[12px] text-red-600 mt-4">{error}</p>}
             <button disabled={busy || !termsAccepted} className="btn-primary w-full mt-6 disabled:opacity-50 inline-flex items-center justify-center gap-2">{busy ? 'Opening secure payment...' : <>Continue to Stripe - £{formatPounds(selectedPrice)}/month <ArrowRight size={13}/></>}</button>
-            <div className="flex gap-2 mt-4 text-[10px] leading-5 text-[#8a949b]"><ShieldCheck size={14} className="text-[#10283b] shrink-0 mt-0.5" /><p>Payment does not automatically publish the advert. WHC approval is required before the placement can go live.</p></div>
+            <div className="flex gap-2 mt-4 text-[10px] leading-5 text-[#6b7580]"><ShieldCheck size={14} className="text-[#10283b] shrink-0 mt-0.5" /><p>Payment does not automatically publish the advert. WHC approval is required before the placement can go live.</p></div>
           </form>
         </div>
       </section>

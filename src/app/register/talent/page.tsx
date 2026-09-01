@@ -101,7 +101,7 @@ export default function TalentRegisterPage() {
         <div className="w-full max-w-[430px]">
           <Wordmark />
           <div className="mt-10 bg-white border border-[#e3e7eb] p-7 lg:p-8">
-            <p className="text-[10px] uppercase tracking-[0.2em] text-[#8a949b] font-semibold">WHC Concierge</p>
+            <p className="text-[10px] uppercase tracking-[0.2em] text-[#6b7580] font-semibold">WHC Concierge</p>
             <h1 className="mt-2 text-[30px] leading-tight tracking-[-0.02em] font-serif font-semibold text-[#10283b]">Create your Talent account</h1>
             <p className="mt-2 mb-7 text-[13px] leading-6 text-[#5a6a76]">Three fields now. You build your professional profile once you are inside - nothing is asked twice.</p>
 
@@ -122,7 +122,7 @@ export default function TalentRegisterPage() {
                   <input id="reg-password" type={showPassword ? 'text' : 'password'} value={password} onChange={(e) => { setError(''); setPassword(e.target.value) }} className="input-field pr-10" maxLength={MAX_PASSWORD_LENGTH} autoComplete="new-password" />
                   <button type="button" onClick={() => setShowPassword(!showPassword)} aria-label={showPassword ? 'Hide password' : 'Show password'} className="absolute right-1 top-1/2 -translate-y-1/2 p-2 text-muted hover:text-[#0b2f4d]">{showPassword ? <EyeOff size={15} /> : <Eye size={15} />}</button>
                 </div>
-                <p className="mt-1.5 text-[11px] text-[#8a949b]">Use {MIN_PASSWORD_LENGTH}-{MAX_PASSWORD_LENGTH} characters.</p>
+                <p className="mt-1.5 text-[11px] text-[#6b7580]">Use {MIN_PASSWORD_LENGTH}-{MAX_PASSWORD_LENGTH} characters.</p>
               </div>
 
               <button type="button" onClick={createAccount} disabled={loading} className="w-full bg-[#0b2f4d] hover:bg-[#123f64] text-white px-5 py-3 text-[13px] font-semibold transition-colors disabled:opacity-40">
@@ -130,7 +130,7 @@ export default function TalentRegisterPage() {
               </button>
             </div>
 
-            {refCode && <p className="mt-4 text-[11px] text-[#8a949b]">Referral code <span className="font-semibold text-[#10283b]">{refCode}</span> will be applied to your account.</p>}
+            {refCode && <p className="mt-4 text-[11px] text-[#6b7580]">Referral code <span className="font-semibold text-[#10283b]">{refCode}</span> will be applied to your account.</p>}
 
             <p className="text-[13px] text-muted mt-7">Already have an account? <Link href="/login?role=talent" className="text-[#0b2f4d] font-semibold hover:underline">Sign in →</Link></p>
           </div>

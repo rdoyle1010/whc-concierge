@@ -42,7 +42,7 @@ function Field({ label, hint, children }: { label: string; hint?: string; childr
     <label className="block text-[12px] text-[#5a6a76]">
       <span className="font-medium text-[#10283b]">{label}</span>
       {children}
-      {hint ? <span className="mt-1 block text-[11px] leading-5 text-[#8a949b]">{hint}</span> : null}
+      {hint ? <span className="mt-1 block text-[11px] leading-5 text-[#6b7580]">{hint}</span> : null}
     </label>
   )
 }
@@ -53,12 +53,12 @@ function StringList({ label, hint, placeholder, values, onChange }: {
   return (
     <div>
       <p className="text-[12px] font-medium text-[#10283b]">{label}</p>
-      {hint ? <p className="mt-0.5 text-[11px] leading-5 text-[#8a949b]">{hint}</p> : null}
+      {hint ? <p className="mt-0.5 text-[11px] leading-5 text-[#6b7580]">{hint}</p> : null}
       <div className="mt-2 space-y-2">
         {values.map((value, index) => (
           <div key={index} className="flex items-center gap-2">
             <input value={value} placeholder={placeholder} className="input-field" onChange={event => onChange(values.map((item, i) => (i === index ? event.target.value : item)))} />
-            <button type="button" onClick={() => onChange(values.filter((_, i) => i !== index))} className="border border-[#e3e7eb] bg-white p-2 text-[#8a949b] hover:text-red-600" aria-label={`Remove ${label} ${index + 1}`}><Trash2 size={13} /></button>
+            <button type="button" onClick={() => onChange(values.filter((_, i) => i !== index))} className="border border-[#e3e7eb] bg-white p-2 text-[#6b7580] hover:text-red-600" aria-label={`Remove ${label} ${index + 1}`}><Trash2 size={13} /></button>
           </div>
         ))}
       </div>
@@ -177,7 +177,7 @@ export default function AcademyCourseEditorPage() {
   if (!detail) {
     return (
       <DashboardShell role="admin" userName="Admin">
-        <button type="button" onClick={leave} className="mb-4 inline-flex items-center gap-1 text-[13px] text-[#8a949b] hover:text-[#10283b]"><ArrowLeft size={14} /> Academy</button>
+        <button type="button" onClick={leave} className="mb-4 inline-flex items-center gap-1 text-[13px] text-[#6b7580] hover:text-[#10283b]"><ArrowLeft size={14} /> Academy</button>
         <div className="dashboard-card"><p className="text-[13px] text-red-600">{error || 'Course not found.'}</p></div>
       </DashboardShell>
     )
@@ -187,7 +187,7 @@ export default function AcademyCourseEditorPage() {
 
   return (
     <DashboardShell role="admin" userName="Admin">
-      <button type="button" onClick={leave} className="mb-4 inline-flex items-center gap-1 text-[13px] text-[#8a949b] hover:text-[#10283b]"><ArrowLeft size={14} /> Academy</button>
+      <button type="button" onClick={leave} className="mb-4 inline-flex items-center gap-1 text-[13px] text-[#6b7580] hover:text-[#10283b]"><ArrowLeft size={14} /> Academy</button>
 
       <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
@@ -212,7 +212,7 @@ export default function AcademyCourseEditorPage() {
       {/* Nothing has been taken over yet: offer the copy, explicitly. */}
       {!doc && (
         <div className="dashboard-card">
-          <div className="mb-3 inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#8a949b]"><Lock size={12} /> Platform version</div>
+          <div className="mb-3 inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#6b7580]"><Lock size={12} /> Platform version</div>
           <h2 className="text-[18px] font-semibold text-[#10283b]">Take editorial control of this course</h2>
           <p className="mt-2 max-w-2xl text-[13px] leading-6 text-[#5a6a76]">
             This course is currently the WHC platform version, and it improves with every release. When you take editorial control, the whole of the current course is copied into your own editable version first - every module, every lesson, the key terms, the knowledge checks and the assessment with its answers. You then edit a complete copy. You never start from an empty page, and you can go back to the platform version at any time without losing your writing.
@@ -220,7 +220,7 @@ export default function AcademyCourseEditorPage() {
           <div className="my-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
             {[['Modules', detail.platform_stats.modules], ['Lessons', detail.platform_stats.lessons], ['Words', detail.platform_stats.words.toLocaleString('en-GB')], ['Assessment questions', detail.platform_stats.questions]].map(([label, value]) => (
               <div key={String(label)} className="border border-[#e3e7eb] bg-[#f5f6f8] p-3">
-                <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[#8a949b]">{label}</p>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[#6b7580]">{label}</p>
                 <p className="mt-1 text-[18px] font-semibold text-[#10283b]">{value}</p>
               </div>
             ))}
@@ -253,14 +253,14 @@ export default function AcademyCourseEditorPage() {
             {problem ? (
               <p className="mt-3 flex items-start gap-2 border-t border-[#e3e7eb] pt-3 text-[12px] text-red-700"><AlertTriangle size={14} className="mt-0.5 shrink-0" /> {problem}</p>
             ) : (
-              <p className="mt-3 border-t border-[#e3e7eb] pt-3 text-[12px] text-[#8a949b]">Nothing saves on its own. Your writing is only stored when you press Save.</p>
+              <p className="mt-3 border-t border-[#e3e7eb] pt-3 text-[12px] text-[#6b7580]">Nothing saves on its own. Your writing is only stored when you press Save.</p>
             )}
           </div>
 
           {/* 1. The course itself */}
           <div className="dashboard-card mb-5">
             <h2 className="mb-1 text-[16px] font-semibold text-[#10283b]">The course</h2>
-            <p className="mb-4 text-[12px] text-[#8a949b]">What a learner reads before they begin, and what appears on every Academy card.</p>
+            <p className="mb-4 text-[12px] text-[#6b7580]">What a learner reads before they begin, and what appears on every Academy card.</p>
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <Field label="Course name"><input value={doc.title} onChange={event => update(current => ({ ...current, title: event.target.value }))} className="input-field mt-1" /></Field>
               <Field label="Category">
@@ -282,7 +282,7 @@ export default function AcademyCourseEditorPage() {
           <div className="mb-5 flex flex-wrap items-center justify-between gap-2">
             <div>
               <h2 className="text-[16px] font-semibold text-[#10283b]">Modules and lessons</h2>
-              <p className="text-[12px] text-[#8a949b]">A module is one step of the syllabus. Each module holds one or more lessons - the written content the learner reads. Adding, deleting or reordering modules changes what part-way learners still have to complete, so make those changes deliberately.</p>
+              <p className="text-[12px] text-[#6b7580]">A module is one step of the syllabus. Each module holds one or more lessons - the written content the learner reads. Adding, deleting or reordering modules changes what part-way learners still have to complete, so make those changes deliberately.</p>
             </div>
             <button type="button" onClick={() => { update(current => ({ ...current, modules: [...current.modules, emptyModule()] })); setOpenModule(doc.modules.length) }} className="btn-secondary inline-flex items-center gap-1 text-[12px]"><Plus size={12} /> Add module</button>
           </div>
@@ -295,12 +295,12 @@ export default function AcademyCourseEditorPage() {
                   <div className="flex flex-wrap items-center gap-2 p-4">
                     <button type="button" onClick={() => setOpenModule(open ? null : index)} className="min-w-0 flex-1 text-left">
                       <p className="text-[13px] font-semibold text-[#10283b]">Module {index + 1}. {module.title || <span className="text-red-600">Untitled module</span>}</p>
-                      <p className="mt-0.5 text-[11px] text-[#8a949b]">{module.lessons.length} lesson{module.lessons.length === 1 ? '' : 's'} · {module.knowledgeCheck.length} knowledge check{module.knowledgeCheck.length === 1 ? '' : 's'} · {module.keyTerms.length} key term{module.keyTerms.length === 1 ? '' : 's'}</p>
+                      <p className="mt-0.5 text-[11px] text-[#6b7580]">{module.lessons.length} lesson{module.lessons.length === 1 ? '' : 's'} · {module.knowledgeCheck.length} knowledge check{module.knowledgeCheck.length === 1 ? '' : 's'} · {module.keyTerms.length} key term{module.keyTerms.length === 1 ? '' : 's'}</p>
                     </button>
                     <div className="flex items-center gap-1">
                       <button type="button" disabled={index === 0} onClick={() => { update(current => ({ ...current, modules: move(current.modules, index, index - 1) })); setOpenModule(index - 1) }} className="border border-[#e3e7eb] p-2 text-[#5a6a76] disabled:opacity-30" aria-label="Move module up"><ArrowUp size={13} /></button>
                       <button type="button" disabled={index === doc.modules.length - 1} onClick={() => { update(current => ({ ...current, modules: move(current.modules, index, index + 1) })); setOpenModule(index + 1) }} className="border border-[#e3e7eb] p-2 text-[#5a6a76] disabled:opacity-30" aria-label="Move module down"><ArrowDown size={13} /></button>
-                      <button type="button" onClick={() => { if (window.confirm(`Delete module ${index + 1}${module.title ? ` "${module.title}"` : ''} and every lesson in it? This is not saved until you press Save.`)) { update(current => ({ ...current, modules: current.modules.filter((_, i) => i !== index) })); setOpenModule(null) } }} className="border border-[#e3e7eb] p-2 text-[#8a949b] hover:text-red-600" aria-label="Delete module"><Trash2 size={13} /></button>
+                      <button type="button" onClick={() => { if (window.confirm(`Delete module ${index + 1}${module.title ? ` "${module.title}"` : ''} and every lesson in it? This is not saved until you press Save.`)) { update(current => ({ ...current, modules: current.modules.filter((_, i) => i !== index) })); setOpenModule(null) } }} className="border border-[#e3e7eb] p-2 text-[#6b7580] hover:text-red-600" aria-label="Delete module"><Trash2 size={13} /></button>
                       <button type="button" onClick={() => setOpenModule(open ? null : index)} className="btn-secondary text-[11px]">{open ? 'Close' : 'Open'}</button>
                     </div>
                   </div>
@@ -319,7 +319,7 @@ export default function AcademyCourseEditorPage() {
                         <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
                           <div>
                             <p className="text-[13px] font-semibold text-[#10283b]">Lessons in this module</p>
-                            <p className="text-[11px] leading-5 text-[#8a949b]">{LESSON_BODY_HELP}</p>
+                            <p className="text-[11px] leading-5 text-[#6b7580]">{LESSON_BODY_HELP}</p>
                           </div>
                           <button type="button" onClick={() => updateModule(index, current => ({ ...current, lessons: [...current.lessons, emptyLesson()] }))} className="btn-secondary inline-flex items-center gap-1 text-[12px]"><Plus size={12} /> Add lesson</button>
                         </div>
@@ -327,14 +327,14 @@ export default function AcademyCourseEditorPage() {
                           {module.lessons.map((lesson, lessonIndex) => (
                             <div key={lessonIndex} className="border border-[#e3e7eb] bg-white p-3">
                               <div className="mb-2 flex items-center gap-2">
-                                <span className="text-[11px] font-semibold text-[#8a949b]">Lesson {lessonIndex + 1}</span>
+                                <span className="text-[11px] font-semibold text-[#6b7580]">Lesson {lessonIndex + 1}</span>
                                 <input value={lesson.title} placeholder="Lesson title" className="input-field flex-1" onChange={event => updateModule(index, current => ({ ...current, lessons: current.lessons.map((item, i) => (i === lessonIndex ? { ...item, title: event.target.value } : item)) }))} />
                                 <button type="button" disabled={lessonIndex === 0} onClick={() => updateModule(index, current => ({ ...current, lessons: move(current.lessons, lessonIndex, lessonIndex - 1) }))} className="border border-[#e3e7eb] p-2 text-[#5a6a76] disabled:opacity-30" aria-label="Move lesson up"><ArrowUp size={13} /></button>
                                 <button type="button" disabled={lessonIndex === module.lessons.length - 1} onClick={() => updateModule(index, current => ({ ...current, lessons: move(current.lessons, lessonIndex, lessonIndex + 1) }))} className="border border-[#e3e7eb] p-2 text-[#5a6a76] disabled:opacity-30" aria-label="Move lesson down"><ArrowDown size={13} /></button>
-                                <button type="button" onClick={() => { if (window.confirm(`Delete lesson ${lessonIndex + 1}${lesson.title ? ` "${lesson.title}"` : ''}?`)) updateModule(index, current => ({ ...current, lessons: current.lessons.filter((_, i) => i !== lessonIndex) })) }} className="border border-[#e3e7eb] p-2 text-[#8a949b] hover:text-red-600" aria-label="Delete lesson"><Trash2 size={13} /></button>
+                                <button type="button" onClick={() => { if (window.confirm(`Delete lesson ${lessonIndex + 1}${lesson.title ? ` "${lesson.title}"` : ''}?`)) updateModule(index, current => ({ ...current, lessons: current.lessons.filter((_, i) => i !== lessonIndex) })) }} className="border border-[#e3e7eb] p-2 text-[#6b7580] hover:text-red-600" aria-label="Delete lesson"><Trash2 size={13} /></button>
                               </div>
                               <textarea rows={12} value={lesson.body} placeholder="The written content of this lesson." className="input-field resize-y font-normal leading-6" onChange={event => updateModule(index, current => ({ ...current, lessons: current.lessons.map((item, i) => (i === lessonIndex ? { ...item, body: event.target.value } : item)) }))} />
-                              <p className="mt-1 text-[11px] text-[#8a949b]">{lesson.body.trim() ? `${lesson.body.trim().split(/\s+/).length.toLocaleString('en-GB')} words` : 'No content yet - this lesson cannot go live empty.'}</p>
+                              <p className="mt-1 text-[11px] text-[#6b7580]">{lesson.body.trim() ? `${lesson.body.trim().split(/\s+/).length.toLocaleString('en-GB')} words` : 'No content yet - this lesson cannot go live empty.'}</p>
                             </div>
                           ))}
                         </div>
@@ -344,15 +344,15 @@ export default function AcademyCourseEditorPage() {
                       {module.visuals.length > 0 && (
                         <div className="mt-5 border-t border-[#e3e7eb] pt-4">
                           <p className="text-[13px] font-semibold text-[#10283b]">Diagrams and tables in this module</p>
-                          <p className="mt-0.5 text-[11px] leading-5 text-[#8a949b]">These come from the WHC version of the course and are kept exactly as they are, so nothing is lost when you take control. They cannot be rewritten here yet - you can remove one if it no longer fits what you have written.</p>
+                          <p className="mt-0.5 text-[11px] leading-5 text-[#6b7580]">These come from the WHC version of the course and are kept exactly as they are, so nothing is lost when you take control. They cannot be rewritten here yet - you can remove one if it no longer fits what you have written.</p>
                           <div className="mt-2 space-y-2">
                             {module.visuals.map((visual, visualIndex) => (
                               <div key={visualIndex} className="flex items-center gap-2 border border-[#e3e7eb] bg-white p-3">
                                 <div className="min-w-0 flex-1">
                                   <p className="truncate text-[12px] font-medium text-[#10283b]">{visual.title || 'Untitled'}</p>
-                                  <p className="text-[11px] text-[#8a949b]">{describeVisual(visual)}</p>
+                                  <p className="text-[11px] text-[#6b7580]">{describeVisual(visual)}</p>
                                 </div>
-                                <button type="button" onClick={() => { if (window.confirm(`Remove "${visual.title || 'this diagram'}" from module ${index + 1}?`)) updateModule(index, current => ({ ...current, visuals: current.visuals.filter((_, i) => i !== visualIndex) })) }} className="border border-[#e3e7eb] p-2 text-[#8a949b] hover:text-red-600" aria-label="Remove diagram"><Trash2 size={13} /></button>
+                                <button type="button" onClick={() => { if (window.confirm(`Remove "${visual.title || 'this diagram'}" from module ${index + 1}?`)) updateModule(index, current => ({ ...current, visuals: current.visuals.filter((_, i) => i !== visualIndex) })) }} className="border border-[#e3e7eb] p-2 text-[#6b7580] hover:text-red-600" aria-label="Remove diagram"><Trash2 size={13} /></button>
                               </div>
                             ))}
                           </div>
@@ -362,7 +362,7 @@ export default function AcademyCourseEditorPage() {
                       {/* Key terms */}
                       <div className="mt-5 border-t border-[#e3e7eb] pt-4">
                         <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-                          <div><p className="text-[13px] font-semibold text-[#10283b]">Key terms</p><p className="text-[11px] text-[#8a949b]">The glossary shown under the module content.</p></div>
+                          <div><p className="text-[13px] font-semibold text-[#10283b]">Key terms</p><p className="text-[11px] text-[#6b7580]">The glossary shown under the module content.</p></div>
                           <button type="button" onClick={() => updateModule(index, current => ({ ...current, keyTerms: [...current.keyTerms, { term: '', definition: '' }] }))} className="btn-secondary inline-flex items-center gap-1 text-[12px]"><Plus size={12} /> Add key term</button>
                         </div>
                         <div className="space-y-2">
@@ -370,7 +370,7 @@ export default function AcademyCourseEditorPage() {
                             <div key={termIndex} className="grid grid-cols-1 gap-2 border border-[#e3e7eb] bg-white p-3 md:grid-cols-[220px_1fr_auto]">
                               <input value={term.term} placeholder="Term" className="input-field" onChange={event => updateModule(index, current => ({ ...current, keyTerms: current.keyTerms.map((item, i) => (i === termIndex ? { ...item, term: event.target.value } : item)) }))} />
                               <input value={term.definition} placeholder="What it means" className="input-field" onChange={event => updateModule(index, current => ({ ...current, keyTerms: current.keyTerms.map((item, i) => (i === termIndex ? { ...item, definition: event.target.value } : item)) }))} />
-                              <button type="button" onClick={() => updateModule(index, current => ({ ...current, keyTerms: current.keyTerms.filter((_, i) => i !== termIndex) }))} className="border border-[#e3e7eb] p-2 text-[#8a949b] hover:text-red-600" aria-label="Delete key term"><Trash2 size={13} /></button>
+                              <button type="button" onClick={() => updateModule(index, current => ({ ...current, keyTerms: current.keyTerms.filter((_, i) => i !== termIndex) }))} className="border border-[#e3e7eb] p-2 text-[#6b7580] hover:text-red-600" aria-label="Delete key term"><Trash2 size={13} /></button>
                             </div>
                           ))}
                         </div>
@@ -379,16 +379,16 @@ export default function AcademyCourseEditorPage() {
                       {/* Knowledge checks */}
                       <div className="mt-5 border-t border-[#e3e7eb] pt-4">
                         <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-                          <div><p className="text-[13px] font-semibold text-[#10283b]">Knowledge checks</p><p className="text-[11px] text-[#8a949b]">Practice questions inside the module. The learner sees the answer and your explanation after choosing, so these are not the final assessment.</p></div>
+                          <div><p className="text-[13px] font-semibold text-[#10283b]">Knowledge checks</p><p className="text-[11px] text-[#6b7580]">Practice questions inside the module. The learner sees the answer and your explanation after choosing, so these are not the final assessment.</p></div>
                           <button type="button" onClick={() => updateModule(index, current => ({ ...current, knowledgeCheck: [...current.knowledgeCheck, { q: '', options: ['', '', '', ''], answer: 0, why: '' }] }))} className="btn-secondary inline-flex items-center gap-1 text-[12px]"><Plus size={12} /> Add knowledge check</button>
                         </div>
                         <div className="space-y-3">
                           {module.knowledgeCheck.map((check, checkIndex) => (
                             <div key={checkIndex} className="border border-[#e3e7eb] bg-white p-3">
                               <div className="mb-2 flex items-center gap-2">
-                                <span className="shrink-0 text-[11px] font-semibold text-[#8a949b]">Q{checkIndex + 1}</span>
+                                <span className="shrink-0 text-[11px] font-semibold text-[#6b7580]">Q{checkIndex + 1}</span>
                                 <input value={check.q} placeholder="Question" className="input-field flex-1" onChange={event => updateModule(index, current => ({ ...current, knowledgeCheck: current.knowledgeCheck.map((item, i) => (i === checkIndex ? { ...item, q: event.target.value } : item)) }))} />
-                                <button type="button" onClick={() => updateModule(index, current => ({ ...current, knowledgeCheck: current.knowledgeCheck.filter((_, i) => i !== checkIndex) }))} className="border border-[#e3e7eb] p-2 text-[#8a949b] hover:text-red-600" aria-label="Delete knowledge check"><Trash2 size={13} /></button>
+                                <button type="button" onClick={() => updateModule(index, current => ({ ...current, knowledgeCheck: current.knowledgeCheck.filter((_, i) => i !== checkIndex) }))} className="border border-[#e3e7eb] p-2 text-[#6b7580] hover:text-red-600" aria-label="Delete knowledge check"><Trash2 size={13} /></button>
                               </div>
                               <div className="mb-2 grid grid-cols-1 gap-2 md:grid-cols-2">
                                 {check.options.map((option, optionIndex) => (
@@ -430,7 +430,7 @@ export default function AcademyCourseEditorPage() {
             <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
               <div>
                 <h2 className="text-[16px] font-semibold text-[#10283b]">End-of-course assessment</h2>
-                <p className="text-[12px] text-[#8a949b]">Marked on the server, so the answers below never reach a learner&apos;s browser. Passing issues the certificate.</p>
+                <p className="text-[12px] text-[#6b7580]">Marked on the server, so the answers below never reach a learner&apos;s browser. Passing issues the certificate.</p>
               </div>
               <button type="button" onClick={() => update(current => ({ ...current, assessment: [...current.assessment, emptyQuestion()] }))} className="btn-secondary inline-flex items-center gap-1 text-[12px]"><Plus size={12} /> Add question</button>
             </div>
@@ -438,11 +438,11 @@ export default function AcademyCourseEditorPage() {
               {doc.assessment.map((question, index) => (
                 <div key={index} className="border border-[#e3e7eb] p-3">
                   <div className="mb-2 flex items-center gap-2">
-                    <span className="shrink-0 text-[11px] font-semibold text-[#8a949b]">Q{index + 1}</span>
+                    <span className="shrink-0 text-[11px] font-semibold text-[#6b7580]">Q{index + 1}</span>
                     <input value={question.q} placeholder="Question" className="input-field flex-1" onChange={event => update(current => ({ ...current, assessment: current.assessment.map((item, i) => (i === index ? { ...item, q: event.target.value } : item)) }))} />
                     <button type="button" disabled={index === 0} onClick={() => update(current => ({ ...current, assessment: move(current.assessment, index, index - 1) }))} className="border border-[#e3e7eb] p-2 text-[#5a6a76] disabled:opacity-30" aria-label="Move question up"><ArrowUp size={13} /></button>
                     <button type="button" disabled={index === doc.assessment.length - 1} onClick={() => update(current => ({ ...current, assessment: move(current.assessment, index, index + 1) }))} className="border border-[#e3e7eb] p-2 text-[#5a6a76] disabled:opacity-30" aria-label="Move question down"><ArrowDown size={13} /></button>
-                    <button type="button" onClick={() => { if (window.confirm(`Delete assessment question ${index + 1}?`)) update(current => ({ ...current, assessment: current.assessment.filter((_, i) => i !== index) })) }} className="border border-[#e3e7eb] p-2 text-[#8a949b] hover:text-red-600" aria-label="Delete question"><Trash2 size={13} /></button>
+                    <button type="button" onClick={() => { if (window.confirm(`Delete assessment question ${index + 1}?`)) update(current => ({ ...current, assessment: current.assessment.filter((_, i) => i !== index) })) }} className="border border-[#e3e7eb] p-2 text-[#6b7580] hover:text-red-600" aria-label="Delete question"><Trash2 size={13} /></button>
                   </div>
                   <div className="mb-2 grid grid-cols-1 gap-2 md:grid-cols-2">
                     {question.options.map((option, optionIndex) => (

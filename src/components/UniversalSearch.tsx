@@ -136,7 +136,7 @@ export default function UniversalSearch({ variant, onNavigate }: { variant: 'nav
           type="button"
           onClick={() => setOpen(true)}
           aria-label="Search the platform"
-          className={`flex h-9 w-9 items-center justify-center transition-colors ${dark ? 'text-white/70 hover:text-white' : 'border border-border bg-white text-secondary hover:border-[#8a949b] hover:text-ink'}`}
+          className={`flex h-9 w-9 items-center justify-center transition-colors ${dark ? 'text-white/70 hover:text-white' : 'border border-border bg-white text-secondary hover:border-[#6b7580] hover:text-ink'}`}
         >
           <Search size={16} />
         </button>

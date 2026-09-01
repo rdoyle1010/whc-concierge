@@ -8,7 +8,7 @@ module.exports = {
         // Manrope + Poppins. Navy is the brand colour - never black.
         ink: '#10283b',
         body: '#3d4b57',
-        muted: '#8a949b',
+        muted: '#6b7580',
         secondary: '#5a6a76',
         surface: '#f5f6f8',
         border: '#e3e7eb',

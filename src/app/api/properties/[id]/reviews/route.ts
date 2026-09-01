@@ -32,7 +32,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
 
     const reviewerIds = [...new Set(reviews.map(r => r.reviewer_id).filter(Boolean))]
     const { data: candidates } = reviewerIds.length
-      ? await admin.from('candidate_profiles').select('user_id,full_name,role_level').in('user_id', reviewerIds)
+      ? await admin.from('candidate_profiles').select('user_id,role_level').in('user_id', reviewerIds)
       : { data: [] as any[] }
     const candidateMap = new Map((candidates || []).map((c: any) => [c.user_id, c]))
 
@@ -48,8 +48,10 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
           created_at: r.created_at,
           verified: true,
           source: r.booking_id ? 'Completed WHC agency shift' : 'WHC placement',
-          reviewer_name: reviewer?.full_name || 'WHC professional',
-          reviewer_role: reviewer?.role_level || null,
+          // Published by role, never by name: nobody consented to a public,
+          // permanent attribution of their opinion of a named employer.
+          reviewer_name: reviewer?.role_level || 'Verified WHC professional',
+          reviewer_role: null,
         }
       })
 

@@ -64,7 +64,7 @@ export function LessonVisualBlock({ visual }: { visual: Visual }) {
   // Downloads/media flow - never a stock photo pasted for decoration.
   return (
     <div className="rounded-xl border border-dashed border-[#e3e7eb] bg-[#f5f6f8] p-5 my-4 text-center">
-      <ImageIcon size={20} className="mx-auto text-[#8a949b] mb-2" />
+      <ImageIcon size={20} className="mx-auto text-[#6b7580] mb-2" />
       <p className="text-[12px] font-semibold text-[#10283b]">{visual.title}</p>
       <p className="text-[11.5px] text-secondary mt-1">{visual.description}</p>
     </div>

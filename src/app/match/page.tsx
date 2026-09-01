@@ -32,9 +32,9 @@ export default async function MatchExplainerPage() {
               <p className="mt-7 max-w-xl text-[16px] leading-7 text-[#5a6a76]">Think of it like a dating app for your career. WHC Concierge ranks live roles around your real experience and preferences, then lets you review them one at a time.</p>
               <div className="mt-8 flex flex-wrap gap-3">
                 <Link href="/login?role=talent&next=%2Froles%2Fmatch" className="inline-flex items-center gap-2 bg-[#0b2f4d] px-6 py-3.5 text-[13px] font-semibold text-white">Sign in to start matching <ArrowRight size={15}/></Link>
-                <Link href="/register/talent" className="inline-flex items-center gap-2 border border-[#8a949b] bg-white px-6 py-3.5 text-[13px] font-semibold text-[#10283b]">Create free profile</Link>
+                <Link href="/register/talent" className="inline-flex items-center gap-2 border border-[#6b7580] bg-white px-6 py-3.5 text-[13px] font-semibold text-[#10283b]">Create free profile</Link>
               </div>
-              <p className="mt-5 text-[11px] leading-5 text-[#8a949b]">Nothing is sent to an employer just because you swipe. You stay in control and choose when to submit an application.</p>
+              <p className="mt-5 text-[11px] leading-5 text-[#6b7580]">Nothing is sent to an employer just because you swipe. You stay in control and choose when to submit an application.</p>
             </div>
 
             <div className="relative mx-auto w-full max-w-[440px] py-8">

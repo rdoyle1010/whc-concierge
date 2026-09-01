@@ -131,7 +131,7 @@ export default async function PropertiesPage({ searchParams }: { searchParams?: 
             reviewScore>0?`${reviewScore.toFixed(1)} WHC verified${reviewCount?` (${reviewCount})`:''}`:null,
             p.live_roles>0?`${p.live_roles} live role${p.live_roles===1?'':'s'}`:null,
           ].filter(Boolean).join(' · ')
-          return <Link key={p.id} href={`/properties/${p.id}`} aria-label={`Explore property: ${name}`} className="group flex flex-col overflow-hidden border border-border bg-white transition-colors hover:border-[#8a949b]">
+          return <Link key={p.id} href={`/properties/${p.id}`} aria-label={`Explore property: ${name}`} className="group flex flex-col overflow-hidden border border-border bg-white transition-colors hover:border-[#6b7580]">
             <div className="relative aspect-[16/10] overflow-hidden bg-[#e8eef4]">
               {image?<img src={image} alt={name} loading="lazy" decoding="async" className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-[1.02]"/>:<img src={cms.blocks[0].image.url} alt={cms.blocks[0].image.alt} loading="lazy" className="w-full h-full object-cover"/>}
               <div className="absolute inset-0" style={{background:'linear-gradient(to top, rgba(11,47,77,.82) 0%, rgba(11,47,77,.28) 55%, rgba(11,47,77,.05) 100%)'}} aria-hidden />

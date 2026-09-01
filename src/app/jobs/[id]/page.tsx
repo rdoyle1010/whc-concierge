@@ -113,7 +113,7 @@ export default async function RoleDetailPage(props: { params: Promise<{ id: stri
           </div>
 
           <aside className="lg:sticky lg:top-24 border border-[#e3e7eb] rounded-[20px] p-5 bg-white shadow-sm">
-            <p className="text-[10px] uppercase tracking-[.14em] text-[#8a949b]">Interested in this role?</p>
+            <p className="text-[10px] uppercase tracking-[.14em] text-[#6b7580]">Interested in this role?</p>
             <p className="text-[13px] leading-6 text-[#5a6a76] mt-2">Apply through WHC so the property can review your full professional profile and match information.</p>
             <div className="mt-5"><JobApplyButtons roleId={String(job.id)} /></div>
           </aside>
@@ -122,7 +122,7 @@ export default async function RoleDetailPage(props: { params: Promise<{ id: stri
 
       {(propertyPhoto || employer.id) && <section className="border-y border-[#e3e7eb] bg-[#f5f6f8]">
         <div className="max-w-6xl mx-auto px-6 py-8 grid md:grid-cols-[220px_1fr_auto] gap-6 items-center">
-          {propertyPhoto ? <div className="aspect-[4/3] overflow-hidden rounded-[16px] bg-white"><img src={propertyPhoto} alt={propertyName} className="w-full h-full object-cover"/></div> : <div className="aspect-[4/3] rounded-[16px] bg-white border border-[#e3e7eb] flex items-center justify-center"><Building2 size={30} className="text-[#8a949b]"/></div>}
+          {propertyPhoto ? <div className="aspect-[4/3] overflow-hidden rounded-[16px] bg-white"><img src={propertyPhoto} alt={propertyName} className="w-full h-full object-cover"/></div> : <div className="aspect-[4/3] rounded-[16px] bg-white border border-[#e3e7eb] flex items-center justify-center"><Building2 size={30} className="text-[#6b7580]"/></div>}
           <div>
             <p className="text-[10px] uppercase tracking-[.14em] text-[#5a6a76]">The property</p>
             <h2 className="text-[28px] mt-2">{propertyName}</h2>
@@ -148,15 +148,15 @@ export default async function RoleDetailPage(props: { params: Promise<{ id: stri
           {hasAny([job.commercial_responsibility, job.key_kpis, job.membership_size, job.opening_hours]) &&
             <JobSection eyebrow="The commercial picture" title="Commercial responsibility">
               {job.commercial_responsibility && <Prose text={job.commercial_responsibility}/>}
-              {Array.isArray(job.key_kpis) && job.key_kpis.length > 0 && <div className={job.commercial_responsibility ? 'mt-6' : ''}><p className="text-[11px] uppercase tracking-[.12em] font-semibold text-[#8a949b] mb-3">The numbers this role owns</p><ul className="space-y-2">{job.key_kpis.map((kpi: string) => <li key={kpi} className="text-[13px] leading-6 text-[#5a6a76] pl-3 border-l-2 border-[#0b2f4d]">{kpi}</li>)}</ul></div>}
+              {Array.isArray(job.key_kpis) && job.key_kpis.length > 0 && <div className={job.commercial_responsibility ? 'mt-6' : ''}><p className="text-[11px] uppercase tracking-[.12em] font-semibold text-[#6b7580] mb-3">The numbers this role owns</p><ul className="space-y-2">{job.key_kpis.map((kpi: string) => <li key={kpi} className="text-[13px] leading-6 text-[#5a6a76] pl-3 border-l-2 border-[#0b2f4d]">{kpi}</li>)}</ul></div>}
               {(job.membership_size || job.opening_hours) && <div className="grid sm:grid-cols-2 gap-3 mt-6">{job.membership_size && <Fact label="Membership" value={String(job.membership_size)}/>} {job.opening_hours && <Fact label="Opening hours" value={String(job.opening_hours)}/>}</div>}
             </JobSection>}
 
           {hasAny([employer.num_treatment_rooms, employer.spa_size, employer.facilities, employer.product_houses_used || employer.product_houses, employer.team_size]) &&
             <JobSection eyebrow="The spa" title={`Inside the spa at ${propertyName}`}>
               {(employer.num_treatment_rooms || employer.spa_size || employer.team_size) && <div className="grid sm:grid-cols-3 gap-3">{employer.num_treatment_rooms && <Fact label="Treatment rooms" value={String(employer.num_treatment_rooms)}/>} {employer.spa_size && <Fact label="Spa size" value={String(employer.spa_size)}/>} {employer.team_size && <Fact label="Spa team" value={`${employer.team_size} people`}/>}</div>}
-              {Array.isArray(employer.facilities) && employer.facilities.length > 0 && <div className="mt-6"><p className="text-[11px] uppercase tracking-[.12em] font-semibold text-[#8a949b] mb-3">Facilities</p><div className="flex flex-wrap gap-1.5">{employer.facilities.map((facility: string) => <span key={facility} className="text-[12px] bg-[#f5f6f8] text-[#5a6a76] px-3 py-1.5">{facility}</span>)}</div></div>}
-              {(() => { const partners = employer.product_houses_used || employer.product_houses; return Array.isArray(partners) && partners.length > 0 ? <div className="mt-6"><p className="text-[11px] uppercase tracking-[.12em] font-semibold text-[#8a949b] mb-3">Product partners</p><div className="flex flex-wrap gap-1.5">{partners.map((house: string) => <span key={house} className="text-[12px] border border-[#e3e7eb] bg-white text-[#10283b] px-3 py-1.5">{house}</span>)}</div></div> : null })()}
+              {Array.isArray(employer.facilities) && employer.facilities.length > 0 && <div className="mt-6"><p className="text-[11px] uppercase tracking-[.12em] font-semibold text-[#6b7580] mb-3">Facilities</p><div className="flex flex-wrap gap-1.5">{employer.facilities.map((facility: string) => <span key={facility} className="text-[12px] bg-[#f5f6f8] text-[#5a6a76] px-3 py-1.5">{facility}</span>)}</div></div>}
+              {(() => { const partners = employer.product_houses_used || employer.product_houses; return Array.isArray(partners) && partners.length > 0 ? <div className="mt-6"><p className="text-[11px] uppercase tracking-[.12em] font-semibold text-[#6b7580] mb-3">Product partners</p><div className="flex flex-wrap gap-1.5">{partners.map((house: string) => <span key={house} className="text-[12px] border border-[#e3e7eb] bg-white text-[#10283b] px-3 py-1.5">{house}</span>)}</div></div> : null })()}
             </JobSection>}
 
           {(job.reporting_line || job.team_size) && <JobSection eyebrow="The team" title="Team & reporting">
@@ -166,8 +166,8 @@ export default async function RoleDetailPage(props: { params: Promise<{ id: stri
           {hasAny([salaryRange, job.three_things, job.perks, job.benefits, ...packageItems]) && <JobSection eyebrow="The package" title="Salary & benefits">
             {salaryRange && <div className="grid sm:grid-cols-2 gap-3 mb-6"><Fact label="Salary" value={salaryRange}/>{job.offers_accommodation && <Fact label="Accommodation" value="Provided"/>}</div>}
             {Array.isArray(job.three_things) && job.three_things.length > 0 && <TickList items={job.three_things}/>}
-            {Array.isArray(job.benefits) && job.benefits.length > 0 && <div className="mt-6"><p className="text-[11px] uppercase tracking-[.12em] font-semibold text-[#8a949b] mb-3">Benefits</p><TickList items={job.benefits}/></div>}
-            {Array.isArray(job.perks) && job.perks.length > 0 && <div className="mt-6"><p className="text-[11px] uppercase tracking-[.12em] font-semibold text-[#8a949b] mb-3">Perks</p><TickList items={job.perks}/></div>}
+            {Array.isArray(job.benefits) && job.benefits.length > 0 && <div className="mt-6"><p className="text-[11px] uppercase tracking-[.12em] font-semibold text-[#6b7580] mb-3">Benefits</p><TickList items={job.benefits}/></div>}
+            {Array.isArray(job.perks) && job.perks.length > 0 && <div className="mt-6"><p className="text-[11px] uppercase tracking-[.12em] font-semibold text-[#6b7580] mb-3">Perks</p><TickList items={job.perks}/></div>}
             {packageItems.length > 0 && <div className="flex flex-wrap gap-2 mt-6">{packageItems.map((item: any) => <span key={String(item)} className="bg-[#f5f6f8] px-3 py-1.5 text-[12px] text-[#5a6a76]">{String(item)}</span>)}</div>}
           </JobSection>}
 
@@ -207,7 +207,7 @@ export default async function RoleDetailPage(props: { params: Promise<{ id: stri
         <aside className="space-y-4">
           <JobMatchPanel jobId={String(job.id)} />
           <div className="border border-[#e3e7eb] rounded-[18px] p-5">
-            <p className="text-[10px] uppercase tracking-[.14em] text-[#8a949b]">Role at a glance</p>
+            <p className="text-[10px] uppercase tracking-[.14em] text-[#6b7580]">Role at a glance</p>
             <div className="space-y-4 mt-4">{salaryRange && <MiniFact icon={BriefcaseBusiness} label="Salary" value={salaryRange}/>} {(job.location || employer.location) && <MiniFact icon={MapPin} label="Location" value={job.location || employer.location}/>} {job.shift_pattern && <MiniFact icon={CalendarDays} label="Shift pattern" value={prettyChip(String(job.shift_pattern))}/>} {employer.star_rating && <MiniFact icon={Star} label="Property" value={isNaN(Number(employer.star_rating)) ? employer.star_rating : `${employer.star_rating} star`}/>}</div>
           </div>
         </aside>
@@ -224,7 +224,7 @@ function Prose({ text }: { text: string }) { return <div className="text-[15px] 
 function JobSection({ eyebrow, title, children }: { eyebrow: string; title: string; children: React.ReactNode }) {
   return <section><p className="text-[10px] uppercase tracking-[.16em] font-semibold text-[#5a6a76]">{eyebrow}</p><h2 className="text-[30px] md:text-[36px] mt-2 mb-5">{title}</h2>{children}</section>
 }
-function Fact({ label, value }: { label: string; value: string }) { return <div className="rounded-[14px] border border-[#e3e7eb] bg-white px-4 py-3"><p className="text-[9px] uppercase tracking-[.12em] text-[#8a949b]">{label}</p><p className="text-[13px] font-semibold text-[#10283b] mt-1">{value}</p></div> }
-function MiniFact({ icon: Icon, label, value }: { icon: any; label: string; value: string }) { return <div className="flex gap-3"><Icon size={16} className="text-[#5a6a76] mt-0.5 shrink-0"/><div><p className="text-[10px] uppercase tracking-[.1em] text-[#8a949b]">{label}</p><p className="text-[13px] text-[#10283b] mt-0.5">{value}</p></div></div> }
-function ChipList({ label, items }: { label: string; items?: string[] | null }) { if (!Array.isArray(items) || items.length === 0) return null; return <div><p className="text-[11px] uppercase tracking-[.12em] font-semibold text-[#8a949b] mb-3">{label}</p><div className="flex flex-wrap gap-2">{items.map(item => <span key={item} className="rounded-full border border-[#e3e7eb] bg-[#f5f6f8] px-3 py-1.5 text-[12px] text-[#5a6a76]">{prettyChip(String(item))}</span>)}</div></div> }
+function Fact({ label, value }: { label: string; value: string }) { return <div className="rounded-[14px] border border-[#e3e7eb] bg-white px-4 py-3"><p className="text-[9px] uppercase tracking-[.12em] text-[#6b7580]">{label}</p><p className="text-[13px] font-semibold text-[#10283b] mt-1">{value}</p></div> }
+function MiniFact({ icon: Icon, label, value }: { icon: any; label: string; value: string }) { return <div className="flex gap-3"><Icon size={16} className="text-[#5a6a76] mt-0.5 shrink-0"/><div><p className="text-[10px] uppercase tracking-[.1em] text-[#6b7580]">{label}</p><p className="text-[13px] text-[#10283b] mt-0.5">{value}</p></div></div> }
+function ChipList({ label, items }: { label: string; items?: string[] | null }) { if (!Array.isArray(items) || items.length === 0) return null; return <div><p className="text-[11px] uppercase tracking-[.12em] font-semibold text-[#6b7580] mb-3">{label}</p><div className="flex flex-wrap gap-2">{items.map(item => <span key={item} className="rounded-full border border-[#e3e7eb] bg-[#f5f6f8] px-3 py-1.5 text-[12px] text-[#5a6a76]">{prettyChip(String(item))}</span>)}</div></div> }
 function TickList({ items }: { items: string[] }) { return <div className="grid sm:grid-cols-2 gap-3">{items.map(item => <div key={item} className="flex gap-3 text-[13px] text-[#5a6a76]"><Check size={15} className="text-[#0b2f4d] mt-0.5 shrink-0"/>{item}</div>)}</div> }

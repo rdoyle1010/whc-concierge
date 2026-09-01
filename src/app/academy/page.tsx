@@ -107,7 +107,7 @@ export default function PublicAcademyPage() {
       <Navbar />
 
       <section className="pt-[76px] bg-[#0b2f4d] text-white overflow-hidden">
-        <div className="mx-auto max-w-[1440px] px-6 py-18 lg:px-10 lg:py-24 grid lg:grid-cols-[1.05fr_.95fr] gap-12 items-center">
+        <div className="mx-auto max-w-[1440px] px-6 py-16 lg:px-10 lg:py-24 grid lg:grid-cols-[1.05fr_.95fr] gap-12 items-center">
           <div>
             <p className="mb-4 text-[10px] font-semibold uppercase tracking-[0.2em] text-white/55">WHC Academy</p>
             <h1 className="max-w-4xl text-[44px] font-semibold leading-[1.01] tracking-[-0.05em] text-white md:text-[64px]">Learn what luxury spas actually expect from you.</h1>
@@ -119,7 +119,7 @@ export default function PublicAcademyPage() {
             <p className="mt-4 text-[11px] text-white/45">No membership required. WHC members receive member pricing.</p>
           </div>
 
-          <div className="rounded-[28px] bg-white p-7 md:p-9 text-[#10283b] shadow-xl shadow-black/15">
+          <div className="rounded-[28px] bg-white p-7 md:p-9 text-[#10283b] ">
             <p className="text-[10px] uppercase tracking-[.16em] font-semibold text-[#5a6a76]">What you leave with</p>
             <h2 className="text-[29px] font-semibold tracking-[-.035em] mt-2">More than a certificate.</h2>
             <div className="space-y-5 mt-7">
@@ -141,7 +141,7 @@ export default function PublicAcademyPage() {
             ['Apply', 'Real spa scenarios'],
             ['Prove', 'Formal assessment'],
             ['Show', 'Certificate + profile badge'],
-          ].map(([title, text], index) => <div key={title} className="flex items-start gap-3"><div className="h-8 w-8 rounded-full bg-[#0b2f4d] text-white flex items-center justify-center text-[11px] font-semibold shrink-0">{index + 1}</div><div><p className="text-[12px] font-semibold text-[#10283b]">{title}</p><p className="text-[11px] text-[#8a949b] mt-0.5">{text}</p></div></div>)}
+          ].map(([title, text], index) => <div key={title} className="flex items-start gap-3"><div className="h-8 w-8 rounded-full bg-[#0b2f4d] text-white flex items-center justify-center text-[11px] font-semibold shrink-0">{index + 1}</div><div><p className="text-[12px] font-semibold text-[#10283b]">{title}</p><p className="text-[11px] text-[#6b7580] mt-0.5">{text}</p></div></div>)}
         </div>
       </section>
 
@@ -201,7 +201,7 @@ export default function PublicAcademyPage() {
                       <span className="inline-flex items-center gap-1.5 text-[11px] text-[#5a6a76]"><CheckCircle2 size={13} className="text-[#5a6a76]" /> Formal assessment</span>
                     </div>
                     <div className="flex items-center justify-between gap-4 border-t border-[#e3e7eb] pt-5">
-                      <div><p className="text-[10px] uppercase tracking-[0.12em] text-[#8a949b]">Guest price</p><p className="text-[22px] font-semibold text-[#10283b]">£{(publicCoursePrice(course) / 100).toFixed(0)}</p></div>
+                      <div><p className="text-[10px] uppercase tracking-[0.12em] text-[#6b7580]">Guest price</p><p className="text-[22px] font-semibold text-[#10283b]">£{(publicCoursePrice(course) / 100).toFixed(0)}</p></div>
                       {purchaseButton(course)}
                     </div>
                   </div>
@@ -220,7 +220,7 @@ export default function PublicAcademyPage() {
 
           {categories.map(cat => (
             <div key={cat} className="mb-12">
-              <h3 className="mb-4 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#8a949b]">{cat}</h3>
+              <h3 className="mb-4 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#6b7580]">{cat}</h3>
               <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 xl:grid-cols-3">
                 {standardCourses.filter(c => c.category === cat).map(course => (
                   <article key={course.slug} className="flex flex-col overflow-hidden border border-[#e3e7eb] bg-white">
@@ -230,7 +230,7 @@ export default function PublicAcademyPage() {
                     <div className="flex flex-1 flex-col p-6">
                       <h3 className="mb-1 text-[19px] font-semibold leading-snug tracking-tight text-[#10283b]">{course.title}</h3>
                       <p className="mb-3 text-[12px] text-[#5a6a76]">{course.tagline}</p>
-                      <p className="text-[11px] text-[#8a949b]">{course.lessons.length} module{course.lessons.length === 1 ? '' : 's'} · ~{course.minutes} min · {courseMeta(course.slug).cpdHours} CPD hour{courseMeta(course.slug).cpdHours === 1 ? '' : 's'} · £{(publicCoursePrice(course) / 100).toFixed(0)}</p>
+                      <p className="text-[11px] text-[#6b7580]">{course.lessons.length} module{course.lessons.length === 1 ? '' : 's'} · ~{course.minutes} min · {courseMeta(course.slug).cpdHours} CPD hour{courseMeta(course.slug).cpdHours === 1 ? '' : 's'} · £{(publicCoursePrice(course) / 100).toFixed(0)}</p>
                       {(demand[course.slug] || 0) > 0 && (
                         <p className="mt-2 border-t border-[#e3e7eb] pt-2 text-[12px] font-serif font-semibold text-[#0b2f4d]">Asked for in {demand[course.slug]} live WHC role{demand[course.slug] === 1 ? '' : 's'} right now</p>
                       )}
@@ -251,7 +251,7 @@ export default function PublicAcademyPage() {
             <h2 className="text-[29px] md:text-[36px] font-semibold tracking-[-.035em] text-[#10283b] mt-2">Don't just say you're developing. Show it.</h2>
             <p className="text-[13px] leading-6 text-[#5a6a76] max-w-3xl mt-3">Every WHC certificate carries a unique verification code. For Talent members, completed Academy courses can also appear as profile badges employers can see.</p>
           </div>
-          <Link href="/verify" className="inline-flex items-center justify-center gap-2 rounded-xl border border-[#8a949b] px-5 py-3 text-[12px] font-semibold text-[#5a6a76] hover:bg-[#f5f6f8]">See certificate verification <ArrowRight size={13}/></Link>
+          <Link href="/verify" className="inline-flex items-center justify-center gap-2 rounded-xl border border-[#6b7580] px-5 py-3 text-[12px] font-semibold text-[#5a6a76] hover:bg-[#f5f6f8]">See certificate verification <ArrowRight size={13}/></Link>
         </section>
 
         <section className="mt-14 border border-border bg-[#f5f6f8] p-7 md:p-9">
