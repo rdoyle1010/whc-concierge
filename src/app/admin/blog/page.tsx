@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
+import { useDialog } from '@/components/useDialog'
 import DashboardShell from '@/components/DashboardShell'
 import { Plus, Edit2, Trash2, Eye, EyeOff, FileText, X, Upload, Image as ImageIcon, Share2 } from 'lucide-react'
 import Pagination from '@/components/Pagination'
@@ -27,6 +28,9 @@ export default function AdminBlogPage() {
     author: 'WHC Concierge', category: '', tags: '', status: 'draft', published_at: '',
   }
   const [form, setForm] = useState(emptyPost)
+
+  const formDialog = useDialog(() => setShowForm(false), 'admin-blog-editor-heading', { enabled: showForm })
+  const deleteDialog = useDialog(() => setShowDelete(null), 'admin-blog-delete-heading', { enabled: Boolean(showDelete) })
 
   const load = async () => {
     try {
@@ -128,8 +132,8 @@ export default function AdminBlogPage() {
     {pageError && <div className="mb-5 rounded-xl bg-red-50 px-4 py-3 text-[13px] text-red-600">{pageError}</div>}
 
     {showForm && <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#07243b]/70 p-4" onClick={() => setShowForm(false)}>
-      <div className="max-h-[92vh] w-full max-w-4xl overflow-y-auto rounded-2xl bg-white p-7 md:p-9" onClick={e => e.stopPropagation()}>
-        <div className="mb-6 flex items-center justify-between"><div><p className="dashboard-eyebrow">Journal editor</p><h2 className="text-[24px] font-semibold text-[#10283b]">{editing ? 'Edit article' : 'Write new article'}</h2></div><button onClick={() => setShowForm(false)} className="p-2 text-[#5a6a76]"><X size={18}/></button></div>
+      <div {...formDialog.panelProps} className="max-h-[92vh] w-full max-w-4xl overflow-y-auto rounded-2xl bg-white p-7 md:p-9">
+        <div className="mb-6 flex items-center justify-between"><div><p className="dashboard-eyebrow">Journal editor</p><h2 id="admin-blog-editor-heading" className="text-[24px] font-semibold text-[#10283b]">{editing ? 'Edit article' : 'Write new article'}</h2></div><button onClick={() => setShowForm(false)} className="p-2 text-[#5a6a76]"><X size={18}/></button></div>
         <div className="space-y-5">
           <div><label className="dashboard-eyebrow block mb-1.5">Title *</label><input aria-label="Title" className="input-field" value={form.title} onChange={e => setForm({ ...form, title: e.target.value, slug: editing ? form.slug : generateSlug(e.target.value) })} placeholder="Article title"/></div>
           <div className="grid md:grid-cols-2 gap-4"><div><label className="dashboard-eyebrow block mb-1.5">Slug</label><input aria-label="Slug" className="input-field" value={form.slug} onChange={e => setForm({ ...form, slug: e.target.value })}/></div><div><label className="dashboard-eyebrow block mb-1.5">Author</label><input aria-label="Author" className="input-field" value={form.author} onChange={e => setForm({ ...form, author: e.target.value })}/></div></div>
@@ -151,7 +155,7 @@ export default function AdminBlogPage() {
       </div>
     </div>}
 
-    {showDelete && <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#07243b]/70 p-4" onClick={() => setShowDelete(null)}><div className="w-full max-w-sm rounded-2xl bg-white p-6" onClick={e=>e.stopPropagation()}><h3 className="text-[18px] font-semibold text-[#10283b]">Delete this article?</h3><p className="text-[12px] text-[#5a6a76] mt-2">This cannot be undone.</p><div className="flex gap-2 mt-6"><button className="btn-secondary flex-1" onClick={()=>setShowDelete(null)}>Cancel</button><button className="flex-1 rounded-lg bg-red-600 px-4 py-2 text-white text-[12px] font-semibold" onClick={confirmDelete}>Delete</button></div></div></div>}
+    {showDelete && <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#07243b]/70 p-4" onClick={() => setShowDelete(null)}><div {...deleteDialog.panelProps} className="w-full max-w-sm rounded-2xl bg-white p-6"><h3 id="admin-blog-delete-heading" className="text-[18px] font-semibold text-[#10283b]">Delete this article?</h3><p className="text-[12px] text-[#5a6a76] mt-2">This cannot be undone.</p><div className="flex gap-2 mt-6"><button className="btn-secondary flex-1" onClick={()=>setShowDelete(null)}>Cancel</button><button className="flex-1 rounded-lg bg-red-600 px-4 py-2 text-white text-[12px] font-semibold" onClick={confirmDelete}>Delete</button></div></div></div>}
 
     {loading ? <div className="h-64 flex items-center justify-center"><div className="h-8 w-8 animate-spin rounded-full border-2 border-[#5a6a76] border-t-transparent"/></div> : posts.length === 0 ? <div className="dashboard-card text-center py-16"><FileText size={38} className="mx-auto text-[#6b7580]"/><p className="mt-3 text-[15px] font-semibold text-[#10283b]">No articles yet</p></div> : <>
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">{paginated.map(post => <article key={post.id} className="overflow-hidden rounded-2xl border border-[#e3e7eb] bg-white">

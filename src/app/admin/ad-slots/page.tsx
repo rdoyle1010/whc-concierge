@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
+import { useDialog } from '@/components/useDialog'
 import DashboardShell from '@/components/DashboardShell'
 import { Megaphone, Plus, Upload, X } from 'lucide-react'
 
@@ -66,6 +67,8 @@ export default function AdminAdSlotsPage() {
   const [rotationWeight, setRotationWeight] = useState('1')
   const [uploading, setUploading] = useState(false)
   const [creating, setCreating] = useState(false)
+
+  const formDialog = useDialog(() => setFormOpen(false), 'admin-direct-advert-heading', { enabled: formOpen })
 
   async function load() {
     try {
@@ -285,9 +288,9 @@ export default function AdminAdSlotsPage() {
 
         {formOpen && (
           <div className="fixed inset-0 bg-[#07243b]/70 z-50 flex items-center justify-center p-4" onClick={() => setFormOpen(false)}>
-            <div className="bg-white rounded-2xl max-w-md w-full max-h-[90vh] overflow-y-auto p-6" onClick={e => e.stopPropagation()}>
+            <div {...formDialog.panelProps} className="bg-white rounded-2xl max-w-md w-full max-h-[90vh] overflow-y-auto p-6">
               <div className="flex items-center justify-between mb-1">
-                <h2 className="font-serif text-lg font-bold text-ink">Place a direct advert</h2>
+                <h2 id="admin-direct-advert-heading" className="font-serif text-lg font-bold text-ink">Place a direct advert</h2>
                 <button type="button" onClick={() => setFormOpen(false)} className="text-gray-300 hover:text-ink"><X size={20} /></button>
               </div>
               <p className="text-[12px] text-secondary mb-4">For brands that come to you directly - no payment flow, live as soon as you pin it to a slot that is switched on.</p>

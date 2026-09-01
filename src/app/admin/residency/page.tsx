@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useDialog } from '@/components/useDialog'
 import DashboardShell from '@/components/DashboardShell'
 import { CalendarCheck, Check, X, Eye, Clock3 } from 'lucide-react'
 
@@ -12,6 +13,9 @@ export default function AdminResidencyPage() {
   const [selected, setSelected] = useState<any>(null)
   const [rejecting, setRejecting] = useState<any>(null)
   const [reason, setReason] = useState('')
+
+  const detailDialog = useDialog(() => setSelected(null), 'admin-residency-detail-heading', { enabled: Boolean(selected) })
+  const rejectDialog = useDialog(() => setRejecting(null), 'admin-residency-reject-heading', { enabled: Boolean(rejecting) })
 
   async function load() {
     try {
@@ -144,9 +148,9 @@ export default function AdminResidencyPage() {
 
       {selected && (
         <div className="fixed inset-0 bg-[#07243b]/70 z-50 flex items-center justify-center p-4" onClick={() => setSelected(null)}>
-          <div className="bg-white max-w-lg w-full max-h-[90vh] overflow-y-auto p-7 border border-border" onClick={(e) => e.stopPropagation()}>
+          <div {...detailDialog.panelProps} className="bg-white max-w-lg w-full max-h-[90vh] overflow-y-auto p-7 border border-border">
             <div className="flex items-start justify-between mb-3">
-              <div><p className="dashboard-eyebrow">Specialist listing</p><h2 className="text-2xl font-semibold text-ink">{selected.candidate_name || 'Specialist'}</h2></div>
+              <div><p className="dashboard-eyebrow">Specialist listing</p><h2 id="admin-residency-detail-heading" className="text-2xl font-semibold text-ink">{selected.candidate_name || 'Specialist'}</h2></div>
               <button onClick={() => setSelected(null)} className="text-gray-300 hover:text-ink"><X size={20} /></button>
             </div>
             <p className="text-sm text-secondary mb-4">{selected.title}{selected.duration ? ` · ${selected.duration}` : ''}{selected.travel_availability ? ` · ${String(selected.travel_availability).replace(/_/g, ' ')}` : ''}</p>
@@ -166,8 +170,8 @@ export default function AdminResidencyPage() {
 
       {rejecting && (
         <div className="fixed inset-0 bg-[#07243b]/70 z-50 flex items-center justify-center p-4" onClick={() => setRejecting(null)}>
-          <div className="bg-white max-w-md w-full p-6 border border-border" onClick={(e) => e.stopPropagation()}>
-            <h2 className="text-xl font-semibold text-ink mb-2">Reject listing</h2>
+          <div {...rejectDialog.panelProps} className="bg-white max-w-md w-full p-6 border border-border">
+            <h2 id="admin-residency-reject-heading" className="text-xl font-semibold text-ink mb-2">Reject listing</h2>
             <p className="text-sm text-secondary mb-4">{rejecting.candidate_name || 'The specialist'} will be told why by email and in-app so they can correct the listing and resubmit.</p>
             <textarea rows={3} value={reason} onChange={(e) => setReason(e.target.value)} className="input-field mb-4" placeholder="Reason shown to the specialist..." />
             <div className="flex gap-3">

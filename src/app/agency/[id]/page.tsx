@@ -12,6 +12,7 @@ import ReviewForm from '@/components/ReviewForm'
 import { AGENCY_PLATFORM_FEE_PCT } from '@/lib/constants'
 import { shiftHours } from '@/lib/agency-time'
 import TrackView from '@/components/TrackView'
+import { useDialog } from '@/components/useDialog'
 
 export default function AgencyProfilePage() {
   const { id } = useParams()
@@ -35,6 +36,7 @@ export default function AgencyProfilePage() {
   const [suggestSlug, setSuggestSlug] = useState('')
   const [suggestBusy, setSuggestBusy] = useState(false)
   const [suggestNotice, setSuggestNotice] = useState('')
+  const reviewDialog = useDialog(() => setShowReview(false), 'agency-profile-review-dialog-heading', { enabled: Boolean(showReview && profile?.user_id) })
 
   const previewRate = parseInt(offerRate, 10) || 0
   const previewHours = shiftHours(offerStartTime, offerEndTime) || 0
@@ -208,7 +210,7 @@ export default function AgencyProfilePage() {
         </div>
       </div>
 
-      {showReview && profile?.user_id && <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setShowReview(false)}><div className="bg-white rounded-2xl max-w-md w-full max-h-[90vh] overflow-y-auto p-6" onClick={e => e.stopPropagation()}><div className="flex items-center justify-between mb-4"><h2 className="text-lg font-semibold text-ink">Review {profile.full_name}</h2><button type="button" onClick={() => setShowReview(false)} aria-label="Close" className="p-2 -m-2 text-gray-300 hover:text-ink"><X size={20} /></button></div><ReviewForm reviewedId={profile.user_id} reviewedName={profile.full_name} type="candidate" /></div></div>}
+      {showReview && profile?.user_id && <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setShowReview(false)}><div {...reviewDialog.panelProps} className="bg-white rounded-2xl max-w-md w-full max-h-[90vh] overflow-y-auto p-6"><div className="flex items-center justify-between mb-4"><h2 id="agency-profile-review-dialog-heading" className="text-lg font-semibold text-ink">Review {profile.full_name}</h2><button type="button" onClick={() => setShowReview(false)} aria-label="Close" className="p-2 -m-2 text-gray-300 hover:text-ink"><X size={20} /></button></div><ReviewForm reviewedId={profile.user_id} reviewedName={profile.full_name} type="candidate" /></div></div>}
     </DashboardShell>
   )
 }

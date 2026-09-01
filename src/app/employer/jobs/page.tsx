@@ -1,6 +1,7 @@
 'use client'
 
 import { Suspense, useEffect, useState } from 'react'
+import { useDialog } from '@/components/useDialog'
 import { useRouter, useSearchParams } from 'next/navigation'
 import DashboardShell from '@/components/DashboardShell'
 import { createClient } from '@/lib/supabase/client'
@@ -36,6 +37,7 @@ function EmployerJobs() {
     benefits: '', requirements: '', status: 'active',
   }
   const [form, setForm] = useState(emptyJob)
+  const formDialog = useDialog(() => setShowForm(false), 'job-form-dialog-heading', { enabled: showForm })
 
   useEffect(() => {
     async function load() {
@@ -236,8 +238,8 @@ function EmployerJobs() {
 
       {!loading && jobs.length > 0 && <div className="dashboard-metrics mb-8"><div className="dashboard-metric"><p className="dashboard-metric-value">{activeCount}</p><p className="dashboard-metric-label">Live roles</p></div><div className="dashboard-metric"><p className="dashboard-metric-value">{draftCount}</p><p className="dashboard-metric-label">Drafts</p></div><div className="dashboard-metric"><p className="dashboard-metric-value">{filledCount}</p><p className="dashboard-metric-label">Filled</p></div><div className="dashboard-metric"><p className="dashboard-metric-value">{jobs.length}</p><p className="dashboard-metric-label">Total listings</p></div></div>}
 
-      {showForm && <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#07243b]/55 p-4" onClick={() => setShowForm(false)}><div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto border border-border bg-[#ffffff] p-6 md:p-8" onClick={(e) => e.stopPropagation()}>
-        <p className="dashboard-eyebrow">Listing editor</p><h2 className="dashboard-section-title mb-2">{editing ? 'Edit role' : 'Create role draft'}</h2><p className="mb-6 text-[12px] leading-5 text-muted">You can change the role image here at any time. It updates the live Browse Roles card once saved.</p>
+      {showForm && <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#07243b]/55 p-4" onClick={() => setShowForm(false)}><div {...formDialog.panelProps} className="w-full max-w-2xl max-h-[90vh] overflow-y-auto border border-border bg-[#ffffff] p-6 md:p-8">
+        <p className="dashboard-eyebrow">Listing editor</p><h2 id="job-form-dialog-heading" className="dashboard-section-title mb-2">{editing ? 'Edit role' : 'Create role draft'}</h2><p className="mb-6 text-[12px] leading-5 text-muted">You can change the role image here at any time. It updates the live Browse Roles card once saved.</p>
         <div className="space-y-4">
           <div><label className="mb-1.5 block text-[12px] font-semibold text-secondary">Job title *</label><input aria-label="Job title" type="text" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} className="input-field" placeholder="e.g. Senior Spa Therapist" /></div>
           <div><label className="mb-1.5 block text-[12px] font-semibold text-secondary">Job image</label><div className="grid sm:grid-cols-[180px_1fr] gap-4 items-center rounded-xl border border-border bg-white p-4">{form.job_image_url ? <div className="aspect-[16/10] overflow-hidden rounded-lg"><img src={form.job_image_url} alt="Job preview" className="h-full w-full object-cover" /></div> : <div className="aspect-[16/10] rounded-lg border border-dashed border-border flex items-center justify-center text-muted"><ImageIcon size={26}/></div>}<div className="flex flex-wrap gap-2"><label className="btn-secondary inline-flex items-center gap-2 cursor-pointer"><Upload size={13}/>{uploadingImage?'Uploading...':form.job_image_url?'Replace image':'Upload image'}<input type="file" accept="image/jpeg,image/png,image/webp" className="hidden" disabled={uploadingImage} onChange={e=>{const file=e.target.files?.[0];if(file)uploadJobImage(file);e.target.value=''}}/></label>{form.job_image_url && <button type="button" onClick={()=>setForm(current=>({...current,job_image_url:''}))} className="btn-secondary inline-flex items-center gap-2"><X size={13}/>Remove</button>}</div></div></div>

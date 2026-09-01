@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useDialog } from '@/components/useDialog'
 import DashboardShell from '@/components/DashboardShell'
 import { createClient } from '@/lib/supabase/client'
 import { Search, Users, Building2, CheckCircle, XCircle, X, FileText, ExternalLink } from 'lucide-react'
@@ -23,6 +24,11 @@ export default function AdminUsersPage() {
   const [page, setPage] = useState(1)
   const [perPage, setPerPage] = useState(25)
   const [loadError, setLoadError] = useState('')
+
+  // The drawer stands down while the nested reject modal is open, so Escape
+  // there closes only the modal and leaves the drawer behind it.
+  const detailDialog = useDialog(() => setSelected(null), 'admin-user-detail-heading', { enabled: Boolean(selected) })
+  const rejectDialog = useDialog(() => setShowReject(false), 'admin-user-reject-heading', { enabled: Boolean(showReject) })
 
   useEffect(() => {
     let active = true
@@ -169,9 +175,9 @@ export default function AdminUsersPage() {
 
       {selected && (
         <div className="fixed inset-0 bg-[#07243b]/70 z-50 flex justify-end" onClick={() => setSelected(null)}>
-          <div className="bg-white w-full max-w-lg h-full overflow-y-auto animate-slide-in-right" onClick={(e) => e.stopPropagation()}>
+          <div {...detailDialog.panelProps} className="bg-white w-full max-w-lg h-full overflow-y-auto animate-slide-in-right">
             <div className="p-6 border-b border-border flex items-center justify-between sticky top-0 bg-white z-10">
-              <h3 className="text-lg font-bold text-ink">{selected.full_name || selected.company_name}</h3>
+              <h3 id="admin-user-detail-heading" className="text-lg font-bold text-ink">{selected.full_name || selected.company_name}</h3>
               <button type="button" onClick={() => setSelected(null)} className="text-muted hover:text-ink"><X size={20} /></button>
             </div>
             <div className="p-6 space-y-4 text-sm">
@@ -206,8 +212,8 @@ export default function AdminUsersPage() {
 
       {showReject && selected && (
         <div className="fixed inset-0 bg-[#07243b]/70 z-[60] flex items-center justify-center p-4" onClick={() => setShowReject(false)}>
-          <div className="bg-white max-w-md w-full p-6" onClick={(e) => e.stopPropagation()}>
-            <h3 className="text-lg font-bold text-ink mb-4">Rejection Reason</h3>
+          <div {...rejectDialog.panelProps} className="bg-white max-w-md w-full p-6">
+            <h3 id="admin-user-reject-heading" className="text-lg font-bold text-ink mb-4">Rejection Reason</h3>
             <textarea rows={4} value={rejectReason} onChange={(e) => setRejectReason(e.target.value)} className="input-field mb-4" placeholder="Explain why this profile is being rejected..." />
             <div className="flex gap-3"><button type="button" onClick={() => setShowReject(false)} className="btn-secondary flex-1">Cancel</button><button type="button" onClick={() => reject(selectedType, selected.id)} className="bg-red-600 text-white px-6 py-3 text-sm font-medium hover:bg-red-700 transition-colors flex-1">Reject</button></div>
           </div>

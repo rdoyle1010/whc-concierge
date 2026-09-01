@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useDialog } from '@/components/useDialog'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import DashboardShell from '@/components/DashboardShell'
@@ -27,6 +28,7 @@ export default function HotelJobsPage() {
     required_qualifications: [] as string[], insurance_required: false,
   }
   const [form, setForm] = useState(emptyJob)
+  const formDialog = useDialog(() => setShowForm(false), 'hotel-job-form-heading', { enabled: showForm })
 
   useEffect(() => {
     async function load() {
@@ -94,8 +96,8 @@ export default function HotelJobsPage() {
       {/* Job form modal */}
       {showForm && (
         <div className="fixed inset-0 bg-black/30 z-50 flex items-center justify-center p-4" onClick={() => setShowForm(false)}>
-          <div className="bg-white border border-border rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6 animate-fade-in-up" onClick={e => e.stopPropagation()}>
-            <h2 className="text-[18px] font-medium text-ink mb-6">Post a New Role</h2>
+          <div {...formDialog.panelProps} className="bg-white border border-border rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6 animate-fade-in-up">
+            <h2 id="hotel-job-form-heading" className="text-[18px] font-medium text-ink mb-6">Post a New Role</h2>
             <div className="space-y-4">
               <div><label className="eyebrow block mb-1.5">Job Title *</label><input aria-label="Job Title" type="text" value={form.job_title} onChange={e => setForm({ ...form, job_title: e.target.value })} className="input-field" placeholder="e.g. Senior Spa Therapist" /></div>
               <div><label className="eyebrow block mb-1.5">Description</label><textarea aria-label="Description" rows={4} value={form.job_description} onChange={e => setForm({ ...form, job_description: e.target.value })} className="input-field" /></div>

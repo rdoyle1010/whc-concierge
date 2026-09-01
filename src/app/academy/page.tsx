@@ -5,6 +5,7 @@ import Link from 'next/link'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
 import SponsoredAd from '@/components/SponsoredAd'
+import { useDialog } from '@/components/useDialog'
 import { createClient } from '@/lib/supabase/client'
 import { ACADEMY, coursePrice, publicCoursePrice, type AcademyCourse } from '@/lib/academy'
 import { courseMeta } from '@/lib/academy-meta'
@@ -31,6 +32,7 @@ export default function PublicAcademyPage() {
   // the course teaches. Computed server-side and cached; absent counts simply
   // mean the line does not render.
   const [demand, setDemand] = useState<Record<string, number>>({})
+  const buyingDialog = useDialog(() => setBuying(null), 'academy-buy-dialog-heading', { enabled: Boolean(buying) })
 
   async function submitTeamEnquiry() {
     setTeamError('')
@@ -281,9 +283,9 @@ export default function PublicAcademyPage() {
 
       {buying && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setBuying(null)}>
-          <div className="w-full max-w-md rounded-2xl bg-white p-6" onClick={e => e.stopPropagation()}>
+          <div {...buyingDialog.panelProps} className="w-full max-w-md rounded-2xl bg-white p-6">
             <div className="mb-2 flex items-center justify-between">
-              <h2 className="flex items-center gap-2 text-lg font-semibold tracking-tight text-[#10283b]"><GraduationCap size={17} className="text-[#5a6a76]" /> {buying.title}</h2>
+              <h2 id="academy-buy-dialog-heading" className="flex items-center gap-2 text-lg font-semibold tracking-tight text-[#10283b]"><GraduationCap size={17} className="text-[#5a6a76]" /> {buying.title}</h2>
               <button type="button" onClick={() => setBuying(null)} aria-label="Close" className="p-2 -m-2 text-gray-300 hover:text-[#10283b]"><X size={20} /></button>
             </div>
             <p className="mb-4 text-[12px] leading-5 text-[#5a6a76]">£{(buying.price / 100).toFixed(0)} one-off. After payment your access link arrives by email. Your certificate is issued when you complete the learning and pass the assessment.</p>

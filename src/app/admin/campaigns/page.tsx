@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
+import { useDialog } from '@/components/useDialog'
 import DashboardShell from '@/components/DashboardShell'
 import { Plus, Copy, Edit2, Trash2, Send, Eye, Save, Upload, Mail, X, TestTube2 } from 'lucide-react'
 import { renderNewsletterHtml } from '@/lib/newsletter-template'
@@ -25,6 +26,11 @@ export default function AdminCampaignsPage() {
   const [featuredSel, setFeaturedSel] = useState<Pick[]>([])
   const [busy, setBusy] = useState<string | null>(null)
   const [banner, setBanner] = useState<{ type: 'ok'|'error'; text: string } | null>(null)
+
+  // The studio stands down while the full preview sits on top of it, so Escape
+  // in the preview closes only the preview.
+  const formDialog = useDialog(() => setShowForm(false), 'admin-campaign-editor-heading', { enabled: showForm })
+  const previewDialog = useDialog(() => setShowPreview(false), undefined, { label: 'Newsletter preview', enabled: showPreview })
 
   async function load() {
     const res = await fetch('/api/admin/campaigns', { cache: 'no-store' })
@@ -139,8 +145,8 @@ export default function AdminCampaignsPage() {
       </div>)}
     </section>
 
-    {showForm && <div className="fixed inset-0 z-[70] bg-[#07243b]/70 p-3 md:p-6 overflow-y-auto"><div className="mx-auto max-w-6xl rounded-[24px] bg-white shadow-2xl overflow-hidden">
-      <div className="flex items-center justify-between border-b border-border px-6 py-4"><div><p className="text-[10px] uppercase tracking-[.16em] text-muted">Newsletter studio</p><h2 className="text-[24px] text-[#10283b] mt-1">{editing?'Edit newsletter':'Create newsletter'}</h2></div><button onClick={()=>setShowForm(false)} className="p-2 text-muted"><X size={20}/></button></div>
+    {showForm && <div className="fixed inset-0 z-[70] bg-[#07243b]/70 p-3 md:p-6 overflow-y-auto"><div {...formDialog.panelProps} className="mx-auto max-w-6xl rounded-[24px] bg-white shadow-2xl overflow-hidden">
+      <div className="flex items-center justify-between border-b border-border px-6 py-4"><div><p className="text-[10px] uppercase tracking-[.16em] text-muted">Newsletter studio</p><h2 id="admin-campaign-editor-heading" className="text-[24px] text-[#10283b] mt-1">{editing?'Edit newsletter':'Create newsletter'}</h2></div><button onClick={()=>setShowForm(false)} className="p-2 text-muted"><X size={20}/></button></div>
       <div className="grid lg:grid-cols-[1.05fr_.95fr]">
         <div className="p-6 md:p-8 space-y-7 border-r border-border">
           <Section title="1. Email details"><Field label="Email subject / campaign name" value={form.name} onChange={v=>setForm({...form,name:v})}/><Field label="Preheader text" value={form.preheader} onChange={v=>setForm({...form,preheader:v})} hint="The short line many inboxes show after the subject."/><div className="grid sm:grid-cols-2 gap-4"><Select label="Audience" value={form.target_audience} onChange={v=>setForm({...form,target_audience:v})} options={['All','Candidates','Employers']}/><Select label="Layout" value={form.layout_style} onChange={v=>setForm({...form,layout_style:v})} options={['editorial','feature','simple']}/></div>{audiences && <p className="text-[11px] text-muted">Reachable inboxes for this audience: <span className="font-semibold text-ink">{reachableFor(form.target_audience)}</span> · Talent {form.target_audience==='Employers'?0:audiences.candidates} · Properties {form.target_audience==='Candidates'?0:audiences.employers} · newsletter-only {form.target_audience==='All'?(audiences.newsletterOnly ?? 0):0}</p>}</Section>
@@ -155,7 +161,7 @@ export default function AdminCampaignsPage() {
       </div>
     </div></div>}
 
-    {showPreview && <div className="fixed inset-0 z-[90] bg-[#07243b]/80 p-4 md:p-8 overflow-y-auto"><div className="max-w-4xl mx-auto"><div className="flex justify-between items-center mb-3 text-white"><span className="text-[12px] uppercase tracking-[.15em]">Newsletter preview</span><button onClick={()=>setShowPreview(false)} className="p-2"><X/></button></div><iframe title="Full newsletter preview" srcDoc={previewHtml} className="w-full min-h-[850px] bg-white rounded-[20px]"/></div></div>}
+    {showPreview && <div className="fixed inset-0 z-[90] bg-[#07243b]/80 p-4 md:p-8 overflow-y-auto"><div {...previewDialog.panelProps} className="max-w-4xl mx-auto"><div className="flex justify-between items-center mb-3 text-white"><span className="text-[12px] uppercase tracking-[.15em]">Newsletter preview</span><button onClick={()=>setShowPreview(false)} className="p-2"><X/></button></div><iframe title="Full newsletter preview" srcDoc={previewHtml} className="w-full min-h-[850px] bg-white rounded-[20px]"/></div></div>}
   </DashboardShell>
 }
 

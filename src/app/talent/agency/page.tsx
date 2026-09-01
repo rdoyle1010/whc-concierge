@@ -5,6 +5,7 @@ import Link from 'next/link'
 import DashboardShell from '@/components/DashboardShell'
 import { Calendar, Clock, Banknote, Star, X, Zap, Car, TrainFront, MapPin, Check } from 'lucide-react'
 import ReviewForm from '@/components/ReviewForm'
+import { useDialog } from '@/components/useDialog'
 import { AGENCY_LISTING_TIERS } from '@/lib/constants'
 
 function expiryLabel(expiresAt: string | null | undefined): string | null {
@@ -30,6 +31,7 @@ export default function TalentAgencyPage() {
   const [cancellingId, setCancellingId] = useState<string | null>(null)
   const [cancelReason, setCancelReason] = useState('')
   const [cancelError, setCancelError] = useState('')
+  const reviewDialog = useDialog(() => setReviewing(null), 'talent-agency-review-dialog-heading', { enabled: Boolean(reviewing) })
 
   async function load() {
     try {
@@ -323,9 +325,9 @@ export default function TalentAgencyPage() {
 
       {reviewing && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setReviewing(null)}>
-          <div className="bg-white rounded-2xl max-w-md w-full max-h-[90vh] overflow-y-auto p-6" onClick={(e) => e.stopPropagation()}>
+          <div {...reviewDialog.panelProps} className="bg-white rounded-2xl max-w-md w-full max-h-[90vh] overflow-y-auto p-6">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="font-serif text-lg font-bold text-ink">Review {reviewing.name}</h2>
+              <h2 id="talent-agency-review-dialog-heading" className="font-serif text-lg font-bold text-ink">Review {reviewing.name}</h2>
               <button type="button" onClick={() => setReviewing(null)} aria-label="Close" className="p-2 -m-2 text-gray-300 hover:text-ink"><X size={20} /></button>
             </div>
             <ReviewForm

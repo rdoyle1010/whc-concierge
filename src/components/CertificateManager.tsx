@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { BadgeCheck, Clock, FileText, Plus, ShieldQuestion, X } from 'lucide-react'
+import { useDialog } from '@/components/useDialog'
 
 // Structured certificate manager: each document gets a name, an awarding
 // body, a country and a year, then goes to WHC for review. Verified
@@ -43,6 +44,7 @@ export default function CertificateManager({ userId }: { userId: string | null }
   const [country, setCountry] = useState('')
   const [yearAwarded, setYearAwarded] = useState('')
   const [uploading, setUploading] = useState(false)
+  const formDialog = useDialog(() => setFormOpen(false), 'certificate-manager-form-heading', { enabled: formOpen })
 
   async function load() {
     try {
@@ -168,9 +170,9 @@ export default function CertificateManager({ userId }: { userId: string | null }
 
       {formOpen && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setFormOpen(false)}>
-          <div className="bg-white rounded-2xl max-w-md w-full max-h-[90vh] overflow-y-auto p-6" onClick={e => e.stopPropagation()}>
+          <div {...formDialog.panelProps} className="bg-white rounded-2xl max-w-md w-full max-h-[90vh] overflow-y-auto p-6">
             <div className="flex items-center justify-between mb-1">
-              <h2 className="font-serif text-lg font-bold text-ink">Add a certificate</h2>
+              <h2 id="certificate-manager-form-heading" className="font-serif text-lg font-bold text-ink">Add a certificate</h2>
               <button type="button" onClick={() => setFormOpen(false)} aria-label="Close" className="p-2 -m-2 text-gray-300 hover:text-ink"><X size={20} /></button>
             </div>
             <p className="text-[12px] text-secondary mb-4">Tell us what this certificate is. WHC reviews it, and once verified it shows to employers with a trust badge.</p>

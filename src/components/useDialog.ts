@@ -56,6 +56,19 @@ export type DialogPanelProps = {
   onClick: (event: React.MouseEvent) => void
 }
 
+// Dialogs stack. The admin user drawer opens a reject modal on top of itself;
+// the campaign studio opens a preview on top of itself. Every open dialog
+// listens on `document`, and stopPropagation does not silence a sibling
+// listener on the same node, so without this one Escape press closed both
+// layers at once - the person meant to dismiss the confirmation and lost the
+// record they were working on behind it.
+//
+// A module-level stack, rather than a guard at each call site, because the
+// alternative is disabling the dialog underneath, which then re-runs its
+// effect when the top one closes and yanks focus to its first field instead
+// of returning it to the button the person pressed.
+const stack: symbol[] = []
+
 export function useDialog(
   onClose: () => void,
   labelledBy?: string,
@@ -71,6 +84,9 @@ export function useDialog(
 
   useEffect(() => {
     if (!enabled) return
+    const token = Symbol('dialog')
+    stack.push(token)
+    const isTopmost = () => stack[stack.length - 1] === token
     returnFocusTo.current = document.activeElement as HTMLElement | null
 
     const previousOverflow = document.body.style.overflow
@@ -81,6 +97,9 @@ export function useDialog(
     ;(first || panel)?.focus?.()
 
     function onKeyDown(event: KeyboardEvent) {
+      // Only the dialog on top of the stack reacts. The ones underneath stay
+      // open, keep their focus trap, and take over again when it closes.
+      if (!isTopmost()) return
       if (event.key === 'Escape') {
         event.stopPropagation()
         closeRef.current()
@@ -108,7 +127,11 @@ export function useDialog(
     document.addEventListener('keydown', onKeyDown, true)
     return () => {
       document.removeEventListener('keydown', onKeyDown, true)
-      document.body.style.overflow = previousOverflow
+      const index = stack.lastIndexOf(token)
+      if (index !== -1) stack.splice(index, 1)
+      // Only the last dialog out unlocks the page. A nested dialog closing
+      // must not hand scrolling back while the drawer behind it is still up.
+      if (stack.length === 0) document.body.style.overflow = previousOverflow
       returnFocusTo.current?.focus?.()
     }
   }, [enabled])

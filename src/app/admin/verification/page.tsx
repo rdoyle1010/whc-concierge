@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useDialog } from '@/components/useDialog'
 import DashboardShell from '@/components/DashboardShell'
 import { MANUAL_VERIFICATION_TYPES } from '@/lib/verification-badges'
 import { ShieldCheck, FileText, X, Clock3 } from 'lucide-react'
@@ -15,6 +16,8 @@ export default function AdminVerificationPage() {
   const [error, setError] = useState('')
   const [rejecting, setRejecting] = useState<any>(null)
   const [reason, setReason] = useState('')
+
+  const rejectDialog = useDialog(() => setRejecting(null), 'admin-verification-reject-heading', { enabled: Boolean(rejecting) })
 
   async function load() {
     try {
@@ -200,9 +203,9 @@ export default function AdminVerificationPage() {
 
       {rejecting && (
         <div className="fixed inset-0 bg-[#07243b]/70 z-50 flex items-center justify-center p-4" onClick={() => setRejecting(null)}>
-          <div className="bg-white max-w-md w-full p-6 border border-border" onClick={(e) => e.stopPropagation()}>
+          <div {...rejectDialog.panelProps} className="bg-white max-w-md w-full p-6 border border-border">
             <div className="flex items-center justify-between mb-2">
-              <h2 className="text-xl font-semibold text-ink">{rejecting.whc_verified ? 'Revoke badge' : 'Reject verification'}</h2>
+              <h2 id="admin-verification-reject-heading" className="text-xl font-semibold text-ink">{rejecting.whc_verified ? 'Revoke badge' : 'Reject verification'}</h2>
               <button onClick={() => setRejecting(null)} className="text-gray-300 hover:text-ink"><X size={20} /></button>
             </div>
             <p className="text-sm text-secondary mb-4">This decision covers both the right-to-work and insurance evidence. {rejecting.full_name} will be told why by email and in-app so they can correct the issue and resubmit.</p>

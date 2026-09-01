@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useDialog } from '@/components/useDialog'
 import DashboardShell from '@/components/DashboardShell'
 import { createClient } from '@/lib/supabase/client'
 import { AlertTriangle, Eye, X } from 'lucide-react'
@@ -14,6 +15,8 @@ export default function AdminComplaintsPage() {
   const [sendingReply, setSendingReply] = useState(false)
   const [replyMsg, setReplyMsg] = useState('')
   const [error, setError] = useState('')
+
+  const detailDialog = useDialog(() => setSelected(null), 'admin-complaint-detail-heading', { enabled: Boolean(selected) })
 
   useEffect(() => {
     async function load() {
@@ -106,9 +109,9 @@ export default function AdminComplaintsPage() {
       {/* Detail modal */}
       {selected && (
         <div className="fixed inset-0 bg-[#07243b]/70 z-50 flex items-center justify-center p-4" onClick={() => setSelected(null)}>
-          <div className="bg-white rounded-3xl max-w-lg w-full p-8 animate-fade-in-up" onClick={(e) => e.stopPropagation()}>
+          <div {...detailDialog.panelProps} className="bg-white rounded-3xl max-w-lg w-full p-8 animate-fade-in-up">
             <div className="flex items-start justify-between mb-4">
-              <h2 className="font-serif text-xl font-bold text-ink">{selected.subject || selected.message}</h2>
+              <h2 id="admin-complaint-detail-heading" className="font-serif text-xl font-bold text-ink">{selected.subject || selected.message}</h2>
               <button onClick={() => setSelected(null)} className="text-gray-300 hover:text-secondary"><X size={20} /></button>
             </div>
             <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${statusColors[selected.status] || ''}`}>{selected.status}</span>
