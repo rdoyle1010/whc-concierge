@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { isAdminRequest as requireAdmin } from '@/lib/admin-api-auth'
+import { isAdminRequest as requireAdmin, adminRequestUserId } from '@/lib/admin-api-auth'
 import { RETENTION_CATEGORIES, RETENTION_EXCLUDED, retentionCutoff } from '@/lib/retention'
 
 type Admin = ReturnType<typeof createAdminClient>
@@ -211,7 +211,8 @@ export async function GET(_req: NextRequest) {
 }
 
 export async function POST(_req: NextRequest) {
-  if (!(await requireAdmin())) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+  const ranBy = await adminRequestUserId()
+  if (!ranBy) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
 
   const admin = createAdminClient()
   try {
@@ -223,8 +224,16 @@ export async function POST(_req: NextRequest) {
     const summary = { total, categories, problems, scanLimit: SCAN_LIMIT }
     let recorded = true
     try {
-      const { error } = await admin.from('retention_runs').insert({ ran_at: ranAt, summary })
-      if (error) recorded = false
+      // run_by arrives with 20260901140000_data_retention.sql. Before that
+      // migration the insert is retried without it, so an unapplied migration
+      // costs the attribution and not the audit row.
+      const { error } = await admin.from('retention_runs').insert({ ran_at: ranAt, summary, run_by: ranBy })
+      if (error && /column/i.test(error.message || '')) {
+        const { error: retryError } = await admin.from('retention_runs').insert({ ran_at: ranAt, summary })
+        if (retryError) recorded = false
+      } else if (error) {
+        recorded = false
+      }
     } catch { recorded = false }
 
     if (problems.length) console.error('[retention sweep problems]', problems)
@@ -236,9 +245,9 @@ export async function POST(_req: NextRequest) {
       categories,
       excluded: RETENTION_EXCLUDED,
       recorded,
-      // retention_runs arrives with 20260901120000_data_retention.sql. The
+      // retention_runs arrives with 20260901140000_data_retention.sql. The
       // sweep still runs before the migration; only the audit row is missing.
-      note: recorded ? null : 'The sweep ran, but it could not be logged - run the 20260901120000_data_retention migration to create retention_runs.',
+      note: recorded ? null : 'The sweep ran, but it could not be logged - run the 20260901140000_data_retention migration to create retention_runs.',
     })
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 })

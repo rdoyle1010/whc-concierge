@@ -54,7 +54,7 @@ export default function MessagesScreen() {
     <Pressable onPress={() => router.back()}><Text style={styles.back}>‹ Back</Text></Pressable>
     <View style={styles.headingRow}><View style={{flex:1}}><Text style={styles.eyebrow}>CONVERSATIONS</Text><Text style={styles.title}>Messages</Text></View>{unreadCount>0?<View style={styles.count}><Text style={styles.countText}>{unreadCount}</Text></View>:null}</View>
     <Text style={styles.intro}>Your Wellness House conversations in one place. Opening a conversation marks received messages as read.</Text>
-    {loading ? <ActivityIndicator color="#092b45" style={{ marginTop: 24 }} /> : null}
+    {loading ? <ActivityIndicator color="#0b2f4d" style={{ marginTop: 24 }} /> : null}
     {error ? <Text style={styles.error}>{error}</Text> : null}
     {!loading && threads.length === 0 ? <View style={styles.empty}><Text style={styles.emptyTitle}>No conversations yet.</Text><Text style={styles.emptyCopy}>Applications, Agency activity and employer conversations will appear here when they begin.</Text></View> : null}
     <View style={styles.list}>{threads.map(message => {
@@ -70,10 +70,10 @@ export default function MessagesScreen() {
 
 const styles = StyleSheet.create({
   scroll:{flex:1,backgroundColor:'#fff'}, page:{paddingHorizontal:22,paddingTop:18,paddingBottom:30}, back:{color:'#66747c',fontSize:14,marginBottom:26},
-  headingRow:{flexDirection:'row',alignItems:'flex-start',gap:12},eyebrow:{color:'#71808a',fontSize:8,letterSpacing:2,marginBottom:8}, title:{color:'#092b45',fontSize:29,lineHeight:34,fontWeight:'500'},
-  count:{minWidth:30,height:30,borderRadius:15,backgroundColor:'#092b45',alignItems:'center',justifyContent:'center',marginTop:4},countText:{color:'#fff',fontSize:11,fontWeight:'700'},
+  headingRow:{flexDirection:'row',alignItems:'flex-start',gap:12},eyebrow:{color:'#71808a',fontSize:8,letterSpacing:2,marginBottom:8}, title:{color:'#0b2f4d',fontSize:29,lineHeight:34,fontWeight:'500'},
+  count:{minWidth:30,height:30,borderRadius:15,backgroundColor:'#0b2f4d',alignItems:'center',justifyContent:'center',marginTop:4},countText:{color:'#fff',fontSize:11,fontWeight:'700'},
   intro:{color:'#66747c',fontSize:13,lineHeight:20,marginTop:9,marginBottom:22}, list:{gap:9}, card:{borderWidth:1,borderColor:'#dce3e7',padding:15}, unreadCard:{backgroundColor:'#f6f9fa',borderColor:'#b9c7ce'},
-  row:{flexDirection:'row',gap:12},avatar:{width:38,height:38,borderRadius:19,backgroundColor:'#edf2f4',alignItems:'center',justifyContent:'center'},avatarText:{color:'#092b45',fontSize:13,fontWeight:'700'},
-  nameRow:{flexDirection:'row',justifyContent:'space-between',gap:8},name:{color:'#173246',fontSize:14,fontWeight:'600',flex:1}, unread:{color:'#092b45',fontSize:8,letterSpacing:1.2,fontWeight:'700'}, preview:{color:'#66747c',fontSize:11,lineHeight:17,marginTop:5}, date:{color:'#8b989f',fontSize:9,marginTop:7},
+  row:{flexDirection:'row',gap:12},avatar:{width:38,height:38,borderRadius:19,backgroundColor:'#edf2f4',alignItems:'center',justifyContent:'center'},avatarText:{color:'#0b2f4d',fontSize:13,fontWeight:'700'},
+  nameRow:{flexDirection:'row',justifyContent:'space-between',gap:8},name:{color:'#173246',fontSize:14,fontWeight:'600',flex:1}, unread:{color:'#0b2f4d',fontSize:8,letterSpacing:1.2,fontWeight:'700'}, preview:{color:'#66747c',fontSize:11,lineHeight:17,marginTop:5}, date:{color:'#8b989f',fontSize:9,marginTop:7},
   empty:{backgroundColor:'#f4f7f8',padding:18}, emptyTitle:{color:'#173246',fontSize:14,fontWeight:'600'}, emptyCopy:{color:'#71808a',fontSize:11,lineHeight:17,marginTop:6}, error:{color:'#9b2c2c',fontSize:11,marginBottom:16}
 })

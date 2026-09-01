@@ -8,6 +8,15 @@ import { createAdminClient } from '@/lib/supabase/admin'
  * a public database mutation route.
  */
 export async function isAdminRequest(): Promise<boolean> {
+  return Boolean(await adminRequestUserId())
+}
+
+/**
+ * The signed-in administrator's id, or null where the caller is not an admin.
+ * Used where a route has to record who took a destructive action, rather than
+ * logging it as though the platform had done it by itself.
+ */
+export async function adminRequestUserId(): Promise<string | null> {
   const cookieStore = await cookies()
   const auth = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -15,7 +24,7 @@ export async function isAdminRequest(): Promise<boolean> {
     { cookies: { getAll() { return cookieStore.getAll() }, setAll() {} } },
   )
   const { data: { user } } = await auth.auth.getUser()
-  if (!user) return false
+  if (!user) return null
 
   const admin = createAdminClient()
   const { data: profile } = await admin
@@ -23,5 +32,5 @@ export async function isAdminRequest(): Promise<boolean> {
     .select('role')
     .eq('id', user.id)
     .maybeSingle()
-  return profile?.role === 'admin'
+  return profile?.role === 'admin' ? user.id : null
 }

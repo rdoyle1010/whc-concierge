@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
+import { getRequestUser } from '@/lib/request-user'
 import { createNotification } from '@/lib/notifications'
 import { AGENCY_PLATFORM_FEE_PCT, agencyFeePctForShift, agencyFeePctForShiftPlus } from '@/lib/constants'
 
@@ -46,11 +47,21 @@ function isExpired(booking: any): boolean {
 
 // Agency offer / counter-offer flow.
 // All writes use the service-role client because client-side RLS on
-// agency_bookings is unreliable. The caller is authenticated via cookies.
+// agency_bookings is unreliable. The caller is authenticated by cookie session
+// in the browser, or by Bearer access token from the mobile app.
 
 const OPEN_STATUSES = ['pending', 'countered']
 
-async function getAuthedUser() {
+// The browser authenticates with a cookie session. The mobile app has no
+// cookie jar and sends the same Supabase access token as a Bearer header, so
+// when one is present the shared request-user helper reads it - and enforces
+// two-step verification on it exactly as it does everywhere else. Cookie
+// callers keep the behaviour they have always had.
+async function getAuthedUser(req?: NextRequest) {
+  const authorization = req?.headers.get('authorization') || ''
+  if (authorization.startsWith('Bearer ')) {
+    return { data: { user: await getRequestUser(req as NextRequest) } }
+  }
   const cookieStore = await cookies()
   const supabaseAuth = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -505,7 +516,7 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   try {
-    const { data: { user } } = await getAuthedUser()
+    const { data: { user } } = await getAuthedUser(req)
     if (!user) return NextResponse.json({ error: 'Please log in' }, { status: 401 })
 
     const body = await req.json()

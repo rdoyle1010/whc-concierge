@@ -60,7 +60,7 @@ export default function AdminScreen() {
     <Text style={styles.title}>Hello, {name.split(' ')[0]}.</Text>
     <Text style={styles.intro}>Your mobile control centre for quick checks and platform actions. It uses the same live account and data as the website.</Text>
 
-    {loading?<ActivityIndicator color="#092b45" style={{marginTop:22}}/>:<View style={styles.metricGrid}>{metrics.map(([label,value])=><View key={label} style={styles.metric}><Text style={styles.value}>{value}</Text><Text style={styles.metricLabel}>{label}</Text></View>)}</View>}
+    {loading?<ActivityIndicator color="#0b2f4d" style={{marginTop:22}}/>:<View style={styles.metricGrid}>{metrics.map(([label,value])=><View key={label} style={styles.metric}><Text style={styles.value}>{value}</Text><Text style={styles.metricLabel}>{label}</Text></View>)}</View>}
 
     <Text style={styles.sectionTitle}>Admin tools</Text>
     <View style={styles.toolList}>{tools.map(([label,path,copy])=><Pressable key={path} onPress={()=>openAdmin(path)} style={styles.toolCard}><View style={{flex:1}}><Text style={styles.toolTitle}>{label}</Text><Text style={styles.toolCopy}>{copy}</Text></View><Text style={styles.arrow}>→</Text></Pressable>)}</View>
@@ -71,9 +71,9 @@ export default function AdminScreen() {
 
 const styles=StyleSheet.create({
   scroll:{flex:1,backgroundColor:'#fff'},page:{paddingHorizontal:22,paddingTop:18,paddingBottom:34},
-  topRow:{flexDirection:'row',justifyContent:'space-between',alignItems:'flex-start',marginBottom:36},wordmark:{color:'#092b45',fontSize:20,letterSpacing:2,fontWeight:'700'},sub:{color:'#71808a',fontSize:8,letterSpacing:3,marginTop:4},signOut:{color:'#71808a',fontSize:12},
-  eyebrow:{color:'#71808a',fontSize:8,letterSpacing:2,marginBottom:9},title:{color:'#092b45',fontSize:30,lineHeight:36,fontWeight:'500'},intro:{color:'#66747c',fontSize:14,lineHeight:21,marginTop:9,marginBottom:20},
-  metricGrid:{flexDirection:'row',flexWrap:'wrap',gap:9},metric:{width:'48%',borderWidth:1,borderColor:'#dce3e7',padding:16},value:{color:'#092b45',fontSize:27,lineHeight:31,fontWeight:'600'},metricLabel:{color:'#71808a',fontSize:10,marginTop:4},
-  sectionTitle:{color:'#173246',fontSize:18,fontWeight:'600',marginTop:28,marginBottom:11},toolList:{gap:9},toolCard:{borderWidth:1,borderColor:'#dce3e7',padding:16,flexDirection:'row',alignItems:'center',gap:12},toolTitle:{color:'#173246',fontSize:14,fontWeight:'600'},toolCopy:{color:'#71808a',fontSize:11,lineHeight:16,marginTop:4},arrow:{color:'#092b45',fontSize:18},
+  topRow:{flexDirection:'row',justifyContent:'space-between',alignItems:'flex-start',marginBottom:36},wordmark:{color:'#0b2f4d',fontSize:20,letterSpacing:2,fontWeight:'700'},sub:{color:'#71808a',fontSize:8,letterSpacing:3,marginTop:4},signOut:{color:'#71808a',fontSize:12},
+  eyebrow:{color:'#71808a',fontSize:8,letterSpacing:2,marginBottom:9},title:{color:'#0b2f4d',fontSize:30,lineHeight:36,fontWeight:'500'},intro:{color:'#66747c',fontSize:14,lineHeight:21,marginTop:9,marginBottom:20},
+  metricGrid:{flexDirection:'row',flexWrap:'wrap',gap:9},metric:{width:'48%',borderWidth:1,borderColor:'#dce3e7',padding:16},value:{color:'#0b2f4d',fontSize:27,lineHeight:31,fontWeight:'600'},metricLabel:{color:'#71808a',fontSize:10,marginTop:4},
+  sectionTitle:{color:'#173246',fontSize:18,fontWeight:'600',marginTop:28,marginBottom:11},toolList:{gap:9},toolCard:{borderWidth:1,borderColor:'#dce3e7',padding:16,flexDirection:'row',alignItems:'center',gap:12},toolTitle:{color:'#173246',fontSize:14,fontWeight:'600'},toolCopy:{color:'#71808a',fontSize:11,lineHeight:16,marginTop:4},arrow:{color:'#0b2f4d',fontSize:18},
   notice:{backgroundColor:'#f4f7f8',padding:17,marginTop:22},noticeTitle:{color:'#173246',fontSize:13,fontWeight:'600'},noticeCopy:{color:'#71808a',fontSize:11,lineHeight:17,marginTop:6}
 })

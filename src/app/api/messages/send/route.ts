@@ -80,6 +80,30 @@ async function getMessagingRelationship(admin: ReturnType<typeof createAdminClie
   return { allowed: Boolean(!byJob.error && byJob.data), contactRestricted, residencyRestricted }
 }
 
+// The composer needs to know the state of a conversation before the person
+// types into it - otherwise the first they learn of the contact-detail lock is
+// a 403 on a message they have already written. This returns the same
+// relationship the POST enforces, for one recipient, so a client can explain
+// the rule up front instead of surprising the user with it.
+export async function GET(req: NextRequest) {
+  try {
+    const user = await getRequestUser(req)
+    if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+    const recipientId = req.nextUrl.searchParams.get('recipientId') || ''
+    if (!recipientId) return NextResponse.json({ error: 'Missing recipient' }, { status: 400 })
+    if (recipientId === user.id) return NextResponse.json({ error: 'You cannot message yourself' }, { status: 400 })
+
+    const relationship = await getMessagingRelationship(createAdminClient(), user.id, recipientId)
+    return NextResponse.json({
+      allowed: relationship.allowed,
+      contactRestricted: relationship.contactRestricted,
+      residencyRestricted: relationship.residencyRestricted,
+    })
+  } catch (e: any) {
+    return NextResponse.json({ error: e.message }, { status: 500 })
+  }
+}
+
 export async function POST(req: NextRequest) {
   try {
     const user = await getRequestUser(req)

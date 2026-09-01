@@ -111,6 +111,68 @@ function companyFacts(employer: any) {
   return facts
 }
 
+// Ported verbatim from src/app/api/interview-ready/route.ts so the phone and
+// the web give the same preparation. Interviewers at every level respect a
+// candidate who understands how a spa makes money; these are pitched at the
+// seniority of the role rather than one generic list.
+function commercialTalkingPoints(level: string, employer: any) {
+  const e = employer || {}
+  const rooms = Number(e.num_treatment_rooms) || null
+  const brands = list(e.product_houses_used || e.product_houses)
+  const bedrooms = Number(e.room_count) || null
+  const points: string[] = []
+  if (level === 'Director / Executive') {
+    points.push(
+      rooms ? `With ${rooms} treatment rooms, be ready to talk utilisation: occupancy percentage, revenue per treatment room and how you would move both.` : 'Ask about treatment room count early, then talk utilisation: occupancy percentage and revenue per available treatment hour.',
+      'Payroll is the biggest line in any spa P&L - speak to payroll as a percentage of revenue, productive versus contracted hours, and how you protect margin without burning the team.',
+      bedrooms ? `A ${bedrooms}-bedroom property means in-house capture matters: what percentage of hotel guests use the spa, and what one point of capture is worth.` : 'Ask what percentage of hotel guests currently use the spa - capture rate is usually the biggest untapped revenue lever.',
+      'Membership and retail: recurring revenue smooths seasonality; retail percentage of treatment revenue is a marker of a commercially trained team.',
+      'Come with a view on pricing and yield - peak and off-peak, treatment mix, and where the menu is working hardest.',
+    )
+  } else if (level === 'Manager') {
+    points.push(
+      rooms ? `Know your numbers for a ${rooms}-room spa: therapist utilisation, average treatment value and rebooking rate are the three you will be asked about.` : 'Know the three numbers every spa manager is asked about: therapist utilisation, average treatment value and rebooking rate.',
+      'Retail attachment: how you coach a team to recommend honestly and what a realistic retail-to-treatment percentage looks like.',
+      brands.length ? `They work with ${brands.slice(0, 2).join(' and ')} - product house targets, training and stock control will be part of the job.` : 'Ask which product houses they partner with - brand targets and training will be part of the job.',
+      'Rota and payroll discipline: matching therapist hours to demand without hurting service or the team.',
+    )
+  } else if (level === 'Supervisor / Lead') {
+    points.push(
+      'Rebooking and retail conversations: how you personally do them, and how you help colleagues do them without feeling salesy.',
+      'Utilisation basics: why an empty treatment room costs the business, and what you do with quiet time.',
+      'Upgrades and add-ons: enhancing the guest experience in a way that also lifts average spend.',
+    )
+  } else {
+    points.push(
+      'Rebooking: the honest, guest-first way you invite someone to book their next treatment before they leave.',
+      'Retail: how you recommend homecare because it extends the treatment result - the commercial benefit follows the genuine advice.',
+      brands.length ? `They use ${brands.slice(0, 2).join(' and ')} - showing you understand brand standards and homecare philosophy marks you out.` : 'Ask about their product houses - showing interest in brand standards and homecare marks you out.',
+      'Why reliability is commercial: a filled column and a full treatment book is the business.',
+    )
+  }
+  return points
+}
+
+// 30/60/90-day thinking, scaled to seniority. Not a plan to recite - a
+// structure that shows the interviewer the candidate thinks beyond day one.
+function plan306090(level: string, company: { name: string }) {
+  if (level === 'Director / Executive') return {
+    thirty: ['Listen and audit: the P&L line by line, payroll structure, utilisation data, guest feedback, team one-to-ones - before changing anything.', `Understand how the spa fits ${company.name}'s wider commercial strategy and who the key stakeholders are.`, 'Identify the two or three quickest wins that build credibility without destabilising the team.'],
+    sixty: ['Present a diagnostic to your stakeholders: where the spa makes and loses money, and the priority order for fixing it.', 'Begin the structural moves: rota against demand, pricing and menu review, retail and membership strategy.', 'Set the leadership rhythm - what gets measured, what gets celebrated, and the standards that are non-negotiable.'],
+    ninety: ['Deliver the first measurable movement: utilisation, capture rate, retail percentage or payroll ratio - whichever you committed to.', 'A twelve-month plan agreed with the business: investment cases, team development and succession, and the guest experience vision.'],
+  }
+  if (level === 'Manager') return {
+    thirty: ['Learn the team, the guests and the numbers before changing anything - work alongside every role at least once.', 'Review the diary: where utilisation is lost, where the rota fights demand, and what guests say in reviews.'],
+    sixty: ['Set clear standards and coach to them - treatment quality, arrival experience, rebooking and retail conversations.', 'Fix the two operational frustrations the team raises most - that buys trust for everything after.'],
+    ninety: ['Show movement on the numbers you are measured on: utilisation, average treatment value, rebooking, retail attachment.', 'A development plan per team member and a hiring pipeline for the gaps.'],
+  }
+  return {
+    thirty: ['Learn the treatment menu, protocols and brand standards until they are second nature.', 'Get to know the team and how this spa likes things done - every property is different.'],
+    sixty: ['Build your rebooking and retail confidence - set a personal target and track it honestly.', 'Ask for feedback on your treatments and act on it visibly.'],
+    ninety: ['Be the reliable name on the rota - the person guests re-request and colleagues trust.', 'Tell your manager where you want to develop next and ask what it takes to get there.'],
+  }
+}
+
 function fallback(candidate: any, job: any, employer: any, cvText: string) {
   const level = seniority(job)
   const focus = focusFor(level)
@@ -137,6 +199,8 @@ function fallback(candidate: any, job: any, employer: any, cvText: string) {
     },
     likely_questions: focus.map(x => `Tell me about a time you demonstrated ${x}.`).concat([`Why does ${clean(job.job_title)} at ${companyName} interest you?`, 'Tell me about a difficult guest or team situation and what you learned.']).slice(0, 9),
     hard_questions: gaps.slice(0, 4).map(x => ({ question: `This role asks for ${x}. Your profile does not clearly evidence it. How would you address that?`, prepare: ['Use the closest genuine transferable experience.', 'Be clear about what you have not done yet.', 'Show how you would learn or step up.'] })),
+    commercial_talking_points: commercialTalkingPoints(level, employer),
+    plan_30_60_90: plan306090(level, { name: companyName }),
     questions_to_ask: ['What would success in the first 90 days look like?', 'What are the biggest priorities for the spa team right now?', `How does ${companyName} measure guest experience and commercial success?`, 'What development opportunities are available?'],
     readiness: { overall: evidence.length >= 4 ? 78 : evidence.length >= 2 ? 68 : 58, message: 'Focus next on turning responsibilities into specific evidence and practising the areas the role may challenge.' },
   }

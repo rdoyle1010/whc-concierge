@@ -43,31 +43,49 @@ export default function PrivacyStealthScreen(){
     if(!candidateId)return
     const previous=profileVisible
     setProfileVisible(value)
-    const {error}=await supabase.from('candidate_profiles').update({profile_visible:value,updated_at:new Date().toISOString()}).eq('id',candidateId)
-    if(error){setProfileVisible(previous);setMessage('Could not update visibility. Please try again.')}
+    // Row-level security scopes this update to the signed-in candidate, so a
+    // request that is refused comes back as zero rows rather than an error.
+    // Both cases have to roll the switch back, or the screen would show a
+    // setting the database never took.
+    const {data,error}=await supabase.from('candidate_profiles').update({profile_visible:value,updated_at:new Date().toISOString()}).eq('id',candidateId).select('id')
+    if(error||!data?.length){setProfileVisible(previous);setMessage('Could not update visibility. Please try again.')}
     else setMessage(value?'Your profile can be discovered by eligible employers, except those you block below.':'Your profile is hidden from all employer discovery.')
   }
 
+  // Blocking one employer no longer flips the global stealth_mode flag. RLS
+  // now reads stealth_mode as "hide me from every employer" (the same meaning
+  // the web talent settings give it), so setting it here would have hidden the
+  // candidate from the whole market the moment they blocked a single property -
+  // the opposite of what this screen promises. The block row alone is what
+  // hides them from that one employer.
   async function toggleEmployer(employer:Employer){
     if(!candidateId||busy)return
     setBusy(employer.id);setMessage('')
     const isBlocked=blocked.has(employer.id)
+    // The blocks_insert_candidate / blocks_delete_candidate policies allow a
+    // candidate to write only their own rows, which is exactly the shape of
+    // these two calls. A refused delete is not an error - it simply matches no
+    // rows - so the returned rows are what decides whether the unblock worked.
+    // Reporting success on zero rows would leave the candidate believing an
+    // employer had been unblocked when the block still stood.
     if(isBlocked){
-      const {error}=await supabase.from('profile_blocks').delete().eq('candidate_id',candidateId).eq('blocked_employer_id',employer.id)
-      if(!error){setBlocked(current=>{const next=new Set(current);next.delete(employer.id);return next});setMessage(`${employer.property_name||employer.company_name} can now discover you if your profile is visible.`)}
-      else setMessage('Could not unblock this employer.')
+      const {data,error}=await supabase.from('profile_blocks').delete().eq('candidate_id',candidateId).eq('blocked_employer_id',employer.id).select('blocked_employer_id')
+      if(error)setMessage(`Could not unblock this employer. ${error.message}`)
+      else if(!data?.length)setMessage('Could not unblock this employer - nothing was changed. Please sign out, sign back in and try again.')
+      else{setBlocked(current=>{const next=new Set(current);next.delete(employer.id);return next});setMessage(`${employer.property_name||employer.company_name} can now discover you if your profile is visible.`)}
     }else{
-      const {error}=await supabase.from('profile_blocks').insert({candidate_id:candidateId,blocked_employer_id:employer.id})
-      if(!error){
+      const {data,error}=await supabase.from('profile_blocks').insert({candidate_id:candidateId,blocked_employer_id:employer.id}).select('blocked_employer_id')
+      if(error)setMessage(`Could not block this employer. ${error.message}`)
+      else if(!data?.length)setMessage('Could not block this employer - nothing was saved. Please sign out, sign back in and try again.')
+      else{
         setBlocked(current=>new Set(current).add(employer.id))
-        await supabase.from('candidate_profiles').update({stealth_mode:true,updated_at:new Date().toISOString()}).eq('id',candidateId)
         setMessage(`${employer.property_name||employer.company_name} is blocked and cannot discover your profile.`)
-      }else setMessage('Could not block this employer.')
+      }
     }
     setBusy(null)
   }
 
-  if(loading)return <View style={styles.center}><ActivityIndicator color="#092b45"/></View>
+  if(loading)return <View style={styles.center}><ActivityIndicator color="#0b2f4d"/></View>
 
   return <ScrollView style={styles.scroll} contentContainerStyle={styles.page} keyboardShouldPersistTaps="handled">
     <Pressable onPress={()=>router.back()}><Text style={styles.back}>‹ Back</Text></Pressable>
@@ -104,4 +122,4 @@ export default function PrivacyStealthScreen(){
   </ScrollView>
 }
 
-const styles=StyleSheet.create({scroll:{flex:1,backgroundColor:'#fff'},page:{paddingHorizontal:20,paddingTop:54,paddingBottom:110},center:{flex:1,alignItems:'center',justifyContent:'center',backgroundColor:'#fff'},back:{fontSize:14,color:'#66747c',marginBottom:28},eyebrow:{fontSize:9,letterSpacing:2.1,color:'#71808a',marginBottom:9},title:{fontSize:30,lineHeight:36,color:'#092b45',fontWeight:'500'},intro:{fontSize:13,lineHeight:20,color:'#66747c',marginTop:9,marginBottom:22},visibilityCard:{flexDirection:'row',alignItems:'center',borderWidth:1,borderColor:'#dce3e7',padding:16,backgroundColor:'#f9fbfb'},cardTitle:{fontSize:14,fontWeight:'700',color:'#173246'},cardCopy:{fontSize:11,lineHeight:17,color:'#71808a',marginTop:4},visibilityButton:{minWidth:52,paddingVertical:10,paddingHorizontal:10,borderWidth:1,borderColor:'#d7dfe3',alignItems:'center'},visibilityButtonOn:{backgroundColor:'#092b45',borderColor:'#092b45'},visibilityText:{fontSize:10,fontWeight:'800',color:'#71808a'},visibilityTextOn:{color:'#fff'},summary:{marginTop:14,flexDirection:'row',gap:14,alignItems:'center',borderWidth:1,borderColor:'#e2e6e8',padding:15},summaryNumber:{fontSize:28,color:'#092b45',fontWeight:'600'},summaryTitle:{fontSize:13,fontWeight:'700',color:'#173246'},summaryCopy:{fontSize:10.5,lineHeight:16,color:'#71808a',marginTop:2},sectionLabel:{fontSize:9,letterSpacing:1.8,color:'#71808a',marginTop:28,marginBottom:9},search:{borderWidth:1,borderColor:'#d7dfe3',paddingHorizontal:14,paddingVertical:13,color:'#173246',fontSize:14},helper:{fontSize:10.5,lineHeight:16,color:'#7a878e',marginTop:8,marginBottom:12},list:{gap:8},row:{flexDirection:'row',alignItems:'center',gap:12,borderWidth:1,borderColor:'#e0e5e8',padding:13,backgroundColor:'#fff'},rowBlocked:{borderColor:'#9eb0bb',backgroundColor:'#f3f7f8'},check:{width:24,height:24,borderWidth:1.5,borderColor:'#aeb8be',alignItems:'center',justifyContent:'center'},checkBlocked:{backgroundColor:'#092b45',borderColor:'#092b45'},checkText:{fontSize:14,color:'#fff',fontWeight:'800'},checkTextBlocked:{color:'#fff'},employerName:{fontSize:13,fontWeight:'700',color:'#173246'},company:{fontSize:10.5,color:'#71808a',marginTop:2},location:{fontSize:10,color:'#89949a',marginTop:2},state:{fontSize:8.5,letterSpacing:.6,color:'#839097'},stateBlocked:{color:'#092b45',fontWeight:'800'},empty:{borderWidth:1,borderColor:'#e0e5e8',padding:18,marginTop:8},emptyTitle:{fontSize:13,fontWeight:'700',color:'#173246'},emptyCopy:{fontSize:11,color:'#71808a',marginTop:4},message:{fontSize:11,lineHeight:17,color:'#526976',marginTop:14},note:{backgroundColor:'#f4f7f8',padding:15,marginTop:22},noteTitle:{fontSize:11,fontWeight:'700',color:'#173246'},noteCopy:{fontSize:10.5,lineHeight:17,color:'#71808a',marginTop:4}})
+const styles=StyleSheet.create({scroll:{flex:1,backgroundColor:'#fff'},page:{paddingHorizontal:20,paddingTop:54,paddingBottom:110},center:{flex:1,alignItems:'center',justifyContent:'center',backgroundColor:'#fff'},back:{fontSize:14,color:'#66747c',marginBottom:28},eyebrow:{fontSize:9,letterSpacing:2.1,color:'#71808a',marginBottom:9},title:{fontSize:30,lineHeight:36,color:'#0b2f4d',fontWeight:'500'},intro:{fontSize:13,lineHeight:20,color:'#66747c',marginTop:9,marginBottom:22},visibilityCard:{flexDirection:'row',alignItems:'center',borderWidth:1,borderColor:'#dce3e7',padding:16,backgroundColor:'#f9fbfb'},cardTitle:{fontSize:14,fontWeight:'700',color:'#173246'},cardCopy:{fontSize:11,lineHeight:17,color:'#71808a',marginTop:4},visibilityButton:{minWidth:52,paddingVertical:10,paddingHorizontal:10,borderWidth:1,borderColor:'#d7dfe3',alignItems:'center'},visibilityButtonOn:{backgroundColor:'#0b2f4d',borderColor:'#0b2f4d'},visibilityText:{fontSize:10,fontWeight:'800',color:'#71808a'},visibilityTextOn:{color:'#fff'},summary:{marginTop:14,flexDirection:'row',gap:14,alignItems:'center',borderWidth:1,borderColor:'#e2e6e8',padding:15},summaryNumber:{fontSize:28,color:'#0b2f4d',fontWeight:'600'},summaryTitle:{fontSize:13,fontWeight:'700',color:'#173246'},summaryCopy:{fontSize:10.5,lineHeight:16,color:'#71808a',marginTop:2},sectionLabel:{fontSize:9,letterSpacing:1.8,color:'#71808a',marginTop:28,marginBottom:9},search:{borderWidth:1,borderColor:'#d7dfe3',paddingHorizontal:14,paddingVertical:13,color:'#173246',fontSize:14},helper:{fontSize:10.5,lineHeight:16,color:'#7a878e',marginTop:8,marginBottom:12},list:{gap:8},row:{flexDirection:'row',alignItems:'center',gap:12,borderWidth:1,borderColor:'#e0e5e8',padding:13,backgroundColor:'#fff'},rowBlocked:{borderColor:'#9eb0bb',backgroundColor:'#f3f7f8'},check:{width:24,height:24,borderWidth:1.5,borderColor:'#aeb8be',alignItems:'center',justifyContent:'center'},checkBlocked:{backgroundColor:'#0b2f4d',borderColor:'#0b2f4d'},checkText:{fontSize:14,color:'#fff',fontWeight:'800'},checkTextBlocked:{color:'#fff'},employerName:{fontSize:13,fontWeight:'700',color:'#173246'},company:{fontSize:10.5,color:'#71808a',marginTop:2},location:{fontSize:10,color:'#89949a',marginTop:2},state:{fontSize:8.5,letterSpacing:.6,color:'#839097'},stateBlocked:{color:'#0b2f4d',fontWeight:'800'},empty:{borderWidth:1,borderColor:'#e0e5e8',padding:18,marginTop:8},emptyTitle:{fontSize:13,fontWeight:'700',color:'#173246'},emptyCopy:{fontSize:11,color:'#71808a',marginTop:4},message:{fontSize:11,lineHeight:17,color:'#526976',marginTop:14},note:{backgroundColor:'#f4f7f8',padding:15,marginTop:22},noteTitle:{fontSize:11,fontWeight:'700',color:'#173246'},noteCopy:{fontSize:10.5,lineHeight:17,color:'#71808a',marginTop:4}})
