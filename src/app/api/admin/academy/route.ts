@@ -5,7 +5,9 @@ import { cookies } from 'next/headers'
 import { createNotification } from '@/lib/notifications'
 import { sendCourseGiftEmail } from '@/lib/emails'
 import { emailAllowed } from '@/lib/notification-prefs'
-import { getAcademyCatalog, getAcademyCourseBySlug, publicCourse } from '@/lib/academy-catalog-server'
+import { getAcademyCatalog, getAcademyCourseBySlug, publicCourse, saveAcademyCourseSettings } from '@/lib/academy-catalog-server'
+import { courseMeta } from '@/lib/academy-meta'
+import { publicCoursePrice } from '@/lib/academy'
 
 const CATEGORIES = new Set(['Guest Experience', 'Standards', 'Treatments', 'Commercial', 'Brands', 'Specialist Care'])
 
@@ -92,11 +94,28 @@ export async function GET() {
       lessons_total: courseMap.get(enrolment.course_slug)?.lessons.length ?? 0,
       lessons_done: Object.keys(enrolment.progress || {}).length,
     }))
+    // Every course talent can see - the code catalogue merged with any
+    // academy_courses overrides - with the same {revenue, enrolments,
+    // completions} stat shape the agency dashboard reports.
     const courses = catalogue.map(course => {
       const courseRows = rows.filter((row: any) => row.course_slug === course.slug && row.paid_at)
+      const meta = courseMeta(course.slug)
+      const codeTitle = course.title
       return {
         ...publicCourse(course),
         answer_key: course.answer_key,
+        override: course.override,
+        level: meta.level,
+        cpd_hours: meta.cpdHours,
+        skills: meta.skills,
+        modules: course.lessons.length,
+        questions: course.quiz.length,
+        member_price: course.price ?? 0,
+        guest_price: publicCoursePrice(course),
+        code_title: codeTitle,
+        // A saved title that no longer matches the code title is dead weight:
+        // talent always sees the code title, so admin gets told plainly.
+        title_differs: Boolean(course.code_defined && course.override?.title && course.override.title !== codeTitle),
         enrolments: courseRows.length,
         completions: courseRows.filter((row: any) => row.completed_at).length,
         revenue: courseRows.reduce((sum: number, row: any) => sum + (row.amount_paid || 0), 0),
@@ -117,10 +136,51 @@ export async function POST(req: NextRequest) {
     const body = await req.json()
     const action = String(body.action || '')
 
+    // The safe control surface: works for every course in the catalogue,
+    // including the ones defined in code, and never touches lesson content.
+    if (action === 'save_course_settings') {
+      const slug = cleanSlug(body.slug || body.courseSlug)
+      const existing = await getAcademyCourseBySlug(slug, true)
+      if (!existing) return NextResponse.json({ error: 'Course not found' }, { status: 404 })
+
+      const price = Math.round(Number(body.price))
+      if (!Number.isFinite(price) || price < 0 || price > 1000000) {
+        return NextResponse.json({ error: 'Enter a member price between £0 and £10,000.' }, { status: 400 })
+      }
+      const imageUrl = String(body.image_url ?? '').trim().slice(0, 1000)
+      if (imageUrl && !/^https:\/\//i.test(imageUrl)) {
+        return NextResponse.json({ error: 'Course image must use a secure https:// URL.' }, { status: 400 })
+      }
+      const tagline = String(body.tagline ?? '').trim().slice(0, 300)
+      const sortRaw = body.sort_order
+      const sortOrder = sortRaw === '' || sortRaw === null || sortRaw === undefined ? null : Math.round(Number(sortRaw))
+      if (sortOrder !== null && (!Number.isFinite(sortOrder) || sortOrder < 0 || sortOrder > 9999)) {
+        return NextResponse.json({ error: 'Display order must be a whole number between 0 and 9999.' }, { status: 400 })
+      }
+
+      const result = await saveAcademyCourseSettings(admin, slug, {
+        price,
+        image_url: imageUrl || null,
+        is_active: body.is_active !== false,
+        tagline: tagline || null,
+        sort_order: sortOrder,
+      }, user.id)
+      if (result.error) return NextResponse.json({ error: result.error }, { status: 500 })
+      return NextResponse.json({ success: true, slug, sort_order_saved: result.sortOrderSaved !== false })
+    }
+
     if (action === 'save_course') {
       const course = validateCourse(body.course || {})
       if ('error' in course) return NextResponse.json({ error: course.error }, { status: 400 })
       const existing = await getAcademyCourseBySlug(course.slug, true)
+      // Content for a platform course is authored in code so every release
+      // ships the newest teaching material. Writing it here would look like it
+      // worked and change nothing for learners - so it is refused, plainly.
+      if (existing?.code_defined) {
+        return NextResponse.json({
+          error: 'This is a platform course: its modules, assessment and title come from the WHC course library. Use Course settings to change the price, image, summary, order or visibility.',
+        }, { status: 400 })
+      }
       const { error } = await admin.from('academy_courses').upsert({
         slug: course.slug,
         title: course.title,
@@ -146,24 +206,14 @@ export async function POST(req: NextRequest) {
       const slug = cleanSlug(body.courseSlug)
       const existing = await getAcademyCourseBySlug(slug, true)
       if (!existing) return NextResponse.json({ error: 'Course not found' }, { status: 404 })
-      const { error } = await admin.from('academy_courses').upsert({
-        slug: existing.slug,
-        title: existing.title,
-        tagline: existing.tagline,
-        category: existing.category,
-        minutes: existing.minutes,
+      const result = await saveAcademyCourseSettings(admin, slug, {
         price: existing.price ?? 1000,
-        image_url: existing.image_url,
-        lessons: existing.lessons,
-        quiz: existing.quiz,
-        answer_key: existing.answer_key || [],
+        image_url: existing.override?.image_url ?? null,
         is_active: action === 'restore_course',
-        is_core: existing.is_core,
-        is_custom: existing.is_custom,
-        updated_by: user.id,
-        updated_at: new Date().toISOString(),
-      }, { onConflict: 'slug' })
-      if (error) throw error
+        tagline: existing.override?.tagline ?? null,
+        sort_order: existing.sort_order,
+      }, user.id)
+      if (result.error) return NextResponse.json({ error: result.error }, { status: 500 })
       return NextResponse.json({ success: true })
     }
 

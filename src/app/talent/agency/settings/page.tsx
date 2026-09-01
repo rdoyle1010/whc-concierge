@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import DashboardShell from '@/components/DashboardShell'
-import { Check, Zap, MapPin, CalendarDays, Clock3 } from 'lucide-react'
+import { Check, Zap, MapPin, CalendarDays, Clock3, Banknote } from 'lucide-react'
 import { AGENCY_LISTING_TIERS } from '@/lib/constants'
 
 const dayKey = (d: Date) => d.toLocaleDateString('en-CA')
@@ -63,6 +63,31 @@ export default function AgencySettingsPage() {
   const [dayBusy, setDayBusy] = useState<string | null>(null)
   const [referral, setReferral] = useState<{ code: string | null; total: number; converted: number }>({ code: null, total: 0, converted: 0 })
   const [copied, setCopied] = useState(false)
+  const [payoutState, setPayoutState] = useState<'loading' | 'not_started' | 'incomplete' | 'active' | 'unavailable'>('loading')
+  const [payoutBusy, setPayoutBusy] = useState(false)
+
+  // Stripe Connect payout readiness, shared with Residency - same account,
+  // same onboarding endpoint.
+  useEffect(() => {
+    fetch('/api/talent/payouts')
+      .then(res => res.ok ? res.json() : { state: 'unavailable' })
+      .then(json => setPayoutState(json.state || 'unavailable'))
+      .catch(() => setPayoutState('unavailable'))
+  }, [])
+
+  async function startPayouts() {
+    if (payoutBusy) return
+    setPayoutBusy(true); setError('')
+    try {
+      const res = await fetch('/api/talent/payouts', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ returnUrl: window.location.origin, returnPath: '/talent/agency/settings' }),
+      })
+      const json = await res.json()
+      if (!res.ok || !json.url) { setError(json.error || 'Could not start payout setup.'); return }
+      window.location.href = json.url
+    } catch { setError('Could not start payout setup.') } finally { setPayoutBusy(false) }
+  }
 
   useEffect(() => {
     async function load() {
@@ -204,6 +229,38 @@ export default function AgencySettingsPage() {
             <Zap size={18} className="text-ink mt-0.5 shrink-0" />
             <p className="text-[13px] text-secondary">You&apos;re not on the register yet. Fill in your details below and subscribe from {AGENCY_LISTING_TIERS.basic.display} to start receiving shift offers.</p>
           </div>
+        )}
+
+        {/* Connected payouts mean the property's payment reaches the
+            professional at the moment it clears, instead of waiting on a WHC
+            bank transfer after the shift. */}
+        {live.available && payoutState !== 'loading' && payoutState !== 'unavailable' && (
+          payoutState === 'active' ? (
+            <div className="mb-6 flex items-start gap-3 border border-green-200 bg-green-50 px-5 py-4">
+              <Banknote size={18} className="text-green-700 mt-0.5 shrink-0" />
+              <div>
+                <p className="text-[14px] font-medium text-green-800">Payouts are connected</p>
+                <p className="text-[12px] leading-5 text-green-700 mt-0.5">Your full agreed shift amount is sent straight to your bank account by Stripe the moment a property pays. Nothing is deducted and nothing waits on a WHC transfer.</p>
+              </div>
+            </div>
+          ) : (
+            <div className="mb-6 border border-[#0b2f4d]/25 bg-[#f5f6f8] px-5 py-4">
+              <div className="flex items-start gap-3">
+                <Banknote size={18} className="text-[#0b2f4d] mt-0.5 shrink-0" />
+                <div>
+                  <p className="text-[14px] font-medium text-ink">{payoutState === 'incomplete' ? 'Finish connecting your payouts' : 'Get paid the moment a property pays'}</p>
+                  <p className="text-[12px] leading-5 text-secondary mt-1">
+                    {payoutState === 'incomplete'
+                      ? 'Your Stripe payout setup is not finished, so shift money still comes to you by WHC bank transfer after the shift. Complete it and you are paid automatically instead.'
+                      : 'Connect your bank account securely through Stripe and your full agreed shift amount is paid to you automatically as soon as the property pays, rather than by a WHC bank transfer after the shift. It takes about two minutes, and your rate and fee do not change.'}
+                  </p>
+                  <button type="button" onClick={startPayouts} disabled={payoutBusy} className="btn-primary mt-3 text-[12px] disabled:opacity-50">
+                    {payoutBusy ? 'Opening Stripe...' : payoutState === 'incomplete' ? 'Continue payout setup' : 'Connect payouts with Stripe'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )
         )}
 
         <div className="dashboard-card mb-6 space-y-5">

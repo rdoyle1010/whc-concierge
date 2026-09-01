@@ -207,6 +207,25 @@ check('Academy catalogue never returns quiz answer keys', () => {
   assert.match(read('src/app/api/academy/catalog/route.ts'), /publicCourse/)
   assert.match(read('src/lib/academy-catalog-server.ts'), /answer_key: _answerKey/)
 })
+check('Academy admin overrides never replace code-authored course content', () => {
+  // The earlier bug: academy_courses rows replaced code content, so courses
+  // stopped improving with releases. The merge for a code-defined course must
+  // therefore read ONLY the commercial fields from the row.
+  const source = read('src/lib/academy-catalog-server.ts')
+  const merge = source.split('const merged = base.map')[1].split('const baseSlugs')[0]
+  for (const frozen of ['row.lessons', 'row.quiz', 'row.answer_key', 'row.title', 'row.minutes', 'row.category']) {
+    assert.equal(merge.includes(frozen), false, `code course content must not come from ${frozen}`)
+  }
+  for (const editable of ['row.price', 'row.image_url', 'row.is_active', 'row.tagline', 'row.sort_order']) {
+    assert.equal(merge.includes(editable), true, `admin must still control ${editable}`)
+  }
+  // Admin edits those fields through one action that works for every course.
+  const adminRoute = read('src/app/api/admin/academy/route.ts')
+  assert.match(adminRoute, /save_course_settings/)
+  assert.match(adminRoute, /saveAcademyCourseSettings/)
+  // An admin-set image is never overruled by a hard-coded page image.
+  assert.match(read('src/app/academy/page.tsx'), /course\.image_admin_set && course\.image_url/)
+})
 check('homepage hero is prioritised and public controls are accessible', () => {
   const hero = read('src/components/HeroCarousel.tsx')
   const navigation = read('src/components/Navbar.tsx')

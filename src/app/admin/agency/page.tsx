@@ -5,8 +5,10 @@ import DashboardShell from '@/components/DashboardShell'
 import { Banknote, CheckCircle2 } from 'lucide-react'
 
 // WHC's agency money view: what each property has paid in, what each
-// therapist is owed, and a one-click "mark paid out" once the bank
-// transfer to the therapist has been made.
+// therapist is owed, and how each payout was settled. Where the therapist
+// has connected Stripe payouts the money moved at booking and there is
+// nothing to transfer; otherwise a payout can only be marked paid against
+// the bank reference for the transfer that was actually made.
 
 export default function AdminAgencyPage() {
   const [bookings, setBookings] = useState<any[]>([])
@@ -19,6 +21,7 @@ export default function AdminAgencyPage() {
   const [loadError, setLoadError] = useState('')
   const [bookingsCapped, setBookingsCapped] = useState(false)
   const [registerRows, setRegisterRows] = useState<any[]>([])
+  const [payoutRefs, setPayoutRefs] = useState<Record<string, string>>({})
 
   async function load() {
     setLoadError('')
@@ -74,10 +77,11 @@ export default function AdminAgencyPage() {
     try {
       const res = await fetch('/api/admin/agency', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'mark_paid_out', bookingId }),
+        body: JSON.stringify({ action: 'mark_paid_out', bookingId, payoutReference: (payoutRefs[bookingId] || '').trim() }),
       })
       const j = await res.json()
       if (!res.ok) { setError(j.error || 'Could not update.'); return }
+      setPayoutRefs(prev => ({ ...prev, [bookingId]: '' }))
       await load()
     } catch {
       setError('Something went wrong - please try again.')
@@ -110,7 +114,9 @@ export default function AdminAgencyPage() {
   }
 
   const paidIn = bookings.filter(b => b.paid_at)
-  const owed = paidIn.filter(b => b.payout_status === 'pending' && b.dispute_status !== 'open')
+  // A destination charge paid the therapist at booking, so WHC owes nothing
+  // on it even before the row is marked settled.
+  const owed = paidIn.filter(b => b.payout_status === 'pending' && b.dispute_status !== 'open' && b.payout_method !== 'stripe_connect')
   const disputes = bookings.filter(b => b.dispute_status === 'open')
   const totalCollected = paidIn.reduce((s, b) => s + (b.amount_paid || 0), 0)
   const totalRefunded = bookings.reduce((s, b) => s + (b.refund_amount || 0), 0)
@@ -122,7 +128,7 @@ export default function AdminAgencyPage() {
       <div className="mb-7">
         <p className="dashboard-eyebrow">Platform</p>
         <h1 className="dashboard-title">Agency Money</h1>
-        <p className="dashboard-intro">What each property has paid in, what each therapist is owed, and a one-click mark paid out once the bank transfer has been made.</p>
+        <p className="dashboard-intro">What each property has paid in, what each therapist is owed, and how each payout settled. Therapists with Stripe payouts connected are paid directly at booking. Everyone else is settled by bank transfer, which can only be marked paid against the reference of the transfer you actually made.</p>
       </div>
 
       {error && <div className="bg-red-50 text-red-600 text-sm px-4 py-3 rounded-lg mb-6">{error}</div>}
@@ -298,13 +304,33 @@ export default function AdminAgencyPage() {
                       <td className="py-2.5 pr-4">{b.payout_amount ? `£${b.payout_amount}` : '-'}</td>
                       <td className="py-2.5 text-right">
                         {b.paid_at && b.payout_status !== 'paid' && (
-                          <button onClick={() => markPaidOut(b.id)} disabled={busyId === b.id}
-                            className="btn-secondary text-[11px] disabled:opacity-50 whitespace-nowrap">
-                            {busyId === b.id ? 'Saving...' : 'Mark paid out'}
-                          </button>
+                          b.payout_method === 'stripe_connect' ? (
+                            <div className="flex flex-col items-end gap-1">
+                              <span className="text-[11px] text-secondary">Paid directly by Stripe at booking - no transfer to make</span>
+                              <button onClick={() => markPaidOut(b.id)} disabled={busyId === b.id}
+                                className="btn-secondary text-[11px] disabled:opacity-50 whitespace-nowrap">
+                                {busyId === b.id ? 'Saving...' : 'Record as settled'}
+                              </button>
+                            </div>
+                          ) : (
+                            <div className="flex flex-col items-end gap-1">
+                              <input type="text" aria-label="Bank transfer reference" value={payoutRefs[b.id] || ''}
+                                onChange={e => setPayoutRefs(prev => ({ ...prev, [b.id]: e.target.value }))}
+                                placeholder="Bank transfer reference" className="input-field !py-1.5 text-[12px] w-48" />
+                              <button onClick={() => markPaidOut(b.id)} disabled={busyId === b.id || (payoutRefs[b.id] || '').trim().length < 4}
+                                className="btn-secondary text-[11px] disabled:opacity-50 whitespace-nowrap">
+                                {busyId === b.id ? 'Saving...' : 'Mark paid out'}
+                              </button>
+                            </div>
+                          )
                         )}
                         {b.payout_status === 'paid' && (
-                          <span className="inline-flex items-center gap-1 text-[11px] text-green-700"><CheckCircle2 size={12} /> Paid out{b.payout_at ? ` ${new Date(b.payout_at).toLocaleDateString('en-GB')}` : ''}</span>
+                          <span className="inline-flex flex-col items-end gap-0.5 text-[11px] text-green-700">
+                            <span className="inline-flex items-center gap-1"><CheckCircle2 size={12} /> Paid out{b.payout_at ? ` ${new Date(b.payout_at).toLocaleDateString('en-GB')}` : ''}</span>
+                            {b.payout_method === 'stripe_connect'
+                              ? <span className="text-secondary">Sent by Stripe at booking</span>
+                              : b.payout_reference ? <span className="text-secondary">Ref {b.payout_reference}</span> : null}
+                          </span>
                         )}
                       </td>
                     </tr>

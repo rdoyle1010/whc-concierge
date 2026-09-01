@@ -127,8 +127,11 @@ export default function TalentAgencyPage() {
   // The professional keeps the full agreed rate - the WHC fee is paid by the
   // property on top, so nothing is deducted from the payout.
   const expectedPayout = (b: any) => b.payout_amount ?? Math.max(0, b.rate * (b.hours && b.hours > 0 ? b.hours : 8))
-  const paidOut = shifts.filter((b) => b.payout_status === 'paid').reduce((s, b) => s + expectedPayout(b), 0)
-  const awaitingPayout = shifts.filter((b) => b.paid_at && b.payout_status === 'pending' && b.dispute_status !== 'open').reduce((s, b) => s + expectedPayout(b), 0)
+  // Where Stripe payouts are connected the money reached the professional as
+  // the property paid, so it is money received rather than money awaited.
+  const paidByStripeAtBooking = (b: any) => b.payout_method === 'stripe_connect' && Boolean(b.paid_at) && b.dispute_status !== 'open'
+  const paidOut = shifts.filter((b) => b.payout_status === 'paid' || paidByStripeAtBooking(b)).reduce((s, b) => s + expectedPayout(b), 0)
+  const awaitingPayout = shifts.filter((b) => b.paid_at && b.payout_status === 'pending' && b.dispute_status !== 'open' && !paidByStripeAtBooking(b)).reduce((s, b) => s + expectedPayout(b), 0)
   const onHold = shifts.filter((b) => b.dispute_status === 'open').reduce((s, b) => s + expectedPayout(b), 0)
   const awaitingProperty = shifts.filter((b) => b.status === 'accepted').reduce((s, b) => s + expectedPayout(b), 0)
   const hasEarnings = shifts.some((b) => ['accepted', 'confirmed', 'completed'].includes(b.status))
@@ -280,7 +283,10 @@ export default function TalentAgencyPage() {
                     {b.status === 'accepted' && <p className="text-[11px] text-blue-700 mt-1.5">Agreed at £{b.rate}/hour - awaiting the property&apos;s payment to WHC. Once paid, your full payout of £{b.rate * (b.hours && b.hours > 0 ? b.hours : 8)} is confirmed. The property pays the WHC fee - nothing is deducted from you.</p>}
                     {(b.status === 'confirmed' || b.status === 'completed') && b.dispute_status === 'open' && <p className="text-[11px] text-amber-700 mt-1.5">The property has raised an issue with this shift - your payout of £{expectedPayout(b)} is on hold while WHC reviews it.</p>}
                     {(b.status === 'confirmed' || b.status === 'completed') && b.dispute_status !== 'open' && (
-                      b.payout_status === 'cancelled' ? <p className="text-[11px] text-secondary mt-1.5">Issue resolved - no payout is due for this booking.</p> : <p className="text-[11px] text-green-700 mt-1.5">Paid &amp; confirmed - WHC pays you £{expectedPayout(b)} after the shift{b.payout_status === 'paid' ? ` (payout sent${b.payout_at ? ` ${new Date(b.payout_at).toLocaleDateString('en-GB')}` : ''})` : ''}.</p>
+                      b.payout_status === 'cancelled' ? <p className="text-[11px] text-secondary mt-1.5">Issue resolved - no payout is due for this booking.</p>
+                        : b.payout_method === 'stripe_connect'
+                          ? <p className="text-[11px] text-green-700 mt-1.5">Paid directly by Stripe - your £{expectedPayout(b)} went straight to your connected bank account when the property paid. It usually lands within 2 to 3 working days.</p>
+                          : <p className="text-[11px] text-green-700 mt-1.5">Paid &amp; confirmed - WHC pays you £{expectedPayout(b)} by bank transfer after the shift{b.payout_status === 'paid' ? ` (sent${b.payout_at ? ` ${new Date(b.payout_at).toLocaleDateString('en-GB')}` : ''}${b.payout_reference ? `, reference ${b.payout_reference}` : ''})` : ''}.</p>
                     )}
                   </div>
                   <div className="text-right">

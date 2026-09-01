@@ -247,9 +247,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ url: session.url })
     }
 
-    // ── Agency booking payment - the PROPERTY pays the FULL amount through
-    // WHC at acceptance: rate × hours + 10% platform fee. WHC pays the
-    // therapist 100% of the agreed shift amount after the completed shift.
+    // ── Agency booking payment - the PROPERTY pays the FULL amount at
+    // acceptance: rate × hours + the WHC platform fee. The therapist always
+    // receives 100% of the agreed shift amount. Where the therapist has
+    // connected Stripe payouts the shift money is transferred to them by
+    // Stripe as the payment clears; otherwise WHC collects it and settles by
+    // bank transfer after the completed shift.
     if (type === 'agency_booking') {
       const { bookingId } = body
       if (!bookingId) return NextResponse.json({ error: 'Missing bookingId' }, { status: 400 })
@@ -281,6 +284,16 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: 'Could not work out the total for this booking.' }, { status: 400 })
       }
 
+      // Stripe Connect. When the professional has finished payout onboarding
+      // this becomes a DESTINATION CHARGE: the shift money is transferred to
+      // them as the property pays, and WHC keeps only its booking fee as the
+      // application fee. The professional never waits on a WHC bank transfer
+      // and WHC never holds their money. Amounts are identical either way.
+      const { candidatePayoutAccount, agencyDestinationSplit, AGENCY_PAYOUT_CONNECT, AGENCY_PAYOUT_MANUAL } = await import('@/lib/agency-payouts')
+      const payee = await candidatePayoutAccount(admin, booking.candidate_id)
+      const split = agencyDestinationSplit(gross, fee)
+      const payoutMethod = payee.ready && payee.accountId ? AGENCY_PAYOUT_CONNECT : AGENCY_PAYOUT_MANUAL
+
       const session = await stripe.checkout.sessions.create({
         payment_method_types: ['card'],
         line_items: [{
@@ -288,7 +301,7 @@ export async function POST(req: NextRequest) {
             currency: 'gbp',
             product_data: {
               name: 'WHC Concierge - Agency Shift Booking',
-              description: `${booking.shift_date || 'Agreed date'}: £${booking.rate}/hr × ${effHours}h (£${gross}) + ${Math.round((fee / Math.max(1, gross)) * 100)}% WHC fee (£${fee}). The therapist receives the full £${gross} agreed shift amount after the completed shift.`,
+              description: `${booking.shift_date || 'Agreed date'}: £${booking.rate}/hr × ${effHours}h (£${gross}) + ${Math.round((fee / Math.max(1, gross)) * 100)}% WHC fee (£${fee}). ${payoutMethod === AGENCY_PAYOUT_CONNECT ? `The therapist is paid the full £${gross} agreed shift amount directly by Stripe as this payment clears.` : `The therapist receives the full £${gross} agreed shift amount after the completed shift.`}`,
             },
             unit_amount: totalPounds * 100, // pounds → pence
           },
@@ -296,9 +309,16 @@ export async function POST(req: NextRequest) {
         }],
         mode: 'payment',
         allow_promotion_codes: false,
+        ...(payoutMethod === AGENCY_PAYOUT_CONNECT && payee.accountId ? {
+          payment_intent_data: {
+            transfer_data: { destination: payee.accountId },
+            application_fee_amount: split.applicationFeePence,
+            metadata: { type: 'agency_booking', booking_id: booking.id, candidate_id: String(booking.candidate_id || '') },
+          },
+        } : {}),
         success_url: `${origin}/employer/agency?paid=processing&booking=${encodeURIComponent(booking.id)}`,
         cancel_url: `${origin}/employer/agency?paid=cancelled`,
-        metadata: { type: 'agency_booking', booking_id: booking.id, employer_id: emp.id, user_id: user.id, gross: String(gross), fee: String(fee) },
+        metadata: { type: 'agency_booking', booking_id: booking.id, employer_id: emp.id, user_id: user.id, gross: String(gross), fee: String(fee), payout_method: payoutMethod },
       })
       return NextResponse.json({ url: session.url })
     }

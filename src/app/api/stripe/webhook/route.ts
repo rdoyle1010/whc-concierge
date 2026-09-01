@@ -97,6 +97,42 @@ export async function POST(req: NextRequest) {
   }
 
   const supabase = createAdminClient()
+
+  // Event ledger. Stripe retries and replays events; recording the verified
+  // event id before any work makes EVERY branch below idempotent, not just
+  // the ones that happen to upsert. A duplicate key means we have already
+  // processed this event, so acknowledge it and do nothing.
+  try {
+    const { error: ledgerError } = await supabase.from('stripe_events')
+      .insert({ event_id: event.id, type: event.type, payload: event as any })
+    if (ledgerError) {
+      const message = String(ledgerError.message || '')
+      if ((ledgerError as any).code === '23505' || /duplicate key|already exists/i.test(message)) {
+        return NextResponse.json({ received: true, duplicate: true })
+      }
+      // stripe_events arrives with migration 20260901100000. Until it is run,
+      // log and carry on - a missing ledger must never break a payment.
+      console.error('[Stripe events] ledger unavailable, continuing:', message)
+    }
+  } catch (ledgerFailure: any) {
+    console.error('[Stripe events] ledger unavailable, continuing:', ledgerFailure?.message)
+  }
+
+  // If fulfilment fails we release the ledger row, so Stripe's retry is new
+  // work rather than a duplicate we silently acknowledge. The ledger stops
+  // double fulfilment; it must never stop a failed one being retried.
+  async function releaseLedger() {
+    try { await supabase.from('stripe_events').delete().eq('event_id', event.id) } catch { /* nothing to release */ }
+  }
+  async function fulfilmentFailed(message: string) {
+    await releaseLedger()
+    return NextResponse.json({ error: message }, { status: 500 })
+  }
+
+  // Wrapped so that any unexpected throw below releases the ledger row before
+  // the 500 reaches Stripe. The body keeps its original indentation so this
+  // change stays reviewable.
+  try {
   const residencyHandled = await handleResidencyStripeEvent(event, stripe, supabase)
   if (residencyHandled) return NextResponse.json({ received: true })
 
@@ -111,7 +147,7 @@ export async function POST(req: NextRequest) {
         const result = await fulfilCommercialPurchase(supabase, stripe, session)
         if (!result.ok) {
           console.error('[Commercial product] fulfilment failed:', result.error)
-          return NextResponse.json({ error: 'commercial_product fulfilment failed' }, { status: 500 })
+          return await fulfilmentFailed('commercial_product fulfilment failed')
         }
       }
 
@@ -137,7 +173,7 @@ export async function POST(req: NextRequest) {
         }, { onConflict: 'stripe_checkout_session_id' })
         if (error) {
           console.error('[Sponsored advert] fulfilment failed:', error.message)
-          return NextResponse.json({ error: 'sponsored_ad fulfilment failed' }, { status: 500 })
+          return await fulfilmentFailed('sponsored_ad fulfilment failed')
         }
       }
 
@@ -196,7 +232,7 @@ export async function POST(req: NextRequest) {
         }).eq('id', meta.employer_id)
         if (error) {
           console.error('[Featured employer] fulfilment failed:', error.message)
-          return NextResponse.json({ error: 'featured_employer fulfilment failed' }, { status: 500 })
+          return await fulfilmentFailed('featured_employer fulfilment failed')
         }
         await announceFeaturedEmployer(supabase, meta.employer_id)
       }
@@ -204,14 +240,27 @@ export async function POST(req: NextRequest) {
       if (meta?.type === 'agency_booking' && meta?.booking_id) {
         const gross = meta.gross ? parseInt(meta.gross) : 0
         const fee = meta.fee ? parseInt(meta.fee) : 0
-        await supabase.from('agency_bookings').update({
+        // Which money model this booking used. 'stripe_connect' means the
+        // shift money was transferred to the professional by the destination
+        // charge itself; 'manual' means WHC holds it until it settles.
+        const payoutMethod = meta.payout_method === 'stripe_connect' ? 'stripe_connect' : 'manual'
+        const paidUpdate: Record<string, any> = {
           status: 'confirmed',
           paid_at: new Date().toISOString(),
           amount_paid: gross + fee,
           payout_amount: gross,
           payout_status: 'pending',
           stripe_payment_intent: (session.payment_intent as string) || null,
-        }).eq('id', meta.booking_id)
+          payout_method: payoutMethod,
+        }
+        let { error: paidError } = await supabase.from('agency_bookings').update(paidUpdate).eq('id', meta.booking_id)
+        if (paidError && /column|payout_method/i.test(paidError.message || '')) {
+          // payout_method arrives with migration 20260901100000; the payment
+          // must land regardless of whether it has been run yet.
+          delete paidUpdate.payout_method
+          ;({ error: paidError } = await supabase.from('agency_bookings').update(paidUpdate).eq('id', meta.booking_id))
+        }
+        if (paidError) console.error('[Agency booking] payment record update failed:', paidError.message)
 
         try {
           const { data: booking } = await supabase.from('agency_bookings')
@@ -238,9 +287,13 @@ export async function POST(req: NextRequest) {
               }
             } catch { /* best-effort */ }
 
+            const payoutLine = payoutMethod === 'stripe_connect'
+              ? 'Your payout has been sent straight to your connected bank account by Stripe.'
+              : 'WHC pays you after the shift.'
+
             if (cand?.user_id) {
               await createNotification(cand.user_id, 'general', 'Booking confirmed - payment received',
-                `Your shift at ${propertyName} on ${shiftDate} at £${booking.rate}/hr is confirmed. WHC pays you after the shift.`,
+                `Your shift at ${propertyName} on ${shiftDate} at £${booking.rate}/hr is confirmed. ${payoutLine}`,
                 '/talent/agency')
               // Preference-gated ('booking_updates'): the therapist's copy
               // honours their opt-out; the in-app notification above always
@@ -250,7 +303,7 @@ export async function POST(req: NextRequest) {
                 const { data: u } = await supabase.auth.admin.getUserById(cand.user_id)
                 if (u?.user?.email) {
                   await sendBookingConfirmedEmail(u.user.email, cand.full_name || 'there',
-                    `shift at ${propertyName} on ${shiftDate} at £${booking.rate}/hr. WHC pays you after the shift.`)
+                    `shift at ${propertyName} on ${shiftDate} at £${booking.rate}/hr. ${payoutLine}`)
                 }
               }
             }
@@ -328,7 +381,7 @@ export async function POST(req: NextRequest) {
           if (!userId) throw new Error('course_public fulfilment: no user for ' + email)
         } catch (e: any) {
           console.error('[Academy public] fulfilment failed:', e?.message)
-          return NextResponse.json({ error: 'course_public fulfilment failed' }, { status: 500 })
+          return await fulfilmentFailed('course_public fulfilment failed')
         }
       }
 
@@ -724,6 +777,11 @@ export async function POST(req: NextRequest) {
         .not('membership_tier', 'is', null)
       break
     }
+  }
+  } catch (processingError: any) {
+    console.error('[Stripe webhook] processing failed:', processingError?.message)
+    await releaseLedger()
+    throw processingError
   }
 
   return NextResponse.json({ received: true })

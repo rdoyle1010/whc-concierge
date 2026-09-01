@@ -64,10 +64,15 @@ export async function POST(req: NextRequest) {
       await admin.from('candidate_profiles').update({ stripe_connect_account_id: accountId }).eq('id', candidate.id)
     }
 
+    // Agency and Residency both start onboarding here, so the professional
+    // comes back to the page they left. Allowlisted - never a caller-supplied path.
+    const RETURN_PATHS = ['/talent/residency', '/talent/agency/settings']
+    const returnPath = RETURN_PATHS.includes(String(body.returnPath || '')) ? String(body.returnPath) : RETURN_PATHS[0]
+
     const link = await stripe.accountLinks.create({
       account: accountId,
-      refresh_url: `${origin}/talent/residency?payouts=refresh`,
-      return_url: `${origin}/talent/residency?payouts=return`,
+      refresh_url: `${origin}${returnPath}?payouts=refresh`,
+      return_url: `${origin}${returnPath}?payouts=return`,
       type: 'account_onboarding',
     })
     return NextResponse.json({ url: link.url })

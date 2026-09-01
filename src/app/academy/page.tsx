@@ -91,7 +91,10 @@ export default function PublicAcademyPage() {
   const managementCourses = courses.filter(course => MANAGEMENT_PROGRAMMES.has(course.slug))
   const standardCourses = courses.filter(course => !MANAGEMENT_PROGRAMMES.has(course.slug))
   const categories = Array.from(new Set(standardCourses.map(c => c.category)))
-  const displayCourseImage = (course: AcademyCourse & { image_url?: string }) => MODERN_COURSE_IMAGES[course.slug] || course.image_url || courseImage(course.slug)
+  // An image uploaded in Admin -> Academy always wins; MODERN_COURSE_IMAGES is
+  // only a nicer default for courses no admin has set an image for.
+  const displayCourseImage = (course: AcademyCourse & { image_url?: string; image_admin_set?: boolean }) =>
+    (course.image_admin_set && course.image_url) || MODERN_COURSE_IMAGES[course.slug] || course.image_url || courseImage(course.slug)
 
   const purchaseButton = (course: AcademyCourse) => isCandidate ? (
     <Link href="/talent/academy" className="btn-primary text-[12px] inline-flex items-center justify-center gap-1.5">Member enrolment <ArrowRight size={12} /></Link>
