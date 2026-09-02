@@ -385,3 +385,29 @@ test('no oversized images are committed to public/', () => {
     .filter(file => file.bytes > 1_200_000)
   assert.deepEqual(heavy, [], `resize these before committing: ${heavy.map(f => `${f.name} ${(f.bytes / 1024 / 1024).toFixed(2)}MB`).join(', ')}`)
 })
+
+// supabase.auth.getUser() sends the token to Supabase to be validated, so
+// every call is a network round trip rather than a local read. The dashboard
+// shell asked three times on mount, the settings pages three more, and several
+// widgets on those pages once each - eight round trips to answer one question,
+// in sequence, before anything the visitor came for appeared.
+test('the signed-in viewer is read once and shared', () => {
+  const shell = readFileSync(new URL('../src/components/DashboardShell.tsx', import.meta.url), 'utf8')
+  assert.ok(!/auth\.getUser\(\)/.test(shell), 'the shell renders on every dashboard page and must not re-ask')
+  assert.match(shell, /getViewer\(\)/)
+  // A sign-out that leaves the previous user cached is worse than a slow page.
+  assert.match(shell, /forgetViewer\(\)/)
+
+  const viewer = readFileSync(new URL('../src/lib/viewer.ts', import.meta.url), 'utf8')
+  assert.match(viewer, /onAuthStateChange/, 'a changed session must invalidate the cached answer')
+  assert.match(viewer, /catch\(\(\) => \{ pending = null/, 'a failed lookup must not cache as signed out forever')
+})
+
+// Seven round trips in a row, where the last four asked nothing of each other.
+test('the employer dashboard does not wait on queries that are independent', () => {
+  const page = readFileSync(new URL('../src/app/employer/dashboard/page.tsx', import.meta.url), 'utf8')
+  assert.match(page, /await Promise\.all\(\[/, 'independent counts must be fetched together')
+  const load = page.slice(page.indexOf('async function load'), page.indexOf('load()\n'))
+  const awaits = (load.match(/await supabase\./g) || []).length
+  assert.ok(awaits <= 3, `${awaits} sequential queries still wait on each other`)
+})

@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { getViewer } from '@/lib/viewer'
 import DashboardShell from '@/components/DashboardShell'
 import { createClient } from '@/lib/supabase/client'
 import { ShieldCheck, Upload, FileText, X } from 'lucide-react'
@@ -43,7 +44,7 @@ export default function TalentVerificationPage() {
   useEffect(() => { load() }, [])
 
   async function uploadOne(file: File, sub: string): Promise<string | null> {
-    const { data: { user } } = await supabase.auth.getUser()
+    const user = await getViewer()
     if (!user) return null
     const fd = new FormData()
     fd.append('file', file)

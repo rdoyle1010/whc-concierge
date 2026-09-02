@@ -1,6 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useState } from 'react'
+import { getViewer } from '@/lib/viewer'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import DashboardShell from '@/components/DashboardShell'
@@ -90,7 +91,7 @@ export default function TalentResidencyPage() {
 
   const load = useCallback(async () => {
     setLoading(true)
-    const { data: { user } } = await supabase.auth.getUser()
+    const user = await getViewer()
     if (!user) { window.location.href = '/login?role=talent'; return }
     const { data: candidate } = await supabase.from('candidate_profiles').select('id,full_name,residency_member,residency_subscription_status').eq('user_id', user.id).maybeSingle()
     setProfile(candidate)

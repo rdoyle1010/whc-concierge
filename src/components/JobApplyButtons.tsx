@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { getViewer } from '@/lib/viewer'
 import Link from 'next/link'
 import { ArrowRight, Bookmark } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
@@ -23,7 +24,7 @@ export default function JobApplyButtons({ roleId }: Props) {
     let cancelled = false
 
     ;(async () => {
-      const { data: { user } } = await supabase.auth.getUser()
+      const user = await getViewer()
       if (cancelled) return
 
       if (!user) {

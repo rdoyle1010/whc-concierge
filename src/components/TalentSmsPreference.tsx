@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { getViewer } from '@/lib/viewer'
 import { usePathname } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { MessageSquareText } from 'lucide-react'
@@ -19,7 +20,7 @@ export default function TalentSmsPreference() {
     if (!show) return
     let active = true
     ;(async () => {
-      const { data: { user } } = await supabase.auth.getUser()
+      const user = await getViewer()
       if (!user || !active) return
       const { data } = await supabase
         .from('candidate_profiles')

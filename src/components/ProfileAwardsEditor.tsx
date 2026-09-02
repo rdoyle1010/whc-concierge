@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { getViewer } from '@/lib/viewer'
 import { Award, Plus, Save, Trash2 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 
@@ -22,7 +23,7 @@ export default function ProfileAwardsEditor({ kind }: { kind: Kind }) {
 
   useEffect(() => {
     ;(async () => {
-      const { data: { user } } = await supabase.auth.getUser()
+      const user = await getViewer()
       if (!user) { setLoading(false); return }
       const table = kind === 'talent' ? 'candidate_profiles' : 'employer_profiles'
       const { data } = await supabase.from(table).select('id, awards').eq('user_id', user.id).maybeSingle()

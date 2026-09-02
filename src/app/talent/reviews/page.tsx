@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { getViewer } from '@/lib/viewer'
 import DashboardShell from '@/components/DashboardShell'
 import { createClient } from '@/lib/supabase/client'
 import { Star } from 'lucide-react'
@@ -13,7 +14,7 @@ export default function TalentReviewsPage() {
 
   useEffect(() => {
     async function load() {
-      const { data: { user } } = await supabase.auth.getUser()
+      const user = await getViewer()
       if (!user) { setLoading(false); return }
 
       const { data } = await supabase

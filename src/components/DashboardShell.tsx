@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { getViewer, forgetViewer } from '@/lib/viewer'
 import Link from 'next/link'
 import Wordmark from '@/components/Wordmark'
 import NotificationBell from '@/components/NotificationBell'
@@ -149,7 +150,7 @@ export default function DashboardShell({ children, role, userName, intro }: Dash
 
   useEffect(() => {
     let active = true
-    supabase.auth.getUser().then(({ data }) => { if (active) setViewerId(data.user?.id || null) }).catch(() => { })
+    getViewer().then(user => { if (active) setViewerId(user?.id || null) }).catch(() => { })
     return () => { active = false }
   }, [])
 
@@ -157,7 +158,7 @@ export default function DashboardShell({ children, role, userName, intro }: Dash
     let active = true
     async function loadAccess() {
       if (role === 'admin') return
-      const { data: { user } } = await supabase.auth.getUser()
+      const user = await getViewer()
       if (!active || !user) return
       if (role === 'talent') {
         const { data } = await supabase.from('candidate_profiles').select('membership_tier,interview_ready_credits,academy_discount_pct,free_feature_credits').eq('user_id', user.id).maybeSingle()
@@ -174,10 +175,10 @@ export default function DashboardShell({ children, role, userName, intro }: Dash
   useEffect(() => {
     if (!isPublicAgencyRoute) return
     let active = true
-    supabase.auth.getUser().then(async ({ data }) => {
+    getViewer().then(async user => {
       if (!active) return
-      if (!data.user) { setAgencyShell('public'); return }
-      const { data: profile } = await supabase.from('profiles').select('role').eq('id', data.user.id).maybeSingle()
+      if (!user) { setAgencyShell('public'); return }
+      const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).maybeSingle()
       if (!active) return
       setAgencyShell(profile?.role === 'employer' ? 'employer' : 'public')
     }).catch(() => { if (active) setAgencyShell('public') })
@@ -185,6 +186,7 @@ export default function DashboardShell({ children, role, userName, intro }: Dash
   }, [isPublicAgencyRoute])
 
   const handleSignOut = async () => {
+    forgetViewer()
     await supabase.auth.signOut()
     window.location.href = '/'
   }
