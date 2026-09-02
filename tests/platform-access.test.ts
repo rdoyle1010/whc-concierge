@@ -124,7 +124,7 @@ test('joining the list is the way through, and it is remembered', () => {
   assert.match(gate, /thc_joined=1/, 'a visitor who joined must not meet the gate again')
   assert.match(gate, /api\/newsletter\/subscribe/)
   // Rebecca has to keep working while the doors are shut.
-  assert.match(gate, /const SKIP = \['\/admin', '\/admin-sign-in'\]/)
+  assert.match(gate, /const SKIP = \[[^\]]*'\/admin'[^\]]*'\/admin-sign-in'[^\]]*\]/)
   const lib = read('src/lib/platform-access.ts')
   assert.match(lib, /JOINED_COOKIE/)
   assert.match(lib, /PREVIEW_COOKIE/, 'the preview code must still walk a demo straight past')
@@ -135,4 +135,19 @@ test('joining the list is the way through, and it is remembered', () => {
 test('the gate says there is a confirmation email coming', () => {
   const gate = read('src/components/ComingSoonGate.tsx')
   assert.match(gate, /confirm/i, 'the visitor must be told to confirm')
+})
+
+// The gate landed on a signed-in professional's own settings page and locked
+// it: scroll frozen, and someone who already has an account being asked to
+// join a list about opening. Anyone holding a session is past the waiting list
+// by definition.
+test('the arrival gate never meets someone who already has an account', () => {
+  const lib = read('src/lib/platform-access.ts')
+  assert.match(lib, /sb-\.\*-auth-token/, 'a session must send the gate away')
+  const gate = read('src/components/ComingSoonGate.tsx')
+  // The root layout survives a client-side navigation, so a gate mounted on a
+  // public page otherwise rides along into a portal and locks it.
+  for (const portal of ['/talent', '/employer', '/hotel']) {
+    assert.ok(gate.includes(`'${portal}'`), `${portal} must be skipped by the gate`)
+  }
 })

@@ -81,6 +81,15 @@ export async function showEntryGate(): Promise<boolean> {
   const jar = await cookies()
   if (jar.get(JOINED_COOKIE)?.value === '1') return false
   if (access.previewCode && jar.get(PREVIEW_COOKIE)?.value === access.previewCode) return false
+  // Anyone holding a session is past the waiting list by definition. Without
+  // this the gate lands on a professional's own settings page and locks it,
+  // asking someone who already has an account to join a list about opening.
+  //
+  // Presence of the cookie is enough and the token is deliberately not
+  // verified: this is a soft gate in front of public pages, not an
+  // entitlement, and validating it would add an auth round trip to every
+  // render of every page on the site.
+  if (jar.getAll().some(cookie => /^sb-.*-auth-token(\.\d+)?$/.test(cookie.name))) return false
   return true
 }
 

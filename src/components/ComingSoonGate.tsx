@@ -15,9 +15,11 @@ import { ArrowRight, Check } from 'lucide-react'
 // asks, it does not defend. Nothing behind it is private.
 //
 // Staff routes are skipped outright - the point of closing the doors is that
-// Rebecca keeps working.
+// Rebecca keeps working - and so are the portals, because the root layout
+// survives a client-side navigation: without this the gate mounted on a public
+// page rides along into a signed-in dashboard and locks it.
 
-const SKIP = ['/admin', '/admin-sign-in']
+const SKIP = ['/admin', '/admin-sign-in', '/talent', '/employer', '/hotel']
 
 export default function ComingSoonGate({ logo }: { logo?: { url: string; alt: string } }) {
   const pathname = usePathname()
