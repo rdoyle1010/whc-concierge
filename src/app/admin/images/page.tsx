@@ -15,7 +15,8 @@ import { cloneDefaultPublicPagesContent, PUBLIC_PAGE_SLUGS, type PublicPagesCont
 // publishes both stores in a single action.
 
 type Store = 'website' | 'pages'
-type Slot = { store: Store; field: string; group: string; label: string; url: string; href?: string }
+type PanelKey = 'homepageCta' | 'authPanel'
+type Slot = { store: Store; field: string; group: string; label: string; url: string; href?: string; panelKey?: PanelKey }
 
 const pageNames: Record<string, string> = {
   properties: 'Properties', agency: 'Agency', residency: 'Residency',
@@ -40,8 +41,8 @@ function websiteSlots(content: WebsiteContent): Slot[] {
     store: 'website', field: `roles.images.${index}.url`, group: 'Homepage',
     label: `Featured role card ${index + 1}`, url: item.url, href: '/',
   }))
-  slots.push({ store: 'website', field: 'panels.homepageCta.image.url', group: 'Dark panels', label: 'Homepage closing panel', url: content.panels.homepageCta.image.url, href: '/' })
-  slots.push({ store: 'website', field: 'panels.authPanel.image.url', group: 'Dark panels', label: 'Sign-in panel', url: content.panels.authPanel.image.url, href: '/login' })
+  slots.push({ store: 'website', field: 'panels.homepageCta.image.url', group: 'Dark panels', label: 'Homepage closing panel', url: content.panels.homepageCta.image.url, href: '/', panelKey: 'homepageCta' })
+  slots.push({ store: 'website', field: 'panels.authPanel.image.url', group: 'Dark panels', label: 'Sign-in panel', url: content.panels.authPanel.image.url, href: '/login', panelKey: 'authPanel' })
   return slots
 }
 
@@ -119,8 +120,17 @@ export default function MediaLibraryPage() {
     const data = await response.json().catch(() => ({}))
     setBusy(null)
     if (!response.ok) { setNotice({ type: 'error', text: data.error || 'That picture could not be uploaded.' }); return }
-    if (slot.store === 'website') setWebsite(current => setPath(current, slot.field, data.url))
-    else setPages(current => setPath(current, slot.field, data.url))
+    if (slot.store === 'website') {
+      setWebsite(current => {
+        let next = setPath(current, slot.field, data.url)
+        if (slot.panelKey && next.panels[slot.panelKey].mode === 'brand') {
+          next = setPath(next, `panels.${slot.panelKey}.mode`, 'image')
+        }
+        return next
+      })
+    } else {
+      setPages(current => setPath(current, slot.field, data.url))
+    }
     setNotice({ type: 'success', text: 'Uploaded. Press Publish pictures to put it live.' })
   }
 
@@ -164,11 +174,20 @@ export default function MediaLibraryPage() {
       {notice && <div role="status" className={`mt-5 border px-4 py-3 text-[13px] ${notice.type === 'success' ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-red-200 bg-red-50 text-red-600'}`}>{notice.text}</div>}
       {loadError && <div role="alert" className="mt-5 border border-red-200 bg-red-50 px-4 py-3 text-[13px] text-red-600">{loadError}</div>}
       {loading && <p className="mt-6 text-[13px] text-secondary">Loading pictures...</p>}
-      {!loading && !loadError && changed && <p className="mt-4 text-[12px] text-secondary">You have unpublished changes. Nothing is live until you press Publish pictures.</p>}
+
+      {!loading && !loadError && changed && (
+        <div className="sticky bottom-4 z-20 mt-5 flex flex-wrap items-center justify-between gap-3 border border-ink bg-ink px-4 py-3 shadow-lg">
+          <p className="text-[12px] text-white">You have unpublished changes. Nothing is live until you publish.</p>
+          <button type="button" onClick={publish} disabled={busy !== null} className="inline-flex items-center gap-2 bg-white px-4 py-2 text-[12px] font-semibold text-ink disabled:opacity-50">
+            {busy === 'publish' ? <RefreshCw size={13} className="animate-spin" /> : <Send size={13} />} Publish pictures
+          </button>
+        </div>
+      )}
 
       {groups.map(([group, items]) => (
         <section key={group} className="dashboard-panel mt-6">
           <h2 className="dashboard-section-title">{group}</h2>
+          {group === 'Dark panels' && <p className="mt-1 text-[12px] text-secondary max-w-2xl">The two large charcoal areas on the site. Upload a picture and the panel switches on automatically. Set one to a sponsor&apos;s advert to sell it - it falls back to your picture whenever no advert is running.</p>}
           <div className="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
             {items.map(slot => (
               <div key={slot.field} className="border border-border bg-white p-3">
@@ -182,6 +201,19 @@ export default function MediaLibraryPage() {
                   {slot.href && <a href={slot.href} target="_blank" rel="noopener" className="shrink-0 text-muted hover:text-ink" aria-label={`Open ${slot.label} on the site`}><ExternalLink size={13} /></a>}
                 </div>
                 {!slot.url && <p className="mt-0.5 text-[11px] text-muted">No picture set</p>}
+                {slot.panelKey && (
+                  <label className="mt-2 block text-[11px] text-muted">This panel shows
+                    <select
+                      value={website.panels[slot.panelKey].mode}
+                      onChange={event => setWebsite(current => setPath(current, `panels.${slot.panelKey}.mode`, event.target.value))}
+                      className="input-field mt-1 !text-[11px] !py-1.5"
+                    >
+                      <option value="brand">Plain charcoal - picture hidden</option>
+                      <option value="image">Your picture</option>
+                      <option value="advert">A sponsor&apos;s advert</option>
+                    </select>
+                  </label>
+                )}
                 <label className="mt-2.5 flex cursor-pointer items-center justify-center gap-1.5 border border-border py-2 text-[11px] font-medium hover:bg-surface">
                   {busy === slot.field ? <RefreshCw size={12} className="animate-spin" /> : <Upload size={12} />}
                   {slot.url ? 'Replace' : 'Upload'}

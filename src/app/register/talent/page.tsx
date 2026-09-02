@@ -142,7 +142,7 @@ export default function TalentRegisterPage() {
 
       <div className="hidden lg:flex w-[42%] bg-[#1c1b1a] relative isolate overflow-hidden items-center">
         <PanelBackdrop panel={site.panels.authPanel} placement="auth_panel" />
-        <div className="p-12 xl:p-16 max-w-xl w-full">
+        <div className="relative p-12 xl:p-16 max-w-xl w-full">
           <p className="text-[10px] uppercase tracking-[0.2em] text-white/50 font-semibold mb-4">Wellness House Collective</p>
           <p className="text-white text-[30px] leading-tight tracking-[-0.03em] font-serif font-semibold">The professional platform for spa and wellness careers.</p>
 
