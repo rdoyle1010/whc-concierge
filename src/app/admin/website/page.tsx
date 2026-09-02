@@ -183,21 +183,21 @@ export default function WebsiteEditorPage() {
             <p className="text-[13px] font-medium text-ink">{label}</p>
             <p className="text-[11px] text-muted mt-0.5 max-w-md">{hint}</p>
           </div>
-          <label className="text-[11px] font-medium">Panel shows
-            <select value={panel.mode} onChange={event => update('panels.' + path + '.mode', event.target.value)} className="input-field mt-1.5 min-w-[220px]">
-              <option value="brand">Plain charcoal (as now)</option>
-              <option value="image">Your picture</option>
-              <option value="advert">Sell to a sponsor</option>
-            </select>
+          <label className="flex items-center gap-2 text-[11px] font-medium">
+            <input type="checkbox" checked={panel.mode === 'advert'} onChange={event => update('panels.' + path + '.mode', event.target.checked ? 'advert' : 'image')} />
+            Sell this panel to sponsors
           </label>
         </div>
-        {panel.mode !== 'brand' && (
+        {(
           <div className="mt-4 border-t border-border pt-4">
             <ImageEditor
               label={panel.mode === 'advert' ? 'Fallback picture, shown when no advert is live' : 'Panel picture'}
               path={'panels.' + path + '.image'}
               image={panel.image}
             />
+            {panel.image.url && (
+              <button type="button" onClick={() => update('panels.' + path + '.image.url', '')} className="btn-secondary mt-3 text-[11px]">Remove picture (back to plain charcoal)</button>
+            )}
             <label className="block text-[11px] mt-3">Darkening behind the text: {panel.overlay}%
               <input type="range" min="0" max="100" value={panel.overlay} onChange={event => update('panels.' + path + '.overlay', Number(event.target.value))} className="w-full mt-2" />
               <span className="block text-[10px] text-muted mt-1">The panel carries white text, so the picture needs darkening to stay readable. Lower it for a lighter, more visible picture.</span>
@@ -358,7 +358,7 @@ export default function WebsiteEditorPage() {
 
                 <div className="border-t border-border pt-7">
                   <h2 className="text-[17px] font-medium">Dark panels</h2>
-                  <p className="text-[12px] text-muted mt-1 max-w-2xl">The two large charcoal panels on the site. Leave them plain, put a picture behind them, or sell them to a sponsor. A sold panel with no live advert falls back to your picture, so the space is never empty.</p>
+                  <p className="text-[12px] text-muted mt-1 max-w-2xl">The two large charcoal panels on the site. Add a picture and it shows; remove it and the panel goes back to plain charcoal. Tick <span className="font-medium text-ink">Sell this panel to sponsors</span> to put it up for sale - a sponsor&apos;s advert then replaces your picture while their campaign runs, and your picture returns when it ends.</p>
                 </div>
                 {PANELS.map(panel => <PanelEditor key={panel.path} label={panel.label} hint={panel.hint} path={panel.path} />)}
               </div>}

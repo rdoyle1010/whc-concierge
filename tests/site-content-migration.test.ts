@@ -50,3 +50,27 @@ test('a logo URL cannot break out of the CSS or markup it is written into', asyn
     assert.equal(safeLogoUrl(hostile), '/images/whc-logo-charcoal.jpg', `rejected: ${hostile}`)
   }
 })
+
+// Two rounds were lost to a panel that held a picture but stayed hidden
+// behind a separate on/off setting. The picture is now the switch, and the
+// backdrop must never gate on the mode again.
+test('a panel picture is shown whenever one is set, whatever the mode', async () => {
+  const { readFileSync } = await import('node:fs')
+  const source = readFileSync(new URL('../src/components/PanelBackdrop.tsx', import.meta.url), 'utf8')
+  assert.doesNotMatch(source, /mode === 'brand'/, 'the backdrop must not hide a picture behind the mode')
+  assert.match(source, /const backdrop = creative \|\| panel\.image\.url/)
+  assert.match(source, /if \(!backdrop\) return null/)
+})
+
+// The panel copy sits on top of the backdrop, so the copy needs its own
+// stacking context or the picture paints straight over the words.
+test('every panel that carries a backdrop positions its copy above it', async () => {
+  const { readFileSync } = await import('node:fs')
+  for (const file of ['src/app/page.tsx', 'src/app/login/page.tsx', 'src/app/register/talent/page.tsx']) {
+    const source = readFileSync(new URL('../' + file, import.meta.url), 'utf8')
+    const index = source.indexOf('<PanelBackdrop')
+    assert.ok(index > -1, `${file} should render a PanelBackdrop`)
+    const after = source.slice(index, index + 400)
+    assert.match(after, /<div className="relative/, `${file} must position the panel copy above the backdrop`)
+  }
+})

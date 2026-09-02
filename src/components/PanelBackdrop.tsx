@@ -8,6 +8,11 @@ import type { AdPlacementKey } from '@/lib/advertising'
 // banner farm: the panel keeps its own copy and buttons, and the backdrop
 // behind them is either a picture WHC controls or a sponsor's creative.
 //
+// The rule is deliberately blunt: a panel with a picture shows that picture.
+// An earlier version gated it behind a separate on/off setting, so uploading
+// a picture appeared to do nothing at all. The presence of the picture is the
+// decision; removing it returns the panel to plain charcoal.
+//
 // The fallback order matters commercially. A panel sold to sponsors that has
 // no live advert - between campaigns, or while one is awaiting approval -
 // drops back to the house picture, then to plain charcoal. The space is never
@@ -47,8 +52,6 @@ export default function PanelBackdrop({ panel, placement }: { panel: Panel; plac
       .catch(() => { })
     return () => { active = false }
   }, [panel.mode, placement])
-
-  if (panel.mode === 'brand') return null
 
   const creative = advert?.media_type === 'video' ? null : advert?.media_url || advert?.logo_url
   const backdrop = creative || panel.image.url
