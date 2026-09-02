@@ -37,7 +37,9 @@ export default function EmployerAnalyticsPage() {
       setProfile(prof)
 
       // Load jobs
-      const { data: jobs } = await supabase.from('job_listings').select('*').eq('employer_id', prof.id).order('posted_date', { ascending: false })
+      const { data: jobs } = await supabase.from('job_listings')
+        // This page lists and counts roles, and draws no description.
+        .select('id, job_title, title, is_live, status, tier, posted_date, created_at').eq('employer_id', prof.id).order('posted_date', { ascending: false })
       if (!jobs || jobs.length === 0) { setLoading(false); return }
 
       const jobIds = jobs.map(j => j.id)

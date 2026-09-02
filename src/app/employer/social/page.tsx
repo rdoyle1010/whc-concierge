@@ -21,7 +21,9 @@ export default function EmployerSocialPage() {
       const { data: prof } = await supabase.from('employer_profiles').select('*').eq('user_id', user.id).maybeSingle()
       setProfile(prof)
       if (prof) {
-        const { data } = await supabase.from('job_listings').select('*').eq('employer_id', prof.id).order('posted_date', { ascending: false })
+        const { data } = await supabase.from('job_listings')
+        // This page writes posts from the description, but needs none of the requirement fields.
+        .select('id, job_title, title, job_description, description, is_live, status, job_type, location, salary_display_text, salary_min, salary_max').eq('employer_id', prof.id).order('posted_date', { ascending: false })
         setJobs((data || []).map((j: any) => ({ ...j, title: j.job_title || j.title, description: j.job_description || j.description })))
       }
       setLoading(false)
