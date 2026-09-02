@@ -393,9 +393,19 @@ test('reprocessing stored pictures is admin-only and survives a timeout', () => 
   assert.match(route, /adminRequestUser/, 'this rewrites production storage')
   assert.match(route, /Unauthorised/)
   // A bucket can hold hundreds of photographs and a serverless function has a
-  // hard timeout; asking for all of them at once loses the lot.
-  assert.match(route, /const BATCH = \d+/)
+  // hard timeout, so asking for all of them at once loses the lot. Counting
+  // images is the wrong unit: checking one downloads it, applying downloads,
+  // re-encodes and uploads it, so the same batch can be three times the work -
+  // which is how the check ran to the end while the apply died a dozen in.
+  assert.match(route, /TIME_BUDGET_MS/, 'a batch must be bounded by time, not by count')
+  assert.match(route, /Date\.now\(\) - startedAt > TIME_BUDGET_MS/)
+  assert.match(route, /handled > 0 &&/, 'one slow picture must not stall the run forever')
   assert.match(route, /cursor/, 'the caller must be able to resume')
+
+  // Work already done must survive a failed batch.
+  const page = readFileSync(new URL('../src/app/admin/images/page.tsx', import.meta.url), 'utf8')
+  assert.match(page, /attempt < 3/, 'a failed batch should be retried before giving up')
+  assert.match(page, /carry on from here/, 'and the run must be resumable rather than lost')
   // Evidence must not be re-encoded.
   assert.ok(!/talent-documents|message-attachments/.test(route.slice(route.indexOf('const BUCKETS'), route.indexOf('const IMAGE_EXT'))))
   // Nothing is written unless it was asked for.

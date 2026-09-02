@@ -22,7 +22,14 @@ import sharp from 'sharp'
 // evidence; re-encoding it changes bytes somebody may later need to rely on.
 const BUCKETS = ['site-images', 'property-photos'] as const
 const IMAGE_EXT = /\.(jpe?g|png|webp)$/i
-const BATCH = 6
+// A fixed batch size is the wrong unit. Checking an image downloads it;
+// applying downloads, re-encodes and uploads it, so the same six images can be
+// three times the work - which is why the check ran to the end and the apply
+// died around a dozen in. Work to a time budget instead and hand back the
+// cursor, so a batch always returns before the platform's function timeout
+// whatever the pictures happen to weigh.
+const TIME_BUDGET_MS = 8_000
+const MAX_PER_CALL = 12
 
 type Listed = { bucket: string; path: string }
 
@@ -63,11 +70,16 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  const slice = all.slice(cursor, cursor + BATCH)
+  const slice = all.slice(cursor, cursor + MAX_PER_CALL)
+  const startedAt = Date.now()
   let rewritten = 0, before = 0, after = 0, skipped = 0, failed = 0
+  let handled = 0
   const changes: { path: string; from: number; to: number; width: number }[] = []
 
   for (const item of slice) {
+    // Always do at least one, or a slow first image would stall forever.
+    if (handled > 0 && Date.now() - startedAt > TIME_BUDGET_MS) break
+    handled++
     const { data, error } = await admin.storage.from(item.bucket).download(item.path)
     if (error || !data) { failed++; continue }
     const original = Buffer.from(await data.arrayBuffer())
@@ -97,12 +109,12 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  const nextCursor = cursor + slice.length
+  const nextCursor = cursor + handled
   return NextResponse.json({
     total: all.length,
     cursor: nextCursor,
     done: nextCursor >= all.length,
-    processed: slice.length,
+    processed: handled,
     rewritten, skipped, failed, before, after, changes,
     maxWidth: MAX_IMAGE_WIDTH,
     applied: apply,

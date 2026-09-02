@@ -166,16 +166,28 @@ export default function MediaLibraryPage() {
     let cursor = 0
     const tally = { rewritten: 0, before: 0, after: 0, failed: 0 }
     for (;;) {
-      const response = await fetch('/api/admin/optimise-images', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ apply, cursor }),
-      }).catch(() => null)
-      if (!response || !response.ok) {
-        setNotice({ type: 'error', text: 'The pictures could not be optimised. Nothing was lost - try again.' })
+      // A batch that fails should cost that batch, not the run. Every picture
+      // already rewritten stays rewritten, so resuming from the last good
+      // cursor picks up exactly where it stopped.
+      let batch: any = null
+      for (let attempt = 0; attempt < 3 && !batch; attempt++) {
+        const response = await fetch('/api/admin/optimise-images', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ apply, cursor }),
+        }).catch(() => null)
+        if (response?.ok) { batch = await response.json().catch(() => null) }
+        else if (attempt < 2) await new Promise(resolve => setTimeout(resolve, 1500 * (attempt + 1)))
+      }
+      if (!batch) {
+        setNotice({
+          type: 'error',
+          text: tally.rewritten
+            ? `Stopped after ${tally.rewritten} picture${tally.rewritten === 1 ? '' : 's'}. Those are done and saved - press the button again to carry on from here.`
+            : 'The pictures could not be optimised. Nothing was changed - try again.',
+        })
         setOptimise(current => current && { ...current, running: false })
         return
       }
-      const batch = await response.json()
       tally.rewritten += batch.rewritten
       tally.before += batch.before
       tally.after += batch.after
