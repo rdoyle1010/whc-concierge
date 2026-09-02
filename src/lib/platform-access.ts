@@ -70,6 +70,18 @@ export async function doorsClosedFor(): Promise<boolean> {
 // and lifting the gate later costs one setting rather than a re-index.
 export const JOINED_COOKIE = 'thc_joined'
 
+// Set when somebody reads the gate and carries on without joining.
+//
+// The gate began as a dead end: no dismissal, joining the list the only way
+// through. That is an intrusive interstitial, which Google penalises on mobile
+// as a matter of stated policy, and it cannot be run at the same time as
+// chasing rankings. A gate that asks once, takes no for an answer and gets out
+// of the way still builds the list and costs nothing in search.
+//
+// A week, not a year: long enough that browsing the site is not an argument,
+// short enough that somebody who comes back next month is asked again.
+export const GATE_SEEN_COOKIE = 'thc_gate_seen'
+
 /**
  * True when this visitor should meet the coming-soon sign-up before anything
  * else. Anyone who has joined the list, or holds a valid preview cookie, walks
@@ -80,6 +92,7 @@ export async function showEntryGate(): Promise<boolean> {
   if (!access.closed) return false
   const jar = await cookies()
   if (jar.get(JOINED_COOKIE)?.value === '1') return false
+  if (jar.get(GATE_SEEN_COOKIE)?.value === '1') return false
   if (access.previewCode && jar.get(PREVIEW_COOKIE)?.value === access.previewCode) return false
   // Anyone holding a session is past the waiting list by definition. Without
   // this the gate lands on a professional's own settings page and locks it,

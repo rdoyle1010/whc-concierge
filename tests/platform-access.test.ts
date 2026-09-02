@@ -119,6 +119,23 @@ test('the arrival gate is decided on the server', () => {
   assert.match(layout, /\{gate && <ComingSoonGate/)
 })
 
+// The gate began as a dead end: no dismissal, joining the only way through.
+// That is an intrusive interstitial, which Google penalises on mobile as stated
+// policy - and it cannot be run at the same time as chasing rankings. A gate
+// that asks once, takes no for an answer and gets out of the way still builds
+// the list and costs nothing in search.
+test('the gate takes no for an answer', () => {
+  const gate = read('src/components/ComingSoonGate.tsx')
+  assert.match(gate, /Not now, take me to the site/, 'there must be a way past without joining')
+  assert.match(gate, /useDialog\(\(\) => dismiss\(\)/, 'and Escape must work, like any dialog')
+  assert.match(gate, /thc_gate_seen=1/, 'a dismissal must be remembered')
+  assert.match(gate, /60 \* 60 \* 24 \* 7/, 'for a week - long enough not to nag, short enough to ask again')
+
+  const lib = read('src/lib/platform-access.ts')
+  assert.match(lib, /GATE_SEEN_COOKIE/)
+  assert.match(lib, /GATE_SEEN_COOKIE\)\?\.value === '1'/, 'the server must honour it')
+})
+
 test('joining the list is the way through, and it is remembered', () => {
   const gate = read('src/components/ComingSoonGate.tsx')
   assert.match(gate, /thc_joined=1/, 'a visitor who joined must not meet the gate again')

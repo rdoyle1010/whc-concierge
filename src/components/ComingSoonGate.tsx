@@ -31,12 +31,21 @@ export default function ComingSoonGate({ logo }: { logo?: { url: string; alt: st
   const [dismissed, setDismissed] = useState(false)
   const skipped = SKIP.some(prefix => pathname === prefix || pathname.startsWith(`${prefix}/`))
   const open = !skipped && !dismissed
-  // No close handler on purpose - joining the list is the way through - but
-  // the focus trap matters: without it Tab walks off behind the gate into a
-  // page the visitor can neither see nor use.
-  const dialog = useDialog(() => { }, 'gate-heading', { enabled: open })
+  // Escape closes it, like any dialog. The gate asks once and gets out of the
+  // way: a wall that cannot be dismissed is an intrusive interstitial, which
+  // Google penalises on mobile, and that cannot be run alongside chasing
+  // rankings. The focus trap stays - without it Tab walks off behind the gate
+  // into a page the visitor can neither see nor use.
+  const dialog = useDialog(() => dismiss(), 'gate-heading', { enabled: open })
 
   if (!open) return null
+
+  // Remembered for a week: long enough that browsing is not an argument,
+  // short enough that somebody returning next month is asked again.
+  function dismiss() {
+    document.cookie = `thc_gate_seen=1; path=/; max-age=${60 * 60 * 24 * 7}; samesite=lax${location.protocol === 'https:' ? '; secure' : ''}`
+    setDismissed(true)
+  }
 
   async function submit(event: React.FormEvent) {
     event.preventDefault()
@@ -114,6 +123,12 @@ export default function ComingSoonGate({ logo }: { logo?: { url: string; alt: st
             One email when we open, and the occasional piece of industry insight. Unsubscribe in a click.
           </p>
         </form>
+        )}
+
+        {state !== 'done' && (
+          <button type="button" onClick={dismiss} className="mt-6 text-[12px] text-secondary underline underline-offset-4 hover:text-ink">
+            Not now, take me to the site
+          </button>
         )}
 
         <dl className="mt-10 grid gap-5 sm:grid-cols-3">
