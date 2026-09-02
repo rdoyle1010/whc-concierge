@@ -360,3 +360,28 @@ test('every talent nav entry points at a page that exists', () => {
     )
   }
 })
+
+// Nothing on this platform resized an uploaded picture. A property
+// photographs its spa on a phone, uploads eight megapixels, and every visitor
+// on 4G downloads the lot to fill a box a few hundred pixels wide. On a real
+// 5472x3648 photograph that is 5.99MB where 0.71MB looks identical.
+test('uploaded pictures are resized before they are stored', () => {
+  const route = readFileSync(new URL('../src/app/api/upload/route.ts', import.meta.url), 'utf8')
+  assert.match(route, /from 'sharp'/)
+  assert.match(route, /MAX_IMAGE_WIDTH = 2400/)
+  assert.match(route, /await shrinkImage\(original/, 'the resized buffer is what must be stored')
+  // An optimisation that loses someone's upload is worse than no optimisation.
+  const shrink = route.slice(route.indexOf('async function shrinkImage'), route.indexOf('const ALLOWED_COLUMNS'))
+  assert.match(shrink, /catch \{[\s\S]*return buffer/, 'a picture sharp cannot read must still be stored')
+  assert.match(shrink, /rotate\(\)/, 'a phone photo carries its orientation in EXIF')
+  assert.match(shrink, /out\.length < buffer\.length \? out : buffer/, 'never store something larger than we were given')
+})
+
+// A 5.99MB photograph sat in the repo and shipped on every deploy.
+test('no oversized images are committed to public/', () => {
+  const dir = new URL('../public/images/', import.meta.url)
+  const heavy = readdirSync(dir)
+    .map(name => ({ name, bytes: statSync(new URL(name, dir)).size }))
+    .filter(file => file.bytes > 1_200_000)
+  assert.deepEqual(heavy, [], `resize these before committing: ${heavy.map(f => `${f.name} ${(f.bytes / 1024 / 1024).toFixed(2)}MB`).join(', ')}`)
+})
