@@ -293,7 +293,15 @@ check('Academy course content leaves the database only when it is owned and comp
   // 7. Every course surface reads the same merged catalogue, so custom content
   //    reaches talent, the public page and the app together.
   assert.match(read('src/app/api/academy/catalog/route.ts'), /getAcademyCatalog/)
-  assert.match(read('src/app/talent/academy/[slug]/page.tsx'), /course\?\.rich \|\| getCourseContent\(slug\)/)
+  // The precedence is the rule: an admin's own version wins, code content is
+  // the fallback. The code content is now fetched for this one course instead
+  // of imported, because the static index pulls all forty-five courses into
+  // whatever bundles it and this page is a client component - every lesson of
+  // every course was being downloaded to read one.
+  const coursePage = read('src/app/talent/academy/[slug]/page.tsx')
+  assert.match(coursePage, /const rich = course\?\.rich \|\| codeContent/)
+  assert.match(coursePage, /loadCourseContent\(slug\)/)
+  assert.match(coursePage, /if \(course\?\.rich\) \{ setCodeContent\(null\); return \}/, "an admin's version needs nothing fetched")
   assert.match(read('src/app/api/academy/manual/route.ts'), /academyRichContent/)
 
   // 8. The additive migration exists and reloads PostgREST.

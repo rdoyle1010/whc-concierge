@@ -8,7 +8,7 @@ import { courseBySlug, coursePrice, PASS_MARK, type AcademyCourse } from '@/lib/
 import { courseImage, lessonExtras } from '@/lib/academy-extras'
 import { courseMeta } from '@/lib/academy-meta'
 import { LessonVisualBlock, KnowledgeCheckBlock } from '@/components/LessonVisual'
-import { getCourseContent } from '@/lib/academy-content'
+import { loadCourseContent } from '@/lib/academy-content-lazy'
 import type { CourseContent } from '@/lib/academy-types'
 import {
   ArrowLeft, ArrowRight, Check, Award, RotateCcw, Quote, TrendingUp,
@@ -87,7 +87,18 @@ export default function CoursePlayerPage() {
   // catalogue serves her content, including the rich layer below. A partial or
   // broken admin version never reaches here: the catalogue falls back to the
   // platform version, so this page can never render an empty course.
-  const rich = course?.rich || getCourseContent(slug)
+  // Fetched for this one course rather than imported. The static index pulls
+  // all forty-five courses into whatever bundles it, and this page is a client
+  // component: every lesson of every course was being downloaded to read one.
+  const [codeContent, setCodeContent] = useState<CourseContent | null>(null)
+  useEffect(() => {
+    let active = true
+    // An admin's own version is already in hand; there is nothing to fetch.
+    if (course?.rich) { setCodeContent(null); return }
+    loadCourseContent(slug).then(content => { if (active) setCodeContent(content) })
+    return () => { active = false }
+  }, [slug, course?.rich])
+  const rich = course?.rich || codeContent
 
   const [loading, setLoading] = useState(true)
   const [enrolled, setEnrolled] = useState(false)
