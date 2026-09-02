@@ -25,7 +25,7 @@ export default function Wordmark({
     >
       <Image
         src={safeLogoUrl(logo.url)}
-        alt={logo.alt || 'Wellness House Collective'}
+        alt={logo.alt || 'Talent House Collective'}
         fill
         priority
         sizes={compact ? '168px' : '192px'}

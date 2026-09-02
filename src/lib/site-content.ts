@@ -25,7 +25,7 @@ const calloutSchema = z.object({ eyebrow: text, heading: text, text, buttonLabel
 // keeps the bundled artwork. Uploading a logo in admin replaces it.
 export const DEFAULT_LOGO = {
   url: '/images/whc-logo-charcoal.jpg',
-  alt: 'Wellness House Collective',
+  alt: 'Talent House Collective',
   fit: 'fill' as const,
 }
 
