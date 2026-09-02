@@ -14,7 +14,7 @@ const STEP_MAP: Record<string, number> = {
 export default function ProfileStrength({ profile }: { profile: any }) {
   const { score, missing, nudge } = calculateProfileStrength(profile)
 
-  const colour = score >= 80 ? '#22C55E' : score >= 50 ? '#0b2f4d' : '#e5e5e5'
+  const colour = score >= 80 ? '#22C55E' : score >= 50 ? '#1c1b1a' : '#e5e5e5'
 
   // Build quick-link buttons for incomplete sections
   const missingSteps = new Map<number, string>()
@@ -36,7 +36,7 @@ export default function ProfileStrength({ profile }: { profile: any }) {
         <p className="text-[14px] font-medium text-ink">Profile Strength</p>
         <div className="relative w-14 h-14">
           <svg className="w-14 h-14 -rotate-90" viewBox="0 0 36 36">
-            <circle cx="18" cy="18" r="16" fill="none" stroke="#f5f6f8" strokeWidth="3" />
+            <circle cx="18" cy="18" r="16" fill="none" stroke="#f3f0eb" strokeWidth="3" />
             <circle cx="18" cy="18" r="16" fill="none" stroke={colour} strokeWidth="3" strokeDasharray={`${score} ${100 - score}`} strokeLinecap="round" />
           </svg>
           <span className="absolute inset-0 flex items-center justify-center text-[12px] font-semibold text-ink">{score}%</span>
@@ -65,7 +65,7 @@ export default function ProfileStrength({ profile }: { profile: any }) {
         <div className="flex flex-wrap gap-2 pt-3 border-t border-border">
           {Array.from(missingSteps.entries()).slice(0, 3).map(([step, _label]) => (
             <Link key={step} href={`/talent/onboarding?step=${step}`}
-              className="text-[11px] font-medium text-accent bg-[#f5f6f8] border border-accent/20 px-2.5 py-1 rounded-full hover:bg-accent/10 transition-colors flex items-center gap-1">
+              className="text-[11px] font-medium text-accent bg-[#f3f0eb] border border-accent/20 px-2.5 py-1 rounded-full hover:bg-accent/10 transition-colors flex items-center gap-1">
               {STEP_LABELS[step] || `Step ${step}`} <ArrowRight size={10} />
             </Link>
           ))}

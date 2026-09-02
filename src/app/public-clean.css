@@ -8,10 +8,10 @@
 }
 .public-page .text-accent,
 .public-page .public-eyebrow {
-  color: var(--site-accent, #0b2f4d);
+  color: var(--site-accent, #1c1b1a);
 }
 .public-page .bg-accent {
-  background-color: var(--site-accent, #0b2f4d);
+  background-color: var(--site-accent, #1c1b1a);
 }
 .website-theme section {
   box-shadow: none;

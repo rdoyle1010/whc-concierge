@@ -39,16 +39,16 @@ export async function POST(req: NextRequest) {
         <p style="font-size: 16px; font-weight: 600; margin-bottom: 32px;">WHC Concierge</p>
         <p style="font-size: 20px; font-weight: 700; margin-bottom: 20px;">New Contact Form Submission</p>
         <table style="width: 100%; border-collapse: collapse; margin-bottom: 24px;">
-          <tr><td style="padding: 8px 0; color: #6b7580; font-size: 13px; width: 100px;">Name</td><td style="padding: 8px 0; font-size: 14px; color: #10283b; font-weight: 500;">${name}</td></tr>
-          <tr><td style="padding: 8px 0; color: #6b7580; font-size: 13px;">Email</td><td style="padding: 8px 0; font-size: 14px;"><a href="mailto:${email}" style="color: #5a6a76;">${email}</a></td></tr>
-          <tr><td style="padding: 8px 0; color: #6b7580; font-size: 13px;">Type</td><td style="padding: 8px 0; font-size: 14px; color: #10283b; text-transform: capitalize;">${type || 'general'}</td></tr>
-          <tr><td style="padding: 8px 0; color: #6b7580; font-size: 13px;">Subject</td><td style="padding: 8px 0; font-size: 14px; color: #10283b; font-weight: 500;">${subject}</td></tr>
+          <tr><td style="padding: 8px 0; color: #6e6a66; font-size: 13px; width: 100px;">Name</td><td style="padding: 8px 0; font-size: 14px; color: #1c1b1a; font-weight: 500;">${name}</td></tr>
+          <tr><td style="padding: 8px 0; color: #6e6a66; font-size: 13px;">Email</td><td style="padding: 8px 0; font-size: 14px;"><a href="mailto:${email}" style="color: #57534e;">${email}</a></td></tr>
+          <tr><td style="padding: 8px 0; color: #6e6a66; font-size: 13px;">Type</td><td style="padding: 8px 0; font-size: 14px; color: #1c1b1a; text-transform: capitalize;">${type || 'general'}</td></tr>
+          <tr><td style="padding: 8px 0; color: #6e6a66; font-size: 13px;">Subject</td><td style="padding: 8px 0; font-size: 14px; color: #1c1b1a; font-weight: 500;">${subject}</td></tr>
         </table>
         <div style="background: #fafafa; border-radius: 8px; padding: 16px; margin-bottom: 24px;">
-          <p style="font-size: 12px; color: #6b7580; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.05em;">Message</p>
+          <p style="font-size: 12px; color: #6e6a66; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.05em;">Message</p>
           <p style="font-size: 14px; color: #374151; line-height: 1.7; white-space: pre-wrap;">${message}</p>
         </div>
-        <p style="font-size: 12px; color: #6b7580;">Wellness House Collective &middot; wellnesshousecollective.co.uk</p>
+        <p style="font-size: 12px; color: #6e6a66;">Wellness House Collective &middot; wellnesshousecollective.co.uk</p>
       </div>
     `
 

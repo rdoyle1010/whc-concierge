@@ -40,13 +40,13 @@ export default async function FeaturedPropertiesSection() {
               const name = property.property_name || property.company_name || 'WHC property'
               const image = property.property_photos?.[0] || property.logo_url
               return (
-                <Link key={property.id} href={`/properties/${property.id}`} className="group overflow-hidden rounded-2xl border border-[#e3e7eb] bg-white shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md">
-                  <div className="relative h-36 overflow-hidden bg-[#e8eef4]">
+                <Link key={property.id} href={`/properties/${property.id}`} className="group overflow-hidden rounded-2xl border border-[#e0dad2] bg-white shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md">
+                  <div className="relative h-36 overflow-hidden bg-[#e9e4dd]">
                     {image ? <img src={image} alt={name} loading="lazy" decoding="async" className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.02]" /> : <div className="flex h-full items-center justify-center"><Building2 size={32} className="opacity-30" /></div>}
-                    <span className="absolute left-4 top-4 inline-flex items-center gap-1 rounded-full bg-[#0b2f4d] px-3 py-1.5 text-[9px] font-semibold uppercase tracking-[0.12em] text-white"><Star size={10} fill="currentColor" /> Featured</span>
+                    <span className="absolute left-4 top-4 inline-flex items-center gap-1 rounded-full bg-[#1c1b1a] px-3 py-1.5 text-[9px] font-semibold uppercase tracking-[0.12em] text-white"><Star size={10} fill="currentColor" /> Featured</span>
                   </div>
                   <div className="p-5">
-                    <h3 className="text-[16px] font-semibold text-[#10283b]">{name}</h3>
+                    <h3 className="text-[16px] font-semibold text-[#1c1b1a]">{name}</h3>
                     {property.location && <p className="mt-1 flex items-center gap-1 text-[11px] opacity-55"><MapPin size={11} />{property.location}</p>}
                     <p className="mt-3 line-clamp-2 text-[12px] leading-5 opacity-65">{property.tagline || 'Discover this featured WHC property and its opportunities.'}</p>
                     <span className="site-accent mt-3 inline-flex items-center gap-1 text-[11px] font-semibold">View property <ArrowRight size={11} className="transition-transform group-hover:translate-x-0.5" /></span>

@@ -7,7 +7,7 @@ import { Eye, EyeOff, BriefcaseBusiness, Sparkles } from 'lucide-react'
 import Wordmark from '@/components/Wordmark'
 
 export default function LoginPage() {
-  return <Suspense fallback={<div className="min-h-screen bg-[#f5f6f8]" />}><LoginForm /></Suspense>
+  return <Suspense fallback={<div className="min-h-screen bg-[#f3f0eb]" />}><LoginForm /></Suspense>
 }
 
 function LoginForm() {
@@ -68,7 +68,7 @@ function LoginForm() {
   const registerHref = `/register/${role}${safeDestination ? `?redirect=${encodeURIComponent(safeDestination)}` : ''}`
 
   return (
-    <main id="main-content" className="min-h-screen bg-[#f5f6f8] flex items-stretch">
+    <main id="main-content" className="min-h-screen bg-[#f3f0eb] flex items-stretch">
       <div className="flex-1 flex items-center justify-center px-6 py-10 lg:py-16">
         <div className="w-full max-w-[430px]">
           <Wordmark />
@@ -78,14 +78,14 @@ function LoginForm() {
             <p className="dashboard-intro !mt-2 mb-7">Choose the workspace linked to your account, then sign in.</p>
 
             {safeDestination === '/roles/match' && (
-              <div className="mb-5 rounded-xl border border-[#e3e7eb] bg-[#f5f6f8] px-4 py-3 text-[12px] leading-5 text-[#5a6a76]">
+              <div className="mb-5 rounded-xl border border-[#e0dad2] bg-[#f3f0eb] px-4 py-3 text-[12px] leading-5 text-[#57534e]">
                 Sign in as Talent to continue to your role matches. We&apos;ll take you straight back to Match after sign-in.
               </div>
             )}
 
-            <div className="grid grid-cols-2 gap-2 bg-[#f5f6f8] rounded-xl p-1.5 mb-7">
-              <button type="button" onClick={() => { setRole('talent'); setError('') }} className={`flex items-center justify-center gap-2 py-2.5 rounded-lg text-[12px] font-semibold transition-all ${role === 'talent' ? 'bg-[#0b2f4d] text-white shadow-sm' : 'text-secondary hover:text-[#0b2f4d]'}`}><Sparkles size={13} />Talent</button>
-              <button type="button" onClick={() => { setRole('employer'); setError('') }} className={`flex items-center justify-center gap-2 py-2.5 rounded-lg text-[12px] font-semibold transition-all ${role === 'employer' ? 'bg-[#0b2f4d] text-white shadow-sm' : 'text-secondary hover:text-[#0b2f4d]'}`}><BriefcaseBusiness size={13} />Hotel / Employer</button>
+            <div className="grid grid-cols-2 gap-2 bg-[#f3f0eb] rounded-xl p-1.5 mb-7">
+              <button type="button" onClick={() => { setRole('talent'); setError('') }} className={`flex items-center justify-center gap-2 py-2.5 rounded-lg text-[12px] font-semibold transition-all ${role === 'talent' ? 'bg-[#1c1b1a] text-white shadow-sm' : 'text-secondary hover:text-[#1c1b1a]'}`}><Sparkles size={13} />Talent</button>
+              <button type="button" onClick={() => { setRole('employer'); setError('') }} className={`flex items-center justify-center gap-2 py-2.5 rounded-lg text-[12px] font-semibold transition-all ${role === 'employer' ? 'bg-[#1c1b1a] text-white shadow-sm' : 'text-secondary hover:text-[#1c1b1a]'}`}><BriefcaseBusiness size={13} />Hotel / Employer</button>
             </div>
 
             {confirmationPending && <div role="status" className="bg-emerald-50 border border-emerald-100 text-emerald-700 text-[13px] px-3 py-2.5 rounded-xl mb-5">Your profile is saved. Check your email to confirm your account, then sign in here.</div>}
@@ -97,17 +97,17 @@ function LoginForm() {
                 <label htmlFor="login-password" className="dashboard-eyebrow block mb-1.5 !text-[9px]">Password</label>
                 <div className="relative">
                   <input id="login-password" type={show ? 'text' : 'password'} required autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} className="input-field pr-10" />
-                  <button type="button" onClick={() => setShow(!show)} aria-label={show ? 'Hide password' : 'Show password'} className="absolute right-1 top-1/2 -translate-y-1/2 p-2 text-muted hover:text-[#0b2f4d]">{show ? <EyeOff size={15} /> : <Eye size={15} />}</button>
+                  <button type="button" onClick={() => setShow(!show)} aria-label={show ? 'Hide password' : 'Show password'} className="absolute right-1 top-1/2 -translate-y-1/2 p-2 text-muted hover:text-[#1c1b1a]">{show ? <EyeOff size={15} /> : <Eye size={15} />}</button>
                 </div>
               </div>
               <div className="flex items-center justify-between">
                 <p className="text-[12px] text-secondary">You will stay signed in on this device.</p>
-                <Link href="/forgot-password" className="text-[12px] text-[#10283b] hover:underline">Forgot password?</Link>
+                <Link href="/forgot-password" className="text-[12px] text-[#1c1b1a] hover:underline">Forgot password?</Link>
               </div>
-              <button type="submit" disabled={loading} className="w-full rounded-xl bg-[#0b2f4d] hover:bg-[#123f64] text-white px-5 py-3 text-[13px] font-semibold transition-colors disabled:opacity-50">{loading ? 'Signing in...' : `Sign in as ${role === 'employer' ? 'Hotel / Employer' : 'Talent'}`}</button>
+              <button type="submit" disabled={loading} className="w-full rounded-xl bg-[#1c1b1a] hover:bg-[#33302d] text-white px-5 py-3 text-[13px] font-semibold transition-colors disabled:opacity-50">{loading ? 'Signing in...' : `Sign in as ${role === 'employer' ? 'Hotel / Employer' : 'Talent'}`}</button>
             </form>
 
-            <p className="text-[13px] text-muted mt-7">New to WHC Concierge? <Link href={registerHref} className="text-[#0b2f4d] font-semibold hover:underline">Create an account →</Link></p>
+            <p className="text-[13px] text-muted mt-7">New to WHC Concierge? <Link href={registerHref} className="text-[#1c1b1a] font-semibold hover:underline">Create an account →</Link></p>
           </div>
         </div>
       </div>
@@ -115,7 +115,7 @@ function LoginForm() {
       {/* The brand panel carries facts, not a stock photograph hotlinked from
           a third-party CDN with its URL in view-source. The registration page
           already does it this way and it reads considerably more expensive. */}
-      <div className="hidden lg:flex w-[42%] bg-[#0b2f4d] relative items-end">
+      <div className="hidden lg:flex w-[42%] bg-[#1c1b1a] relative items-end">
         <div className="relative p-12 xl:p-16 max-w-xl">
           <p className="text-[10px] uppercase tracking-[0.2em] text-white/70 font-semibold mb-4">Wellness House Collective</p>
           <p className="text-white text-[30px] leading-tight tracking-[-0.03em] font-semibold">The professional platform for spa and wellness careers.</p>

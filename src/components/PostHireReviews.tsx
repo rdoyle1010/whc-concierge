@@ -49,7 +49,7 @@ export default function PostHireReviews() {
 
       <div className="mt-5 space-y-4">
         {placements.map(placement => (
-          <div key={placement.applicationId} className="rounded-2xl border border-[#e3e7eb] bg-white p-5">
+          <div key={placement.applicationId} className="rounded-2xl border border-[#e0dad2] bg-white p-5">
             <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
               <div>
                 <div className="flex flex-wrap items-center gap-2">
@@ -73,7 +73,7 @@ export default function PostHireReviews() {
         ))}
       </div>
 
-      {reviewing && <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/50 p-4" onClick={()=>setReviewing(null)}><div {...reviewDialog.panelProps} className="w-full max-w-md max-h-[90vh] overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl"><div className="mb-4 flex items-center justify-between gap-4"><div><p className="text-[10px] font-semibold uppercase tracking-[.14em] text-[#10283b]">Placement review</p><h2 id="post-hire-review-dialog-heading" className="mt-1 text-lg font-semibold text-ink">Review {reviewing.counterpartName}</h2></div><button type="button" onClick={()=>setReviewing(null)} aria-label="Close" className="p-2 -m-2"><X size={20}/></button></div><ReviewForm reviewedId={reviewing.counterpartUserId} reviewedName={reviewing.counterpartName} type={reviewing.counterpartReviewType} onComplete={()=>setPlacements(current=>current.map(item=>item.applicationId===reviewing.applicationId?{...item,counterpartReviewed:true}:item))}/></div></div>}
+      {reviewing && <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/50 p-4" onClick={()=>setReviewing(null)}><div {...reviewDialog.panelProps} className="w-full max-w-md max-h-[90vh] overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl"><div className="mb-4 flex items-center justify-between gap-4"><div><p className="text-[10px] font-semibold uppercase tracking-[.14em] text-[#1c1b1a]">Placement review</p><h2 id="post-hire-review-dialog-heading" className="mt-1 text-lg font-semibold text-ink">Review {reviewing.counterpartName}</h2></div><button type="button" onClick={()=>setReviewing(null)} aria-label="Close" className="p-2 -m-2"><X size={20}/></button></div><ReviewForm reviewedId={reviewing.counterpartUserId} reviewedName={reviewing.counterpartName} type={reviewing.counterpartReviewType} onComplete={()=>setPlacements(current=>current.map(item=>item.applicationId===reviewing.applicationId?{...item,counterpartReviewed:true}:item))}/></div></div>}
     </section>
   )
 }

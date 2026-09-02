@@ -14,13 +14,13 @@
 .dashboard-shell input:focus,
 .dashboard-shell select:focus,
 .dashboard-shell textarea:focus {
-  border-color: #10283b;
+  border-color: #1c1b1a;
   box-shadow: 0 0 0 2px rgba(0,0,0,.06);
 }
 
 /* Sidebar: black, with white/grey states - never coloured. */
 .dashboard-sidebar {
-  background: #0b2f4d;
+  background: #1c1b1a;
   border-right-color: rgba(255,255,255,.10);
 }
 

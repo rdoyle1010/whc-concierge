@@ -292,7 +292,7 @@ check('homepage hero is prioritised and public controls are accessible', () => {
   assert.doesNotMatch(hero, /slides\.map\(\(item, index\)[\s\S]*?<img/)
   assert.match(navigation, /aria-label=\{mobileOpen \? 'Close navigation menu' : 'Open navigation menu'\}/)
   assert.match(navigation, /aria-label="Open account menu"/)
-  assert.match(read('src/app/layout.tsx'), /icon: '\/images\/whc-logo\.jpg'/)
+  assert.match(read('src/app/layout.tsx'), /icon: '\/images\/whc-logo-charcoal\.jpg'/)
 })
 check('no literal production secrets are tracked', () => {
   const files = execFileSync('git', ['ls-files'], { encoding: 'utf8' }).trim().split('\n').filter(Boolean)
@@ -341,7 +341,7 @@ check('linear-gradient appears only as image overlays or in allowlisted files', 
   assert.deepEqual(offenders, [])
 })
 check('no stray cream or off-white surfaces under src', () => {
-  // The neutral system allows white and #f5f6f8 only. globals.css keeps the
+  // The neutral system allows warm white and #f3f0eb only. globals.css keeps the
   // legacy .bg-gray-50 mapping selector, so this check covers ts/tsx.
   const creamPattern = /bg-\[#fafafa\]|bg-\[#f7f7f7\]|bg-gray-50\b/i
   const offenders = designSourceFiles()

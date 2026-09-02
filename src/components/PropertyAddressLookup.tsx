@@ -59,7 +59,7 @@ export default function PropertyAddressLookup({
   }
 
   return (
-    <div className="md:col-span-2 border border-border bg-[#f5f6f8] p-4">
+    <div className="md:col-span-2 border border-border bg-[#f3f0eb] p-4">
       <div className="flex items-center gap-2 mb-1"><MapPin size={15} className="text-ink"/><p className="text-[12px] font-semibold text-ink">Find the property address</p></div>
       <p className="text-[11px] text-muted mb-4">Enter the property postcode, then choose the correct address. Spa Platform creates the map link automatically.</p>
 
@@ -72,13 +72,13 @@ export default function PropertyAddressLookup({
 
       {suggestions.length > 0 && (
         <div className="mt-3 max-w-2xl border border-border bg-white divide-y divide-border">
-          {suggestions.map(item => <button key={item.id} type="button" onClick={() => selectAddress(item.id)} className="block w-full px-4 py-3 text-left text-[12px] text-ink hover:bg-[#f5f6f8]">{item.address}</button>)}
+          {suggestions.map(item => <button key={item.id} type="button" onClick={() => selectAddress(item.id)} className="block w-full px-4 py-3 text-left text-[12px] text-ink hover:bg-[#f3f0eb]">{item.address}</button>)}
         </div>
       )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
         <div className="md:col-span-2"><label className="block text-[11px] font-medium text-ink mb-1.5">Selected property address</label><textarea aria-label="Selected property address" rows={2} className="input-field text-[13px] resize-y" value={address || ''} onChange={e => onSelect({ postcode: query, address: e.target.value, mapUrl: mapUrl || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(e.target.value)}` })} placeholder="Full property address" /></div>
-        {mapUrl && <div className="md:col-span-2"><a href={mapUrl} target="_blank" rel="noreferrer" className="text-[12px] font-medium text-[#0b2f4d] underline">Open generated map link</a></div>}
+        {mapUrl && <div className="md:col-span-2"><a href={mapUrl} target="_blank" rel="noreferrer" className="text-[12px] font-medium text-[#1c1b1a] underline">Open generated map link</a></div>}
       </div>
     </div>
   )

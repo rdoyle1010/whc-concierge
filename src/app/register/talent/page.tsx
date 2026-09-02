@@ -86,7 +86,7 @@ export default function TalentRegisterPage() {
     }
   }
 
-  // Ruled fact rows for the navy panel. Numeric facts only appear once the
+  // Ruled fact rows for the charcoal panel. Numeric facts only appear once the
   // live counts have loaded; the two standing promises always show.
   const factRows: Array<{ value: string | null; label: string }> = [
     stats?.liveRoles ? { value: String(stats.liveRoles), label: `live role${stats.liveRoles === 1 ? '' : 's'} open right now` } : null,
@@ -96,48 +96,48 @@ export default function TalentRegisterPage() {
   ].filter(Boolean) as Array<{ value: string | null; label: string }>
 
   return (
-    <main id="main-content" className="min-h-screen bg-[#f5f6f8] flex items-stretch">
+    <main id="main-content" className="min-h-screen bg-[#f3f0eb] flex items-stretch">
       <div className="flex-1 flex items-center justify-center px-6 py-10 lg:py-16">
         <div className="w-full max-w-[430px]">
           <Wordmark />
-          <div className="mt-10 bg-white border border-[#e3e7eb] p-7 lg:p-8">
-            <p className="text-[10px] uppercase tracking-[0.2em] text-[#6b7580] font-semibold">WHC Concierge</p>
-            <h1 className="mt-2 text-[30px] leading-tight tracking-[-0.02em] font-serif font-semibold text-[#10283b]">Create your Talent account</h1>
-            <p className="mt-2 mb-7 text-[13px] leading-6 text-[#5a6a76]">Three fields now. You build your professional profile once you are inside - nothing is asked twice.</p>
+          <div className="mt-10 bg-white border border-[#e0dad2] p-7 lg:p-8">
+            <p className="text-[10px] uppercase tracking-[0.2em] text-[#6e6a66] font-semibold">WHC Concierge</p>
+            <h1 className="mt-2 text-[30px] leading-tight tracking-[-0.02em] font-serif font-semibold text-[#1c1b1a]">Create your Talent account</h1>
+            <p className="mt-2 mb-7 text-[13px] leading-6 text-[#57534e]">Three fields now. You build your professional profile once you are inside - nothing is asked twice.</p>
 
             {error && <div role="alert" className="bg-red-50 border border-red-100 text-red-600 text-[13px] px-3 py-2.5 mb-5">{error}</div>}
 
             <div className="space-y-4">
               <div>
-                <label htmlFor="reg-full-name" className="block text-[10px] font-semibold text-[#5a6a76] uppercase tracking-[0.14em] mb-1.5">Full name</label>
+                <label htmlFor="reg-full-name" className="block text-[10px] font-semibold text-[#57534e] uppercase tracking-[0.14em] mb-1.5">Full name</label>
                 <input id="reg-full-name" type="text" value={fullName} onChange={(e) => { setError(''); setFullName(e.target.value) }} className="input-field" autoComplete="name" />
               </div>
               <div>
-                <label htmlFor="reg-email" className="block text-[10px] font-semibold text-[#5a6a76] uppercase tracking-[0.14em] mb-1.5">Email</label>
+                <label htmlFor="reg-email" className="block text-[10px] font-semibold text-[#57534e] uppercase tracking-[0.14em] mb-1.5">Email</label>
                 <input id="reg-email" type="email" value={email} onChange={(e) => { setError(''); setEmail(e.target.value) }} className="input-field" autoComplete="email" />
               </div>
               <div>
-                <label htmlFor="reg-password" className="block text-[10px] font-semibold text-[#5a6a76] uppercase tracking-[0.14em] mb-1.5">Password</label>
+                <label htmlFor="reg-password" className="block text-[10px] font-semibold text-[#57534e] uppercase tracking-[0.14em] mb-1.5">Password</label>
                 <div className="relative">
                   <input id="reg-password" type={showPassword ? 'text' : 'password'} value={password} onChange={(e) => { setError(''); setPassword(e.target.value) }} className="input-field pr-10" maxLength={MAX_PASSWORD_LENGTH} autoComplete="new-password" />
-                  <button type="button" onClick={() => setShowPassword(!showPassword)} aria-label={showPassword ? 'Hide password' : 'Show password'} className="absolute right-1 top-1/2 -translate-y-1/2 p-2 text-muted hover:text-[#0b2f4d]">{showPassword ? <EyeOff size={15} /> : <Eye size={15} />}</button>
+                  <button type="button" onClick={() => setShowPassword(!showPassword)} aria-label={showPassword ? 'Hide password' : 'Show password'} className="absolute right-1 top-1/2 -translate-y-1/2 p-2 text-muted hover:text-[#1c1b1a]">{showPassword ? <EyeOff size={15} /> : <Eye size={15} />}</button>
                 </div>
-                <p className="mt-1.5 text-[11px] text-[#6b7580]">Use {MIN_PASSWORD_LENGTH}-{MAX_PASSWORD_LENGTH} characters.</p>
+                <p className="mt-1.5 text-[11px] text-[#6e6a66]">Use {MIN_PASSWORD_LENGTH}-{MAX_PASSWORD_LENGTH} characters.</p>
               </div>
 
-              <button type="button" onClick={createAccount} disabled={loading} className="w-full bg-[#0b2f4d] hover:bg-[#123f64] text-white px-5 py-3 text-[13px] font-semibold transition-colors disabled:opacity-40">
+              <button type="button" onClick={createAccount} disabled={loading} className="w-full bg-[#1c1b1a] hover:bg-[#33302d] text-white px-5 py-3 text-[13px] font-semibold transition-colors disabled:opacity-40">
                 {loading ? 'Creating account...' : 'Create account and build profile'}
               </button>
             </div>
 
-            {refCode && <p className="mt-4 text-[11px] text-[#6b7580]">Referral code <span className="font-semibold text-[#10283b]">{refCode}</span> will be applied to your account.</p>}
+            {refCode && <p className="mt-4 text-[11px] text-[#6e6a66]">Referral code <span className="font-semibold text-[#1c1b1a]">{refCode}</span> will be applied to your account.</p>}
 
-            <p className="text-[13px] text-muted mt-7">Already have an account? <Link href="/login?role=talent" className="text-[#0b2f4d] font-semibold hover:underline">Sign in →</Link></p>
+            <p className="text-[13px] text-muted mt-7">Already have an account? <Link href="/login?role=talent" className="text-[#1c1b1a] font-semibold hover:underline">Sign in →</Link></p>
           </div>
         </div>
       </div>
 
-      <div className="hidden lg:flex w-[42%] bg-[#0b2f4d] items-center">
+      <div className="hidden lg:flex w-[42%] bg-[#1c1b1a] items-center">
         <div className="p-12 xl:p-16 max-w-xl w-full">
           <p className="text-[10px] uppercase tracking-[0.2em] text-white/50 font-semibold mb-4">Wellness House Collective</p>
           <p className="text-white text-[30px] leading-tight tracking-[-0.03em] font-serif font-semibold">The professional platform for spa and wellness careers.</p>

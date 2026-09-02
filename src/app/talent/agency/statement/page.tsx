@@ -52,7 +52,7 @@ export default function PayoutStatementPage() {
 
   return (
     <div className="min-h-screen bg-white">
-      <div className="print:hidden border-b border-[#e3e7eb] px-6 py-4 flex items-center justify-between max-w-3xl mx-auto">
+      <div className="print:hidden border-b border-[#e0dad2] px-6 py-4 flex items-center justify-between max-w-3xl mx-auto">
         <Link href="/talent/agency" className="text-[13px] text-secondary hover:text-black inline-flex items-center gap-1.5"><ArrowLeft size={14} /> Agency Shifts</Link>
         <div className="flex items-center gap-3">
           {months.length > 0 && (
@@ -82,7 +82,7 @@ export default function PayoutStatementPage() {
           <>
             <table className="w-full text-left text-[13px] mb-8">
               <thead>
-                <tr className="text-[11px] uppercase tracking-wide text-muted border-b border-[#e3e7eb]">
+                <tr className="text-[11px] uppercase tracking-wide text-muted border-b border-[#e0dad2]">
                   <th className="py-2 pr-3">Date</th>
                   <th className="py-2 pr-3">Property</th>
                   <th className="py-2 pr-3 text-right">Hours</th>
@@ -93,7 +93,7 @@ export default function PayoutStatementPage() {
               </thead>
               <tbody>
                 {rows.map(b => (
-                  <tr key={b.id} className="border-b border-[#e3e7eb]">
+                  <tr key={b.id} className="border-b border-[#e0dad2]">
                     <td className="py-2.5 pr-3 whitespace-nowrap">{b.shift_date ? new Date(b.shift_date).toLocaleDateString('en-GB') : '-'}</td>
                     <td className="py-2.5 pr-3">{b.employer_name}</td>
                     <td className="py-2.5 pr-3 text-right">{effHours(b)}</td>
@@ -120,7 +120,7 @@ export default function PayoutStatementPage() {
               <div className="dashboard-card !py-4"><p className="text-[11px] uppercase tracking-wide text-muted mb-1">Still to come</p><p className="text-[20px] font-semibold text-amber-600">£{totals.pending.toFixed(2)}</p></div>
             </div>
 
-            <div className="text-[11px] text-muted space-y-1 border-t border-[#e3e7eb] pt-6">
+            <div className="text-[11px] text-muted space-y-1 border-t border-[#e0dad2] pt-6">
               <p>Your agreed earnings are your hourly rate × hours. Properties pay Wellness House Collective, and WHC pays you 100% of that agreed shift amount after each completed shift. You are responsible for your own tax and National Insurance as a self-employed professional.</p>
             </div>
           </>

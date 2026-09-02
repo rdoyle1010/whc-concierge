@@ -89,7 +89,7 @@ export default function AdminResidencyPage() {
           )}
           {r.approval_status === 'approved' && (
             <button onClick={() => toggleFeatured(r.id, !r.is_featured)} disabled={busyId === r.id}
-              className={`!py-2 text-[12px] rounded-lg px-3 font-semibold disabled:opacity-50 ${r.is_featured ? 'bg-[#f5f6f8] text-[#10283b] border border-[#e3e7eb]' : 'btn-secondary'}`}>
+              className={`!py-2 text-[12px] rounded-lg px-3 font-semibold disabled:opacity-50 ${r.is_featured ? 'bg-[#f3f0eb] text-[#1c1b1a] border border-[#e0dad2]' : 'btn-secondary'}`}>
               {r.is_featured ? '★ Featured' : 'Feature (no charge)'}</button>
           )}
           {r.approval_status !== 'rejected' && (
@@ -147,7 +147,7 @@ export default function AdminResidencyPage() {
       )}
 
       {selected && (
-        <div className="fixed inset-0 bg-[#07243b]/70 z-50 flex items-center justify-center p-4" onClick={() => setSelected(null)}>
+        <div className="fixed inset-0 bg-[#0f0e0d]/70 z-50 flex items-center justify-center p-4" onClick={() => setSelected(null)}>
           <div {...detailDialog.panelProps} className="bg-white max-w-lg w-full max-h-[90vh] overflow-y-auto p-7 border border-border">
             <div className="flex items-start justify-between mb-3">
               <div><p className="dashboard-eyebrow">Specialist listing</p><h2 id="admin-residency-detail-heading" className="text-2xl font-semibold text-ink">{selected.candidate_name || 'Specialist'}</h2></div>
@@ -169,7 +169,7 @@ export default function AdminResidencyPage() {
       )}
 
       {rejecting && (
-        <div className="fixed inset-0 bg-[#07243b]/70 z-50 flex items-center justify-center p-4" onClick={() => setRejecting(null)}>
+        <div className="fixed inset-0 bg-[#0f0e0d]/70 z-50 flex items-center justify-center p-4" onClick={() => setRejecting(null)}>
           <div {...rejectDialog.panelProps} className="bg-white max-w-md w-full p-6 border border-border">
             <h2 id="admin-residency-reject-heading" className="text-xl font-semibold text-ink mb-2">Reject listing</h2>
             <p className="text-sm text-secondary mb-4">{rejecting.candidate_name || 'The specialist'} will be told why by email and in-app so they can correct the listing and resubmit.</p>

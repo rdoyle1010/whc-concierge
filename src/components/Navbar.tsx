@@ -110,7 +110,7 @@ export default function Navbar({ siteContent }: { siteContent?: WebsiteContent }
   const groupActive = (paths: string[]) => paths.some(path => pathname === path || pathname.startsWith(`${path}/`))
 
   return (
-    <nav aria-label="Main navigation" className="fixed top-0 z-50 h-[76px] w-full border-b border-white/10 bg-[#0b2f4d] text-white shadow-[0_8px_24px_rgba(7,36,59,0.10)]">
+    <nav aria-label="Main navigation" className="fixed top-0 z-50 h-[76px] w-full border-b border-white/10 bg-[#1c1b1a] text-white shadow-[0_8px_24px_rgba(28,27,26,0.10)]">
       <div className="mx-auto grid h-full max-w-[1440px] grid-cols-[auto_1fr_auto] items-center gap-10 px-6 lg:px-10">
         <div className="shrink-0"><Wordmark dark compact /></div>
 
@@ -134,10 +134,10 @@ export default function Navbar({ siteContent }: { siteContent?: WebsiteContent }
                       {group.label}<ChevronDown size={11} className="opacity-65 transition-transform group-hover:rotate-180" />
                       {active && <span className="absolute inset-x-0 bottom-0 h-[2px] bg-white" />}
                     </button>
-                    <div className="pointer-events-none absolute left-1/2 top-[64px] w-[290px] -translate-x-1/2 translate-y-2 border border-[#e3e7eb] bg-white p-2 opacity-0 shadow-[0_18px_48px_rgba(5,29,46,.16)] transition-all duration-150 group-hover:pointer-events-auto group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:translate-y-0 group-focus-within:opacity-100">
-                      {group.items.map(item => <Link key={item.href} href={item.href} className="block border-b border-[#e3e7eb] px-4 py-3.5 last:border-0 hover:bg-[#f5f6f8]">
-                        <span className="block text-[12px] font-semibold text-[#10283b]">{item.label}</span>
-                        <span className="mt-1 block text-[10px] leading-4 text-[#6b7580]">{item.note}</span>
+                    <div className="pointer-events-none absolute left-1/2 top-[64px] w-[290px] -translate-x-1/2 translate-y-2 border border-[#e0dad2] bg-white p-2 opacity-0 shadow-[0_18px_48px_rgba(28,27,26,.16)] transition-all duration-150 group-hover:pointer-events-auto group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:translate-y-0 group-focus-within:opacity-100">
+                      {group.items.map(item => <Link key={item.href} href={item.href} className="block border-b border-[#e0dad2] px-4 py-3.5 last:border-0 hover:bg-[#f3f0eb]">
+                        <span className="block text-[12px] font-semibold text-[#1c1b1a]">{item.label}</span>
+                        <span className="mt-1 block text-[10px] leading-4 text-[#6e6a66]">{item.note}</span>
                       </Link>)}
                     </div>
                   </div>
@@ -153,7 +153,7 @@ export default function Navbar({ siteContent }: { siteContent?: WebsiteContent }
           <div className="mr-3"><UniversalSearch variant="navbar" /></div>
           {user ? (
             <>
-              <Link href={dashboardHref} className="mr-3 inline-flex items-center gap-2 rounded-lg bg-white px-3.5 py-2 text-[10px] font-semibold uppercase tracking-[0.1em] text-[#0b2f4d] hover:bg-[#f5f6f8]"><LayoutDashboard size={13}/>My dashboard</Link>
+              <Link href={dashboardHref} className="mr-3 inline-flex items-center gap-2 rounded-lg bg-white px-3.5 py-2 text-[10px] font-semibold uppercase tracking-[0.1em] text-[#1c1b1a] hover:bg-[#f3f0eb]"><LayoutDashboard size={13}/>My dashboard</Link>
               <div className="mr-2 border-r border-white/12 pr-3 text-white"><NotificationBell userId={user.id} /></div>
               <div className="relative" ref={dropdownRef}>
                 <button type="button" onClick={() => setProfileOpen(!profileOpen)} aria-label="Open account menu" aria-expanded={profileOpen} aria-haspopup="menu" className="flex items-center gap-2 px-1.5 py-1 text-white/75 transition-colors hover:text-white">
@@ -189,7 +189,7 @@ export default function Navbar({ siteContent }: { siteContent?: WebsiteContent }
       </div>
 
       {mobileOpen && (
-        <div id="mobile-navigation" className="max-h-[calc(100vh-76px)] overflow-y-auto border-t border-white/10 bg-[#0b2f4d] lg:hidden">
+        <div id="mobile-navigation" className="max-h-[calc(100vh-76px)] overflow-y-auto border-t border-white/10 bg-[#1c1b1a] lg:hidden">
           <div className="px-6 py-5">
             <div className="mb-4 flex items-center justify-between border-b border-white/12 pb-4">
               <p className="text-[9px] font-semibold uppercase tracking-[.18em] text-white/55">Search the platform</p>
@@ -210,7 +210,7 @@ export default function Navbar({ siteContent }: { siteContent?: WebsiteContent }
             <div className="mt-5 border-t border-white/12 pt-5">
               {user ? (
                 <>
-                  <Link href={dashboardHref} className="mb-3 flex items-center justify-center gap-2 rounded-lg bg-white px-4 py-3 text-[12px] font-semibold text-[#0b2f4d]" onClick={() => setMobileOpen(false)}><LayoutDashboard size={14}/>My dashboard</Link>
+                  <Link href={dashboardHref} className="mb-3 flex items-center justify-center gap-2 rounded-lg bg-white px-4 py-3 text-[12px] font-semibold text-[#1c1b1a]" onClick={() => setMobileOpen(false)}><LayoutDashboard size={14}/>My dashboard</Link>
                   <Link href={isEmployer ? '/employer/messages' : isAdmin ? '/admin/messages' : '/talent/messages'} className="block py-2 text-[13px] text-white/70" onClick={() => setMobileOpen(false)}>Messages</Link>
                   <button type="button" onClick={handleSignOut} className="block w-full py-2 text-left text-[13px] text-white/70">Sign Out</button>
                 </>

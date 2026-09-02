@@ -60,9 +60,9 @@ export default function AdminMatchesPage() {
         </div>
       ) : (
         <>
-        <div className="bg-white rounded-xl border border-[#e3e7eb] overflow-hidden">
+        <div className="bg-white rounded-xl border border-[#e0dad2] overflow-hidden">
           <table className="w-full">
-            <thead className="bg-[#f5f6f8] border-b border-[#e3e7eb]">
+            <thead className="bg-[#f3f0eb] border-b border-[#e0dad2]">
               <tr>
                 <th className="text-left px-6 py-3 text-xs font-medium text-secondary uppercase">Candidate</th>
                 <th className="text-left px-6 py-3 text-xs font-medium text-secondary uppercase">Employer</th>
@@ -74,7 +74,7 @@ export default function AdminMatchesPage() {
             </thead>
             <tbody className="divide-y divide-gray-50">
               {filtered.slice((page - 1) * perPage, page * perPage).map((m) => (
-                <tr key={m.id} className="hover:bg-[#f5f6f8]">
+                <tr key={m.id} className="hover:bg-[#f3f0eb]">
                   <td className="px-6 py-4">
                     <p className="text-sm font-medium text-ink">{m.candidate_profiles?.full_name || '-'}</p>
                     <p className="text-xs text-muted">{m.candidate_profiles?.headline}</p>

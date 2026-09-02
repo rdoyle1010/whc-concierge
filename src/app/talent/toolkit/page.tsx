@@ -54,7 +54,7 @@ export default function TalentToolkitPage() {
                   {course.resources.map(resource => (
                     <div key={`${resource.kind}-${resource.id}`} className="flex flex-col rounded-xl border border-border p-4">
                       <div className="flex items-start gap-2.5 mb-2">
-                        <FileSpreadsheet size={16} className="mt-0.5 shrink-0 text-[#10283b]" />
+                        <FileSpreadsheet size={16} className="mt-0.5 shrink-0 text-[#1c1b1a]" />
                         <div className="min-w-0">
                           <p className="text-[13px] font-semibold text-ink">{resource.title}</p>
                           {resource.description && <p className="mt-0.5 text-[11.5px] leading-5 text-muted">{resource.description}</p>}

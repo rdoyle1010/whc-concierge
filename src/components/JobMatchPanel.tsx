@@ -68,21 +68,21 @@ export default function JobMatchPanel({ jobId }: { jobId: string }) {
   if ((gapKeys.has('treatmentSkills') || data.missingRequiredSkills.length > 0) && suggestions.length > 0) {
     for (const suggestion of suggestions) {
       actions.push(<li key={`skill-${suggestion.skill}`}>
-        Add {suggestion.skill} to your profile if you have it{suggestion.slug && suggestion.title ? <>, or take <Link href={`/talent/academy/${suggestion.slug}`} className="font-semibold text-[#0b2f4d] underline">{suggestion.title}</Link> in the Academy</> : null}.
+        Add {suggestion.skill} to your profile if you have it{suggestion.slug && suggestion.title ? <>, or take <Link href={`/talent/academy/${suggestion.slug}`} className="font-semibold text-[#1c1b1a] underline">{suggestion.title}</Link> in the Academy</> : null}.
       </li>)
     }
   }
   if (gapKeys.has('qualifications')) actions.push(<li key="qualifications">
-    <Link href="/talent/profile" className="font-semibold text-[#0b2f4d] underline">Add your qualifications</Link> and have your certificates <Link href="/talent/verification" className="font-semibold text-[#0b2f4d] underline">verified</Link>. Verified credentials carry real weight with employers.
+    <Link href="/talent/profile" className="font-semibold text-[#1c1b1a] underline">Add your qualifications</Link> and have your certificates <Link href="/talent/verification" className="font-semibold text-[#1c1b1a] underline">verified</Link>. Verified credentials carry real weight with employers.
   </li>)
   if (gapKeys.has('proficiencyDepth')) actions.push(<li key="proficiencyDepth">
-    <Link href="/talent/profile" className="font-semibold text-[#0b2f4d] underline">Complete your skill proficiency levels</Link> so this employer can see the depth behind each skill.
+    <Link href="/talent/profile" className="font-semibold text-[#1c1b1a] underline">Complete your skill proficiency levels</Link> so this employer can see the depth behind each skill.
   </li>)
   if (gapKeys.has('brands')) actions.push(<li key="brands">
-    Add the product houses you have trained with to <Link href="/talent/profile" className="font-semibold text-[#0b2f4d] underline">your profile</Link>. Brand training you already hold may be the missing piece here.
+    Add the product houses you have trained with to <Link href="/talent/profile" className="font-semibold text-[#1c1b1a] underline">your profile</Link>. Brand training you already hold may be the missing piece here.
   </li>)
   if (gapKeys.has('profileCompleteness')) actions.push(<li key="profileCompleteness">
-    <Link href="/talent/profile" className="font-semibold text-[#0b2f4d] underline">Complete your profile</Link>. Employers see more of your story when there is more story to see.
+    <Link href="/talent/profile" className="font-semibold text-[#1c1b1a] underline">Complete your profile</Link>. Employers see more of your story when there is more story to see.
   </li>)
   if (gapKeys.has('location')) actions.push(<li key="location">
     This role sits outside your usual travel range. That is a fact worth weighing honestly, not something to work around.
@@ -94,54 +94,54 @@ export default function JobMatchPanel({ jobId }: { jobId: string }) {
     The employer asked for more years of experience than your profile shows. Evidence of real responsibility can count for a lot, but be straightforward about where you are.
   </li>)
 
-  return <div className="border border-[#e3e7eb] bg-white p-5">
-    <p className="text-[10px] uppercase tracking-[.14em] text-[#6b7580]">Your match with this role</p>
+  return <div className="border border-[#e0dad2] bg-white p-5">
+    <p className="text-[10px] uppercase tracking-[.14em] text-[#6e6a66]">Your match with this role</p>
     <div className="flex items-baseline gap-3 mt-3">
-      <span className="text-[44px] leading-none font-semibold tracking-[-.03em] text-[#0b2f4d]">{data.score}%</span>
-      <span className="text-[13px] font-semibold text-[#10283b]">{data.label}</span>
+      <span className="text-[44px] leading-none font-semibold tracking-[-.03em] text-[#1c1b1a]">{data.score}%</span>
+      <span className="text-[13px] font-semibold text-[#1c1b1a]">{data.label}</span>
     </div>
 
-    {(data.dimensions || []).length > 0 && <div className="mt-5 border-t border-[#e3e7eb] pt-4">
-      <p className="text-[10px] uppercase tracking-[.14em] font-semibold text-[#10283b]">Why you match</p>
+    {(data.dimensions || []).length > 0 && <div className="mt-5 border-t border-[#e0dad2] pt-4">
+      <p className="text-[10px] uppercase tracking-[.14em] font-semibold text-[#1c1b1a]">Why you match</p>
       <ul className="mt-3 space-y-2.5">
         {(data.dimensions || []).map(dim => <li key={dim.key}>
           <div className="flex items-baseline justify-between gap-3">
-            <span className="text-[12px] text-[#5a6a76]">{dim.label}</span>
-            <span className={`text-[12px] font-semibold tabular-nums ${dim.value >= 70 ? 'text-[#0b2f4d]' : dim.value < 60 ? 'text-[#6b7580]' : 'text-[#10283b]'}`}>{dim.value}%</span>
+            <span className="text-[12px] text-[#57534e]">{dim.label}</span>
+            <span className={`text-[12px] font-semibold tabular-nums ${dim.value >= 70 ? 'text-[#1c1b1a]' : dim.value < 60 ? 'text-[#6e6a66]' : 'text-[#1c1b1a]'}`}>{dim.value}%</span>
           </div>
-          <div className="mt-1 h-[3px] w-full bg-[#f5f6f8]"><div className="h-full bg-[#0b2f4d]" style={{ width: `${Math.min(100, dim.value)}%`, opacity: dim.value >= 70 ? 1 : 0.45 }} /></div>
+          <div className="mt-1 h-[3px] w-full bg-[#f3f0eb]"><div className="h-full bg-[#1c1b1a]" style={{ width: `${Math.min(100, dim.value)}%`, opacity: dim.value >= 70 ? 1 : 0.45 }} /></div>
         </li>)}
       </ul>
     </div>}
 
-    {(data.strongestEvidence || []).length > 0 && <div className="mt-5 border-t border-[#e3e7eb] pt-4">
-      <p className="text-[10px] uppercase tracking-[.14em] font-semibold text-[#10283b]">Your strongest evidence</p>
-      <p className="text-[11px] leading-5 text-[#6b7580] mt-1">From your own CV - lead with these.</p>
+    {(data.strongestEvidence || []).length > 0 && <div className="mt-5 border-t border-[#e0dad2] pt-4">
+      <p className="text-[10px] uppercase tracking-[.14em] font-semibold text-[#1c1b1a]">Your strongest evidence</p>
+      <p className="text-[11px] leading-5 text-[#6e6a66] mt-1">From your own CV - lead with these.</p>
       <ul className="mt-2 space-y-2">
-        {(data.strongestEvidence || []).map(line => <li key={line} className="border-l-2 border-[#0b2f4d] pl-3 text-[12px] leading-5 text-[#10283b]">&ldquo;{line}&rdquo;</li>)}
+        {(data.strongestEvidence || []).map(line => <li key={line} className="border-l-2 border-[#1c1b1a] pl-3 text-[12px] leading-5 text-[#1c1b1a]">&ldquo;{line}&rdquo;</li>)}
       </ul>
     </div>}
-    {data.hasEvidenceBank === false && <div className="mt-5 border-t border-[#e3e7eb] pt-4">
-      <p className="text-[11px] leading-5 text-[#6b7580]"><Link href="/talent/profile" className="font-semibold text-[#0b2f4d] underline">Upload your CV</Link> and WHC will extract the evidence statements worth leading with on applications like this.</p>
+    {data.hasEvidenceBank === false && <div className="mt-5 border-t border-[#e0dad2] pt-4">
+      <p className="text-[11px] leading-5 text-[#6e6a66]"><Link href="/talent/profile" className="font-semibold text-[#1c1b1a] underline">Upload your CV</Link> and WHC will extract the evidence statements worth leading with on applications like this.</p>
     </div>}
 
-    {(data.employerMayQuestion || []).length > 0 && <div className="mt-5 border-t border-[#e3e7eb] pt-4">
-      <p className="text-[10px] uppercase tracking-[.14em] font-semibold text-[#10283b]">What the employer may question</p>
+    {(data.employerMayQuestion || []).length > 0 && <div className="mt-5 border-t border-[#e0dad2] pt-4">
+      <p className="text-[10px] uppercase tracking-[.14em] font-semibold text-[#1c1b1a]">What the employer may question</p>
       <ul className="mt-2 space-y-2">
-        {(data.employerMayQuestion || []).map(item => <li key={item} className="border-l-2 border-[#6b7580] pl-3 text-[12px] leading-5 text-[#5a6a76]">{item}</li>)}
+        {(data.employerMayQuestion || []).map(item => <li key={item} className="border-l-2 border-[#6e6a66] pl-3 text-[12px] leading-5 text-[#57534e]">{item}</li>)}
       </ul>
       {data.interviewReadyHref && <Link href={data.interviewReadyHref} className="btn-primary mt-4 inline-block !py-2 text-[12px]">Prepare answers in Interview Ready</Link>}
     </div>}
 
-    {(data.employerMayQuestion || []).length === 0 && data.interviewReadyHref && <div className="mt-5 border-t border-[#e3e7eb] pt-4">
+    {(data.employerMayQuestion || []).length === 0 && data.interviewReadyHref && <div className="mt-5 border-t border-[#e0dad2] pt-4">
       <Link href={data.interviewReadyHref} className="btn-primary inline-block !py-2 text-[12px]">Prepare for this interview</Link>
-      <p className="text-[11px] leading-5 text-[#6b7580] mt-2">Likely questions, commercial talking points and 30/60/90-day thinking - built for this exact role.</p>
+      <p className="text-[11px] leading-5 text-[#6e6a66] mt-2">Likely questions, commercial talking points and 30/60/90-day thinking - built for this exact role.</p>
     </div>}
 
-    {actions.length > 0 && <div className="mt-5 border-t border-[#e3e7eb] pt-4">
-      <p className="text-[10px] uppercase tracking-[.14em] font-semibold text-[#10283b]">How to strengthen your application</p>
-      <ul className="mt-2 space-y-2 text-[12px] leading-5 text-[#5a6a76] list-none">{actions}</ul>
-      <p className="text-[11px] leading-5 text-[#6b7580] mt-3">Honest development, not box-ticking: only add skills and experience you genuinely hold.</p>
+    {actions.length > 0 && <div className="mt-5 border-t border-[#e0dad2] pt-4">
+      <p className="text-[10px] uppercase tracking-[.14em] font-semibold text-[#1c1b1a]">How to strengthen your application</p>
+      <ul className="mt-2 space-y-2 text-[12px] leading-5 text-[#57534e] list-none">{actions}</ul>
+      <p className="text-[11px] leading-5 text-[#6e6a66] mt-3">Honest development, not box-ticking: only add skills and experience you genuinely hold.</p>
     </div>}
   </div>
 }

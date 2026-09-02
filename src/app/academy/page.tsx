@@ -13,7 +13,7 @@ import { courseImage } from '@/lib/academy-extras'
 import { GraduationCap, ShieldCheck, X, ArrowRight, BriefcaseBusiness, ChartNoAxesCombined, CheckCircle2, Award, Sparkles, TrendingUp, BadgeCheck, BrainCircuit } from 'lucide-react'
 
 const MANAGEMENT_PROGRAMMES = new Set(['spa-manager-programme', 'spa-director-programme'])
-const ACADEMY_ACCENT = '#5a6a76'
+const ACADEMY_ACCENT = '#57534e'
 const MODERN_COURSE_IMAGES: Record<string, string> = {
   'five-star-service': 'https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?w=1200&q=85&auto=format&fit=crop',
 }
@@ -108,21 +108,21 @@ export default function PublicAcademyPage() {
     <div className="min-h-screen bg-white">
       <Navbar />
 
-      <section className="pt-[76px] bg-[#0b2f4d] text-white overflow-hidden">
+      <section className="pt-[76px] bg-[#1c1b1a] text-white overflow-hidden">
         <div className="mx-auto max-w-[1440px] px-6 py-16 lg:px-10 lg:py-24 grid lg:grid-cols-[1.05fr_.95fr] gap-12 items-center">
           <div>
             <p className="mb-4 text-[10px] font-semibold uppercase tracking-[0.2em] text-white/55">WHC Academy</p>
             <h1 className="max-w-4xl text-[44px] font-semibold leading-[1.01] tracking-[-0.05em] text-white md:text-[64px]">Learn what luxury spas actually expect from you.</h1>
             <p className="mt-6 max-w-3xl text-[16px] leading-8 text-white/70 md:text-[18px]">Professional courses with assessments, verified certificates and CPD hours - built for spa careers, from the treatment room to director level.</p>
             <div className="flex flex-col sm:flex-row gap-3 mt-8">
-              <a href="#main-content" className="inline-flex items-center justify-center gap-2 rounded-xl bg-white px-6 py-3.5 text-[13px] font-semibold text-[#0b2f4d] hover:bg-white/90 transition-colors">Explore courses <ArrowRight size={14} /></a>
+              <a href="#main-content" className="inline-flex items-center justify-center gap-2 rounded-xl bg-white px-6 py-3.5 text-[13px] font-semibold text-[#1c1b1a] hover:bg-white/90 transition-colors">Explore courses <ArrowRight size={14} /></a>
               <Link href={isCandidate ? '/talent/academy' : '/register/talent'} className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/25 px-6 py-3.5 text-[13px] font-semibold text-white hover:bg-white/10 transition-colors">Build my career profile <ArrowRight size={14} /></Link>
             </div>
             <p className="mt-4 text-[11px] text-white/45">No membership required. WHC members receive member pricing.</p>
           </div>
 
-          <div className="rounded-[28px] bg-white p-7 md:p-9 text-[#10283b] ">
-            <p className="text-[10px] uppercase tracking-[.16em] font-semibold text-[#5a6a76]">What you leave with</p>
+          <div className="rounded-[28px] bg-white p-7 md:p-9 text-[#1c1b1a] ">
+            <p className="text-[10px] uppercase tracking-[.16em] font-semibold text-[#57534e]">What you leave with</p>
             <h2 className="text-[29px] font-semibold tracking-[-.035em] mt-2">More than a certificate.</h2>
             <div className="space-y-5 mt-7">
               {[
@@ -130,20 +130,20 @@ export default function PublicAcademyPage() {
                 [BrainCircuit, 'Confidence you can use', 'Work through practical scenarios and understand why the standard matters, not just what to memorise.'],
                 [TrendingUp, 'Skills that move careers forward', 'From treatment-room knowledge to management, commercial thinking and leadership.'],
                 [Award, 'A stronger professional story', 'Use your learning to strengthen your CV, profile and interview examples.'],
-              ].map(([Icon, title, text]: any) => <div key={title} className="flex gap-4"><div className="h-10 w-10 rounded-xl bg-[#e8eef4] flex items-center justify-center shrink-0"><Icon size={18} className="text-[#5a6a76]" /></div><div><p className="text-[14px] font-semibold">{title}</p><p className="text-[12px] leading-5 text-black/55 mt-1">{text}</p></div></div>)}
+              ].map(([Icon, title, text]: any) => <div key={title} className="flex gap-4"><div className="h-10 w-10 rounded-xl bg-[#e9e4dd] flex items-center justify-center shrink-0"><Icon size={18} className="text-[#57534e]" /></div><div><p className="text-[14px] font-semibold">{title}</p><p className="text-[12px] leading-5 text-black/55 mt-1">{text}</p></div></div>)}
             </div>
           </div>
         </div>
       </section>
 
-      <section className="bg-white border-b border-[#e3e7eb]">
+      <section className="bg-white border-b border-[#e0dad2]">
         <div className="max-w-[1440px] mx-auto px-6 lg:px-10 py-8 grid grid-cols-2 md:grid-cols-4 gap-5">
           {[
             ['Learn', 'Short, focused modules'],
             ['Apply', 'Real spa scenarios'],
             ['Prove', 'Formal assessment'],
             ['Show', 'Certificate + profile badge'],
-          ].map(([title, text], index) => <div key={title} className="flex items-start gap-3"><div className="h-8 w-8 rounded-full bg-[#0b2f4d] text-white flex items-center justify-center text-[11px] font-semibold shrink-0">{index + 1}</div><div><p className="text-[12px] font-semibold text-[#10283b]">{title}</p><p className="text-[11px] text-[#6b7580] mt-0.5">{text}</p></div></div>)}
+          ].map(([title, text], index) => <div key={title} className="flex items-start gap-3"><div className="h-8 w-8 rounded-full bg-[#1c1b1a] text-white flex items-center justify-center text-[11px] font-semibold shrink-0">{index + 1}</div><div><p className="text-[12px] font-semibold text-[#1c1b1a]">{title}</p><p className="text-[11px] text-[#6e6a66] mt-0.5">{text}</p></div></div>)}
         </div>
       </section>
 
@@ -158,7 +158,7 @@ export default function PublicAcademyPage() {
         )}
 
         <section className="mb-14 grid lg:grid-cols-[.85fr_1.15fr] gap-6 items-stretch">
-          <div className="rounded-[24px] bg-[#10283b] text-white p-8 md:p-10">
+          <div className="rounded-[24px] bg-[#1c1b1a] text-white p-8 md:p-10">
             <p className="text-[10px] uppercase tracking-[.18em] text-white/55 font-semibold">Choose your next move</p>
             <h2 className="text-[34px] font-semibold tracking-[-.04em] leading-[1.05] mt-3">What do you want to be better at next?</h2>
             <p className="text-[14px] leading-7 text-white/65 mt-5">Pick learning that strengthens the job you do now or prepares you for the role you want next.</p>
@@ -168,7 +168,7 @@ export default function PublicAcademyPage() {
               [Sparkles, 'Deliver better', 'Treatment-room, product and service knowledge for stronger guest experiences.'],
               [BriefcaseBusiness, 'Step into management', 'People, rotas, standards, KPIs, commercial thinking and everyday leadership.'],
               [ChartNoAxesCombined, 'Lead at director level', 'P&L, forecasting, strategy, performance and the decisions senior spa leaders make.'],
-            ].map(([Icon, title, text]: any) => <div key={title} className="rounded-[20px] border border-[#e3e7eb] bg-white p-6"><Icon size={20} className="text-[#5a6a76]"/><h3 className="text-[16px] font-semibold text-[#10283b] mt-5">{title}</h3><p className="text-[12px] leading-6 text-[#5a6a76] mt-2">{text}</p></div>)}
+            ].map(([Icon, title, text]: any) => <div key={title} className="rounded-[20px] border border-[#e0dad2] bg-white p-6"><Icon size={20} className="text-[#57534e]"/><h3 className="text-[16px] font-semibold text-[#1c1b1a] mt-5">{title}</h3><p className="text-[12px] leading-6 text-[#57534e] mt-2">{text}</p></div>)}
           </div>
         </section>
 
@@ -176,34 +176,34 @@ export default function PublicAcademyPage() {
           <section className="mb-16">
             <div className="mb-7 flex flex-col justify-between gap-3 md:flex-row md:items-end">
               <div>
-                <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-[#5a6a76]">Flagship leadership programmes</p>
-                <h2 className="text-[31px] font-semibold tracking-[-0.035em] text-[#10283b] md:text-[42px]">Move from experienced practitioner to confident leader.</h2>
-                <p className="mt-3 max-w-3xl text-[13px] leading-6 text-[#5a6a76]">Applied programmes built around the work luxury spa managers and directors actually do: people, payroll, KPIs, profitability, forecasting, marketing and strategy.</p>
+                <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-[#57534e]">Flagship leadership programmes</p>
+                <h2 className="text-[31px] font-semibold tracking-[-0.035em] text-[#1c1b1a] md:text-[42px]">Move from experienced practitioner to confident leader.</h2>
+                <p className="mt-3 max-w-3xl text-[13px] leading-6 text-[#57534e]">Applied programmes built around the work luxury spa managers and directors actually do: people, payroll, KPIs, profitability, forecasting, marketing and strategy.</p>
               </div>
             </div>
             <div className="grid gap-6 lg:grid-cols-2">
               {managementCourses.map((course, index) => (
-                <article key={course.slug} className="overflow-hidden border border-[#e3e7eb] bg-white">
+                <article key={course.slug} className="overflow-hidden border border-[#e0dad2] bg-white">
                   <div className="relative h-64">
                     <img src={displayCourseImage(course)} alt="" loading="lazy" decoding="async" className="absolute inset-0 h-full w-full object-cover" />
-                    <div className="absolute inset-0 bg-gradient-to-t from-[#0b2f4d]/95 via-[#0b2f4d]/35 to-transparent" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-[#1c1b1a]/95 via-[#1c1b1a]/35 to-transparent" />
                     <div className="absolute bottom-6 left-6 right-6 text-white">
                       <div className="mb-2 flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-white/70">{index === 0 ? <BriefcaseBusiness size={13} /> : <ChartNoAxesCombined size={13} />} WHC Leadership Programme</div>
                       <h3 className="text-[27px] font-semibold tracking-[-0.03em]">{course.title}</h3>
                     </div>
                   </div>
                   <div className="p-7">
-                    <p className="mb-5 text-[13px] leading-6 text-[#5a6a76]">{course.tagline}</p>
+                    <p className="mb-5 text-[13px] leading-6 text-[#57534e]">{course.tagline}</p>
                     {(demand[course.slug] || 0) > 0 && (
-                      <p className="mb-5 border-t border-[#e3e7eb] pt-3 text-[13px] font-serif font-semibold text-[#0b2f4d]">Asked for in {demand[course.slug]} live WHC role{demand[course.slug] === 1 ? '' : 's'} right now</p>
+                      <p className="mb-5 border-t border-[#e0dad2] pt-3 text-[13px] font-serif font-semibold text-[#1c1b1a]">Asked for in {demand[course.slug]} live WHC role{demand[course.slug] === 1 ? '' : 's'} right now</p>
                     )}
                     <div className="mb-6 grid gap-2 sm:grid-cols-3">
-                      <span className="inline-flex items-center gap-1.5 text-[11px] text-[#5a6a76]"><CheckCircle2 size={13} className="text-[#5a6a76]" /> {course.lessons.length} applied modules</span>
-                      <span className="inline-flex items-center gap-1.5 text-[11px] text-[#5a6a76]"><CheckCircle2 size={13} className="text-[#5a6a76]" /> Real spa case studies</span>
-                      <span className="inline-flex items-center gap-1.5 text-[11px] text-[#5a6a76]"><CheckCircle2 size={13} className="text-[#5a6a76]" /> Formal assessment</span>
+                      <span className="inline-flex items-center gap-1.5 text-[11px] text-[#57534e]"><CheckCircle2 size={13} className="text-[#57534e]" /> {course.lessons.length} applied modules</span>
+                      <span className="inline-flex items-center gap-1.5 text-[11px] text-[#57534e]"><CheckCircle2 size={13} className="text-[#57534e]" /> Real spa case studies</span>
+                      <span className="inline-flex items-center gap-1.5 text-[11px] text-[#57534e]"><CheckCircle2 size={13} className="text-[#57534e]" /> Formal assessment</span>
                     </div>
-                    <div className="flex items-center justify-between gap-4 border-t border-[#e3e7eb] pt-5">
-                      <div><p className="text-[10px] uppercase tracking-[0.12em] text-[#6b7580]">Guest price</p><p className="text-[22px] font-semibold text-[#10283b]">£{(publicCoursePrice(course) / 100).toFixed(0)}</p></div>
+                    <div className="flex items-center justify-between gap-4 border-t border-[#e0dad2] pt-5">
+                      <div><p className="text-[10px] uppercase tracking-[0.12em] text-[#6e6a66]">Guest price</p><p className="text-[22px] font-semibold text-[#1c1b1a]">£{(publicCoursePrice(course) / 100).toFixed(0)}</p></div>
                       {purchaseButton(course)}
                     </div>
                   </div>
@@ -215,28 +215,28 @@ export default function PublicAcademyPage() {
 
         <section>
           <div className="mb-8 max-w-3xl">
-            <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-[#5a6a76]">Professional course library</p>
-            <h2 className="text-[30px] font-semibold tracking-[-0.035em] text-[#10283b] md:text-[40px]">Build the skills luxury spas actually use.</h2>
-            <p className="text-[13px] leading-6 text-[#5a6a76] mt-3">Choose focused learning you can complete around work, then add the achievement to your WHC professional profile.</p>
+            <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-[#57534e]">Professional course library</p>
+            <h2 className="text-[30px] font-semibold tracking-[-0.035em] text-[#1c1b1a] md:text-[40px]">Build the skills luxury spas actually use.</h2>
+            <p className="text-[13px] leading-6 text-[#57534e] mt-3">Choose focused learning you can complete around work, then add the achievement to your WHC professional profile.</p>
           </div>
 
           {categories.map(cat => (
             <div key={cat} className="mb-12">
-              <h3 className="mb-4 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#6b7580]">{cat}</h3>
+              <h3 className="mb-4 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#6e6a66]">{cat}</h3>
               <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 xl:grid-cols-3">
                 {standardCourses.filter(c => c.category === cat).map(course => (
-                  <article key={course.slug} className="flex flex-col overflow-hidden border border-[#e3e7eb] bg-white">
+                  <article key={course.slug} className="flex flex-col overflow-hidden border border-[#e0dad2] bg-white">
                     <div className="relative h-44 shrink-0">
                       <img src={displayCourseImage(course)} alt="" loading="lazy" decoding="async" className="absolute inset-0 h-full w-full object-cover" />
                     </div>
                     <div className="flex flex-1 flex-col p-6">
-                      <h3 className="mb-1 text-[19px] font-semibold leading-snug tracking-tight text-[#10283b]">{course.title}</h3>
-                      <p className="mb-3 text-[12px] text-[#5a6a76]">{course.tagline}</p>
-                      <p className="text-[11px] text-[#6b7580]">{course.lessons.length} module{course.lessons.length === 1 ? '' : 's'} · ~{course.minutes} min · {courseMeta(course.slug).cpdHours} CPD hour{courseMeta(course.slug).cpdHours === 1 ? '' : 's'} · £{(publicCoursePrice(course) / 100).toFixed(0)}</p>
+                      <h3 className="mb-1 text-[19px] font-semibold leading-snug tracking-tight text-[#1c1b1a]">{course.title}</h3>
+                      <p className="mb-3 text-[12px] text-[#57534e]">{course.tagline}</p>
+                      <p className="text-[11px] text-[#6e6a66]">{course.lessons.length} module{course.lessons.length === 1 ? '' : 's'} · ~{course.minutes} min · {courseMeta(course.slug).cpdHours} CPD hour{courseMeta(course.slug).cpdHours === 1 ? '' : 's'} · £{(publicCoursePrice(course) / 100).toFixed(0)}</p>
                       {(demand[course.slug] || 0) > 0 && (
-                        <p className="mt-2 border-t border-[#e3e7eb] pt-2 text-[12px] font-serif font-semibold text-[#0b2f4d]">Asked for in {demand[course.slug]} live WHC role{demand[course.slug] === 1 ? '' : 's'} right now</p>
+                        <p className="mt-2 border-t border-[#e0dad2] pt-2 text-[12px] font-serif font-semibold text-[#1c1b1a]">Asked for in {demand[course.slug]} live WHC role{demand[course.slug] === 1 ? '' : 's'} right now</p>
                       )}
-                      <div className="mt-auto border-t border-[#e3e7eb] pt-4">
+                      <div className="mt-auto border-t border-[#e0dad2] pt-4">
                         {isCandidate ? <Link href="/talent/academy" className="btn-primary text-[12px]">Member enrolment · £{(coursePrice(course) / 100).toFixed(0)}</Link> : <button type="button" onClick={() => { setBuying({ slug: course.slug, title: course.title, price: publicCoursePrice(course) }); setError('') }} className="btn-primary text-[12px]">Start course</button>}
                       </div>
                     </div>
@@ -247,16 +247,16 @@ export default function PublicAcademyPage() {
           ))}
         </section>
 
-        <section className="mt-14 rounded-[26px] bg-white border border-[#e3e7eb] p-8 md:p-10 grid md:grid-cols-[1fr_auto] gap-8 items-center">
+        <section className="mt-14 rounded-[26px] bg-white border border-[#e0dad2] p-8 md:p-10 grid md:grid-cols-[1fr_auto] gap-8 items-center">
           <div>
-            <p className="text-[10px] uppercase tracking-[.17em] text-[#5a6a76] font-semibold">Make your learning visible</p>
-            <h2 className="text-[29px] md:text-[36px] font-semibold tracking-[-.035em] text-[#10283b] mt-2">Don't just say you're developing. Show it.</h2>
-            <p className="text-[13px] leading-6 text-[#5a6a76] max-w-3xl mt-3">Every WHC certificate carries a unique verification code. For Talent members, completed Academy courses can also appear as profile badges employers can see.</p>
+            <p className="text-[10px] uppercase tracking-[.17em] text-[#57534e] font-semibold">Make your learning visible</p>
+            <h2 className="text-[29px] md:text-[36px] font-semibold tracking-[-.035em] text-[#1c1b1a] mt-2">Don't just say you're developing. Show it.</h2>
+            <p className="text-[13px] leading-6 text-[#57534e] max-w-3xl mt-3">Every WHC certificate carries a unique verification code. For Talent members, completed Academy courses can also appear as profile badges employers can see.</p>
           </div>
-          <Link href="/verify" className="inline-flex items-center justify-center gap-2 rounded-xl border border-[#6b7580] px-5 py-3 text-[12px] font-semibold text-[#5a6a76] hover:bg-[#f5f6f8]">See certificate verification <ArrowRight size={13}/></Link>
+          <Link href="/verify" className="inline-flex items-center justify-center gap-2 rounded-xl border border-[#6e6a66] px-5 py-3 text-[12px] font-semibold text-[#57534e] hover:bg-[#f3f0eb]">See certificate verification <ArrowRight size={13}/></Link>
         </section>
 
-        <section className="mt-14 border border-border bg-[#f5f6f8] p-7 md:p-9">
+        <section className="mt-14 border border-border bg-[#f3f0eb] p-7 md:p-9">
             <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-accent">WHC Academy for Teams</p>
             <h2 className="mt-2 text-[24px] font-semibold text-ink">Train the whole team, track every completion</h2>
             <p className="mt-2 max-w-2xl text-[13px] leading-6 text-secondary">Put your property&apos;s therapists, reception and management through the same professional curriculum - service standards, revenue, retail, leadership - with team pricing from £15 per seat per year (minimum 10 seats) and a property onboarding pathway built from the course library. Completion and CPD records for every team member, ready for your quality audits.</p>
@@ -275,9 +275,9 @@ export default function PublicAcademyPage() {
             )}
         </section>
 
-        <div className="mt-6 flex max-w-4xl items-start gap-3 border border-[#e3e7eb] bg-white p-5">
-          <ShieldCheck size={18} className="mt-0.5 shrink-0 text-[#5a6a76]" />
-          <p className="text-[11px] leading-5 text-[#5a6a76]">WHC Academy certificates evidence course completion and assessment. They are professional-development records and are not a substitute for regulated qualifications, licences or insurance where those are required.</p>
+        <div className="mt-6 flex max-w-4xl items-start gap-3 border border-[#e0dad2] bg-white p-5">
+          <ShieldCheck size={18} className="mt-0.5 shrink-0 text-[#57534e]" />
+          <p className="text-[11px] leading-5 text-[#57534e]">WHC Academy certificates evidence course completion and assessment. They are professional-development records and are not a substitute for regulated qualifications, licences or insurance where those are required.</p>
         </div>
       </main>
 
@@ -285,10 +285,10 @@ export default function PublicAcademyPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setBuying(null)}>
           <div {...buyingDialog.panelProps} className="w-full max-w-md rounded-2xl bg-white p-6">
             <div className="mb-2 flex items-center justify-between">
-              <h2 id="academy-buy-dialog-heading" className="flex items-center gap-2 text-lg font-semibold tracking-tight text-[#10283b]"><GraduationCap size={17} className="text-[#5a6a76]" /> {buying.title}</h2>
-              <button type="button" onClick={() => setBuying(null)} aria-label="Close" className="p-2 -m-2 text-gray-300 hover:text-[#10283b]"><X size={20} /></button>
+              <h2 id="academy-buy-dialog-heading" className="flex items-center gap-2 text-lg font-semibold tracking-tight text-[#1c1b1a]"><GraduationCap size={17} className="text-[#57534e]" /> {buying.title}</h2>
+              <button type="button" onClick={() => setBuying(null)} aria-label="Close" className="p-2 -m-2 text-gray-300 hover:text-[#1c1b1a]"><X size={20} /></button>
             </div>
-            <p className="mb-4 text-[12px] leading-5 text-[#5a6a76]">£{(buying.price / 100).toFixed(0)} one-off. After payment your access link arrives by email. Your certificate is issued when you complete the learning and pass the assessment.</p>
+            <p className="mb-4 text-[12px] leading-5 text-[#57534e]">£{(buying.price / 100).toFixed(0)} one-off. After payment your access link arrives by email. Your certificate is issued when you complete the learning and pass the assessment.</p>
             <label htmlFor="academy-buy-email" className="mb-1.5 block text-sm font-medium text-gray-700">Your email</label>
             <input id="academy-buy-email" type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="you@example.com" className="input-field mb-3" />
             {error && <p role="alert" className="mb-3 text-[12px] text-red-600">{error}</p>}

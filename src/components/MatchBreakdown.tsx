@@ -41,7 +41,7 @@ const CATEGORIES: { key: keyof BreakdownData; label: string; weight: number }[] 
 
 function barColour(score: number): string {
   if (score >= 80) return '#22C55E'
-  if (score >= 60) return '#0b2f4d'
+  if (score >= 60) return '#1c1b1a'
   if (score >= 40) return '#D97706'
   return '#e5e5e5'
 }
@@ -105,7 +105,7 @@ export default function MatchBreakdown({
               return (
                 <div key={cat.key} className="flex items-center gap-2">
                   <span className="text-[10px] text-muted w-[80px] shrink-0 text-right">{cat.label}</span>
-                  <div className="flex-1 h-[6px] bg-[#f5f6f8] rounded-full overflow-hidden">
+                  <div className="flex-1 h-[6px] bg-[#f3f0eb] rounded-full overflow-hidden">
                     <div
                       className="h-full rounded-full transition-all duration-500"
                       style={{ width: `${val}%`, backgroundColor: barColour(val) }}
@@ -133,7 +133,7 @@ export default function MatchBreakdown({
       <div className="flex items-center gap-4">
         <div className="relative w-16 h-16 shrink-0">
           <svg className="w-16 h-16 -rotate-90" viewBox="0 0 36 36">
-            <circle cx="18" cy="18" r="16" fill="none" stroke="#f5f6f8" strokeWidth="2.5" />
+            <circle cx="18" cy="18" r="16" fill="none" stroke="#f3f0eb" strokeWidth="2.5" />
             <circle
               cx="18" cy="18" r="16" fill="none" stroke={colour} strokeWidth="2.5"
               strokeDasharray={`${score} ${100 - score}`} strokeLinecap="round"
@@ -157,7 +157,7 @@ export default function MatchBreakdown({
           return (
             <div key={cat.key} className="flex items-center gap-2.5">
               <span className="text-[11px] text-muted w-[90px] shrink-0 text-right">{cat.label}</span>
-              <div className="flex-1 h-[8px] bg-[#f5f6f8] rounded-full overflow-hidden">
+              <div className="flex-1 h-[8px] bg-[#f3f0eb] rounded-full overflow-hidden">
                 <div
                   className="h-full rounded-full transition-all duration-700"
                   style={{ width: `${val}%`, backgroundColor: barColour(val) }}

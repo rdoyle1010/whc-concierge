@@ -65,8 +65,8 @@ const image = (url: string, alt: string): WebsiteContent['howItWorks']['image'] 
 export const DEFAULT_WEBSITE_CONTENT: WebsiteContent = {
   version: 1,
   brand: {
-    headingFont: 'modern', bodyFont: 'system', accent: '#0B2F4D', ink: '#102838',
-    background: '#FFFFFF', surface: '#F5F5F5', buttonStyle: 'square', spacing: 'airy',
+    headingFont: 'modern', bodyFont: 'system', accent: '#1C1B1A', ink: '#1C1B1A',
+    background: '#F7F5F2', surface: '#F3F0EB', buttonStyle: 'square', spacing: 'airy',
   },
   navigation: {
     jobs: 'Browse Roles', agency: 'Agency', academy: 'Academy', residency: 'Residency', blog: 'Journal',
@@ -132,10 +132,31 @@ export function cloneDefaultWebsiteContent(): WebsiteContent {
   return JSON.parse(JSON.stringify(DEFAULT_WEBSITE_CONTENT)) as WebsiteContent
 }
 
+// The homepage brand lives in the database, so a saved palette outlives a
+// deploy. These are the navy-era values: whenever one is still stored we
+// swap in the charcoal default, so the live site moves with the code and
+// no admin has to republish to pick the new palette up.
+const LEGACY_BRAND: Record<'accent' | 'ink' | 'background' | 'surface', string[]> = {
+  accent: ['#0b2f4d', '#07243b', '#123f64'],
+  ink: ['#10283b', '#102838'],
+  background: ['#ffffff'],
+  surface: ['#f5f5f5', '#f5f6f8', '#f7f8fa'],
+}
+
+function normaliseLegacyBrand(content: WebsiteContent): WebsiteContent {
+  const defaults = DEFAULT_WEBSITE_CONTENT.brand
+  for (const key of Object.keys(LEGACY_BRAND) as (keyof typeof LEGACY_BRAND)[]) {
+    if (LEGACY_BRAND[key].includes(content.brand[key].trim().toLowerCase())) {
+      content.brand[key] = defaults[key]
+    }
+  }
+  return content
+}
+
 export function parseWebsiteContent(value: unknown): WebsiteContent {
   const raw = typeof value === 'string' ? (() => { try { return JSON.parse(value) } catch { return null } })() : value
   const parsed = WebsiteContentSchema.safeParse(raw)
-  return parsed.success ? parsed.data : cloneDefaultWebsiteContent()
+  return parsed.success ? normaliseLegacyBrand(parsed.data) : cloneDefaultWebsiteContent()
 }
 
 export function websiteCssVariables(content: WebsiteContent): CSSProperties {

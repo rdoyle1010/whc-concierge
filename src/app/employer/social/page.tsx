@@ -72,12 +72,12 @@ export default function EmployerSocialPage() {
 
     <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4 mb-9">
       {platforms.map(({ name, icon: Icon, status, text }) => <div key={name} className="dashboard-card">
-        <div className="flex items-start justify-between gap-3"><div className="h-10 w-10 rounded-lg bg-[#f5f6f8] text-[#0b2f4d] flex items-center justify-center"><Icon size={18}/></div><span className="text-[10px] uppercase tracking-[.12em] text-[#5a6a76]">{status}</span></div>
+        <div className="flex items-start justify-between gap-3"><div className="h-10 w-10 rounded-lg bg-[#f3f0eb] text-[#1c1b1a] flex items-center justify-center"><Icon size={18}/></div><span className="text-[10px] uppercase tracking-[.12em] text-[#57534e]">{status}</span></div>
         <h2 className="text-[20px] mt-4">{name}</h2><p className="text-[12px] leading-5 text-secondary mt-2">{text}</p>
       </div>)}
     </div>
 
-    <div className="dashboard-card mb-8 bg-[#0b2f4d] text-white border-[#0b2f4d]">
+    <div className="dashboard-card mb-8 bg-[#1c1b1a] text-white border-[#1c1b1a]">
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5">
         <div><p className="text-[9px] uppercase tracking-[.18em] text-white/55">One role. Multiple channels.</p><h2 className="text-white text-[26px] mt-2">Every share sends candidates back to WHC.</h2><p className="text-[13px] leading-6 text-white/65 mt-2 max-w-3xl">That means the property keeps one applicant list, one shortlist, one set of messages and one source of truth instead of losing applications across several social platforms.</p></div>
         <div className="flex flex-wrap gap-2 text-[11px]"><span className="rounded-full border border-white/15 px-3 py-1.5">LinkedIn</span><span className="rounded-full border border-white/15 px-3 py-1.5">Facebook</span><span className="rounded-full border border-white/15 px-3 py-1.5">Instagram</span><span className="rounded-full border border-white/15 px-3 py-1.5">WhatsApp</span></div>
@@ -86,7 +86,7 @@ export default function EmployerSocialPage() {
 
     <section>
       <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-4"><div><p className="dashboard-eyebrow">Live vacancies</p><h2 className="dashboard-section-title">Promote a job</h2></div><a href="/employer/jobs" className="btn-secondary text-center">Manage job listings</a></div>
-      {loading ? <div className="skeleton h-44 rounded-lg"/> : liveJobs.length === 0 ? <div className="dashboard-card py-12 text-center"><Megaphone size={24} className="mx-auto text-[#5a6a76] mb-3"/><h3 className="text-[20px]">No live jobs to promote</h3><p className="text-[12px] text-secondary mt-2">Once a paid job is live it will appear here with its social sharing controls.</p></div> : <div className="space-y-4">{liveJobs.map(job => {
+      {loading ? <div className="skeleton h-44 rounded-lg"/> : liveJobs.length === 0 ? <div className="dashboard-card py-12 text-center"><Megaphone size={24} className="mx-auto text-[#57534e] mb-3"/><h3 className="text-[20px]">No live jobs to promote</h3><p className="text-[12px] text-secondary mt-2">Once a paid job is live it will appear here with its social sharing controls.</p></div> : <div className="space-y-4">{liveJobs.map(job => {
         const url = jobUrl(job)
         const text = shareText(job)
         const encodedUrl = encodeURIComponent(url)
@@ -111,13 +111,13 @@ export default function EmployerSocialPage() {
     <section className="mt-9">
       <div className="mb-4"><p className="dashboard-eyebrow">Managed campaigns - coming soon</p><h2 className="dashboard-section-title">Let WHC run the promotion for you</h2><p className="text-[12px] text-secondary mt-1 max-w-2xl">These managed options are not available to purchase yet. Register your interest and we will contact you when they launch.</p></div>
       <div className="grid lg:grid-cols-3 gap-4">
-        <div className="dashboard-card"><Sparkles size={18} className="text-[#5a6a76]"/><h3 className="text-[19px] mt-4">WHC Social Feature</h3><p className="text-[12px] leading-5 text-secondary mt-2">WHC features your vacancy through its own LinkedIn, Instagram, Facebook and employer newsletter channels.</p><a href="/contact" className="btn-secondary inline-flex mt-4 text-[12px]">Register interest</a></div>
-        <div className="dashboard-card"><Megaphone size={18} className="text-[#5a6a76]"/><h3 className="text-[19px] mt-4">Meta Recruitment Campaign</h3><p className="text-[12px] leading-5 text-secondary mt-2">A managed Facebook and Instagram recruitment advert using the live WHC application link.</p><a href="/contact" className="btn-secondary inline-flex mt-4 text-[12px]">Register interest</a></div>
-        <div className="dashboard-card"><CheckCircle2 size={18} className="text-[#5a6a76]"/><h3 className="text-[19px] mt-4">Multi-channel campaign</h3><p className="text-[12px] leading-5 text-secondary mt-2">One WHC job distributed and measured across LinkedIn and Meta channels.</p><a href="/contact" className="btn-secondary inline-flex mt-4 text-[12px]">Register interest</a></div>
+        <div className="dashboard-card"><Sparkles size={18} className="text-[#57534e]"/><h3 className="text-[19px] mt-4">WHC Social Feature</h3><p className="text-[12px] leading-5 text-secondary mt-2">WHC features your vacancy through its own LinkedIn, Instagram, Facebook and employer newsletter channels.</p><a href="/contact" className="btn-secondary inline-flex mt-4 text-[12px]">Register interest</a></div>
+        <div className="dashboard-card"><Megaphone size={18} className="text-[#57534e]"/><h3 className="text-[19px] mt-4">Meta Recruitment Campaign</h3><p className="text-[12px] leading-5 text-secondary mt-2">A managed Facebook and Instagram recruitment advert using the live WHC application link.</p><a href="/contact" className="btn-secondary inline-flex mt-4 text-[12px]">Register interest</a></div>
+        <div className="dashboard-card"><CheckCircle2 size={18} className="text-[#57534e]"/><h3 className="text-[19px] mt-4">Multi-channel campaign</h3><p className="text-[12px] leading-5 text-secondary mt-2">One WHC job distributed and measured across LinkedIn and Meta channels.</p><a href="/contact" className="btn-secondary inline-flex mt-4 text-[12px]">Register interest</a></div>
       </div>
     </section>
 
-    <div className="mt-8 border border-[#e3e7eb] bg-[#f5f6f8] p-5 text-[12px] leading-6 text-secondary">
+    <div className="mt-8 border border-[#e0dad2] bg-[#f3f0eb] p-5 text-[12px] leading-6 text-secondary">
       <strong className="text-ink">About account connections:</strong> Sharing tools and social-ready content are available now. Posting directly into your company LinkedIn Jobs account or a paid Meta Ads account requires you to authorise those platforms first - we will let you know when those connections become available.
     </div>
   </DashboardShell>

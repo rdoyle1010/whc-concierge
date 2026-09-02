@@ -73,7 +73,7 @@ export default function AdminMessagesPage() {
   const statusColors: Record<string, string> = {
     open: 'border-amber-200 bg-amber-50 text-amber-700',
     replied: 'border-emerald-200 bg-emerald-50 text-emerald-700',
-    closed: 'border-[#e3e7eb] bg-[#f5f6f8] text-[#6b7580]',
+    closed: 'border-[#e0dad2] bg-[#f3f0eb] text-[#6e6a66]',
   }
 
   return (
@@ -92,83 +92,83 @@ export default function AdminMessagesPage() {
 
       {actionError && <div className="bg-red-50 text-red-600 text-sm px-4 py-3 mb-5 border border-red-100">{actionError}</div>}
 
-      <div className="overflow-hidden border border-[#e3e7eb] bg-white">
+      <div className="overflow-hidden border border-[#e0dad2] bg-white">
         <div className="grid min-h-[640px] grid-cols-1 lg:grid-cols-[360px_minmax(0,1fr)]">
-          <aside className="border-b border-[#e3e7eb] bg-[#f5f6f8] lg:border-b-0 lg:border-r">
-            <div className="border-b border-[#e3e7eb] px-5 py-5">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#10283b]">Inbox</p>
-              <p className="mt-1 text-[12px] text-[#6b7580]">{total} message{total === 1 ? '' : 's'}</p>
+          <aside className="border-b border-[#e0dad2] bg-[#f3f0eb] lg:border-b-0 lg:border-r">
+            <div className="border-b border-[#e0dad2] px-5 py-5">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#1c1b1a]">Inbox</p>
+              <p className="mt-1 text-[12px] text-[#6e6a66]">{total} message{total === 1 ? '' : 's'}</p>
             </div>
             <div className="max-h-[570px] overflow-y-auto">
               {loading ? (
-                <div className="space-y-3 p-4">{[1,2,3,4].map(i => <div key={i} className="h-[86px] animate-pulse rounded-2xl bg-[#f5f6f8]" />)}</div>
+                <div className="space-y-3 p-4">{[1,2,3,4].map(i => <div key={i} className="h-[86px] animate-pulse rounded-2xl bg-[#f3f0eb]" />)}</div>
               ) : queries.length === 0 ? (
                 <div className="flex min-h-[300px] flex-col items-center justify-center px-8 text-center">
-                  <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl border border-[#e3e7eb] bg-white text-[#10283b]"><Mail size={20} /></div>
-                  <p className="text-[15px] font-medium text-[#10283b]">No messages here</p>
-                  <p className="mt-2 text-[12px] leading-5 text-[#6b7580]">New enquiries will appear here when they arrive.</p>
+                  <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl border border-[#e0dad2] bg-white text-[#1c1b1a]"><Mail size={20} /></div>
+                  <p className="text-[15px] font-medium text-[#1c1b1a]">No messages here</p>
+                  <p className="mt-2 text-[12px] leading-5 text-[#6e6a66]">New enquiries will appear here when they arrive.</p>
                 </div>
               ) : queries.map((q) => {
                 const active = selected?.id === q.id
                 const initials = String(q.name || 'Q').split(' ').map((part: string) => part[0]).join('').slice(0,2).toUpperCase()
                 return (
-                  <button key={q.id} type="button" onClick={() => setSelected(q)} className={`w-full border-b border-[#e3e7eb] px-4 py-4 text-left transition ${active ? 'bg-white' : 'hover:bg-white/70'}`}>
+                  <button key={q.id} type="button" onClick={() => setSelected(q)} className={`w-full border-b border-[#e0dad2] px-4 py-4 text-left transition ${active ? 'bg-white' : 'hover:bg-white/70'}`}>
                     <div className="flex items-start gap-3">
-                      <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full border text-[11px] font-semibold ${active ? 'border-[#5a6a76] bg-[#f5f6f8] text-[#10283b]' : 'border-[#e3e7eb] bg-white text-[#5a6a76]'}`}>{initials}</div>
+                      <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full border text-[11px] font-semibold ${active ? 'border-[#57534e] bg-[#f3f0eb] text-[#1c1b1a]' : 'border-[#e0dad2] bg-white text-[#57534e]'}`}>{initials}</div>
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2">
-                          <p className="min-w-0 flex-1 truncate text-[13px] font-semibold text-[#10283b]">{q.name}</p>
-                          <span className={`rounded-full border px-2 py-0.5 text-[9px] font-semibold capitalize ${statusColors[q.status] || 'border-[#e3e7eb] bg-[#f5f6f8] text-[#6b7580]'}`}>{q.status}</span>
+                          <p className="min-w-0 flex-1 truncate text-[13px] font-semibold text-[#1c1b1a]">{q.name}</p>
+                          <span className={`rounded-full border px-2 py-0.5 text-[9px] font-semibold capitalize ${statusColors[q.status] || 'border-[#e0dad2] bg-[#f3f0eb] text-[#6e6a66]'}`}>{q.status}</span>
                         </div>
-                        <p className="mt-1 truncate text-[11px] font-medium text-[#5a6a76]">{q.subject || 'General enquiry'}</p>
-                        <p className="mt-1 truncate text-[10px] text-[#6b7580]">{q.message}</p>
-                        <p className="mt-2 text-[9px] uppercase tracking-[0.08em] text-[#6b7580]">{new Date(q.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</p>
+                        <p className="mt-1 truncate text-[11px] font-medium text-[#57534e]">{q.subject || 'General enquiry'}</p>
+                        <p className="mt-1 truncate text-[10px] text-[#6e6a66]">{q.message}</p>
+                        <p className="mt-2 text-[9px] uppercase tracking-[0.08em] text-[#6e6a66]">{new Date(q.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</p>
                       </div>
                     </div>
                   </button>
                 )
               })}
             </div>
-            <div className="border-t border-[#e3e7eb] bg-white px-4 py-3"><Pagination page={page} perPage={perPage} total={total} showPerPage={false} onPageChange={setPage} /></div>
+            <div className="border-t border-[#e0dad2] bg-white px-4 py-3"><Pagination page={page} perPage={perPage} total={total} showPerPage={false} onPageChange={setPage} /></div>
           </aside>
 
-          <section className="min-w-0 bg-[#f5f6f8]">
+          <section className="min-w-0 bg-[#f3f0eb]">
             {!selected ? (
               <div className="flex min-h-[640px] flex-col items-center justify-center px-8 text-center">
-                <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-2xl border border-[#e3e7eb] bg-white text-[#10283b]"><MessageSquare size={22} /></div>
-                <p className="text-[20px] font-medium tracking-[-0.02em] text-[#10283b]">Select an enquiry</p>
-                <p className="mt-2 max-w-sm text-[12px] leading-5 text-[#6b7580]">Open a message from the inbox to review the enquiry and reply.</p>
+                <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-2xl border border-[#e0dad2] bg-white text-[#1c1b1a]"><MessageSquare size={22} /></div>
+                <p className="text-[20px] font-medium tracking-[-0.02em] text-[#1c1b1a]">Select an enquiry</p>
+                <p className="mt-2 max-w-sm text-[12px] leading-5 text-[#6e6a66]">Open a message from the inbox to review the enquiry and reply.</p>
               </div>
             ) : (
               <div className="flex min-h-[640px] flex-col">
-                <header className="flex flex-col gap-4 border-b border-[#e3e7eb] bg-white px-5 py-5 sm:flex-row sm:items-start sm:justify-between md:px-7">
+                <header className="flex flex-col gap-4 border-b border-[#e0dad2] bg-white px-5 py-5 sm:flex-row sm:items-start sm:justify-between md:px-7">
                   <div className="min-w-0">
                     <div className="mb-2 flex flex-wrap items-center gap-2">
-                      <span className={`rounded-full border px-2.5 py-1 text-[9px] font-semibold capitalize ${statusColors[selected.status] || 'border-[#e3e7eb] bg-[#f5f6f8] text-[#6b7580]'}`}>{selected.status}</span>
-                      {selected.type && <span className="rounded-full border border-[#e3e7eb] bg-[#f5f6f8] px-2.5 py-1 text-[9px] font-semibold text-[#5a6a76]">{selected.type}</span>}
+                      <span className={`rounded-full border px-2.5 py-1 text-[9px] font-semibold capitalize ${statusColors[selected.status] || 'border-[#e0dad2] bg-[#f3f0eb] text-[#6e6a66]'}`}>{selected.status}</span>
+                      {selected.type && <span className="rounded-full border border-[#e0dad2] bg-[#f3f0eb] px-2.5 py-1 text-[9px] font-semibold text-[#57534e]">{selected.type}</span>}
                     </div>
-                    <h2 className="text-[24px] font-medium tracking-[-0.03em] text-[#10283b]">{selected.subject || 'General enquiry'}</h2>
-                    <p className="mt-2 text-[12px] text-[#5a6a76]">{selected.name} · {selected.email}</p>
-                    <p className="mt-1 text-[10px] text-[#6b7580]">{new Date(selected.created_at).toLocaleString('en-GB')}</p>
+                    <h2 className="text-[24px] font-medium tracking-[-0.03em] text-[#1c1b1a]">{selected.subject || 'General enquiry'}</h2>
+                    <p className="mt-2 text-[12px] text-[#57534e]">{selected.name} · {selected.email}</p>
+                    <p className="mt-1 text-[10px] text-[#6e6a66]">{new Date(selected.created_at).toLocaleString('en-GB')}</p>
                   </div>
                   <div className="flex gap-2">
-                    <button type="button" onClick={() => updateStatus(selected.id, 'replied')} className="flex h-10 w-10 items-center justify-center rounded-full border border-[#e3e7eb] bg-white text-[#5a6a76] transition hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-700" title="Mark replied"><Check size={17} /></button>
-                    <button type="button" onClick={() => deleteQuery(selected.id)} className="flex h-10 w-10 items-center justify-center rounded-full border border-[#e3e7eb] bg-white text-[#6b7580] transition hover:border-red-200 hover:bg-red-50 hover:text-red-600" title="Delete"><Trash2 size={17} /></button>
+                    <button type="button" onClick={() => updateStatus(selected.id, 'replied')} className="flex h-10 w-10 items-center justify-center rounded-full border border-[#e0dad2] bg-white text-[#57534e] transition hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-700" title="Mark replied"><Check size={17} /></button>
+                    <button type="button" onClick={() => deleteQuery(selected.id)} className="flex h-10 w-10 items-center justify-center rounded-full border border-[#e0dad2] bg-white text-[#6e6a66] transition hover:border-red-200 hover:bg-red-50 hover:text-red-600" title="Delete"><Trash2 size={17} /></button>
                   </div>
                 </header>
 
                 <div className="flex-1 px-5 py-6 md:px-7">
-                  <div className="rounded-[20px] border border-[#e3e7eb] bg-white p-5 shadow-sm md:p-6">
-                    <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#10283b]">Enquiry</p>
-                    <p className="mt-4 whitespace-pre-wrap text-[13px] leading-6 text-[#3d4b57]">{selected.message}</p>
+                  <div className="rounded-[20px] border border-[#e0dad2] bg-white p-5 shadow-sm md:p-6">
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#1c1b1a]">Enquiry</p>
+                    <p className="mt-4 whitespace-pre-wrap text-[13px] leading-6 text-[#3a3835]">{selected.message}</p>
                   </div>
 
-                  <div className="mt-6 rounded-[20px] border border-[#e3e7eb] bg-white p-5 md:p-6">
+                  <div className="mt-6 rounded-[20px] border border-[#e0dad2] bg-white p-5 md:p-6">
                     <div className="mb-4">
-                      <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#10283b]">Reply</p>
-                      <p className="mt-1 text-[12px] text-[#6b7580]">Reply by email to {selected.email}</p>
+                      <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#1c1b1a]">Reply</p>
+                      <p className="mt-1 text-[12px] text-[#6e6a66]">Reply by email to {selected.email}</p>
                     </div>
-                    <textarea rows={6} value={reply} onChange={(e) => setReply(e.target.value)} className="w-full resize-y rounded-2xl border border-[#e3e7eb] bg-[#f5f6f8] px-4 py-3 text-[13px] leading-6 text-[#10283b] outline-none transition placeholder:text-[#6b7580] focus:border-[#5a6a76] focus:bg-white" placeholder={`Hi ${selected.name?.split(' ')[0] || 'there'},`} />
+                    <textarea rows={6} value={reply} onChange={(e) => setReply(e.target.value)} className="w-full resize-y rounded-2xl border border-[#e0dad2] bg-[#f3f0eb] px-4 py-3 text-[13px] leading-6 text-[#1c1b1a] outline-none transition placeholder:text-[#6e6a66] focus:border-[#57534e] focus:bg-white" placeholder={`Hi ${selected.name?.split(' ')[0] || 'there'},`} />
                     {replyMsg && <p className={`mt-2 text-[11px] ${replyMsg.includes('sent') ? 'text-emerald-600' : 'text-red-600'}`}>{replyMsg}</p>}
                     <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                       <div className="flex flex-wrap gap-2">

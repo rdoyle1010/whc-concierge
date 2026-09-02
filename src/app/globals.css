@@ -3,17 +3,17 @@
 @tailwind utilities;
 
 /* ---------------------------------------------------------------------------
-   WHC brand system: navy ink and accent on white, Manrope headings,
-   Poppins body, soft grey surfaces, square corners. The Website & Brand
+   WHC brand system: charcoal ink and accent on warm white, Manrope
+   headings, Poppins body, stone surfaces, square corners. The Website & Brand
    admin settings feed the --site-* variables (set on the root wrapper in
    layout.tsx) and every shared class below reads them with fallbacks.
    --------------------------------------------------------------------------- */
 
 @layer base {
   html { font-family: var(--font-poppins), "Segoe UI", sans-serif; }
-  body { @apply bg-white text-body antialiased font-sans; font-size: 15px; line-height: 1.7; }
+  body { @apply bg-parchment text-body antialiased font-sans; font-size: 15px; line-height: 1.7; }
   h1, h2, h3, h4 {
-    color: var(--site-ink, #10283b);
+    color: var(--site-ink, #1c1b1a);
     font-family: var(--site-heading-font, var(--font-manrope), "Segoe UI", sans-serif);
     font-weight: 600;
     letter-spacing: -0.02em;
@@ -24,12 +24,12 @@
 
 @layer components {
   /* One button language: colour + transform transition ~150ms, existing
-     hover colours, a 1px press on :active and a navy focus-visible ring. */
-  .btn-primary { @apply text-white px-5 py-2.5 text-[13px] font-semibold; background: var(--site-accent, #0b2f4d); border-radius: var(--site-button-radius, 0px); transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease, transform 150ms ease; }
-  .btn-primary:hover { background: #123f64; }
+     hover colours, a 1px press on :active and a charcoal focus-visible ring. */
+  .btn-primary { @apply text-white px-5 py-2.5 text-[13px] font-semibold; background: var(--site-accent, #1c1b1a); border-radius: var(--site-button-radius, 0px); transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease, transform 150ms ease; }
+  .btn-primary:hover { background: #33302d; }
   .btn-secondary { @apply bg-white text-ink border border-border px-5 py-2.5 text-[13px] font-semibold hover:bg-surface; border-radius: var(--site-button-radius, 0px); transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease, transform 150ms ease; }
-  .btn-accent { @apply text-white px-5 py-2.5 text-[13px] font-semibold; background: var(--site-accent, #0b2f4d); border-radius: var(--site-button-radius, 0px); transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease, transform 150ms ease; }
-  .btn-accent:hover { background: #123f64; }
+  .btn-accent { @apply text-white px-5 py-2.5 text-[13px] font-semibold; background: var(--site-accent, #1c1b1a); border-radius: var(--site-button-radius, 0px); transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease, transform 150ms ease; }
+  .btn-accent:hover { background: #33302d; }
   .btn-primary:active, .btn-secondary:active, .btn-accent:active { transform: translateY(1px); }
   .btn-ghost { @apply text-secondary text-[13px] font-medium hover:text-ink transition-colors; }
   .input-field { @apply w-full px-3.5 py-2.5 bg-white border border-border text-[14px] text-ink focus:outline-none focus:ring-2 focus:ring-ink/10 focus:border-ink/40 transition-all duration-150 placeholder:text-muted; border-radius: 0; }
@@ -40,9 +40,9 @@
   .section-heading { @apply text-[34px] md:text-[44px] font-semibold text-ink leading-[1.08]; font-family: var(--site-heading-font, var(--font-manrope), sans-serif); letter-spacing: -.02em; }
 
   .badge-platinum { @apply bg-ink text-white text-[10px] font-semibold px-2.5 py-0.5 rounded-full; }
-  .badge-gold { background:#0b2f4d; color:#fff; @apply text-[10px] font-semibold px-2.5 py-0.5 rounded-full; }
+  .badge-gold { background:#1c1b1a; color:#fff; @apply text-[10px] font-semibold px-2.5 py-0.5 rounded-full; }
   .badge-silver { @apply bg-neutral-400 text-white text-[10px] font-semibold px-2.5 py-0.5 rounded-full; }
-  .badge-bronze { background:#5a6a76; color:#fff; @apply text-[10px] font-semibold px-2.5 py-0.5 rounded-full; }
+  .badge-bronze { background:#57534e; color:#fff; @apply text-[10px] font-semibold px-2.5 py-0.5 rounded-full; }
 
   .match-perfect { @apply bg-match-perfect-bg text-match-perfect-text text-[11px] font-semibold px-2.5 py-1 rounded-full; }
   .match-strong { @apply bg-match-strong-bg text-match-strong-text text-[11px] font-semibold px-2.5 py-1 rounded-full; }
@@ -50,9 +50,9 @@
   .match-partial { @apply bg-match-partial-bg text-match-partial-text text-[11px] font-semibold px-2.5 py-1 rounded-full; }
 
 
-  .public-page { @apply min-h-screen bg-white text-body; }
+  .public-page { @apply min-h-screen bg-parchment text-body; }
   .public-hero { @apply bg-white border-b border-border; }
-  .public-eyebrow { color:var(--site-accent, #0b2f4d); @apply text-[10px] uppercase tracking-[0.18em] font-semibold; }
+  .public-eyebrow { color:var(--site-accent, #1c1b1a); @apply text-[10px] uppercase tracking-[0.18em] font-semibold; }
   .public-title { @apply text-ink font-semibold leading-[1.06]; font-family: var(--site-heading-font, var(--font-manrope), sans-serif); letter-spacing: -0.02em; font-size: clamp(2.1rem, 3.6vw, 3.2rem); }
   .public-intro { @apply text-secondary text-[15px] leading-7; }
   .public-panel { @apply bg-white border border-border; border-radius: 0; box-shadow: none; }
@@ -60,7 +60,7 @@
   /* One intentional loading shimmer: surface base with a moving highlight. */
   .skeleton {
     @apply rounded;
-    background: #f5f6f8 linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,.75) 50%, rgba(255,255,255,0) 100%) no-repeat -60% 0 / 55% 100%;
+    background: #f3f0eb linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,.75) 50%, rgba(255,255,255,0) 100%) no-repeat -60% 0 / 55% 100%;
     animation: skeleton-shimmer 1.4s ease infinite;
   }
 }
@@ -70,11 +70,11 @@
   to { background-position: 160% 0; }
 }
 
-/* One focus language across the platform: a navy focus-visible ring on
+/* One focus language across the platform: a charcoal focus-visible ring on
    interactive elements. Mouse focus keeps existing styling untouched. */
 a:focus-visible, button:focus-visible, input:focus-visible,
 select:focus-visible, textarea:focus-visible, [role="button"]:focus-visible {
-  outline: 2px solid #0b2f4d;
+  outline: 2px solid #1c1b1a;
   outline-offset: 2px;
 }
 
@@ -82,9 +82,9 @@ select:focus-visible, textarea:focus-visible, [role="button"]:focus-visible {
 .fade-in { animation: fadeRise 200ms ease-out both; }
 @keyframes fadeRise { from { opacity: 0; transform: translateY(2px); } to { opacity: 1; transform: translateY(0); } }
 
-/* Honest indeterminate upload progress: a thin navy sweep, no fake numbers. */
-.progress-track { height: 3px; background: #e3e7eb; overflow: hidden; }
-.progress-indeterminate { height: 100%; width: 36%; background: #0b2f4d; animation: progressSweep 1.2s ease-in-out infinite; }
+/* Honest indeterminate upload progress: a thin charcoal sweep, no fake numbers. */
+.progress-track { height: 3px; background: #e0dad2; overflow: hidden; }
+.progress-indeterminate { height: 100%; width: 36%; background: #1c1b1a; animation: progressSweep 1.2s ease-in-out infinite; }
 @keyframes progressSweep { from { transform: translateX(-120%); } to { transform: translateX(320%); } }
 
 @media (prefers-reduced-motion: reduce) {
@@ -97,23 +97,23 @@ select:focus-visible, textarea:focus-visible, [role="button"]:focus-visible {
 }
 
 /* Legacy public utilities inherit the monochrome language. */
-.text-black { color: #10283b !important; }
-.bg-black { background-color: #0b2f4d !important; }
-.hover\:text-black:hover { color: #07243b !important; }
-.hover\:bg-black:hover { background-color: #123f64 !important; }
-.border-neutral-100 { border-color: #e3e7eb !important; }
-.text-neutral-400 { color: #6b7580 !important; }
-.text-neutral-600 { color: #5a6a76 !important; }
-.bg-neutral-100 { background-color: #f5f6f8 !important; }
+.text-black { color: #1c1b1a !important; }
+.bg-black { background-color: #1c1b1a !important; }
+.hover\:text-black:hover { color: #0f0e0d !important; }
+.hover\:bg-black:hover { background-color: #33302d !important; }
+.border-neutral-100 { border-color: #e0dad2 !important; }
+.text-neutral-400 { color: #6e6a66 !important; }
+.text-neutral-600 { color: #57534e !important; }
+.bg-neutral-100 { background-color: #f3f0eb !important; }
 
 /* Editorial workspace shared by Talent, Employer and Admin. */
 .dashboard-shell {
   background: #ffffff;
-  color: #10283b;
+  color: #1c1b1a;
   font-family: var(--font-poppins), "Segoe UI", sans-serif;
 }
 .dashboard-sidebar {
-  background: #0b2f4d;
+  background: #1c1b1a;
   border-right: 1px solid rgba(255,255,255,.10);
   box-shadow: none;
 }
@@ -124,7 +124,7 @@ select:focus-visible, textarea:focus-visible, [role="button"]:focus-visible {
   font-family: var(--site-heading-font, var(--font-manrope), "Segoe UI", sans-serif);
 }
 .dashboard-title {
-  color: #10283b;
+  color: #1c1b1a;
   font-size: clamp(2rem, 3vw, 2.9rem);
   line-height: 1.05;
   font-weight: 600;
@@ -132,7 +132,7 @@ select:focus-visible, textarea:focus-visible, [role="button"]:focus-visible {
 }
 .dashboard-eyebrow {
   margin-bottom: .65rem;
-  color: #6b7580;
+  color: #6e6a66;
   font-size: 9px;
   line-height: 1.4;
   font-weight: 700;
@@ -142,19 +142,19 @@ select:focus-visible, textarea:focus-visible, [role="button"]:focus-visible {
 .dashboard-intro {
   max-width: 720px;
   margin-top: .9rem;
-  color: #5a6a76;
+  color: #57534e;
   font-size: 13px;
   line-height: 1.75;
 }
 .dashboard-shell .dashboard-card,
 .dashboard-panel {
   background: #ffffff;
-  border: 1px solid #e3e7eb;
+  border: 1px solid #e0dad2;
   border-radius: 0;
   padding: 1.5rem;
   box-shadow: none;
 }
-.dashboard-shell .dashboard-card:hover { border-color: #6b7580; }
+.dashboard-shell .dashboard-card:hover { border-color: #6e6a66; }
 .dashboard-shell .btn-primary,
 .dashboard-shell .btn-secondary,
 .dashboard-shell .btn-accent,
@@ -164,21 +164,21 @@ select:focus-visible, textarea:focus-visible, [role="button"]:focus-visible {
 .dashboard-shell input:not([type="checkbox"]):not([type="radio"]) { border-radius: 0; }
 .dashboard-shell table { border-radius: 0; }
 .dashboard-shell .btn-primary,
-.dashboard-shell .btn-accent { background: var(--site-accent, #0b2f4d); color:#fff; }
+.dashboard-shell .btn-accent { background: var(--site-accent, #1c1b1a); color:#fff; }
 .dashboard-shell .btn-primary:hover,
-.dashboard-shell .btn-accent:hover { background: #123f64; }
-.dashboard-shell .input-field:focus { border-color: #6b7580; box-shadow: 0 0 0 2px rgba(0,0,0,.06); }
+.dashboard-shell .btn-accent:hover { background: #33302d; }
+.dashboard-shell .input-field:focus { border-color: #6e6a66; box-shadow: 0 0 0 2px rgba(0,0,0,.06); }
 .dashboard-metrics {
   display: grid;
   grid-template-columns: repeat(2,minmax(0,1fr));
   background: #ffffff;
-  border-top: 1px solid #e3e7eb;
-  border-bottom: 1px solid #e3e7eb;
+  border-top: 1px solid #e0dad2;
+  border-bottom: 1px solid #e0dad2;
 }
-.dashboard-metric { min-height: 112px; padding: 1.25rem; border-right: 1px solid #e3e7eb; }
+.dashboard-metric { min-height: 112px; padding: 1.25rem; border-right: 1px solid #e0dad2; }
 .dashboard-metric:nth-child(2n) { border-right: 0; }
 .dashboard-metric-value {
-  color: #10283b;
+  color: #1c1b1a;
   font-family: var(--site-heading-font, var(--font-manrope), sans-serif);
   font-size: 2.3rem;
   line-height: .98;
@@ -186,27 +186,27 @@ select:focus-visible, textarea:focus-visible, [role="button"]:focus-visible {
   letter-spacing: -.02em;
 }
 .dashboard-nav-item { border-radius: 0; }
-.dashboard-metric-label { margin-top: .55rem; color: #6b7580; font-size: 9px; font-weight: 650; text-transform: uppercase; letter-spacing: .14em; }
-.dashboard-list-row { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 1rem 0; border-top: 1px solid #e3e7eb; }
+.dashboard-metric-label { margin-top: .55rem; color: #6e6a66; font-size: 9px; font-weight: 650; text-transform: uppercase; letter-spacing: .14em; }
+.dashboard-list-row { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 1rem 0; border-top: 1px solid #e0dad2; }
 .dashboard-list-row:first-child { border-top: 0; }
-.dashboard-rule { border-top: 1px solid #e3e7eb; }
-.dashboard-section-title { font-family: var(--site-heading-font, var(--font-manrope), sans-serif); font-size: 1.45rem; font-weight: 600; color: #10283b; letter-spacing: -.015em; }
+.dashboard-rule { border-top: 1px solid #e0dad2; }
+.dashboard-section-title { font-family: var(--site-heading-font, var(--font-manrope), sans-serif); font-size: 1.45rem; font-weight: 600; color: #1c1b1a; letter-spacing: -.015em; }
 
 /* Older portal screens fold into the same monochrome system. */
-.dashboard-shell .bg-gray-50 { background-color: #f5f6f8; }
-.dashboard-shell .bg-gray-100 { background-color: #e3e7eb; }
-.dashboard-shell .border-gray-100 { border-color: #e3e7eb; }
-.dashboard-shell .border-gray-200 { border-color: #e3e7eb; }
-.dashboard-shell .text-gray-300 { color: #6b7580; }
-.dashboard-shell .text-gray-400 { color: #6b7580; }
-.dashboard-shell .text-gray-500 { color: #5a6a76; }
-.dashboard-shell .text-gray-600 { color: #5a6a76; }
-.dashboard-shell .text-gray-700 { color: #3d4b57; }
+.dashboard-shell .bg-gray-50 { background-color: #f3f0eb; }
+.dashboard-shell .bg-gray-100 { background-color: #e0dad2; }
+.dashboard-shell .border-gray-100 { border-color: #e0dad2; }
+.dashboard-shell .border-gray-200 { border-color: #e0dad2; }
+.dashboard-shell .text-gray-300 { color: #6e6a66; }
+.dashboard-shell .text-gray-400 { color: #6e6a66; }
+.dashboard-shell .text-gray-500 { color: #57534e; }
+.dashboard-shell .text-gray-600 { color: #57534e; }
+.dashboard-shell .text-gray-700 { color: #3a3835; }
 .dashboard-shell .shadow-xl,
 .dashboard-shell .shadow-2xl { box-shadow: 0 18px 54px rgba(0,0,0,.10); }
 .dashboard-shell .ring-1 { --tw-ring-color: rgba(0,0,0,.10); }
-.dashboard-shell .hover\:bg-gray-100:hover { background-color: #e3e7eb; }
-.dashboard-shell .hover\:bg-gray-50:hover { background-color: #f5f6f8; }
+.dashboard-shell .hover\:bg-gray-100:hover { background-color: #e0dad2; }
+.dashboard-shell .hover\:bg-gray-50:hover { background-color: #f3f0eb; }
 .dashboard-shell > main h1.text-2xl,
 .dashboard-shell > main h1.text-3xl {
   font-size: clamp(1.9rem, 2.6vw, 2.6rem) !important;
@@ -220,7 +220,7 @@ select:focus-visible, textarea:focus-visible, [role="button"]:focus-visible {
 
 @media (min-width: 1024px) {
   .dashboard-metrics { grid-template-columns: repeat(4,minmax(0,1fr)); }
-  .dashboard-metric:nth-child(2n) { border-right: 1px solid #e3e7eb; }
+  .dashboard-metric:nth-child(2n) { border-right: 1px solid #e0dad2; }
   .dashboard-metric:last-child { border-right: 0; }
 }
 
@@ -241,24 +241,24 @@ select:focus-visible, textarea:focus-visible, [role="button"]:focus-visible {
 .swipe-left { transform: translateX(-120%) rotate(-8deg); opacity:0; }
 .swipe-right { transform: translateX(120%) rotate(8deg); opacity:0; }
 
-::-webkit-scrollbar { width:4px; } ::-webkit-scrollbar-track { background:transparent; } ::-webkit-scrollbar-thumb { background:#6b7580; border-radius:2px; }
+::-webkit-scrollbar { width:4px; } ::-webkit-scrollbar-track { background:transparent; } ::-webkit-scrollbar-thumb { background:#6e6a66; border-radius:2px; }
 html { scroll-behavior:smooth; }
 
 /* Website & Brand editor variables. Defaults are the WHC monochrome system;
    admin-published values on the root wrapper override them everywhere. */
 .website-theme {
   font-family: var(--site-body-font, var(--font-poppins), "Segoe UI", sans-serif);
-  color: var(--site-ink, #10283b);
-  background: var(--site-background, #ffffff);
+  color: var(--site-ink, #1c1b1a);
+  background: var(--site-background, #f7f5f2);
 }
 .website-theme .site-heading {
   font-family: var(--site-heading-font, var(--font-manrope), sans-serif);
-  color: var(--site-ink, #10283b);
+  color: var(--site-ink, #1c1b1a);
   letter-spacing: -0.02em;
 }
-.website-theme .site-accent { color: var(--site-accent, #0b2f4d); }
-.website-theme .site-accent-bg { background-color: var(--site-accent, #0b2f4d); }
-.website-theme .site-surface { background-color: var(--site-surface, #f5f6f8); }
+.website-theme .site-accent { color: var(--site-accent, #1c1b1a); }
+.website-theme .site-accent-bg { background-color: var(--site-accent, #1c1b1a); }
+.website-theme .site-surface { background-color: var(--site-surface, #f3f0eb); }
 .website-theme .site-section {
   padding-top: calc(5rem * var(--site-space, 1));
   padding-bottom: calc(5rem * var(--site-space, 1));

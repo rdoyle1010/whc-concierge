@@ -105,23 +105,23 @@ export default function AdminCertificatesPage() {
         {row.status === 'submitted' ? (
           <div>
             {!assist[row.id] && (
-              <button type="button" disabled={assistBusy === row.id} onClick={() => runAssist(row.id)} className="mb-2 inline-flex items-center gap-1.5 rounded-lg border border-[#e3e7eb] bg-[#f5f6f8] px-3 py-1.5 text-[12px] font-semibold text-[#10283b] hover:bg-[#f5f6f8]">
+              <button type="button" disabled={assistBusy === row.id} onClick={() => runAssist(row.id)} className="mb-2 inline-flex items-center gap-1.5 rounded-lg border border-[#e0dad2] bg-[#f3f0eb] px-3 py-1.5 text-[12px] font-semibold text-[#1c1b1a] hover:bg-[#f3f0eb]">
                 <Sparkles size={13} /> {assistBusy === row.id ? 'Reviewing...' : 'AI review'}
               </button>
             )}
             {assist[row.id] && (
-              <div className="mb-3 rounded-lg border border-[#e3e7eb] bg-[#f5f6f8] p-3">
-                <p className="text-[10.5px] font-semibold uppercase tracking-[0.12em] text-[#10283b] mb-1.5 inline-flex items-center gap-1"><Sparkles size={11} /> AI assessment{assist[row.id].recognition ? ` · ${String(assist[row.id].recognition).replace('_', ' ')}` : ''}</p>
+              <div className="mb-3 rounded-lg border border-[#e0dad2] bg-[#f3f0eb] p-3">
+                <p className="text-[10.5px] font-semibold uppercase tracking-[0.12em] text-[#1c1b1a] mb-1.5 inline-flex items-center gap-1"><Sparkles size={11} /> AI assessment{assist[row.id].recognition ? ` · ${String(assist[row.id].recognition).replace('_', ' ')}` : ''}</p>
                 <p className="text-[12.5px] text-gray-700 leading-relaxed mb-2">{assist[row.id].assessment}</p>
                 {assist[row.id].equivalence_note && <p className="text-[12px] text-gray-600 mb-2"><strong className="text-ink">Equivalence:</strong> {assist[row.id].equivalence_note}</p>}
                 {Array.isArray(assist[row.id].checks) && assist[row.id].checks.length > 0 && (
                   <ul className="mb-2 space-y-0.5">{assist[row.id].checks.map((check: string, i: number) => <li key={i} className="text-[12px] text-gray-600">☐ {check}</li>)}</ul>
                 )}
                 {assist[row.id].drafts && (
-                  <div className="flex flex-wrap gap-1.5 pt-1 border-t border-[#e3e7eb]">
+                  <div className="flex flex-wrap gap-1.5 pt-1 border-t border-[#e0dad2]">
                     <span className="text-[11px] text-secondary py-1">Use drafted message:</span>
                     {(['verified', 'more_info', 'rejected'] as const).map(kind => assist[row.id].drafts[kind] && (
-                      <button key={kind} type="button" onClick={() => setNotes(current => ({ ...current, [row.id]: assist[row.id].drafts[kind] }))} className="rounded-full border border-[#e3e7eb] bg-white px-2.5 py-1 text-[11px] font-semibold text-[#10283b] hover:bg-[#f5f6f8]">
+                      <button key={kind} type="button" onClick={() => setNotes(current => ({ ...current, [row.id]: assist[row.id].drafts[kind] }))} className="rounded-full border border-[#e0dad2] bg-white px-2.5 py-1 text-[11px] font-semibold text-[#1c1b1a] hover:bg-[#f3f0eb]">
                         {kind === 'verified' ? 'Verify + congratulate' : kind === 'more_info' ? 'Ask for more info' : 'Decline kindly'}
                       </button>
                     ))}
@@ -139,7 +139,7 @@ export default function AdminCertificatesPage() {
             </div>
           </div>
         ) : row.review_note ? (
-          <p className="text-[12px] text-secondary bg-[#f5f6f8] rounded px-3 py-2"><ShieldQuestion size={12} className="inline mr-1 -mt-0.5" /> {row.review_note}</p>
+          <p className="text-[12px] text-secondary bg-[#f3f0eb] rounded px-3 py-2"><ShieldQuestion size={12} className="inline mr-1 -mt-0.5" /> {row.review_note}</p>
         ) : null}
       </div>
     )

@@ -71,7 +71,7 @@ export default function PublicRolesBrowser({ jobs }: { jobs: any[] }) {
 
                   {job.description && <p className="text-[13px] leading-6 text-secondary line-clamp-3">{job.description}</p>}
 
-                  {(job.required_brands || []).length > 0 && <div className="flex flex-wrap gap-1.5 mt-4">{(job.required_brands || []).slice(0, 4).map((brand: string) => <span key={brand} className="text-[10px] font-medium bg-[#f5f6f8] text-accent border border-accent/20 px-2 py-1 rounded-full">{brand}</span>)}</div>}
+                  {(job.required_brands || []).length > 0 && <div className="flex flex-wrap gap-1.5 mt-4">{(job.required_brands || []).slice(0, 4).map((brand: string) => <span key={brand} className="text-[10px] font-medium bg-[#f3f0eb] text-accent border border-accent/20 px-2 py-1 rounded-full">{brand}</span>)}</div>}
 
                   <div className="mt-6 pt-5 border-t border-border flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
                     <div>

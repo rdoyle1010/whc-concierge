@@ -53,20 +53,20 @@ export default function PlatformExperienceReview({ applicationId }: { applicatio
 
   if (reviewed) {
     return (
-      <div className="rounded-2xl border border-[#e3e7eb] bg-[#f5f6f8] p-5">
-        <p className="text-[10px] font-semibold uppercase tracking-[.15em] text-[#10283b]">Spa Platform experience</p>
+      <div className="rounded-2xl border border-[#e0dad2] bg-[#f3f0eb] p-5">
+        <p className="text-[10px] font-semibold uppercase tracking-[.15em] text-[#1c1b1a]">Spa Platform experience</p>
         <div className="mt-3 flex items-center gap-1">
           {[1,2,3,4,5].map(i => <Star key={i} size={16} className={i <= rating ? 'fill-amber-400 text-amber-400' : 'text-gray-200'} />)}
         </div>
         <p className="mt-2 text-[13px] font-medium text-ink">Thank you for reviewing your Spa Platform experience.</p>
-        {googleReviewUrl && <a href={googleReviewUrl} target="_blank" rel="noopener noreferrer" className="mt-3 inline-flex items-center gap-1.5 text-[12px] font-medium text-[#10283b] hover:underline">Share your experience on Google <ExternalLink size={12}/></a>}
+        {googleReviewUrl && <a href={googleReviewUrl} target="_blank" rel="noopener noreferrer" className="mt-3 inline-flex items-center gap-1.5 text-[12px] font-medium text-[#1c1b1a] hover:underline">Share your experience on Google <ExternalLink size={12}/></a>}
       </div>
     )
   }
 
   return (
-    <div className="rounded-2xl border border-[#e3e7eb] bg-[#f5f6f8] p-5">
-      <p className="text-[10px] font-semibold uppercase tracking-[.15em] text-[#10283b]">Spa Platform experience</p>
+    <div className="rounded-2xl border border-[#e0dad2] bg-[#f3f0eb] p-5">
+      <p className="text-[10px] font-semibold uppercase tracking-[.15em] text-[#1c1b1a]">Spa Platform experience</p>
       <h3 className="mt-1 text-[17px] font-semibold text-ink">How was the recruitment journey?</h3>
       <p className="mt-1 text-[12px] leading-5 text-muted">Your feedback helps Wellness House Collective improve the platform for verified professionals and properties.</p>
       <div className="mt-4 flex items-center gap-1">

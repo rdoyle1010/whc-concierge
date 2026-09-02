@@ -24,11 +24,11 @@ async function featuredCardsHtml(admin: any, featuredIds: any[]): Promise<string
   ])
   const site = 'https://talent.wellnesshousecollective.co.uk'
   const esc = (t: any) => String(t || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-  const card = (img: string | null, title: string, sub: string, href: string) => `<a href="${href}" style="display:flex;align-items:center;gap:14px;padding:14px;border:1px solid #e5e5e5;border-radius:12px;text-decoration:none;margin-bottom:10px;background:#fff">${img ? `<img src="${img}" width="52" height="52" style="border-radius:50%;object-fit:cover" alt="" />` : `<div style="width:52px;height:52px;border-radius:50%;background:#0b2f4d;color:#fff;text-align:center;line-height:52px;font-weight:600">${esc(title)[0] || 'W'}</div>`}<span><span style="display:block;font-weight:600;color:#10283b">${esc(title)}</span><span style="display:block;font-size:12px;color:#5a6a76;margin-top:2px">${esc(sub)}</span></span></a>`
+  const card = (img: string | null, title: string, sub: string, href: string) => `<a href="${href}" style="display:flex;align-items:center;gap:14px;padding:14px;border:1px solid #e5e5e5;border-radius:12px;text-decoration:none;margin-bottom:10px;background:#fff">${img ? `<img src="${img}" width="52" height="52" style="border-radius:50%;object-fit:cover" alt="" />` : `<div style="width:52px;height:52px;border-radius:50%;background:#1c1b1a;color:#fff;text-align:center;line-height:52px;font-weight:600">${esc(title)[0] || 'W'}</div>`}<span><span style="display:block;font-weight:600;color:#1c1b1a">${esc(title)}</span><span style="display:block;font-size:12px;color:#57534e;margin-top:2px">${esc(sub)}</span></span></a>`
   let html = ''
   for (const c of cands || []) html += card(c.profile_image_url, c.full_name || 'Professional', `${c.headline || c.role_level || 'Wellness professional'}${c.hourly_rate ? ` · £${c.hourly_rate}/hr agency` : ''}`, `${site}/agency/${c.id}`)
   for (const e of emps || []) html += card(e.logo_url, e.property_name || e.company_name || 'Property', e.tagline || 'Preferred Employer', `${site}/properties/${e.id}`)
-  return html ? `<div style="margin:28px 0"><p style="font-size:11px;letter-spacing:1px;text-transform:uppercase;color:#5a6a76;font-weight:600;margin-bottom:12px">Featured this week</p>${html}</div>` : ''
+  return html ? `<div style="margin:28px 0"><p style="font-size:11px;letter-spacing:1px;text-transform:uppercase;color:#57534e;font-weight:600;margin-bottom:12px">Featured this week</p>${html}</div>` : ''
 }
 
 export async function GET() {

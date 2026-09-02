@@ -88,20 +88,20 @@ export default function EmployerBillingPage() {
         <div className="dashboard-card"><div className="text-muted mb-2"><Briefcase size={16} /></div><p className="text-[24px] font-semibold text-ink">{listings.length}</p><p className="text-[11px] text-muted">Total job posts</p></div>
         <div className="dashboard-card"><div className="text-muted mb-2"><CreditCard size={16} /></div><p className="text-[24px] font-semibold text-ink">{listings.filter(l => l.is_live).length}</p><p className="text-[11px] text-muted">Active listings</p></div>
         <div className="dashboard-card"><p className="text-[14px] font-medium text-ink mb-1">Membership tier</p><p className="text-[13px] font-medium text-ink capitalize">{profile?.membership_tier || 'Free'}</p></div>
-        <div className={`dashboard-card ${featuredActive ? 'border-[#5a6a76]' : ''}`}><div className="text-[#10283b] mb-2"><Star size={16} fill={featuredActive ? 'currentColor' : 'none'} /></div><p className="text-[14px] font-semibold text-ink">{featuredActive ? 'Featured active' : 'Standard profile'}</p><p className="text-[11px] text-muted mt-1">{featuredActive && profile?.featured_until ? `Until ${new Date(profile.featured_until).toLocaleDateString('en-GB')}` : featuredPrice || 'Featured upgrade available'}</p></div>
+        <div className={`dashboard-card ${featuredActive ? 'border-[#57534e]' : ''}`}><div className="text-[#1c1b1a] mb-2"><Star size={16} fill={featuredActive ? 'currentColor' : 'none'} /></div><p className="text-[14px] font-semibold text-ink">{featuredActive ? 'Featured active' : 'Standard profile'}</p><p className="text-[11px] text-muted mt-1">{featuredActive && profile?.featured_until ? `Until ${new Date(profile.featured_until).toLocaleDateString('en-GB')}` : featuredPrice || 'Featured upgrade available'}</p></div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
         <div className="dashboard-card lg:col-span-2">
           <p className="text-[14px] font-medium text-ink mb-6">Payment Methods</p>
           <div className="dashboard-card flex items-center justify-between !p-4">
-            <div className="flex items-center gap-3"><div className="w-10 h-10 rounded-lg bg-[#10283b]/10 flex items-center justify-center text-[#10283b]"><CreditCard size={18} /></div><div><p className="text-[13px] font-medium text-ink">Stripe Payment Methods</p><p className="text-[12px] text-muted mt-0.5">Manage stored cards and active subscriptions</p></div></div>
+            <div className="flex items-center gap-3"><div className="w-10 h-10 rounded-lg bg-[#1c1b1a]/10 flex items-center justify-center text-[#1c1b1a]"><CreditCard size={18} /></div><div><p className="text-[13px] font-medium text-ink">Stripe Payment Methods</p><p className="text-[12px] text-muted mt-0.5">Manage stored cards and active subscriptions</p></div></div>
             {(profile?.stripe_customer_id || profile?.membership_stripe_customer_id) ? <button type="button" onClick={handleManagePayment} disabled={redirecting} className="btn-secondary text-[12px] flex items-center gap-1">{redirecting ? 'Redirecting...' : 'Manage'}<ExternalLink size={12} /></button> : <p className="text-[12px] text-muted text-right max-w-[200px]">Billing portal becomes available after your first payment.</p>}
           </div>
         </div>
 
-        <div className="dashboard-card border-[#5a6a76]/50">
-          <div className="flex items-center gap-2 text-[#10283b]"><Star size={16} /><p className="text-[14px] font-semibold">Featured Hotel</p></div>
+        <div className="dashboard-card border-[#57534e]/50">
+          <div className="flex items-center gap-2 text-[#1c1b1a]"><Star size={16} /><p className="text-[14px] font-semibold">Featured Hotel</p></div>
           <p className="mt-3 text-[13px] text-ink">{featuredActive ? 'Your property currently receives premium visibility.' : 'Put your property in front of approved WHC Talent.'}</p>
           <p className="mt-2 text-[12px] leading-5 text-muted">{featuredPrice ? `Current new-subscription price: ${featuredPrice}.` : ''} Pricing shown is current and confirmed at checkout.</p>
           <Link href="/employer/featured" className="btn-primary mt-5 inline-flex text-[12px]">{featuredActive ? 'View Featured status' : 'Get Featured'}</Link>

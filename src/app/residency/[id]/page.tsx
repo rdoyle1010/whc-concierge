@@ -47,11 +47,11 @@ export default async function ResidencyDetailPage(props: { params: Promise<{ id:
   const dayRate = Number(r.day_rate || (r.weekly_rate ? Math.round(Number(r.weekly_rate) / 5) : 0))
 
   return (
-    <div className="min-h-screen bg-[#f5f6f8]">
+    <div className="min-h-screen bg-[#f3f0eb]">
       <Navbar />
       <div className="pt-[76px] bg-white border-b border-border"><div className="max-w-6xl mx-auto px-6 lg:px-8 py-3"><Link href="/residency" className="text-[12px] text-muted hover:text-ink flex items-center gap-1"><ArrowLeft size={12}/>Back to Residency</Link></div></div>
 
-      <section className="bg-[#f5f6f8] border-b border-border">
+      <section className="bg-[#f3f0eb] border-b border-border">
         <div className="max-w-6xl mx-auto px-6 lg:px-8 py-10 md:py-14">
           <div className="grid md:grid-cols-[128px_1fr_auto] gap-7 items-start">
             <div className="w-28 h-32 bg-white/70 border border-white flex items-center justify-center"><UserRound size={38} className="text-accent/70"/></div>

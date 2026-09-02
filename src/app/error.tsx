@@ -12,7 +12,7 @@ export default function Error({ error, reset }: { error: Error & { digest?: stri
     <div className="min-h-screen bg-white flex items-center justify-center px-6">
       <div className="text-center max-w-md">
         <div className="w-12 h-12 rounded-full border border-border flex items-center justify-center mx-auto mb-8">
-          <span className="text-[20px]" style={{ color: '#5a6a76' }}>!</span>
+          <span className="text-[20px]" style={{ color: '#57534e' }}>!</span>
         </div>
         <h1 className="text-[28px] font-medium text-ink mb-3">Something went wrong</h1>
         <p className="text-[14px] text-secondary leading-relaxed mb-10">An unexpected error occurred. Please try again or return to the home page.</p>

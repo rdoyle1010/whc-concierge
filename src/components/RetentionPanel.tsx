@@ -60,7 +60,7 @@ export default function RetentionPanel() {
   return (
     <div className="dashboard-card">
       <div className="mb-5 flex items-start gap-3">
-        <div className="flex h-10 w-10 items-center justify-center bg-[#f5f6f8] text-[#0b2f4d]"><Trash2 size={18} /></div>
+        <div className="flex h-10 w-10 items-center justify-center bg-[#f3f0eb] text-[#1c1b1a]"><Trash2 size={18} /></div>
         <div>
           <p className="text-[15px] font-semibold text-ink">Data retention</p>
           <p className="mt-1 max-w-2xl text-[12px] leading-5 text-muted">
@@ -69,7 +69,7 @@ export default function RetentionPanel() {
         </div>
       </div>
 
-      {message && <div className="mb-4 border border-border bg-[#f5f6f8] px-4 py-3 text-[12px] text-secondary">{message}</div>}
+      {message && <div className="mb-4 border border-border bg-[#f3f0eb] px-4 py-3 text-[12px] text-secondary">{message}</div>}
 
       {loading ? (
         <p className="text-[13px] text-muted">Loading the preview...</p>
@@ -96,7 +96,7 @@ export default function RetentionPanel() {
           </p>
 
           <div className="mt-4 border-t border-border pt-4">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#6b7580]">Never swept</p>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#6e6a66]">Never swept</p>
             <ul className="mt-2 space-y-1">
               {data.excluded.map(item => (
                 <li key={item.table} className="text-[11px] leading-4 text-muted"><span className="font-medium text-secondary">{item.table}</span> - {item.reason}</li>

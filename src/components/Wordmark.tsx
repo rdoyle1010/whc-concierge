@@ -12,10 +12,10 @@ export default function Wordmark({
 }: { dark?: boolean; href?: string | null; compact?: boolean }) {
   const mark = (
     <span
-      className={`relative block shrink-0 overflow-hidden bg-[#0b2f4d] ${compact ? 'h-[42px] w-[168px]' : 'h-[48px] w-[192px]'} ${dark ? '' : 'ring-1 ring-black/5'}`}
+      className={`relative block shrink-0 overflow-hidden bg-[#1c1b1a] ${compact ? 'h-[42px] w-[168px]' : 'h-[48px] w-[192px]'} ${dark ? '' : 'ring-1 ring-black/5'}`}
     >
       <Image
-        src="/images/whc-logo.jpg"
+        src="/images/whc-logo-charcoal.jpg"
         alt="Wellness House Collective"
         fill
         priority

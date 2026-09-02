@@ -57,8 +57,8 @@ export const metadata: Metadata = {
     images: ['/opengraph-image'],
   },
   icons: {
-    icon: '/images/whc-logo.jpg',
-    apple: '/images/whc-logo.jpg',
+    icon: '/images/whc-logo-charcoal.jpg',
+    apple: '/images/whc-logo-charcoal.jpg',
   },
 }
 
@@ -71,7 +71,7 @@ const organizationJsonLd = {
   '@type': 'Organization',
   name: 'WHC Concierge',
   url: 'https://talent.wellnesshousecollective.co.uk',
-  logo: 'https://talent.wellnesshousecollective.co.uk/images/whc-logo.jpg',
+  logo: 'https://talent.wellnesshousecollective.co.uk/images/whc-logo-charcoal.jpg',
   description: 'The professional platform for spa and wellness careers',
   sameAs: [],
 }
@@ -89,7 +89,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   return (
     <html lang="en-GB" className={`${manrope.variable} ${editorial.variable} ${poppins.variable}`}>
       <body>
-        <a href="#main-content" className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:bg-white focus:px-5 focus:py-3 focus:text-[13px] focus:font-semibold focus:text-[#0b2f4d] focus:shadow-xl focus:border focus:border-[#0b2f4d]">Skip to main content</a>
+        <a href="#main-content" className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:bg-white focus:px-5 focus:py-3 focus:text-[13px] focus:font-semibold focus:text-[#1c1b1a] focus:shadow-xl focus:border focus:border-[#1c1b1a]">Skip to main content</a>
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }} />
         <div className="website-theme min-h-screen" style={brandStyle}>
           {children}

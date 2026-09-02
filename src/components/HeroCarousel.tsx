@@ -63,8 +63,8 @@ export default function HeroCarousel({ siteContent }: { siteContent?: WebsiteCon
           className="object-cover"
           style={{ objectPosition: slide.image.focalX + '% ' + slide.image.focalY + '%' }}
         />
-        {/* Navy legibility gradient - the destination-page idiom. */}
-        <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, rgba(11,47,77,.92) 0%, rgba(11,47,77,.48) 50%, rgba(11,47,77,.16) 100%)' }} />
+        {/* Charcoal legibility gradient - the destination-page idiom. */}
+        <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, rgba(28,27,26,.92) 0%, rgba(28,27,26,.48) 50%, rgba(28,27,26,.16) 100%)' }} />
       </div>
 
       <div className="absolute inset-0 z-10 flex items-end">

@@ -80,15 +80,15 @@ export default function AdminRevenuePage() {
         </div>
       </section>
 
-      <div className="rounded-xl border border-[#e3e7eb] bg-[#f5f6f8] px-4 py-3 text-[11px] leading-5 text-[#10283b]">{data.note}</div>
+      <div className="rounded-xl border border-[#e0dad2] bg-[#f3f0eb] px-4 py-3 text-[11px] leading-5 text-[#1c1b1a]">{data.note}</div>
     </>}
   </DashboardShell>
 }
 
 function Metric({ icon, label, value, note, emphasis = false }: { icon: React.ReactNode; label: string; value: string; note: string; emphasis?: boolean }) {
-  return <div className={`dashboard-card ${emphasis ? 'ring-1 ring-accent/20' : ''}`}><div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#f5f6f8] text-accent mb-4">{icon}</div><p className="text-[10px] uppercase tracking-[0.12em] text-muted">{label}</p><p className="text-[27px] font-semibold tracking-tight text-ink mt-1">{value}</p><p className="text-[11px] leading-5 text-muted mt-2">{note}</p></div>
+  return <div className={`dashboard-card ${emphasis ? 'ring-1 ring-accent/20' : ''}`}><div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#f3f0eb] text-accent mb-4">{icon}</div><p className="text-[10px] uppercase tracking-[0.12em] text-muted">{label}</p><p className="text-[27px] font-semibold tracking-tight text-ink mt-1">{value}</p><p className="text-[11px] leading-5 text-muted mt-2">{note}</p></div>
 }
 
 function SmallMetric({ label, value, note }: { label: string; value: string; note: string }) {
-  return <div className="rounded-xl border border-border bg-[#f5f6f8] p-4"><p className="text-[10px] uppercase tracking-[0.1em] text-muted">{label}</p><p className="text-[20px] font-semibold text-ink mt-1">{value}</p><p className="text-[11px] text-muted mt-1">{note}</p></div>
+  return <div className="rounded-xl border border-border bg-[#f3f0eb] p-4"><p className="text-[10px] uppercase tracking-[0.1em] text-muted">{label}</p><p className="text-[20px] font-semibold text-ink mt-1">{value}</p><p className="text-[11px] text-muted mt-1">{note}</p></div>
 }

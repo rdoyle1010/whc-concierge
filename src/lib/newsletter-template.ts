@@ -50,12 +50,12 @@ export function renderNewsletterHtml(
   return `<!doctype html>
 <html>
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
-<body style="margin:0;background:#f3f6f8;font-family:Inter,-apple-system,BlinkMacSystemFont,Segoe UI,Arial,sans-serif;color:#10283b">
+<body style="margin:0;background:#f3f6f8;font-family:Inter,-apple-system,BlinkMacSystemFont,Segoe UI,Arial,sans-serif;color:#1c1b1a">
   <div style="display:none;max-height:0;overflow:hidden;opacity:0">${preheader}</div>
   <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f3f6f8;padding:28px 12px">
     <tr><td align="center">
       <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:${maxWidth}px;background:#ffffff;border:1px solid #e5e5e5;border-radius:20px;overflow:hidden">
-        <tr><td style="background:#0b2f4d;padding:26px 30px;color:#fff">
+        <tr><td style="background:#1c1b1a;padding:26px 30px;color:#fff">
           <div style="font-size:11px;letter-spacing:1.7px;text-transform:uppercase;color:#b9c8d3">Wellness House Collective</div>
           <div style="font-size:25px;line-height:1.15;font-weight:650;margin-top:10px">${title}</div>
         </td></tr>
@@ -64,7 +64,7 @@ export function renderNewsletterHtml(
           ${body}
           ${bodyImage ? `<div style="margin:28px 0"><img src="${escapeHtml(bodyImage)}" alt="" width="100%" style="display:block;width:100%;height:auto;border-radius:14px"></div>` : ''}
           ${featuredHtml}
-          ${ctaUrl && ctaLabel ? `<div style="margin:30px 0 8px"><a href="${escapeHtml(ctaUrl)}" style="display:inline-block;background:#0b2f4d;color:#fff;text-decoration:none;padding:13px 20px;border-radius:8px;font-size:13px;font-weight:650">${ctaLabel}</a></div>` : ''}
+          ${ctaUrl && ctaLabel ? `<div style="margin:30px 0 8px"><a href="${escapeHtml(ctaUrl)}" style="display:inline-block;background:#1c1b1a;color:#fff;text-decoration:none;padding:13px 20px;border-radius:8px;font-size:13px;font-weight:650">${ctaLabel}</a></div>` : ''}
         </td></tr>
         <tr><td style="background:#f7f7f7;border-top:1px solid #e5e5e5;padding:24px 30px;font-size:11px;line-height:1.65;color:#73818a">
           <div style="font-weight:600;color:#4d4d4d;margin-bottom:7px">Wellness House Collective</div>

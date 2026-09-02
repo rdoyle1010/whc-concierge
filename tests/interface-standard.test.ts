@@ -51,14 +51,14 @@ test('the secondary text colour is legible against white', () => {
   assert.ok(contrast(match[1], '#ffffff') >= 4.5, `secondary ${match[1]} is too pale against white`)
 })
 
-// #5a6a76 on the brand navy is 2.46:1. It was carrying primary calls to
+// #57534e on the brand charcoal is 1.9:1. It was carrying primary calls to
 // action and section eyebrows on four public pages.
-test('the secondary grey is never used as a fill or a label on navy', () => {
+test('the secondary grey is never used as a fill or a label on charcoal', () => {
   const offenders = sources.filter(file =>
-    /bg-\[#5a6a76\][^"'`]*text-\[#0b2f4d\]/.test(file.text)
-    || /text-\[#5a6a76\][^"'`]*(?=.*bg-\[#0b2f4d\])/.test(''),
+    /bg-\[#57534e\][^"'`]*text-\[#1c1b1a\]/.test(file.text)
+    || /text-\[#57534e\][^"'`]*(?=.*bg-\[#1c1b1a\])/.test(''),
   )
-  assert.equal(offenders.length, 0, `unreadable grey-on-navy in: ${offenders.map(f => f.path).join(', ')}`)
+  assert.equal(offenders.length, 0, `unreadable grey-on-charcoal in: ${offenders.map(f => f.path).join(', ')}`)
 })
 
 // Tailwind silently drops a spacing value it does not recognise, so the
