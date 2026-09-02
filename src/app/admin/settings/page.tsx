@@ -77,6 +77,12 @@ export default function AdminSettingsPage() {
     // form. Anything else, including blank, hides them - a marketplace with
     // two roles in it argues against itself.
     { key: 'login_live_numbers', label: 'Show live numbers on the sign-in page (type on to show, leave blank to hide)', placeholder: 'off' },
+    // Type closed to shut sign-in and registration behind a waiting list.
+    // Every public page stays visible, and admin sign-in is never affected.
+    { key: 'platform_access', label: 'Sign-in and registration (type closed to hold new accounts behind a waiting list, leave blank to keep open)', placeholder: 'open' },
+    // A word of your choosing. Visiting /api/preview?code=THAT&next=/login
+    // lets one browser straight through, for a live walkthrough.
+    { key: 'platform_preview_code', label: 'Preview code (lets you demo the real sign-in while the doors are closed)', placeholder: 'a word only you know' },
   ]
   const socialFields: { key:keyof SocialLinks; label:string; placeholder:string }[] = [
     { key:'instagram_url', label:'Instagram public profile', placeholder:'https://www.instagram.com/...' },
