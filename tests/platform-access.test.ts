@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { readFileSync } from 'node:fs'
+import { readFileSync, existsSync } from 'node:fs'
 
 const read = (path: string) => readFileSync(new URL(`../${path}`, import.meta.url), 'utf8')
 
@@ -17,8 +17,33 @@ test('sign-in and registration are gated in a layout, not in the page', () => {
 })
 
 test('admin sign-in is never gated', () => {
-  // Closing the doors must not lock the owner out of her own platform.
+  // Closing the doors must not lock the owner out of her own platform. The
+  // page is only one link in that chain: a layout beside it, the auth route
+  // behind it, the admin area it lands in, or the middleware in front of all
+  // three would each shut the door just as firmly.
   assert.doesNotMatch(read('src/app/admin-sign-in/page.tsx'), /doorsClosedFor/)
+  for (const link of [
+    'src/app/api/auth/login/route.ts',
+    'src/app/admin/layout.tsx',
+    'src/proxy.ts',
+  ]) {
+    assert.doesNotMatch(read(link), /doorsClosedFor/, `${link} would lock the owner out`)
+  }
+  assert.equal(
+    existsSync(new URL('../src/app/admin-sign-in/layout.tsx', import.meta.url)),
+    false,
+    'a layout here would gate admin sign-in the same way it gates /login',
+  )
+})
+
+// A property or professional already signed in keeps working while the doors
+// are shut. Only new sign-ins and registrations are held back, so closing up
+// for a launch does not throw out the accounts that already exist.
+test('closing the doors holds the front door, not the people already inside', () => {
+  for (const area of ['src/app/talent/layout.tsx', 'src/app/employer/layout.tsx']) {
+    if (!existsSync(new URL(`../${area}`, import.meta.url))) continue
+    assert.doesNotMatch(read(area), /doorsClosedFor/, `${area} must not evict existing accounts`)
+  }
 })
 
 test('the closed panel captures the email rather than sending people away', () => {
