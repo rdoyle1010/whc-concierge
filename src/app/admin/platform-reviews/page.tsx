@@ -46,7 +46,7 @@ export default function AdminPlatformReviewsPage() {
       <div>
         <p className="dashboard-eyebrow">Reputation & testimonials</p>
         <h1 className="dashboard-title">Platform Reviews</h1>
-        <p className="dashboard-intro">Every completed-hire review of Spa Platform and Wellness House Collective, from Talent and property partners, in one place.</p>
+        <p className="dashboard-intro">Every completed-hire review of Spa Platform and Talent House Collective, from Talent and property partners, in one place.</p>
       </div>
       <button type="button" onClick={load} disabled={loading} className="btn-secondary inline-flex items-center gap-2 self-start"><RefreshCw size={14} className={loading ? 'animate-spin' : ''}/> Refresh</button>
     </div>

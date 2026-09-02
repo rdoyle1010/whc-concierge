@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import Image from 'next/image'
+import Wordmark from '@/components/Wordmark'
 import { createClient } from '@/lib/supabase/client'
 import { Eye, EyeOff } from 'lucide-react'
 
@@ -35,7 +35,7 @@ export default function ResetPasswordPage() {
     <main id="main-content" className="min-h-screen bg-surface flex">
       <div className="flex-1 flex items-center justify-center px-6 py-12">
         <div className="w-full max-w-[430px] public-panel p-7 md:p-9">
-          <Link href="/"><Image src="/images/whc-logo-charcoal.jpg" alt="Wellness House Collective" width={150} height={50} className="object-contain mix-blend-multiply" /></Link>
+          <Wordmark />
           {done ? <>
             <p className="public-eyebrow mt-9 mb-3">Account recovery</p><h1 className="text-[30px] font-semibold text-ink mb-2">Password updated</h1><p className="text-[14px] text-secondary mb-7">Your password has been changed. Taking you back to sign in...</p><Link href="/login" className="btn-primary w-full inline-block text-center">Go to sign in</Link>
           </> : <>
@@ -50,7 +50,7 @@ export default function ResetPasswordPage() {
           </>}
         </div>
       </div>
-      <div className="hidden lg:block w-[42%] relative bg-[#1c1b1a]"><div className="absolute bottom-12 left-12 right-12"><p className="text-white text-[20px] font-medium leading-snug">Where exceptional talent meets exceptional opportunity.</p><p className="text-white/70 text-[12px] mt-3">Wellness House Collective</p></div></div>
+      <div className="hidden lg:block w-[42%] relative bg-[#1c1b1a]"><div className="absolute bottom-12 left-12 right-12"><p className="text-white text-[20px] font-medium leading-snug">Where exceptional talent meets exceptional opportunity.</p><p className="text-white/70 text-[12px] mt-3">Talent House Collective</p></div></div>
     </main>
   )
 }

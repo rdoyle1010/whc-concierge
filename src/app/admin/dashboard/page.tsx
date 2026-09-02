@@ -88,7 +88,7 @@ export default function AdminDashboard() {
     <DashboardShell role="admin" userName="Admin">
       <div className="mb-7 flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
         <div>
-          <p className="dashboard-eyebrow">Wellness House Collective</p>
+          <p className="dashboard-eyebrow">Talent House Collective</p>
           <h1 className="dashboard-title">Administration</h1>
           <p className="dashboard-intro">A focused view of the people, content and commercial work that needs your attention.</p>
         </div>

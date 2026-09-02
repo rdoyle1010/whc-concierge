@@ -68,7 +68,7 @@ export default function PlatformExperienceReview({ applicationId }: { applicatio
     <div className="rounded-2xl border border-[#e0dad2] bg-[#f3f0eb] p-5">
       <p className="text-[10px] font-semibold uppercase tracking-[.15em] text-[#1c1b1a]">Spa Platform experience</p>
       <h3 className="mt-1 text-[17px] font-semibold text-ink">How was the recruitment journey?</h3>
-      <p className="mt-1 text-[12px] leading-5 text-muted">Your feedback helps Wellness House Collective improve the platform for verified professionals and properties.</p>
+      <p className="mt-1 text-[12px] leading-5 text-muted">Your feedback helps Talent House Collective improve the platform for verified professionals and properties.</p>
       <div className="mt-4 flex items-center gap-1">
         {[1,2,3,4,5].map(i => (
           <button key={i} type="button" onMouseEnter={()=>setHover(i)} onMouseLeave={()=>setHover(0)} onClick={()=>setRating(i)} aria-label={`${i} stars`} className="p-0.5">

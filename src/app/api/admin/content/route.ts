@@ -256,7 +256,7 @@ export async function POST(req: NextRequest) {
         body: JSON.stringify({
           from: FROM_EMAIL,
           to: q.email,
-          subject: `Re: your message to Wellness House Collective`,
+          subject: `Re: your message to Talent House Collective`,
           html: `
             <div style="font-family: Inter, -apple-system, sans-serif; max-width: 560px; margin: 0 auto; padding: 40px 20px;">
               <p style="font-size: 16px; font-weight: 600; margin-bottom: 24px;">Talent House Collective</p>

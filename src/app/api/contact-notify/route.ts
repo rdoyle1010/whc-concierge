@@ -48,7 +48,7 @@ export async function POST(req: NextRequest) {
           <p style="font-size: 12px; color: #6e6a66; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.05em;">Message</p>
           <p style="font-size: 14px; color: #374151; line-height: 1.7; white-space: pre-wrap;">${message}</p>
         </div>
-        <p style="font-size: 12px; color: #6e6a66;">Wellness House Collective &middot; wellnesshousecollective.co.uk</p>
+        <p style="font-size: 12px; color: #6e6a66;">Talent House Collective &middot; talenthousecollective.co.uk</p>
       </div>
     `
 

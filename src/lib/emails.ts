@@ -31,7 +31,7 @@ const wrapper = (content: string) => `
   <div style="font-family: Inter, -apple-system, sans-serif; max-width: 560px; margin: 0 auto; padding: 40px 20px;">
     <p style="font-size: 16px; font-weight: 600; margin-bottom: 32px;">Talent House Collective</p>
     ${content}
-    <p style="margin-top: 40px; font-size: 12px; color: #8c8781;">Wellness House Collective &middot; wellnesshousecollective.co.uk</p>
+    <p style="margin-top: 40px; font-size: 12px; color: #8c8781;">Talent House Collective &middot; talenthousecollective.co.uk</p>
   </div>
 `
 

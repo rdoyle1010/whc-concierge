@@ -33,7 +33,7 @@ export default function EmployerSocialPage() {
 
   const shareText = (job: any) => {
     const salary = job.salary_display_text || (job.salary_min && job.salary_max ? `£${Number(job.salary_min).toLocaleString()}–£${Number(job.salary_max).toLocaleString()}` : 'Competitive salary')
-    return `${profile?.company_name || 'We are'} hiring: ${job.title}\n${job.location || ''}${job.job_type ? ` · ${job.job_type}` : ''}\n${salary}\n\nApply through Wellness House Collective:`
+    return `${profile?.company_name || 'We are'} hiring: ${job.title}\n${job.location || ''}${job.job_type ? ` · ${job.job_type}` : ''}\n${salary}\n\nApply through Talent House Collective:`
   }
 
   const jobUrl = (job: any) => `${SITE}/jobs/${job.id}`
@@ -49,7 +49,7 @@ export default function EmployerSocialPage() {
   }
 
   async function nativeShare(job: any) {
-    const data = { title: `${job.title} at ${profile?.company_name || 'Wellness House Collective'}`, text: shareText(job), url: jobUrl(job) }
+    const data = { title: `${job.title} at ${profile?.company_name || 'Talent House Collective'}`, text: shareText(job), url: jobUrl(job) }
     if (navigator.share) {
       try { await navigator.share(data); return } catch {}
     }

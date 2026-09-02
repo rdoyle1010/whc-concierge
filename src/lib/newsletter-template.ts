@@ -35,7 +35,7 @@ export function renderNewsletterHtml(
   data: NewsletterTemplateData,
   opts: { unsubscribeUrl?: string; featuredHtml?: string; test?: boolean } = {},
 ) {
-  const title = escapeHtml(data.name || 'News from Wellness House Collective')
+  const title = escapeHtml(data.name || 'News from Talent House Collective')
   const preheader = escapeHtml(data.preheader || '')
   const headerImage = safeUrl(data.header_image_url)
   const bodyImage = safeUrl(data.body_image_url)
@@ -56,7 +56,7 @@ export function renderNewsletterHtml(
     <tr><td align="center">
       <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:${maxWidth}px;background:#ffffff;border:1px solid #e5e5e5;border-radius:20px;overflow:hidden">
         <tr><td style="background:#1c1b1a;padding:26px 30px;color:#fff">
-          <div style="font-size:11px;letter-spacing:1.7px;text-transform:uppercase;color:#b9c8d3">Wellness House Collective</div>
+          <div style="font-size:11px;letter-spacing:1.7px;text-transform:uppercase;color:#b9c8d3">Talent House Collective</div>
           <div style="font-size:25px;line-height:1.15;font-weight:650;margin-top:10px">${title}</div>
         </td></tr>
         ${headerImage ? `<tr><td><img src="${escapeHtml(headerImage)}" alt="" width="100%" style="display:block;width:100%;height:auto;max-height:340px;object-fit:cover"></td></tr>` : ''}
@@ -67,7 +67,7 @@ export function renderNewsletterHtml(
           ${ctaUrl && ctaLabel ? `<div style="margin:30px 0 8px"><a href="${escapeHtml(ctaUrl)}" style="display:inline-block;background:#1c1b1a;color:#fff;text-decoration:none;padding:13px 20px;border-radius:8px;font-size:13px;font-weight:650">${ctaLabel}</a></div>` : ''}
         </td></tr>
         <tr><td style="background:#f7f7f7;border-top:1px solid #e5e5e5;padding:24px 30px;font-size:11px;line-height:1.65;color:#73818a">
-          <div style="font-weight:600;color:#4d4d4d;margin-bottom:7px">Wellness House Collective</div>
+          <div style="font-weight:600;color:#4d4d4d;margin-bottom:7px">Talent House Collective</div>
           <div>${footer}</div>
           <div style="margin-top:10px">talenthousecollective.co.uk</div>
           ${opts.test

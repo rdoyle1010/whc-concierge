@@ -40,7 +40,7 @@ const uniq = (values: unknown, limit = 20) => Array.from(new Set((Array.isArray(
 
 async function aiEnhanceCv(text: string, deterministic: CvSuggestions): Promise<CvSuggestions | null> {
   if (!OPENAI_API_KEY) return null
-  const prompt = `You are analysing a CV for Wellness House Collective, a spa and wellness recruitment platform.
+  const prompt = `You are analysing a CV for Talent House Collective, a spa and wellness recruitment platform.
 Rules:
 - Extract only evidence genuinely supported by the CV text. Never invent employers, results, qualifications, dates, job titles or responsibilities.
 - Do not change the person's current/actual seniority just because they appear ready for progression.

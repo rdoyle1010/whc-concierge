@@ -113,7 +113,7 @@ export default function NewsletterSignupBar() {
       <div className="min-w-0 pr-8 md:pr-0">
         <div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[.16em] text-[#57534e]"><Mail size={14}/>WHC Newsletter</div>
         <h2 className="mt-2 text-[22px] leading-tight text-[#1c1b1a] md:text-[26px]">{config?.heading || 'The best of wellness, in your inbox.'}</h2>
-        <p className="mt-1.5 max-w-2xl text-[12px] leading-5 text-[#57534e]">{config?.text || 'Jobs, industry insight, Academy updates and opportunities from Wellness House Collective.'}</p>
+        <p className="mt-1.5 max-w-2xl text-[12px] leading-5 text-[#57534e]">{config?.text || 'Jobs, industry insight, Academy updates and opportunities from Talent House Collective.'}</p>
         <p className="mt-2 text-[10px] leading-4 text-[#6e6a66]">Double opt-in: we email you once to confirm. You can unsubscribe at any time. See our <a href="/privacy" className="underline">Privacy Policy</a>.</p>
       </div>
 

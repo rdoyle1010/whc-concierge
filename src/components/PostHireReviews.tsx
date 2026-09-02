@@ -43,7 +43,7 @@ export default function PostHireReviews() {
         <div>
           <p className="dashboard-eyebrow !mb-1">Post-hire feedback</p>
           <h2 className="dashboard-section-title">Complete the placement journey</h2>
-          <p className="mt-1 text-[12px] leading-5 text-muted">Completed hires can be reviewed by both sides, and you can separately tell Wellness House Collective how the Spa Platform experience worked for you.</p>
+          <p className="mt-1 text-[12px] leading-5 text-muted">Completed hires can be reviewed by both sides, and you can separately tell Talent House Collective how the Spa Platform experience worked for you.</p>
         </div>
       </div>
 

@@ -26,7 +26,7 @@ function applyLegacyImages(content: WebsiteContent, rows: LegacyImage[]): Websit
     next.hero.slides = heroes.slice(0, 8).map((row, index) => ({
       image: {
         url: row.image_url || next.hero.slides[index]?.image.url || '',
-        alt: row.heading || next.hero.slides[index]?.image.alt || 'Wellness House Collective',
+        alt: row.heading || next.hero.slides[index]?.image.alt || 'Talent House Collective',
         focalX: 50,
         focalY: 50,
       },

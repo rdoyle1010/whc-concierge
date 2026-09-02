@@ -57,7 +57,7 @@ export function jobAlertEmailHtml({ firstName, jobTitle, propertyName, matchScor
         </td></tr>
 
         <tr><td style="background-color: #fafafa; border-radius: 0 0 12px 12px; padding: 28px 40px; border-top: 1px solid #e0dad2;">
-          <p style="margin: 0 0 4px; font-size: 12px; color: #8c8781;">Wellness House Collective</p>
+          <p style="margin: 0 0 4px; font-size: 12px; color: #8c8781;">Talent House Collective</p>
           <p style="margin: 0 0 12px; font-size: 12px; color: #8c8781;">United Kingdom &middot; <a href="mailto:rebecca.whc@outlook.com" style="color: #555555; text-decoration: none;">rebecca.whc@outlook.com</a></p>
           <p style="margin: 0; font-size: 11px; color: #d9d9d9;">You received this because job alerts are enabled on your Talent House Collective profile. Manage alerts in your <a href="https://talenthousecollective.co.uk/talent/settings" style="color: #555555; text-decoration: none;">settings</a>.</p>
         </td></tr>

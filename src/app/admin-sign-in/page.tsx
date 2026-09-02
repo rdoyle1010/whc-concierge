@@ -48,7 +48,7 @@ export default function AdminSignInPage() {
           </div>
           <p className="dashboard-eyebrow">WHC internal</p>
           <h1 className="dashboard-title !text-[32px]">Admin sign in</h1>
-          <p className="dashboard-intro !mt-2 mb-7">For authorised Wellness House Collective administrators only.</p>
+          <p className="dashboard-intro !mt-2 mb-7">For authorised Talent House Collective administrators only.</p>
 
           {error && <div className="bg-red-50 border border-red-100 text-red-600 text-[13px] px-3 py-2.5 rounded-xl mb-5">{error}</div>}
 
