@@ -15,7 +15,7 @@ import { cloneDefaultPublicPagesContent, PUBLIC_PAGE_SLUGS, type PublicPagesCont
 // publishes both stores in a single action.
 
 type Store = 'website' | 'pages'
-type PanelKey = 'homepageCta' | 'authPanel'
+type PanelKey = 'homepageCta' | 'authPanel' | 'intelligenceHero' | 'intelligenceJournal' | 'agencyProfessional'
 type Slot = { store: Store; field: string; group: string; label: string; url: string; href?: string; panelKey?: PanelKey }
 
 const pageNames: Record<string, string> = {
@@ -43,6 +43,9 @@ function websiteSlots(content: WebsiteContent): Slot[] {
   }))
   slots.push({ store: 'website', field: 'panels.homepageCta.image.url', group: 'Dark panels', label: 'Homepage closing panel', url: content.panels.homepageCta.image.url, href: '/', panelKey: 'homepageCta' })
   slots.push({ store: 'website', field: 'panels.authPanel.image.url', group: 'Dark panels', label: 'Sign-in panel', url: content.panels.authPanel.image.url, href: '/login', panelKey: 'authPanel' })
+  slots.push({ store: 'website', field: 'panels.intelligenceHero.image.url', group: 'Dark panels', label: 'Intelligence masthead picture', url: content.panels.intelligenceHero.image.url, href: '/intelligence', panelKey: 'intelligenceHero' })
+  slots.push({ store: 'website', field: 'panels.intelligenceJournal.image.url', group: 'Dark panels', label: 'Intelligence closing panel', url: content.panels.intelligenceJournal.image.url, href: '/intelligence', panelKey: 'intelligenceJournal' })
+  slots.push({ store: 'website', field: 'panels.agencyProfessional.image.url', group: 'Dark panels', label: 'Agency professional band picture', url: content.panels.agencyProfessional.image.url, href: '/agency/about', panelKey: 'agencyProfessional' })
   return slots
 }
 

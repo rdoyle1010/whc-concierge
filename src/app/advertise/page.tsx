@@ -63,6 +63,16 @@ const audienceCopy: Record<AdPlacementKey, { audience: string; where: string; be
     where: 'On WHC agency and flexible-work pages',
     bestFor: 'Insurance, payroll, training and products for freelance professionals',
   },
+  intelligence_hero: {
+    audience: 'Operators, group directors and senior professionals reading the market',
+    where: 'The picture box beside the WHC Intelligence masthead',
+    bestFor: 'Consultancies, equipment houses and groups who want to be seen as part of the industry conversation',
+  },
+  intelligence_band: {
+    audience: 'Readers who have worked through the market report to the end',
+    where: 'The full-width panel that closes WHC Intelligence',
+    bestFor: 'Brands and suppliers targeting decision-makers at the point they act on what they have read',
+  },
   residency_page_sponsor: {
     audience: 'Professionals considering international placements',
     where: 'Alongside residency opportunities',

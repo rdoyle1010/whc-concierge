@@ -36,6 +36,12 @@ const emptyPanelImage = { url: '', alt: '', focalX: 50, focalY: 50 }
 const DEFAULT_PANELS = {
   homepageCta: { mode: 'brand' as const, image: { ...emptyPanelImage }, overlay: 72 },
   authPanel: { mode: 'brand' as const, image: { ...emptyPanelImage }, overlay: 72 },
+  // Picture boxes rather than backdrops: these sit beside the copy in bands
+  // where the text fills half the width and the rest was dead space. Empty
+  // until a picture is uploaded, so the pages look exactly as they do now.
+  intelligenceHero: { mode: 'brand' as const, image: { ...emptyPanelImage }, overlay: 72 },
+  intelligenceJournal: { mode: 'brand' as const, image: { ...emptyPanelImage }, overlay: 72 },
+  agencyProfessional: { mode: 'brand' as const, image: { ...emptyPanelImage }, overlay: 72 },
 }
 
 // The header lockup. 'fill' crops the artwork to the header box, which is
@@ -93,6 +99,12 @@ export const WebsiteContentSchema = z.object({
   panels: z.object({
     homepageCta: panelSchema,
     authPanel: panelSchema,
+    // .default() on each one, because content saved before these existed has
+    // to keep parsing - a stored record predating a field is the normal case,
+    // not the exception.
+    intelligenceHero: panelSchema.default(DEFAULT_PANELS.intelligenceHero),
+    intelligenceJournal: panelSchema.default(DEFAULT_PANELS.intelligenceJournal),
+    agencyProfessional: panelSchema.default(DEFAULT_PANELS.agencyProfessional),
   }).default(DEFAULT_PANELS),
   sections: z.array(z.object({
     id: z.enum(['proof', 'howItWorks', 'product', 'trust', 'roles', 'cta', 'services', 'testimonials']),

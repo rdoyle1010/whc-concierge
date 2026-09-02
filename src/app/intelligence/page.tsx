@@ -4,6 +4,9 @@ import { unstable_cache } from 'next/cache'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { getWebsiteContent } from '@/lib/site-content-server'
+import PanelBackdrop from '@/components/PanelBackdrop'
+import PanelPicture from '@/components/PanelPicture'
 import { Clock, ArrowRight } from 'lucide-react'
 
 export const revalidate = 300
@@ -169,6 +172,7 @@ function postsForCategory(posts: any[], category: string) {
 
 export default async function IntelligencePage() {
   const { liveJobs, salaryRows, posts, generatedAt } = await getIntelligenceData()
+  const site = await getWebsiteContent()
 
   const dateline = new Date(generatedAt).toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })
   const seniority = seniorityCounts(liveJobs)
@@ -179,17 +183,22 @@ export default async function IntelligencePage() {
     <div className="min-h-screen bg-white">
       <Navbar />
 
-      {/* Masthead */}
+      {/* Masthead. The copy has always occupied the left half; the right half
+          is now a picture box Rebecca can fill from Admin -> Pictures, or sell.
+          With nothing in it the masthead renders exactly as it did. */}
       <header className="bg-accent pt-[76px]">
-        <div className="max-w-6xl mx-auto px-6 py-20 md:py-28">
-          <p className="text-[10px] uppercase tracking-[0.18em] font-semibold text-white/70">WHC Intelligence</p>
-          <h1 className="mt-5 text-white text-[38px] md:text-[58px] leading-[1.05] tracking-[-.04em] max-w-4xl">
-            The numbers behind luxury wellness careers, reported straight.
-          </h1>
-          <p className="mt-6 text-[15px] leading-7 text-white/75 max-w-2xl">
-            Intelligence drawn from a live hiring platform - real roles, advertised salaries and demand as it stands.
-            A figure appears here only once the data clears WHC&apos;s credibility thresholds. Nothing padded, nothing invented.
-          </p>
+        <div className="max-w-6xl mx-auto px-6 py-20 md:py-28 grid gap-10 lg:grid-cols-[1.05fr_.95fr] lg:items-center">
+          <div>
+            <p className="text-[10px] uppercase tracking-[0.18em] font-semibold text-white/70">WHC Intelligence</p>
+            <h1 className="mt-5 text-white text-[38px] md:text-[58px] leading-[1.05] tracking-[-.04em]">
+              The numbers behind luxury wellness careers, reported straight.
+            </h1>
+            <p className="mt-6 text-[15px] leading-7 text-white/75 max-w-2xl">
+              Intelligence drawn from a live hiring platform - real roles, advertised salaries and demand as it stands.
+              A figure appears here only once the data clears WHC&apos;s credibility thresholds. Nothing padded, nothing invented.
+            </p>
+          </div>
+          <PanelPicture panel={site.panels.intelligenceHero} placement="intelligence_hero" aspect="aspect-[5/4]" />
         </div>
       </header>
 
@@ -306,8 +315,9 @@ export default async function IntelligencePage() {
       {/* Closing CTA - the global newsletter signup bar already appears on
           public pages via the root layout, so this row points to the archive
           rather than duplicating the form. */}
-      <section className="bg-accent">
-        <div className="max-w-6xl mx-auto px-6 py-16 md:py-20 text-center">
+      <section className="bg-accent relative isolate overflow-hidden">
+        <PanelBackdrop panel={site.panels.intelligenceJournal} placement="intelligence_band" />
+        <div className="relative max-w-6xl mx-auto px-6 py-16 md:py-20 text-center">
           <h2 className="text-white text-[28px] md:text-[36px]">Read the full journal</h2>
           <p className="mt-4 text-[14px] leading-7 text-white/70 max-w-xl mx-auto">
             Every article WHC has published - careers, leadership and industry perspective across luxury wellness.

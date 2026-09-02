@@ -67,6 +67,18 @@ export const AD_PLACEMENTS = {
     monthlyPence: 15000,
     page: 'Agency',
   },
+  intelligence_hero: {
+    label: 'Intelligence Masthead',
+    description: 'The picture box beside the WHC Intelligence masthead - the market report every property and professional reads.',
+    monthlyPence: 30000,
+    page: 'Intelligence',
+  },
+  intelligence_band: {
+    label: 'Intelligence Closing Panel',
+    description: 'The full-width panel that closes WHC Intelligence, above the footer.',
+    monthlyPence: 25000,
+    page: 'Intelligence',
+  },
   residency_page_sponsor: {
     label: 'Residency Sponsor',
     description: 'Appear alongside international residency opportunities.',

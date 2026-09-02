@@ -197,3 +197,40 @@ test('the agency demo card matches the band it renders in', () => {
   const card = text.slice(text.indexOf('function ProfessionalDemoCard'), text.indexOf('export default'))
   assert.ok(!/text-white|bg-white\/|border-white\//.test(card), 'the card sits on a light band and must be styled for one')
 })
+
+// The wide bands where the copy fills half the width and the rest is dead
+// space are the most valuable empty space on the site. Each one is now a
+// picture box or a backdrop that Rebecca fills from Admin -> Pictures, and can
+// sell. The rule that matters: an empty slot must change nothing.
+test('a picture box draws nothing until something is put in it', () => {
+  const picture = readFileSync(new URL('../src/components/PanelPicture.tsx', import.meta.url), 'utf8')
+  assert.match(picture, /if \(!picture\) return null/, 'an empty slot must not render an empty box')
+  assert.ok(
+    !/panel\.mode === 'brand'/.test(picture),
+    "a picture is the switch - gating it behind a mode is how uploads appeared to do nothing",
+  )
+})
+
+test('every panel slot reaches both the Pictures screen and the Website editor', () => {
+  const content = readFileSync(new URL('../src/lib/site-content.ts', import.meta.url), 'utf8')
+  const block = content.slice(content.indexOf('const DEFAULT_PANELS'), content.indexOf('// The header lockup'))
+  const keys = [...block.matchAll(/^\s{2}(\w+):/gm)].map(match => match[1])
+  assert.ok(keys.length >= 5, `expected the panel slots, found ${keys.join(', ')}`)
+
+  const images = readFileSync(new URL('../src/app/admin/images/page.tsx', import.meta.url), 'utf8')
+  const website = readFileSync(new URL('../src/app/admin/website/page.tsx', import.meta.url), 'utf8')
+  for (const key of keys) {
+    assert.ok(images.includes(`panels.${key}.image.url`), `${key} is missing from Admin -> Pictures`)
+    assert.ok(website.includes(`'${key}' as const`), `${key} is missing from the Website editor`)
+  }
+})
+
+// Content saved before a panel existed still has to parse, or adding a slot
+// logs every administrator out of their own settings.
+test('new panels default rather than making stored content invalid', () => {
+  const content = readFileSync(new URL('../src/lib/site-content.ts', import.meta.url), 'utf8')
+  for (const key of ['intelligenceHero', 'intelligenceJournal', 'agencyProfessional']) {
+    const rule = new RegExp(`${key}: panelSchema\\.default\\(`)
+    assert.match(content, rule, `${key} must carry a default for content saved before it existed`)
+  }
+})
