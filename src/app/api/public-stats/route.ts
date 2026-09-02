@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { readConfigString } from '@/lib/platform-access'
 import { unstable_cache } from 'next/cache'
 import { createClient } from '@supabase/supabase-js'
 import { createAdminClient } from '@/lib/supabase/admin'
@@ -34,7 +35,7 @@ const getPublicStats = unstable_cache(async () => {
       liveRoles: jobs.error ? null : jobs.count ?? 0,
       properties: properties.error ? null : properties.count ?? 0,
       verifiedReviews: reviews.error ? null : reviews.count ?? 0,
-      showLiveNumbers: String(setting.data?.value || '').toLowerCase() === 'on',
+      showLiveNumbers: readConfigString(setting.data?.value).toLowerCase() === 'on',
     }
   } catch {
     return { liveRoles: null, properties: null, verifiedReviews: null, showLiveNumbers: false }

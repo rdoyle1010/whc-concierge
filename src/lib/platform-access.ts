@@ -13,6 +13,19 @@ import { createAdminClient } from '@/lib/supabase/admin'
 
 export const PREVIEW_COOKIE = 'thc_preview'
 
+// platform_config.value is a json column, so a value written by hand in the
+// SQL editor arrives as the JSON string "closed" while one written by the
+// admin form arrives already parsed. Accept either rather than depending on
+// which route set it.
+export function readConfigString(value: unknown): string {
+  if (typeof value !== 'string') return value == null ? '' : String(value).trim()
+  const trimmed = value.trim()
+  if (trimmed.length > 1 && trimmed.startsWith('"') && trimmed.endsWith('"')) {
+    try { return String(JSON.parse(trimmed)).trim() } catch { return trimmed.slice(1, -1).trim() }
+  }
+  return trimmed
+}
+
 const readAccess = unstable_cache(
   async () => {
     try {
@@ -21,10 +34,10 @@ const readAccess = unstable_cache(
         .from('platform_config')
         .select('key, value')
         .in('key', ['platform_access', 'platform_preview_code'])
-      const map = new Map((data || []).map(row => [row.key, String(row.value || '')]))
+      const map = new Map((data || []).map(row => [row.key, readConfigString(row.value)]))
       return {
-        closed: map.get('platform_access')?.trim().toLowerCase() === 'closed',
-        previewCode: (map.get('platform_preview_code') || '').trim(),
+        closed: map.get('platform_access')?.toLowerCase() === 'closed',
+        previewCode: map.get('platform_preview_code') || '',
       }
     } catch {
       // Fail open. A database wobble should not close the platform to

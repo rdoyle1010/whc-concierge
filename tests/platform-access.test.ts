@@ -35,3 +35,15 @@ test('access fails open, and the preview cannot be an open redirect', () => {
   assert.match(route, /startsWith\('\/'\) && !nextPath\.startsWith\('\/\/'\)/, 'the return path must stay on this site')
   assert.match(route, /supplied !== previewCode/, 'a wrong code must not set the cookie')
 })
+
+// platform_config.value is a json column, and the migration file that says
+// otherwise is out of date. A value set by hand in the SQL editor therefore
+// arrives as the JSON string "closed" while the admin form writes it parsed.
+test('the access flag is read the same whichever route set it', async () => {
+  const { readConfigString } = await import('../src/lib/platform-access')
+  assert.equal(readConfigString('closed'), 'closed')
+  assert.equal(readConfigString('"closed"'), 'closed')
+  assert.equal(readConfigString('  "closed"  '), 'closed')
+  assert.equal(readConfigString(null), '')
+  assert.equal(readConfigString(undefined), '')
+})
