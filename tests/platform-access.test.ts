@@ -85,3 +85,25 @@ test('saving the access setting clears the cache in front of it', () => {
   assert.match(body, /revalidateTag\('platform-access'/, 'a change to the doors must take effect on the next request')
   assert.match(route, /ACCESS_KEYS = new Set\(\['platform_access', 'platform_preview_code'\]\)/)
 })
+
+// The middleware bounces an unauthenticated visitor out of a portal to /login
+// carrying the role they were heading for, so the panel can address the person
+// who actually arrived. A hotel director who typed /employer/dashboard should
+// not be read talent copy.
+test('the closed panel speaks to whoever the middleware sent it', () => {
+  const panel = read('src/components/DoorsClosed.tsx')
+  assert.match(panel, /params\.get\('role'\)/, 'the role on the URL must reach the copy')
+  for (const audience of ['talent', 'employer', 'both']) {
+    assert.match(panel, new RegExp(`${audience}: \\{`), `${audience} needs its own wording`)
+  }
+  // Staff bounced out of the admin area have no use for a waiting list.
+  assert.match(panel, /admin-sign-in/, 'someone sent here from /admin needs the staff route')
+})
+
+test('the panel sells rather than apologises', () => {
+  const panel = read('src/components/DoorsClosed.tsx')
+  // Anyone who reaches this page went looking for an account. The page has to
+  // ask for something.
+  assert.match(panel, /Join the list|Request early access/)
+  assert.match(panel, /api\/newsletter\/subscribe/, 'it must join the same double opt-in list')
+})
