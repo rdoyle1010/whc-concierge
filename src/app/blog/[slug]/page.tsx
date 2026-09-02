@@ -1,4 +1,6 @@
+import type { Metadata } from 'next'
 import { createServerSupabaseClient } from '@/lib/supabase/server'
+import { SITE_ORIGIN } from '@/lib/site-content'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import Navbar from '@/components/Navbar'
@@ -10,6 +12,54 @@ import BlogImage from '@/components/BlogImage'
 import SponsoredAd from '@/components/SponsoredAd'
 
 export const revalidate = 60
+
+// Every Journal article shared one title and one description in search results,
+// because this page exported no metadata and there is no layout beside it to
+// carry any. Google saw a dozen articles all called "Talent House Collective |
+// Spa and Wellness Careers" - competing with each other and describing none of
+// themselves. The Journal is the strongest organic asset on this platform and
+// it was invisible.
+export async function generateMetadata(props: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+  const { slug } = await props.params
+  try {
+    const supabase = await createServerSupabaseClient()
+    const { data: post } = await supabase
+      .from('blog_posts')
+      .select('title, excerpt, content, image_url, author, published_at, created_at, category')
+      .eq('slug', slug).eq('status', 'published').single()
+    if (!post) return {}
+
+    // A description Google will actually show: the excerpt if there is one,
+    // otherwise the opening of the article, trimmed at a word rather than
+    // mid-syllable.
+    const raw = (post.excerpt || post.content || '').replace(/\s+/g, ' ').trim()
+    const description = raw.length > 155 ? raw.slice(0, 155).replace(/\s\S*$/, '') + '...' : raw
+    const url = `${SITE_ORIGIN}/blog/${slug}`
+    const published = post.published_at || post.created_at
+
+    return {
+      title: `${post.title} | Talent House Collective`,
+      description,
+      alternates: { canonical: url },
+      openGraph: {
+        type: 'article', url, title: post.title, description,
+        publishedTime: published || undefined,
+        authors: post.author ? [post.author] : undefined,
+        section: post.category || undefined,
+        images: post.image_url ? [{ url: post.image_url }] : undefined,
+      },
+      twitter: {
+        card: post.image_url ? 'summary_large_image' : 'summary',
+        title: post.title, description,
+        images: post.image_url ? [post.image_url] : undefined,
+      },
+    }
+  } catch {
+    // A database wobble should cost the article its rich title, not the page.
+    return {}
+  }
+}
+
 
 export default async function BlogPostPage(props: { params: Promise<{ slug: string }> }) {
   const params = await props.params;
