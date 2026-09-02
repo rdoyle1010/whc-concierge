@@ -234,3 +234,21 @@ test('new panels default rather than making stored content invalid', () => {
     assert.match(content, rule, `${key} must carry a default for content saved before it existed`)
   }
 })
+
+// A property saved their company profile and the confirmation came back in
+// red, because the banner picked its colour by searching the message for the
+// words "success" or "updated". "Profile saved." and "Photo added." contain
+// neither, so the two most common successes on the page both read as failures.
+// Wording is not a status code.
+test('save banners are told the outcome, never asked to guess it', () => {
+  const files = [
+    'src/app/employer/profile/page.tsx',
+    'src/components/ProfileAwardsEditor.tsx',
+  ]
+  for (const file of files) {
+    const text = readFileSync(new URL(`../${file}`, import.meta.url), 'utf8')
+    const sniff = text.match(/\.includes\(['"](?:success|updated|saved|error|failed)['"]\)/i)
+    assert.ok(!sniff, `${file} decides a banner's meaning from its wording: ${sniff?.[0]}`)
+    assert.match(text, /kind: 'success'/, `${file} must carry the outcome alongside the text`)
+  }
+})

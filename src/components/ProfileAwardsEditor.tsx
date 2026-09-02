@@ -15,7 +15,10 @@ export default function ProfileAwardsEditor({ kind }: { kind: Kind }) {
   const [awards, setAwards] = useState<AwardItem[]>([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
-  const [message, setMessage] = useState('')
+  // The outcome travels with the text. Deciding the colour by searching the
+  // message for the word "success" meant a reworded message silently turned
+  // every save red.
+  const [notice, setNotice] = useState<{ kind: 'success' | 'error'; text: string } | null>(null)
 
   useEffect(() => {
     ;(async () => {
@@ -45,12 +48,12 @@ export default function ProfileAwardsEditor({ kind }: { kind: Kind }) {
         url: String(award.url || '').trim().slice(0, 500),
       }))
       .filter(award => award.name)
-    setSaving(true); setMessage('')
+    setSaving(true); setNotice(null)
     const table = kind === 'talent' ? 'candidate_profiles' : 'employer_profiles'
     const { error } = await supabase.from(table).update({ awards: clean }).eq('id', profileId)
     setSaving(false)
-    if (error) setMessage(error.message)
-    else { setAwards(clean); setMessage('Awards saved successfully.') }
+    if (error) setNotice({ kind: 'error', text: error.message })
+    else { setAwards(clean); setNotice({ kind: 'success', text: 'Awards saved.' }) }
   }
 
   if (loading) return <div className="dashboard-card">Loading awards…</div>
@@ -76,7 +79,7 @@ export default function ProfileAwardsEditor({ kind }: { kind: Kind }) {
       </div>)}
     </div>
 
-    {message && <p className={`mt-4 text-[12px] ${message.includes('success') ? 'text-emerald-700' : 'text-red-600'}`}>{message}</p>}
+    {notice && <p role={notice.kind === 'error' ? 'alert' : 'status'} className={`mt-4 text-[12px] ${notice.kind === 'success' ? 'text-emerald-700' : 'text-red-600'}`}>{notice.text}</p>}
     <button type="button" onClick={save} disabled={saving} className="btn-primary mt-5 inline-flex items-center gap-2 disabled:opacity-50"><Save size={14}/>{saving ? 'Saving…' : 'Save awards'}</button>
   </div>
 }

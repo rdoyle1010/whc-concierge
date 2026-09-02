@@ -15,7 +15,11 @@ export default function EmployerProfilePage() {
   const [profile, setProfile] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
-  const [message, setMessage] = useState('')
+  // Say whether it worked; never infer it from the wording.
+  type Notice = { kind: 'success' | 'error'; text: string } | null
+  const [notice, setNotice] = useState<Notice>(null)
+  const ok = (text: string) => setNotice({ kind: 'success', text })
+  const fail = (text: string) => setNotice({ kind: 'error', text })
 
   useEffect(() => {
     async function load() {
@@ -116,22 +120,22 @@ export default function EmployerProfilePage() {
 
     setSaving(false)
     if (finalError) {
-      setMessage(finalError.message)
+      fail(finalError.message)
     } else {
       // Best-effort: geocode the postcode so distance features work
       fetch('/api/employer/geocode', { method: 'POST' }).catch(() => {})
       if (stripped.length > 0) {
-        setMessage(`Some fields could not be saved: ${stripped.join(', ')}. Please try again or contact support.`)
+        fail(`Some fields could not be saved: ${stripped.join(', ')}. Please try again or contact support.`)
       } else {
-        setMessage('Profile saved.')
+        ok('Profile saved.')
       }
     }
-    setTimeout(() => setMessage(''), stripped.length > 0 ? 8000 : 3000)
+    setTimeout(() => setNotice(null), stripped.length > 0 ? 8000 : 3000)
   }
 
   const handleGalleryUpload = async (file: File) => {
     const current: string[] = profile.property_photos || []
-    if (current.length >= 6) { setMessage('Maximum 6 photos - remove one first.'); return }
+    if (current.length >= 6) { fail('Maximum 6 photos - remove one first.'); return }
     const ext = file.name.split('.').pop()
     const formData = new FormData()
     formData.append('file', file)
@@ -139,18 +143,18 @@ export default function EmployerProfilePage() {
     formData.append('path', `${profile.id}-${Date.now()}.${ext}`)
     const res = await fetch('/api/upload', { method: 'POST', body: formData })
     const data = await res.json()
-    if (!res.ok) { setMessage(`Upload failed: ${data.error}`); return }
+    if (!res.ok) { fail(`Upload failed: ${data.error}`); return }
     const next = [...current, data.url]
     const { error } = await supabase.from('employer_profiles').update({ property_photos: next }).eq('id', profile.id)
-    if (error) { setMessage(error.message); return }
+    if (error) { fail(error.message); return }
     update('property_photos', next)
-    setMessage('Photo added.')
+    ok('Photo added.')
   }
 
   const removeGalleryPhoto = async (url: string) => {
     const next = (profile.property_photos || []).filter((u: string) => u !== url)
     const { error } = await supabase.from('employer_profiles').update({ property_photos: next }).eq('id', profile.id)
-    if (error) { setMessage(`Could not remove photo: ${error.message}`); return }
+    if (error) { fail(`Could not remove photo: ${error.message}`); return }
     update('property_photos', next)
   }
 
@@ -164,13 +168,13 @@ export default function EmployerProfilePage() {
     formData.append('path', `logos/${profile.id}.${ext}`)
     const res = await fetch('/api/upload', { method: 'POST', body: formData })
     const data = await res.json()
-    if (!res.ok) { setMessage(`Upload failed: ${data.error}`); return }
+    if (!res.ok) { fail(`Upload failed: ${data.error}`); return }
     const { error: logoError } = await supabase.from('employer_profiles').update({ logo_url: data.url }).eq('id', profile.id)
-    if (logoError) { setMessage(`Could not save the logo: ${logoError.message}`); return }
+    if (logoError) { fail(`Could not save the logo: ${logoError.message}`); return }
 
     update('logo_url', data.url)
-    setMessage('Logo updated.')
-    setTimeout(() => setMessage(''), 3000)
+    ok('Logo updated.')
+    setTimeout(() => setNotice(null), 3000)
   }
 
   if (loading) return <DashboardShell role="employer"><div className="flex items-center justify-center h-64"><div className="animate-spin w-8 h-8 border-2 border-accent border-t-transparent rounded-full" /></div></DashboardShell>
@@ -190,7 +194,7 @@ export default function EmployerProfilePage() {
           </button>
         </div>
 
-        {message && <div role="status" className={`px-4 py-3 rounded-lg mb-6 text-sm ${message.includes('success') || message.includes('updated') ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'}`}>{message}</div>}
+        {notice && <div role={notice.kind === 'error' ? 'alert' : 'status'} className={`px-4 py-3 rounded-lg mb-6 text-sm ${notice.kind === 'success' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-600'}`}>{notice.text}</div>}
 
         {/* Logo */}
         <div className="dashboard-card mb-6">
