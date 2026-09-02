@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { readFileSync, readdirSync, statSync } from 'node:fs'
+import { readFileSync, readdirSync, statSync, existsSync } from 'node:fs'
 import { join } from 'node:path'
 
 const APP = new URL('../src/app/', import.meta.url).pathname
@@ -324,4 +324,39 @@ test('a logo is fitted, not cropped', () => {
   const img = page.match(/<img src=\{profile\.logo_url\}[^/]*\/>/)
   assert.ok(img, 'the logo preview must be findable')
   assert.match(img[0], /object-contain/, 'object-cover crops the middle out of a wide lockup')
+})
+
+// The sidebar nav was sized by subtracting a guessed 156px for the block above
+// it and the sign-out bar below. The block is taller than that, so the list ran
+// under the sign-out bar and its last item - Settings - could not be reached at
+// all, on any screen. A flex column measures itself; an arithmetic guess about
+// two other elements is wrong the moment either of them changes.
+test('the dashboard sidebar measures itself rather than guessing', () => {
+  const shell = readFileSync(new URL('../src/components/DashboardShell.tsx', import.meta.url), 'utf8')
+  // The early-return branch above renders its own <main id="main-content">, so
+  // slicing to the first one runs backwards and yields nothing.
+  const start = shell.indexOf('dashboard-sidebar')
+  const aside = shell.slice(start, shell.indexOf('<main id="main-content"', start))
+
+  assert.ok(!/h-\[calc\(100vh-\d+px\)\]/.test(aside), 'a hardcoded height guesses at elements it cannot see')
+  assert.match(aside, /dashboard-sidebar[^`]*flex[^`]*flex-col/, 'the sidebar must be a column')
+  assert.match(aside, /min-h-0 flex-1 overflow-y-auto/, 'without min-h-0 a flex child never scrolls')
+  assert.ok(
+    !/absolute bottom-0 left-0 right-0 px-4 py-4 bg-\[#f1f1f1\]/.test(aside),
+    'an absolutely positioned sign-out bar sits on top of the last nav item',
+  )
+})
+
+// Settings is the last item in the talent nav, which is exactly why it was the
+// one that disappeared.
+test('every talent nav entry points at a page that exists', () => {
+  const shell = readFileSync(new URL('../src/components/DashboardShell.tsx', import.meta.url), 'utf8')
+  const hrefs = [...shell.matchAll(/href: '(\/talent\/[a-z-]+)'/g)].map(m => m[1])
+  assert.ok(hrefs.includes('/talent/settings'), 'Settings must be reachable from the nav')
+  for (const href of new Set(hrefs)) {
+    assert.ok(
+      existsSync(new URL(`../src/app${href}/page.tsx`, import.meta.url)),
+      `${href} is in the nav but has no page`,
+    )
+  }
 })
