@@ -5,11 +5,11 @@ export default function AdvertisingTermsPage() {
   return <div className="min-h-screen bg-[#f1f1f1] text-[#1c1c1c]">
     <Navbar />
     <main id="main-content" className="pt-[76px]">
-      <section className="bg-[#1c1c1c] text-white">
+      <section className="bg-[#f1f1f1] text-ink">
         <div className="mx-auto max-w-4xl px-6 py-16 lg:px-8">
           <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#555555]">Wellness House Collective</p>
           <h1 className="mt-3 text-[40px] font-semibold tracking-[-0.04em]">Advertising Terms & Conditions</h1>
-          <p className="mt-4 text-[13px] text-white/65">Version 25 August 2026</p>
+          <p className="mt-4 text-[13px] text-secondary">Version 25 August 2026</p>
         </div>
       </section>
 

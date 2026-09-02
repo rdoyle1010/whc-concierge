@@ -131,3 +131,69 @@ test('the talent dashboard greets the reader through that slot', () => {
   assert.match(page, /intro=\{<>/, 'the greeting must be passed as the shell intro')
   assert.match(page, /timeOfDayGreeting\(\)/)
 })
+
+// Rebecca's brief was "wherever there is black like this" - the wide charcoal
+// bands that broke up the public pages. The sweep that removed them was scoped
+// to each <section>, which left three kinds of wreckage worth locking down.
+
+const PUBLIC_PAGES = [
+  'page.tsx', 'about/page.tsx', 'academy/page.tsx', 'advertise/page.tsx',
+  'advertising-terms/page.tsx', 'agency/about/page.tsx', 'coming-soon/page.tsx',
+  'jobs/[id]/page.tsx', 'match/page.tsx', 'pricing/page.tsx', 'privacy/page.tsx',
+  'residency/page.tsx', 'blog/[slug]/page.tsx',
+]
+
+test('no public page opens on a full-width charcoal band', () => {
+  for (const path of PUBLIC_PAGES) {
+    const text = readFileSync(join(APP, path), 'utf8')
+    const band = text.match(/<section[^>]*\bbg-(?:ink|\[#1c1c1c\]|\[#1c1b1a\])\b/)
+    assert.ok(!band, `${path} still carries a charcoal <section>: ${band?.[0]}`)
+  }
+})
+
+// Inverting a white button on a dark band left the old label colour behind, so
+// the text matched the button it sat on. Two colours in one class list is
+// always a mistake, whichever of them the cascade happens to pick.
+test('no element sets two conflicting text colours', () => {
+  for (const path of PUBLIC_PAGES) {
+    const text = readFileSync(join(APP, path), 'utf8')
+    for (const [, classes] of text.matchAll(/className="([^"]*)"/g)) {
+      const light = /(?:^|\s)text-white(?:\s|$)/.test(classes)
+      const dark = /(?:^|\s)text-(?:ink|\[#1c1c1c\])(?:\s|$)/.test(classes)
+      assert.ok(!(light && dark), `${path} sets both a light and a dark text colour: ${classes}`)
+    }
+  }
+})
+
+// globals.css sets h1-h4 colour as a base element rule, and an element rule
+// beats an inherited value however the parent set it. So a heading on a dark
+// card that says nothing about colour renders charcoal on charcoal - which is
+// exactly how "Featured Talent" and "Employer Group" disappeared.
+test('the heading rule that makes dark-card headings vanish is still an element rule', () => {
+  const css = readFileSync(new URL('../src/app/globals.css', import.meta.url), 'utf8')
+  assert.match(css, /h1, h2, h3, h4 \{\s*\n\s*color: var\(--site-ink/, 'if this rule changes, re-check every heading on a dark surface')
+})
+
+test('headings on charcoal cards name their own colour', () => {
+  const cases: [string, string][] = [
+    ['pricing/page.tsx', 'Featured Talent'],
+    ['pricing/page.tsx', 'Employer Group'],
+    ['academy/page.tsx', 'What do you want to be better at next?'],
+  ]
+  for (const [path, heading] of cases) {
+    const text = readFileSync(join(APP, path), 'utf8')
+    const tag = new RegExp(`<h[1-4]([^>]*)>${heading.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}<`)
+    const match = text.match(tag)
+    assert.ok(match, `${path} no longer contains the heading "${heading}"`)
+    assert.match(match![1], /text-white/, `"${heading}" must set its own colour or it renders charcoal on charcoal`)
+  }
+})
+
+// The demo card is declared above the section that renders it, so a sweep
+// scoped to that section slides straight past it. This is the second time a
+// component outside the band it lives in has been left behind.
+test('the agency demo card matches the band it renders in', () => {
+  const text = readFileSync(join(APP, 'agency/about/page.tsx'), 'utf8')
+  const card = text.slice(text.indexOf('function ProfessionalDemoCard'), text.indexOf('export default'))
+  assert.ok(!/text-white|bg-white\/|border-white\//.test(card), 'the card sits on a light band and must be styled for one')
+})

@@ -40,14 +40,14 @@ export default async function BlogPostPage(props: { params: Promise<{ slug: stri
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       <Navbar />
       <main id="main-content">
-      <section className="bg-ink pt-32 pb-16">
+      <section className="bg-[#f1f1f1] pt-32 pb-16">
         <div className="max-w-3xl mx-auto px-4">
-          <Link href="/blog" className="text-white/80 text-sm flex items-center mb-6 hover:text-white">
+          <Link href="/blog" className="text-secondary text-sm flex items-center mb-6 hover:text-ink">
             <ArrowLeft size={16} className="mr-1" /> Back to Journal
           </Link>
-          {post.category && <span className="text-white/80 text-sm uppercase tracking-wider">{post.category}</span>}
-          <h1 className="text-3xl md:text-5xl font-serif font-bold text-white mt-2 mb-4">{post.title}</h1>
-          <p className="text-white/50 text-sm">
+          {post.category && <span className="text-secondary text-sm uppercase tracking-wider">{post.category}</span>}
+          <h1 className="text-3xl md:text-5xl font-serif font-bold text-ink mt-2 mb-4">{post.title}</h1>
+          <p className="text-muted text-sm">
             {post.author} &middot; {new Date(publishedDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}
           </p>
         </div>

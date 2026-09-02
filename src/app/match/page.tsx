@@ -112,10 +112,10 @@ export default async function MatchExplainerPage() {
           </div>
         </section>
 
-        <section className="border-y border-[#dddddd] bg-[#1c1c1c] py-16 text-white">
+        <section className="border-y border-[#dddddd] bg-[#f1f1f1] py-16 text-ink">
           <div className="mx-auto flex max-w-6xl flex-col gap-7 px-6 md:flex-row md:items-center md:justify-between lg:px-8">
-            <div><p className="text-[10px] font-semibold uppercase tracking-[.17em] text-white/55">Ready?</p><h2 className="mt-2 text-[34px] font-semibold">See the roles built around your profile.</h2></div>
-            <Link href="/login?role=talent&next=%2Froles%2Fmatch" className="inline-flex w-fit items-center gap-2 bg-white px-6 py-3.5 text-[13px] font-semibold text-[#1c1c1c]">Start matching <ArrowRight size={15}/></Link>
+            <div><p className="text-[10px] font-semibold uppercase tracking-[.17em] text-secondary">Ready?</p><h2 className="mt-2 text-[34px] font-semibold">See the roles built around your profile.</h2></div>
+            <Link href="/login?role=talent&next=%2Froles%2Fmatch" className="inline-flex w-fit items-center gap-2 bg-ink text-white px-6 py-3.5 text-[13px] font-semibold">Start matching <ArrowRight size={15}/></Link>
           </div>
         </section>
       </main>

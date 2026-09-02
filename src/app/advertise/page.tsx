@@ -146,11 +146,11 @@ export default function AdvertisePage() {
   return <div className="min-h-screen bg-[#f1f1f1]">
     <Navbar />
     <main id="main-content" className="pt-[76px]">
-      <section className="bg-[#1c1c1c] text-white">
+      <section className="bg-[#f1f1f1] text-ink">
         <div className="max-w-7xl mx-auto px-6 lg:px-8 py-16 md:py-20">
           <p className="text-[10px] uppercase tracking-[0.2em] text-[#555555] font-semibold mb-4">Advertise with Talent House Collective</p>
-          <h1 className="text-[42px] md:text-[58px] leading-[1.02] tracking-[-0.05em] font-semibold text-white max-w-4xl">A real placement, with a clear audience and clear terms.</h1>
-          <p className="text-[15px] leading-7 text-white/70 max-w-2xl mt-5">Choose where your brand appears, pay securely through Stripe, then WHC reviews the creative before publication.</p>
+          <h1 className="text-[42px] md:text-[58px] leading-[1.02] tracking-[-0.05em] font-semibold text-ink max-w-4xl">A real placement, with a clear audience and clear terms.</h1>
+          <p className="text-[15px] leading-7 text-secondary max-w-2xl mt-5">Choose where your brand appears, pay securely through Stripe, then WHC reviews the creative before publication.</p>
         </div>
       </section>
 

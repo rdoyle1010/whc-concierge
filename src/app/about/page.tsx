@@ -68,10 +68,10 @@ export default function AboutPage() {
           </div>
         </section>
 
-        <section className="py-20 px-6 bg-[#1c1c1c] text-white">
+        <section className="py-20 px-6 bg-[#f1f1f1] text-ink">
           <div className="max-w-3xl mx-auto text-center">
-            <p className="text-[10px] uppercase tracking-[0.2em] text-white/70 font-semibold mb-8">What we believe</p>
-            <div className="space-y-8 text-[22px] md:text-[28px] leading-[1.4] font-medium text-white/90">
+            <p className="text-[10px] uppercase tracking-[0.2em] text-secondary font-semibold mb-8">What we believe</p>
+            <div className="space-y-8 text-[22px] md:text-[28px] leading-[1.4] font-medium text-body">
               <p>Recruitment should reward expertise, not advertising spend.</p>
               <div className="w-12 h-px bg-[#555555] mx-auto" />
               <p>Discretion is non-negotiable in luxury hospitality.</p>
