@@ -160,10 +160,17 @@ export default function MediaLibraryPage() {
   // for a simpler loop.
   type Optimise = { running: boolean; applied: boolean; done: number; total: number; rewritten: number; before: number; after: number; failed: number }
   const [optimise, setOptimise] = useState<Optimise | null>(null)
+  // Where the last run stopped. Without this, pressing the button again
+  // starts from the first picture and spends the whole time budget
+  // re-reading work already done - so a bucket this size would never finish,
+  // however many times somebody pressed it.
+  const [resumeAt, setResumeAt] = useState(0)
 
   async function runOptimise(apply: boolean) {
-    setOptimise({ running: true, applied: apply, done: 0, total: 0, rewritten: 0, before: 0, after: 0, failed: 0 })
-    let cursor = 0
+    // A check always reads everything; only an apply resumes, because the
+    // pictures behind it are already done.
+    let cursor = apply ? resumeAt : 0
+    setOptimise({ running: true, applied: apply, done: cursor, total: 0, rewritten: 0, before: 0, after: 0, failed: 0 })
     const tally = { rewritten: 0, before: 0, after: 0, failed: 0 }
     for (;;) {
       // A batch that fails should cost that batch, not the run. Every picture
@@ -179,6 +186,7 @@ export default function MediaLibraryPage() {
         else if (attempt < 2) await new Promise(resolve => setTimeout(resolve, 1500 * (attempt + 1)))
       }
       if (!batch) {
+        setResumeAt(cursor)
         setNotice({
           type: 'error',
           text: tally.rewritten
@@ -194,7 +202,7 @@ export default function MediaLibraryPage() {
       tally.failed += batch.failed
       cursor = batch.cursor
       setOptimise({ running: !batch.done, applied: apply, done: cursor, total: batch.total, ...tally })
-      if (batch.done) break
+      if (batch.done) { setResumeAt(0); break }
     }
     // Nothing to reload: each picture is rewritten at its own path, so every
     // URL on this screen still points at the same place.

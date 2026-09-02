@@ -408,6 +408,13 @@ test('reprocessing stored pictures is admin-only and survives a timeout', () => 
   const page = readFileSync(new URL('../src/app/admin/images/page.tsx', import.meta.url), 'utf8')
   assert.match(page, /attempt < 3/, 'a failed batch should be retried before giving up')
   assert.match(page, /carry on from here/, 'and the run must be resumable rather than lost')
+  // The message promised resuming and the loop restarted at zero, so a second
+  // press spent its whole time budget re-reading pictures already done. With a
+  // bucket this size it would never have reached the end.
+  assert.match(page, /const \[resumeAt, setResumeAt\] = useState\(0\)/)
+  assert.match(page, /let cursor = apply \? resumeAt : 0/, 'an apply must pick up where it stopped')
+  assert.match(page, /setResumeAt\(cursor\)/, 'a failure must record where it got to')
+  assert.match(page, /setResumeAt\(0\); break/, 'and finishing must clear it')
   // Evidence must not be re-encoded.
   assert.ok(!/talent-documents|message-attachments/.test(route.slice(route.indexOf('const BUCKETS'), route.indexOf('const IMAGE_EXT'))))
   // Nothing is written unless it was asked for.
