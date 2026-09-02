@@ -1,6 +1,8 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useTaxonomy } from '@/lib/use-sectors'
+import { liveDoors, liveSectorsForDoor } from '@/lib/sectors'
 import { useRouter, useSearchParams } from 'next/navigation'
 import DashboardShell from '@/components/DashboardShell'
 import { createClient } from '@/lib/supabase/client'
@@ -27,6 +29,13 @@ export default function PostRolePage() {
   const [profile,setProfile]=useState<any>(null); const [phase,setPhase]=useState<'form'|'tier'>('form'); const [selectedTier,setSelectedTier]=useState<'Bronze'|'Platinum'>('Bronze')
   const [saving,setSaving]=useState(false); const [checkoutLoading,setCheckoutLoading]=useState(false); const [createdJobId,setCreatedJobId]=useState<string|null>(null); const [uploadingImage,setUploadingImage]=useState(false); const [error,setError]=useState(''); const [fieldErrors,setFieldErrors]=useState<Record<string,string>>({})
   const [selectedScopes,setSelectedScopes]=useState<ScopeValue[]>(['step_up'])
+  // The door is a filter, not a stored value: a role belongs to a sector, and
+  // the sector already knows its door.
+  const {taxonomy}=useTaxonomy()
+  const [doorId,setDoorId]=useState('')
+  const [sectorId,setSectorId]=useState('')
+  const doors=liveDoors(taxonomy)
+  const sectorsForDoor=doorId?liveSectorsForDoor(taxonomy,doorId):[]
   const [form,setForm]=useState({title:'',description:'',job_image_url:'',location:'',location_postcode:'',radius_miles:'',job_type:'Full-time',contract_type:'permanent',required_role_level:'',candidate_scope:'step_up',salary_min:'',salary_max:'',required_skills:[] as string[],required_product_houses:[] as string[],required_qualifications:[] as string[],required_systems:[] as string[],preferred_business_skills:[] as string[],min_years_experience:'',shift_pattern:'',offers_accommodation:false,requirements:'',benefits:'',insurance_required:false,is_agency_role:false,is_residency_role:false,why_role_exists:'',success_90_days:'',reporting_line:'',team_size:'',opening_hours:'',commercial_responsibility:'',membership_size:'',key_kpis:'',why_move:'',career_progression:'',interview_process:''})
   const update=(field:keyof typeof form,value:any)=>{setForm(p=>({...p,[field]:value}));setFieldErrors(p=>{const n={...p};delete n[field];return n})}
   const resolvedCandidateScope=():ScopeValue=>selectedScopes.includes('open_transferable')?'open_transferable':selectedScopes.includes('emerging')?'emerging':selectedScopes.includes('step_up')?'step_up':'same_level'
@@ -36,9 +45,17 @@ export default function PostRolePage() {
 
   async function uploadJobImage(file:File){setUploadingImage(true);setError('');try{const fd=new FormData();fd.append('file',file);fd.append('bucket','site-images');const safe=(form.title||'job').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');fd.append('path',`jobs/${profile?.id||'employer'}/${safe}-${Date.now()}-${file.name.replace(/[^a-zA-Z0-9._-]/g,'-')}`);const res=await fetch('/api/upload',{method:'POST',body:fd});const body=await res.json().catch(()=>({}));if(!res.ok)throw new Error(body.error||'Image upload failed');update('job_image_url',body.url)}catch(e:any){setError(e.message||'Image upload failed')}finally{setUploadingImage(false)}}
 
-  const payload=()=>({employer_id:profile.id,job_title:form.title,job_description:form.description,job_image_url:form.job_image_url||null,location:form.location,location_postcode:form.location_postcode||null,radius_miles:form.radius_miles?parseInt(form.radius_miles):null,job_type:form.job_type,contract_type:form.contract_type,required_role_level:form.required_role_level||null,candidate_scope:resolvedCandidateScope(),salary_min:form.salary_min?parseInt(form.salary_min):null,salary_max:form.salary_max?parseInt(form.salary_max):null,required_skills:form.required_skills.length?form.required_skills:null,required_brands:form.required_product_houses.length?form.required_product_houses:null,required_qualifications:form.required_qualifications.length?form.required_qualifications:null,required_systems:form.required_systems.length?form.required_systems:null,preferred_business_skills:form.preferred_business_skills.length?form.preferred_business_skills:null,min_years_experience:form.min_years_experience?parseInt(form.min_years_experience):0,shift_pattern:form.shift_pattern||null,offers_accommodation:form.offers_accommodation,requirements:form.requirements?form.requirements.split('\n').filter(Boolean):null,benefits:form.benefits?form.benefits.split('\n').filter(Boolean):null,insurance_required:form.insurance_required,is_agency_role:form.is_agency_role,is_residency_role:form.is_residency_role,tier:selectedTier,why_role_exists:form.why_role_exists.trim()||null,success_90_days:form.success_90_days.trim()||null,reporting_line:form.reporting_line.trim()||null,team_size:form.team_size?parseInt(form.team_size):null,opening_hours:form.opening_hours.trim()||null,commercial_responsibility:form.commercial_responsibility.trim()||null,membership_size:form.membership_size.trim()||null,key_kpis:form.key_kpis?form.key_kpis.split('\n').map(k=>k.trim()).filter(Boolean):null,why_move:form.why_move.trim()||null,career_progression:form.career_progression.trim()||null,interview_process:form.interview_process.trim()||null})
+  // Until an employer chooses, preselect the door that holds spa: this is a
+  // spa platform opening other doors, not a neutral directory.
+  useEffect(()=>{
+    if(doorId||!taxonomy.sectors.length)return
+    const spa=taxonomy.sectors.find(s=>s.slug==='spa')
+    if(spa?.door_id&&liveDoors(taxonomy).some(d=>d.id===spa.door_id)){setDoorId(spa.door_id);setSectorId(spa.id)}
+  },[taxonomy,doorId])
+
+  const payload=()=>({employer_id:profile.id,sector_id:sectorId||null,job_title:form.title,job_description:form.description,job_image_url:form.job_image_url||null,location:form.location,location_postcode:form.location_postcode||null,radius_miles:form.radius_miles?parseInt(form.radius_miles):null,job_type:form.job_type,contract_type:form.contract_type,required_role_level:form.required_role_level||null,candidate_scope:resolvedCandidateScope(),salary_min:form.salary_min?parseInt(form.salary_min):null,salary_max:form.salary_max?parseInt(form.salary_max):null,required_skills:form.required_skills.length?form.required_skills:null,required_brands:form.required_product_houses.length?form.required_product_houses:null,required_qualifications:form.required_qualifications.length?form.required_qualifications:null,required_systems:form.required_systems.length?form.required_systems:null,preferred_business_skills:form.preferred_business_skills.length?form.preferred_business_skills:null,min_years_experience:form.min_years_experience?parseInt(form.min_years_experience):0,shift_pattern:form.shift_pattern||null,offers_accommodation:form.offers_accommodation,requirements:form.requirements?form.requirements.split('\n').filter(Boolean):null,benefits:form.benefits?form.benefits.split('\n').filter(Boolean):null,insurance_required:form.insurance_required,is_agency_role:form.is_agency_role,is_residency_role:form.is_residency_role,tier:selectedTier,why_role_exists:form.why_role_exists.trim()||null,success_90_days:form.success_90_days.trim()||null,reporting_line:form.reporting_line.trim()||null,team_size:form.team_size?parseInt(form.team_size):null,opening_hours:form.opening_hours.trim()||null,commercial_responsibility:form.commercial_responsibility.trim()||null,membership_size:form.membership_size.trim()||null,key_kpis:form.key_kpis?form.key_kpis.split('\n').map(k=>k.trim()).filter(Boolean):null,why_move:form.why_move.trim()||null,career_progression:form.career_progression.trim()||null,interview_process:form.interview_process.trim()||null})
   async function saveDraft(){if(!profile||!form.title||!form.location)return;setSaving(true);setError('');try{const r=await fetch('/api/employer/jobs/create',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({...payload(),is_live:false,status:'draft'})});const j=await r.json();if(!r.ok)throw new Error(j.error||'Error saving draft');router.push('/employer/jobs?draft=saved')}catch(e:any){setError(e.message);setSaving(false)}}
-  function next(){const e:Record<string,string>={};if(form.title.trim().length<5)e.job_title='Title must be at least 5 characters';if(form.description.trim().length<10)e.job_description='Description must be at least 10 characters';if(!form.location.trim())e.location='Location is required';setFieldErrors(e);if(Object.keys(e).length){setError('Please complete the highlighted fields.');window.scrollTo({top:0,behavior:'smooth'});return}setError('');setPhase('tier');window.scrollTo({top:0,behavior:'smooth'})}
+  function next(){const e:Record<string,string>={};if(form.title.trim().length<5)e.job_title='Title must be at least 5 characters';if(form.description.trim().length<10)e.job_description='Description must be at least 10 characters';if(!form.location.trim())e.location='Location is required';if(doors.length&&!sectorId)e.sector='Choose the door and sector this role sits in';setFieldErrors(e);if(Object.keys(e).length){setError('Please complete the highlighted fields.');window.scrollTo({top:0,behavior:'smooth'});return}setError('');setPhase('tier');window.scrollTo({top:0,behavior:'smooth'})}
   async function post(){if(!profile||saving||checkoutLoading)return;setSaving(true);setError('');try{
     // Reuse the draft created by an earlier attempt: without this, every retry
     // of "Post role & pay" left a duplicate listing behind.
@@ -55,6 +72,23 @@ export default function PostRolePage() {
     {error&&<div role="alert" className="max-w-4xl mt-6 bg-red-50 text-red-700 text-sm px-4 py-3 rounded-lg">{error}</div>}
     {phase==='form'?<div className="max-w-4xl mt-8 space-y-7">
       <section className="dashboard-card space-y-5"><p className="eyebrow">Job details</p>
+        {doors.length>0&&(
+          <div className="grid sm:grid-cols-2 gap-4">
+            <Field label="Door *">
+              <select className="input-field" value={doorId} onChange={e=>{setDoorId(e.target.value);setSectorId('')}}>
+                <option value="">Choose a door</option>
+                {doors.map(door=><option key={door.id} value={door.id}>{door.label}</option>)}
+              </select>
+            </Field>
+            <Field label="Sector *">
+              <select className={`input-field ${fieldErrors.sector?'border-red-300':''}`} value={sectorId} onChange={e=>setSectorId(e.target.value)} disabled={!doorId}>
+                <option value="">{doorId?'Choose a sector':'Choose a door first'}</option>
+                {sectorsForDoor.map(sector=><option key={sector.id} value={sector.id}>{sector.label}</option>)}
+              </select>
+              <p className="mt-1.5 text-[11px] text-muted">Decides who sees this role and how it is filtered. It cannot be left blank.</p>
+            </Field>
+          </div>
+        )}
         <Field label="Job title *"><input className={`input-field ${fieldErrors.job_title?'border-red-300':''}`} value={form.title} onChange={e=>update('title',e.target.value)} placeholder="e.g. Director of Spa"/></Field>
         <Field label="Job description *"><textarea className={`input-field ${fieldErrors.job_description?'border-red-300':''}`} rows={7} value={form.description} onChange={e=>update('description',e.target.value)} placeholder="Responsibilities, priorities, reporting line, team size and what success looks like..."/></Field>
         <div><p className="eyebrow mb-1.5">Job image</p><p className="text-[11px] text-secondary mb-3">Upload a photo specifically for this vacancy. This will appear on Browse Roles and the role page. If you leave it blank, WHC will use your property photo as a fallback.</p><div className="grid md:grid-cols-[260px_1fr] gap-4 items-center border border-border rounded-xl p-4 bg-[#f3f0eb]">{form.job_image_url?<div className="aspect-[16/10] overflow-hidden rounded-xl bg-white"><img src={form.job_image_url} alt="Job preview" className="w-full h-full object-cover"/></div>:<div className="aspect-[16/10] rounded-xl border border-dashed border-border bg-white flex items-center justify-center text-muted"><ImageIcon size={30}/></div>}<div className="flex flex-wrap gap-2"><label className="btn-secondary inline-flex items-center gap-2 cursor-pointer"><Upload size={13}/>{uploadingImage?'Uploading...':form.job_image_url?'Replace image':'Upload job image'}<input type="file" accept="image/jpeg,image/png,image/webp" className="hidden" disabled={uploadingImage} onChange={e=>{const f=e.target.files?.[0];if(f)uploadJobImage(f);e.target.value=''}}/></label>{form.job_image_url&&<button type="button" onClick={()=>update('job_image_url','')} className="btn-secondary inline-flex items-center gap-2"><X size={13}/>Remove</button>}</div></div></div>

@@ -22,20 +22,24 @@ function createPublicSupabaseClient() {
 const getPublicStats = unstable_cache(async () => {
   try {
     const supabase = createPublicSupabaseClient()
-    const [jobs, properties, reviews] = await Promise.all([
+    const [jobs, properties, reviews, setting] = await Promise.all([
       supabase.from('job_listings').select('id', { count: 'exact', head: true }).eq('is_live', true).eq('status', 'active'),
       supabase.from('employer_profiles').select('id', { count: 'exact', head: true }).eq('approval_status', 'approved'),
       createAdminClient().from('reviews').select('id', { count: 'exact', head: true }),
+      // Two live roles and one property reads as an empty marketplace, so the
+      // strip is off until an administrator judges the numbers worth showing.
+      createAdminClient().from('platform_config').select('value').eq('key', 'login_live_numbers').maybeSingle(),
     ])
     return {
       liveRoles: jobs.error ? null : jobs.count ?? 0,
       properties: properties.error ? null : properties.count ?? 0,
       verifiedReviews: reviews.error ? null : reviews.count ?? 0,
+      showLiveNumbers: String(setting.data?.value || '').toLowerCase() === 'on',
     }
   } catch {
-    return { liveRoles: null, properties: null, verifiedReviews: null }
+    return { liveRoles: null, properties: null, verifiedReviews: null, showLiveNumbers: false }
   }
-}, ['public-stats-v1'], { revalidate: 300 })
+}, ['public-stats-v2'], { revalidate: 300 })
 
 export async function GET() {
   const stats = await getPublicStats()

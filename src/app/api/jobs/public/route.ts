@@ -5,13 +5,15 @@ import { createAdminClient } from '@/lib/supabase/admin'
 const DEFAULT_PER_PAGE = 12
 const MAX_PER_PAGE = 50
 
-const readPublicJobs = unstable_cache(async (search: string, location: string, offset: number, perPage: number) => {
+const readPublicJobs = unstable_cache(async (search: string, location: string, offset: number, perPage: number, sectorId: string, doorId: string) => {
   const admin = createAdminClient()
   const { data, error } = await admin.rpc('get_public_jobs_page', {
     p_search: search || null,
     p_location: location || null,
     p_offset: offset,
     p_limit: perPage,
+    p_sector_id: sectorId || null,
+    p_door_id: doorId || null,
   })
   if (error) throw new Error(error.message)
   const rows: any[] = data || []
@@ -36,7 +38,7 @@ const readPublicJobs = unstable_cache(async (search: string, location: string, o
     } catch { /* best-effort merge */ }
   }
   return rows
-}, ['public-jobs-page-v4'], { revalidate: 60 })
+}, ['public-jobs-page-v5'], { revalidate: 60, tags: ['public-jobs'] })
 
 export async function GET(req: NextRequest) {
   const pageParam = Number(req.nextUrl.searchParams.get('page'))
@@ -47,10 +49,14 @@ export async function GET(req: NextRequest) {
     : DEFAULT_PER_PAGE
   const search = (req.nextUrl.searchParams.get('search') || '').trim()
   const location = (req.nextUrl.searchParams.get('location') || '').trim()
+  // A sector filter is more specific than its door, so it wins when both are
+  // sent. Ids are passed straight to the query, which only matches real rows.
+  const sectorId = (req.nextUrl.searchParams.get('sector') || '').trim()
+  const doorId = sectorId ? '' : (req.nextUrl.searchParams.get('door') || '').trim()
   const offset = (page - 1) * perPage
 
   try {
-    const data = await readPublicJobs(search, location, offset, perPage)
+    const data = await readPublicJobs(search, location, offset, perPage, sectorId, doorId)
     const rows = data.map((row: any) => ({
       id: row.id,
       job_title: row.job_title,

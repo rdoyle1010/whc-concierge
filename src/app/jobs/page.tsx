@@ -1,6 +1,8 @@
 'use client'
 
 import { Suspense, useEffect, useState } from 'react'
+import { useTaxonomy } from '@/lib/use-sectors'
+import { liveDoors, liveSectorsForDoor } from '@/lib/sectors'
 import { useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import Navbar from '@/components/Navbar'
@@ -41,6 +43,13 @@ function PublicJobsBrowser() {
   const initialSearch = searchParams.get('specialism') || searchParams.get('search') || ''
   const [search, setSearch] = useState(initialSearch)
   const [location, setLocation] = useState('')
+  // Door narrows the sector list; sector is what the query actually filters
+  // on, so choosing a door alone shows everything inside it.
+  const { taxonomy } = useTaxonomy()
+  const [doorId, setDoorId] = useState('')
+  const [sectorId, setSectorId] = useState('')
+  const doors = liveDoors(taxonomy)
+  const sectorsForDoor = doorId ? liveSectorsForDoor(taxonomy, doorId) : []
   // An empty result means two different things, and the page should not say
   // the same thing for both.
   const hasActiveSearch = search.trim().length > 0 || location.trim().length > 0
@@ -60,6 +69,8 @@ function PublicJobsBrowser() {
       const params = new URLSearchParams({ page: String(page), per_page: String(perPage) })
       if (search.trim()) params.set('search', search.trim())
       if (location.trim()) params.set('location', location.trim())
+      if (sectorId) params.set('sector', sectorId)
+      else if (doorId) params.set('door', doorId)
       try {
         const res = await fetch(`/api/jobs/public?${params.toString()}`, { signal: controller.signal })
         const body = res.ok ? await res.json() : { rows: [], pagination: { total: 0 } }
@@ -71,7 +82,7 @@ function PublicJobsBrowser() {
       } finally { if (active) setLoading(false) }
     }, 250)
     return () => { active = false; controller.abort(); window.clearTimeout(timer) }
-  }, [page, search, location])
+  }, [page, search, location, doorId, sectorId])
 
   useEffect(() => {
     let active = true
@@ -247,7 +258,7 @@ function PublicJobsBrowser() {
     </article>
   }
 
-  return <div className="min-h-screen bg-surface"><Navbar/><main id="main-content"><section className="pt-[76px] bg-white border-b border-border"><div className="max-w-[1440px] mx-auto px-6 lg:px-10 py-16"><p className="public-eyebrow mb-4">Open positions</p><h1 className="public-title mb-4">Live roles at exceptional properties.</h1><p className="text-[15px] text-secondary max-w-[58ch] mb-8">Matched on real skills, qualifications and product houses - not CV keywords. Every property here has been approved by hand before its role went live.</p><div className="max-w-2xl flex flex-col sm:flex-row gap-3"><div className="relative flex-1"><Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted"/><input type="text" placeholder="Job title or property..." aria-label="Search by job title or property" value={search} onChange={e=>{setSearch(e.target.value);setPage(1)}} className="input-field pl-9"/></div><div className="relative flex-1"><MapPin size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted"/><input type="text" placeholder="Location..." aria-label="Search by location" value={location} onChange={e=>{setLocation(e.target.value);setPage(1)}} className="input-field pl-9"/></div></div></div></section><SponsoredAd placement="jobs_talent_sponsor"/><section className="py-12"><div className="max-w-[1440px] mx-auto px-6 lg:px-10">
+  return <div className="min-h-screen bg-surface"><Navbar/><main id="main-content"><section className="pt-[76px] bg-white border-b border-border"><div className="max-w-[1440px] mx-auto px-6 lg:px-10 py-16"><p className="public-eyebrow mb-4">Open positions</p><h1 className="public-title mb-4">Live roles at exceptional properties.</h1><p className="text-[15px] text-secondary max-w-[58ch] mb-8">Matched on real skills, qualifications and product houses - not CV keywords. Every property here has been approved by hand before its role went live.</p><div className="max-w-2xl flex flex-col sm:flex-row gap-3"><div className="relative flex-1"><Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted"/><input type="text" placeholder="Job title or property..." aria-label="Search by job title or property" value={search} onChange={e=>{setSearch(e.target.value);setPage(1)}} className="input-field pl-9"/></div><div className="relative flex-1"><MapPin size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted"/><input type="text" placeholder="Location..." aria-label="Search by location" value={location} onChange={e=>{setLocation(e.target.value);setPage(1)}} className="input-field pl-9"/></div></div>{doors.length>0&&<div className="max-w-2xl mt-3 flex flex-col sm:flex-row gap-3"><select aria-label="Filter by door" value={doorId} onChange={e=>{setDoorId(e.target.value);setSectorId('');setPage(1)}} className="input-field flex-1"><option value="">All areas of the industry</option>{doors.map(door=><option key={door.id} value={door.id}>{door.label}</option>)}</select><select aria-label="Filter by sector" value={sectorId} onChange={e=>{setSectorId(e.target.value);setPage(1)}} disabled={!doorId} className="input-field flex-1"><option value="">{doorId?'All sectors in this area':'Choose an area first'}</option>{sectorsForDoor.map(sector=><option key={sector.id} value={sector.id}>{sector.label}</option>)}</select></div>}</div></section><SponsoredAd placement="jobs_talent_sponsor"/><section className="py-12"><div className="max-w-[1440px] mx-auto px-6 lg:px-10">
     {loading ? <div className="border-x border-b border-t border-border bg-white" role="status" aria-label="Loading roles"><span className="sr-only">Loading roles</span>{[0,1,2,3,4].map(row=><div key={row} className="flex items-center gap-5 border-b border-border px-6 py-6 last:border-b-0 md:px-8"><div className="skeleton hidden h-[92px] w-[92px] shrink-0 sm:block"/><div className="min-w-0 flex-1"><div className="skeleton h-[15px] w-1/3"/><div className="skeleton mt-3 h-[12px] w-1/2"/><div className="skeleton mt-3 h-[12px] w-1/4"/></div></div>)}</div> : jobs.length===0 ? <div className="border border-border bg-white p-10 md:p-14"><p className="public-eyebrow mb-4">Nothing matched</p><h2 className="text-[22px] font-serif text-ink mb-3">{hasActiveSearch ? 'No live role matches that search.' : 'No roles are live right now.'}</h2><p className="text-[14px] leading-relaxed text-secondary max-w-[54ch] mb-7">{hasActiveSearch ? 'WHC lists a small number of roles at approved properties rather than everything on the market, so a narrow search can come back empty. Clearing it will show everything currently open.' : 'Roles appear the moment an approved property publishes one. The Journal and the market data are worth a look in the meantime.'}</p><div className="flex flex-wrap items-center gap-3">{hasActiveSearch && <button type="button" onClick={()=>{setSearch('');setLocation('');setPage(1)}} className="btn-primary">Clear search</button>}<Link href="/intelligence" className="btn-secondary">See what the market is paying</Link><Link href="/login?role=talent" className="btn-secondary">Get alerted when one opens</Link></div></div> : <>
     <div className="mb-7 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
       <div>

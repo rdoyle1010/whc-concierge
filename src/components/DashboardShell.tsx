@@ -21,7 +21,7 @@ import { TrendingUp,
   Settings, LogOut, Menu, X, Users, FileText, Megaphone,
   AlertTriangle, Heart, Building2, ChevronRight, BarChart3, CreditCard, GraduationCap,
   Palette, Banknote, Download, MapPin, Brain, ClipboardList, ShieldCheck, Lock,
-  Search, Mail, Image as ImageIcon,
+  Search, Mail, Image as ImageIcon, LayoutGrid,
 } from 'lucide-react'
 
 interface NavItem {
@@ -95,6 +95,7 @@ const navItems: Record<string, NavItem[]> = {
     { label: 'Website & Brand', href: '/admin/website', icon: <Palette size={17} />, section: 'People & platform' },
     { label: 'Public Pages', href: '/admin/website/pages', icon: <FileText size={17} /> },
     { label: 'Pictures', href: '/admin/images', icon: <ImageIcon size={17} /> },
+    { label: 'Doors & Sectors', href: '/admin/sectors', icon: <LayoutGrid size={17} /> },
     { label: 'Users', href: '/admin/users', icon: <Users size={17} /> },
     { label: 'Messages', href: '/admin/messages', icon: <MessageSquare size={17} /> },
     { label: 'Matches', href: '/admin/matches', icon: <Heart size={17} /> },

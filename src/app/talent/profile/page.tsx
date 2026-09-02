@@ -1,6 +1,8 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useTaxonomy } from '@/lib/use-sectors'
+import { liveSectorGroups } from '@/lib/sectors'
 import Link from 'next/link'
 import DashboardShell from '@/components/DashboardShell'
 import CertificateManager from '@/components/CertificateManager'
@@ -25,6 +27,21 @@ export default function TalentProfilePage() {
 
   useEffect(()=>{(async()=>{const {data:{user}}=await supabase.auth.getUser();if(!user)return;const {data}=await supabase.from('candidate_profiles').select('*').eq('user_id',user.id).single();setProfile(data||{});if(data?.id){const {data:completed}=await supabase.from('course_enrollments').select('course_slug,completed_at,certificate_code').eq('candidate_id',data.id).not('completed_at','is',null).order('completed_at',{ascending:false});setAcademyBadges(completed||[])}setLoading(false)})()},[])
   const u=(field:string,value:any)=>setProfile((p:any)=>({...p,[field]:value}))
+  // Sectors live in a join table rather than on the profile row, so they load
+  // and save on their own rather than with the rest of the form.
+  const {taxonomy}=useTaxonomy()
+  const sectorGroups=liveSectorGroups(taxonomy)
+  const [sectorIds,setSectorIds]=useState<string[]>([])
+  const [savingSectors,setSavingSectors]=useState(false)
+  useEffect(()=>{fetch('/api/talent/sectors').then(r=>r.ok?r.json():null).then(d=>{if(Array.isArray(d?.sectorIds))setSectorIds(d.sectorIds)}).catch(()=>{})},[])
+  async function toggleSector(id:string){
+    const next=sectorIds.includes(id)?sectorIds.filter(x=>x!==id):[...sectorIds,id]
+    setSectorIds(next);setSavingSectors(true)
+    const res=await fetch('/api/talent/sectors',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({sectorIds:next})}).catch(()=>null)
+    setSavingSectors(false)
+    if(!res||!res.ok){setMessage('Your sectors could not be saved.');setTimeout(()=>setMessage(''),4000)}
+  }
+
   const completionChecklist:[string,boolean][]=[['Full name',!!profile?.full_name],['Role level',!!profile?.role_level],['Headline',!!profile?.headline],['About you',!!profile?.bio],['Treatments & services',(profile?.services_offered?.length||0)>0],['Qualifications',(profile?.qualifications?.length||0)>0],['CV uploaded',!!profile?.cv_url],['Years of experience',!!profile?.experience_years],['Postcode',!!profile?.postcode],['Business skills',(profile?.business_skills?.length||0)>0]]
   const completionItems=completionChecklist.map(([,done])=>done)
   const missingItems=completionChecklist.filter(([,done])=>!done).map(([label])=>label)
@@ -85,6 +102,31 @@ export default function TalentProfilePage() {
       <section className="dashboard-card"><p className="eyebrow">WHC Academy achievements</p>{academyBadges.length?<div className="mt-4 space-y-2">{academyBadges.map(b=><div key={b.course_slug} className="flex justify-between border border-border rounded-lg p-3"><div><p className="text-[13px] font-semibold">{courseTitle(b.course_slug)}</p><p className="text-[10px] text-muted">Completed {new Date(b.completed_at).toLocaleDateString('en-GB')}</p></div><Award size={17}/></div>)}</div>:<p className="text-[12px] text-muted mt-2">Completed Academy courses will appear here.</p>}</section>
 
       <section className="dashboard-card space-y-4"><p className="eyebrow">Personal details</p><div className="flex items-center gap-4"><div className="w-16 h-16 rounded-full overflow-hidden bg-[#e9e4dd]">{profile.profile_image_url&&<img src={profile.profile_image_url} alt="Your profile photo" className="w-full h-full object-cover"/>}</div><label className="btn-secondary cursor-pointer inline-flex gap-2"><Upload size={13}/>Upload Photo<input type="file" accept="image/*" className="hidden" onChange={handlePhotoUpload}/></label></div><div className="grid sm:grid-cols-2 gap-4"><Field label="Full name"><input className="input-field" value={profile.full_name||''} onChange={e=>u('full_name',e.target.value)}/></Field><Field label="Phone"><input className="input-field" value={profile.phone||''} onChange={e=>u('phone',e.target.value)}/></Field><Field label="Postcode"><input className="input-field" value={profile.postcode||''} onChange={e=>u('postcode',e.target.value)}/></Field><Field label="Right to work in the UK (visa, settled status or citizenship)"><select className="input-field" value={profile.right_to_work||''} onChange={e=>u('right_to_work',e.target.value)}><option value="">Select</option><option value="uk">Right to work in the UK</option><option value="ireland">Right to work in Ireland</option><option value="uk_ireland">Right to work in UK & Ireland</option><option value="visa_required">Visa / sponsorship required</option></select></Field></div></section>
+
+      {sectorGroups.length>0&&(
+        <section className="dashboard-card space-y-4">
+          <div>
+            <p className="eyebrow">Sectors you work in</p>
+            <p className="mt-1 text-[12px] leading-5 text-secondary">Choose every sector you take work in. Properties and brands search by sector, so leaving one out means missing the roles behind it. You can change these at any time.{savingSectors?' Saving...':''}</p>
+          </div>
+          {sectorGroups.map(group=>(
+            <div key={group.door.id} className="border-t border-border pt-4">
+              <p className="text-[10px] font-semibold uppercase tracking-[.15em] text-muted">{group.door.label}</p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                {group.sectors.map(sector=>{
+                  const on=sectorIds.includes(sector.id)
+                  return (
+                    <button key={sector.id} type="button" onClick={()=>toggleSector(sector.id)} aria-pressed={on}
+                      className={`border px-3 py-1.5 text-[12px] font-medium transition-colors ${on?'border-ink bg-ink text-white':'border-border bg-white text-body hover:border-secondary'}`}>
+                      {sector.label}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+          ))}
+        </section>
+      )}
 
       <section className="dashboard-card space-y-4"><p className="eyebrow">Professional details</p><Field label="Current role level"><select className="input-field" value={profile.role_level||''} onChange={e=>u('role_level',e.target.value)}><option value="">Select</option>{ROLE_LEVELS.map(r=><option key={r}>{r}</option>)}</select></Field><Field label="Headline"><input className="input-field" value={profile.headline||''} onChange={e=>u('headline',e.target.value)} placeholder="e.g. Spa Manager | Luxury Hospitality | Commercial & People Leadership"/></Field><Field label="Bio"><textarea rows={4} className="input-field" value={profile.bio||''} onChange={e=>u('bio',e.target.value)}/></Field><div className="grid sm:grid-cols-3 gap-4"><Field label="Experience years"><input type="number" className="input-field" value={profile.experience_years||''} onChange={e=>u('experience_years',e.target.value)}/></Field>{profile.agency_available?<><Field label="Agency day rate min (£)"><input type="number" className="input-field" value={profile.day_rate_min||''} onChange={e=>u('day_rate_min',e.target.value)}/></Field><Field label="Agency day rate max (£)"><input type="number" className="input-field" value={profile.day_rate_max||''} onChange={e=>u('day_rate_max',e.target.value)}/></Field></>:null}</div><Field label="Availability"><select className="input-field" value={profile.availability_status||''} onChange={e=>u('availability_status',e.target.value)}>{AVAILABILITY_STATUSES.map(a=><option key={a.value} value={a.value}>{a.label}</option>)}</select></Field></section>
 

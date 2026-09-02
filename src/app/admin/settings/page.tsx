@@ -73,6 +73,10 @@ export default function AdminSettingsPage() {
   // anywhere, so they have been removed rather than pretending they work.
   const configFields = [
     { key: 'contact_email', label: 'Contact Email (contact-form notifications are sent here)', placeholder: 'hello@wellnesshousecollective.co.uk' },
+    // Type on to show the live role and property counts beside the sign-in
+    // form. Anything else, including blank, hides them - a marketplace with
+    // two roles in it argues against itself.
+    { key: 'login_live_numbers', label: 'Show live numbers on the sign-in page (type on to show, leave blank to hide)', placeholder: 'off' },
   ]
   const socialFields: { key:keyof SocialLinks; label:string; placeholder:string }[] = [
     { key:'instagram_url', label:'Instagram public profile', placeholder:'https://www.instagram.com/...' },

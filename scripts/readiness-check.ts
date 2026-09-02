@@ -180,6 +180,10 @@ check('all service-role API routes are protected or deliberately public', () => 
     // pages. Reviews are private to their parties, so only the count - never
     // a row - is read with the service role.
     'src/app/api/public-stats/route.ts',
+    // Public by design: the door and sector taxonomy - slugs, labels and sort
+    // order, nothing per-person. The public jobs page filters on it while
+    // signed out, and the post-a-role and profile forms read the same list.
+    'src/app/api/sectors/route.ts',
   ])
   const authMarkers = /getUser\(|getRequestUser\(|requireAdmin|verifyAdmin|stripe-signature|isInternalApiRequest/
   const unguarded = files.filter(file => !authMarkers.test(read(file)) && !deliberatePublic.has(file))

@@ -25,6 +25,9 @@ function LoginForm() {
   const [show, setShow] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  // Off unless an administrator turns it on: an honest but tiny number on the
+  // sign-in page argues against the platform rather than for it.
+  const [showLiveNumbers, setShowLiveNumbers] = useState(false)
   const [liveRoles, setLiveRoles] = useState<number | null>(null)
   const [properties, setProperties] = useState<number | null>(null)
 
@@ -34,6 +37,7 @@ function LoginForm() {
       .then(res => (res.ok ? res.json() : null))
       .then(data => {
         if (cancelled) return
+        setShowLiveNumbers(data?.showLiveNumbers === true)
         if (typeof data?.liveRoles === 'number') setLiveRoles(data.liveRoles)
         if (typeof data?.properties === 'number') setProperties(data.properties)
       })
@@ -125,14 +129,14 @@ function LoginForm() {
           <p className="text-white text-[30px] leading-tight tracking-[-0.03em] font-semibold">The professional platform for spa and wellness careers.</p>
           <p className="text-white/80 text-[13px] mt-4 leading-6">Live roles, Agency cover, Residency and the Academy - one account, one platform.</p>
           <dl className="mt-9 border-t border-white/20">
-            {liveRoles !== null && liveRoles > 0 && (
+            {showLiveNumbers && liveRoles !== null && liveRoles > 0 && (
               <div className="flex items-baseline gap-3 border-b border-white/15 py-4">
                 <dt className="sr-only">Live roles this week</dt>
                 <dd className="text-[24px] font-serif font-semibold text-white leading-none tabular-nums">{liveRoles}</dd>
                 <p className="text-[13px] text-white/80">live role{liveRoles === 1 ? '' : 's'} this week</p>
               </div>
             )}
-            {properties !== null && properties > 0 && (
+            {showLiveNumbers && properties !== null && properties > 0 && (
               <div className="flex items-baseline gap-3 border-b border-white/15 py-4">
                 <dt className="sr-only">Approved properties</dt>
                 <dd className="text-[24px] font-serif font-semibold text-white leading-none tabular-nums">{properties}</dd>

@@ -108,15 +108,15 @@ export const DEFAULT_PUBLIC_PAGES_CONTENT: PublicPagesContent = {
     'coming-soon': {
       label: 'Coming Soon',
       hero: {
-        eyebrow: 'Coming next',
-        heading: 'Talent House Collective is only the beginning.',
-        text: 'We are building the talent, flexible staffing and career-confidence platform for hospitality - starting with spa and wellness, then expanding into the departments every great property depends on.',
+        eyebrow: 'Where this is going',
+        heading: 'One platform. Several doors.',
+        text: 'Talent House Collective opens on Spa & Wellness and Brands. Hospitality is built and waiting. Each door is a different part of the industry, and every one of them shares the same verified professionals, the same flexible staffing and the same standards.',
         image: image('https://images.unsplash.com/photo-1751972788348-3360f69603f6?auto=format&fit=crop&q=82&w=1800', 'Luxury hospitality destination'),
       },
       blocks: [
-        block('AI Interview & Confidence Coach', 'Not an answer machine. A confidence builder.', 'Help professionals understand themselves, pull stronger evidence from their own experience and practise until they can answer with confidence.', 'https://images.unsplash.com/photo-1521737711867-e3b97375f902?auto=format&fit=crop&q=82&w=1600', 'Professionals in conversation'),
-        block('Hospitality expansion', 'From spa into the departments that make hospitality work.', 'Permanent jobs and flexible Agency staffing will expand beyond spa while Residency stays specialist.', 'https://images.unsplash.com/photo-1564501049412-61c2a3083791?auto=format&fit=crop&q=82&w=1600', 'Hospitality property'),
-        block('Property arrival packs', 'Know the property before your first shift starts.', 'Confirmed Agency and Residency professionals receive the practical details they need before they arrive.', 'https://images.unsplash.com/photo-1600334129128-685c5582fd35?auto=format&fit=crop&q=82&w=1600', 'Spa operations'),
+        block('Open now', 'Spa & Wellness, and Brands.', 'Spa, beauty, fitness, Pilates and yoga, and recovery - the trades this platform was built for. Alongside them, Brands: education, sales and ambassador roles for the product houses that supply them.', 'https://images.unsplash.com/photo-1600334129128-685c5582fd35?auto=format&fit=crop&q=82&w=1600', 'Luxury spa treatment'),
+        block('Next through the door', 'Hospitality, when there is something behind it.', 'Events, food and beverage, front of house and housekeeping are built and ready. They open when there are properties hiring into them, not before - an empty category helps nobody.', 'https://images.unsplash.com/photo-1564501049412-61c2a3083791?auto=format&fit=crop&q=82&w=1600', 'Hospitality property'),
+        block('The same standards, whichever door', 'Verified once. Trusted everywhere.', 'Right to work, insurance and qualifications are reviewed by hand before the Verified badge is awarded, and that badge travels with the professional across every sector they work in.', 'https://images.unsplash.com/photo-1521737711867-e3b97375f902?auto=format&fit=crop&q=82&w=1600', 'Professionals in conversation'),
       ],
     },
   },
