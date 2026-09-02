@@ -2,41 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { verifyRegistrationProof } from '@/lib/registration'
 import { getRequestUser } from '@/lib/request-user'
-import sharp from 'sharp'
-
-// Nothing on this platform ever resized an uploaded picture. A property
-// photographs its spa on a phone, uploads eight megapixels of it, and every
-// visitor on 4G downloads the lot - at full resolution, in the original
-// format, to be drawn in a box a few hundred pixels wide. That is most of why
-// the site feels slow, and it compounds with every photo anyone adds.
-//
-// 2400px wide is generous: it still looks sharp on a retina display at full
-// bleed, and it is an order of magnitude less data than a modern camera roll.
-const MAX_IMAGE_WIDTH = 2400
-// SVG is already small and rasterising it would throw away the thing that
-// makes it worth using. GIFs may be animated, and sharp would flatten them.
-const SKIP_RESIZE = new Set(['image/svg+xml', 'image/gif'])
-
-async function shrinkImage(buffer: Buffer, type: string): Promise<Buffer> {
-  if (!type.startsWith('image/') || SKIP_RESIZE.has(type)) return buffer
-  try {
-    const image = sharp(buffer, { failOn: 'none' })
-    const { width } = await image.metadata()
-    // rotate() applies the EXIF orientation and drops the tag, so a photo
-    // taken sideways on a phone is not served sideways.
-    let pipeline = image.rotate()
-    if (width && width > MAX_IMAGE_WIDTH) pipeline = pipeline.resize({ width: MAX_IMAGE_WIDTH, withoutEnlargement: true })
-    const out = type === 'image/png'
-      ? await pipeline.png({ compressionLevel: 9 }).toBuffer()
-      : await pipeline.jpeg({ quality: 82, mozjpeg: true }).toBuffer()
-    // Never hand back something larger than we were given.
-    return out.length < buffer.length ? out : buffer
-  } catch {
-    // A picture that sharp cannot read is still the person's picture. Store
-    // the original rather than failing their upload over an optimisation.
-    return buffer
-  }
-}
+import { shrinkImage } from '@/lib/image-resize'
 
 const ALLOWED_COLUMNS = new Set([
   'profile_image_url',

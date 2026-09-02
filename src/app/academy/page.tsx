@@ -93,10 +93,15 @@ export default function PublicAcademyPage() {
   const managementCourses = courses.filter(course => MANAGEMENT_PROGRAMMES.has(course.slug))
   const standardCourses = courses.filter(course => !MANAGEMENT_PROGRAMMES.has(course.slug))
   const categories = Array.from(new Set(standardCourses.map(c => c.category)))
-  // An image uploaded in Admin -> Academy always wins; MODERN_COURSE_IMAGES is
-  // only a nicer default for courses no admin has set an image for.
-  const displayCourseImage = (course: AcademyCourse & { image_url?: string; image_admin_set?: boolean }) =>
-    (course.image_admin_set && course.image_url) || MODERN_COURSE_IMAGES[course.slug] || course.image_url || courseImage(course.slug)
+  // An uploaded image wins, and the presence of the image is the whole of the
+  // decision. It used to be gated behind image_admin_set, which is hardcoded
+  // false for every course defined in code - so for those courses a stock
+  // picture in MODERN_COURSE_IMAGES outranked the one an administrator had
+  // actually uploaded, and the upload appeared to do nothing at all. That is
+  // the third time on this platform a flag beside a picture has decided the
+  // picture does not count.
+  const displayCourseImage = (course: AcademyCourse & { image_url?: string }) =>
+    course.image_url || MODERN_COURSE_IMAGES[course.slug] || courseImage(course.slug)
 
   const purchaseButton = (course: AcademyCourse) => isCandidate ? (
     <Link href="/talent/academy" className="btn-primary text-[12px] inline-flex items-center justify-center gap-1.5">Member enrolment <ArrowRight size={12} /></Link>

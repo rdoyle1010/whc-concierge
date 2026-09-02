@@ -27,6 +27,8 @@ const pagePaths: Record<string, string> = {
   pricing: '/pricing', 'coming-soon': '/coming-soon',
 }
 
+const asMb = (bytes: number) => (bytes / 1024 / 1024).toFixed(1) + 'MB'
+
 function websiteSlots(content: WebsiteContent): Slot[] {
   const slots: Slot[] = [
     { store: 'website', field: 'brand.logo.url', group: 'Brand', label: 'Logo', url: content.brand.logo.url, href: '/admin/website' },
@@ -152,6 +154,40 @@ export default function MediaLibraryPage() {
     }
   }
 
+  // Reprocessing every stored picture is too much work for one request, so
+  // the route hands back a cursor and this keeps calling until it is done.
+  // Losing a hundred photographs to a serverless timeout would be a poor trade
+  // for a simpler loop.
+  type Optimise = { running: boolean; applied: boolean; done: number; total: number; rewritten: number; before: number; after: number; failed: number }
+  const [optimise, setOptimise] = useState<Optimise | null>(null)
+
+  async function runOptimise(apply: boolean) {
+    setOptimise({ running: true, applied: apply, done: 0, total: 0, rewritten: 0, before: 0, after: 0, failed: 0 })
+    let cursor = 0
+    const tally = { rewritten: 0, before: 0, after: 0, failed: 0 }
+    for (;;) {
+      const response = await fetch('/api/admin/optimise-images', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ apply, cursor }),
+      }).catch(() => null)
+      if (!response || !response.ok) {
+        setNotice({ type: 'error', text: 'The pictures could not be optimised. Nothing was lost - try again.' })
+        setOptimise(current => current && { ...current, running: false })
+        return
+      }
+      const batch = await response.json()
+      tally.rewritten += batch.rewritten
+      tally.before += batch.before
+      tally.after += batch.after
+      tally.failed += batch.failed
+      cursor = batch.cursor
+      setOptimise({ running: !batch.done, applied: apply, done: cursor, total: batch.total, ...tally })
+      if (batch.done) break
+    }
+    // Nothing to reload: each picture is rewritten at its own path, so every
+    // URL on this screen still points at the same place.
+  }
+
   return (
     <DashboardShell role="admin">
       <div className="flex flex-wrap items-start justify-between gap-4">
@@ -168,6 +204,42 @@ export default function MediaLibraryPage() {
       {notice && <div role="status" className={`mt-5 border px-4 py-3 text-[13px] ${notice.type === 'success' ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-red-200 bg-red-50 text-red-600'}`}>{notice.text}</div>}
       {loadError && <div role="alert" className="mt-5 border border-red-200 bg-red-50 px-4 py-3 text-[13px] text-red-600">{loadError}</div>}
       {loading && <p className="mt-6 text-[13px] text-secondary">Loading pictures...</p>}
+
+      {!loading && !loadError && (
+        <section className="dashboard-panel mt-6">
+          <h2 className="dashboard-section-title">Picture sizes</h2>
+          <p className="mt-1 max-w-2xl text-[12px] leading-6 text-secondary">
+            Pictures uploaded from now on are resized automatically. Anything uploaded before that is still stored at the
+            size it came off the camera, which is what visitors download. Check first, then optimise: nothing is written
+            until you press the second button.
+          </p>
+          <div className="mt-4 flex flex-wrap gap-3">
+            <button type="button" disabled={optimise?.running} onClick={() => runOptimise(false)} className="btn-secondary text-[12px] disabled:opacity-50">
+              {optimise?.running && !optimise.applied ? 'Checking...' : 'Check what could be saved'}
+            </button>
+            <button type="button" disabled={optimise?.running} onClick={() => runOptimise(true)} className="btn-primary text-[12px] disabled:opacity-50">
+              {optimise?.running && optimise.applied ? 'Optimising...' : 'Optimise stored pictures'}
+            </button>
+          </div>
+          {optimise && (
+            <div role="status" className="mt-4 border border-border bg-white p-4 text-[12px] leading-6 text-secondary">
+              <p>
+                {optimise.done} of {optimise.total || '...'} checked
+                {optimise.running ? '...' : '.'}
+              </p>
+              {optimise.rewritten > 0 && (
+                <p className="mt-1 text-ink">
+                  {optimise.rewritten} picture{optimise.rewritten === 1 ? '' : 's'} {optimise.applied ? 'optimised' : 'could be optimised'}:{' '}
+                  {asMb(optimise.before)} down to {asMb(optimise.after)}
+                  {optimise.before > 0 && <> ({Math.round((1 - optimise.after / optimise.before) * 100)}% smaller)</>}.
+                </p>
+              )}
+              {!optimise.running && optimise.rewritten === 0 && <p className="mt-1">Every stored picture is already a sensible size.</p>}
+              {optimise.failed > 0 && <p className="mt-1 text-red-600">{optimise.failed} could not be read and were left exactly as they were.</p>}
+            </div>
+          )}
+        </section>
+      )}
 
       {!loading && !loadError && changed && (
         <div className="sticky bottom-4 z-20 mt-5 flex flex-wrap items-center justify-between gap-3 border border-ink bg-ink px-4 py-3 shadow-lg">

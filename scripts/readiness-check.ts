@@ -185,7 +185,11 @@ check('all service-role API routes are protected or deliberately public', () => 
     // signed out, and the post-a-role and profile forms read the same list.
     'src/app/api/sectors/route.ts',
   ])
-  const authMarkers = /getUser\(|getRequestUser\(|requireAdmin|verifyAdmin|stripe-signature|isInternalApiRequest/
+  // adminRequestUser is the actual admin guard on this platform. It was
+  // missing here, so a route passed only if it happened to wrap the helper in
+  // something called requireAdmin - the check was reading naming rather than
+  // substance, and a correctly guarded route failed for calling it directly.
+  const authMarkers = /getUser\(|getRequestUser\(|adminRequestUser\(|requireAdmin|verifyAdmin|stripe-signature|isInternalApiRequest/
   const unguarded = files.filter(file => !authMarkers.test(read(file)) && !deliberatePublic.has(file))
   assert.deepEqual(unguarded, [])
 })
@@ -273,8 +277,18 @@ check('Academy course content leaves the database only when it is owned and comp
   // 6. The commercial settings path is unchanged and still works everywhere.
   assert.match(adminRoute, /save_course_settings/)
   assert.match(adminRoute, /saveAcademyCourseSettings/)
-  // An admin-set image is never overruled by a hard-coded page image.
-  assert.match(read('src/app/academy/page.tsx'), /course\.image_admin_set && course\.image_url/)
+  // An admin-set image is never overruled by a hard-coded page image. This
+  // used to pin the expression `image_admin_set && image_url`, which failed
+  // that intent for every course defined in code: image_admin_set is hardcoded
+  // false for those, so a stock picture beat the uploaded one and the upload
+  // appeared to do nothing. The rule is the intent, not the expression - the
+  // uploaded image comes first, and nothing gates it.
+  const chooser = read('src/app/academy/page.tsx')
+  assert.match(chooser, /course\.image_url \|\| MODERN_COURSE_IMAGES/)
+  assert.ok(
+    !/image_admin_set && course\.image_url/.test(chooser),
+    'an uploaded image must not be gated behind a flag',
+  )
 
   // 7. Every course surface reads the same merged catalogue, so custom content
   //    reaches talent, the public page and the app together.

@@ -368,14 +368,38 @@ test('every talent nav entry points at a page that exists', () => {
 // 5472x3648 photograph that is 5.99MB where 0.71MB looks identical.
 test('uploaded pictures are resized before they are stored', () => {
   const route = readFileSync(new URL('../src/app/api/upload/route.ts', import.meta.url), 'utf8')
-  assert.match(route, /from 'sharp'/)
-  assert.match(route, /MAX_IMAGE_WIDTH = 2400/)
   assert.match(route, /await shrinkImage\(original/, 'the resized buffer is what must be stored')
+
+  // One implementation, shared with the tool that reprocesses storage. Two
+  // copies would drift, and pictures uploaded today would stop matching
+  // pictures fixed yesterday.
+  const shrink = readFileSync(new URL('../src/lib/image-resize.ts', import.meta.url), 'utf8')
+  assert.match(shrink, /MAX_IMAGE_WIDTH = 2400/)
   // An optimisation that loses someone's upload is worse than no optimisation.
-  const shrink = route.slice(route.indexOf('async function shrinkImage'), route.indexOf('const ALLOWED_COLUMNS'))
   assert.match(shrink, /catch \{[\s\S]*return buffer/, 'a picture sharp cannot read must still be stored')
   assert.match(shrink, /rotate\(\)/, 'a phone photo carries its orientation in EXIF')
   assert.match(shrink, /out\.length < buffer\.length \? out : buffer/, 'never store something larger than we were given')
+
+  for (const user of ['src/app/api/upload/route.ts', 'src/app/api/admin/optimise-images/route.ts']) {
+    assert.match(readFileSync(new URL(`../${user}`, import.meta.url), 'utf8'), /from '@\/lib\/image-resize'/, `${user} must share it`)
+  }
+})
+
+// A script needs a terminal, a checkout and the service role key on somebody's
+// own machine. Rebecca works from a browser, so the tool lives where the key
+// already is.
+test('reprocessing stored pictures is admin-only and survives a timeout', () => {
+  const route = readFileSync(new URL('../src/app/api/admin/optimise-images/route.ts', import.meta.url), 'utf8')
+  assert.match(route, /adminRequestUser/, 'this rewrites production storage')
+  assert.match(route, /Unauthorised/)
+  // A bucket can hold hundreds of photographs and a serverless function has a
+  // hard timeout; asking for all of them at once loses the lot.
+  assert.match(route, /const BATCH = \d+/)
+  assert.match(route, /cursor/, 'the caller must be able to resume')
+  // Evidence must not be re-encoded.
+  assert.ok(!/talent-documents|message-attachments/.test(route.slice(route.indexOf('const BUCKETS'), route.indexOf('const IMAGE_EXT'))))
+  // Nothing is written unless it was asked for.
+  assert.match(route, /const apply = body\.apply === true/)
 })
 
 // A 5.99MB photograph sat in the repo and shipped on every deploy.
@@ -437,4 +461,19 @@ test('the employer dashboard asks for the columns it draws', () => {
   assert.ok(!/select\('\*'\)/.test(jobs), 'job_listings must not be fetched whole')
   assert.match(jobs, /job_title/)
   assert.ok(!/job_description/.test(jobs), 'the dashboard lists titles, not descriptions')
+})
+
+// Three times now a flag beside a picture has decided the picture does not
+// count: the panel backdrops, the sign-in panel, and the academy cards, where
+// image_admin_set is hardcoded false for every course defined in code - so a
+// stock picture outranked the one an administrator had uploaded and the upload
+// appeared to do nothing. The presence of the picture is the decision.
+test('an uploaded picture is never outranked by a flag beside it', () => {
+  const academy = readFileSync(new URL('../src/app/academy/page.tsx', import.meta.url), 'utf8')
+  const chooser = academy.slice(academy.indexOf('const displayCourseImage'), academy.indexOf('const purchaseButton'))
+  assert.ok(!/image_admin_set/.test(chooser), 'the upload must not be gated behind a flag')
+  assert.match(chooser, /course\.image_url \|\|/, 'the uploaded image comes first')
+
+  const backdrop = readFileSync(new URL('../src/components/PanelBackdrop.tsx', import.meta.url), 'utf8')
+  assert.ok(!/mode === 'brand'/.test(backdrop), 'same rule, same reason')
 })
