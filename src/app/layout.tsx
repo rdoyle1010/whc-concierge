@@ -4,6 +4,8 @@ import './globals.css'
 import './public-clean.css'
 import './portal-clean.css'
 import CookieConsent from '@/components/CookieConsent'
+import ComingSoonGate from '@/components/ComingSoonGate'
+import { showEntryGate } from '@/lib/platform-access'
 import NewsletterSignupBar from '@/components/NewsletterSignupBar'
 import { SiteBrandProvider } from '@/components/SiteBrandProvider'
 import { DEFAULT_LOGO, safeLogoUrl } from '@/lib/site-content'
@@ -109,6 +111,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     brandStyle = websiteCssVariables(await getWebsiteContent(false))
   } catch { /* fall back to CSS defaults */ }
   const logo = await publishedLogo()
+  // Decided on the server so the gate is in the first response rather than
+  // appearing a moment after the page it is meant to sit in front of.
+  const gate = await showEntryGate()
   return (
     <html lang="en-GB" className={`${manrope.variable} ${editorial.variable} ${poppins.variable}`}>
       <body>
@@ -116,6 +121,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd(logo.url)) }} />
         <div className="website-theme min-h-screen" style={brandStyle}>
           <SiteBrandProvider logo={logo}>{children}</SiteBrandProvider>
+          {/* Inside the themed wrapper, so the gate follows the brand colours
+              and heading font set in Admin rather than the CSS fallbacks. */}
+          {gate && <ComingSoonGate logo={logo} />}
         </div>
         <NewsletterSignupBar />
         <CookieConsent />

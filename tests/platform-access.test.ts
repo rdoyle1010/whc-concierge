@@ -107,3 +107,32 @@ test('the panel sells rather than apologises', () => {
   assert.match(panel, /Join the list|Request early access/)
   assert.match(panel, /api\/newsletter\/subscribe/, 'it must join the same double opt-in list')
 })
+
+// The launch runs on the list, so the site asks for the list first: a
+// coming-soon sign-up in front of whatever page the visitor landed on, again
+// on the next page, until they join.
+test('the arrival gate is decided on the server', () => {
+  const lib = read('src/lib/platform-access.ts')
+  assert.match(lib, /export async function showEntryGate/)
+  const layout = read('src/app/layout.tsx')
+  assert.match(layout, /await showEntryGate\(\)/, 'deciding this on the client shows the page first and the gate after')
+  assert.match(layout, /\{gate && <ComingSoonGate/)
+})
+
+test('joining the list is the way through, and it is remembered', () => {
+  const gate = read('src/components/ComingSoonGate.tsx')
+  assert.match(gate, /thc_joined=1/, 'a visitor who joined must not meet the gate again')
+  assert.match(gate, /api\/newsletter\/subscribe/)
+  // Rebecca has to keep working while the doors are shut.
+  assert.match(gate, /const SKIP = \['\/admin', '\/admin-sign-in'\]/)
+  const lib = read('src/lib/platform-access.ts')
+  assert.match(lib, /JOINED_COOKIE/)
+  assert.match(lib, /PREVIEW_COOKIE/, 'the preview code must still walk a demo straight past')
+})
+
+// Double opt-in means the signup is not finished when the form posts. A gate
+// that simply vanishes leaves the confirmation email arriving unexplained.
+test('the gate says there is a confirmation email coming', () => {
+  const gate = read('src/components/ComingSoonGate.tsx')
+  assert.match(gate, /confirm/i, 'the visitor must be told to confirm')
+})

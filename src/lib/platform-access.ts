@@ -64,6 +64,26 @@ export async function doorsClosedFor(): Promise<boolean> {
   return jar.get(PREVIEW_COOKIE)?.value !== access.previewCode
 }
 
+// Set once someone joins the list, so the arrival gate stops appearing. It is
+// a soft gate rather than a security boundary - the page behind it is public
+// and stays in the HTML, which is deliberate: a crawler still reads the site,
+// and lifting the gate later costs one setting rather than a re-index.
+export const JOINED_COOKIE = 'thc_joined'
+
+/**
+ * True when this visitor should meet the coming-soon sign-up before anything
+ * else. Anyone who has joined the list, or holds a valid preview cookie, walks
+ * straight past it.
+ */
+export async function showEntryGate(): Promise<boolean> {
+  const access = await readAccess()
+  if (!access.closed) return false
+  const jar = await cookies()
+  if (jar.get(JOINED_COOKIE)?.value === '1') return false
+  if (access.previewCode && jar.get(PREVIEW_COOKIE)?.value === access.previewCode) return false
+  return true
+}
+
 export async function platformAccess(): Promise<AccessState> {
   return readAccess()
 }
