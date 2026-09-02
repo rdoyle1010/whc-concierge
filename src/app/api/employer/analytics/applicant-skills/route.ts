@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getRequestUser } from '@/lib/request-user'
+import { PREMIUM_COLUMNS, isPremium } from '@/lib/employer-premium'
 
 // The five skills that come up most often across this employer's applicants.
 //
@@ -20,8 +21,14 @@ export async function GET(req: NextRequest) {
 
     const admin = createAdminClient()
     const { data: employer } = await admin.from('employer_profiles')
-      .select('id, approval_status').eq('user_id', user.id).maybeSingle()
+      .select(`id, approval_status, ${PREMIUM_COLUMNS}`).eq('user_id', user.id).maybeSingle()
     if (!employer) return NextResponse.json({ error: 'An employer account is required' }, { status: 403 })
+    if (!isPremium(employer, 'employer_analytics')) {
+      return NextResponse.json(
+        { error: 'Analytics is a premium feature.', upgradeHref: '/employer/billing' },
+        { status: 402 },
+      )
+    }
 
     const { data: jobs } = await admin.from('job_listings').select('id').eq('employer_id', employer.id)
     const jobIds = (jobs || []).map((job: any) => job.id)

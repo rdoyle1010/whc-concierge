@@ -3,6 +3,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { getRequestUser } from '@/lib/request-user'
 import { createNotification } from '@/lib/notifications'
 import { trackEvent } from '@/lib/analytics'
+import { PREMIUM_COLUMNS, isPremium } from '@/lib/employer-premium'
 
 export const dynamic = 'force-dynamic'
 
@@ -98,11 +99,17 @@ async function handleEmployerRequest(admin: ReturnType<typeof createAdminClient>
   if (!candidateId) return NextResponse.json({ error: 'candidateId required' }, { status: 400 })
 
   const { data: employer } = await admin.from('employer_profiles')
-    .select('id, user_id, property_name, company_name, approval_status')
+    .select(`id, user_id, property_name, company_name, approval_status, ${PREMIUM_COLUMNS}`)
     .eq('user_id', userId)
     .maybeSingle()
   if (!employer) return NextResponse.json({ error: 'Employer account required' }, { status: 403 })
   if (employer.approval_status !== 'approved') return NextResponse.json({ error: 'Your employer account must be approved before requesting introductions' }, { status: 403 })
+  if (!isPremium(employer, 'employer_talent_search')) {
+    return NextResponse.json(
+      { error: 'Approaching a professional directly is a premium feature.', upgradeHref: '/employer/billing' },
+      { status: 402 },
+    )
+  }
 
   const { data: candidate } = await admin.from('candidate_profiles')
     .select('id, user_id, approval_status, profile_visible')

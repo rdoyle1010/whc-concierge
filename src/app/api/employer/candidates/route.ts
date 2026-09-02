@@ -4,6 +4,7 @@ import { createServerSupabaseClient } from '@/lib/supabase/server'
 import { canEmployerDiscoverCandidate, mutualRadiusResult, travelAccessSummary } from '@/lib/discovery'
 import { calculateMatchScore } from '@/lib/matching'
 import { PRIVATE_MODE_COLUMNS, isMissingColumnError, presentCandidateForEmployer } from '@/lib/private-mode'
+import { PREMIUM_COLUMNS, isPremium } from '@/lib/employer-premium'
 
 export const dynamic = 'force-dynamic'
 
@@ -37,12 +38,21 @@ export async function GET(req: NextRequest) {
   const admin = createAdminClient()
   const { data: employer } = await admin
     .from('employer_profiles')
-    .select('id, company_name, property_name, approval_status, latitude, longitude, postcode, commute_car_required, nearest_transport, transport_walk_minutes, parking_available, taxi_support, taxi_notes, travel_notes')
+    .select(`id, company_name, property_name, approval_status, latitude, longitude, postcode, commute_car_required, nearest_transport, transport_walk_minutes, parking_available, taxi_support, taxi_notes, travel_notes, ${PREMIUM_COLUMNS}`)
     .eq('user_id', user.id)
     .maybeSingle()
 
   if (!employer) return NextResponse.json({ error: 'Employer account required' }, { status: 403 })
   if (employer.approval_status !== 'approved') return NextResponse.json({ error: 'Your employer account must be approved before viewing talent profiles' }, { status: 403 })
+
+  // Talent Search is a paid feature. The sidebar padlock is cosmetic, so the
+  // refusal has to happen here, where the candidate data is actually served.
+  if (!isPremium(employer, 'employer_talent_search')) {
+    return NextResponse.json(
+      { error: 'Talent Search is a premium feature.', upgradeHref: '/employer/billing' },
+      { status: 402 },
+    )
+  }
 
   const requestedRadius = Number(req.nextUrl.searchParams.get('radius'))
   const radius = Number.isFinite(requestedRadius) && requestedRadius > 0 ? Math.min(requestedRadius, 250) : null
