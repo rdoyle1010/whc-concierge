@@ -1,7 +1,7 @@
 'use client'
 
 import type { WebsiteContent } from '@/lib/site-content'
-import { websiteCssVariables } from '@/lib/site-content'
+import { websiteCssVariables } from '@/lib/site-content-values'
 
 export default function WebsiteEditorPreview({ content }: { content: WebsiteContent }) {
   const hero = content.hero.slides[0]

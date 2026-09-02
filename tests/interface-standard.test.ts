@@ -212,8 +212,10 @@ test('a picture box draws nothing until something is put in it', () => {
 })
 
 test('every panel slot reaches both the Pictures screen and the Website editor', () => {
-  const content = readFileSync(new URL('../src/lib/site-content.ts', import.meta.url), 'utf8')
-  const block = content.slice(content.indexOf('const DEFAULT_PANELS'), content.indexOf('// The header lockup'))
+  // DEFAULT_PANELS moved to site-content-values.ts so the browser can read it
+  // without pulling zod in behind it. The rule is unchanged.
+  const content = readFileSync(new URL('../src/lib/site-content-values.ts', import.meta.url), 'utf8')
+  const block = content.slice(content.indexOf('const DEFAULT_PANELS'), content.indexOf('export const DEFAULT_WEBSITE_CONTENT'))
   const keys = [...block.matchAll(/^\s{2}(\w+):/gm)].map(match => match[1])
   assert.ok(keys.length >= 5, `expected the panel slots, found ${keys.join(', ')}`)
 
@@ -486,4 +488,36 @@ test('an uploaded picture is never outranked by a flag beside it', () => {
 
   const backdrop = readFileSync(new URL('../src/components/PanelBackdrop.tsx', import.meta.url), 'utf8')
   assert.ok(!/mode === 'brand'/.test(backdrop), 'same rule, same reason')
+})
+
+// zod validates content on the server. It has no business in a browser, and it
+// arrived there because the schemas and the default values lived in the same
+// file: SiteBrandProvider wanted a logo url, use-site-content wanted the
+// defaults, Footer wanted some fallback wording - and each of them dragged the
+// whole validator along. It was 268KB on every page of the site.
+//
+// The values live in the *-values modules now, which import nothing at
+// runtime. A value import from a schema module in anything the browser loads
+// puts zod straight back.
+test('the browser never imports a schema module for a value', () => {
+  const clientFiles = [...globSync('src/components/**/*.tsx'), ...globSync('src/lib/use-*.ts')]
+    .map(path => ({ path, text: readFileSync(path, 'utf8') }))
+    .filter(f => f.text.includes("'use client'") || f.path.includes('/use-'))
+
+  const schemaModules = ['@/lib/site-content', '@/lib/public-page-content']
+  const offenders: string[] = []
+  for (const file of clientFiles) {
+    for (const module of schemaModules) {
+      // `import type { X } from` is erased; `import { X } from` is not.
+      const valueImport = new RegExp(`import \\{[^}]*\\} from '${module}'`)
+      const match = file.text.match(valueImport)
+      if (!match) continue
+      const specifiers = match[0].slice(match[0].indexOf('{') + 1, match[0].indexOf('}'))
+      // Every specifier being type-only is fine; one that is not is a value.
+      if (specifiers.split(',').some(s => s.trim() && !s.trim().startsWith('type '))) {
+        offenders.push(`${file.path}: ${match[0]}`)
+      }
+    }
+  }
+  assert.deepEqual(offenders, [], 'these put zod back into every page')
 })

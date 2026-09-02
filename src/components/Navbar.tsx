@@ -8,7 +8,7 @@ import { createClient } from '@/lib/supabase/client'
 import { Menu, X, User, ChevronDown, LayoutDashboard, Settings, LogOut, MessageSquare, Building2, ShieldCheck } from 'lucide-react'
 import NotificationBell from '@/components/NotificationBell'
 import UniversalSearch from '@/components/UniversalSearch'
-import { type WebsiteContent } from '@/lib/site-content'
+import type { WebsiteContent } from '@/lib/site-content'
 import { usePublicSiteContent } from '@/lib/use-site-content'
 
 const supabase = createClient()

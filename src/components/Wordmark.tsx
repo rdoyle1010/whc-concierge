@@ -3,7 +3,7 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import { useSiteLogo } from '@/components/SiteBrandProvider'
-import { safeLogoUrl } from '@/lib/site-content'
+import { safeLogoUrl } from '@/lib/site-content-values'
 
 // The brand artwork is shared by public, registration and dashboard
 // navigation, and is uploaded in Website & Brand rather than shipped in the

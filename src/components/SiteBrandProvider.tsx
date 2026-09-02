@@ -1,7 +1,7 @@
 'use client'
 
 import { createContext, useContext } from 'react'
-import { DEFAULT_LOGO } from '@/lib/site-content'
+import { DEFAULT_LOGO } from '@/lib/site-content-values'
 
 // The published logo is resolved once on the server in layout.tsx and handed
 // down here. Reading it from context rather than fetching it in the browser

@@ -3,9 +3,9 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import Wordmark from '@/components/Wordmark'
-import { type WebsiteContent } from '@/lib/site-content'
+import type { WebsiteContent } from '@/lib/site-content'
 import { usePublicSiteContent } from '@/lib/use-site-content'
-import { DEFAULT_PUBLIC_PAGES_CONTENT } from '@/lib/public-page-content'
+import { DEFAULT_PUBLIC_PAGES_CONTENT } from '@/lib/public-page-content-values'
 import { Linkedin, Instagram, Facebook, MessageCircle, Mail, Link2, Share2, Check, Youtube, Music2 } from 'lucide-react'
 
 const DEFAULT_SOCIAL = {

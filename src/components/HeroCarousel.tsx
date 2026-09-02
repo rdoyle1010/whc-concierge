@@ -3,7 +3,8 @@
 import { useCallback, useEffect, useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { DEFAULT_WEBSITE_CONTENT, type WebsiteContent } from '@/lib/site-content'
+import { DEFAULT_WEBSITE_CONTENT } from '@/lib/site-content-values'
+import type { WebsiteContent } from '@/lib/site-content'
 
 export default function HeroCarousel({ siteContent }: { siteContent?: WebsiteContent }) {
   const content = siteContent || DEFAULT_WEBSITE_CONTENT

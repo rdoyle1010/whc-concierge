@@ -42,7 +42,10 @@ test('footer copy uses readable public-site contrast', () => {
 
 test('site icon follows the uploaded brand logo', () => {
   const source = read('src/app/layout.tsx')
-  const brand = read('src/lib/site-content.ts')
+  // DEFAULT_LOGO moved to site-content-values.ts so client components can read
+  // it without pulling zod into every page. The rule is unchanged: the site
+  // icon follows the brand logo.
+  const brand = read('src/lib/site-content-values.ts')
   assert.match(source, /icons: \{ icon: logo\.url, apple: logo\.url \}/)
   assert.match(source, /export async function generateMetadata/)
   assert.doesNotMatch(source, /icon: '\/favicon\.ico'/)
