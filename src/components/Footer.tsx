@@ -84,7 +84,7 @@ export default function Footer({ siteContent }: { siteContent?: WebsiteContent }
     { href: '/verify', label: 'Verify a Certificate' }, { href: '/faq', label: 'FAQ' }, { href: '/privacy', label: 'Privacy Policy' }, { href: '/terms', label: 'Terms' },
   ]
 
-  const LinkList = ({ items }: { items: { href: string; label: string }[] }) => <div className="space-y-2.5">{items.map(link => <Link key={link.href} href={link.href} className="block text-[12px] text-white/65 hover:text-white transition-colors">{link.label}</Link>)}</div>
+  const LinkList = ({ items }: { items: { href: string; label: string }[] }) => <div className="space-y-2.5">{items.map(link => <Link key={link.href} href={link.href} className="block text-[12px] text-secondary hover:text-ink transition-colors">{link.label}</Link>)}</div>
 
   const currentUrl = () => typeof window !== 'undefined' ? window.location.href : 'https://talenthousecollective.co.uk'
   const pageTitle = () => typeof document !== 'undefined' ? document.title : 'Talent House Collective'
@@ -117,12 +117,12 @@ export default function Footer({ siteContent }: { siteContent?: WebsiteContent }
       </div>
     </section>
 
-    <footer className="bg-[#1c1c1c] text-white border-t border-white/10"><div className="max-w-7xl mx-auto px-6 lg:px-8 py-12"><div className="grid grid-cols-1 md:grid-cols-[1.4fr_1fr_1fr_1fr] gap-9 pb-10"><div><Wordmark dark /><p className="mt-5 max-w-sm text-[13px] leading-6 text-white/60">The professional platform for spa and wellness careers. Live roles, agency cover, residencies and the Academy.</p>
+    <footer className="bg-[#f1f1f1] text-ink border-t border-[#dddddd]"><div className="max-w-7xl mx-auto px-6 lg:px-8 py-12"><div className="grid grid-cols-1 md:grid-cols-[1.4fr_1fr_1fr_1fr] gap-9 pb-10"><div><Wordmark /><p className="mt-5 max-w-sm text-[13px] leading-6 text-secondary">The professional platform for spa and wellness careers. Live roles, agency cover, residencies and the Academy.</p>
     <div className="mt-7 max-w-sm">
-      <p className="text-[9px] uppercase tracking-[0.2em] text-white/55 font-semibold">Join our mailing list</p>
-      <p className="mt-2 text-[12px] leading-5 text-white/60">Jobs, industry insight and opportunities from Talent House Collective, straight to your inbox.</p>
+      <p className="text-[9px] uppercase tracking-[0.2em] text-secondary font-semibold">Join our mailing list</p>
+      <p className="mt-2 text-[12px] leading-5 text-secondary">Jobs, industry insight and opportunities from Talent House Collective, straight to your inbox.</p>
       {newsletterState === 'success' ? (
-        <p role="status" className="mt-3 text-[12px] font-semibold text-white/85">Check your inbox to confirm your subscription.</p>
+        <p role="status" className="mt-3 text-[12px] font-semibold text-body">Check your inbox to confirm your subscription.</p>
       ) : (
         <form onSubmit={subscribeToNewsletter} className="mt-3">
           <div className="flex gap-2">
@@ -135,17 +135,17 @@ export default function Footer({ siteContent }: { siteContent?: WebsiteContent }
               onChange={e => setNewsletterEmail(e.target.value)}
               placeholder="Your email address"
               autoComplete="email"
-              className="flex-1 min-w-0 rounded-lg border border-white/10 bg-white/5 px-3.5 py-2.5 text-[12px] text-white placeholder:text-white/40 focus:outline-none focus:border-white/30 transition-colors"
+              className="flex-1 min-w-0 rounded-lg border border-[#dddddd] bg-[#e7e7e7] px-3.5 py-2.5 text-[12px] text-ink placeholder:text-muted focus:outline-none focus:border-[#dddddd] transition-colors"
             />
-            <button type="submit" disabled={newsletterState === 'sending'} className="shrink-0 rounded-lg bg-white px-4 py-2.5 text-[12px] font-semibold text-[#1c1c1c] hover:bg-white/85 transition-colors disabled:opacity-60">
+            <button type="submit" disabled={newsletterState === 'sending'} className="shrink-0 rounded-lg bg-ink px-4 py-2.5 text-[12px] font-semibold text-white hover:bg-[#333333] transition-colors disabled:opacity-60">
               {newsletterState === 'sending' ? 'Sending...' : 'Subscribe'}
             </button>
           </div>
           <input type="text" name="company" value={newsletterHoneypot} onChange={e => setNewsletterHoneypot(e.target.value)} tabIndex={-1} autoComplete="off" aria-hidden="true" className="hidden" />
-          {newsletterState === 'error' && <p role="alert" className="mt-2 text-[11.5px] text-white/70">{newsletterError}</p>}
+          {newsletterState === 'error' && <p role="alert" className="mt-2 text-[11.5px] text-secondary">{newsletterError}</p>}
         </form>
       )}
     </div>
-    </div><div><p className="text-[9px] uppercase tracking-[0.2em] text-white/55 mb-4 font-semibold">Discover</p><LinkList items={primary} /></div><div><p className="text-[9px] uppercase tracking-[0.2em] text-white/55 mb-4 font-semibold">WHC</p><LinkList items={company} /></div><div><p className="text-[9px] uppercase tracking-[0.2em] text-white/55 mb-4 font-semibold">Support</p><LinkList items={support} /></div></div><div className="border-t border-white/10 pt-5 flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between"><p className="text-[11px] text-white/45">{content.footer.copyright}</p><Link href="/admin-sign-in" className="text-[11px] text-white/35 hover:text-white/70 transition-colors" aria-label={`${content.footer.staffLabel} sign in`}>{content.footer.staffLabel}</Link></div></div></footer>
+    </div><div><p className="text-[9px] uppercase tracking-[0.2em] text-secondary mb-4 font-semibold">Discover</p><LinkList items={primary} /></div><div><p className="text-[9px] uppercase tracking-[0.2em] text-secondary mb-4 font-semibold">WHC</p><LinkList items={company} /></div><div><p className="text-[9px] uppercase tracking-[0.2em] text-secondary mb-4 font-semibold">Support</p><LinkList items={support} /></div></div><div className="border-t border-[#dddddd] pt-5 flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between"><p className="text-[11px] text-muted">{content.footer.copyright}</p><Link href="/admin-sign-in" className="text-[11px] text-muted hover:text-ink transition-colors" aria-label={`${content.footer.staffLabel} sign in`}>{content.footer.staffLabel}</Link></div></div></footer>
   </>
 }

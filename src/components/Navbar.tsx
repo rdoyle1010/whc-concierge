@@ -110,7 +110,7 @@ export default function Navbar({ siteContent }: { siteContent?: WebsiteContent }
   const groupActive = (paths: string[]) => paths.some(path => pathname === path || pathname.startsWith(`${path}/`))
 
   return (
-    <nav aria-label="Main navigation" className="fixed top-0 z-50 h-[76px] w-full border-b border-white/10 bg-[#1c1c1c] text-white shadow-[0_8px_24px_rgba(28,28,28,0.10)]">
+    <nav aria-label="Main navigation" className="fixed top-0 z-50 h-[76px] w-full border-b border-[#dddddd] bg-[#f1f1f1] text-ink shadow-[0_8px_24px_rgba(28,28,28,0.10)]">
       <div className="mx-auto grid h-full max-w-[1440px] grid-cols-[auto_1fr_auto] items-center gap-10 px-6 lg:px-10">
         <div className="shrink-0"><Wordmark dark compact /></div>
 
@@ -119,8 +119,8 @@ export default function Navbar({ siteContent }: { siteContent?: WebsiteContent }
             <div className="flex h-full items-center gap-1">
               {loggedInSiteLinks.map(link => {
                 const active = isActive(link.href)
-                return <Link key={link.href} href={link.href} className={`relative flex h-full items-center px-3 text-[10px] font-semibold uppercase tracking-[0.12em] transition-colors ${active ? 'text-white' : 'text-white/66 hover:text-white'}`}>
-                  {link.label}{active && <span className="absolute inset-x-3 bottom-0 h-[2px] bg-white" />}
+                return <Link key={link.href} href={link.href} className={`relative flex h-full items-center px-3 text-[10px] font-semibold uppercase tracking-[0.12em] transition-colors ${active ? 'text-ink' : 'text-secondary hover:text-ink'}`}>
+                  {link.label}{active && <span className="absolute inset-x-3 bottom-0 h-[2px] bg-ink" />}
                 </Link>
               })}
             </div>
@@ -130,9 +130,9 @@ export default function Navbar({ siteContent }: { siteContent?: WebsiteContent }
                 const active = groupActive(group.paths)
                 return (
                   <div key={group.label} className="group relative flex h-full items-center">
-                    <button type="button" className={`relative flex h-full items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] transition-colors ${active ? 'text-white' : 'text-white/68 group-hover:text-white'}`}>
+                    <button type="button" className={`relative flex h-full items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] transition-colors ${active ? 'text-ink' : 'text-secondary group-hover:text-ink'}`}>
                       {group.label}<ChevronDown size={11} className="opacity-65 transition-transform group-hover:rotate-180" />
-                      {active && <span className="absolute inset-x-0 bottom-0 h-[2px] bg-white" />}
+                      {active && <span className="absolute inset-x-0 bottom-0 h-[2px] bg-ink" />}
                     </button>
                     <div className="pointer-events-none absolute left-1/2 top-[64px] w-[290px] -translate-x-1/2 translate-y-2 border border-[#dddddd] bg-white p-2 opacity-0 shadow-[0_18px_48px_rgba(28,28,28,.16)] transition-all duration-150 group-hover:pointer-events-auto group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:translate-y-0 group-focus-within:opacity-100">
                       {group.items.map(item => <Link key={item.href} href={item.href} className="block border-b border-[#dddddd] px-4 py-3.5 last:border-0 hover:bg-[#f1f1f1]">
@@ -143,8 +143,8 @@ export default function Navbar({ siteContent }: { siteContent?: WebsiteContent }
                   </div>
                 )
               })}
-              <Link href="/academy" className={`relative flex h-full items-center text-[10px] font-semibold uppercase tracking-[0.16em] transition-colors ${isActive('/academy') ? 'text-white' : 'text-white/68 hover:text-white'}`}>Academy{isActive('/academy') && <span className="absolute inset-x-0 bottom-0 h-[2px] bg-white" />}</Link>
-              <Link href="/intelligence" className={`relative flex h-full items-center text-[10px] font-semibold uppercase tracking-[0.16em] transition-colors ${isActive('/intelligence') ? 'text-white' : 'text-white/68 hover:text-white'}`}>Intelligence{isActive('/intelligence') && <span className="absolute inset-x-0 bottom-0 h-[2px] bg-white" />}</Link>
+              <Link href="/academy" className={`relative flex h-full items-center text-[10px] font-semibold uppercase tracking-[0.16em] transition-colors ${isActive('/academy') ? 'text-ink' : 'text-secondary hover:text-ink'}`}>Academy{isActive('/academy') && <span className="absolute inset-x-0 bottom-0 h-[2px] bg-ink" />}</Link>
+              <Link href="/intelligence" className={`relative flex h-full items-center text-[10px] font-semibold uppercase tracking-[0.16em] transition-colors ${isActive('/intelligence') ? 'text-ink' : 'text-secondary hover:text-ink'}`}>Intelligence{isActive('/intelligence') && <span className="absolute inset-x-0 bottom-0 h-[2px] bg-ink" />}</Link>
             </div>
           )}
         </div>
@@ -153,11 +153,11 @@ export default function Navbar({ siteContent }: { siteContent?: WebsiteContent }
           <div className="mr-3"><UniversalSearch variant="navbar" /></div>
           {user ? (
             <>
-              <Link href={dashboardHref} className="mr-3 inline-flex items-center gap-2 rounded-lg bg-white px-3.5 py-2 text-[10px] font-semibold uppercase tracking-[0.1em] text-[#1c1c1c] hover:bg-[#f1f1f1]"><LayoutDashboard size={13}/>My dashboard</Link>
-              <div className="mr-2 border-r border-white/12 pr-3 text-white"><NotificationBell userId={user.id} /></div>
+              <Link href={dashboardHref} className="mr-3 inline-flex items-center gap-2 rounded-lg bg-ink px-3.5 py-2 text-[10px] font-semibold uppercase tracking-[0.1em] text-white hover:bg-[#333333]"><LayoutDashboard size={13}/>My dashboard</Link>
+              <div className="mr-2 border-r border-[#dddddd] pr-3 text-ink"><NotificationBell userId={user.id} /></div>
               <div className="relative" ref={dropdownRef}>
-                <button type="button" onClick={() => setProfileOpen(!profileOpen)} aria-label="Open account menu" aria-expanded={profileOpen} aria-haspopup="menu" className="flex items-center gap-2 px-1.5 py-1 text-white/75 transition-colors hover:text-white">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-full border border-white/18 bg-white/7 text-[10px] font-semibold text-white">
+                <button type="button" onClick={() => setProfileOpen(!profileOpen)} aria-label="Open account menu" aria-expanded={profileOpen} aria-haspopup="menu" className="flex items-center gap-2 px-1.5 py-1 text-body transition-colors hover:text-ink">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full border border-[#dddddd] bg-[#e7e7e7] text-[10px] font-semibold text-ink">
                     {initials || (isAdmin ? <ShieldCheck size={15} /> : isEmployer ? <Building2 size={15} /> : <User size={15} />)}
                   </div>
                   <ChevronDown size={11} className={`transition-transform ${profileOpen ? 'rotate-180' : ''}`} />
@@ -176,49 +176,49 @@ export default function Navbar({ siteContent }: { siteContent?: WebsiteContent }
             </>
           ) : (
             <div className="flex items-center gap-5 whitespace-nowrap">
-              <Link href="/login?role=talent" className="text-[9px] font-semibold uppercase tracking-[0.17em] text-white/66 transition-colors hover:text-white">Talent Portal</Link>
-              <span className="h-5 w-px bg-white/18" />
-              <Link href="/login?role=employer" className="text-[9px] font-semibold uppercase tracking-[0.17em] text-white/82 transition-colors hover:text-white">Property Portal</Link>
+              <Link href="/login?role=talent" className="text-[9px] font-semibold uppercase tracking-[0.17em] text-secondary transition-colors hover:text-ink">Talent Portal</Link>
+              <span className="h-5 w-px bg-[#e7e7e7]" />
+              <Link href="/login?role=employer" className="text-[9px] font-semibold uppercase tracking-[0.17em] text-body transition-colors hover:text-ink">Property Portal</Link>
             </div>
           )}
         </div>
 
-        <button type="button" onClick={() => setMobileOpen(!mobileOpen)} className="col-start-3 rounded-lg p-2 text-white transition-colors hover:bg-white/10 lg:hidden" aria-label={mobileOpen ? 'Close navigation menu' : 'Open navigation menu'} aria-expanded={mobileOpen} aria-controls="mobile-navigation">
+        <button type="button" onClick={() => setMobileOpen(!mobileOpen)} className="col-start-3 rounded-lg p-2 text-ink transition-colors hover:bg-[#e7e7e7] lg:hidden" aria-label={mobileOpen ? 'Close navigation menu' : 'Open navigation menu'} aria-expanded={mobileOpen} aria-controls="mobile-navigation">
           {mobileOpen ? <X size={20} /> : <Menu size={20} />}
         </button>
       </div>
 
       {mobileOpen && (
-        <div id="mobile-navigation" className="max-h-[calc(100vh-76px)] overflow-y-auto border-t border-white/10 bg-[#1c1c1c] lg:hidden">
+        <div id="mobile-navigation" className="max-h-[calc(100vh-76px)] overflow-y-auto border-t border-[#dddddd] bg-[#f1f1f1] lg:hidden">
           <div className="px-6 py-5">
-            <div className="mb-4 flex items-center justify-between border-b border-white/12 pb-4">
-              <p className="text-[9px] font-semibold uppercase tracking-[.18em] text-white/55">Search the platform</p>
+            <div className="mb-4 flex items-center justify-between border-b border-[#dddddd] pb-4">
+              <p className="text-[9px] font-semibold uppercase tracking-[.18em] text-secondary">Search the platform</p>
               <UniversalSearch variant="navbar" onNavigate={() => setMobileOpen(false)} />
             </div>
-            {user ? loggedInSiteLinks.map(link => <Link key={link.href} href={link.href} className={`block border-b border-white/8 py-3 text-[13px] font-medium ${isActive(link.href) ? 'text-white' : 'text-white/70 hover:text-white'}`} onClick={() => setMobileOpen(false)}>{link.label}</Link>) : (
+            {user ? loggedInSiteLinks.map(link => <Link key={link.href} href={link.href} className={`block border-b border-[#dddddd] py-3 text-[13px] font-medium ${isActive(link.href) ? 'text-ink' : 'text-secondary hover:text-ink'}`} onClick={() => setMobileOpen(false)}>{link.label}</Link>) : (
               <>
-                <p className="pb-2 text-[9px] font-semibold uppercase tracking-[.18em] text-white/55">Careers</p>
-                {publicGroups[0].items.map(item => <Link key={item.href} href={item.href} className="block border-b border-white/8 py-3 text-[13px] text-white/78" onClick={() => setMobileOpen(false)}>{item.label}</Link>)}
-                <p className="pb-2 pt-6 text-[9px] font-semibold uppercase tracking-[.18em] text-white/55">Flexible Work</p>
-                {publicGroups[1].items.map(item => <Link key={item.href} href={item.href} className="block border-b border-white/8 py-3 text-[13px] text-white/78" onClick={() => setMobileOpen(false)}>{item.label}</Link>)}
-                <p className="pb-2 pt-6 text-[9px] font-semibold uppercase tracking-[.18em] text-white/55">Development & Ideas</p>
-                <Link href="/academy" className="block border-b border-white/8 py-3 text-[13px] text-white/78" onClick={() => setMobileOpen(false)}>Academy</Link>
-                <Link href="/intelligence" className="block border-b border-white/8 py-3 text-[13px] text-white/78" onClick={() => setMobileOpen(false)}>Intelligence</Link>
+                <p className="pb-2 text-[9px] font-semibold uppercase tracking-[.18em] text-secondary">Careers</p>
+                {publicGroups[0].items.map(item => <Link key={item.href} href={item.href} className="block border-b border-[#dddddd] py-3 text-[13px] text-body" onClick={() => setMobileOpen(false)}>{item.label}</Link>)}
+                <p className="pb-2 pt-6 text-[9px] font-semibold uppercase tracking-[.18em] text-secondary">Flexible Work</p>
+                {publicGroups[1].items.map(item => <Link key={item.href} href={item.href} className="block border-b border-[#dddddd] py-3 text-[13px] text-body" onClick={() => setMobileOpen(false)}>{item.label}</Link>)}
+                <p className="pb-2 pt-6 text-[9px] font-semibold uppercase tracking-[.18em] text-secondary">Development & Ideas</p>
+                <Link href="/academy" className="block border-b border-[#dddddd] py-3 text-[13px] text-body" onClick={() => setMobileOpen(false)}>Academy</Link>
+                <Link href="/intelligence" className="block border-b border-[#dddddd] py-3 text-[13px] text-body" onClick={() => setMobileOpen(false)}>Intelligence</Link>
               </>
             )}
 
-            <div className="mt-5 border-t border-white/12 pt-5">
+            <div className="mt-5 border-t border-[#dddddd] pt-5">
               {user ? (
                 <>
-                  <Link href={dashboardHref} className="mb-3 flex items-center justify-center gap-2 rounded-lg bg-white px-4 py-3 text-[12px] font-semibold text-[#1c1c1c]" onClick={() => setMobileOpen(false)}><LayoutDashboard size={14}/>My dashboard</Link>
-                  <Link href={isEmployer ? '/employer/messages' : isAdmin ? '/admin/messages' : '/talent/messages'} className="block py-2 text-[13px] text-white/70" onClick={() => setMobileOpen(false)}>Messages</Link>
-                  <button type="button" onClick={handleSignOut} className="block w-full py-2 text-left text-[13px] text-white/70">Sign Out</button>
+                  <Link href={dashboardHref} className="mb-3 flex items-center justify-center gap-2 rounded-lg bg-ink px-4 py-3 text-[12px] font-semibold text-white" onClick={() => setMobileOpen(false)}><LayoutDashboard size={14}/>My dashboard</Link>
+                  <Link href={isEmployer ? '/employer/messages' : isAdmin ? '/admin/messages' : '/talent/messages'} className="block py-2 text-[13px] text-secondary" onClick={() => setMobileOpen(false)}>Messages</Link>
+                  <button type="button" onClick={handleSignOut} className="block w-full py-2 text-left text-[13px] text-secondary">Sign Out</button>
                 </>
               ) : (
                 <div className="flex items-center gap-5">
-                  <Link href="/login?role=talent" className="text-[10px] font-semibold uppercase tracking-[.14em] text-white" onClick={() => setMobileOpen(false)}>Talent Portal</Link>
-                  <span className="h-5 w-px bg-white/18" />
-                  <Link href="/login?role=employer" className="text-[10px] font-semibold uppercase tracking-[.14em] text-white/82" onClick={() => setMobileOpen(false)}>Property Portal</Link>
+                  <Link href="/login?role=talent" className="text-[10px] font-semibold uppercase tracking-[.14em] text-ink" onClick={() => setMobileOpen(false)}>Talent Portal</Link>
+                  <span className="h-5 w-px bg-[#e7e7e7]" />
+                  <Link href="/login?role=employer" className="text-[10px] font-semibold uppercase tracking-[.14em] text-body" onClick={() => setMobileOpen(false)}>Property Portal</Link>
                 </div>
               )}
             </div>

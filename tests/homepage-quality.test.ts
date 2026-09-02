@@ -28,12 +28,16 @@ test('homepage mockup heading does not skip a heading level', () => {
   assert.doesNotMatch(source, /<h4/)
 })
 
+// The footer is a light band now, so the failure mode inverted: white text
+// on it is invisible. The link columns were exactly that for one render,
+// because they are declared in a helper above the <footer> element.
 test('footer copy uses readable public-site contrast', () => {
   const source = read('src/components/Footer.tsx')
-  assert.match(source, /bg-\[#1c1c1c\]/)
-  assert.match(source, /text-white\/65/)
-  assert.match(source, /text-white\/60/)
-  assert.doesNotMatch(source, /text-white\/20/)
+  const footer = source.slice(source.indexOf('<footer className='))
+  assert.match(footer, /bg-\[#f1f1f1\]/, 'the footer band is light grey')
+  assert.doesNotMatch(footer, /text-white\//, 'no faded white text on a light band')
+  assert.match(source, /block text-\[12px\] text-secondary hover:text-ink/, 'the link columns must be ink, not white')
+  assert.match(footer, /text-secondary/)
 })
 
 test('site icon follows the uploaded brand logo', () => {
