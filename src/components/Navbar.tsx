@@ -4,24 +4,45 @@ import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import Wordmark from '@/components/Wordmark'
-import { createClient } from '@/lib/supabase/client'
 import { Menu, X, User, ChevronDown, LayoutDashboard, Settings, LogOut, MessageSquare, Building2, ShieldCheck } from 'lucide-react'
 import NotificationBell from '@/components/NotificationBell'
 import UniversalSearch from '@/components/UniversalSearch'
 import type { WebsiteContent } from '@/lib/site-content'
 import { usePublicSiteContent } from '@/lib/use-site-content'
 
-const supabase = createClient()
-let sessionPromise: ReturnType<typeof supabase.auth.getSession> | null = null
+// Fetched on demand rather than imported at module scope.
+//
+// The Supabase browser client carries auth, the realtime websocket client and
+// their buffer and ws polyfills - about 250KB. Navbar renders on every page of
+// the site, including ones nobody is signed in to, so creating the client up
+// here put all of it in the initial bundle of the homepage, the Journal and
+// every public page besides. Realtime is used by exactly two screens, both
+// behind sign-in.
+//
+// Nothing here was synchronous anyway: the navigation already renders its
+// signed-out state and fills in afterwards, so deferring the download changes
+// no behaviour, only when it happens.
+let clientPromise: Promise<Awaited<ReturnType<typeof loadClient>>> | null = null
+async function loadClient() {
+  const { createClient } = await import('@/lib/supabase/client')
+  return createClient()
+}
+function getSupabase() {
+  if (!clientPromise) clientPromise = loadClient()
+  return clientPromise
+}
+
+let sessionPromise: Promise<Awaited<ReturnType<Awaited<ReturnType<typeof getSupabase>>['auth']['getSession']>>> | null = null
 let cachedRoleByUser = new Map<string, string | null>()
 
 function getSessionOnce() {
-  if (!sessionPromise) sessionPromise = supabase.auth.getSession()
+  if (!sessionPromise) sessionPromise = getSupabase().then(supabase => supabase.auth.getSession())
   return sessionPromise
 }
 
 async function getRoleOnce(userId: string) {
   if (cachedRoleByUser.has(userId)) return cachedRoleByUser.get(userId) || null
+  const supabase = await getSupabase()
   const { data } = await supabase.from('profiles').select('role').eq('id', userId).single()
   const role = data?.role || null
   cachedRoleByUser.set(userId, role)
@@ -59,6 +80,7 @@ export default function Navbar({ siteContent }: { siteContent?: WebsiteContent }
   const handleSignOut = async () => {
     cachedRoleByUser.clear()
     sessionPromise = null
+    const supabase = await getSupabase()
     await supabase.auth.signOut()
     window.location.href = '/'
   }

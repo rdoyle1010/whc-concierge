@@ -521,3 +521,21 @@ test('the browser never imports a schema module for a value', () => {
   }
   assert.deepEqual(offenders, [], 'these put zod back into every page')
 })
+
+// The Supabase browser client carries auth, the realtime websocket client and
+// their buffer and ws polyfills - about 250KB. Navbar renders on every page of
+// the site, including ones nobody is signed in to, and created the client at
+// module scope, so all of it sat in the initial bundle of the homepage, the
+// Journal and every public page besides. Realtime is used by exactly two
+// screens, both behind sign-in.
+test('the public navigation does not ship the database client', () => {
+  const navbar = readFileSync(new URL('../src/components/Navbar.tsx', import.meta.url), 'utf8')
+  assert.ok(
+    !/^import \{ createClient \} from '@\/lib\/supabase\/client'/m.test(navbar),
+    'a static import puts the whole client in the initial bundle',
+  )
+  assert.match(navbar, /await import\('@\/lib\/supabase\/client'\)/, 'it must be fetched on demand')
+  // Nothing in the navigation was synchronous anyway; if that changes, this
+  // deferral would start costing a flash of the wrong state.
+  assert.match(navbar, /function getSupabase\(\)/)
+})
