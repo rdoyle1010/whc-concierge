@@ -8,8 +8,14 @@ test('homepage renders one prioritised hero image instead of every slide', () =>
   const source = read('src/components/HeroCarousel.tsx')
   assert.match(source, /src=\{slide\.image\.url\}/)
   assert.match(source, /fetchPriority=\{current === 0 \? 'high' : 'auto'\}/)
-  assert.match(source, /new window\.Image\(\)/)
   assert.doesNotMatch(source, /slides\.map\(\(item, index\)[\s\S]*?<img/)
+
+  // This used to require a hand-rolled `new window.Image()` preload of the next
+  // slide. The intent was right and the effect was nil: it fetched the raw
+  // original from storage while the carousel renders the resized /_next/image
+  // variant, so it downloaded megabytes the carousel never used and warmed no
+  // cache it reads. Requiring it back would be requiring the waste.
+  assert.doesNotMatch(source, /new window\.Image\(\)/, 'the manual preload fetched a file the carousel never uses')
 })
 
 test('public navigation icon buttons have accessible names and states', () => {

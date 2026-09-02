@@ -35,17 +35,14 @@ export default function HeroCarousel({ siteContent }: { siteContent?: WebsiteCon
   // Preload only the next slide, well after the critical Lighthouse window.
   // This preserves a smooth later transition without pulling another large
   // source image into the initial page load.
-  useEffect(() => {
-    if (slides.length < 2) return
-    const timer = window.setTimeout(() => {
-      if (document.visibilityState !== 'visible') return
-      const upcoming = slides[(current + 1) % slides.length]
-      const image = new window.Image()
-      image.decoding = 'async'
-      image.src = upcoming.image.url
-    }, 10000)
-    return () => window.clearTimeout(timer)
-  }, [current, slides])
+  // The next slide used to be preloaded here by hand, ten seconds in. The
+  // intent was right and the effect was nil: it fetched the raw original from
+  // storage, while the carousel renders the resized /_next/image variant. So it
+  // downloaded a couple of megabytes the carousel would never use, warmed no
+  // cache the carousel reads, and did it on every slide change.
+  //
+  // next/image already fetches the variant it needs, and the slide interval is
+  // long enough to cover it.
 
   const slide = slides[current] || slides[0]
 

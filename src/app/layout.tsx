@@ -116,6 +116,15 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const gate = await showEntryGate()
   return (
     <html lang="en-GB" className={`${manrope.variable} ${editorial.variable} ${poppins.variable}`}>
+      <head>
+        {/* Every picture on the site is served from Supabase storage, and a
+            Lighthouse run counts nine separate third-party requests to it. Each
+            one paid for its own DNS lookup and TLS handshake because nothing
+            told the browser that host was coming. Opening the connection while
+            the HTML is still parsing takes that cost off the first image. */}
+        <link rel="preconnect" href="https://klfsemvrxvgrbuzrqyer.supabase.co" crossOrigin="" />
+        <link rel="dns-prefetch" href="https://klfsemvrxvgrbuzrqyer.supabase.co" />
+      </head>
       <body>
         <a href="#main-content" className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:bg-white focus:px-5 focus:py-3 focus:text-[13px] focus:font-semibold focus:text-[#1c1c1c] focus:shadow-xl focus:border focus:border-[#1c1c1c]">Skip to main content</a>
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd(logo.url)) }} />
