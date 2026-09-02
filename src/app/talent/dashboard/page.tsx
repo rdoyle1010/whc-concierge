@@ -124,12 +124,15 @@ export default function TalentDashboard() {
     || (briefViews !== null && briefViews > 0) || briefOffers > 0
 
   return (
-    <DashboardShell role="talent" userName={profile?.full_name}>
-      <div className="mb-8">
+    <DashboardShell
+      role="talent"
+      userName={profile?.full_name}
+      intro={<>
         <p className="dashboard-eyebrow">Your career</p>
         <h1 className="dashboard-title">{timeOfDayGreeting()}{briefFirstName ? `, ${briefFirstName}` : ''}.</h1>
         <p className="dashboard-intro">Permanent roles, flexible work, private conversations and your professional profile in one workspace.</p>
-      </div>
+      </>}
+    >
 
       <section className="dashboard-card mb-8">
           <p className="dashboard-eyebrow">Your brief</p>

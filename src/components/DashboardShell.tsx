@@ -36,6 +36,8 @@ interface DashboardShellProps {
   children: React.ReactNode
   role: 'talent' | 'employer' | 'admin'
   userName?: string
+  /** Rendered above everything else, so a page greeting opens the page. */
+  intro?: React.ReactNode
 }
 
 const navItems: Record<string, NavItem[]> = {
@@ -124,7 +126,7 @@ const workspaceLabel = {
   admin: 'Platform control',
 } as const
 
-export default function DashboardShell({ children, role, userName }: DashboardShellProps) {
+export default function DashboardShell({ children, role, userName, intro }: DashboardShellProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [agencyShell, setAgencyShell] = useState<'checking' | 'employer' | 'public'>('checking')
   const [access, setAccess] = useState<Partial<Record<FeatureKey, FeatureAccess>>>({})
@@ -200,6 +202,6 @@ export default function DashboardShell({ children, role, userName }: DashboardSh
       <nav aria-label="Dashboard navigation" className="px-4 pb-20 overflow-y-auto h-[calc(100vh-156px)]">{items.map((item,index)=>{const active=isActive(item.href);const itemAccess=item.accessKey?access[item.accessKey]:undefined;const locked=itemAccess?.state==='locked';const limited=itemAccess?.state==='limited';const href=locked?(itemAccess?.upgradeHref||item.href):item.href;return <div key={item.href}>{item.section&&<p className={`${index===0?'mt-1':'mt-5'} mb-1.5 px-3 text-[8px] font-semibold uppercase tracking-[0.2em] text-white/32`}>{item.section}</p>}<Link href={href} onClick={()=>setSidebarOpen(false)} title={locked ? itemAccess?.label || 'Upgrade to unlock' : limited ? itemAccess?.label : undefined} aria-label={locked ? `${item.label}. ${itemAccess?.label || 'Locked feature'}` : item.label} className={`dashboard-nav-item relative flex items-center gap-3 px-3 py-2 text-[12.5px] transition-colors border-l ${active&&!locked?'text-white bg-white/[0.055] border-[#6e6a66]':locked?'text-white/42 hover:text-white/70 hover:bg-white/[0.025] border-transparent':'text-white/58 hover:text-white hover:bg-white/[0.035] border-transparent'}`}><span className={active&&!locked?'text-white/80':locked?'text-white/30':'text-white/44'}>{item.icon}</span><span className="tracking-[-0.01em]">{item.label}</span>{locked?<span className="ml-auto flex items-center gap-1 text-[9px] uppercase tracking-[0.08em] text-white/45"><Lock size={11}/></span>:limited?<span className="ml-auto text-[9px] text-white/45">{itemAccess?.label}</span>:active?<ChevronRight size={12} className="ml-auto text-white/70"/>:null}</Link></div>})}</nav>
       <div className="absolute bottom-0 left-0 right-0 px-4 py-4 bg-[#1c1b1a] border-t border-white/[0.07]"><button type="button" onClick={handleSignOut} className="dashboard-nav-item flex items-center gap-3 px-3 py-2.5 text-[12.5px] text-white/48 hover:text-white hover:bg-white/[0.035] w-full transition-colors"><LogOut size={17}/><span>Sign out</span></button></div>
     </aside>
-    <main id="main-content" className="lg:ml-[264px] min-h-screen"><div className="hidden lg:flex h-[52px] items-center justify-end gap-4 border-b border-border bg-white px-10 xl:px-12">{viewerId && <NotificationBell userId={viewerId} />}<UniversalSearch variant="dashboard" /></div><div className="p-5 sm:p-6 md:p-8 lg:p-10 xl:p-12 max-w-[1540px] mx-auto">{showJobsTalentSponsor?<div className="mb-7"><SponsoredAd placement="jobs_talent_sponsor" /></div>:null}{showPostHireActions?<PostHireActions/>:null}{showRecruitmentPipeline?<ApplicationPipelineHub role={role as 'talent'|'employer'}/>:null}{activityRole?<DashboardActivityCentre role={activityRole}/>:null}{showPostHireReviews?<PostHireReviews/>:null}{children}</div></main>
+    <main id="main-content" className="lg:ml-[264px] min-h-screen"><div className="hidden lg:flex h-[52px] items-center justify-end gap-4 border-b border-border bg-white px-10 xl:px-12">{viewerId && <NotificationBell userId={viewerId} />}<UniversalSearch variant="dashboard" /></div><div className="p-5 sm:p-6 md:p-8 lg:p-10 xl:p-12 max-w-[1540px] mx-auto">{intro?<div className="mb-8">{intro}</div>:null}{showJobsTalentSponsor?<div className="mb-7"><SponsoredAd placement="jobs_talent_sponsor" /></div>:null}{showPostHireActions?<PostHireActions/>:null}{showRecruitmentPipeline?<ApplicationPipelineHub role={role as 'talent'|'employer'}/>:null}{activityRole?<DashboardActivityCentre role={activityRole}/>:null}{showPostHireReviews?<PostHireReviews/>:null}{children}</div></main>
   </div>
 }

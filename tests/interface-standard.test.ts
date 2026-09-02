@@ -111,3 +111,23 @@ test('the sign-in funnel carries no third-party stock photography', () => {
     assert.ok(!/pexels\.com/.test(text), `${path} must not hotlink stock photography`)
   }
 })
+
+// The talent dashboard opened with a dark promotional banner, then the
+// activity centre, and only then said "Good afternoon" - a greeting
+// halfway down the page. The shell renders its own blocks before children,
+// so the greeting needs the intro slot to sit where a greeting belongs.
+test('the dashboard shell renders its intro before anything else', () => {
+  const shell = readFileSync(new URL('../src/components/DashboardShell.tsx', import.meta.url), 'utf8')
+  const intro = shell.indexOf('{intro?')
+  const activity = shell.indexOf('<DashboardActivityCentre')
+  const children = shell.lastIndexOf('{children}')
+  assert.ok(intro > -1, 'the shell must accept an intro slot')
+  assert.ok(intro < activity, 'the intro must render above the activity centre')
+  assert.ok(activity < children, 'the activity centre must still render above the page body')
+})
+
+test('the talent dashboard greets the reader through that slot', () => {
+  const page = readFileSync(new URL('../src/app/talent/dashboard/page.tsx', import.meta.url), 'utf8')
+  assert.match(page, /intro=\{<>/, 'the greeting must be passed as the shell intro')
+  assert.match(page, /timeOfDayGreeting\(\)/)
+})
