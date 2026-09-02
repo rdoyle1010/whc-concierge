@@ -10,6 +10,29 @@ import CollapsibleCheckboxSection from '@/components/CollapsibleCheckboxSection'
 
 const STAR_RATINGS = ['3', '4', '5', 'Boutique', 'Independent']
 
+// A property should be told which of their answers was not kept, in the words
+// the form used, not the name of a database column they have never seen.
+const FIELD_LABELS: Record<string, string> = {
+  company_name: 'Company / brand name', property_name: 'Property name',
+  contact_name: 'Contact name', contact_phone: 'Phone', contact_email: 'Contact email',
+  website: 'Website', location: 'Location', postcode: 'Postcode',
+  company_type: 'Company type', property_type: 'Property type', star_rating: 'Star rating',
+  about_text: 'About', tagline: 'Tagline',
+  product_houses_used: 'Product houses', systems_used: 'Systems', services_offered: 'Services offered',
+  brand_partners: 'Brand partners', qualifications_sought: 'Qualifications sought',
+  num_treatment_rooms: 'Treatment rooms', team_size: 'Team size',
+  commute_car_required: 'Car required', nearest_transport: 'Nearest transport',
+  transport_walk_minutes: 'Walk from transport', parking_available: 'Parking',
+  taxi_support: 'Taxi support', taxi_notes: 'Taxi notes', travel_notes: 'Travel notes',
+  location_guide: 'Location guide', relocation_support: 'Relocation support',
+  hotel_group: 'Hotel group', room_count: 'Room count', spa_size: 'Spa size',
+  facilities: 'Facilities', opening_year: 'Opening year',
+  culture_statement: 'Culture statement', staff_benefits: 'Staff benefits',
+  progression_notes: 'Progression notes', culture_points: 'Culture points',
+  highlights: 'Highlights', agency_available: 'Agency availability', agency_note: 'Agency note',
+}
+const fieldLabel = (column: string) => FIELD_LABELS[column] || column
+
 export default function EmployerProfilePage() {
   const supabase = createClient()
   const [profile, setProfile] = useState<any>(null)
@@ -47,8 +70,10 @@ export default function EmployerProfilePage() {
 
   const handleSave = async () => {
     setSaving(true)
-    // Single source of truth for the save - the retry loop below strips only
-    // the columns the DB rejects, so no field is ever silently dropped.
+    // Single source of truth for the save. The recovery below drops a column
+    // the database does not have so one missing field cannot lose the whole
+    // form - but it is a net, not a feature: whatever it drops is reported as
+    // a failure, by name, and needs a migration.
     const payload: Record<string, any> = {
         // Company basics
         company_name: profile.company_name,
@@ -106,10 +131,13 @@ export default function EmployerProfilePage() {
       .update(payload)
       .eq('id', profile.id)
 
-    // If a column doesn't exist in the DB, strip just that field and retry
+    // Drop a column the database does not have and try once more. Three
+    // attempts, not ten: past a third missing column the schema is wrong in a
+    // way no amount of retrying fixes, and eleven round trips on a broken save
+    // is a slow failure rather than a fast one.
     let finalError = error
     const stripped: string[] = []
-    for (let i = 0; i < 10 && finalError; i++) {
+    for (let i = 0; i < 3 && finalError; i++) {
       const m = finalError.message.match(/Could not find the '([^']+)' column/) || finalError.message.match(/column "([^"]+)" of relation/)
       if (!m || !(m[1] in payload)) break
       stripped.push(m[1])
@@ -125,7 +153,7 @@ export default function EmployerProfilePage() {
       // Best-effort: geocode the postcode so distance features work
       fetch('/api/employer/geocode', { method: 'POST' }).catch(() => {})
       if (stripped.length > 0) {
-        fail(`Some fields could not be saved: ${stripped.join(', ')}. Please try again or contact support.`)
+        fail(`Not saved: ${stripped.map(fieldLabel).join(', ')}. Everything else was kept. Please tell us so we can fix it - retrying will not help.`)
       } else {
         ok('Profile saved.')
       }
@@ -165,7 +193,7 @@ export default function EmployerProfilePage() {
     const formData = new FormData()
     formData.append('file', file)
     formData.append('bucket', 'site-images')
-    formData.append('path', `logos/${profile.id}.${ext}`)
+    formData.append('path', `logos/${profile.id}-${Date.now()}.${ext}`)
     const res = await fetch('/api/upload', { method: 'POST', body: formData })
     const data = await res.json()
     if (!res.ok) { fail(`Upload failed: ${data.error}`); return }
@@ -200,9 +228,9 @@ export default function EmployerProfilePage() {
         <div className="dashboard-card mb-6">
           <h3 className="font-serif text-lg font-semibold mb-4">Company Logo</h3>
           <div className="flex items-center space-x-6">
-            <div className="w-24 h-24 rounded-xl bg-gray-100 flex items-center justify-center overflow-hidden">
+            <div className="w-24 h-24 rounded-xl bg-white border border-border flex items-center justify-center overflow-hidden">
               {profile.logo_url ? (
-                <img src={profile.logo_url} alt="Logo" className="w-full h-full object-cover" />
+                <img src={profile.logo_url} alt={`${profile.company_name || 'Company'} logo`} className="w-full h-full object-contain p-1.5" />
               ) : (
                 <span className="text-2xl font-serif font-bold text-gray-300">{profile.company_name?.[0]}</span>
               )}

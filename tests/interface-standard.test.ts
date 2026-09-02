@@ -252,3 +252,76 @@ test('save banners are told the outcome, never asked to guess it', () => {
     assert.match(text, /kind: 'success'/, `${file} must carry the outcome alongside the text`)
   }
 })
+
+// The Company Profile save drops a column the database does not have and
+// carries on, so a schema that has drifted loses the property's answer while
+// telling them nothing useful. Two things keep that honest: it must be a
+// bounded net rather than an eleven-round-trip guessing game, and whatever it
+// drops must be named in the words the form used.
+test('the profile save recovery stays a bounded net', () => {
+  const page = readFileSync(new URL('../src/app/employer/profile/page.tsx', import.meta.url), 'utf8')
+  const bound = page.match(/for \(let i = 0; i < (\d+) && finalError/)
+  assert.ok(bound, 'the recovery loop must have an explicit bound')
+  assert.ok(Number(bound[1]) <= 3, `retrying ${bound[1]} times is a slow failure, not a recovery`)
+  assert.ok(
+    !/no field is ever silently dropped/.test(page),
+    'the comment must not claim the opposite of what the code does',
+  )
+})
+
+test('every column the profile saves has a label a property would recognise', () => {
+  const page = readFileSync(new URL('../src/app/employer/profile/page.tsx', import.meta.url), 'utf8')
+  const payload = page.slice(page.indexOf('const payload: Record<string, any> = {'))
+  const columns = [...payload.slice(0, payload.indexOf('\n    }\n')).matchAll(/^\s{8}(\w+):/gm)].map(m => m[1])
+  assert.ok(columns.length > 30, `expected the full payload, found ${columns.length} columns`)
+  const labels = page.slice(page.indexOf('const FIELD_LABELS'), page.indexOf('const fieldLabel'))
+  for (const column of columns) {
+    assert.ok(labels.includes(`${column}:`), `${column} would be reported to a property by its database name`)
+  }
+})
+
+// contact_email lived in the production database by hand and in no migration,
+// so every environment but production dropped it on save: the property typed
+// where applications should go, was told it saved, and the value vanished.
+test('every column the profile saves is created by a migration', () => {
+  const page = readFileSync(new URL('../src/app/employer/profile/page.tsx', import.meta.url), 'utf8')
+  const payload = page.slice(page.indexOf('const payload: Record<string, any> = {'))
+  const columns = [...payload.slice(0, payload.indexOf('\n    }\n')).matchAll(/^\s{8}(\w+):/gm)].map(m => m[1])
+
+  const dir = new URL('../supabase/migrations/', import.meta.url)
+  const sql = readdirSync(dir).filter(f => f.endsWith('.sql'))
+    .map(f => readFileSync(new URL(f, dir), 'utf8').toLowerCase()).join('\n')
+
+  const declared = new Set<string>()
+  for (const block of sql.matchAll(/alter\s+table\s+(?:if\s+exists\s+)?(?:public\.)?employer_profiles\s+([\s\S]*?);/g)) {
+    for (const col of block[1].matchAll(/add\s+column\s+(?:if\s+not\s+exists\s+)?["']?(\w+)/g)) declared.add(col[1])
+  }
+  for (const block of sql.matchAll(/create\s+table\s+(?:if\s+not\s+exists\s+)?(?:public\.)?employer_profiles\s*\(([\s\S]*?)\n\)/g)) {
+    for (const line of block[1].split('\n')) {
+      const col = line.match(/^\s*["']?(\w+)\s+\w/)
+      if (col && !['constraint', 'primary', 'unique', 'foreign', 'check'].includes(col[1])) declared.add(col[1])
+    }
+  }
+
+  const missing = columns.filter(column => !declared.has(column.toLowerCase()))
+  assert.deepEqual(missing, [], `these columns are saved but no migration creates them: ${missing.join(', ')}`)
+})
+
+// Uploading a replacement logo to a fixed path with upsert returns the same
+// public URL, writes the same string to the database, and leaves the browser
+// serving the cached image - so the property uploads a new logo and nothing
+// appears to happen. This session has now been caught by that shape of bug
+// three times.
+test('a replacement logo lands on a new URL', () => {
+  const page = readFileSync(new URL('../src/app/employer/profile/page.tsx', import.meta.url), 'utf8')
+  const path = page.match(/formData\.append\('path', `logos\/[^`]+`\)/)
+  assert.ok(path, 'the logo upload path must be findable')
+  assert.match(path[0], /Date\.now\(\)/, 'a fixed path returns a cached image after every re-upload')
+})
+
+test('a logo is fitted, not cropped', () => {
+  const page = readFileSync(new URL('../src/app/employer/profile/page.tsx', import.meta.url), 'utf8')
+  const img = page.match(/<img src=\{profile\.logo_url\}[^/]*\/>/)
+  assert.ok(img, 'the logo preview must be findable')
+  assert.match(img[0], /object-contain/, 'object-cover crops the middle out of a wide lockup')
+})
