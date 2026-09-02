@@ -3,7 +3,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { getRequestUser } from '@/lib/request-user'
 import { getStripe } from '@/lib/stripe'
 
-const SITE = 'https://talent.wellnesshousecollective.co.uk'
+const SITE = 'https://talenthousecollective.co.uk'
 const RESIDENCY_MEMBERSHIP_PENCE = 1000
 const DURATIONS = new Set(['1-2 months','3-4 months','5-6 months','Flexible'])
 const TRAVEL = new Set(['UK Only','Europe','Middle East','Asia Pacific','Global'])

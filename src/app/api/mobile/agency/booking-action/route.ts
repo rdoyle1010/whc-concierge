@@ -55,7 +55,7 @@ async function alertCascadeHolder(admin: ReturnType<typeof createAdminClient>, c
     ])
   }
   // SMS is consent-gated: sms_opt_in plus a phone number on file.
-  if (smsAllowed(candidate)) await sendSms(candidate.phone, `WHC Concierge: ${empName} needs cover TODAY - £${booking.rate}/hr. You have ${mins} mins to respond in Agency.`).catch(() => null)
+  if (smsAllowed(candidate)) await sendSms(candidate.phone, `Talent House Collective: ${empName} needs cover TODAY - £${booking.rate}/hr. You have ${mins} mins to respond in Agency.`).catch(() => null)
 }
 
 async function advanceCascade(admin: ReturnType<typeof createAdminClient>, booking: any) {

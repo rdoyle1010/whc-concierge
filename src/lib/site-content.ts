@@ -1,6 +1,9 @@
 import type { CSSProperties } from 'react'
 import { z } from 'zod'
 
+// The canonical public origin. Everything user-facing links here.
+export const SITE_ORIGIN = 'https://talenthousecollective.co.uk'
+
 export const WEBSITE_DRAFT_KEY = 'website_content_draft_v1'
 export const WEBSITE_PUBLISHED_KEY = 'website_content_published_v1'
 export const WEBSITE_HISTORY_KEY = 'website_content_history_v1'
@@ -116,7 +119,7 @@ export const DEFAULT_WEBSITE_CONTENT: WebsiteContent = {
   },
   hero: {
     slides: [
-      { image: image('https://images.unsplash.com/photo-1720678418766-2628e52f4634?w=1920&q=80&auto=format&fit=crop', 'Luxury spa interior'), eyebrow: 'WHC Concierge', heading: 'The professional platform for spa and wellness careers', text: 'Find exceptional people. Build better careers. Develop stronger spa businesses.' },
+      { image: image('https://images.unsplash.com/photo-1720678418766-2628e52f4634?w=1920&q=80&auto=format&fit=crop', 'Luxury spa interior'), eyebrow: 'Talent House Collective', heading: 'The professional platform for spa and wellness careers', text: 'Find exceptional people. Build better careers. Develop stronger spa businesses.' },
       { image: image('https://images.unsplash.com/photo-1590490360836-2e3b067c082b?w=1920&q=80&auto=format&fit=crop', 'Calm luxury treatment space'), eyebrow: 'Intelligent matching', heading: 'Precision matching, not guesswork', text: 'Skills, qualifications, brands, location and availability, weighted and scored - so both sides can see why a match is right.' },
       { image: image('https://images.unsplash.com/photo-1540555700478-4be289fbecef?w=1920&q=80&auto=format&fit=crop', 'Wellness treatment setting'), eyebrow: 'Verified by WHC', heading: 'Every profile tells the full story', text: 'Right-to-work, insurance and qualifications reviewed by WHC before the Verified badge is awarded.' },
     ],
@@ -186,6 +189,22 @@ const LEGACY_BRAND: Record<'accent' | 'ink' | 'background' | 'surface', string[]
   surface: ['#f5f5f5', '#f5f6f8', '#f7f8fa'],
 }
 
+// Website content saved before the move to talenthousecollective.co.uk can
+// still carry absolute links on the old host. Rewrite them on read so stored
+// content follows the canonical domain without anyone republishing.
+const LEGACY_SITE_ORIGINS = [
+  'https://talent.wellnesshousecollective.co.uk',
+  'http://talent.wellnesshousecollective.co.uk',
+]
+
+export function normaliseLegacySiteLinks<T>(value: T): T {
+  let json = JSON.stringify(value)
+  for (const origin of LEGACY_SITE_ORIGINS) {
+    json = json.split(origin).join(SITE_ORIGIN)
+  }
+  return JSON.parse(json) as T
+}
+
 function normaliseLegacyBrand(content: WebsiteContent): WebsiteContent {
   const defaults = DEFAULT_WEBSITE_CONTENT.brand
   for (const key of Object.keys(LEGACY_BRAND) as (keyof typeof LEGACY_BRAND)[]) {
@@ -199,7 +218,9 @@ function normaliseLegacyBrand(content: WebsiteContent): WebsiteContent {
 export function parseWebsiteContent(value: unknown): WebsiteContent {
   const raw = typeof value === 'string' ? (() => { try { return JSON.parse(value) } catch { return null } })() : value
   const parsed = WebsiteContentSchema.safeParse(raw)
-  return parsed.success ? normaliseLegacyBrand(parsed.data) : cloneDefaultWebsiteContent()
+  return parsed.success
+    ? normaliseLegacySiteLinks(normaliseLegacyBrand(parsed.data))
+    : cloneDefaultWebsiteContent()
 }
 
 export function websiteCssVariables(content: WebsiteContent): CSSProperties {

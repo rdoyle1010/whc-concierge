@@ -14,7 +14,7 @@ const TWILIO_API_KEY_SECRET = process.env.TWILIO_API_KEY_SECRET
 const TWILIO_AUTH_TOKEN = process.env.TWILIO_AUTH_TOKEN
 const TWILIO_FROM_NUMBER = process.env.TWILIO_FROM_NUMBER
 
-const PLATFORM_URL = 'https://talent.wellnesshousecollective.co.uk'
+const PLATFORM_URL = 'https://talenthousecollective.co.uk'
 
 export function smsConfigured(): boolean {
   const hasProductionKey = Boolean(TWILIO_API_KEY_SID && TWILIO_API_KEY_SECRET)
@@ -41,30 +41,30 @@ function privateNotificationBody(original: string): string {
   const text = original.toLowerCase()
 
   if (text.includes('urgent') && (text.includes('agency') || text.includes('cover') || text.includes('shift'))) {
-    return `WHC Concierge: You have an urgent Agency Cover update. Sign in to view and respond: ${PLATFORM_URL}`
+    return `Talent House Collective: You have an urgent Agency Cover update. Sign in to view and respond: ${PLATFORM_URL}`
   }
 
   if (text.includes('interview')) {
-    return `WHC Concierge: You have an interview update. Sign in to view the details: ${PLATFORM_URL}`
+    return `Talent House Collective: You have an interview update. Sign in to view the details: ${PLATFORM_URL}`
   }
 
   if (text.includes('agency') || text.includes('cover') || text.includes('shift')) {
-    return `WHC Concierge: You have a new Agency Cover update. Sign in to view and respond: ${PLATFORM_URL}`
+    return `Talent House Collective: You have a new Agency Cover update. Sign in to view and respond: ${PLATFORM_URL}`
   }
 
   if (text.includes('residency')) {
-    return `WHC Concierge: You have a new Residency update. Sign in to view the details: ${PLATFORM_URL}`
+    return `Talent House Collective: You have a new Residency update. Sign in to view the details: ${PLATFORM_URL}`
   }
 
   if (text.includes('message') || text.includes('inbox')) {
-    return `WHC Concierge: You have a new message waiting. Sign in to read it: ${PLATFORM_URL}`
+    return `Talent House Collective: You have a new message waiting. Sign in to read it: ${PLATFORM_URL}`
   }
 
   if (text.includes('application') || text.includes('shortlist') || text.includes('job offer') || text.includes('offer you') || text.includes('candidate')) {
-    return `WHC Concierge: You have a recruitment update. Sign in to view the details: ${PLATFORM_URL}`
+    return `Talent House Collective: You have a recruitment update. Sign in to view the details: ${PLATFORM_URL}`
   }
 
-  return `WHC Concierge: You have a new update. Sign in to view the details: ${PLATFORM_URL}`
+  return `Talent House Collective: You have a new update. Sign in to view the details: ${PLATFORM_URL}`
 }
 
 export async function sendSms(to: string | null | undefined, body: string): Promise<boolean> {

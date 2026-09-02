@@ -5,7 +5,7 @@ import { marketingUnsubscribeUrl, newsletterUnsubscribeUrl } from '@/lib/privacy
 import { renderNewsletterHtml } from '@/lib/newsletter-template'
 
 const RESEND_API_KEY = process.env.RESEND_API_KEY
-const FROM_EMAIL = 'WHC Concierge <noreply@mail.wellnesshousecollective.co.uk>'
+const FROM_EMAIL = 'Talent House Collective <noreply@mail.wellnesshousecollective.co.uk>'
 const MAX_RECIPIENTS_PER_SEND = 500
 
 // Delegated to the shared admin guard, which enforces two-step
@@ -22,7 +22,7 @@ async function featuredCardsHtml(admin: any, featuredIds: any[]): Promise<string
     candIds.length ? admin.from('candidate_profiles').select('id, full_name, headline, hourly_rate, role_level, profile_image_url').in('id', candIds) : Promise.resolve({ data: [] }),
     empIds.length ? admin.from('employer_profiles').select('id, company_name, property_name, tagline, logo_url').in('id', empIds) : Promise.resolve({ data: [] }),
   ])
-  const site = 'https://talent.wellnesshousecollective.co.uk'
+  const site = 'https://talenthousecollective.co.uk'
   const esc = (t: any) => String(t || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
   const card = (img: string | null, title: string, sub: string, href: string) => `<a href="${href}" style="display:flex;align-items:center;gap:14px;padding:14px;border:1px solid #e5e5e5;border-radius:12px;text-decoration:none;margin-bottom:10px;background:#fff">${img ? `<img src="${img}" width="52" height="52" style="border-radius:50%;object-fit:cover" alt="" />` : `<div style="width:52px;height:52px;border-radius:50%;background:#1c1b1a;color:#fff;text-align:center;line-height:52px;font-weight:600">${esc(title)[0] || 'W'}</div>`}<span><span style="display:block;font-weight:600;color:#1c1b1a">${esc(title)}</span><span style="display:block;font-size:12px;color:#57534e;margin-top:2px">${esc(sub)}</span></span></a>`
   let html = ''
@@ -141,7 +141,7 @@ export async function POST(req: NextRequest) {
       const batch = recipients.slice(i, i + 10)
       const results = await Promise.allSettled(batch.map(async recipient => {
         const html = renderNewsletterHtml(campaign, { featuredHtml: cards, unsubscribeUrl: recipient.unsubscribe })
-        const res = await fetch('https://api.resend.com/emails', { method: 'POST', headers: { Authorization: `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ from: FROM_EMAIL, to: recipient.email, subject: campaign.name || 'News from WHC Concierge', html }) })
+        const res = await fetch('https://api.resend.com/emails', { method: 'POST', headers: { Authorization: `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ from: FROM_EMAIL, to: recipient.email, subject: campaign.name || 'News from Talent House Collective', html }) })
         if (!res.ok) throw new Error(String(res.status))
       }))
       for (const r of results) r.status === 'fulfilled' ? sent++ : failed++

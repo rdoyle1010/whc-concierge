@@ -80,7 +80,7 @@ export default async function BlogPostPage(props: { params: Promise<{ slug: stri
 
         <div className="mt-8 pt-6 border-t border-[#e0dad2]">
           <p className="text-xs text-muted uppercase tracking-wider mb-3">Share this article</p>
-          <ShareButtons url={`https://talent.wellnesshousecollective.co.uk/blog/${post.slug}`} title={post.title} />
+          <ShareButtons url={`https://talenthousecollective.co.uk/blog/${post.slug}`} title={post.title} />
         </div>
       </article>
       </main>

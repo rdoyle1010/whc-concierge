@@ -6,7 +6,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 const limiter = rateLimit('contact-notify', { windowMs: 15 * 60 * 1000, maxRequests: 5 })
 
 const RESEND_API_KEY = process.env.RESEND_API_KEY
-const FROM_EMAIL = 'WHC Concierge <noreply@mail.wellnesshousecollective.co.uk>'
+const FROM_EMAIL = 'Talent House Collective <noreply@mail.wellnesshousecollective.co.uk>'
 // Fallback only - the admin-configured platform_config contact_email wins.
 const DEFAULT_ADMIN_EMAIL = 'rebecca.whc@outlook.com'
 
@@ -36,7 +36,7 @@ export async function POST(req: NextRequest) {
 
     const html = `
       <div style="font-family: Inter, -apple-system, sans-serif; max-width: 560px; margin: 0 auto; padding: 40px 20px;">
-        <p style="font-size: 16px; font-weight: 600; margin-bottom: 32px;">WHC Concierge</p>
+        <p style="font-size: 16px; font-weight: 600; margin-bottom: 32px;">Talent House Collective</p>
         <p style="font-size: 20px; font-weight: 700; margin-bottom: 20px;">New Contact Form Submission</p>
         <table style="width: 100%; border-collapse: collapse; margin-bottom: 24px;">
           <tr><td style="padding: 8px 0; color: #6e6a66; font-size: 13px; width: 100px;">Name</td><td style="padding: 8px 0; font-size: 14px; color: #1c1b1a; font-weight: 500;">${name}</td></tr>

@@ -6,10 +6,10 @@ import { Award, Shield, Users, Heart } from 'lucide-react'
 import FounderImage from '@/components/FounderImage'
 
 export const metadata: Metadata = {
-  title: { absolute: 'About WHC Concierge | The Professional Platform for Spa and Wellness Careers' },
-  description: 'WHC Concierge is the professional platform for spa and wellness careers - built by someone who has lived inside the industry.',
-  alternates: { canonical: 'https://talent.wellnesshousecollective.co.uk/about' },
-  openGraph: { title: 'About WHC Concierge | The Professional Platform for Spa and Wellness Careers', description: 'The story behind the professional platform for spa and wellness careers.' },
+  title: { absolute: 'About Talent House Collective | The Professional Platform for Spa and Wellness Careers' },
+  description: 'Talent House Collective is the professional platform for spa and wellness careers - built by someone who has lived inside the industry.',
+  alternates: { canonical: 'https://talenthousecollective.co.uk/about' },
+  openGraph: { title: 'About Talent House Collective | The Professional Platform for Spa and Wellness Careers', description: 'The story behind the professional platform for spa and wellness careers.' },
 }
 
 export default function AboutPage() {
@@ -28,14 +28,14 @@ export default function AboutPage() {
           <div className="max-w-4xl mx-auto text-center">
             <p className="public-eyebrow mb-4">About</p>
             <h1 className="public-title mb-5">Built for an industry that deserves better.</h1>
-            <p className="public-intro max-w-2xl mx-auto">WHC Concierge is the professional platform for spa and wellness careers - built by someone who has lived inside the industry.</p>
+            <p className="public-intro max-w-2xl mx-auto">Talent House Collective is the professional platform for spa and wellness careers - built by someone who has lived inside the industry.</p>
           </div>
         </section>
 
         <section className="py-16 md:py-20 px-6 bg-white border-b border-border">
           <div className="max-w-3xl mx-auto space-y-7 text-[15px] md:text-[16px] leading-8 text-secondary">
             <p>Recruitment in luxury wellness has been broken for years. Generic job boards do not understand what a CIDESCO qualification means, or why ESPA training is not interchangeable with Dermalogica. Talented therapists vanish into stacks of unsuitable applicants. Five-star properties settle for whoever applied first. Everyone loses.</p>
-            <p>WHC Concierge exists to change that. Every profile is vetted. Every property is verified. Our matching engine scores candidates across fifteen weighted categories - treatment skills, product house expertise, brand experience, location, availability, role level - so the right people surface first.</p>
+            <p>Talent House Collective exists to change that. Every profile is vetted. Every property is verified. Our matching engine scores candidates across fifteen weighted categories - treatment skills, product house expertise, brand experience, location, availability, role level - so the right people surface first.</p>
             <p>No commission on hires. No spam. No generic filters built for office workers. Just the tools the wellness industry should always have had.</p>
           </div>
         </section>
@@ -47,7 +47,7 @@ export default function AboutPage() {
               <p className="public-eyebrow mb-3">Founder</p>
               <h2 className="text-[30px] md:text-[38px] font-semibold tracking-[-0.035em] text-ink mb-6">Founded by Rebecca Doyle</h2>
               <p className="text-[15px] leading-8 text-secondary mb-5">Rebecca built her career inside the luxury spa and wellness sector - watching firsthand how poorly the industry was served by mainstream recruitment. Properties she admired struggled to find the right people. Therapists with extraordinary CVs were stuck in the wrong roles. The disconnect was costing the entire sector its standards.</p>
-              <p className="text-[15px] leading-8 text-secondary mb-8">WHC Concierge is the platform she wished had existed when she was hiring. Built with industry knowledge, not algorithms designed for office workers. Made for the people who make luxury wellness what it is.</p>
+              <p className="text-[15px] leading-8 text-secondary mb-8">Talent House Collective is the platform she wished had existed when she was hiring. Built with industry knowledge, not algorithms designed for office workers. Made for the people who make luxury wellness what it is.</p>
               <a href="https://www.linkedin.com/in/rebecca-doyle-whc/" target="_blank" rel="noopener noreferrer" className="btn-primary inline-block">Connect on LinkedIn →</a>
             </div>
           </div>

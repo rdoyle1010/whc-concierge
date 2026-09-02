@@ -8,7 +8,7 @@ import { trackEvent } from '@/lib/analytics'
 // 12.5% of first-year salary (15-20% executive), payable on placement.
 
 const RESEND_API_KEY = process.env.RESEND_API_KEY
-const FROM_EMAIL = 'WHC Concierge <noreply@mail.wellnesshousecollective.co.uk>'
+const FROM_EMAIL = 'Talent House Collective <noreply@mail.wellnesshousecollective.co.uk>'
 const ADMIN_EMAIL = 'rebecca.whc@outlook.com'
 
 const esc = (v: string) => v.replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;')

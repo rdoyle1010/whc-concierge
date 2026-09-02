@@ -32,7 +32,7 @@ async function publicProfile(id: string) {
 export async function generateMetadata(props: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const { id } = await props.params
   const r = await publicProfile(id)
-  return { title: `${r?.primary_specialism || 'Residency Specialist'} - WHC Concierge Residency` }
+  return { title: `${r?.primary_specialism || 'Residency Specialist'} - Talent House Collective Residency` }
 }
 
 export default async function ResidencyDetailPage(props: { params: Promise<{ id: string }> }) {

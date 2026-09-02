@@ -125,7 +125,7 @@ export default function TalentResidencyPage() {
     <DashboardShell role="talent" userName={profile?.full_name}>
       <div className="max-w-6xl">
         <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-5 mb-8">
-          <div><p className="dashboard-eyebrow mb-2">Residency Marketplace</p><h1 className="dashboard-title">Residency offers</h1><p className="dashboard-intro mt-2">Review hotel invitations and keep your agreed terms protected on WHC Concierge.</p></div>
+          <div><p className="dashboard-eyebrow mb-2">Residency Marketplace</p><h1 className="dashboard-title">Residency offers</h1><p className="dashboard-intro mt-2">Review hotel invitations and keep your agreed terms protected on Talent House Collective.</p></div>
           <div className="flex flex-wrap gap-2">
             <Link href="/talent/before-you-arrive" className="btn-secondary">Before You Arrive</Link>
             <Link href="/residency/create" className="btn-primary">{memberActive ? 'Manage Residency Listing' : 'Join Residency'}</Link>

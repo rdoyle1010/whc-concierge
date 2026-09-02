@@ -5,7 +5,7 @@ import { getStripe } from '@/lib/stripe'
 import { geocodePostcode } from '@/lib/geo'
 import { AGENCY_LISTING_TIERS } from '@/lib/constants'
 
-const SITE = 'https://talent.wellnesshousecollective.co.uk'
+const SITE = 'https://talenthousecollective.co.uk'
 
 export async function GET(req: NextRequest) {
   const user = await getRequestUser(req)

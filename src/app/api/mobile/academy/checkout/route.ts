@@ -5,7 +5,7 @@ import { getStripe } from '@/lib/stripe'
 import { BUNDLE_PRICE, coursePrice } from '@/lib/academy'
 import { getAcademyCatalog, getAcademyCourseBySlug } from '@/lib/academy-catalog-server'
 
-const SITE = 'https://talent.wellnesshousecollective.co.uk'
+const SITE = 'https://talenthousecollective.co.uk'
 const WEB_ACADEMY_RETURN = `${SITE}/talent/academy`
 const APP_RETURN = `${SITE}/app-return/academy`
 

@@ -13,7 +13,7 @@ import TrackView from '@/components/TrackView'
 
 export const revalidate = 60
 
-const SITE = 'https://talent.wellnesshousecollective.co.uk'
+const SITE = 'https://talenthousecollective.co.uk'
 type Job = Record<string, any>
 
 const getJob = cache(async (id: string): Promise<Job | null> => {
@@ -41,15 +41,15 @@ const EMPLOYMENT_TYPE_MAP: Record<string, string> = {
 export async function generateMetadata(props: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const params = await props.params
   const job = await getJob(params.id)
-  if (!job) return { title: { absolute: 'Role not found | WHC Concierge' }, robots: { index: false, follow: false } }
+  if (!job) return { title: { absolute: 'Role not found | Talent House Collective' }, robots: { index: false, follow: false } }
   const employer = job.employer_profiles || {}
-  const propertyName = employer.property_name || employer.company_name || 'WHC Concierge'
+  const propertyName = employer.property_name || employer.company_name || 'Talent House Collective'
   const titleText = job.job_title || job.title || 'Role'
   const description = stripPlain(String(job.job_description || job.description || '')).slice(0, 160)
   const url = `${SITE}/jobs/${params.id}`
   const image = Array.isArray(employer.property_photos) ? employer.property_photos[0] : undefined
   return {
-    title: { absolute: `${titleText} - ${propertyName} | WHC Concierge` }, description,
+    title: { absolute: `${titleText} - ${propertyName} | Talent House Collective` }, description,
     alternates: { canonical: url },
     openGraph: { title: `${titleText} - ${propertyName}`, description, url, type: 'article', ...(image ? { images: [image] } : {}) },
     twitter: { title: `${titleText} - ${propertyName}`, description, card: 'summary_large_image', ...(image ? { images: [image] } : {}) },

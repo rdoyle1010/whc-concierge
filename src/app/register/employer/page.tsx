@@ -144,7 +144,7 @@ export default function EmployerRegisterPage() {
               <details className="mt-5 border border-border">
                 <summary className="cursor-pointer px-4 py-3 text-[13px] font-semibold text-ink hover:bg-surface">Read the full Terms &amp; Conditions - Employer</summary>
                 <div className="border-t border-border px-4 py-4 text-[12px] text-secondary leading-relaxed">
-                  <p className="mb-2">By registering a property on WHC Concierge, you agree to the following:</p>
+                  <p className="mb-2">By registering a property on Talent House Collective, you agree to the following:</p>
                   <p className="mb-2">1. <strong>Accuracy of listings:</strong> All job listings and company information must be accurate and represent genuine vacancies. WHC reserves the right to remove misleading listings.</p>
                   <p className="mb-2">2. <strong>Account review:</strong> Employer accounts may be reviewed and approved by WHC before protected Talent or Agency features become available.</p>
                   <p className="mb-2">3. <strong>Job posting fees:</strong> Standard Jobs are {JOB_TIERS.Bronze.display} for {JOB_TIERS.Bronze.days} days and Featured Jobs are {JOB_TIERS.Platinum.display} for {JOB_TIERS.Platinum.days} days. Employer Pro currently receives {pounds(EMPLOYER_MEMBERSHIPS.pro.discountedStandardJobPrice)} Standard Jobs and Employer Group currently includes up to {EMPLOYER_MEMBERSHIPS.group.includedJobs} Standard Jobs per membership year. Fees are generally non-refundable once a paid listing is published.</p>

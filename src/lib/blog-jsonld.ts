@@ -1,8 +1,8 @@
-const BASE_URL = 'https://talent.wellnesshousecollective.co.uk'
+const BASE_URL = 'https://talenthousecollective.co.uk'
 
 const PUBLISHER = {
   '@type': 'Organization',
-  name: 'WHC Concierge',
+  name: 'Talent House Collective',
   url: BASE_URL,
   logo: {
     '@type': 'ImageObject',
@@ -28,7 +28,7 @@ export function generateBlogJsonLd({ title, slug, excerpt, category, publishedAt
     description: excerpt || '',
     author: {
       '@type': 'Organization',
-      name: authorName || 'WHC Concierge',
+      name: authorName || 'Talent House Collective',
       url: BASE_URL,
     },
     publisher: PUBLISHER,

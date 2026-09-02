@@ -1,5 +1,5 @@
 const RESEND_API_KEY = process.env.RESEND_API_KEY
-const FROM_EMAIL = 'WHC Concierge <noreply@mail.wellnesshousecollective.co.uk>'
+const FROM_EMAIL = 'Talent House Collective <noreply@mail.wellnesshousecollective.co.uk>'
 
 export async function sendFeaturedEmployerEmail(email: string, talentName: string, propertyName: string, location: string) {
   if (!RESEND_API_KEY) {
@@ -10,11 +10,11 @@ export async function sendFeaturedEmployerEmail(email: string, talentName: strin
   const subject = `Featured property: ${propertyName}`
   const html = `
     <div style="font-family: Inter, -apple-system, sans-serif; max-width: 560px; margin: 0 auto; padding: 40px 20px;">
-      <p style="font-size:16px;font-weight:600;margin-bottom:32px;">WHC Concierge</p>
+      <p style="font-size:16px;font-weight:600;margin-bottom:32px;">Talent House Collective</p>
       <p style="font-size:24px;font-weight:700;margin-bottom:16px;">A featured property to discover</p>
-      <p style="color:#57534e;">Hi ${talentName || 'there'}, <strong>${propertyName}</strong>${location ? ` in ${location}` : ''} is now featured on WHC Concierge.</p>
+      <p style="color:#57534e;">Hi ${talentName || 'there'}, <strong>${propertyName}</strong>${location ? ` in ${location}` : ''} is now featured on Talent House Collective.</p>
       <p style="color:#57534e;">Explore the property, view its live opportunities and decide whether it could be your next move.</p>
-      <p style="margin-top:24px;"><a href="https://talent.wellnesshousecollective.co.uk/properties" style="display:inline-block;background:#1c1b1a;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600;">View featured properties</a></p>
+      <p style="margin-top:24px;"><a href="https://talenthousecollective.co.uk/properties" style="display:inline-block;background:#1c1b1a;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600;">View featured properties</a></p>
       <p style="margin-top:40px;font-size:12px;color:#8c8781;">Wellness House Collective &middot; wellnesshousecollective.co.uk</p>
     </div>
   `

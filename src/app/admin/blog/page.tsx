@@ -25,7 +25,7 @@ export default function AdminBlogPage() {
 
   const emptyPost = {
     title: '', slug: '', content: '', excerpt: '', image_url: '',
-    author: 'WHC Concierge', category: '', tags: '', status: 'draft', published_at: '',
+    author: 'Talent House Collective', category: '', tags: '', status: 'draft', published_at: '',
   }
   const [form, setForm] = useState(emptyPost)
 
@@ -90,7 +90,7 @@ export default function AdminBlogPage() {
   const handleEdit = (post: any) => {
     setForm({
       title: post.title || '', slug: post.slug || '', content: post.content || '', excerpt: post.excerpt || '',
-      image_url: post.image_url || '', author: post.author || 'WHC Concierge', category: post.category || '',
+      image_url: post.image_url || '', author: post.author || 'Talent House Collective', category: post.category || '',
       tags: post.tags?.join(', ') || '', status: post.status || 'draft',
       // Keep the full timestamp - saving a date-only value would silently
       // reset the publish time to midnight and reshuffle the Journal order.

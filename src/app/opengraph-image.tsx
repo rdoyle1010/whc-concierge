@@ -1,7 +1,7 @@
 import { ImageResponse } from 'next/og'
 
 export const runtime = 'edge'
-export const alt = 'WHC Concierge - Luxury Wellness Careers Platform'
+export const alt = 'Talent House Collective - Luxury Wellness Careers Platform'
 export const size = { width: 1200, height: 630 }
 export const contentType = 'image/png'
 
@@ -34,7 +34,7 @@ export default function OGImage() {
             marginBottom: 56,
           }}
         >
-          WHC Concierge
+          Talent House Collective
         </div>
 
         {/* Gold rule */}
@@ -94,7 +94,7 @@ export default function OGImage() {
             fontFamily: 'system-ui, -apple-system, "Segoe UI", sans-serif',
           }}
         >
-          talent.wellnesshousecollective.co.uk
+          talenthousecollective.co.uk
         </div>
       </div>
     ),

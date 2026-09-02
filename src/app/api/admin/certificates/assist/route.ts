@@ -55,7 +55,7 @@ export async function POST(req: NextRequest) {
       })
     }
 
-    const prompt = `You are the certificate verification assistant for WHC Concierge, the UK's specialist recruitment platform for luxury spa, wellness and hospitality. An admin is reviewing a qualification certificate a professional has submitted. Your job: help the admin review it well, and draft the message to the professional for each possible outcome.
+    const prompt = `You are the certificate verification assistant for Talent House Collective, the UK's specialist recruitment platform for luxury spa, wellness and hospitality. An admin is reviewing a qualification certificate a professional has submitted. Your job: help the admin review it well, and draft the message to the professional for each possible outcome.
 
 Submission:
 - Qualification title: ${certificate.title}

@@ -8,7 +8,7 @@ import { Clock, ArrowRight } from 'lucide-react'
 
 export const revalidate = 300
 
-const SITE = 'https://talent.wellnesshousecollective.co.uk'
+const SITE = 'https://talenthousecollective.co.uk'
 
 export const metadata: Metadata = {
   title: 'WHC Intelligence',

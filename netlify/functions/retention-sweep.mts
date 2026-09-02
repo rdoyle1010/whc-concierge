@@ -20,7 +20,7 @@ import type { Config } from '@netlify/functions'
 export default async function handler() {
   const site = process.env.URL
     || process.env.NEXT_PUBLIC_SITE_URL
-    || 'https://talent.wellnesshousecollective.co.uk'
+    || 'https://talenthousecollective.co.uk'
   const secret = process.env.INTERNAL_API_SECRET || process.env.STRIPE_WEBHOOK_SECRET || ''
 
   if (!secret) {

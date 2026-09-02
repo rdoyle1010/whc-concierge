@@ -14,7 +14,7 @@ export function applicantConfirmationHtml({ applicantName, jobTitle, propertyNam
         <!-- Header -->
         <tr><td style="background: linear-gradient(145deg, #0f0e0d, #1c1b1a); border-radius: 12px 12px 0 0; padding: 40px 40px 32px; text-align: center;">
           <p style="margin: 0 0 8px; font-size: 11px; letter-spacing: 3px; text-transform: uppercase; color: rgba(28,27,26, 0.6);">Application Received</p>
-          <h1 style="margin: 0; font-size: 28px; font-weight: 700; color: #555555; letter-spacing: -0.5px;">WHC Concierge</h1>
+          <h1 style="margin: 0; font-size: 28px; font-weight: 700; color: #555555; letter-spacing: -0.5px;">Talent House Collective</h1>
         </td></tr>
 
         <!-- Body -->
@@ -48,7 +48,7 @@ export function applicantConfirmationHtml({ applicantName, jobTitle, propertyNam
           <!-- CTA -->
           <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
             <tr><td align="center">
-              <a href="https://talent.wellnesshousecollective.co.uk/talent/applications" style="display: inline-block; padding: 14px 32px; background-color: #1c1b1a; color: #FFFFFF; font-size: 14px; font-weight: 600; text-decoration: none; border-radius: 8px; letter-spacing: 0.3px;">View Your Applications</a>
+              <a href="https://talenthousecollective.co.uk/talent/applications" style="display: inline-block; padding: 14px 32px; background-color: #1c1b1a; color: #FFFFFF; font-size: 14px; font-weight: 600; text-decoration: none; border-radius: 8px; letter-spacing: 0.3px;">View Your Applications</a>
             </td></tr>
           </table>
         </td></tr>
@@ -57,7 +57,7 @@ export function applicantConfirmationHtml({ applicantName, jobTitle, propertyNam
         <tr><td style="background-color: #fafafa; border-radius: 0 0 12px 12px; padding: 28px 40px; border-top: 1px solid #e0dad2;">
           <p style="margin: 0 0 4px; font-size: 12px; color: #8c8781;">Wellness House Collective</p>
           <p style="margin: 0 0 12px; font-size: 12px; color: #8c8781;">United Kingdom &middot; <a href="mailto:rebecca.whc@outlook.com" style="color: #555555; text-decoration: none;">rebecca.whc@outlook.com</a></p>
-          <p style="margin: 0; font-size: 11px; color: #d9d9d9;">You received this email because you applied for a role on WHC Concierge.</p>
+          <p style="margin: 0; font-size: 11px; color: #d9d9d9;">You received this email because you applied for a role on Talent House Collective.</p>
         </td></tr>
 
       </table>
@@ -82,7 +82,7 @@ export function employerNotificationHtml({ applicantName, jobTitle, propertyName
         <!-- Header -->
         <tr><td style="background: linear-gradient(145deg, #0f0e0d, #1c1b1a); border-radius: 12px 12px 0 0; padding: 40px 40px 32px; text-align: center;">
           <p style="margin: 0 0 8px; font-size: 11px; letter-spacing: 3px; text-transform: uppercase; color: rgba(28,27,26, 0.6);">New Application</p>
-          <h1 style="margin: 0; font-size: 28px; font-weight: 700; color: #555555; letter-spacing: -0.5px;">WHC Concierge</h1>
+          <h1 style="margin: 0; font-size: 28px; font-weight: 700; color: #555555; letter-spacing: -0.5px;">Talent House Collective</h1>
         </td></tr>
 
         <!-- Body -->
@@ -115,7 +115,7 @@ export function employerNotificationHtml({ applicantName, jobTitle, propertyName
           <!-- CTA -->
           <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
             <tr><td align="center">
-              <a href="https://talent.wellnesshousecollective.co.uk/employer/applications" style="display: inline-block; padding: 14px 32px; background-color: #1c1b1a; color: #FFFFFF; font-size: 14px; font-weight: 600; text-decoration: none; border-radius: 8px; letter-spacing: 0.3px;">Review Applicant</a>
+              <a href="https://talenthousecollective.co.uk/employer/applications" style="display: inline-block; padding: 14px 32px; background-color: #1c1b1a; color: #FFFFFF; font-size: 14px; font-weight: 600; text-decoration: none; border-radius: 8px; letter-spacing: 0.3px;">Review Applicant</a>
             </td></tr>
           </table>
         </td></tr>
@@ -124,7 +124,7 @@ export function employerNotificationHtml({ applicantName, jobTitle, propertyName
         <tr><td style="background-color: #fafafa; border-radius: 0 0 12px 12px; padding: 28px 40px; border-top: 1px solid #e0dad2;">
           <p style="margin: 0 0 4px; font-size: 12px; color: #8c8781;">Wellness House Collective</p>
           <p style="margin: 0 0 12px; font-size: 12px; color: #8c8781;">United Kingdom &middot; <a href="mailto:rebecca.whc@outlook.com" style="color: #555555; text-decoration: none;">rebecca.whc@outlook.com</a></p>
-          <p style="margin: 0; font-size: 11px; color: #d9d9d9;">You received this email because a candidate applied for a role you posted on WHC Concierge.</p>
+          <p style="margin: 0; font-size: 11px; color: #d9d9d9;">You received this email because a candidate applied for a role you posted on Talent House Collective.</p>
         </td></tr>
 
       </table>

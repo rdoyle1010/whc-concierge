@@ -67,7 +67,7 @@ async function announceFeaturedEmployer(supabase: any, employerId: string) {
         candidate.user_id,
         'general',
         `Featured property: ${propertyName}`,
-        `${propertyName}${employer.location ? ` in ${employer.location}` : ''} is now featured on WHC Concierge.`,
+        `${propertyName}${employer.location ? ` in ${employer.location}` : ''} is now featured on Talent House Collective.`,
         '/properties',
       )
       const { data: talentUser } = await supabase.auth.admin.getUserById(candidate.user_id)
@@ -441,9 +441,9 @@ export async function POST(req: NextRequest) {
             try {
               const { data: link } = await supabase.auth.admin.generateLink({
                 type: 'magiclink', email,
-                options: { redirectTo: 'https://talent.wellnesshousecollective.co.uk/talent/academy' },
+                options: { redirectTo: 'https://talenthousecollective.co.uk/talent/academy' },
               })
-              const action = (link as any)?.properties?.action_link || 'https://talent.wellnesshousecollective.co.uk/login'
+              const action = (link as any)?.properties?.action_link || 'https://talenthousecollective.co.uk/login'
               const course = await getAcademyCourseBySlug(meta.course_slug, true)
               await sendCourseAccessEmail(email, buyerName, course?.title || meta.course_slug, action)
             } catch (e: any) {

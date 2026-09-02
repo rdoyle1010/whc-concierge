@@ -76,7 +76,7 @@ function LoginForm() {
         <div className="w-full max-w-[430px]">
           <Wordmark />
           <div className="mt-10 dashboard-card !p-7 lg:!p-8">
-            <p className="dashboard-eyebrow">WHC Concierge</p>
+            <p className="dashboard-eyebrow">Talent House Collective</p>
             <h1 className="dashboard-title !text-[34px]">Welcome back</h1>
             <p className="dashboard-intro !mt-2 mb-7">Choose the workspace linked to your account, then sign in.</p>
 
@@ -110,7 +110,7 @@ function LoginForm() {
               <button type="submit" disabled={loading} className="w-full rounded-xl bg-[#1c1b1a] hover:bg-[#33302d] text-white px-5 py-3 text-[13px] font-semibold transition-colors disabled:opacity-50">{loading ? 'Signing in...' : `Sign in as ${role === 'employer' ? 'Hotel / Employer' : 'Talent'}`}</button>
             </form>
 
-            <p className="text-[13px] text-muted mt-7">New to WHC Concierge? <Link href={registerHref} className="text-[#1c1b1a] font-semibold hover:underline">Create an account →</Link></p>
+            <p className="text-[13px] text-muted mt-7">New to Talent House Collective? <Link href={registerHref} className="text-[#1c1b1a] font-semibold hover:underline">Create an account →</Link></p>
           </div>
         </div>
       </div>

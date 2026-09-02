@@ -152,7 +152,7 @@ export async function POST(req: NextRequest) {
   await admin.from('job_listings').update({ tier, status: 'pending_payment', is_live: false }).eq('id', job.id).eq('employer_id', employer.id)
 
   const stripe = getStripe()
-  const site = 'https://talent.wellnesshousecollective.co.uk'
+  const site = 'https://talenthousecollective.co.uk'
   const session = await stripe.checkout.sessions.create({
     payment_method_types: ['card'],
     customer_email: user.email || undefined,
@@ -160,7 +160,7 @@ export async function POST(req: NextRequest) {
       price_data: {
         currency: 'gbp',
         product_data: {
-          name: `WHC Concierge - ${tier === 'Bronze' ? 'Standard' : 'Featured'} Job`,
+          name: `Talent House Collective - ${tier === 'Bronze' ? 'Standard' : 'Featured'} Job`,
           description: `${days}-day role listing${tier === 'Bronze' && membership === 'pro' ? ' with Employer Pro member pricing' : ''}.`,
         },
         unit_amount: amount,

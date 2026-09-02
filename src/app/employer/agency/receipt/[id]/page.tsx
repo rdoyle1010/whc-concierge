@@ -60,7 +60,7 @@ export default function AgencyReceiptPage() {
         <div className="flex items-start justify-between mb-10">
           <div>
             <p className="text-[22px] font-serif font-bold text-black">Wellness House Collective</p>
-            <p className="text-[12px] text-secondary">talent.wellnesshousecollective.co.uk</p>
+            <p className="text-[12px] text-secondary">talenthousecollective.co.uk</p>
           </div>
           <div className="text-right">
             <p className="text-[13px] font-semibold text-black">RECEIPT</p>

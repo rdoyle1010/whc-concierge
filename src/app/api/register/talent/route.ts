@@ -7,20 +7,20 @@ import { sanitiseTalentRegistration, verifyRegistrationProof } from '@/lib/regis
 import { canCompleteRegistration } from '@/lib/role-access'
 
 const RESEND_API_KEY = process.env.RESEND_API_KEY
-const FROM_EMAIL = 'WHC Concierge <noreply@mail.wellnesshousecollective.co.uk>'
+const FROM_EMAIL = 'Talent House Collective <noreply@mail.wellnesshousecollective.co.uk>'
 
 async function sleep(ms: number) {
   return new Promise(resolve => setTimeout(resolve, ms))
 }
 
 async function sendWelcomeEmail(email: string, firstName: string) {
-  const html = welcomeEmailHtml({ firstName, userType: 'talent', dashboardUrl: 'https://talent.wellnesshousecollective.co.uk/talent/dashboard' })
+  const html = welcomeEmailHtml({ firstName, userType: 'talent', dashboardUrl: 'https://talenthousecollective.co.uk/talent/dashboard' })
   if (!RESEND_API_KEY) { console.log(`[Welcome email skipped] To: ${email}`); return }
   try {
     const res = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ from: FROM_EMAIL, to: email, subject: 'Welcome to WHC Concierge', html }),
+      body: JSON.stringify({ from: FROM_EMAIL, to: email, subject: 'Welcome to Talent House Collective', html }),
     })
     if (!res.ok) {
       const detail = await res.text().catch(() => '')

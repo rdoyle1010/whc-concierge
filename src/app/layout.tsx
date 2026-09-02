@@ -28,7 +28,7 @@ const poppins = Poppins({
   weight: ['400', '500', '600'],
 })
 
-const SITE_URL = 'https://talent.wellnesshousecollective.co.uk'
+const SITE_URL = 'https://talenthousecollective.co.uk'
 
 // The logo is uploaded in Website & Brand, so the favicon, the Organization
 // JSON-LD and the header lockup all have to read the published value rather
@@ -45,8 +45,8 @@ async function publishedLogo() {
 
 const baseMetadata: Metadata = {
   title: {
-    default: 'WHC Concierge | Spa and Wellness Careers',
-    template: '%s | WHC Concierge',
+    default: 'Talent House Collective | Spa and Wellness Careers',
+    template: '%s | Talent House Collective',
   },
   description: 'The professional platform for spa and wellness careers. Live roles at exceptional properties, matched on real skills, qualifications and brands - not CV keywords.',
   keywords: [
@@ -56,20 +56,20 @@ const baseMetadata: Metadata = {
     'luxury hotel recruitment', 'ESPA therapist', 'Elemis trained therapist',
     'spa residency UK', 'wellness professionals', 'spa agency UK',
   ],
-  metadataBase: new URL('https://talent.wellnesshousecollective.co.uk'),
+  metadataBase: new URL('https://talenthousecollective.co.uk'),
   robots: { index: true, follow: true },
   openGraph: {
     type: 'website',
     locale: 'en_GB',
-    siteName: 'WHC Concierge',
-    title: 'WHC Concierge | Spa and Wellness Careers',
+    siteName: 'Talent House Collective',
+    title: 'Talent House Collective | Spa and Wellness Careers',
     description: 'The professional platform for spa and wellness careers. Live roles at exceptional properties, matched on real skills, qualifications and brands - not CV keywords.',
-    url: 'https://talent.wellnesshousecollective.co.uk',
-    images: [{ url: '/opengraph-image', width: 1200, height: 630, alt: 'WHC Concierge - The professional platform for spa and wellness careers' }],
+    url: 'https://talenthousecollective.co.uk',
+    images: [{ url: '/opengraph-image', width: 1200, height: 630, alt: 'Talent House Collective - The professional platform for spa and wellness careers' }],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'WHC Concierge | Spa and Wellness Careers',
+    title: 'Talent House Collective | Spa and Wellness Careers',
     description: 'The professional platform for spa and wellness careers. Live roles, matched on real skills, qualifications and brands.',
     images: ['/opengraph-image'],
   },
@@ -91,7 +91,7 @@ export const revalidate = 300
 const organizationJsonLd = (logoUrl: string) => ({
   '@context': 'https://schema.org',
   '@type': 'Organization',
-  name: 'WHC Concierge',
+  name: 'Talent House Collective',
   url: SITE_URL,
   logo: logoUrl.startsWith('http') ? logoUrl : SITE_URL + logoUrl,
   description: 'The professional platform for spa and wellness careers',

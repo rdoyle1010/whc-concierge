@@ -7,7 +7,7 @@ import { sendSmsIfOptedIn } from '@/lib/sms'
 import { emailAllowed } from '@/lib/notification-prefs'
 
 const RESEND_API_KEY = process.env.RESEND_API_KEY
-const FROM_EMAIL = 'WHC Concierge <noreply@mail.wellnesshousecollective.co.uk>'
+const FROM_EMAIL = 'Talent House Collective <noreply@mail.wellnesshousecollective.co.uk>'
 
 const ALLOWED = ['shortlisted', 'rejected', 'accepted'] as const
 type Decision = typeof ALLOWED[number]
@@ -19,7 +19,7 @@ function escapeHtml(value: string) {
 function messageHtml(opts: { note: string; jobTitle: string; propertyName: string; decision: Decision }) {
   const label = opts.decision === 'shortlisted' ? 'Shortlisted' : opts.decision === 'accepted' ? 'Offer update' : 'Application update'
   const safeNote = escapeHtml(opts.note).replaceAll('\n', '<br>')
-  return `<!doctype html><html lang="en"><body style="margin:0;background:#ffffff;font-family:Arial,Helvetica,sans-serif;color:#1c1b1a;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:36px 16px;"><table role="presentation" width="560" cellpadding="0" cellspacing="0" style="max-width:560px;width:100%;background:#ffffff;border:1px solid #e5e5e5;"><tr><td style="background:#1c1b1a;padding:30px 36px;"><p style="margin:0 0 7px;color:#ffffff;opacity:.8;font-size:10px;letter-spacing:2px;text-transform:uppercase;">${label}</p><h1 style="margin:0;color:#ffffff;font-family:Arial,Helvetica,sans-serif;font-size:25px;font-weight:600;">WHC Concierge</h1></td></tr><tr><td style="padding:34px 36px;"><p style="margin:0 0 18px;color:#1c1b1a;font-size:11px;text-transform:uppercase;letter-spacing:1.4px;">${escapeHtml(opts.jobTitle)} · ${escapeHtml(opts.propertyName)}</p><div style="font-size:14px;line-height:1.75;color:#405262;">${safeNote}</div><p style="margin:28px 0 0;"><a href="https://talent.wellnesshousecollective.co.uk/talent/applications" style="display:inline-block;background:#1c1b1a;color:#ffffff;text-decoration:none;padding:12px 20px;font-size:13px;font-weight:600;">View application progress</a></p></td></tr><tr><td style="padding:20px 36px;border-top:1px solid #e5e5e5;color:#6e6a66;font-size:11px;">Wellness House Collective · WHC Concierge</td></tr></table></td></tr></table></body></html>`
+  return `<!doctype html><html lang="en"><body style="margin:0;background:#ffffff;font-family:Arial,Helvetica,sans-serif;color:#1c1b1a;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:36px 16px;"><table role="presentation" width="560" cellpadding="0" cellspacing="0" style="max-width:560px;width:100%;background:#ffffff;border:1px solid #e5e5e5;"><tr><td style="background:#1c1b1a;padding:30px 36px;"><p style="margin:0 0 7px;color:#ffffff;opacity:.8;font-size:10px;letter-spacing:2px;text-transform:uppercase;">${label}</p><h1 style="margin:0;color:#ffffff;font-family:Arial,Helvetica,sans-serif;font-size:25px;font-weight:600;">Talent House Collective</h1></td></tr><tr><td style="padding:34px 36px;"><p style="margin:0 0 18px;color:#1c1b1a;font-size:11px;text-transform:uppercase;letter-spacing:1.4px;">${escapeHtml(opts.jobTitle)} · ${escapeHtml(opts.propertyName)}</p><div style="font-size:14px;line-height:1.75;color:#405262;">${safeNote}</div><p style="margin:28px 0 0;"><a href="https://talenthousecollective.co.uk/talent/applications" style="display:inline-block;background:#1c1b1a;color:#ffffff;text-decoration:none;padding:12px 20px;font-size:13px;font-weight:600;">View application progress</a></p></td></tr><tr><td style="padding:20px 36px;border-top:1px solid #e5e5e5;color:#6e6a66;font-size:11px;">Wellness House Collective · Talent House Collective</td></tr></table></td></tr></table></body></html>`
 }
 
 export async function POST(req: NextRequest) {
@@ -102,7 +102,7 @@ export async function POST(req: NextRequest) {
       if (decision === 'shortlisted') {
         try {
           const { data: smsCandidate } = await admin.from('candidate_profiles').select('phone,sms_opt_in').eq('id', application.candidate_id).maybeSingle()
-          if (smsCandidate) smsSent = await sendSmsIfOptedIn({ to: smsCandidate.phone, optedIn: smsCandidate.sms_opt_in, body: `WHC Concierge: Congratulations, you have been shortlisted for ${job.job_title} at ${propertyName}. Open My Applications for the update.` })
+          if (smsCandidate) smsSent = await sendSmsIfOptedIn({ to: smsCandidate.phone, optedIn: smsCandidate.sms_opt_in, body: `Talent House Collective: Congratulations, you have been shortlisted for ${job.job_title} at ${propertyName}. Open My Applications for the update.` })
         } catch (smsError: any) {
           console.error('Recruitment decision SMS failed:', smsError?.message || smsError)
         }

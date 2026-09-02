@@ -22,3 +22,27 @@
     Referrer-Policy = "strict-origin-when-cross-origin"
     Permissions-Policy = "camera=(), microphone=(), geolocation=(), interest-cohort=()"
     Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js.stripe.com https://checkout.stripe.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://images.unsplash.com https://*.supabase.co https://*.stripe.com; font-src 'self' data:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.stripe.com https://checkout.stripe.com; frame-src https://js.stripe.com https://checkout.stripe.com; object-src 'none'; base-uri 'self'"
+
+# --- Domain move: talent.wellnesshousecollective.co.uk -> talenthousecollective.co.uk ---
+# The old host keeps serving /api/* untouched so the live Stripe webhook and any
+# other integration still pointing at it keep working until they are re-pointed.
+# This no-op rule must stay ABOVE the catch-all redirect below.
+[[redirects]]
+  from = "https://talent.wellnesshousecollective.co.uk/api/*"
+  to = "https://talent.wellnesshousecollective.co.uk/api/:splat"
+  status = 200
+  force = false
+
+# Everything else on the old host moves permanently to the new canonical domain.
+[[redirects]]
+  from = "https://talent.wellnesshousecollective.co.uk/*"
+  to = "https://talenthousecollective.co.uk/:splat"
+  status = 301
+  force = true
+
+# Apex is canonical; www follows it.
+[[redirects]]
+  from = "https://www.talenthousecollective.co.uk/*"
+  to = "https://talenthousecollective.co.uk/:splat"
+  status = 301
+  force = true

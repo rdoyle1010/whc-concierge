@@ -7,7 +7,7 @@ import { emailAllowed } from '@/lib/notification-prefs'
 import { trackEvent } from '@/lib/analytics'
 
 const RESEND_API_KEY = process.env.RESEND_API_KEY
-const FROM_EMAIL = 'WHC Concierge <noreply@mail.wellnesshousecollective.co.uk>'
+const FROM_EMAIL = 'Talent House Collective <noreply@mail.wellnesshousecollective.co.uk>'
 
 async function sendEmail(to: string, subject: string, html: string) {
   if (!RESEND_API_KEY) return

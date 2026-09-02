@@ -86,7 +86,7 @@ export default function Footer({ siteContent }: { siteContent?: WebsiteContent }
 
   const LinkList = ({ items }: { items: { href: string; label: string }[] }) => <div className="space-y-2.5">{items.map(link => <Link key={link.href} href={link.href} className="block text-[12px] text-white/65 hover:text-white transition-colors">{link.label}</Link>)}</div>
 
-  const currentUrl = () => typeof window !== 'undefined' ? window.location.href : 'https://talent.wellnesshousecollective.co.uk'
+  const currentUrl = () => typeof window !== 'undefined' ? window.location.href : 'https://talenthousecollective.co.uk'
   const pageTitle = () => typeof document !== 'undefined' ? document.title : 'Wellness House Collective'
   const openShare = (network: 'linkedin' | 'facebook' | 'whatsapp' | 'email') => {
     const url = encodeURIComponent(currentUrl()); const title = encodeURIComponent(pageTitle()); const text = encodeURIComponent(`Take a look at this from Wellness House Collective: ${pageTitle()} ${currentUrl()}`)
@@ -105,7 +105,7 @@ export default function Footer({ siteContent }: { siteContent?: WebsiteContent }
   ].filter(item => item.url)
 
   return <>
-    <section className="bg-white border-t border-[#e0dad2] overflow-hidden" aria-label="WHC Concierge hospitality photography">
+    <section className="bg-white border-t border-[#e0dad2] overflow-hidden" aria-label="Talent House Collective hospitality photography">
       <div className="max-w-[1500px] mx-auto px-0 md:px-6 lg:px-8 py-0 md:py-8"><div className="grid grid-cols-2 lg:grid-cols-4 gap-px md:gap-3 bg-[#e0dad2] md:bg-transparent">{editorialImages.map((image, index) => <div key={`${image.url}-${index}`} className="group relative overflow-hidden bg-[#f3f0eb] aspect-[4/5] md:aspect-[3/4]">{image.url ? <img src={image.url} alt={image.alt} loading="lazy" decoding="async" fetchPriority="low" className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.025]" style={{ objectPosition: `${image.focalX}% ${image.focalY}%` }} /> : null}<div className="absolute inset-0 bg-gradient-to-t from-[#0f0e0d]/55 via-transparent to-transparent" /><p className="absolute bottom-4 left-4 right-4 text-[9px] md:text-[10px] uppercase tracking-[.16em] font-semibold text-white/90">{image.label}</p></div>)}</div></div>
     </section>
 

@@ -19,7 +19,7 @@ export default function FounderImage() {
   return (
     <img
       src="/images/founder-rebecca.jpg"
-      alt="Rebecca Doyle, founder of WHC Concierge"
+      alt="Rebecca Doyle, founder of Talent House Collective"
       onError={() => setErrored(true)}
       className="w-full max-w-[380px] mx-auto"
     />

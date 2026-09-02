@@ -231,7 +231,7 @@ export async function POST(req: NextRequest) {
         line_items: [{
           price_data: {
             currency: 'gbp',
-            product_data: { name: 'WHC Concierge - Featured Profile', description: 'Monthly featured profile subscription' },
+            product_data: { name: 'Talent House Collective - Featured Profile', description: 'Monthly featured profile subscription' },
             unit_amount: FEATURED_PROFILE_PRICE,
             recurring: { interval: 'month' },
           },
@@ -300,7 +300,7 @@ export async function POST(req: NextRequest) {
           price_data: {
             currency: 'gbp',
             product_data: {
-              name: 'WHC Concierge - Agency Shift Booking',
+              name: 'Talent House Collective - Agency Shift Booking',
               description: `${booking.shift_date || 'Agreed date'}: £${booking.rate}/hr × ${effHours}h (£${gross}) + ${Math.round((fee / Math.max(1, gross)) * 100)}% WHC fee (£${fee}). ${payoutMethod === AGENCY_PAYOUT_CONNECT ? `The therapist is paid the full £${gross} agreed shift amount directly by Stripe as this payment clears.` : `The therapist receives the full £${gross} agreed shift amount after the completed shift.`}`,
             },
             unit_amount: totalPounds * 100, // pounds → pence
@@ -345,7 +345,7 @@ export async function POST(req: NextRequest) {
           price_data: {
             currency: 'gbp',
             product_data: {
-              name: `WHC Concierge - Agency Register (${tierConfig.label})`,
+              name: `Talent House Collective - Agency Register (${tierConfig.label})`,
               description: `Monthly agency listing subscription - ${tierConfig.display}`,
             },
             unit_amount: tierConfig.price,
@@ -383,7 +383,7 @@ export async function POST(req: NextRequest) {
           price_data: {
             currency: 'gbp',
             product_data: {
-              name: 'WHC Concierge - Preferred Employer Registration',
+              name: 'Talent House Collective - Preferred Employer Registration',
               description: 'Annual registration. Book agency cover, carry the Preferred Employer badge.',
             },
             unit_amount: PREFERRED_EMPLOYER_PRICE,
@@ -469,7 +469,7 @@ export async function POST(req: NextRequest) {
         line_items: [{
           price_data: {
             currency: 'gbp',
-            product_data: { name: `WHC Concierge - ${tier} Job Posting`, description: `${tierConfig.days}-day listing` },
+            product_data: { name: `Talent House Collective - ${tier} Job Posting`, description: `${tierConfig.days}-day listing` },
             unit_amount: tierConfig.price,
           },
           quantity: 1,

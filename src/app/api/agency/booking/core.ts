@@ -202,7 +202,7 @@ async function alertCascadeHolder(
     if (smsAllowed(candidate)) {
       jobs.push(sendSms(
         candidate.phone,
-        `WHC Concierge: ${empName} needs cover TODAY - £${b.rate}/hr${b.hours ? ` for ${b.hours}h` : ''}. You have ${mins} mins before this offer moves on. Accept: https://talent.wellnesshousecollective.co.uk/talent/agency`,
+        `Talent House Collective: ${empName} needs cover TODAY - £${b.rate}/hr${b.hours ? ` for ${b.hours}h` : ''}. You have ${mins} mins before this offer moves on. Accept: https://talenthousecollective.co.uk/talent/agency`,
       ))
     }
     await Promise.allSettled(jobs)
@@ -695,7 +695,7 @@ export async function POST(req: NextRequest) {
         if (urgent && smsAllowed(targetCand)) {
           jobs.push(sendSms(
             targetCand.phone,
-            `WHC Concierge: ${empName} needs cover TODAY - £${rate}/hr${hours ? ` for ${hours}h` : ''}. Offer expires in 4 hrs. Accept or counter: https://talent.wellnesshousecollective.co.uk/talent/agency`,
+            `Talent House Collective: ${empName} needs cover TODAY - £${rate}/hr${hours ? ` for ${hours}h` : ''}. Offer expires in 4 hrs. Accept or counter: https://talenthousecollective.co.uk/talent/agency`,
           ))
         }
         await Promise.allSettled(jobs)

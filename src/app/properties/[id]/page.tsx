@@ -8,7 +8,7 @@ import { Star, ArrowLeft, ExternalLink, BadgeCheck, BookOpen } from 'lucide-reac
 
 export const revalidate = 60
 
-const SITE = 'https://talent.wellnesshousecollective.co.uk'
+const SITE = 'https://talenthousecollective.co.uk'
 
 const asList = (value: any) => Array.isArray(value) ? value.filter(Boolean) : []
 const prettyType = (value: string) => String(value).replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
@@ -170,14 +170,14 @@ function jobSalary(job: any): string | null {
 export async function generateMetadata(props: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const { id } = await props.params
   const data = await getPropertyPageData(id)
-  if (!data) return { title: { absolute: 'Property not found | WHC Concierge' }, robots: { index: false, follow: false } }
+  if (!data) return { title: { absolute: 'Property not found | Talent House Collective' }, robots: { index: false, follow: false } }
   const { property } = data
   const name = property.property_name || property.company_name || 'Property'
-  const description = String(property.tagline || property.property_description || property.about_text || `Explore working life at ${name} on WHC Concierge.`).slice(0, 160)
+  const description = String(property.tagline || property.property_description || property.about_text || `Explore working life at ${name} on Talent House Collective.`).slice(0, 160)
   const url = `${SITE}/properties/${id}`
   const image = asList(property.property_photos)[0]
   return {
-    title: { absolute: `Work at ${name} | WHC Concierge` }, description,
+    title: { absolute: `Work at ${name} | Talent House Collective` }, description,
     alternates: { canonical: url },
     openGraph: { title: `Work at ${name}`, description, url, type: 'website', ...(image ? { images: [image] } : {}) },
     twitter: { title: `Work at ${name}`, description, card: 'summary_large_image', ...(image ? { images: [image] } : {}) },

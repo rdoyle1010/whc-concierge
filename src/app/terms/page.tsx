@@ -27,7 +27,7 @@ export default function TermsPage() {
       </section>
       <section className="pb-24 px-4">
         <div className="max-w-3xl mx-auto text-[14px] text-secondary leading-[1.8] space-y-6">
-          <p>By using WHC Concierge (&ldquo;the Platform&rdquo;), operated by Wellness House Collective Ltd, you agree to these Terms of Service. Please read them carefully before registering, buying a paid service or arranging work through the Platform.</p>
+          <p>By using Talent House Collective (&ldquo;the Platform&rdquo;), operated by Wellness House Collective Ltd, you agree to these Terms of Service. Please read them carefully before registering, buying a paid service or arranging work through the Platform.</p>
 
           <h2 className="text-[18px] font-medium text-ink mt-8">1. Eligibility</h2>
           <p>You must be at least 18 years old to create an account. By registering, you confirm that the information you provide is accurate and that you have the legal right to work in the jurisdictions where you seek employment or offer services.</p>

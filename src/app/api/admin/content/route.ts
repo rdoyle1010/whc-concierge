@@ -13,7 +13,7 @@ import {
 import { getWebsiteContent } from '@/lib/site-content-server'
 
 const RESEND_API_KEY = process.env.RESEND_API_KEY
-const FROM_EMAIL = 'WHC Concierge <noreply@mail.wellnesshousecollective.co.uk>'
+const FROM_EMAIL = 'Talent House Collective <noreply@mail.wellnesshousecollective.co.uk>'
 const DEFAULT_CONTACT_PAGE_SIZE = 25
 const MAX_CONTACT_PAGE_SIZE = 100
 const CONTACT_STATUSES = new Set(['open', 'replied', 'closed', 'investigating', 'resolved', 'dismissed'])
@@ -259,7 +259,7 @@ export async function POST(req: NextRequest) {
           subject: `Re: your message to Wellness House Collective`,
           html: `
             <div style="font-family: Inter, -apple-system, sans-serif; max-width: 560px; margin: 0 auto; padding: 40px 20px;">
-              <p style="font-size: 16px; font-weight: 600; margin-bottom: 24px;">WHC Concierge</p>
+              <p style="font-size: 16px; font-weight: 600; margin-bottom: 24px;">Talent House Collective</p>
               <p style="color: #374151; white-space: pre-wrap;">${replyText.replace(/</g, '&lt;')}</p>
               <hr style="border: none; border-top: 1px solid #e0dad2; margin: 24px 0;" />
               <p style="font-size: 12px; color: #6e6a66;">Your original message: ${String(q.message || '').slice(0, 500).replace(/</g, '&lt;')}</p>
