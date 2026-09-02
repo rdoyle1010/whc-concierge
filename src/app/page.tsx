@@ -271,7 +271,17 @@ function RolesSection({ content, roles }: { content: WebsiteContent; roles: Feat
 // is featured.
 type FeaturedEntry = { id: string; title: string; meta: string; href: string }
 const getFeaturedPlacements = unstable_cache(async (): Promise<{ properties: FeaturedEntry[]; professionals: FeaturedEntry[] }> => {
-  const admin = createAdminClient()
+  // The queries below are guarded, but the client that runs them was not:
+  // createAdminClient throws when its configuration is missing, and it sat
+  // outside the try. Featured placements are sold inventory on the homepage -
+  // the busiest page on the site - and a database wobble took the whole page
+  // down to an error screen rather than quietly dropping a panel.
+  let admin: ReturnType<typeof createAdminClient>
+  try {
+    admin = createAdminClient()
+  } catch {
+    return { properties: [], professionals: [] }
+  }
   try {
     const [{ data: employers }, { data: candidates }] = await Promise.all([
       admin.from('employer_profiles')

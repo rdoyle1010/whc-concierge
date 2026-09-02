@@ -51,3 +51,19 @@ test('site icon follows the uploaded brand logo', () => {
   assert.doesNotMatch(source, /icon: '\/favicon\.ico'/)
   assert.match(brand, /url: '\/images\/whc-logo-charcoal\.jpg'/)
 })
+
+// Every query on the homepage collapses to an empty list on error, so the page
+// composes around missing data. The client that runs them did not:
+// createAdminClient throws when its configuration is missing and sat outside
+// the try, so the one failure the busiest page on the site could not survive
+// was the one nobody had guarded. It rendered an error screen instead of
+// dropping a panel.
+test('the homepage survives its database being unreachable', () => {
+  const page = read('src/app/page.tsx')
+  const calls = [...page.matchAll(/const admin = createAdminClient\(\)/g)]
+  for (const call of calls) {
+    const before = page.slice(Math.max(0, call.index! - 400), call.index!)
+    assert.match(before, /try \{/, 'every admin client must be created inside a try')
+  }
+  assert.match(page, /admin = createAdminClient\(\)\n  \} catch \{/, 'and the failure must return empty rather than throw')
+})
