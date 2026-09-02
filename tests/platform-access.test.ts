@@ -47,3 +47,16 @@ test('the access flag is read the same whichever route set it', async () => {
   assert.equal(readConfigString(null), '')
   assert.equal(readConfigString(undefined), '')
 })
+
+// Rebecca typed "closed" into Admin -> Settings, saved, refreshed, and the
+// sign-in form was still there - so she reported the switch did nothing. It
+// worked; it was just behind a 30 second cache that the save never cleared,
+// and on Netlify each server instance holds its own copy, so the doors
+// appeared to open and shut at random between refreshes.
+test('saving the access setting clears the cache in front of it', () => {
+  const route = readFileSync(new URL('../src/app/api/admin/content/route.ts', import.meta.url), 'utf8')
+  const handler = route.slice(route.indexOf("action === 'config_upsert'"))
+  const body = handler.slice(0, handler.indexOf('\n    }'))
+  assert.match(body, /revalidateTag\('platform-access'/, 'a change to the doors must take effect on the next request')
+  assert.match(route, /ACCESS_KEYS = new Set\(\['platform_access', 'platform_preview_code'\]\)/)
+})

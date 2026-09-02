@@ -135,6 +135,11 @@ export async function GET(req: NextRequest) {
   }
 }
 
+// The keys that decide whether anyone can sign in. Writing one of these has
+// to clear the cache in front of it or the change lands up to 30 seconds late,
+// per server instance.
+const ACCESS_KEYS = new Set(['platform_access', 'platform_preview_code'])
+
 export async function POST(req: NextRequest) {
   const user = await requireAdmin()
   if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
@@ -164,6 +169,11 @@ export async function POST(req: NextRequest) {
       const { key, value } = body
       if (!key) return NextResponse.json({ error: 'Missing key' }, { status: 400 })
       await saveConfigValue(admin, key, String(value ?? ''))
+      // Closing the doors reads through a 30 second cache, and on Netlify each
+      // lambda instance holds its own copy - so without this the setting looks
+      // broken: one refresh shows the waiting list, the next shows the form,
+      // and an administrator reasonably concludes the switch does nothing.
+      if (ACCESS_KEYS.has(String(key))) revalidateTag('platform-access', 'max')
       return NextResponse.json({ success: true })
     }
 
