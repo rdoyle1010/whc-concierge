@@ -238,7 +238,7 @@ export default function InterviewReadyPage() {
       </div>
 
       {tab === 'dossier' ? <div className="space-y-6">
-        <section className="dashboard-panel bg-[#1c1b1a] !border-[#1c1b1a] text-white">
+        <section className="dashboard-panel !bg-[#1c1b1a] !border-[#1c1b1a] text-white">
           <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-7 items-start">
             <div><p className="text-[9px] uppercase tracking-[.2em] text-white/60 mb-2">Your preparation</p><h2 className="text-[30px] !text-white mb-3">{prep.company_intelligence?.name || selectedJob?.job_title || targetRole}</h2><p className="text-[13px] leading-6 text-white/70 max-w-3xl">{prep.role_intelligence?.role_summary}</p>{prep.style && <p className="text-[12px] text-white/55 mt-4">Working style: <span className="text-white">{prep.style.primary}</span> with {prep.style.secondary} · {prep.style.summary}</p>}</div>
             <div className="bg-white/[0.06] border border-white/10 p-5"><p className="text-[9px] uppercase tracking-[.18em] text-white/45 mb-2">Interview Readiness</p><p className="text-[46px] leading-none text-white font-serif">{prep.readiness?.overall ?? 0}%</p><p className="text-[11px] leading-5 text-white/55 mt-3">Preparation score, not a hiring prediction.</p></div>

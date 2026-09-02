@@ -96,15 +96,6 @@ export default function TalentDashboard() {
 
   // The sidebar already navigates everywhere - this list keeps only the
   // destinations a professional actually opens daily.
-  const quickLinks = [
-    { label: 'Browse Jobs', desc: 'Find your next permanent or fixed-term role.', href: '/talent/jobs' },
-    { label: 'Agency Shifts', desc: 'Manage planned cover and urgent shift offers.', href: '/talent/agency' },
-    { label: 'Applications', desc: 'Track every role you have applied for.', href: '/talent/applications' },
-    { label: 'Messages', desc: 'Private conversations with properties and matches.', href: '/talent/messages' },
-    { label: 'Academy', desc: 'Courses, certificates and profile badges.', href: '/talent/academy' },
-    { label: 'My Profile', desc: 'Keep your professional profile polished and current.', href: '/talent/profile' },
-  ]
-
   if (loading) return (
     <DashboardShell role="talent">
       <div className="animate-pulse space-y-6">
@@ -256,21 +247,14 @@ export default function TalentDashboard() {
         </div>
       )}
 
+      {/* The old "Career workspace" list lived here. Every one of its six
+          links is already in the sidebar, two clicks from any page, and it
+          sat directly above a second grid of links to the public site - two
+          near-identical blocks that made the page read as filler. The
+          sidebar is the navigation; this panel is the one thing the
+          dashboard can say that the sidebar cannot. */}
       <div className="grid grid-cols-1 lg:grid-cols-[1.55fr_.85fr] gap-6">
-        <section className="dashboard-panel">
-          <p className="dashboard-eyebrow">Continue your journey</p>
-          <h2 className="dashboard-section-title mb-4">Career workspace</h2>
-          <div>
-            {quickLinks.map(link => (
-              <Link key={link.href} href={link.href} className="dashboard-list-row group">
-                <span><span className="block text-[13px] font-medium text-ink">{link.label}</span><span className="block text-[12px] text-muted mt-0.5">{link.desc}</span></span>
-                <ArrowRight size={14} className="text-muted group-hover:text-accent shrink-0" />
-              </Link>
-            ))}
-          </div>
-        </section>
-
-        <aside className="dashboard-panel bg-[#1c1b1a] !border-[#1c1b1a] text-white">
+        <aside className="dashboard-panel !bg-[#1c1b1a] !border-[#1c1b1a] text-white lg:col-start-2">
           <EyeOff size={19} className="text-white/80 mb-5" />
           <p className="text-[9px] uppercase tracking-[.2em] text-white/48 mb-2">Profile privacy</p>
           <h2 className="text-[28px] !text-white mb-3">{profile?.stealth_mode ? 'Stealth Mode is on' : 'Control who sees you'}</h2>
