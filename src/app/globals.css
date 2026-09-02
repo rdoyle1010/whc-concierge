@@ -274,3 +274,45 @@ html { scroll-behavior:smooth; }
    like rounded-[22px] are neutralised by the attribute selector. */
 .rounded, .rounded-md, .rounded-lg, .rounded-xl, .rounded-2xl, .rounded-3xl,
 [class*="rounded-["] { border-radius: 0; }
+
+/* Journal article bodies, and the editor that writes them.
+   The page used the `prose` classes, and @tailwindcss/typography is not
+   installed - so they matched nothing and a heading in an article looked
+   exactly like a paragraph. These are the real styles, applied to both the
+   published article and the editing surface, so what a writer sees while
+   typing is what a reader gets. */
+.article-body { color: #333333; font-size: 16px; line-height: 1.85; }
+.article-body > * + * { margin-top: 1.15em; }
+.article-body p { margin: 0; }
+.article-body h2 {
+  font-family: var(--site-heading-font, var(--font-manrope), sans-serif);
+  font-size: 1.6rem; font-weight: 600; color: #1c1c1c;
+  letter-spacing: -.02em; line-height: 1.25; margin-top: 2em;
+}
+.article-body h3 {
+  font-family: var(--site-heading-font, var(--font-manrope), sans-serif);
+  font-size: 1.25rem; font-weight: 600; color: #1c1c1c;
+  letter-spacing: -.015em; margin-top: 1.7em;
+}
+.article-body h4 { font-size: 1.05rem; font-weight: 600; color: #1c1c1c; margin-top: 1.5em; }
+.article-body strong, .article-body b { font-weight: 600; color: #1c1c1c; }
+.article-body em, .article-body i { font-style: italic; }
+.article-body u { text-decoration: underline; text-underline-offset: 3px; }
+.article-body s { text-decoration: line-through; }
+.article-body ul, .article-body ol { padding-left: 1.35rem; }
+.article-body ul { list-style: disc; }
+.article-body ol { list-style: decimal; }
+.article-body li { margin-top: .4em; padding-left: .2rem; }
+.article-body li::marker { color: #6b6b6b; }
+.article-body blockquote {
+  border-left: 2px solid #1c1c1c; padding: .15rem 0 .15rem 1.15rem;
+  font-size: 1.08rem; line-height: 1.7; color: #1c1c1c;
+}
+.article-body a { color: #1c1c1c; text-decoration: underline; text-underline-offset: 3px; }
+.article-body a:hover { color: #555555; }
+/* The editing surface is empty on a new article, and an empty contentEditable
+   gives no hint of what to do with it. */
+.article-body[contenteditable]:empty::before {
+  content: 'Write the article. Use the toolbar for headings, bold, lists and links.';
+  color: #6b6b6b;
+}

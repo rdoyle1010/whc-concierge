@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { sanitizeArticleHtml } from '@/lib/article-html'
 import { adminRequestUser } from '@/lib/admin-api-auth'
 import { createAdminClient } from '@/lib/supabase/admin'
 
@@ -50,6 +51,13 @@ export async function GET(req: NextRequest) {
   return NextResponse.json({ posts: data || [], total: count ?? 0, page, per_page: perPage })
 }
 
+// Article bodies arrive as HTML from the editor. They are sanitised here so
+// the stored value is already safe for anything that reads it - the public
+// page, the RSS feed, an export - rather than trusting each reader to do it.
+function withCleanBody<T extends Record<string, any>>(post: T): T {
+  return typeof post.content === 'string' ? { ...post, content: sanitizeArticleHtml(post.content) } : post
+}
+
 export async function POST(req: NextRequest) {
   const user = await requireAdmin()
   if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
@@ -61,7 +69,7 @@ export async function POST(req: NextRequest) {
   }
 
   const admin = createAdminClient()
-  const { data, error } = await admin.from('blog_posts').insert(post).select().single()
+  const { data, error } = await admin.from('blog_posts').insert(withCleanBody(post)).select().single()
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   return NextResponse.json({ success: true, post: data })
@@ -74,7 +82,7 @@ export async function PATCH(req: NextRequest) {
   const body = await req.json().catch(() => ({}))
   const { id } = body
   if (!id) return NextResponse.json({ error: 'id required' }, { status: 400 })
-  const updates = pickEditable(body)
+  const updates = withCleanBody(pickEditable(body))
   if (Object.keys(updates).length === 0) {
     return NextResponse.json({ error: 'No fields to update' }, { status: 400 })
   }

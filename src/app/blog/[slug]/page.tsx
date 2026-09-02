@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { createServerSupabaseClient } from '@/lib/supabase/server'
 import { SITE_ORIGIN } from '@/lib/site-content'
+import { sanitizeArticleHtml, isRichArticle } from '@/lib/article-html'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import Navbar from '@/components/Navbar'
@@ -32,7 +33,9 @@ export async function generateMetadata(props: { params: Promise<{ slug: string }
     // A description Google will actually show: the excerpt if there is one,
     // otherwise the opening of the article, trimmed at a word rather than
     // mid-syllable.
-    const raw = (post.excerpt || post.content || '').replace(/\s+/g, ' ').trim()
+    // Strip tags before trimming: the body is HTML now, and a description
+    // reading "<p><strong>The spa..." helps nobody in a search result.
+    const raw = (post.excerpt || post.content || '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim()
     const description = raw.length > 155 ? raw.slice(0, 155).replace(/\s\S*$/, '') + '...' : raw
     const url = `${SITE_ORIGIN}/blog/${slug}`
     const published = post.published_at || post.created_at
@@ -114,10 +117,21 @@ export default async function BlogPostPage(props: { params: Promise<{ slug: stri
       )}
 
       <article className="max-w-3xl mx-auto px-4 py-16">
-        <div className="prose prose-lg max-w-none prose-headings:font-serif prose-a:text-accent">
-          {post.content.split('\n').map((paragraph: string, i: number) => (
-            paragraph.trim() ? <p key={i}>{paragraph}</p> : null
-          ))}
+        <div className="article-body prose prose-lg max-w-none prose-headings:font-serif prose-a:text-accent">
+          {isRichArticle(post.content) ? (
+            // Sanitised again on the way out, not only on the way in. The stored
+            // value is already clean, but an article could have been written
+            // before the sanitiser existed or changed by any other path into the
+            // table, and the cost of checking twice is nothing next to the cost
+            // of being wrong once.
+            <div dangerouslySetInnerHTML={{ __html: sanitizeArticleHtml(post.content) }} />
+          ) : (
+            // Every article written before the editor existed is plain text with
+            // newlines, and must keep rendering exactly as it always has.
+            post.content.split('\n').map((paragraph: string, i: number) => (
+              paragraph.trim() ? <p key={i}>{paragraph}</p> : null
+            ))
+          )}
         </div>
 
         {post.tags?.length > 0 && (

@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
+import ArticleEditor from '@/components/ArticleEditor'
 import { useDialog } from '@/components/useDialog'
 import DashboardShell from '@/components/DashboardShell'
 import { Plus, Edit2, Trash2, Eye, EyeOff, FileText, X, Upload, Image as ImageIcon, Share2 } from 'lucide-react'
@@ -145,7 +146,7 @@ export default function AdminBlogPage() {
           </div></div>
 
           <div><label className="dashboard-eyebrow block mb-1.5">Excerpt</label><textarea aria-label="Excerpt" rows={3} maxLength={220} className="input-field" value={form.excerpt} onChange={e => setForm({ ...form, excerpt: e.target.value })} placeholder="Short introduction shown on the Journal page"/></div>
-          <div><label className="dashboard-eyebrow block mb-1.5">Article *</label><textarea aria-label="Article" rows={16} className="input-field leading-7" value={form.content} onChange={e => setForm({ ...form, content: e.target.value })} placeholder="Write the full article here…"/></div>
+          <div><label className="dashboard-eyebrow block mb-1.5">Article *</label><ArticleEditor value={form.content} onChange={html => setForm({ ...form, content: html })} /></div>
 
           <div className="rounded-xl bg-[#e7e7e7] p-4 flex gap-3"><Share2 size={18} className="text-[#1c1c1c] shrink-0 mt-0.5"/><div><p className="text-[12px] font-semibold text-[#1c1c1c]">Social sharing is automatic</p><p className="text-[11px] text-[#555555] mt-1">Published articles get LinkedIn, Facebook, WhatsApp, Email and Copy Link buttons on the article page.</p></div></div>
 
