@@ -586,7 +586,7 @@ export default function OnboardingWizard() {
         {/* ═══ STEP 9: Agency Work ═══ */}
         {step === 9 && (
           <div className="space-y-5">
-            <div className="flex items-start gap-3 p-4 bg-[#f3f0eb] rounded-xl">
+            <div className="flex items-start gap-3 p-4 bg-[#f1f1f1] rounded-xl">
               <Zap size={18} className="text-accent mt-0.5 shrink-0" />
               <div>
                 <p className="text-[14px] font-medium text-ink">Join the agency register</p>
@@ -655,7 +655,7 @@ export default function OnboardingWizard() {
               <div className="relative w-16 h-16">
                 <svg className="w-16 h-16 -rotate-90" viewBox="0 0 36 36">
                   <circle cx="18" cy="18" r="16" fill="none" stroke="#e5e5e5" strokeWidth="3" />
-                  <circle cx="18" cy="18" r="16" fill="none" stroke={completionPct >= 80 ? '#16A34A' : completionPct >= 50 ? '#1c1b1a' : '#e5e5e5'} strokeWidth="3" strokeDasharray={`${completionPct} ${100 - completionPct}`} strokeLinecap="round" />
+                  <circle cx="18" cy="18" r="16" fill="none" stroke={completionPct >= 80 ? '#16A34A' : completionPct >= 50 ? '#1c1c1c' : '#e5e5e5'} strokeWidth="3" strokeDasharray={`${completionPct} ${100 - completionPct}`} strokeLinecap="round" />
                 </svg>
                 <span className="absolute inset-0 flex items-center justify-center text-[13px] font-semibold text-ink">{completionPct}%</span>
               </div>

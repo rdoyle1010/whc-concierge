@@ -21,7 +21,7 @@ export default function Wordmark({
   const box = compact ? 'h-[42px] w-[168px]' : 'h-[48px] w-[192px]'
   const mark = (
     <span
-      className={`relative block shrink-0 overflow-hidden ${box} ${contain ? '' : 'bg-[#1c1b1a]'} ${dark || contain ? '' : 'ring-1 ring-black/5'}`}
+      className={`relative block shrink-0 overflow-hidden ${box} ${contain ? '' : 'bg-[#1c1c1c]'} ${dark || contain ? '' : 'ring-1 ring-black/5'}`}
     >
       <Image
         src={safeLogoUrl(logo.url)}

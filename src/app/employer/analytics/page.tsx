@@ -15,7 +15,7 @@ const STATUS_LABELS: Record<string, string> = {
   shortlisted: 'Shortlisted', interview: 'Interview', offered: 'Offer made', accepted: 'Accepted',
 }
 const FUNNEL_ORDER = ['total', 'pending', 'shortlisted', 'interview', 'offered', 'accepted']
-const FUNNEL_COLOURS = ['#1c1b1a', '#33302d', '#4a4643', '#1c1b1a', '#33302d', '#16a34a']
+const FUNNEL_COLOURS = ['#1c1c1c', '#333333', '#474747', '#1c1c1c', '#333333', '#16a34a']
 
 export default function EmployerAnalyticsPage() {
   const supabase = createClient()
@@ -183,7 +183,7 @@ export default function EmployerAnalyticsPage() {
         </div>
         <div className="dashboard-card">
           <div className="text-muted mb-2"><TrendingUp size={16} /></div>
-          <p className="text-[28px] font-semibold" style={{ color: '#57534e' }}>{stats.avgMatch > 0 ? `${stats.avgMatch}%` : '-'}</p>
+          <p className="text-[28px] font-semibold" style={{ color: '#555555' }}>{stats.avgMatch > 0 ? `${stats.avgMatch}%` : '-'}</p>
           <p className="text-[11px] text-muted">{stats.avgMatch > 0 ? 'Avg match score' : 'Avg match score (no scored applications yet)'}</p>
         </div>
         <div className="dashboard-card">
@@ -229,7 +229,7 @@ export default function EmployerAnalyticsPage() {
             <div className="space-y-2.5">
               {topSkills.map((skill, i) => (
                 <div key={skill} className="flex items-center gap-3">
-                  <span className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-semibold shrink-0" style={{ backgroundColor: '#f3f0eb', color: '#57534e' }}>{i + 1}</span>
+                  <span className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-semibold shrink-0" style={{ backgroundColor: '#f1f1f1', color: '#555555' }}>{i + 1}</span>
                   <span className="text-[13px] text-ink">{skill}</span>
                 </div>
               ))}
@@ -269,7 +269,7 @@ export default function EmployerAnalyticsPage() {
                   <tr key={row.id} className="hover:bg-surface/50 transition-colors">
                     <td className="px-5 py-3 text-[13px] font-medium text-ink max-w-[200px] truncate">{row.title}</td>
                     <td className="px-5 py-3">
-                      <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${row.tier === 'Platinum' ? 'bg-ink text-white' : row.tier === 'Gold' ? 'bg-[#f3f0eb] text-accent' : row.tier === 'Silver' ? 'bg-neutral-100 text-neutral-600' : 'bg-surface text-muted'}`}>{row.tier}</span>
+                      <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${row.tier === 'Platinum' ? 'bg-ink text-white' : row.tier === 'Gold' ? 'bg-[#f1f1f1] text-accent' : row.tier === 'Silver' ? 'bg-neutral-100 text-neutral-600' : 'bg-surface text-muted'}`}>{row.tier}</span>
                     </td>
                     <td className="px-5 py-3">
                       <span className={`text-[11px] font-medium px-2 py-0.5 rounded-full ${row.status === 'live' ? 'bg-emerald-50 text-emerald-700' : row.status === 'filled' ? 'bg-blue-50 text-blue-700' : 'bg-neutral-100 text-neutral-500'}`}>{row.status}</span>
@@ -279,7 +279,7 @@ export default function EmployerAnalyticsPage() {
                     <td className="px-5 py-3 text-[13px] text-ink">{row.shortlisted}</td>
                     <td className="px-5 py-3">
                       {row.avgScore > 0 ? (
-                        <span className="text-[13px] font-medium" style={{ color: row.avgScore >= 80 ? '#16A34A' : row.avgScore >= 60 ? '#57534e' : '#57534e' }}>{row.avgScore}%</span>
+                        <span className="text-[13px] font-medium" style={{ color: row.avgScore >= 80 ? '#16A34A' : row.avgScore >= 60 ? '#555555' : '#555555' }}>{row.avgScore}%</span>
                       ) : <span className="text-[11px] text-muted">-</span>}
                     </td>
                   </tr>

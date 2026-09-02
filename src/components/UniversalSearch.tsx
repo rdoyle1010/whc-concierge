@@ -136,7 +136,7 @@ export default function UniversalSearch({ variant, onNavigate }: { variant: 'nav
           type="button"
           onClick={() => setOpen(true)}
           aria-label="Search the platform"
-          className={`flex h-9 w-9 items-center justify-center transition-colors ${dark ? 'text-white/70 hover:text-white' : 'border border-border bg-white text-secondary hover:border-[#6e6a66] hover:text-ink'}`}
+          className={`flex h-9 w-9 items-center justify-center transition-colors ${dark ? 'text-white/70 hover:text-white' : 'border border-border bg-white text-secondary hover:border-[#6b6b6b] hover:text-ink'}`}
         >
           <Search size={16} />
         </button>
@@ -146,7 +146,7 @@ export default function UniversalSearch({ variant, onNavigate }: { variant: 'nav
 
   return (
     <div ref={rootRef} className="relative max-lg:static">
-      <div className="max-lg:fixed max-lg:inset-x-0 max-lg:top-0 max-lg:z-[80] max-lg:border-b max-lg:border-border max-lg:bg-white max-lg:p-3 max-lg:shadow-[0_18px_48px_rgba(28,27,26,.14)]">
+      <div className="max-lg:fixed max-lg:inset-x-0 max-lg:top-0 max-lg:z-[80] max-lg:border-b max-lg:border-border max-lg:bg-white max-lg:p-3 max-lg:shadow-[0_18px_48px_rgba(28,28,28,.14)]">
         <div className={`flex h-9 items-center gap-2 border px-3 max-lg:border-border max-lg:bg-white ${dark ? 'border-white/25 bg-white/[0.07]' : 'border-border bg-white'}`}>
           <Search size={14} className={`shrink-0 max-lg:text-muted ${dark ? 'text-white/55' : 'text-muted'}`} />
           <input
@@ -177,7 +177,7 @@ export default function UniversalSearch({ variant, onNavigate }: { variant: 'nav
           <div
             id="universal-search-results"
             role="listbox"
-            className="fade-in z-[80] border border-border bg-white shadow-[0_18px_48px_rgba(28,27,26,.14)] max-lg:mt-2 max-lg:max-h-[calc(100vh-120px)] max-lg:overflow-y-auto lg:absolute lg:right-0 lg:top-[calc(100%+10px)] lg:max-h-[70vh] lg:w-[400px] lg:overflow-y-auto"
+            className="fade-in z-[80] border border-border bg-white shadow-[0_18px_48px_rgba(28,28,28,.14)] max-lg:mt-2 max-lg:max-h-[calc(100vh-120px)] max-lg:overflow-y-auto lg:absolute lg:right-0 lg:top-[calc(100%+10px)] lg:max-h-[70vh] lg:w-[400px] lg:overflow-y-auto"
           >
             {loading && !searched ? (
               <div className="px-4 py-4" aria-hidden="true">

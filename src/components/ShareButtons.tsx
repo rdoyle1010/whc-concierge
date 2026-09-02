@@ -30,8 +30,8 @@ export default function ShareButtons({ url, title }: ShareButtonsProps) {
   ]
 
   return <div className="flex flex-wrap items-center gap-2">
-    {links.map(link => <a key={link.name} href={link.href} target={link.name === 'Email' ? undefined : '_blank'} rel="noopener noreferrer" className="inline-flex items-center gap-2 rounded-lg border border-[#e0dad2] bg-white px-3 py-2 text-[11px] font-semibold text-[#1c1b1a] hover:bg-[#f3f0eb]" title={`Share on ${link.name}`}>{link.icon}{link.name}</a>)}
-    <button type="button" onClick={handleCopyLink} className="inline-flex items-center gap-2 rounded-lg border border-[#e0dad2] bg-white px-3 py-2 text-[11px] font-semibold text-[#1c1b1a] hover:bg-[#f3f0eb]" title="Copy article link">
+    {links.map(link => <a key={link.name} href={link.href} target={link.name === 'Email' ? undefined : '_blank'} rel="noopener noreferrer" className="inline-flex items-center gap-2 rounded-lg border border-[#dddddd] bg-white px-3 py-2 text-[11px] font-semibold text-[#1c1c1c] hover:bg-[#f1f1f1]" title={`Share on ${link.name}`}>{link.icon}{link.name}</a>)}
+    <button type="button" onClick={handleCopyLink} className="inline-flex items-center gap-2 rounded-lg border border-[#dddddd] bg-white px-3 py-2 text-[11px] font-semibold text-[#1c1c1c] hover:bg-[#f1f1f1]" title="Copy article link">
       {copied ? <Check size={15}/> : <Link2 size={15}/>} {copied ? 'Copied' : 'Copy link'}
     </button>
   </div>

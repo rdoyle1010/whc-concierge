@@ -37,7 +37,7 @@ export default async function BlogOGImage({ params }: { params: Promise<{ slug: 
         style={{
           width: '100%', height: '100%', display: 'flex', flexDirection: 'column',
           justifyContent: 'space-between', padding: '60px 70px',
-          background: 'linear-gradient(145deg, #0f0e0d 0%, #1c1b1a 50%, #0f0e0d 100%)',
+          background: 'linear-gradient(145deg, #0f0f0f 0%, #1c1c1c 50%, #0f0f0f 100%)',
         }}
       >
         {/* Top: branding + category */}
@@ -45,7 +45,7 @@ export default async function BlogOGImage({ params }: { params: Promise<{ slug: 
           <div
             style={{
               fontSize: 20, fontWeight: 600, letterSpacing: '2px',
-              color: '#57534e', textTransform: 'uppercase' as const,
+              color: '#555555', textTransform: 'uppercase' as const,
               display: 'flex',
             }}
           >
@@ -55,8 +55,8 @@ export default async function BlogOGImage({ params }: { params: Promise<{ slug: 
             <div
               style={{
                 fontSize: 14, fontWeight: 500, letterSpacing: '1px',
-                color: 'rgba(28,27,26, 0.7)',
-                border: '1px solid rgba(28,27,26, 0.3)',
+                color: 'rgba(28,28,28, 0.7)',
+                border: '1px solid rgba(28,28,28, 0.3)',
                 borderRadius: 20, padding: '6px 16px',
                 textTransform: 'uppercase' as const,
                 display: 'flex',
@@ -81,7 +81,7 @@ export default async function BlogOGImage({ params }: { params: Promise<{ slug: 
 
         {/* Bottom: URL + decorative line */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-          <div style={{ width: 40, height: 2, background: '#57534e', display: 'flex' }} />
+          <div style={{ width: 40, height: 2, background: '#555555', display: 'flex' }} />
           <div
             style={{
               fontSize: 14, color: 'rgba(255, 255, 255, 0.25)',

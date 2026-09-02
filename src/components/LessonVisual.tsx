@@ -10,13 +10,13 @@ import { ArrowDown, Check, ImageIcon, X } from 'lucide-react'
 export function LessonVisualBlock({ visual }: { visual: Visual }) {
   if (visual.kind === 'flow') {
     return (
-      <div className="rounded-xl border border-[#e0dad2] bg-white p-5 my-4">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#1c1b1a] mb-3">{visual.title}</p>
+      <div className="rounded-xl border border-[#dddddd] bg-white p-5 my-4">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#1c1c1c] mb-3">{visual.title}</p>
         <div className="flex flex-col items-stretch gap-1">
           {visual.steps.map((step, index) => (
             <div key={index} className="flex flex-col items-center">
-              <div className="w-full rounded-lg bg-[#e9e4dd] border border-[#e0dad2] px-4 py-2.5 text-center text-[13px] font-medium text-[#1c1b1a]">{step}</div>
-              {index < visual.steps.length - 1 && <ArrowDown size={14} className="text-[#1c1b1a] my-0.5" />}
+              <div className="w-full rounded-lg bg-[#e7e7e7] border border-[#dddddd] px-4 py-2.5 text-center text-[13px] font-medium text-[#1c1c1c]">{step}</div>
+              {index < visual.steps.length - 1 && <ArrowDown size={14} className="text-[#1c1c1c] my-0.5" />}
             </div>
           ))}
         </div>
@@ -27,12 +27,12 @@ export function LessonVisualBlock({ visual }: { visual: Visual }) {
 
   if (visual.kind === 'table') {
     return (
-      <div className="rounded-xl border border-[#e0dad2] bg-white p-5 my-4">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#1c1b1a] mb-3">{visual.title}</p>
+      <div className="rounded-xl border border-[#dddddd] bg-white p-5 my-4">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#1c1c1c] mb-3">{visual.title}</p>
         <div className="overflow-x-auto">
           <table className="w-full text-[12.5px] border-collapse min-w-[420px]">
-            <thead><tr>{visual.headers.map(header => <th key={header} className="border-b-2 border-[#1c1b1a]/20 bg-[#f3f0eb] px-3 py-2 text-left font-semibold text-ink">{header}</th>)}</tr></thead>
-            <tbody>{visual.rows.map((row, ri) => <tr key={ri}>{row.map((cell, ci) => <td key={ci} className={`border-b border-[#e0dad2] px-3 py-2 text-gray-700 ${ci > 0 ? 'tabular-nums' : ''}`}>{cell}</td>)}</tr>)}</tbody>
+            <thead><tr>{visual.headers.map(header => <th key={header} className="border-b-2 border-[#1c1c1c]/20 bg-[#f1f1f1] px-3 py-2 text-left font-semibold text-ink">{header}</th>)}</tr></thead>
+            <tbody>{visual.rows.map((row, ri) => <tr key={ri}>{row.map((cell, ci) => <td key={ci} className={`border-b border-[#dddddd] px-3 py-2 text-gray-700 ${ci > 0 ? 'tabular-nums' : ''}`}>{cell}</td>)}</tr>)}</tbody>
           </table>
         </div>
         {visual.caption && <p className="mt-3 text-[11.5px] text-secondary leading-5">{visual.caption}</p>}
@@ -42,14 +42,14 @@ export function LessonVisualBlock({ visual }: { visual: Visual }) {
 
   if (visual.kind === 'matrix') {
     return (
-      <div className="rounded-xl border border-[#e0dad2] bg-white p-5 my-4">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#1c1b1a] mb-3">{visual.title}</p>
+      <div className="rounded-xl border border-[#dddddd] bg-white p-5 my-4">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#1c1c1c] mb-3">{visual.title}</p>
         <div className="flex gap-2">
           <div className="flex items-center"><p className="text-[10px] font-semibold uppercase tracking-wide text-secondary [writing-mode:vertical-rl] rotate-180">{visual.yLabel} →</p></div>
           <div className="flex-1">
             <div className="grid grid-cols-2 gap-1.5">
               {visual.quadrants.map((quadrant, index) => (
-                <div key={index} className={`rounded-lg px-3 py-4 text-center text-[12px] font-medium leading-5 ${index === 0 ? 'bg-[#e7f2ec] text-[#2e5b45]' : index === 3 ? 'bg-[#f3f0eb] text-[#1c1b1a]' : 'bg-[#f3f0eb] text-gray-700'}`}>{quadrant}</div>
+                <div key={index} className={`rounded-lg px-3 py-4 text-center text-[12px] font-medium leading-5 ${index === 0 ? 'bg-[#e7f2ec] text-[#2e5b45]' : index === 3 ? 'bg-[#f1f1f1] text-[#1c1c1c]' : 'bg-[#f1f1f1] text-gray-700'}`}>{quadrant}</div>
               ))}
             </div>
             <p className="mt-2 text-center text-[10px] font-semibold uppercase tracking-wide text-secondary">{visual.xLabel} →</p>
@@ -63,9 +63,9 @@ export function LessonVisualBlock({ visual }: { visual: Visual }) {
   // image_placeholder: an honest slot the admin fills through the Academy
   // Downloads/media flow - never a stock photo pasted for decoration.
   return (
-    <div className="rounded-xl border border-dashed border-[#e0dad2] bg-[#f3f0eb] p-5 my-4 text-center">
-      <ImageIcon size={20} className="mx-auto text-[#6e6a66] mb-2" />
-      <p className="text-[12px] font-semibold text-[#1c1b1a]">{visual.title}</p>
+    <div className="rounded-xl border border-dashed border-[#dddddd] bg-[#f1f1f1] p-5 my-4 text-center">
+      <ImageIcon size={20} className="mx-auto text-[#6b6b6b] mb-2" />
+      <p className="text-[12px] font-semibold text-[#1c1c1c]">{visual.title}</p>
       <p className="text-[11.5px] text-secondary mt-1">{visual.description}</p>
     </div>
   )
@@ -77,8 +77,8 @@ export function KnowledgeCheckBlock({ checks }: { checks: KnowledgeCheck[] }) {
   const [answers, setAnswers] = useState<Record<number, number>>({})
   if (!checks.length) return null
   return (
-    <div className="rounded-xl border border-[#e0dad2] bg-[#f3f0eb] p-5 my-4">
-      <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#1c1b1a] mb-3">Knowledge check</p>
+    <div className="rounded-xl border border-[#dddddd] bg-[#f1f1f1] p-5 my-4">
+      <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#1c1c1c] mb-3">Knowledge check</p>
       <div className="space-y-4">
         {checks.map((check, qi) => {
           const chosen = answers[qi]
@@ -95,7 +95,7 @@ export function KnowledgeCheckBlock({ checks }: { checks: KnowledgeCheck[] }) {
                       onClick={() => setAnswers(current => ({ ...current, [qi]: oi }))}
                       className={`w-full rounded-lg border px-3 py-2 text-left text-[12.5px] transition-colors ${revealed
                         ? isRight ? 'border-green-300 bg-green-50 text-green-800' : isChosen ? 'border-red-300 bg-red-50 text-red-700' : 'border-transparent bg-white/60 text-secondary'
-                        : 'border-[#e0dad2] bg-white hover:border-[#1c1b1a]/40 text-gray-700'}`}>
+                        : 'border-[#dddddd] bg-white hover:border-[#1c1c1c]/40 text-gray-700'}`}>
                       {revealed && isRight && <Check size={12} className="inline mr-1.5 -mt-0.5" />}
                       {revealed && isChosen && !isRight && <X size={12} className="inline mr-1.5 -mt-0.5" />}
                       {option}

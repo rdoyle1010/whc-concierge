@@ -11,7 +11,9 @@ import type { Door, RateCard, Sector } from '@/lib/sectors'
 
 type Payload = { doors: Door[]; sectors: Sector[]; rateCards: RateCard[] }
 
-const EMPTY_CARD = { min_hourly_rate: 15, platform_fee_pct: 15, min_shift_minutes: 240 }
+// Matches the database default, reached only by a sector opened before its
+// rates were set.
+const EMPTY_CARD = { min_hourly_rate: 20, platform_fee_pct: 15, min_shift_minutes: 240 }
 
 export default function DoorsAndSectorsPage() {
   const [data, setData] = useState<Payload>({ doors: [], sectors: [], rateCards: [] })

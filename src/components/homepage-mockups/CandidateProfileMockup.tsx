@@ -31,11 +31,11 @@ export default function CandidateProfileMockup() {
       </div>
       <p className="mb-3 text-xs text-muted">6 years experience</p>
 
-      <button type="button" className="mb-2 w-full rounded-lg border border-[rgba(28,27,26,0.35)] bg-[#f3f0eb] py-2 text-[12px] font-medium text-accent">View Full Profile</button>
-      <div className="grid grid-cols-3 gap-2 border-t border-[#e0dad2] pt-3">
-        <button type="button" className="flex items-center justify-center gap-1 rounded-lg bg-[#f3f0eb] py-2 text-xs text-muted"><X size={13} />Pass</button>
-        <button type="button" className="flex items-center justify-center gap-1 rounded-lg bg-[#f3f0eb] py-2 text-xs text-secondary"><Star size={13} />Save</button>
-        <button type="button" className="flex items-center justify-center gap-1 rounded-lg bg-[#1c1b1a] py-2 text-xs text-white"><Heart size={13} />Interested</button>
+      <button type="button" className="mb-2 w-full rounded-lg border border-[rgba(28,28,28,0.35)] bg-[#f1f1f1] py-2 text-[12px] font-medium text-accent">View Full Profile</button>
+      <div className="grid grid-cols-3 gap-2 border-t border-[#dddddd] pt-3">
+        <button type="button" className="flex items-center justify-center gap-1 rounded-lg bg-[#f1f1f1] py-2 text-xs text-muted"><X size={13} />Pass</button>
+        <button type="button" className="flex items-center justify-center gap-1 rounded-lg bg-[#f1f1f1] py-2 text-xs text-secondary"><Star size={13} />Save</button>
+        <button type="button" className="flex items-center justify-center gap-1 rounded-lg bg-[#1c1c1c] py-2 text-xs text-white"><Heart size={13} />Interested</button>
       </div>
     </div>
   )

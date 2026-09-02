@@ -59,7 +59,7 @@ export default function AboutPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {values.map(([Icon, title, copy]) => (
                 <div key={title} className="public-panel p-7">
-                  <div className="w-11 h-11 rounded-xl bg-[#f3f0eb] flex items-center justify-center mb-5"><Icon className="w-5 h-5 text-accent" /></div>
+                  <div className="w-11 h-11 rounded-xl bg-[#f1f1f1] flex items-center justify-center mb-5"><Icon className="w-5 h-5 text-accent" /></div>
                   <h3 className="text-[18px] font-semibold text-ink mb-2">{title}</h3>
                   <p className="text-[13px] text-secondary leading-7">{copy}</p>
                 </div>
@@ -68,14 +68,14 @@ export default function AboutPage() {
           </div>
         </section>
 
-        <section className="py-20 px-6 bg-[#1c1b1a] text-white">
+        <section className="py-20 px-6 bg-[#1c1c1c] text-white">
           <div className="max-w-3xl mx-auto text-center">
             <p className="text-[10px] uppercase tracking-[0.2em] text-white/70 font-semibold mb-8">What we believe</p>
             <div className="space-y-8 text-[22px] md:text-[28px] leading-[1.4] font-medium text-white/90">
               <p>Recruitment should reward expertise, not advertising spend.</p>
-              <div className="w-12 h-px bg-[#57534e] mx-auto" />
+              <div className="w-12 h-px bg-[#555555] mx-auto" />
               <p>Discretion is non-negotiable in luxury hospitality.</p>
-              <div className="w-12 h-px bg-[#57534e] mx-auto" />
+              <div className="w-12 h-px bg-[#555555] mx-auto" />
               <p>If a platform doesn&apos;t understand the industry, it can&apos;t serve it.</p>
             </div>
           </div>

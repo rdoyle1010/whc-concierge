@@ -202,7 +202,7 @@ export default function AdminVerificationPage() {
       )}
 
       {rejecting && (
-        <div className="fixed inset-0 bg-[#0f0e0d]/70 z-50 flex items-center justify-center p-4" onClick={() => setRejecting(null)}>
+        <div className="fixed inset-0 bg-[#0f0f0f]/70 z-50 flex items-center justify-center p-4" onClick={() => setRejecting(null)}>
           <div {...rejectDialog.panelProps} className="bg-white max-w-md w-full p-6 border border-border">
             <div className="flex items-center justify-between mb-2">
               <h2 id="admin-verification-reject-heading" className="text-xl font-semibold text-ink">{rejecting.whc_verified ? 'Revoke badge' : 'Reject verification'}</h2>

@@ -123,13 +123,24 @@ alter table public.employer_profiles
 -- 6. Agency rates per sector ------------------------------------------------
 -- A pilates instructor and a spa therapist do not share a rate floor, so the
 -- numbers Agency enforces move from code to a row an administrator can edit.
--- platform_fee_pct is the live 15%; the rate floor and shift minimum did not
--- exist as values anywhere before now and are starting points to review.
+-- The fee is the live 15% throughout. The floors and minimums are Rebecca's,
+-- set from what the market actually pays.
+--
+-- The shift minimums are the important part: an hour for fitness and for
+-- class cover, because a single class is the whole job and a four-hour
+-- minimum would refuse it outright. Brand education is priced as a
+-- professional engagement rather than a shift - eight hours at £38 is a
+-- £300 day.
+--
+-- These are floors. An employer may always offer more.
 
 create table if not exists public.agency_rate_cards (
   id uuid primary key default gen_random_uuid(),
   sector_id uuid not null unique references public.sectors(id) on delete cascade,
-  min_hourly_rate numeric(8,2) not null default 15.00,
+  -- The default is only reached when a sector is opened before anyone sets
+  -- its rates, so it is deliberately conservative: too high gets corrected on
+  -- the admin screen, too low lets a property underpay in the meantime.
+  min_hourly_rate numeric(8,2) not null default 20.00,
   platform_fee_pct numeric(5,2) not null default 15.00,
   min_shift_minutes integer not null default 240,
   updated_at timestamptz not null default now(),
@@ -138,12 +149,17 @@ create table if not exists public.agency_rate_cards (
   constraint agency_rate_cards_shift_positive check (min_shift_minutes > 0)
 );
 
--- Spa carries today's values; the rest of the Spa & Wellness door starts as a
--- copy of spa so no sector goes live without a rate card behind it.
 insert into public.agency_rate_cards (sector_id, min_hourly_rate, platform_fee_pct, min_shift_minutes)
-select s.id, 15.00, 15.00, 240
-from public.sectors s
-where s.slug in ('spa', 'beauty', 'fitness', 'pilates_yoga', 'recovery')
+select s.id, v.min_hourly_rate, 15.00, v.min_shift_minutes
+from (values
+  ('spa',             20.00, 240),   -- £80 minimum engagement
+  ('beauty',          18.00, 240),   -- £72
+  ('fitness',         25.00,  60),   -- PT and gym cover, single hour
+  ('pilates_yoga',    35.00,  60),   -- class cover, single class
+  ('recovery',        16.00, 240),   -- £64
+  ('brand_education', 38.00, 480)    -- training day, £304
+) as v(slug, min_hourly_rate, min_shift_minutes)
+join public.sectors s on s.slug = v.slug
 on conflict (sector_id) do nothing;
 
 -- 7. Access -----------------------------------------------------------------

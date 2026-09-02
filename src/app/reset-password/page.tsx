@@ -50,7 +50,7 @@ export default function ResetPasswordPage() {
           </>}
         </div>
       </div>
-      <div className="hidden lg:block w-[42%] relative bg-[#1c1b1a]"><div className="absolute bottom-12 left-12 right-12"><p className="text-white text-[20px] font-medium leading-snug">Where exceptional talent meets exceptional opportunity.</p><p className="text-white/70 text-[12px] mt-3">Talent House Collective</p></div></div>
+      <div className="hidden lg:block w-[42%] relative bg-[#1c1c1c]"><div className="absolute bottom-12 left-12 right-12"><p className="text-white text-[20px] font-medium leading-snug">Where exceptional talent meets exceptional opportunity.</p><p className="text-white/70 text-[12px] mt-3">Talent House Collective</p></div></div>
     </main>
   )
 }

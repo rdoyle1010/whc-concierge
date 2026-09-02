@@ -463,7 +463,7 @@ export default function EmployerProfilePage() {
             ))}
             {(profile.property_photos || []).length < 6 && (
               <label className="aspect-[4/3] rounded-lg border-2 border-dashed border-border flex flex-col items-center justify-center cursor-pointer hover:border-ink/30 transition-colors text-muted">
-                <span className="text-[22px] leading-none mb-1" style={{ color: '#57534e' }}>+</span>
+                <span className="text-[22px] leading-none mb-1" style={{ color: '#555555' }}>+</span>
                 <span className="text-[11px]">Add photo</span>
                 <input type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) handleGalleryUpload(f); e.target.value = '' }} />
               </label>

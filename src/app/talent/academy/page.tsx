@@ -108,10 +108,10 @@ export default function AcademyPage() {
         {error && <div className="bg-red-50 text-red-600 text-sm px-4 py-3 rounded-lg mb-4">{error}</div>}
 
         {career && (
-          <div className="mb-8 rounded-2xl border border-[#e0dad2] bg-[#f3f0eb] p-6">
+          <div className="mb-8 rounded-2xl border border-[#dddddd] bg-[#f1f1f1] p-6">
             <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
               <div className="min-w-0">
-                <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#1c1b1a]">Your career position</p>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#1c1c1c]">Your career position</p>
                 <h2 className="mt-1 font-sans text-[22px] font-semibold tracking-tight text-ink">{career.position?.current || 'Building your profile'} → {career.position?.next}</h2>
                 <p className="mt-1 text-[12px] leading-5 text-secondary max-w-xl">
                   {career.position?.average_match ? <>Across {career.position.live_roles_assessed} live roles you average a {career.position.average_match}% match{career.position?.top_match ? <> - strongest: {career.position.top_match.score}% for {career.position.top_match.title}</> : null}. The learning below is chosen to move those numbers, not to sell you courses.</> : 'Complete your profile and the Academy will read the live market against your skills to recommend exactly what to learn next.'}
@@ -125,11 +125,11 @@ export default function AcademyPage() {
             </div>
 
             {career.progress?.in_progress?.length > 0 && (
-              <div className="mt-5 border-t border-[#e0dad2] pt-4">
-                <p className="mb-2 text-[11px] font-semibold text-[#1c1b1a]">Continue learning</p>
+              <div className="mt-5 border-t border-[#dddddd] pt-4">
+                <p className="mb-2 text-[11px] font-semibold text-[#1c1c1c]">Continue learning</p>
                 <div className="flex flex-wrap gap-2">
                   {career.progress.in_progress.map((item: any) => (
-                    <Link key={item.slug} href={`/talent/academy/${item.slug}`} className="inline-flex items-center gap-2 rounded-xl border border-[#e0dad2] bg-white px-3.5 py-2 text-[12px] font-medium text-ink hover:border-[#1c1b1a]">
+                    <Link key={item.slug} href={`/talent/academy/${item.slug}`} className="inline-flex items-center gap-2 rounded-xl border border-[#dddddd] bg-white px-3.5 py-2 text-[12px] font-medium text-ink hover:border-[#1c1c1c]">
                       {item.title}
                       <span className="text-[10px] text-muted">{item.lessons_done}/{item.lessons_total} lessons</span>
                     </Link>
@@ -139,18 +139,18 @@ export default function AcademyPage() {
             )}
 
             {career.gaps?.length > 0 && (
-              <div className="mt-5 border-t border-[#e0dad2] pt-4">
-                <p className="mb-1 text-[11px] font-semibold text-[#1c1b1a]">Skills employers are asking for right now - that your profile doesn&apos;t show yet</p>
+              <div className="mt-5 border-t border-[#dddddd] pt-4">
+                <p className="mb-1 text-[11px] font-semibold text-[#1c1c1c]">Skills employers are asking for right now - that your profile doesn&apos;t show yet</p>
                 <p className="mb-3 text-[11px] text-secondary">From the requirements of live roles you could match. Closing a gap strengthens real applications - directional, honest, no invented percentages.</p>
                 <div className="grid gap-2 sm:grid-cols-2">
                   {career.gaps.map((gap: any) => (
-                    <div key={gap.skill} className="rounded-xl border border-[#e0dad2] bg-white p-3.5">
+                    <div key={gap.skill} className="rounded-xl border border-[#dddddd] bg-white p-3.5">
                       <div className="flex items-center justify-between gap-2">
                         <p className="text-[13px] font-semibold text-ink truncate">{gap.skill}</p>
                         <span className="shrink-0 text-[10px] text-muted">{gap.demanded_in} live role{gap.demanded_in === 1 ? '' : 's'}</span>
                       </div>
                       {gap.courses?.length ? gap.courses.map((c: any) => (
-                        <Link key={c.slug} href={`/talent/academy/${c.slug}`} className="mt-1.5 flex items-center justify-between gap-2 text-[12px] text-[#1c1b1a] hover:underline">
+                        <Link key={c.slug} href={`/talent/academy/${c.slug}`} className="mt-1.5 flex items-center justify-between gap-2 text-[12px] text-[#1c1c1c] hover:underline">
                           <span className="truncate">→ {c.title}</span><span className="shrink-0 text-[10px] text-muted">~{c.minutes} min</span>
                         </Link>
                       )) : <p className="mt-1.5 text-[11px] text-muted">Evidence this on your profile - no course needed.</p>}
@@ -161,13 +161,13 @@ export default function AcademyPage() {
             )}
 
             {career.pathway?.length > 0 && (
-              <div className="mt-5 border-t border-[#e0dad2] pt-4">
-                <p className="mb-2 text-[11px] font-semibold text-[#1c1b1a]">Recommended for your step up to {career.position?.next}</p>
+              <div className="mt-5 border-t border-[#dddddd] pt-4">
+                <p className="mb-2 text-[11px] font-semibold text-[#1c1c1c]">Recommended for your step up to {career.position?.next}</p>
                 <div className="flex flex-wrap gap-2">
                   {career.pathway.map((item: any) => (
-                    <Link key={item.slug} href={`/talent/academy/${item.slug}`} className="inline-flex items-center gap-2 rounded-xl border border-[#e0dad2] bg-white px-3.5 py-2 text-[12px] font-medium text-ink hover:border-[#1c1b1a]">
+                    <Link key={item.slug} href={`/talent/academy/${item.slug}`} className="inline-flex items-center gap-2 rounded-xl border border-[#dddddd] bg-white px-3.5 py-2 text-[12px] font-medium text-ink hover:border-[#1c1c1c]">
                       {item.title}
-                      <span className="rounded-full bg-[#f3f0eb] px-2 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-[#1c1b1a]">{item.level}</span>
+                      <span className="rounded-full bg-[#f1f1f1] px-2 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-[#1c1c1c]">{item.level}</span>
                     </Link>
                   ))}
                 </div>
@@ -221,7 +221,7 @@ export default function AcademyPage() {
                         </div>
                         <p className="text-[12px] text-secondary mb-2">{course.tagline}</p>
                         <p className="text-[11px] text-muted mb-4 inline-flex items-center gap-1"><Clock size={11} /> {course.lessons.length} modules · objectives, case studies &amp; assessment · ~{course.minutes} min</p>
-                        {isManagement && <div className="mb-4 rounded-xl border border-accent/20 bg-[#f3f0eb] p-3"><p className="text-[11px] font-semibold text-ink">Includes practical management labs + downloadable toolkit</p><p className="mt-1 text-[10px] leading-4 text-muted">Work with rota, payroll, profitability, P&amp;L, forecasting and planning templates rather than just reading theory.</p></div>}
+                        {isManagement && <div className="mb-4 rounded-xl border border-accent/20 bg-[#f1f1f1] p-3"><p className="text-[11px] font-semibold text-ink">Includes practical management labs + downloadable toolkit</p><p className="mt-1 text-[10px] leading-4 text-muted">Work with rota, payroll, profitability, P&amp;L, forecasting and planning templates rather than just reading theory.</p></div>}
                         <div className="mt-auto">
                           {done ? (
                             <div className="grid grid-cols-1 gap-2">

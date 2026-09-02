@@ -35,7 +35,7 @@ export default function AcademyToolkitPage() {
 
         {uploads.length > 0 && (
           <div className="mb-7">
-            <p className="mb-3 text-[12px] font-semibold uppercase tracking-[0.14em] text-[#1c1b1a]">Course downloads</p>
+            <p className="mb-3 text-[12px] font-semibold uppercase tracking-[0.14em] text-[#1c1c1c]">Course downloads</p>
             <div className="grid gap-4 md:grid-cols-2">
               {uploads.map(upload => (
                 <article key={upload.id} className="dashboard-card flex flex-col">
@@ -58,7 +58,7 @@ export default function AcademyToolkitPage() {
             {resources.map(resource => (
               <article key={resource.id} className="dashboard-card flex flex-col">
                 <div className="mb-4 flex items-start gap-3">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#f3f0eb] text-[#1c1b1a]"><FileSpreadsheet size={18} /></div>
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#f1f1f1] text-[#1c1c1c]"><FileSpreadsheet size={18} /></div>
                   <div>
                     <h2 className="text-[15px] font-semibold text-ink">{resource.title}</h2>
                     <p className="mt-1 text-[12px] leading-5 text-muted">{resource.description}</p>

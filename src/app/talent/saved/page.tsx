@@ -57,7 +57,7 @@ export default function SavedJobsPage() {
             return (
               <div key={saved.id} className="bg-white border border-border rounded-xl p-5 hover:shadow-sm transition-all">
                 <div className="flex items-center justify-between mb-3">
-                  <span className={`text-[10px] font-semibold px-2.5 py-1 rounded-full ${job.tier === 'Platinum' ? 'bg-ink text-white' : job.tier === 'Gold' ? 'bg-[#f3f0eb] text-[#1c1b1a]' : 'bg-surface text-muted'}`}>{job.tier || 'Standard'}</span>
+                  <span className={`text-[10px] font-semibold px-2.5 py-1 rounded-full ${job.tier === 'Platinum' ? 'bg-ink text-white' : job.tier === 'Gold' ? 'bg-[#f1f1f1] text-[#1c1c1c]' : 'bg-surface text-muted'}`}>{job.tier || 'Standard'}</span>
                   <button type="button" onClick={() => removeSaved(saved.job_id)} aria-label="Remove saved role"
                     className="p-2.5 text-muted hover:text-red-500 transition-colors" title="Remove">
                     <Trash2 size={14} />

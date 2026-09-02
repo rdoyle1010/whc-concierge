@@ -85,3 +85,27 @@ test('every role gets a sector, and the column is only made required once backfi
   const notNull = migration.indexOf('alter column sector_id set not null')
   assert.ok(backfill > -1 && notNull > backfill, 'the backfill must run before the NOT NULL')
 })
+
+// The floors are commercial decisions, not defaults. A later edit that drops
+// one back to a placeholder would let a property underpay, and the shift
+// minimums are what make single-class cover possible at all.
+test('every open sector is seeded with its real rate card', () => {
+  const migration = readFileSync(new URL('../supabase/migrations/20260902120000_phase_0_sector_foundations.sql', import.meta.url), 'utf8')
+  const expected: [string, string, string][] = [
+    ['spa', '20.00', '240'],
+    ['beauty', '18.00', '240'],
+    ['fitness', '25.00', '60'],
+    ['pilates_yoga', '35.00', '60'],
+    ['recovery', '16.00', '240'],
+    ['brand_education', '38.00', '480'],
+  ]
+  for (const [slug, rate, minutes] of expected) {
+    const row = new RegExp(`'${slug}',\\s*${rate.replace('.', '\\.')},\\s*${minutes}\\b`)
+    assert.match(migration, row, `${slug} must be seeded at £${rate} with a ${minutes} minute minimum`)
+  }
+})
+
+test('a sector opened before its rates are set never falls below the spa floor', () => {
+  const migration = readFileSync(new URL('../supabase/migrations/20260902120000_phase_0_sector_foundations.sql', import.meta.url), 'utf8')
+  assert.match(migration, /min_hourly_rate numeric\(8,2\) not null default 20\.00/)
+})

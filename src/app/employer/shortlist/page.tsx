@@ -121,7 +121,7 @@ export default function EmployerShortlistPage() {
                       {c.services_offered?.length > 0 && (
                         <div className="flex flex-wrap gap-1 mt-2 ml-[52px]">
                           {c.services_offered.slice(0, 4).map((sk: string) => (
-                            <span key={sk} className="text-[10px] bg-[#f3f0eb] text-accent border border-accent/20 px-2 py-0.5 rounded-full">{sk}</span>
+                            <span key={sk} className="text-[10px] bg-[#f1f1f1] text-accent border border-accent/20 px-2 py-0.5 rounded-full">{sk}</span>
                           ))}
                         </div>
                       )}

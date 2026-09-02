@@ -107,8 +107,8 @@ export default async function PropertiesPage({ searchParams }: { searchParams?: 
     <section className="pt-[76px] bg-white border-b border-border overflow-hidden">
       <div className="max-w-7xl mx-auto px-6 lg:px-8 py-10 md:py-14 grid lg:grid-cols-[.9fr_1.1fr] gap-9 items-center">
         <div className="py-6 lg:py-12">
-          <p className="text-[10px] uppercase tracking-[0.18em] font-semibold text-[#57534e] mb-4">{cms.hero.eyebrow}</p>
-          <h1 className="text-[42px] md:text-[56px] font-semibold tracking-[-0.045em] leading-[1.02] text-[#1c1b1a]">{cms.hero.heading}</h1>
+          <p className="text-[10px] uppercase tracking-[0.18em] font-semibold text-[#555555] mb-4">{cms.hero.eyebrow}</p>
+          <h1 className="text-[42px] md:text-[56px] font-semibold tracking-[-0.045em] leading-[1.02] text-[#1c1c1c]">{cms.hero.heading}</h1>
           <p className="text-[14px] text-muted max-w-xl mt-5 leading-7">{cms.hero.text}</p>
         </div>
         <div className="h-[360px] md:h-[430px] overflow-hidden"><img src={cms.hero.image.url} alt={cms.hero.image.alt} className="w-full h-full object-cover" style={{objectPosition:`${cms.hero.image.focalX}% ${cms.hero.image.focalY}%`}}/></div>
@@ -116,8 +116,8 @@ export default async function PropertiesPage({ searchParams }: { searchParams?: 
     </section>
 
     <section className="py-14 bg-white"><div className="max-w-7xl mx-auto px-6 lg:px-8">
-      {properties.length === 0 ? <div className="grid lg:grid-cols-[.85fr_1.15fr] overflow-hidden bg-white border border-border"><div className="min-h-[280px]"><img src={cms.blocks[0].image.url} alt={cms.blocks[0].image.alt} className="w-full h-full object-cover" /></div><div className="px-8 py-14 md:px-12 flex flex-col justify-center"><Building2 size={30} className="text-[#57534e] mb-4" /><p className="text-[10px] uppercase tracking-[.16em] font-semibold text-[#57534e] mb-3">Properties</p><p className="text-[20px] font-medium text-[#1c1b1a]">New properties are joining WHC.</p><p className="text-[13px] text-secondary mt-3 leading-6 max-w-lg">Approved property profiles will appear here as soon as they are ready for professionals to explore.</p></div></div> : <>
-        <div className="flex items-end justify-between gap-5 mb-8"><div><p className="text-[10px] uppercase tracking-[0.16em] font-semibold text-[#57534e]">WHC properties</p><h2 className="text-[27px] md:text-[34px] font-semibold tracking-[-0.03em] text-[#1c1b1a] mt-1">Explore places to work</h2><p className="text-[13px] text-secondary mt-2 max-w-2xl">See the property profile, ratings, spa information and live roles before deciding whether it is right for you. Properties with the most live roles appear first.</p></div><p className="hidden md:block text-[12px] text-muted">{properties.length} approved propert{properties.length === 1 ? 'y' : 'ies'}</p></div>
+      {properties.length === 0 ? <div className="grid lg:grid-cols-[.85fr_1.15fr] overflow-hidden bg-white border border-border"><div className="min-h-[280px]"><img src={cms.blocks[0].image.url} alt={cms.blocks[0].image.alt} className="w-full h-full object-cover" /></div><div className="px-8 py-14 md:px-12 flex flex-col justify-center"><Building2 size={30} className="text-[#555555] mb-4" /><p className="text-[10px] uppercase tracking-[.16em] font-semibold text-[#555555] mb-3">Properties</p><p className="text-[20px] font-medium text-[#1c1c1c]">New properties are joining WHC.</p><p className="text-[13px] text-secondary mt-3 leading-6 max-w-lg">Approved property profiles will appear here as soon as they are ready for professionals to explore.</p></div></div> : <>
+        <div className="flex items-end justify-between gap-5 mb-8"><div><p className="text-[10px] uppercase tracking-[0.16em] font-semibold text-[#555555]">WHC properties</p><h2 className="text-[27px] md:text-[34px] font-semibold tracking-[-0.03em] text-[#1c1c1c] mt-1">Explore places to work</h2><p className="text-[13px] text-secondary mt-2 max-w-2xl">See the property profile, ratings, spa information and live roles before deciding whether it is right for you. Properties with the most live roles appear first.</p></div><p className="hidden md:block text-[12px] text-muted">{properties.length} approved propert{properties.length === 1 ? 'y' : 'ies'}</p></div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">{properties.map((p:any)=>{
           const name=p.property_name||p.company_name||'Property'
           const image=p.property_photos?.[0]||p.logo_url
@@ -131,22 +131,22 @@ export default async function PropertiesPage({ searchParams }: { searchParams?: 
             reviewScore>0?`${reviewScore.toFixed(1)} WHC verified${reviewCount?` (${reviewCount})`:''}`:null,
             p.live_roles>0?`${p.live_roles} live role${p.live_roles===1?'':'s'}`:null,
           ].filter(Boolean).join(' · ')
-          return <Link key={p.id} href={`/properties/${p.id}`} aria-label={`Explore property: ${name}`} className="group flex flex-col overflow-hidden border border-border bg-white transition-colors hover:border-[#6e6a66]">
-            <div className="relative aspect-[16/10] overflow-hidden bg-[#e9e4dd]">
+          return <Link key={p.id} href={`/properties/${p.id}`} aria-label={`Explore property: ${name}`} className="group flex flex-col overflow-hidden border border-border bg-white transition-colors hover:border-[#6b6b6b]">
+            <div className="relative aspect-[16/10] overflow-hidden bg-[#e7e7e7]">
               {image?<img src={image} alt={name} loading="lazy" decoding="async" className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-[1.02]"/>:<img src={cms.blocks[0].image.url} alt={cms.blocks[0].image.alt} loading="lazy" className="w-full h-full object-cover"/>}
-              <div className="absolute inset-0" style={{background:'linear-gradient(to top, rgba(28,27,26,.82) 0%, rgba(28,27,26,.28) 55%, rgba(28,27,26,.05) 100%)'}} aria-hidden />
-              {p.id===featuredSlotId&&<span className="absolute left-5 top-5 bg-[#1c1b1a] px-2 py-1 text-[9px] font-semibold uppercase tracking-[.12em] text-white">Featured</span>}
+              <div className="absolute inset-0" style={{background:'linear-gradient(to top, rgba(28,28,28,.82) 0%, rgba(28,28,28,.28) 55%, rgba(28,28,28,.05) 100%)'}} aria-hidden />
+              {p.id===featuredSlotId&&<span className="absolute left-5 top-5 bg-[#1c1c1c] px-2 py-1 text-[9px] font-semibold uppercase tracking-[.12em] text-white">Featured</span>}
               <h3 className="absolute inset-x-5 bottom-5 font-serif text-[22px] md:text-[24px] font-semibold leading-tight tracking-tight text-white">{name}</h3>
             </div>
             <div className="flex flex-1 flex-col px-5 py-4">
               <p className="text-[12px] leading-6 text-secondary">{factLine}</p>
-              <span className="mt-auto pt-4 inline-flex text-[12px] font-semibold text-[#1c1b1a]">Explore property →</span>
+              <span className="mt-auto pt-4 inline-flex text-[12px] font-semibold text-[#1c1c1c]">Explore property →</span>
             </div>
           </Link>})}</div>
       </>}
     </div></section>
 
-    {cms.blocks.slice(1).filter(b=>b.visible).map((b,i)=><section key={i} className="bg-white border-t border-border"><div className="max-w-7xl mx-auto px-6 lg:px-8 py-12 md:py-16 grid md:grid-cols-2 gap-8 items-center"><div className={i%2?'md:order-2':''}><p className="text-[10px] uppercase tracking-[.18em] font-semibold text-[#57534e]">{b.eyebrow}</p><h2 className="text-[30px] md:text-[40px] tracking-[-.04em] font-semibold text-[#1c1b1a] mt-3">{b.heading}</h2><p className="text-[14px] leading-7 text-muted mt-4">{b.text}</p></div><div className={`aspect-[4/3] overflow-hidden ${i%2?'md:order-1':''}`}><img src={b.image.url} alt={b.image.alt} className="w-full h-full object-cover" style={{objectPosition:`${b.image.focalX}% ${b.image.focalY}%`}}/></div></div></section>)}
+    {cms.blocks.slice(1).filter(b=>b.visible).map((b,i)=><section key={i} className="bg-white border-t border-border"><div className="max-w-7xl mx-auto px-6 lg:px-8 py-12 md:py-16 grid md:grid-cols-2 gap-8 items-center"><div className={i%2?'md:order-2':''}><p className="text-[10px] uppercase tracking-[.18em] font-semibold text-[#555555]">{b.eyebrow}</p><h2 className="text-[30px] md:text-[40px] tracking-[-.04em] font-semibold text-[#1c1c1c] mt-3">{b.heading}</h2><p className="text-[14px] leading-7 text-muted mt-4">{b.text}</p></div><div className={`aspect-[4/3] overflow-hidden ${i%2?'md:order-1':''}`}><img src={b.image.url} alt={b.image.alt} className="w-full h-full object-cover" style={{objectPosition:`${b.image.focalX}% ${b.image.focalY}%`}}/></div></div></section>)}
     </main>
       <Footer />
   </div>

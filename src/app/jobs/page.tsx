@@ -233,13 +233,13 @@ function PublicJobsBrowser() {
     const title = job.job_title || 'Wellness role'
     const description = job.job_description || ''
     return <article className="h-[500px] overflow-hidden border border-border bg-white shadow-sm">
-      <div className="relative h-52 overflow-hidden bg-[#f3f0eb]">
+      <div className="relative h-52 overflow-hidden bg-[#f1f1f1]">
         {image ? <img src={image} alt={`${title} at ${employer.company_name || 'wellness property'}`} className="h-full w-full object-cover" draggable={false}/> : <div className="flex h-full w-full items-center justify-center"><Building2 size={44} className="text-muted/50"/></div>}
         {isFeatured(job) && <span className="absolute left-5 top-5 bg-accent px-2 py-1 text-[9px] font-semibold uppercase tracking-[.12em] text-white">Featured</span>}
       </div>
       <div className="p-7">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          {job.is_residency_role ? <span className="bg-[#e9e4dd] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[.1em] text-accent">Residency</span> : <span/>}
+          {job.is_residency_role ? <span className="bg-[#e7e7e7] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[.1em] text-accent">Residency</span> : <span/>}
           <span className="text-[11px] uppercase tracking-[.1em] text-muted">{job.job_type}</span>
         </div>
         <h2 className="mt-4 font-serif text-[28px] font-semibold tracking-tight text-ink">{title}</h2>

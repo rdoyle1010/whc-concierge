@@ -115,7 +115,7 @@ export function calculateMatchScore(candidate:any, job:any): {
   score:number; label:string; colour:string; bgColour:string; breakdown:any; matchingSkills:string[]; hardStop:boolean; hardStopReason?:string; matchExplanation:string; distanceMiles:number|null; locationBasis:'distance'|'text'|'unknown'; progression?:any; mode?:'permanent'|'agency'|'leadership'
 } {
   const emptyBreakdown={roleLevel:-1,treatmentSkills:-1,brands:-1,qualifications:-1,experience:-1,businessSkills:-1,systems:-1,location:-1,shiftCompatibility:-1,transport:-1,accommodation:-1,proficiencyDepth:-1,salaryFit:-1,availability:-1,profileCompleteness:0,reviewScore:0}
-  const empty={score:10,label:'Requirement Missing',colour:'#57534e',bgColour:'#F3F4F6',breakdown:emptyBreakdown,matchingSkills:[] as string[],hardStop:true,matchExplanation:'',distanceMiles:null,locationBasis:'unknown' as const}
+  const empty={score:10,label:'Requirement Missing',colour:'#555555',bgColour:'#F3F4F6',breakdown:emptyBreakdown,matchingSkills:[] as string[],hardStop:true,matchExplanation:'',distanceMiles:null,locationBasis:'unknown' as const}
 
   const candidateRole=String(candidate.role_level||candidate.current_role||candidate.job_title||'')
   const requiredRole=String(job.required_role_level||job.job_title||job.title||'')
@@ -192,7 +192,7 @@ export function calculateMatchScore(candidate:any, job:any): {
   if (!policy.sameFamily && policy.scope!=='open_transferable') score=Math.min(score,25)
   const rounded=Math.max(10,Math.round(score))
   const label=rounded>=90?'Perfect Match':rounded>=75?'Strong Match':rounded>=60?'Good Match':rounded>=45?'Partial Match':'Low Match'
-  const colour=rounded>=90?'#16A34A':rounded>=75?'#1D4ED8':rounded>=60?'#D97706':'#57534e'
+  const colour=rounded>=90?'#16A34A':rounded>=75?'#1D4ED8':rounded>=60?'#D97706':'#555555'
   const bgColour=rounded>=90?'#DCFCE7':rounded>=75?'#DBEAFE':rounded>=60?'#FEF3C7':'#F3F4F6'
   const matchingSkills=[...treatmentResult.matches,...brandResult.matches,...qualResult.matches,...bizResult.matches].slice(0,6)
   const reasons:string[]=[]

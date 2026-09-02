@@ -168,7 +168,7 @@ export default function EmployerRegisterPage() {
 
           {/* The commercial intelligence - out of the small print, in plain sight */}
           <aside className="lg:col-span-5" aria-labelledby="emp-charges-heading">
-            <div className="bg-[#1c1b1a] p-8 xl:p-10 lg:sticky lg:top-8">
+            <div className="bg-[#1c1c1c] p-8 xl:p-10 lg:sticky lg:top-8">
               <p className="text-[10px] uppercase tracking-[0.2em] text-white/50 font-semibold">In plain sight</p>
               <h2 id="emp-charges-heading" className="mt-3 text-white text-[24px] leading-tight tracking-[-0.02em] font-serif font-semibold">How WHC charges</h2>
               <p className="mt-3 text-[13px] leading-6 text-white/60">No hidden commercial terms. The numbers below are the same ones written into the agreement you accept on this page.</p>

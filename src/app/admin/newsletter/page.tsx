@@ -236,7 +236,7 @@ export default function AdminNewsletterPage() {
           ) : (
             <form onSubmit={savePopup} className="space-y-4">
               <label className="flex items-center gap-2.5 text-[13px] text-ink font-medium">
-                <input type="checkbox" checked={popup.enabled} onChange={e => setPopup({ ...popup, enabled: e.target.checked })} className="h-4 w-4 accent-[#1c1b1a]" />
+                <input type="checkbox" checked={popup.enabled} onChange={e => setPopup({ ...popup, enabled: e.target.checked })} className="h-4 w-4 accent-[#1c1c1c]" />
                 Show the signup popup
               </label>
               <div>

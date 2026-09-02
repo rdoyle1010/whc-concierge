@@ -51,7 +51,7 @@ export default function AgencyReceiptPage() {
   return (
     <div className="min-h-screen bg-white">
       {/* Toolbar - hidden when printing */}
-      <div className="print:hidden border-b border-[#e0dad2] px-6 py-4 flex items-center justify-between max-w-3xl mx-auto">
+      <div className="print:hidden border-b border-[#dddddd] px-6 py-4 flex items-center justify-between max-w-3xl mx-auto">
         <Link href="/employer/agency" className="text-[13px] text-secondary hover:text-black inline-flex items-center gap-1.5"><ArrowLeft size={14} /> Agency Bookings</Link>
         <button onClick={() => window.print()} className="btn-primary text-[13px] inline-flex items-center gap-2"><Printer size={14} /> Print / Save as PDF</button>
       </div>
@@ -76,13 +76,13 @@ export default function AgencyReceiptPage() {
 
         <table className="w-full text-left text-[13px] mb-8">
           <thead>
-            <tr className="text-[11px] uppercase tracking-wide text-muted border-b border-[#e0dad2]">
+            <tr className="text-[11px] uppercase tracking-wide text-muted border-b border-[#dddddd]">
               <th className="py-2 pr-4">Description</th>
               <th className="py-2 pr-4 text-right">Amount</th>
             </tr>
           </thead>
           <tbody>
-            <tr className="border-b border-[#e0dad2]">
+            <tr className="border-b border-[#dddddd]">
               <td className="py-3 pr-4">
                 Agency therapist cover - {booking.candidate_name}
                 <span className="block text-[12px] text-secondary">
@@ -91,7 +91,7 @@ export default function AgencyReceiptPage() {
               </td>
               <td className="py-3 pr-4 text-right">£{subtotal.toFixed(2)}</td>
             </tr>
-            <tr className="border-b border-[#e0dad2]">
+            <tr className="border-b border-[#dddddd]">
               <td className="py-3 pr-4">WHC platform fee ({feePct}%)</td>
               <td className="py-3 pr-4 text-right">£{fee.toFixed(2)}</td>
             </tr>
@@ -106,7 +106,7 @@ export default function AgencyReceiptPage() {
           <p className="text-[12px] text-secondary mb-6">A refund of £{booking.refund_amount} was subsequently agreed on this booking{booking.refunded_at ? ` (${new Date(booking.refunded_at).toLocaleDateString('en-GB')})` : ''}.</p>
         ) : null}
 
-        <div className="text-[11px] text-muted space-y-1 border-t border-[#e0dad2] pt-6">
+        <div className="text-[11px] text-muted space-y-1 border-t border-[#dddddd] pt-6">
           <p>Payment received in full by Wellness House Collective, who manages the professional payout after the completed shift. No VAT has been charged on this receipt.</p>
           <p>Questions about this receipt? Reply to any WHC email or contact us through your dashboard.</p>
         </div>

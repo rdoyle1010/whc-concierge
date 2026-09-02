@@ -51,12 +51,12 @@ test('the secondary text colour is legible against white', () => {
   assert.ok(contrast(match[1], '#ffffff') >= 4.5, `secondary ${match[1]} is too pale against white`)
 })
 
-// #57534e on the brand charcoal is 1.9:1. It was carrying primary calls to
+// #555555 on the brand charcoal is 1.9:1. It was carrying primary calls to
 // action and section eyebrows on four public pages.
 test('the secondary grey is never used as a fill or a label on charcoal', () => {
   const offenders = sources.filter(file =>
-    /bg-\[#57534e\][^"'`]*text-\[#1c1b1a\]/.test(file.text)
-    || /text-\[#57534e\][^"'`]*(?=.*bg-\[#1c1b1a\])/.test(''),
+    /bg-\[#555555\][^"'`]*text-\[#1c1c1c\]/.test(file.text)
+    || /text-\[#555555\][^"'`]*(?=.*bg-\[#1c1c1c\])/.test(''),
   )
   assert.equal(offenders.length, 0, `unreadable grey-on-charcoal in: ${offenders.map(f => f.path).join(', ')}`)
 })

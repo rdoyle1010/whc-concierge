@@ -307,7 +307,7 @@ const getFeaturedPlacements = unstable_cache(async (): Promise<{ properties: Fea
 function FeaturedPlacementsSection({ placements }: { placements: { properties: FeaturedEntry[]; professionals: FeaturedEntry[] } }) {
   if (!placements.properties.length && !placements.professionals.length) return null
   return (
-    <section className="border-b border-border bg-[#f3f0eb]">
+    <section className="border-b border-border bg-[#f1f1f1]">
       <div className="mx-auto max-w-7xl px-6 py-14 lg:px-8">
         <Eyebrow>Featured on WHC</Eyebrow>
         <div className="mt-6 grid gap-x-14 gap-y-8 md:grid-cols-2">

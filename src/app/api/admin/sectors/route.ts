@@ -49,8 +49,8 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: 'id and is_live are required' }, { status: 400 })
       }
       // Opening a sector for Agency work without a rate card would leave the
-      // shift with no floor and no fee, so it gets today's spa values until
-      // an administrator sets its own.
+      // shift with no floor and no fee, so it gets the conservative database
+      // default until an administrator sets the sector's own.
       if (body.is_live) {
         const { data: existing } = await admin
           .from('agency_rate_cards').select('sector_id').eq('sector_id', body.id).maybeSingle()

@@ -295,9 +295,9 @@ export default function AdminAcademyPage() {
                 <div className="flex flex-wrap items-center gap-2">
                   <p className="text-[14px] font-medium text-ink">{course.title}</p>
                   <span className={`text-[10px] font-semibold uppercase px-2 py-0.5 ${course.is_active ? 'bg-green-50 text-green-700' : 'bg-gray-100 text-secondary'}`}>{course.is_active ? 'Live' : 'Archived'}</span>
-                  {course.level && <span className="text-[10px] font-semibold uppercase px-2 py-0.5 bg-[#f3f0eb] text-[#1c1b1a]">{course.level}</span>}
+                  {course.level && <span className="text-[10px] font-semibold uppercase px-2 py-0.5 bg-[#f1f1f1] text-[#1c1c1c]">{course.level}</span>}
                   {course.content_source === 'custom'
-                    ? <span className="inline-flex items-center gap-1 text-[10px] font-semibold uppercase px-2 py-0.5 bg-[#1c1b1a] text-white"><PencilLine size={10} /> Your version</span>
+                    ? <span className="inline-flex items-center gap-1 text-[10px] font-semibold uppercase px-2 py-0.5 bg-[#1c1c1c] text-white"><PencilLine size={10} /> Your version</span>
                     : <span className="inline-flex items-center gap-1 text-[10px] text-muted">{course.code_defined ? <><Lock size={10} /> Platform version</> : 'Admin-created course'}</span>}
                   {course.content_source !== 'custom' && course.has_saved_content && <span className="text-[10px] text-secondary">Your version saved, not live</span>}
                   {course.managed && <span className="text-[10px] text-accent">Admin settings saved</span>}

@@ -139,7 +139,7 @@ export default function ReviewForm({ reviewedId, reviewedName, type = 'candidate
       </div>
 
       {allRated && (
-        <div className="flex items-center gap-3 p-3 bg-[#f3f0eb] border border-accent/20 rounded-lg">
+        <div className="flex items-center gap-3 p-3 bg-[#f1f1f1] border border-accent/20 rounded-lg">
           <span className="text-[20px] font-semibold text-accent">{avgScore.toFixed(1)}</span>
           <div>
             <div className="flex items-center gap-0.5">

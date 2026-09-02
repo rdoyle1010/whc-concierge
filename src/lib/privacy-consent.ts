@@ -69,14 +69,14 @@ async function sendEmail(to: string, subject: string, html: string) {
 
 function confirmationEmailHtml(heading: string, intro: string, wording: string, url: string) {
   return `
-    <div style="font-family:Inter,-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;max-width:620px;margin:0 auto;padding:40px 22px;color:#1c1b1a">
+    <div style="font-family:Inter,-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;max-width:620px;margin:0 auto;padding:40px 22px;color:#1c1c1c">
       <p style="font-weight:700;margin-bottom:30px">Wellness House Collective</p>
       <h1 style="font-size:26px;line-height:1.2">${heading}</h1>
       <p style="font-size:15px;line-height:1.7;color:#4d4d4d">${intro}</p>
       <p style="font-size:14px;line-height:1.7;color:#4d4d4d"><strong>What you are agreeing to:</strong><br>${wording}</p>
-      <p style="margin:28px 0"><a href="${url}" style="display:inline-block;background:#1c1b1a;color:#fff;text-decoration:none;padding:13px 20px;border-radius:7px;font-weight:600">Confirm subscription</a></p>
-      <p style="font-size:12px;line-height:1.6;color:#8c8781">If you did not request this, ignore this email. Nothing will be activated. This confirmation link expires in 24 hours.</p>
-      <p style="font-size:12px;line-height:1.6;color:#8c8781;margin-top:30px">Talent House Collective · talenthousecollective.co.uk · <a href="${SITE}/privacy" style="color:#4d4d4d">Privacy policy</a></p>
+      <p style="margin:28px 0"><a href="${url}" style="display:inline-block;background:#1c1c1c;color:#fff;text-decoration:none;padding:13px 20px;border-radius:7px;font-weight:600">Confirm subscription</a></p>
+      <p style="font-size:12px;line-height:1.6;color:#8c8c8c">If you did not request this, ignore this email. Nothing will be activated. This confirmation link expires in 24 hours.</p>
+      <p style="font-size:12px;line-height:1.6;color:#8c8c8c;margin-top:30px">Talent House Collective · talenthousecollective.co.uk · <a href="${SITE}/privacy" style="color:#4d4d4d">Privacy policy</a></p>
     </div>
   `
 }

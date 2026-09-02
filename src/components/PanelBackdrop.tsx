@@ -80,7 +80,7 @@ export default function PanelBackdrop({ panel, placement }: { panel: Panel; plac
             style={{ objectPosition: `${panel.image.focalX}% ${panel.image.focalY}%` }}
           />
         )}
-        <div className="absolute inset-0 bg-[#1c1b1a]" style={{ opacity: scrim }} />
+        <div className="absolute inset-0 bg-[#1c1c1c]" style={{ opacity: scrim }} />
       </div>
 
       {advert && (
@@ -88,7 +88,7 @@ export default function PanelBackdrop({ panel, placement }: { panel: Panel; plac
           href={`/api/advertising/click?id=${encodeURIComponent(advert.id)}`}
           target="_blank"
           rel="noopener sponsored"
-          className="absolute right-5 top-5 z-10 max-w-[240px] border border-white/25 bg-[#1c1b1a]/70 px-3.5 py-2.5 backdrop-blur-sm transition-colors hover:border-white/60"
+          className="absolute right-5 top-5 z-10 max-w-[240px] border border-white/25 bg-[#1c1c1c]/70 px-3.5 py-2.5 backdrop-blur-sm transition-colors hover:border-white/60"
         >
           <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-white/70">Sponsored</p>
           <p className="mt-0.5 truncate text-[12px] font-medium text-white">{advert.brand_name}</p>

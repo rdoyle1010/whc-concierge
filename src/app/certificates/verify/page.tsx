@@ -36,12 +36,12 @@ function VerifyInner() {
   }, [])
 
   return (
-    <div className="min-h-screen bg-[#f3f0eb]">
+    <div className="min-h-screen bg-[#f1f1f1]">
       <Navbar />
       <div className="mx-auto max-w-2xl px-6 pt-32 pb-24">
-        <p className="text-[11px] uppercase tracking-[0.18em] text-[#1c1b1a] font-semibold mb-2">WHC Academy</p>
-        <h1 className="font-serif text-[32px] font-semibold text-[#1c1b1a] mb-2">Verify a certificate</h1>
-        <p className="text-[13.5px] text-[#57534e] leading-relaxed mb-6">Every WHC Academy certificate carries a unique verification code. Enter it below to confirm the certificate is genuine and see exactly what was awarded.</p>
+        <p className="text-[11px] uppercase tracking-[0.18em] text-[#1c1c1c] font-semibold mb-2">WHC Academy</p>
+        <h1 className="font-serif text-[32px] font-semibold text-[#1c1c1c] mb-2">Verify a certificate</h1>
+        <p className="text-[13.5px] text-[#555555] leading-relaxed mb-6">Every WHC Academy certificate carries a unique verification code. Enter it below to confirm the certificate is genuine and see exactly what was awarded.</p>
 
         <div className="flex gap-2 mb-8">
           <input value={code} onChange={e => setCode(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') verify(code) }}
@@ -77,5 +77,5 @@ function VerifyInner() {
 }
 
 export default function VerifyCertificatePage() {
-  return <Suspense fallback={<div className="min-h-screen bg-[#f3f0eb]" />}><VerifyInner /></Suspense>
+  return <Suspense fallback={<div className="min-h-screen bg-[#f1f1f1]" />}><VerifyInner /></Suspense>
 }

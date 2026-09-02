@@ -216,7 +216,7 @@ export default function AdminAdSlotsPage() {
                     return (
                       <div key={slot.slot_key} className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border px-3.5 py-3">
                         <div className="min-w-0">
-                          <p className="text-[13px] font-semibold text-ink inline-flex items-center gap-1.5"><Megaphone size={13} className="text-[#1c1b1a]" /> {slot.label}</p>
+                          <p className="text-[13px] font-semibold text-ink inline-flex items-center gap-1.5"><Megaphone size={13} className="text-[#1c1c1c]" /> {slot.label}</p>
                           <p className="text-[11.5px] text-muted mt-0.5">
                             £{formatPounds(prices[slot.slot_key] ?? slot.monthly_pence)}/month self-serve price
                             {slot.pinned_placement_id ? ` · pinned: ${advertName(slot.pinned_placement_id) || 'unknown advert'}` : candidates.length ? ` · ${candidates.length} advert${candidates.length === 1 ? '' : 's'} available` : ' · no adverts yet'}
@@ -246,7 +246,7 @@ export default function AdminAdSlotsPage() {
                           )}
                           <button type="button" disabled={busy === slot.slot_key}
                             onClick={() => setSlot(slot.slot_key, { enabled: !slot.enabled })}
-                            className={`relative h-6 w-11 rounded-full transition-colors ${slot.enabled ? 'bg-accent' : 'bg-[#e0dad2]'}`}
+                            className={`relative h-6 w-11 rounded-full transition-colors ${slot.enabled ? 'bg-accent' : 'bg-[#dddddd]'}`}
                             aria-label={slot.enabled ? 'Switch slot off' : 'Switch slot on'}>
                             <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-all ${slot.enabled ? 'left-[22px]' : 'left-0.5'}`} />
                           </button>
@@ -287,7 +287,7 @@ export default function AdminAdSlotsPage() {
         )}
 
         {formOpen && (
-          <div className="fixed inset-0 bg-[#0f0e0d]/70 z-50 flex items-center justify-center p-4" onClick={() => setFormOpen(false)}>
+          <div className="fixed inset-0 bg-[#0f0f0f]/70 z-50 flex items-center justify-center p-4" onClick={() => setFormOpen(false)}>
             <div {...formDialog.panelProps} className="bg-white rounded-2xl max-w-md w-full max-h-[90vh] overflow-y-auto p-6">
               <div className="flex items-center justify-between mb-1">
                 <h2 id="admin-direct-advert-heading" className="font-serif text-lg font-bold text-ink">Place a direct advert</h2>

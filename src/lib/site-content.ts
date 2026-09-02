@@ -109,8 +109,8 @@ const image = (url: string, alt: string): WebsiteContent['howItWorks']['image'] 
 export const DEFAULT_WEBSITE_CONTENT: WebsiteContent = {
   version: 1,
   brand: {
-    headingFont: 'modern', bodyFont: 'system', accent: '#1C1B1A', ink: '#1C1B1A',
-    background: '#F7F5F2', surface: '#F3F0EB', buttonStyle: 'square', spacing: 'airy',
+    headingFont: 'modern', bodyFont: 'system', accent: '#1C1C1C', ink: '#1C1C1C',
+    background: '#F7F7F7', surface: '#F1F1F1', buttonStyle: 'square', spacing: 'airy',
     logo: { ...DEFAULT_LOGO },
   },
   navigation: {
@@ -183,10 +183,11 @@ export function cloneDefaultWebsiteContent(): WebsiteContent {
 // swap in the charcoal default, so the live site moves with the code and
 // no admin has to republish to pick the new palette up.
 const LEGACY_BRAND: Record<'accent' | 'ink' | 'background' | 'surface', string[]> = {
-  accent: ['#0b2f4d', '#07243b', '#123f64'],
-  ink: ['#10283b', '#102838'],
-  background: ['#ffffff'],
-  surface: ['#f5f5f5', '#f5f6f8', '#f7f8fa'],
+  // Navy era, then the warm charcoal that replaced it. Both move to grey.
+  accent: ['#0b2f4d', '#07243b', '#123f64', '#1c1b1a'],
+  ink: ['#10283b', '#102838', '#1c1b1a'],
+  background: ['#ffffff', '#f7f5f2'],
+  surface: ['#f5f5f5', '#f5f6f8', '#f7f8fa', '#f3f0eb'],
 }
 
 // Website content saved before the move to talenthousecollective.co.uk can

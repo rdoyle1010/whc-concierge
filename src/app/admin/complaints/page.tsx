@@ -93,7 +93,7 @@ export default function AdminComplaintsPage() {
                 </div>
                 <button onClick={() => setSelected(c)} className="p-2 rounded-lg hover:bg-gray-100 text-muted ml-4"><Eye size={18} /></button>
               </div>
-              <div className="flex space-x-2 mt-4 pt-4 border-t border-[#e0dad2]">
+              <div className="flex space-x-2 mt-4 pt-4 border-t border-[#dddddd]">
                 {['open', 'investigating', 'resolved', 'dismissed'].map((s) => (
                   <button key={s} onClick={() => updateStatus(c.id, s)}
                     className={`text-xs px-3 py-1.5 rounded-lg capitalize transition-colors ${
@@ -108,14 +108,14 @@ export default function AdminComplaintsPage() {
 
       {/* Detail modal */}
       {selected && (
-        <div className="fixed inset-0 bg-[#0f0e0d]/70 z-50 flex items-center justify-center p-4" onClick={() => setSelected(null)}>
+        <div className="fixed inset-0 bg-[#0f0f0f]/70 z-50 flex items-center justify-center p-4" onClick={() => setSelected(null)}>
           <div {...detailDialog.panelProps} className="bg-white rounded-3xl max-w-lg w-full p-8 animate-fade-in-up">
             <div className="flex items-start justify-between mb-4">
               <h2 id="admin-complaint-detail-heading" className="font-serif text-xl font-bold text-ink">{selected.subject || selected.message}</h2>
               <button onClick={() => setSelected(null)} className="text-gray-300 hover:text-secondary"><X size={20} /></button>
             </div>
             <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${statusColors[selected.status] || ''}`}>{selected.status}</span>
-            <div className="mt-4 p-4 bg-[#f3f0eb] rounded-xl">
+            <div className="mt-4 p-4 bg-[#f1f1f1] rounded-xl">
               <p className="text-gray-600 whitespace-pre-wrap leading-relaxed">{selected.message}</p>
             </div>
             <div className="mt-4 text-sm text-muted">
@@ -124,7 +124,7 @@ export default function AdminComplaintsPage() {
             </div>
 
             {/* Real reply - emails the complainant directly */}
-            <div className="mt-5 pt-5 border-t border-[#e0dad2]">
+            <div className="mt-5 pt-5 border-t border-[#dddddd]">
               <label className="block text-sm font-medium text-gray-700 mb-1.5">Reply by email to {selected.email}</label>
               <textarea rows={4} value={reply} onChange={(e) => setReply(e.target.value)} className="input-field mb-2"
                 placeholder={`Hi ${selected.name?.split(' ')[0] || 'there'}, thank you for raising this...`} />

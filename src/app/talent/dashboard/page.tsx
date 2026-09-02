@@ -226,7 +226,7 @@ export default function TalentDashboard() {
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
                   <button type="button" disabled={!!approachBusy} onClick={() => respondToApproach(approach.employer_id, 'accept')}
-                    className="px-3 py-2 bg-[#1c1b1a] text-white text-[12px] font-medium disabled:opacity-50">
+                    className="px-3 py-2 bg-[#1c1c1c] text-white text-[12px] font-medium disabled:opacity-50">
                     {approachBusy === `accept:${approach.employer_id}` ? 'Accepting...' : 'Accept introduction'}
                   </button>
                   <button type="button" disabled={!!approachBusy} onClick={() => respondToApproach(approach.employer_id, 'decline')}
@@ -257,7 +257,7 @@ export default function TalentDashboard() {
           sidebar is the navigation; this panel is the one thing the
           dashboard can say that the sidebar cannot. */}
       <div className="grid grid-cols-1 lg:grid-cols-[1.55fr_.85fr] gap-6">
-        <aside className="dashboard-panel !bg-[#1c1b1a] !border-[#1c1b1a] text-white lg:col-start-2">
+        <aside className="dashboard-panel !bg-[#1c1c1c] !border-[#1c1c1c] text-white lg:col-start-2">
           <EyeOff size={19} className="text-white/80 mb-5" />
           <p className="text-[9px] uppercase tracking-[.2em] text-white/48 mb-2">Profile privacy</p>
           <h2 className="text-[28px] !text-white mb-3">{profile?.stealth_mode ? 'Stealth Mode is on' : 'Control who sees you'}</h2>

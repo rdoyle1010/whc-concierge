@@ -111,7 +111,7 @@ export default function TalentAgencyPage() {
 
   const statusColors: Record<string, string> = {
     pending: 'bg-amber-50 text-amber-700',
-    countered: 'bg-[#f3f0eb] text-accent',
+    countered: 'bg-[#f1f1f1] text-accent',
     accepted: 'bg-green-50 text-green-700',
     confirmed: 'bg-green-50 text-green-700',
     completed: 'bg-blue-50 text-blue-700',
@@ -162,7 +162,7 @@ export default function TalentAgencyPage() {
             <Link href="/talent/agency/settings" className="text-[12px] font-medium text-green-800 underline shrink-0 ml-4">Manage</Link>
           </div>
         ) : (
-          <div className="flex items-center justify-between bg-[#f3f0eb] border border-border rounded-xl px-5 py-4 mb-6">
+          <div className="flex items-center justify-between bg-[#f1f1f1] border border-border rounded-xl px-5 py-4 mb-6">
             <div>
               <p className="text-[14px] font-medium text-ink">You&apos;re not on the agency register yet</p>
               <p className="text-[12px] text-secondary mt-0.5">Join from {AGENCY_LISTING_TIERS.basic.display} to appear in the directory and receive shift offers - urgent same-day offers arrive by text.</p>

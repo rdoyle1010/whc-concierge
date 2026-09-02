@@ -12,10 +12,10 @@ export async function sendFeaturedEmployerEmail(email: string, talentName: strin
     <div style="font-family: Inter, -apple-system, sans-serif; max-width: 560px; margin: 0 auto; padding: 40px 20px;">
       <p style="font-size:16px;font-weight:600;margin-bottom:32px;">Talent House Collective</p>
       <p style="font-size:24px;font-weight:700;margin-bottom:16px;">A featured property to discover</p>
-      <p style="color:#57534e;">Hi ${talentName || 'there'}, <strong>${propertyName}</strong>${location ? ` in ${location}` : ''} is now featured on Talent House Collective.</p>
-      <p style="color:#57534e;">Explore the property, view its live opportunities and decide whether it could be your next move.</p>
-      <p style="margin-top:24px;"><a href="https://talenthousecollective.co.uk/properties" style="display:inline-block;background:#1c1b1a;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600;">View featured properties</a></p>
-      <p style="margin-top:40px;font-size:12px;color:#8c8781;">Talent House Collective &middot; talenthousecollective.co.uk</p>
+      <p style="color:#555555;">Hi ${talentName || 'there'}, <strong>${propertyName}</strong>${location ? ` in ${location}` : ''} is now featured on Talent House Collective.</p>
+      <p style="color:#555555;">Explore the property, view its live opportunities and decide whether it could be your next move.</p>
+      <p style="margin-top:24px;"><a href="https://talenthousecollective.co.uk/properties" style="display:inline-block;background:#1c1c1c;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600;">View featured properties</a></p>
+      <p style="margin-top:40px;font-size:12px;color:#8c8c8c;">Talent House Collective &middot; talenthousecollective.co.uk</p>
     </div>
   `
 
