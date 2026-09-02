@@ -1,7 +1,12 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
-import { employerFeatureAccess, talentFeatureAccess } from '../src/lib/feature-access'
+import {
+  employerFeatureAccess,
+  talentFeatureAccess,
+  hasActiveFeaturedAccess,
+  FEATURED_PREMIUM_GRANDFATHER_UNTIL,
+} from '../src/lib/feature-access'
 
 const read = (path: string) => readFileSync(new URL(`../${path}`, import.meta.url), 'utf8')
 
@@ -59,17 +64,53 @@ test('the tier rules themselves still lock free and open paid', () => {
   assert.equal(employerFeatureAccess({ membership_tier: 'standard' }).employer_analytics.state, 'locked')
 })
 
-test('an expired Featured Employer purchase stops unlocking premium features', () => {
+test('an expired Featured Employer window unlocks nothing at all', () => {
   const yesterday = new Date(Date.now() - 86_400_000).toISOString()
-  const tomorrow = new Date(Date.now() + 86_400_000).toISOString()
   assert.equal(
     employerFeatureAccess({ membership_tier: 'free', featured_employer: true, featured_until: yesterday }).employer_analytics.state,
     'locked',
   )
-  assert.equal(
-    employerFeatureAccess({ membership_tier: 'free', featured_employer: true, featured_until: tomorrow }).employer_analytics.state,
-    'included',
-  )
+})
+
+// Featured is a visibility product bought once; Pro is the subscription that
+// carries the tools. Featured used to carry them too, so a single payment
+// bought what Pro sells - but windows already running were paid for under
+// those terms and have to keep working until they lapse.
+test('a Featured window bought before the change keeps the premium tools', () => {
+  const cutoff = Date.parse(FEATURED_PREMIUM_GRANDFATHER_UNTIL)
+  const beforeChange = new Date(cutoff - 86_400_000).toISOString()
+  const access = employerFeatureAccess({ membership_tier: 'free', featured_employer: true, featured_until: beforeChange })
+  assert.equal(access.employer_analytics.state, 'included')
+  assert.equal(access.employer_talent_search.state, 'included')
+})
+
+test('a Featured window bought after the change is visibility only', () => {
+  const cutoff = Date.parse(FEATURED_PREMIUM_GRANDFATHER_UNTIL)
+  const afterChange = new Date(cutoff + 86_400_000).toISOString()
+  const access = employerFeatureAccess({ membership_tier: 'free', featured_employer: true, featured_until: afterChange })
+  assert.equal(access.employer_analytics.state, 'locked', 'Featured must no longer carry Analytics')
+  assert.equal(access.employer_talent_search.state, 'locked', 'Featured must no longer carry Talent Search')
+  // The visibility half of the product is untouched: it is still active.
+  assert.equal(hasActiveFeaturedAccess({ featured_employer: true, featured_until: afterChange }), true)
+})
+
+test('a subscription still carries the tools whatever Featured does', () => {
+  const cutoff = Date.parse(FEATURED_PREMIUM_GRANDFATHER_UNTIL)
+  const afterChange = new Date(cutoff + 86_400_000).toISOString()
+  for (const tier of ['pro', 'group']) {
+    const access = employerFeatureAccess({ membership_tier: tier, featured_employer: true, featured_until: afterChange })
+    assert.equal(access.employer_talent_search.state, 'included', `${tier} must keep Talent Search`)
+    assert.equal(access.employer_analytics.state, 'included', `${tier} must keep Analytics`)
+  }
+})
+
+test('the grandfather cutoff covers the longest Featured window that could predate it', () => {
+  // Featured runs 30 or 365 days. The cutoff has to sit at least a year
+  // ahead of the change, or an annual window bought the day before it would
+  // be treated as a new purchase and lose access it paid for.
+  const cutoff = Date.parse(FEATURED_PREMIUM_GRANDFATHER_UNTIL)
+  assert.ok(Number.isFinite(cutoff), 'the cutoff must be a real date')
+  assert.ok(cutoff - Date.now() <= 366 * 86_400_000, 'the cutoff must not keep granting the tools indefinitely')
 })
 
 test('Interview Ready stays locked at zero credits and limited above it', () => {

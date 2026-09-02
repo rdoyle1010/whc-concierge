@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react'
 import DashboardShell from '@/components/DashboardShell'
 import { createClient } from '@/lib/supabase/client'
 import { ArrowRight, Check, Crown, Home, Megaphone, Sparkles, Users } from 'lucide-react'
+import Link from 'next/link'
 
 type CommercialSetting = {
   product_key: string
@@ -103,6 +104,9 @@ export default function EmployerFeaturedPage() {
             <p className="mt-4 max-w-2xl !text-white/75 text-[13px] leading-6">{setting?.description || 'Premium property visibility across Talent House Collective.'}</p>
           </div>
 
+          <p className="px-7 pt-6 text-[12px] leading-6 text-secondary">
+            Featured is about being seen. Searching the talent pool and role analytics come with <Link href="/employer/membership" className="underline">Employer Pro</Link>, and the two work well together: Featured brings people to your property, Pro lets you go and find them.
+          </p>
           <div className="grid gap-5 p-7 sm:grid-cols-2">
             {[
               [Home, 'Featured property placement', 'Appear above standard properties in the public property directory with a Featured badge.'],

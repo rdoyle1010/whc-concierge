@@ -26,16 +26,37 @@ export type FeatureKey =
   | 'employer_talent_search'
   | 'employer_analytics'
 
-function hasActiveFeaturedAccess(profile?: EmployerAccessProfile | null) {
+export function hasActiveFeaturedAccess(profile?: EmployerAccessProfile | null) {
   if (!profile?.featured_employer) return false
   if (!profile.featured_until) return true
   const expiry = new Date(profile.featured_until).getTime()
   return Number.isFinite(expiry) && expiry > Date.now()
 }
 
+// Featured Employer is a visibility product - a badge and higher placement -
+// bought once. It used to unlock Talent Search and Analytics as well, which
+// meant a single payment bought the same tooling as a Pro subscription and
+// gave every employer a reason never to subscribe.
+//
+// Windows already running when that changed were paid for under the old
+// terms and keep the tools until they lapse. Featured runs for 30 or 365
+// days, so any window ending on or before one year from the change was
+// necessarily bought before it; anything later was bought after. A window
+// with no expiry is granted by an administrator, predates all of this, and
+// is theirs to revoke.
+export const FEATURED_PREMIUM_GRANDFATHER_UNTIL = '2027-09-02T12:26:19.000Z'
+
+function featuredStillCarriesPremium(profile?: EmployerAccessProfile | null) {
+  if (!hasActiveFeaturedAccess(profile)) return false
+  if (!profile?.featured_until) return true
+  const expiry = new Date(profile.featured_until).getTime()
+  return Number.isFinite(expiry) && expiry <= Date.parse(FEATURED_PREMIUM_GRANDFATHER_UNTIL)
+}
+
 function activeEmployerPremium(profile?: EmployerAccessProfile | null) {
   const tier = String(profile?.membership_tier || '').toLowerCase()
-  return tier === 'pro' || tier === 'group' || hasActiveFeaturedAccess(profile)
+  if (tier === 'pro' || tier === 'group') return true
+  return featuredStillCarriesPremium(profile)
 }
 
 export function talentFeatureAccess(profile?: TalentAccessProfile | null): Record<FeatureKey, FeatureAccess> {
