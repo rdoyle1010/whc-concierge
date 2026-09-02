@@ -55,7 +55,7 @@ export default async function MatchExplainerPage() {
               <div className="relative overflow-hidden border border-[#dddddd] bg-white shadow-[0_24px_70px_rgba(28,28,28,.14)]">
                 <span className="absolute left-1/2 top-3 z-10 -translate-x-1/2 rounded-full bg-[#1c1c1c] px-3 py-1 text-[9px] font-semibold uppercase tracking-[0.14em] text-white">Sample - for illustration</span>
                 <div className="relative h-[235px] bg-[#1c1c1c]">
-                  <img src={SAMPLE_CARD_IMAGE} alt="A spa therapist giving a facial in a treatment room" width={472} height={264} className="h-full w-full object-cover" />
+                  <img decoding="async" src={SAMPLE_CARD_IMAGE} alt="A spa therapist giving a facial in a treatment room" width={472} height={264} className="h-full w-full object-cover" />
                   {/* Deeper than it was. The previous image was dark at the foot,
                       this one is bright white towels exactly where the role title
                       sits, and white on white does not read. */}

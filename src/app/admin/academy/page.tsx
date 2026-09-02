@@ -223,7 +223,7 @@ export default function AdminAcademyPage() {
             <div className="mb-3"><h3 className="text-[15px] font-medium text-ink">Course image</h3><p className="text-[11px] text-secondary">This image appears on the Academy course card and course page. Upload a landscape image for the best result.</p></div>
             <div className="grid gap-4 md:grid-cols-[260px_1fr] rounded-xl border border-border bg-surface/50 p-4">
               <div className="aspect-[16/10] overflow-hidden rounded-xl border border-border bg-white">
-                {editing.image_url ? <img src={editing.image_url} alt={`${editing.title || 'Course'} preview`} className="h-full w-full object-cover" /> : <div className="flex h-full items-center justify-center text-gray-300"><ImageIcon size={34} /></div>}
+                {editing.image_url ? <img loading="lazy" decoding="async" src={editing.image_url} alt={`${editing.title || 'Course'} preview`} className="h-full w-full object-cover" /> : <div className="flex h-full items-center justify-center text-gray-300"><ImageIcon size={34} /></div>}
               </div>
               <div className="flex flex-col justify-center gap-3">
                 <p className="text-[12px] leading-5 text-secondary">Choose a JPEG, PNG or WebP from your computer or phone. You no longer need to paste an image URL.</p>
@@ -290,7 +290,7 @@ export default function AdminAcademyPage() {
           const editingSettings = settingsSlug === course.slug && settings
           return <div key={course.slug} className={`dashboard-card !p-0 overflow-hidden ${course.is_active ? '' : 'opacity-70'}`}>
             <div className="p-4 flex flex-col md:flex-row md:items-center gap-3">
-              <div className="h-16 w-24 shrink-0 overflow-hidden border border-border bg-surface">{course.image_url ? <img src={course.image_url} alt="" className="h-full w-full object-cover"/> : <div className="flex h-full items-center justify-center text-gray-300"><ImageIcon size={20}/></div>}</div>
+              <div className="h-16 w-24 shrink-0 overflow-hidden border border-border bg-surface">{course.image_url ? <img loading="lazy" decoding="async" src={course.image_url} alt="" className="h-full w-full object-cover"/> : <div className="flex h-full items-center justify-center text-gray-300"><ImageIcon size={20}/></div>}</div>
               <button onClick={() => setOpenCourse(open ? null : course.slug)} className="text-left flex-1 min-w-0">
                 <div className="flex flex-wrap items-center gap-2">
                   <p className="text-[14px] font-medium text-ink">{course.title}</p>
@@ -326,7 +326,7 @@ export default function AdminAcademyPage() {
 
                 <div className="mt-4 grid gap-4 md:grid-cols-[220px_1fr] border border-border bg-white p-4">
                   <div className="aspect-[16/10] overflow-hidden border border-border bg-surface">
-                    {(settings.image_url || course.image_url) ? <img src={settings.image_url || course.image_url} alt={`${course.title} preview`} className="h-full w-full object-cover" /> : <div className="flex h-full items-center justify-center text-gray-300"><ImageIcon size={30} /></div>}
+                    {(settings.image_url || course.image_url) ? <img decoding="async" src={settings.image_url || course.image_url} alt={`${course.title} preview`} className="h-full w-full object-cover" /> : <div className="flex h-full items-center justify-center text-gray-300"><ImageIcon size={30} /></div>}
                   </div>
                   <div className="flex flex-col justify-center gap-2">
                     <p className="text-[12px] font-medium text-ink">Course image</p>

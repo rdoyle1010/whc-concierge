@@ -212,7 +212,7 @@ export default function CoursePlayerPage() {
       <Link href="/talent/academy" className="text-[13px] text-muted hover:text-ink flex items-center gap-1 mb-4"><ArrowLeft size={14} /> Academy</Link>
 
       <div className="relative rounded-2xl overflow-hidden mb-5 h-44 md:h-52">
-        <img src={course.image_url || courseImage(slug)} alt="" className="absolute inset-0 w-full h-full object-cover" />
+        <img decoding="async" src={course.image_url || courseImage(slug)} alt="" className="absolute inset-0 w-full h-full object-cover" />
         <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/35 to-transparent" />
         <div className="absolute bottom-0 left-0 right-0 p-6">
           <p className="text-[10px] uppercase tracking-[0.25em] text-white/80 font-semibold mb-1.5">WHC Academy · {course.category}</p>
@@ -326,7 +326,7 @@ export default function CoursePlayerPage() {
                 <h2 className="font-serif text-[22px] font-bold text-ink mb-4">{lesson.title}</h2>
 
                 <div className="relative mb-6 h-48 overflow-hidden rounded-2xl md:h-56">
-                  <img src={MODULE_VISUALS[i % MODULE_VISUALS.length]} alt="" className="absolute inset-0 h-full w-full object-cover" />
+                  <img decoding="async" src={MODULE_VISUALS[i % MODULE_VISUALS.length]} alt="" className="absolute inset-0 h-full w-full object-cover" />
                   <div className="absolute inset-0 bg-gradient-to-t from-[#1c1c1c]/80 via-[#1c1c1c]/20 to-transparent" />
                   <div className="absolute bottom-0 left-0 right-0 p-5">
                     <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#dddddd]">Think like a spa professional</p>

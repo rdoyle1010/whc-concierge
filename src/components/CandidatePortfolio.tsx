@@ -180,7 +180,7 @@ export default function CandidatePortfolio({ candidate, academy, reviews, career
         <div className="flex flex-col sm:flex-row gap-7 md:gap-10">
           {candidate.profile_image_url && (
             <div className="h-32 w-32 md:h-40 md:w-40 shrink-0 overflow-hidden border border-border bg-surface">
-              <img src={candidate.profile_image_url} alt={name} className="h-full w-full object-cover" />
+              <img decoding="async" src={candidate.profile_image_url} alt={name} className="h-full w-full object-cover" />
             </div>
           )}
           <div className="min-w-0">

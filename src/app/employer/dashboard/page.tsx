@@ -48,7 +48,9 @@ export default function EmployerDashboard() {
       setProfile(prof)
       if (!prof) { setLoading(false); return }
 
-      const { data: jobs } = await supabase.from('job_listings').select('*').eq('employer_id', prof.id).order('posted_date', { ascending: false })
+      const { data: jobs } = await supabase.from('job_listings')
+        .select('id, job_title, title, is_live, job_type, contract_type, location, tier, posted_date')
+        .eq('employer_id', prof.id).order('posted_date', { ascending: false })
       const normalizedJobs = (jobs || []).map((j: any) => ({
         ...j,
         title: j.job_title || j.title,

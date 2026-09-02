@@ -183,7 +183,7 @@ function PublicJobsBrowser() {
               luxury spa listing needs. */}
           <div className="hidden h-[92px] w-[92px] shrink-0 overflow-hidden bg-surface sm:block md:h-[108px] md:w-[108px]">
             {image
-              ? <img src={image} alt={`${employer.property_name || employer.company_name || 'Property'}`} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]" loading="lazy" />
+              ? <img decoding="async" src={image} alt={`${employer.property_name || employer.company_name || 'Property'}`} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]" loading="lazy" />
               : <div className="flex h-full w-full items-center justify-center border border-border">
                   <span className="font-serif text-[22px] text-muted">{(employer.property_name || employer.company_name || 'W').trim().charAt(0).toUpperCase()}</span>
                 </div>}
@@ -234,7 +234,7 @@ function PublicJobsBrowser() {
     const description = job.job_description || ''
     return <article className="h-[500px] overflow-hidden border border-border bg-white shadow-sm">
       <div className="relative h-52 overflow-hidden bg-[#f1f1f1]">
-        {image ? <img src={image} alt={`${title} at ${employer.company_name || 'wellness property'}`} className="h-full w-full object-cover" draggable={false}/> : <div className="flex h-full w-full items-center justify-center"><Building2 size={44} className="text-muted/50"/></div>}
+        {image ? <img decoding="async" src={image} alt={`${title} at ${employer.company_name || 'wellness property'}`} className="h-full w-full object-cover" draggable={false}/> : <div className="flex h-full w-full items-center justify-center"><Building2 size={44} className="text-muted/50"/></div>}
         {isFeatured(job) && <span className="absolute left-5 top-5 bg-accent px-2 py-1 text-[9px] font-semibold uppercase tracking-[.12em] text-white">Featured</span>}
       </div>
       <div className="p-7">

@@ -187,7 +187,7 @@ export default function MediaLibraryPage() {
               <div key={slot.field} className="border border-border bg-white p-3">
                 <div className="aspect-video overflow-hidden bg-surface">
                   {slot.url
-                    ? <img src={slot.url} alt="" className="h-full w-full object-cover" />
+                    ? <img loading="lazy" decoding="async" src={slot.url} alt="" className="h-full w-full object-cover" />
                     : <div className="flex h-full items-center justify-center text-gray-300"><ImageIcon size={26} /></div>}
                 </div>
                 <div className="mt-2.5 flex items-start justify-between gap-2">

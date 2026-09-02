@@ -222,7 +222,7 @@ export default function WebsiteEditorPage() {
       <div className="grid sm:grid-cols-[180px_1fr] gap-5">
         <div>
           <div className="aspect-video bg-surface overflow-hidden">
-            {image.url && <img src={image.url} alt={image.alt} className="w-full h-full object-cover" style={{ objectPosition: image.focalX + '% ' + image.focalY + '%' }} />}
+            {image.url && <img decoding="async" src={image.url} alt={image.alt} className="w-full h-full object-cover" style={{ objectPosition: image.focalX + '% ' + image.focalY + '%' }} />}
           </div>
           <label className="mt-2 flex items-center justify-center gap-1.5 py-2 border border-border text-[11px] font-medium cursor-pointer hover:bg-surface">
             {busy === 'upload' ? <RefreshCw size={12} className="animate-spin" /> : <Upload size={12} />} Replace photo
@@ -380,7 +380,7 @@ export default function WebsiteEditorPage() {
                 <div className="border border-border p-4 bg-white grid sm:grid-cols-[220px_1fr] gap-5">
                   <div>
                     <div className={`h-[64px] w-full overflow-hidden ${content.brand.logo.fit === 'contain' ? 'bg-surface' : 'bg-[#1c1c1c]'}`}>
-                      {content.brand.logo.url && <img src={content.brand.logo.url} alt={content.brand.logo.alt} className={`h-full w-full ${content.brand.logo.fit === 'contain' ? 'object-contain' : 'object-cover'}`} />}
+                      {content.brand.logo.url && <img loading="lazy" decoding="async" src={content.brand.logo.url} alt={content.brand.logo.alt} className={`h-full w-full ${content.brand.logo.fit === 'contain' ? 'object-contain' : 'object-cover'}`} />}
                     </div>
                     <label className="mt-2 flex items-center justify-center gap-1.5 py-2 border border-border text-[11px] font-medium cursor-pointer hover:bg-surface">
                       {busy === 'upload' ? <RefreshCw size={12} className="animate-spin" /> : <Upload size={12} />} Upload logo

@@ -60,7 +60,17 @@ const EDITORIAL_CATEGORIES = [
 ]
 
 const getIntelligenceData = unstable_cache(async () => {
-  const admin = createAdminClient()
+  // Every query below is defensive, but the client that runs them was not:
+  // createAdminClient throws when its configuration is missing, and it sat
+  // outside every try, so the one failure the page could not survive was the
+  // one it never guarded. The page is built to compose around missing data -
+  // it should compose around no database at all.
+  let admin: ReturnType<typeof createAdminClient>
+  try {
+    admin = createAdminClient()
+  } catch {
+    return { liveJobs: [], salaryRows: [], posts: [], generatedAt: new Date().toISOString() }
+  }
 
   // Every query is defensive - an error collapses to an empty list so the
   // page composes around missing data instead of failing.

@@ -265,7 +265,7 @@ export default async function PropertyDestinationPage({ params }: { params: Prom
       {/* Hero */}
       {heroPhoto ? (
         <header className="relative">
-          <img src={heroPhoto} alt={name} className="absolute inset-0 h-full w-full object-cover" />
+          <img decoding="async" src={heroPhoto} alt={name} className="absolute inset-0 h-full w-full object-cover" />
           <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, rgba(28,28,28,.92) 0%, rgba(28,28,28,.5) 45%, rgba(28,28,28,.18) 100%)' }} />
           <div className="relative max-w-6xl mx-auto px-6 pt-44 md:pt-64 pb-12 md:pb-16">
             <h1 className="text-white text-[40px] md:text-[62px] leading-[1.03] tracking-[-.04em] max-w-4xl">{name}</h1>

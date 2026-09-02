@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { readFileSync, readdirSync, statSync, existsSync } from 'node:fs'
+import { readFileSync, readdirSync, statSync, existsSync, globSync } from 'node:fs'
 import { join } from 'node:path'
 
 const APP = new URL('../src/app/', import.meta.url).pathname
@@ -321,7 +321,8 @@ test('a replacement logo lands on a new URL', () => {
 
 test('a logo is fitted, not cropped', () => {
   const page = readFileSync(new URL('../src/app/employer/profile/page.tsx', import.meta.url), 'utf8')
-  const img = page.match(/<img src=\{profile\.logo_url\}[^/]*\/>/)
+  // Attribute order is not the contract; the tag carrying logo_url is.
+  const img = page.match(/<img [^>]*profile\.logo_url[^>]*>/)
   assert.ok(img, 'the logo preview must be findable')
   assert.match(img[0], /object-contain/, 'object-cover crops the middle out of a wide lockup')
 })
@@ -410,4 +411,30 @@ test('the employer dashboard does not wait on queries that are independent', () 
   const load = page.slice(page.indexOf('async function load'), page.indexOf('load()\n'))
   const awaits = (load.match(/await supabase\./g) || []).length
   assert.ok(awaits <= 3, `${awaits} sequential queries still wait on each other`)
+})
+
+// Images are the bulk of what this site sends down the wire. Three rules, and
+// the third is the one that is easy to get backwards.
+test('images decode off the main thread and lists wait to be scrolled to', () => {
+  const files = [...globSync('src/**/*.tsx')].map(path => ({ path, text: readFileSync(path, 'utf8') }))
+  const tags = files.flatMap(f => (f.text.match(/<img [^>]*>/g) || []).map(tag => ({ path: f.path, tag })))
+  assert.ok(tags.length > 50, `expected the app's images, found ${tags.length}`)
+
+  const undecoded = tags.filter(t => !/decoding=/.test(t.tag))
+  assert.ok(undecoded.length <= 12, `${undecoded.length} images still block the main thread while they decode`)
+
+  // Deferring the page's largest paint is the one place lazy loading costs
+  // more than it saves.
+  const lazyHeroes = tags.filter(t => /loading="lazy"/.test(t.tag) && /hero\.image\.url/.test(t.tag))
+  assert.deepEqual(lazyHeroes.map(t => t.path), [], 'a hero image must not be lazy')
+})
+
+// select('*') on a list pulls every long-text column for every row, none of
+// which the dashboard renders.
+test('the employer dashboard asks for the columns it draws', () => {
+  const page = readFileSync(new URL('../src/app/employer/dashboard/page.tsx', import.meta.url), 'utf8')
+  const jobs = page.slice(page.indexOf("from('job_listings')"), page.indexOf('.eq(\'employer_id\''))
+  assert.ok(!/select\('\*'\)/.test(jobs), 'job_listings must not be fetched whole')
+  assert.match(jobs, /job_title/)
+  assert.ok(!/job_description/.test(jobs), 'the dashboard lists titles, not descriptions')
 })

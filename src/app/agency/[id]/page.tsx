@@ -159,7 +159,7 @@ export default function AgencyProfilePage() {
 
         <div className="bg-white border border-border rounded-2xl p-8 mb-6 shadow-sm">
           <div className="flex flex-col md:flex-row gap-6">
-            <div className="w-24 h-24 rounded-full bg-[#f1f1f1] border border-[#dddddd] flex items-center justify-center shrink-0 overflow-hidden">{profile.profile_image_url ? <img src={profile.profile_image_url} alt="" className="w-full h-full object-cover" /> : <span className="text-[32px] font-semibold text-[#1c1c1c]">{profile.full_name?.[0]}</span>}</div>
+            <div className="w-24 h-24 rounded-full bg-[#f1f1f1] border border-[#dddddd] flex items-center justify-center shrink-0 overflow-hidden">{profile.profile_image_url ? <img decoding="async" src={profile.profile_image_url} alt="" className="w-full h-full object-cover" /> : <span className="text-[32px] font-semibold text-[#1c1c1c]">{profile.full_name?.[0]}</span>}</div>
             <div className="flex-1">
               <div className="flex flex-wrap items-center gap-3 mb-2"><h1 className="text-[32px] md:text-[38px] font-semibold tracking-tight text-ink capitalize">{profile.full_name}</h1>{profile.role_level && <span className="text-[11px] font-medium bg-surface text-secondary px-3 py-1 rounded-full">{profile.role_level}</span>}</div>
               {profile.headline && <p className="text-[14px] text-secondary mb-3">{profile.headline}</p>}

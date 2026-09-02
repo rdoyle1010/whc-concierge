@@ -90,7 +90,7 @@ export default function EmployerShortlistPage() {
                       <div className="flex items-start justify-between">
                         <div className="flex items-center gap-3">
                           <div className="w-10 h-10 rounded-full bg-surface flex items-center justify-center overflow-hidden shrink-0">
-                            {c.profile_image_url ? <img src={c.profile_image_url} alt="" className="w-full h-full object-cover" />
+                            {c.profile_image_url ? <img loading="lazy" decoding="async" src={c.profile_image_url} alt="" className="w-full h-full object-cover" />
                             : <span className="text-[14px] font-semibold text-muted">{c.full_name?.[0]}</span>}
                           </div>
                           <div>

@@ -59,7 +59,7 @@ export default function PricingPage() {
             <h1 className="text-[44px] md:text-[62px] leading-[1.01] tracking-[-.05em] font-semibold text-ink mb-5">{cms.hero.heading || 'Choose what you need. Pay for what creates value.'}</h1>
             <p className="text-[15px] md:text-[17px] leading-7 text-secondary max-w-3xl">{cms.hero.text || 'Free entry for Talent and Employers, clear paid upgrades, transparent Agency fees and specialist recruitment when you want WHC to do more.'}</p>
           </div>
-          <div className="aspect-[4/3] overflow-hidden rounded-[26px]"><img src={cms.hero.image.url} alt={cms.hero.image.alt} className="w-full h-full object-cover" style={{objectPosition:`${cms.hero.image.focalX}% ${cms.hero.image.focalY}%`}}/></div>
+          <div className="aspect-[4/3] overflow-hidden rounded-[26px]"><img decoding="async" src={cms.hero.image.url} alt={cms.hero.image.alt} className="w-full h-full object-cover" style={{objectPosition:`${cms.hero.image.focalX}% ${cms.hero.image.focalY}%`}}/></div>
         </div>
       </section>
 

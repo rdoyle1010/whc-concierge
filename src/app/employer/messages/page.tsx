@@ -266,7 +266,7 @@ export default function EmployerMessagesPage() {
                             <div className={`max-w-[82%] md:max-w-[68%] ${mine ? 'items-end' : 'items-start'} flex flex-col`}>
                               <div className={`px-4 py-3 text-[13px] leading-5 ${mine ? 'bg-accent text-white' : 'bg-surface text-ink'}`}>
                                 {msg.content && <p className="whitespace-pre-wrap">{msg.content}</p>}
-                                {msg.attachment_url && <div className="mt-2">{msg.attachment_type?.startsWith('image/') ? <a href={msg.attachment_url} target="_blank" rel="noopener noreferrer"><img src={msg.attachment_url} alt={msg.attachment_name || 'Attachment'} className="max-w-[220px] rounded-xl" /></a> : <div className="flex items-center gap-2 text-xs"><FileText size={14} /><a href={msg.attachment_url} download={msg.attachment_name} className="underline hover:opacity-80">{msg.attachment_name}</a></div>}</div>}
+                                {msg.attachment_url && <div className="mt-2">{msg.attachment_type?.startsWith('image/') ? <a href={msg.attachment_url} target="_blank" rel="noopener noreferrer"><img loading="lazy" decoding="async" src={msg.attachment_url} alt={msg.attachment_name || 'Attachment'} className="max-w-[220px] rounded-xl" /></a> : <div className="flex items-center gap-2 text-xs"><FileText size={14} /><a href={msg.attachment_url} download={msg.attachment_name} className="underline hover:opacity-80">{msg.attachment_name}</a></div>}</div>}
                               </div>
                               <p className="mt-1 px-1 text-[9px] tracking-wide text-[#6b6b6b]">{formatTimestamp(msg.created_at)}</p>
                             </div>

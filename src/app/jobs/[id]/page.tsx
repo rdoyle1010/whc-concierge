@@ -122,7 +122,7 @@ export default async function RoleDetailPage(props: { params: Promise<{ id: stri
 
       {(propertyPhoto || employer.id) && <section className="border-y border-[#dddddd] bg-[#f1f1f1]">
         <div className="max-w-6xl mx-auto px-6 py-8 grid md:grid-cols-[220px_1fr_auto] gap-6 items-center">
-          {propertyPhoto ? <div className="aspect-[4/3] overflow-hidden rounded-[16px] bg-white"><img src={propertyPhoto} alt={propertyName} className="w-full h-full object-cover"/></div> : <div className="aspect-[4/3] rounded-[16px] bg-white border border-[#dddddd] flex items-center justify-center"><Building2 size={30} className="text-[#6b6b6b]"/></div>}
+          {propertyPhoto ? <div className="aspect-[4/3] overflow-hidden rounded-[16px] bg-white"><img decoding="async" src={propertyPhoto} alt={propertyName} className="w-full h-full object-cover"/></div> : <div className="aspect-[4/3] rounded-[16px] bg-white border border-[#dddddd] flex items-center justify-center"><Building2 size={30} className="text-[#6b6b6b]"/></div>}
           <div>
             <p className="text-[10px] uppercase tracking-[.14em] text-[#555555]">The property</p>
             <h2 className="text-[28px] mt-2">{propertyName}</h2>

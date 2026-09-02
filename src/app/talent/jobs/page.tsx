@@ -236,11 +236,11 @@ export default function TalentJobsPage() {
                 <article key={job.id} className="card p-0 overflow-hidden">
                   <div className="relative h-36 bg-[#f1f1f1] overflow-hidden">
                     {job.employer_profiles?.property_photos?.[0]
-                      ? <img src={job.employer_profiles.property_photos[0]} alt={job.employer_profiles?.company_name || 'Property'} className="h-full w-full object-cover" />
+                      ? <img loading="lazy" decoding="async" src={job.employer_profiles.property_photos[0]} alt={job.employer_profiles?.company_name || 'Property'} className="h-full w-full object-cover" />
                       : <div className="h-full w-full flex items-center justify-center"><Building2 size={30} className="text-muted/50" /></div>}
                     {job.employer_profiles?.logo_url && (
                       <div className="absolute bottom-3 left-5 h-12 w-12 overflow-hidden rounded-md border-2 border-white bg-white shadow-sm">
-                        <img src={job.employer_profiles.logo_url} alt="" className="h-full w-full object-cover" />
+                        <img loading="lazy" decoding="async" src={job.employer_profiles.logo_url} alt="" className="h-full w-full object-cover" />
                       </div>
                     )}
                   </div>

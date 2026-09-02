@@ -266,7 +266,7 @@ export default function AdminAdSlotsPage() {
                   {adverts.map(advert => (
                     <div key={advert.id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border px-3 py-2.5">
                       <div className="flex items-center gap-3 min-w-0">
-                        {advert.logo_url && <img src={advert.logo_url} alt="" className="h-8 w-16 object-contain shrink-0" />}
+                        {advert.logo_url && <img loading="lazy" decoding="async" src={advert.logo_url} alt="" className="h-8 w-16 object-contain shrink-0" />}
                         <div className="min-w-0">
                           <p className="text-[12.5px] font-semibold text-ink truncate">{advert.brand_name} <span className="font-normal text-muted">· {advert.placement.replace(/_/g, ' ')}</span></p>
                           <p className="text-[11px] text-muted">{advert.source === 'direct' ? 'Direct deal' : `Self-serve · ${advert.payment_status}`} · {advert.review_status} · {advert.impression_count || 0} views · {advert.click_count || 0} clicks{advert.end_date ? ` · until ${advert.end_date}` : ''}</p>
@@ -329,7 +329,7 @@ export default function AdminAdSlotsPage() {
               </div>
               <label className="block text-[12px] font-semibold text-ink mb-1.5">Logo</label>
               {logoUrl ? (
-                <p className="text-[12px] text-green-700 mb-3 inline-flex items-center gap-2"><img src={logoUrl} alt="" className="h-8 w-16 object-contain" /> Uploaded <button type="button" onClick={() => setLogoUrl('')} className="underline text-secondary">change</button></p>
+                <p className="text-[12px] text-green-700 mb-3 inline-flex items-center gap-2"><img decoding="async" src={logoUrl} alt="" className="h-8 w-16 object-contain" /> Uploaded <button type="button" onClick={() => setLogoUrl('')} className="underline text-secondary">change</button></p>
               ) : (
                 <label className="btn-secondary inline-flex cursor-pointer items-center gap-1.5 text-[12px] mb-3"><Upload size={13} /> {uploading ? 'Uploading...' : 'Upload logo'}<input type="file" accept="image/*" className="hidden" onChange={uploadLogo} disabled={uploading} /></label>
               )}
@@ -340,7 +340,7 @@ export default function AdminAdSlotsPage() {
                 <div className="mb-3 flex items-center gap-3">
                   {mediaType === 'video'
                     ? <video src={mediaUrl} muted playsInline className="h-16 w-28 object-cover border border-border" />
-                    : <img src={mediaUrl} alt="" className="h-16 w-28 object-cover border border-border" />}
+                    : <img decoding="async" src={mediaUrl} alt="" className="h-16 w-28 object-cover border border-border" />}
                   <span className="text-[12px] text-green-700">{mediaType === 'video' ? 'Video' : 'Image'} uploaded</span>
                   <button type="button" onClick={() => { setMediaUrl(''); setMediaType('logo') }} className="text-[12px] underline text-secondary">remove</button>
                 </div>

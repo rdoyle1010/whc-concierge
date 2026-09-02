@@ -86,13 +86,13 @@ export default function SponsoredAd({ placement }: { placement: AdPlacementKey }
             className="h-auto w-full object-cover"
           />
         ) : advert.media_type === 'image' && advert.media_url ? (
-          <img src={advert.media_url} alt="" className="h-auto w-full object-cover" />
+          <img decoding="async" src={advert.media_url} alt="" className="h-auto w-full object-cover" />
         ) : null}
 
         <div className="flex flex-col items-start justify-between gap-4 px-5 py-4 sm:flex-row sm:items-center">
           <div className="flex min-w-0 items-center gap-4">
             {advert.media_type === 'logo' && advert.logo_url && (
-              <img src={advert.logo_url} alt={`${advert.brand_name} logo`} className="h-12 w-28 shrink-0 object-contain" />
+              <img decoding="async" src={advert.logo_url} alt={`${advert.brand_name} logo`} className="h-12 w-28 shrink-0 object-contain" />
             )}
             <div className="min-w-0">
               <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-accent">Sponsored</p>

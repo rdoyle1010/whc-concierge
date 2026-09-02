@@ -64,7 +64,7 @@ export default function ComingSoonGate({ logo }: { logo?: { url: string; alt: st
         {logo?.url && (
           // This is the first thing anyone sees of the brand, and for a launch
           // announcement it is the frame the screenshots sit in.
-          <img src={logo.url} alt={logo.alt} className="mb-10 h-11 w-auto object-contain" />
+          <img decoding="async" src={logo.url} alt={logo.alt} className="mb-10 h-11 w-auto object-contain" />
         )}
         <p className="public-eyebrow">Opening soon</p>
         <h2 id="gate-heading" className="section-heading mt-4">

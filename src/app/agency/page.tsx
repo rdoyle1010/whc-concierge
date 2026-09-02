@@ -263,7 +263,7 @@ export default function AgencyPage() {
 
     return <div className={`${fixedHeight ? 'h-[500px] ' : ''}flex flex-col overflow-hidden border bg-white p-6 ${c.is_featured ? 'border-accent' : 'border-border'}`}>
       <div className="flex items-start gap-4">
-        <div className="w-14 h-14 bg-surface border border-border overflow-hidden flex items-center justify-center shrink-0">{c.profile_image_url ? <img src={c.profile_image_url} alt={c.full_name ? `Profile photo of ${c.full_name}` : 'Profile photo'} className="w-full h-full object-cover" draggable={false} /> : <span className="font-serif text-[20px] font-semibold text-accent">{c.full_name?.[0]}</span>}</div>
+        <div className="w-14 h-14 bg-surface border border-border overflow-hidden flex items-center justify-center shrink-0">{c.profile_image_url ? <img decoding="async" src={c.profile_image_url} alt={c.full_name ? `Profile photo of ${c.full_name}` : 'Profile photo'} className="w-full h-full object-cover" draggable={false} /> : <span className="font-serif text-[20px] font-semibold text-accent">{c.full_name?.[0]}</span>}</div>
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
             <h3 className="font-serif text-[21px] font-semibold text-ink leading-tight truncate">{c.full_name}</h3>

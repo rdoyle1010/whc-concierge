@@ -227,12 +227,12 @@ export default function SwipeMatchPage() {
 
         <article className="overflow-hidden rounded-3xl border border-border bg-white shadow-[0_18px_55px_rgba(28,28,28,.08)] lg:grid lg:grid-cols-[42%_58%]">
           <div className="relative min-h-[300px] lg:min-h-[620px] bg-[#1c1c1c] overflow-hidden">
-            {photo ? <img src={photo} alt={property} className="absolute inset-0 h-full w-full object-cover" /> : <div className="absolute inset-0 bg-[#1c1c1c]" />}
+            {photo ? <img decoding="async" src={photo} alt={property} className="absolute inset-0 h-full w-full object-cover" /> : <div className="absolute inset-0 bg-[#1c1c1c]" />}
             <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-black/15" />
             <div className="absolute left-5 top-5 flex gap-2"><span className={tierClass(job.tier || 'Standard')}>{job.tier || 'Standard'}</span></div>
             <div className="absolute bottom-0 inset-x-0 p-6 text-white">
               <div className="flex items-center gap-3 mb-3">
-                {logo && <div className="h-12 w-12 rounded-xl overflow-hidden border border-white/40 bg-white"><img src={logo} alt="" className="h-full w-full object-cover" /></div>}
+                {logo && <div className="h-12 w-12 rounded-xl overflow-hidden border border-white/40 bg-white"><img decoding="async" src={logo} alt="" className="h-full w-full object-cover" /></div>}
                 <div><p className="text-[11px] uppercase tracking-[.14em] text-white/70">Property</p><p className="text-[18px] font-semibold">{property}</p></div>
               </div>
               <div className="flex flex-wrap items-center gap-3 text-[12px] text-white/80">

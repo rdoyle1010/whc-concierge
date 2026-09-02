@@ -230,7 +230,7 @@ export default function EmployerProfilePage() {
           <div className="flex items-center space-x-6">
             <div className="w-24 h-24 rounded-xl bg-white border border-border flex items-center justify-center overflow-hidden">
               {profile.logo_url ? (
-                <img src={profile.logo_url} alt={`${profile.company_name || 'Company'} logo`} className="w-full h-full object-contain p-1.5" />
+                <img decoding="async" src={profile.logo_url} alt={`${profile.company_name || 'Company'} logo`} className="w-full h-full object-contain p-1.5" />
               ) : (
                 <span className="text-2xl font-serif font-bold text-gray-300">{profile.company_name?.[0]}</span>
               )}
@@ -489,7 +489,7 @@ export default function EmployerProfilePage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
             {(profile.property_photos || []).map((url: string) => (
               <div key={url} className="relative aspect-[4/3] rounded-lg overflow-hidden bg-surface group">
-                <img src={url} alt="" className="w-full h-full object-cover" />
+                <img loading="lazy" decoding="async" src={url} alt="" className="w-full h-full object-cover" />
                 <button type="button" onClick={() => removeGalleryPhoto(url)} className="absolute top-2 right-2 bg-white/90 rounded-full w-6 h-6 text-[11px] font-bold text-red-500 opacity-0 group-hover:opacity-100 transition-opacity">✕</button>
               </div>
             ))}
