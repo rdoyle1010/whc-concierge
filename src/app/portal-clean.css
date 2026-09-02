@@ -18,10 +18,10 @@
   box-shadow: 0 0 0 2px rgba(0,0,0,.06);
 }
 
-/* Sidebar: black, with white/grey states - never coloured. */
+/* Sidebar: light grey, with ink text and grey states - never coloured. */
 .dashboard-sidebar {
-  background: #1c1c1c;
-  border-right-color: rgba(255,255,255,.10);
+  background: #f1f1f1;
+  border-right-color: #dddddd;
 }
 
 /* Neutral notification surfaces. */

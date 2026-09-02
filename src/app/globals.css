@@ -113,8 +113,8 @@ select:focus-visible, textarea:focus-visible, [role="button"]:focus-visible {
   font-family: var(--font-poppins), "Segoe UI", sans-serif;
 }
 .dashboard-sidebar {
-  background: #1c1c1c;
-  border-right: 1px solid rgba(255,255,255,.10);
+  background: #f1f1f1;
+  border-right: 1px solid #dddddd;
   box-shadow: none;
 }
 .dashboard-shell h1,
