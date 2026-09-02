@@ -1,4 +1,4 @@
-# CLAUDE.md — WHC Concierge
+# CLAUDE.md — Talent House Collective
 
 This file tells Claude Code exactly what this project is and how to work on it.
 Read this before touching anything.
@@ -7,12 +7,14 @@ Read this before touching anything.
 
 ## What this project is
 
-**WHC Concierge** is a luxury spa and wellness talent platform built by Rebecca Doyle /
+**Talent House Collective** is a luxury spa and wellness talent platform built by Rebecca Doyle /
 Wellness House Collective. It connects spa and wellness professionals (Talent) with
 luxury hotel employers (Hotel / Employer).
 
-Live URL: https://talent.wellnesshousecollective.co.uk
-Netlify project: whc-concierge
+Live URL: https://talenthousecollective.co.uk
+(Old domain talent.wellnesshousecollective.co.uk 301s here; /api/* on the old host is
+deliberately left unredirected so the existing Stripe webhook keeps working.)
+Netlify project: whc-concierge (repo name unchanged)
 Stack: Next.js (App Router) · Supabase (auth + database) · Stripe (payments) · Netlify (hosting)
 
 ---

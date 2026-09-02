@@ -38,7 +38,7 @@ async function nominatimSuggestions(postcode: string, propertyName: string) {
     const response = await fetch(url, {
       cache: 'no-store',
       headers: {
-        'User-Agent': 'SpaPlatform/1.0 (https://talent.wellnesshousecollective.co.uk)',
+        'User-Agent': 'SpaPlatform/1.0 (https://talenthousecollective.co.uk)',
         'Accept-Language': 'en-GB,en;q=0.9',
       },
     })

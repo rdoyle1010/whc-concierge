@@ -104,7 +104,7 @@ export default function TalentRegisterPage() {
         <div className="w-full max-w-[430px]">
           <Wordmark />
           <div className="mt-10 bg-white border border-[#e0dad2] p-7 lg:p-8">
-            <p className="text-[10px] uppercase tracking-[0.2em] text-[#6e6a66] font-semibold">WHC Concierge</p>
+            <p className="text-[10px] uppercase tracking-[0.2em] text-[#6e6a66] font-semibold">Talent House Collective</p>
             <h1 className="mt-2 text-[30px] leading-tight tracking-[-0.02em] font-serif font-semibold text-[#1c1b1a]">Create your Talent account</h1>
             <p className="mt-2 mb-7 text-[13px] leading-6 text-[#57534e]">Three fields now. You build your professional profile once you are inside - nothing is asked twice.</p>
 

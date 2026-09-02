@@ -41,7 +41,7 @@ export async function POST(req: NextRequest) {
     }
 
     const stripe = getStripe()
-    const site = 'https://talent.wellnesshousecollective.co.uk'
+    const site = 'https://talenthousecollective.co.uk'
 
     // One shift, one live checkout. Without this a property that goes back
     // and clicks Pay again ends up with two valid sessions, and paying both
@@ -91,7 +91,7 @@ export async function POST(req: NextRequest) {
         price_data: {
           currency: 'gbp',
           product_data: {
-            name: 'WHC Concierge - Agency Shift Booking',
+            name: 'Talent House Collective - Agency Shift Booking',
             description: `${booking.shift_date || 'Agreed date'}: £${booking.rate}/hr × ${money.hours}h (${formatPence(money.grossPence)}) + ${feePctLabel}% WHC fee (${formatPence(money.feePence)}). The professional receives the full ${formatPence(money.grossPence)} agreed shift amount${useConnect ? ' - paid straight to their account by Stripe' : ' after the completed shift'}.`,
           },
           unit_amount: money.totalPence,

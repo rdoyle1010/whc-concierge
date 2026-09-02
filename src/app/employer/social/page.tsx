@@ -5,7 +5,7 @@ import DashboardShell from '@/components/DashboardShell'
 import { createClient } from '@/lib/supabase/client'
 import { Megaphone, Linkedin, Facebook, Instagram, Mail, Link as LinkIcon, MessageCircle, Copy, ExternalLink, Sparkles, CheckCircle2 } from 'lucide-react'
 
-const SITE = 'https://talent.wellnesshousecollective.co.uk'
+const SITE = 'https://talenthousecollective.co.uk'
 
 export default function EmployerSocialPage() {
   const supabase = createClient()

@@ -86,7 +86,7 @@ export default function EmployerFeaturedPage() {
       <div className="mb-8">
         <p className="dashboard-eyebrow">Visibility</p>
         <h1 className="dashboard-title">Get Featured</h1>
-        <p className="dashboard-intro">Put your property in front of approved spa and wellness professionals across WHC Concierge.</p>
+        <p className="dashboard-intro">Put your property in front of approved spa and wellness professionals across Talent House Collective.</p>
       </div>
 
       {error && <div className="mb-6 rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-[13px] text-red-600">{error}</div>}
@@ -100,7 +100,7 @@ export default function EmployerFeaturedPage() {
               <h2 className="!text-white text-[34px] font-semibold tracking-[-0.03em]">{priceLabel(setting)}</h2>
               <span className="mb-1 !text-white/70 text-[12px]">cancel through billing</span>
             </div>
-            <p className="mt-4 max-w-2xl !text-white/75 text-[13px] leading-6">{setting?.description || 'Premium property visibility across WHC Concierge.'}</p>
+            <p className="mt-4 max-w-2xl !text-white/75 text-[13px] leading-6">{setting?.description || 'Premium property visibility across Talent House Collective.'}</p>
           </div>
 
           <div className="grid gap-5 p-7 sm:grid-cols-2">

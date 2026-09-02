@@ -41,7 +41,7 @@ export default async function MatchExplainerPage() {
             <div className="max-w-2xl">
               <p className="mb-4 text-[10px] font-semibold uppercase tracking-[0.18em] text-[#57534e]">WHC Match</p>
               <h1 className="site-heading text-[48px] font-semibold leading-[0.98] md:text-[68px]">Roles come to you. You decide what feels right.</h1>
-              <p className="mt-7 max-w-xl text-[16px] leading-7 text-[#57534e]">Think of it like a dating app for your career. WHC Concierge ranks live roles around your real experience and preferences, then lets you review them one at a time.</p>
+              <p className="mt-7 max-w-xl text-[16px] leading-7 text-[#57534e]">Think of it like a dating app for your career. Talent House Collective ranks live roles around your real experience and preferences, then lets you review them one at a time.</p>
               <div className="mt-8 flex flex-wrap gap-3">
                 <Link href="/login?role=talent&next=%2Froles%2Fmatch" className="inline-flex items-center gap-2 bg-[#1c1b1a] px-6 py-3.5 text-[13px] font-semibold text-white">Sign in to start matching <ArrowRight size={15}/></Link>
                 <Link href="/register/talent" className="inline-flex items-center gap-2 border border-[#6e6a66] bg-white px-6 py-3.5 text-[13px] font-semibold text-[#1c1b1a]">Create free profile</Link>

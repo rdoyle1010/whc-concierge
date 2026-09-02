@@ -1,5 +1,5 @@
 const STATIC_ALLOWED_ORIGINS = [
-  'https://talent.wellnesshousecollective.co.uk',
+  'https://talenthousecollective.co.uk',
   'https://whc-concierge.netlify.app',
 ]
 

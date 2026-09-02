@@ -28,7 +28,7 @@ export async function POST(req: NextRequest) {
   const stripe = getStripe()
   const session = await stripe.checkout.sessions.create({
     payment_method_types: ['card'],
-    line_items: [{ price_data: { currency: 'gbp', product_data: { name: 'WHC Concierge - Agency Shift Adjustment', description: `Approved shift adjustment £${extra} + ${pctLabel}% WHC fee £${fee}. The professional receives the approved £${extra}.` }, unit_amount: Math.round(total * 100) }, quantity: 1 }],
+    line_items: [{ price_data: { currency: 'gbp', product_data: { name: 'Talent House Collective - Agency Shift Adjustment', description: `Approved shift adjustment £${extra} + ${pctLabel}% WHC fee £${fee}. The professional receives the approved £${extra}.` }, unit_amount: Math.round(total * 100) }, quantity: 1 }],
     mode: 'payment',
     allow_promotion_codes: false,
     success_url: `${origin}/employer/agency/cases?adjustment=processing&session_id={CHECKOUT_SESSION_ID}`,

@@ -69,11 +69,11 @@ export function renderNewsletterHtml(
         <tr><td style="background:#f7f7f7;border-top:1px solid #e5e5e5;padding:24px 30px;font-size:11px;line-height:1.65;color:#73818a">
           <div style="font-weight:600;color:#4d4d4d;margin-bottom:7px">Wellness House Collective</div>
           <div>${footer}</div>
-          <div style="margin-top:10px">talent.wellnesshousecollective.co.uk</div>
+          <div style="margin-top:10px">talenthousecollective.co.uk</div>
           ${opts.test
             ? `<div style="margin-top:10px;font-weight:700">TEST MESSAGE - not a live marketing send.</div>`
             : opts.unsubscribeUrl
-              ? `<div style="margin-top:10px">You are receiving this optional email because you confirmed your WHC marketing or newsletter preference. <a href="${escapeHtml(opts.unsubscribeUrl)}" style="color:#4d4d4d">Unsubscribe</a> · <a href="https://talent.wellnesshousecollective.co.uk/privacy" style="color:#4d4d4d">Privacy policy</a></div>`
+              ? `<div style="margin-top:10px">You are receiving this optional email because you confirmed your WHC marketing or newsletter preference. <a href="${escapeHtml(opts.unsubscribeUrl)}" style="color:#4d4d4d">Unsubscribe</a> · <a href="https://talenthousecollective.co.uk/privacy" style="color:#4d4d4d">Privacy policy</a></div>`
               : ''}
         </td></tr>
       </table>

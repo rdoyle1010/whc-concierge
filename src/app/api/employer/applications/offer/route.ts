@@ -6,7 +6,7 @@ import { createNotification } from '@/lib/notifications'
 import { sendSmsIfOptedIn } from '@/lib/sms'
 
 const RESEND_API_KEY = process.env.RESEND_API_KEY
-const FROM_EMAIL = 'WHC Concierge <noreply@mail.wellnesshousecollective.co.uk>'
+const FROM_EMAIL = 'Talent House Collective <noreply@mail.wellnesshousecollective.co.uk>'
 
 function escapeHtml(value: string) {
   return value.replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#39;')
@@ -70,7 +70,7 @@ export async function POST(req: NextRequest) {
     const smsSent = await sendSmsIfOptedIn({
       to: candidate.phone,
       optedIn: candidate.sms_opt_in,
-      body: `WHC Concierge: Congratulations - ${propertyName} would like to offer you the ${job.job_title} role. Open My Applications to review and respond.`,
+      body: `Talent House Collective: Congratulations - ${propertyName} would like to offer you the ${job.job_title} role. Open My Applications to review and respond.`,
     })
 
     // The offer is the most important email on the platform - send it as well
@@ -88,7 +88,7 @@ export async function POST(req: NextRequest) {
               from: FROM_EMAIL,
               to: candidateEmail,
               subject: `Job offer - ${job.job_title} at ${propertyName}`,
-              html: `<div style="font-family:Arial,Helvetica,sans-serif;max-width:560px;margin:0 auto;background:#ffffff;border:1px solid #e5e5e5;color:#1c1b1a"><div style="background:#1c1b1a;padding:24px 32px;"><p style="margin:0 0 6px;color:#ffffff;opacity:.8;font-size:11px;text-transform:uppercase;letter-spacing:1.5px;">Job offer</p><h1 style="margin:0;color:#ffffff;font-size:23px;font-weight:600;">WHC Concierge</h1></div><div style="padding:28px 32px;"><h2 style="font-weight:600;margin:0 0 12px;">Congratulations, ${escapeHtml(candidate.full_name || 'there')}</h2><p style="line-height:1.6">${escapeHtml(propertyName)} would like to offer you the role of <strong>${escapeHtml(job.job_title)}</strong>.</p><div style="background:#f7f7f7;border:1px solid #e5e5e5;padding:16px 20px;margin:20px 0;line-height:1.6;white-space:pre-wrap">${escapeHtml(note)}</div><p style="line-height:1.6">Sign in to review the offer and respond.</p><p style="margin:28px 0"><a href="https://talent.wellnesshousecollective.co.uk/talent/applications" style="background:#1c1b1a;color:#ffffff;padding:12px 24px;text-decoration:none">Review your offer</a></p><p style="color:#777;font-size:13px">Wellness House Collective · WHC Concierge</p></div></div>`,
+              html: `<div style="font-family:Arial,Helvetica,sans-serif;max-width:560px;margin:0 auto;background:#ffffff;border:1px solid #e5e5e5;color:#1c1b1a"><div style="background:#1c1b1a;padding:24px 32px;"><p style="margin:0 0 6px;color:#ffffff;opacity:.8;font-size:11px;text-transform:uppercase;letter-spacing:1.5px;">Job offer</p><h1 style="margin:0;color:#ffffff;font-size:23px;font-weight:600;">Talent House Collective</h1></div><div style="padding:28px 32px;"><h2 style="font-weight:600;margin:0 0 12px;">Congratulations, ${escapeHtml(candidate.full_name || 'there')}</h2><p style="line-height:1.6">${escapeHtml(propertyName)} would like to offer you the role of <strong>${escapeHtml(job.job_title)}</strong>.</p><div style="background:#f7f7f7;border:1px solid #e5e5e5;padding:16px 20px;margin:20px 0;line-height:1.6;white-space:pre-wrap">${escapeHtml(note)}</div><p style="line-height:1.6">Sign in to review the offer and respond.</p><p style="margin:28px 0"><a href="https://talenthousecollective.co.uk/talent/applications" style="background:#1c1b1a;color:#ffffff;padding:12px 24px;text-decoration:none">Review your offer</a></p><p style="color:#777;font-size:13px">Wellness House Collective · Talent House Collective</p></div></div>`,
             }),
           })
           emailSent = response.ok

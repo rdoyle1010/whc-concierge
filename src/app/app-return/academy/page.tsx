@@ -27,8 +27,8 @@ export default function AcademyAppReturnPage() {
       <section style={{maxWidth:'420px',textAlign:'center'}}>
         <p style={{fontSize:'11px',letterSpacing:'0.18em',color:'#71808a'}}>WELLNESS HOUSE</p>
         <h1 style={{fontSize:'28px',lineHeight:1.2,color:'#1c1b1a',margin:'12px 0'}}>{status === 'cancelled' ? 'Checkout cancelled.' : 'Payment complete.'}</h1>
-        <p style={{fontSize:'14px',lineHeight:1.6,color:'#66747c'}}>{status === 'cancelled' ? 'Return to the app when you are ready.' : 'Opening Wellness House Talent so you can continue in the Academy.'}</p>
-        <a href={deepLink} style={{display:'inline-block',marginTop:'22px',padding:'13px 18px',background:'#1c1b1a',color:'#fff',textDecoration:'none'}}>Open Wellness House Talent</a>
+        <p style={{fontSize:'14px',lineHeight:1.6,color:'#66747c'}}>{status === 'cancelled' ? 'Return to the app when you are ready.' : 'Opening Talent House Collective so you can continue in the Academy.'}</p>
+        <a href={deepLink} style={{display:'inline-block',marginTop:'22px',padding:'13px 18px',background:'#1c1b1a',color:'#fff',textDecoration:'none'}}>Open Talent House Collective</a>
       </section>
     </main>
   )

@@ -5,7 +5,7 @@ import { createClient } from '@supabase/supabase-js'
 // closed three weeks ago and miss every one posted since.
 export const revalidate = 3600
 
-const BASE = 'https://talent.wellnesshousecollective.co.uk'
+const BASE = 'https://talenthousecollective.co.uk'
 
 type Entry = MetadataRoute.Sitemap[number]
 

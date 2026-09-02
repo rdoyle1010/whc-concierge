@@ -16,9 +16,9 @@ import { createServerSupabaseClient } from '@/lib/supabase/server'
 export const revalidate = 60
 
 export const metadata: Metadata = {
-  title: { absolute: 'WHC Concierge | Spa and Wellness Careers' },
+  title: { absolute: 'Talent House Collective | Spa and Wellness Careers' },
   description: 'The professional platform for spa and wellness careers. Live roles at exceptional properties, matched on real skills, qualifications and brands - not CV keywords.',
-  alternates: { canonical: 'https://talent.wellnesshousecollective.co.uk' },
+  alternates: { canonical: 'https://talenthousecollective.co.uk' },
 }
 
 type FeaturedRole = {
@@ -220,7 +220,7 @@ function RoutesSection() {
   return (
     <section className="border-b border-black/10 bg-white">
       <div className="mx-auto max-w-7xl px-6 py-14 lg:px-8">
-        <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-accent">WHC Concierge</p>
+        <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-accent">Talent House Collective</p>
         <h2 className="site-heading mt-2 max-w-3xl text-[26px] font-semibold leading-tight md:text-[32px]">The professional platform for spa and wellness careers.</h2>
         <p className="mt-2 max-w-2xl text-[14px] leading-6 text-secondary">Find exceptional people. Build better careers. Develop stronger spa businesses.</p>
         <div className="mt-8 grid gap-4 md:grid-cols-3">

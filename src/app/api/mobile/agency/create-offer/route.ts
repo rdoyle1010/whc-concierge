@@ -163,7 +163,7 @@ export async function POST(req: NextRequest) {
       ])
     }
     // SMS is consent-gated: sms_opt_in plus a phone number on file.
-    if (urgent && smsAllowed(candidate)) await sendSms(candidate.phone, `WHC Concierge: ${propertyName} needs cover TODAY - £${rate}/hr. Open Agency in the app to respond.`).catch(() => null)
+    if (urgent && smsAllowed(candidate)) await sendSms(candidate.phone, `Talent House Collective: ${propertyName} needs cover TODAY - £${rate}/hr. Open Agency in the app to respond.`).catch(() => null)
 
     return NextResponse.json({ success: true, booking, created, urgent })
   } catch (error: any) {

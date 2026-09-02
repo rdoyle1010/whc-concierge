@@ -6,9 +6,9 @@ import { unstable_cache } from 'next/cache'
 import { createAdminClient } from '@/lib/supabase/admin'
 
 export const metadata: Metadata = {
-  title: { absolute: 'How WHC proves what it publishes | WHC Concierge' },
+  title: { absolute: 'How WHC proves what it publishes | Talent House Collective' },
   description: 'Every review on WHC comes from a completed, paid engagement between two verified accounts. Here is the standard, and what is published today.',
-  alternates: { canonical: 'https://talent.wellnesshousecollective.co.uk/testimonials' },
+  alternates: { canonical: 'https://talenthousecollective.co.uk/testimonials' },
 }
 
 // Reviews on WHC are earned, not collected. This page used to carry eight

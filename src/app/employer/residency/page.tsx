@@ -80,7 +80,7 @@ export default function EmployerResidencyPage() {
 
         <div className="rounded-2xl border border-border bg-white p-5 mb-7 flex items-start gap-3">
           <ShieldCheck size={20} className="text-accent mt-0.5" />
-          <div><p className="font-medium text-ink text-sm">Protected platform booking</p><p className="text-xs text-muted mt-1 leading-5">Payment is only requested after both sides agree the rate and dates. WHC Concierge records the terms and charges the property a 10% booking fee.</p></div>
+          <div><p className="font-medium text-ink text-sm">Protected platform booking</p><p className="text-xs text-muted mt-1 leading-5">Payment is only requested after both sides agree the rate and dates. Talent House Collective records the terms and charges the property a 10% booking fee.</p></div>
         </div>
 
         {loading ? <div className="skeleton h-44 rounded-2xl" /> : bookings.length === 0 ? (

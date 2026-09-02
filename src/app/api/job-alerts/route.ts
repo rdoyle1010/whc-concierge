@@ -7,7 +7,7 @@ import { isInternalApiRequest } from '@/lib/internal-request'
 import { emailAllowed } from '@/lib/notification-prefs'
 
 const RESEND_API_KEY = process.env.RESEND_API_KEY
-const FROM_EMAIL = 'WHC Concierge <noreply@mail.wellnesshousecollective.co.uk>'
+const FROM_EMAIL = 'Talent House Collective <noreply@mail.wellnesshousecollective.co.uk>'
 
 export async function POST(req: NextRequest) {
   try {

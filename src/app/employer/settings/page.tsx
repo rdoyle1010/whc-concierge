@@ -253,7 +253,7 @@ export default function EmployerSettingsPage() {
           <div className="flex items-start justify-between gap-4 mb-4">
             <div>
               <h3 className="font-serif text-lg font-semibold">SMS Notifications</h3>
-              <p className="text-sm text-gray-500 mt-1">Get short text alerts when something important needs attention. Full details stay inside WHC Concierge.</p>
+              <p className="text-sm text-gray-500 mt-1">Get short text alerts when something important needs attention. Full details stay inside Talent House Collective.</p>
             </div>
             <button type="button" onClick={() => saveSmsSettings(!smsEnabled)} disabled={smsSaving}
               aria-label={smsEnabled ? 'Turn SMS notifications off' : 'Turn SMS notifications on'}

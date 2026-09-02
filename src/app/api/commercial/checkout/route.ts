@@ -24,18 +24,18 @@ export async function POST(req: NextRequest) {
   if (product === 'talent_standard' || product === 'talent_pro') {
     const tier = product === 'talent_standard' ? 'standard' : 'pro'
     const cfg = TALENT_MEMBERSHIPS[tier]
-    amount = cfg.price; name = `WHC Concierge - ${cfg.label}`; mode = 'subscription'; successPath = '/talent/membership'
+    amount = cfg.price; name = `Talent House Collective - ${cfg.label}`; mode = 'subscription'; successPath = '/talent/membership'
     description = tier === 'standard' ? 'Monthly career membership with Interview Ready credit, enhanced matching and 10% Academy discount.' : 'Priority career membership with 10 Interview Ready credits monthly, advanced preparation and 20% Academy discount.'
     metadata = { ...metadata, role: 'talent', tier }
   } else if (product === 'featured_talent_7' || product === 'featured_talent_30') {
     const cfg = product === 'featured_talent_7' ? FEATURED_TALENT.seven_days : FEATURED_TALENT.thirty_days
-    amount = cfg.price; name = `WHC Concierge - ${cfg.label}`; mode = 'payment'; successPath = '/talent/membership'
+    amount = cfg.price; name = `Talent House Collective - ${cfg.label}`; mode = 'payment'; successPath = '/talent/membership'
     description = `${cfg.days} days of premium visibility in employer searches and WHC featured placements.`
     metadata = { ...metadata, role: 'talent', featured_days: String(cfg.days) }
   } else if (product === 'employer_pro' || product === 'employer_group') {
     const tier = product === 'employer_pro' ? 'pro' : 'group'
     const cfg = EMPLOYER_MEMBERSHIPS[tier]
-    amount = cfg.price; name = `WHC Concierge - ${cfg.label}`; mode = 'subscription'; successPath = '/employer/membership'
+    amount = cfg.price; name = `Talent House Collective - ${cfg.label}`; mode = 'subscription'; successPath = '/employer/membership'
     description = tier === 'pro' ? 'Annual employer membership with full talent search, enhanced matching, analytics and £99 Standard Jobs.' : 'Annual multi-property membership with up to 20 included job listings and advanced recruitment tools.'
     metadata = { ...metadata, role: 'employer', tier }
   } else if (product === 'residency_featured') {
@@ -46,7 +46,7 @@ export async function POST(req: NextRequest) {
       const setting = await getCommercialSetting('residency_featured')
       if (setting?.is_active && setting.price_pence > 0) amount = setting.price_pence
     } catch { /* fall back */ }
-    name = 'WHC Concierge - Featured Residency Listing'
+    name = 'Talent House Collective - Featured Residency Listing'
     mode = 'payment'; successPath = '/talent/residency'
     description = '30 days at the top of the Residency marketplace with the Featured badge.'
     metadata = { ...metadata, role: 'talent', featured_days: '30' }

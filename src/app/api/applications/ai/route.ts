@@ -86,7 +86,7 @@ export async function POST(req: NextRequest) {
         ? 'Improve the candidate\'s current covering letter while preserving their meaning and factual accuracy. Return a complete letter, not just the body.'
         : 'Analyse the application and identify its strongest evidence and any genuine gaps the candidate should consider addressing.'
 
-    const prompt = `You are the WHC Concierge AI Application Assistant for luxury spa, wellness and hospitality professionals in the UK.
+    const prompt = `You are the Talent House Collective AI Application Assistant for luxury spa, wellness and hospitality professionals in the UK.
 
 Your job is to help the candidate present their OWN verified experience clearly. Never invent qualifications, employers, brands, skills, experience, availability or achievements. Never infer protected characteristics. Do not make hiring decisions or predict whether the employer will hire them.
 

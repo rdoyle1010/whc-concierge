@@ -83,7 +83,7 @@ function MfaChallenge() {
         <div className="h-11 w-11 rounded-full bg-[#1c1b1a] text-white flex items-center justify-center mb-5"><ShieldCheck size={20}/></div>
         <p className="dashboard-eyebrow">Two-step verification</p>
         <h1 className="dashboard-title !text-[32px]">Confirm it’s you</h1>
-        <p className="dashboard-intro !mt-2 mb-6">Open your authenticator app and enter the current six-digit code for WHC Concierge.</p>
+        <p className="dashboard-intro !mt-2 mb-6">Open your authenticator app and enter the current six-digit code for Talent House Collective.</p>
         {error && <div role="alert" className="bg-red-50 border border-red-100 text-red-600 text-[13px] px-3 py-2.5 rounded-xl mb-5">{error}</div>}
         {recovered !== null ? (
           <div role="status" className="bg-green-50 border border-green-200 text-green-800 text-[13px] px-4 py-3">

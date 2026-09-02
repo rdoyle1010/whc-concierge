@@ -15,7 +15,7 @@ export default function WebsiteEditorPreview({ content }: { content: WebsiteCont
   return (
     <div className="website-theme overflow-hidden bg-white border border-neutral-200 shadow-sm" style={websiteCssVariables(content)}>
       <div className="h-11 px-4 flex items-center justify-between border-b border-black/10 bg-white">
-        <span className="text-[11px] font-semibold tracking-[0.16em]" style={{ color: 'var(--site-ink)' }}>WHC CONCIERGE</span>
+        <span className="text-[11px] font-semibold tracking-[0.16em]" style={{ color: 'var(--site-ink)' }}>TALENT HOUSE COLLECTIVE</span>
         <div className="flex gap-2 text-[7px] text-neutral-500">
           <span>{content.navigation.jobs}</span><span>{content.navigation.agency}</span><span>{content.navigation.academy}</span>
         </div>

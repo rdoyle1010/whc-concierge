@@ -30,7 +30,7 @@ function applyLegacyImages(content: WebsiteContent, rows: LegacyImage[]): Websit
         focalX: 50,
         focalY: 50,
       },
-      eyebrow: index === 0 ? 'WHC Concierge' : 'Why WHC Concierge',
+      eyebrow: index === 0 ? 'Talent House Collective' : 'Why Talent House Collective',
       heading: row.heading || next.hero.slides[index]?.heading || '',
       text: row.subtext || next.hero.slides[index]?.text || '',
     }))

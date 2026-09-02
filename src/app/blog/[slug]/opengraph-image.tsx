@@ -88,7 +88,7 @@ export default async function BlogOGImage({ params }: { params: Promise<{ slug: 
               letterSpacing: '1px', display: 'flex',
             }}
           >
-            talent.wellnesshousecollective.co.uk
+            talenthousecollective.co.uk
           </div>
         </div>
       </div>

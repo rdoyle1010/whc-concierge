@@ -34,7 +34,7 @@ export function welcomeEmailHtml({ firstName, userType, dashboardUrl }: {
         <!-- Header -->
         <tr><td style="background: linear-gradient(145deg, #0f0e0d, #1c1b1a); border-radius: 12px 12px 0 0; padding: 40px 40px 32px; text-align: center;">
           <p style="margin: 0 0 8px; font-size: 11px; letter-spacing: 3px; text-transform: uppercase; color: rgba(28,27,26, 0.6);">Welcome to</p>
-          <h1 style="margin: 0; font-size: 28px; font-weight: 700; color: #555555; letter-spacing: -0.5px;">WHC Concierge</h1>
+          <h1 style="margin: 0; font-size: 28px; font-weight: 700; color: #555555; letter-spacing: -0.5px;">Talent House Collective</h1>
         </td></tr>
 
         <!-- Body -->
@@ -64,7 +64,7 @@ export function welcomeEmailHtml({ firstName, userType, dashboardUrl }: {
         <tr><td style="background-color: #fafafa; border-radius: 0 0 12px 12px; padding: 28px 40px; border-top: 1px solid #e0dad2;">
           <p style="margin: 0 0 4px; font-size: 12px; color: #8c8781;">Wellness House Collective</p>
           <p style="margin: 0 0 12px; font-size: 12px; color: #8c8781;">United Kingdom &middot; <a href="mailto:rebecca.whc@outlook.com" style="color: #555555; text-decoration: none;">rebecca.whc@outlook.com</a></p>
-          <p style="margin: 0; font-size: 11px; color: #d9d9d9;">You received this email because you created an account on WHC Concierge. To stop receiving emails, you can delete your account from your settings page.</p>
+          <p style="margin: 0; font-size: 11px; color: #d9d9d9;">You received this email because you created an account on Talent House Collective. To stop receiving emails, you can delete your account from your settings page.</p>
         </td></tr>
 
       </table>

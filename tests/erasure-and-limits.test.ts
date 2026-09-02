@@ -6,7 +6,7 @@ import { getClientIp } from '../src/lib/rate-limit'
 const read = (path: string) => readFileSync(new URL(`../${path}`, import.meta.url), 'utf8')
 
 function request(headers: Record<string, string>) {
-  return new Request('https://talent.wellnesshousecollective.co.uk/api/auth/login', { headers })
+  return new Request('https://talenthousecollective.co.uk/api/auth/login', { headers })
 }
 
 // The old getClientIp took the LEFTMOST X-Forwarded-For entry, which is

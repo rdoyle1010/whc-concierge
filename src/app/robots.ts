@@ -20,7 +20,7 @@ import { MetadataRoute } from 'next'
 //     enumerable from a search index
 //   - /coming-soon: an unfinished page that must never outrank a real one
 export default function robots(): MetadataRoute.Robots {
-  const base = 'https://talent.wellnesshousecollective.co.uk'
+  const base = 'https://talenthousecollective.co.uk'
   return {
     rules: {
       userAgent: '*',
