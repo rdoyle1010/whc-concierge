@@ -16,6 +16,11 @@ import {
 
 type Tab = 'content' | 'images' | 'brand' | 'navigation' | 'sections' | 'history'
 
+const PANELS = [
+  { path: 'homepageCta' as const, label: 'Homepage closing panel', hint: 'The full-width band that closes the homepage, above the footer.' },
+  { path: 'authPanel' as const, label: 'Sign-in panel', hint: 'The tall panel beside the sign-in and registration forms.' },
+]
+
 const TABS: { id: Tab; label: string; icon: React.ReactNode }[] = [
   { id: 'content', label: 'Wording', icon: <Type size={15} /> },
   { id: 'images', label: 'Photos', icon: <ImageIcon size={15} /> },
@@ -128,7 +133,9 @@ export default function WebsiteEditorPage() {
     flash('success', 'Website published successfully.')
   }
 
-  const uploadImage = async (path: string, file: File) => {
+  // uploadTo writes the returned URL to an exact field, which the logo needs;
+  // uploadImage is the image-block shorthand that appends '.url'.
+  const uploadTo = async (field: string, file: File) => {
     setBusy('upload')
     const form = new FormData()
     form.append('file', file)
@@ -138,9 +145,11 @@ export default function WebsiteEditorPage() {
     const data = await response.json().catch(() => ({}))
     setBusy(null)
     if (!response.ok) return flash('error', data.error || 'Image upload failed.')
-    update(path + '.url', data.url)
-    flash('success', 'Photo uploaded to the draft. Press Save Draft when ready.')
+    update(field, data.url)
+    flash('success', 'Uploaded to the draft. Press Save Draft, then Publish, to put it live.')
   }
+
+  const uploadImage = (path: string, file: File) => uploadTo(path + '.url', file)
 
   const restore = async (id: string) => {
     if (!window.confirm('Restore this version into the draft editor? The public website will not change until you publish.')) return
@@ -163,6 +172,40 @@ export default function WebsiteEditorPage() {
     const sections = [...content.sections]
     ;[sections[index], sections[target]] = [sections[target], sections[index]]
     update('sections', sections)
+  }
+
+  const PanelEditor = ({ label, hint, path }: { label: string; hint: string; path: 'homepageCta' | 'authPanel' }) => {
+    const panel = content.panels[path]
+    return (
+      <div className="border border-border p-4 bg-white">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <p className="text-[13px] font-medium text-ink">{label}</p>
+            <p className="text-[11px] text-muted mt-0.5 max-w-md">{hint}</p>
+          </div>
+          <label className="text-[11px] font-medium">Panel shows
+            <select value={panel.mode} onChange={event => update('panels.' + path + '.mode', event.target.value)} className="input-field mt-1.5 min-w-[220px]">
+              <option value="brand">Plain charcoal (as now)</option>
+              <option value="image">Your picture</option>
+              <option value="advert">Sell to a sponsor</option>
+            </select>
+          </label>
+        </div>
+        {panel.mode !== 'brand' && (
+          <div className="mt-4 border-t border-border pt-4">
+            <ImageEditor
+              label={panel.mode === 'advert' ? 'Fallback picture, shown when no advert is live' : 'Panel picture'}
+              path={'panels.' + path + '.image'}
+              image={panel.image}
+            />
+            <label className="block text-[11px] mt-3">Darkening behind the text: {panel.overlay}%
+              <input type="range" min="0" max="100" value={panel.overlay} onChange={event => update('panels.' + path + '.overlay', Number(event.target.value))} className="w-full mt-2" />
+              <span className="block text-[10px] text-muted mt-1">The panel carries white text, so the picture needs darkening to stay readable. Lower it for a lighter, more visible picture.</span>
+            </label>
+          </div>
+        )}
+      </div>
+    )
   }
 
   const ImageEditor = ({ label, path, image }: { label: string; path: string; image: { url: string; alt: string; focalX: number; focalY: number } }) => (
@@ -312,10 +355,46 @@ export default function WebsiteEditorPage() {
                 <ImageEditor label="How it works" path="howItWorks.image" image={content.howItWorks.image} />
                 <ImageEditor label="Callout background" path="cta.background" image={content.cta.background} />
                 {content.roles.images.map((item, index) => <ImageEditor key={index} label={'Featured role card ' + (index + 1)} path={'roles.images.' + index} image={item} />)}
+
+                <div className="border-t border-border pt-7">
+                  <h2 className="text-[17px] font-medium">Dark panels</h2>
+                  <p className="text-[12px] text-muted mt-1 max-w-2xl">The two large charcoal panels on the site. Leave them plain, put a picture behind them, or sell them to a sponsor. A sold panel with no live advert falls back to your picture, so the space is never empty.</p>
+                </div>
+                {PANELS.map(panel => <PanelEditor key={panel.path} label={panel.label} hint={panel.hint} path={panel.path} />)}
               </div>}
 
               {tab === 'brand' && <div className="space-y-7">
-                <div><h2 className="text-[17px] font-medium">Fonts & brand style</h2><p className="text-[12px] text-muted mt-1">The default is now a clean modern sans-serif style, closer to your Squarespace website.</p></div>
+                <div>
+                  <h2 className="text-[17px] font-medium">Your logo</h2>
+                  <p className="text-[12px] text-muted mt-1">Appears in the header on every page, on sign-in and registration, as the browser tab icon and in Google results.</p>
+                </div>
+                <div className="border border-border p-4 bg-white grid sm:grid-cols-[220px_1fr] gap-5">
+                  <div>
+                    <div className={`h-[64px] w-full overflow-hidden ${content.brand.logo.fit === 'contain' ? 'bg-surface' : 'bg-[#1c1b1a]'}`}>
+                      {content.brand.logo.url && <img src={content.brand.logo.url} alt={content.brand.logo.alt} className={`h-full w-full ${content.brand.logo.fit === 'contain' ? 'object-contain' : 'object-cover'}`} />}
+                    </div>
+                    <label className="mt-2 flex items-center justify-center gap-1.5 py-2 border border-border text-[11px] font-medium cursor-pointer hover:bg-surface">
+                      {busy === 'upload' ? <RefreshCw size={12} className="animate-spin" /> : <Upload size={12} />} Upload logo
+                      <input type="file" accept="image/jpeg,image/png,image/webp,image/svg+xml" className="hidden" onChange={event => {
+                        const file = event.target.files?.[0]
+                        if (file) uploadTo('brand.logo.url', file)
+                        event.target.value = ''
+                      }} />
+                    </label>
+                  </div>
+                  <div className="space-y-3">
+                    <label className="block text-[11px] font-medium">How it sits in the header
+                      <select value={content.brand.logo.fit} onChange={event => update('brand.logo.fit', event.target.value)} className="input-field mt-1.5">
+                        <option value="fill">Fill the block - crops to the header shape (use for artwork with its own background)</option>
+                        <option value="contain">Show the whole logo - no cropping (use for a transparent PNG or SVG)</option>
+                      </select>
+                    </label>
+                    <Field label="Logo URL" value={content.brand.logo.url} onChange={value => update('brand.logo.url', value)} />
+                    <Field label="Alt text" value={content.brand.logo.alt} onChange={value => update('brand.logo.alt', value)} hint="Read aloud by screen readers and used by search engines." />
+                  </div>
+                </div>
+
+                <div className="border-t border-border pt-7"><h2 className="text-[17px] font-medium">Fonts & brand style</h2><p className="text-[12px] text-muted mt-1">The default is now a clean modern sans-serif style, closer to your Squarespace website.</p></div>
                 <div className="grid sm:grid-cols-2 gap-5">
                   <label className="text-[11px] font-medium">Heading font<select value={content.brand.headingFont} onChange={event => update('brand.headingFont', event.target.value)} className="input-field mt-1.5"><option value="modern">Manrope (brand)</option><option value="editorial">Editorial serif</option><option value="classic">Classic serif</option></select></label>
                   <label className="text-[11px] font-medium">Body font<select value={content.brand.bodyFont} onChange={event => update('brand.bodyFont', event.target.value)} className="input-field mt-1.5"><option value="system">Poppins (brand)</option><option value="clean">Manrope</option><option value="friendly">Arial</option></select></label>

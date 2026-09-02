@@ -13,6 +13,16 @@ const audienceCopy: Record<AdPlacementKey, { audience: string; where: string; be
     where: 'Immediately below the homepage hero',
     bestFor: 'Brand launches, product houses, equipment, education and major industry campaigns',
   },
+  homepage_cta_band: {
+    audience: 'Every homepage visitor, at the point of decision',
+    where: 'The full-width panel that closes the homepage',
+    bestFor: 'Product houses, hotel groups and equipment brands wanting the last word on the page',
+  },
+  auth_panel: {
+    audience: 'Signed-up professionals and employers, on every return visit',
+    where: 'The brand panel beside the sign-in and registration screens',
+    bestFor: 'Brands building recall with a committed, repeat-visiting industry audience',
+  },
   academy_sponsor: {
     audience: 'Professionals actively developing their careers',
     where: 'Inside the WHC Academy journey',

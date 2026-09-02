@@ -5,6 +5,8 @@ import './public-clean.css'
 import './portal-clean.css'
 import CookieConsent from '@/components/CookieConsent'
 import NewsletterSignupBar from '@/components/NewsletterSignupBar'
+import { SiteBrandProvider } from '@/components/SiteBrandProvider'
+import { DEFAULT_LOGO, safeLogoUrl } from '@/lib/site-content'
 
 const manrope = Manrope({
   subsets: ['latin'],
@@ -26,7 +28,22 @@ const poppins = Poppins({
   weight: ['400', '500', '600'],
 })
 
-export const metadata: Metadata = {
+const SITE_URL = 'https://talent.wellnesshousecollective.co.uk'
+
+// The logo is uploaded in Website & Brand, so the favicon, the Organization
+// JSON-LD and the header lockup all have to read the published value rather
+// than a path baked into this file.
+async function publishedLogo() {
+  try {
+    const { getWebsiteContent } = await import('@/lib/site-content-server')
+    const content = await getWebsiteContent(false)
+    return { ...content.brand.logo, url: safeLogoUrl(content.brand.logo.url) }
+  } catch {
+    return { ...DEFAULT_LOGO }
+  }
+}
+
+const baseMetadata: Metadata = {
   title: {
     default: 'WHC Concierge | Spa and Wellness Careers',
     template: '%s | WHC Concierge',
@@ -57,24 +74,29 @@ export const metadata: Metadata = {
     images: ['/opengraph-image'],
   },
   icons: {
-    icon: '/images/whc-logo-charcoal.jpg',
-    apple: '/images/whc-logo-charcoal.jpg',
+    icon: DEFAULT_LOGO.url,
+    apple: DEFAULT_LOGO.url,
   },
+}
+
+export async function generateMetadata(): Promise<Metadata> {
+  const logo = await publishedLogo()
+  return { ...baseMetadata, icons: { icon: logo.url, apple: logo.url } }
 }
 
 // Static pages inherit this: brand changes published in admin reach every
 // page within five minutes without a redeploy.
 export const revalidate = 300
 
-const organizationJsonLd = {
+const organizationJsonLd = (logoUrl: string) => ({
   '@context': 'https://schema.org',
   '@type': 'Organization',
   name: 'WHC Concierge',
-  url: 'https://talent.wellnesshousecollective.co.uk',
-  logo: 'https://talent.wellnesshousecollective.co.uk/images/whc-logo-charcoal.jpg',
+  url: SITE_URL,
+  logo: logoUrl.startsWith('http') ? logoUrl : SITE_URL + logoUrl,
   description: 'The professional platform for spa and wellness careers',
   sameAs: [],
-}
+})
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   // The Website & Brand settings (fonts, colours, button shape, spacing)
@@ -86,13 +108,14 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     const { websiteCssVariables } = await import('@/lib/site-content')
     brandStyle = websiteCssVariables(await getWebsiteContent(false))
   } catch { /* fall back to CSS defaults */ }
+  const logo = await publishedLogo()
   return (
     <html lang="en-GB" className={`${manrope.variable} ${editorial.variable} ${poppins.variable}`}>
       <body>
         <a href="#main-content" className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:bg-white focus:px-5 focus:py-3 focus:text-[13px] focus:font-semibold focus:text-[#1c1b1a] focus:shadow-xl focus:border focus:border-[#1c1b1a]">Skip to main content</a>
-        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }} />
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd(logo.url)) }} />
         <div className="website-theme min-h-screen" style={brandStyle}>
-          {children}
+          <SiteBrandProvider logo={logo}>{children}</SiteBrandProvider>
         </div>
         <NewsletterSignupBar />
         <CookieConsent />

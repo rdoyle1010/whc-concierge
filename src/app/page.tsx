@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import type { ReactNode } from 'react'
 import Link from 'next/link'
+import PanelBackdrop from '@/components/PanelBackdrop'
 import { unstable_cache } from 'next/cache'
 import { BadgeCheck, Star } from 'lucide-react'
 import Footer from '@/components/Footer'
@@ -384,9 +385,14 @@ function VerifiedReviewsSection({ content, reviews }: { content: WebsiteContent;
 // One closing charcoal band, two audiences, one button each. Copy stays
 // admin-editable through the Website editor's CTA fields.
 function CalloutSection({ content }: { content: WebsiteContent }) {
+  const panel = content.panels.homepageCta
+  // The CTA background has always been an editable field; it now actually
+  // reaches the page, and the same panel can be sold to a sponsor instead.
+  const backdrop = { ...panel, image: panel.image.url ? panel.image : content.cta.background }
   return (
-    <section className="site-accent-bg">
-      <div className="mx-auto max-w-6xl px-6 py-16 md:py-20 lg:px-8">
+    <section className="site-accent-bg relative isolate overflow-hidden">
+      <PanelBackdrop panel={backdrop} placement="homepage_cta_band" />
+      <div className="relative mx-auto max-w-6xl px-6 py-16 md:py-20 lg:px-8">
         <div className="grid gap-x-16 gap-y-12 md:grid-cols-2">
           {([content.cta.talent, content.cta.employer] as const).map(card => (
             <div key={card.eyebrow} className="border-t border-white/20 pt-6">

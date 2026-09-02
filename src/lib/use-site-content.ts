@@ -7,7 +7,7 @@ import { DEFAULT_WEBSITE_CONTENT, type WebsiteContent } from '@/lib/site-content
 // not fetch website content server-side. Cached per page load so the Navbar
 // and Footer share one request.
 
-export type PublicSiteContent = Pick<WebsiteContent, 'navigation' | 'footer' | 'brand'>
+export type PublicSiteContent = Pick<WebsiteContent, 'navigation' | 'footer' | 'brand' | 'panels'>
 
 let cached: PublicSiteContent | null = null
 let inflight: Promise<PublicSiteContent | null> | null = null

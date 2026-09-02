@@ -36,8 +36,11 @@ test('footer copy uses readable public-site contrast', () => {
   assert.doesNotMatch(source, /text-white\/20/)
 })
 
-test('site icon points to a real brand asset', () => {
+test('site icon follows the uploaded brand logo', () => {
   const source = read('src/app/layout.tsx')
-  assert.match(source, /icon: '\/images\/whc-logo-charcoal\.jpg'/)
+  const brand = read('src/lib/site-content.ts')
+  assert.match(source, /icons: \{ icon: logo\.url, apple: logo\.url \}/)
+  assert.match(source, /export async function generateMetadata/)
   assert.doesNotMatch(source, /icon: '\/favicon\.ico'/)
+  assert.match(brand, /url: '\/images\/whc-logo-charcoal\.jpg'/)
 })

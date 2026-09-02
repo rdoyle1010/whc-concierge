@@ -3,6 +3,8 @@
 import { useEffect, useState, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
+import PanelBackdrop from '@/components/PanelBackdrop'
+import { usePublicSiteContent } from '@/lib/use-site-content'
 import { Eye, EyeOff, BriefcaseBusiness, Sparkles } from 'lucide-react'
 import Wordmark from '@/components/Wordmark'
 
@@ -16,6 +18,7 @@ function LoginForm() {
   const requestedDestination = searchParams.get('redirect') || searchParams.get('next') || searchParams.get('returnTo') || ''
   const safeDestination = requestedDestination.startsWith('/') && !requestedDestination.startsWith('//') ? requestedDestination : ''
   const confirmationPending = searchParams.get('registered') === '1' && searchParams.get('confirm') === '1'
+  const site = usePublicSiteContent()
   const [role, setRole] = useState<'talent' | 'employer'>(initialRole === 'employer' ? 'employer' : 'talent')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -115,7 +118,8 @@ function LoginForm() {
       {/* The brand panel carries facts, not a stock photograph hotlinked from
           a third-party CDN with its URL in view-source. The registration page
           already does it this way and it reads considerably more expensive. */}
-      <div className="hidden lg:flex w-[42%] bg-[#1c1b1a] relative items-end">
+      <div className="hidden lg:flex w-[42%] bg-[#1c1b1a] relative isolate overflow-hidden items-end">
+        <PanelBackdrop panel={site.panels.authPanel} placement="auth_panel" />
         <div className="relative p-12 xl:p-16 max-w-xl">
           <p className="text-[10px] uppercase tracking-[0.2em] text-white/70 font-semibold mb-4">Wellness House Collective</p>
           <p className="text-white text-[30px] leading-tight tracking-[-0.03em] font-semibold">The professional platform for spa and wellness careers.</p>

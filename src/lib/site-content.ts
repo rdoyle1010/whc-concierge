@@ -18,6 +18,42 @@ const imageSchema = z.object({
 
 const calloutSchema = z.object({ eyebrow: text, heading: text, text, buttonLabel: text, buttonHref: link })
 
+// Shipped as the default so a site that has never touched the brand editor
+// keeps the bundled artwork. Uploading a logo in admin replaces it.
+export const DEFAULT_LOGO = {
+  url: '/images/whc-logo-charcoal.jpg',
+  alt: 'Wellness House Collective',
+  fit: 'fill' as const,
+}
+
+const emptyPanelImage = { url: '', alt: '', focalX: 50, focalY: 50 }
+
+// Both panels ship as plain charcoal, exactly as they render today. Nothing
+// changes on the live site until an administrator turns a panel on.
+const DEFAULT_PANELS = {
+  homepageCta: { mode: 'brand' as const, image: { ...emptyPanelImage }, overlay: 72 },
+  authPanel: { mode: 'brand' as const, image: { ...emptyPanelImage }, overlay: 72 },
+}
+
+// The header lockup. 'fill' crops the artwork to the header box, which is
+// what the supplied WHC block artwork wants; 'contain' shows a whole logo on
+// a clear background, which is what an uploaded transparent PNG wants.
+const logoSchema = z.object({
+  url: link,
+  alt: text,
+  fit: z.enum(['fill', 'contain']),
+})
+
+// The platform's large charcoal panels are inventory. Each one can stay a
+// plain brand panel, carry a picture, or be sold to a sponsor - and a sold
+// panel that has no live advert falls back to the picture, then to charcoal,
+// so the space is never empty.
+const panelSchema = z.object({
+  mode: z.enum(['brand', 'image', 'advert']),
+  image: imageSchema,
+  overlay: z.number().min(0).max(100),
+})
+
 export const WebsiteContentSchema = z.object({
   version: z.literal(1),
   brand: z.object({
@@ -29,6 +65,7 @@ export const WebsiteContentSchema = z.object({
     surface: hex,
     buttonStyle: z.enum(['square', 'soft', 'pill']),
     spacing: z.enum(['compact', 'balanced', 'airy']),
+    logo: logoSchema.default(DEFAULT_LOGO),
   }),
   navigation: z.object({
     jobs: text, agency: text, academy: text, residency: text, blog: text,
@@ -50,6 +87,10 @@ export const WebsiteContentSchema = z.object({
   services: z.object({ cards: z.array(calloutSchema).length(3) }),
   testimonials: z.object({ eyebrow: text, heading: text, linkLabel: text }),
   footer: z.object({ copyright: text, staffLabel: text }),
+  panels: z.object({
+    homepageCta: panelSchema,
+    authPanel: panelSchema,
+  }).default(DEFAULT_PANELS),
   sections: z.array(z.object({
     id: z.enum(['proof', 'howItWorks', 'product', 'trust', 'roles', 'cta', 'services', 'testimonials']),
     visible: z.boolean(),
@@ -67,6 +108,7 @@ export const DEFAULT_WEBSITE_CONTENT: WebsiteContent = {
   brand: {
     headingFont: 'modern', bodyFont: 'system', accent: '#1C1B1A', ink: '#1C1B1A',
     background: '#F7F5F2', surface: '#F3F0EB', buttonStyle: 'square', spacing: 'airy',
+    logo: { ...DEFAULT_LOGO },
   },
   navigation: {
     jobs: 'Browse Roles', agency: 'Agency', academy: 'Academy', residency: 'Residency', blog: 'Journal',
@@ -120,6 +162,7 @@ export const DEFAULT_WEBSITE_CONTENT: WebsiteContent = {
     ],
   },
   testimonials: { eyebrow: 'What people say', heading: 'Trusted by the industry.', linkLabel: 'Read all testimonials' },
+  panels: JSON.parse(JSON.stringify(DEFAULT_PANELS)),
   footer: { copyright: '© 2026 Wellness House Collective', staffLabel: 'Staff' },
   sections: [
     { id: 'proof', visible: true }, { id: 'howItWorks', visible: true }, { id: 'product', visible: true },
@@ -182,4 +225,14 @@ export function websiteCssVariables(content: WebsiteContent): CSSProperties {
     '--site-button-radius': radii[content.brand.buttonStyle],
     '--site-space': spaces[content.brand.spacing],
   } as CSSProperties
+}
+
+// A logo URL reaches the page inside a CSS url() and an <img src>, so a stray
+// quote or bracket would break out of both. Anything that is not a plain
+// relative path or http(s) URL falls back to the bundled artwork.
+export function safeLogoUrl(url: string): string {
+  const trimmed = (url || '').trim()
+  if (!trimmed || /["'()\s<>\\]/.test(trimmed)) return DEFAULT_LOGO.url
+  if (trimmed.startsWith('/') && !trimmed.startsWith('//')) return trimmed
+  return /^https?:\/\//i.test(trimmed) ? trimmed : DEFAULT_LOGO.url
 }

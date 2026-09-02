@@ -7,6 +7,18 @@ export const AD_PLACEMENTS = {
     monthlyPence: 40000,
     page: 'Homepage',
   },
+  homepage_cta_band: {
+    label: 'Homepage Closing Panel',
+    description: 'The full-width panel that closes the homepage - the last thing every visitor sees.',
+    monthlyPence: 45000,
+    page: 'Homepage',
+  },
+  auth_panel: {
+    label: 'Sign-in Panel',
+    description: 'The brand panel beside every sign-in and registration screen, seen on each return visit.',
+    monthlyPence: 35000,
+    page: 'Sign in & register',
+  },
   academy_sponsor: {
     label: 'Academy Sponsor',
     description: 'Reach working spa and wellness professionals in the WHC Academy.',

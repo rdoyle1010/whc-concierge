@@ -292,7 +292,7 @@ check('homepage hero is prioritised and public controls are accessible', () => {
   assert.doesNotMatch(hero, /slides\.map\(\(item, index\)[\s\S]*?<img/)
   assert.match(navigation, /aria-label=\{mobileOpen \? 'Close navigation menu' : 'Open navigation menu'\}/)
   assert.match(navigation, /aria-label="Open account menu"/)
-  assert.match(read('src/app/layout.tsx'), /icon: '\/images\/whc-logo-charcoal\.jpg'/)
+  assert.match(read('src/app/layout.tsx'), /icons: \{ icon: logo\.url, apple: logo\.url \}/)
 })
 check('no literal production secrets are tracked', () => {
   const files = execFileSync('git', ['ls-files'], { encoding: 'utf8' }).trim().split('\n').filter(Boolean)

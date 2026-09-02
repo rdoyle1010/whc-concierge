@@ -3,6 +3,8 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import PanelBackdrop from '@/components/PanelBackdrop'
+import { usePublicSiteContent } from '@/lib/use-site-content'
 import { Eye, EyeOff } from 'lucide-react'
 import Wordmark from '@/components/Wordmark'
 import { createClient } from '@/lib/supabase/client'
@@ -15,6 +17,7 @@ type PublicStats = { liveRoles: number | null; properties: number | null; verifi
 export default function TalentRegisterPage() {
   const router = useRouter()
   const supabase = createClient()
+  const site = usePublicSiteContent()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [fullName, setFullName] = useState('')
@@ -137,7 +140,8 @@ export default function TalentRegisterPage() {
         </div>
       </div>
 
-      <div className="hidden lg:flex w-[42%] bg-[#1c1b1a] items-center">
+      <div className="hidden lg:flex w-[42%] bg-[#1c1b1a] relative isolate overflow-hidden items-center">
+        <PanelBackdrop panel={site.panels.authPanel} placement="auth_panel" />
         <div className="p-12 xl:p-16 max-w-xl w-full">
           <p className="text-[10px] uppercase tracking-[0.2em] text-white/50 font-semibold mb-4">Wellness House Collective</p>
           <p className="text-white text-[30px] leading-tight tracking-[-0.03em] font-serif font-semibold">The professional platform for spa and wellness careers.</p>
