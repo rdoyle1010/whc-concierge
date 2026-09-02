@@ -21,6 +21,13 @@ const editorial = Cormorant_Garamond({
   variable: '--font-editorial',
   display: 'swap',
   weight: ['500', '600', '700'],
+  // Three of the five font files the browser preloads are this face, and it
+  // competes for bandwidth with the hero image - the element Lighthouse is
+  // timing for Largest Contentful Paint. Manrope and Poppins set the headline
+  // and the body copy above the fold; this one is the serif accent, and almost
+  // every use of it is further down the page. It loads when it is first needed,
+  // and display: swap means the text was never waiting on it anyway.
+  preload: false,
 })
 
 const poppins = Poppins({
