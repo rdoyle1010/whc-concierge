@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import { createServerSupabaseClient } from '@/lib/supabase/server'
 import { SITE_ORIGIN } from '@/lib/site-content'
-import { sanitizeArticleHtml, isRichArticle } from '@/lib/article-html'
+import { toArticleHtml, isRichArticle } from '@/lib/article-html'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import Navbar from '@/components/Navbar'
@@ -124,7 +124,7 @@ export default async function BlogPostPage(props: { params: Promise<{ slug: stri
             // before the sanitiser existed or changed by any other path into the
             // table, and the cost of checking twice is nothing next to the cost
             // of being wrong once.
-            <div dangerouslySetInnerHTML={{ __html: sanitizeArticleHtml(post.content) }} />
+            <div dangerouslySetInnerHTML={{ __html: toArticleHtml(post.content) }} />
           ) : (
             // Every article written before the editor existed is plain text with
             // newlines, and must keep rendering exactly as it always has.

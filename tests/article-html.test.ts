@@ -72,5 +72,11 @@ test('the body is sanitised on save and on render', () => {
   assert.match(route, /withCleanBody\(post\)/, 'creating an article must sanitise it')
   assert.match(route, /withCleanBody\(pickEditable\(body\)\)/, 'and so must editing one')
   const page = readFileSync(new URL('../src/app/blog/[slug]/page.tsx', import.meta.url), 'utf8')
-  assert.match(page, /sanitizeArticleHtml\(post\.content\)/, 'and rendering must not trust the stored value')
+  // toArticleHtml sanitises internally and also restores paragraph structure
+  // for articles written before the editor. The rule is that rendering must
+  // not trust the stored value, whichever function does it.
+  assert.match(page, /toArticleHtml\(post\.content\)/, 'rendering must not trust the stored value')
+  const lib = readFileSync(new URL('../src/lib/article-html.ts', import.meta.url), 'utf8')
+  const render = lib.slice(lib.indexOf('export function toArticleHtml'))
+  assert.equal((render.match(/sanitizeArticleHtml\(/g) || []).length, 2, 'both paths through it must sanitise')
 })

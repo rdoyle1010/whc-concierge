@@ -75,5 +75,34 @@ export function sanitizeArticleHtml(dirty: string): string {
  * either way have to keep rendering.
  */
 export function isRichArticle(content: string): boolean {
-  return /<(p|h2|h3|h4|ul|ol|blockquote|strong|em|u|s|a|span)\b/i.test(content || '')
+  // This listed the tags the new editor produces and missed the ones older
+  // articles were actually written with: <b>, <i> and <br>. Those articles fell
+  // through to the plain-text path and printed their own markup at the reader
+  // as words. Match anything the sanitiser would allow, not just what the
+  // toolbar happens to emit today.
+  return /<(p|br|h2|h3|h4|ul|ol|li|blockquote|strong|b|em|i|u|s|a|span)\b/i.test(content || '')
+}
+
+// Whether the content carries any structure of its own, or is a run of inline
+// markup with newlines doing the work of paragraphs.
+const HAS_BLOCKS = /<(p|h2|h3|h4|ul|ol|blockquote)\b/i
+
+/**
+ * The stored article as HTML fit to render.
+ *
+ * Older articles are a mix: bold and line-break tags inline, and newlines where
+ * the writer meant a new paragraph. Rendered as-is they collapse into one
+ * unbroken slab, which is what the reader was getting. Where there is no block
+ * structure, the newlines become paragraphs and the inline markup is kept.
+ */
+export function toArticleHtml(content: string): string {
+  const raw = content || ''
+  if (HAS_BLOCKS.test(raw)) return sanitizeArticleHtml(raw)
+  const paragraphs = raw
+    .split(/\n{1,}/)
+    .map(line => line.trim())
+    .filter(Boolean)
+    .map(line => `<p>${line}</p>`)
+    .join('')
+  return sanitizeArticleHtml(paragraphs || raw)
 }
