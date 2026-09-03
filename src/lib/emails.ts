@@ -136,6 +136,37 @@ export async function sendVerificationResultEmail(email: string, name: string, v
   `))
 }
 
+// A certificate decision used to create an in-app notification and nothing
+// else, so a professional who uploaded one only found out by logging back in
+// and noticing a bell. Right-to-work decisions have always sent an email; this
+// makes the two consistent.
+export async function sendCertificateResultEmail(
+  email: string, name: string, certificate: string,
+  decision: 'verified' | 'rejected' | 'more_information', note: string | null,
+) {
+  const subject = decision === 'verified'
+    ? `${certificate} is verified`
+    : decision === 'rejected'
+      ? `${certificate} could not be verified`
+      : `${certificate} needs a little more`
+
+  const body = decision === 'verified' ? `
+    <p style="font-size: 24px; font-weight: 700; margin-bottom: 16px;">Good news, ${name}</p>
+    <p style="color: #555555;"><strong>${certificate}</strong> has been reviewed and verified by WHC. It now shows as verified on your profile, where properties can see it.</p>
+  ` : decision === 'rejected' ? `
+    <p style="font-size: 24px; font-weight: 700; margin-bottom: 16px;">Hi ${name}</p>
+    <p style="color: #555555;">We could not verify <strong>${certificate}</strong> this time.</p>
+    ${note ? `<p style="color: #555555; font-weight: 500;">Reason: ${note}</p>` : ''}
+    <p style="color: #555555;">Upload a clearer copy from your profile and we will look again.</p>
+  ` : `
+    <p style="font-size: 24px; font-weight: 700; margin-bottom: 16px;">Hi ${name}</p>
+    <p style="color: #555555;">We need a little more to verify <strong>${certificate}</strong>.</p>
+    ${note ? `<p style="color: #555555; font-weight: 500;">${note}</p>` : ''}
+    <p style="color: #555555;">Add it from your profile and we will finish the check.</p>
+  `
+  await sendEmail(email, subject, wrapper(body))
+}
+
 export async function sendInsuranceExpiryEmail(email: string, name: string, expiryDate: string, lapsed: boolean) {
   await sendEmail(email, lapsed ? 'Your WHC Verified badge has lapsed' : 'Your insurance is about to expire', wrapper(lapsed ? `
     <p style="font-size: 24px; font-weight: 700; margin-bottom: 16px;">Hi ${name}</p>

@@ -10,6 +10,26 @@ async function requireAdmin() {
   return adminRequestUser()
 }
 
+// Talent profiles carry no email column - a professional's address lives in
+// auth.users, which the browser cannot read. So the admin list showed "no email
+// on profile" for everybody and it looked as though people had signed up
+// without one. They had not: Supabase will not create an account without an
+// email, so every account has one. It was only ever invisible here.
+async function emailsForUsers(userIds: string[]) {
+  const admin = createAdminClient()
+  const pairs = await Promise.all(
+    userIds.slice(0, 200).map(async id => {
+      try {
+        const { data } = await admin.auth.admin.getUserById(id)
+        return [id, data?.user?.email || null] as const
+      } catch {
+        return [id, null] as const
+      }
+    }),
+  )
+  return Object.fromEntries(pairs)
+}
+
 export async function POST(req: NextRequest) {
   const user = await requireAdmin()
   if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
@@ -18,8 +38,15 @@ export async function POST(req: NextRequest) {
   const { type, id, action, reason } = body as {
     type: 'candidate' | 'employer'
     id: string
-    action: 'approve' | 'reject'
+    action: 'approve' | 'reject' | 'emails'
     reason?: string
+  }
+
+  // Looking up addresses needs no profile id, so it is answered before the
+  // approve/reject validation below.
+  if (action === 'emails') {
+    const ids = Array.isArray(body.user_ids) ? body.user_ids.filter((v: unknown) => typeof v === 'string') : []
+    return NextResponse.json({ emails: await emailsForUsers(ids) })
   }
 
   if (!id || (type !== 'candidate' && type !== 'employer') || (action !== 'approve' && action !== 'reject')) {

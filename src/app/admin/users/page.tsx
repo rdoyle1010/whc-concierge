@@ -42,6 +42,21 @@ export default function AdminUsersPage() {
       setCandidates(c.data || [])
       setEmployers(e.data || [])
       setLoading(false)
+
+      // A professional's address lives in auth.users, which the browser cannot
+      // read - so this list said "no email on profile" for everybody and it
+      // looked as though people had signed up without one. They had not.
+      const ids = (c.data || []).map((row: any) => row.user_id).filter(Boolean)
+      if (ids.length) {
+        const res = await fetch('/api/admin/users', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'emails', user_ids: ids }),
+        }).catch(() => null)
+        const json = await res?.json().catch(() => null)
+        if (active && json?.emails) {
+          setCandidates(current => current.map((row: any) => ({ ...row, email: row.email || json.emails[row.user_id] || null })))
+        }
+      }
     }
     load()
     return () => { active = false }
