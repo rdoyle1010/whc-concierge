@@ -232,3 +232,26 @@ test('registering through the consultancy door sets the workspace immediately', 
   // The intent has to survive a round trip through a confirmation email.
   assert.match(page, /registered=1&confirm=1&role=consultant/)
 })
+
+// A consultant who has filled the form in and is waiting for review could not
+// see what they had made - the only link to the public page appeared once it
+// was already published, which is too late to be useful.
+test('a draft can be previewed by the person who wrote it', () => {
+  const route = read('src/app/api/consultancy/public/route.ts')
+  // And by nobody else: an unpublished listing must still 404 for a stranger,
+  // or a draft could be found by guessing an id.
+  assert.match(route, /user\.id !== data\.user_id/)
+  assert.match(route, /preview: true/)
+  const listing = read('src/app/consultancy/[id]/page.tsx')
+  assert.match(listing, /nobody else can see this/, 'a preview must never be mistaken for the live page')
+  assert.match(listing, /\{!preview &&/, 'and the enquiry form is meaningless against your own draft')
+})
+
+// Preview saves first, because it reads from the database - previewing unsaved
+// work would show the last version and quietly mislead.
+test('preview saves without changing whether the listing is published', () => {
+  const page = read('src/app/talent/consultancy/page.tsx')
+  const fn = page.slice(page.indexOf('async function preview()'), page.indexOf('async function save('))
+  assert.match(fn, /save\(Boolean\(profile\?\.is_live\), \{ silent: true \}\)/,
+    'passing false here would take a live listing down every time somebody looked at it')
+})

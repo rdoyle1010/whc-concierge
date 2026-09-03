@@ -16,6 +16,7 @@ export default function ConsultancyProfilePage() {
   const params = useParams()
   const id = String(params?.id || '')
   const [profile, setProfile] = useState<any>(null)
+  const [preview, setPreview] = useState(false)
   const [loading, setLoading] = useState(true)
   const [open, setOpen] = useState(false)
   const [form, setForm] = useState({ subject: '', message: '', budget_band: '', timeline: '' })
@@ -26,7 +27,7 @@ export default function ConsultancyProfilePage() {
   useEffect(() => {
     fetch(`/api/consultancy/public?id=${encodeURIComponent(id)}`)
       .then(res => res.ok ? res.json() : null)
-      .then(data => setProfile(data?.profile || null))
+      .then(data => { setProfile(data?.profile || null); setPreview(Boolean(data?.preview)) })
       .catch(() => {})
       .finally(() => setLoading(false))
   }, [id])
@@ -60,6 +61,16 @@ export default function ConsultancyProfilePage() {
       <Navbar />
       <main className="bg-white">
         <div className="max-w-4xl mx-auto px-6 lg:px-10 pt-28 pb-12">
+          {preview && (
+            <div className="mb-6 border border-ink bg-[#f1f1f1] px-4 py-3">
+              <p className="text-[13px] font-medium text-ink">Preview - nobody else can see this</p>
+              <p className="mt-1 text-[12px] leading-6 text-secondary">
+                This is exactly how your listing will read once it is published. Changes you have not saved yet will not
+                appear here.{' '}
+                <Link href="/talent/consultancy" className="font-semibold text-ink underline">Back to editing</Link>
+              </p>
+            </div>
+          )}
           <Link href="/consultancy" className="text-[13px] text-secondary hover:text-ink inline-flex items-center gap-1.5"><ArrowLeft size={14} /> Consultancy</Link>
 
           {profile.cover_image_url && (
@@ -98,9 +109,11 @@ export default function ConsultancyProfilePage() {
               {profile.linkedin_url && <a href={profile.linkedin_url} target="_blank" rel="noopener noreferrer nofollow" className="inline-flex items-center gap-1 text-ink underline"><Linkedin size={12} /> LinkedIn</a>}
             </div>
 
-            <button type="button" onClick={() => setOpen(true)} className="btn-primary mt-7 inline-flex items-center gap-2 text-[13px]">
-              <Send size={14} /> Contact {profile.practice_name}
-            </button>
+            {!preview && (
+              <button type="button" onClick={() => setOpen(true)} className="btn-primary mt-7 inline-flex items-center gap-2 text-[13px]">
+                <Send size={14} /> Contact {profile.practice_name}
+              </button>
+            )}
             {notice && <p className={`mt-3 text-[12px] ${notice.kind === 'ok' ? 'text-emerald-700' : 'text-red-600'}`}>{notice.text}</p>}
           </header>
 

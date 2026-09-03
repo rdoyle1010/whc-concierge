@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import DashboardShell from '@/components/DashboardShell'
-import { Plus, Trash2, Save, ExternalLink, Send, Star, Upload, X } from 'lucide-react'
+import { Plus, Trash2, Save, ExternalLink, Send, Star, Upload, X, Eye } from 'lucide-react'
 import { getViewer } from '@/lib/viewer'
 import {
   BUDGET_BANDS, CONSULTANCY_SPECIALISMS, ENGAGEMENT_TYPES, WORKS_WITH,
@@ -150,7 +150,14 @@ export default function TalentConsultancyPage() {
   const setProject = (index: number, patch: Partial<ConsultancyProject>) =>
     set('projects', projects.map((project, i) => i === index ? { ...project, ...patch } : project))
 
-  async function save(publish: boolean) {
+  async function preview() {
+    // Saved with whatever publish state it already has. Passing false here
+    // would quietly take a live listing down every time somebody looked at it.
+    const id = await save(Boolean(profile?.is_live), { silent: true })
+    if (id) window.open(`/consultancy/${id}`, '_blank', 'noopener')
+  }
+
+  async function save(publish: boolean, opts: { silent?: boolean } = {}): Promise<string | null> {
     setSaving(true); setNotice(null)
     const res = await fetch('/api/consultancy/mine', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -158,8 +165,9 @@ export default function TalentConsultancyPage() {
     })
     const body = await res.json().catch(() => ({}))
     setSaving(false)
-    if (!res.ok) { setNotice({ kind: 'error', text: body.error || 'Could not save.' }); return }
+    if (!res.ok) { setNotice({ kind: 'error', text: body.error || 'Could not save.' }); return null }
     setProfile(body.profile)
+    if (opts.silent) return body.profile?.id || null
     setNotice({
       kind: 'ok',
       text: publish
@@ -169,6 +177,7 @@ export default function TalentConsultancyPage() {
           : 'Saved as a draft. Nobody can see it yet.',
     })
     setTimeout(() => setNotice(null), 6000)
+    return body.profile?.id || null
   }
 
   if (loading) return <DashboardShell role="talent"><div className="skeleton h-64 w-full" /></DashboardShell>
@@ -422,6 +431,9 @@ export default function TalentConsultancyPage() {
         <div className="flex flex-wrap items-center gap-3">
           <button type="button" onClick={() => save(false)} disabled={saving} className="btn-secondary text-[13px] inline-flex items-center gap-2 disabled:opacity-50">
             <Save size={14} /> {saving ? 'Saving...' : 'Save draft'}
+          </button>
+          <button type="button" onClick={preview} disabled={saving || !profile?.practice_name} className="btn-secondary text-[13px] inline-flex items-center gap-2 disabled:opacity-50">
+            <Eye size={14} /> Preview
           </button>
           <button type="button" onClick={() => save(true)} disabled={saving || missing.length > 0} className="btn-primary text-[13px] inline-flex items-center gap-2 disabled:opacity-50">
             <Send size={14} /> {profile?.is_live ? 'Save and resubmit' : 'Publish listing'}

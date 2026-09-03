@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { isFeatured, parseProjects, projectClientLabel } from '@/lib/consultancy'
+import { getRequestUser } from '@/lib/request-user'
 
 // The public directory, and a single public listing.
 //
@@ -17,9 +18,19 @@ export async function GET(req: NextRequest) {
 
   if (id) {
     const { data, error } = await admin.from('consultancy_profiles')
-      .select(columns).eq('id', id).eq('is_live', true).eq('approval_status', 'approved').maybeSingle()
+      .select(`${columns}, user_id, is_live, approval_status`).eq('id', id).maybeSingle()
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
     if (!data) return NextResponse.json({ error: 'Not found' }, { status: 404 })
+
+    // A listing that is not published yet is visible to exactly one person:
+    // the consultant who wrote it. Anybody else gets the same 404 they would
+    // have got before, so a draft cannot be found by guessing an id.
+    const published = data.is_live === true && data.approval_status === 'approved'
+    if (!published) {
+      const user = await getRequestUser(req)
+      if (!user || user.id !== data.user_id) return NextResponse.json({ error: 'Not found' }, { status: 404 })
+      return NextResponse.json({ profile: shape(data), preview: true })
+    }
 
     // Counted here rather than on the client, where an ad blocker or a second
     // tab would make the number meaningless to the consultant reading it.
