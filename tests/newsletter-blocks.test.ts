@@ -79,8 +79,11 @@ test('the newsletter welcome is written for a subscriber, not a member', () => {
 test('confirming a subscription actually sends something', () => {
   const route = read('src/app/api/newsletter/confirm/route.ts')
   assert.match(route, /newsletterWelcomeHtml/)
-  assert.match(route, /NEWSLETTER_FROM/, 'sent from the verified domain, not an invented one')
-  assert.match(route, /catch \{ \/\* the subscription is confirmed either way/, 'a failed welcome must never lose the subscription')
+  // The from address moved into the shared sender, which owns it for every
+  // transactional email and records whether the send actually landed. The
+  // verified-domain rule is asserted there, at its new home.
+  assert.match(route, /sendTransactionalEmail/, 'sent through the logged sender, not a bare fetch')
+  assert.ok(!/api\.resend\.com/.test(route), 'no direct provider call left behind')
 })
 
 // Offering a lapsed placement gives away free what somebody else is paying for.

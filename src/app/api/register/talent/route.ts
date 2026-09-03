@@ -1,34 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { welcomeEmailHtml } from '@/lib/welcome-email-template'
+import { sendTransactionalEmail } from '@/lib/send-email'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { sanitiseTalentRegistration, verifyRegistrationProof } from '@/lib/registration'
 import { canCompleteRegistration } from '@/lib/role-access'
 
-const RESEND_API_KEY = process.env.RESEND_API_KEY
-const FROM_EMAIL = 'Talent House Collective <noreply@mail.wellnesshousecollective.co.uk>'
+async function sendWelcomeEmail(email: string, firstName: string, userId?: string | null) {
+  await sendTransactionalEmail({
+    to: email,
+    subject: 'Welcome to Talent House Collective',
+    html: welcomeEmailHtml({ firstName, userType: 'talent', dashboardUrl: 'https://talenthousecollective.co.uk/talent/dashboard' }),
+    kind: 'welcome_talent',
+    userId,
+  })
+}
 
 async function sleep(ms: number) {
   return new Promise(resolve => setTimeout(resolve, ms))
-}
-
-async function sendWelcomeEmail(email: string, firstName: string) {
-  const html = welcomeEmailHtml({ firstName, userType: 'talent', dashboardUrl: 'https://talenthousecollective.co.uk/talent/dashboard' })
-  if (!RESEND_API_KEY) { console.log(`[Welcome email skipped] To: ${email}`); return }
-  try {
-    const res = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: { 'Authorization': `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ from: FROM_EMAIL, to: email, subject: 'Welcome to Talent House Collective', html }),
-    })
-    if (!res.ok) {
-      const detail = await res.text().catch(() => '')
-      console.error(`[Welcome email FAILED ${res.status}] To: ${email} - ${detail.slice(0, 300)}`)
-    }
-  } catch (err) {
-    console.error('Welcome email failed:', err)
-  }
 }
 
 async function recordReferral(supabase: any, userId: string, refCode: string) {
@@ -162,7 +152,7 @@ export async function POST(req: NextRequest) {
 
       if (!profileError) {
         if (body.refCode) await recordReferral(supabase, userId, body.refCode)
-        if (userEmail) await sendWelcomeEmail(userEmail, String(safeProfile.full_name).split(' ')[0] || 'there')
+        if (userEmail) await sendWelcomeEmail(userEmail, String(safeProfile.full_name).split(' ')[0] || 'there', userId)
         return NextResponse.json({ success: true })
       }
 
@@ -176,7 +166,7 @@ export async function POST(req: NextRequest) {
       const result = await upsertStrippingUnknownColumns(supabase, 'candidate_profiles', safeProfile)
       if (result.ok) {
         if (body.refCode) await recordReferral(supabase, userId, body.refCode)
-        if (userEmail) await sendWelcomeEmail(userEmail, String(safeProfile.full_name).split(' ')[0] || 'there')
+        if (userEmail) await sendWelcomeEmail(userEmail, String(safeProfile.full_name).split(' ')[0] || 'there', userId)
         return NextResponse.json({ success: true })
       }
       lastError = result.error

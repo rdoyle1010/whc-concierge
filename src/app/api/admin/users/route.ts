@@ -38,7 +38,7 @@ export async function POST(req: NextRequest) {
   const { type, id, action, reason } = body as {
     type: 'candidate' | 'employer'
     id: string
-    action: 'approve' | 'reject' | 'emails'
+    action: 'approve' | 'reject' | 'emails' | 'email_log'
     reason?: string
   }
 
@@ -47,6 +47,23 @@ export async function POST(req: NextRequest) {
   if (action === 'emails') {
     const ids = Array.isArray(body.user_ids) ? body.user_ids.filter((v: unknown) => typeof v === 'string') : []
     return NextResponse.json({ emails: await emailsForUsers(ids) })
+  }
+
+  // "Did they get an email?" used to end in a guess. Now it ends in a row.
+  if (action === 'email_log') {
+    const address = String(body.email || '').trim().toLowerCase()
+    const userId = typeof body.user_id === 'string' ? body.user_id : null
+    if (!address && !userId) return NextResponse.json({ log: [] })
+    const logClient = createAdminClient()
+    let query = logClient.from('email_log').select('id, kind, subject, status, error, created_at').order('created_at', { ascending: false }).limit(20)
+    query = address && userId
+      ? query.or(`recipient.ilike.${address},user_id.eq.${userId}`)
+      : address ? query.ilike('recipient', address) : query.eq('user_id', userId as string)
+    const { data, error } = await query
+    // The table arrives with a migration. Until it is run, say so plainly
+    // rather than showing an empty list that reads as "nothing was sent".
+    if (error) return NextResponse.json({ log: [], unavailable: true })
+    return NextResponse.json({ log: data || [] })
   }
 
   if (!id || (type !== 'candidate' && type !== 'employer') || (action !== 'approve' && action !== 'reject')) {

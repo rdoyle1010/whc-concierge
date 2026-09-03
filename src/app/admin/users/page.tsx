@@ -29,9 +29,30 @@ export default function AdminUsersPage() {
   const [perPage, setPerPage] = useState(25)
   const resetPages = () => { setTalentPage(1); setHotelPage(1) }
   const [loadError, setLoadError] = useState('')
+  // What the platform actually sent this person, and whether it arrived.
+  const [emailLog, setEmailLog] = useState<{ rows: any[]; unavailable: boolean } | null>(null)
 
   // The drawer stands down while the nested reject modal is open, so Escape
   // there closes only the modal and leaves the drawer behind it.
+  // Loaded when the drawer opens, because "did they get an email?" is the
+  // question being asked at exactly that moment.
+  useEffect(() => {
+    if (!selected) { setEmailLog(null); return }
+    let active = true
+    fetch('/api/admin/users', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'email_log',
+        email: selected.email || selected.work_email || selected.contact_email || '',
+        user_id: selected.user_id || null,
+      }),
+    })
+      .then(res => res.ok ? res.json() : null)
+      .then(json => { if (active) setEmailLog({ rows: json?.log || [], unavailable: Boolean(json?.unavailable) }) })
+      .catch(() => { if (active) setEmailLog({ rows: [], unavailable: false }) })
+    return () => { active = false }
+  }, [selected])
+
   const detailDialog = useDialog(() => setSelected(null), 'admin-user-detail-heading', { enabled: Boolean(selected) })
   const rejectDialog = useDialog(() => setShowReject(false), 'admin-user-reject-heading', { enabled: Boolean(showReject) })
 
@@ -246,6 +267,26 @@ export default function AdminUsersPage() {
                 {selected.certificates_urls?.map((url: string, i: number) => <a key={i} href={url} target="_blank" rel="noopener noreferrer" className="flex items-center space-x-2 text-ink hover:underline"><FileText size={14} /><span>Certificate {i+1}</span><ExternalLink size={12} /></a>)}
                 {!selected.cv_url && !selected.insurance_document_url && !selected.certificates_urls?.length && <p className="text-muted">No documents uploaded</p>}
               </div></div>
+              <div>
+                <p className="text-xs text-muted uppercase tracking-wider mb-2">Emails we sent</p>
+                {!emailLog ? <p className="text-muted text-[12px]">Checking…</p>
+                  : emailLog.unavailable ? <p className="text-[12px] text-amber-700">The email log table has not been created yet - run the email_log migration and sends from then on will be recorded here.</p>
+                  : emailLog.rows.length === 0 ? <p className="text-[12px] text-muted">Nothing recorded. Anything sent before the email log existed will not appear here.</p>
+                  : (
+                    <div className="space-y-1.5">
+                      {emailLog.rows.map(entry => (
+                        <div key={entry.id} className="border border-border p-2.5">
+                          <div className="flex flex-wrap items-baseline justify-between gap-2">
+                            <p className="text-[12px] font-medium text-ink">{entry.subject || entry.kind}</p>
+                            <span className={`text-[10px] font-semibold uppercase tracking-wider ${entry.status === 'sent' ? 'text-emerald-700' : 'text-red-600'}`}>{entry.status}</span>
+                          </div>
+                          <p className="text-[11px] text-muted">{new Date(entry.created_at).toLocaleString('en-GB')}</p>
+                          {entry.error && <p className="mt-1 text-[11px] leading-5 text-red-600">{entry.error}</p>}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+              </div>
               {selected.approval_notes && <div className="bg-red-50 p-3"><p className="text-xs text-red-600">Rejection reason: {selected.approval_notes}</p></div>}
             </div>
             <div className="p-6 border-t border-border sticky bottom-0 bg-white space-y-3">
