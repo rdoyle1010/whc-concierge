@@ -101,6 +101,7 @@ export default function Navbar({ siteContent }: { siteContent?: WebsiteContent }
     { href: '/agency/about', label: 'Agency' },
     { href: '/academy', label: 'Academy' },
     { href: '/residency', label: 'Residency' },
+    { href: '/consultancy', label: 'Consultancy' },
     { href: '/intelligence', label: 'Intelligence' },
   ]
 
@@ -116,10 +117,11 @@ export default function Navbar({ siteContent }: { siteContent?: WebsiteContent }
     },
     {
       label: 'Flexible Work',
-      paths: ['/agency', '/residency'],
+      paths: ['/agency', '/residency', '/consultancy'],
       items: [
         { href: '/agency/about', label: labels.agency, note: 'Flexible shifts and cover' },
         { href: '/residency', label: labels.residency, note: 'Specialist placements' },
+        { href: '/consultancy', label: 'Consultancy', note: 'Advisers, designers and operators' },
       ],
     },
   ]

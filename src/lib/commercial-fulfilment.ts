@@ -9,7 +9,7 @@ export type CommercialFulfilmentResult = {
   message?: string
 }
 
-const KNOWN_PRODUCTS = ['talent_standard', 'talent_pro', 'featured_talent_7', 'featured_talent_30', 'employer_pro', 'employer_group', 'residency_featured']
+const KNOWN_PRODUCTS = ['talent_standard', 'talent_pro', 'featured_talent_7', 'featured_talent_30', 'employer_pro', 'employer_group', 'residency_featured', 'consultancy_featured']
 
 /**
  * Write a paid checkout into the purchase ledger.
@@ -116,6 +116,24 @@ export async function fulfilCommercialPurchase(admin: any, stripe: Stripe, sessi
     if (!profile) return fail(404, 'Employer profile not found', product, role)
     const { error } = await admin.from('employer_profiles').update({ membership_tier: tier, membership_started_at: now.toISOString(), membership_renews_at: renewsAt, membership_stripe_subscription_id: subscriptionId, ...customerColumns, membership_cancel_at_period_end: Boolean(sub?.cancel_at_period_end), annual_job_allowance: tier === 'group' ? 20 : 0, annual_jobs_used: 0 }).eq('id', profile.id)
     if (error) return fail(500, `Membership update failed: ${error.message}`, product, role)
+  } else if (product === 'consultancy_featured') {
+    // The payment is already banked, so a listing that cannot be found must
+    // never come back as a bare 404 - the buyer is told it is recorded and
+    // WHC applies it by hand.
+    const recordedMessage = 'Your payment is recorded. Your Consultancy listing could not be updated automatically - please contact WHC and we will apply your Featured placement.'
+    const days = Number(session.metadata?.featured_days || 30)
+    const { data: listing } = await admin.from('consultancy_profiles')
+      .select('id, featured_until').eq('user_id', userId).maybeSingle()
+    if (!listing) return { ok: true, status: 200, product, role, message: recordedMessage }
+
+    // Buying a second month while the first is still running extends it rather
+    // than restarting it, or the buyer loses the days they already paid for.
+    const existingUntil = listing.featured_until ? new Date(listing.featured_until) : null
+    const start = existingUntil && existingUntil > now ? existingUntil : now
+    const until = new Date(start.getTime() + days * 86400000)
+    const { error } = await admin.from('consultancy_profiles')
+      .update({ featured: true, featured_until: until.toISOString() }).eq('id', listing.id)
+    if (error) return fail(500, `Consultancy featured update failed: ${error.message}`, product, role)
   } else if (product === 'residency_featured') {
     // The payment is already in the ledger, so a missing profile or listing
     // must never surface as a bare 404 - tell the member it is recorded.

@@ -109,6 +109,19 @@ check('public Residency data is sanitised and membership-gated', () => {
   assert.doesNotMatch(mapper, /profile_photo_url:/)
   assert.doesNotMatch(mapper, /full_name:/)
 })
+check('the public Consultancy directory serves only approved, published listings', () => {
+  const route = read('src/app/api/consultancy/public/route.ts')
+  assert.doesNotMatch(route, /select\('\*'\)/)
+  assert.match(route, /eq\('is_live', true\)/)
+  assert.match(route, /eq\('approval_status', 'approved'\)/)
+  // Confidential clients are resolved to what may be shown before the response
+  // leaves the server, not in the browser where the raw name would still be in
+  // the payload.
+  assert.match(route, /client: projectClientLabel\(project\)/)
+  for (const hidden of ['approval_notes', 'view_count', 'enquiry_count']) {
+    assert.doesNotMatch(route, new RegExp(`${hidden}:`), `${hidden} is not public`)
+  }
+})
 check('Residency money has payout and dispute controls', () => {
   const admin = read('src/app/api/admin/residency-money/route.ts')
   assert.match(admin, /mark_paid_out/)
@@ -169,6 +182,13 @@ check('all service-role API routes are protected or deliberately public', () => 
     'src/app/api/newsletter/unsubscribe/route.ts',
     'src/app/api/register/init/route.ts',
     'src/app/api/residency/public/route.ts',
+    // Public by design: the Consultancy directory. Unlike Residency, which is
+    // anonymous until a booking, this is a showcase - the practice name, the
+    // projects and the outcomes are the product. It serves only listings the
+    // consultant published and WHC approved, and the shaper drops the columns
+    // that are the consultant's own business (moderation notes, view and
+    // enquiry counts) rather than selecting the row wholesale.
+    'src/app/api/consultancy/public/route.ts',
     'src/app/api/stripe/sponsored-ad-confirm/route.ts',
     // Public by design: aggregate demand counts for the public Academy page -
     // a map of course slug to live-role count, cached, nothing per-listing.

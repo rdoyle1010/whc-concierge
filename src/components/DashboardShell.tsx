@@ -22,7 +22,7 @@ import { TrendingUp,
   Settings, LogOut, Menu, X, Users, FileText, Megaphone,
   AlertTriangle, Heart, Building2, ChevronRight, BarChart3, CreditCard, GraduationCap,
   Palette, Banknote, Download, MapPin, Brain, ClipboardList, ShieldCheck, Lock,
-  Search, Mail, Image as ImageIcon, LayoutGrid,
+  Search, Mail, Image as ImageIcon, LayoutGrid, Lightbulb,
 } from 'lucide-react'
 
 interface NavItem {
@@ -52,6 +52,7 @@ const navItems: Record<string, NavItem[]> = {
     { label: 'Agency Settings', href: '/talent/agency/settings', icon: <Settings size={17} /> },
     { label: 'Shift Resolution', href: '/talent/agency/cases', icon: <AlertTriangle size={17} /> },
     { label: 'Residency', href: '/talent/residency', icon: <MapPin size={17} /> },
+    { label: 'Consultancy', href: '/talent/consultancy', icon: <Lightbulb size={17} /> },
     { label: 'Before You Arrive', href: '/talent/before-you-arrive', icon: <ClipboardList size={17} /> },
     { label: 'Academy', href: '/talent/academy', icon: <GraduationCap size={17} />, section: 'Grow' },
     { label: 'Career Intelligence', href: '/talent/career', icon: <TrendingUp size={17} /> },
@@ -79,6 +80,7 @@ const navItems: Record<string, NavItem[]> = {
     { label: 'Agency Bookings', href: '/employer/agency', icon: <Calendar size={17} />, section: 'Flexible staffing' },
     { label: 'Shift Resolution', href: '/employer/agency/cases', icon: <AlertTriangle size={17} /> },
     { label: 'Residency', href: '/employer/residency', icon: <MapPin size={17} /> },
+    { label: 'Consultancy', href: '/consultancy', icon: <Lightbulb size={17} /> },
     { label: 'Company Profile', href: '/employer/profile', icon: <Building2 size={17} />, section: 'Your property' },
     { label: 'Property Fact File', href: '/employer/property-fact-file', icon: <FileText size={17} /> },
     { label: 'Analytics', href: '/employer/analytics', icon: <BarChart3 size={17} />, section: 'Visibility', accessKey: 'employer_analytics' },
@@ -107,6 +109,7 @@ const navItems: Record<string, NavItem[]> = {
     { label: 'Academy', href: '/admin/academy', icon: <GraduationCap size={17} />, section: 'Content & revenue' },
     { label: 'Academy Downloads', href: '/admin/academy/downloads', icon: <Download size={17} /> },
     { label: 'Residency Listings', href: '/admin/residency', icon: <Calendar size={17} /> },
+    { label: 'Consultancy', href: '/admin/consultancy', icon: <Lightbulb size={17} /> },
     { label: 'Residency Money', href: '/admin/residency-money', icon: <CreditCard size={17} /> },
     { label: 'Job Listings', href: '/admin/jobs', icon: <Briefcase size={17} /> },
     { label: 'Blog & Journal', href: '/admin/blog', icon: <FileText size={17} /> },
