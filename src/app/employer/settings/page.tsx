@@ -5,6 +5,7 @@ import { getViewer } from '@/lib/viewer'
 import { useDialog } from '@/components/useDialog'
 import DashboardShell from '@/components/DashboardShell'
 import { createClient } from '@/lib/supabase/client'
+import EmailAddressPanel from '@/components/EmailAddressPanel'
 import { Save, Download, AlertTriangle } from 'lucide-react'
 import { deletionSummary } from '@/lib/account-deletion'
 
@@ -271,6 +272,8 @@ export default function EmployerSettingsPage() {
             <button type="button" onClick={() => saveSmsSettings()} disabled={smsSaving} className="btn-secondary text-[13px] disabled:opacity-50">{smsSaving ? 'Saving...' : 'Save SMS settings'}</button>
           </div>
         </div>
+
+        <EmailAddressPanel />
 
         <div className="dashboard-card">
           <h3 className="font-serif text-lg font-semibold mb-4">Change Password</h3>

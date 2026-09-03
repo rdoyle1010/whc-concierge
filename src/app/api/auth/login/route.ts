@@ -78,9 +78,18 @@ export async function POST(request: NextRequest) {
 
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
-      .select('role')
+      .select('role, email')
       .eq('id', authData.user.id)
       .maybeSingle()
+
+    // A confirmed email change updates auth.users and nothing else, so the
+    // copies held on profiles and employer_profiles keep the old address -
+    // and those are what the admin lists, invoices and contact routes read.
+    // Sign-in is where the two can be reconciled for free: the person has
+    // just proved which address is current by using it.
+    if (profile && authData.user.email && profile.email !== authData.user.email) {
+      await syncStoredEmail(authData.user.id, authData.user.email)
+    }
 
     if (profileError) {
       await supabase.auth.signOut()
@@ -155,4 +164,16 @@ export async function POST(request: NextRequest) {
     console.error('Login route failed:', error)
     return NextResponse.json({ error: 'Sign in failed. Please try again.' }, { status: 500 })
   }
+}
+
+
+// Best-effort, and deliberately silent. A stale copy of an address is a
+// nuisance; a sign-in that fails because tidying it up went wrong is not.
+async function syncStoredEmail(userId: string, email: string) {
+  try {
+    const { createAdminClient } = await import('@/lib/supabase/admin')
+    const admin = createAdminClient()
+    await admin.from('profiles').update({ email }).eq('id', userId)
+    await admin.from('employer_profiles').update({ email }).eq('user_id', userId)
+  } catch { /* the address on auth.users is the one that signs people in */ }
 }
