@@ -135,3 +135,61 @@ test('there is one page showing everything sent', () => {
     'an empty list before the migration would read as "we have never sent anything"')
   assert.match(read('src/components/DashboardShell.tsx'), /admin\/messages-sent/, 'and it is reachable')
 })
+
+// `if (userEmail) await alertAdminOfSignup(...); await sendWelcomeEmail(...)`
+// reads as one guarded statement and is two. The guard covered only the alert,
+// so a sign-up with no address on it told Rebecca nothing while still calling
+// the welcome sender with an empty string. Neither registration route may
+// carry a guard shaped like that again.
+test('a guard on one line does not silently cover two statements', () => {
+  for (const route of ['src/app/api/register/talent/route.ts', 'src/app/api/register/employer/route.ts']) {
+    for (const line of read(route).split('\n')) {
+      const trimmed = line.trim()
+      if (!trimmed.startsWith('if (')) continue
+      // A braced body is unambiguous however many statements it holds; only an
+      // unbraced one can quietly leave the next statement outside the guard.
+      const body = trimmed.slice(trimmed.indexOf(')', trimmed.lastIndexOf('(')) + 1).trim()
+      if (!body || body.startsWith('{')) continue
+      assert.ok(
+        !/;\s*\S/.test(body),
+        `${route} hides a second statement behind a one-line if: ${trimmed}`,
+      )
+    }
+  }
+})
+
+// The operator alert goes to Rebecca. It has nothing to do with whether the
+// person signing up has an email address, and must not be gated on one.
+test('the sign-up alert is not gated on the member having an email', () => {
+  for (const route of ['src/app/api/register/talent/route.ts', 'src/app/api/register/employer/route.ts']) {
+    const source = read(route)
+    const helper = source.slice(source.indexOf('async function announceSignup'))
+    const alertAt = helper.indexOf('alertAdminOfSignup(')
+    const guardAt = helper.indexOf('if (email')
+    assert.ok(alertAt !== -1, `${route} must announce the sign-up`)
+    assert.ok(guardAt === -1 || alertAt < guardAt, `${route} still gates the alert on an address`)
+  }
+})
+
+// A missing API key, an unverified sending domain, a rejected send and a spam
+// folder all look identical from the outside: nothing arrives. The only way to
+// tell them apart used to be registering a fake account and guessing.
+test('delivery can be proved without registering a fake account', () => {
+  const route = read('src/app/api/admin/delivery-test/route.ts')
+  assert.match(route, /adminRequestUser/, 'sending real messages is an admin-only button')
+  // Both channels, and a real send rather than a config read dressed up as one.
+  assert.match(route, /rawSms\(/, 'the text test sends an actual text')
+  assert.match(route, /sendTransactionalEmail\(/, 'the email test sends an actual email')
+  // The point is the reason, not a red cross.
+  assert.match(route, /TWILIO_ACCOUNT_SID/, 'a missing Twilio config names what to set')
+  assert.match(route, /result\.error/, 'the provider gets to say why it refused')
+  // A browser response must not carry the sending credentials or the full
+  // address of an account.
+  assert.ok(!/process\.env\.RESEND_API_KEY\b(?!\))/.test(route.replace('Boolean(process.env.RESEND_API_KEY)', '')),
+    'the key itself never leaves the server')
+  assert.match(route, /function maskEmail/)
+
+  const panel = read('src/components/DeliveryTestPanel.tsx')
+  assert.match(panel, /Send a test/, 'and there is a button to press')
+  assert.match(read('src/app/admin/settings/page.tsx'), /<DeliveryTestPanel \/>/, 'wired into settings')
+})

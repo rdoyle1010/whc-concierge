@@ -22,6 +22,17 @@ async function sendWelcomeEmail(email: string, firstName: string, userId?: strin
   })
 }
 
+// The alert to the operator and the welcome to the property are two different
+// messages to two different people. They were on one line joined by a
+// semicolon, which read as one guarded statement and was not: the guard
+// covered only the alert, so a sign-up with no address on it sent nothing to
+// Rebecca while still calling the welcome sender with an empty string.
+async function announceSignup(email: string, profile: Record<string, any>, userId: string) {
+  await alertAdminOfSignup('employer', profile.property_name || profile.company_name)
+  if (!email) return
+  const firstName = String(profile.contact_name || profile.company_name || '').split(' ')[0] || 'there'
+  await sendWelcomeEmail(email, firstName, userId)
+}
 
 // Insert, stripping ONLY columns the DB reports as unknown (keeps all other data).
 async function insertStrippingUnknownColumns(supabase: any, table: string, row: Record<string, any>, maxStrips = 8) {
@@ -144,7 +155,7 @@ export async function POST(req: NextRequest) {
         .insert(safeProfile)
 
       if (!profileError) {
-        if (userEmail) await alertAdminOfSignup('employer', safeProfile.property_name || safeProfile.company_name); await sendWelcomeEmail(userEmail, String(safeProfile.contact_name || safeProfile.company_name).split(' ')[0] || 'there')
+        await announceSignup(userEmail, safeProfile, userId)
         return NextResponse.json({ success: true })
       }
 
@@ -158,7 +169,7 @@ export async function POST(req: NextRequest) {
       // Column mismatch: strip only the offending columns, keep the rest of the data
       const result = await insertStrippingUnknownColumns(supabase, 'employer_profiles', safeProfile)
       if (result.ok) {
-        if (userEmail) await alertAdminOfSignup('employer', safeProfile.property_name || safeProfile.company_name); await sendWelcomeEmail(userEmail, String(safeProfile.contact_name || safeProfile.company_name).split(' ')[0] || 'there')
+        await announceSignup(userEmail, safeProfile, userId)
         return NextResponse.json({ success: true })
       }
       lastError = result.error

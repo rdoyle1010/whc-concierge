@@ -18,6 +18,16 @@ async function sendWelcomeEmail(email: string, firstName: string, userId?: strin
   })
 }
 
+// The alert to the operator and the welcome to the member are two different
+// messages to two different people. They were on one line joined by a
+// semicolon, which read as one guarded statement and was not: the guard
+// covered only the alert, so a sign-up with no address on it sent nothing to
+// Rebecca while still calling the welcome sender with an empty string.
+async function announceSignup(email: string, fullName: string, userId: string) {
+  await alertAdminOfSignup('talent', fullName)
+  if (email) await sendWelcomeEmail(email, String(fullName).split(' ')[0] || 'there', userId)
+}
+
 async function sleep(ms: number) {
   return new Promise(resolve => setTimeout(resolve, ms))
 }
@@ -159,7 +169,7 @@ export async function POST(req: NextRequest) {
 
       if (!profileError) {
         if (body.refCode) await recordReferral(supabase, userId, body.refCode)
-        if (userEmail) await alertAdminOfSignup('talent', safeProfile.full_name); await sendWelcomeEmail(userEmail, String(safeProfile.full_name).split(' ')[0] || 'there', userId)
+        await announceSignup(userEmail, safeProfile.full_name, userId)
         return NextResponse.json({ success: true })
       }
 
@@ -173,7 +183,7 @@ export async function POST(req: NextRequest) {
       const result = await upsertStrippingUnknownColumns(supabase, 'candidate_profiles', safeProfile)
       if (result.ok) {
         if (body.refCode) await recordReferral(supabase, userId, body.refCode)
-        if (userEmail) await alertAdminOfSignup('talent', safeProfile.full_name); await sendWelcomeEmail(userEmail, String(safeProfile.full_name).split(' ')[0] || 'there', userId)
+        await announceSignup(userEmail, safeProfile.full_name, userId)
         return NextResponse.json({ success: true })
       }
       lastError = result.error
