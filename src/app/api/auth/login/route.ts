@@ -78,9 +78,18 @@ export async function POST(request: NextRequest) {
 
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
-      .select('role')
+      .select('role, email')
       .eq('id', authData.user.id)
       .maybeSingle()
+
+    // A confirmed email change updates auth.users and nothing else, so the
+    // copies held on profiles and employer_profiles keep the old address -
+    // and those are what the admin lists, invoices and contact routes read.
+    // Sign-in is where the two can be reconciled for free: the person has
+    // just proved which address is current by using it.
+    if (profile && authData.user.email && profile.email !== authData.user.email) {
+      await syncStoredEmail(authData.user.id, authData.user.email)
+    }
 
     if (profileError) {
       await supabase.auth.signOut()
@@ -102,14 +111,24 @@ export async function POST(request: NextRequest) {
 
       if (!matchesSelectedLogin) {
         await supabase.auth.signOut()
+        // Naming the door matters more than naming the account type. An
+        // administrator who tries the ordinary sign-in page was told to "use
+        // the Admin sign in" - which is not on that page, has no toggle, and
+        // is at a URL nothing links to. That is a dead end dressed up as an
+        // instruction, and it is how an administrator concludes their account
+        // is broken.
         const correctArea = accountRole === 'employer'
           ? 'Hotel / Employer'
           : accountRole === 'candidate'
             ? 'Talent'
-            : 'Admin'
+            : 'administrator'
+        const where = accountRole === 'admin'
+          ? 'Administrators sign in at talenthousecollective.co.uk/admin, not here.'
+          : `Please use the ${correctArea} side of this page.`
         return NextResponse.json({
-          error: `This is a ${correctArea} account. Please use the ${correctArea} sign in.`,
+          error: `This is ${accountRole === 'admin' ? 'an' : 'a'} ${correctArea} account. ${where}`,
           accountRole,
+          adminSignIn: accountRole === 'admin' ? '/admin' : undefined,
         }, { status: 403 })
       }
     }
@@ -145,4 +164,16 @@ export async function POST(request: NextRequest) {
     console.error('Login route failed:', error)
     return NextResponse.json({ error: 'Sign in failed. Please try again.' }, { status: 500 })
   }
+}
+
+
+// Best-effort, and deliberately silent. A stale copy of an address is a
+// nuisance; a sign-in that fails because tidying it up went wrong is not.
+async function syncStoredEmail(userId: string, email: string) {
+  try {
+    const { createAdminClient } = await import('@/lib/supabase/admin')
+    const admin = createAdminClient()
+    await admin.from('profiles').update({ email }).eq('id', userId)
+    await admin.from('employer_profiles').update({ email }).eq('user_id', userId)
+  } catch { /* the address on auth.users is the one that signs people in */ }
 }

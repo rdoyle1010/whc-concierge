@@ -23,6 +23,7 @@ import { TrendingUp,
   AlertTriangle, Heart, Building2, ChevronRight, BarChart3, CreditCard, GraduationCap,
   Palette, Banknote, Download, MapPin, Brain, ClipboardList, ShieldCheck, Lock,
   Search, Mail, Image as ImageIcon, LayoutGrid, Lightbulb,
+  Activity,
 } from 'lucide-react'
 
 interface NavItem {
@@ -115,6 +116,7 @@ const navItems: Record<string, NavItem[]> = {
     { label: 'Users', href: '/admin/users', icon: <Users size={17} /> },
     { label: 'Messages', href: '/admin/messages', icon: <MessageSquare size={17} /> },
     { label: 'Messages We Sent', href: '/admin/messages-sent', icon: <Mail size={17} /> },
+    { label: 'Who Is Online', href: '/admin/activity', icon: <Activity size={17} /> },
     { label: 'Matches', href: '/admin/matches', icon: <Heart size={17} /> },
     { label: 'Agency Money', href: '/admin/agency', icon: <CreditCard size={17} /> },
     { label: 'Agency Cases', href: '/admin/agency-cases', icon: <AlertTriangle size={17} /> },
@@ -177,6 +179,35 @@ export default function DashboardShell({ children, role, userName, intro }: Dash
     getViewer().then(user => { if (active) setViewerId(user?.id || null) }).catch(() => { })
     return () => { active = false }
   }, [])
+
+  // The heartbeat behind "who has been online today".
+  //
+  // auth.users.last_sign_in_at was the only signal there was, and it answers a
+  // different question badly: a session lasts weeks, so somebody who signed in
+  // once and has used the platform daily ever since still reads as one visit
+  // months ago.
+  //
+  // It fires on each page a signed-in person opens and then every five
+  // minutes, which is the same bucket the server counts in - so a tab left
+  // open overnight adds nothing, and the figure stays minutes of actual use
+  // rather than wall-clock hours.
+  useEffect(() => {
+    const workspace = role === 'talent' && accountFocus === 'consultant' ? 'consultant' : role
+    const ping = () => {
+      // A person reading a page in a background tab is not using the platform,
+      // and counting them would inflate every number on the admin view.
+      if (typeof document !== 'undefined' && document.visibilityState !== 'visible') return
+      fetch('/api/activity/ping', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ role: workspace }),
+        keepalive: true,
+      }).catch(() => { })
+    }
+    ping()
+    const timer = setInterval(ping, 5 * 60 * 1000)
+    return () => clearInterval(timer)
+  }, [pathname, role, accountFocus])
 
   useEffect(() => {
     let active = true

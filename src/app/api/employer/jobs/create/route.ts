@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { geocodePostcode } from '@/lib/geo'
+import { geocodeLocation } from '@/lib/geo'
+import { countryCode, DEFAULT_COUNTRY, productAvailableIn } from '@/lib/countries'
 import { getRequestUser } from '@/lib/request-user'
 
 // Job storytelling columns (20260831170000). Optional narrative fields; if the
@@ -31,7 +32,7 @@ export async function POST(req: NextRequest) {
   const admin = createAdminClient()
   const { data: employer } = await admin
     .from('employer_profiles')
-    .select('id, postcode, latitude, longitude')
+    .select('id, postcode, latitude, longitude, country_code, country')
     .eq('user_id', user.id)
     .maybeSingle()
 
@@ -51,11 +52,29 @@ export async function POST(req: NextRequest) {
   if (!CANDIDATE_SCOPES.has(String(payload.candidate_scope || 'step_up'))) payload.candidate_scope = 'step_up'
   payload.is_live = false
 
+  // A role's country is not always the property's. A London group hiring for
+  // its resort in the Maldives is the ordinary case, so the role carries its
+  // own country and only falls back to the property's when it is not given.
+  const roleCountry = countryCode(payload.country_code as string | null) || countryCode(employer.country_code || employer.country) || DEFAULT_COUNTRY
+  payload.country_code = roleCountry
+
+  // A role abroad can be advertised, but it cannot be an Agency Cover shift:
+  // supplying somebody into one makes Talent House an employment business,
+  // licensed country by country. Cleared rather than refused, because the rest
+  // of the role is perfectly postable and refusing the whole thing over a
+  // checkbox would read as the country being unsupported.
+  if (!productAvailableIn('agency', roleCountry)) payload.is_agency_role = false
+
   const rolePostcode = String(payload.location_postcode || '').trim()
+  const roleTown = String(payload.location_city || payload.location || '').trim()
   let coords: { latitude: number; longitude: number } | null = null
-  if (rolePostcode) coords = await geocodePostcode(rolePostcode)
-  if (!coords && employer.latitude != null && employer.longitude != null) coords = { latitude: employer.latitude, longitude: employer.longitude }
-  if (!coords && employer.postcode) coords = await geocodePostcode(employer.postcode)
+  if (rolePostcode || roleTown) coords = await geocodeLocation(rolePostcode || roleTown, roleCountry)
+  // The property's own coordinates are only a sensible fallback when the role
+  // is in the same country. Otherwise a Maldives role inherits a Yorkshire pin
+  // and every distance on the platform is wrong by four thousand miles.
+  const sameCountry = roleCountry === (countryCode(employer.country_code || employer.country) || DEFAULT_COUNTRY)
+  if (!coords && sameCountry && employer.latitude != null && employer.longitude != null) coords = { latitude: employer.latitude, longitude: employer.longitude }
+  if (!coords && sameCountry && employer.postcode) coords = await geocodeLocation(employer.postcode, roleCountry)
   if (coords) { payload.latitude = coords.latitude; payload.longitude = coords.longitude }
 
   let { data: job, error } = await admin.from('job_listings').insert(payload).select('id').single()

@@ -227,7 +227,12 @@ check('all service-role API routes are protected or deliberately public', () => 
   // missing here, so a route passed only if it happened to wrap the helper in
   // something called requireAdmin - the check was reading naming rather than
   // substance, and a correctly guarded route failed for calling it directly.
-  const authMarkers = /getUser\(|getRequestUser\(|adminRequestUser\(|requireAdmin|verifyAdmin|stripe-signature|isInternalApiRequest/
+  // signInWithPassword belongs here for the same reason getUser does: a route
+  // that calls it has established who the caller is before doing anything.
+  // The sign-in route reconciles the copies of a member's email address after
+  // a confirmed change, which needs the service role and cannot happen before
+  // the password has been accepted.
+  const authMarkers = /getUser\(|getRequestUser\(|adminRequestUser\(|requireAdmin|verifyAdmin|stripe-signature|isInternalApiRequest|signInWithPassword\(/
   const unguarded = files.filter(file => !authMarkers.test(read(file)) && !deliberatePublic.has(file))
   assert.deepEqual(unguarded, [])
 })

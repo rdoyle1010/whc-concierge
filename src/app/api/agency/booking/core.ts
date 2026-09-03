@@ -44,6 +44,7 @@ import { sendSms } from '@/lib/sms'
 import { sendAgencyOfferEmail, sendReviewRequestEmail, sendInsuranceExpiryEmail, sendAgencyUpdateEmail, sendFeaturedExpiringEmail } from '@/lib/emails'
 import { emailAllowed, smsAllowed } from '@/lib/notification-prefs'
 import { profileDistanceMiles } from '@/lib/geo'
+import { productAvailableIn, unavailableReason } from '@/lib/countries'
 import { shiftHours, validShiftWindow, windowCovers, windowsOverlap } from '@/lib/agency-time'
 
 // Offers expire so urgent cover doesn't sit unanswered while the property
@@ -557,6 +558,14 @@ export async function POST(req: NextRequest) {
     // platform fee is calculated on top and payable by the property.
     if (action === 'create') {
       if (!emp) return NextResponse.json({ error: 'Only employers can make offers' }, { status: 403 })
+      // Agency Cover is the one product line with a border on it. Supplying
+      // somebody into a shift makes Talent House an employment business,
+      // licensed country by country, so a property outside the UK cannot book
+      // cover however much it would like to. Roles, Residency and Consultancy
+      // are open to it.
+      if (!productAvailableIn('agency', emp.country_code || emp.country)) {
+        return NextResponse.json({ error: unavailableReason('agency') }, { status: 403 })
+      }
       // Agency cover is a Preferred Employer benefit (£150/year registration)
       if (!emp.preferred_employer) {
         return NextResponse.json({ error: 'Agency bookings are for registered Preferred Employers. Register from your Agency Bookings page (£150/year) to book cover.' }, { status: 403 })
@@ -576,7 +585,7 @@ export async function POST(req: NextRequest) {
 
       const { data: targetCand } = await admin
         .from('candidate_profiles')
-        .select('id, full_name, user_id, phone, sms_opt_in, approval_status, profile_visible, agency_available, agency_listed_until, latitude, longitude, travel_radius_miles')
+        .select('id, full_name, user_id, phone, sms_opt_in, approval_status, profile_visible, agency_available, agency_listed_until, latitude, longitude, travel_radius_miles, country_code, location_country')
         .eq('id', body.candidateId)
         .maybeSingle()
       if (!targetCand) return NextResponse.json({ error: 'Candidate not found' }, { status: 404 })

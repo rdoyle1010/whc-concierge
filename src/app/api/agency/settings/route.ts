@@ -3,6 +3,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { geocodePostcode } from '@/lib/geo'
+import { productAvailableIn, unavailableReason } from '@/lib/countries'
 
 // Agency register settings. This route owns the practical details the
 // register needs: rate, mobile, postcode, travel radius and optional SMS consent.
@@ -72,10 +73,22 @@ export async function POST(req: NextRequest) {
     if (!user) return NextResponse.json({ error: 'Please log in' }, { status: 401 })
 
     const admin = createAdminClient()
-    const { data: cand } = await admin.from('candidate_profiles').select('id, postcode').eq('user_id', user.id).maybeSingle()
+    const { data: cand } = await admin.from('candidate_profiles')
+      .select('id, postcode, country_code, location_country').eq('user_id', user.id).maybeSingle()
     if (!cand) return NextResponse.json({ error: 'No candidate profile found' }, { status: 404 })
 
     const body = await req.json()
+
+    if (body.joining) {
+      // Agency Cover is the one line with a border on it. Placing somebody
+      // into a shift makes Talent House an employment business, which is
+      // licensed country by country - so the gate is here, on the server,
+      // rather than only in a form that a request can go round.
+      const country = cand.country_code || cand.location_country
+      if (!productAvailableIn('agency', country)) {
+        return NextResponse.json({ error: unavailableReason('agency') }, { status: 403 })
+      }
+    }
 
     if (body.joining) {
       const rate = parseInt(String(body.hourly_rate), 10)

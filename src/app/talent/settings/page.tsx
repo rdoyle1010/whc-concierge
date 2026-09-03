@@ -5,6 +5,7 @@ import { getViewer } from '@/lib/viewer'
 import { useDialog } from '@/components/useDialog'
 import DashboardShell from '@/components/DashboardShell'
 import { createClient } from '@/lib/supabase/client'
+import EmailAddressPanel from '@/components/EmailAddressPanel'
 import { Save, Search, ShieldOff, X, Download, AlertTriangle, Lock } from 'lucide-react'
 import Link from 'next/link'
 import { deletionSummary } from '@/lib/account-deletion'
@@ -511,6 +512,8 @@ export default function TalentSettingsPage() {
             )}
           </div>
         )}
+
+        <EmailAddressPanel />
 
         <div className="dashboard-card">
           <h3 className="font-serif text-lg font-semibold mb-4">Change Password</h3>

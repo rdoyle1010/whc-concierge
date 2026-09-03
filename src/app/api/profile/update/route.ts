@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getRequestUser } from '@/lib/request-user'
 import { profileUpdateSchema, validateRequest } from '@/lib/validations'
-import { geocodePostcode } from '@/lib/geo'
+import { geocodeLocation } from '@/lib/geo'
 import { recordSalary } from '@/lib/analytics'
 
 const ALLOWED_COLUMNS = new Set([
@@ -11,6 +11,10 @@ const ALLOWED_COLUMNS = new Set([
   // and a column here would put it on a profile properties browse.
   'language_skills','cv_language',
   'full_name','phone','postcode','location','location_country','has_car','role_level','headline','bio','experience_years',
+  // Where they are, and where they will work. Agency stays UK-only; Roles,
+  // Residency and Consultancy travel, and open_to_countries is what makes a
+  // therapist in Leeds findable for a resort in the Maldives.
+  'country_code','open_to_countries',
   'day_rate_min','day_rate_max','hourly_rate','willing_to_relocate','availability_status','right_to_work','languages','availability_date',
   'services_offered','product_houses','qualifications','systems_experience','business_skills','career_evidence','travel_availability','travel_radius_miles',
   'has_insurance','employment_types_wanted','skills','certificates_urls','profile_completion_pct','profile_completion_score','profile_image_url','cv_url',
@@ -33,9 +37,15 @@ function stripToAllowed(data: Record<string, unknown>): Record<string, unknown> 
 // save - the profile just stays text-matched until the postcode is corrected.
 async function withCoordinates(clean: Record<string, unknown>): Promise<Record<string, unknown>> {
   const postcode = typeof clean.postcode === 'string' ? clean.postcode.trim() : ''
-  if (!postcode) return clean
+  const country = typeof clean.country_code === 'string' ? clean.country_code
+    : typeof clean.location_country === 'string' ? clean.location_country : null
+  // Abroad there is no postcode to give, and a therapist in Muscat would have
+  // been left off every distance-aware list on the platform for not having
+  // one. The town is what they have, and it is enough.
+  const place = postcode || (typeof clean.location === 'string' ? clean.location.trim() : '')
+  if (!place && !country) return clean
   try {
-    const coords = await geocodePostcode(postcode)
+    const coords = await geocodeLocation(place, country)
     if (coords) return { ...clean, latitude: coords.latitude, longitude: coords.longitude }
   } catch {}
   return clean
