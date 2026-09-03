@@ -1,30 +1,14 @@
 // Email notification templates for Talent House Collective
 // Uses Resend API - set RESEND_API_KEY in environment
 
-const RESEND_API_KEY = process.env.RESEND_API_KEY
-const FROM_EMAIL = 'Talent House Collective <noreply@mail.wellnesshousecollective.co.uk>'
+import { sendTransactionalEmail } from '@/lib/send-email'
 
+// Every message in this file goes through the shared sender, which records
+// what was sent to whom and what happened to it. Eighteen kinds of email run
+// through here across thirteen routes; before, all of them failed into a
+// console nobody reads.
 async function sendEmail(to: string, subject: string, html: string) {
-  if (!RESEND_API_KEY) {
-    console.log(`[Email skipped - no API key] To: ${to}, Subject: ${subject}`)
-    return
-  }
-
-  try {
-    // Log failures loudly - Resend rejections (bad key, unverified domain)
-    // otherwise fail in silence and nobody notices for months.
-    const res = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: { 'Authorization': `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ from: FROM_EMAIL, to, subject, html }),
-    })
-    if (!res.ok) {
-      const detail = await res.text().catch(() => '')
-      console.error(`[Email FAILED ${res.status}] To: ${to}, Subject: ${subject} - ${detail.slice(0, 300)}`)
-    }
-  } catch (err) {
-    console.error('Email send failed:', err)
-  }
+  await sendTransactionalEmail({ to, subject, html, kind: 'notification' })
 }
 
 const wrapper = (content: string) => `

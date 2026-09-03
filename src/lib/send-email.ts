@@ -17,12 +17,14 @@ export const TRANSACTIONAL_FROM = 'Talent House Collective <noreply@mail.wellnes
 export type EmailKind =
   | 'welcome_talent' | 'welcome_employer' | 'newsletter_welcome'
   | 'verification' | 'certificate' | 'notification' | 'other'
+  | 'admin_alert' | 'interview' | 'offer' | 'decision' | 'job_alert' | 'application'
 
 type SendResult = { ok: boolean; status: 'sent' | 'failed' | 'skipped'; error?: string }
 
 async function record(entry: {
   recipient: string; kind: EmailKind; subject: string; userId?: string | null
   status: 'sent' | 'failed' | 'skipped'; error?: string | null; providerId?: string | null
+  channel?: 'email' | 'sms'
 }) {
   try {
     const admin = createAdminClient()
@@ -34,11 +36,33 @@ async function record(entry: {
       status: entry.status,
       error: entry.error ? String(entry.error).slice(0, 500) : null,
       provider_id: entry.providerId || null,
+      channel: entry.channel || 'email',
     })
   } catch {
     // The log must never be the reason an email fails to send. If the table is
     // not there yet, the send still happens.
   }
+}
+
+/**
+ * Record a text message alongside the emails.
+ *
+ * Same table on purpose: "what have we sent this person" is one question, and
+ * two logs for two channels means checking two places to answer it.
+ */
+export async function recordSms(entry: {
+  to: string; body: string; status: 'sent' | 'failed' | 'skipped'; error?: string | null
+}): Promise<void> {
+  await record({
+    recipient: entry.to || '(no number)',
+    kind: 'notification',
+    // The text itself, trimmed - short enough to recognise, and these are
+    // deliberately contentless notifications rather than private detail.
+    subject: entry.body.slice(0, 160),
+    status: entry.status,
+    error: entry.error,
+    channel: 'sms',
+  })
 }
 
 export async function sendTransactionalEmail(opts: {

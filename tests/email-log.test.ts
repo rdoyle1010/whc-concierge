@@ -91,3 +91,47 @@ test('an alert can never fail a registration', () => {
     assert.match(read(route), /alertAdminOfSignup\(/, `${route} must raise the alert`)
   }
 })
+
+// The log was built for email and only ever covered email. Texts went nowhere:
+// a failed SMS printed to a serverless console and was gone within days, so
+// "did they get the interview text?" had no answer.
+test('texts are recorded alongside emails, in the same place', () => {
+  const lib = read('src/lib/send-email.ts')
+  assert.match(lib, /export async function recordSms/)
+  assert.match(lib, /channel: 'sms'/)
+  const sms = read('src/lib/sms.ts')
+  // Every exit from both senders, not only the happy one.
+  const sent = (sms.match(/status: 'sent'/g) || []).length
+  const failed = (sms.match(/status: 'failed'/g) || []).length
+  const skipped = (sms.match(/status: 'skipped'/g) || []).length
+  assert.ok(sent >= 2 && failed >= 4 && skipped >= 4,
+    `both senders must record every outcome (sent ${sent}, failed ${failed}, skipped ${skipped})`)
+})
+
+// A text must never fail because the thing recording it did.
+test('logging can never break a send', () => {
+  const sms = read('src/lib/sms.ts')
+  const logger = sms.slice(sms.indexOf('async function log('), sms.indexOf('export function smsConfigured'))
+  assert.match(logger, /catch \{/, 'the recorder swallows its own failures')
+})
+
+// Eighteen kinds of email run through one shared helper across thirteen routes.
+// Converting that one function was the difference between logging a third of
+// what the platform sends and logging nearly all of it.
+test('the shared email helper is logged', () => {
+  const emails = read('src/lib/emails.ts')
+  assert.match(emails, /sendTransactionalEmail/)
+  assert.ok(!/api\.resend\.com/.test(emails), 'no direct provider call left in the shared helper')
+})
+
+// "What did we send this person, and did it arrive" needs one place to look.
+test('there is one page showing everything sent', () => {
+  const page = read('src/app/admin/messages-sent/page.tsx')
+  assert.match(page, /Messages we sent/)
+  // Never attempted and rejected are different problems with different fixes,
+  // so they are never collapsed into one status.
+  assert.match(page, /Never sent/)
+  assert.match(page, /message log table has not been created yet/,
+    'an empty list before the migration would read as "we have never sent anything"')
+  assert.match(read('src/components/DashboardShell.tsx'), /admin\/messages-sent/, 'and it is reachable')
+})
