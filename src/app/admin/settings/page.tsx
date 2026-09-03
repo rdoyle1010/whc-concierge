@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import DashboardShell from '@/components/DashboardShell'
 import AuthenticatorSecurity from '@/components/AuthenticatorSecurity'
 import RetentionPanel from '@/components/RetentionPanel'
+import BillingIdentityPanel from '@/components/BillingIdentityPanel'
 import { Save, Settings, CreditCard, Share2, ExternalLink } from 'lucide-react'
 
 type CommercialSetting = { product_key: string; label: string; description: string; price_pence: number; billing_interval: 'month' | 'year' | 'one_off'; is_active: boolean }
@@ -99,6 +100,8 @@ export default function AdminSettingsPage() {
       {message && <div className={`rounded-xl px-4 py-3 text-[13px] ${message.includes('Error') ? 'bg-red-50 text-red-600' : 'bg-emerald-50 text-emerald-700'}`}>{message}</div>}
 
       <AuthenticatorSecurity required />
+
+      <BillingIdentityPanel />
 
       <RetentionPanel />
 

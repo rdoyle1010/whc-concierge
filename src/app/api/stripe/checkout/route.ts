@@ -457,12 +457,18 @@ export async function POST(req: NextRequest) {
       const { createAdminClient } = await import('@/lib/supabase/admin')
       const admin = createAdminClient()
       const [{ data: emp }, { data: job }] = await Promise.all([
-        admin.from('employer_profiles').select('id, user_id').eq('id', employerId).maybeSingle(),
+        admin.from('employer_profiles').select('id, user_id, purchase_order_ref').eq('id', employerId).maybeSingle(),
         admin.from('job_listings').select('id, employer_id').eq('id', jobId).maybeSingle(),
       ])
       if (!emp || emp.user_id !== user.id || !job || job.employer_id !== emp.id) {
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
       }
+
+      // The purchase order comes from the property's own billing settings, not
+      // from this checkout: a hotel issues one PO for a supplier and expects it
+      // on everything, and asking again at every payment is how it gets typed
+      // wrong. Stripe metadata values are capped, so it is trimmed to fit.
+      const poRef = String(emp.purchase_order_ref || '').trim().slice(0, 100)
 
       const session = await stripe.checkout.sessions.create({
         payment_method_types: ['card'],
@@ -478,7 +484,7 @@ export async function POST(req: NextRequest) {
         allow_promotion_codes: true,
         success_url: `${origin}/employer/jobs?success=true`,
         cancel_url: `${origin}/employer/post-role?cancelled=true`,
-        metadata: { type: 'job_posting', tier, employer_id: employerId, job_id: jobId, days: String(tierConfig.days), user_id: user.id },
+        metadata: { type: 'job_posting', tier, employer_id: employerId, job_id: jobId, days: String(tierConfig.days), user_id: user.id, ...(poRef ? { po_number: poRef } : {}) },
       })
       return NextResponse.json({ url: session.url })
     }

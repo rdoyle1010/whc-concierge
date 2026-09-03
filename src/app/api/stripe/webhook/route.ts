@@ -10,7 +10,7 @@ import { sendFeaturedEmployerEmail } from '@/lib/featured-employer-email'
 import Stripe from 'stripe'
 import { getInternalApiSecret } from '@/lib/internal-request'
 import { handleResidencyStripeEvent } from '@/lib/residency-stripe-webhook'
-import { fulfilCommercialPurchase } from '@/lib/commercial-fulfilment'
+import { fulfilCommercialPurchase, recordCommercialPurchase } from '@/lib/commercial-fulfilment'
 import { applyAgencyCaseAdjustment } from '@/lib/agency-case-adjustment'
 
 async function convertReferral(supabase: any, candidateId: string) {
@@ -520,6 +520,14 @@ export async function POST(req: NextRequest) {
       }
 
       if (meta?.type === 'job_posting' && meta?.job_id) {
+        // Job adverts are the commonest thing a property buys and until now
+        // they left no financial record at all: no receipt could be printed
+        // for one, and the month's revenue simply did not count them.
+        await recordCommercialPurchase(
+          supabase, session,
+          String(meta.tier || '').toLowerCase() === 'bronze' ? 'standard_job' : `job_${String(meta.tier || 'standard').toLowerCase()}`,
+          String(meta.user_id || ''),
+        )
         const days = meta.days ? parseInt(meta.days) : 30
         const expiresAt = new Date(Date.now() + days * 24 * 60 * 60 * 1000).toISOString()
         // Safety net behind the publish gate: if payment completes while the

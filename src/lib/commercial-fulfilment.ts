@@ -11,6 +11,35 @@ export type CommercialFulfilmentResult = {
 
 const KNOWN_PRODUCTS = ['talent_standard', 'talent_pro', 'featured_talent_7', 'featured_talent_30', 'employer_pro', 'employer_group', 'residency_featured']
 
+/**
+ * Write a paid checkout into the purchase ledger.
+ *
+ * The ledger is what a receipt is printed from and what the revenue page
+ * counts, so anything missing from it cannot be receipted and does not appear
+ * in the month's takings. Deliberately NOT recorded here are the products
+ * already banked in their own tables - academy courses (course_enrolments),
+ * agency shifts (agency_bookings), residency placements (residency_bookings)
+ * and advertising (ad_placements). Adding those would double the month.
+ *
+ * Idempotent on stripe_session_id, so a webhook replay is harmless.
+ */
+export async function recordCommercialPurchase(admin: any, session: Stripe.Checkout.Session, productKey: string, userId: string) {
+  if (!userId || !productKey) return
+  const { error } = await admin.from('commercial_purchases').upsert({
+    user_id: userId,
+    product_key: productKey,
+    stripe_session_id: session.id,
+    stripe_payment_intent: typeof session.payment_intent === 'string' ? session.payment_intent : session.payment_intent?.id || null,
+    amount_pence: session.amount_total || 0,
+    status: 'paid',
+    metadata: session.metadata || {},
+  }, { onConflict: 'stripe_session_id' })
+  // A failed ledger write must not undo fulfilment - the buyer has paid and
+  // should get what they bought. It is logged so it can be reconciled against
+  // Stripe rather than disappearing.
+  if (error) console.error('[ledger] purchase not recorded', productKey, session.id, error.message)
+}
+
 function fail(status: number, error: string, product: string, role: string): CommercialFulfilmentResult {
   return { ok: false, status, error, product, role }
 }

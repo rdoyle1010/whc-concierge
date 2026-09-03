@@ -174,6 +174,10 @@ export async function POST(req: NextRequest) {
       // broken: one refresh shows the waiting list, the next shows the form,
       // and an administrator reasonably concludes the switch does nothing.
       if (ACCESS_KEYS.has(String(key))) revalidateTag('platform-access', 'max')
+      // Same trap: the billing identity is read through a cache with its own
+      // tag, so without this a saved company number goes on missing from
+      // receipts for five minutes and looks like the form did nothing.
+      if (String(key) === 'billing_identity') revalidateTag('billing-identity', 'max')
       return NextResponse.json({ success: true })
     }
 
