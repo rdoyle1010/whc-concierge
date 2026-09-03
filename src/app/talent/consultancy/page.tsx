@@ -65,6 +65,24 @@ export default function TalentConsultancyPage() {
   const engagements: string[] = Array.isArray(profile?.engagement_types) ? profile.engagement_types : []
   const missing = profile ? missingForPublication(profile) : []
 
+  // The form is long. Without this a consultant sees one section, a greyed-out
+  // Publish button and a list of things they have not done, with no sense of
+  // how much is left or where any of it is.
+  const steps = [
+    {
+      n: 1, title: 'The practice', hint: 'Who you are and what you do',
+      done: Boolean(profile?.practice_name && profile?.headline && String(profile?.summary || '').length >= 120),
+    },
+    {
+      n: 2, title: 'Specialisms', hint: 'What properties can filter you by',
+      done: specialisms.length > 0,
+    },
+    {
+      n: 3, title: 'Selected work', hint: 'The projects that make the case',
+      done: projects.filter(project => project.title).length > 0,
+    },
+  ]
+
   const toggle = (key: string, list: string[], value: string) =>
     set(key, list.includes(value) ? list.filter(item => item !== value) : [...list, value])
 
@@ -108,7 +126,34 @@ export default function TalentConsultancyPage() {
         </p>
       </div>
 
-      {/* State first: a consultant needs to know whether anybody can see this. */}
+      {/* What good looks like, before asking anybody to produce it. A consultant
+          arriving cold from the public directory has never seen one of these. */}
+      {!live && (
+        <div className="dashboard-card mb-6">
+          <p className="text-[13px] font-medium text-ink">Three steps, about ten minutes</p>
+          <div className="mt-4 grid gap-3 sm:grid-cols-3">
+            {steps.map(step => (
+              <div key={step.n} className={`border p-4 ${step.done ? 'border-ink bg-[#f1f1f1]' : 'border-border'}`}>
+                <div className="flex items-center gap-2">
+                  <span className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-bold ${step.done ? 'bg-ink text-white' : 'border border-border text-muted'}`}>
+                    {step.done ? '✓' : step.n}
+                  </span>
+                  <p className="text-[13px] font-medium text-ink">{step.title}</p>
+                </div>
+                <p className="mt-1.5 text-[11px] leading-5 text-muted">{step.hint}</p>
+              </div>
+            ))}
+          </div>
+          <p className="mt-4 border-t border-border pt-4 text-[12px] leading-6 text-secondary">
+            <span className="font-semibold text-ink">What makes one work.</span> A property is buying judgement, and
+            judgement is proved by outcomes. &ldquo;Rebuilt the retail calendar&rdquo; is a description. &ldquo;Retail
+            per treatment from £6.10 to £14.40 in two quarters&rdquo; is a reason to call you. Work under NDA can be
+            listed as the property type instead of the name, so nothing has to be left out.
+          </p>
+        </div>
+      )}
+
+      {/* State: a consultant needs to know whether anybody can see this. */}
       <div className="dashboard-card mb-6 flex flex-wrap items-center justify-between gap-4">
         <div>
           <p className="text-[13px] font-medium text-ink">
@@ -145,7 +190,7 @@ export default function TalentConsultancyPage() {
       )}
 
       <section className="dashboard-card mb-6 space-y-4">
-        <p className="eyebrow">The practice</p>
+        <p className="eyebrow">Step 1 &middot; The practice</p>
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
             <label htmlFor="practice" className="eyebrow block mb-1.5">Practice or trading name *</label>
@@ -197,7 +242,7 @@ export default function TalentConsultancyPage() {
 
       <section className="dashboard-card mb-6 space-y-5">
         <div>
-          <p className="eyebrow">Specialisms *</p>
+          <p className="eyebrow">Step 2 &middot; Specialisms</p>
           <p className="mt-1 text-[12px] text-muted">Properties filter on these. Pick what you genuinely lead on, not everything you have touched.</p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -229,7 +274,7 @@ export default function TalentConsultancyPage() {
 
       <section className="dashboard-card mb-6 space-y-4">
         <div>
-          <p className="eyebrow">Selected work *</p>
+          <p className="eyebrow">Step 3 &middot; Selected work</p>
           <p className="mt-1 text-[12px] leading-6 text-muted max-w-2xl">
             This is what the listing is for. A hotel buys judgement on evidence, so the outcome line matters more than
             the description - what actually changed, in numbers where you have them. Work under NDA can be marked
@@ -258,11 +303,20 @@ export default function TalentConsultancyPage() {
               Under NDA - show the property type rather than the name
             </label>
             <textarea rows={3} value={project.summary} onChange={e => setProject(index, { summary: e.target.value })}
-              placeholder="What the work was" aria-label={`Project ${index + 1} description`} className="input-field" />
+              placeholder="What the work was - the brief, the state you found it in, what you did" aria-label={`Project ${index + 1} description`} className="input-field" />
             <textarea rows={2} value={project.outcome} onChange={e => setProject(index, { outcome: e.target.value })}
-              placeholder="What changed - revenue, utilisation, retention, scores, opening on time" aria-label={`Project ${index + 1} outcome`} className="input-field" />
+              placeholder="What changed. e.g. Opened on schedule at 71% utilisation against a 55% plan, £1.2m first-year revenue" aria-label={`Project ${index + 1} outcome`} className="input-field" />
           </div>
         ))}
+
+        {projects.length === 0 && (
+          <div className="border border-dashed border-border p-6 text-center">
+            <p className="text-[13px] text-ink">No projects yet</p>
+            <p className="mx-auto mt-1.5 max-w-md text-[12px] leading-6 text-muted">
+              One is enough to publish. Start with the piece of work you would want a property to judge you on.
+            </p>
+          </div>
+        )}
 
         {projects.length < 12 && (
           <button type="button" onClick={() => set('projects', [...projects, { ...EMPTY_PROJECT }])}
@@ -270,10 +324,14 @@ export default function TalentConsultancyPage() {
         )}
       </section>
 
-      <div className="dashboard-card sticky bottom-4">
+      {/* This used to be a sticky card. Sticky puts it at the foot of the
+          viewport while the page is scrolled to the top, so it sat on top of
+          Specialisms and Selected work and the form appeared to end after the
+          first section - which is exactly what a consultant reported. */}
+      <div className="border-t border-border bg-white p-5">
         {missing.length > 0 && (
           <p className="mb-4 text-[12px] leading-6 text-secondary">
-            <span className="font-semibold text-ink">Before this can go live:</span> {missing.join(', ')}.
+            <span className="font-semibold text-ink">Still to do before this can go live:</span> {missing.join(', ')}.
           </p>
         )}
         <div className="flex flex-wrap items-center gap-3">

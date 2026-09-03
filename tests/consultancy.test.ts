@@ -182,3 +182,25 @@ test('an active talent account is never quietly trimmed', () => {
   }
   assert.match(inference, /!talent\.account_focus/, 'a choice already made is never overwritten')
 })
+
+// The action bar was `sticky bottom-4` as the last element on the page, which
+// puts it at the foot of the viewport while the page is scrolled to the top -
+// so it sat on top of Specialisms and Selected work, and the form appeared to
+// end after the first section. A consultant filled in one section, saw a
+// greyed-out Publish button, and had no idea the rest existed.
+test('nothing floats over the rest of the listing form', () => {
+  const page = read('src/app/talent/consultancy/page.tsx')
+  assert.ok(!/sticky bottom-/.test(page), 'a sticky footer covers the sections below it')
+})
+
+// A consultant arriving cold from the public directory has never seen one of
+// these listings and does not know what a good one contains.
+test('the form says what it wants before asking for it', () => {
+  const page = read('src/app/talent/consultancy/page.tsx')
+  assert.match(page, /Three steps, about ten minutes/, 'how long this takes, up front')
+  for (const step of ['Step 1 &middot; The practice', 'Step 2 &middot; Specialisms', 'Step 3 &middot; Selected work']) {
+    assert.ok(page.includes(step), `${step} must be numbered so it maps to the steps shown`)
+  }
+  assert.match(page, /is a description\./, 'the difference between a description and an outcome is shown, not described')
+  assert.match(page, /No projects yet/, 'an empty section has to say what belongs in it')
+})
