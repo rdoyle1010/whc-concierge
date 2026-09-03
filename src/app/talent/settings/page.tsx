@@ -47,6 +47,27 @@ export default function TalentSettingsPage() {
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [loading, setLoading] = useState(false)
+  // null until we know; then 'consultant' or '' for the ordinary workspace.
+  const [accountFocus, setAccountFocus] = useState<string | null>(null)
+  const [workspaceBusy, setWorkspaceBusy] = useState(false)
+
+  useEffect(() => {
+    fetch('/api/consultancy/mine', { cache: 'no-store' })
+      .then(res => res.ok ? res.json() : null)
+      // Only offered to somebody who has a consultancy listing. Everybody else
+      // has no use for a switch between two workspaces they will never see.
+      .then(json => { if (json?.profile) setAccountFocus(json.accountFocus || '') })
+      .catch(() => {})
+  }, [])
+
+  async function setWorkspace(next: 'consultant' | null) {
+    setWorkspaceBusy(true)
+    await fetch('/api/consultancy/mine', {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ account_focus: next }),
+    }).catch(() => {})
+    window.location.reload()
+  }
   const [message, setMessage] = useState('')
   const [messageType, setMessageType] = useState<'success' | 'error'>('error')
 
@@ -453,6 +474,40 @@ export default function TalentSettingsPage() {
       </div>
 
       <div className="max-w-2xl space-y-6">
+        {/* An account-level choice, so it lives with the other account-level
+            choices. It sat on the consultancy listing page, where it invited
+            somebody who had come to consult to take on a jobs dashboard they
+            never asked for - but removing it outright would trap anybody who
+            later does want roles. */}
+        {accountFocus !== null && (
+          <div className="dashboard-card">
+            <h3 className="font-serif text-lg font-semibold mb-2">What this account is for</h3>
+            {accountFocus === 'consultant' ? (
+              <>
+                <p className="text-[13px] leading-7 text-secondary">
+                  Your workspace is set up for consultancy, so agency shifts, Residency and the job tools are hidden.
+                  Turn them on if you also want to be found for roles or flexible work.
+                </p>
+                <button type="button" onClick={() => setWorkspace(null)} disabled={workspaceBusy}
+                  className="btn-secondary mt-4 text-[13px] disabled:opacity-50">
+                  {workspaceBusy ? 'Switching...' : 'Show roles and agency work too'}
+                </button>
+              </>
+            ) : (
+              <>
+                <p className="text-[13px] leading-7 text-secondary">
+                  You are seeing the full workspace. If you are only here to consult, the agency, shift and job tools
+                  can be hidden until you want them.
+                </p>
+                <button type="button" onClick={() => setWorkspace('consultant')} disabled={workspaceBusy}
+                  className="btn-secondary mt-4 text-[13px] disabled:opacity-50">
+                  {workspaceBusy ? 'Switching...' : 'Simplify to consultancy only'}
+                </button>
+              </>
+            )}
+          </div>
+        )}
+
         <div className="dashboard-card">
           <h3 className="font-serif text-lg font-semibold mb-4">Change Password</h3>
           {message && <div className={`px-4 py-3 rounded-lg mb-4 text-sm ${messageType === 'success' ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'}`}>{message}</div>}

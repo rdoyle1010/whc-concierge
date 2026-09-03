@@ -107,12 +107,15 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  // An edit to an approved listing returns it to review. The alternative is a
-  // listing that passed moderation on its old contents and is now showing
-  // something nobody at Talent House has read, on a page carrying her name.
+  // An edit to an approved listing used to send it straight back to pending,
+  // which pulled it out of the public directory until somebody re-read it. So
+  // correcting a typo took a consultant's listing offline, and the lesson they
+  // learn from that is to stop editing.
+  //
+  // It stays live now and is flagged for a re-read instead. Moderation is
+  // unchanged: anything wrong can still be pulled by hand, immediately.
   if (existing?.approval_status === 'approved') {
-    update.approval_status = 'pending'
-    update.approval_notes = null
+    update.review_requested_at = new Date().toISOString()
   }
 
   const { data, error } = existing
@@ -120,7 +123,7 @@ export async function POST(req: NextRequest) {
     : await admin.from('consultancy_profiles').insert(update).select('*').single()
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-  return NextResponse.json({ profile: data, returnedToReview: existing?.approval_status === 'approved' })
+  return NextResponse.json({ profile: data, stillLive: existing?.approval_status === 'approved' })
 }
 
 /**

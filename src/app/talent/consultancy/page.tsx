@@ -57,7 +57,6 @@ export default function TalentConsultancyPage() {
   const [saving, setSaving] = useState(false)
   const [notice, setNotice] = useState<{ kind: 'ok' | 'error'; text: string } | null>(null)
   const [featuring, setFeaturing] = useState(false)
-  const [focus, setFocus] = useState<string | null>(null)
   const [viewerId, setViewerId] = useState<string | null>(null)
   const [uploading, setUploading] = useState<string | null>(null)
 
@@ -88,13 +87,6 @@ export default function TalentConsultancyPage() {
   // The trimmed workspace is inferred from the fact that somebody listed a
   // practice on an otherwise empty talent profile. An inference has to be
   // reversible in one click by the person it was made about.
-  async function switchWorkspace(next: 'consultant' | null) {
-    await fetch('/api/consultancy/mine', {
-      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ account_focus: next }),
-    })
-    window.location.reload()
-  }
 
   async function feature() {
     setFeaturing(true); setNotice(null)
@@ -114,7 +106,6 @@ export default function TalentConsultancyPage() {
       .then(data => {
         setProfile(data?.profile || { practice_name: '', specialisms: [], engagement_types: [], projects: [], works_with: 'uk', is_live: false })
         setEnquiries(data?.enquiries || [])
-        setFocus(data?.accountFocus || null)
       })
       .catch(() => {})
       .finally(() => setLoading(false))
@@ -172,8 +163,8 @@ export default function TalentConsultancyPage() {
       kind: 'ok',
       text: publish
         ? 'Sent for review. It goes live in the directory once Talent House has read it.'
-        : body.returnedToReview
-          ? 'Saved. Because the listing was live, the change goes back for review before it reappears.'
+        : body.stillLive
+          ? 'Saved and live. Talent House re-reads changes, but your listing stays in the directory while that happens.'
           : 'Saved as a draft. Nobody can see it yet.',
     })
     setTimeout(() => setNotice(null), 6000)
@@ -438,35 +429,39 @@ export default function TalentConsultancyPage() {
           <button type="button" onClick={() => save(true)} disabled={saving || missing.length > 0} className="btn-primary text-[13px] inline-flex items-center gap-2 disabled:opacity-50">
             <Send size={14} /> {profile?.is_live ? 'Save and resubmit' : 'Publish listing'}
           </button>
-          {live && !profile?.featured && (
-            <button type="button" onClick={feature} disabled={featuring} className="text-[12px] font-semibold text-ink underline inline-flex items-center gap-1.5 disabled:opacity-50">
-              <Star size={12} /> {featuring ? 'Opening payment...' : 'Feature this listing'}
-            </button>
-          )}
-          {profile?.featured && <span className="text-[12px] font-semibold text-ink inline-flex items-center gap-1.5"><Star size={12} fill="currentColor" /> Featured</span>}
           {notice && <p className={`text-[12px] ${notice.kind === 'ok' ? 'text-emerald-700' : 'text-red-600'}`}>{notice.text}</p>}
         </div>
       </div>
 
-      <div className="mt-6 border-t border-border pt-5 text-[12px] leading-6 text-muted">
-        {focus === 'consultant' ? (
-          <>
-            Your workspace is set up for consultancy, so the agency and shift tools are hidden.{' '}
-            <button type="button" onClick={() => switchWorkspace(null)} className="font-semibold text-ink underline">
-              Show everything
-            </button>{' '}
-            if you also want roles, agency shifts or Residency.
-          </>
-        ) : (
-          <>
-            Only here to consult?{' '}
-            <button type="button" onClick={() => switchWorkspace('consultant')} className="font-semibold text-ink underline">
-              Simplify my workspace
-            </button>{' '}
-            and the agency, shift and job tools are hidden until you want them.
-          </>
+      {/* Featured is a real product with a price, so it is stated as one and
+          stays on the page whatever state the listing is in. Hiding it until a
+          listing goes live meant the only people who ever saw it were the ones
+          who had stopped looking at this page. */}
+      <div className="dashboard-card mt-6">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div className="max-w-xl">
+            <p className="eyebrow mb-1.5">Featured placement</p>
+            <p className="text-[13px] leading-7 text-secondary">
+              Thirty days at the top of the directory with the Featured mark and an enlarged listing. Everything else
+              stays exactly as it is - nothing is hidden from a property without it, and listing is free either way.
+            </p>
+          </div>
+          <div className="shrink-0">
+            {profile?.featured ? (
+              <span className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-ink"><Star size={13} fill="currentColor" /> Featured</span>
+            ) : (
+              <button
+                type="button" onClick={feature} disabled={featuring || !live}
+                className="btn-primary text-[13px] inline-flex items-center gap-2 disabled:opacity-50"
+              ><Star size={13} /> {featuring ? 'Opening payment...' : 'Feature my listing'}</button>
+            )}
+          </div>
+        </div>
+        {!live && !profile?.featured && (
+          <p className="mt-3 text-[12px] text-muted">Available once your listing is live in the directory.</p>
         )}
       </div>
+
     </DashboardShell>
   )
 }

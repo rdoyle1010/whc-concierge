@@ -119,12 +119,15 @@ test('enquiries need a real brief and are rate limited', () => {
   assert.match(route, /eq\('is_live', true\)/, 'a withdrawn listing takes no enquiries')
 })
 
-// Every listing sits on a page carrying the platform's name, so an edit to an
-// approved listing goes back for review rather than publishing itself.
-test('editing an approved listing returns it to review', () => {
+// Editing an approved listing used to set it back to pending, which pulled it
+// from the public directory until somebody re-read it. Correcting a typo cost a
+// consultant their place in the directory, and what they learn from that is to
+// stop editing.
+test('editing a live listing does not take it offline', () => {
   const route = read('src/app/api/consultancy/mine/route.ts')
   assert.match(route, /existing\?\.approval_status === 'approved'/)
-  assert.match(route, /approval_status = 'pending'|approval_status: 'pending'/)
+  assert.match(route, /review_requested_at/, 'the edit is flagged for a re-read')
+  assert.ok(!/approval_status: 'pending'/.test(route), 'and never sets the listing back to pending')
 })
 
 // The directory had no visible way in: the only route to a listing was a
@@ -171,9 +174,14 @@ test('the trimmed workspace can be switched back', () => {
   const route = read('src/app/api/consultancy/mine/route.ts')
   assert.match(route, /export async function PATCH/, 'the switch is theirs to make')
   assert.match(route, /body\.account_focus === 'consultant' \? 'consultant' : null/)
+  // It lives in Settings, with the other account-level choices. On the
+  // consultancy page it invited somebody who came to consult to take on a jobs
+  // dashboard they never asked for.
+  const settings = read('src/app/talent/settings/page.tsx')
+  assert.match(settings, /Show roles and agency work too/, 'the way back exists')
+  assert.match(settings, /Simplify to consultancy only/, 'and so does the way in')
   const page = read('src/app/talent/consultancy/page.tsx')
-  assert.match(page, /Show everything/, 'the way back is on the page, not hidden in settings')
-  assert.match(page, /Simplify my workspace/, 'and so is the way in')
+  assert.ok(!/Show everything/.test(page), 'but it is not advertised under a listing')
 })
 
 // Inferring it from an already-active talent account would take agency shifts
@@ -254,4 +262,14 @@ test('preview saves without changing whether the listing is published', () => {
   const fn = page.slice(page.indexOf('async function preview()'), page.indexOf('async function save('))
   assert.match(fn, /save\(Boolean\(profile\?\.is_live\), \{ silent: true \}\)/,
     'passing false here would take a live listing down every time somebody looked at it')
+})
+
+// Featured only appeared once a listing was already live, so the only people
+// who ever saw the offer were the ones who had stopped looking at the page.
+test('the featured placement is offered as a product, not hidden', () => {
+  const page = read('src/app/talent/consultancy/page.tsx')
+  assert.match(page, /Featured placement/, 'it has a card of its own')
+  assert.match(page, /Thirty days at the top of the directory/, 'and says what it buys')
+  assert.match(page, /nothing is hidden from a property without it/, 'and what it does not')
+  assert.match(page, /Available once your listing is live/, 'with the one condition stated rather than left as a dead button')
 })
