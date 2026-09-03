@@ -60,3 +60,34 @@ test('the admin user drawer shows what was sent to that person', () => {
   // the wrong answer to the question being asked.
   assert.match(page, /email log table has not been created yet/)
 })
+
+// A text saying "you have a new update" tells the person who runs the platform
+// nothing. The member-privacy rewrite is right for members and useless here.
+test('the admin alert says who signed up, without a full identity', () => {
+  const lib = read('src/lib/admin-alerts.ts')
+  assert.match(lib, /rawSms/, 'it must bypass the rewrite that strips names')
+  assert.match(lib, /Hannah F\./, 'the shortening rule is written down with an example')
+  // A property is announced by name; shortening one would produce nonsense.
+  assert.match(lib, /kind === 'employer'\s*\n?\s*\?/, 'properties are not shortened')
+  const sms = read('src/lib/sms.ts')
+  assert.match(sms, /Only for messages to WHC's own operators/, 'the raw sender must say what it is for')
+})
+
+// An alert that quietly does nothing is worse than no alert - it gets trusted.
+test('a sign-up alert falls back to email rather than failing silently', () => {
+  const lib = read('src/lib/admin-alerts.ts')
+  assert.match(lib, /sendTransactionalEmail/, 'no Twilio means email, not silence')
+  assert.match(lib, /admin_alert_email/)
+})
+
+// Somebody who has just created an account must not see an error because a
+// text message did not send.
+test('an alert can never fail a registration', () => {
+  const lib = read('src/lib/admin-alerts.ts')
+  const body = lib.slice(lib.indexOf('export async function alertAdminOfSignup'))
+  assert.match(body, /try \{/, 'the whole thing is wrapped')
+  assert.match(body, /Registration succeeded/, 'and the reason is written down')
+  for (const route of ['src/app/api/register/talent/route.ts', 'src/app/api/register/employer/route.ts']) {
+    assert.match(read(route), /alertAdminOfSignup\(/, `${route} must raise the alert`)
+  }
+})

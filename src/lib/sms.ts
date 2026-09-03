@@ -106,6 +106,39 @@ export async function sendSms(to: string | null | undefined, body: string): Prom
   }
 }
 
+/**
+ * Send exactly the text given, with no privacy rewrite.
+ *
+ * Only for messages to WHC's own operators about their own platform. Every
+ * message to a member goes through sendSms, which strips names, rates and
+ * details so they never appear on somebody's lock screen.
+ */
+export async function rawSms(to: string | null | undefined, body: string): Promise<boolean> {
+  const number = normaliseUkMobile(to)
+  if (!number || !smsConfigured()) return false
+  try {
+    const username = TWILIO_API_KEY_SID || TWILIO_ACCOUNT_SID!
+    const password = TWILIO_API_KEY_SECRET || TWILIO_AUTH_TOKEN!
+    const auth = Buffer.from(`${username}:${password}`).toString('base64')
+    const res = await fetch(
+      `https://api.twilio.com/2010-04-01/Accounts/${TWILIO_ACCOUNT_SID}/Messages.json`,
+      {
+        method: 'POST',
+        headers: { Authorization: `Basic ${auth}`, 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({ To: number, From: TWILIO_FROM_NUMBER!, Body: body.slice(0, 600) }).toString(),
+      }
+    )
+    if (!res.ok) {
+      console.error(`[admin SMS FAILED ${res.status}]`, (await res.text().catch(() => '')).slice(0, 200))
+      return false
+    }
+    return true
+  } catch (err) {
+    console.error('[admin SMS FAILED] network error:', err)
+    return false
+  }
+}
+
 export async function sendSmsIfOptedIn(opts: {
   to: string | null | undefined
   body: string

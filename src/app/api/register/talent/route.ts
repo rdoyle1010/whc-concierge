@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { welcomeEmailHtml } from '@/lib/welcome-email-template'
 import { sendTransactionalEmail } from '@/lib/send-email'
+import { alertAdminOfSignup } from '@/lib/admin-alerts'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { sanitiseTalentRegistration, verifyRegistrationProof } from '@/lib/registration'
@@ -158,7 +159,7 @@ export async function POST(req: NextRequest) {
 
       if (!profileError) {
         if (body.refCode) await recordReferral(supabase, userId, body.refCode)
-        if (userEmail) await sendWelcomeEmail(userEmail, String(safeProfile.full_name).split(' ')[0] || 'there', userId)
+        if (userEmail) await alertAdminOfSignup('talent', safeProfile.full_name); await sendWelcomeEmail(userEmail, String(safeProfile.full_name).split(' ')[0] || 'there', userId)
         return NextResponse.json({ success: true })
       }
 
@@ -172,7 +173,7 @@ export async function POST(req: NextRequest) {
       const result = await upsertStrippingUnknownColumns(supabase, 'candidate_profiles', safeProfile)
       if (result.ok) {
         if (body.refCode) await recordReferral(supabase, userId, body.refCode)
-        if (userEmail) await sendWelcomeEmail(userEmail, String(safeProfile.full_name).split(' ')[0] || 'there', userId)
+        if (userEmail) await alertAdminOfSignup('talent', safeProfile.full_name); await sendWelcomeEmail(userEmail, String(safeProfile.full_name).split(' ')[0] || 'there', userId)
         return NextResponse.json({ success: true })
       }
       lastError = result.error

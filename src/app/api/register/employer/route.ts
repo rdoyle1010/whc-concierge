@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { welcomeEmailHtml } from '@/lib/welcome-email-template'
 import { sendTransactionalEmail } from '@/lib/send-email'
+import { alertAdminOfSignup } from '@/lib/admin-alerts'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { sanitiseEmployerRegistration, verifyRegistrationProof } from '@/lib/registration'
@@ -143,7 +144,7 @@ export async function POST(req: NextRequest) {
         .insert(safeProfile)
 
       if (!profileError) {
-        if (userEmail) await sendWelcomeEmail(userEmail, String(safeProfile.contact_name || safeProfile.company_name).split(' ')[0] || 'there')
+        if (userEmail) await alertAdminOfSignup('employer', safeProfile.property_name || safeProfile.company_name); await sendWelcomeEmail(userEmail, String(safeProfile.contact_name || safeProfile.company_name).split(' ')[0] || 'there')
         return NextResponse.json({ success: true })
       }
 
@@ -157,7 +158,7 @@ export async function POST(req: NextRequest) {
       // Column mismatch: strip only the offending columns, keep the rest of the data
       const result = await insertStrippingUnknownColumns(supabase, 'employer_profiles', safeProfile)
       if (result.ok) {
-        if (userEmail) await sendWelcomeEmail(userEmail, String(safeProfile.contact_name || safeProfile.company_name).split(' ')[0] || 'there')
+        if (userEmail) await alertAdminOfSignup('employer', safeProfile.property_name || safeProfile.company_name); await sendWelcomeEmail(userEmail, String(safeProfile.contact_name || safeProfile.company_name).split(' ')[0] || 'there')
         return NextResponse.json({ success: true })
       }
       lastError = result.error

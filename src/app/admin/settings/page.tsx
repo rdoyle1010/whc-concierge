@@ -80,6 +80,8 @@ export default function AdminSettingsPage() {
     { key: 'login_live_numbers', label: 'Show live numbers on the sign-in page (type on to show, leave blank to hide)', placeholder: 'off' },
     // Type closed to shut sign-in and registration behind a waiting list.
     // Every public page stays visible, and admin sign-in is never affected.
+    { key: 'admin_alert_mobile', label: 'Your mobile for new sign-up alerts (leave blank for none)', placeholder: '07700 900123' },
+    { key: 'admin_alert_email', label: 'Fallback email for sign-up alerts, used if the text cannot be sent', placeholder: 'you@example.com' },
     { key: 'platform_access', label: 'Sign-in and registration (type closed to hold new accounts behind a waiting list, leave blank to keep open)', placeholder: 'open' },
     // A word of your choosing. Visiting /api/preview?code=THAT&next=/login
     // lets one browser straight through, for a live walkthrough.
