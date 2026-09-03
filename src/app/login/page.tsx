@@ -5,7 +5,7 @@ import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import PanelBackdrop from '@/components/PanelBackdrop'
 import { usePublicSiteContent } from '@/lib/use-site-content'
-import { Eye, EyeOff, BriefcaseBusiness, Sparkles } from 'lucide-react'
+import { Eye, EyeOff, BriefcaseBusiness, Sparkles, Lightbulb } from 'lucide-react'
 import Wordmark from '@/components/Wordmark'
 
 export default function LoginPage() {
@@ -19,7 +19,14 @@ function LoginForm() {
   const safeDestination = requestedDestination.startsWith('/') && !requestedDestination.startsWith('//') ? requestedDestination : ''
   const confirmationPending = searchParams.get('registered') === '1' && searchParams.get('confirm') === '1'
   const site = usePublicSiteContent()
-  const [role, setRole] = useState<'talent' | 'employer'>(initialRole === 'employer' ? 'employer' : 'talent')
+  // Three doors to two account types. A consultancy listing sits on a talent
+  // account, but a consultant reading "Talent" or "Hotel" picks neither and
+  // concludes the platform has no room for them. The door is labelled; behind
+  // it the account is the same.
+  const [door, setDoor] = useState<'talent' | 'employer' | 'consultant'>(
+    initialRole === 'employer' ? 'employer' : initialRole === 'consultant' ? 'consultant' : 'talent')
+  const role: 'talent' | 'employer' = door === 'employer' ? 'employer' : 'talent'
+  const doorLabel = door === 'employer' ? 'Hotel / Employer' : door === 'consultant' ? 'Consultancy' : 'Talent'
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [show, setShow] = useState(false)
@@ -56,7 +63,12 @@ function LoginForm() {
       const timeout = window.setTimeout(() => controller.abort(), 15000)
       const response = await fetch('/api/auth/login', {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, cache: 'no-store', signal: controller.signal,
-        body: JSON.stringify({ email, password, role, redirect: safeDestination }),
+        // A consultant who signed in through their own door lands on their
+        // listing, not on a jobs dashboard they did not ask for.
+        body: JSON.stringify({
+          email, password, role,
+          redirect: safeDestination || (door === 'consultant' ? '/talent/consultancy' : ''),
+        }),
       })
       window.clearTimeout(timeout)
       const result = await response.json().catch(() => ({}))
@@ -72,7 +84,11 @@ function LoginForm() {
     }
   }
 
-  const registerHref = `/register/${role}${safeDestination ? `?redirect=${encodeURIComponent(safeDestination)}` : ''}`
+  // Registering through the consultancy door sets the account up for it, so
+  // the workspace is trimmed from the first screen rather than inferred later.
+  const registerHref = door === 'consultant'
+    ? '/register/talent?focus=consultant&redirect=%2Ftalent%2Fconsultancy'
+    : `/register/${role}${safeDestination ? `?redirect=${encodeURIComponent(safeDestination)}` : ''}`
 
   return (
     <main id="main-content" className="min-h-screen bg-[#f1f1f1] flex items-stretch">
@@ -90,17 +106,25 @@ function LoginForm() {
               </div>
             )}
 
-            <div className="grid grid-cols-2 gap-2 bg-[#f1f1f1] rounded-xl p-1.5 mb-7">
-              <button type="button" onClick={() => { setRole('talent'); setError('') }} className={`flex items-center justify-center gap-2 py-2.5 rounded-lg text-[12px] font-semibold transition-all ${role === 'talent' ? 'bg-[#1c1c1c] text-white shadow-sm' : 'text-secondary hover:text-[#1c1c1c]'}`}><Sparkles size={13} />Talent</button>
-              <button type="button" onClick={() => { setRole('employer'); setError('') }} className={`flex items-center justify-center gap-2 py-2.5 rounded-lg text-[12px] font-semibold transition-all ${role === 'employer' ? 'bg-[#1c1c1c] text-white shadow-sm' : 'text-secondary hover:text-[#1c1c1c]'}`}><BriefcaseBusiness size={13} />Hotel / Employer</button>
+            <div className="grid grid-cols-3 gap-2 bg-[#f1f1f1] rounded-xl p-1.5 mb-3">
+              {([
+                { value: 'talent', label: 'Talent', icon: <Sparkles size={13} /> },
+                { value: 'employer', label: 'Hotel', icon: <BriefcaseBusiness size={13} /> },
+                { value: 'consultant', label: 'Consultancy', icon: <Lightbulb size={13} /> },
+              ] as const).map(option => (
+                <button
+                  type="button" key={option.value}
+                  onClick={() => { setDoor(option.value); setError('') }}
+                  className={`flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-[12px] font-semibold transition-all ${door === option.value ? 'bg-[#1c1c1c] text-white shadow-sm' : 'text-secondary hover:text-[#1c1c1c]'}`}
+                >{option.icon}{option.label}</button>
+              ))}
             </div>
 
-            {/* There is no third account type - a consultancy listing sits on a
-                Talent account. Without saying so, a consultant reads two
-                buttons that both look wrong and picks neither. */}
-            <p className="-mt-5 mb-6 text-[11px] leading-5 text-muted">
-              Listing a consultancy practice, or here for the Academy? Sign in as <span className="font-semibold text-ink">Talent</span> - it is the same account.
-            </p>
+            {door === 'consultant' && (
+              <p className="mb-6 text-[11px] leading-5 text-muted">
+                Consultancy and Talent share one account, so if you already have a Talent sign-in, use it here.
+              </p>
+            )}
 
             {confirmationPending && <div role="status" className="bg-emerald-50 border border-emerald-100 text-emerald-700 text-[13px] px-3 py-2.5 rounded-xl mb-5">Your profile is saved. Check your email to confirm your account, then sign in here.</div>}
             {error && <div role="alert" className="bg-red-50 border border-red-100 text-red-600 text-[13px] px-3 py-2.5 rounded-xl mb-5">{error}</div>}
@@ -118,7 +142,7 @@ function LoginForm() {
                 <p className="text-[12px] text-secondary">You will stay signed in on this device.</p>
                 <Link href="/forgot-password" className="text-[12px] text-[#1c1c1c] hover:underline">Forgot password?</Link>
               </div>
-              <button type="submit" disabled={loading} className="w-full rounded-xl bg-[#1c1c1c] hover:bg-[#333333] text-white px-5 py-3 text-[13px] font-semibold transition-colors disabled:opacity-50">{loading ? 'Signing in...' : `Sign in as ${role === 'employer' ? 'Hotel / Employer' : 'Talent'}`}</button>
+              <button type="submit" disabled={loading} className="w-full rounded-xl bg-[#1c1c1c] hover:bg-[#333333] text-white px-5 py-3 text-[13px] font-semibold transition-colors disabled:opacity-50">{loading ? 'Signing in...' : `Sign in as ${doorLabel}`}</button>
             </form>
 
             <p className="text-[13px] text-muted mt-7">New to Talent House Collective? <Link href={registerHref} className="text-[#1c1c1c] font-semibold hover:underline">Create an account →</Link></p>

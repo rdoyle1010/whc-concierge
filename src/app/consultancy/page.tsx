@@ -60,13 +60,10 @@ export default function ConsultancyDirectory() {
           {/* A directory with no visible way in fills up slowly or not at all,
               and a consultant reading this page is exactly who should be in it. */}
           <div className="mt-7 flex flex-wrap items-center gap-4">
-            <Link href="/talent/consultancy" className="btn-primary inline-flex items-center gap-2 text-[13px]">
+            <Link href="/consultancy/join" className="btn-primary inline-flex items-center gap-2 text-[13px]">
               List your practice <ArrowRight size={14} />
             </Link>
-            <p className="text-[12px] leading-6 text-muted">
-              Free to list. You will need a Talent House Collective account - it takes a minute, and consultants use the
-              same one as everyone else on the platform.
-            </p>
+            <p className="text-[12px] leading-6 text-muted">Free to list. About ten minutes, and no commission on work you win.</p>
           </div>
 
           <div className="mt-8 grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto_auto]">
@@ -103,7 +100,7 @@ export default function ConsultancyDirectory() {
                     The first practices are being listed now. If you advise properties on spa design, operations, retail
                     or brand, this is the room to be in early.
                   </p>
-                  <Link href="/talent/consultancy" className="btn-primary mt-6 inline-flex items-center gap-2 text-[13px]">
+                  <Link href="/consultancy/join" className="btn-primary mt-6 inline-flex items-center gap-2 text-[13px]">
                     List your practice <ArrowRight size={14} />
                   </Link>
                 </>
@@ -162,7 +159,7 @@ export default function ConsultancyDirectory() {
                   be here.
                 </p>
               </div>
-              <Link href="/talent/consultancy" className="btn-primary inline-flex items-center gap-2 text-[13px]">
+              <Link href="/consultancy/join" className="btn-primary inline-flex items-center gap-2 text-[13px]">
                 List your practice <ArrowRight size={14} />
               </Link>
             </div>

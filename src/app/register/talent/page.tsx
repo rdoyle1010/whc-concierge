@@ -25,11 +25,17 @@ export default function TalentRegisterPage() {
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [refCode, setRefCode] = useState('')
+  // Set when somebody arrives through the consultancy door, so the account is
+  // pointed at a listing from the first screen rather than at a treatment
+  // profile they will never fill in.
+  const [consultantFocus, setConsultantFocus] = useState(false)
   const [stats, setStats] = useState<PublicStats | null>(null)
 
   useEffect(() => {
-    const r = new URLSearchParams(window.location.search).get('ref')
+    const params = new URLSearchParams(window.location.search)
+    const r = params.get('ref')
     if (r) setRefCode(r.slice(0, 30))
+    if (params.get('focus') === 'consultant') setConsultantFocus(true)
   }, [])
 
   useEffect(() => {
@@ -77,7 +83,20 @@ export default function TalentRegisterPage() {
       }
 
       if (init.requiresEmailConfirmation) {
-        router.push('/login?registered=1&confirm=1')
+        router.push(consultantFocus
+          ? '/login?registered=1&confirm=1&role=consultant'
+          : '/login?registered=1&confirm=1')
+        return
+      }
+
+      if (consultantFocus) {
+        // Recorded before the redirect so the workspace is already trimmed
+        // when the listing page loads.
+        await fetch('/api/consultancy/mine', {
+          method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ account_focus: 'consultant' }),
+        }).catch(() => {})
+        router.push('/talent/consultancy')
         return
       }
 

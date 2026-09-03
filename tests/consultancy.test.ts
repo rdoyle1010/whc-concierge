@@ -132,9 +132,13 @@ test('editing an approved listing returns it to review', () => {
 // page could not see and would not think to look for.
 test('a consultant reading the directory can find the way in', () => {
   const page = read('src/app/consultancy/page.tsx')
-  const links = page.match(/href="\/talent\/consultancy"/g) || []
+  const links = page.match(/href="\/consultancy\/join"/g) || []
   assert.ok(links.length >= 2, 'the invitation appears at the top and again at the end of the list')
   assert.match(page, /Free to list/, 'the price has to be the first thing said, because it is the reason to act')
+  // It goes to a page that explains the thing, not to a form or a sign-in wall.
+  const join = read('src/app/consultancy/join/page.tsx')
+  assert.match(join, /Free to list\. No commission/, 'the terms are answered before anything is asked for')
+  assert.match(join, /role=consultant/, 'and the sign-in door is the consultancy one')
 })
 
 // An empty directory and an over-filtered one look identical and are not the
@@ -203,4 +207,28 @@ test('the form says what it wants before asking for it', () => {
   }
   assert.match(page, /is a description\./, 'the difference between a description and an outcome is shown, not described')
   assert.match(page, /No projects yet/, 'an empty section has to say what belongs in it')
+})
+
+// Two account types, three doors. A consultant reading "Talent" or "Hotel"
+// picks neither and concludes there is no room for them here.
+test('consultancy has its own sign-in door', () => {
+  const login = read('src/app/login/page.tsx')
+  assert.match(login, /'talent' \| 'employer' \| 'consultant'/, 'the door is its own choice')
+  // Behind it the account is a talent account - the door is a label, not a
+  // third kind of user, and the API must never be told otherwise.
+  assert.match(login, /const role: 'talent' \| 'employer' = door === 'employer' \? 'employer' : 'talent'/)
+  assert.match(login, /door === 'consultant' \? '\/talent\/consultancy' : ''/, 'it lands on the listing, not a jobs dashboard')
+  assert.match(login, /focus=consultant/, 'and registering through it sets the account up for consultancy')
+})
+
+// Inferring the workspace later means somebody is handed agency shifts and a
+// treatment menu first, and only stops being handed them once they have
+// finished a listing.
+test('registering through the consultancy door sets the workspace immediately', () => {
+  const page = read('src/app/register/talent/page.tsx')
+  assert.match(page, /params\.get\('focus'\) === 'consultant'/)
+  assert.match(page, /account_focus: 'consultant'/)
+  assert.match(page, /router\.push\('\/talent\/consultancy'\)/, 'they land on the thing they came to do')
+  // The intent has to survive a round trip through a confirmation email.
+  assert.match(page, /registered=1&confirm=1&role=consultant/)
 })

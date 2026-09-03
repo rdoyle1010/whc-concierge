@@ -121,7 +121,13 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'This email is already registered as a hotel or employer account. Please sign in through Hotel / Employer.' }, { status: 409 })
     }
 
-    const safeProfile = sanitiseTalentRegistration(profileData, userId)
+    const safeProfile: Record<string, any> = sanitiseTalentRegistration(profileData, userId)
+
+    // Registering through the consultancy door says outright what this account
+    // is for, so the workspace is right from the first screen rather than
+    // inferred from an empty profile once they have already been handed agency
+    // shifts and a treatment menu.
+    if (String(body.focus || '') === 'consultant') safeProfile.account_focus = 'consultant'
     if (!safeProfile.full_name || !safeProfile.role_level || safeProfile.agreed_terms !== true) {
       return NextResponse.json({ error: 'Name, role level and acceptance of the terms are required.' }, { status: 400 })
     }
