@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import DashboardShell from '@/components/DashboardShell'
+import VatExposurePanel from '@/components/VatExposurePanel'
 import { Banknote, BookOpen, BriefcaseBusiness, CreditCard, Megaphone, RefreshCw, Sparkles } from 'lucide-react'
 
 function pounds(pence: number) {
@@ -41,6 +42,11 @@ export default function AdminRevenuePage() {
     </div>
 
     {error && <div className="mb-6 rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-600">{error}</div>}
+
+    {/* Above the month's figures deliberately: the threshold is the number
+        that costs money if it is noticed late, and everything below it is a
+        month in isolation. */}
+    <div className="mb-6"><VatExposurePanel /></div>
 
     {loading && !data ? <div className="grid grid-cols-1 md:grid-cols-3 gap-4">{[1,2,3,4,5,6].map(i => <div key={i} className="skeleton h-32 rounded-2xl" />)}</div> : data && <>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">

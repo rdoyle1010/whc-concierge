@@ -24,9 +24,12 @@
   border-right-color: #dddddd;
 }
 
-/* Neutral notification surfaces. */
-.dashboard-shell [class*="bg-amber-50"],
-.dashboard-shell [class*="bg-yellow-50"] {
+/* Neutral notification surfaces.
+   Matched exactly, not by substring: [class*="bg-amber-50"] also catches
+   bg-amber-500, so a saturated amber anywhere in a portal was quietly being
+   repainted near-white and its element vanished into the card behind it. */
+.dashboard-shell [class~="bg-amber-50"],
+.dashboard-shell [class~="bg-yellow-50"] {
   background-color: #f5f5f5;
 }
 .dashboard-shell [class*="text-amber-"],
