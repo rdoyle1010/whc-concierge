@@ -89,6 +89,12 @@ export async function GET(req: NextRequest) {
     .eq('approval_status', 'approved')
     .or('profile_visible.eq.true,profile_visible.is.null')
     .eq('agency_available', true)
+    // Agency Cover is a UK product: supplying somebody into a shift makes
+    // Talent House an employment business, licensed country by country. A
+    // professional abroad who has ticked the register must not be offered to a
+    // property, because the booking that follows is one we cannot lawfully
+    // make. Rows written before country existed are null and are British.
+    .or('country_code.eq.GB,country_code.is.null')
 
   if (id) query = query.eq('id', id)
   const [{ data, error }, { data: blocks }] = await Promise.all([

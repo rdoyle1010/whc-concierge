@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import DashboardShell from '@/components/DashboardShell'
+import { unavailableReason } from '@/lib/countries'
 import { Calendar, Clock, Banknote, Star, X, Zap, Car, TrainFront, MapPin, Check } from 'lucide-react'
 import ReviewForm from '@/components/ReviewForm'
 import { useDialog } from '@/components/useDialog'
@@ -27,7 +28,7 @@ export default function TalentAgencyPage() {
   const [busyId, setBusyId] = useState<string | null>(null)
   const [actionError, setActionError] = useState('')
   const [reviewing, setReviewing] = useState<{ userId: string; name: string; bookingId?: string } | null>(null)
-  const [listing, setListing] = useState<{ available: boolean; tier: string | null; until: string | null } | null>(null)
+  const [listing, setListing] = useState<{ available: boolean; tier: string | null; until: string | null; availableHere: boolean } | null>(null)
   const [cancellingId, setCancellingId] = useState<string | null>(null)
   const [cancelReason, setCancelReason] = useState('')
   const [cancelError, setCancelError] = useState('')
@@ -44,6 +45,7 @@ export default function TalentAgencyPage() {
           available: Boolean(viewer.agency_available),
           tier: viewer.agency_tier || null,
           until: viewer.agency_listed_until || null,
+          availableHere: viewer.agency_available_here !== false,
         } : null)
       } else {
         setBookings([])
@@ -146,7 +148,18 @@ export default function TalentAgencyPage() {
         <p className="dashboard-intro">Shift offers from properties that need cover, matched to your rate and travel area.</p>
       </div>
 
-      {listing && (
+      {listing && !listing.availableHere && (
+        <div className="rounded-xl border border-amber-200 bg-amber-50 px-5 py-4 mb-6">
+          <p className="text-[14px] font-medium text-amber-900">Agency Cover is not available where you are</p>
+          <p className="mt-1 text-[12.5px] leading-5 text-amber-800">{unavailableReason('agency')}</p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <Link href="/roles" className="btn-secondary text-[12px]">Browse roles</Link>
+            <Link href="/talent/consultancy" className="btn-secondary text-[12px]">List a consultancy</Link>
+          </div>
+        </div>
+      )}
+
+      {listing && listing.availableHere && (
         listing.available ? (
           <div className="flex items-center justify-between bg-green-50 border border-green-200 rounded-xl px-5 py-4 mb-6">
             <div>

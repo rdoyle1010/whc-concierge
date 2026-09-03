@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
-import { geocodePostcode } from '@/lib/geo'
+import { geocodeLocation } from '@/lib/geo'
 
 // Geocode the calling employer's postcode and cache the coordinates on their
 // profile. Called after the profile page saves, so distance-to-candidate can
@@ -20,11 +20,16 @@ export async function POST() {
     if (!user) return NextResponse.json({ error: 'Please log in' }, { status: 401 })
 
     const admin = createAdminClient()
-    const { data: emp } = await admin.from('employer_profiles').select('id, postcode').eq('user_id', user.id).maybeSingle()
+    const { data: emp } = await admin.from('employer_profiles').select('id, postcode, city, country_code, country').eq('user_id', user.id).maybeSingle()
     if (!emp) return NextResponse.json({ error: 'No employer profile found' }, { status: 404 })
-    if (!emp.postcode) return NextResponse.json({ success: true, geocoded: false })
+    // A property abroad has a city and no postcode we can resolve. Requiring
+    // one left every non-UK property unmapped and therefore invisible to
+    // anything that sorts or filters by location.
+    const place = String(emp.postcode || emp.city || '').trim()
+    const country = emp.country_code || emp.country
+    if (!place && !country) return NextResponse.json({ success: true, geocoded: false })
 
-    const coords = await geocodePostcode(emp.postcode)
+    const coords = await geocodeLocation(place, country)
     if (!coords) return NextResponse.json({ success: true, geocoded: false })
 
     const { error } = await admin.from('employer_profiles')
