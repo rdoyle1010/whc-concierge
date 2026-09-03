@@ -22,6 +22,18 @@ export default function TalentConsultancyPage() {
   const [saving, setSaving] = useState(false)
   const [notice, setNotice] = useState<{ kind: 'ok' | 'error'; text: string } | null>(null)
   const [featuring, setFeaturing] = useState(false)
+  const [focus, setFocus] = useState<string | null>(null)
+
+  // The trimmed workspace is inferred from the fact that somebody listed a
+  // practice on an otherwise empty talent profile. An inference has to be
+  // reversible in one click by the person it was made about.
+  async function switchWorkspace(next: 'consultant' | null) {
+    await fetch('/api/consultancy/mine', {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ account_focus: next }),
+    })
+    window.location.reload()
+  }
 
   async function feature() {
     setFeaturing(true); setNotice(null)
@@ -41,6 +53,7 @@ export default function TalentConsultancyPage() {
       .then(data => {
         setProfile(data?.profile || { practice_name: '', specialisms: [], engagement_types: [], projects: [], works_with: 'uk', is_live: false })
         setEnquiries(data?.enquiries || [])
+        setFocus(data?.accountFocus || null)
       })
       .catch(() => {})
       .finally(() => setLoading(false))
@@ -278,6 +291,26 @@ export default function TalentConsultancyPage() {
           {profile?.featured && <span className="text-[12px] font-semibold text-ink inline-flex items-center gap-1.5"><Star size={12} fill="currentColor" /> Featured</span>}
           {notice && <p className={`text-[12px] ${notice.kind === 'ok' ? 'text-emerald-700' : 'text-red-600'}`}>{notice.text}</p>}
         </div>
+      </div>
+
+      <div className="mt-6 border-t border-border pt-5 text-[12px] leading-6 text-muted">
+        {focus === 'consultant' ? (
+          <>
+            Your workspace is set up for consultancy, so the agency and shift tools are hidden.{' '}
+            <button type="button" onClick={() => switchWorkspace(null)} className="font-semibold text-ink underline">
+              Show everything
+            </button>{' '}
+            if you also want roles, agency shifts or Residency.
+          </>
+        ) : (
+          <>
+            Only here to consult?{' '}
+            <button type="button" onClick={() => switchWorkspace('consultant')} className="font-semibold text-ink underline">
+              Simplify my workspace
+            </button>{' '}
+            and the agency, shift and job tools are hidden until you want them.
+          </>
+        )}
       </div>
     </DashboardShell>
   )

@@ -42,7 +42,8 @@ export async function GET(req: NextRequest) {
       .eq('consultancy_id', data.id).order('created_at', { ascending: false }).limit(50)
     enquiries = rows || []
   }
-  return NextResponse.json({ profile: data || null, enquiries })
+  const { data: talent } = await admin.from('candidate_profiles').select('account_focus').eq('user_id', user.id).maybeSingle()
+  return NextResponse.json({ profile: data || null, enquiries, accountFocus: talent?.account_focus || null })
 }
 
 export async function POST(req: NextRequest) {
@@ -87,6 +88,25 @@ export async function POST(req: NextRequest) {
 
   const { data: existing } = await admin.from('consultancy_profiles').select('id, approval_status').eq('user_id', user.id).maybeSingle()
 
+  // Somebody creating their first listing on an otherwise untouched talent
+  // profile came here to consult, not to take shifts - so the workspace is
+  // trimmed to what they will actually use. Inferred rather than asked, because
+  // a question at sign-up is one more thing between them and a listing, and it
+  // is reversible from their own Consultancy page the moment it is wrong.
+  if (!existing) {
+    const { data: talent } = await admin.from('candidate_profiles')
+      .select('id, account_focus, services_offered, role_level, agency_available')
+      .eq('user_id', user.id).maybeSingle()
+    const untouched = talent
+      && !talent.account_focus
+      && !talent.role_level
+      && !talent.agency_available
+      && !(Array.isArray(talent.services_offered) && talent.services_offered.length)
+    if (untouched) {
+      await admin.from('candidate_profiles').update({ account_focus: 'consultant' }).eq('id', talent.id)
+    }
+  }
+
   // An edit to an approved listing returns it to review. The alternative is a
   // listing that passed moderation on its old contents and is now showing
   // something nobody at WHC has read, on a page carrying her name.
@@ -101,4 +121,22 @@ export async function POST(req: NextRequest) {
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
   return NextResponse.json({ profile: data, returnedToReview: existing?.approval_status === 'approved' })
+}
+
+/**
+ * Switch between the trimmed consultancy workspace and the full talent one.
+ *
+ * The trimmed workspace is inferred, and an inference has to be reversible in
+ * one click by the person it was made about - a consultant who later wants
+ * agency shifts should not have to ask anybody to change it.
+ */
+export async function PATCH(req: NextRequest) {
+  const user = await getRequestUser(req)
+  if (!user) return NextResponse.json({ error: 'Please sign in' }, { status: 401 })
+  const body = await req.json().catch(() => ({}))
+  const focus = body.account_focus === 'consultant' ? 'consultant' : null
+  const admin = createAdminClient()
+  const { error } = await admin.from('candidate_profiles').update({ account_focus: focus }).eq('user_id', user.id)
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  return NextResponse.json({ success: true, account_focus: focus })
 }

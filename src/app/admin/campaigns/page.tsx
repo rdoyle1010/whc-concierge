@@ -5,14 +5,17 @@ import { useDialog } from '@/components/useDialog'
 import DashboardShell from '@/components/DashboardShell'
 import { Plus, Copy, Edit2, Trash2, Send, Eye, Save, Upload, Mail, X, TestTube2 } from 'lucide-react'
 import { renderNewsletterHtml } from '@/lib/newsletter-template'
+import { featuredBlock, sponsorBlock } from '@/lib/newsletter-blocks'
+import { candidateCard, employerCard } from '@/lib/newsletter-cards'
 
 type Pick = { type: string; id: string; label: string }
 type Form = {
   name: string; description: string; type: string; status: string; target_audience: string;
   content: string; preheader: string; header_image_url: string; body_image_url: string; cta_label: string; cta_url: string; footer_text: string; layout_style: string;
+  sponsor_name: string; sponsor_logo_url: string; sponsor_headline: string; sponsor_text: string; sponsor_url: string;
 }
 
-const empty: Form = { name: '', description: '', type: 'Email', status: 'draft', target_audience: 'All', content: '', preheader: '', header_image_url: '', body_image_url: '', cta_label: '', cta_url: '', footer_text: 'Better matches. Better careers. Better teams.', layout_style: 'editorial' }
+const empty: Form = { name: '', description: '', type: 'Email', status: 'draft', target_audience: 'All', content: '', preheader: '', header_image_url: '', body_image_url: '', cta_label: '', cta_url: '', footer_text: 'Better matches. Better careers. Better teams.', layout_style: 'editorial', sponsor_name: '', sponsor_logo_url: '', sponsor_headline: '', sponsor_text: '', sponsor_url: '' }
 
 export default function AdminCampaignsPage() {
   const [campaigns, setCampaigns] = useState<any[]>([])
@@ -41,7 +44,24 @@ export default function AdminCampaignsPage() {
   }
   useEffect(() => { load() }, [])
 
-  const previewHtml = useMemo(() => renderNewsletterHtml(form, { test: true, featuredHtml: featuredSel.length ? `<div style="margin:28px 0;padding:18px;border:1px solid #e5e5e5;border-radius:12px"><div style="font-size:11px;letter-spacing:1px;text-transform:uppercase;color:#555555;font-weight:600">Featured this week</div><div style="margin-top:9px;color:#4d4d4d;font-size:13px">${featuredSel.map(f => f.label).join(' · ')}</div></div>` : '' }), [form, featuredSel])
+  // Built from the same renderer and the same rows the send uses. It used to
+  // draw a grey box of names instead, so featuring somebody looked as though it
+  // had done nothing.
+  const previewHtml = useMemo(() => {
+    const cards = featuredSel.map(pick => {
+      const pool = pick.type === 'candidate'
+        ? [...(promotion?.featured_candidates || []), ...(promotion?.agency_featured || [])]
+        : (promotion?.preferred_employers || [])
+      const row = pool.find((entry: any) => entry.id === pick.id)
+      if (!row) return null
+      return pick.type === 'candidate' ? candidateCard(row) : employerCard(row)
+    }).filter(Boolean) as ReturnType<typeof candidateCard>[]
+    const blocks = featuredBlock(cards) + sponsorBlock({
+      name: form.sponsor_name, logo_url: form.sponsor_logo_url,
+      headline: form.sponsor_headline, text: form.sponsor_text, url: form.sponsor_url,
+    })
+    return renderNewsletterHtml(form, { test: true, featuredHtml: blocks })
+  }, [form, featuredSel, promotion])
 
   const openNew = () => { setEditing(null); setForm(empty); setFeaturedSel([]); setBanner(null); setShowForm(true) }
   const picksFrom = (c: any): Pick[] => (c.featured_ids || []).map((f: any) => {
@@ -153,8 +173,22 @@ export default function AdminCampaignsPage() {
           <Section title="2. Header image"><ImagePicker value={form.header_image_url} busy={busy==='header_image_url'} onUrl={v=>setForm({...form,header_image_url:v})} onFile={f=>uploadImage('header_image_url',f)} label="Wide hero image"/></Section>
           <Section title="3. Newsletter content"><TextArea label="Main copy" value={form.content} onChange={v=>setForm({...form,content:v})} rows={12} hint="Use blank lines between paragraphs. The email template will space it properly."/><ImagePicker value={form.body_image_url} busy={busy==='body_image_url'} onUrl={v=>setForm({...form,body_image_url:v})} onFile={f=>uploadImage('body_image_url',f)} label="Optional image inside the article"/></Section>
           <Section title="4. Call to action"><div className="grid sm:grid-cols-2 gap-4"><Field label="Button wording" value={form.cta_label} onChange={v=>setForm({...form,cta_label:v})} placeholder="View the latest roles"/><Field label="Button link" value={form.cta_url} onChange={v=>setForm({...form,cta_url:v})} placeholder="https://..."/></div></Section>
-          <Section title="5. Featured members"><p className="text-[12px] text-muted mb-3">Optional paid-feature cards are inserted into the email automatically.</p><div className="flex flex-wrap gap-2">{choices.length?choices.map(opt=>{const on=featuredSel.some(f=>f.id===opt.id&&f.type===opt.type);return <button type="button" key={`${opt.type}-${opt.id}`} onClick={()=>setFeaturedSel(on?featuredSel.filter(f=>!(f.id===opt.id&&f.type===opt.type)):[...featuredSel,opt])} className={`rounded-full border px-3 py-1.5 text-[11px] ${on?'bg-[#1c1c1c] text-white border-[#1c1c1c]':'border-border text-secondary'}`}>{on?'✓ ':''}{opt.label}</button>}):<span className="text-[12px] text-muted">No featured members currently available.</span>}</div></Section>
-          <Section title="6. Footer"><TextArea label="Footer message" value={form.footer_text} onChange={v=>setForm({...form,footer_text:v})} rows={2} hint="Unsubscribe and privacy links are added automatically for live sends."/></Section>
+          <Section title="5. Featured members"><p className="text-[12px] text-muted mb-3">Members on a live Featured or Preferred placement. Lapsed placements are not offered - giving one away free devalues the one somebody is paying for. Selected cards appear in the preview exactly as they will send.</p><div className="flex flex-wrap gap-2">{choices.length?choices.map(opt=>{const on=featuredSel.some(f=>f.id===opt.id&&f.type===opt.type);return <button type="button" key={`${opt.type}-${opt.id}`} onClick={()=>setFeaturedSel(on?featuredSel.filter(f=>!(f.id===opt.id&&f.type===opt.type)):[...featuredSel,opt])} className={`rounded-full border px-3 py-1.5 text-[11px] ${on?'bg-[#1c1c1c] text-white border-[#1c1c1c]':'border-border text-secondary'}`}>{on?'✓ ':''}{opt.label}</button>}):<span className="text-[12px] leading-6 text-muted">Nobody is currently on a paid Featured or Preferred placement, so there is nothing to insert. This list fills up as members buy one - it is not a fault.</span>}</div></Section>
+          <Section title="6. Sponsor">
+            <p className="text-[12px] leading-6 text-muted mb-3">
+              A paid brand placement for this issue - the slot sold with Industry Feature and Partner Campaign. It is
+              always labelled Sponsored: paid placement has to be identifiable, and blurring it spends the trust that
+              makes the slot worth buying. Leave the name blank for no sponsor.
+            </p>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <Field label="Brand name" value={form.sponsor_name} onChange={v=>setForm({...form,sponsor_name:v})} placeholder="e.g. ESPA" />
+              <Field label="Logo URL" value={form.sponsor_logo_url} onChange={v=>setForm({...form,sponsor_logo_url:v})} placeholder="https://..." />
+            </div>
+            <Field label="Headline" value={form.sponsor_headline} onChange={v=>setForm({...form,sponsor_headline:v})} placeholder="One line - what the brand wants remembered" />
+            <TextArea label="Body" value={form.sponsor_text} onChange={v=>setForm({...form,sponsor_text:v})} rows={3} hint="Two or three sentences. Written by the brand, checked by you." />
+            <Field label="Link" value={form.sponsor_url} onChange={v=>setForm({...form,sponsor_url:v})} placeholder="https://..." hint="The button is tagged nofollow sponsored, as paid links must be." />
+          </Section>
+          <Section title="7. Footer"><TextArea label="Footer message" value={form.footer_text} onChange={v=>setForm({...form,footer_text:v})} rows={2} hint="Unsubscribe and privacy links are added automatically for live sends."/></Section>
           <div className="flex flex-wrap gap-2 pt-2"><button onClick={()=>setShowPreview(true)} className="btn-secondary inline-flex items-center gap-2"><Eye size={14}/>Preview</button><button onClick={()=>saveDraft(true)} disabled={busy==='save'} className="btn-secondary inline-flex items-center gap-2"><Save size={14}/>{busy==='save'?'Saving…':'Save draft'}</button><button onClick={sendTest} disabled={busy==='test'} className="btn-primary inline-flex items-center gap-2"><TestTube2 size={14}/>{busy==='test'?'Sending…':'Send test to me'}</button></div>
         </div>
         <div className="bg-[#e7e7e7] p-5 md:p-7 lg:sticky lg:top-0 lg:h-[calc(100vh-70px)] overflow-auto"><p className="text-[10px] uppercase tracking-[.16em] text-[#555555] mb-3">Live preview</p><iframe title="Newsletter preview" srcDoc={previewHtml} className="w-full h-[760px] bg-white rounded-[16px] shadow-sm border border-[#dddddd]"/></div>

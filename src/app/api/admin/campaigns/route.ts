@@ -1,11 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { adminRequestUser } from '@/lib/admin-api-auth'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { featuredBlock, sponsorBlock } from '@/lib/newsletter-blocks'
+import { candidateCard, employerCard } from '@/lib/newsletter-cards'
 import { marketingUnsubscribeUrl, newsletterUnsubscribeUrl } from '@/lib/privacy-consent'
 import { renderNewsletterHtml } from '@/lib/newsletter-template'
+import { NEWSLETTER_FROM as FROM_EMAIL } from '@/lib/newsletter-welcome-email'
 
 const RESEND_API_KEY = process.env.RESEND_API_KEY
-const FROM_EMAIL = 'Talent House Collective <noreply@mail.wellnesshousecollective.co.uk>'
+
 const MAX_RECIPIENTS_PER_SEND = 500
 
 // Delegated to the shared admin guard, which enforces two-step
@@ -22,13 +25,18 @@ async function featuredCardsHtml(admin: any, featuredIds: any[]): Promise<string
     candIds.length ? admin.from('candidate_profiles').select('id, full_name, headline, hourly_rate, role_level, profile_image_url').in('id', candIds) : Promise.resolve({ data: [] }),
     empIds.length ? admin.from('employer_profiles').select('id, company_name, property_name, tagline, logo_url').in('id', empIds) : Promise.resolve({ data: [] }),
   ])
-  const site = 'https://talenthousecollective.co.uk'
-  const esc = (t: any) => String(t || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-  const card = (img: string | null, title: string, sub: string, href: string) => `<a href="${href}" style="display:flex;align-items:center;gap:14px;padding:14px;border:1px solid #e5e5e5;border-radius:12px;text-decoration:none;margin-bottom:10px;background:#fff">${img ? `<img src="${img}" width="52" height="52" style="border-radius:50%;object-fit:cover" alt="" />` : `<div style="width:52px;height:52px;border-radius:50%;background:#1c1c1c;color:#fff;text-align:center;line-height:52px;font-weight:600">${esc(title)[0] || 'W'}</div>`}<span><span style="display:block;font-weight:600;color:#1c1c1c">${esc(title)}</span><span style="display:block;font-size:12px;color:#555555;margin-top:2px">${esc(sub)}</span></span></a>`
-  let html = ''
-  for (const c of cands || []) html += card(c.profile_image_url, c.full_name || 'Professional', `${c.headline || c.role_level || 'Wellness professional'}${c.hourly_rate ? ` · £${c.hourly_rate}/hr agency` : ''}`, `${site}/agency/${c.id}`)
-  for (const e of emps || []) html += card(e.logo_url, e.property_name || e.company_name || 'Property', e.tagline || 'Preferred Employer', `${site}/properties/${e.id}`)
-  return html ? `<div style="margin:28px 0"><p style="font-size:11px;letter-spacing:1px;text-transform:uppercase;color:#555555;font-weight:600;margin-bottom:12px">Featured this week</p>${html}</div>` : ''
+  return featuredBlock([
+    ...(cands || []).map((c: any) => candidateCard(c)),
+    ...(emps || []).map((e: any) => employerCard(e)),
+  ])
+}
+
+// No end date means the placement was granted rather than sold, and those do
+// not lapse on their own.
+function stillRunning(until: string | null | undefined): boolean {
+  if (!until) return true
+  const ends = Date.parse(String(until))
+  return !Number.isFinite(ends) || ends > Date.now()
 }
 
 export async function GET() {
@@ -37,8 +45,8 @@ export async function GET() {
   const admin = createAdminClient()
   const [{ data: campaigns }, { data: cands }, { data: emps }, { data: audience }, { data: optedIn }, { data: newsletter }] = await Promise.all([
     admin.from('campaigns').select('*').order('created_at', { ascending: false }),
-    admin.from('candidate_profiles').select('id, full_name, headline, hourly_rate, profile_image_url, is_featured, featured_until, agency_tier').or('is_featured.eq.true,agency_tier.eq.featured'),
-    admin.from('employer_profiles').select('id, company_name, property_name, preferred_employer, preferred_until, logo_url').eq('preferred_employer', true),
+    admin.from('candidate_profiles').select('id, full_name, headline, hourly_rate, role_level, profile_image_url, is_featured, featured_until, agency_tier').or('is_featured.eq.true,agency_tier.eq.featured'),
+    admin.from('employer_profiles').select('id, company_name, property_name, tagline, preferred_employer, preferred_until, logo_url').eq('preferred_employer', true),
     admin.from('profiles').select('id,role,email').not('email', 'is', null),
     admin.from('privacy_preferences').select('user_id').eq('marketing_email_status', 'confirmed'),
     admin.from('newsletter_subscribers').select('id,email,status').eq('status', 'confirmed'),
@@ -51,7 +59,14 @@ export async function GET() {
   const excluded_without_confirmed_consent = (audience || []).filter((r: any) => r.email && !optedInSet.has(r.id)).length
   return NextResponse.json({
     campaigns: campaigns || [],
-    promotion: { featured_candidates: (cands || []).filter((c: any) => c.is_featured), agency_featured: (cands || []).filter((c: any) => c.agency_tier === 'featured'), preferred_employers: emps || [] },
+    // A lapsed placement must not stay in the picker. Offering it would give
+    // away free what somebody else is paying for, and the newsletter would
+    // promote a membership that has already ended.
+    promotion: {
+      featured_candidates: (cands || []).filter((c: any) => c.is_featured && stillRunning(c.featured_until)),
+      agency_featured: (cands || []).filter((c: any) => c.agency_tier === 'featured'),
+      preferred_employers: (emps || []).filter((e: any) => stillRunning(e.preferred_until)),
+    },
     audiences: {
       all: eligible.length + newsletterOnly.length,
       candidates: roles.filter((r: string) => r === 'candidate').length,
@@ -84,6 +99,12 @@ export async function POST(req: NextRequest) {
         preheader: data?.preheader || null, header_image_url: data?.header_image_url || null, body_image_url: data?.body_image_url || null,
         cta_label: data?.cta_label || null, cta_url: data?.cta_url || null, footer_text: data?.footer_text || null, layout_style: data?.layout_style || 'editorial',
         featured_ids: Array.isArray(data?.featured_ids) ? data.featured_ids : null,
+        // A paid brand placement belongs to one issue and is written with it.
+        sponsor_name: data?.sponsor_name || null,
+        sponsor_logo_url: data?.sponsor_logo_url || null,
+        sponsor_headline: data?.sponsor_headline || null,
+        sponsor_text: data?.sponsor_text || null,
+        sponsor_url: data?.sponsor_url || null,
       }
       const result = id ? await admin.from('campaigns').update(clean).eq('id', id).select('id').single() : await admin.from('campaigns').insert(clean).select('id').single()
       if (result.error) return NextResponse.json({ error: result.error.message }, { status: 500 })
@@ -99,11 +120,16 @@ export async function POST(req: NextRequest) {
     if (!campaign) return NextResponse.json({ error: 'Newsletter not found.' }, { status: 404 })
     if (!campaign.content || !String(campaign.content).trim()) return NextResponse.json({ error: 'Add newsletter content before sending.' }, { status: 400 })
     const cards = await featuredCardsHtml(admin, campaign.featured_ids)
+    const sponsor = sponsorBlock({
+      name: campaign.sponsor_name, logo_url: campaign.sponsor_logo_url,
+      headline: campaign.sponsor_headline, text: campaign.sponsor_text, url: campaign.sponsor_url,
+    })
+    const blocks = cards + sponsor
 
     if (action === 'send_test') {
       if (!RESEND_API_KEY) return NextResponse.json({ error: 'Email is not configured (RESEND_API_KEY missing).' }, { status: 500 })
       if (!user.email) return NextResponse.json({ error: 'Your admin account has no email address.' }, { status: 400 })
-      const html = renderNewsletterHtml(campaign, { featuredHtml: cards, test: true })
+      const html = renderNewsletterHtml(campaign, { featuredHtml: blocks, test: true })
       const res = await fetch('https://api.resend.com/emails', { method: 'POST', headers: { Authorization: `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ from: FROM_EMAIL, to: user.email, subject: `[TEST] ${campaign.name || 'WHC Newsletter'}`, html }) })
       if (!res.ok) return NextResponse.json({ error: 'Test send failed - check Resend logs.' }, { status: 502 })
       return NextResponse.json({ success: true, email: user.email })
@@ -140,7 +166,7 @@ export async function POST(req: NextRequest) {
     for (let i = 0; i < recipients.length; i += 10) {
       const batch = recipients.slice(i, i + 10)
       const results = await Promise.allSettled(batch.map(async recipient => {
-        const html = renderNewsletterHtml(campaign, { featuredHtml: cards, unsubscribeUrl: recipient.unsubscribe })
+        const html = renderNewsletterHtml(campaign, { featuredHtml: blocks, unsubscribeUrl: recipient.unsubscribe })
         const res = await fetch('https://api.resend.com/emails', { method: 'POST', headers: { Authorization: `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ from: FROM_EMAIL, to: recipient.email, subject: campaign.name || 'News from Talent House Collective', html }) })
         if (!res.ok) throw new Error(String(res.status))
       }))

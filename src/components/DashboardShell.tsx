@@ -92,6 +92,20 @@ const navItems: Record<string, NavItem[]> = {
     { label: 'Security', href: '/employer/security', icon: <ShieldCheck size={17} /> },
     { label: 'Settings', href: '/employer/settings', icon: <Settings size={17} /> },
   ],
+  // Somebody who signed up to list a consultancy practice does not take shifts,
+  // does not need Shift Resolution or Before You Arrive, and is not asked which
+  // treatments they perform. Handing them the full talent workspace tells them
+  // they are in the wrong place. They can switch to the full one whenever they
+  // want a role - the link sits on their Consultancy page.
+  consultant: [
+    { label: 'My Practice', href: '/talent/consultancy', icon: <Lightbulb size={17} />, section: 'Consultancy' },
+    { label: 'Messages', href: '/talent/messages', icon: <MessageSquare size={17} /> },
+    { label: 'Academy', href: '/talent/academy', icon: <GraduationCap size={17} />, section: 'Grow' },
+    { label: 'Billing', href: '/talent/billing', icon: <CreditCard size={17} />, section: 'Account' },
+    { label: 'Privacy & Preferences', href: '/talent/privacy', icon: <ShieldCheck size={17} /> },
+    { label: 'Security', href: '/talent/security', icon: <ShieldCheck size={17} /> },
+    { label: 'Settings', href: '/talent/settings', icon: <Settings size={17} /> },
+  ],
   admin: [
     { label: 'Dashboard', href: '/admin/dashboard', icon: <LayoutDashboard size={17} />, section: 'Overview' },
     { label: 'Revenue', href: '/admin/revenue', icon: <Banknote size={17} /> },
@@ -143,7 +157,8 @@ export default function DashboardShell({ children, role, userName, intro }: Dash
   const [viewerId, setViewerId] = useState<string | null>(null)
   const pathname = usePathname()
   const supabase = createClient()
-  const items = navItems[role]
+  const [accountFocus, setAccountFocus] = useState<string | null>(null)
+  const items = role === 'talent' && accountFocus === 'consultant' ? navItems.consultant : navItems[role]
   const isPublicAgencyRoute = pathname === '/agency'
   const showRecruitmentPipeline = (role === 'talent' && pathname === '/talent/applications') || (role === 'employer' && pathname === '/employer/applications')
   const showPostHireActions = role === 'employer' && pathname === '/employer/applications'
@@ -164,8 +179,8 @@ export default function DashboardShell({ children, role, userName, intro }: Dash
       const user = await getViewer()
       if (!active || !user) return
       if (role === 'talent') {
-        const { data } = await supabase.from('candidate_profiles').select('membership_tier,interview_ready_credits,academy_discount_pct,free_feature_credits').eq('user_id', user.id).maybeSingle()
-        if (active) setAccess(talentFeatureAccess(data))
+        const { data } = await supabase.from('candidate_profiles').select('membership_tier,interview_ready_credits,academy_discount_pct,free_feature_credits,account_focus').eq('user_id', user.id).maybeSingle()
+        if (active) { setAccess(talentFeatureAccess(data)); setAccountFocus(data?.account_focus || null) }
       } else {
         const { data } = await supabase.from('employer_profiles').select('membership_tier,annual_job_allowance,annual_jobs_used,featured_employer,featured_until').eq('user_id', user.id).maybeSingle()
         if (active) setAccess(employerFeatureAccess(data))

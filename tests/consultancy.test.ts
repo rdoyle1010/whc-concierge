@@ -145,3 +145,40 @@ test('an empty directory and an over-filtered one say different things', () => {
   assert.match(page, /The directory is just opening/)
   assert.match(page, /Clear filters/, 'the filtered case offers the way out of it')
 })
+
+// A spa designer signing up was handed Agency Shifts, Shift Resolution, Before
+// You Arrive, Interview Ready and a profile asking which treatments they
+// perform. None of it applies, and all of it says "you are in the wrong place".
+test('a consultant gets a workspace for consultancy, not for shifts', () => {
+  const shell = read('src/components/DashboardShell.tsx')
+  const start = shell.indexOf('  consultant: [')
+  assert.ok(start > 0, 'there has to be a consultant workspace')
+  const nav = shell.slice(start, shell.indexOf('  ],', start))
+  for (const absent of ['Agency Shifts', 'Shift Resolution', 'Before You Arrive', 'Interview Ready', 'Residency', 'Go Featured']) {
+    assert.ok(!nav.includes(absent), `${absent} does not belong in a consultant's sidebar`)
+  }
+  assert.match(nav, /My Practice/, 'the listing is their profile')
+  assert.match(shell, /accountFocus === 'consultant' \? navItems\.consultant/, 'the nav actually switches')
+})
+
+// The trimmed workspace is inferred, so it must be reversible in one click by
+// the person it was inferred about.
+test('the trimmed workspace can be switched back', () => {
+  const route = read('src/app/api/consultancy/mine/route.ts')
+  assert.match(route, /export async function PATCH/, 'the switch is theirs to make')
+  assert.match(route, /body\.account_focus === 'consultant' \? 'consultant' : null/)
+  const page = read('src/app/talent/consultancy/page.tsx')
+  assert.match(page, /Show everything/, 'the way back is on the page, not hidden in settings')
+  assert.match(page, /Simplify my workspace/, 'and so is the way in')
+})
+
+// Inferring it from an already-active talent account would take agency shifts
+// away from somebody who is using them.
+test('an active talent account is never quietly trimmed', () => {
+  const route = read('src/app/api/consultancy/mine/route.ts')
+  const inference = route.slice(route.indexOf('const untouched'), route.indexOf('account_focus: \'consultant\''))
+  for (const signal of ['role_level', 'agency_available', 'services_offered']) {
+    assert.ok(inference.includes(signal), `${signal} must rule the inference out`)
+  }
+  assert.match(inference, /!talent\.account_focus/, 'a choice already made is never overwritten')
+})
