@@ -69,6 +69,15 @@ export type DialogPanelProps = {
 // of returning it to the button the person pressed.
 const stack: symbol[] = []
 
+// The page's own overflow, remembered once when the first dialog opens rather
+// than by each dialog separately.
+//
+// Capturing it per dialog looks equivalent and is not: a second dialog opening
+// on top of the first records 'hidden' as the page's normal state, and if the
+// two then close in the wrong order that is what gets restored. The page stays
+// locked with no dialog on screen and nothing to explain it.
+let pageOverflow: string | null = null
+
 export function useDialog(
   onClose: () => void,
   labelledBy?: string,
@@ -89,7 +98,7 @@ export function useDialog(
     const isTopmost = () => stack[stack.length - 1] === token
     returnFocusTo.current = document.activeElement as HTMLElement | null
 
-    const previousOverflow = document.body.style.overflow
+    if (stack.length === 1) pageOverflow = document.body.style.overflow
     document.body.style.overflow = 'hidden'
 
     const panel = panelRef.current
@@ -131,7 +140,10 @@ export function useDialog(
       if (index !== -1) stack.splice(index, 1)
       // Only the last dialog out unlocks the page. A nested dialog closing
       // must not hand scrolling back while the drawer behind it is still up.
-      if (stack.length === 0) document.body.style.overflow = previousOverflow
+      if (stack.length === 0) {
+        document.body.style.overflow = pageOverflow ?? ''
+        pageOverflow = null
+      }
       returnFocusTo.current?.focus?.()
     }
   }, [enabled])

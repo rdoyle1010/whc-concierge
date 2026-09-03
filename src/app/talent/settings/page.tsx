@@ -413,7 +413,11 @@ export default function TalentSettingsPage() {
   const [deleting, setDeleting] = useState(false)
   const [exporting, setExporting] = useState(false)
   const [showDeleteRequest, setShowDeleteRequest] = useState(false)
-  const deleteDialog = useDialog(() => setShowDeleteRequest(false), 'delete-account-heading')
+  // Without the enabled flag this dialog counts as open from the moment the
+  // page loads, and an open dialog locks page scrolling. The delete
+  // confirmation is never on screen, so nothing looked wrong - Settings just
+  // would not scroll, and no amount of staring at the layout explained it.
+  const deleteDialog = useDialog(() => setShowDeleteRequest(false), 'delete-account-heading', { enabled: showDeleteRequest })
   const [deleteRequested, setDeleteRequested] = useState(false)
 
   const handleExportData = async () => {

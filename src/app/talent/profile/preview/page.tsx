@@ -140,6 +140,12 @@ export default function TalentProfilePreviewPage() {
                 </Link>
               ))}
             </div>
+            {/* The wizard is the fast way to fill all of these at once, and it
+                was only linked from the edit page - so the one screen that
+                lists what is missing offered no way to fix it. */}
+            <Link href="/talent/onboarding" className="mt-5 inline-flex items-center gap-2 text-[13px] font-semibold text-ink underline">
+              Fill these in with the Skills Wizard <ArrowRight size={14} />
+            </Link>
           </section>
         )}
       </div>
