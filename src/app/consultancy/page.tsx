@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
-import { Search, Star, MapPin, Briefcase } from 'lucide-react'
+import { Search, Star, MapPin, Briefcase, ArrowRight } from 'lucide-react'
 import { CONSULTANCY_SPECIALISMS, ENGAGEMENT_TYPES, WORKS_WITH } from '@/lib/consultancy'
 
 // The public directory. Unlike Residency, which is anonymous by design, this
@@ -57,6 +57,18 @@ export default function ConsultancyDirectory() {
             biography. Contact anyone here directly.
           </p>
 
+          {/* A directory with no visible way in fills up slowly or not at all,
+              and a consultant reading this page is exactly who should be in it. */}
+          <div className="mt-7 flex flex-wrap items-center gap-4">
+            <Link href="/talent/consultancy" className="btn-primary inline-flex items-center gap-2 text-[13px]">
+              List your practice <ArrowRight size={14} />
+            </Link>
+            <p className="text-[12px] leading-6 text-muted">
+              Free to list. You will need a Talent House Collective account - it takes a minute, and consultants use the
+              same one as everyone else on the platform.
+            </p>
+          </div>
+
           <div className="mt-8 grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto_auto]">
             <div className="relative">
               <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
@@ -84,8 +96,25 @@ export default function ConsultancyDirectory() {
             <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">{[1, 2, 3, 4, 5, 6].map(i => <div key={i} className="skeleton h-64" />)}</div>
           ) : filtered.length === 0 ? (
             <div className="border border-border p-12 text-center">
-              <p className="text-[15px] text-ink">No consultants match that yet.</p>
-              <p className="mt-2 text-[13px] text-secondary">Try a broader specialism, or clear the filters.</p>
+              {profiles.length === 0 ? (
+                <>
+                  <p className="text-[15px] text-ink">The directory is just opening.</p>
+                  <p className="mx-auto mt-2 max-w-lg text-[13px] leading-6 text-secondary">
+                    The first practices are being listed now. If you advise properties on spa design, operations, retail
+                    or brand, this is the room to be in early.
+                  </p>
+                  <Link href="/talent/consultancy" className="btn-primary mt-6 inline-flex items-center gap-2 text-[13px]">
+                    List your practice <ArrowRight size={14} />
+                  </Link>
+                </>
+              ) : (
+                <>
+                  <p className="text-[15px] text-ink">No consultants match that.</p>
+                  <p className="mt-2 text-[13px] text-secondary">Try a broader specialism, or clear the filters.</p>
+                  <button type="button" onClick={() => { setSearch(''); setSpecialism(''); setEngagement('') }}
+                    className="btn-secondary mt-5 text-[13px]">Clear filters</button>
+                </>
+              )}
             </div>
           ) : (
             <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
@@ -120,6 +149,25 @@ export default function ConsultancyDirectory() {
             </div>
           )}
         </section>
+
+        {profiles.length > 0 && (
+          <section className="border-t border-border bg-[#f1f1f1]">
+            <div className="max-w-[1440px] mx-auto px-6 lg:px-10 py-14 flex flex-wrap items-center justify-between gap-6">
+              <div className="max-w-xl">
+                <p className="eyebrow mb-2">For consultants</p>
+                <h2 className="text-2xl font-semibold tracking-tight text-ink">Your work is already in these buildings</h2>
+                <p className="mt-3 text-[13px] leading-7 text-secondary">
+                  Listing is free. Put up the projects that changed something and the properties looking for exactly
+                  that will find you. Featured placement is there if you want the top of the page - it is not needed to
+                  be here.
+                </p>
+              </div>
+              <Link href="/talent/consultancy" className="btn-primary inline-flex items-center gap-2 text-[13px]">
+                List your practice <ArrowRight size={14} />
+              </Link>
+            </div>
+          </section>
+        )}
       </main>
       <Footer />
     </>

@@ -126,3 +126,22 @@ test('editing an approved listing returns it to review', () => {
   assert.match(route, /existing\?\.approval_status === 'approved'/)
   assert.match(route, /approval_status = 'pending'|approval_status: 'pending'/)
 })
+
+// The directory had no visible way in: the only route to a listing was a
+// sidebar link inside the talent portal, which a consultant reading the public
+// page could not see and would not think to look for.
+test('a consultant reading the directory can find the way in', () => {
+  const page = read('src/app/consultancy/page.tsx')
+  const links = page.match(/href="\/talent\/consultancy"/g) || []
+  assert.ok(links.length >= 2, 'the invitation appears at the top and again at the end of the list')
+  assert.match(page, /Free to list/, 'the price has to be the first thing said, because it is the reason to act')
+})
+
+// An empty directory and an over-filtered one look identical and are not the
+// same problem: one needs listings, the other needs the filters cleared.
+test('an empty directory and an over-filtered one say different things', () => {
+  const page = read('src/app/consultancy/page.tsx')
+  assert.match(page, /profiles\.length === 0 \?/, 'the two cases are told apart')
+  assert.match(page, /The directory is just opening/)
+  assert.match(page, /Clear filters/, 'the filtered case offers the way out of it')
+})
