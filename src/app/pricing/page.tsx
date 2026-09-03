@@ -35,9 +35,9 @@ const talentPlans = [
 const FAQS = [
   { q: 'Is it free for Talent to join?', a: 'Yes. Talent Free is £0 and includes a professional profile, CV, role browsing, applications, basic matching and a first Interview Ready trial.' },
   { q: 'How much does Featured Talent cost?', a: `Featured Talent is ${pounds(FEATURED_TALENT.seven_days.price)} for 7 days or ${pounds(FEATURED_TALENT.thirty_days.price)} for 30 days. It is separate from membership so a professional can buy extra visibility only when they need it.` },
-  { q: 'How does Agency pricing work?', a: `The professional keeps 100% of the agreed shift rate. The property pays the agreed shift value plus a ${Math.round(AGENCY_PLATFORM_FEE_PCT * 100)}% WHC platform fee.` },
-  { q: 'Do you offer a recruitment service as well as job advertising?', a: 'Yes. Employers can advertise directly, or ask WHC to run the search. WHC Recruitment Service is typically 12.5% of first-year salary. Executive Search for senior leadership roles is typically 15–20%.' },
-  { q: 'How does Residency pricing work?', a: `Specialists list themselves for £10/month. Properties browse and book for free - a 10% platform fee is added only when a booking is agreed and confirmed. Featured placement in the directory is arranged directly with WHC${RESIDENCY_PRICING.featured.price ? ` (guide ${pounds(RESIDENCY_PRICING.featured.price)})` : ''}.` },
+  { q: 'How does Agency pricing work?', a: `The professional keeps 100% of the agreed shift rate. The property pays the agreed shift value plus a ${Math.round(AGENCY_PLATFORM_FEE_PCT * 100)}% Talent House platform fee.` },
+  { q: 'Do you offer a recruitment service as well as job advertising?', a: 'Yes. Employers can advertise directly, or ask Talent House to run the search. Talent House Recruitment Service is typically 12.5% of first-year salary. Executive Search for senior leadership roles is typically 15–20%.' },
+  { q: 'How does Residency pricing work?', a: `Specialists list themselves for £10/month. Properties browse and book for free - a 10% platform fee is added only when a booking is agreed and confirmed. Featured placement in the directory is arranged directly with Talent House${RESIDENCY_PRICING.featured.price ? ` (guide ${pounds(RESIDENCY_PRICING.featured.price)})` : ''}.` },
   { q: 'How are payments handled?', a: 'Online payments are processed securely through Stripe. Paid services are subject to the relevant platform terms, cancellation and refund rules.' },
 ]
 
@@ -58,7 +58,7 @@ export default function PricingPage() {
           <div>
             <p className="text-[10px] uppercase tracking-[.2em] font-semibold text-body mb-4">{cms.hero.eyebrow || 'Simple, transparent pricing'}</p>
             <h1 className="text-[44px] md:text-[62px] leading-[1.01] tracking-[-.05em] font-semibold text-ink mb-5">{cms.hero.heading || 'Choose what you need. Pay for what creates value.'}</h1>
-            <p className="text-[15px] md:text-[17px] leading-7 text-secondary max-w-3xl">{cms.hero.text || 'Free entry for Talent and Employers, clear paid upgrades, transparent Agency fees and specialist recruitment when you want WHC to do more.'}</p>
+            <p className="text-[15px] md:text-[17px] leading-7 text-secondary max-w-3xl">{cms.hero.text || 'Free entry for Talent and Employers, clear paid upgrades, transparent Agency fees and specialist recruitment when you want Talent House to do more.'}</p>
           </div>
           <div className="aspect-[4/3] overflow-hidden rounded-[26px]"><img decoding="async" src={cms.hero.image.url} alt={cms.hero.image.alt} className="w-full h-full object-cover" style={{objectPosition:`${cms.hero.image.focalX}% ${cms.hero.image.focalY}%`}}/></div>
         </div>
@@ -78,9 +78,9 @@ export default function PricingPage() {
 
       <section className="py-16 px-6 bg-white border-y border-[#dddddd]">
         <div className="max-w-7xl mx-auto">
-          <div className="max-w-3xl mb-9"><p className="text-[10px] uppercase tracking-[.18em] font-semibold text-[#1c1c1c]">Flexible work & specialist placements</p><h2 className="text-[32px] md:text-[42px] tracking-[-.04em] font-semibold text-[#1c1c1c] mt-2">The professional keeps the agreed rate.</h2><p className="text-[13px] leading-6 text-[#555555] mt-3">WHC adds its platform fee to the property side, so the rate a professional agrees is the rate they earn.</p></div>
+          <div className="max-w-3xl mb-9"><p className="text-[10px] uppercase tracking-[.18em] font-semibold text-[#1c1c1c]">Flexible work & specialist placements</p><h2 className="text-[32px] md:text-[42px] tracking-[-.04em] font-semibold text-[#1c1c1c] mt-2">The professional keeps the agreed rate.</h2><p className="text-[13px] leading-6 text-[#555555] mt-3">Talent House adds its platform fee to the property side, so the rate a professional agrees is the rate they earn.</p></div>
           <div className="grid md:grid-cols-2 gap-5">
-            <div className="rounded-[22px] bg-[#f1f1f1] border border-[#dddddd] p-7"><CalendarDays size={20} className="text-[#1c1c1c]"/><p className="text-[10px] uppercase tracking-[.16em] font-semibold text-[#1c1c1c] mt-5">Agency booking</p><h3 className="text-[26px] font-semibold text-[#1c1c1c] mt-2">Agreed shift value + {Math.round(AGENCY_PLATFORM_FEE_PCT * 100)}%</h3><p className="text-[12px] leading-6 text-[#555555] mt-3">Example: £20/hour × 10 hours = £200 to the professional. WHC fee £30. Property total £230.</p><p className="text-[11px] font-semibold text-[#1c1c1c] mt-4">The rate you see is the rate you earn.</p></div>
+            <div className="rounded-[22px] bg-[#f1f1f1] border border-[#dddddd] p-7"><CalendarDays size={20} className="text-[#1c1c1c]"/><p className="text-[10px] uppercase tracking-[.16em] font-semibold text-[#1c1c1c] mt-5">Agency booking</p><h3 className="text-[26px] font-semibold text-[#1c1c1c] mt-2">Agreed shift value + {Math.round(AGENCY_PLATFORM_FEE_PCT * 100)}%</h3><p className="text-[12px] leading-6 text-[#555555] mt-3">Example: £20/hour × 10 hours = £200 to the professional. Talent House fee £30. Property total £230.</p><p className="text-[11px] font-semibold text-[#1c1c1c] mt-4">The rate you see is the rate you earn.</p></div>
             <div className="rounded-[22px] bg-[#1c1c1c] p-7 text-white"><MapPin size={20} className="text-white/70"/><p className="text-[10px] uppercase tracking-[.16em] font-semibold text-white/70 mt-5">Residency listings</p><h3 className="text-[26px] font-semibold text-white mt-2">Free to book · 10% on confirmation</h3><p className="text-[12px] leading-6 text-white/65 mt-3">Browse verified residency specialists free. Pay only when a booking is agreed and confirmed - a 10% platform fee protects both sides. Specialists list for £10/month.</p></div>
           </div>
         </div>
@@ -100,7 +100,7 @@ export default function PricingPage() {
 
       <section className="py-16 px-6 bg-white border-b border-[#dddddd]">
         <div className="max-w-7xl mx-auto grid lg:grid-cols-2 gap-5">
-          <div className="rounded-[22px] border border-[#dddddd] p-7"><p className="text-[10px] uppercase tracking-[.16em] font-semibold text-[#1c1c1c]">WHC Recruitment Service</p><h3 className="text-[28px] font-semibold text-[#1c1c1c] mt-2">12.5% of first-year salary</h3><p className="text-[12px] leading-6 text-[#555555] mt-3">WHC takes the vacancy brief, searches the platform and wider network, pre-screens candidates and delivers a shortlist, with a replacement guarantee on every placement.</p></div>
+          <div className="rounded-[22px] border border-[#dddddd] p-7"><p className="text-[10px] uppercase tracking-[.16em] font-semibold text-[#1c1c1c]">Talent House Recruitment Service</p><h3 className="text-[28px] font-semibold text-[#1c1c1c] mt-2">12.5% of first-year salary</h3><p className="text-[12px] leading-6 text-[#555555] mt-3">Talent House takes the vacancy brief, searches the platform and wider network, pre-screens candidates and delivers a shortlist, with a replacement guarantee on every placement.</p></div>
           <div className="rounded-[22px] bg-[#f1f1f1] border border-[#dddddd] p-7"><p className="text-[10px] uppercase tracking-[.16em] font-semibold text-[#1c1c1c]">Executive Search</p><h3 className="text-[28px] font-semibold text-[#1c1c1c] mt-2">15–20% of first-year salary</h3><p className="text-[12px] leading-6 text-[#555555] mt-3">For Director of Spa, Wellness Director, Regional leadership, Group Spa Director and other senior confidential searches.</p></div>
         </div>
       </section>

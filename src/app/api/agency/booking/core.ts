@@ -367,7 +367,7 @@ async function maintenanceSweep(admin: any) {
     }
   } catch { /* review nudges are never fatal */ }
 
-  // ── Insurance expiry chasing (WHC Verified) ──
+  // ── Insurance expiry chasing (Talent House Verified) ──
   try {
     // Expired → badge paused, therapist told how to get it back
     const { data: lapsed } = await admin.from('candidate_profiles')
@@ -382,7 +382,7 @@ async function maintenanceSweep(admin: any) {
         .eq('id', c.id).eq('whc_verified', true)
       if (c.user_id) {
         try {
-          await createNotification(c.user_id, 'general', 'WHC Verified badge paused',
+          await createNotification(c.user_id, 'general', 'Talent House Verified badge paused',
             `Your insurance expired on ${c.insurance_expiry_date} so your badge is paused. Upload your renewal from the Verification page and it comes straight back after review.`, '/talent/verification')
           const { data: u } = await admin.auth.admin.getUserById(c.user_id)
           if (u?.user?.email) await sendInsuranceExpiryEmail(u.user.email, c.full_name || 'there', c.insurance_expiry_date, true)
@@ -404,7 +404,7 @@ async function maintenanceSweep(admin: any) {
       if (c.user_id) {
         try {
           await createNotification(c.user_id, 'general', 'Your insurance expires soon',
-            `Your insurance expires on ${c.insurance_expiry_date}. Upload your renewal from the Verification page and your WHC Verified badge carries straight on.`, '/talent/verification')
+            `Your insurance expires on ${c.insurance_expiry_date}. Upload your renewal from the Verification page and your Talent House Verified badge carries straight on.`, '/talent/verification')
           const { data: u } = await admin.auth.admin.getUserById(c.user_id)
           if (u?.user?.email) await sendInsuranceExpiryEmail(u.user.email, c.full_name || 'there', c.insurance_expiry_date, false)
         } catch { /* non-fatal */ }
@@ -553,7 +553,7 @@ export async function POST(req: NextRequest) {
     ])
 
     // ── create: employer sends an offer to a candidate ──
-    // Rates are HOURLY. The therapist receives rate × hours in full; WHC's
+    // Rates are HOURLY. The therapist receives rate × hours in full; Talent House's
     // platform fee is calculated on top and payable by the property.
     if (action === 'create') {
       if (!emp) return NextResponse.json({ error: 'Only employers can make offers' }, { status: 403 })
@@ -706,7 +706,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true, booking, created: createdCount })
     }
 
-    // ── urgent_cascade: the property asks for cover and WHC finds someone ──
+    // ── urgent_cascade: the property asks for cover and Talent House finds someone ──
     // Builds a distance-sorted queue of available therapists and offers the
     // shift to them one at a time (30-minute windows) until someone accepts.
     if (action === 'urgent_cascade') {
@@ -876,7 +876,7 @@ export async function POST(req: NextRequest) {
     const shiftDate = booking.shift_date || 'the agreed date'
 
     // ── dispute: the property reports a problem with a PAID booking ──
-    // (no-show, left early, quality). Payout freezes until WHC resolves it;
+    // (no-show, left early, quality). Payout freezes until Talent House resolves it;
     // any refund is minus the 10% admin fee, decided case-by-case in Admin.
     if (action === 'dispute') {
       if (!isEmployerParty) {
@@ -886,7 +886,7 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: 'Issues can be reported on paid bookings only.' }, { status: 400 })
       }
       if (booking.dispute_status === 'open') {
-        return NextResponse.json({ error: 'An issue is already open on this booking - WHC is reviewing it.' }, { status: 400 })
+        return NextResponse.json({ error: 'An issue is already open on this booking - Talent House is reviewing it.' }, { status: 400 })
       }
       const reason = String(body.reason || '').trim()
       if (!reason) return NextResponse.json({ error: 'Please describe what happened.' }, { status: 400 })
@@ -935,7 +935,7 @@ export async function POST(req: NextRequest) {
       await notifyOtherParty(
         admin, otherUserId, user.id,
         'Standing booking accepted',
-        `${actorName} has accepted all ${acceptedRows.length} shifts in your standing booking (weekly from ${booking.shift_date}) at £${booking.rate} per hour. Pay each shift from your Agency Bookings page to confirm it - WHC pays the therapist after each shift.`,
+        `${actorName} has accepted all ${acceptedRows.length} shifts in your standing booking (weekly from ${booking.shift_date}) at £${booking.rate} per hour. Pay each shift from your Agency Bookings page to confirm it - Talent House pays the therapist after each shift.`,
         '/employer/agency',
       )
       return NextResponse.json({ success: true, accepted: acceptedRows.length })
@@ -1011,8 +1011,8 @@ export async function POST(req: NextRequest) {
       const effHours = booking.hours && booking.hours > 0 ? booking.hours : 8
       const totalDue = agencyShiftMoney({ ratePounds: booking.rate, hours: effHours, storedFeePounds: updated.platform_fee }).totalPounds
       const acceptBody = isCandidateParty
-        // Candidate accepted → the property now pays WHC in full to confirm
-        ? `${actorName} has accepted the agency offer for ${shiftDate} at £${booking.rate} per hour. To confirm the booking, pay £${totalDue} (rate plus the WHC fee) from your Agency Bookings page. WHC pays the therapist after the shift.`
+        // Candidate accepted → the property now pays Talent House in full to confirm
+        ? `${actorName} has accepted the agency offer for ${shiftDate} at £${booking.rate} per hour. To confirm the booking, pay £${totalDue} (rate plus the Talent House fee) from your Agency Bookings page. Talent House pays the therapist after the shift.`
         : `${actorName} has accepted the agency offer for ${shiftDate} at £${booking.rate} per hour. The booking is confirmed once payment is made.`
       await notifyOtherParty(
         admin, otherUserId, user.id,

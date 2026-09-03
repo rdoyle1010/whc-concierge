@@ -1,4 +1,4 @@
-// WHC Academy brand masterclass: Thalgo. Independent WHC training - not
+// Talent House Academy brand masterclass: Thalgo. Independent Talent House training - not
 // affiliated with or endorsed by Thalgo. Answer key lives in
 // academy-more-answers/thalgo-masterclass.ts (server-only).
 

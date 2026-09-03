@@ -48,7 +48,7 @@ export async function POST(req: NextRequest) {
   const tomorrow = (() => { const d = new Date(`${londonToday()}T12:00:00Z`); d.setUTCDate(d.getUTCDate() + 1); return d.toISOString().slice(0, 10) })()
   const lateEmployerCancellation = role === 'employer' && String(booking.shift_date) <= tomorrow
 
-  // Before payment there is no money to retain. After payment WHC's agreed
+  // Before payment there is no money to retain. After payment Talent House's agreed
   // admin/platform fee remains earned; the shift money is frozen for Admin to
   // decide any refund/compensation under the cancellation policy.
   const update: Record<string, any> = {
@@ -79,8 +79,8 @@ export async function POST(req: NextRequest) {
         requested_adjustment_type: role === 'employer' ? 'refund' : 'none',
         requested_amount: role === 'employer' ? (lateEmployerCancellation ? Math.round(gross / 2) : gross) : null,
         requested_reason: lateEmployerCancellation
-          ? `Late cancellation by the property within 24 hours of the shift. Policy default: 50% refund (£${Math.round(gross / 2)}), 50% (£${gross - Math.round(gross / 2)}) compensates the professional for the held day. WHC admin fee of £${fee} is retained.`
-          : `Pre-shift cancellation. WHC admin fee of £${fee} is retained.`,
+          ? `Late cancellation by the property within 24 hours of the shift. Policy default: 50% refund (£${Math.round(gross / 2)}), 50% (£${gross - Math.round(gross / 2)}) compensates the professional for the held day. Talent House admin fee of £${fee} is retained.`
+          : `Pre-shift cancellation. Talent House admin fee of £${fee} is retained.`,
         status: 'under_review',
       })
     }
@@ -93,7 +93,7 @@ export async function POST(req: NextRequest) {
   const otherUser = role === 'candidate' ? emp?.user_id : cand?.user_id
   if (otherUser) {
     await createNotification(otherUser, 'general', 'Agency shift cancelled',
-      `${role === 'candidate' ? cand?.full_name || 'The professional' : emp?.property_name || emp?.company_name || 'The property'} cancelled the ${booking.shift_date} Agency shift. ${paid ? `WHC will review the money; the £${fee} admin fee is retained.` : 'No payment had been collected.'}`,
+      `${role === 'candidate' ? cand?.full_name || 'The professional' : emp?.property_name || emp?.company_name || 'The property'} cancelled the ${booking.shift_date} Agency shift. ${paid ? `Talent House will review the money; the £${fee} admin fee is retained.` : 'No payment had been collected.'}`,
       role === 'candidate' ? '/employer/agency' : '/talent/agency')
   }
 

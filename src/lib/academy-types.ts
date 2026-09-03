@@ -1,4 +1,4 @@
-// WHC Academy - the university-grade course content model. Each course's
+// Talent House Academy - the university-grade course content model. Each course's
 // full content lives in src/lib/academy-content/<slug>.ts conforming to
 // these types. Quizzes and answer keys remain in academy.ts /
 // academy-answers.ts and are untouched by this layer.
@@ -31,7 +31,7 @@ export type RichLesson = {
   keyTerms: KeyTerm[]
   caseStudy: CaseStudy
   summary: string // the takeaway paragraph
-  // WHC course standard (optional - existing courses render unchanged):
+  // Talent House course standard (optional - existing courses render unchanged):
   whyThisMatters?: string // the operational/commercial stake, up front
   visuals?: LessonVisual[] // diagrams, tables, matrices, image slots
   scenario?: string // a situation the learner thinks through

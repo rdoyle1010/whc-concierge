@@ -1,4 +1,4 @@
-// WHC Academy brand masterclass: Sisley Paris. Independent WHC training -
+// Talent House Academy brand masterclass: Sisley Paris. Independent Talent House training -
 // not affiliated with or endorsed by Sisley Paris. Answer key lives in
 // academy-more-answers/sisley-masterclass.ts (server-only).
 

@@ -133,7 +133,7 @@ export default function EmployerBillingPage() {
 
         <div className="dashboard-card border-[#555555]/50">
           <div className="flex items-center gap-2 text-[#1c1c1c]"><Star size={16} /><p className="text-[14px] font-semibold">Featured Hotel</p></div>
-          <p className="mt-3 text-[13px] text-ink">{featuredActive ? 'Your property currently receives premium visibility.' : 'Put your property in front of approved WHC Talent.'}</p>
+          <p className="mt-3 text-[13px] text-ink">{featuredActive ? 'Your property currently receives premium visibility.' : 'Put your property in front of approved Talent House Talent.'}</p>
           <p className="mt-2 text-[12px] leading-5 text-muted">{featuredPrice ? `Current new-subscription price: ${featuredPrice}.` : ''} Pricing shown is current and confirmed at checkout.</p>
           <Link href="/employer/featured" className="btn-primary mt-5 inline-flex text-[12px]">{featuredActive ? 'View Featured status' : 'Get Featured'}</Link>
         </div>

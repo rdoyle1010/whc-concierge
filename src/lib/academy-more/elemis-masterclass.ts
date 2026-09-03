@@ -1,5 +1,5 @@
-// Elemis Masterclass - a WHC Academy brand masterclass pack.
-// Independent WHC training; not affiliated with or endorsed by Elemis.
+// Elemis Masterclass - a Talent House Academy brand masterclass pack.
+// Independent Talent House training; not affiliated with or endorsed by Elemis.
 
 import type { AcademyCourse } from '../academy'
 import type { CourseExtras } from '../academy-extras'

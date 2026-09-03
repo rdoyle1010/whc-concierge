@@ -1,4 +1,4 @@
-// WHC Academy - the editable course content document.
+// Talent House Academy - the editable course content document.
 //
 // This is the single shape an admin edits when she takes editorial control of
 // a course, and the single validator used by BOTH the admin API route and the

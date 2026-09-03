@@ -5,13 +5,13 @@ import { PASS_MARK } from '@/lib/academy'
 import { getAcademyAnswerKey, getAcademyCourseBySlug } from '@/lib/academy-catalog-server'
 import { getRequestUser } from '@/lib/request-user'
 
-// WHC Academy - enrolments, lesson progress and the server-graded quiz.
+// Talent House Academy - enrolments, lesson progress and the server-graded quiz.
 // Payment happens via Stripe checkout; the webhook sets paid_at. Quizzes are
 // graded HERE so answer keys never reach the browser or mobile app.
 
 function makeCertificateCode() {
   const alphabet = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'
-  let code = 'WHC-'
+  let code = 'Talent House-'
   for (let i = 0; i < 8; i++) code += alphabet[Math.floor(Math.random() * alphabet.length)]
   return code
 }

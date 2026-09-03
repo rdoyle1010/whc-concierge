@@ -17,8 +17,8 @@
 // most sensitive thing a spa platform could be holding.
 //
 // This module is deliberately not a legal opinion. Which of the three applies,
-// and whether the duty falls on WHC or on the property, depends on whether a
-// given engagement makes WHC the employment business - and that is a question
+// and whether the duty falls on Talent House or on the property, depends on whether a
+// given engagement makes Talent House the employment business - and that is a question
 // for a solicitor, not for a comment in a file.
 
 export const HOME_OFFICE_CHECK_URL = 'https://www.gov.uk/view-right-to-work'

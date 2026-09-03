@@ -232,7 +232,7 @@ export default function AgencySettingsPage() {
         )}
 
         {/* Connected payouts mean the property's payment reaches the
-            professional at the moment it clears, instead of waiting on a WHC
+            professional at the moment it clears, instead of waiting on a Talent House
             bank transfer after the shift. */}
         {live.available && payoutState !== 'loading' && payoutState !== 'unavailable' && (
           payoutState === 'active' ? (
@@ -240,7 +240,7 @@ export default function AgencySettingsPage() {
               <Banknote size={18} className="text-green-700 mt-0.5 shrink-0" />
               <div>
                 <p className="text-[14px] font-medium text-green-800">Payouts are connected</p>
-                <p className="text-[12px] leading-5 text-green-700 mt-0.5">Your full agreed shift amount is sent straight to your bank account by Stripe the moment a property pays. Nothing is deducted and nothing waits on a WHC transfer.</p>
+                <p className="text-[12px] leading-5 text-green-700 mt-0.5">Your full agreed shift amount is sent straight to your bank account by Stripe the moment a property pays. Nothing is deducted and nothing waits on a Talent House transfer.</p>
               </div>
             </div>
           ) : (
@@ -251,8 +251,8 @@ export default function AgencySettingsPage() {
                   <p className="text-[14px] font-medium text-ink">{payoutState === 'incomplete' ? 'Finish connecting your payouts' : 'Get paid the moment a property pays'}</p>
                   <p className="text-[12px] leading-5 text-secondary mt-1">
                     {payoutState === 'incomplete'
-                      ? 'Your Stripe payout setup is not finished, so shift money still comes to you by WHC bank transfer after the shift. Complete it and you are paid automatically instead.'
-                      : 'Connect your bank account securely through Stripe and your full agreed shift amount is paid to you automatically as soon as the property pays, rather than by a WHC bank transfer after the shift. It takes about two minutes, and your rate and fee do not change.'}
+                      ? 'Your Stripe payout setup is not finished, so shift money still comes to you by Talent House bank transfer after the shift. Complete it and you are paid automatically instead.'
+                      : 'Connect your bank account securely through Stripe and your full agreed shift amount is paid to you automatically as soon as the property pays, rather than by a Talent House bank transfer after the shift. It takes about two minutes, and your rate and fee do not change.'}
                   </p>
                   <button type="button" onClick={startPayouts} disabled={payoutBusy} className="btn-primary mt-3 text-[12px] disabled:opacity-50">
                     {payoutBusy ? 'Opening Stripe...' : payoutState === 'incomplete' ? 'Continue payout setup' : 'Connect payouts with Stripe'}

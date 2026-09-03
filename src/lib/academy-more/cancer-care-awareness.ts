@@ -1,4 +1,4 @@
-// WHC Academy specialist care course: Cancer Care Awareness in the Spa.
+// Talent House Academy specialist care course: Cancer Care Awareness in the Spa.
 // AWARENESS-LEVEL training only - it does not replace accredited oncology
 // touch certification (e.g. Made for Life or Jennifer Young-style
 // programmes), which many insurers require before treating guests in

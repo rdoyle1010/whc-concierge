@@ -7,7 +7,7 @@ import DashboardShell from '@/components/DashboardShell'
 import { Plus, Edit2, Trash2, Eye, EyeOff, FileText, X, Upload, Image as ImageIcon, Share2 } from 'lucide-react'
 import Pagination from '@/components/Pagination'
 
-// The nine WHC Intelligence desks, plus Journal for general pieces. Posts in
+// The nine Talent House Intelligence desks, plus Journal for general pieces. Posts in
 // these categories surface on /intelligence under the matching desk.
 const CATEGORIES = ['Salary reports', 'Industry benchmarks', 'Leadership interviews', 'Spa opening reports', 'Career advice', 'Revenue benchmarks', 'Recruitment trends', 'Role guides', 'Industry analysis', 'Journal']
 
@@ -142,7 +142,7 @@ export default function AdminBlogPage() {
 
           <div><label className="dashboard-eyebrow block mb-1.5">Featured image</label><div className="grid md:grid-cols-[240px_1fr] gap-4 rounded-2xl border border-[#dddddd] p-4 bg-[#f1f1f1]">
             <div className="aspect-[16/10] overflow-hidden rounded-xl bg-white border border-[#dddddd]">{form.image_url ? <img loading="lazy" decoding="async" src={form.image_url} alt="Article preview" className="w-full h-full object-cover"/> : <div className="h-full flex items-center justify-center text-[#6b6b6b]"><ImageIcon size={30}/></div>}</div>
-            <div className="flex flex-col justify-center gap-3"><p className="text-[12px] leading-5 text-[#555555]">Upload the article image from your computer or phone. It will be stored in WHC site storage and used on the Journal card and article page.</p><div className="flex flex-wrap gap-2"><label className="btn-secondary w-fit cursor-pointer inline-flex items-center gap-2"><Upload size={14}/>{uploading ? 'Uploading…' : form.image_url ? 'Replace image' : 'Upload image'}<input type="file" accept="image/jpeg,image/png,image/webp" className="hidden" disabled={uploading} onChange={e => { const file=e.target.files?.[0]; if(file) uploadImage(file); e.target.value='' }}/></label>{form.image_url ? <button type="button" onClick={() => setForm({ ...form, image_url: '' })} className="btn-secondary">Remove image</button> : null}</div><p className="text-[11px] text-[#6b6b6b]">JPEG, PNG or WebP. Maximum 10 MB.</p></div>
+            <div className="flex flex-col justify-center gap-3"><p className="text-[12px] leading-5 text-[#555555]">Upload the article image from your computer or phone. It will be stored in Talent House site storage and used on the Journal card and article page.</p><div className="flex flex-wrap gap-2"><label className="btn-secondary w-fit cursor-pointer inline-flex items-center gap-2"><Upload size={14}/>{uploading ? 'Uploading…' : form.image_url ? 'Replace image' : 'Upload image'}<input type="file" accept="image/jpeg,image/png,image/webp" className="hidden" disabled={uploading} onChange={e => { const file=e.target.files?.[0]; if(file) uploadImage(file); e.target.value='' }}/></label>{form.image_url ? <button type="button" onClick={() => setForm({ ...form, image_url: '' })} className="btn-secondary">Remove image</button> : null}</div><p className="text-[11px] text-[#6b6b6b]">JPEG, PNG or WebP. Maximum 10 MB.</p></div>
           </div></div>
 
           <div><label className="dashboard-eyebrow block mb-1.5">Excerpt</label><textarea aria-label="Excerpt" rows={3} maxLength={220} className="input-field" value={form.excerpt} onChange={e => setForm({ ...form, excerpt: e.target.value })} placeholder="Short introduction shown on the Journal page"/></div>

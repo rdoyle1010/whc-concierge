@@ -112,7 +112,7 @@ export default function TalentRegisterPage() {
   // live counts have loaded; the two standing promises always show.
   const factRows: Array<{ value: string | null; label: string }> = [
     stats?.liveRoles ? { value: String(stats.liveRoles), label: `live role${stats.liveRoles === 1 ? '' : 's'} open right now` } : null,
-    stats?.properties ? { value: String(stats.properties), label: `approved propert${stats.properties === 1 ? 'y' : 'ies'} hiring through WHC` } : null,
+    stats?.properties ? { value: String(stats.properties), label: `approved propert${stats.properties === 1 ? 'y' : 'ies'} hiring through Talent House` } : null,
     { value: null, label: 'Salary expectations stay private until you choose' },
     { value: null, label: 'Verified employers only' },
   ].filter(Boolean) as Array<{ value: string | null; label: string }>
@@ -176,7 +176,7 @@ export default function TalentRegisterPage() {
                   </div>
                 ) : (
                   <>
-                    <dt className="sr-only">WHC standard</dt>
+                    <dt className="sr-only">Talent House standard</dt>
                     <dd className="text-[14px] font-serif font-medium text-white/85 leading-6">{row.label}</dd>
                   </>
                 )}

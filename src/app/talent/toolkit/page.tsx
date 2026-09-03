@@ -28,7 +28,7 @@ export default function TalentToolkitPage() {
   return (
     <DashboardShell role="talent">
       <div className="max-w-4xl">
-        <p className="dashboard-eyebrow">WHC Academy</p>
+        <p className="dashboard-eyebrow">Talent House Academy</p>
         <h1 className="dashboard-title">My Toolkit</h1>
         <p className="dashboard-intro max-w-2xl mb-7">Every tool, template and worksheet you gain through Academy courses lives here permanently - {total > 0 ? `${total} tool${total === 1 ? '' : 's'} and counting` : 'they appear as you enrol'}. Use them with real figures from your own spa.</p>
 

@@ -97,7 +97,7 @@ export async function POST(req: NextRequest) {
         .gt('expires_at', new Date().toISOString())
         .select('id')
       if (released?.length && data.user_id) {
-        await createNotification(data.user_id, 'general', 'Your paid roles are now live', `Your employer account is approved and ${released.length} paid role${released.length === 1 ? ' is' : 's are'} now live on WHC.`, '/employer/jobs')
+        await createNotification(data.user_id, 'general', 'Your paid roles are now live', `Your employer account is approved and ${released.length} paid role${released.length === 1 ? ' is' : 's are'} now live on Talent House.`, '/employer/jobs')
       }
     } catch (e: any) { console.error('Releasing held roles failed:', e?.message) }
   }

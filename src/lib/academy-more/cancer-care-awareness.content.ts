@@ -15,7 +15,7 @@ export const content: CourseContent = {
     'Explain where awareness-level practice ends and where accredited oncology touch training, venue protocol and insurance requirements begin',
   ],
   prerequisites: 'A recognised therapy qualification. This awareness course supplements, and never replaces, specialist clinical training.',
-  author: { name: 'WHC Academy', role: 'Developed by Wellness House Collective' },
+  author: { name: 'Talent House Academy', role: 'Developed by Wellness House Collective' },
   references: [
     { label: 'NHS website - general health information for the public', url: 'https://www.nhs.uk' },
     { label: 'Recognised specialist training providers offer accredited oncology touch programmes; ask your venue and insurer which they recognise' },

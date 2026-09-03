@@ -4,7 +4,7 @@ import { getRequestUser } from '@/lib/request-user'
 import { createNotification } from '@/lib/notifications'
 import { trackEvent } from '@/lib/analytics'
 
-// Managed recruitment intake: the employer asks WHC to run the search.
+// Managed recruitment intake: the employer asks Talent House to run the search.
 // 12.5% of first-year salary (15-20% executive), payable on placement.
 
 const RESEND_API_KEY = process.env.RESEND_API_KEY
@@ -20,7 +20,7 @@ async function alertAdmin(propertyName: string, request: { job_title: string; se
     : 'Not stated'
   const html = `<div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;padding:32px 20px;color:#1c1c1c;">
     <p style="font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:#1c1c1c;">New managed search request</p>
-    <h2 style="font-family:Georgia,serif;font-weight:500;">${esc(propertyName)} wants WHC to run a search</h2>
+    <h2 style="font-family:Georgia,serif;font-weight:500;">${esc(propertyName)} wants Talent House to run a search</h2>
     <table style="width:100%;border-collapse:collapse;font-size:14px;">
       <tr><td style="padding:6px 0;color:#6b6b6b;width:110px;">Service</td><td style="text-transform:capitalize;">${esc(request.service)}</td></tr>
       <tr><td style="padding:6px 0;color:#6b6b6b;">Role</td><td><strong>${esc(request.job_title)}</strong>${request.role_level ? ` (${esc(String(request.role_level))})` : ''}</td></tr>
@@ -91,7 +91,7 @@ export async function POST(req: NextRequest) {
 
     const propertyName = employer.property_name || employer.company_name || 'An employer'
     await alertAdmin(propertyName, request)
-    await createNotification(user.id, 'general', 'Managed search request received', `Thank you - WHC has received your ${service === 'executive' ? 'executive search' : 'managed recruitment'} request for ${jobTitle}. We will come back to you within one working day.`, '/employer/recruitment').catch?.(() => {})
+    await createNotification(user.id, 'general', 'Managed search request received', `Thank you - Talent House has received your ${service === 'executive' ? 'executive search' : 'managed recruitment'} request for ${jobTitle}. We will come back to you within one working day.`, '/employer/recruitment').catch?.(() => {})
     await trackEvent('recruitment_request_created', { actorUserId: user.id, employerId: employer.id }, { service, job_title: jobTitle })
 
     return NextResponse.json({ success: true, request })

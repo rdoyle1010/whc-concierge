@@ -75,7 +75,7 @@ export async function POST(req: NextRequest) {
       consent_type: field,
       action: body[field] ? 'enabled' : 'disabled',
       policy_version: PRIVACY_POLICY_VERSION,
-      wording: field === 'share_profile_with_whc_partners' ? 'Allow WHC to share my profile with selected WHC commercial partners outside a direct application or booking.' : null,
+      wording: field === 'share_profile_with_whc_partners' ? 'Allow Talent House to share my profile with selected Talent House commercial partners outside a direct application or booking.' : null,
       source: 'account_preferences',
     }))
   if (events.length) await admin.from('consent_events').insert(events)

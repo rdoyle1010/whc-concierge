@@ -1,4 +1,4 @@
-// WHC Academy brand masterclass: Guinot. Independent WHC training - not
+// Talent House Academy brand masterclass: Guinot. Independent Talent House training - not
 // affiliated with or endorsed by Guinot. Answer key lives in
 // academy-more-answers/guinot-masterclass.ts (server-only).
 

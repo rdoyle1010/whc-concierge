@@ -5,7 +5,7 @@ import { trackEvent } from '@/lib/analytics'
 
 // The therapist's certificate manager: structured submissions with a review
 // lifecycle. Files are uploaded through the existing document upload path;
-// this API records what each document IS, so WHC can review it and employers
+// this API records what each document IS, so Talent House can review it and employers
 // can trust it.
 
 export async function GET(req: NextRequest) {

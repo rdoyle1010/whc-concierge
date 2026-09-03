@@ -15,7 +15,7 @@ export const content: CourseContent = {
     'Work within professional scope, knowing when to adapt conservatively, defer or refer, and where accredited certification is required before hands-on treatment',
   ],
   prerequisites: 'A recognised therapy qualification. This awareness course supplements, and never replaces, specialist clinical training.',
-  author: { name: 'WHC Academy', role: 'Developed by Wellness House Collective' },
+  author: { name: 'Talent House Academy', role: 'Developed by Wellness House Collective' },
   references: [
     { label: 'NHS website - general health information for the public', url: 'https://www.nhs.uk' },
     { label: 'Recognised pregnancy massage qualifications are offered by accredited training providers; ask your venue and insurer which they recognise' },

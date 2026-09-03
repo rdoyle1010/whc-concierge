@@ -209,7 +209,7 @@ export default function SwipeMatchPage() {
       <header className="bg-white border-b border-border">
         <div className="max-w-6xl mx-auto px-6 h-[64px] flex items-center justify-between">
           <Link href="/talent/dashboard" className="text-[13px] text-muted hover:text-ink flex items-center gap-1.5"><ArrowLeft size={14} /> Dashboard</Link>
-          <div className="text-center"><p className="text-[13px] font-semibold text-ink">Your role matches</p><p className="text-[10px] text-muted">Ranked from your WHC profile</p></div>
+          <div className="text-center"><p className="text-[13px] font-semibold text-ink">Your role matches</p><p className="text-[10px] text-muted">Ranked from your Talent House profile</p></div>
           <span className="rounded-full bg-parchment px-3 py-1.5 text-[11px] font-semibold text-secondary">{idx + 1} of {jobs.length}</span>
         </div>
       </header>

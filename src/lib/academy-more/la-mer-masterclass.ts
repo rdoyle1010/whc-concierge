@@ -1,4 +1,4 @@
-// WHC Academy brand masterclass: La Mer. Independent WHC training - not
+// Talent House Academy brand masterclass: La Mer. Independent Talent House training - not
 // affiliated with or endorsed by La Mer. Answer key lives in
 // academy-more-answers/la-mer-masterclass.ts (server-only).
 

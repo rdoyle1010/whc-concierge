@@ -1,4 +1,4 @@
-// WHC Academy specialist care course: Menopause-Aware Treatments.
+// Talent House Academy specialist care course: Menopause-Aware Treatments.
 // AWARENESS-LEVEL training only - it does not replace accredited
 // certification, venue protocols or a guest's own medical guidance.
 // Answer key lives in academy-more-answers/menopause-aware-spa.ts (server-only).

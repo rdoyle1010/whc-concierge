@@ -85,7 +85,7 @@ export const DEFAULT_WEBSITE_CONTENT: WebsiteContent = {
     slides: [
       { image: image('https://images.unsplash.com/photo-1720678418766-2628e52f4634?w=1920&q=80&auto=format&fit=crop', 'Luxury spa interior'), eyebrow: 'Talent House Collective', heading: 'The professional platform for spa and wellness careers', text: 'Find exceptional people. Build better careers. Develop stronger spa businesses.' },
       { image: image('https://images.unsplash.com/photo-1590490360836-2e3b067c082b?w=1920&q=80&auto=format&fit=crop', 'Calm luxury treatment space'), eyebrow: 'Intelligent matching', heading: 'Precision matching, not guesswork', text: 'Skills, qualifications, brands, location and availability, weighted and scored - so both sides can see why a match is right.' },
-      { image: image('https://images.unsplash.com/photo-1540555700478-4be289fbecef?w=1920&q=80&auto=format&fit=crop', 'Wellness treatment setting'), eyebrow: 'Verified by WHC', heading: 'Every profile tells the full story', text: 'Right-to-work, insurance and qualifications reviewed by WHC before the Verified badge is awarded.' },
+      { image: image('https://images.unsplash.com/photo-1540555700478-4be289fbecef?w=1920&q=80&auto=format&fit=crop', 'Wellness treatment setting'), eyebrow: 'Verified by Talent House', heading: 'Every profile tells the full story', text: 'Right-to-work, insurance and qualifications reviewed by Talent House before the Verified badge is awarded.' },
     ],
     primaryLabel: 'Post a Role', primaryHref: '/register/employer',
     secondaryLabel: 'Join as a Professional', secondaryHref: '/register/talent',
@@ -123,8 +123,8 @@ export const DEFAULT_WEBSITE_CONTENT: WebsiteContent = {
   },
   services: {
     cards: [
-      { eyebrow: 'Agency marketplace', heading: 'Fill shifts fast. One transparent fee.', text: 'Flexible cover by the hour or day. The professional keeps 100% of the agreed rate; the property pays the rate plus the WHC fee.', buttonLabel: 'Browse practitioners', buttonHref: '/agency/about' },
-      { eyebrow: 'WHC Academy', heading: 'Training that gets you booked.', text: 'Professional courses with assessments, verified certificates and CPD hours - built for spa careers.', buttonLabel: 'Explore the Academy', buttonHref: '/academy' },
+      { eyebrow: 'Agency marketplace', heading: 'Fill shifts fast. One transparent fee.', text: 'Flexible cover by the hour or day. The professional keeps 100% of the agreed rate; the property pays the rate plus the Talent House fee.', buttonLabel: 'Browse practitioners', buttonHref: '/agency/about' },
+      { eyebrow: 'Talent House Academy', heading: 'Training that gets you booked.', text: 'Professional courses with assessments, verified certificates and CPD hours - built for spa careers.', buttonLabel: 'Explore the Academy', buttonHref: '/academy' },
       { eyebrow: 'Residency programme', heading: 'Visiting specialists in residence.', text: 'Placements of one to six months at destination properties, with terms, payments and payouts protected on the platform.', buttonLabel: 'Explore residencies', buttonHref: '/residency' },
     ],
   },

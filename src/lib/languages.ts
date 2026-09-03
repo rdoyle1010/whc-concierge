@@ -23,7 +23,7 @@ export const FLUENCY_LEVELS: { value: Fluency; label: string; hint: string }[] =
 export type LanguageSkill = { code: string; label: string; fluency: Fluency }
 
 // The languages that actually come up in luxury spa and hospitality across
-// Europe, the Gulf and the destinations WHC places into. Not every language in
+// Europe, the Gulf and the destinations Talent House places into. Not every language in
 // the world: a list somebody scrolls is a list nobody fills in.
 export const LANGUAGES: { code: string; label: string }[] = [
   { code: 'en', label: 'English' },

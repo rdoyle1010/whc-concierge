@@ -64,10 +64,10 @@ export async function POST(req: NextRequest) {
         : decision === 'rejected' ? 'Certificate could not be verified'
         : 'Certificate review - more information needed'
       const message = decision === 'verified'
-        ? `${row.title} has been reviewed and verified by WHC. It now shows as verified on your profile.`
+        ? `${row.title} has been reviewed and verified by Talent House. It now shows as verified on your profile.`
         : decision === 'rejected'
           ? `${row.title} could not be verified: ${note}`
-          : `WHC needs more information to verify ${row.title}: ${note}`
+          : `Talent House needs more information to verify ${row.title}: ${note}`
       await createNotification(candidate.user_id, 'general', title, message, '/talent/profile').catch?.(() => {})
 
       // And an email, because a bell is only seen by somebody who happens to

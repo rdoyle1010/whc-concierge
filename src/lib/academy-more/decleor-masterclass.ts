@@ -1,4 +1,4 @@
-// WHC Academy brand masterclass: Decleor. Independent WHC training - not
+// Talent House Academy brand masterclass: Decleor. Independent Talent House training - not
 // affiliated with or endorsed by Decleor. Answer key lives in
 // academy-more-answers/decleor-masterclass.ts (server-only).
 

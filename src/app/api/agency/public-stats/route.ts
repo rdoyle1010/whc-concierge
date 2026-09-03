@@ -9,7 +9,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 // "On the register" mirrors the directory's own listing rule: agency_available,
 // approved, and either no agency_listed_until or one still in the future.
 // Agency Ready is not computable without exposing raw compliance fields, so
-// the page states WHC Verified and Insured counts instead.
+// the page states Talent House Verified and Insured counts instead.
 
 const readPublicStats = unstable_cache(async () => {
   const admin = createAdminClient()

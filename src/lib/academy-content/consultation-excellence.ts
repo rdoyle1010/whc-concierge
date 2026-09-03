@@ -11,7 +11,7 @@ const content: CourseContent = {
     'Complete, store and use consultation records lawfully, securely and to the benefit of the returning guest',
   ],
   prerequisites: `None. This is a foundation course; it assumes only that you are working or training in a treatment role with guest contact.`,
-  author: { name: 'WHC Academy', role: 'Developed by Wellness House Collective' },
+  author: { name: 'Talent House Academy', role: 'Developed by Wellness House Collective' },
   references: [
     { label: 'UK Spa Association - industry standards and operational guidance', url: 'https://www.spa-uk.org' },
     { label: 'CIBTAC - international awarding body for beauty and spa therapy education', url: 'https://www.cibtac.com' },

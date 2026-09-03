@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import DashboardShell from '@/components/DashboardShell'
 import { Banknote, CheckCircle2 } from 'lucide-react'
 
-// WHC's agency money view: what each property has paid in, what each
+// Talent House's agency money view: what each property has paid in, what each
 // therapist is owed, and how each payout was settled. Where the therapist
 // has connected Stripe payouts the money moved at booking and there is
 // nothing to transfer; otherwise a payout can only be marked paid against
@@ -114,7 +114,7 @@ export default function AdminAgencyPage() {
   }
 
   const paidIn = bookings.filter(b => b.paid_at)
-  // A destination charge paid the therapist at booking, so WHC owes nothing
+  // A destination charge paid the therapist at booking, so Talent House owes nothing
   // on it even before the row is marked settled.
   const owed = paidIn.filter(b => b.payout_status === 'pending' && b.dispute_status !== 'open' && b.payout_method !== 'stripe_connect')
   const disputes = bookings.filter(b => b.dispute_status === 'open')
@@ -142,10 +142,10 @@ export default function AdminAgencyPage() {
           {bookingsCapped && (
             <div className="bg-amber-50 text-amber-800 border border-amber-200 text-sm px-4 py-3 mb-6">Totals below cover the most recent 250 rows.</div>
           )}
-          {/* WHC Academy revenue */}
+          {/* Talent House Academy revenue */}
           {academy && academy.enrolments > 0 && (
             <div className="dashboard-card mb-6">
-              <h2 className="text-[16px] font-medium text-ink mb-3">WHC Academy</h2>
+              <h2 className="text-[16px] font-medium text-ink mb-3">Talent House Academy</h2>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
                 <div className="bg-surface rounded-xl px-4 py-3"><p className="text-[11px] uppercase tracking-wide text-muted mb-1">Course revenue</p><p className="text-[20px] font-semibold text-ink">£{(academy.revenue / 100).toFixed(2)}</p></div>
                 <div className="bg-surface rounded-xl px-4 py-3"><p className="text-[11px] uppercase tracking-wide text-muted mb-1">Enrolments</p><p className="text-[20px] font-semibold text-ink">{academy.enrolments}</p></div>
@@ -188,7 +188,7 @@ export default function AdminAgencyPage() {
             <div className="dashboard-card"><p className="eyebrow mb-1">Collected from properties</p><p className="text-[22px] font-semibold text-ink">£{totalCollected}</p></div>
             <div className="dashboard-card"><p className="eyebrow mb-1">Owed to therapists</p><p className="text-[22px] font-semibold text-amber-600">£{totalOwed}</p></div>
             <div className="dashboard-card"><p className="eyebrow mb-1">Refunded</p><p className="text-[22px] font-semibold text-gray-600">£{totalRefunded}</p></div>
-            <div className="dashboard-card"><p className="eyebrow mb-1">WHC margin</p><p className="text-[22px] font-semibold text-green-700">£{margin}</p></div>
+            <div className="dashboard-card"><p className="eyebrow mb-1">Talent House margin</p><p className="text-[22px] font-semibold text-green-700">£{margin}</p></div>
           </div>
 
           {/* The register: who employers can actually find, and why not */}

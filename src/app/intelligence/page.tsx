@@ -14,11 +14,11 @@ export const revalidate = 300
 const SITE = 'https://talenthousecollective.co.uk'
 
 export const metadata: Metadata = {
-  title: 'WHC Intelligence',
-  description: 'Salary signals, hiring demand and editorial analysis for luxury spa and wellness - drawn from live WHC platform data and published only when the sample clears our credibility thresholds.',
+  title: 'Talent House Intelligence',
+  description: 'Salary signals, hiring demand and editorial analysis for luxury spa and wellness - drawn from live Talent House platform data and published only when the sample clears our credibility thresholds.',
   alternates: { canonical: `${SITE}/intelligence` },
   openGraph: {
-    title: 'WHC Intelligence',
+    title: 'Talent House Intelligence',
     description: 'Verifiable industry intelligence for luxury spa and wellness, from a live hiring platform.',
     url: `${SITE}/intelligence`,
     type: 'website',
@@ -199,13 +199,13 @@ export default async function IntelligencePage() {
       <header className="bg-accent pt-[76px]">
         <div className="max-w-6xl mx-auto px-6 py-20 md:py-28 grid gap-10 lg:grid-cols-[1.05fr_.95fr] lg:items-center">
           <div>
-            <p className="text-[10px] uppercase tracking-[0.18em] font-semibold text-white/70">WHC Intelligence</p>
+            <p className="text-[10px] uppercase tracking-[0.18em] font-semibold text-white/70">Talent House Intelligence</p>
             <h1 className="mt-5 text-white text-[38px] md:text-[58px] leading-[1.05] tracking-[-.04em]">
               The numbers behind luxury wellness careers, reported straight.
             </h1>
             <p className="mt-6 text-[15px] leading-7 text-white/75 max-w-2xl">
               Intelligence drawn from a live hiring platform - real roles, advertised salaries and demand as it stands.
-              A figure appears here only once the data clears WHC&apos;s credibility thresholds. Nothing padded, nothing invented.
+              A figure appears here only once the data clears Talent House&apos;s credibility thresholds. Nothing padded, nothing invented.
             </p>
           </div>
           <PanelPicture panel={site.panels.intelligenceHero} placement="intelligence_hero" aspect="aspect-[5/4]" />
@@ -218,7 +218,7 @@ export default async function IntelligencePage() {
           <p className="public-eyebrow">The market this month</p>
           <h2 className="mt-4 text-[26px] md:text-[34px] leading-[1.2] max-w-3xl">{dateline}</h2>
           <p className="mt-4 text-[13px] leading-6 text-secondary max-w-2xl">
-            Source: live WHC platform data, refreshed continuously.
+            Source: live Talent House platform data, refreshed continuously.
           </p>
 
           <div className="mt-10 grid grid-cols-2 md:grid-cols-5 gap-x-8 gap-y-6 max-w-5xl">
@@ -330,7 +330,7 @@ export default async function IntelligencePage() {
         <div className="relative max-w-6xl mx-auto px-6 py-16 md:py-20 text-center">
           <h2 className="text-white text-[28px] md:text-[36px]">Read the full journal</h2>
           <p className="mt-4 text-[14px] leading-7 text-white/70 max-w-xl mx-auto">
-            Every article WHC has published - careers, leadership and industry perspective across luxury wellness.
+            Every article Talent House has published - careers, leadership and industry perspective across luxury wellness.
           </p>
           <div className="mt-8 flex flex-wrap justify-center gap-3">
             <Link href="/blog" className="inline-flex items-center gap-2 bg-white text-accent px-6 py-3 text-[13px] font-semibold hover:bg-surface transition-colors">

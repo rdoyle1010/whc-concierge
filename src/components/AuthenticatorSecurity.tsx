@@ -69,7 +69,7 @@ export default function AuthenticatorSecurity({ required = false }: { required?:
 
   async function startEnrollment() {
     setBusy(true); setError(''); setMessage('')
-    const { data, error } = await supabase.auth.mfa.enroll({ factorType: 'totp', friendlyName: 'WHC Authenticator' })
+    const { data, error } = await supabase.auth.mfa.enroll({ factorType: 'totp', friendlyName: 'Talent House Authenticator' })
     if (error) setError(error.message)
     else setEnrollment(data)
     setBusy(false)
@@ -108,14 +108,14 @@ export default function AuthenticatorSecurity({ required = false }: { required?:
       <div className="flex-1"><h3 className="font-serif text-lg font-semibold">Authenticator app</h3><p className="text-sm text-secondary mt-1">Add a second sign-in check using Microsoft Authenticator, Google Authenticator, 1Password or another TOTP app. This protects sensitive personal information, bookings and money even if a password is stolen.</p></div>
     </div>
 
-    {required && !factor && <div className="mt-4 bg-amber-50 border border-amber-200 text-amber-800 px-4 py-3 text-sm"><strong>Required for WHC administrators.</strong> Set this up before using sensitive admin and payment functions.</div>}
+    {required && !factor && <div className="mt-4 bg-amber-50 border border-amber-200 text-amber-800 px-4 py-3 text-sm"><strong>Required for Talent House administrators.</strong> Set this up before using sensitive admin and payment functions.</div>}
     {message && <div role="status" className="mt-4 bg-green-50 text-green-700 px-4 py-3 text-sm">{message}</div>}
     {error && <div role="alert" className="mt-4 bg-red-50 text-red-600 px-4 py-3 text-sm">{error}</div>}
 
     {recoveryCodes && recoveryCodes.length > 0 && <div className="mt-5 border-2 border-accent p-5">
       <p className="dashboard-eyebrow">Save these now</p>
       <h4 className="text-[16px] font-serif text-ink mt-1 mb-2">Your recovery codes</h4>
-      <p className="text-[13px] text-secondary leading-relaxed mb-4 max-w-[58ch]">Print them, or put them in your password manager. If you lose your phone these are the only way back into your account - each one works once, and WHC cannot recover them for you because only a hashed copy is stored.</p>
+      <p className="text-[13px] text-secondary leading-relaxed mb-4 max-w-[58ch]">Print them, or put them in your password manager. If you lose your phone these are the only way back into your account - each one works once, and Talent House cannot recover them for you because only a hashed copy is stored.</p>
       <ul className="grid grid-cols-2 gap-x-6 gap-y-1.5 font-mono text-[14px] text-ink mb-4">
         {recoveryCodes.map(item => <li key={item} className="tabular-nums tracking-wide">{item}</li>)}
       </ul>

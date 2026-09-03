@@ -33,8 +33,8 @@ async function loadReviews(admin: ReturnType<typeof createAdminClient>, employer
         rating: Number(row.rating),
         comment: row.text || '',
         created_at: row.created_at,
-        source: row.booking_id ? 'Completed WHC Agency shift' : 'WHC placement',
-        reviewer_name: reviewer?.full_name || 'WHC professional',
+        source: row.booking_id ? 'Completed Talent House Agency shift' : 'Talent House placement',
+        reviewer_name: reviewer?.full_name || 'Talent House professional',
         reviewer_role: reviewer?.role_level || null,
       }
     })

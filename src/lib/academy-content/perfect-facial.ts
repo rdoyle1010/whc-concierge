@@ -11,7 +11,7 @@ const content: CourseContent = {
     'Close every facial with a mirror moment, a concise home care prescription and an honest course-of-treatments recommendation aligned to the four to six week skin renewal cycle',
   ],
   prerequisites: `A recognised facial or beauty therapy qualification (NVQ Level 2 or 3, VTCT, CIBTAC, CIDESCO or equivalent) is assumed: this course sharpens the analysis, adaptation and closing skills built on that training, and it does not replace formal instruction in facial techniques, contraindications or product chemistry.`,
-  author: { name: 'WHC Academy', role: 'Developed by Wellness House Collective' },
+  author: { name: 'Talent House Academy', role: 'Developed by Wellness House Collective' },
   references: [
     { label: `Your spa's own treatment protocols and consultation documentation - the authoritative source for contraindication policy, timings and product use at your venue` },
     { label: `Your product house's official training materials and protocol cards` },

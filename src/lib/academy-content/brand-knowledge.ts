@@ -11,7 +11,7 @@ const content: CourseContent = {
     'Apply a professional, honest protocol when working with an unfamiliar house, protecting guest trust and rebooking prospects',
   ],
   prerequisites: `None beyond a working therapy background: the course assumes you already deliver treatments professionally and focuses on how to learn and represent a product house, not on treatment technique. It maps the brand landscape; only each house's own accredited training qualifies you to deliver its protocols.`,
-  author: { name: 'WHC Academy', role: 'Developed by Wellness House Collective' },
+  author: { name: 'Talent House Academy', role: 'Developed by Wellness House Collective' },
   references: [
     { label: `Your product house's official training materials - always the authoritative source on its protocols, products and language` },
     { label: `The published websites and brand materials of the houses at venues where you work or apply - read them for register as much as for facts` },

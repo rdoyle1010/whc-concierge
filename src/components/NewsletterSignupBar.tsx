@@ -29,14 +29,14 @@ export default function NewsletterSignupBar() {
   useEffect(() => {
     const status = typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('newsletter') : null
     if (status === 'confirmed') {
-      setMessage('You’re subscribed. Welcome to the WHC newsletter.')
+      setMessage('You’re subscribed. Welcome to the Talent House newsletter.')
       setSuccess(true)
       setVisible(true)
       localStorage.setItem(STORAGE_KEY, String(Date.now() + 365 * 86400000))
       return
     }
     if (status === 'unsubscribed') {
-      setMessage('You have been unsubscribed from the WHC newsletter.')
+      setMessage('You have been unsubscribed from the Talent House newsletter.')
       setSuccess(true)
       setVisible(true)
       return
@@ -111,7 +111,7 @@ export default function NewsletterSignupBar() {
     <div className="relative grid gap-5 px-5 py-5 md:grid-cols-[1fr_auto] md:items-center md:px-7">
       <button type="button" onClick={dismiss} aria-label="Close newsletter signup" className="absolute right-3 top-3 rounded-full p-2 text-[#6b6b6b] hover:bg-[#f1f1f1] hover:text-[#1c1c1c]"><X size={16}/></button>
       <div className="min-w-0 pr-8 md:pr-0">
-        <div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[.16em] text-[#555555]"><Mail size={14}/>WHC Newsletter</div>
+        <div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[.16em] text-[#555555]"><Mail size={14}/>Talent House Newsletter</div>
         <h2 className="mt-2 text-[22px] leading-tight text-[#1c1c1c] md:text-[26px]">{config?.heading || 'The best of wellness, in your inbox.'}</h2>
         <p className="mt-1.5 max-w-2xl text-[12px] leading-5 text-[#555555]">{config?.text || 'Jobs, industry insight, Academy updates and opportunities from Talent House Collective.'}</p>
         <p className="mt-2 text-[10px] leading-4 text-[#6b6b6b]">Double opt-in: we email you once to confirm. You can unsubscribe at any time. See our <a href="/privacy" className="underline">Privacy Policy</a>.</p>

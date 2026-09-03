@@ -46,7 +46,7 @@ export async function GET(req: NextRequest) {
       learnerName: candidate.full_name || 'the enrolled learner',
     }, content)
 
-    const fileName = `WHC-Course-Manual-${slug}.pdf`
+    const fileName = `Talent House-Course-Manual-${slug}.pdf`
     return new NextResponse(new Uint8Array(pdf), {
       headers: {
         'Content-Type': 'application/pdf',

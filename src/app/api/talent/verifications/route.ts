@@ -3,7 +3,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { getRequestUser } from '@/lib/request-user'
 
 // The signed-in candidate's manual verification marks (employment,
-// qualifications, references, WHC assessment, manager approval). Read via the
+// qualifications, references, Talent House assessment, manager approval). Read via the
 // admin client because candidate_verifications is service-role only; the
 // table arrives via a hand-run migration, so a missing table degrades to an
 // empty list rather than an error.

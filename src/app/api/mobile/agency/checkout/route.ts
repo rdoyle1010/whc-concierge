@@ -63,12 +63,12 @@ export async function POST(req: NextRequest) {
     // both the website and the app send every agency payment to this route,
     // and this route had no Connect support - so agency-payouts.ts was dead
     // code and every professional who had completed Connect onboarding still
-    // waited on a manual bank transfer while WHC held their money between the
+    // waited on a manual bank transfer while Talent House held their money between the
     // property's payment and settlement. That client-money exposure was the
     // exact thing Connect was adopted to remove.
     //
     // A destination charge sends the shift money straight to the
-    // professional at the moment of payment and leaves WHC only its own fee.
+    // professional at the moment of payment and leaves Talent House only its own fee.
     // Nothing about the amounts changes: the property pays gross + fee either
     // way, and the professional receives 100% of the agreed shift value
     // either way. What changes is who is holding it in between.
@@ -92,7 +92,7 @@ export async function POST(req: NextRequest) {
           currency: 'gbp',
           product_data: {
             name: 'Talent House Collective - Agency Shift Booking',
-            description: `${booking.shift_date || 'Agreed date'}: £${booking.rate}/hr × ${money.hours}h (${formatPence(money.grossPence)}) + ${feePctLabel}% WHC fee (${formatPence(money.feePence)}). The professional receives the full ${formatPence(money.grossPence)} agreed shift amount${useConnect ? ' - paid straight to their account by Stripe' : ' after the completed shift'}.`,
+            description: `${booking.shift_date || 'Agreed date'}: £${booking.rate}/hr × ${money.hours}h (${formatPence(money.grossPence)}) + ${feePctLabel}% Talent House fee (${formatPence(money.feePence)}). The professional receives the full ${formatPence(money.grossPence)} agreed shift amount${useConnect ? ' - paid straight to their account by Stripe' : ' after the completed shift'}.`,
           },
           unit_amount: money.totalPence,
         },

@@ -83,12 +83,12 @@ test('notifications never name a private professional', () => {
   assert.equal(candidateNameForEmployer({ full_name: 'Alexandra Whitmore-Hunt', private_mode: true }), 'Alexandra W.')
   assert.equal(candidateNameForEmployer({ full_name: 'Alexandra Whitmore-Hunt', private_mode: true }, true), 'Alexandra Whitmore-Hunt')
   assert.equal(candidateNameForEmployer({ full_name: 'Sam Doyle' }), 'Sam Doyle')
-  assert.equal(candidateNameForEmployer({ full_name: null }), 'A WHC professional')
+  assert.equal(candidateNameForEmployer({ full_name: null }), 'A Talent House professional')
 })
 
 test('anonymisation handles the awkward names as well as the easy ones', () => {
   assert.equal(anonymiseDisplayName('Cher'), 'Cher')
-  assert.equal(anonymiseDisplayName('  '), 'WHC professional')
-  assert.equal(anonymiseDisplayName(null), 'WHC professional')
+  assert.equal(anonymiseDisplayName('  '), 'Talent House professional')
+  assert.equal(anonymiseDisplayName(null), 'Talent House professional')
   assert.equal(anonymiseDisplayName('mary jane o\'brien'), 'mary O.')
 })

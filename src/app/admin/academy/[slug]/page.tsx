@@ -215,7 +215,7 @@ export default function AcademyCourseEditorPage() {
           <div className="mb-3 inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#6b6b6b]"><Lock size={12} /> Platform version</div>
           <h2 className="text-[18px] font-semibold text-[#1c1c1c]">Take editorial control of this course</h2>
           <p className="mt-2 max-w-2xl text-[13px] leading-6 text-[#555555]">
-            This course is currently the WHC platform version, and it improves with every release. When you take editorial control, the whole of the current course is copied into your own editable version first - every module, every lesson, the key terms, the knowledge checks and the assessment with its answers. You then edit a complete copy. You never start from an empty page, and you can go back to the platform version at any time without losing your writing.
+            This course is currently the Talent House platform version, and it improves with every release. When you take editorial control, the whole of the current course is copied into your own editable version first - every module, every lesson, the key terms, the knowledge checks and the assessment with its answers. You then edit a complete copy. You never start from an empty page, and you can go back to the platform version at any time without losing your writing.
           </p>
           <div className="my-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
             {[['Modules', detail.platform_stats.modules], ['Lessons', detail.platform_stats.lessons], ['Words', detail.platform_stats.words.toLocaleString('en-GB')], ['Assessment questions', detail.platform_stats.questions]].map(([label, value]) => (
@@ -244,7 +244,7 @@ export default function AcademyCourseEditorPage() {
               <div className="flex flex-wrap gap-2">
                 <button type="button" onClick={save} disabled={busy === 'save' || Boolean(problem)} className="btn-primary inline-flex items-center gap-2 text-[13px] disabled:opacity-50"><Save size={14} /> {busy === 'save' ? 'Saving...' : source === 'custom' ? 'Save and publish' : 'Save your version'}</button>
                 {source === 'custom' ? (
-                  <button type="button" disabled={busy === 'revert'} onClick={() => { if (window.confirm('Put the WHC platform version back in front of learners? Your own version stays saved here, so you can publish it again whenever you like.')) act({ action: 'revert_content' }, 'revert', 'Reverted. Learners see the platform version again, and your version is still saved here.') }} className="btn-secondary inline-flex items-center gap-2 text-[13px] disabled:opacity-50"><Undo2 size={14} /> Revert to the platform version</button>
+                  <button type="button" disabled={busy === 'revert'} onClick={() => { if (window.confirm('Put the Talent House platform version back in front of learners? Your own version stays saved here, so you can publish it again whenever you like.')) act({ action: 'revert_content' }, 'revert', 'Reverted. Learners see the platform version again, and your version is still saved here.') }} className="btn-secondary inline-flex items-center gap-2 text-[13px] disabled:opacity-50"><Undo2 size={14} /> Revert to the platform version</button>
                 ) : (
                   <button type="button" disabled={busy === 'publish' || Boolean(problem)} onClick={() => { if (window.confirm('Publish your version? Everyone studying this course sees it straight away.')) act({ action: 'publish_content' }, 'publish', 'Published. Talent, the public Academy and the app now show your version.') }} className="btn-secondary inline-flex items-center gap-2 text-[13px] disabled:opacity-50"><Check size={14} /> Publish your version</button>
                 )}
@@ -344,7 +344,7 @@ export default function AcademyCourseEditorPage() {
                       {module.visuals.length > 0 && (
                         <div className="mt-5 border-t border-[#dddddd] pt-4">
                           <p className="text-[13px] font-semibold text-[#1c1c1c]">Diagrams and tables in this module</p>
-                          <p className="mt-0.5 text-[11px] leading-5 text-[#6b6b6b]">These come from the WHC version of the course and are kept exactly as they are, so nothing is lost when you take control. They cannot be rewritten here yet - you can remove one if it no longer fits what you have written.</p>
+                          <p className="mt-0.5 text-[11px] leading-5 text-[#6b6b6b]">These come from the Talent House version of the course and are kept exactly as they are, so nothing is lost when you take control. They cannot be rewritten here yet - you can remove one if it no longer fits what you have written.</p>
                           <div className="mt-2 space-y-2">
                             {module.visuals.map((visual, visualIndex) => (
                               <div key={visualIndex} className="flex items-center gap-2 border border-[#dddddd] bg-white p-3">

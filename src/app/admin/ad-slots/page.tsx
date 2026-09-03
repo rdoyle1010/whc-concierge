@@ -7,7 +7,7 @@ import { Megaphone, Plus, Upload, X } from 'lucide-react'
 
 // The advertising control room: every ad slot on the site, grouped by page,
 // each with an on/off switch and an optional pinned advert - plus direct
-// advert placement for brands that come to WHC by email.
+// advert placement for brands that come to Talent House by email.
 
 type Slot = {
   slot_key: string

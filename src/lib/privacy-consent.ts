@@ -1,8 +1,8 @@
 import { createHash, createHmac, randomBytes, timingSafeEqual } from 'node:crypto'
 
 export const PRIVACY_POLICY_VERSION = '2026-08-26'
-export const MARKETING_CONSENT_WORDING = 'I would like Wellness House Collective to send me marketing emails about jobs, Academy courses, platform features, events and relevant WHC services. I can unsubscribe at any time.'
-export const NEWSLETTER_CONSENT_WORDING = 'I would like Wellness House Collective to email me its newsletter, including industry news, jobs, Academy updates, events and relevant WHC services. I can unsubscribe at any time.'
+export const MARKETING_CONSENT_WORDING = 'I would like Wellness House Collective to send me marketing emails about jobs, Academy courses, platform features, events and relevant Talent House services. I can unsubscribe at any time.'
+export const NEWSLETTER_CONSENT_WORDING = 'I would like Wellness House Collective to email me its newsletter, including industry news, jobs, Academy updates, events and relevant Talent House services. I can unsubscribe at any time.'
 
 const SITE = 'https://talenthousecollective.co.uk'
 const FROM_EMAIL = 'Talent House Collective <noreply@mail.wellnesshousecollective.co.uk>'
@@ -83,9 +83,9 @@ function confirmationEmailHtml(heading: string, intro: string, wording: string, 
 
 export async function sendMarketingDoubleOptInEmail(email: string, token: string) {
   const url = `${SITE}/api/privacy/marketing/confirm?token=${encodeURIComponent(token)}`
-  return sendEmail(email, 'Please confirm your WHC marketing preferences', confirmationEmailHtml(
+  return sendEmail(email, 'Please confirm your Talent House marketing preferences', confirmationEmailHtml(
     'One more step to confirm marketing emails',
-    'You asked to receive optional WHC marketing emails. We use double opt-in, so nothing is activated until you confirm below.',
+    'You asked to receive optional Talent House marketing emails. We use double opt-in, so nothing is activated until you confirm below.',
     MARKETING_CONSENT_WORDING,
     url,
   ))
@@ -93,9 +93,9 @@ export async function sendMarketingDoubleOptInEmail(email: string, token: string
 
 export async function sendNewsletterDoubleOptInEmail(email: string, token: string) {
   const url = `${SITE}/api/newsletter/confirm?token=${encodeURIComponent(token)}`
-  return sendEmail(email, 'Please confirm your WHC newsletter subscription', confirmationEmailHtml(
-    'Confirm your WHC newsletter',
-    'You entered your email on WHC to receive our newsletter. We use double opt-in, so we will not add you to the newsletter list until you confirm below.',
+  return sendEmail(email, 'Please confirm your Talent House newsletter subscription', confirmationEmailHtml(
+    'Confirm your Talent House newsletter',
+    'You entered your email on Talent House to receive our newsletter. We use double opt-in, so we will not add you to the newsletter list until you confirm below.',
     NEWSLETTER_CONSENT_WORDING,
     url,
   ))

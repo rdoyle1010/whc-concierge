@@ -20,7 +20,7 @@ function containsRestrictedContactDetails(value: string) {
 // relationship has real commitment behind it: a paid agency booking, a
 // confirmed residency, or an application the employer has moved to
 // interview stage or beyond. Early conversations - mutual matches,
-// shortlists, fresh applications - stay on WHC, which is what protects
+// shortlists, fresh applications - stay on Talent House, which is what protects
 // both sides and the platform's fee.
 const PROGRESSED_APPLICATION_STATUSES = ['interview', 'offered', 'accepted']
 
@@ -143,7 +143,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Attachments are locked until the Residency booking is confirmed.' }, { status: 403 })
     }
     if (relationship.contactRestricted && typeof content === 'string' && containsRestrictedContactDetails(content)) {
-      return NextResponse.json({ error: 'To protect both sides, phone numbers, email addresses, links and direct-contact details unlock once there is a confirmed booking or an interview-stage application. Keep the conversation on WHC until then.' }, { status: 403 })
+      return NextResponse.json({ error: 'To protect both sides, phone numbers, email addresses, links and direct-contact details unlock once there is a confirmed booking or an interview-stage application. Keep the conversation on Talent House until then.' }, { status: 403 })
     }
 
     const { data, error } = await admin.from('messages').insert({

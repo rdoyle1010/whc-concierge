@@ -181,7 +181,7 @@ function EmployerJobs() {
     const newIsLive = !isCurrentlyActive
     if (newIsLive) {
       if (profile?.approval_status !== 'approved') {
-        alert('Your employer account is awaiting WHC approval. Roles go live the moment your account is approved.')
+        alert('Your employer account is awaiting Talent House approval. Roles go live the moment your account is approved.')
         return
       }
       const paidUntil = job.expires_at ? new Date(job.expires_at).getTime() : 0

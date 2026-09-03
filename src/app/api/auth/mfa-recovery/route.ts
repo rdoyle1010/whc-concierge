@@ -68,7 +68,7 @@ export async function POST(req: NextRequest) {
     })
     if (limited) {
       return NextResponse.json(
-        { error: 'Too many recovery attempts. Wait an hour, or contact WHC support.' },
+        { error: 'Too many recovery attempts. Wait an hour, or contact Talent House support.' },
         { status: 429, headers: { 'Retry-After': String(limited.retryAfterSeconds) } },
       )
     }
@@ -80,7 +80,7 @@ export async function POST(req: NextRequest) {
     if (readError) return NextResponse.json({ error: 'Recovery is unavailable right now.' }, { status: 500 })
     if (!rows || rows.length === 0) {
       return NextResponse.json(
-        { error: 'This account has no unused recovery codes. Contact WHC support to regain access.' },
+        { error: 'This account has no unused recovery codes. Contact Talent House support to regain access.' },
         { status: 400 },
       )
     }

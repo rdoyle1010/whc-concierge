@@ -482,7 +482,7 @@ export default function TalentSettingsPage() {
             <div>
               <h3 className="font-serif text-lg font-semibold flex items-center gap-2"><ShieldOff size={18} /> Stealth Mode</h3>
               <p className="text-sm text-gray-500 mt-1">Hide from specific employers without hiding from everyone else. Blocked businesses are removed before your profile reaches search, matching, agency results or shortlists.</p>
-              <p className="text-xs text-gray-400 mt-2">This does not withdraw an application or message you already chose to send. WHC administrators retain access for safety and support.</p>
+              <p className="text-xs text-gray-400 mt-2">This does not withdraw an application or message you already chose to send. Talent House administrators retain access for safety and support.</p>
             </div>
             <button type="button" onClick={() => toggleStealth(!stealthEnabled)}
               aria-label={stealthEnabled ? 'Turn Stealth Mode off' : 'Turn Stealth Mode on'}
@@ -584,7 +584,7 @@ export default function TalentSettingsPage() {
 
             <div className="py-3">
               <p className="text-[13px] font-medium text-ink">Hide me from specific employers</p>
-              <p className="text-[12px] leading-5 text-muted mt-0.5">Blocked employers can never see your profile anywhere on WHC - use this for your current employer.</p>
+              <p className="text-[12px] leading-5 text-muted mt-0.5">Blocked employers can never see your profile anywhere on Talent House - use this for your current employer.</p>
               {pcmMessage && <p className="text-[12px] text-red-600 mt-2">{pcmMessage}</p>}
 
               <div className="relative mt-3">

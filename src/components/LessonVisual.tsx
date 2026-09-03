@@ -4,7 +4,7 @@ import { useState } from 'react'
 import type { LessonVisual as Visual, KnowledgeCheck } from '@/lib/academy-types'
 import { ArrowDown, Check, ImageIcon, X } from 'lucide-react'
 
-// Visual learning blocks for the WHC course standard. Every visual explains
+// Visual learning blocks for the Talent House course standard. Every visual explains
 // something; none is decoration. All render mobile-first.
 
 export function LessonVisualBlock({ visual }: { visual: Visual }) {

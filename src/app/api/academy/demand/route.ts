@@ -4,7 +4,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { getAcademyCatalog } from '@/lib/academy-catalog-server'
 import { coursesForSkill } from '@/lib/academy-meta'
 
-// Live demand per Academy course: how many live WHC roles ask for a skill the
+// Live demand per Academy course: how many live Talent House roles ask for a skill the
 // course teaches. A job counts once per course even when several of its
 // skills map to it. Cached for five minutes - the public Academy page reads
 // this on every visit and the truth does not move faster than that.

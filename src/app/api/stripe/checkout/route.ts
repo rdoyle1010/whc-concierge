@@ -57,7 +57,7 @@ export async function POST(req: NextRequest) {
           price_data: {
             currency: 'gbp',
             product_data: {
-              name: `WHC Academy - ${course.title}`,
+              name: `Talent House Academy - ${course.title}`,
               description: 'Online course with certificate. Access details are emailed after payment.',
             },
             unit_amount: publicCoursePrice(course),
@@ -73,9 +73,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ url: session.url })
     }
 
-    // Sponsored adverts are available to brands without a WHC member
+    // Sponsored adverts are available to brands without a Talent House member
     // account. Payment starts the subscription; the advert remains pending
-    // until WHC approves the creative in Admin → Sponsored Ads.
+    // until Talent House approves the creative in Admin → Sponsored Ads.
     if (type === 'sponsored_ad') {
       const placement = body.placement
       const brandName = String(body.brandName || '').trim().slice(0, 120)
@@ -104,7 +104,7 @@ export async function POST(req: NextRequest) {
         line_items: [{
           price_data: {
             currency: 'gbp',
-            product_data: { name: `WHC Sponsored Advert - ${config.label}`, description: config.description },
+            product_data: { name: `Talent House Sponsored Advert - ${config.label}`, description: config.description },
             unit_amount: config.monthlyPence,
             recurring: { interval: 'month' },
           },
@@ -125,7 +125,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
     }
 
-    // ── WHC Academy bundle - every course for £79 ──
+    // ── Talent House Academy bundle - every course for £79 ──
     if (type === 'course_bundle') {
       const { candidateId } = body
       if (!candidateId) return NextResponse.json({ error: 'Missing candidateId' }, { status: 400 })
@@ -158,7 +158,7 @@ export async function POST(req: NextRequest) {
           price_data: {
             currency: 'gbp',
             product_data: {
-              name: `WHC Academy - Core Curriculum Bundle (${coreCourses.length} courses)`,
+              name: `Talent House Academy - Core Curriculum Bundle (${coreCourses.length} courses)`,
               description: `All ${coreCourses.length} active core curriculum courses, with a certificate and profile badge for each on completion. Brand masterclasses and specialist care courses sold separately.`,
             },
             unit_amount: amountPence,
@@ -174,7 +174,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ url: session.url })
     }
 
-    // ── WHC Academy course - one-off, certificate on completion ──
+    // ── Talent House Academy course - one-off, certificate on completion ──
     if (type === 'course') {
       const { candidateId, courseSlug } = body
       if (!candidateId || !courseSlug) return NextResponse.json({ error: 'Missing candidateId or courseSlug' }, { status: 400 })
@@ -198,7 +198,7 @@ export async function POST(req: NextRequest) {
           price_data: {
             currency: 'gbp',
             product_data: {
-              name: `WHC Academy - ${courseDef.title.slice(0, 80)}`,
+              name: `Talent House Academy - ${courseDef.title.slice(0, 80)}`,
               description: 'Online course with certificate and profile badge on completion',
             },
             unit_amount: amountPence,
@@ -248,10 +248,10 @@ export async function POST(req: NextRequest) {
     }
 
     // ── Agency booking payment - the PROPERTY pays the FULL amount at
-    // acceptance: rate × hours + the WHC platform fee. The therapist always
+    // acceptance: rate × hours + the Talent House platform fee. The therapist always
     // receives 100% of the agreed shift amount. Where the therapist has
     // connected Stripe payouts the shift money is transferred to them by
-    // Stripe as the payment clears; otherwise WHC collects it and settles by
+    // Stripe as the payment clears; otherwise Talent House collects it and settles by
     // bank transfer after the completed shift.
     if (type === 'agency_booking') {
       const { bookingId } = body
@@ -286,9 +286,9 @@ export async function POST(req: NextRequest) {
 
       // Stripe Connect. When the professional has finished payout onboarding
       // this becomes a DESTINATION CHARGE: the shift money is transferred to
-      // them as the property pays, and WHC keeps only its booking fee as the
-      // application fee. The professional never waits on a WHC bank transfer
-      // and WHC never holds their money. Amounts are identical either way.
+      // them as the property pays, and Talent House keeps only its booking fee as the
+      // application fee. The professional never waits on a Talent House bank transfer
+      // and Talent House never holds their money. Amounts are identical either way.
       const { candidatePayoutAccount, agencyDestinationSplit, AGENCY_PAYOUT_CONNECT, AGENCY_PAYOUT_MANUAL } = await import('@/lib/agency-payouts')
       const payee = await candidatePayoutAccount(admin, booking.candidate_id)
       const split = agencyDestinationSplit(gross, fee)
@@ -301,7 +301,7 @@ export async function POST(req: NextRequest) {
             currency: 'gbp',
             product_data: {
               name: 'Talent House Collective - Agency Shift Booking',
-              description: `${booking.shift_date || 'Agreed date'}: £${booking.rate}/hr × ${effHours}h (£${gross}) + ${Math.round((fee / Math.max(1, gross)) * 100)}% WHC fee (£${fee}). ${payoutMethod === AGENCY_PAYOUT_CONNECT ? `The therapist is paid the full £${gross} agreed shift amount directly by Stripe as this payment clears.` : `The therapist receives the full £${gross} agreed shift amount after the completed shift.`}`,
+              description: `${booking.shift_date || 'Agreed date'}: £${booking.rate}/hr × ${effHours}h (£${gross}) + ${Math.round((fee / Math.max(1, gross)) * 100)}% Talent House fee (£${fee}). ${payoutMethod === AGENCY_PAYOUT_CONNECT ? `The therapist is paid the full £${gross} agreed shift amount directly by Stripe as this payment clears.` : `The therapist receives the full £${gross} agreed shift amount after the completed shift.`}`,
             },
             unit_amount: totalPounds * 100, // pounds → pence
           },
@@ -429,7 +429,7 @@ export async function POST(req: NextRequest) {
           price_data: {
             currency: 'gbp',
             product_data: {
-              name: 'WHC Agency Plus',
+              name: 'Talent House Agency Plus',
               description: 'Monthly membership: reduced 10% booking fee, priority cover and the Agency Plus badge. Professionals always keep 100% of the agreed rate.',
             },
             unit_amount: pricePence,

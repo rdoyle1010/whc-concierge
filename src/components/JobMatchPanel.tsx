@@ -122,7 +122,7 @@ export default function JobMatchPanel({ jobId }: { jobId: string }) {
       </ul>
     </div>}
     {data.hasEvidenceBank === false && <div className="mt-5 border-t border-[#dddddd] pt-4">
-      <p className="text-[11px] leading-5 text-[#6b6b6b]"><Link href="/talent/profile" className="font-semibold text-[#1c1c1c] underline">Upload your CV</Link> and WHC will extract the evidence statements worth leading with on applications like this.</p>
+      <p className="text-[11px] leading-5 text-[#6b6b6b]"><Link href="/talent/profile" className="font-semibold text-[#1c1c1c] underline">Upload your CV</Link> and Talent House will extract the evidence statements worth leading with on applications like this.</p>
     </div>}
 
     {(data.employerMayQuestion || []).length > 0 && <div className="mt-5 border-t border-[#dddddd] pt-4">

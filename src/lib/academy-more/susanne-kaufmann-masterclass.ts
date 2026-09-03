@@ -1,4 +1,4 @@
-// WHC Academy brand masterclass: Susanne Kaufmann. Independent WHC training -
+// Talent House Academy brand masterclass: Susanne Kaufmann. Independent Talent House training -
 // not affiliated with or endorsed by Susanne Kaufmann. Answer key lives in
 // academy-more-answers/susanne-kaufmann-masterclass.ts (server-only).
 

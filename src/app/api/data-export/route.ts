@@ -95,7 +95,7 @@ export async function GET(_req: NextRequest) {
       role,
       platform: 'Talent House Collective',
       url: 'https://talenthousecollective.co.uk',
-      note: 'This is the personal data WHC holds about this account. No section is capped or truncated.',
+      note: 'This is the personal data Talent House holds about this account. No section is capped or truncated.',
       unavailable,
     },
     account: {
@@ -160,7 +160,7 @@ export async function GET(_req: NextRequest) {
         .select('*, employer_profiles:blocked_employer_id(company_name)')
         .eq('candidate_id', cp.id))
 
-      // The taxonomy joins - the structured skills profile WHC matches on,
+      // The taxonomy joins - the structured skills profile Talent House matches on,
       // which is personal data in its own right.
       await section(exportData, 'candidate_skills', unavailable, () =>
         admin.from('candidate_skills').select('*').eq('candidate_id', cp.id))
@@ -210,7 +210,7 @@ export async function GET(_req: NextRequest) {
 
     if (cp) {
       // References written ABOUT this person by somebody else. Among the most
-      // consequential records WHC holds on a professional, and the export
+      // consequential records Talent House holds on a professional, and the export
       // never mentioned them.
       await section(exportData, 'references_about_you', unavailable, () =>
         admin.from('reference_requests').select('*').eq('candidate_id', cp.id).order('created_at', { ascending: false }))
@@ -314,7 +314,7 @@ export async function GET(_req: NextRequest) {
   await section(exportData, 'platform_experience_reviews', unavailable, () =>
     admin.from('platform_experience_reviews').select('*').eq('reviewer_user_id', user.id).order('created_at', { ascending: false }))
 
-  // The behavioural profile WHC keeps server-side: job views, candidate
+  // The behavioural profile Talent House keeps server-side: job views, candidate
   // profile views and other recorded activity. Retained for 13 months.
   await section(exportData, 'analytics_events', unavailable, () =>
     admin.from('analytics_events').select('*').eq('actor_user_id', user.id).order('created_at', { ascending: false }))
@@ -349,7 +349,7 @@ export async function GET(_req: NextRequest) {
     }
   }
   exportData.documents = {
-    note: 'The files WHC stores for this account. The files themselves are not included in this export - download them from your profile and verification pages, where each one is already linked.',
+    note: 'The files Talent House stores for this account. The files themselves are not included in this export - download them from your profile and verification pages, where each one is already linked.',
     count: documents.length,
     files: documents,
   }

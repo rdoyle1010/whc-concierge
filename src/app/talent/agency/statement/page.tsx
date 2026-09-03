@@ -121,7 +121,7 @@ export default function PayoutStatementPage() {
             </div>
 
             <div className="text-[11px] text-muted space-y-1 border-t border-[#dddddd] pt-6">
-              <p>Your agreed earnings are your hourly rate × hours. Properties pay Wellness House Collective, and WHC pays you 100% of that agreed shift amount after each completed shift. You are responsible for your own tax and National Insurance as a self-employed professional.</p>
+              <p>Your agreed earnings are your hourly rate × hours. Properties pay Wellness House Collective, and Talent House pays you 100% of that agreed shift amount after each completed shift. You are responsible for your own tax and National Insurance as a self-employed professional.</p>
             </div>
           </>
         )}

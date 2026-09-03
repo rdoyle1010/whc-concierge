@@ -1,4 +1,4 @@
-// WHC Academy brand masterclass: Wildsmith Skin. Independent WHC training -
+// Talent House Academy brand masterclass: Wildsmith Skin. Independent Talent House training -
 // not affiliated with or endorsed by Wildsmith Skin. Answer key lives in
 // academy-more-answers/wildsmith-masterclass.ts (server-only).
 

@@ -98,7 +98,7 @@ export async function sendReviewRequestEmail(email: string, name: string, otherN
   await sendEmail(email, `How was your experience with ${otherName}?`, wrapper(`
     <p style="font-size: 24px; font-weight: 700; margin-bottom: 16px;">Leave a review</p>
     <p style="color: #555555;">How was your experience with <strong>${otherName}</strong>?</p>
-    <p style="color: #555555;">Log in to leave a review and help the WHC community.</p>
+    <p style="color: #555555;">Log in to leave a review and help the Talent House community.</p>
   `))
 }
 
@@ -108,25 +108,25 @@ export async function sendCourseGiftEmail(email: string, name: string, course: s
     <p style="color: #555555;">Talent House Collective has awarded you the certificate for <strong>${course}</strong>. It is live on your profile now, visible to every property searching the directory.</p>
     <p style="margin-top: 24px;"><a href="https://talenthousecollective.co.uk/talent/academy" style="display: inline-block; background: #1c1c1c; color: #fff; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600;">View your certificate</a></p>
   ` : `
-    <p style="font-size: 24px; font-weight: 700; margin-bottom: 16px;">A gift from WHC, ${name}</p>
+    <p style="font-size: 24px; font-weight: 700; margin-bottom: 16px;">A gift from Talent House, ${name}</p>
     <p style="color: #555555;">Talent House Collective has enrolled you on <strong>${course}</strong>, with our compliments. Complete the modules, pass the assessment, and the certificate and profile badge are yours.</p>
     <p style="margin-top: 24px;"><a href="https://talenthousecollective.co.uk/talent/academy" style="display: inline-block; background: #1c1c1c; color: #fff; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600;">Start your course</a></p>
   `))
 }
 
 export async function sendCourseAccessEmail(email: string, name: string, course: string, link: string) {
-  await sendEmail(email, `Your WHC Academy course is ready - ${course}`, wrapper(`
+  await sendEmail(email, `Your Talent House Academy course is ready - ${course}`, wrapper(`
     <p style="font-size: 24px; font-weight: 700; margin-bottom: 16px;">Welcome to the Academy, ${name}</p>
     <p style="color: #555555;">Thank you for your purchase. Your course <strong>${course}</strong> is ready - the button below signs you straight in, no password needed.</p>
     <p style="margin-top: 24px;"><a href="${link}" style="display: inline-block; background: #1c1c1c; color: #fff; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600;">Start your course</a></p>
-    <p style="color: #555555; margin-top: 24px; font-size: 13px;">Complete the lessons, pass the final quiz (80%), and your certificate is issued instantly with a unique verification code. A free WHC profile has been created for you - complete it any time to be visible to five-star properties hiring on the platform.</p>
+    <p style="color: #555555; margin-top: 24px; font-size: 13px;">Complete the lessons, pass the final quiz (80%), and your certificate is issued instantly with a unique verification code. A free Talent House profile has been created for you - complete it any time to be visible to five-star properties hiring on the platform.</p>
   `))
 }
 
 export async function sendVerificationResultEmail(email: string, name: string, verified: boolean, reason: string | null) {
-  await sendEmail(email, verified ? 'You are WHC Verified' : 'Your verification needs attention', wrapper(verified ? `
+  await sendEmail(email, verified ? 'You are Talent House Verified' : 'Your verification needs attention', wrapper(verified ? `
     <p style="font-size: 24px; font-weight: 700; margin-bottom: 16px;">Congratulations, ${name}</p>
-    <p style="color: #555555;">Your insurance and qualifications checked out. The <strong>WHC Verified</strong> badge now shows on your profile and in the agency directory - properties consistently choose verified therapists first.</p>
+    <p style="color: #555555;">Your insurance and qualifications checked out. The <strong>Talent House Verified</strong> badge now shows on your profile and in the agency directory - properties consistently choose verified therapists first.</p>
     <p style="color: #555555;">We'll remind you before your insurance expires so the badge never lapses.</p>
   ` : `
     <p style="font-size: 24px; font-weight: 700; margin-bottom: 16px;">Hi ${name}</p>
@@ -152,7 +152,7 @@ export async function sendCertificateResultEmail(
 
   const body = decision === 'verified' ? `
     <p style="font-size: 24px; font-weight: 700; margin-bottom: 16px;">Good news, ${name}</p>
-    <p style="color: #555555;"><strong>${certificate}</strong> has been reviewed and verified by WHC. It now shows as verified on your profile, where properties can see it.</p>
+    <p style="color: #555555;"><strong>${certificate}</strong> has been reviewed and verified by Talent House. It now shows as verified on your profile, where properties can see it.</p>
   ` : decision === 'rejected' ? `
     <p style="font-size: 24px; font-weight: 700; margin-bottom: 16px;">Hi ${name}</p>
     <p style="color: #555555;">We could not verify <strong>${certificate}</strong> this time.</p>
@@ -168,13 +168,13 @@ export async function sendCertificateResultEmail(
 }
 
 export async function sendInsuranceExpiryEmail(email: string, name: string, expiryDate: string, lapsed: boolean) {
-  await sendEmail(email, lapsed ? 'Your WHC Verified badge has lapsed' : 'Your insurance is about to expire', wrapper(lapsed ? `
+  await sendEmail(email, lapsed ? 'Your Talent House Verified badge has lapsed' : 'Your insurance is about to expire', wrapper(lapsed ? `
     <p style="font-size: 24px; font-weight: 700; margin-bottom: 16px;">Hi ${name}</p>
-    <p style="color: #555555;">Your insurance expired on <strong>${expiryDate}</strong>, so your WHC Verified badge has been paused. Properties can still book you, but the badge is a real edge - especially for urgent cover.</p>
+    <p style="color: #555555;">Your insurance expired on <strong>${expiryDate}</strong>, so your Talent House Verified badge has been paused. Properties can still book you, but the badge is a real edge - especially for urgent cover.</p>
     <p style="margin-top: 24px;"><a href="https://talenthousecollective.co.uk/talent/verification" style="display: inline-block; background: #1c1c1c; color: #fff; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600;">Upload your new certificate</a></p>
   ` : `
     <p style="font-size: 24px; font-weight: 700; margin-bottom: 16px;">Hi ${name}</p>
-    <p style="color: #555555;">Your insurance certificate expires on <strong>${expiryDate}</strong>. Upload your renewal now and your WHC Verified badge carries straight on - no gap, no fuss.</p>
+    <p style="color: #555555;">Your insurance certificate expires on <strong>${expiryDate}</strong>. Upload your renewal now and your Talent House Verified badge carries straight on - no gap, no fuss.</p>
     <p style="margin-top: 24px;"><a href="https://talenthousecollective.co.uk/talent/verification" style="display: inline-block; background: #1c1c1c; color: #fff; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600;">Upload renewal</a></p>
   `))
 }

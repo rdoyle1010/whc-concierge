@@ -55,7 +55,7 @@ async function announceFeaturedEmployer(supabase: any, employerId: string) {
       .select('property_name,company_name,location')
       .eq('id', employerId).maybeSingle()
     if (!employer) return
-    const propertyName = employer.property_name || employer.company_name || 'A WHC property'
+    const propertyName = employer.property_name || employer.company_name || 'A Talent House property'
     const { data: talent } = await supabase.from('candidate_profiles')
       .select('user_id,full_name')
       .eq('approval_status', 'approved')
@@ -277,7 +277,7 @@ export async function POST(req: NextRequest) {
         const fee = feePence / 100
         // Which money model this booking used. 'stripe_connect' means the
         // shift money was transferred to the professional by the destination
-        // charge itself; 'manual' means WHC holds it until it settles.
+        // charge itself; 'manual' means Talent House holds it until it settles.
         const payoutMethod = meta.payout_method === 'stripe_connect' ? 'stripe_connect' : 'manual'
         const paidUpdate: Record<string, any> = {
           status: 'confirmed',
@@ -361,7 +361,7 @@ export async function POST(req: NextRequest) {
 
             const payoutLine = payoutMethod === 'stripe_connect'
               ? 'Your payout has been sent straight to your connected bank account by Stripe.'
-              : 'WHC pays you after the shift.'
+              : 'Talent House pays you after the shift.'
 
             if (cand?.user_id) {
               await createNotification(cand.user_id, 'general', 'Booking confirmed - payment received',
@@ -538,7 +538,7 @@ export async function POST(req: NextRequest) {
           const { data: paidEmployer } = await supabase.from('employer_profiles').select('approval_status,user_id').eq('id', meta.employer_id).maybeSingle()
           employerApproved = paidEmployer?.approval_status === 'approved'
           if (!employerApproved && paidEmployer?.user_id) {
-            await createNotification(paidEmployer.user_id, 'general', 'Payment received - role held for approval', 'Your role is paid for and will go live automatically as soon as WHC approves your employer account.', '/employer/jobs').catch?.(() => {})
+            await createNotification(paidEmployer.user_id, 'general', 'Payment received - role held for approval', 'Your role is paid for and will go live automatically as soon as Talent House approves your employer account.', '/employer/jobs').catch?.(() => {})
           }
         }
         await supabase.from('job_listings').update({
@@ -820,7 +820,7 @@ export async function POST(req: NextRequest) {
         //
         // The account is not closed and the tier is not deleted: the member
         // keeps their profile, their history and their place. Only the
-        // benefits that cost WHC money are suspended, and invoice.paid
+        // benefits that cost Talent House money are suspended, and invoice.paid
         // restores them the moment the card clears.
         await supabase.from('candidate_profiles')
           .update({ membership_past_due: true, agency_available: false })

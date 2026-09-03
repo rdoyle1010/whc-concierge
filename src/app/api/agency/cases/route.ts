@@ -148,11 +148,11 @@ export async function POST(req: NextRequest) {
     const payout = Number(updated?.proposed_payout_amount ?? row.booking?.payout_amount ?? 0)
     let refundId: string | null = null
     if (refund > 0) {
-      if (!row.booking?.stripe_payment_intent || row.booking.stripe_payment_intent === 'manual_audit_no_charge') return NextResponse.json({ error: 'This audit booking has no real Stripe payment to refund. Ask WHC Admin to amend the proposal.' }, { status: 400 })
+      if (!row.booking?.stripe_payment_intent || row.booking.stripe_payment_intent === 'manual_audit_no_charge') return NextResponse.json({ error: 'This audit booking has no real Stripe payment to refund. Ask Talent House Admin to amend the proposal.' }, { status: 400 })
       const stripe = getStripe()
       // Same reasoning as the admin dispute path: on a destination charge the
       // professional was paid when the property paid, so a refund without
-      // reverse_transfer comes out of WHC's own balance while they keep the
+      // reverse_transfer comes out of Talent House's own balance while they keep the
       // shift money.
       const viaConnect = bookingPaidByConnect(row.booking)
       const result = await stripe.refunds.create({

@@ -1,4 +1,4 @@
-// WHC Academy brand masterclass: Aromatherapy Associates. Independent WHC
+// Talent House Academy brand masterclass: Aromatherapy Associates. Independent Talent House
 // training - not affiliated with or endorsed by Aromatherapy Associates.
 // Answer key lives in academy-more-answers/aromatherapy-associates-masterclass.ts
 // (server-only).

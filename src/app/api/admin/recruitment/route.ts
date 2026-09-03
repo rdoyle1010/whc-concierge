@@ -6,11 +6,11 @@ import { createNotification } from '@/lib/notifications'
 const STATUSES = ['new', 'reviewing', 'search_active', 'shortlist_sent', 'placed', 'closed'] as const
 
 const STATUS_MESSAGES: Record<string, { title: string; body: (jobTitle: string) => string }> = {
-  reviewing: { title: 'Your search brief is being reviewed', body: t => `WHC is reviewing your brief for ${t} and will come back to you shortly.` },
-  search_active: { title: 'Your search is underway', body: t => `WHC is actively searching the register for ${t}. You will hear from us as the shortlist takes shape.` },
-  shortlist_sent: { title: 'Your shortlist is ready', body: t => `WHC has sent you a shortlist for ${t}. We will talk you through each candidate.` },
+  reviewing: { title: 'Your search brief is being reviewed', body: t => `Talent House is reviewing your brief for ${t} and will come back to you shortly.` },
+  search_active: { title: 'Your search is underway', body: t => `Talent House is actively searching the register for ${t}. You will hear from us as the shortlist takes shape.` },
+  shortlist_sent: { title: 'Your shortlist is ready', body: t => `Talent House has sent you a shortlist for ${t}. We will talk you through each candidate.` },
   placed: { title: 'Placement complete', body: t => `Congratulations - your ${t} search has completed with a successful placement.` },
-  closed: { title: 'Search closed', body: t => `Your search for ${t} has been closed. Thank you for working with WHC - start another any time.` },
+  closed: { title: 'Search closed', body: t => `Your search for ${t} has been closed. Thank you for working with Talent House - start another any time.` },
 }
 
 // Delegated to the shared admin guard, which enforces two-step

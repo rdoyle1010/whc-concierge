@@ -102,7 +102,7 @@ export default async function RoleDetailPage(props: { params: Promise<{ id: stri
             <div className="flex flex-wrap gap-x-5 gap-y-2 mt-4 text-[13px] text-[#555555]">
               {(job.location || employer.location) && <span className="inline-flex items-center gap-1.5"><MapPin size={14}/>{job.location || employer.location}</span>}
               {employer.star_rating && <span className="inline-flex items-center gap-1.5"><Star size={14} fill="currentColor"/>{isNaN(Number(employer.star_rating)) ? employer.star_rating : `${employer.star_rating} star property`}</span>}
-              {reviewScore > 0 && <span className="inline-flex items-center gap-1.5"><BadgeCheck size={14}/>{reviewScore.toFixed(1)} WHC rating{reviewCount ? ` · ${reviewCount} review${reviewCount === 1 ? '' : 's'}` : ''}</span>}
+              {reviewScore > 0 && <span className="inline-flex items-center gap-1.5"><BadgeCheck size={14}/>{reviewScore.toFixed(1)} Talent House rating{reviewCount ? ` · ${reviewCount} review${reviewCount === 1 ? '' : 's'}` : ''}</span>}
             </div>
             <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3 mt-7">
               {salaryRange && <Fact label="Salary" value={salaryRange}/>} 
@@ -114,7 +114,7 @@ export default async function RoleDetailPage(props: { params: Promise<{ id: stri
 
           <aside className="lg:sticky lg:top-24 border border-[#dddddd] rounded-[20px] p-5 bg-white shadow-sm">
             <p className="text-[10px] uppercase tracking-[.14em] text-[#6b6b6b]">Interested in this role?</p>
-            <p className="text-[13px] leading-6 text-[#555555] mt-2">Apply through WHC so the property can review your full professional profile and match information.</p>
+            <p className="text-[13px] leading-6 text-[#555555] mt-2">Apply through Talent House so the property can review your full professional profile and match information.</p>
             <div className="mt-5"><JobApplyButtons roleId={String(job.id)} /></div>
           </aside>
         </div>
@@ -192,8 +192,8 @@ export default async function RoleDetailPage(props: { params: Promise<{ id: stri
           <JobSection eyebrow="The employer" title={`Why ${propertyName}`}>
             <div className="grid md:grid-cols-[1fr_auto] gap-6 items-start border border-[#dddddd] rounded-[20px] p-6">
               <div>
-                <p className="text-[14px] leading-7 text-[#555555]">{employer.about_text || employer.description || employer.tagline || `Explore the full WHC property profile for ${propertyName} to see its spa operation, staff reviews, property rating, brands, travel information and current opportunities.`}</p>
-                <div className="flex flex-wrap gap-3 mt-4 text-[12px] text-[#555555]">{employer.star_rating && <span>{isNaN(Number(employer.star_rating)) ? employer.star_rating : `${employer.star_rating}★ property`}</span>}{reviewScore > 0 && <span>{reviewScore.toFixed(1)} WHC staff rating</span>}{employer.hotel_group && <span>{employer.hotel_group}</span>}{employer.room_count && <span>{employer.room_count} rooms</span>}{employer.spa_size && <span>{employer.spa_size}</span>}{employer.num_treatment_rooms && <span>{employer.num_treatment_rooms} treatment rooms</span>}{employer.team_size && <span>{employer.team_size} spa team</span>}{employer.opening_year && <span>Opened {employer.opening_year}</span>}</div>
+                <p className="text-[14px] leading-7 text-[#555555]">{employer.about_text || employer.description || employer.tagline || `Explore the full Talent House property profile for ${propertyName} to see its spa operation, staff reviews, property rating, brands, travel information and current opportunities.`}</p>
+                <div className="flex flex-wrap gap-3 mt-4 text-[12px] text-[#555555]">{employer.star_rating && <span>{isNaN(Number(employer.star_rating)) ? employer.star_rating : `${employer.star_rating}★ property`}</span>}{reviewScore > 0 && <span>{reviewScore.toFixed(1)} Talent House staff rating</span>}{employer.hotel_group && <span>{employer.hotel_group}</span>}{employer.room_count && <span>{employer.room_count} rooms</span>}{employer.spa_size && <span>{employer.spa_size}</span>}{employer.num_treatment_rooms && <span>{employer.num_treatment_rooms} treatment rooms</span>}{employer.team_size && <span>{employer.team_size} spa team</span>}{employer.opening_year && <span>Opened {employer.opening_year}</span>}</div>
                 {Array.isArray(employer.facilities) && employer.facilities.length > 0 && <div className="flex flex-wrap gap-1.5 mt-4">{employer.facilities.map((facility: string) => <span key={facility} className="text-[11px] bg-[#f1f1f1] text-[#555555] px-2.5 py-1 rounded-full">{facility}</span>)}</div>}
                 {employer.culture_statement && <div className="mt-5"><p className="text-[10px] uppercase tracking-[.14em] text-[#1c1c1c] font-semibold mb-1.5">Working here</p><p className="text-[13px] leading-6 text-[#555555] whitespace-pre-line">{employer.culture_statement}</p></div>}
                 {Array.isArray(employer.staff_benefits) && employer.staff_benefits.length > 0 && <div className="mt-4"><p className="text-[10px] uppercase tracking-[.14em] text-[#1c1c1c] font-semibold mb-1.5">Staff benefits</p><div className="flex flex-wrap gap-1.5">{employer.staff_benefits.map((benefit: string) => <span key={benefit} className="text-[11px] bg-emerald-50 text-emerald-700 px-2.5 py-1 rounded-full">{benefit}</span>)}</div></div>}
@@ -213,7 +213,7 @@ export default async function RoleDetailPage(props: { params: Promise<{ id: stri
         </aside>
       </section>
 
-      <section className="bg-[#f1f1f1] text-ink py-14 px-6"><div className="max-w-4xl mx-auto text-center"><h2 className="text-[30px] text-ink">Could this be your next move?</h2><p className="text-[14px] text-secondary mt-3 mb-7">Apply through WHC and the property will receive your profile, experience and match information in one place.</p><div className="flex justify-center"><JobApplyButtons roleId={String(job.id)} /></div></div></section>
+      <section className="bg-[#f1f1f1] text-ink py-14 px-6"><div className="max-w-4xl mx-auto text-center"><h2 className="text-[30px] text-ink">Could this be your next move?</h2><p className="text-[14px] text-secondary mt-3 mb-7">Apply through Talent House and the property will receive your profile, experience and match information in one place.</p><div className="flex justify-center"><JobApplyButtons roleId={String(job.id)} /></div></div></section>
     </main>
     <SponsoredAd placement="job_detail_sponsor" />
     <Footer />

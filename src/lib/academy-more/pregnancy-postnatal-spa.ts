@@ -1,4 +1,4 @@
-// WHC Academy specialist care course: Pregnancy & Post-Natal Treatments.
+// Talent House Academy specialist care course: Pregnancy & Post-Natal Treatments.
 // Awareness-level training - it does not replace accredited pregnancy or
 // post-natal massage certification, venue protocols or insurer requirements.
 // Answer key lives in academy-more-answers/pregnancy-postnatal-spa.ts

@@ -1,4 +1,4 @@
-// WHC Academy brand masterclass: Biologique Recherche. Independent WHC
+// Talent House Academy brand masterclass: Biologique Recherche. Independent Talent House
 // training - not affiliated with or endorsed by Biologique Recherche.
 // Answer key lives in academy-more-answers/biologique-recherche-masterclass.ts
 // (server-only).

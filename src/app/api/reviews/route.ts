@@ -229,7 +229,7 @@ export async function POST(req: NextRequest) {
         ratingInt >= 4 ? `You have a new ${ratingInt}-star review` : 'You have a new review',
         comment
           ? `"${String(comment).slice(0, 120)}${String(comment).length > 120 ? '…' : ''}"`
-          : 'A review has been left on your WHC profile.',
+          : 'A review has been left on your Talent House profile.',
         link,
       )
     } catch { /* the review itself is saved either way */ }

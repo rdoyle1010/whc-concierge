@@ -102,7 +102,7 @@ export async function POST(req: NextRequest) {
     if (existing) return NextResponse.json({ error: 'A reference request already exists for this property.' }, { status: 409 })
     const { error } = await admin.from('reference_requests').insert({ candidate_id: candidate.id, employer_id: employer.id, requested_by: user.id, request_message: message || null })
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-    try { await createNotification(employer.user_id, 'general', 'Reference request', `${candidate.full_name || 'A Talent member'} has asked you for a verified WHC reference.`, '/employer/dashboard') } catch {}
+    try { await createNotification(employer.user_id, 'general', 'Reference request', `${candidate.full_name || 'A Talent member'} has asked you for a verified Talent House reference.`, '/employer/dashboard') } catch {}
     return NextResponse.json({ success: true })
   }
 

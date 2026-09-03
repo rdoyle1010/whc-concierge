@@ -4,7 +4,7 @@ import { useEffect } from 'react'
 
 export default function GlobalError({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
   useEffect(() => {
-    console.error('[WHC Global Error]', error)
+    console.error('[Talent House Global Error]', error)
   }, [error])
 
   return (

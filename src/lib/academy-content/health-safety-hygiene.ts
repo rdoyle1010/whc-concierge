@@ -11,7 +11,7 @@ const content: CourseContent = {
     `Respond correctly to accidents, near-misses, guest illness and fire evacuation, and complete accurate records that meet accident-book and RIDDOR reporting requirements`,
   ],
   prerequisites: `None. The course assumes no prior legal or first aid knowledge. Where practice varies by venue, your own spa's documented procedures always take precedence over the general guidance here.`,
-  author: { name: 'WHC Academy', role: 'Developed by Wellness House Collective' },
+  author: { name: 'Talent House Academy', role: 'Developed by Wellness House Collective' },
   references: [
     { label: `Health and Safety Executive (HSE) - the UK regulator's official guidance on workplace health and safety`, url: `https://www.hse.gov.uk` },
     { label: `HSE - COSHH: Control of Substances Hazardous to Health`, url: `https://www.hse.gov.uk/coshh/` },

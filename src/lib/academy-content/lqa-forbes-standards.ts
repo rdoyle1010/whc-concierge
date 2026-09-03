@@ -11,7 +11,7 @@ const content: CourseContent = {
     'Balance strict standards compliance with graciousness and professional judgement, prioritising guest wellbeing when the checklist and the human moment conflict',
   ],
   prerequisites: `None. The course assumes only that you work, or intend to work, in a treatment-room role.`,
-  author: { name: 'WHC Academy', role: 'Developed by Wellness House Collective' },
+  author: { name: 'Talent House Academy', role: 'Developed by Wellness House Collective' },
   references: [
     { label: `Forbes Travel Guide - the star rating organisation whose standards this course describes`, url: `https://www.forbestravelguide.com` },
     { label: `Leading Quality Assurance (LQA) - benchmarking audits for luxury hospitality` },

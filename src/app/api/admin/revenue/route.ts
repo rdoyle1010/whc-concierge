@@ -53,7 +53,7 @@ export async function GET() {
   const academyRevenue = (academyRes.data || []).reduce((sum: number, row: any) => sum + Number(row.amount_paid || 0), 0)
   // agency_bookings amounts are stored in POUNDS - convert to pence here.
   const agencyGross = Math.round((agencyRes.data || []).reduce((sum: number, row: any) => sum + Number(row.amount_paid || 0), 0) * 100)
-  // WHC's agency revenue is what was collected minus what goes to the
+  // Talent House's agency revenue is what was collected minus what goes to the
   // therapist and any refund, on paid bookings that were not cancelled,
   // refunded or disputed - the same arithmetic the Agency Money page uses.
   const EXCLUDED_AGENCY_STATUSES = new Set(['cancelled', 'refunded', 'disputed'])
@@ -132,6 +132,6 @@ export async function GET() {
       open_requests: recruitment.filter((row: any) => ['new', 'reviewing', 'search_active', 'shortlist_sent'].includes(row.status)).length,
       new_this_month: recruitment.filter((row: any) => row.created_at >= monthStart).length,
     },
-    note: 'Recorded revenue includes the commercial purchase ledger, Academy payments, WHC Agency platform revenue and Residency platform fees. Subscription/job revenue should not be treated as cash received until a central Stripe transaction ledger is added.',
+    note: 'Recorded revenue includes the commercial purchase ledger, Academy payments, Talent House Agency platform revenue and Residency platform fees. Subscription/job revenue should not be treated as cash received until a central Stripe transaction ledger is added.',
   })
 }

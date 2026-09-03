@@ -11,7 +11,7 @@ const content: CourseContent = {
     'Apply the integrity rule to every offer, accept a decline gracefully, and record forward recommendations on the guest record for future visits',
   ],
   prerequisites: `None beyond professional treatment competence; no prior sales training is assumed and the method is built from first principles.`,
-  author: { name: 'WHC Academy', role: 'Developed by Wellness House Collective' },
+  author: { name: 'Talent House Academy', role: 'Developed by Wellness House Collective' },
   references: [
     { label: 'UK Spa Association - industry resources and operational guidance', url: 'https://www.spa-uk.org' },
     { label: `Your spa's own treatment menu, upgrade price list and brand training - offers only convert when quoted accurately` },

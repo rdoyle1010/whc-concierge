@@ -1,4 +1,4 @@
-// WHC Academy brand masterclass: Clarins. Independent WHC training - not
+// Talent House Academy brand masterclass: Clarins. Independent Talent House training - not
 // affiliated with or endorsed by Clarins. Answer key lives in
 // academy-more-answers/clarins-masterclass.ts (server-only).
 

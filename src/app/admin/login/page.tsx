@@ -45,7 +45,7 @@ export default function AdminLoginPage() {
           <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[#1c1c1c] text-white mb-5">
             <ShieldCheck size={20} />
           </div>
-          <p className="dashboard-eyebrow">WHC internal</p>
+          <p className="dashboard-eyebrow">Talent House internal</p>
           <h1 className="dashboard-title !text-[32px]">Admin sign in</h1>
           <p className="dashboard-intro !mt-2 mb-7">For authorised Talent House Collective administrators only.</p>
 

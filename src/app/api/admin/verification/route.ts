@@ -117,7 +117,7 @@ export async function POST(req: NextRequest) {
         await createNotification(row.user_id, 'general',
           decision === 'verified' ? 'Right to work verified' : 'Verification needs attention',
           decision === 'verified'
-            ? 'WHC has verified your right-to-work evidence. Your verified status is now visible to properties. Insurance is shown separately if you have chosen to provide it.'
+            ? 'Talent House has verified your right-to-work evidence. Your verified status is now visible to properties. Insurance is shown separately if you have chosen to provide it.'
             : `We couldn't verify your right-to-work evidence${body.reason ? `: ${body.reason}` : ''}. Update it and resubmit from your Verification page.`,
           '/talent/verification')
         const { data: authUser } = await admin.auth.admin.getUserById(row.user_id)

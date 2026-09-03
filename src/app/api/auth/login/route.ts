@@ -90,7 +90,7 @@ export async function POST(request: NextRequest) {
     const accountRole = normaliseAccountRole(profile?.role)
     if (!accountRole) {
       await supabase.auth.signOut()
-      return NextResponse.json({ error: 'Your account role could not be verified. Please contact WHC support.' }, { status: 403 })
+      return NextResponse.json({ error: 'Your account role could not be verified. Please contact Talent House support.' }, { status: 403 })
     }
 
     if (expectedRole) {

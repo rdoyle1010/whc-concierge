@@ -98,7 +98,7 @@ export default function AcademyPage() {
         <p className="dashboard-eyebrow">Learning &amp; development</p>
         <div className="flex items-center gap-2 mb-2">
           <GraduationCap size={22} className="text-accent" />
-          <h1 className="dashboard-title">WHC Academy</h1>
+          <h1 className="dashboard-title">Talent House Academy</h1>
         </div>
         <p className="dashboard-intro mb-6 max-w-2xl">
           The Academy exists to move your career forward: learn, pass the assessment, and the verified badge joins your profile - where it strengthens your matches and shows employers exactly what you can do. Core curriculum £{(COURSE_PRICE / 100).toFixed(0)} per course, brand masterclasses £5, leadership programmes with practical toolkits.

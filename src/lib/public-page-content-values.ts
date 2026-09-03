@@ -28,7 +28,7 @@ export const DEFAULT_PUBLIC_PAGES_CONTENT: PublicPagesContent = {
     properties: {
       label: 'Properties',
       hero: {
-        eyebrow: 'WHC properties',
+        eyebrow: 'Talent House properties',
         heading: 'Exceptional places to work.',
         text: 'Meet verified hotels, spas and wellness destinations using Talent House Collective to find exceptional people. Featured properties appear first.',
         image: image('https://images.unsplash.com/photo-1759038086403-c607d67bb245?auto=format&fit=crop&q=82&w=1800', 'Luxury hospitality interior'),

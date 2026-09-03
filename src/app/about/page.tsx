@@ -83,8 +83,8 @@ export default function AboutPage() {
 
         <section className="bg-parchment py-16 md:py-20 px-6">
           <div className="max-w-2xl mx-auto text-center">
-            <p className="public-eyebrow mb-3">Join WHC</p>
-            <h2 className="text-[28px] md:text-[36px] font-semibold text-ink mb-8">Whether you&apos;re hiring or hired, WHC works for you.</h2>
+            <p className="public-eyebrow mb-3">Join Talent House</p>
+            <h2 className="text-[28px] md:text-[36px] font-semibold text-ink mb-8">Whether you&apos;re hiring or hired, Talent House works for you.</h2>
             <div className="flex flex-col sm:flex-row gap-3 justify-center"><Link href="/register/talent" className="btn-primary">Create a profile</Link><Link href="/register/employer" className="btn-secondary">Post a role</Link></div>
           </div>
         </section>

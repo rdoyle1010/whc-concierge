@@ -75,7 +75,7 @@ export default async function SpecialismsPage() {
             <p className="public-eyebrow mb-4">Specialisms</p>
             <h1 className="public-title mb-4">Where the demand actually is.</h1>
             <p className="text-[15px] text-secondary max-w-[58ch]">
-              WHC covers every discipline in luxury spa and wellness. This page shows which of them
+              Talent House covers every discipline in luxury spa and wellness. This page shows which of them
               properties are hiring for today, rather than describing what each one involves.
               {totalLive > 0 && (
                 <> Counted across {totalLive} live role{totalLive === 1 ? '' : 's'}, refreshed every few minutes.</>
@@ -121,7 +121,7 @@ export default async function SpecialismsPage() {
                 Covered, nothing live today
               </h2>
               <p className="text-[13px] text-secondary max-w-[58ch] mb-6">
-                These disciplines are supported on WHC and professionals in them are on the register.
+                These disciplines are supported on Talent House and professionals in them are on the register.
                 No property has a role open in them right now, so there is nothing to link to.
               </p>
               <ul className="flex flex-wrap gap-2">
@@ -139,7 +139,7 @@ export default async function SpecialismsPage() {
           <div className="max-w-[1080px] mx-auto px-6 lg:px-8 py-16">
             <h2 className="text-[22px] font-serif text-ink mb-3">Tell us when yours opens.</h2>
             <p className="text-[15px] text-secondary leading-relaxed max-w-[56ch] mb-8">
-              Create a profile and WHC will match you against roles as properties publish them,
+              Create a profile and Talent House will match you against roles as properties publish them,
               on skills and product houses rather than keywords.
             </p>
             <div className="flex flex-wrap items-center gap-3">

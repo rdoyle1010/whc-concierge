@@ -6,7 +6,7 @@ import type { AdPlacementKey } from '@/lib/advertising'
 // The platform's large charcoal panels are the most valuable empty space on
 // the site. This turns one into inventory without turning the page into a
 // banner farm: the panel keeps its own copy and buttons, and the backdrop
-// behind them is either a picture WHC controls or a sponsor's creative.
+// behind them is either a picture Talent House controls or a sponsor's creative.
 //
 // The rule is deliberately blunt: a panel with a picture shows that picture.
 // An earlier version gated it behind a separate on/off setting, so uploading

@@ -22,7 +22,7 @@ export function deletionSummary(result: AccountDeletionResult): string {
   }
 
   if (result.incomplete?.length) {
-    lines.push('', 'These items could not be removed automatically and have been logged for WHC to finish by hand:')
+    lines.push('', 'These items could not be removed automatically and have been logged for Talent House to finish by hand:')
     for (const item of result.incomplete) lines.push(`- ${item}`)
   }
 

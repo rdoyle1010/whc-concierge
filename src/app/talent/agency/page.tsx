@@ -126,7 +126,7 @@ export default function TalentAgencyPage() {
     .sort((a, b) => Number(Boolean(b.employer_agency_plus)) - Number(Boolean(a.employer_agency_plus)))
   const shifts = bookings.filter((b) => b.status !== 'pending' && b.status !== 'countered')
 
-  // The professional keeps the full agreed rate - the WHC fee is paid by the
+  // The professional keeps the full agreed rate - the Talent House fee is paid by the
   // property on top, so nothing is deducted from the payout.
   const expectedPayout = (b: any) => b.payout_amount ?? Math.max(0, b.rate * (b.hours && b.hours > 0 ? b.hours : 8))
   // Where Stripe payouts are connected the money reached the professional as
@@ -179,9 +179,9 @@ export default function TalentAgencyPage() {
           {hasEarnings && (
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8">
               <div className="dashboard-card !py-4"><p className="text-[11px] uppercase tracking-wide text-muted mb-1">Paid to you</p><p className="text-[20px] font-semibold text-green-700">£{paidOut}</p></div>
-              <div className="dashboard-card !py-4"><p className="text-[11px] uppercase tracking-wide text-muted mb-1">Awaiting payout</p><p className="text-[20px] font-semibold text-ink">£{awaitingPayout}</p><p className="text-[10px] text-muted">Property has paid - WHC pays you after the shift</p></div>
+              <div className="dashboard-card !py-4"><p className="text-[11px] uppercase tracking-wide text-muted mb-1">Awaiting payout</p><p className="text-[20px] font-semibold text-ink">£{awaitingPayout}</p><p className="text-[10px] text-muted">Property has paid - Talent House pays you after the shift</p></div>
               <div className="dashboard-card !py-4"><p className="text-[11px] uppercase tracking-wide text-muted mb-1">Awaiting property payment</p><p className="text-[20px] font-semibold text-amber-600">£{awaitingProperty}</p></div>
-              <div className="dashboard-card !py-4"><p className="text-[11px] uppercase tracking-wide text-muted mb-1">On hold</p><p className="text-[20px] font-semibold text-secondary">£{onHold}</p><p className="text-[10px] text-muted">{onHold > 0 ? 'An issue is being reviewed by WHC' : 'No open issues'}</p></div>
+              <div className="dashboard-card !py-4"><p className="text-[11px] uppercase tracking-wide text-muted mb-1">On hold</p><p className="text-[20px] font-semibold text-secondary">£{onHold}</p><p className="text-[10px] text-muted">{onHold > 0 ? 'An issue is being reviewed by Talent House' : 'No open issues'}</p></div>
             </div>
           )}
           {hasEarnings && (
@@ -282,13 +282,13 @@ export default function TalentAgencyPage() {
                       {b.shift_type && <span className="flex items-center space-x-1"><Clock size={14} /><span>{b.shift_type}</span></span>}
                       {b.hours && <span>{b.hours}h</span>}
                     </div>
-                    {b.status === 'accepted' && <p className="text-[11px] text-blue-700 mt-1.5">Agreed at £{b.rate}/hour - awaiting the property&apos;s payment to WHC. Once paid, your full payout of £{b.rate * (b.hours && b.hours > 0 ? b.hours : 8)} is confirmed. The property pays the WHC fee - nothing is deducted from you.</p>}
-                    {(b.status === 'confirmed' || b.status === 'completed') && b.dispute_status === 'open' && <p className="text-[11px] text-amber-700 mt-1.5">The property has raised an issue with this shift - your payout of £{expectedPayout(b)} is on hold while WHC reviews it.</p>}
+                    {b.status === 'accepted' && <p className="text-[11px] text-blue-700 mt-1.5">Agreed at £{b.rate}/hour - awaiting the property&apos;s payment to Talent House. Once paid, your full payout of £{b.rate * (b.hours && b.hours > 0 ? b.hours : 8)} is confirmed. The property pays the Talent House fee - nothing is deducted from you.</p>}
+                    {(b.status === 'confirmed' || b.status === 'completed') && b.dispute_status === 'open' && <p className="text-[11px] text-amber-700 mt-1.5">The property has raised an issue with this shift - your payout of £{expectedPayout(b)} is on hold while Talent House reviews it.</p>}
                     {(b.status === 'confirmed' || b.status === 'completed') && b.dispute_status !== 'open' && (
                       b.payout_status === 'cancelled' ? <p className="text-[11px] text-secondary mt-1.5">Issue resolved - no payout is due for this booking.</p>
                         : b.payout_method === 'stripe_connect'
                           ? <p className="text-[11px] text-green-700 mt-1.5">Paid directly by Stripe - your £{expectedPayout(b)} went straight to your connected bank account when the property paid. It usually lands within 2 to 3 working days.</p>
-                          : <p className="text-[11px] text-green-700 mt-1.5">Paid &amp; confirmed - WHC pays you £{expectedPayout(b)} by bank transfer after the shift{b.payout_status === 'paid' ? ` (sent${b.payout_at ? ` ${new Date(b.payout_at).toLocaleDateString('en-GB')}` : ''}${b.payout_reference ? `, reference ${b.payout_reference}` : ''})` : ''}.</p>
+                          : <p className="text-[11px] text-green-700 mt-1.5">Paid &amp; confirmed - Talent House pays you £{expectedPayout(b)} by bank transfer after the shift{b.payout_status === 'paid' ? ` (sent${b.payout_at ? ` ${new Date(b.payout_at).toLocaleDateString('en-GB')}` : ''}${b.payout_reference ? `, reference ${b.payout_reference}` : ''})` : ''}.</p>
                     )}
                   </div>
                   <div className="text-right">

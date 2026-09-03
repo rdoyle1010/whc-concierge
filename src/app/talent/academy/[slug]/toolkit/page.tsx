@@ -28,7 +28,7 @@ export default function AcademyToolkitPage() {
       <div className="max-w-5xl">
         <Link href={`/talent/academy/${slug}`} className="mb-5 inline-flex items-center gap-1 text-[12px] text-muted hover:text-ink"><ArrowLeft size={13} /> Back to programme</Link>
         <div className="mb-7">
-          <p className="dashboard-eyebrow">WHC Academy resources</p>
+          <p className="dashboard-eyebrow">Talent House Academy resources</p>
           <h1 className="dashboard-title">{title}</h1>
           <p className="dashboard-intro max-w-2xl">Download the working tools used throughout the programme. Use them with real or practice spa figures as you complete the management labs.</p>
         </div>

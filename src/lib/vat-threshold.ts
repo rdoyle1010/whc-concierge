@@ -3,13 +3,13 @@
 //
 // On an agency shift a property pays the whole amount and the professional is
 // paid out of it. Whether that whole amount is turnover depends on which of
-// two things WHC is:
+// two things Talent House is:
 //
 //   Agent (an employment agency)      - introduces the professional, who is
 //                                       engaged by the property. Turnover is
 //                                       the commission only.
 //   Principal (an employment business) - supplies the professional, who is
-//                                       engaged by WHC. Turnover is the whole
+//                                       engaged by Talent House. Turnover is the whole
 //                                       charge, therapist's pay included.
 //
 // The gap is roughly seven times, so the same trading year sits either
@@ -26,7 +26,7 @@
 export const VAT_THRESHOLD_PENCE = 9_000_000
 
 export type TurnoverReading = {
-  /** Money that is turnover under either reading: WHC's own products. */
+  /** Money that is turnover under either reading: Talent House's own products. */
   ownProductsPence: number
   /** Commission retained on pass-through bookings. */
   commissionPence: number

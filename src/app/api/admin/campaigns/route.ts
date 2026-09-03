@@ -74,7 +74,7 @@ export async function GET() {
       newsletterOnly: newsletterOnly.length,
       newsletter: (newsletter || []).length,
       excluded_without_confirmed_consent,
-      note: 'newsletterOnly counts confirmed standalone subscribers with no WHC profile - they are only reached by sends to All.',
+      note: 'newsletterOnly counts confirmed standalone subscribers with no Talent House profile - they are only reached by sends to All.',
     },
   })
 }
@@ -130,7 +130,7 @@ export async function POST(req: NextRequest) {
       if (!RESEND_API_KEY) return NextResponse.json({ error: 'Email is not configured (RESEND_API_KEY missing).' }, { status: 500 })
       if (!user.email) return NextResponse.json({ error: 'Your admin account has no email address.' }, { status: 400 })
       const html = renderNewsletterHtml(campaign, { featuredHtml: blocks, test: true })
-      const res = await fetch('https://api.resend.com/emails', { method: 'POST', headers: { Authorization: `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ from: FROM_EMAIL, to: user.email, subject: `[TEST] ${campaign.name || 'WHC Newsletter'}`, html }) })
+      const res = await fetch('https://api.resend.com/emails', { method: 'POST', headers: { Authorization: `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ from: FROM_EMAIL, to: user.email, subject: `[TEST] ${campaign.name || 'Talent House Newsletter'}`, html }) })
       if (!res.ok) return NextResponse.json({ error: 'Test send failed - check Resend logs.' }, { status: 502 })
       return NextResponse.json({ success: true, email: user.email })
     }

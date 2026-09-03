@@ -28,7 +28,7 @@ export default function PublicAcademyPage() {
   const [teamBusy, setTeamBusy] = useState(false)
   const [teamSent, setTeamSent] = useState(false)
   const [teamError, setTeamError] = useState('')
-  // Live demand per course slug: how many live WHC roles ask for the skills
+  // Live demand per course slug: how many live Talent House roles ask for the skills
   // the course teaches. Computed server-side and cached; absent counts simply
   // mean the line does not render.
   const [demand, setDemand] = useState<Record<string, number>>({})
@@ -116,14 +116,14 @@ export default function PublicAcademyPage() {
       <section className="pt-[76px] bg-[#f1f1f1] text-ink overflow-hidden">
         <div className="mx-auto max-w-[1440px] px-6 py-16 lg:px-10 lg:py-24 grid lg:grid-cols-[1.05fr_.95fr] gap-12 items-center">
           <div>
-            <p className="mb-4 text-[10px] font-semibold uppercase tracking-[0.2em] text-secondary">WHC Academy</p>
+            <p className="mb-4 text-[10px] font-semibold uppercase tracking-[0.2em] text-secondary">Talent House Academy</p>
             <h1 className="max-w-4xl text-[44px] font-semibold leading-[1.01] tracking-[-0.05em] text-ink md:text-[64px]">Learn what luxury spas actually expect from you.</h1>
             <p className="mt-6 max-w-3xl text-[16px] leading-8 text-secondary md:text-[18px]">Professional courses with assessments, verified certificates and CPD hours - built for spa careers, from the treatment room to director level.</p>
             <div className="flex flex-col sm:flex-row gap-3 mt-8">
               <a href="#main-content" className="inline-flex items-center justify-center gap-2 rounded-xl bg-ink text-white px-6 py-3.5 text-[13px] font-semibold hover:bg-[#333333] transition-colors">Explore courses <ArrowRight size={14} /></a>
               <Link href={isCandidate ? '/talent/academy' : '/register/talent'} className="inline-flex items-center justify-center gap-2 rounded-xl border border-[#dddddd] px-6 py-3.5 text-[13px] font-semibold text-ink hover:bg-[#e7e7e7] transition-colors">Build my career profile <ArrowRight size={14} /></Link>
             </div>
-            <p className="mt-4 text-[11px] text-muted">No membership required. WHC members receive member pricing.</p>
+            <p className="mt-4 text-[11px] text-muted">No membership required. Talent House members receive member pricing.</p>
           </div>
 
           <div className="rounded-[28px] border border-[#dddddd] bg-white p-7 md:p-9 text-[#1c1c1c] shadow-[0_20px_60px_rgba(28,28,28,.06)]">
@@ -131,7 +131,7 @@ export default function PublicAcademyPage() {
             <h2 className="text-[29px] font-semibold tracking-[-.035em] mt-2">More than a certificate.</h2>
             <div className="space-y-5 mt-7">
               {[
-                [BadgeCheck, 'Proof employers can verify', 'Completed courses can appear as WHC profile badges with a certificate code.'],
+                [BadgeCheck, 'Proof employers can verify', 'Completed courses can appear as Talent House profile badges with a certificate code.'],
                 [BrainCircuit, 'Confidence you can use', 'Work through practical scenarios and understand why the standard matters, not just what to memorise.'],
                 [TrendingUp, 'Skills that move careers forward', 'From treatment-room knowledge to management, commercial thinking and leadership.'],
                 [Award, 'A stronger professional story', 'Use your learning to strengthen your CV, profile and interview examples.'],
@@ -193,14 +193,14 @@ export default function PublicAcademyPage() {
                     <img src={displayCourseImage(course)} alt="" loading="lazy" decoding="async" className="absolute inset-0 h-full w-full object-cover" />
                     <div className="absolute inset-0 bg-gradient-to-t from-[#1c1c1c]/95 via-[#1c1c1c]/35 to-transparent" />
                     <div className="absolute bottom-6 left-6 right-6 text-white">
-                      <div className="mb-2 flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-white/70">{index === 0 ? <BriefcaseBusiness size={13} /> : <ChartNoAxesCombined size={13} />} WHC Leadership Programme</div>
+                      <div className="mb-2 flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-white/70">{index === 0 ? <BriefcaseBusiness size={13} /> : <ChartNoAxesCombined size={13} />} Talent House Leadership Programme</div>
                       <h3 className="text-[27px] font-semibold tracking-[-0.03em]">{course.title}</h3>
                     </div>
                   </div>
                   <div className="p-7">
                     <p className="mb-5 text-[13px] leading-6 text-[#555555]">{course.tagline}</p>
                     {(demand[course.slug] || 0) > 0 && (
-                      <p className="mb-5 border-t border-[#dddddd] pt-3 text-[13px] font-serif font-semibold text-[#1c1c1c]">Asked for in {demand[course.slug]} live WHC role{demand[course.slug] === 1 ? '' : 's'} right now</p>
+                      <p className="mb-5 border-t border-[#dddddd] pt-3 text-[13px] font-serif font-semibold text-[#1c1c1c]">Asked for in {demand[course.slug]} live Talent House role{demand[course.slug] === 1 ? '' : 's'} right now</p>
                     )}
                     <div className="mb-6 grid gap-2 sm:grid-cols-3">
                       <span className="inline-flex items-center gap-1.5 text-[11px] text-[#555555]"><CheckCircle2 size={13} className="text-[#555555]" /> {course.lessons.length} applied modules</span>
@@ -222,7 +222,7 @@ export default function PublicAcademyPage() {
           <div className="mb-8 max-w-3xl">
             <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-[#555555]">Professional course library</p>
             <h2 className="text-[30px] font-semibold tracking-[-0.035em] text-[#1c1c1c] md:text-[40px]">Build the skills luxury spas actually use.</h2>
-            <p className="text-[13px] leading-6 text-[#555555] mt-3">Choose focused learning you can complete around work, then add the achievement to your WHC professional profile.</p>
+            <p className="text-[13px] leading-6 text-[#555555] mt-3">Choose focused learning you can complete around work, then add the achievement to your Talent House professional profile.</p>
           </div>
 
           {categories.map(cat => (
@@ -239,7 +239,7 @@ export default function PublicAcademyPage() {
                       <p className="mb-3 text-[12px] text-[#555555]">{course.tagline}</p>
                       <p className="text-[11px] text-[#6b6b6b]">{course.lessons.length} module{course.lessons.length === 1 ? '' : 's'} · ~{course.minutes} min · {courseMeta(course.slug).cpdHours} CPD hour{courseMeta(course.slug).cpdHours === 1 ? '' : 's'} · £{(publicCoursePrice(course) / 100).toFixed(0)}</p>
                       {(demand[course.slug] || 0) > 0 && (
-                        <p className="mt-2 border-t border-[#dddddd] pt-2 text-[12px] font-serif font-semibold text-[#1c1c1c]">Asked for in {demand[course.slug]} live WHC role{demand[course.slug] === 1 ? '' : 's'} right now</p>
+                        <p className="mt-2 border-t border-[#dddddd] pt-2 text-[12px] font-serif font-semibold text-[#1c1c1c]">Asked for in {demand[course.slug]} live Talent House role{demand[course.slug] === 1 ? '' : 's'} right now</p>
                       )}
                       <div className="mt-auto border-t border-[#dddddd] pt-4">
                         {isCandidate ? <Link href="/talent/academy" className="btn-primary text-[12px]">Member enrolment · £{(coursePrice(course) / 100).toFixed(0)}</Link> : <button type="button" onClick={() => { setBuying({ slug: course.slug, title: course.title, price: publicCoursePrice(course) }); setError('') }} className="btn-primary text-[12px]">Start course</button>}
@@ -256,17 +256,17 @@ export default function PublicAcademyPage() {
           <div>
             <p className="text-[10px] uppercase tracking-[.17em] text-[#555555] font-semibold">Make your learning visible</p>
             <h2 className="text-[29px] md:text-[36px] font-semibold tracking-[-.035em] text-[#1c1c1c] mt-2">Don't just say you're developing. Show it.</h2>
-            <p className="text-[13px] leading-6 text-[#555555] max-w-3xl mt-3">Every WHC certificate carries a unique verification code. For Talent members, completed Academy courses can also appear as profile badges employers can see.</p>
+            <p className="text-[13px] leading-6 text-[#555555] max-w-3xl mt-3">Every Talent House certificate carries a unique verification code. For Talent members, completed Academy courses can also appear as profile badges employers can see.</p>
           </div>
           <Link href="/verify" className="inline-flex items-center justify-center gap-2 rounded-xl border border-[#6b6b6b] px-5 py-3 text-[12px] font-semibold text-[#555555] hover:bg-[#f1f1f1]">See certificate verification <ArrowRight size={13}/></Link>
         </section>
 
         <section className="mt-14 border border-border bg-[#f1f1f1] p-7 md:p-9">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-accent">WHC Academy for Teams</p>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-accent">Talent House Academy for Teams</p>
             <h2 className="mt-2 text-[24px] font-semibold text-ink">Train the whole team, track every completion</h2>
             <p className="mt-2 max-w-2xl text-[13px] leading-6 text-secondary">Put your property&apos;s therapists, reception and management through the same professional curriculum - service standards, revenue, retail, leadership - with team pricing from £15 per seat per year (minimum 10 seats) and a property onboarding pathway built from the course library. Completion and CPD records for every team member, ready for your quality audits.</p>
             {teamSent ? (
-              <p role="status" className="mt-5 text-[13px] font-medium text-green-700">Thank you - your enquiry is with the WHC team and we will come back to you within one working day.</p>
+              <p role="status" className="mt-5 text-[13px] font-medium text-green-700">Thank you - your enquiry is with the Talent House team and we will come back to you within one working day.</p>
             ) : (
               <div className="mt-5 grid gap-3 md:grid-cols-2">
                 <input type="text" aria-label="Your name" value={teamForm.name} onChange={e => setTeamForm({ ...teamForm, name: e.target.value })} placeholder="Your name" className="input-field" />
@@ -282,7 +282,7 @@ export default function PublicAcademyPage() {
 
         <div className="mt-6 flex max-w-4xl items-start gap-3 border border-[#dddddd] bg-white p-5">
           <ShieldCheck size={18} className="mt-0.5 shrink-0 text-[#555555]" />
-          <p className="text-[11px] leading-5 text-[#555555]">WHC Academy certificates evidence course completion and assessment. They are professional-development records and are not a substitute for regulated qualifications, licences or insurance where those are required.</p>
+          <p className="text-[11px] leading-5 text-[#555555]">Talent House Academy certificates evidence course completion and assessment. They are professional-development records and are not a substitute for regulated qualifications, licences or insurance where those are required.</p>
         </div>
       </main>
 
@@ -298,7 +298,7 @@ export default function PublicAcademyPage() {
             <input id="academy-buy-email" type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="you@example.com" className="input-field mb-3" />
             {error && <p role="alert" className="mb-3 text-[12px] text-red-600">{error}</p>}
             <button type="button" onClick={buyAsGuest} disabled={busy || !email.trim()} className="btn-primary w-full disabled:opacity-50">{busy ? 'Taking you to payment...' : `Pay £${(buying.price / 100).toFixed(0)} & start`}</button>
-            <p className="mt-3 text-center text-[11px] text-muted">Already a WHC member? <Link href="/login" className="underline">Sign in</Link> and pay the member price instead.</p>
+            <p className="mt-3 text-center text-[11px] text-muted">Already a Talent House member? <Link href="/login" className="underline">Sign in</Link> and pay the member price instead.</p>
           </div>
         </div>
       )}

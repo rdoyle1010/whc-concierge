@@ -66,7 +66,7 @@ export default function AgencyReceiptPage() {
   // carry a higher fee) show their real rate, not the standard default.
   const feePct = subtotal > 0 && fee > 0 ? Math.round((fee / subtotal) * 100) : Math.round(AGENCY_PLATFORM_FEE_PCT * 100)
   const total = booking.amount_paid || subtotal + fee
-  const ref = `WHC-${String(booking.id).slice(0, 8).toUpperCase()}`
+  const ref = `Talent House-${String(booking.id).slice(0, 8).toUpperCase()}`
 
   return (
     <PaymentDocument
@@ -81,7 +81,7 @@ export default function AgencyReceiptPage() {
           detail: `Shift on ${booking.shift_date ? new Date(booking.shift_date).toLocaleDateString('en-GB') : 'agreed date'}${booking.shift_type ? ` \u00b7 ${booking.shift_type}` : ''} \u00b7 ${hours}h \u00d7 \u00a3${booking.rate}/hr`,
           amount: subtotal,
         },
-        { description: `WHC platform fee (${feePct}%)`, amount: fee },
+        { description: `Talent House platform fee (${feePct}%)`, amount: fee },
       ]}
       total={total}
       backHref="/employer/agency"

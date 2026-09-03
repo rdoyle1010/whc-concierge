@@ -13,7 +13,7 @@ export async function POST(req: NextRequest) {
     if (honeypot) return NextResponse.json({ success: true })
     if (!EMAIL_RE.test(email) || email.length > 254) return NextResponse.json({ error: 'Please enter a valid email address.' }, { status: 400 })
 
-    // This endpoint sends a real email, through WHC's own domain, to any
+    // This endpoint sends a real email, through Talent House's own domain, to any
     // address handed to it. The 120-second per-address hold below does
     // nothing against a list of distinct victim addresses, which turns the
     // newsletter form into a mail-bombing service and burns the sending

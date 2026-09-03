@@ -11,7 +11,7 @@ const content: CourseContent = {
     'Escalate impossible turnaround gaps to a coordinator professionally, protecting both the standard and the schedule',
   ],
   prerequisites: `None. The course assumes only basic familiarity with a treatment room. Where your property's brand standard specifies details, its own manual takes precedence.`,
-  author: { name: 'WHC Academy', role: 'Developed by Wellness House Collective' },
+  author: { name: 'Talent House Academy', role: 'Developed by Wellness House Collective' },
   references: [
     { label: `Forbes Travel Guide - luxury service and facility standards`, url: `https://www.forbestravelguide.com` },
     { label: `UK Spa Association - industry resources and operational guidance`, url: `https://www.spa-uk.org` },

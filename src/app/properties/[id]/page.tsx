@@ -102,10 +102,10 @@ async function loadReviews(admin: ReturnType<typeof createAdminClient>, employer
         comment: r.text || '',
         created_at: r.created_at,
         verified: true,
-        source: r.booking_id ? 'Completed WHC agency shift' : 'WHC placement',
+        source: r.booking_id ? 'Completed Talent House agency shift' : 'Talent House placement',
         // Published by role, never by name: nobody consented to a public,
           // permanent attribution of their opinion of a named employer.
-          reviewer_name: reviewer?.role_level || 'Verified WHC professional',
+          reviewer_name: reviewer?.role_level || 'Verified Talent House professional',
         reviewer_role: null,
       }
     })
@@ -523,7 +523,7 @@ export default async function PropertyDestinationPage({ params }: { params: Prom
               <div>
                 <p className="public-eyebrow">What it&apos;s actually like to work here</p>
                 <p className="mt-5 text-[12px] leading-6 italic text-muted max-w-2xl">
-                  Verified reviews from professionals who have worked here through WHC - separate from guest reviews and property marketing.
+                  Verified reviews from professionals who have worked here through Talent House - separate from guest reviews and property marketing.
                 </p>
               </div>
               {reviewSummary.average && (
@@ -592,7 +592,7 @@ export default async function PropertyDestinationPage({ params }: { params: Prom
       <section className="bg-accent">
         <div className="max-w-6xl mx-auto px-6 py-16 md:py-20 text-center">
           <h2 className="text-white text-[30px] md:text-[38px]">Considering a move?</h2>
-          <p className="mt-4 text-[14px] leading-7 text-white/70 max-w-xl mx-auto">Browse live roles across WHC properties, or create a profile so employers like {name} can find you.</p>
+          <p className="mt-4 text-[14px] leading-7 text-white/70 max-w-xl mx-auto">Browse live roles across Talent House properties, or create a profile so employers like {name} can find you.</p>
           <div className="mt-8 flex flex-wrap justify-center gap-3">
             <Link href="/jobs" className="bg-white text-accent px-6 py-3 text-[13px] font-semibold hover:bg-surface transition-colors">Browse live roles</Link>
             <Link href="/register" className="border border-white/40 text-white px-6 py-3 text-[13px] font-semibold hover:bg-white/10 transition-colors">Create your profile</Link>

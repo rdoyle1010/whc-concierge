@@ -57,7 +57,7 @@ function buildFit(candidate: any, job: any) {
   const missingSkills = missingFrom(job.required_skills, skillsPool)
   if (missingSkills.length) {
     const covering = academyFor(missingSkills)
-    gaps.push({ area: 'Treatments & skills', items: missingSkills, advice: covering ? `WHC Academy covers this: "${covering}" - or in-house training and shadowing.` : 'Usually closed with in-house training or shadowing during the first weeks.' })
+    gaps.push({ area: 'Treatments & skills', items: missingSkills, advice: covering ? `Talent House Academy covers this: "${covering}" - or in-house training and shadowing.` : 'Usually closed with in-house training or shadowing during the first weeks.' })
   }
 
   const missingQuals = missingFrom(job.required_qualifications, candidate.qualifications || [])
@@ -69,7 +69,7 @@ function buildFit(candidate: any, job: any) {
   const missingBrands = missingFrom(job.required_brands, candidate.product_houses || [])
   if (missingBrands.length) {
     const covering = academyFor(missingBrands)
-    gaps.push({ area: 'Product houses', items: missingBrands, advice: covering ? `WHC Academy covers this: "${covering}" - brand familiarisation before day one.` : 'Brand houses run their own product training; experience with comparable houses shortens it.' })
+    gaps.push({ area: 'Product houses', items: missingBrands, advice: covering ? `Talent House Academy covers this: "${covering}" - brand familiarisation before day one.` : 'Brand houses run their own product training; experience with comparable houses shortens it.' })
   }
 
   const requiredYears = Number(job.min_years_experience || 0)

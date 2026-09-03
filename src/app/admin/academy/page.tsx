@@ -283,7 +283,7 @@ export default function AdminAcademyPage() {
         <div className="mb-3 border border-border bg-surface p-4">
           <p className="text-[12px] font-semibold text-ink">This is the same catalogue talent sees.</p>
           <p className="mt-1 text-[12px] leading-5 text-secondary">Every course on the Talent Academy, the public Academy page and the app is listed below. <span className="font-medium text-ink">Course settings</span> covers price, image, summary line, display order and whether a course is live. <span className="font-medium text-ink">Edit content</span> opens the full course: modules, lessons, written content, key terms, knowledge checks and the assessment.</p>
-          <p className="mt-1 text-[12px] leading-5 text-secondary">A course marked <span className="font-medium text-ink">Platform version</span> is the WHC library version and improves with every release. In the editor you can take editorial control of it: the whole current course is copied across first, so you always edit a complete copy and never an empty page. You can hand a course back to the platform version at any time without losing your writing.</p>
+          <p className="mt-1 text-[12px] leading-5 text-secondary">A course marked <span className="font-medium text-ink">Platform version</span> is the Talent House library version and improves with every release. In the editor you can take editorial control of it: the whole current course is copied across first, so you always edit a complete copy and never an empty page. You can hand a course back to the platform version at any time without losing your writing.</p>
         </div>
         <div className="space-y-3 mb-8">{courses.map(course => {
           const open = openCourse === course.slug
@@ -349,7 +349,7 @@ export default function AdminAcademyPage() {
 
             {open && <div className="border-t border-border bg-surface p-4">
               <p className="text-[13px] text-gray-600 mb-2">{course.tagline}</p>
-              <p className="text-[11px] text-muted mb-3 inline-flex items-center gap-1">{course.content_source === 'custom' ? <><PencilLine size={11} /> Your own version of this course, exactly as learners see it.</> : <><Lock size={11} /> The WHC platform version of this course. Use Edit content to take editorial control.</>} {course.questions} assessment question{course.questions === 1 ? '' : 's'}.</p>
+              <p className="text-[11px] text-muted mb-3 inline-flex items-center gap-1">{course.content_source === 'custom' ? <><PencilLine size={11} /> Your own version of this course, exactly as learners see it.</> : <><Lock size={11} /> The Talent House platform version of this course. Use Edit content to take editorial control.</>} {course.questions} assessment question{course.questions === 1 ? '' : 's'}.</p>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-2">{course.lessons.map((lesson: any, index: number) => <div key={index} className="bg-white border border-border p-3"><p className="text-[12px] font-medium text-ink">{index + 1}. {lesson.title}</p><p className="text-[11px] text-secondary mt-1 line-clamp-3 whitespace-pre-line">{lesson.content}</p></div>)}</div>
             </div>}
           </div>

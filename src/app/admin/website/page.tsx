@@ -19,7 +19,7 @@ type Tab = 'content' | 'images' | 'brand' | 'navigation' | 'sections' | 'history
 const PANELS = [
   { path: 'homepageCta' as const, kind: 'backdrop' as const, label: 'Homepage closing panel', hint: 'The full-width band that closes the homepage, above the footer.' },
   { path: 'authPanel' as const, kind: 'backdrop' as const, label: 'Sign-in panel', hint: 'The tall panel beside the sign-in and registration forms.' },
-  { path: 'intelligenceJournal' as const, kind: 'backdrop' as const, label: 'Intelligence closing panel', hint: 'The full-width band that closes WHC Intelligence, above the footer.' },
+  { path: 'intelligenceJournal' as const, kind: 'backdrop' as const, label: 'Intelligence closing panel', hint: 'The full-width band that closes Talent House Intelligence, above the footer.' },
   { path: 'intelligenceHero' as const, kind: 'picture' as const, label: 'Intelligence masthead picture', hint: 'The picture box beside the Intelligence headline, where the right-hand half used to be empty.' },
   { path: 'agencyProfessional' as const, kind: 'picture' as const, label: 'Agency professional band picture', hint: 'The picture box above the four steps on the Flexible Work page.' },
 ]

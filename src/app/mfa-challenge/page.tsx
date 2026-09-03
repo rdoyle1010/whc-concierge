@@ -107,7 +107,7 @@ function MfaChallenge() {
             <button type="button" onClick={() => { setMode(mode === 'code' ? 'recovery' : 'code'); setError('') }} className="text-xs text-ink hover:underline">
               {mode === 'code' ? 'Lost your phone? Use a recovery code' : 'Back to the authenticator code'}
             </button>
-            <a href="/contact" className="text-xs text-muted hover:text-ink underline">Contact WHC support</a>
+            <a href="/contact" className="text-xs text-muted hover:text-ink underline">Contact Talent House support</a>
             <button type="button" onClick={signOut} className="text-xs text-muted hover:text-ink underline">Use a different account</button>
           </div>
         )}

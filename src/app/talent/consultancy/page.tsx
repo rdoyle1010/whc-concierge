@@ -102,7 +102,7 @@ export default function TalentConsultancyPage() {
     setNotice({
       kind: 'ok',
       text: publish
-        ? 'Sent for review. It goes live in the directory once WHC has read it.'
+        ? 'Sent for review. It goes live in the directory once Talent House has read it.'
         : body.returnedToReview
           ? 'Saved. Because the listing was live, the change goes back for review before it reappears.'
           : 'Saved as a draft. Nobody can see it yet.',
@@ -157,13 +157,13 @@ export default function TalentConsultancyPage() {
       <div className="dashboard-card mb-6 flex flex-wrap items-center justify-between gap-4">
         <div>
           <p className="text-[13px] font-medium text-ink">
-            {live ? 'Live in the directory' : status === 'pending' && profile?.is_live ? 'With WHC for review'
+            {live ? 'Live in the directory' : status === 'pending' && profile?.is_live ? 'With Talent House for review'
               : status === 'rejected' ? 'Not approved' : 'Draft - not visible to anyone'}
           </p>
           <p className="mt-1 text-[12px] text-muted">
             {live ? `${profile.view_count || 0} view${profile.view_count === 1 ? '' : 's'} · ${profile.enquiry_count || 0} enquir${profile.enquiry_count === 1 ? 'y' : 'ies'}`
               : status === 'rejected' && profile?.approval_notes ? profile.approval_notes
-              : 'Listings are read by WHC before they appear, because every one of them carries the platform’s name.'}
+              : 'Listings are read by Talent House before they appear, because every one of them carries the platform’s name.'}
           </p>
         </div>
         {live && <Link href={`/consultancy/${profile.id}`} target="_blank" className="btn-secondary text-[12px] inline-flex items-center gap-1.5"><ExternalLink size={12} /> View public listing</Link>}

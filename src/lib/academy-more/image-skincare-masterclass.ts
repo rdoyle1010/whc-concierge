@@ -1,4 +1,4 @@
-// WHC Academy brand masterclass: IMAGE Skincare. Independent WHC training -
+// Talent House Academy brand masterclass: IMAGE Skincare. Independent Talent House training -
 // not affiliated with or endorsed by IMAGE Skincare. Answer key lives in
 // academy-more-answers/image-skincare-masterclass.ts (server-only).
 

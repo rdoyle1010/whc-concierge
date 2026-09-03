@@ -10,9 +10,9 @@ export const revalidate = 60
 // The image on the sample role card.
 //
 // This was a hotlinked Unsplash photograph of towels and tulips: generic, off
-// the charcoal palette, and outside WHC's control, so a photo taken down at source
+// the charcoal palette, and outside Talent House's control, so a photo taken down at source
 // would have left a hole in the middle of the page a professional lands on
-// first. It is now a WHC image, served from this site.
+// first. It is now a Talent House image, served from this site.
 //
 // To change it: drop a new file into public/images and change this one line.
 // The panel behind it is brand charcoal, so the card still reads if the image is
@@ -39,7 +39,7 @@ export default async function MatchExplainerPage() {
         <section className="border-b border-[#dddddd] bg-white">
           <div className="mx-auto grid max-w-7xl gap-12 px-6 py-16 lg:grid-cols-[1fr_0.9fr] lg:items-center lg:px-8 lg:py-24">
             <div className="max-w-2xl">
-              <p className="mb-4 text-[10px] font-semibold uppercase tracking-[0.18em] text-[#555555]">WHC Match</p>
+              <p className="mb-4 text-[10px] font-semibold uppercase tracking-[0.18em] text-[#555555]">Talent House Match</p>
               <h1 className="site-heading text-[48px] font-semibold leading-[0.98] md:text-[68px]">Roles come to you. You decide what feels right.</h1>
               <p className="mt-7 max-w-xl text-[16px] leading-7 text-[#555555]">Think of it like a dating app for your career. Talent House Collective ranks live roles around your real experience and preferences, then lets you review them one at a time.</p>
               <div className="mt-8 flex flex-wrap gap-3">
@@ -92,7 +92,7 @@ export default async function MatchExplainerPage() {
         <section className="bg-[#f1f1f1] py-16 lg:py-20">
           <div className="mx-auto max-w-7xl px-6 lg:px-8">
             <div className="grid gap-px border border-[#dddddd] bg-[#dddddd] md:grid-cols-3">
-              <div className="bg-white p-8"><p className="text-[11px] font-semibold uppercase tracking-[.14em] text-[#555555]">01 · We rank</p><h2 className="mt-4 text-[24px] font-semibold text-[#1c1c1c]">Your strongest roles appear first.</h2><p className="mt-3 text-[13px] leading-6 text-[#555555]">The score is built from your WHC profile and the employer’s real job requirements, not a generic keyword search.</p></div>
+              <div className="bg-white p-8"><p className="text-[11px] font-semibold uppercase tracking-[.14em] text-[#555555]">01 · We rank</p><h2 className="mt-4 text-[24px] font-semibold text-[#1c1c1c]">Your strongest roles appear first.</h2><p className="mt-3 text-[13px] leading-6 text-[#555555]">The score is built from your Talent House profile and the employer’s real job requirements, not a generic keyword search.</p></div>
               <div className="bg-white p-8"><p className="text-[11px] font-semibold uppercase tracking-[.14em] text-[#555555]">02 · You swipe</p><h2 className="mt-4 text-[24px] font-semibold text-[#1c1c1c]">Left to pass. Right to keep.</h2><p className="mt-3 text-[13px] leading-6 text-[#555555]">Pass roles that are not for you. Swipe right on ones you want to explore and they move into My Applications.</p></div>
               <div className="bg-white p-8"><p className="text-[11px] font-semibold uppercase tracking-[.14em] text-[#555555]">03 · You choose</p><h2 className="mt-4 text-[24px] font-semibold text-[#1c1c1c]">Nothing is sent until you say so.</h2><p className="mt-3 text-[13px] leading-6 text-[#555555]">Review the full role, prepare your application and submit only when you are ready.</p></div>
             </div>

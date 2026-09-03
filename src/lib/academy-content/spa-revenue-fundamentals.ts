@@ -1,6 +1,6 @@
 import type { CourseContent } from '../academy-types'
 
-// Spa Revenue Fundamentals - the exemplar of the WHC course standard.
+// Spa Revenue Fundamentals - the exemplar of the Talent House course standard.
 // Every module: why it matters, outcomes, structured teaching with worked
 // numbers, a visual that explains something, a scenario, a practical
 // activity, a formative knowledge check, key terms, a case study, a
@@ -19,7 +19,7 @@ const content: CourseContent = {
     'Diagnose a underperforming week using the demand → capacity → pricing → utilisation → RevPATH chain',
     'Present a commercial recommendation with the numbers to support it',
   ],
-  author: { name: 'WHC Academy', role: 'Developed by Wellness House Collective', note: 'Reviewed by the WHC editorial team. Figures in worked examples are illustrative of typical UK luxury spa operations.' },
+  author: { name: 'Talent House Academy', role: 'Developed by Wellness House Collective', note: 'Reviewed by the Talent House editorial team. Figures in worked examples are illustrative of typical UK luxury spa operations.' },
   references: [
     { label: 'UK Spa Association - industry resources and operational guidance', url: 'https://www.spa-uk.org' },
     { label: 'Global Wellness Institute - wellness economy research', url: 'https://globalwellnessinstitute.org' },

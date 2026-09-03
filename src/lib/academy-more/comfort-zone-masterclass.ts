@@ -1,4 +1,4 @@
-// WHC Academy brand masterclass: Comfort Zone. Independent WHC training -
+// Talent House Academy brand masterclass: Comfort Zone. Independent Talent House training -
 // not affiliated with or endorsed by Comfort Zone. Answer key lives in
 // academy-more-answers/comfort-zone-masterclass.ts (server-only).
 

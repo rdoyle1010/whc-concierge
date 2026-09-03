@@ -144,7 +144,7 @@ export default function AdminCampaignsPage() {
 
   return <DashboardShell role="admin" userName="Admin">
     <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-      <div><p className="dashboard-eyebrow">Content & revenue</p><h1 className="dashboard-title">Newsletters & Campaigns</h1><p className="dashboard-intro">Create polished WHC newsletters, preview them, test them and send only to confirmed subscribers.</p></div>
+      <div><p className="dashboard-eyebrow">Content & revenue</p><h1 className="dashboard-title">Newsletters & Campaigns</h1><p className="dashboard-intro">Create polished Talent House newsletters, preview them, test them and send only to confirmed subscribers.</p></div>
       <button onClick={openNew} className="btn-primary inline-flex items-center gap-2"><Plus size={15}/>Write Newsletter</button>
     </div>
 

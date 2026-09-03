@@ -4,7 +4,7 @@
 // First name plus surname initial: "Alexandra Whitmore-Hunt" -> "Alexandra W."
 export function anonymiseDisplayName(fullName: string | null | undefined): string {
   const name = (fullName || '').trim()
-  if (!name) return 'WHC professional'
+  if (!name) return 'Talent House professional'
   const parts = name.split(/\s+/)
   if (parts.length === 1) return parts[0]
   return `${parts[0]} ${parts[parts.length - 1][0].toUpperCase()}.`
@@ -58,5 +58,5 @@ export function candidateNameForEmployer(
 ): string {
   const isPrivate = candidate.private_mode === true && !revealedToEmployer
   if (isPrivate || candidate.show_first_name_only === true) return anonymiseDisplayName(candidate.full_name)
-  return candidate.full_name || 'A WHC professional'
+  return candidate.full_name || 'A Talent House professional'
 }

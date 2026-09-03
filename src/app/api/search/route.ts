@@ -62,7 +62,7 @@ async function safeRows(promise: PromiseLike<{ data: any[] | null; error: any }>
 
 function displayName(fullName: string | null, firstNameOnly: boolean): string {
   const name = (fullName || '').trim()
-  if (!name) return 'WHC professional'
+  if (!name) return 'Talent House professional'
   if (!firstNameOnly) return name
   const parts = name.split(/\s+/)
   if (parts.length === 1) return parts[0]

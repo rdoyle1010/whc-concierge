@@ -5,7 +5,7 @@ import { createNotification } from '@/lib/notifications'
 
 // Moderation for the Consultancy directory.
 //
-// Every listing appears on a page carrying WHC's name, so somebody reads it
+// Every listing appears on a page carrying Talent House's name, so somebody reads it
 // before a hotel does. An edit to an approved listing puts it back here, which
 // is why the queue is ordered by when it was last touched rather than created.
 

@@ -84,7 +84,7 @@ export async function POST(req: NextRequest) {
 
   if (action === 'checkout') {
     if (candidate.approval_status !== 'approved') {
-      return NextResponse.json({ error: 'Your Talent profile must be approved by WHC before you can join the Agency register.' }, { status: 403 })
+      return NextResponse.json({ error: 'Your Talent profile must be approved by Talent House before you can join the Agency register.' }, { status: 403 })
     }
     if (candidate.agency_available) {
       return NextResponse.json({ error: 'Your Agency listing is already active. Use Manage subscription instead.' }, { status: 400 })
@@ -116,7 +116,7 @@ export async function POST(req: NextRequest) {
       customer_email: user.email || undefined,
       line_items: [{ price_data: {
         currency: 'gbp',
-        product_data: { name: `WHC Agency Register - ${tierConfig.label}`, description: tierConfig.features.join(' · ') },
+        product_data: { name: `Talent House Agency Register - ${tierConfig.label}`, description: tierConfig.features.join(' · ') },
         unit_amount: tierConfig.price,
         recurring: { interval: 'month' },
       }, quantity: 1 }],

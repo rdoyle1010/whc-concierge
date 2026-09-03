@@ -16,8 +16,8 @@ export const content: CourseContent = {
     'Prepare credible capex cases and communicate risk, payback and decisions to executives',
     'Produce a focused 12-month business plan linking initiatives to measurable financial and operational outcomes',
   ],
-  prerequisites: 'Spa or department management experience; the WHC Professional Certificate in Spa Management is the natural precursor.',
-  author: { name: 'WHC Academy', role: 'Developed by Wellness House Collective' },
+  prerequisites: 'Spa or department management experience; the Talent House Professional Certificate in Spa Management is the natural precursor.',
+  author: { name: 'Talent House Academy', role: 'Developed by Wellness House Collective' },
   references: [
     { label: 'UK Spa Association - industry resources and operational guidance', url: 'https://www.spa-uk.org' },
     { label: 'Global Wellness Institute - wellness economy research and industry data', url: 'https://globalwellnessinstitute.org' },

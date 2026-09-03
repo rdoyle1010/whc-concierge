@@ -339,7 +339,7 @@ export async function POST(req: NextRequest) {
     if (refundAmount > amountPaid) {
       return NextResponse.json({ error: `Refund cannot exceed the £${amountPaid.toFixed(2)} collected for this booking.` }, { status: 400 })
     }
-    // Money invariant: WHC can never pay out more than it took in. The refund
+    // Money invariant: Talent House can never pay out more than it took in. The refund
     // to the property plus the payout to the therapist must fit inside it.
     if (agencyResolutionExceedsCollected(amountPaid, refundAmount, payoutAmount)) {
       return NextResponse.json({ error: `A £${refundAmount} refund plus a £${payoutAmount} therapist payout comes to £${refundAmount + payoutAmount}, more than the £${amountPaid} collected for this booking. Lower one of them before resolving.` }, { status: 400 })
@@ -353,11 +353,11 @@ export async function POST(req: NextRequest) {
       try {
         const stripe = getStripe()
         // On a destination charge the professional was paid at the moment the
-        // property paid - WHC only ever held its own fee. Refunding without
-        // reverse_transfer therefore takes the whole refund out of WHC's own
+        // property paid - Talent House only ever held its own fee. Refunding without
+        // reverse_transfer therefore takes the whole refund out of Talent House's own
         // balance while the professional keeps the lot: on a £600 shift, a
         // £600 loss. reverse_transfer pulls the shift money back from the
-        // connected account, and refund_application_fee returns the WHC fee
+        // connected account, and refund_application_fee returns the Talent House fee
         // so the property is made whole from the right pockets.
         const viaConnect = bookingPaidByConnect(booking)
         const refund = await stripe.refunds.create({
@@ -404,8 +404,8 @@ export async function POST(req: NextRequest) {
       if (bEmp?.user_id) {
         await createNotification(bEmp.user_id, 'general', 'Booking issue resolved',
           refundAmount > 0
-            ? `WHC has resolved the issue on the ${when} shift. A refund of £${refundAmount} has been issued.`
-            : `WHC has resolved the issue on the ${when} shift. No refund was agreed on this occasion.`,
+            ? `Talent House has resolved the issue on the ${when} shift. A refund of £${refundAmount} has been issued.`
+            : `Talent House has resolved the issue on the ${when} shift. No refund was agreed on this occasion.`,
           '/employer/agency')
       }
       if (bCand?.user_id) {

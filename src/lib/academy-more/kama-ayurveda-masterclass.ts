@@ -1,4 +1,4 @@
-// WHC Academy brand masterclass: Kama Ayurveda. Independent WHC training -
+// Talent House Academy brand masterclass: Kama Ayurveda. Independent Talent House training -
 // not affiliated with or endorsed by Kama Ayurveda. Answer key lives in
 // academy-more-answers/kama-ayurveda-masterclass.ts (server-only).
 

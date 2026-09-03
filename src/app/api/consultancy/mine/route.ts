@@ -17,7 +17,7 @@ const text = (value: unknown, max: number) => {
   return trimmed ? trimmed.slice(0, max) : null
 }
 
-// A link a hotel clicks from a WHC page is a link WHC is vouching for.
+// A link a hotel clicks from a Talent House page is a link Talent House is vouching for.
 function safeUrl(value: unknown): string | null {
   const raw = text(value, 500)
   if (!raw) return null
@@ -109,7 +109,7 @@ export async function POST(req: NextRequest) {
 
   // An edit to an approved listing returns it to review. The alternative is a
   // listing that passed moderation on its old contents and is now showing
-  // something nobody at WHC has read, on a page carrying her name.
+  // something nobody at Talent House has read, on a page carrying her name.
   if (existing?.approval_status === 'approved') {
     update.approval_status = 'pending'
     update.approval_notes = null

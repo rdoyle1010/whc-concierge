@@ -68,7 +68,7 @@ export default function VatExposurePanel() {
           <p className="mt-1 text-[12px] leading-6 text-muted max-w-2xl">
             The threshold test is a rolling twelve months, not a tax year - a strong summer can take you over in
             September while the year-to-date figure still looks safe. Which of these two numbers is your turnover
-            depends on whether WHC introduces professionals or supplies them.
+            depends on whether Talent House introduces professionals or supplies them.
           </p>
         </div>
       </div>
@@ -84,8 +84,8 @@ export default function VatExposurePanel() {
       )}
 
       <div className="mt-5 grid gap-4 sm:grid-cols-2">
-        <Reading data={data.agent} caution="Applies if professionals are engaged by the property and WHC introduces them for a commission." />
-        <Reading data={data.principal} caution="Applies if professionals are engaged by WHC and supplied to the property - the likelier reading where WHC takes the whole payment and pays the professional." />
+        <Reading data={data.agent} caution="Applies if professionals are engaged by the property and Talent House introduces them for a commission." />
+        <Reading data={data.principal} caution="Applies if professionals are engaged by Talent House and supplied to the property - the likelier reading where Talent House takes the whole payment and pays the professional." />
       </div>
 
       <div className="mt-5 border-t border-border pt-4 text-[11px] leading-5 text-muted space-y-1">

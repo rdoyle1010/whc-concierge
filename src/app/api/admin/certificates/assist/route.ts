@@ -66,18 +66,18 @@ Submission:
 - Treatments they offer: ${(candidate?.services_offered || []).slice(0, 10).join(', ') || 'none listed'}
 - Other stated qualifications: ${(candidate?.qualifications || []).join(', ') || 'none listed'}
 
-You know the spa and beauty qualification landscape: international bodies (CIDESCO, CIBTAC, ITEC), UK bodies (VTCT, City & Guilds, NVQ levels 2-4, BTEC), and that many excellent professionals trained overseas under national systems (e.g. South Africa's SAAHSP, Australia's Certificate III/IV, US state licensure, Philippines TESDA). Be honest about what a document review can and cannot prove: WHC checks that the document is a genuine-looking certificate matching the submitted details and the person's name - it does not contact the awarding body unless escalated.
+You know the spa and beauty qualification landscape: international bodies (CIDESCO, CIBTAC, ITEC), UK bodies (VTCT, City & Guilds, NVQ levels 2-4, BTEC), and that many excellent professionals trained overseas under national systems (e.g. South Africa's SAAHSP, Australia's Certificate III/IV, US state licensure, Philippines TESDA). Be honest about what a document review can and cannot prove: Talent House checks that the document is a genuine-looking certificate matching the submitted details and the person's name - it does not contact the awarding body unless escalated.
 
 Return STRICT JSON, no markdown, with exactly these keys:
 {
   "assessment": "3-5 sentences for the admin: what this qualification is, whether the body is recognised, whether the details are internally consistent (does the qualification fit their treatments/experience?), and your overall read",
   "recognition": "one of: well_known | recognised | unfamiliar | inconsistent",
   "checks": ["4-6 short imperative checks the admin should do on the opened document, specific to THIS submission"],
-  "equivalence_note": "1-2 sentences on how this maps to UK expectations (e.g. broadly NVQ Level 3 equivalent) - only if you are reasonably confident, otherwise say an equivalence judgement needs the WHC review table",
+  "equivalence_note": "1-2 sentences on how this maps to UK expectations (e.g. broadly NVQ Level 3 equivalent) - only if you are reasonably confident, otherwise say an equivalence judgement needs the Talent House review table",
   "drafts": {
     "verified": "warm message to the professional confirming verification, congratulating them, and noting the badge now shows to employers. 40-80 words, UK English.",
     "more_info": "kind message asking for what is most likely missing (full document, awarding body visible, name matching profile, English translation if applicable). Specific to this submission. 40-90 words.",
-    "rejected": "respectful message explaining the document could not be verified as submitted, what they can do next (resubmit with corrections, contact the awarding body for a verification letter, or use ENIC for international equivalence), and that WHC is happy to help. Never accusatory. 50-100 words."
+    "rejected": "respectful message explaining the document could not be verified as submitted, what they can do next (resubmit with corrections, contact the awarding body for a verification letter, or use ENIC for international equivalence), and that Talent House is happy to help. Never accusatory. 50-100 words."
   }
 }`
 

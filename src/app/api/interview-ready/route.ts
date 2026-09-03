@@ -130,10 +130,10 @@ function companyFacts(employer: any, externalName: string) {
   if (facilities.length) facts.push({ label: 'Spa facilities / services', value: facilities.slice(0, 12).join(', ') })
   const groupName = clean(e.hotel_group_name || e.group_name || e.parent_brand)
   const gaps: string[] = []
-  if (!groupName) gaps.push('Hotel group / independent status is not yet verified in the WHC property profile.')
-  if (!(e.room_count || e.hotel_rooms || e.number_of_rooms)) gaps.push('Hotel bedroom count is not yet verified in the WHC property profile.')
-  if (!(e.spa_opened_year || e.spa_opening_year)) gaps.push('Spa opening date is not yet verified in the WHC property profile.')
-  if (!brands.length) gaps.push('Spa product house / treatment brand information is not yet verified in the WHC property profile.')
+  if (!groupName) gaps.push('Hotel group / independent status is not yet verified in the Talent House property profile.')
+  if (!(e.room_count || e.hotel_rooms || e.number_of_rooms)) gaps.push('Hotel bedroom count is not yet verified in the Talent House property profile.')
+  if (!(e.spa_opened_year || e.spa_opening_year)) gaps.push('Spa opening date is not yet verified in the Talent House property profile.')
+  if (!brands.length) gaps.push('Spa product house / treatment brand information is not yet verified in the Talent House property profile.')
   return {
     name: clean(e.property_name || e.company_name || externalName) || 'The employer',
     group_name: groupName,
@@ -240,7 +240,7 @@ function fallback(candidate: any, job: any, employer: any, style: any, cvText: s
     cv_match: {
       why_you_match: strengths.length ? strengths.map(item => `Your profile already evidences ${item}; prepare one real example that proves it.`) : ['Your profile provides the starting point. Pull out examples that directly answer the responsibilities in this job description.'],
       strongest_evidence: strengths,
-      underused_evidence: cvText ? ['Look for CV statements that describe responsibility but not the outcome. Add the genuine scale, result or learning when you know it.'] : ['Your CV file could not be read on this attempt. Your WHC profile and the job description are still being used; re-uploading the CV will allow deeper evidence coaching.'],
+      underused_evidence: cvText ? ['Look for CV statements that describe responsibility but not the outcome. Add the genuine scale, result or learning when you know it.'] : ['Your CV file could not be read on this attempt. Your Talent House profile and the job description are still being used; re-uploading the CV will allow deeper evidence coaching.'],
       gaps_or_risks: gaps,
       talk_about_this: focus.slice(0, 5).map(item => `Prepare one real example showing your capability in ${item}.`),
       cv_improvements: ['Make evidence relevant to this exact role easy to spot.', 'Turn responsibilities into verified outcomes where you genuinely know the result.'],

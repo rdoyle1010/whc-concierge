@@ -11,7 +11,7 @@ const content: CourseContent = {
     'Track and articulate personal retail metrics, including link rate, retail-to-treatment percentage and average retail transaction, and use them as evidence of professional value in reviews and interviews',
   ],
   prerequisites: `None, although this course pairs naturally with Consultation Excellence, because every prescription it teaches is built from consultation and treatment findings.`,
-  author: { name: 'WHC Academy', role: 'Developed by Wellness House Collective' },
+  author: { name: 'Talent House Academy', role: 'Developed by Wellness House Collective' },
   references: [
     { label: 'UK Spa Association - industry resources and operational benchmarks', url: 'https://www.spa-uk.org' },
     { label: 'CIBTAC - international awarding body for beauty and spa therapy education', url: 'https://www.cibtac.com' },

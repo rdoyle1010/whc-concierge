@@ -187,7 +187,7 @@ export default function AdminVerificationPage() {
       <div className="mb-8">
         <p className="dashboard-eyebrow">Trust & compliance</p>
         <h1 className="dashboard-title">Verification</h1>
-        <p className="dashboard-intro">Review right-to-work evidence alongside insurance and qualification documents before awarding WHC Verified. Your decision covers right-to-work AND insurance evidence together. Expired insurance automatically pauses the badge until valid cover is supplied.</p>
+        <p className="dashboard-intro">Review right-to-work evidence alongside insurance and qualification documents before awarding Talent House Verified. Your decision covers right-to-work AND insurance evidence together. Expired insurance automatically pauses the badge until valid cover is supplied.</p>
       </div>
 
       {!loading && rows.length > 0 && (

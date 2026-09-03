@@ -37,7 +37,7 @@ export async function POST(req: NextRequest) {
     const meta = { type: 'residency_listing', candidate_id: candidate.id, user_id: user.id }
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'], customer_email: user.email || undefined, mode: 'subscription', allow_promotion_codes: true,
-      line_items: [{ price_data: { currency: 'gbp', product_data: { name: 'WHC Residency Membership', description: 'Monthly specialist listing, Residency offers and booking management.' }, unit_amount: RESIDENCY_MEMBERSHIP_PENCE, recurring: { interval: 'month' } }, quantity: 1 }],
+      line_items: [{ price_data: { currency: 'gbp', product_data: { name: 'Talent House Residency Membership', description: 'Monthly specialist listing, Residency offers and booking management.' }, unit_amount: RESIDENCY_MEMBERSHIP_PENCE, recurring: { interval: 'month' } }, quantity: 1 }],
       success_url: `${SITE}/residency-setup?membership=success`, cancel_url: `${SITE}/residency-setup?membership=cancelled`,
       metadata: meta, subscription_data: { metadata: meta },
     })

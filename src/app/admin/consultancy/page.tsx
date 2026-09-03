@@ -5,7 +5,7 @@ import Link from 'next/link'
 import DashboardShell from '@/components/DashboardShell'
 import { CheckCircle, XCircle, Star, ExternalLink } from 'lucide-react'
 
-// Every listing appears on a page carrying WHC's name, so somebody reads it
+// Every listing appears on a page carrying Talent House's name, so somebody reads it
 // before a hotel does. An edit to an approved listing sends it back here.
 
 const TABS = ['pending', 'approved', 'rejected'] as const

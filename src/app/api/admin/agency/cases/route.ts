@@ -67,14 +67,14 @@ export async function POST(req: NextRequest) {
   // The same invariant the admin dispute route enforces, and this one was
   // missing it: refund plus payout cannot exceed what the property actually
   // paid in. Without it an administrator could propose a full refund AND the
-  // full shift value, both parties could sign, and WHC would pay the
+  // full shift value, both parties could sign, and Talent House would pay the
   // professional out of its own money on top of refunding the property.
   //
   // The extra the property is being asked to pay counts as collected, since
   // the resolution only completes once that payment clears.
   if (agencyResolutionExceedsCollected(Number(booking.amount_paid || 0) + extra, refund, adjustedPayout)) {
     return NextResponse.json(
-      { error: `The refund (£${refund.toFixed(2)}) plus the payout (£${adjustedPayout.toFixed(2)}) is more than the £${(Number(booking.amount_paid || 0) + extra).toFixed(2)} this booking will have collected. WHC cannot hand out more than it took in.` },
+      { error: `The refund (£${refund.toFixed(2)}) plus the payout (£${adjustedPayout.toFixed(2)}) is more than the £${(Number(booking.amount_paid || 0) + extra).toFixed(2)} this booking will have collected. Talent House cannot hand out more than it took in.` },
       { status: 400 },
     )
   }
@@ -101,8 +101,8 @@ export async function POST(req: NextRequest) {
     admin.from('employer_profiles').select('user_id').eq('id', booking.employer_id).maybeSingle(),
   ])
   await Promise.allSettled([
-    c?.user_id ? createNotification(c.user_id, 'general', 'Agency case resolution ready', 'WHC has proposed a resolution. Please review the terms and sign if you agree.', '/talent/agency/cases') : Promise.resolve(),
-    e?.user_id ? createNotification(e.user_id, 'general', 'Agency case resolution ready', 'WHC has proposed a resolution. Please review the terms and sign if you agree.', '/employer/agency/cases') : Promise.resolve(),
+    c?.user_id ? createNotification(c.user_id, 'general', 'Agency case resolution ready', 'Talent House has proposed a resolution. Please review the terms and sign if you agree.', '/talent/agency/cases') : Promise.resolve(),
+    e?.user_id ? createNotification(e.user_id, 'general', 'Agency case resolution ready', 'Talent House has proposed a resolution. Please review the terms and sign if you agree.', '/employer/agency/cases') : Promise.resolve(),
   ])
   return NextResponse.json({ success: true, awaitingAgreement: true })
 }

@@ -11,7 +11,7 @@ const content: CourseContent = {
     'Assess individual guest type and emotional state within the first minute of contact and adapt communication, pace and presence accordingly',
   ],
   prerequisites: `None. This is a professional foundation course, suitable from the first week of a spa career.`,
-  author: { name: 'WHC Academy', role: 'Developed by Wellness House Collective' },
+  author: { name: 'Talent House Academy', role: 'Developed by Wellness House Collective' },
   references: [
     { label: 'Forbes Travel Guide - service standards for luxury hospitality', url: 'https://www.forbestravelguide.com' },
     { label: 'UK Spa Association - industry standards and operational guidance', url: 'https://www.spa-uk.org' },

@@ -1,4 +1,4 @@
-// WHC Academy brand masterclass: Temple Spa. Independent WHC training - not
+// Talent House Academy brand masterclass: Temple Spa. Independent Talent House training - not
 // affiliated with or endorsed by Temple Spa. Answer key lives in
 // academy-more-answers/temple-spa-masterclass.ts (server-only).
 

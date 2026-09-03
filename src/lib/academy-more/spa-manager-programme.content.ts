@@ -16,7 +16,7 @@ export const content: CourseContent = {
     'Build a practical scorecard, SOP framework and 30-day management action plan',
   ],
   prerequisites: 'Experience in a spa or hospitality team; suitable for senior therapists and supervisors stepping up.',
-  author: { name: 'WHC Academy', role: 'Developed by Wellness House Collective' },
+  author: { name: 'Talent House Academy', role: 'Developed by Wellness House Collective' },
   references: [
     { label: 'UK Spa Association - industry resources and operational guidance', url: 'https://www.spa-uk.org' },
     { label: 'ACAS - Code of Practice on disciplinary and grievance procedures, and guidance on fair people management', url: 'https://www.acas.org.uk' },

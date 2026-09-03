@@ -37,7 +37,7 @@ export default async function FeaturedPropertiesSection() {
           </div>
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {data.map((property: any) => {
-              const name = property.property_name || property.company_name || 'WHC property'
+              const name = property.property_name || property.company_name || 'Talent House property'
               const image = property.property_photos?.[0] || property.logo_url
               return (
                 <Link key={property.id} href={`/properties/${property.id}`} className="group overflow-hidden rounded-2xl border border-[#dddddd] bg-white shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md">
@@ -48,7 +48,7 @@ export default async function FeaturedPropertiesSection() {
                   <div className="p-5">
                     <h3 className="text-[16px] font-semibold text-[#1c1c1c]">{name}</h3>
                     {property.location && <p className="mt-1 flex items-center gap-1 text-[11px] opacity-55"><MapPin size={11} />{property.location}</p>}
-                    <p className="mt-3 line-clamp-2 text-[12px] leading-5 opacity-65">{property.tagline || 'Discover this featured WHC property and its opportunities.'}</p>
+                    <p className="mt-3 line-clamp-2 text-[12px] leading-5 opacity-65">{property.tagline || 'Discover this featured Talent House property and its opportunities.'}</p>
                     <span className="site-accent mt-3 inline-flex items-center gap-1 text-[11px] font-semibold">View property <ArrowRight size={11} className="transition-transform group-hover:translate-x-0.5" /></span>
                   </div>
                 </Link>

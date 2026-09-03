@@ -22,7 +22,7 @@ const BENEFITS = [
   'Top of search results when properties browse talent',
   'Featured in the homepage carousel',
   'Social media promotion by Talent House Collective',
-  'Inclusion in the WHC newsletter to employers',
+  'Inclusion in the Talent House newsletter to employers',
 ]
 
 function UpgradeContent() {

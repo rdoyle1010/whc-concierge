@@ -119,8 +119,8 @@ export async function fulfilCommercialPurchase(admin: any, stripe: Stripe, sessi
   } else if (product === 'consultancy_featured') {
     // The payment is already banked, so a listing that cannot be found must
     // never come back as a bare 404 - the buyer is told it is recorded and
-    // WHC applies it by hand.
-    const recordedMessage = 'Your payment is recorded. Your Consultancy listing could not be updated automatically - please contact WHC and we will apply your Featured placement.'
+    // Talent House applies it by hand.
+    const recordedMessage = 'Your payment is recorded. Your Consultancy listing could not be updated automatically - please contact Talent House and we will apply your Featured placement.'
     const days = Number(session.metadata?.featured_days || 30)
     const { data: listing } = await admin.from('consultancy_profiles')
       .select('id, featured_until').eq('user_id', userId).maybeSingle()
@@ -137,7 +137,7 @@ export async function fulfilCommercialPurchase(admin: any, stripe: Stripe, sessi
   } else if (product === 'residency_featured') {
     // The payment is already in the ledger, so a missing profile or listing
     // must never surface as a bare 404 - tell the member it is recorded.
-    const recordedMessage = 'Your payment is recorded. Your Residency listing could not be updated automatically - please contact WHC and we will apply your Featured placement.'
+    const recordedMessage = 'Your payment is recorded. Your Residency listing could not be updated automatically - please contact Talent House and we will apply your Featured placement.'
     const { data: profile } = await admin.from('candidate_profiles').select('id').eq('user_id', userId).maybeSingle()
     if (!profile) return { ok: true, status: 200, product, role, message: recordedMessage }
 

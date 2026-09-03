@@ -1,4 +1,4 @@
-// WHC Academy brand masterclass: Ground Wellbeing. Independent WHC training -
+// Talent House Academy brand masterclass: Ground Wellbeing. Independent Talent House training -
 // not affiliated with or endorsed by Ground Wellbeing. Answer key lives in
 // academy-more-answers/ground-wellbeing-masterclass.ts (server-only).
 

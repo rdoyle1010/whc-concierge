@@ -1,4 +1,4 @@
-// WHC Academy brand masterclass: Sodashi. Independent WHC training - not
+// Talent House Academy brand masterclass: Sodashi. Independent Talent House training - not
 // affiliated with or endorsed by Sodashi. Answer key lives in
 // academy-more-answers/sodashi-masterclass.ts (server-only).
 

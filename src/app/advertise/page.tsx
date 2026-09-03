@@ -25,7 +25,7 @@ const audienceCopy: Record<AdPlacementKey, { audience: string; where: string; be
   },
   academy_sponsor: {
     audience: 'Professionals actively developing their careers',
-    where: 'Inside the WHC Academy journey',
+    where: 'Inside the Talent House Academy journey',
     bestFor: 'Training, product houses, education, equipment and professional services',
   },
   jobs_talent_sponsor: {
@@ -40,7 +40,7 @@ const audienceCopy: Record<AdPlacementKey, { audience: string; where: string; be
   },
   journal_sponsor: {
     audience: 'Professionals and leaders reading industry editorial',
-    where: 'At the top of the WHC Journal',
+    where: 'At the top of the Talent House Journal',
     bestFor: 'Product houses, education, events and industry announcements',
   },
   journal_article_sponsor: {
@@ -60,17 +60,17 @@ const audienceCopy: Record<AdPlacementKey, { audience: string; where: string; be
   },
   agency_page_sponsor: {
     audience: 'Flexible-work professionals and the properties booking them',
-    where: 'On WHC agency and flexible-work pages',
+    where: 'On Talent House agency and flexible-work pages',
     bestFor: 'Insurance, payroll, training and products for freelance professionals',
   },
   intelligence_hero: {
     audience: 'Operators, group directors and senior professionals reading the market',
-    where: 'The picture box beside the WHC Intelligence masthead',
+    where: 'The picture box beside the Talent House Intelligence masthead',
     bestFor: 'Consultancies, equipment houses and groups who want to be seen as part of the industry conversation',
   },
   intelligence_band: {
     audience: 'Readers who have worked through the market report to the end',
-    where: 'The full-width panel that closes WHC Intelligence',
+    where: 'The full-width panel that closes Talent House Intelligence',
     bestFor: 'Brands and suppliers targeting decision-makers at the point they act on what they have read',
   },
   residency_page_sponsor: {
@@ -160,13 +160,13 @@ export default function AdvertisePage() {
         <div className="max-w-7xl mx-auto px-6 lg:px-8 py-16 md:py-20">
           <p className="text-[10px] uppercase tracking-[0.2em] text-[#555555] font-semibold mb-4">Advertise with Talent House Collective</p>
           <h1 className="text-[42px] md:text-[58px] leading-[1.02] tracking-[-0.05em] font-semibold text-ink max-w-4xl">A real placement, with a clear audience and clear terms.</h1>
-          <p className="text-[15px] leading-7 text-secondary max-w-2xl mt-5">Choose where your brand appears, pay securely through Stripe, then WHC reviews the creative before publication.</p>
+          <p className="text-[15px] leading-7 text-secondary max-w-2xl mt-5">Choose where your brand appears, pay securely through Stripe, then Talent House reviews the creative before publication.</p>
         </div>
       </section>
 
       <div className="max-w-7xl mx-auto px-6 lg:px-8 pt-8 space-y-3">
         {confirming && <div className="bg-blue-50 border border-blue-200 text-blue-800 rounded-xl p-5">Confirming your Stripe payment and creating the admin approval record…</div>}
-        {confirmation && <div className="bg-green-50 border border-green-200 text-green-800 rounded-xl p-5"><p className="font-medium flex items-center gap-2"><Check size={16} /> Payment confirmed and advert submitted.</p><p className="text-[13px] mt-1"><strong>{confirmation.brandName}</strong> · {confirmation.placement}. Status: awaiting WHC approval. A confirmation email has been sent to the address supplied.</p></div>}
+        {confirmation && <div className="bg-green-50 border border-green-200 text-green-800 rounded-xl p-5"><p className="font-medium flex items-center gap-2"><Check size={16} /> Payment confirmed and advert submitted.</p><p className="text-[13px] mt-1"><strong>{confirmation.brandName}</strong> · {confirmation.placement}. Status: awaiting Talent House approval. A confirmation email has been sent to the address supplied.</p></div>}
         {confirmationError && <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl p-5"><p className="font-medium">Payment return needs attention.</p><p className="text-[13px] mt-1">{confirmationError}</p></div>}
         {cancelled && <div className="bg-amber-50 border border-amber-200 text-amber-800 rounded-xl p-5">Checkout was cancelled. No advert has been submitted.</div>}
       </div>
@@ -211,7 +211,7 @@ export default function AdvertisePage() {
               <p><strong className="text-[#1c1c1c]">1.</strong> Submit your creative and accept the Advertising Terms.</p>
               <p><strong className="text-[#1c1c1c]">2.</strong> Complete Stripe checkout. Promotion codes can reduce the first checkout amount, including to £0 where valid.</p>
               <p><strong className="text-[#1c1c1c]">3.</strong> The booking is written to Admin as <strong>Pending Approval</strong>.</p>
-              <p><strong className="text-[#1c1c1c]">4.</strong> WHC reviews it, then approval makes the advert live in the placement you bought.</p>
+              <p><strong className="text-[#1c1c1c]">4.</strong> Talent House reviews it, then approval makes the advert live in the placement you bought.</p>
               <p><strong className="text-[#1c1c1c]">5.</strong> You receive an email when it is submitted and another when it goes live.</p>
             </div>
           </div>
@@ -229,13 +229,13 @@ export default function AdvertisePage() {
             <div className="mt-6 rounded-xl border border-[#dddddd] bg-[#f1f1f1] p-4">
               <label className="flex gap-3 cursor-pointer text-[12px] leading-5 text-[#555555]">
                 <input required type="checkbox" checked={termsAccepted} onChange={event => setTermsAccepted(event.target.checked)} className="mt-1 h-4 w-4" />
-                <span>I have read and agree to the <Link href="/advertising-terms" target="_blank" className="font-semibold text-[#1c1c1c] underline">Advertising Terms & Conditions</Link>. I understand this is a rolling monthly subscription, billing starts at checkout, and publication is subject to WHC approval.</span>
+                <span>I have read and agree to the <Link href="/advertising-terms" target="_blank" className="font-semibold text-[#1c1c1c] underline">Advertising Terms & Conditions</Link>. I understand this is a rolling monthly subscription, billing starts at checkout, and publication is subject to Talent House approval.</span>
               </label>
             </div>
 
             {error && <p className="text-[12px] text-red-600 mt-4">{error}</p>}
             <button disabled={busy || !termsAccepted} className="btn-primary w-full mt-6 disabled:opacity-50 inline-flex items-center justify-center gap-2">{busy ? 'Opening secure payment...' : <>Continue to Stripe - £{formatPounds(selectedPrice)}/month <ArrowRight size={13}/></>}</button>
-            <div className="flex gap-2 mt-4 text-[10px] leading-5 text-[#6b6b6b]"><ShieldCheck size={14} className="text-[#1c1c1c] shrink-0 mt-0.5" /><p>Payment does not automatically publish the advert. WHC approval is required before the placement can go live.</p></div>
+            <div className="flex gap-2 mt-4 text-[10px] leading-5 text-[#6b6b6b]"><ShieldCheck size={14} className="text-[#1c1c1c] shrink-0 mt-0.5" /><p>Payment does not automatically publish the advert. Talent House approval is required before the placement can go live.</p></div>
           </form>
         </div>
       </section>

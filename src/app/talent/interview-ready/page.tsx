@@ -194,7 +194,7 @@ export default function InterviewReadyPage() {
     <div className="mb-8 max-w-4xl">
       <p className="dashboard-eyebrow">Career development</p>
       <h1 className="dashboard-title">Interview Ready</h1>
-      <p className="dashboard-intro max-w-3xl">Know yourself. Know the role. Know the business. Interview Ready brings together your CV, WHC profile and the exact opportunity so you understand what matters and can practise with confidence.</p>
+      <p className="dashboard-intro max-w-3xl">Know yourself. Know the role. Know the business. Interview Ready brings together your CV, Talent House profile and the exact opportunity so you understand what matters and can practise with confidence.</p>
     </div>
 
     <div className="mb-8 border-l-2 border-accent bg-white/70 px-5 py-4">
@@ -205,9 +205,9 @@ export default function InterviewReadyPage() {
       <section className="dashboard-panel">
         <p className="dashboard-eyebrow">1. The opportunity</p>
         <h2 className="dashboard-section-title mb-2">What are you preparing for?</h2>
-        <p className="text-[12px] text-muted leading-5 mb-5">Choose a live WHC role and we use its full job description and property profile. For an external role, paste as much detail as you have.</p>
-        <label className="block text-[11px] font-medium text-ink mb-1.5">Live role on WHC</label>
-        <select aria-label="Live role on WHC" value={jobId} onChange={e => { setJobId(e.target.value); if (e.target.value) { setTargetRole(''); setCompanyName(''); setJobDescription('') } }} className="input-field text-[13px] mb-5">
+        <p className="text-[12px] text-muted leading-5 mb-5">Choose a live Talent House role and we use its full job description and property profile. For an external role, paste as much detail as you have.</p>
+        <label className="block text-[11px] font-medium text-ink mb-1.5">Live role on Talent House</label>
+        <select aria-label="Live role on Talent House" value={jobId} onChange={e => { setJobId(e.target.value); if (e.target.value) { setTargetRole(''); setCompanyName(''); setJobDescription('') } }} className="input-field text-[13px] mb-5">
           <option value="">Choose a role</option>
           {jobs.map(job => { const employer = Array.isArray(job.employer_profiles) ? job.employer_profiles[0] : job.employer_profiles; const company = employer?.property_name || employer?.company_name || 'Property'; return <option key={job.id} value={job.id}>{job.job_title} · {company}{job.location ? ` · ${job.location}` : ''}</option> })}
         </select>
@@ -219,7 +219,7 @@ export default function InterviewReadyPage() {
         <label className="block text-[11px] font-medium text-ink mb-1.5">Job description</label>
         <textarea aria-label="Job description" disabled={Boolean(jobId)} value={jobDescription} onChange={e => setJobDescription(e.target.value)} placeholder="Paste the complete job description here." rows={8} className="input-field text-[13px] resize-y disabled:opacity-45" />
         {selectedJob && <div className="mt-5 px-4 py-3 bg-surface text-[12px] text-secondary"><span className="font-medium text-ink">Selected:</span> {selectedJob.job_title}</div>}
-        <div className="mt-5 flex items-start gap-2 text-[11px] text-muted leading-5"><ShieldCheck size={14} className="text-accent shrink-0 mt-0.5" /><span>Property facts are shown only when supplied or verified in the WHC property profile. Missing facts are identified rather than guessed.</span></div>
+        <div className="mt-5 flex items-start gap-2 text-[11px] text-muted leading-5"><ShieldCheck size={14} className="text-accent shrink-0 mt-0.5" /><span>Property facts are shown only when supplied or verified in the Talent House property profile. Missing facts are identified rather than guessed.</span></div>
       </section>
 
       <section className="dashboard-panel">

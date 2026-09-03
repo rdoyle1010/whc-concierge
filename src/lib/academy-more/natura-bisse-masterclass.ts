@@ -1,4 +1,4 @@
-// WHC Academy brand masterclass: Natura Bisse. Independent WHC training - not
+// Talent House Academy brand masterclass: Natura Bisse. Independent Talent House training - not
 // affiliated with or endorsed by Natura Bisse. Answer key lives in
 // academy-more-answers/natura-bisse-masterclass.ts (server-only).
 

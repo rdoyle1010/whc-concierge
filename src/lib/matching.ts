@@ -209,7 +209,7 @@ export function calculateMatchScore(candidate:any, job:any): {
   const strength=rounded>=90?'Excellent':rounded>=75?'Strong':rounded>=60?'Good':'Partial'
   let matchExplanation=reasons.length?`${strength} match based on ${reasons.join(', ')}.`:''
   if (policy.levelGap===1&&policy.allowed) matchExplanation += ` This employer is open to candidates ready for the next career step.`
-  if (!policy.allowed&&policy.scope==='same_level') matchExplanation += ` This employer asked WHC to prioritise candidates already at this level.`
+  if (!policy.allowed&&policy.scope==='same_level') matchExplanation += ` This employer asked Talent House to prioritise candidates already at this level.`
   if (mode==='agency') matchExplanation += ` Weighted for agency work: treatment capability, availability, distance and reliability count most.`
   if (mode==='leadership') matchExplanation += ` Weighted for a leadership appointment: level, commercial and people experience count most.`
   if (salaryScore>=0&&salaryScore<50) matchExplanation += ` Note: the advertised salary sits below their stated expectation.`

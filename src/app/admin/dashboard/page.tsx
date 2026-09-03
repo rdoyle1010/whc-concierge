@@ -17,7 +17,7 @@ const SECTIONS = [
   { group: 'People & operations', label: 'Messages', desc: 'Enquiries and complaints from the contact form.', href: '/admin/messages', icon: <MessageSquare size={17} /> },
   { group: 'People & operations', label: 'Platform Reviews', desc: 'Read Talent and property feedback about Spa Platform.', href: '/admin/platform-reviews', icon: <MessageSquare size={17} /> },
   { group: 'People & operations', label: 'Complaints', desc: 'Resolve reported issues.', href: '/admin/complaints', icon: <AlertTriangle size={17} /> },
-  { group: 'People & operations', label: 'Managed Search', desc: 'Employer briefs for WHC-run recruitment.', href: '/admin/recruitment', icon: <Briefcase size={17} /> },
+  { group: 'People & operations', label: 'Managed Search', desc: 'Employer briefs for Talent House-run recruitment.', href: '/admin/recruitment', icon: <Briefcase size={17} /> },
   { group: 'Content & revenue', label: 'Website & Brand', desc: 'Control public content and identity.', href: '/admin/website', icon: <Palette size={17} /> },
   { group: 'Content & revenue', label: 'Public Pages', desc: 'Edit the wording and photography of each public page.', href: '/admin/website/pages', icon: <Palette size={17} /> },
   { group: 'Content & revenue', label: 'Revenue', desc: 'Recorded revenue and booked recurring value.', href: '/admin/revenue', icon: <CreditCard size={17} /> },
@@ -102,7 +102,7 @@ export default function AdminDashboard() {
           </button>
           {showHelp && (
             <div className="absolute right-0 top-12 z-20 w-[320px] rounded-2xl border border-border bg-white p-4 text-[12px] leading-5 text-secondary shadow-xl">
-              This panel checks live WHC platform data. Stripe means a paid entitlement belongs to an account with a Stripe customer record. Manual means access was granted outside Stripe. Comped Academy enrolments were granted free by an admin and are not a problem. The scale row shows how much data the platform is carrying so growth is visible before it becomes a performance problem.
+              This panel checks live Talent House platform data. Stripe means a paid entitlement belongs to an account with a Stripe customer record. Manual means access was granted outside Stripe. Comped Academy enrolments were granted free by an admin and are not a problem. The scale row shows how much data the platform is carrying so growth is visible before it becomes a performance problem.
             </div>
           )}
         </div>

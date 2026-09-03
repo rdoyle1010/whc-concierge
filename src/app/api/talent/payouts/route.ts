@@ -79,7 +79,7 @@ export async function POST(req: NextRequest) {
   } catch (e: any) {
     const message = String(e?.message || '')
     if (message.toLowerCase().includes('connect')) {
-      return NextResponse.json({ error: 'Payout onboarding is not available yet - WHC is finishing its Stripe Connect setup. Your payout will be arranged directly in the meantime.' }, { status: 503 })
+      return NextResponse.json({ error: 'Payout onboarding is not available yet - Talent House is finishing its Stripe Connect setup. Your payout will be arranged directly in the meantime.' }, { status: 503 })
     }
     return NextResponse.json({ error: message || 'Could not start payout setup.' }, { status: 500 })
   }

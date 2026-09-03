@@ -64,7 +64,7 @@ export default function RetentionPanel() {
         <div>
           <p className="text-[15px] font-semibold text-ink">Data retention</p>
           <p className="mt-1 max-w-2xl text-[12px] leading-5 text-muted">
-            WHC keeps personal data only for the periods below. This runs on demand rather than on a schedule, so it should be run periodically - roughly once a month is enough to keep the platform inside its own policy. The preview below is a dry run and deletes nothing.
+            Talent House keeps personal data only for the periods below. This runs on demand rather than on a schedule, so it should be run periodically - roughly once a month is enough to keep the platform inside its own policy. The preview below is a dry run and deletes nothing.
           </p>
         </div>
       </div>

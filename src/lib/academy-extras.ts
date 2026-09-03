@@ -1,4 +1,4 @@
-// WHC Academy lesson enrichment - imagery, the guest's viewpoint, the
+// Talent House Academy lesson enrichment - imagery, the guest's viewpoint, the
 // career benefit and quick tips for every lesson. Kept separate from
 // academy.ts so course text, quizzes and answer keys stay untouched.
 // Lessons are matched by index; images are the same licence-free Unsplash

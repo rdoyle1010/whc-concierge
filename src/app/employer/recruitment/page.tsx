@@ -72,7 +72,7 @@ export default function EmployerRecruitmentPage() {
       const json = await res.json()
       if (!res.ok) { setError(json.error || 'Could not send your request.'); return }
       setRequests(current => [json.request, ...current])
-      setNotice('Request sent. WHC will come back to you within one working day.')
+      setNotice('Request sent. Talent House will come back to you within one working day.')
       setJobTitle(''); setRoleLevel(''); setSalaryMin(''); setSalaryMax(''); setLocation(''); setTimeline(''); setBrief('')
     } catch {
       setError('Could not send your request. Please try again.')
@@ -85,9 +85,9 @@ export default function EmployerRecruitmentPage() {
     <DashboardShell role="employer">
       <div className="max-w-3xl">
         <p className="dashboard-eyebrow">Recruitment service</p>
-        <h1 className="dashboard-title">Let WHC run the search</h1>
+        <h1 className="dashboard-title">Let Talent House run the search</h1>
         <p className="dashboard-intro mb-6 max-w-2xl">
-          For roles you would rather not run yourself, WHC manages the whole search: we work your brief against the verified
+          For roles you would rather not run yourself, Talent House manages the whole search: we work your brief against the verified
           register, screen for qualifications, brands and commercial fit, and send you a shortlist worth interviewing.
           You pay only on placement.
         </p>
@@ -106,7 +106,7 @@ export default function EmployerRecruitmentPage() {
           <div className="dashboard-card">
             <Users size={18} className="text-[#1c1c1c] mb-2" />
             <p className="text-[13px] font-semibold text-ink mb-1">Specialist pool</p>
-            <p className="text-[12px] text-secondary leading-relaxed">Every candidate comes from the WHC register: spa, wellness and luxury hospitality only.</p>
+            <p className="text-[12px] text-secondary leading-relaxed">Every candidate comes from the Talent House register: spa, wellness and luxury hospitality only.</p>
           </div>
         </div>
 
@@ -162,7 +162,7 @@ export default function EmployerRecruitmentPage() {
           {notice && <p role="status" className="text-[12.5px] text-green-700 font-medium mb-3 inline-flex items-center gap-1.5"><Check size={14} /> {notice}</p>}
 
           <button type="button" onClick={submit} disabled={submitting} className="btn-primary text-[13px]">
-            {submitting ? 'Sending...' : 'Send the brief to WHC'}
+            {submitting ? 'Sending...' : 'Send the brief to Talent House'}
           </button>
           <p className="text-[11px] text-muted mt-3">No cost and no commitment at this stage - sending a brief starts a conversation, not a contract.</p>
         </div>
@@ -172,7 +172,7 @@ export default function EmployerRecruitmentPage() {
           {loading ? (
             <p className="text-[13px] text-secondary">Loading...</p>
           ) : requests.length === 0 ? (
-            <p className="text-[13px] text-secondary">No searches yet. Send a brief above and WHC takes it from there.</p>
+            <p className="text-[13px] text-secondary">No searches yet. Send a brief above and Talent House takes it from there.</p>
           ) : (
             <div className="space-y-3">
               {requests.map(request => (

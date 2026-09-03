@@ -37,7 +37,7 @@ function LearningFramework({ title }: { title: string }) {
     <div className="mb-6 rounded-2xl border border-[#dddddd] bg-[#f1f1f1] p-5">
       <div className="mb-4 flex items-start justify-between gap-3">
         <div>
-          <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#1c1c1c]">WHC learning framework</p>
+          <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#1c1c1c]">Talent House learning framework</p>
           <p className="mt-1 text-[14px] font-semibold text-[#1c1c1c]">Do more than read {title.toLowerCase()}.</p>
           <p className="mt-1 text-[12px] leading-5 text-[#555555]">Work through the reason, the method, the judgement calls and the practical application.</p>
         </div>
@@ -226,7 +226,7 @@ export default function CoursePlayerPage() {
         <img decoding="async" src={course.image_url || courseImage(slug)} alt="" className="absolute inset-0 w-full h-full object-cover" />
         <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/35 to-transparent" />
         <div className="absolute bottom-0 left-0 right-0 p-6">
-          <p className="text-[10px] uppercase tracking-[0.25em] text-white/80 font-semibold mb-1.5">WHC Academy · {course.category}</p>
+          <p className="text-[10px] uppercase tracking-[0.25em] text-white/80 font-semibold mb-1.5">Talent House Academy · {course.category}</p>
           <h1 className="text-2xl md:text-3xl font-serif font-bold text-white">{course.title}</h1>
         </div>
       </div>

@@ -7,7 +7,7 @@ import { calculateMatchScore } from '@/lib/matching'
 
 // Career Intelligence: where the professional sits, what the live market is
 // asking for, the gaps between the two, and the course that closes each gap.
-// Salary signals follow the WHC credibility rules - a number is only shown
+// Salary signals follow the Talent House credibility rules - a number is only shown
 // with its sample size, and below 30 records nothing is shown at all.
 
 const SALARY_SUPPRESS_BELOW = 30
@@ -88,7 +88,7 @@ export async function GET(req: NextRequest) {
   }
 
   // Gap -> course recommendations: demanded skills the professional lacks,
-  // each mapped to the WHC course that teaches it, plus the ladder's
+  // each mapped to the Talent House course that teaches it, plus the ladder's
   // recommended next courses.
   const { data: enrolments } = await admin.from('course_enrollments')
     .select('course_slug, completed_at').eq('candidate_id', candidate.id).not('paid_at', 'is', null)

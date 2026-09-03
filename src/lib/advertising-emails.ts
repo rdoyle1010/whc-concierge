@@ -25,7 +25,7 @@ export async function sendAdvertSubmittedEmail(email: string, brand: string, pla
     <h1 style="font-size:24px">Your campaign is awaiting approval</h1>
     <p>Thank you, ${brand}. Your <strong>${placement}</strong> booking has been received.</p>
     <p><strong>Price:</strong> £${monthlyRate.toFixed(2)} per month. This is a rolling monthly subscription and renews until cancelled.</p>
-    <p>Billing begins at checkout. The advert will not appear publicly until WHC has reviewed and approved the creative.</p>
+    <p>Billing begins at checkout. The advert will not appear publicly until Talent House has reviewed and approved the creative.</p>
     <p>We aim to review submissions within 2 working days. We will email you again as soon as it is live.</p>
   `))
 }
@@ -34,7 +34,7 @@ export async function sendAdvertLiveEmail(email: string, brand: string, placemen
   return sendEmail(email, `Your ${placement} advert is now live`, wrap(`
     <h1 style="font-size:24px">Your campaign is live</h1>
     <p>${brand}, your <strong>${placement}</strong> advert was approved and published on <strong>${liveDate}</strong>.</p>
-    <p>Your subscription continues monthly until cancelled. WHC tracks impressions and clicks while the advert is active.</p>
+    <p>Your subscription continues monthly until cancelled. Talent House tracks impressions and clicks while the advert is active.</p>
   `))
 }
 
@@ -42,6 +42,6 @@ export async function sendAdvertRejectedEmail(email: string, brand: string, plac
   return sendEmail(email, `Update on your ${placement} advert`, wrap(`
     <h1 style="font-size:24px">Your campaign needs attention</h1>
     <p>${brand}, your <strong>${placement}</strong> creative has not been approved for publication in its current form.</p>
-    <p>Please contact WHC so we can agree the required changes. Your advert remains offline.</p>
+    <p>Please contact Talent House so we can agree the required changes. Your advert remains offline.</p>
   `))
 }

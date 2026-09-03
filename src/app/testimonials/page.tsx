@@ -6,14 +6,14 @@ import { unstable_cache } from 'next/cache'
 import { createAdminClient } from '@/lib/supabase/admin'
 
 export const metadata: Metadata = {
-  title: { absolute: 'How WHC proves what it publishes | Talent House Collective' },
-  description: 'Every review on WHC comes from a completed, paid engagement between two verified accounts. Here is the standard, and what is published today.',
+  title: { absolute: 'How Talent House proves what it publishes | Talent House Collective' },
+  description: 'Every review on Talent House comes from a completed, paid engagement between two verified accounts. Here is the standard, and what is published today.',
   alternates: { canonical: 'https://talenthousecollective.co.uk/testimonials' },
 }
 
-// Reviews on WHC are earned, not collected. This page used to carry eight
+// Reviews on Talent House are earned, not collected. This page used to carry eight
 // invented quotes with a line underneath admitting they were invented, which
-// told a prospective employer exactly one thing: that WHC had no customers.
+// told a prospective employer exactly one thing: that Talent House had no customers.
 // It now publishes the standard, and whatever genuinely meets it.
 //
 // Reviewers are published by role and engagement, never by name. A named
@@ -54,7 +54,7 @@ const getPublishedReviews = unstable_cache(async (): Promise<PublishedReview[]> 
       id: row.id,
       rating: Number(row.rating),
       text: String(row.text).trim(),
-      role: roleByUser.get(row.reviewer_id) || 'Verified WHC professional',
+      role: roleByUser.get(row.reviewer_id) || 'Verified Talent House professional',
       source: row.booking_id ? 'After a completed Agency shift' : 'After a completed placement',
       when: row.created_at || null,
     }))
@@ -102,7 +102,7 @@ const STANDARD = [
     body: 'Reviews are published by professional level and by the kind of engagement that produced them. We do not attach a person’s name to a public opinion of a former employer, and we do not invite properties to solicit reviews from people they are still paying.',
   },
   {
-    heading: 'Nothing is written on WHC’s behalf',
+    heading: 'Nothing is written on Talent House’s behalf',
     body: 'No review on this platform has ever been drafted, edited, arranged or paid for by us. Where there is nothing to publish, this page says so rather than filling the space.',
   },
 ]
@@ -117,7 +117,7 @@ export default async function ProofPage() {
         <section className="border-b border-border">
           <div className="max-w-[880px] mx-auto px-6 lg:px-8 py-16">
             <p className="public-eyebrow mb-5">Proof</p>
-            <h1 className="public-title mb-5">How WHC proves what it publishes.</h1>
+            <h1 className="public-title mb-5">How Talent House proves what it publishes.</h1>
             <p className="text-[16px] leading-relaxed text-secondary max-w-[62ch]">
               Most recruitment sites open with testimonials. Very few will tell you where they came
               from. This page is the reverse: the standard first, then whatever currently meets it,
@@ -180,7 +180,7 @@ export default async function ProofPage() {
             ) : (
               <div className="border border-border p-8">
                 <p className="text-[16px] text-ink leading-relaxed max-w-[62ch] mb-4">
-                  Nothing yet. WHC is early, and no engagement has completed and been reviewed under
+                  Nothing yet. Talent House is early, and no engagement has completed and been reviewed under
                   the standard above.
                 </p>
                 <p className="text-[14px] text-secondary leading-relaxed max-w-[62ch]">

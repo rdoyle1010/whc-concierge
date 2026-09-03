@@ -136,11 +136,11 @@ const getVerifiedReviews = unstable_cache(async (): Promise<VerifiedReview[]> =>
         rating: Number(row.rating),
         comment: String(row.text).trim(),
         createdAt: row.created_at || null,
-        source: row.booking_id ? 'Completed WHC agency shift' : 'WHC placement',
+        source: row.booking_id ? 'Completed Talent House agency shift' : 'Talent House placement',
         // Published by role, never by name. Nobody consented to having their
         // legal name attached, on the open web, to a public opinion of a
         // named former employer.
-        reviewerName: reviewer?.role_level || 'Verified WHC professional',
+        reviewerName: reviewer?.role_level || 'Verified Talent House professional',
         reviewerRole: null,
       }
     })
@@ -178,9 +178,9 @@ function NumbersStrip({ numbers }: { numbers: LiveNumbers }) {
   if (!items.length) return null
 
   return (
-    <section aria-label="Live on WHC today" className="border-b border-border bg-white">
+    <section aria-label="Live on Talent House today" className="border-b border-border bg-white">
       <div className="mx-auto max-w-7xl px-6 py-10 lg:px-8">
-        <Eyebrow>Live on WHC today</Eyebrow>
+        <Eyebrow>Live on Talent House today</Eyebrow>
         <div className="mt-6 grid grid-cols-2 gap-x-8 gap-y-6 md:grid-cols-4">
           {items.map(item => (
             <div key={item.label} className="border-t border-border pt-3">
@@ -200,7 +200,7 @@ function RoutesSection() {
   const routes = [
     {
       title: "I'm hiring",
-      copy: 'Post roles to matched, vetted professionals, book flexible cover by the hour, or have WHC run the whole search.',
+      copy: 'Post roles to matched, vetted professionals, book flexible cover by the hour, or have Talent House run the whole search.',
       href: '/register?role=employer',
       cta: 'Find exceptional people',
     },
@@ -319,7 +319,7 @@ function FeaturedPlacementsSection({ placements }: { placements: { properties: F
   return (
     <section className="border-b border-border bg-[#f1f1f1]">
       <div className="mx-auto max-w-7xl px-6 py-14 lg:px-8">
-        <Eyebrow>Featured on WHC</Eyebrow>
+        <Eyebrow>Featured on Talent House</Eyebrow>
         <div className="mt-6 grid gap-x-14 gap-y-8 md:grid-cols-2">
           {placements.properties.length > 0 && (
             <div>
@@ -367,9 +367,9 @@ function VerifiedReviewsSection({ content, reviews }: { content: WebsiteContent;
   return (
     <section className="border-b border-border bg-white">
       <div className="mx-auto max-w-7xl px-6 py-14 lg:px-8">
-        <Eyebrow>Verified on WHC</Eyebrow>
+        <Eyebrow>Verified on Talent House</Eyebrow>
         <h2 className="site-heading mt-2 text-[26px] font-semibold leading-tight md:text-[32px]">{content.testimonials.heading}</h2>
-        <p className="mt-4 max-w-2xl text-[12px] italic leading-6 text-muted">Reviews on WHC come only from verified placements and completed shifts.</p>
+        <p className="mt-4 max-w-2xl text-[12px] italic leading-6 text-muted">Reviews on Talent House come only from verified placements and completed shifts.</p>
         <div className="mt-10 grid gap-x-14 gap-y-12 md:grid-cols-3">
           {reviews.map(review => (
             <article key={review.id} className="border-t border-border pt-6">

@@ -88,9 +88,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Only draft roles can be published.' }, { status: 400 })
   }
   // Roles from unapproved employers must never reach talent: they'd render
-  // with no company details, and approval is WHC's quality gate.
+  // with no company details, and approval is Talent House's quality gate.
   if ((employer as any).approval_status !== 'approved') {
-    return NextResponse.json({ error: 'Your employer account is awaiting WHC approval. You can prepare roles as drafts now - publishing and payment unlock the moment your account is approved.' }, { status: 403 })
+    return NextResponse.json({ error: 'Your employer account is awaiting Talent House approval. You can prepare roles as drafts now - publishing and payment unlock the moment your account is approved.' }, { status: 403 })
   }
   if (String(job.job_title || '').trim().length < 5 || String(job.job_description || '').trim().length < 10 || !String(job.location || '').trim()) {
     return NextResponse.json({ error: 'Complete the job title, description and location before publishing.' }, { status: 400 })

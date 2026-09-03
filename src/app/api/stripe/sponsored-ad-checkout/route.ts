@@ -60,7 +60,7 @@ export async function POST(req: NextRequest) {
         price_data: {
           currency: 'gbp',
           product_data: {
-            name: `WHC Sponsored Advert - ${setting.label || config.label}`,
+            name: `Talent House Sponsored Advert - ${setting.label || config.label}`,
             description: `${setting.description || config.description} Rolling monthly subscription; renews until cancelled.`,
           },
           unit_amount: setting.price_pence,

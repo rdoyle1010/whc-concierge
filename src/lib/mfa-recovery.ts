@@ -16,7 +16,7 @@ import { createHash, randomBytes, timingSafeEqual } from 'crypto'
 // BOTH a valid password session and a secret that was only ever shown once,
 // so it is still two factors.
 //
-// Only hashes are stored. WHC cannot read a recovery code, cannot email one
+// Only hashes are stored. Talent House cannot read a recovery code, cannot email one
 // back to somebody who lost them, and a database leak yields nothing usable.
 
 export const RECOVERY_CODE_COUNT = 10

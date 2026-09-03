@@ -5,7 +5,7 @@ import { BadgeCheck, Clock, FileText, Plus, ShieldQuestion, X } from 'lucide-rea
 import { useDialog } from '@/components/useDialog'
 
 // Structured certificate manager: each document gets a name, an awarding
-// body, a country and a year, then goes to WHC for review. Verified
+// body, a country and a year, then goes to Talent House for review. Verified
 // certificates show to employers with a trust badge instead of an
 // unexplained "Certificate 1" link.
 
@@ -24,7 +24,7 @@ type Certificate = {
 
 const STATUS_META: Record<Certificate['status'], { label: string; className: string }> = {
   submitted: { label: 'Under review', className: 'bg-amber-50 text-amber-700' },
-  verified: { label: 'WHC verified', className: 'bg-green-50 text-green-700' },
+  verified: { label: 'Talent House verified', className: 'bg-green-50 text-green-700' },
   rejected: { label: 'Not verified', className: 'bg-red-50 text-red-600' },
   more_info: { label: 'More info needed', className: 'bg-blue-50 text-blue-700' },
 }
@@ -112,13 +112,13 @@ export default function CertificateManager({ userId }: { userId: string | null }
         <p className="text-[12px] font-semibold text-ink">Qualifications & certificates</p>
         <button type="button" onClick={() => openForm()} className="btn-secondary inline-flex items-center gap-1.5 text-[12px]"><Plus size={13} /> Add certificate</button>
       </div>
-      <p className="text-[11.5px] text-muted mb-3">Name each certificate so employers understand it - especially if you trained outside the UK. WHC reviews every submission; verified certificates carry a trust badge on your profile.</p>
+      <p className="text-[11.5px] text-muted mb-3">Name each certificate so employers understand it - especially if you trained outside the UK. Talent House reviews every submission; verified certificates carry a trust badge on your profile.</p>
       <details className="mb-3 rounded-lg border border-border bg-[#f1f1f1] px-3 py-2">
         <summary className="cursor-pointer text-[12px] font-semibold text-ink">Help with certificates - lost documents, overseas training, questions</summary>
         <div className="mt-2 space-y-1.5 text-[11.5px] leading-relaxed text-secondary">
           <p><strong className="text-ink">Lost or missing certificate?</strong> Contact your awarding body or training school - most (CIDESCO, CIBTAC, ITEC, VTCT, City &amp; Guilds) can reissue certificates or provide a verification letter.</p>
           <p><strong className="text-ink">Trained outside the UK?</strong> Submit your certificate in its original language with an English translation if you have one. For a formal UK comparison of an international qualification, UK ENIC provides a <a href="https://www.enic.org.uk/individuals/statement-of-comparability" target="_blank" rel="noopener noreferrer" className="underline text-ink">Statement of Comparability</a>.</p>
-          <p><strong className="text-ink">Not sure what to submit?</strong> Upload what you have and add honest details - the WHC review will tell you exactly what is needed, and asking is never held against you.</p>
+          <p><strong className="text-ink">Not sure what to submit?</strong> Upload what you have and add honest details - the Talent House review will tell you exactly what is needed, and asking is never held against you.</p>
           <p><strong className="text-ink">Anything else:</strong> message us through the Contact page and choose &quot;certification&quot; - a real person reads every one.</p>
         </div>
       </details>
@@ -148,7 +148,7 @@ export default function CertificateManager({ userId }: { userId: string | null }
                 </div>
               </div>
               {(certificate.status === 'rejected' || certificate.status === 'more_info') && certificate.review_note && (
-                <p className="mt-1.5 text-[11.5px] text-secondary bg-[#f1f1f1] rounded px-2.5 py-1.5"><ShieldQuestion size={12} className="inline mr-1 -mt-0.5" />WHC: {certificate.review_note} <button type="button" onClick={() => openForm(certificate.document_url, certificate.title)} className="underline font-medium">Resubmit</button></p>
+                <p className="mt-1.5 text-[11.5px] text-secondary bg-[#f1f1f1] rounded px-2.5 py-1.5"><ShieldQuestion size={12} className="inline mr-1 -mt-0.5" />Talent House: {certificate.review_note} <button type="button" onClick={() => openForm(certificate.document_url, certificate.title)} className="underline font-medium">Resubmit</button></p>
               )}
             </div>
           ))}
@@ -157,7 +157,7 @@ export default function CertificateManager({ userId }: { userId: string | null }
             <div key={url} className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-dashed border-amber-300 bg-amber-50/40 px-3 py-2.5">
               <div className="min-w-0">
                 <p className="text-[12.5px] font-medium text-ink inline-flex items-center gap-1.5"><FileText size={13} className="shrink-0 text-amber-600" /> Uploaded certificate {i + 1}</p>
-                <p className="text-[11px] text-amber-700 mt-0.5">Needs details before WHC can review it</p>
+                <p className="text-[11px] text-amber-700 mt-0.5">Needs details before Talent House can review it</p>
               </div>
               <div className="flex items-center gap-2 shrink-0">
                 <a href={url} target="_blank" rel="noopener noreferrer" className="text-[11px] underline text-secondary">View</a>
@@ -175,7 +175,7 @@ export default function CertificateManager({ userId }: { userId: string | null }
               <h2 id="certificate-manager-form-heading" className="font-serif text-lg font-bold text-ink">Add a certificate</h2>
               <button type="button" onClick={() => setFormOpen(false)} aria-label="Close" className="p-2 -m-2 text-gray-300 hover:text-ink"><X size={20} /></button>
             </div>
-            <p className="text-[12px] text-secondary mb-4">Tell us what this certificate is. WHC reviews it, and once verified it shows to employers with a trust badge.</p>
+            <p className="text-[12px] text-secondary mb-4">Tell us what this certificate is. Talent House reviews it, and once verified it shows to employers with a trust badge.</p>
 
             <label className="block text-[12px] font-semibold text-ink mb-1.5">Qualification name *</label>
             <input aria-label="Qualification name" value={title} onChange={e => setTitle(e.target.value)} placeholder="e.g. CIDESCO Diploma in Beauty & Spa Therapy" className="input-field text-[13px] w-full mb-3" />
@@ -201,7 +201,7 @@ export default function CertificateManager({ userId }: { userId: string | null }
             )}
 
             {message && <p className="text-[12px] text-red-600 mb-3">{message}</p>}
-            <button type="button" onClick={submit} disabled={busy || uploading || !formDoc || title.trim().length < 3} className="btn-primary w-full text-[13px] disabled:opacity-50">{busy ? 'Sending...' : 'Send to WHC for review'}</button>
+            <button type="button" onClick={submit} disabled={busy || uploading || !formDoc || title.trim().length < 3} className="btn-primary w-full text-[13px] disabled:opacity-50">{busy ? 'Sending...' : 'Send to Talent House for review'}</button>
             <p className="text-[11px] text-muted mt-2 inline-flex items-center gap-1"><Clock size={11} /> Reviews usually complete within two working days.</p>
           </div>
         </div>

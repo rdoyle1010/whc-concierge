@@ -96,7 +96,7 @@ export default function EmployerRegisterPage() {
     { label: 'Featured Job', value: `${JOB_TIERS.Platinum.display} for ${JOB_TIERS.Platinum.days} days`, note: 'Priority placement and a relevant talent email.' },
     { label: 'Employer Pro', value: `Standard Jobs at ${pounds(EMPLOYER_MEMBERSHIPS.pro.discountedStandardJobPrice)}`, note: `${pounds(EMPLOYER_MEMBERSHIPS.pro.price)} a year.` },
     { label: 'Employer Group', value: `${EMPLOYER_MEMBERSHIPS.group.includedJobs} Standard Jobs included`, note: `${pounds(EMPLOYER_MEMBERSHIPS.group.price)} a membership year.` },
-    { label: 'Agency cover', value: `${percent(AGENCY_PLATFORM_FEE_PCT)} WHC fee`, note: 'The professional keeps 100% of the agreed rate; the property pays the rate plus the WHC fee.' },
+    { label: 'Agency cover', value: `${percent(AGENCY_PLATFORM_FEE_PCT)} Talent House fee`, note: 'The professional keeps 100% of the agreed rate; the property pays the rate plus the Talent House fee.' },
     { label: 'Managed recruitment', value: `${percent(RECRUITMENT_SERVICE_RATE)} of first-year salary`, note: 'With a replacement guarantee.' },
   ]
 
@@ -145,14 +145,14 @@ export default function EmployerRegisterPage() {
                 <summary className="cursor-pointer px-4 py-3 text-[13px] font-semibold text-ink hover:bg-surface">Read the full Terms &amp; Conditions - Employer</summary>
                 <div className="border-t border-border px-4 py-4 text-[12px] text-secondary leading-relaxed">
                   <p className="mb-2">By registering a property on Talent House Collective, you agree to the following:</p>
-                  <p className="mb-2">1. <strong>Accuracy of listings:</strong> All job listings and company information must be accurate and represent genuine vacancies. WHC reserves the right to remove misleading listings.</p>
-                  <p className="mb-2">2. <strong>Account review:</strong> Employer accounts may be reviewed and approved by WHC before protected Talent or Agency features become available.</p>
+                  <p className="mb-2">1. <strong>Accuracy of listings:</strong> All job listings and company information must be accurate and represent genuine vacancies. Talent House reserves the right to remove misleading listings.</p>
+                  <p className="mb-2">2. <strong>Account review:</strong> Employer accounts may be reviewed and approved by Talent House before protected Talent or Agency features become available.</p>
                   <p className="mb-2">3. <strong>Job posting fees:</strong> Standard Jobs are {JOB_TIERS.Bronze.display} for {JOB_TIERS.Bronze.days} days and Featured Jobs are {JOB_TIERS.Platinum.display} for {JOB_TIERS.Platinum.days} days. Employer Pro currently receives {pounds(EMPLOYER_MEMBERSHIPS.pro.discountedStandardJobPrice)} Standard Jobs and Employer Group currently includes up to {EMPLOYER_MEMBERSHIPS.group.includedJobs} Standard Jobs per membership year. Fees are generally non-refundable once a paid listing is published.</p>
-                  <p className="mb-2">4. <strong>Agency bookings:</strong> The professional keeps 100% of the agreed shift value. The property pays that agreed value plus a {Math.round(AGENCY_PLATFORM_FEE_PCT * 100)}% WHC platform fee through the Platform. WHC manages the professional payout after the completed shift, subject to any cancellation, dispute or adjustment process.</p>
+                  <p className="mb-2">4. <strong>Agency bookings:</strong> The professional keeps 100% of the agreed shift value. The property pays that agreed value plus a {Math.round(AGENCY_PLATFORM_FEE_PCT * 100)}% Talent House platform fee through the Platform. Talent House manages the professional payout after the completed shift, subject to any cancellation, dispute or adjustment process.</p>
                   <p className="mb-2">5. <strong>Candidate data:</strong> You agree to handle Talent personal data in accordance with applicable data-protection law and our <a href="/privacy" className="underline text-ink">Privacy Policy</a>. Information accessed through the Platform must not be shared with unauthorised third parties.</p>
                   <p className="mb-2">6. <strong>Professional conduct:</strong> You agree to treat Talent fairly and professionally. Discriminatory, misleading or abusive practices are prohibited.</p>
-                  <p className="mb-2">7. <strong>Payments:</strong> Online Platform payments are processed securely through Stripe or another payment provider shown at checkout. You remain responsible for employment salary and compensation terms you advertise unless WHC expressly contracts otherwise.</p>
-                  <p>8. <strong>Full terms:</strong> Your use of WHC is also subject to the current full Terms of Service linked below.</p>
+                  <p className="mb-2">7. <strong>Payments:</strong> Online Platform payments are processed securely through Stripe or another payment provider shown at checkout. You remain responsible for employment salary and compensation terms you advertise unless Talent House expressly contracts otherwise.</p>
+                  <p>8. <strong>Full terms:</strong> Your use of Talent House is also subject to the current full Terms of Service linked below.</p>
                 </div>
               </details>
 
@@ -170,7 +170,7 @@ export default function EmployerRegisterPage() {
           <aside className="lg:col-span-5" aria-labelledby="emp-charges-heading">
             <div className="bg-[#1c1c1c] p-8 xl:p-10 lg:sticky lg:top-8">
               <p className="text-[10px] uppercase tracking-[0.2em] text-white/50 font-semibold">In plain sight</p>
-              <h2 id="emp-charges-heading" className="mt-3 text-white text-[24px] leading-tight tracking-[-0.02em] font-serif font-semibold">How WHC charges</h2>
+              <h2 id="emp-charges-heading" className="mt-3 text-white text-[24px] leading-tight tracking-[-0.02em] font-serif font-semibold">How Talent House charges</h2>
               <p className="mt-3 text-[13px] leading-6 text-white/60">No hidden commercial terms. The numbers below are the same ones written into the agreement you accept on this page.</p>
 
               <dl className="mt-8">

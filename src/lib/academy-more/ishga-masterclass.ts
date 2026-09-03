@@ -1,4 +1,4 @@
-// WHC Academy brand masterclass: ishga. Independent WHC training - not
+// Talent House Academy brand masterclass: ishga. Independent Talent House training - not
 // affiliated with or endorsed by ishga. Answer key lives in
 // academy-more-answers/ishga-masterclass.ts (server-only).
 

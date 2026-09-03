@@ -15,7 +15,7 @@ export const content: CourseContent = {
     `Apply ongoing consent, accurate record-keeping and warm, professional referral as everyday specialist-care practice`,
   ],
   prerequisites: 'A recognised therapy qualification. This awareness course supplements, and never replaces, specialist clinical training.',
-  author: { name: 'WHC Academy', role: 'Developed by Wellness House Collective' },
+  author: { name: 'Talent House Academy', role: 'Developed by Wellness House Collective' },
   references: [
     { label: 'NHS website - general health information for the public', url: 'https://www.nhs.uk' },
     { label: `Your own spa's written protocols, consultation forms and insurance documents - the governing references for everything in this course` },

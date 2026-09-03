@@ -32,7 +32,7 @@ export async function POST(req: NextRequest) {
     }
     const { name, email, subject, message, type } = validation.data!
 
-    const emailSubject = `New WHC Contact: ${type || 'general'} - ${subject}`
+    const emailSubject = `New Talent House Contact: ${type || 'general'} - ${subject}`
 
     const html = `
       <div style="font-family: Inter, -apple-system, sans-serif; max-width: 560px; margin: 0 auto; padding: 40px 20px;">

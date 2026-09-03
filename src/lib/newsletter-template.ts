@@ -73,7 +73,7 @@ export function renderNewsletterHtml(
           ${opts.test
             ? `<div style="margin-top:10px;font-weight:700">TEST MESSAGE - not a live marketing send.</div>`
             : opts.unsubscribeUrl
-              ? `<div style="margin-top:10px">You are receiving this optional email because you confirmed your WHC marketing or newsletter preference. <a href="${escapeHtml(opts.unsubscribeUrl)}" style="color:#4d4d4d">Unsubscribe</a> · <a href="https://talenthousecollective.co.uk/privacy" style="color:#4d4d4d">Privacy policy</a></div>`
+              ? `<div style="margin-top:10px">You are receiving this optional email because you confirmed your Talent House marketing or newsletter preference. <a href="${escapeHtml(opts.unsubscribeUrl)}" style="color:#4d4d4d">Unsubscribe</a> · <a href="https://talenthousecollective.co.uk/privacy" style="color:#4d4d4d">Privacy policy</a></div>`
               : ''}
         </td></tr>
       </table>

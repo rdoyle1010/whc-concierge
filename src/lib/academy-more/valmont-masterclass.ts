@@ -1,4 +1,4 @@
-// WHC Academy brand masterclass: Valmont. Independent WHC training - not
+// Talent House Academy brand masterclass: Valmont. Independent Talent House training - not
 // affiliated with or endorsed by Valmont. Answer key lives in
 // academy-more-answers/valmont-masterclass.ts (server-only).
 

@@ -11,7 +11,7 @@ const content: CourseContent = {
     'Close a treatment with a gradual landing, an unhurried re-entry ritual and a findings-based aftercare conversation that converts single bookings into treatment plans',
   ],
   prerequisites: `A recognised massage qualification; this course refines professional delivery rather than teaching technique from scratch.`,
-  author: { name: 'WHC Academy', role: 'Developed by Wellness House Collective' },
+  author: { name: 'Talent House Academy', role: 'Developed by Wellness House Collective' },
   references: [
     { label: 'UK Spa Association - industry resources and operational guidance', url: 'https://www.spa-uk.org' },
     { label: `Your spa's own treatment protocols and brand training - house sequence, timings and draping style always take precedence` },

@@ -5,7 +5,7 @@ import { DEFAULT_LOGO } from '@/lib/site-content-values'
 
 // The published logo is resolved once on the server in layout.tsx and handed
 // down here. Reading it from context rather than fetching it in the browser
-// is what stops a custom logo flashing the bundled WHC artwork on first paint.
+// is what stops a custom logo flashing the bundled Talent House artwork on first paint.
 
 export type SiteLogo = { url: string; alt: string; fit: 'fill' | 'contain' }
 

@@ -59,8 +59,8 @@ export default function EmployerSocialPage() {
   }
 
   const platforms = [
-    { name: 'LinkedIn', icon: Linkedin, status: 'Share now', text: 'Share the live WHC job link into your company or personal LinkedIn feed.' },
-    { name: 'Facebook', icon: Facebook, status: 'Share now', text: 'Share live vacancies directly to Facebook with the WHC application link.' },
+    { name: 'LinkedIn', icon: Linkedin, status: 'Share now', text: 'Share the live Talent House job link into your company or personal LinkedIn feed.' },
+    { name: 'Facebook', icon: Facebook, status: 'Share now', text: 'Share live vacancies directly to Facebook with the Talent House application link.' },
     { name: 'Instagram', icon: Instagram, status: 'Caption ready', text: 'Copy a recruitment-ready caption and job link for your Instagram post or Story.' },
     { name: 'Meta Ads', icon: Megaphone, status: 'Planned', text: 'Paid Facebook and Instagram recruitment campaigns through a Meta Business connection are planned.' },
   ]
@@ -69,7 +69,7 @@ export default function EmployerSocialPage() {
     <div className="mb-8">
       <p className="dashboard-eyebrow">Recruitment marketing</p>
       <h1 className="dashboard-title">Social & Advertising</h1>
-      <p className="dashboard-intro">Post a role once in WHC, then share the same live application link across LinkedIn, Facebook, Instagram, WhatsApp and email. This keeps applicants coming back to one job record and one application process.</p>
+      <p className="dashboard-intro">Post a role once in Talent House, then share the same live application link across LinkedIn, Facebook, Instagram, WhatsApp and email. This keeps applicants coming back to one job record and one application process.</p>
     </div>
 
     <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4 mb-9">
@@ -81,7 +81,7 @@ export default function EmployerSocialPage() {
 
     <div className="dashboard-card mb-8 bg-[#1c1c1c] text-white border-[#1c1c1c]">
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5">
-        <div><p className="text-[9px] uppercase tracking-[.18em] text-white/55">One role. Multiple channels.</p><h2 className="text-white text-[26px] mt-2">Every share sends candidates back to WHC.</h2><p className="text-[13px] leading-6 text-white/65 mt-2 max-w-3xl">That means the property keeps one applicant list, one shortlist, one set of messages and one source of truth instead of losing applications across several social platforms.</p></div>
+        <div><p className="text-[9px] uppercase tracking-[.18em] text-white/55">One role. Multiple channels.</p><h2 className="text-white text-[26px] mt-2">Every share sends candidates back to Talent House.</h2><p className="text-[13px] leading-6 text-white/65 mt-2 max-w-3xl">That means the property keeps one applicant list, one shortlist, one set of messages and one source of truth instead of losing applications across several social platforms.</p></div>
         <div className="flex flex-wrap gap-2 text-[11px]"><span className="rounded-full border border-white/15 px-3 py-1.5">LinkedIn</span><span className="rounded-full border border-white/15 px-3 py-1.5">Facebook</span><span className="rounded-full border border-white/15 px-3 py-1.5">Instagram</span><span className="rounded-full border border-white/15 px-3 py-1.5">WhatsApp</span></div>
       </div>
     </div>
@@ -111,11 +111,11 @@ export default function EmployerSocialPage() {
     </section>
 
     <section className="mt-9">
-      <div className="mb-4"><p className="dashboard-eyebrow">Managed campaigns - coming soon</p><h2 className="dashboard-section-title">Let WHC run the promotion for you</h2><p className="text-[12px] text-secondary mt-1 max-w-2xl">These managed options are not available to purchase yet. Register your interest and we will contact you when they launch.</p></div>
+      <div className="mb-4"><p className="dashboard-eyebrow">Managed campaigns - coming soon</p><h2 className="dashboard-section-title">Let Talent House run the promotion for you</h2><p className="text-[12px] text-secondary mt-1 max-w-2xl">These managed options are not available to purchase yet. Register your interest and we will contact you when they launch.</p></div>
       <div className="grid lg:grid-cols-3 gap-4">
-        <div className="dashboard-card"><Sparkles size={18} className="text-[#555555]"/><h3 className="text-[19px] mt-4">WHC Social Feature</h3><p className="text-[12px] leading-5 text-secondary mt-2">WHC features your vacancy through its own LinkedIn, Instagram, Facebook and employer newsletter channels.</p><a href="/contact" className="btn-secondary inline-flex mt-4 text-[12px]">Register interest</a></div>
-        <div className="dashboard-card"><Megaphone size={18} className="text-[#555555]"/><h3 className="text-[19px] mt-4">Meta Recruitment Campaign</h3><p className="text-[12px] leading-5 text-secondary mt-2">A managed Facebook and Instagram recruitment advert using the live WHC application link.</p><a href="/contact" className="btn-secondary inline-flex mt-4 text-[12px]">Register interest</a></div>
-        <div className="dashboard-card"><CheckCircle2 size={18} className="text-[#555555]"/><h3 className="text-[19px] mt-4">Multi-channel campaign</h3><p className="text-[12px] leading-5 text-secondary mt-2">One WHC job distributed and measured across LinkedIn and Meta channels.</p><a href="/contact" className="btn-secondary inline-flex mt-4 text-[12px]">Register interest</a></div>
+        <div className="dashboard-card"><Sparkles size={18} className="text-[#555555]"/><h3 className="text-[19px] mt-4">Talent House Social Feature</h3><p className="text-[12px] leading-5 text-secondary mt-2">Talent House features your vacancy through its own LinkedIn, Instagram, Facebook and employer newsletter channels.</p><a href="/contact" className="btn-secondary inline-flex mt-4 text-[12px]">Register interest</a></div>
+        <div className="dashboard-card"><Megaphone size={18} className="text-[#555555]"/><h3 className="text-[19px] mt-4">Meta Recruitment Campaign</h3><p className="text-[12px] leading-5 text-secondary mt-2">A managed Facebook and Instagram recruitment advert using the live Talent House application link.</p><a href="/contact" className="btn-secondary inline-flex mt-4 text-[12px]">Register interest</a></div>
+        <div className="dashboard-card"><CheckCircle2 size={18} className="text-[#555555]"/><h3 className="text-[19px] mt-4">Multi-channel campaign</h3><p className="text-[12px] leading-5 text-secondary mt-2">One Talent House job distributed and measured across LinkedIn and Meta channels.</p><a href="/contact" className="btn-secondary inline-flex mt-4 text-[12px]">Register interest</a></div>
       </div>
     </section>
 

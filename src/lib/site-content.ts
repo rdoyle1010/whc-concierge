@@ -32,7 +32,7 @@ const calloutSchema = z.object({ eyebrow: text, heading: text, text, buttonLabel
 // changes on the live site until an administrator turns a panel on.
 
 // The header lockup. 'fill' crops the artwork to the header box, which is
-// what the supplied WHC block artwork wants; 'contain' shows a whole logo on
+// what the supplied Talent House block artwork wants; 'contain' shows a whole logo on
 // a clear background, which is what an uploaded transparent PNG wants.
 const logoSchema = z.object({
   url: link,

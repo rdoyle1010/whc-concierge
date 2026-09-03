@@ -21,7 +21,7 @@ export const AD_PLACEMENTS = {
   },
   academy_sponsor: {
     label: 'Academy Sponsor',
-    description: 'Reach working spa and wellness professionals in the WHC Academy.',
+    description: 'Reach working spa and wellness professionals in the Talent House Academy.',
     monthlyPence: 25000,
     page: 'Academy',
   },
@@ -39,7 +39,7 @@ export const AD_PLACEMENTS = {
   },
   journal_sponsor: {
     label: 'Journal Sponsor',
-    description: 'Sponsor the WHC Journal - industry reading for spa professionals and leaders.',
+    description: 'Sponsor the Talent House Journal - industry reading for spa professionals and leaders.',
     monthlyPence: 20000,
     page: 'Journal',
   },
@@ -51,7 +51,7 @@ export const AD_PLACEMENTS = {
   },
   talent_dashboard_sponsor: {
     label: 'Talent Dashboard Sponsor',
-    description: 'Reach signed-in spa professionals inside their WHC dashboard.',
+    description: 'Reach signed-in spa professionals inside their Talent House dashboard.',
     monthlyPence: 25000,
     page: 'Talent dashboard',
   },
@@ -63,19 +63,19 @@ export const AD_PLACEMENTS = {
   },
   agency_page_sponsor: {
     label: 'Agency Sponsor',
-    description: 'Appear on the WHC flexible-work and agency pages.',
+    description: 'Appear on the Talent House flexible-work and agency pages.',
     monthlyPence: 15000,
     page: 'Agency',
   },
   intelligence_hero: {
     label: 'Intelligence Masthead',
-    description: 'The picture box beside the WHC Intelligence masthead - the market report every property and professional reads.',
+    description: 'The picture box beside the Talent House Intelligence masthead - the market report every property and professional reads.',
     monthlyPence: 30000,
     page: 'Intelligence',
   },
   intelligence_band: {
     label: 'Intelligence Closing Panel',
-    description: 'The full-width panel that closes WHC Intelligence, above the footer.',
+    description: 'The full-width panel that closes Talent House Intelligence, above the footer.',
     monthlyPence: 25000,
     page: 'Intelligence',
   },
@@ -95,6 +95,6 @@ export function isAdPlacement(value: unknown): value is AdPlacementKey {
 
 export const AD_BILLING_COPY = {
   short: 'Rolling monthly subscription. Renews every month until cancelled.',
-  approval: 'Your advert is reviewed by WHC before it can appear publicly.',
-  start: 'Billing starts at checkout. Public display starts only after WHC approval.',
+  approval: 'Your advert is reviewed by Talent House before it can appear publicly.',
+  start: 'Billing starts at checkout. Public display starts only after Talent House approval.',
 } as const

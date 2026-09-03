@@ -11,7 +11,7 @@ const content: CourseContent = {
     'Explain how a therapist\'s own skin, posture and visible energy function as commercial signals that support retail sales and guest confidence',
   ],
   prerequisites: `None. The course assumes treatment competence but no prior experience of five-star grooming standards.`,
-  author: { name: 'WHC Academy', role: 'Developed by Wellness House Collective' },
+  author: { name: 'Talent House Academy', role: 'Developed by Wellness House Collective' },
   references: [
     { label: 'UK Spa Association - industry resources and operational guidance', url: 'https://www.spa-uk.org' },
     { label: `Your spa's own grooming and uniform policy - house standards vary and always take precedence on shift` },

@@ -34,7 +34,7 @@ const dedupe = (values: string[]): string[] => {
 
 function displayName(candidate: any): string {
   const full = String(candidate?.full_name || '').trim()
-  if (!full) return 'WHC professional'
+  if (!full) return 'Talent House professional'
   if (!candidate?.show_first_name_only) return full
   const parts = full.split(/\s+/)
   if (parts.length === 1) return parts[0]
@@ -323,7 +323,7 @@ export default function CandidatePortfolio({ candidate, academy, reviews, career
             )}
             {completions.length > 0 && (
               <div className={qualifications.length > 0 ? 'mt-8 max-w-3xl' : 'mt-7 max-w-3xl'}>
-                <GroupLabel>WHC Academy</GroupLabel>
+                <GroupLabel>Talent House Academy</GroupLabel>
                 <div className="mt-3">
                   {completions.map(entry => {
                     const completed = formatDate(entry.completed_at)
@@ -334,7 +334,7 @@ export default function CandidatePortfolio({ candidate, academy, reviews, career
                           {completed && <p className="text-[12px] text-secondary">{completed}</p>}
                         </div>
                         <p className="mt-1 inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[.12em] text-accent">
-                          <BadgeCheck size={11} />WHC Academy - verified completion
+                          <BadgeCheck size={11} />Talent House Academy - verified completion
                         </p>
                       </div>
                     )
@@ -362,7 +362,7 @@ export default function CandidatePortfolio({ candidate, academy, reviews, career
               <div>
                 <Eyebrow>Verified reviews</Eyebrow>
                 <p className="mt-3 text-[12px] leading-6 italic text-muted max-w-2xl">
-                  Feedback from employers this professional has worked with through WHC.
+                  Feedback from employers this professional has worked with through Talent House.
                 </p>
               </div>
               {reviewAverage != null && (

@@ -30,7 +30,7 @@ function portfolioGaps(profile: any, completions: number): string[] {
   if (empty(profile.languages)) gaps.push('Add your languages')
   if (empty(profile.desired_roles) && empty(profile.employment_types_wanted)) gaps.push('Tell employers the roles you want next')
   if (empty(profile.awards)) gaps.push('Add any awards you have won')
-  if (completions === 0) gaps.push('Complete a WHC Academy course for a verified credential')
+  if (completions === 0) gaps.push('Complete a Talent House Academy course for a verified credential')
   return gaps
 }
 
@@ -73,7 +73,7 @@ export default function TalentProfilePreviewPage() {
       if (error) ({ data: reviewRows } = await buildReviewQuery(false))
       setReviews((reviewRows || []) as unknown as Review[])
 
-      // Manual verification marks granted by WHC admins. Served through the
+      // Manual verification marks granted by Talent House admins. Served through the
       // talent API (the table is service-role only); an absent table or a
       // failed request simply means no manual badges.
       try {

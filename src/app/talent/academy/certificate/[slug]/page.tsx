@@ -67,8 +67,8 @@ export default function CertificatePage() {
           <p className="text-[11px] uppercase tracking-[0.3em] text-muted mb-6">Certificate of Completion</p>
 
           <p className="text-[13px] text-secondary mb-2">This certifies that</p>
-          <p className="font-serif text-[34px] font-bold text-black capitalize mb-2">{name || 'WHC Professional'}</p>
-          <p className="text-[13px] text-secondary mb-1">has successfully completed the WHC Academy course</p>
+          <p className="font-serif text-[34px] font-bold text-black capitalize mb-2">{name || 'Talent House Professional'}</p>
+          <p className="text-[13px] text-secondary mb-1">has successfully completed the Talent House Academy course</p>
           <p className="font-serif text-[22px] font-semibold text-black mb-8">{course.title}</p>
 
           <p className="text-[12px] text-secondary mb-10">including assessment passed at {enr.quiz_score}% &middot; {date}</p>

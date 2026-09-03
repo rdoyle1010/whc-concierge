@@ -1,4 +1,4 @@
-// WHC Academy - the course catalogue. Content lives in code (no CMS needed);
+// Talent House Academy - the course catalogue. Content lives in code (no CMS needed);
 // enrolments, progress and certificates live in the course_enrollments table.
 // IMPORTANT: quiz answer keys are NOT in this file - they live in
 // academy-answers.ts, which is only ever imported server-side.

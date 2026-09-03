@@ -121,10 +121,10 @@ export const EXECUTIVE_SEARCH_GUIDE_RATE = 0.18
 export const EXECUTIVE_SEARCH_RATE_RANGE = [0.15, 0.20] as const
 
 // Agency commercial promise: the professional keeps the full agreed rate.
-// WHC charges the property 15% on top of the shift value.
+// Talent House charges the property 15% on top of the shift value.
 export const AGENCY_COMMISSION_RATE = 0.15
 export const AGENCY_PLATFORM_FEE_PCT = 0.15
-// Same-day and next-day cover carries an urgency premium on the WHC fee -
+// Same-day and next-day cover carries an urgency premium on the Talent House fee -
 // the professional still receives the full agreed rate; the premium prices
 // the emergency service the property is buying.
 export const AGENCY_URGENT_FEE_SURCHARGE = 0.05
@@ -136,7 +136,7 @@ export const AGENCY_URGENT_FEE_SURCHARGE = 0.05
 export const AGENCY_PLUS_MONTHLY_PRICE = 9900 // £99/mo
 export const AGENCY_PLUS_FEE_PCT = 0.10      // vs 15% standard
 
-// The WHC fee percentage for a shift, judged by how close the shift date is
+// The Talent House fee percentage for a shift, judged by how close the shift date is
 // to today (both YYYY-MM-DD, Europe/London). Same-day or next-day => premium.
 // Agency Plus members pay the reduced base; the urgency premium applies to
 // everyone because it prices the emergency, not the relationship.

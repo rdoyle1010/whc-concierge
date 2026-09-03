@@ -32,7 +32,7 @@ async function requireAdmin() {
 
 function makeCertificateCode() {
   const alphabet = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'
-  let code = 'WHC-'
+  let code = 'Talent House-'
   for (let i = 0; i < 8; i++) code += alphabet[Math.floor(Math.random() * alphabet.length)]
   return code
 }
@@ -260,7 +260,7 @@ export async function POST(req: NextRequest) {
       // worked and change nothing for learners - so it is refused, plainly.
       if (existing?.code_defined) {
         return NextResponse.json({
-          error: 'This is a platform course. Open it in the course content editor and choose "Take editorial control of this course" - that copies the current WHC content in for you to edit, so nothing is ever lost.',
+          error: 'This is a platform course. Open it in the course content editor and choose "Take editorial control of this course" - that copies the current Talent House content in for you to edit, so nothing is ever lost.',
         }, { status: 400 })
       }
       const { error } = await admin.from('academy_courses').upsert({
@@ -349,7 +349,7 @@ export async function POST(req: NextRequest) {
       const { error } = await admin.from('course_enrollments').update({ completed_at: new Date().toISOString(), certificate_code: await makeUniqueCertificateCode(admin), quiz_score: enrolment.quiz_score ?? 100 }).eq('id', enrolment.id)
       if (error) throw error
       try {
-        if (candidate?.user_id) await createNotification(candidate.user_id, 'general', 'Certificate awarded', `WHC has awarded you the certificate for ${course?.title || enrolment.course_slug}.`, '/talent/academy')
+        if (candidate?.user_id) await createNotification(candidate.user_id, 'general', 'Certificate awarded', `Talent House has awarded you the certificate for ${course?.title || enrolment.course_slug}.`, '/talent/academy')
       } catch { /* best effort */ }
       return NextResponse.json({ success: true })
     }
@@ -358,7 +358,7 @@ export async function POST(req: NextRequest) {
       const { error } = await admin.from('course_enrollments').update({ completed_at: null, certificate_code: null }).eq('id', enrolment.id)
       if (error) throw error
       try {
-        if (candidate?.user_id) await createNotification(candidate.user_id, 'general', 'Certificate withdrawn', `Your certificate for ${course?.title || enrolment.course_slug} has been withdrawn by WHC${body.reason ? `: ${String(body.reason).slice(0, 300)}` : ''}.`, '/talent/academy')
+        if (candidate?.user_id) await createNotification(candidate.user_id, 'general', 'Certificate withdrawn', `Your certificate for ${course?.title || enrolment.course_slug} has been withdrawn by Talent House${body.reason ? `: ${String(body.reason).slice(0, 300)}` : ''}.`, '/talent/academy')
       } catch { /* best effort */ }
       return NextResponse.json({ success: true })
     }

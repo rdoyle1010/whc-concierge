@@ -16,7 +16,7 @@ export default function AcademyResourcesPage() {
     <DashboardShell role="talent">
       <Link href={`/talent/academy/${slug}`} className="mb-5 inline-flex items-center gap-1 text-[13px] text-muted hover:text-ink"><ArrowLeft size={14} /> Back to programme</Link>
       <div className="mb-7">
-        <p className="dashboard-eyebrow">WHC Academy resources</p>
+        <p className="dashboard-eyebrow">Talent House Academy resources</p>
         <h1 className="dashboard-title">{title}</h1>
         <p className="dashboard-intro">Practical working documents included with your programme. Download them, use them with real spa numbers and keep them as part of your management toolkit.</p>
       </div>

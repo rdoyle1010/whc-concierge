@@ -1,4 +1,4 @@
-// WHC Academy brand masterclass: Medik8. Independent WHC training - not
+// Talent House Academy brand masterclass: Medik8. Independent Talent House training - not
 // affiliated with or endorsed by Medik8. Answer key lives in
 // academy-more-answers/medik8-masterclass.ts (server-only).
 

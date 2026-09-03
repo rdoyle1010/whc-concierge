@@ -30,7 +30,7 @@ export async function GET() {
     let referralStats: { total: number; converted: number } | null = null
     try {
       if (!referralCode) {
-        const base = (cand.full_name || 'WHC').split(' ')[0].replace(/[^A-Za-z]/g, '').toUpperCase().slice(0, 8) || 'WHC'
+        const base = (cand.full_name || 'Talent House').split(' ')[0].replace(/[^A-Za-z]/g, '').toUpperCase().slice(0, 8) || 'Talent House'
         for (let i = 0; i < 4 && !referralCode; i++) {
           const attempt = `${base}${String(Math.floor(1000 + Math.random() * 9000))}`
           const { error } = await admin.from('candidate_profiles').update({ referral_code: attempt }).eq('id', cand.id).is('referral_code', null)

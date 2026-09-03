@@ -3,7 +3,7 @@ import type { CourseExtras } from '../academy-extras'
 
 export const course: AcademyCourse = {
   slug: 'spa-manager-programme',
-  title: 'WHC Professional Certificate in Spa Management',
+  title: 'Talent House Professional Certificate in Spa Management',
   tagline: 'Run the floor, lead the team and understand the numbers behind a high-performing spa',
   category: 'Commercial',
   minutes: 180,

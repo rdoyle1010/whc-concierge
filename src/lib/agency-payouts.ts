@@ -2,9 +2,9 @@
 //
 // A professional who has finished Stripe Connect onboarding is paid by the
 // property at the moment of payment - the checkout is a destination charge,
-// so the shift money is transferred straight to them and WHC keeps only its
+// so the shift money is transferred straight to them and Talent House keeps only its
 // booking fee. A professional who has not connected an account keeps the
-// existing route: WHC collects in full and settles by bank transfer after
+// existing route: Talent House collects in full and settles by bank transfer after
 // the shift, recorded against a bank reference.
 //
 // Nothing here changes any amount. The property pays gross + fee either way,
@@ -39,7 +39,7 @@ export async function candidatePayoutAccount(admin: any, candidateId: string | n
 }
 
 // The destination-charge split, in pence. The property is charged exactly
-// what it is charged today (gross + fee); the application fee is the WHC fee
+// what it is charged today (gross + fee); the application fee is the Talent House fee
 // alone, so the professional always receives the full agreed shift value.
 export function agencyDestinationSplit(grossPounds: number, feePounds: number) {
   const gross = Math.max(0, Number(grossPounds) || 0)
@@ -49,7 +49,7 @@ export function agencyDestinationSplit(grossPounds: number, feePounds: number) {
   return { totalPence, applicationFeePence, professionalPence: totalPence - applicationFeePence }
 }
 
-// Money invariant for a dispute resolution: WHC can never hand out more than
+// Money invariant for a dispute resolution: Talent House can never hand out more than
 // the property actually paid in. Refund to the property plus payout to the
 // professional must fit inside the collected amount.
 export function agencyResolutionExceedsCollected(amountPaid: number, refundAmount: number, payoutAmount: number): boolean {

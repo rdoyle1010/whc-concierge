@@ -196,7 +196,7 @@ function ModulePages({ lesson, index, courseTitle }: { lesson: RichLesson; index
       ) : null}
 
       <View style={styles.footer} fixed>
-        <Text style={styles.footerText}>{courseTitle} · WHC Academy</Text>
+        <Text style={styles.footerText}>{courseTitle} · Talent House Academy</Text>
         <Text style={styles.footerText} render={({ pageNumber }) => `${pageNumber}`} />
       </View>
     </Page>
@@ -232,10 +232,10 @@ export async function renderCourseManualPdf(info: ManualCourseInfo, rawContent: 
   const generated = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
 
   const doc = (
-    <Document title={`${info.title} - Course Manual`} author="Wellness House Collective" creator="WHC Academy">
+    <Document title={`${info.title} - Course Manual`} author="Wellness House Collective" creator="Talent House Academy">
       {/* Cover */}
       <Page size="A4" style={styles.page}>
-        <Text style={styles.coverBrand}>WHC Academy · Course Manual</Text>
+        <Text style={styles.coverBrand}>Talent House Academy · Course Manual</Text>
         <View style={styles.coverRule} />
         <Text style={styles.coverTitle}>{info.title}</Text>
         {info.tagline ? <Text style={styles.coverTagline}>{info.tagline}</Text> : null}
@@ -251,7 +251,7 @@ export async function renderCourseManualPdf(info: ManualCourseInfo, rawContent: 
           <Block label="Course author"><Text>{content.author.name}, {content.author.role}{content.author.note ? `. ${content.author.note}` : ''}</Text></Block>
         ) : null}
         <Text style={styles.coverFoot}>
-          © Wellness House Collective. This manual accompanies the interactive WHC Academy course and is for the enrolled learner&apos;s personal professional use.
+          © Wellness House Collective. This manual accompanies the interactive Talent House Academy course and is for the enrolled learner&apos;s personal professional use.
           {content.lastReviewed ? ` Content last reviewed ${content.lastReviewed}.` : ''}{content.version ? ` Version ${content.version}.` : ''}
         </Text>
       </Page>
@@ -275,7 +275,7 @@ export async function renderCourseManualPdf(info: ManualCourseInfo, rawContent: 
           <Block label="Before you start"><Paragraphs text={content.prerequisites} /></Block>
         ) : null}
         <View style={styles.footer} fixed>
-          <Text style={styles.footerText}>{info.title} · WHC Academy</Text>
+          <Text style={styles.footerText}>{info.title} · Talent House Academy</Text>
           <Text style={styles.footerText} render={({ pageNumber }) => `${pageNumber}`} />
         </View>
       </Page>
@@ -294,7 +294,7 @@ export async function renderCourseManualPdf(info: ManualCourseInfo, rawContent: 
             </View>
           ))}
           <View style={styles.footer} fixed>
-            <Text style={styles.footerText}>{info.title} · WHC Academy</Text>
+            <Text style={styles.footerText}>{info.title} · Talent House Academy</Text>
             <Text style={styles.footerText} render={({ pageNumber }) => `${pageNumber}`} />
           </View>
         </Page>

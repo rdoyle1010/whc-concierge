@@ -12,7 +12,7 @@ export const MANUAL_VERIFICATION_TYPES: Array<{ type: string; label: string }> =
   { type: 'employment', label: 'Employment verified' },
   { type: 'qualifications', label: 'Qualifications verified' },
   { type: 'references', label: 'References verified' },
-  { type: 'whc_assessed', label: 'WHC assessed' },
+  { type: 'whc_assessed', label: 'Talent House assessed' },
   { type: 'manager_approved', label: 'Manager approved' },
 ]
 

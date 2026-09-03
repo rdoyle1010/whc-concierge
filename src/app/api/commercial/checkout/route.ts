@@ -30,7 +30,7 @@ export async function POST(req: NextRequest) {
   } else if (product === 'featured_talent_7' || product === 'featured_talent_30') {
     const cfg = product === 'featured_talent_7' ? FEATURED_TALENT.seven_days : FEATURED_TALENT.thirty_days
     amount = cfg.price; name = `Talent House Collective - ${cfg.label}`; mode = 'payment'; successPath = '/talent/membership'
-    description = `${cfg.days} days of premium visibility in employer searches and WHC featured placements.`
+    description = `${cfg.days} days of premium visibility in employer searches and Talent House featured placements.`
     metadata = { ...metadata, role: 'talent', featured_days: String(cfg.days) }
   } else if (product === 'employer_pro' || product === 'employer_group') {
     const tier = product === 'employer_pro' ? 'pro' : 'group'

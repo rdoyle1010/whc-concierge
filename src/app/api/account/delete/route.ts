@@ -68,7 +68,7 @@ export async function POST(_req: NextRequest) {
 
     // One failing step must never abort the deletion. Anything that could not
     // be removed is collected and reported back so the person is told the
-    // truth about what is left, and so WHC can finish it by hand.
+    // truth about what is left, and so Talent House can finish it by hand.
     const failures: string[] = []
     const anonymised: string[] = []
     let filesRemoved = 0
@@ -215,7 +215,7 @@ export async function POST(_req: NextRequest) {
         if (agencyOk && enrolmentsOk) {
           await step('candidate profile', () => admin.from('candidate_profiles').delete().eq('id', cid))
         } else {
-          failures.push('Professional profile kept: financial records that depend on it could not be anonymised first. WHC support has been notified.')
+          failures.push('Professional profile kept: financial records that depend on it could not be anonymised first. Talent House support has been notified.')
         }
       }
 
@@ -334,7 +334,7 @@ export async function POST(_req: NextRequest) {
     const uniqueAnonymised = Array.from(new Set(anonymised))
     const message = authDeleted
       ? 'Your account has been deleted.'
-      : 'Your data has been removed, but the sign-in account itself could not be closed automatically. WHC has been alerted and will close it by hand.'
+      : 'Your data has been removed, but the sign-in account itself could not be closed automatically. Talent House has been alerted and will close it by hand.'
 
     return NextResponse.json({
       success: authDeleted,
@@ -344,7 +344,7 @@ export async function POST(_req: NextRequest) {
       // kept, with the link to the person removed.
       retained: uniqueAnonymised.length
         ? {
-            note: 'These records were anonymised rather than deleted. UK company and tax law requires WHC to keep the amounts and dates for six years, so the money and the dates remain but they are no longer linked to you.',
+            note: 'These records were anonymised rather than deleted. UK company and tax law requires Talent House to keep the amounts and dates for six years, so the money and the dates remain but they are no longer linked to you.',
             records: uniqueAnonymised,
           }
         : null,

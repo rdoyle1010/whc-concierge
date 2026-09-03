@@ -4,7 +4,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { AD_PLACEMENTS, isAdPlacement } from '@/lib/advertising'
 
 // The advertising control room: switch slots on and off, pin adverts to
-// slots, and place direct adverts for brands that come to WHC by email.
+// slots, and place direct adverts for brands that come to Talent House by email.
 
 // Delegated to the shared admin guard, which enforces two-step
 // verification as well as the admin role.
