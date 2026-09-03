@@ -5,6 +5,29 @@ import { enforceRateLimit } from '@/lib/rate-limit'
 
 export const dynamic = 'force-dynamic'
 
+/**
+ * Supabase's own wording, turned into something a person can act on.
+ *
+ * "Invalid login credentials" covers a wrong password, a typo in the address
+ * and an account that was never created, and says nothing about which - so
+ * somebody reads it as "the platform will not let me in" rather than "try the
+ * reset link". Worse, an unconfirmed sign-up returns a different message that
+ * reads the same way, when the fix is simply to open the confirmation email.
+ */
+function signInMessage(raw: string | undefined): string {
+  const message = String(raw || '').toLowerCase()
+  if (message.includes('email not confirmed')) {
+    return 'Your account is created but the email address has not been confirmed yet. Open the confirmation email we sent you, then sign in.'
+  }
+  if (message.includes('invalid login credentials') || message.includes('invalid credentials')) {
+    return 'That email and password do not match an account. Check the password, use the reset link below, or create an account if you have not registered yet.'
+  }
+  if (message.includes('rate limit') || message.includes('too many')) {
+    return 'Too many attempts. Wait a few minutes and try again.'
+  }
+  return raw || 'Sign in failed. Please try again.'
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json().catch(() => null)
@@ -50,7 +73,7 @@ export async function POST(request: NextRequest) {
     const { data: authData, error: authError } = await supabase.auth.signInWithPassword({ email, password })
 
     if (authError || !authData.user) {
-      return NextResponse.json({ error: authError?.message || 'Sign in failed.' }, { status: 401 })
+      return NextResponse.json({ error: signInMessage(authError?.message) }, { status: 401 })
     }
 
     const { data: profile, error: profileError } = await supabase

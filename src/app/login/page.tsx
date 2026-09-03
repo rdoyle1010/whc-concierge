@@ -95,6 +95,13 @@ function LoginForm() {
               <button type="button" onClick={() => { setRole('employer'); setError('') }} className={`flex items-center justify-center gap-2 py-2.5 rounded-lg text-[12px] font-semibold transition-all ${role === 'employer' ? 'bg-[#1c1c1c] text-white shadow-sm' : 'text-secondary hover:text-[#1c1c1c]'}`}><BriefcaseBusiness size={13} />Hotel / Employer</button>
             </div>
 
+            {/* There is no third account type - a consultancy listing sits on a
+                Talent account. Without saying so, a consultant reads two
+                buttons that both look wrong and picks neither. */}
+            <p className="-mt-5 mb-6 text-[11px] leading-5 text-muted">
+              Listing a consultancy practice, or here for the Academy? Sign in as <span className="font-semibold text-ink">Talent</span> - it is the same account.
+            </p>
+
             {confirmationPending && <div role="status" className="bg-emerald-50 border border-emerald-100 text-emerald-700 text-[13px] px-3 py-2.5 rounded-xl mb-5">Your profile is saved. Check your email to confirm your account, then sign in here.</div>}
             {error && <div role="alert" className="bg-red-50 border border-red-100 text-red-600 text-[13px] px-3 py-2.5 rounded-xl mb-5">{error}</div>}
 

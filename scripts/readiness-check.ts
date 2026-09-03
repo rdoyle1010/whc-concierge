@@ -109,6 +109,24 @@ check('public Residency data is sanitised and membership-gated', () => {
   assert.doesNotMatch(mapper, /profile_photo_url:/)
   assert.doesNotMatch(mapper, /full_name:/)
 })
+check('the two content security policies say the same thing', () => {
+  // Two CSP headers do not layer - a browser enforces the intersection. So a
+  // directive relaxed in one file and left alone in the other stays blocked,
+  // and nothing anywhere reports it. That is how the newsletter preview came
+  // to show "This content is blocked" where the email should have been.
+  const fromNext = read('next.config.js')
+    .split("key: 'Content-Security-Policy'")[1]
+    .split("].join('; ')")[0]
+    .match(/"([^"]+)"/g)!.map(part => part.slice(1, -1))
+  const fromNetlify = read('netlify.toml')
+    .match(/Content-Security-Policy = "([^"]*)"/)![1]
+    .split('; ')
+  assert.deepEqual(fromNext, fromNetlify, 'both files must carry an identical policy')
+  // The newsletter studio previews an issue in a srcdoc iframe, which is
+  // checked against frame-src.
+  assert.ok(fromNext.some(part => part.startsWith('frame-src') && part.includes("'self'")),
+    "frame-src needs 'self' or the newsletter preview is blocked")
+})
 check('the public Consultancy directory serves only approved, published listings', () => {
   const route = read('src/app/api/consultancy/public/route.ts')
   assert.doesNotMatch(route, /select\('\*'\)/)
