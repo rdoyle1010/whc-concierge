@@ -102,14 +102,24 @@ export async function POST(request: NextRequest) {
 
       if (!matchesSelectedLogin) {
         await supabase.auth.signOut()
+        // Naming the door matters more than naming the account type. An
+        // administrator who tries the ordinary sign-in page was told to "use
+        // the Admin sign in" - which is not on that page, has no toggle, and
+        // is at a URL nothing links to. That is a dead end dressed up as an
+        // instruction, and it is how an administrator concludes their account
+        // is broken.
         const correctArea = accountRole === 'employer'
           ? 'Hotel / Employer'
           : accountRole === 'candidate'
             ? 'Talent'
-            : 'Admin'
+            : 'administrator'
+        const where = accountRole === 'admin'
+          ? 'Administrators sign in at talenthousecollective.co.uk/admin, not here.'
+          : `Please use the ${correctArea} side of this page.`
         return NextResponse.json({
-          error: `This is a ${correctArea} account. Please use the ${correctArea} sign in.`,
+          error: `This is ${accountRole === 'admin' ? 'an' : 'a'} ${correctArea} account. ${where}`,
           accountRole,
+          adminSignIn: accountRole === 'admin' ? '/admin' : undefined,
         }, { status: 403 })
       }
     }

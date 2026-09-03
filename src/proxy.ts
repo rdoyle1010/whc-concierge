@@ -3,7 +3,13 @@ import { NextResponse, type NextRequest } from 'next/server'
 import { canRoleAccessPath, dashboardForRole, normaliseAccountRole } from '@/lib/role-access'
 
 const PROTECTED_PREFIXES = ['/talent', '/employer', '/hotel', '/admin']
-const AUTH_PAGES = ['/login', '/register']
+// '/admin/login' sits inside the '/admin' prefix, so it was protected by the
+// rule below and bounced a signed-out administrator to '/login?redirect=...'.
+// That page has a Talent / Hotel toggle and no admin option, so it refused the
+// account it had just been handed and told the person to "use the Admin sign
+// in" - the page they had been redirected away from. A closed loop, and the
+// reason an administrator concluded her account was broken.
+const AUTH_PAGES = ['/login', '/register', '/admin/login']
 
 // Two-step verification on the API, not only on the pages.
 //
@@ -80,8 +86,9 @@ export async function proxy(request: NextRequest) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 })
   }
 
-  const isProtected = PROTECTED_PREFIXES.some(prefix => matchesRoutePrefix(pathname, prefix))
   const isAuthPage = AUTH_PAGES.some(page => matchesRoutePrefix(pathname, page))
+  // A sign-in page is never protected, whichever prefix it happens to sit under.
+  const isProtected = !isAuthPage && PROTECTED_PREFIXES.some(prefix => matchesRoutePrefix(pathname, prefix))
 
   // The mobile app has no cookie jar; it sends a Bearer token, and
   // getRequestUser already enforces two-step verification on those. Leaving
@@ -122,6 +129,9 @@ export async function proxy(request: NextRequest) {
     loginUrl.searchParams.set('redirect', destination)
     if (matchesRoutePrefix(pathname, '/employer') || matchesRoutePrefix(pathname, '/hotel')) loginUrl.searchParams.set('role', 'employer')
     if (matchesRoutePrefix(pathname, '/talent')) loginUrl.searchParams.set('role', 'talent')
+    // Administrators have their own door. Sending them to the member sign-in
+    // page hands their account to a form that is built to reject it.
+    if (matchesRoutePrefix(pathname, '/admin')) loginUrl.pathname = '/admin/login'
     return NextResponse.redirect(loginUrl)
   }
 

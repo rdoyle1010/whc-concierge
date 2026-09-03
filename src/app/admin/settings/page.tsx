@@ -6,6 +6,7 @@ import AuthenticatorSecurity from '@/components/AuthenticatorSecurity'
 import RetentionPanel from '@/components/RetentionPanel'
 import BillingIdentityPanel from '@/components/BillingIdentityPanel'
 import DeliveryTestPanel from '@/components/DeliveryTestPanel'
+import AccountAccessPanel from '@/components/AccountAccessPanel'
 import { Save, Settings, CreditCard, Share2, ExternalLink } from 'lucide-react'
 
 type CommercialSetting = { product_key: string; label: string; description: string; price_pence: number; billing_interval: 'month' | 'year' | 'one_off'; is_active: boolean }
@@ -109,6 +110,8 @@ export default function AdminSettingsPage() {
       <RetentionPanel />
 
       <DeliveryTestPanel />
+
+      <AccountAccessPanel />
 
       <div className="dashboard-card">
         <div className="mb-5 flex items-start gap-3"><div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#e7e7e7] text-[#1c1c1c]"><Share2 size={18}/></div><div><p className="text-[15px] font-semibold text-ink">Public social media links</p><p className="mt-1 max-w-2xl text-[12px] leading-5 text-muted">These are simple public profile links shown on the front end. Talent House does not need access to your social inbox, DMs, password or account management. Paste only the public page you want visitors to see.</p></div></div>
