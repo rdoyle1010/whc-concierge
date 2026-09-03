@@ -25,7 +25,7 @@ export async function GET() {
   const admin = createAdminClient()
   try {
     const { data } = await admin.from('candidate_profiles')
-      .select('id, user_id, full_name, role_level, whc_verified, whc_verified_at, verification_status, verification_docs, verification_notes, insurance_expiry_date, insurance_document_url, has_insurance, qualifications, review_score, review_count, right_to_work_uk, right_to_work_ireland, right_to_work_status, right_to_work_document_url, right_to_work_expiry_date, right_to_work_verified_at, right_to_work_notes')
+      .select('id, user_id, full_name, role_level, whc_verified, whc_verified_at, verification_status, verification_docs, verification_notes, insurance_expiry_date, insurance_document_url, has_insurance, qualifications, review_score, review_count, right_to_work_uk, right_to_work_ireland, right_to_work_status, right_to_work_document_url, right_to_work_expiry_date, right_to_work_verified_at, right_to_work_notes, right_to_work_method, right_to_work_share_code, right_to_work_dob, right_to_work_check_outcome')
       .or('verification_status.not.is.null,right_to_work_status.neq.not_submitted')
       .order('whc_verified', { ascending: true })
 
@@ -101,6 +101,10 @@ export async function POST(req: NextRequest) {
       right_to_work_status: decision === 'verified' ? 'approved' : 'rejected',
       right_to_work_verified_at: decision === 'verified' ? now : null,
       right_to_work_notes: String(body.reason || '').slice(0, 500) || null,
+      // Who looked and what the Home Office page said. A decision with no
+      // record of the check behind it is not an audit trail.
+      right_to_work_checked_by: user.id,
+      right_to_work_check_outcome: String(body.outcome || (decision === 'verified' ? 'Checked at gov.uk - permission confirmed' : 'Checked at gov.uk - not confirmed')).slice(0, 300),
       whc_verified: decision === 'verified',
       whc_verified_at: decision === 'verified' ? now : null,
     }

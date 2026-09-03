@@ -6,6 +6,10 @@ import { geocodePostcode } from '@/lib/geo'
 import { recordSalary } from '@/lib/analytics'
 
 const ALLOWED_COLUMNS = new Set([
+  // Languages with fluency, and the language a CV is written in. Never
+  // nationality: it is a protected characteristic and not a hiring criterion,
+  // and a column here would put it on a profile properties browse.
+  'language_skills','cv_language',
   'full_name','phone','postcode','location','location_country','has_car','role_level','headline','bio','experience_years',
   'day_rate_min','day_rate_max','hourly_rate','willing_to_relocate','availability_status','right_to_work','languages','availability_date',
   'services_offered','product_houses','qualifications','systems_experience','business_skills','career_evidence','travel_availability','travel_radius_miles',

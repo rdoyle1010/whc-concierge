@@ -1,6 +1,8 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { parseLanguageSkills, LANGUAGES } from '@/lib/languages'
+import LanguagePicker from '@/components/LanguagePicker'
 import { useTaxonomy } from '@/lib/use-sectors'
 import { liveSectorGroups } from '@/lib/sectors'
 import Link from 'next/link'
@@ -47,7 +49,7 @@ export default function TalentProfilePage() {
   const missingItems=completionChecklist.filter(([,done])=>!done).map(([label])=>label)
   const completionPct=profile?Math.round(completionItems.filter(Boolean).length/completionItems.length*100):0
 
-  async function handleSave(){if(!profile?.id)return;setSaving(true);setMessage('');const data={full_name:profile.full_name,phone:profile.phone||null,postcode:profile.postcode||null,...(profile.postcode?{location:profile.postcode}:{}),has_car:!!profile.has_car,role_level:profile.role_level||null,headline:profile.headline||null,bio:profile.bio||null,experience_years:profile.experience_years?parseInt(profile.experience_years):null,day_rate_min:profile.day_rate_min?parseInt(profile.day_rate_min):null,day_rate_max:profile.day_rate_max?parseInt(profile.day_rate_max):null,availability_status:profile.availability_status||null,right_to_work:profile.right_to_work||null,services_offered:profile.services_offered?.length?profile.services_offered:null,product_houses:profile.product_houses?.length?profile.product_houses:null,qualifications:profile.qualifications?.length?profile.qualifications:null,systems_experience:profile.systems_experience?.length?profile.systems_experience:null,business_skills:profile.business_skills?.length?profile.business_skills:null,career_evidence:profile.career_evidence?.length?profile.career_evidence:null,travel_availability:profile.travel_availability||'uk_only',travel_radius_miles:profile.travel_radius_miles?parseInt(profile.travel_radius_miles):null,has_insurance:!!profile.has_insurance,salary_expectation_private:profile.salary_expectation_private!==false,salary_expectation_min:profile.salary_expectation_min?parseInt(profile.salary_expectation_min):null,salary_expectation_max:profile.salary_expectation_max?parseInt(profile.salary_expectation_max):null,commercial_experience:profile.commercial_experience||null,revenue_responsibility:profile.revenue_responsibility||null,team_size_managed:profile.team_size_managed?parseInt(profile.team_size_managed):null,desired_roles:profile.desired_roles?.length?profile.desired_roles:null,portfolio_url:profile.portfolio_url||null,profile_completion_score:completionPct,profile_completion_pct:completionPct}
+  async function handleSave(){if(!profile?.id)return;setSaving(true);setMessage('');const data={full_name:profile.full_name,language_skills:parseLanguageSkills(profile.language_skills),cv_language:profile.cv_language||null,phone:profile.phone||null,postcode:profile.postcode||null,...(profile.postcode?{location:profile.postcode}:{}),has_car:!!profile.has_car,role_level:profile.role_level||null,headline:profile.headline||null,bio:profile.bio||null,experience_years:profile.experience_years?parseInt(profile.experience_years):null,day_rate_min:profile.day_rate_min?parseInt(profile.day_rate_min):null,day_rate_max:profile.day_rate_max?parseInt(profile.day_rate_max):null,availability_status:profile.availability_status||null,right_to_work:profile.right_to_work||null,services_offered:profile.services_offered?.length?profile.services_offered:null,product_houses:profile.product_houses?.length?profile.product_houses:null,qualifications:profile.qualifications?.length?profile.qualifications:null,systems_experience:profile.systems_experience?.length?profile.systems_experience:null,business_skills:profile.business_skills?.length?profile.business_skills:null,career_evidence:profile.career_evidence?.length?profile.career_evidence:null,travel_availability:profile.travel_availability||'uk_only',travel_radius_miles:profile.travel_radius_miles?parseInt(profile.travel_radius_miles):null,has_insurance:!!profile.has_insurance,salary_expectation_private:profile.salary_expectation_private!==false,salary_expectation_min:profile.salary_expectation_min?parseInt(profile.salary_expectation_min):null,salary_expectation_max:profile.salary_expectation_max?parseInt(profile.salary_expectation_max):null,commercial_experience:profile.commercial_experience||null,revenue_responsibility:profile.revenue_responsibility||null,team_size_managed:profile.team_size_managed?parseInt(profile.team_size_managed):null,desired_roles:profile.desired_roles?.length?profile.desired_roles:null,portfolio_url:profile.portfolio_url||null,profile_completion_score:completionPct,profile_completion_pct:completionPct}
     const res=await fetch('/api/profile/update',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({profileId:profile.id,data})});const result=await res.json().catch(()=>({}));setSaving(false);setMessage(res.ok?'Profile saved.':result.error||'Save failed');setTimeout(()=>setMessage(''),4000)}
 
   const userId=profile?.user_id||profile?.id
@@ -129,6 +131,37 @@ export default function TalentProfilePage() {
       )}
 
       <section className="dashboard-card space-y-4"><p className="eyebrow">Professional details</p><Field label="Current role level"><select className="input-field" value={profile.role_level||''} onChange={e=>u('role_level',e.target.value)}><option value="">Select</option>{ROLE_LEVELS.map(r=><option key={r}>{r}</option>)}</select></Field><Field label="Headline"><input className="input-field" value={profile.headline||''} onChange={e=>u('headline',e.target.value)} placeholder="e.g. Spa Manager | Luxury Hospitality | Commercial & People Leadership"/></Field><Field label="Bio"><textarea rows={4} className="input-field" value={profile.bio||''} onChange={e=>u('bio',e.target.value)}/></Field><div className="grid sm:grid-cols-3 gap-4"><Field label="Experience years"><input type="number" className="input-field" value={profile.experience_years||''} onChange={e=>u('experience_years',e.target.value)}/></Field>{profile.agency_available?<><Field label="Agency day rate min (£)"><input type="number" className="input-field" value={profile.day_rate_min||''} onChange={e=>u('day_rate_min',e.target.value)}/></Field><Field label="Agency day rate max (£)"><input type="number" className="input-field" value={profile.day_rate_max||''} onChange={e=>u('day_rate_max',e.target.value)}/></Field></>:null}</div><Field label="Availability"><select className="input-field" value={profile.availability_status||''} onChange={e=>u('availability_status',e.target.value)}>{AVAILABILITY_STATUSES.map(a=><option key={a.value} value={a.value}>{a.label}</option>)}</select></Field></section>
+
+      {/* Languages, not nationality. A property with Gulf guests needs Arabic;
+          one taking French coach parties needs French. That is a genuine
+          occupational requirement and lawful to ask. Nationality is a protected
+          characteristic, and right to work - which the profile already carries -
+          is the lawful version of what an employer actually needs to know. */}
+      <section className="dashboard-card space-y-4">
+        <div>
+          <p className="eyebrow">Languages</p>
+          <p className="mt-1 text-[12px] leading-6 text-secondary">
+            Properties search on language. A therapist who speaks the language of their guests is worth more to a spa,
+            and this is one of the few things that will put you in front of a property nobody else reaches.
+          </p>
+        </div>
+        <LanguagePicker value={profile?.language_skills} onChange={skills => u('language_skills', skills)} />
+
+        <div className="border-t border-border pt-4">
+          <label htmlFor="cv-language" className="eyebrow block mb-1.5">What language is your CV written in?</label>
+          <select
+            id="cv-language" value={profile?.cv_language || 'en'}
+            onChange={event => u('cv_language', event.target.value)}
+            className="input-field sm:max-w-xs"
+          >
+            {LANGUAGES.map(language => <option key={language.code} value={language.code}>{language.label}</option>)}
+          </select>
+          <p className="mt-1.5 text-[11px] leading-5 text-muted">
+            Upload your CV in whichever language you write best. A property seeing a strong CV in Italian reads
+            international experience; a weak one in English reads as something else entirely.
+          </p>
+        </div>
+      </section>
 
       <section className="dashboard-card space-y-4"><p className="eyebrow">Salary & career goals</p><p className="text-[12px] text-secondary -mt-1">Your salary expectation stays private and helps WHC show you roles that genuinely pay what you want. The leadership questions below are <b className="text-ink">completely optional</b> - they matter for management and director roles, and skipping them never counts against you. If you're focused on treatments, just set your salary expectation and move on.</p><div className="grid sm:grid-cols-2 gap-4"><Field label="Salary expectation - from (£/year)"><input type="number" className="input-field" value={profile.salary_expectation_min||''} onChange={e=>u('salary_expectation_min',e.target.value)} placeholder="e.g. 48000"/></Field><Field label="Salary expectation - to (£/year)"><input type="number" className="input-field" value={profile.salary_expectation_max||''} onChange={e=>u('salary_expectation_max',e.target.value)} placeholder="e.g. 56000"/></Field></div><label className="flex items-start gap-2.5 cursor-pointer"><input type="checkbox" checked={profile.salary_expectation_private!==false} onChange={e=>u('salary_expectation_private',e.target.checked)} className="mt-0.5 w-4 h-4"/><span className="text-[12px] leading-5 text-secondary"><b className="text-ink">Keep my salary expectation private.</b> WHC still uses it to score how well roles pay against what you want - but the number itself is never shown to employers unless you untick this.</span></label><div className="grid sm:grid-cols-2 gap-4"><Field label="Largest team managed"><input type="number" className="input-field" value={profile.team_size_managed||''} onChange={e=>u('team_size_managed',e.target.value)} placeholder="e.g. 12"/></Field><Field label="Revenue responsibility"><input className="input-field" value={profile.revenue_responsibility||''} onChange={e=>u('revenue_responsibility',e.target.value)} placeholder="e.g. £1.2m annual spa revenue"/></Field></div><Field label="Commercial experience"><textarea rows={3} className="input-field" value={profile.commercial_experience||''} onChange={e=>u('commercial_experience',e.target.value)} placeholder="Budgets, retail targets, membership growth, yield, KPIs you have owned..."/></Field><Field label="Portfolio or LinkedIn URL"><input className="input-field" value={profile.portfolio_url||''} onChange={e=>u('portfolio_url',e.target.value)} placeholder="https://..." /></Field></section>
 

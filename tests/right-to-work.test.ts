@@ -95,3 +95,40 @@ test('right to work records the check, not a document', () => {
     assert.ok(migration.includes(column), `${column} must be created`)
   }
 })
+
+// A share code submission has no document to upload. Requiring one before the
+// method is known rejected the very check this work exists to allow - the form
+// accepted it and the server refused it.
+test('a share code is accepted without a document', () => {
+  const route = read('src/app/api/verification/route.ts')
+  const guard = route.slice(route.indexOf('const rightToWorkUrl ='))
+  const refusal = guard.slice(0, guard.indexOf('Please upload evidence'))
+  assert.match(refusal, /method !== 'share_code'/, 'the document is only required where a document is the method')
+  // And the code itself has to be real, or an empty box would pass as a check.
+  assert.match(route, /if \(!isValidShareCode\(shareCode\)\)/, 'a share code submission must carry a valid code')
+})
+
+// A column the screen reads but the query never asked for reads as empty, which
+// looks exactly like a professional who supplied nothing.
+test('every right-to-work column the screens read is selected', () => {
+  const talent = read('src/app/api/verification/route.ts')
+  const admin = read('src/app/api/admin/verification/route.ts')
+  for (const column of ['right_to_work_method', 'right_to_work_share_code', 'right_to_work_dob']) {
+    assert.ok(talent.includes(`${column},`) || talent.includes(`${column}'`), `${column} must be selected for the talent form`)
+    assert.ok(admin.includes(column), `${column} must be selected for the admin queue`)
+  }
+  assert.ok(admin.includes('right_to_work_check_outcome'), 'the admin queue shows the last outcome recorded')
+})
+
+// Languages and the CV language are written through the profile route, which
+// only writes columns it has been told about.
+test('languages and the CV language can actually be saved', () => {
+  const route = read('src/app/api/profile/update/route.ts')
+  const allowed = route.slice(route.indexOf('ALLOWED_COLUMNS'), route.indexOf('])', route.indexOf('ALLOWED_COLUMNS')))
+  for (const column of ['language_skills', 'cv_language']) {
+    assert.ok(allowed.includes(`'${column}'`), `${column} must be writable`)
+  }
+  // The quoted form is a column entry; the word alone appears in the comment
+  // above the list explaining why it is deliberately absent.
+  assert.ok(!allowed.includes("'nationality'"), 'nationality must never become writable')
+})

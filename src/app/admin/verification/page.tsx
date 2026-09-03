@@ -1,10 +1,11 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { checkUrlFor } from '@/lib/right-to-work'
 import { useDialog } from '@/components/useDialog'
 import DashboardShell from '@/components/DashboardShell'
 import { MANUAL_VERIFICATION_TYPES } from '@/lib/verification-badges'
-import { ShieldCheck, FileText, X, Clock3 } from 'lucide-react'
+import { ExternalLink, ShieldCheck, FileText, X, Clock3 } from 'lucide-react'
 
 export default function AdminVerificationPage() {
   const [rows, setRows] = useState<any[]>([])
@@ -96,11 +97,36 @@ export default function AdminVerificationPage() {
               {' · '}Expiry: {r.right_to_work_expiry_date ? new Date(r.right_to_work_expiry_date).toLocaleDateString('en-GB') : 'none given'}
               {r.right_to_work_expiry_date && new Date(r.right_to_work_expiry_date).getTime() < Date.now() && <span className="text-red-600 font-medium"> - EXPIRED</span>}
             </p>
-            {r.right_to_work_document_url ? (
+            {/* A share code is checked at gov.uk, not read off a document. The
+                link opens the Home Office page with the code already in it; the
+                outcome recorded here is what that page said, which is the audit
+                trail a statutory excuse rests on. */}
+            {r.right_to_work_share_code ? (
+              <div className="mt-2 border border-border bg-[#f1f1f1] p-3">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted">Home Office share code</p>
+                <p className="mt-1 font-mono text-[15px] tracking-[0.18em] text-ink">{r.right_to_work_share_code}</p>
+                <p className="mt-1 text-[11px] text-secondary">
+                  Date of birth: {r.right_to_work_dob ? new Date(r.right_to_work_dob).toLocaleDateString('en-GB') : 'not given'}
+                </p>
+                <a href={checkUrlFor(r.right_to_work_share_code)} target="_blank" rel="noopener noreferrer"
+                  className="mt-2 inline-flex items-center gap-1.5 text-[12px] font-semibold text-ink underline">
+                  <ExternalLink size={12} /> Check this code at gov.uk
+                </a>
+                <p className="mt-2 text-[11px] leading-5 text-secondary">
+                  Open the page, confirm the photograph and the permission, then record the outcome below. Verifying
+                  without opening it is not a check and gives no statutory excuse.
+                </p>
+              </div>
+            ) : r.right_to_work_document_url ? (
               <a href={r.right_to_work_document_url} target="_blank" rel="noreferrer"
-                className="mt-1.5 inline-flex items-center gap-1 text-[12px] font-medium text-accent hover:underline"><FileText size={12} /> Right-to-work evidence</a>
+                className="mt-1.5 inline-flex items-center gap-1 text-[12px] font-medium text-accent hover:underline"><FileText size={12} /> Right-to-work evidence (uploaded before share codes)</a>
             ) : (
-              <p className="text-[12px] text-amber-700 mt-1.5">No right-to-work document uploaded - do not verify without evidence.</p>
+              <p className="text-[12px] text-amber-700 mt-1.5">Nothing supplied to check - do not verify.</p>
+            )}
+            {r.right_to_work_check_outcome && (
+              <p className="mt-2 text-[11px] text-secondary">
+                Last outcome recorded: <span className="text-ink">{r.right_to_work_check_outcome}</span>
+              </p>
             )}
           </div>
           <p className="text-sm text-secondary mt-2">

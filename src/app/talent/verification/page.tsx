@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { RTW_METHODS, SHARE_CODE_URL, isValidShareCode, normaliseShareCode, type RtwMethod } from '@/lib/right-to-work'
 import { getViewer } from '@/lib/viewer'
 import DashboardShell from '@/components/DashboardShell'
 import { createClient } from '@/lib/supabase/client'
@@ -20,6 +21,12 @@ export default function TalentVerificationPage() {
   const [rightIreland, setRightIreland] = useState(false)
   const [rtwExpiry, setRtwExpiry] = useState('')
   const [rtwFile, setRtwFile] = useState<File | null>(null)
+  // A share code is the professional's half of a real check. The document
+  // upload it replaces was never a check at all - it recorded that somebody
+  // sent a file, which gives no statutory excuse to anybody.
+  const [rtwMethod, setRtwMethod] = useState<RtwMethod>('share_code')
+  const [shareCode, setShareCode] = useState('')
+  const [rtwDob, setRtwDob] = useState('')
   const [hasInsurance, setHasInsurance] = useState(false)
   const [insuranceExpiry, setInsuranceExpiry] = useState('')
   const [insuranceFile, setInsuranceFile] = useState<File | null>(null)
@@ -35,6 +42,9 @@ export default function TalentVerificationPage() {
         setRightUk(Boolean(verification?.right_to_work_uk))
         setRightIreland(Boolean(verification?.right_to_work_ireland))
         setRtwExpiry(verification?.right_to_work_expiry_date || '')
+        setRtwMethod((verification?.right_to_work_method as RtwMethod) || 'share_code')
+        setShareCode(verification?.right_to_work_share_code || '')
+        setRtwDob(verification?.right_to_work_dob || '')
         setHasInsurance(Boolean(verification?.has_insurance))
         setInsuranceExpiry(verification?.insurance_expiry_date || '')
       }
@@ -58,7 +68,12 @@ export default function TalentVerificationPage() {
   async function submit() {
     setError('')
     if (!rightUk && !rightIreland) { setError('Please confirm whether you have the right to work in the UK, Ireland, or both.'); return }
-    if (!rtwFile && !v?.right_to_work_document_url) { setError('Please upload evidence of your right to work.'); return }
+    if (rtwMethod === 'share_code') {
+      if (!isValidShareCode(shareCode)) { setError('A share code is nine letters and numbers, from gov.uk/prove-right-to-work.'); return }
+      if (!rtwDob) { setError('Your date of birth is needed to view the share code result.'); return }
+    } else if (!rtwFile && !v?.right_to_work_document_url) {
+      setError('Please upload evidence of your right to work.'); return
+    }
     if (hasInsurance && !insuranceExpiry) { setError('Please add the expiry date for your insurance.'); return }
     if (hasInsurance && !insuranceFile && !v?.insurance_document_url) { setError('Please upload your insurance certificate, or choose that you do not currently hold insurance.'); return }
 
@@ -88,6 +103,9 @@ export default function TalentVerificationPage() {
           right_to_work_uk: rightUk,
           right_to_work_ireland: rightIreland,
           right_to_work_document_url: rtwUrl || undefined,
+          right_to_work_method: rtwMethod,
+          right_to_work_share_code: rtwMethod === 'share_code' ? shareCode : null,
+          right_to_work_dob: rtwMethod === 'share_code' ? (rtwDob || null) : null,
           right_to_work_expiry_date: rtwExpiry || null,
           has_insurance: hasInsurance,
           insurance_expiry_date: hasInsurance ? insuranceExpiry : null,
@@ -125,7 +143,49 @@ export default function TalentVerificationPage() {
       <div className="dashboard-card space-y-6">
         <div><h2 className="font-serif text-lg font-semibold">Right to work <span className="text-red-500">*</span></h2><p className="text-xs text-secondary mt-1">This is required. Select every country where you currently have the legal right to work.</p></div>
         <div className="flex flex-col sm:flex-row gap-3"><label className="flex items-center gap-2 border border-border rounded-xl px-4 py-3 cursor-pointer"><input type="checkbox" checked={rightUk} onChange={e=>setRightUk(e.target.checked)}/><span className="text-sm">United Kingdom</span></label><label className="flex items-center gap-2 border border-border rounded-xl px-4 py-3 cursor-pointer"><input type="checkbox" checked={rightIreland} onChange={e=>setRightIreland(e.target.checked)}/><span className="text-sm">Ireland</span></label></div>
+        <div>
+          <label className="eyebrow block mb-1.5">How we check your right to work *</label>
+          <div className="grid gap-2 sm:grid-cols-3">
+            {RTW_METHODS.map(method => (
+              <label key={method.value} className={`cursor-pointer border p-3 text-left transition-colors ${rtwMethod === method.value ? 'border-ink bg-[#f1f1f1]' : 'border-border hover:border-secondary'}`}>
+                <input type="radio" name="rtw-method" className="sr-only" checked={rtwMethod === method.value} onChange={() => setRtwMethod(method.value)} />
+                <span className="block text-[13px] font-medium text-ink">{method.label}</span>
+                <span className="mt-1 block text-[11px] leading-5 text-secondary">{method.hint}</span>
+              </label>
+            ))}
+          </div>
+        </div>
+
+        {rtwMethod === 'share_code' ? (
+          <div className="border border-border bg-[#f1f1f1] p-4">
+            <p className="text-[12px] leading-6 text-secondary">
+              Get a share code from{' '}
+              <a href={SHARE_CODE_URL} target="_blank" rel="noopener noreferrer" className="font-semibold text-ink underline">gov.uk/prove-right-to-work</a>{' '}
+              - it takes a couple of minutes and you will need your passport or biometric residence permit. We check the
+              result with the Home Office rather than storing your documents.
+            </p>
+            <div className="mt-4 grid gap-3 sm:grid-cols-2">
+              <div>
+                <label htmlFor="share-code" className="eyebrow block mb-1.5">Share code *</label>
+                <input
+                  id="share-code" value={shareCode}
+                  onChange={e => setShareCode(normaliseShareCode(e.target.value))}
+                  maxLength={9} placeholder="W9A4B72KX" autoComplete="off" spellCheck={false}
+                  className="input-field font-mono tracking-[0.18em] uppercase"
+                />
+                <p className="mt-1 text-[11px] text-muted">Nine letters and numbers.</p>
+              </div>
+              <div>
+                <label htmlFor="rtw-dob" className="eyebrow block mb-1.5">Date of birth *</label>
+                <input id="rtw-dob" type="date" value={rtwDob} onChange={e => setRtwDob(e.target.value)} className="input-field" />
+                <p className="mt-1 text-[11px] text-muted">Needed to view the result. Not shown to properties.</p>
+              </div>
+            </div>
+          </div>
+        ) : (
         <div><label className="eyebrow block mb-1.5">Right-to-work evidence *</label><label className="flex items-center gap-3 border border-dashed border-border rounded-xl px-4 py-3 cursor-pointer hover:border-ink/30"><Upload size={16} className="text-muted"/><span className="text-[13px] text-secondary truncate">{rtwFile ? rtwFile.name : v?.right_to_work_document_url ? 'Evidence on file - upload to replace' : 'Upload right-to-work evidence'}</span><input type="file" accept=".pdf,.jpg,.jpeg,.png,.webp,.doc,.docx" className="hidden" onChange={e=>setRtwFile(e.target.files?.[0]||null)}/></label><p className="text-[11px] text-muted mt-1">Only WHC administrators can view this document.</p></div>
+        )}
+
         <div><label className="eyebrow block mb-1.5">Right-to-work expiry date</label><input aria-label="Right-to-work expiry date" type="date" value={rtwExpiry} onChange={e=>setRtwExpiry(e.target.value)} className="input-field"/><p className="text-[11px] text-muted mt-1">Leave blank if your right to work has no expiry date.</p></div>
 
         <div className="pt-5 border-t border-border"><div className="flex items-start justify-between gap-4"><div><h2 className="font-serif text-lg font-semibold">Personal insurance</h2><p className="text-xs text-secondary mt-1">Optional. Turn this on only if you hold your own current professional/public liability insurance.</p></div><button type="button" onClick={()=>setHasInsurance(!hasInsurance)} className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${hasInsurance?'bg-ink':'bg-gray-200'}`}><span className={`h-4 w-4 rounded-full bg-white transition-transform ${hasInsurance?'translate-x-6':'translate-x-1'}`}/></button></div></div>
