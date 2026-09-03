@@ -131,3 +131,32 @@ test('the indexes the commonest queries need exist', () => {
     'every index must be IF NOT EXISTS, so the migration is safe against what is already live',
   )
 })
+
+// A box that only says "Search..." makes you guess what it will match, and the
+// wrong guess reads as no results rather than as the wrong query.
+test('every search box says what it searches', () => {
+  const bare: string[] = []
+  for (const file of walk(APP).concat(walk(COMPONENTS))) {
+    const source = readFileSync(file, 'utf8')
+    for (const match of source.matchAll(/placeholder="(Search[^"]*)"/g)) {
+      const hint = match[1].replace(/[.\s]+$/, '')
+      if (hint.toLowerCase() === 'search') bare.push(`${file.split('/src/')[1]}: "${match[1]}"`)
+    }
+  }
+  assert.deepEqual(bare, [], 'a search placeholder has to name what it matches')
+})
+
+// Talent and properties are different decisions - a property is a customer, a
+// professional is the product - and interleaved by signup date they were
+// impossible to tell apart at a glance.
+test('the admin user list keeps talent and properties apart', () => {
+  const page = read('src/app/admin/users/page.tsx')
+  assert.match(page, /lg:grid-cols-2/, 'the two audiences sit side by side')
+  assert.match(page, />Talent</, 'the talent column is labelled')
+  assert.match(page, /Hotels &amp; employers/, 'the property column is labelled')
+  // Separate paging: one shared page number would scroll both columns at once
+  // and hide whichever list is longer.
+  for (const state of ['talentPage', 'hotelPage']) {
+    assert.ok(page.includes(state), `${state} must exist so each column pages on its own`)
+  }
+})
