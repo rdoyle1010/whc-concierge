@@ -3,7 +3,8 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import DashboardShell from '@/components/DashboardShell'
-import { Plus, Trash2, Save, ExternalLink, Send, Star } from 'lucide-react'
+import { Plus, Trash2, Save, ExternalLink, Send, Star, Upload, X } from 'lucide-react'
+import { getViewer } from '@/lib/viewer'
 import {
   BUDGET_BANDS, CONSULTANCY_SPECIALISMS, ENGAGEMENT_TYPES, WORKS_WITH,
   missingForPublication, type ConsultancyProject,
@@ -15,6 +16,40 @@ const EMPTY_PROJECT: ConsultancyProject = {
 
 const budgetLabel = (value: string) => BUDGET_BANDS.find(band => band.value === value)?.label || ''
 
+// One picture field, three uses. Aspect ratio is passed in because a logo, a
+// cover and a project photograph are read at very different shapes and a
+// single preview box would flatter none of them.
+function PictureField({ label, hint, value, aspect, busy, onPick, onClear }: {
+  label: string; hint: string; value: string; aspect: string
+  busy: boolean; onPick: (file: File) => void; onClear: () => void
+}) {
+  return (
+    <div>
+      <p className="eyebrow mb-1.5">{label}</p>
+      {value ? (
+        <div className="relative inline-block">
+          <div className={`${aspect} overflow-hidden border border-border bg-[#f1f1f1]`}>
+            <img src={value} alt="" className="h-full w-full object-contain" />
+          </div>
+          <button
+            type="button" onClick={onClear} aria-label={`Remove ${label.toLowerCase()}`}
+            className="absolute -right-2 -top-2 rounded-full border border-border bg-white p-1 text-muted hover:text-red-600"
+          ><X size={13} /></button>
+        </div>
+      ) : (
+        <label className={`${aspect} flex cursor-pointer items-center justify-center gap-2 border border-dashed border-border text-[12px] text-muted hover:border-ink`}>
+          <Upload size={14} /> {busy ? 'Uploading...' : 'Add a picture'}
+          <input
+            type="file" accept="image/jpeg,image/png,image/webp" className="hidden"
+            onChange={event => { const file = event.target.files?.[0]; if (file) onPick(file); event.target.value = '' }}
+          />
+        </label>
+      )}
+      <p className="mt-1.5 text-[11px] leading-5 text-muted">{hint}</p>
+    </div>
+  )
+}
+
 export default function TalentConsultancyPage() {
   const [profile, setProfile] = useState<any>(null)
   const [enquiries, setEnquiries] = useState<any[]>([])
@@ -23,6 +58,32 @@ export default function TalentConsultancyPage() {
   const [notice, setNotice] = useState<{ kind: 'ok' | 'error'; text: string } | null>(null)
   const [featuring, setFeaturing] = useState(false)
   const [focus, setFocus] = useState<string | null>(null)
+  const [viewerId, setViewerId] = useState<string | null>(null)
+  const [uploading, setUploading] = useState<string | null>(null)
+
+  useEffect(() => { getViewer().then(user => setViewerId(user?.id || null)).catch(() => {}) }, [])
+
+  // Uploads go under the signed-in user's own folder, which is what the upload
+  // route checks before it will accept anything into the public bucket.
+  async function upload(slot: string, file: File): Promise<string | null> {
+    if (!viewerId) { setNotice({ kind: 'error', text: 'Still signing you in - try again in a moment.' }); return null }
+    setUploading(slot); setNotice(null)
+    const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '-')
+    const body = new FormData()
+    body.append('file', file)
+    body.append('bucket', 'site-images')
+    // Timestamped, so replacing a picture is a new URL rather than the old one
+    // served from a cache for the next year.
+    body.append('path', `${viewerId}/consultancy/${slot}-${Date.now()}-${safeName}`)
+    const res = await fetch('/api/upload', { method: 'POST', body })
+    const json = await res.json().catch(() => ({}))
+    setUploading(null)
+    if (!res.ok || !json.url) {
+      setNotice({ kind: 'error', text: json.error || 'That picture would not upload.' })
+      return null
+    }
+    return json.url as string
+  }
 
   // The trimmed workspace is inferred from the fact that somebody listed a
   // practice on an otherwise empty talent profile. An inference has to be
@@ -228,6 +289,23 @@ export default function TalentConsultancyPage() {
             <input id="years" type="number" min={0} max={70} value={profile?.years_experience ?? ''} onChange={e => set('years_experience', e.target.value)} className="input-field" />
           </div>
         </div>
+        <div className="grid gap-6 border-t border-border pt-5 sm:grid-cols-[auto_minmax(0,1fr)]">
+          <PictureField
+            label="Practice logo" aspect="h-28 w-28" busy={uploading === 'logo'}
+            hint="Square works best."
+            value={profile?.logo_url || ''}
+            onPick={async file => { const url = await upload('logo', file); if (url) set('logo_url', url) }}
+            onClear={() => set('logo_url', '')}
+          />
+          <PictureField
+            label="Cover picture" aspect="h-28 w-full max-w-md" busy={uploading === 'cover'}
+            hint="Sits across the top of your listing. A project you are proud of reads better than a stock spa."
+            value={profile?.cover_image_url || ''}
+            onPick={async file => { const url = await upload('cover', file); if (url) set('cover_image_url', url) }}
+            onClear={() => set('cover_image_url', '')}
+          />
+        </div>
+
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
             <label htmlFor="website" className="eyebrow block mb-1.5">Website</label>
@@ -304,6 +382,13 @@ export default function TalentConsultancyPage() {
             </label>
             <textarea rows={3} value={project.summary} onChange={e => setProject(index, { summary: e.target.value })}
               placeholder="What the work was - the brief, the state you found it in, what you did" aria-label={`Project ${index + 1} description`} className="input-field" />
+            <PictureField
+              label="Photograph" aspect="h-36 w-full max-w-md" busy={uploading === `project-${index}`}
+              hint="Optional. The room, the space, the thing you built."
+              value={project.image_url}
+              onPick={async file => { const url = await upload(`project-${index}`, file); if (url) setProject(index, { image_url: url }) }}
+              onClear={() => setProject(index, { image_url: '' })}
+            />
             <textarea rows={2} value={project.outcome} onChange={e => setProject(index, { outcome: e.target.value })}
               placeholder="What changed. e.g. Opened on schedule at 71% utilisation against a 55% plan, £1.2m first-year revenue" aria-label={`Project ${index + 1} outcome`} className="input-field" />
           </div>

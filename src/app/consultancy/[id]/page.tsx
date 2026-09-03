@@ -62,14 +62,32 @@ export default function ConsultancyProfilePage() {
         <div className="max-w-4xl mx-auto px-6 lg:px-10 pt-28 pb-12">
           <Link href="/consultancy" className="text-[13px] text-secondary hover:text-ink inline-flex items-center gap-1.5"><ArrowLeft size={14} /> Consultancy</Link>
 
-          <header className="mt-6 border-b border-border pb-8">
-            {profile.featured && (
-              <p className="mb-3 inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-ink">
-                <Star size={11} fill="currentColor" /> Featured
-              </p>
-            )}
-            <h1 className="text-3xl font-semibold text-ink tracking-tight">{profile.practice_name}</h1>
-            {profile.headline && <p className="mt-2 text-[15px] leading-7 text-secondary max-w-2xl">{profile.headline}</p>}
+          {profile.cover_image_url && (
+            <div className="mt-6 aspect-[21/7] overflow-hidden border border-border bg-[#f1f1f1]">
+              <img src={profile.cover_image_url} alt="" className="h-full w-full object-cover" />
+            </div>
+          )}
+
+          <header className={`border-b border-border pb-8 ${profile.cover_image_url ? 'mt-8' : 'mt-6'}`}>
+            {/* The logo sits with the name rather than floating above it: on its
+                own it reads as a stray box, and a practice mark means nothing
+                separated from the practice it belongs to. */}
+            <div className="flex items-start gap-5">
+              {profile.logo_url && (
+                <div className="hidden h-20 w-20 shrink-0 items-center justify-center overflow-hidden border border-border bg-white sm:flex">
+                  <img src={profile.logo_url} alt={profile.practice_name} className="max-h-full max-w-full object-contain" />
+                </div>
+              )}
+              <div className="min-w-0">
+                {profile.featured && (
+                  <p className="mb-2 inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-ink">
+                    <Star size={11} fill="currentColor" /> Featured
+                  </p>
+                )}
+                <h1 className="text-3xl font-semibold text-ink tracking-tight">{profile.practice_name}</h1>
+                {profile.headline && <p className="mt-2 text-[15px] leading-7 text-secondary max-w-2xl">{profile.headline}</p>}
+              </div>
+            </div>
 
             <div className="mt-5 flex flex-wrap items-center gap-x-5 gap-y-2 text-[12px] text-muted">
               {profile.contact_name && <span>{profile.contact_name}</span>}
@@ -120,6 +138,11 @@ export default function ConsultancyProfilePage() {
                       <h3 className="text-[16px] font-semibold text-ink">{project.title}</h3>
                       <p className="text-[11px] text-muted">{[project.client, project.location, project.year].filter(Boolean).join(' · ')}</p>
                     </div>
+                    {project.image_url && (
+                      <div className="mt-4 aspect-[16/9] overflow-hidden border border-border bg-[#f1f1f1]">
+                        <img src={project.image_url} alt={project.title} loading="lazy" className="h-full w-full object-cover" />
+                      </div>
+                    )}
                     {project.summary && <p className="mt-3 text-[13px] leading-7 text-body whitespace-pre-line">{project.summary}</p>}
                     {project.outcome && (
                       <p className="mt-4 border-l-2 border-ink pl-4 text-[13px] leading-6 text-ink">

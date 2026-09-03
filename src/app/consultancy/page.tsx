@@ -123,6 +123,11 @@ export default function ConsultancyDirectory() {
                       <Star size={11} fill="currentColor" /> Featured
                     </p>
                   )}
+                  {profile.logo_url && (
+                    <div className="mb-3 h-11 w-11 overflow-hidden border border-border bg-white">
+                      <img src={profile.logo_url} alt="" loading="lazy" className="h-full w-full object-contain" />
+                    </div>
+                  )}
                   <p className="text-[17px] font-semibold text-ink">{profile.practice_name}</p>
                   {profile.headline && <p className="mt-1.5 text-[13px] leading-6 text-secondary">{profile.headline}</p>}
 
