@@ -590,7 +590,7 @@ export default function OnboardingWizard() {
               <Zap size={18} className="text-accent mt-0.5 shrink-0" />
               <div>
                 <p className="text-[14px] font-medium text-ink">Join the agency register</p>
-                <p className="text-[13px] text-secondary mt-1">Properties book agency cover when someone calls in sick or they need extra hands. Set your hourly rate, tell us where you can work, and you&apos;ll receive shift offers - urgent same-day offers arrive by text so you never miss one. Hotels pay Wellness House Collective and WHC pays you after the shift, so you never have to chase a property for money.</p>
+                <p className="text-[13px] text-secondary mt-1">Properties book agency cover when someone calls in sick or they need extra hands. Set your hourly rate, tell us where you can work, and you&apos;ll receive shift offers - urgent same-day offers arrive by text so you never miss one. Hotels pay Talent House Collective and WHC pays you after the shift, so you never have to chase a property for money.</p>
               </div>
             </div>
 

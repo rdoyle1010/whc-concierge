@@ -105,11 +105,11 @@ export async function sendReviewRequestEmail(email: string, name: string, otherN
 export async function sendCourseGiftEmail(email: string, name: string, course: string, awarded: boolean) {
   await sendEmail(email, awarded ? `Certificate awarded - ${course}` : `A course has been unlocked for you - ${course}`, wrapper(awarded ? `
     <p style="font-size: 24px; font-weight: 700; margin-bottom: 16px;">Congratulations, ${name}</p>
-    <p style="color: #555555;">Wellness House Collective has awarded you the certificate for <strong>${course}</strong>. It is live on your profile now, visible to every property searching the directory.</p>
+    <p style="color: #555555;">Talent House Collective has awarded you the certificate for <strong>${course}</strong>. It is live on your profile now, visible to every property searching the directory.</p>
     <p style="margin-top: 24px;"><a href="https://talenthousecollective.co.uk/talent/academy" style="display: inline-block; background: #1c1c1c; color: #fff; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600;">View your certificate</a></p>
   ` : `
     <p style="font-size: 24px; font-weight: 700; margin-bottom: 16px;">A gift from WHC, ${name}</p>
-    <p style="color: #555555;">Wellness House Collective has enrolled you on <strong>${course}</strong>, with our compliments. Complete the modules, pass the assessment, and the certificate and profile badge are yours.</p>
+    <p style="color: #555555;">Talent House Collective has enrolled you on <strong>${course}</strong>, with our compliments. Complete the modules, pass the assessment, and the certificate and profile badge are yours.</p>
     <p style="margin-top: 24px;"><a href="https://talenthousecollective.co.uk/talent/academy" style="display: inline-block; background: #1c1c1c; color: #fff; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600;">Start your course</a></p>
   `))
 }

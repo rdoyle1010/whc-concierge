@@ -906,7 +906,7 @@ export async function POST(req: NextRequest) {
       await notifyOtherParty(
         admin, otherUserId, user.id,
         'Issue reported on a booking',
-        `${actorName} has reported an issue with the shift on ${shiftDate}. Your payout for this booking is on hold while Wellness House Collective reviews it - you'll be notified of the outcome.`,
+        `${actorName} has reported an issue with the shift on ${shiftDate}. Your payout for this booking is on hold while Talent House Collective reviews it - you'll be notified of the outcome.`,
         otherLink,
       )
       return NextResponse.json({ success: true, booking: updated })

@@ -326,7 +326,7 @@ export async function POST(req: NextRequest) {
       if (error) throw error
       try {
         if (candidate.user_id) {
-          await createNotification(candidate.user_id, 'general', 'A course has been unlocked for you', `Wellness House Collective has enrolled you on ${course.title}, with our compliments.`, '/talent/academy')
+          await createNotification(candidate.user_id, 'general', 'A course has been unlocked for you', `Talent House Collective has enrolled you on ${course.title}, with our compliments.`, '/talent/academy')
           // Preference-gated ('academy_updates'): the gifted-course email is an
           // Academy notification; the in-app notification above always fires
           // so the gift is never invisible. Fail-open on lookup errors.

@@ -251,7 +251,7 @@ export default function AcademyPage() {
           ))
         )}
 
-        <p className="text-[11px] text-muted">Certificates are issued by Wellness House Collective and carry a unique verification code. They evidence course completion and knowledge assessment; they are not a substitute for accredited qualifications or insurance requirements.</p>
+        <p className="text-[11px] text-muted">Certificates are issued by Talent House Collective and carry a unique verification code. They evidence course completion and knowledge assessment; they are not a substitute for accredited qualifications or insurance requirements.</p>
       </div>
     </DashboardShell>
   )

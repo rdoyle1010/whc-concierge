@@ -130,7 +130,7 @@ export const DEFAULT_WEBSITE_CONTENT: WebsiteContent = {
   },
   testimonials: { eyebrow: 'What people say', heading: 'Trusted by the industry.', linkLabel: 'Read all testimonials' },
   panels: JSON.parse(JSON.stringify(DEFAULT_PANELS)),
-  footer: { copyright: '© 2026 Wellness House Collective', staffLabel: 'Staff' },
+  footer: { copyright: '© 2026 Talent House Collective', staffLabel: 'Staff' },
   sections: [
     { id: 'proof', visible: true }, { id: 'howItWorks', visible: true }, { id: 'product', visible: true },
     { id: 'trust', visible: true }, { id: 'roles', visible: true }, { id: 'cta', visible: true },

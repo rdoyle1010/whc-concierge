@@ -59,7 +59,7 @@ function VerifyInner() {
               {result.learning_minutes ? <p><span className="text-emerald-700">Learning time:</span> {result.learning_minutes >= 60 ? `${Math.round(result.learning_minutes / 60 * 10) / 10} hours` : `${result.learning_minutes} minutes`}</p> : null}
               {typeof result.score === 'number' ? <p><span className="text-emerald-700">Assessment:</span> passed at {result.score}%</p> : null}
               <p><span className="text-emerald-700">Certificate ID:</span> <span className="font-mono">{result.code}</span></p>
-              <p className="pt-1 text-[12px] text-emerald-700">Issued by WHC Academy, Wellness House Collective.</p>
+              <p className="pt-1 text-[12px] text-emerald-700">Issued by WHC Academy, Talent House Collective.</p>
             </div>
           </div>
         )}

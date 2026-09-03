@@ -21,7 +21,7 @@ export default function UpgradePage() {
 const BENEFITS = [
   'Top of search results when properties browse talent',
   'Featured in the homepage carousel',
-  'Social media promotion by Wellness House Collective',
+  'Social media promotion by Talent House Collective',
   'Inclusion in the WHC newsletter to employers',
 ]
 
