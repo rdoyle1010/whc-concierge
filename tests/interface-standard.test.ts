@@ -546,3 +546,24 @@ test('the public navigation does not ship the database client', () => {
   // deferral would start costing a flash of the wrong state.
   assert.match(navbar, /function getSupabase\(\)/)
 })
+
+// The brand rule is explicit in tailwind.config.js: the accent is a detail -
+// logo mark, verified badge, hairlines - "never a button or a background".
+// Bound to it, every primary button on the platform got lighter the moment the
+// accent was set lighter, and a mid-grey button with white text reads as
+// disabled.
+test('primary buttons are ink, not whatever the accent happens to be', () => {
+  const css = readFileSync(new URL('../src/app/globals.css', import.meta.url), 'utf8')
+  const primary = css.slice(css.indexOf('.btn-primary {'), css.indexOf('.btn-primary:hover'))
+  assert.ok(!/var\(--site-accent/.test(primary), 'a light accent must not be able to grey out every button')
+  assert.match(primary, /background: #1c1c1c/)
+})
+
+// Half-opacity on an already-light button is indistinguishable from an enabled
+// one, which is how the whole platform came to look dead.
+test('a disabled button looks disabled', () => {
+  const css = readFileSync(new URL('../src/app/globals.css', import.meta.url), 'utf8')
+  assert.match(css, /\.btn-primary:disabled/)
+  assert.match(css, /background: #dddddd/, 'disabled is a different colour, not a faded version of the same one')
+  assert.match(css, /cursor: not-allowed/)
+})

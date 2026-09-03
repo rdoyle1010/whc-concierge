@@ -52,7 +52,6 @@ const navItems: Record<string, NavItem[]> = {
     { label: 'Agency Settings', href: '/talent/agency/settings', icon: <Settings size={17} /> },
     { label: 'Shift Resolution', href: '/talent/agency/cases', icon: <AlertTriangle size={17} /> },
     { label: 'Residency', href: '/talent/residency', icon: <MapPin size={17} /> },
-    { label: 'Consultancy', href: '/talent/consultancy', icon: <Lightbulb size={17} /> },
     { label: 'Before You Arrive', href: '/talent/before-you-arrive', icon: <ClipboardList size={17} /> },
     { label: 'Academy', href: '/talent/academy', icon: <GraduationCap size={17} />, section: 'Grow' },
     { label: 'Career Intelligence', href: '/talent/career', icon: <TrendingUp size={17} /> },
@@ -159,7 +158,13 @@ export default function DashboardShell({ children, role, userName, intro }: Dash
   const pathname = usePathname()
   const supabase = createClient()
   const [accountFocus, setAccountFocus] = useState<string | null>(null)
-  const items = role === 'talent' && accountFocus === 'consultant' ? navItems.consultant : navItems[role]
+  const [hasConsultancy, setHasConsultancy] = useState(false)
+  const baseItems = role === 'talent' && accountFocus === 'consultant' ? navItems.consultant : navItems[role]
+  // Shown to somebody who actually has a practice listed, and to nobody else.
+  const consultancyItem: NavItem = { label: 'Consultancy', href: '/talent/consultancy', icon: <Lightbulb size={17} /> }
+  const items: NavItem[] = role === 'talent' && accountFocus !== 'consultant' && hasConsultancy
+    ? [...baseItems.slice(0, 5), consultancyItem, ...baseItems.slice(5)]
+    : baseItems
   const isPublicAgencyRoute = pathname === '/agency'
   const showRecruitmentPipeline = (role === 'talent' && pathname === '/talent/applications') || (role === 'employer' && pathname === '/employer/applications')
   const showPostHireActions = role === 'employer' && pathname === '/employer/applications'
@@ -182,6 +187,9 @@ export default function DashboardShell({ children, role, userName, intro }: Dash
       if (role === 'talent') {
         const { data } = await supabase.from('candidate_profiles').select('membership_tier,interview_ready_credits,academy_discount_pct,free_feature_credits,account_focus').eq('user_id', user.id).maybeSingle()
         if (active) { setAccess(talentFeatureAccess(data)); setAccountFocus(data?.account_focus || null) }
+        const consultancy = await fetch('/api/consultancy/mine', { cache: 'no-store' })
+          .then(res => res.ok ? res.json() : null).catch(() => null)
+        if (active) setHasConsultancy(Boolean(consultancy?.profile))
       } else {
         const { data } = await supabase.from('employer_profiles').select('membership_tier,annual_job_allowance,annual_jobs_used,featured_employer,featured_until').eq('user_id', user.id).maybeSingle()
         if (active) setAccess(employerFeatureAccess(data))

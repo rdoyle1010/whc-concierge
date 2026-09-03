@@ -61,6 +61,9 @@ export default function AgencySettingsPage() {
   const [startTime, setStartTime] = useState('09:00')
   const [endTime, setEndTime] = useState('17:00')
   const [dayBusy, setDayBusy] = useState<string | null>(null)
+  // The button itself confirms. A line of green text under it was there, but
+  // people press a button and look at the button, not below it.
+  const [daySaved, setDaySaved] = useState(false)
   const [referral, setReferral] = useState<{ code: string | null; total: number; converted: number }>({ code: null, total: 0, converted: 0 })
   const [copied, setCopied] = useState(false)
   const [payoutState, setPayoutState] = useState<'loading' | 'not_started' | 'incomplete' | 'active' | 'unavailable'>('loading')
@@ -165,7 +168,11 @@ export default function AgencySettingsPage() {
         return { ...current, [key]: [nextWindow] }
       })
       setNotice(state === 'available' ? `${prettyDate(key)} saved as available ${startTime}–${endTime}.` : state === 'unavailable' ? `${prettyDate(key)} saved as not available.` : 'Availability cleared.')
-    } catch { setError('Could not save availability.') } finally { setDayBusy(null) }
+    } catch { setError('Could not save availability.') } finally {
+      setDayBusy(null)
+      setDaySaved(true)
+      window.setTimeout(() => setDaySaved(false), 2200)
+    }
   }
 
   async function saveDetails(joining: boolean): Promise<boolean> {
@@ -323,7 +330,7 @@ export default function AgencySettingsPage() {
             )}
 
             <div className="mt-5 flex flex-wrap items-center gap-3 border-t border-border pt-5">
-              <button type="button" onClick={() => saveDay(availabilityMode)} disabled={!!dayBusy} className="btn-primary text-[12px]">{dayBusy ? 'Saving...' : availabilityMode === 'available' ? 'Save available hours' : 'Save as not available'}</button>
+              <button type="button" onClick={() => saveDay(availabilityMode)} disabled={!!dayBusy} className={`btn-primary text-[12px] inline-flex items-center gap-2 ${daySaved ? '!bg-emerald-700' : ''}`}>{dayBusy ? 'Saving...' : daySaved ? <><Check size={13} /> Saved</> : availabilityMode === 'available' ? 'Save available hours' : 'Save as not available'}</button>
               {days[selectedDate] && <button type="button" onClick={() => saveDay('clear')} disabled={!!dayBusy} className="text-[12px] underline text-muted">Clear this day</button>}
             </div>
             {(windows[selectedDate] || []).map((w, i) => <p key={i} className="mt-3 text-[12px] font-medium text-green-700">Saved: Available {w.start_time.slice(0,5)}–{w.end_time.slice(0,5)}</p>)}

@@ -25,7 +25,7 @@
 @layer components {
   /* One button language: colour + transform transition ~150ms, existing
      hover colours, a 1px press on :active and a grey focus-visible ring. */
-  .btn-primary { @apply text-white px-5 py-2.5 text-[13px] font-semibold; background: var(--site-accent, #1c1c1c); border-radius: var(--site-button-radius, 0px); transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease, transform 150ms ease; }
+  .btn-primary { @apply text-white px-5 py-2.5 text-[13px] font-semibold; background: #1c1c1c; border-radius: var(--site-button-radius, 0px); transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease, transform 150ms ease; }
   .btn-primary:hover { background: #333333; }
   .btn-secondary { @apply bg-white text-ink border border-border px-5 py-2.5 text-[13px] font-semibold hover:bg-surface; border-radius: var(--site-button-radius, 0px); transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease, transform 150ms ease; }
   .btn-accent { @apply text-white px-5 py-2.5 text-[13px] font-semibold; background: var(--site-accent, #1c1c1c); border-radius: var(--site-button-radius, 0px); transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease, transform 150ms ease; }
@@ -164,7 +164,21 @@ select:focus-visible, textarea:focus-visible, [role="button"]:focus-visible {
 .dashboard-shell input:not([type="checkbox"]):not([type="radio"]) { border-radius: 0; }
 .dashboard-shell table { border-radius: 0; }
 .dashboard-shell .btn-primary,
-.dashboard-shell .btn-accent { background: var(--site-accent, #1c1c1c); color:#fff; }
+.dashboard-shell .btn-accent { background: #1c1c1c; color:#fff; }
+
+/* A disabled button has to look disabled. Half-opacity on a mid-grey button is
+   indistinguishable from an enabled one, which is how every button on the
+   platform came to read as dead. */
+.dashboard-shell .btn-primary:disabled,
+.dashboard-shell .btn-accent:disabled,
+.btn-primary:disabled,
+.btn-accent:disabled {
+  background: #dddddd;
+  color: #6b6b6b;
+  cursor: not-allowed;
+}
+.dashboard-shell .btn-secondary:disabled,
+.btn-secondary:disabled { color: #6b6b6b; border-color: #e7e7e7; cursor: not-allowed; }
 .dashboard-shell .btn-primary:hover,
 .dashboard-shell .btn-accent:hover { background: #333333; }
 .dashboard-shell .input-field:focus { border-color: #6b6b6b; box-shadow: 0 0 0 2px rgba(0,0,0,.06); }
