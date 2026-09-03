@@ -35,14 +35,24 @@ function maskEmail(address: string): string {
 }
 
 export async function GET() {
-  if (!await adminRequestUser()) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+  const user = await adminRequestUser()
+  if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
   const [mobile, email] = await Promise.all([config('admin_alert_mobile'), config('admin_alert_email')])
+  // The destination shown has to be the one a message would really go to.
+  // Reporting only the configured value read "Nothing saved to send to" on a
+  // panel whose button then delivered perfectly well, which teaches you to
+  // ignore the panel - and the next time it says something is missing, it will
+  // be right and you will not believe it.
+  const emailTo = email || user.email || ''
   return NextResponse.json({
     email: {
       // A key on the deployment, not the key itself - this is a browser response.
       providerConfigured: Boolean(process.env.RESEND_API_KEY),
       from: TRANSACTIONAL_FROM,
-      to: email ? maskEmail(email) : null,
+      to: emailTo ? maskEmail(emailTo) : null,
+      // Said plainly, because a fallback that is silently your own address is
+      // one you stop thinking about until somebody else needs the alerts.
+      usingAccountFallback: !email && Boolean(user.email),
     },
     sms: {
       providerConfigured: smsConfigured(),
