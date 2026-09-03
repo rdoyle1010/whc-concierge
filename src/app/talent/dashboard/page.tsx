@@ -28,6 +28,16 @@ export default function TalentDashboard() {
   const [approaches, setApproaches] = useState<any[]>([])
   const [approachBusy, setApproachBusy] = useState('')
   const [approachNote, setApproachNote] = useState('')
+  const [consultancyEnquiries, setConsultancyEnquiries] = useState(0)
+  const isConsultant = profile?.account_focus === 'consultant'
+
+  useEffect(() => {
+    if (!isConsultant) return
+    fetch('/api/consultancy/mine', { cache: 'no-store' })
+      .then(res => res.ok ? res.json() : null)
+      .then(json => setConsultancyEnquiries((json?.enquiries || []).length))
+      .catch(() => {})
+  }, [isConsultant])
 
   // Confidential approaches: a property has asked for an introduction to this
   // private profile. Accepting reveals the full profile and opens messaging.
@@ -130,7 +140,9 @@ export default function TalentDashboard() {
       intro={<>
         <p className="dashboard-eyebrow">Your career</p>
         <h1 className="dashboard-title">{timeOfDayGreeting()}{briefFirstName ? `, ${briefFirstName}` : ''}.</h1>
-        <p className="dashboard-intro">Permanent roles, flexible work, private conversations and your professional profile in one workspace.</p>
+        <p className="dashboard-intro">{isConsultant
+          ? 'Your practice, your enquiries and the Academy, in one workspace.'
+          : 'Permanent roles, flexible work, private conversations and your professional profile in one workspace.'}</p>
       </>}
     >
 
@@ -139,8 +151,8 @@ export default function TalentDashboard() {
           <h2 className="dashboard-section-title mb-2">What has moved</h2>
           <div className="mt-4 mb-2 grid max-w-md grid-cols-2 gap-x-8">
             <div className="border-t border-border pt-3">
-              <p className="text-[10px] uppercase tracking-[.14em] text-muted">Applications</p>
-              <p className="mt-1 text-[18px] font-serif font-semibold text-ink">{stats.applications}</p>
+              <p className="text-[10px] uppercase tracking-[.14em] text-muted">{isConsultant ? 'Enquiries' : 'Applications'}</p>
+              <p className="mt-1 text-[18px] font-serif font-semibold text-ink">{isConsultant ? consultancyEnquiries : stats.applications}</p>
             </div>
             <div className="border-t border-border pt-3">
               <p className="text-[10px] uppercase tracking-[.14em] text-muted">Unread messages</p>
@@ -198,10 +210,20 @@ export default function TalentDashboard() {
               <div className="dashboard-list-row">
                 <p className="text-[13px] text-ink">Nothing has moved yet.</p>
                 <p className="text-[12px] text-secondary mt-1 max-w-[54ch]">
-                  Matching runs on what your profile says about your skills, qualifications and
-                  product houses. The more of it that is filled in, the more this brief has to tell
-                  you. <Link href="/talent/profile" className="text-accent hover:underline">Complete your profile</Link>
-                  {' '}or <Link href="/jobs" className="text-accent hover:underline">browse live roles</Link>.
+                  {isConsultant ? (
+                    <>
+                      Properties find you through the directory, so the projects on your listing do the work here.{' '}
+                      <Link href="/talent/consultancy" className="text-accent hover:underline">Open your practice</Link>
+                      {' '}or <Link href="/consultancy" className="text-accent hover:underline">see the directory</Link>.
+                    </>
+                  ) : (
+                    <>
+                      Matching runs on what your profile says about your skills, qualifications and
+                      product houses. The more of it that is filled in, the more this brief has to tell
+                      you. <Link href="/talent/profile" className="text-accent hover:underline">Complete your profile</Link>
+                      {' '}or <Link href="/jobs" className="text-accent hover:underline">browse live roles</Link>.
+                    </>
+                  )}
                 </p>
               </div>
             )}
