@@ -193,3 +193,29 @@ test('delivery can be proved without registering a fake account', () => {
   assert.match(panel, /Send a test/, 'and there is a button to press')
   assert.match(read('src/app/admin/settings/page.tsx'), /<DeliveryTestPanel \/>/, 'wired into settings')
 })
+
+// The delivery test fell back to the signed-in administrator's own address,
+// so it reported success while the path that actually matters - the alert
+// when somebody signs up - had nowhere to send and would have failed in
+// silence. An alert that quietly goes nowhere is worse than no alert, because
+// it gets trusted.
+test('a sign-up alert falls back to the administrator, not to nowhere', () => {
+  const lib = read('src/lib/admin-alerts.ts')
+  assert.match(lib, /async function administratorEmail/)
+  assert.match(lib, /config\(ADMIN_EMAIL_KEY\)\) \|\| \(await administratorEmail\(\)\)/,
+    'the configured address wins, and the account address catches what it misses')
+  assert.match(lib, /order\('created_at', \{ ascending: true \}\)/,
+    'two administrators must resolve to the owner, not to whoever came back first')
+})
+
+// The panel said "Nothing saved to send to" on a button that then delivered
+// perfectly well. A status that contradicts its own result teaches you to
+// ignore it, and the next time it reports something missing it will be right
+// and you will not believe it.
+test('the delivery panel names the address a message would really reach', () => {
+  const route = read('src/app/api/admin/delivery-test/route.ts')
+  assert.match(route, /const emailTo = email \|\| user\.email/, 'the reported destination is the real one')
+  assert.match(route, /usingAccountFallback/, 'and it says when that is a fallback rather than a setting')
+  const panel = read('src/components/DeliveryTestPanel.tsx')
+  assert.match(panel, /your own sign-in address/, 'said plainly, so it is not quietly relied on')
+})

@@ -10,7 +10,7 @@ import { Send, Check, AlertTriangle, MessageSquare, Mail } from 'lucide-react'
 // folder all produced the same result: nothing. This sends a real message
 // down the real path and prints what came back.
 
-type Status = { providerConfigured: boolean; from?: string; to: string | null; rejected?: boolean }
+type Status = { providerConfigured: boolean; from?: string; to: string | null; rejected?: boolean; usingAccountFallback?: boolean }
 type Config = { email: Status; sms: Status }
 type Outcome = { status: 'sent' | 'failed' | 'skipped'; detail: string }
 
@@ -94,7 +94,9 @@ export default function DeliveryTestPanel() {
                 ? <p>Provider connected{row.status?.from ? <> - sending as <span className="text-secondary">{row.status.from}</span></> : null}</p>
                 : <p className="text-amber-700 flex items-start gap-1.5"><AlertTriangle size={13} className="mt-0.5 shrink-0" />{row.missing}</p>}
               {row.status?.to
-                ? <p>Goes to <span className="text-secondary">{row.status.to}</span></p>
+                ? <p>Goes to <span className="text-secondary">{row.status.to}</span>{row.status.usingAccountFallback
+                  ? <> - your own sign-in address, because no alert address is saved below. Fine for you; set one if anybody else should receive them.</>
+                  : null}</p>
                 : row.status?.rejected
                   ? <p className="text-amber-700">The number saved above is not one we can text. Use the 07... form, eleven digits.</p>
                   : <p className="text-amber-700">Nothing saved to send to. Fill this in under General configuration below and save it.</p>}

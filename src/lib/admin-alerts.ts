@@ -35,6 +35,31 @@ async function config(key: string): Promise<string> {
   } catch { return '' }
 }
 
+/**
+ * The administrator's own address, when no fallback has been configured.
+ *
+ * The delivery test in Admin Settings falls back to the signed-in
+ * administrator's address, so it reported success while this path - the one
+ * that actually matters - had nowhere to send. An alert that quietly goes
+ * nowhere is worse than no alert, because it is trusted, and that is the exact
+ * failure this file was written to stop.
+ *
+ * Ordered by created_at so a platform with two administrators picks the owner
+ * rather than whoever the database happened to return first.
+ */
+async function administratorEmail(): Promise<string> {
+  try {
+    const admin = createAdminClient()
+    const { data } = await admin.from('profiles')
+      .select('email, created_at')
+      .eq('role', 'admin')
+      .not('email', 'is', null)
+      .order('created_at', { ascending: true })
+      .limit(1)
+    return String(data?.[0]?.email || '').trim()
+  } catch { return '' }
+}
+
 /** "Hannah Lucy Francis" -> "Hannah F." Enough to recognise, not a full identity. */
 function shortName(fullName: string | null | undefined): string {
   const parts = String(fullName || '').trim().split(/\s+/).filter(Boolean)
@@ -69,7 +94,7 @@ export async function alertAdminOfSignup(kind: SignupKind, name: string | null |
     }
 
     // No number, no Twilio, or the text bounced. Email rather than silence.
-    const email = await config(ADMIN_EMAIL_KEY)
+    const email = (await config(ADMIN_EMAIL_KEY)) || (await administratorEmail())
     if (email) {
       await sendTransactionalEmail({
         to: email,
