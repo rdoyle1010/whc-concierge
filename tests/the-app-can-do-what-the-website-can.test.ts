@@ -63,3 +63,53 @@ test('deleting an account takes more than one tap and tells the truth', () => {
   assert.match(source, /anonymised/i,
     'the screen must be honest that legally required records are kept and anonymised')
 })
+
+test('the app opens on a front door, not a password box', () => {
+  // Icon to credentials with nothing in between is the most expensive screen
+  // to get wrong: the only one every new person sees, and the only one they
+  // can leave from without an account.
+  const index = body('mobile/app/index.tsx')
+  assert.match(index, /router\.replace\('\/welcome'\)/,
+    'a signed-out person must reach the welcome screen, not the sign-in form')
+  assert.ok(existsSync('mobile/app/welcome.tsx'), 'the welcome screen is missing')
+
+  const welcome = body('mobile/app/welcome.tsx')
+  assert.match(welcome, /\/signup/, 'the welcome screen must offer a way to create an account')
+  assert.match(welcome, /\/login/, 'the welcome screen must offer a way to sign in')
+})
+
+test('a role can say what it is on the app, not only on the website', () => {
+  // The API accepted all eleven the whole time. Only the form was missing, so
+  // a property editing a role from a phone could set a salary and nothing
+  // that would make anybody good want the job.
+  const editor = body('mobile/app/employer-job/[id].tsx')
+  const storyFields = [
+    'why_role_exists', 'success_90_days', 'reporting_line', 'team_size', 'opening_hours',
+    'commercial_responsibility', 'membership_size', 'key_kpis', 'why_move',
+    'career_progression', 'interview_process',
+  ]
+  const missing = storyFields.filter(field => !editor.includes(`update('${field}'`))
+  assert.deepEqual(missing, [], `the app cannot edit these, and the website can: ${missing.join(', ')}`)
+
+  // The server list and the form must not drift apart again.
+  const api = body('src/app/api/mobile/employer/jobs/manage/route.ts')
+  for (const field of storyFields) {
+    assert.ok(api.includes(`'${field}'`), `${field} is on the form but the API will not save it`)
+  }
+})
+
+test('the app says what a shift was worth', () => {
+  assert.ok(existsSync('mobile/app/earnings.tsx'), 'the earnings screen is missing')
+  const earnings = body('mobile/app/earnings.tsx')
+  const home = body('mobile/app/home.tsx')
+  assert.ok(home.includes("'/earnings'"), 'nothing in the home menu links to the earnings screen')
+
+  // A shift with no stated hours is a standard day on the website too. A
+  // different assumption here would show a different total for the same work.
+  assert.match(earnings, /hours && b\.hours > 0 \? b\.hours : 8/,
+    'the hours assumption must match the website statement')
+  assert.match(earnings, /payout_amount \?\? grossOf/,
+    'a recorded payout amount must win over the calculated one')
+  assert.match(earnings, /dispute_status === 'open'/,
+    'money held behind a case must not be counted as due')
+})

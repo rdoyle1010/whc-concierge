@@ -13,6 +13,7 @@ const talentCards:Card[]=[
  // laptop, and this was on the website only.
  {title:'Shift Resolution',copy:'Raise or answer an issue about a shift.',href:'/agency-cases'},
  {title:'Saved Roles',copy:'Roles you bookmarked to read properly later.',href:'/saved'},
+ {title:'Your earnings',copy:'What you are owed, what has been paid.',href:'/earnings'},
  {title:'Residency',copy:'Specialist opportunities and confirmed placements.',href:'/residency'},
  {title:'Interview Ready',copy:'Prepare using your CV, the role and the employer.',href:'/interview-ready'},
  {title:'Talent House Academy',copy:'Professional development and certificates.',href:'/academy'},
@@ -26,6 +27,7 @@ const employerCards:Card[]=[
  {title:'Talent Match',copy:'Match a live role with the strongest professionals.',href:'/match'},
  {title:'Agency bookings',copy:'Flexible staffing and live responses.',href:'/agency'},
  {title:'Shift Resolution',copy:'Raise or answer an issue about a shift.',href:'/agency-cases'},
+ {title:'Agency spend',copy:'What you have paid, and where payouts are.',href:'/earnings'},
  {title:'Property Profile',copy:'Photos, spa information and employer presence.',href:'/property-profile'},
  {title:'Residency',copy:'Specialist residency opportunities.',href:'/residency'},
  {title:'Analytics',copy:'Recruitment and role performance.',href:'/analytics'},
