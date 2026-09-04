@@ -2,7 +2,14 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { toPublicResidencyProfile } from '@/lib/residency-public'
 
-export const revalidate = 60
+// This route reads a query parameter, so it cannot be prerendered. Asking for
+// revalidation made Next try anyway on every build, fail, and log "Public
+// Residency directory failed" against a route that works perfectly at runtime -
+// a frightening line in the deploy log for a fault that did not exist.
+//
+// The caching that actually matters is the Cache-Control header below, served
+// by the CDN, and it is untouched.
+export const dynamic = 'force-dynamic'
 
 export async function GET(req: NextRequest) {
   try {
