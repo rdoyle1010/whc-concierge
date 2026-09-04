@@ -13,7 +13,9 @@ export default function IndexScreen() {
       if (!active) return
 
       if (!session?.user) {
-        router.replace('/login')
+        // Not a sign-in form. Somebody who has just downloaded this is owed a
+        // sentence about what it is before being asked for a password.
+        router.replace('/welcome')
         return
       }
 

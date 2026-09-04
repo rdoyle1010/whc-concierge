@@ -33,6 +33,21 @@ type FormState = {
   insurance_required: boolean
   is_agency_role: boolean
   is_residency_role: boolean
+  // The eleven the website has always asked for and the app never showed.
+  // The API accepted them the whole time - only the form was missing, so a
+  // role edited on a phone silently lost the ability to say anything about
+  // itself beyond the salary.
+  why_role_exists: string
+  success_90_days: string
+  reporting_line: string
+  team_size: string
+  opening_hours: string
+  commercial_responsibility: string
+  membership_size: string
+  key_kpis: string
+  why_move: string
+  career_progression: string
+  interview_process: string
 }
 
 type Taxonomy = { skills: string[]; brands: string[]; qualifications: string[]; systems: string[] }
@@ -41,6 +56,7 @@ const blank: FormState = {
   job_title: '', job_description: '', location: '', location_postcode: '', radius_miles: '', job_type: 'Full-time', contract_type: 'permanent',
   required_role_level: '', candidate_scope: 'step_up', salary_min: '', salary_max: '', required_skills: [], required_brands: [], required_qualifications: [], required_systems: [], preferred_business_skills: [],
   min_years_experience: '', shift_pattern: '', requirements: '', benefits: '', offers_accommodation: false, insurance_required: false, is_agency_role: false, is_residency_role: false,
+  why_role_exists: '', success_90_days: '', reporting_line: '', team_size: '', opening_hours: '', commercial_responsibility: '', membership_size: '', key_kpis: '', why_move: '', career_progression: '', interview_process: '',
 }
 
 export default function EmployerJobEditor() {
@@ -103,6 +119,10 @@ export default function EmployerJobEditor() {
         required_qualifications: data.required_qualifications || [], required_systems: data.required_systems || [], preferred_business_skills: data.preferred_business_skills || [], min_years_experience: data.min_years_experience ? String(data.min_years_experience) : '',
         shift_pattern: data.shift_pattern || '', requirements: Array.isArray(data.requirements) ? data.requirements.join('\n') : '', benefits: Array.isArray(data.benefits) ? data.benefits.join('\n') : '', offers_accommodation: Boolean(data.offers_accommodation),
         insurance_required: Boolean(data.insurance_required), is_agency_role: Boolean(data.is_agency_role), is_residency_role: Boolean(data.is_residency_role),
+        why_role_exists: data.why_role_exists || '', success_90_days: data.success_90_days || '', reporting_line: data.reporting_line || '',
+        team_size: data.team_size ? String(data.team_size) : '', opening_hours: data.opening_hours || '', commercial_responsibility: data.commercial_responsibility || '',
+        membership_size: data.membership_size || '', key_kpis: Array.isArray(data.key_kpis) ? data.key_kpis.join('\n') : (data.key_kpis || ''),
+        why_move: data.why_move || '', career_progression: data.career_progression || '', interview_process: data.interview_process || '',
       })
     } catch (e: any) { setError(e?.message || 'Could not load role.') } finally { setLoading(false) }
   }
@@ -118,6 +138,8 @@ export default function EmployerJobEditor() {
       min_years_experience: form.min_years_experience ? Number(form.min_years_experience) : 0,
       requirements: form.requirements.split('\n').map(v => v.trim()).filter(Boolean),
       benefits: form.benefits.split('\n').map(v => v.trim()).filter(Boolean),
+      team_size: form.team_size ? Number(form.team_size) : null,
+      key_kpis: form.key_kpis.split('\n').map(v => v.trim()).filter(Boolean),
     }
   }
 
@@ -226,6 +248,26 @@ export default function EmployerJobEditor() {
     <Field label="Requirements · one per line"><TextInput editable={!closed} value={form.requirements} onChangeText={v => update('requirements', v)} style={[styles.input,styles.smallArea]} multiline placeholder="Right to work in the UK\nLevel 3 Beauty Therapy\nPrevious luxury spa experience" placeholderTextColor={palette.quiet} /></Field>
     <Field label="Benefits · one per line"><TextInput editable={!closed} value={form.benefits} onChangeText={v => update('benefits', v)} style={[styles.input,styles.smallArea]} multiline placeholder="Service charge\nMeals on duty\nHotel discounts\nTraining & development" placeholderTextColor={palette.quiet} /></Field>
 
+    <SectionHeader eyebrow="04 · THE ROLE STORY" title="Why would somebody good leave a job for this one?" copy="A salary band is not a reason to move. These are the answers a Director of Spa reads before deciding whether to apply, and the website has always asked for them." />
+    <Field label="Why does this role exist?"><TextInput editable={!closed} value={form.why_role_exists} onChangeText={v => update('why_role_exists', v)} style={[styles.input, styles.smallArea]} multiline placeholder="A new opening, a promotion, a gap left by somebody leaving - say which." placeholderTextColor={palette.quiet} /></Field>
+    <Field label="What does success look like in ninety days?"><TextInput editable={!closed} value={form.success_90_days} onChangeText={v => update('success_90_days', v)} style={[styles.input, styles.smallArea]} multiline placeholder="What you would want to see settled by the end of their first quarter." placeholderTextColor={palette.quiet} /></Field>
+    <View style={styles.two}>
+      <View style={styles.flex}><Field label="Reporting line"><TextInput editable={!closed} value={form.reporting_line} onChangeText={v => update('reporting_line', v)} style={styles.input} placeholder="e.g. General Manager" placeholderTextColor={palette.quiet} /></Field></View>
+      <View style={styles.flex}><Field label="Team size"><TextInput editable={!closed} value={form.team_size} onChangeText={v => update('team_size', v)} keyboardType="number-pad" style={styles.input} placeholder="12" placeholderTextColor={palette.quiet} /></Field></View>
+    </View>
+    <View style={styles.two}>
+      <View style={styles.flex}><Field label="Opening hours"><TextInput editable={!closed} value={form.opening_hours} onChangeText={v => update('opening_hours', v)} style={styles.input} placeholder="e.g. 7am - 9pm, seven days" placeholderTextColor={palette.quiet} /></Field></View>
+      <View style={styles.flex}><Field label="Membership size"><TextInput editable={!closed} value={form.membership_size} onChangeText={v => update('membership_size', v)} style={styles.input} placeholder="e.g. 400 members" placeholderTextColor={palette.quiet} /></Field></View>
+    </View>
+    <Field label="Commercial responsibility"><TextInput editable={!closed} value={form.commercial_responsibility} onChangeText={v => update('commercial_responsibility', v)} style={[styles.input, styles.smallArea]} multiline placeholder="Budget, revenue line, retail target - whatever this person actually owns." placeholderTextColor={palette.quiet} /></Field>
+    <Field label="Key measures · one per line"><TextInput editable={!closed} value={form.key_kpis} onChangeText={v => update('key_kpis', v)} style={[styles.input, styles.smallArea]} multiline placeholder="Treatment room occupancy\nRetail per treatment\nGuest satisfaction score" placeholderTextColor={palette.quiet} /></Field>
+    <Field label="Why move here?"><TextInput editable={!closed} value={form.why_move} onChangeText={v => update('why_move', v)} style={[styles.input, styles.smallArea]} multiline placeholder="The honest case for your property over the one they are in now." placeholderTextColor={palette.quiet} /></Field>
+    <Field label="Where does this role lead?"><TextInput editable={!closed} value={form.career_progression} onChangeText={v => update('career_progression', v)} style={[styles.input, styles.smallArea]} multiline placeholder="What the next step looks like for somebody who does this well." placeholderTextColor={palette.quiet} /></Field>
+    <Field label="Interview process">
+      <Text style={styles.fieldHelp}>How many stages, who they meet and roughly how long it takes. Stated plainly, this is one of the strongest reasons good people apply rather than wonder.</Text>
+      <TextInput editable={!closed} value={form.interview_process} onChangeText={v => update('interview_process', v)} style={[styles.input, styles.smallArea]} multiline placeholder="Informal call with the Spa Manager, then a treatment assessment and a meeting with the GM. Usually two weeks start to finish." placeholderTextColor={palette.quiet} />
+    </Field>
+
     <View style={styles.toggleGroup}>
       <Toggle disabled={closed} label="Accommodation provided" help="Make this visible to candidates before they apply." value={form.offers_accommodation} onChange={value => update('offers_accommodation', value)} />
       <Toggle disabled={closed} label="Professional insurance required" help="Use this only where the role genuinely requires valid cover." value={form.insurance_required} onChange={value => update('insurance_required', value)} />
@@ -234,7 +276,7 @@ export default function EmployerJobEditor() {
     </View>
 
     {!closed ? <View style={styles.actions}>
-      <SectionHeader eyebrow="04 · PUBLISH" title={live?'Manage this live role':'Choose how to publish'} copy={live?'You can still save edits, mark the position filled or close it early.':'Save a draft first if you are not ready. Publishing may use your Group allowance or open secure Stripe checkout.'} />
+      <SectionHeader eyebrow="05 · PUBLISH" title={live?'Manage this live role':'Choose how to publish'} copy={live?'You can still save edits, mark the position filled or close it early.':'Save a draft first if you are not ready. Publishing may use your Group allowance or open secure Stripe checkout.'} />
       <Pressable disabled={!!busy} onPress={saveDraft} style={styles.secondary}><Text style={styles.secondaryText}>{busy==='save'?'Saving…':isNew?'Save draft':'Save changes'}</Text></Pressable>
 
       {!live ? <>
