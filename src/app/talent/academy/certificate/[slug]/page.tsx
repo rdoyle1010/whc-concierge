@@ -61,7 +61,7 @@ export default function CertificatePage() {
 
       <div className="max-w-3xl mx-auto px-6 py-10 print:py-0">
         <div className="bg-white border-[3px] border-double p-12 md:p-16 text-center" style={{ borderColor: '#555555' }}>
-          <p className="font-serif text-[20px] font-semibold text-black leading-none">Wellness House</p>
+          <p className="font-serif text-[20px] font-semibold text-black leading-none">Talent House</p>
           <p className="uppercase text-[9px] font-medium tracking-[0.42em] mt-1 mb-10" style={{ color: '#555555' }}>Collective</p>
 
           <p className="text-[11px] uppercase tracking-[0.3em] text-muted mb-6">Certificate of Completion</p>

@@ -98,7 +98,7 @@ export default function ReputationScreen(){
         <View style={styles.heroRight}>
           <Text style={styles.verifiedLabel}>WHC VERIFIED</Text>
           <Text style={styles.verifiedTitle}>{profile.name}</Text>
-          <Text style={styles.verifiedCopy}>Ratings are only attached to work or relationships Wellness House can verify.</Text>
+          <Text style={styles.verifiedCopy}>Ratings are only attached to work or relationships Talent House can verify.</Text>
         </View>
       </View>
 

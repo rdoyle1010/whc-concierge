@@ -118,7 +118,7 @@ export default function PrivacyStealthScreen(){
 
     {filtered.length===0?<View style={styles.empty}><Text style={styles.emptyTitle}>No employers found.</Text><Text style={styles.emptyCopy}>Try a different property, company or location name.</Text></View>:null}
     {message?<Text style={styles.message}>{message}</Text>:null}
-    <View style={styles.note}><Text style={styles.noteTitle}>Important</Text><Text style={styles.noteCopy}>Blocking an employer stops future discovery. It does not erase an application or conversation you already chose to send. Wellness House administrators retain access for safety, fraud prevention and support.</Text></View>
+    <View style={styles.note}><Text style={styles.noteTitle}>Important</Text><Text style={styles.noteCopy}>Blocking an employer stops future discovery. It does not erase an application or conversation you already chose to send. Talent House administrators retain access for safety, fraud prevention and support.</Text></View>
   </ScrollView>
 }
 

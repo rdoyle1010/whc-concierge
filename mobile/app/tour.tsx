@@ -22,7 +22,7 @@ const employerSteps: Step[] = [
   { number:'03', title:'Review matched Talent', copy:'See applications and matched professionals in one place, then message the people you want to progress.', action:'Applications', href:'/applications' },
   { number:'04', title:'Use Agency when you need cover', copy:'Find flexible spa professionals based on availability, location and travel practicality, then manage bookings from the same platform.', action:'Agency bookings', href:'/agency' },
   { number:'05', title:'Build your employer reputation', copy:'Your property can collect verified ratings and reviews too. Talent should be able to see what it is genuinely like to work with you.', action:'Reputation', href:'/reputation' },
-  { number:'06', title:'Keep everything together', copy:'Jobs, applications, messages, billing and property information all use the same live Wellness House account as the website.', action:'Messages', href:'/messages' },
+  { number:'06', title:'Keep everything together', copy:'Jobs, applications, messages, billing and property information all use the same live Talent House account as the website.', action:'Messages', href:'/messages' },
 ]
 
 export default function TourScreen(){
@@ -47,7 +47,7 @@ export default function TourScreen(){
     <View style={styles.banner}>
       <Text style={styles.bannerEyebrow}>ONE LIVE ACCOUNT</Text>
       <Text style={styles.bannerTitle}>App + website stay in sync.</Text>
-      <Text style={styles.bannerCopy}>Anything you update uses the same Wellness House account, so use whichever is easier at the time.</Text>
+      <Text style={styles.bannerCopy}>Anything you update uses the same Talent House account, so use whichever is easier at the time.</Text>
     </View>
 
     <View style={styles.steps}>{steps.map(step=><View key={step.number} style={styles.step}>
