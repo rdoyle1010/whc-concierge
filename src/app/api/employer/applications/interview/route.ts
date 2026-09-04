@@ -146,8 +146,33 @@ export async function POST(req: NextRequest) {
     const { data: authUser } = await admin.auth.admin.getUserById(candidate.user_id)
     const email = authUser?.user?.email || null
     if (email && RESEND_API_KEY && wantsEmail) {
+      // Everything the candidate needs in order to turn up. These were stored
+      // from the first version of this form and never sent, so an invitation
+      // could name Teams and carry no link, or say "in person" and no address
+      // - leaving somebody to guess, or to email and ask, or to miss it.
+      const detailRows: string[] = []
+      if (interviewMethod === 'in_person' && venueAddress) {
+        detailRows.push(`<tr><td style="padding:6px 12px 6px 0;vertical-align:top;color:#555555;">Where</td><td style="padding:6px 0;">${escapeHtml(venueAddress).replace(/\n/g, '<br>')}</td></tr>`)
+      } else if (meetingLink) {
+        const label = interviewMethod === 'phone' ? 'Number' : 'Joining link'
+        // A link is made clickable; a phone number is not a URL and must not
+        // be dressed up as one.
+        const value = /^https?:\/\//i.test(meetingLink)
+          ? `<a href="${escapeHtml(meetingLink)}" style="color:#1c1c1c;">${escapeHtml(meetingLink)}</a>`
+          : escapeHtml(meetingLink)
+        detailRows.push(`<tr><td style="padding:6px 12px 6px 0;vertical-align:top;color:#555555;">${label}</td><td style="padding:6px 0;word-break:break-all;">${value}</td></tr>`)
+      }
+      if (contactName) detailRows.push(`<tr><td style="padding:6px 12px 6px 0;vertical-align:top;color:#555555;">You will meet</td><td style="padding:6px 0;">${escapeHtml(contactName)}</td></tr>`)
+      if (preparationRequired) detailRows.push(`<tr><td style="padding:6px 12px 6px 0;vertical-align:top;color:#555555;">To prepare</td><td style="padding:6px 0;">${escapeHtml(preparationRequired).replace(/\n/g, '<br>')}</td></tr>`)
+      if (assessmentType || assessmentDetails) {
+        detailRows.push(`<tr><td style="padding:6px 12px 6px 0;vertical-align:top;color:#555555;">Assessment</td><td style="padding:6px 0;">${escapeHtml([assessmentType, assessmentDetails].filter(Boolean).join(' - '))}</td></tr>`)
+      }
+      const detailsHtml = detailRows.length
+        ? `<table style="width:100%;border-collapse:collapse;margin:20px 0;border-top:1px solid #e5e5e5;border-bottom:1px solid #e5e5e5;font-size:14px;line-height:1.6;">${detailRows.join('')}</table>`
+        : ''
+
       const slotHtml = uniqueIso.map((slot: string) => `<li style="margin:7px 0;">${escapeHtml(new Date(slot).toLocaleString('en-GB',{dateStyle:'full',timeStyle:'short',timeZone:'Europe/London'}))}</li>`).join('')
-      const html = `<!doctype html><html><body style="margin:0;background:#ffffff;font-family:Arial,Helvetica,sans-serif;color:#1c1c1c;"><div style="max-width:560px;margin:32px auto;background:#ffffff;border:1px solid #e5e5e5;"><div style="background:#1c1c1c;padding:24px 32px;"><p style="margin:0 0 6px;color:#ffffff;opacity:.8;font-size:11px;text-transform:uppercase;letter-spacing:1.5px;">${escapeHtml(stageLabel)} invitation</p><h1 style="margin:0;color:#ffffff;font-family:Arial,Helvetica,sans-serif;font-size:23px;font-weight:600;">Talent House Collective</h1></div><div style="padding:28px 32px;"><h2 style="margin:0 0 12px;font-family:Arial,Helvetica,sans-serif;font-weight:600;font-size:19px;">${escapeHtml(job.job_title)}</h2><p>${escapeHtml(propertyName)} would like to invite you to the <strong>${escapeHtml(stageLabel.toLowerCase())}</strong> via ${escapeHtml(methodLabel(interviewMethod))}.</p><p>Please choose one of the proposed times below to confirm your attendance:</p><ul>${slotHtml}</ul>${employerNote ? `<p>${escapeHtml(employerNote)}</p>` : ''}<p><a href="https://talenthousecollective.co.uk/talent/applications" style="display:inline-block;background:#1c1c1c;color:#ffffff;text-decoration:none;padding:12px 18px;">Choose ${escapeHtml(stageLabel.toLowerCase())} time</a></p></div></div></body></html>`
+      const html = `<!doctype html><html><body style="margin:0;background:#ffffff;font-family:Arial,Helvetica,sans-serif;color:#1c1c1c;"><div style="max-width:560px;margin:32px auto;background:#ffffff;border:1px solid #e5e5e5;"><div style="background:#1c1c1c;padding:24px 32px;"><p style="margin:0 0 6px;color:#ffffff;opacity:.8;font-size:11px;text-transform:uppercase;letter-spacing:1.5px;">${escapeHtml(stageLabel)} invitation</p><h1 style="margin:0;color:#ffffff;font-family:Arial,Helvetica,sans-serif;font-size:23px;font-weight:600;">Talent House Collective</h1></div><div style="padding:28px 32px;"><h2 style="margin:0 0 12px;font-family:Arial,Helvetica,sans-serif;font-weight:600;font-size:19px;">${escapeHtml(job.job_title)}</h2><p>${escapeHtml(propertyName)} would like to invite you to the <strong>${escapeHtml(stageLabel.toLowerCase())}</strong> via ${escapeHtml(methodLabel(interviewMethod))}.</p><p>Please choose one of the proposed times below to confirm your attendance:</p><ul>${slotHtml}</ul>${employerNote ? `<p>${escapeHtml(employerNote)}</p>` : ''}${detailsHtml}<p><a href="https://talenthousecollective.co.uk/talent/applications" style="display:inline-block;background:#1c1c1c;color:#ffffff;text-decoration:none;padding:12px 18px;">Choose ${escapeHtml(stageLabel.toLowerCase())} time</a></p></div></div></body></html>`
       const res = await fetch('https://api.resend.com/emails',{method:'POST',headers:{Authorization:`Bearer ${RESEND_API_KEY}`,'Content-Type':'application/json'},body:JSON.stringify({from:FROM_EMAIL,to:email,subject:title,html})})
       if (!res.ok) console.error('Interview invitation email failed:', res.status)
     }
