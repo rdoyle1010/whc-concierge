@@ -20,6 +20,7 @@ export default function BeforeYouArrivePage() {
   const [packs, setPacks] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [busy, setBusy] = useState<string | null>(null)
+  const [showPast, setShowPast] = useState(false)
   const [opening, setOpening] = useState<string | null>(null)
   const [error, setError] = useState('')
 
@@ -68,16 +69,40 @@ export default function BeforeYouArrivePage() {
 
   if (loading) return <DashboardShell role="talent"><div className="skeleton h-72 rounded-md" /></DashboardShell>
 
+  // Once a shift has passed the pack stops being a briefing and becomes a
+  // record. Both are worth keeping - a professional going back to the same
+  // property wants last time's parking instructions - but a stack of finished
+  // shifts on top of tomorrow's is the wrong way round.
+  const shiftEnd = (pack: any) => {
+    const booking = pack?.snapshot?.booking || {}
+    const day = booking.date || booking.end_date || booking.start_date
+    if (!day) return null
+    const time = String(booking.end_time || '23:59').slice(0, 5)
+    const parsed = new Date(`${String(day).slice(0, 10)}T${time}:00`)
+    return Number.isNaN(parsed.getTime()) ? null : parsed
+  }
+  const isPast = (pack: any) => {
+    const end = shiftEnd(pack)
+    return end != null && end.getTime() < Date.now()
+  }
+  const upcoming = packs.filter(pack => !isPast(pack))
+  const past = packs.filter(isPast)
+
   return <DashboardShell role="talent" userName={profile?.full_name}>
     <div className="max-w-5xl">
       <p className="dashboard-eyebrow">Flexible work</p>
       <h1 className="dashboard-title">Before You Arrive</h1>
-      <p className="dashboard-intro max-w-3xl">Everything you need once an Agency shift or Residency placement is confirmed. The pack is taken from the property's operational fact file at the point your booking is confirmed.</p>
+      <p className="dashboard-intro max-w-3xl">Everything you need once an Agency shift or Residency placement is accepted - where to go, which door, who to ask for, what to bring. The pack is taken from the property's operational fact file at the moment your booking is accepted, so it is what they told us on the day you were booked.</p>
+
+      {packs.length > 0 && <div className="mt-6 inline-flex border border-border bg-white p-1">
+        <button type="button" onClick={() => setShowPast(false)} className={`px-4 py-2 text-[12px] ${!showPast ? 'bg-[#1c1c1c] text-white' : 'text-secondary'}`}>Coming up{upcoming.length > 0 ? ` (${upcoming.length})` : ''}</button>
+        <button type="button" onClick={() => setShowPast(true)} className={`px-4 py-2 text-[12px] ${showPast ? 'bg-[#1c1c1c] text-white' : 'text-secondary'}`}>Archive{past.length > 0 ? ` (${past.length})` : ''}</button>
+      </div>}
 
       {error && <div className="mt-5 bg-red-50 text-red-600 px-4 py-3 text-sm">{error}</div>}
 
-      {!packs.length ? <div className="dashboard-panel mt-7"><p className="text-[13px] font-medium text-ink">No confirmed arrival packs yet.</p><p className="text-[12px] text-muted mt-1">Your first pack will appear here automatically after a booking is confirmed.</p></div> : <div className="space-y-6 mt-7">
-        {packs.map(pack => {
+      {!packs.length ? <div className="dashboard-panel mt-7"><p className="text-[13px] font-medium text-ink">No arrival packs yet.</p><p className="text-[12px] text-muted mt-1">Your first pack will appear here automatically as soon as you accept an Agency shift or a Residency placement.</p></div> : <div className="space-y-6 mt-7">
+        {(showPast ? past : upcoming).map(pack => {
           const s = pack.snapshot || {}
           const documents = Array.isArray(s.documents) ? s.documents : []
           return <article key={pack.id} className="dashboard-panel">
@@ -109,6 +134,12 @@ export default function BeforeYouArrivePage() {
             {pack.booking_type === 'residency' && <Section icon={<BedDouble size={15} className="text-accent"/>} title="Residency stay details" data={s.residency} />}
           </article>
         })}
+        {(showPast ? past : upcoming).length === 0 && <div className="dashboard-panel">
+          <p className="text-[13px] font-medium text-ink">{showPast ? 'Nothing in the archive yet.' : 'No shifts coming up.'}</p>
+          <p className="text-[12px] text-muted mt-1">{showPast
+            ? 'A pack moves here once its shift has finished.'
+            : past.length > 0 ? 'Your finished shifts are in the archive.' : 'Your next pack will appear here as soon as you accept a shift.'}</p>
+        </div>}
       </div>}
     </div>
   </DashboardShell>

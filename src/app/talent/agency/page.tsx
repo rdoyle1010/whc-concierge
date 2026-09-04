@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import DashboardShell from '@/components/DashboardShell'
 import { unavailableReason } from '@/lib/countries'
+import { moneyTone, toneClasses, type StatusTone } from '@/lib/status-tone'
 import { Calendar, Clock, Banknote, Star, X, Zap, Car, TrainFront, MapPin, Check } from 'lucide-react'
 import ReviewForm from '@/components/ReviewForm'
 import { useDialog } from '@/components/useDialog'
@@ -19,6 +20,17 @@ function expiryLabel(expiresAt: string | null | undefined): string | null {
   const hrs = Math.floor(mins / 60)
   if (hrs < 48) return `Expires in ${hrs}h ${mins % 60}m`
   return `Expires ${new Date(expiresAt).toLocaleDateString('en-GB')}`
+}
+
+// A figure, what it means, and a colour that says whether it needs anything
+// from you.
+function MoneyTile({ label, amount, tone, note }: { label: string; amount: number; tone: StatusTone; note: string }) {
+  const classes = toneClasses(tone)
+  return <div className={`dashboard-card !py-4 ${classes.card}`}>
+    <p className={`text-[11px] uppercase tracking-wide mb-1 ${classes.label}`}>{label}</p>
+    <p className={`text-[20px] font-semibold ${classes.value}`}>£{amount}</p>
+    <p className="text-[10px] text-muted mt-0.5">{note}</p>
+  </div>
 }
 
 export default function TalentAgencyPage() {
@@ -195,10 +207,14 @@ export default function TalentAgencyPage() {
         <>
           {hasEarnings && (
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8">
-              <div className="dashboard-card !py-4"><p className="text-[11px] uppercase tracking-wide text-muted mb-1">Paid to you</p><p className="text-[20px] font-semibold text-green-700">£{paidOut}</p></div>
-              <div className="dashboard-card !py-4"><p className="text-[11px] uppercase tracking-wide text-muted mb-1">Awaiting payout</p><p className="text-[20px] font-semibold text-ink">£{awaitingPayout}</p><p className="text-[10px] text-muted">Property has paid - Talent House pays you after the shift</p></div>
-              <div className="dashboard-card !py-4"><p className="text-[11px] uppercase tracking-wide text-muted mb-1">Awaiting property payment</p><p className="text-[20px] font-semibold text-amber-600">£{awaitingProperty}</p></div>
-              <div className="dashboard-card !py-4"><p className="text-[11px] uppercase tracking-wide text-muted mb-1">On hold</p><p className="text-[20px] font-semibold text-secondary">£{onHold}</p><p className="text-[10px] text-muted">{onHold > 0 ? 'An issue is being reviewed by Talent House' : 'No open issues'}</p></div>
+              {/* Green is finished, amber is somebody else's move, red is yours.
+                  These four were four grey cards with a coloured number, so an
+                  open dispute and a settled payment looked the same from a
+                  metre away. */}
+              <MoneyTile label="Paid to you" amount={paidOut} tone={moneyTone(paidOut, 'done')} note={paidOut > 0 ? 'Cleared and sent' : 'Nothing paid out yet'} />
+              <MoneyTile label="Awaiting payout" amount={awaitingPayout} tone={moneyTone(awaitingPayout, 'waiting')} note="Property has paid - Talent House pays you after the shift" />
+              <MoneyTile label="Awaiting property payment" amount={awaitingProperty} tone={moneyTone(awaitingProperty, 'waiting')} note="The property has not paid Talent House yet" />
+              <MoneyTile label="On hold" amount={onHold} tone={moneyTone(onHold, 'action')} note={onHold > 0 ? 'An issue is being reviewed - check Shift Resolution' : 'No open issues'} />
             </div>
           )}
           {hasEarnings && (
