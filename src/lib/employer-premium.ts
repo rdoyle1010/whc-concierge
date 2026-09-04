@@ -8,7 +8,7 @@ import { employerFeatureAccess, type FeatureKey } from '@/lib/feature-access'
 // data is served, which is here - one helper shared by the route guards and
 // the API routes so the tier rules never drift apart.
 
-export const PREMIUM_COLUMNS = 'membership_tier, featured_employer, featured_until'
+export const PREMIUM_COLUMNS = 'membership_tier, featured_employer, featured_until, talent_search_until'
 
 export type PremiumCheck = {
   /** Null when the caller is not a signed-in employer at all. */
