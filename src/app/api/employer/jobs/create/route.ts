@@ -15,10 +15,17 @@ const STORY_FIELDS = [
 
 const ALLOWED_FIELDS = [
   'job_title', 'job_description', 'job_image_url', 'location', 'location_postcode', 'radius_miles',
-  // Without these on the list the country picker was read and thrown away, so
-  // every role inherited the property's country - a London group posting for
-  // its Hong Kong resort would have advertised a UK job, mapped to Yorkshire,
-  // priced in pounds.
+  // Anything the form sends and this list omits is silently dropped, and the
+  // failure surfaces as a database error the person posting can do nothing
+  // with. sector_id was missing while the column is NOT NULL, so posting a
+  // role failed every single time with "null value in column sector_id
+  // violates not-null constraint" - which reads like a platform outage
+  // because it is one.
+  'sector_id',
+  // Same omission, quieter consequence: the country picker was read and
+  // thrown away, so every role inherited the property's country - a London
+  // group posting for its Hong Kong resort advertised a UK job, mapped to
+  // Yorkshire, priced in pounds.
   'country_code', 'location_city', 'salary_currency',
   'job_type', 'contract_type', 'required_role_level', 'candidate_scope', 'salary_min', 'salary_max',
   'required_skills', 'required_brands', 'required_qualifications', 'required_systems',
@@ -51,6 +58,11 @@ export async function POST(req: NextRequest) {
 
   if (!String(payload.job_title || '').trim() || !String(payload.location || '').trim()) {
     return NextResponse.json({ error: 'Job title and location are required.' }, { status: 400 })
+  }
+  // Checked here rather than left to the database. A constraint violation is
+  // accurate and useless: it names a column, not a thing the person can fix.
+  if (!String(payload.sector_id || '').trim()) {
+    return NextResponse.json({ error: 'Choose the door and sector this role sits in before posting it.' }, { status: 400 })
   }
   if (!['draft', 'pending_payment'].includes(String(payload.status))) {
     return NextResponse.json({ error: 'Invalid job status.' }, { status: 400 })
