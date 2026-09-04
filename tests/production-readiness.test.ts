@@ -50,10 +50,10 @@ test('owned document URL rejects path traversal', () => {
   assert.equal(isOwnedRegistrationDocumentUrl(`/api/files?bucket=talent-documents&path=${userId}%2F..%2Fsecret.pdf`, userId), false)
 })
 
-test('talent registration forces ownership and pending approval', () => {
-  const row = sanitiseTalentRegistration({ user_id: otherUserId, approval_status: 'approved' }, userId)
+test('talent registration forces ownership and active standard Talent status', () => {
+  const row = sanitiseTalentRegistration({ user_id: otherUserId, approval_status: 'pending' }, userId)
   assert.equal(row.user_id, userId)
-  assert.equal(row.approval_status, 'pending')
+  assert.equal(row.approval_status, 'approved')
 })
 
 test('talent registration strips administrator fields', () => {
@@ -80,10 +80,17 @@ test('talent completion score is calculated on the server', () => {
   assert.equal(row.profile_completion_score, 25)
 })
 
-test('registration proof expires after the short registration window', () => {
+test('registration proof remains valid long enough to resume signup and expires after 24 hours', () => {
   const now = Date.now
   const token = talentProof()
-  Date.now = () => now() + 16 * 60 * 1000
+  Date.now = () => now() + 23 * 60 * 60 * 1000
+  try {
+    assert.notEqual(verifyRegistrationProof(token), null)
+  } finally {
+    Date.now = now
+  }
+
+  Date.now = () => now() + 25 * 60 * 60 * 1000
   try {
     assert.equal(verifyRegistrationProof(token), null)
   } finally {

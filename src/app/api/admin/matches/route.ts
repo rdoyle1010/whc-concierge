@@ -1,21 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { adminRequestUser } from '@/lib/admin-api-auth'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { createServerClient } from '@supabase/ssr'
-import { cookies } from 'next/headers'
 
+// Delegated to the shared admin guard, which enforces two-step
+// verification as well as the admin role.
 async function requireAdmin() {
-  const cookieStore = await cookies()
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    { cookies: { getAll() { return cookieStore.getAll() }, setAll() {} } }
-  )
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return null
-  const admin = createAdminClient()
-  const { data: profile } = await admin.from('profiles').select('role').eq('id', user.id).single()
-  if (profile?.role !== 'admin') return null
-  return user
+  return adminRequestUser()
 }
 
 export async function GET(_req: NextRequest) {
@@ -26,14 +16,14 @@ export async function GET(_req: NextRequest) {
   const { data: matches, error } = await admin
     .from('matches')
     .select('*')
-    .order('created_at', { ascending: false })
+    .order('matched_at', { ascending: false, nullsFirst: false })
     .limit(500)
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
   const rows = matches || []
   const candIds = Array.from(new Set(rows.map(m => m.candidate_id).filter(Boolean)))
   const empIds = Array.from(new Set(rows.map(m => m.employer_id).filter(Boolean)))
-  const jobIds = Array.from(new Set(rows.map(m => m.job_id).filter(Boolean)))
+  const jobIds = Array.from(new Set(rows.map(m => (m as any).job_listing_id || m.job_id).filter(Boolean)))
 
   const [cands, emps, jobs] = await Promise.all([
     candIds.length ? admin.from('candidate_profiles').select('id, full_name, headline').in('id', candIds) : Promise.resolve({ data: [] }),
@@ -53,7 +43,7 @@ export async function GET(_req: NextRequest) {
       return e ? { ...e, company_name: e.property_name || e.company_name } : null
     })(),
     job_listings: (() => {
-      const j = jobMap.get(m.job_id) as any
+      const j = jobMap.get((m as any).job_listing_id || m.job_id) as any
       return j ? { ...j, title: j.job_title } : null
     })(),
   }))

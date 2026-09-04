@@ -15,6 +15,7 @@ import personalPresentation from './personal-presentation'
 import perfectMassage from './perfect-massage'
 import perfectFacial from './perfect-facial'
 import brandKnowledge from './brand-knowledge'
+import spaRevenueFundamentals from './spa-revenue-fundamentals'
 
 const CONTENT: Record<string, CourseContent> = {
   'consultation-excellence': consultationExcellence,
@@ -28,8 +29,9 @@ const CONTENT: Record<string, CourseContent> = {
   'perfect-massage': perfectMassage,
   'perfect-facial': perfectFacial,
   'brand-knowledge': brandKnowledge,
+  'spa-revenue-fundamentals': spaRevenueFundamentals,
 }
 
-import { MORE_CONTENT } from '../academy-more'
+import { MORE_CONTENT } from '../academy-more/content'
 
 export const getCourseContent = (slug: string): CourseContent | null => CONTENT[slug] || MORE_CONTENT[slug] || null

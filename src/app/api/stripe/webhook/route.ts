@@ -1,13 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { triggerJobAlerts } from '@/lib/job-alerts-trigger'
 import { getStripe } from '@/lib/stripe'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { createNotification } from '@/lib/notifications'
+import { createNotification, notifyAdmins } from '@/lib/notifications'
 import { getAcademyCatalog, getAcademyCourseBySlug } from '@/lib/academy-catalog-server'
 import { sendCourseAccessEmail, sendBookingConfirmedEmail, sendReferralRewardEmail, sendFeaturedTalentEmail } from '@/lib/emails'
+import { emailAllowed } from '@/lib/notification-prefs'
 import { sendFeaturedEmployerEmail } from '@/lib/featured-employer-email'
 import Stripe from 'stripe'
 import { getInternalApiSecret } from '@/lib/internal-request'
 import { handleResidencyStripeEvent } from '@/lib/residency-stripe-webhook'
+import { fulfilCommercialPurchase, recordCommercialPurchase } from '@/lib/commercial-fulfilment'
+import { applyAgencyCaseAdjustment } from '@/lib/agency-case-adjustment'
 
 async function convertReferral(supabase: any, candidateId: string) {
   try {
@@ -51,7 +55,7 @@ async function announceFeaturedEmployer(supabase: any, employerId: string) {
       .select('property_name,company_name,location')
       .eq('id', employerId).maybeSingle()
     if (!employer) return
-    const propertyName = employer.property_name || employer.company_name || 'A WHC property'
+    const propertyName = employer.property_name || employer.company_name || 'A Talent House property'
     const { data: talent } = await supabase.from('candidate_profiles')
       .select('user_id,full_name')
       .eq('approval_status', 'approved')
@@ -63,7 +67,7 @@ async function announceFeaturedEmployer(supabase: any, employerId: string) {
         candidate.user_id,
         'general',
         `Featured property: ${propertyName}`,
-        `${propertyName}${employer.location ? ` in ${employer.location}` : ''} is now featured on WHC Concierge.`,
+        `${propertyName}${employer.location ? ` in ${employer.location}` : ''} is now featured on Talent House Collective.`,
         '/properties',
       )
       const { data: talentUser } = await supabase.auth.admin.getUserById(candidate.user_id)
@@ -95,6 +99,42 @@ export async function POST(req: NextRequest) {
   }
 
   const supabase = createAdminClient()
+
+  // Event ledger. Stripe retries and replays events; recording the verified
+  // event id before any work makes EVERY branch below idempotent, not just
+  // the ones that happen to upsert. A duplicate key means we have already
+  // processed this event, so acknowledge it and do nothing.
+  try {
+    const { error: ledgerError } = await supabase.from('stripe_events')
+      .insert({ event_id: event.id, type: event.type, payload: event as any })
+    if (ledgerError) {
+      const message = String(ledgerError.message || '')
+      if ((ledgerError as any).code === '23505' || /duplicate key|already exists/i.test(message)) {
+        return NextResponse.json({ received: true, duplicate: true })
+      }
+      // stripe_events arrives with migration 20260901100000. Until it is run,
+      // log and carry on - a missing ledger must never break a payment.
+      console.error('[Stripe events] ledger unavailable, continuing:', message)
+    }
+  } catch (ledgerFailure: any) {
+    console.error('[Stripe events] ledger unavailable, continuing:', ledgerFailure?.message)
+  }
+
+  // If fulfilment fails we release the ledger row, so Stripe's retry is new
+  // work rather than a duplicate we silently acknowledge. The ledger stops
+  // double fulfilment; it must never stop a failed one being retried.
+  async function releaseLedger() {
+    try { await supabase.from('stripe_events').delete().eq('event_id', event.id) } catch { /* nothing to release */ }
+  }
+  async function fulfilmentFailed(message: string) {
+    await releaseLedger()
+    return NextResponse.json({ error: message }, { status: 500 })
+  }
+
+  // Wrapped so that any unexpected throw below releases the ledger row before
+  // the 500 reaches Stripe. The body keeps its original indentation so this
+  // change stays reviewable.
+  try {
   const residencyHandled = await handleResidencyStripeEvent(event, stripe, supabase)
   if (residencyHandled) return NextResponse.json({ received: true })
 
@@ -102,6 +142,16 @@ export async function POST(req: NextRequest) {
     case 'checkout.session.completed': {
       const session = event.data.object as Stripe.Checkout.Session
       const meta = session.metadata
+
+      if (meta?.type === 'commercial_product' && meta?.product) {
+        // Guaranteed fulfilment for memberships and featured products - the
+        // redirect to /api/commercial/confirm never fires if the tab closes.
+        const result = await fulfilCommercialPurchase(supabase, stripe, session)
+        if (!result.ok) {
+          console.error('[Commercial product] fulfilment failed:', result.error)
+          return await fulfilmentFailed('commercial_product fulfilment failed')
+        }
+      }
 
       if (meta?.type === 'sponsored_ad' && meta?.placement && meta?.brand_name) {
         const subscriptionId = typeof session.subscription === 'string' ? session.subscription : session.subscription?.id
@@ -125,7 +175,7 @@ export async function POST(req: NextRequest) {
         }, { onConflict: 'stripe_checkout_session_id' })
         if (error) {
           console.error('[Sponsored advert] fulfilment failed:', error.message)
-          return NextResponse.json({ error: 'sponsored_ad fulfilment failed' }, { status: 500 })
+          return await fulfilmentFailed('sponsored_ad fulfilment failed')
         }
       }
 
@@ -149,6 +199,9 @@ export async function POST(req: NextRequest) {
               featuredCandidate?.headline || 'A featured professional is available to view and shortlist.',
               '/employer/candidates',
             )
+            // Preference-gated ('product_news'): the featured-talent broadcast
+            // is promotional; the in-app notification above always fires.
+            if (!(await emailAllowed(supabase, employer.user_id, 'product_news'))) return
             const { data: employerUser } = await supabase.auth.admin.getUserById(employer.user_id)
             if (employerUser.user?.email) {
               await sendFeaturedTalentEmail(
@@ -181,23 +234,105 @@ export async function POST(req: NextRequest) {
         }).eq('id', meta.employer_id)
         if (error) {
           console.error('[Featured employer] fulfilment failed:', error.message)
-          return NextResponse.json({ error: 'featured_employer fulfilment failed' }, { status: 500 })
+          return await fulfilmentFailed('featured_employer fulfilment failed')
         }
         await announceFeaturedEmployer(supabase, meta.employer_id)
       }
 
+      // Extra money agreed in a shift resolution. This branch did not exist:
+      // the credit was applied only by a browser redirect, so a closed tab
+      // meant Stripe held the property's money, the case never closed and
+      // the professional was never paid.
+      if (meta?.type === 'agency_case_adjustment' && meta?.case_id) {
+        const result = await applyAgencyCaseAdjustment(supabase, {
+          caseId: String(meta.case_id),
+          bookingId: meta.booking_id ? String(meta.booking_id) : null,
+          extra: Number(meta.extra || 0),
+          fee: Number(meta.fee || 0),
+          sessionId: session.id,
+          actorUserId: meta.user_id ? String(meta.user_id) : null,
+          actorRole: 'employer',
+        })
+        if (!result.applied && result.reason === 'write_failed') {
+          console.error('[Agency case adjustment] could not record the payment:', result.message)
+          return await fulfilmentFailed('agency_case_adjustment fulfilment failed')
+        }
+        if (!result.applied && (result.reason === 'case_not_found' || result.reason === 'booking_not_found')) {
+          await notifyAdmins('Adjustment payment needs review',
+            `An extra shift payment was received for case ${meta.case_id} but the case or booking could not be found. Check Stripe.`,
+            '/admin/agency')
+        }
+      }
+
       if (meta?.type === 'agency_booking' && meta?.booking_id) {
-        const gross = meta.gross ? parseInt(meta.gross) : 0
-        const fee = meta.fee ? parseInt(meta.fee) : 0
-        await supabase.from('agency_bookings').update({
+        // Pence are authoritative. parseInt on a pound string silently
+        // truncated every half-hour shift - "382.5" became 382 - so the
+        // recorded amount_paid sat up to 99p below what was actually
+        // collected, and every refund was then capped at the wrong figure.
+        // The pound fields are still read as a fallback, for sessions created
+        // before pence metadata existed.
+        const grossPence = meta.gross_pence ? Math.round(Number(meta.gross_pence)) : Math.round(Number(meta.gross || 0) * 100)
+        const feePence = meta.fee_pence ? Math.round(Number(meta.fee_pence)) : Math.round(Number(meta.fee || 0) * 100)
+        const gross = grossPence / 100
+        const fee = feePence / 100
+        // Which money model this booking used. 'stripe_connect' means the
+        // shift money was transferred to the professional by the destination
+        // charge itself; 'manual' means Talent House holds it until it settles.
+        const payoutMethod = meta.payout_method === 'stripe_connect' ? 'stripe_connect' : 'manual'
+        const paidUpdate: Record<string, any> = {
           status: 'confirmed',
           paid_at: new Date().toISOString(),
-          fee_paid_at: new Date().toISOString(),
           amount_paid: gross + fee,
           payout_amount: gross,
           payout_status: 'pending',
           stripe_payment_intent: (session.payment_intent as string) || null,
-        }).eq('id', meta.booking_id)
+          payout_method: payoutMethod,
+        }
+        // Claim the booking rather than overwrite it. Two things this stops.
+        // A second payment for the same shift (a stale checkout tab paid an
+        // hour later) no longer silently overwrites the first with identical
+        // values, leaving the property charged twice and nothing recording
+        // it. And a shift the professional cancelled while the property was
+        // on the Stripe page can no longer be flipped back to confirmed - a
+        // paid, confirmed shift that nobody is working.
+        const claim = () => supabase.from('agency_bookings')
+          .update(paidUpdate)
+          .eq('id', meta.booking_id)
+          .is('paid_at', null)
+          .in('status', ['accepted', 'confirmed'])
+          .select('id')
+        let { data: claimed, error: paidError } = await claim()
+        if (paidError && /column|payout_method/i.test(paidError.message || '')) {
+          // payout_method arrives with migration 20260901100000; the payment
+          // must land regardless of whether it has been run yet.
+          delete paidUpdate.payout_method
+          ;({ data: claimed, error: paidError } = await claim())
+        }
+        // A write failure here means Stripe holds the property's money and
+        // nothing records it. Returning 500 releases the ledger row so Stripe
+        // retries, instead of swallowing it with a 200 and leaving a real
+        // person unpaid with only a log line to show for it.
+        if (paidError) {
+          console.error('[Agency booking] payment record update failed:', paidError.message)
+          return await fulfilmentFailed('agency_booking fulfilment failed')
+        }
+        if (!claimed || claimed.length === 0) {
+          // Nothing to claim: already paid, or cancelled while the property
+          // was paying. Either way this payment needs a human, so flag it
+          // rather than acknowledging it silently.
+          console.error('[Agency booking] payment arrived for a booking that could not be claimed:', meta.booking_id)
+          try {
+            await supabase.from('agency_bookings')
+              .update({ dispute_status: 'open', payout_status: 'on_hold' })
+              .eq('id', meta.booking_id)
+          } catch { }
+          try {
+            await notifyAdmins('Payment needs review',
+              `A shift payment was received for booking ${meta.booking_id}, which was already paid or no longer open. Check Stripe and refund it if it is a duplicate.`,
+              '/admin/agency')
+          } catch { }
+          return NextResponse.json({ received: true, unclaimed: true })
+        }
 
         try {
           const { data: booking } = await supabase.from('agency_bookings')
@@ -212,14 +347,36 @@ export async function POST(req: NextRequest) {
             const therapistName = cand?.full_name || 'The therapist'
             const shiftDate = booking.shift_date || 'the agreed date'
 
+            try {
+              const { trackEvent, recordSalary } = await import('@/lib/analytics')
+              await trackEvent('shift_confirmed', { candidateId: booking.candidate_id, employerId: booking.employer_id }, { shift_date: booking.shift_date, rate: booking.rate, gross, fee })
+              if (booking.rate) {
+                await recordSalary({
+                  kind: 'agency_rate', source: 'platform_transaction', period: 'hourly',
+                  amountMin: Number(booking.rate), amountMax: Number(booking.rate),
+                  candidateId: booking.candidate_id, employerId: booking.employer_id,
+                })
+              }
+            } catch { /* best-effort */ }
+
+            const payoutLine = payoutMethod === 'stripe_connect'
+              ? 'Your payout has been sent straight to your connected bank account by Stripe.'
+              : 'Talent House pays you after the shift.'
+
             if (cand?.user_id) {
               await createNotification(cand.user_id, 'general', 'Booking confirmed - payment received',
-                `Your shift at ${propertyName} on ${shiftDate} at £${booking.rate}/hr is confirmed. WHC pays you after the shift.`,
+                `Your shift at ${propertyName} on ${shiftDate} at £${booking.rate}/hr is confirmed. ${payoutLine}`,
                 '/talent/agency')
-              const { data: u } = await supabase.auth.admin.getUserById(cand.user_id)
-              if (u?.user?.email) {
-                await sendBookingConfirmedEmail(u.user.email, cand.full_name || 'there',
-                  `shift at ${propertyName} on ${shiftDate} at £${booking.rate}/hr. WHC pays you after the shift.`)
+              // Preference-gated ('booking_updates'): the therapist's copy
+              // honours their opt-out; the in-app notification above always
+              // fires. The employer's copy below is a payment receipt for
+              // their own payment, so it always sends (transactional).
+              if (await emailAllowed(supabase, cand.user_id, 'booking_updates')) {
+                const { data: u } = await supabase.auth.admin.getUserById(cand.user_id)
+                if (u?.user?.email) {
+                  await sendBookingConfirmedEmail(u.user.email, cand.full_name || 'there',
+                    `shift at ${propertyName} on ${shiftDate} at £${booking.rate}/hr. ${payoutLine}`)
+                }
               }
             }
             if (emp?.user_id) {
@@ -284,9 +441,9 @@ export async function POST(req: NextRequest) {
             try {
               const { data: link } = await supabase.auth.admin.generateLink({
                 type: 'magiclink', email,
-                options: { redirectTo: 'https://talent.wellnesshousecollective.co.uk/talent/academy' },
+                options: { redirectTo: 'https://talenthousecollective.co.uk/talent/academy' },
               })
-              const action = (link as any)?.properties?.action_link || 'https://talent.wellnesshousecollective.co.uk/login'
+              const action = (link as any)?.properties?.action_link || 'https://talenthousecollective.co.uk/login'
               const course = await getAcademyCourseBySlug(meta.course_slug, true)
               await sendCourseAccessEmail(email, buyerName, course?.title || meta.course_slug, action)
             } catch (e: any) {
@@ -296,7 +453,7 @@ export async function POST(req: NextRequest) {
           if (!userId) throw new Error('course_public fulfilment: no user for ' + email)
         } catch (e: any) {
           console.error('[Academy public] fulfilment failed:', e?.message)
-          return NextResponse.json({ error: 'course_public fulfilment failed' }, { status: 500 })
+          return await fulfilmentFailed('course_public fulfilment failed')
         }
       }
 
@@ -354,14 +511,61 @@ export async function POST(req: NextRequest) {
         }).eq('id', meta.employer_id)
       }
 
+      if (meta?.type === 'agency_plus' && meta?.employer_id) {
+        await supabase.from('employer_profiles').update({
+          agency_plus_active: true,
+          agency_plus_until: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+          stripe_customer_id: session.customer as string,
+        }).eq('id', meta.employer_id)
+      }
+
       if (meta?.type === 'job_posting' && meta?.job_id) {
+        // Job adverts are the commonest thing a property buys and until now
+        // they left no financial record at all: no receipt could be printed
+        // for one, and the month's revenue simply did not count them.
+        await recordCommercialPurchase(
+          supabase, session,
+          String(meta.tier || '').toLowerCase() === 'bronze' ? 'standard_job' : `job_${String(meta.tier || 'standard').toLowerCase()}`,
+          String(meta.user_id || ''),
+        )
         const days = meta.days ? parseInt(meta.days) : 30
         const expiresAt = new Date(Date.now() + days * 24 * 60 * 60 * 1000).toISOString()
+        // Safety net behind the publish gate: if payment completes while the
+        // employer is still unapproved, keep the paid term but hold the role
+        // as a draft until approval.
+        let employerApproved = true
+        if (meta.employer_id) {
+          const { data: paidEmployer } = await supabase.from('employer_profiles').select('approval_status,user_id').eq('id', meta.employer_id).maybeSingle()
+          employerApproved = paidEmployer?.approval_status === 'approved'
+          if (!employerApproved && paidEmployer?.user_id) {
+            await createNotification(paidEmployer.user_id, 'general', 'Payment received - role held for approval', 'Your role is paid for and will go live automatically as soon as Talent House approves your employer account.', '/employer/jobs').catch?.(() => {})
+          }
+        }
         await supabase.from('job_listings').update({
-          is_live: true,
-          status: 'active',
+          is_live: employerApproved,
+          status: employerApproved ? 'active' : 'draft',
           expires_at: expiresAt,
+          // The free publish path stamps posted_date too - without it paid
+          // roles sort and display as undated.
+          posted_date: new Date().toISOString(),
         }).eq('id', meta.job_id)
+
+        // Instrumentation: the paid posting is the moment a role truly enters
+        // the market. Record the event and the advertised salary history row.
+        try {
+          const { trackEvent, recordSalary } = await import('@/lib/analytics')
+          const { data: postedJob } = await supabase.from('job_listings').select('id,salary_min,salary_max,required_role_level').eq('id', meta.job_id).maybeSingle()
+          await trackEvent('job_posted', { employerId: meta.employer_id || null, jobId: meta.job_id }, { tier: meta.tier || null, held_for_approval: !employerApproved })
+          if (postedJob && (postedJob.salary_min || postedJob.salary_max)) {
+            await recordSalary({
+              kind: 'advertised', source: 'employer_advertised',
+              amountMin: postedJob.salary_min ? Number(postedJob.salary_min) : null,
+              amountMax: postedJob.salary_max ? Number(postedJob.salary_max) : null,
+              employerId: meta.employer_id || null, jobId: meta.job_id,
+              roleLevel: postedJob.required_role_level ? String(postedJob.required_role_level) : null,
+            })
+          }
+        } catch { /* best-effort */ }
 
         if (meta.employer_id) {
           await supabase.from('employer_profiles').update({
@@ -370,14 +574,20 @@ export async function POST(req: NextRequest) {
           }).eq('id', meta.employer_id)
         }
 
-        fetch(new URL('/api/job-alerts', req.url).toString(), {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'x-whc-internal-secret': getInternalApiSecret(),
-          },
-          body: JSON.stringify({ jobId: meta.job_id }),
-        }).catch(() => {})
+        triggerJobAlerts(meta.job_id, req.url)
+      }
+      break
+    }
+
+    case 'account.updated': {
+      // Stripe Connect: keep the specialist's payout-readiness in step.
+      const account = event.data.object as Stripe.Account
+      const candidateId = account.metadata?.candidate_id
+      const enabled = Boolean(account.payouts_enabled)
+      if (candidateId) {
+        await supabase.from('candidate_profiles').update({ connect_payouts_enabled: enabled }).eq('id', candidateId)
+      } else if (account.id) {
+        await supabase.from('candidate_profiles').update({ connect_payouts_enabled: enabled }).eq('stripe_connect_account_id', account.id)
       }
       break
     }
@@ -391,6 +601,93 @@ export async function POST(req: NextRequest) {
           .eq('status', 'pending_payment')
           .eq('is_live', false)
       }
+      break
+    }
+
+    // Money leaving again. Until now the platform heard only about money
+    // arriving, so a refund issued in the Stripe dashboard and a chargeback
+    // raised by a property were both invisible: the admin money page went on
+    // showing the booking as ready to pay out, and an administrator could
+    // bank-transfer a professional money Stripe had already taken back.
+    case 'charge.refunded':
+    case 'charge.dispute.created':
+    case 'charge.dispute.closed': {
+      const isDispute = event.type.startsWith('charge.dispute')
+      const object = event.data.object as any
+      const paymentIntent = typeof object?.payment_intent === 'string'
+        ? object.payment_intent
+        : object?.payment_intent?.id
+      if (!paymentIntent) break
+
+      const disputeStatus = event.type === 'charge.dispute.closed'
+        ? (object?.status === 'won' ? 'resolved' : 'open')
+        : 'open'
+
+      // Agency bookings.
+      try {
+        const { data: bookings } = await supabase.from('agency_bookings')
+          .select('id, candidate_id, employer_id, shift_date, payout_status, amount_paid')
+          .eq('stripe_payment_intent', paymentIntent)
+        for (const booking of bookings || []) {
+          const update: Record<string, any> = { dispute_status: disputeStatus }
+          if (disputeStatus === 'open') {
+            // Freeze the payout. A booking under dispute or refunded must
+            // never appear on the admin page as ready to pay.
+            if (booking.payout_status !== 'paid') update.payout_status = 'on_hold'
+          }
+          if (event.type === 'charge.refunded') {
+            const refundedPence = Number(object?.amount_refunded || 0)
+            if (refundedPence > 0) update.refund_amount = refundedPence / 100
+            update.refunded_at = new Date().toISOString()
+          }
+          let { error } = await supabase.from('agency_bookings').update(update).eq('id', booking.id)
+          if (error && /column|refunded_at|refund_amount/i.test(error.message || '')) {
+            delete update.refunded_at
+            delete update.refund_amount
+            ;({ error } = await supabase.from('agency_bookings').update(update).eq('id', booking.id))
+          }
+          if (error) console.error('[Stripe reversal] agency booking update failed:', error.message)
+
+          const alreadyPaidOut = booking.payout_status === 'paid'
+          await notifyAdmins(
+            isDispute ? 'Chargeback raised on a shift' : 'Refund issued on a shift',
+            `${isDispute ? 'A property has disputed' : 'A refund was issued on'} the payment for the shift on ${booking.shift_date || 'an agreed date'} (booking ${booking.id}). The payout is on hold.${alreadyPaidOut ? ' WARNING: this shift has already been paid out, so the money is out of the account.' : ''}`,
+            '/admin/agency',
+          )
+        }
+      } catch (reversalError: any) {
+        console.error('[Stripe reversal] agency lookup failed:', reversalError?.message)
+      }
+
+      // Residency bookings hold money the same way.
+      try {
+        const { data: residencies } = await supabase.from('residency_bookings')
+          .select('id, payout_status')
+          .eq('stripe_payment_intent', paymentIntent)
+        for (const booking of residencies || []) {
+          const update: Record<string, any> = { dispute_status: disputeStatus }
+          if (disputeStatus === 'open' && booking.payout_status !== 'paid') update.payout_status = 'on_hold'
+          const { error } = await supabase.from('residency_bookings').update(update).eq('id', booking.id)
+          if (error) console.error('[Stripe reversal] residency booking update failed:', error.message)
+          await notifyAdmins(
+            isDispute ? 'Chargeback raised on a Residency booking' : 'Refund issued on a Residency booking',
+            `Residency booking ${booking.id} has a ${isDispute ? 'chargeback' : 'refund'} against it. The payout is on hold.`,
+            '/admin/residency-money',
+          )
+        }
+      } catch (reversalError: any) {
+        console.error('[Stripe reversal] residency lookup failed:', reversalError?.message)
+      }
+      break
+    }
+
+    // A payout to a professional's connected account bounced. Silent failure
+    // here means somebody believes they have been paid and has not been.
+    case 'payout.failed': {
+      const payout = event.data.object as any
+      await notifyAdmins('A Stripe payout failed',
+        `Stripe could not pay out ${payout?.amount ? `£${(Number(payout.amount) / 100).toFixed(2)}` : 'an amount'}${payout?.failure_message ? `: ${payout.failure_message}` : ''}. Check the connected account's bank details.`,
+        '/admin/agency')
       break
     }
 
@@ -459,10 +756,40 @@ export async function POST(req: NextRequest) {
         break
       }
 
-      await supabase.from('candidate_profiles').update({
-        is_featured: true,
-        featured_until: monthEnd,
-      }).eq('stripe_customer_id', customerId).eq('is_featured', true)
+      // Featured Talent is a separate one-off purchase (£9.99 for 7 days,
+      // £24.99 for 30). This fall-through used to extend it on EVERY paid
+      // invoice for the same Stripe customer - so a professional holding any
+      // £9.99 monthly membership had their £24.99 featured placement renewed
+      // free, every month, forever. The product became free for anyone with a
+      // membership.
+      //
+      // Featured is now extended only by the branch above, which fires on an
+      // invoice whose subscription actually says featured_profile.
+
+      // Commercial memberships carry no recognised metadata.type on their
+      // invoices, so advance their renewal date here on every paid invoice.
+      const invoiceLineEnd = Number((invoice.lines?.data?.[0] as any)?.period?.end || 0)
+      const membershipRenewsAt = invoiceLineEnd > 0 ? new Date(invoiceLineEnd * 1000).toISOString() : monthEnd
+      // A cleared payment lifts the suspension in the same statement that
+      // advances the renewal date, so a member who was past due is whole
+      // again the moment the money arrives.
+      const renewal: Record<string, any> = { membership_renews_at: membershipRenewsAt, membership_past_due: false }
+      let { error: candidateRenewalError } = await supabase.from('candidate_profiles')
+        .update(renewal)
+        .or(`stripe_customer_id.eq.${customerId},membership_stripe_customer_id.eq.${customerId}`)
+        .not('membership_tier', 'is', null)
+      if (candidateRenewalError && /column|membership_past_due/i.test(candidateRenewalError.message || '')) {
+        // membership_past_due arrives with 20260901210000_membership_dunning.sql.
+        delete renewal.membership_past_due
+        await supabase.from('candidate_profiles')
+          .update(renewal)
+          .or(`stripe_customer_id.eq.${customerId},membership_stripe_customer_id.eq.${customerId}`)
+          .not('membership_tier', 'is', null)
+      }
+      await supabase.from('employer_profiles')
+        .update(renewal)
+        .or(`stripe_customer_id.eq.${customerId},membership_stripe_customer_id.eq.${customerId}`)
+        .not('membership_tier', 'is', null)
       break
     }
 
@@ -485,6 +812,28 @@ export async function POST(req: NextRequest) {
           featured_employer: false,
           featured_until: null,
         }).eq('stripe_customer_id', customerId).eq('featured_employer', true)
+
+        // A failing card used to leave every membership benefit switched on
+        // until Stripe's dunning finally gave up - typically two to three
+        // weeks of Interview Ready credits, Academy discount, agency
+        // bookability and Agency Plus fee reduction, all unpaid for.
+        //
+        // The account is not closed and the tier is not deleted: the member
+        // keeps their profile, their history and their place. Only the
+        // benefits that cost Talent House money are suspended, and invoice.paid
+        // restores them the moment the card clears.
+        await supabase.from('candidate_profiles')
+          .update({ membership_past_due: true, agency_available: false })
+          .or(`stripe_customer_id.eq.${customerId},membership_stripe_customer_id.eq.${customerId}`)
+          .not('membership_tier', 'is', null)
+        await supabase.from('employer_profiles')
+          .update({ membership_past_due: true, agency_plus_active: false })
+          .or(`stripe_customer_id.eq.${customerId},membership_stripe_customer_id.eq.${customerId}`)
+          .not('membership_tier', 'is', null)
+
+        await notifyAdmins('A membership payment is failing',
+          `Stripe has failed to collect a membership payment ${attemptCount} times for customer ${customerId}. Benefits are suspended until it clears.`,
+          '/admin/revenue')
       }
       break
     }
@@ -525,6 +874,17 @@ export async function POST(req: NextRequest) {
             lapsed
               ? { preferred_employer: false, preferred_until: null }
               : { preferred_employer: true, preferred_until: subscriptionPeriodEnd(subscription, 365) }
+          ).eq('id', subscription.metadata.employer_id)
+        }
+        break
+      }
+
+      if (subType === 'agency_plus') {
+        if (subscription.metadata?.employer_id && (lapsed || active)) {
+          await supabase.from('employer_profiles').update(
+            lapsed
+              ? { agency_plus_active: false, agency_plus_until: null }
+              : { agency_plus_active: true, agency_plus_until: subscriptionPeriodEnd(subscription, 30) }
           ).eq('id', subscription.metadata.employer_id)
         }
         break
@@ -585,6 +945,14 @@ export async function POST(req: NextRequest) {
         }
         break
       }
+      if (subType === 'agency_plus') {
+        if (subscription.metadata?.employer_id) {
+          await supabase.from('employer_profiles')
+            .update({ agency_plus_active: false, agency_plus_until: null })
+            .eq('id', subscription.metadata.employer_id)
+        }
+        break
+      }
       if (subType === 'featured_employer') {
         if (subscription.metadata?.employer_id) {
           await supabase.from('employer_profiles')
@@ -594,9 +962,35 @@ export async function POST(req: NextRequest) {
         break
       }
 
-      await supabase.from('candidate_profiles').update({ is_featured: false, featured_until: null }).eq('stripe_customer_id', customerId)
+      // Deliberately NOT revoking is_featured here.
+      //
+      // This used to switch off Featured Talent for every profile sharing the
+      // cancelled subscription's Stripe customer. A professional who paid
+      // £24.99 for thirty days of featured placement on the first of the
+      // month and then cancelled their separate £9.99 membership on the fifth
+      // lost twenty-five days she had already paid for. One purchase must
+      // never be revoked by the cancellation of another.
+      //
+      // Featured expires on its own: featured_until is set at purchase and
+      // the maintenance sweep clears it when it passes.
+
+      // Commercial memberships have no dedicated branch, so revoke the tier
+      // here - otherwise benefits outlive the cancelled subscription.
+      await supabase.from('candidate_profiles')
+        .update({ membership_tier: null, membership_renews_at: null })
+        .or(`stripe_customer_id.eq.${customerId},membership_stripe_customer_id.eq.${customerId}`)
+        .not('membership_tier', 'is', null)
+      await supabase.from('employer_profiles')
+        .update({ membership_tier: null, membership_renews_at: null, annual_job_allowance: 0 })
+        .or(`stripe_customer_id.eq.${customerId},membership_stripe_customer_id.eq.${customerId}`)
+        .not('membership_tier', 'is', null)
       break
     }
+  }
+  } catch (processingError: any) {
+    console.error('[Stripe webhook] processing failed:', processingError?.message)
+    await releaseLedger()
+    throw processingError
   }
 
   return NextResponse.json({ received: true })

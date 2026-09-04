@@ -2,12 +2,13 @@ import { ImageResponse } from 'next/og'
 import { createClient } from '@supabase/supabase-js'
 
 export const runtime = 'edge'
-export const alt = 'WHC Blog'
+export const alt = 'Talent House Blog'
 export const size = { width: 1200, height: 630 }
 export const contentType = 'image/png'
 
-export default async function BlogOGImage({ params }: { params: { slug: string } }) {
-  let title = 'WHC Blog'
+export default async function BlogOGImage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params
+  let title = 'Talent House Blog'
   let category = ''
 
   try {
@@ -18,7 +19,8 @@ export default async function BlogOGImage({ params }: { params: { slug: string }
     const { data: post } = await supabase
       .from('blog_posts')
       .select('title, category')
-      .eq('slug', params.slug)
+      .eq('slug', slug)
+      .eq('status', 'published')
       .single()
 
     if (post) {
@@ -35,7 +37,7 @@ export default async function BlogOGImage({ params }: { params: { slug: string }
         style={{
           width: '100%', height: '100%', display: 'flex', flexDirection: 'column',
           justifyContent: 'space-between', padding: '60px 70px',
-          background: 'linear-gradient(145deg, #0a0a14 0%, #1a1a2e 50%, #0f0f1e 100%)',
+          background: 'linear-gradient(145deg, #0f0f0f 0%, #1c1c1c 50%, #0f0f0f 100%)',
         }}
       >
         {/* Top: branding + category */}
@@ -43,18 +45,18 @@ export default async function BlogOGImage({ params }: { params: { slug: string }
           <div
             style={{
               fontSize: 20, fontWeight: 600, letterSpacing: '2px',
-              color: '#C9A96E', textTransform: 'uppercase' as const,
+              color: '#555555', textTransform: 'uppercase' as const,
               display: 'flex',
             }}
           >
-            WHC Blog
+            Talent House Blog
           </div>
           {category && (
             <div
               style={{
                 fontSize: 14, fontWeight: 500, letterSpacing: '1px',
-                color: 'rgba(201, 169, 110, 0.7)',
-                border: '1px solid rgba(201, 169, 110, 0.3)',
+                color: 'rgba(28,28,28, 0.7)',
+                border: '1px solid rgba(28,28,28, 0.3)',
                 borderRadius: 20, padding: '6px 16px',
                 textTransform: 'uppercase' as const,
                 display: 'flex',
@@ -79,14 +81,14 @@ export default async function BlogOGImage({ params }: { params: { slug: string }
 
         {/* Bottom: URL + decorative line */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-          <div style={{ width: 40, height: 2, background: '#C9A96E', display: 'flex' }} />
+          <div style={{ width: 40, height: 2, background: '#555555', display: 'flex' }} />
           <div
             style={{
               fontSize: 14, color: 'rgba(255, 255, 255, 0.25)',
               letterSpacing: '1px', display: 'flex',
             }}
           >
-            talent.wellnesshousecollective.co.uk
+            talenthousecollective.co.uk
           </div>
         </div>
       </div>

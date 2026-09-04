@@ -102,7 +102,7 @@ export async function POST(req: NextRequest) {
     if (existing) return NextResponse.json({ error: 'A reference request already exists for this property.' }, { status: 409 })
     const { error } = await admin.from('reference_requests').insert({ candidate_id: candidate.id, employer_id: employer.id, requested_by: user.id, request_message: message || null })
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-    try { await createNotification(employer.user_id, 'general', 'Reference request', `${candidate.full_name || 'A Talent member'} has asked you for a verified WHC reference.`, '/employer/reputation') } catch {}
+    try { await createNotification(employer.user_id, 'general', 'Reference request', `${candidate.full_name || 'A Talent member'} has asked you for a verified Talent House reference.`, '/employer/dashboard') } catch {}
     return NextResponse.json({ success: true })
   }
 
@@ -120,7 +120,7 @@ export async function POST(req: NextRequest) {
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
     const { data: candidate } = await admin.from('candidate_profiles').select('user_id').eq('id', ref.candidate_id).maybeSingle()
     if (candidate?.user_id) {
-      try { await createNotification(candidate.user_id, 'general', status === 'completed' ? 'Reference completed' : 'Reference request declined', `${employer.property_name || employer.company_name || 'A property'} has responded to your reference request.`, '/talent/reputation') } catch {}
+      try { await createNotification(candidate.user_id, 'general', status === 'completed' ? 'Reference completed' : 'Reference request declined', `${employer.property_name || employer.company_name || 'A property'} has responded to your reference request.`, '/talent/dashboard') } catch {}
     }
     return NextResponse.json({ success: true })
   }

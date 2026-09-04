@@ -18,25 +18,51 @@ export async function POST(req: NextRequest) {
   let description = ''
   let mode: 'payment' | 'subscription' = 'payment'
   let successPath = '/'
-  let metadata: Record<string,string> = { user_id: user.id, product }
+  // type routes the webhook to shared fulfilment when the redirect never lands.
+  let metadata: Record<string,string> = { type: 'commercial_product', user_id: user.id, product }
 
   if (product === 'talent_standard' || product === 'talent_pro') {
     const tier = product === 'talent_standard' ? 'standard' : 'pro'
     const cfg = TALENT_MEMBERSHIPS[tier]
-    amount = cfg.price; name = `WHC Concierge - ${cfg.label}`; mode = 'subscription'; successPath = '/talent/membership'
+    amount = cfg.price; name = `Talent House Collective - ${cfg.label}`; mode = 'subscription'; successPath = '/talent/membership'
     description = tier === 'standard' ? 'Monthly career membership with Interview Ready credit, enhanced matching and 10% Academy discount.' : 'Priority career membership with 10 Interview Ready credits monthly, advanced preparation and 20% Academy discount.'
     metadata = { ...metadata, role: 'talent', tier }
   } else if (product === 'featured_talent_7' || product === 'featured_talent_30') {
     const cfg = product === 'featured_talent_7' ? FEATURED_TALENT.seven_days : FEATURED_TALENT.thirty_days
-    amount = cfg.price; name = `WHC Concierge - ${cfg.label}`; mode = 'payment'; successPath = '/talent/membership'
-    description = `${cfg.days} days of premium visibility in employer searches and WHC featured placements.`
+    amount = cfg.price; name = `Talent House Collective - ${cfg.label}`; mode = 'payment'; successPath = '/talent/membership'
+    description = `${cfg.days} days of premium visibility in employer searches and Talent House featured placements.`
     metadata = { ...metadata, role: 'talent', featured_days: String(cfg.days) }
   } else if (product === 'employer_pro' || product === 'employer_group') {
     const tier = product === 'employer_pro' ? 'pro' : 'group'
     const cfg = EMPLOYER_MEMBERSHIPS[tier]
-    amount = cfg.price; name = `WHC Concierge - ${cfg.label}`; mode = 'subscription'; successPath = '/employer/membership'
+    amount = cfg.price; name = `Talent House Collective - ${cfg.label}`; mode = 'subscription'; successPath = '/employer/membership'
     description = tier === 'pro' ? 'Annual employer membership with full talent search, enhanced matching, analytics and £99 Standard Jobs.' : 'Annual multi-property membership with up to 20 included job listings and advanced recruitment tools.'
     metadata = { ...metadata, role: 'employer', tier }
+  } else if (product === 'consultancy_featured') {
+    // Priced in admin Settings like every other product, so the directory's
+    // paid slot can be repriced without a deploy.
+    amount = 14900
+    try {
+      const { getCommercialSetting } = await import('@/lib/commercial-settings')
+      const setting = await getCommercialSetting('consultancy_featured')
+      if (setting?.is_active && setting.price_pence > 0) amount = setting.price_pence
+    } catch { /* fall back */ }
+    name = 'Talent House Collective - Featured Consultancy'
+    mode = 'payment'; successPath = '/talent/consultancy'
+    description = '30 days at the top of the Consultancy directory with the Featured mark and an enlarged listing.'
+    metadata = { ...metadata, role: 'talent', featured_days: '30' }
+  } else if (product === 'residency_featured') {
+    // Price editable in admin Settings via the commercial_settings row.
+    amount = 9900
+    try {
+      const { getCommercialSetting } = await import('@/lib/commercial-settings')
+      const setting = await getCommercialSetting('residency_featured')
+      if (setting?.is_active && setting.price_pence > 0) amount = setting.price_pence
+    } catch { /* fall back */ }
+    name = 'Talent House Collective - Featured Residency Listing'
+    mode = 'payment'; successPath = '/talent/residency'
+    description = '30 days at the top of the Residency marketplace with the Featured badge.'
+    metadata = { ...metadata, role: 'talent', featured_days: '30' }
   } else {
     return NextResponse.json({ error: 'Unknown commercial product' }, { status: 400 })
   }

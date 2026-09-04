@@ -1,6 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
+import { agencyDestinationSplit, agencyResolutionExceedsCollected } from '../src/lib/agency-payouts.ts'
 
 const read = (path: string) => readFileSync(new URL(`../${path}`, import.meta.url), 'utf8')
 
@@ -36,4 +37,60 @@ test('Agency database safeguard forces full-rate payout for every open booking',
   assert.match(migration, /COALESCE\(NEW\.payout_status, 'pending'\) <> 'paid'/)
   assert.match(migration, /COALESCE\(NEW\.rate, 0\)/)
   assert.match(migration, /COALESCE\(NULLIF\(NEW\.hours, 0\), 8\)/)
+})
+
+test('Agency destination charge keeps the professional whole and WHC on its fee alone', () => {
+  // The property pays gross + fee exactly as before; the application fee is
+  // the WHC fee alone, so the shift money reaching the professional is always
+  // 100% of the agreed shift value.
+  const split = agencyDestinationSplit(200, 30)
+  assert.equal(split.totalPence, 23000)
+  assert.equal(split.applicationFeePence, 3000)
+  assert.equal(split.professionalPence, 20000)
+
+  for (const [gross, fee] of [[120, 18], [400, 60], [95, 19], [8, 2]]) {
+    const row = agencyDestinationSplit(gross, fee)
+    assert.equal(row.totalPence, (gross + fee) * 100, `total for £${gross} + £${fee}`)
+    assert.equal(row.professionalPence, gross * 100, `professional keeps the full £${gross}`)
+    assert.equal(row.applicationFeePence + row.professionalPence, row.totalPence)
+  }
+
+  // A fractional rate still splits to whole pence, and the therapist's share
+  // is always the charge less the WHC fee.
+  const partHour = agencyDestinationSplit(157.5, 24)
+  assert.equal(partHour.totalPence, 18150)
+  assert.equal(partHour.applicationFeePence, 2400)
+  assert.equal(partHour.professionalPence, 15750)
+
+  // Nonsense in, nothing out - never a negative charge or a negative fee.
+  const empty = agencyDestinationSplit(Number.NaN, -50)
+  assert.equal(empty.totalPence, 0)
+  assert.equal(empty.applicationFeePence, 0)
+})
+
+test('Agency dispute resolution can never hand out more than was collected', () => {
+  assert.equal(agencyResolutionExceedsCollected(230, 30, 200), false)
+  assert.equal(agencyResolutionExceedsCollected(230, 0, 230), false)
+  assert.equal(agencyResolutionExceedsCollected(230, 230, 0), false)
+  assert.equal(agencyResolutionExceedsCollected(230, 100, 200), true)
+  assert.equal(agencyResolutionExceedsCollected(230, 231, 0), true)
+  assert.equal(agencyResolutionExceedsCollected(0, 1, 0), true)
+  // A missing or malformed amount collected is treated as nothing collected.
+  assert.equal(agencyResolutionExceedsCollected(Number.NaN, 10, 0), true)
+})
+
+test('Agency booking money routes through Connect and never settles on a bare click', () => {
+  const checkout = read('src/app/api/stripe/checkout/route.ts')
+  assert.match(checkout, /transfer_data:\s*\{\s*destination:\s*payee\.accountId\s*\}/)
+  assert.match(checkout, /application_fee_amount:\s*split\.applicationFeePence/)
+  assert.match(checkout, /payout_method:\s*payoutMethod/)
+
+  const adminAgency = read('src/app/api/admin/agency/route.ts')
+  assert.match(adminAgency, /MIN_PAYOUT_REFERENCE_LENGTH/)
+  assert.match(adminAgency, /payout_confirmed_by:\s*user\.id/)
+  assert.match(adminAgency, /agencyResolutionExceedsCollected/)
+
+  const webhook = read('src/app/api/stripe/webhook/route.ts')
+  assert.match(webhook, /from\('stripe_events'\)/)
+  assert.match(webhook, /duplicate key\|already exists/)
 })

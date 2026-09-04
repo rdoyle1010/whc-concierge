@@ -1,4 +1,4 @@
-// WHC Academy specialist care course: Cancer Care Awareness in the Spa.
+// Talent House Academy specialist care course: Cancer Care Awareness in the Spa.
 // AWARENESS-LEVEL training only - it does not replace accredited oncology
 // touch certification (e.g. Made for Life or Jennifer Young-style
 // programmes), which many insurers require before treating guests in
@@ -7,14 +7,13 @@
 
 import type { AcademyCourse } from '../academy'
 import type { CourseExtras } from '../academy-extras'
-import type { CourseContent } from '../academy-types'
 
 export const course: AcademyCourse = {
   slug: 'cancer-care-awareness',
   title: 'Cancer Care Awareness in the Spa',
   tagline: `Welcome guests living with and beyond cancer - safely, warmly and within your scope`,
   category: 'Specialist Care',
-  minutes: 45,
+  minutes: 90,
   lessons: [
     {
       title: 'Understanding cancer and its effect on the spa guest',
@@ -177,173 +176,6 @@ export const extras: CourseExtras = {
         'Informed consent: explain what you will do, what you adapted and why, and that they can stop at any time',
         'Notice a mole or lump? Say only that it may be worth showing their doctor - never more',
       ],
-    },
-  ],
-}
-
-export const content: CourseContent = {
-  slug: 'cancer-care-awareness',
-  aims: `This course gives spa and wellness therapists a confident, compassionate, awareness-level understanding of cancer and its treatments as they affect the spa guest. It teaches the common physical effects of surgery, chemotherapy, radiotherapy and related therapies; the contraindications, cautions and practical adaptations that keep treatments safe and comfortable; the communication and emotional-care skills a disclosure deserves; and the professional frame of scope, consent, documentation and referral. It is explicitly awareness-level training: it does not replace accredited oncology touch certification such as Made for Life or Jennifer Young-style programmes, which many insurers require before therapists treat guests in active treatment. Throughout, the standard is to follow venue protocols, the guest's own medical guidance and insurance requirements, never to diagnose, and when in doubt to adapt conservatively or refer.`,
-  audience: `Spa and wellness therapists in UK luxury hotels, destination spas and premium day spas who want to welcome guests living with and beyond cancer safely, warmly and within their professional scope. It suits therapists who have encountered a disclosure mid-consultation and wished they had felt better prepared, agency and freelance therapists who meet unfamiliar venue protocols at short notice, spa managers and head therapists who set consultation and referral policy, and reception teams who handle sensitive bookings and enquiries. It is also a considered first step for any therapist planning to progress to accredited oncology touch certification.`,
-  outcomes: [
-    'Describe the main cancer treatments and their common effects on the body a therapist works with, in accurate, compassionate language',
-    'Identify contraindications and cautions, and adapt pressure, heat, products, positioning and timing to keep treatments safe and comfortable',
-    'Conduct a private, calm, present-tense consultation after a disclosure, avoiding both fear-mongering and false reassurance',
-    'Apply the professional frame of scope, informed consent, confidentiality, documentation and graceful referral on every sensitive booking',
-    'Explain where awareness-level practice ends and where accredited oncology touch training, venue protocol and insurance requirements begin',
-  ],
-  lessons: [
-    {
-      title: 'Understanding cancer and its effect on the spa guest',
-      objectives: [
-        'Explain, in plain professional language, why cancer is many diseases and why the therapist works with effects, never diagnoses',
-        'Describe the common physical footprints of surgery, chemotherapy, radiotherapy and related treatments that matter in the treatment room',
-        'Recount why the old blanket refusal of massage is outdated, and state accurately what adapted touch within medical guidance can offer',
-      ],
-      sections: [
-        {
-          heading: 'Many diseases, one person on your couch',
-          body: `Cancer is an umbrella term for a large family of diseases, differing in site, behaviour, treatment and outlook. That is the first professional reframe: there is no single "guest with cancer", and nothing useful follows from the word alone. The person in front of you may be newly diagnosed, mid-treatment, recently finished, or years into life beyond cancer; they may feel fragile, or they may feel entirely well and simply want the treatment they booked. Your role is never to interpret the diagnosis - that belongs to their medical team - but to understand how their disease and its treatment are affecting them today, and to shape the hour around that. This reframe also protects you from the two commonest errors: treating every guest with a history of cancer as an emergency, and treating none of them as needing any adjustment at all. Both are failures of the same kind, a response to the label rather than the person. The consultation, covered fully in lesson three, is where the label gives way to the individual.`,
-        },
-        {
-          heading: `What the treatments do: the therapist's map`,
-          body: `The main medical treatments each leave a footprint a therapist should recognise. Surgery leaves scars, altered sensation, and sometimes the removal or irradiation of lymph nodes, which can create a lifelong risk of lymphoedema, a swelling of the nearby limb when lymphatic drainage is compromised. Chemotherapy commonly brings deep fatigue, nausea and heightened sensitivity to smell, thinning or loss of hair with a tender scalp, dry and reactive skin, easier bruising when platelets are low, and reduced resistance to infection when white cells are low. Some guests have peripheral neuropathy, altered or numbed sensation in hands and feet, which matters enormously for pressure and heat. Radiotherapy affects the treated area specifically: skin there can be red, fragile and sore during and after a course, and is avoided until healed. Hormone therapies can bring hot flushes, joint aches and skin changes; immunotherapies vary widely. Many guests also carry a medical device, a port or PICC line, through which treatment is given. None of this list is for reciting at the guest; it is your quiet map for the adaptations in lesson two.`,
-        },
-        {
-          heading: 'The outdated blanket ban, and what replaced it',
-          body: `For decades, therapists were trained to refuse all massage to anyone with cancer, on the belief that touch and increased circulation could spread the disease around the body. That teaching is now understood to be outdated, and the profession has moved on: appropriately adapted touch, delivered by properly trained hands in line with the guest's medical guidance, is widely offered across professional spa and in cancer care settings themselves. The shift matters for two reasons. First, because the old rule caused real harm of its own kind: people at the most isolating time of their lives were turned away at spa reception desks and made to feel contaminated. Second, because the correction is not a swing to "anything goes". The modern standard is adapted touch within a professional frame: awareness training such as this course, accredited oncology touch certification where insurers and venues require it, medical guidance where protocol demands it, and conservative adaptation always. What a spa can offer such a guest is precious: an hour of being touched with skill and care, as a person rather than a patient. Delivering that safely is what the rest of this course teaches.`,
-        },
-        {
-          heading: 'The awareness-level frame, stated plainly',
-          body: `Before any technique, fix the frame this whole course sits inside. This is awareness-level training. It exists to make you knowledgeable, calm and safe: able to understand what a guest may be experiencing, hold a sensitive consultation, adapt a treatment conservatively within your venue's protocols, and refer well when referral is the right call. It does not, on its own, qualify you to treat guests in active cancer treatment. That work is the province of accredited oncology touch programmes, of which Made for Life and Jennifer Young-style training are well-known examples in the UK, and many insurers require such certification before a therapist takes those bookings. Every venue also has its own protocol, and many require confirmation that the guest's medical team is content for them to receive treatment. Your personal rule of practice therefore has three clauses: follow the venue's protocol, follow the guest's medical guidance, and stay inside what your insurance covers. Where any of the three is unclear, the default is always the same: adapt conservatively, or refer. Held confidently, this frame is not a restriction; it is what makes every other page of this course usable.`,
-        },
-      ],
-      keyTerms: [
-        { term: 'Lymphoedema', definition: `Swelling, most often of a limb, caused by compromised lymphatic drainage, for example after lymph node removal or radiotherapy; the risk can be lifelong and shapes how the nearby limb is treated.` },
-        { term: 'Peripheral neuropathy', definition: `Altered, reduced or tingling sensation, typically in the hands and feet, which some cancer treatments cause; it changes how a guest perceives pressure and heat, so the therapist cannot rely on the guest feeling what is too much.` },
-        { term: 'PICC line / port', definition: `Medical devices through which treatment is delivered: a fine tube in the arm or a small implanted chamber under the skin. The area around any device is never worked over.` },
-        { term: 'Awareness-level training', definition: `Education that prepares a therapist to understand, adapt and refer, without qualifying them to treat guests in active treatment; that requires accredited oncology touch certification, which many insurers mandate.` },
-      ],
-      caseStudy: {
-        title: 'The quiet disclosure at Harewell Manor, the Cotswolds',
-        scenario: `Priya is a senior therapist at Harewell Manor, a luxury country house spa in the Cotswolds. Her two o'clock guest, Mrs Ellison, has booked a sixty-minute aromatherapy massage as a birthday gift from her daughter. On the consultation form, under medical history, she has written a single word: chemotherapy. When Priya gently opens the subject, Mrs Ellison says she finished her final cycle six weeks ago, that she is tired all the time, that her skin has never felt so dry, and that she nearly cancelled because a spa refused her a massage two years ago and she could not face that again.`,
-        insight: `Priya's awareness training does its quietest, most important work before any technique: she does not flinch, and she does not turn Mrs Ellison away. She thanks her, asks how she feels today and what her medical team has advised, and checks the venue protocol for post-treatment guests, which Harewell Manor's policy and her own training allow her to meet with a conservatively adapted treatment: lighter pressure, gentle products, extra warmth and no time pressure. The lesson is the reframe itself: the word on the form is the beginning of a conversation, not the end of a booking.`,
-      },
-      summary: `Cancer is many diseases, and the therapist's concern is never the diagnosis but its effects on the guest today. Surgery, chemotherapy, radiotherapy and related treatments leave recognisable footprints: fatigue, fragile and reactive skin, altered sensation, easy bruising, infection risk, tender scalps, medical devices and lifelong lymphoedema risk after lymph node treatment. The old blanket refusal of massage is outdated; the modern standard is adapted touch within a professional frame of protocol, medical guidance and insurance. This course is that frame at awareness level: understand, adapt conservatively, refer well, and never diagnose.`,
-    },
-    {
-      title: 'Contraindications, cautions and treatment adaptations',
-      objectives: [
-        'Identify the areas, conditions and circumstances that rule treatment elements out or demand adaptation',
-        'Adapt pressure, heat, products, positioning and timing conservatively for a guest affected by cancer treatment',
-        'Apply the "what, adapted how" question within venue protocol and medical guidance, defaulting to conservative choices or referral when unsure',
-      ],
-      sections: [
-        {
-          heading: 'From refusal to adaptation: the professional question',
-          body: `The unskilled responses to a cancer disclosure are refusal and business-as-usual, and both are failures. The professional question is: what treatment, adapted how, is right and safe for this guest today? Answering it starts with three sources that outrank your own judgement: the venue's protocol, which defines what may be offered and with what checks; the guest's medical guidance, which many venues require confirmation of before treating guests in active treatment; and your insurance position, including whether accredited oncology certification is required for this booking at all. Within that frame, the consultation supplies the specifics: where treatment has been given, what has been removed or irradiated, what devices are in place, how energy, skin and sensation are today, and what the guest actually wants from the hour. Often the honest answer is a gentler, shorter, beautifully delivered version of something familiar rather than anything exotic. And the default, whenever any element is uncertain, never changes: adapt conservatively, or refer. A guest is never worse off for a treatment that was slightly gentler than strictly necessary; the reverse is not true.`,
-        },
-        {
-          heading: 'Pressure, and the map of the body',
-          body: `Pressure is the first dial to turn down. Skin affected by treatment can be thin, dry and fragile; low platelets can make bruising easy; deep tissue work has no place on this booking. Gentle, slow, rhythmic work, with the flat of the hand rather than digging thumbs, delivers profound relaxation without risk, and for many guests the lightness itself is the luxury. Then apply the map. Radiotherapy sites are avoided while skin is healing, and approached gently, if at all, afterwards. Recent surgical sites and unhealed scars are avoided entirely. The area around any port, PICC line or other device is never worked over, and the couch position should keep pressure off it. A limb at risk of lymphoedema, after lymph node removal or radiotherapy to the nodes, receives only the lightest touch or is omitted altogether, according to your protocol: this is a lifelong precaution, not one that expires when treatment ends. Where peripheral neuropathy has dulled sensation in hands or feet, the guest cannot reliably tell you what is too firm or too hot, so your conservatism must replace their feedback.`,
-        },
-        {
-          heading: 'Heat, products and the treatment environment',
-          body: `Heat deserves its own discipline. Saunas, steam rooms, hot tubs, hot stones and strongly heated couches can all be unsuitable for a guest in or recently out of active treatment: sensation may be altered, skin tolerance reduced, and the body's response to heat changed by medication. These are decisions for venue policy and the guest's medical advice, not for therapist instinct in the moment, so know your spa's rules on thermal facilities for these guests before you are asked. A comfortably warm room and a warmed blanket are almost always welcome; concentrated heat sources are the caution. Products follow the same conservative logic. Choose the gentlest, lowest-fragrance options in your range: chemotherapy can heighten smell sensitivity and trigger nausea, and treated skin reacts more readily, so this is not the booking for strong actives, vigorous exfoliation or a new, untested product. Patch testing, wherever the brand or treatment calls for it, matters more than ever. Complete the environment with softness everywhere: low light for tired eyes, extra cushioning for tender joints and scar sites, and blankets offered rather than assumed.`,
-        },
-        {
-          heading: 'Timing, positioning and the shape of the hour',
-          body: `The final adaptations concern the shape of the treatment itself. Fatigue after cancer treatment is not ordinary tiredness; it can be sudden and absolute, so a shorter treatment, offered without any sense of short-changing, is often the kinder design: forty-five gentle minutes that end with the guest rested beat sixty that end with them drained. Build in unhurried transitions, help on and off the couch offered gracefully, and no rush at the end of the hour. Positioning is comfort engineering: some guests cannot lie flat comfortably, some cannot lie face down after surgery, and side-lying with cushion support, or working through a semi-reclined position, keeps the treatment possible. Ask, adjust, and check in a little more often than usual, briefly and calmly, without hovering. Scalp work is adapted for hair loss or new growth: many guests love a gentle scalp hold, and some wear a wig or scarf they do not wish to remove, which is simply respected without comment. Finally, record every adaptation you made on the guest's notes: the next therapist should begin where your care left off, not from a blank page.`,
-        },
-      ],
-      keyTerms: [
-        { term: 'Contraindication', definition: `A condition or circumstance that rules a treatment or element of a treatment out, or requires it to be modified; in cancer-aware practice, most are localised (a site, a limb, a device) rather than a blanket ban on the guest.` },
-        { term: 'Conservative adaptation', definition: `The discipline of choosing the gentler option wherever there is doubt: less pressure, less heat, milder products, shorter time. The default response of a professional working at awareness level.` },
-        { term: 'Thermal caution', definition: `The principle that concentrated heat, from saunas and steam to hot stones and heated equipment, is a protocol-and-medical-guidance decision for guests in or recently out of treatment, because sensation and tolerance may be altered.` },
-        { term: 'At-risk limb', definition: `A limb near removed or irradiated lymph nodes, carrying a lifelong risk of lymphoedema; it receives only the lightest touch or is omitted, according to venue protocol.` },
-      ],
-      caseStudy: {
-        title: 'The hot stones rebooking at The Fairholme, Edinburgh',
-        scenario: `Marek works at The Fairholme, a five-star hotel spa in Edinburgh. A regular guest, Ms Docherty, has rebooked her favourite hot stone massage, and mentions at consultation that since her last visit she has had surgery for breast cancer, with lymph nodes removed on the right side, and is partway through radiotherapy. She loves the stones and is visibly hoping nothing needs to change. Marek knows the venue protocol asks for medical guidance for guests in active treatment, that concentrated heat is now a caution, that her right arm is an at-risk limb, and that the radiotherapy site must be avoided entirely.`,
-        insight: `Marek neither refuses nor pretends. He explains warmly that today he will swap the stones for his hands, keep her right arm and the treated area out of the work, and check the spa's protocol on medical confirmation before going further, then delivers a slow, gentle massage with a warmed blanket in place of the heat she loves. He records every adaptation on her notes. Ms Docherty leaves relaxed and, more importantly, safe. The insight: adaptation done gracefully feels like personalisation, not loss, and protocol followed calmly protects the guest, the therapist and the spa at once.`,
-      },
-      summary: `Cancer-aware adaptation replaces the crude question "can they have a treatment?" with the professional one: what treatment, adapted how, today, within venue protocol, medical guidance and insurance cover. Pressure comes down for fragile skin and easy bruising; the body's map is respected, with radiotherapy sites, surgical scars, devices and at-risk limbs avoided or treated ultra-lightly; concentrated heat becomes a protocol decision; products turn gentle and low-fragrance; and the hour itself is reshaped around fatigue, positioning and unhurried pacing. Every adaptation is recorded, and wherever doubt remains, the default holds: adapt conservatively, or refer.`,
-    },
-    {
-      title: 'Communication, consultation and emotional care',
-      objectives: [
-        'Conduct a private, calm consultation after a cancer disclosure, using practical, present-tense questions',
-        `Follow the guest's lead on conversation, protecting dignity and confidentiality throughout the visit`,
-        'Avoid both fear-mongering and false reassurance, and respond to emotion with professional presence rather than advice',
-      ],
-      sections: [
-        {
-          heading: 'The consultation: calm, private, practical',
-          body: `A guest disclosing cancer at a spa consultation is often braced for one of two reactions: alarm, or rejection. Your first professional gift is to show neither. Receive the disclosure as you would any other medical information: a steady expression, a genuine "thank you for telling me", and no drama. Ensure privacy absolutely; this conversation never happens across a reception desk or within earshot of another guest. Then move to practical, present-tense questions, because they are both safer and kinder than history-taking: how are you feeling today? Which areas would you like me to avoid? Is there anywhere tender, or any position that is uncomfortable? What would make this hour really comfortable for you? Notice what those questions do: they hand control to the guest, they gather exactly the information your adaptations need, and they quietly signal competence. Avoid interrogating the diagnosis itself; you need effects, not oncology. Close the consultation by saying back what you will do and what you have adapted, and add the sentence that matters most: you can change your mind about anything, at any point, and nothing needs explaining.`,
-        },
-        {
-          heading: `Following the guest's lead`,
-          body: `There is no single right conversational register for these treatments, because guests come for different things. Some want to talk about their illness, and will tell you so by doing it; your job then is easy listening without prying. Many others are in the spa for precisely the opposite reason: to spend one hour being a person and not a patient, in the only room in their week where nobody mentions hospitals. Misjudging this, and forcing solicitous conversation on a guest who wanted ordinary warmth, undoes the very normality they came to buy. So follow their lead exactly: match the topics they open, let silence be comfortable, and never introduce their illness into small talk once the consultation has done its work. The same discipline governs the body: never comment on scars, hair loss, a wig, a headscarf or a device unless the guest raises them, and handle whatever you see with the unremarkable ease of a professional to whom bodies are simply bodies. Dignity in draping and positioning deserves extra care around surgical sites. The finest compliment these guests pay afterwards is usually some version of: she treated me completely normally.`,
-        },
-        {
-          heading: 'The two traps: fear and false comfort',
-          body: `Two opposite failures wait on either side of good practice, and both come from kind intentions. The first is fear-mongering: visible anxiety, excessive checking, gasping at the consultation form, treating the guest as if they might break. It converts your treatment room into one more clinical space and tells the guest they are a problem to be managed. Calm competence is the antidote: adapt thoroughly, mention adaptations once, lightly, and then deliver a beautiful treatment. The second trap is false reassurance. Sentences like "I am sure you will be fine", "you will beat this" or "my aunt had that and she was okay" are not yours to say: you do not know, the guest knows you do not know, and for someone whose outlook is uncertain such words can land with real pain. Equally, never offer opinions on their medical treatment, diet or alternative therapies; that is diagnosis's talkative cousin and just as far outside your scope. The professional middle path is warm, steady honesty about what is yours: I will adapt this to keep you comfortable and safe. I am so glad you came in. This hour is yours.`,
-        },
-        {
-          heading: 'When emotion arrives, and where your role ends',
-          body: `Spa treatments unlock emotion at the best of times; for a guest carrying a diagnosis, an hour of kind touch can open doors they have been holding shut for months. If tears come, on the couch or in the consultation, your response is presence, not rescue. Pause the work gently, offer a tissue, and let them lead: some will want a moment and then to continue, some will want to talk briefly, a few may want to stop, and all three are fine. You do not need wise words, and you should not attempt counselling; stillness, kindness and unhurried acceptance are the professional skill, and they are enough. Afterwards, allow a soft landing: no bright lights, no brisk turnaround, time to gather themselves before reception. Confidentiality then seals the whole encounter: the guest's condition is shared with colleagues only to the extent the treatment and records require, never as conversation, and their notes are handled with the same discretion as any medical information. Finally, mind yourself: these treatments can move the therapist too. A quiet word with your manager or a trusted senior afterwards is professionalism, not weakness.`,
-        },
-      ],
-      keyTerms: [
-        { term: 'Present-tense consultation', definition: `A consultation style that asks how the guest is affected today - comfort, tender areas, positions, preferences - rather than interrogating diagnosis or history; it gathers what adaptation needs while handing control to the guest.` },
-        { term: 'False reassurance', definition: `Comforting predictions the therapist cannot make, such as "you will be fine"; outside professional scope and capable of landing painfully on a guest whose outlook is uncertain.` },
-        { term: 'Following the lead', definition: `Letting the guest set the conversational register: engaging with their illness only if they raise it, and otherwise giving them the ordinary, warm normality most came for.` },
-        { term: 'Professional presence', definition: `The skill of meeting a guest's emotion with calm stillness, kindness and acceptance rather than advice or counselling; paired with confidentiality, it defines emotional care within a therapist's scope.` },
-      ],
-      caseStudy: {
-        title: 'The tears at Thornleigh Place, Mayfair',
-        scenario: `Sofia is a therapist at Thornleigh Place, a luxury hotel spa in Mayfair. Her guest, Mr Okafor, disclosed at consultation that he is between treatment cycles, said briskly that he would rather not discuss it further, and chose a gentle back, neck and shoulder massage. Sofia adapted quietly and followed his lead into easy, ordinary conversation about nothing in particular. Twenty minutes in, during slow work across his shoulders, Mr Okafor begins to cry, silently at first, then openly, and apologises through the towels for "making a scene".`,
-        insight: `Sofia stills her hands, keeps one resting calmly on his shoulder, and says only: there is nothing to apologise for, take all the time you need. She offers a tissue, waits without a single question, and when he says he would like to carry on, she resumes more slowly, saying nothing further about it. Afterwards she gives him an unhurried landing and a warm, completely normal goodbye, and shares nothing with colleagues beyond his treatment notes. The lesson: emotional care in a spa is presence, dignity and discretion. Sofia never needed the right words, because staying kindly was the skill.`,
-      },
-      summary: `Communication is where cancer-aware care is truly delivered. The consultation is private, calm and present-tense: thank the guest, ask how they are affected today, hand them control and confirm they can change their mind at any point. Thereafter, follow their lead entirely: many guests want an hour of not being a patient, and normality is the luxury. Avoid the twin traps of fear-mongering and false reassurance, offering warm honesty about what is yours to promise. Meet tears with presence rather than advice, protect confidentiality absolutely, and let dignity govern every word, drape and silence.`,
-    },
-    {
-      title: 'Scope of practice, consent, referral and accredited training',
-      objectives: [
-        'Define the boundary of awareness-level practice and explain where accredited oncology touch certification is required',
-        'Apply informed consent, venue protocol, medical guidance and documentation on every sensitive booking',
-        `Refer gracefully - to seniors, protocols, accredited colleagues or the guest's medical team - and respond correctly to anything unusual noticed during treatment`,
-      ],
-      sections: [
-        {
-          heading: 'Scope: the line that protects everyone',
-          body: `Scope of practice is the honest answer to the question: what am I trained, authorised and insured to do? For this course, the answer is precise. Awareness-level training equips you to understand cancer's effects, hold a sensitive consultation, adapt conservatively within venue protocol, and refer well. It does not, on its own, authorise you to treat guests in active cancer treatment. That work belongs to accredited oncology touch programmes, of which Made for Life and Jennifer Young-style training are well-known examples in UK spa, and many insurers require such certification before a therapist takes those bookings at all. Three authorities therefore frame every sensitive booking, and you must know all three before the guest arrives: your venue's protocol, which defines what may be offered and by whom; the guest's medical guidance, which many venues require confirmation of; and your insurance position, both the spa's and, for freelance and agency therapists, your own. Working beyond any of the three is not bravery; it is the single fastest way a well-meaning therapist puts a vulnerable guest, a career and a business at risk simultaneously.`,
-        },
-        {
-          heading: 'Consent, protocol and the paper trail',
-          body: `Informed consent for these bookings must be specific, not ceremonial. The guest should understand what you will do, what you have adapted and why, what you will avoid, and that they may pause or stop at any time without explanation; that final clause, said aloud, changes how safe the whole hour feels. Consent is a conversation first and a signature second. Around it sits the venue's protocol, and the professional obligation is to know it before you need it: what your spa offers guests in active treatment, whether medical confirmation is required and in what form, which therapists hold accredited certification, and how sensitive bookings are flagged to the team discreetly. If you work agency shifts, ask for the protocol on arrival, exactly as you would ask where the fire exits are. Then document. Record the disclosure in appropriate professional language, the questions asked, the guidance confirmed, every adaptation made, anything declined, and how the guest responded. Store it with the confidentiality any medical information commands. Complete notes are continuity of care for the guest's next visit, and they are also your professional protection: the difference between "I adapted correctly and can show it" and an unsupported memory.`,
-        },
-        {
-          heading: 'Never diagnose, and the art of the graceful referral',
-          body: `Therapists see and touch more skin than almost any other profession, and sooner or later you will notice something a guest may not have: an unusual mole, a lump, a patch of changed skin. The rule is absolute and liberating: never diagnose, never alarm, never reassure. You are not qualified to know what it is, and both "I am sure it is nothing" and a worried face are diagnoses in disguise. The professional script is one calm sentence: I noticed a small area here that I was not sure about, and it may be worth showing your doctor next time you see them. Then let it go; noticing and mentioning is the whole of your role. Referral more broadly is a skill to deliver with grace rather than apology. Upwards, to your senior therapist or manager, whenever a booking sits outside your certainty. Sideways, to an accredited colleague, when the venue holds oncology-trained staff and the booking calls for them. Outwards, to the guest's medical team, when protocol requires confirmation before treatment. Phrased well, referral is service: let me make sure you get the best and safest version of this, is a sentence that builds trust rather than spending it.`,
-        },
-        {
-          heading: 'The path onwards: accredited training and the therapist you become',
-          body: `For many therapists, this course is the beginning of something rather than the whole of it. If this work calls to you, the path onwards is accredited oncology touch certification: structured programmes, such as Made for Life or Jennifer Young-style training, that teach adapted treatment for guests in active treatment in the depth that awareness training cannot, and that satisfy the certification requirements many insurers set. Venues notice therapists who hold it; a spa that can safely and warmly welcome guests living with cancer serves its community better and is a better business, and the therapists who make that possible are valued accordingly. Speak to your manager about what your venue holds and what it would support. Until and unless you certify, hold the awareness-level frame with quiet confidence: understand deeply, consult kindly, adapt conservatively, document properly, refer gracefully, and never diagnose. There is nothing apologetic about that list. A guest at a fragile moment of their life, met by a therapist who knows exactly what she can do and exactly where her scope ends, is a guest in the safest possible hands, and that, precisely, is the point of this course.`,
-        },
-      ],
-      keyTerms: [
-        { term: 'Scope of practice', definition: `The boundary of what a professional is trained, authorised and insured to do; for this course, awareness-level understanding, conservative adaptation and referral, not the treatment of guests in active treatment.` },
-        { term: 'Accredited oncology touch training', definition: `Structured, certificated programmes, such as Made for Life or Jennifer Young-style training, that qualify therapists to treat guests in active cancer treatment; many insurers require them before such bookings are taken.` },
-        { term: 'Informed consent', definition: `The guest's specific agreement, given with understanding of what will be done, what has been adapted and why, and the standing right to pause or stop at any time without explanation.` },
-        { term: 'Graceful referral', definition: `Passing a booking, question or observation to the right authority - senior, accredited colleague, protocol or medical team - phrased as service rather than apology, and completing the awareness-level therapist's role.` },
-      ],
-      caseStudy: {
-        title: 'The mid-chemo enquiry at Alderbrook Hall, Cheshire',
-        scenario: `Grace is an agency therapist on her first shift at Alderbrook Hall, a five-star spa hotel in Cheshire. Reception passes her a booking note: the afternoon guest, Mrs Whitfield, has told the team she is midway through chemotherapy and is desperate for a facial before a family wedding. Grace holds awareness-level training but no accredited oncology certification. On arrival she had asked for the venue's protocols, so she knows Alderbrook Hall requires accredited certification for guests in active treatment, holds one certified senior therapist on the team, and asks for confirmation of medical guidance beforehand.`,
-        insight: `Grace neither takes the booking beyond her scope nor lets the guest feel refused. She speaks to the spa manager, and the certified senior therapist takes Mrs Whitfield's facial, with medical confirmation arranged per protocol; Grace offers a gentle hand and arm ritual within her own scope so the guest's afternoon is still generous. Everything is documented. Mrs Whitfield gets a safe, beautiful experience for the wedding; Grace is rebooked by the venue, precisely because she knew her edge and handled it gracefully. Scope, held with confidence, is what five-star safety actually looks like.`,
-      },
-      summary: `Scope is the frame that makes every other lesson safe to use. Awareness-level training means understanding, conservative adaptation and referral; treating guests in active treatment requires accredited oncology touch certification, such as Made for Life or Jennifer Young-style programmes, which many insurers mandate. Every sensitive booking runs on three authorities - venue protocol, the guest's medical guidance and insurance cover - wrapped in specific informed consent and complete, confidential documentation. Never diagnose anything you notice; suggest the guest's doctor, once, calmly. Refer gracefully, consider the accredited path onwards, and hold your boundary with confidence: that is what protects the guest.`,
     },
   ],
 }

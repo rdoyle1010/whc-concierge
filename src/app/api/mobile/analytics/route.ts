@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getRequestUser } from '@/lib/request-user'
+import { PREMIUM_COLUMNS, isPremium } from '@/lib/employer-premium'
 
 export async function GET(req: NextRequest) {
   const user = await getRequestUser(req)
@@ -10,8 +11,14 @@ export async function GET(req: NextRequest) {
   const { data: account } = await admin.from('profiles').select('role').eq('id', user.id).maybeSingle()
   if (account?.role !== 'employer') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
-  const { data: employer } = await admin.from('employer_profiles').select('id').eq('user_id', user.id).maybeSingle()
+  const { data: employer } = await admin.from('employer_profiles').select(`id, ${PREMIUM_COLUMNS}`).eq('user_id', user.id).maybeSingle()
   if (!employer) return NextResponse.json({ stats: {}, jobs: [], funnel: {}, topSkills: [] })
+  if (!isPremium(employer, 'employer_analytics')) {
+    return NextResponse.json(
+      { error: 'Analytics is a premium feature.', upgradeHref: '/employer/billing' },
+      { status: 402 },
+    )
+  }
 
   const { data: jobs, error: jobsError } = await admin.from('job_listings').select('*').eq('employer_id', employer.id).order('posted_date', { ascending: false })
   if (jobsError) return NextResponse.json({ error: 'Could not load job analytics.' }, { status: 500 })
@@ -19,7 +26,7 @@ export async function GET(req: NextRequest) {
   if (!allJobs.length) return NextResponse.json({ stats: { activeListings: 0, totalAppsMonth: 0, totalAppsLastMonth: 0, avgMatch: 0, avgDaysToFirst: 0 }, jobs: [], funnel: { total: 0 }, topSkills: [] })
 
   const jobIds = allJobs.map(job => job.id)
-  const { data: apps, error: appsError } = await admin.from('applications').select('*').in('role_id', jobIds)
+  const { data: apps, error: appsError } = await admin.from('applications').select('*').in('role_id', jobIds).neq('status', 'draft')
   if (appsError) return NextResponse.json({ error: 'Could not load application analytics.' }, { status: 500 })
   const applicationRows = apps || []
 

@@ -5,14 +5,14 @@ import Link from 'next/link'
 
 export default function Error({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
   useEffect(() => {
-    console.error('[WHC Error]', error)
+    console.error('[Talent House Error]', error)
   }, [error])
 
   return (
     <div className="min-h-screen bg-white flex items-center justify-center px-6">
       <div className="text-center max-w-md">
         <div className="w-12 h-12 rounded-full border border-border flex items-center justify-center mx-auto mb-8">
-          <span className="text-[20px]" style={{ color: '#C9A96E' }}>!</span>
+          <span className="text-[20px]" style={{ color: '#555555' }}>!</span>
         </div>
         <h1 className="text-[28px] font-medium text-ink mb-3">Something went wrong</h1>
         <p className="text-[14px] text-secondary leading-relaxed mb-10">An unexpected error occurred. Please try again or return to the home page.</p>

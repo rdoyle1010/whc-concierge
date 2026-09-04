@@ -32,10 +32,10 @@ export async function GET(req: NextRequest) {
     ])
     const employerIds = Array.from(new Set((jobs || []).map((job: any) => job.employer_id).filter(Boolean))) as string[]
     const { data: employers } = employerIds.length
-      ? await admin.from('employer_profiles').select('id,user_id,company_name,property_name,logo_url,cover_image_url').in('id', employerIds)
+      ? await admin.from('employer_profiles').select('id,user_id,company_name,property_name,logo_url,property_photos').in('id', employerIds)
       : { data: [] as any[] }
     const jobMap = new Map((jobs || []).map((job: any) => [job.id, job]))
-    const employerMap = new Map((employers || []).map((employer: any) => [employer.id, employer]))
+    const employerMap = new Map((employers || []).map((employer: any) => [employer.id, { ...employer, cover_image_url: employer.property_photos?.[0] ?? null }]))
     const interviewMap = new Map<string, any[]>()
     for (const interview of interviews || []) interviewMap.set(interview.application_id, [...(interviewMap.get(interview.application_id) || []), interview])
     const offerMap = new Map((offers || []).map((offer: any) => [offer.application_id, offer]))
@@ -56,6 +56,7 @@ export async function GET(req: NextRequest) {
     .select('id,candidate_id,role_id,job_id,status,match_score,cover_note,cover_letter,created_at,updated_at,hired_at,archived_at')
     .in('role_id', jobIds)
     .not('archived_at', 'is', null)
+    .not('hired_at', 'is', null)
     .order('archived_at', { ascending: false })
   if (error) return NextResponse.json({ error: 'Could not load hired placements.' }, { status: 500 })
 

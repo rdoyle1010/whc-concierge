@@ -1,72 +1,18 @@
-/* Public website palette: clean white, navy, graphite and cool grey.
-   This intentionally removes warm beige/champagne styling from the customer-facing site. */
+/* Public website: monochrome WHC brand. The --site-* variables come from the
+   Website & Brand admin settings (set in layout.tsx) - nothing here overrides
+   them, so the admin colour and font pickers govern the live site. */
 
-.website-theme {
-  --site-accent: #0b2f4d !important;
-  --site-ink: #10283b !important;
-  --site-background: #ffffff !important;
-  --site-surface: #f7f8fa !important;
-  background: #ffffff !important;
-}
-
-.website-theme .site-surface,
-.website-theme .bg-surface,
-.website-theme .bg-parchment,
-.website-theme .bg-\[\#F7F3EA\],
-.website-theme .bg-\[\#f7f3ea\],
-.website-theme .bg-\[\#F4F1EA\],
-.website-theme .bg-\[\#f4f1ea\] {
-  background-color: #ffffff !important;
-}
-
-.website-theme .bg-\[\#EEEAE2\],
-.website-theme .bg-\[\#eeeae2\],
-.website-theme .bg-\[\#F3F1EC\],
-.website-theme .bg-\[\#f3f1ec\] {
-  background-color: #f3f5f7 !important;
-}
-
-.website-theme .site-accent,
-.website-theme .text-accent,
-.website-theme .text-gold,
-.website-theme .text-gold-dark {
-  color: #0b2f4d !important;
-}
-
-.website-theme .site-accent-bg,
-.website-theme .bg-accent,
-.website-theme .bg-gold,
-.website-theme .bg-gold-dark {
-  background-color: #0b2f4d !important;
-}
-
-.website-theme .border-border,
-.website-theme .border-\[\#ddd9d1\],
-.website-theme .border-\[\#DDD9D1\] {
-  border-color: #e2e6ea !important;
-}
-
-.website-theme section {
-  box-shadow: none;
-}
-
-/* Public-page shell used outside the homepage. */
 .public-page,
 .public-hero {
-  background: #ffffff !important;
-}
-.public-page .bg-parchment,
-.public-page .bg-surface,
-.public-page .bg-\[\#f8f6f1\],
-.public-page .bg-\[\#F8F6F1\],
-.public-page .bg-\[\#f3f1ec\],
-.public-page .bg-\[\#F3F1EC\] {
-  background-color: #ffffff !important;
+  background: var(--site-background, #ffffff);
 }
 .public-page .text-accent,
 .public-page .public-eyebrow {
-  color: #0b2f4d !important;
+  color: var(--site-accent, #1c1c1c);
 }
 .public-page .bg-accent {
-  background-color: #0b2f4d !important;
+  background-color: var(--site-accent, #1c1c1c);
+}
+.website-theme section {
+  box-shadow: none;
 }

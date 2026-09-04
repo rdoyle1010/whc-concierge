@@ -36,7 +36,7 @@ export async function POST(req: NextRequest) {
     if (!booking) return NextResponse.json({ error: 'Residency booking not found.' }, { status: 404 })
 
     if (!booking.paid_at) {
-      const { error } = await admin.from('residency_bookings').update({
+      const { data: claimed, error } = await admin.from('residency_bookings').update({
         status: 'confirmed',
         agreed_total: gross,
         platform_fee: fee,
@@ -46,8 +46,9 @@ export async function POST(req: NextRequest) {
         paid_at: new Date().toISOString(),
         stripe_payment_intent: typeof session.payment_intent === 'string' ? session.payment_intent : null,
         updated_at: new Date().toISOString(),
-      }).eq('id', bookingId)
+      }).eq('id', bookingId).is('paid_at', null).select('id').maybeSingle()
       if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+      if (!claimed) return NextResponse.json({ success: true, bookingId, alreadyFulfilled: true })
 
       const [{ data: candidate }, { data: employer }] = await Promise.all([
         admin.from('candidate_profiles').select('user_id,full_name').eq('id', booking.candidate_id).maybeSingle(),
@@ -59,6 +60,10 @@ export async function POST(req: NextRequest) {
       }
       if (employer?.user_id) {
         await createNotification(employer.user_id, 'general', 'Residency booking confirmed', `${candidate?.full_name || 'The specialist'} is confirmed for ${booking.start_date} to ${booking.end_date}.`, '/employer/residency')
+        await createNotification(employer.user_id, 'general', 'Complete your Property Fact File', 'Your confirmed specialist receives a Before You Arrive pack built from your Property Fact File - the more complete it is, the better their arrival goes.', '/employer/property-fact-file').catch?.(() => {})
+      }
+      if (candidate?.user_id) {
+        await createNotification(candidate.user_id, 'general', 'Your Before You Arrive pack is ready', `Everything you need for ${propertyName} - travel, arrival and property details - is in your Before You Arrive pack.`, '/talent/before-you-arrive').catch?.(() => {})
       }
     }
 

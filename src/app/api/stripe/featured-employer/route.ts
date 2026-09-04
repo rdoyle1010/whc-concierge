@@ -58,7 +58,7 @@ export async function POST(req: NextRequest) {
         price_data: {
           currency: 'gbp',
           product_data: {
-            name: `WHC Concierge - ${setting.label}`,
+            name: `Talent House Collective - ${setting.label}`,
             description: setting.description,
           },
           unit_amount: setting.price_pence,

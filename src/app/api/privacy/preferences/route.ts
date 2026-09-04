@@ -3,8 +3,16 @@ import { cookies } from 'next/headers'
 import { createServerClient } from '@supabase/ssr'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { MARKETING_CONSENT_WORDING, PRIVACY_POLICY_VERSION } from '@/lib/privacy-consent'
+import { getRequestUser } from '@/lib/request-user'
 
-async function getUser() {
+// The browser sends a cookie session; the mobile preference screen sends the
+// same Supabase access token as a Bearer header. Both resolve to the same
+// user, and the Bearer path carries the same two-step verification rule.
+async function getUser(req?: NextRequest) {
+  const authorization = req?.headers.get('authorization') || ''
+  if (authorization.startsWith('Bearer ')) {
+    return { data: { user: await getRequestUser(req as NextRequest) } }
+  }
   const cookieStore = await cookies()
   const client = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -15,13 +23,14 @@ async function getUser() {
 }
 
 const BOOLEAN_FIELDS = [
-  'marketing_sms', 'marketing_phone', 'job_alerts_email', 'academy_updates_email',
+  'marketing_sms', 'marketing_phone', 'job_alerts_email', 'application_updates_email',
+  'booking_updates_email', 'academy_updates_email',
   'product_news_email', 'partner_marketing_email', 'share_profile_with_employers',
   'share_profile_with_whc_partners', 'allow_anonymised_research',
 ] as const
 
-export async function GET() {
-  const { data: { user } } = await getUser()
+export async function GET(req: NextRequest) {
+  const { data: { user } } = await getUser(req)
   if (!user) return NextResponse.json({ error: 'Please sign in' }, { status: 401 })
   const admin = createAdminClient()
   const { data } = await admin.from('privacy_preferences').select('*').eq('user_id', user.id).maybeSingle()
@@ -47,7 +56,7 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
-  const { data: { user } } = await getUser()
+  const { data: { user } } = await getUser(req)
   if (!user) return NextResponse.json({ error: 'Please sign in' }, { status: 401 })
   const body = await req.json().catch(() => ({}))
   const admin = createAdminClient()
@@ -66,7 +75,7 @@ export async function POST(req: NextRequest) {
       consent_type: field,
       action: body[field] ? 'enabled' : 'disabled',
       policy_version: PRIVACY_POLICY_VERSION,
-      wording: field === 'share_profile_with_whc_partners' ? 'Allow WHC to share my profile with selected WHC commercial partners outside a direct application or booking.' : null,
+      wording: field === 'share_profile_with_whc_partners' ? 'Allow Talent House to share my profile with selected Talent House commercial partners outside a direct application or booking.' : null,
       source: 'account_preferences',
     }))
   if (events.length) await admin.from('consent_events').insert(events)

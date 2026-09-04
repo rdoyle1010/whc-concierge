@@ -31,7 +31,10 @@ export async function POST() {
       .insert({
         user_id: user.id,
         full_name: user.user_metadata?.full_name || user.email?.split('@')[0] || '',
-        approval_status: 'pending',
+        // Match normal signup (register/init): recovery-created candidates
+        // must not stay invisible behind a pending approval they never asked for.
+        approval_status: 'approved',
+        profile_visible: true,
       })
       .select('id')
       .single()

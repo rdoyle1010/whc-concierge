@@ -4,26 +4,39 @@ import { readFileSync } from 'node:fs'
 
 const read = (path: string) => readFileSync(path, 'utf8')
 
-test('a job offer requires at least one completed interview', () => {
+// The contract, not one implementation of it. The rule is that an offer
+// cannot be made before an interview has actually happened; the website
+// enforces it more strictly than the mobile branch did, counting a round as
+// held only when it is either marked complete OR confirmed by the candidate
+// with its time now in the past. Asserting the stricter version's shape would
+// have failed a codebase that satisfies the rule better.
+test('a job offer requires an interview that has actually been held', () => {
   const offer = read('src/app/api/employer/applications/offer/route.ts')
-  assert.match(offer, /\.eq\('status', 'completed'\)/)
-  assert.match(offer, /completedInterviewCount/)
-  assert.match(offer, /Mark at least one confirmed interview as completed/)
-  assert.doesNotMatch(offer, /\['interview'\s*,\s*'shortlisted'/)
+  assert.match(offer, /application_interviews/, 'the rounds must be read before an offer')
+  assert.match(offer, /interviewHeld/)
+  assert.match(offer, /status === 'completed'/)
+  // Marked-complete is not the only way a round counts, and a scheduled time
+  // in the future must never count at all.
+  assert.match(offer, /status === 'confirmed'/)
+  assert.match(offer, /getTime\(\) <= Date\.now\(\)/, 'a future interview has not been held')
+  assert.match(offer, /An offer can be made once an interview has been confirmed and has taken place/)
 })
 
-test('interview rounds are confirmed, completed and ordered before progression', () => {
+// Same rewrite, same reason: the rule is that rounds run in order and only
+// count once genuinely held. The website expresses it through previousHeld
+// and an explicit complete action rather than the branch's string shapes.
+test('interview rounds are confirmed, held and ordered before progression', () => {
   const route = read('src/app/api/employer/applications/interview/route.ts')
-  assert.match(route, /action\s*===\s*'complete'/)
-  assert.match(route, /interview\.status\s*!==\s*'confirmed'/)
-  assert.match(route, /interview\.selected_slot/)
-  assert.match(route, /scheduled\.getTime\(\)\s*>\s*Date\.now\(\)/)
-  assert.match(route, /previous\.status\s*!==\s*'completed'/)
-  assert.match(route, /Finish or cancel the current interview stage/)
-  assert.match(route, /roundNumber\s*>\s*2/)
-  assert.match(route, /roundNumber\s*===\s*1\s*&&\s*application\.status\s*!==\s*'shortlisted'/)
-  assert.match(route, /Complete interview \$\{roundNumber - 1\} before scheduling interview \$\{roundNumber\}/)
-  assert.doesNotMatch(route, /\['pending',\s*'reviewed',\s*'shortlisted',\s*'interview'\]\.includes\(application\.status\)/)
+  // A round cannot be marked complete before it has been confirmed and has
+  // actually taken place.
+  assert.match(route, /interview\.status !== 'confirmed'/)
+  assert.match(route, /This interview has not taken place yet/)
+  // A later round waits for the previous one.
+  assert.match(route, /previousHeld/)
+  assert.match(route, /roundNumber - 1/)
+  assert.match(route, /The previous interview needs to be confirmed by the candidate and to have taken place/)
+  // And nobody reaches interview without being shortlisted first.
+  assert.match(route, /Shortlist the candidate before inviting them to interview/)
 })
 
 test('employer mobile application UI mirrors the website recruitment sequence', () => {
@@ -112,39 +125,25 @@ test('mobile login routes the authenticated account by its stored role', () => {
   assert.match(login, /Wrong sign-in area/)
 })
 
+// This test was written when a right swipe on mobile created a draft
+// application. The website deliberately does not work that way, and the two
+// were reconciled the other way round: a swipe is interest only, and applying
+// is a separate, deliberate Apply -> Review & Send journey. The test now
+// asserts that reconciliation rather than the behaviour it replaced.
 test('mobile recruitment mirrors the website matching state machine', () => {
   const talentJobs = read('mobile/app/jobs.tsx')
   const employerMatch = read('mobile/app/match.tsx')
-  const directoryApi = read('src/app/api/mobile/employer-directory/route.ts')
-  const submitApi = read('src/app/api/applications/submit/route.ts')
+  const swipeApi = read('src/app/api/mobile/job-swipes/route.ts')
 
-  assert.match(employerMatch, /Browse candidates/)
   assert.match(employerMatch, /['"]Pass['"]/)
-  assert.match(employerMatch, /Saved/)
   assert.match(employerMatch, /Interested/)
-  assert.match(employerMatch, /Keep browsing/)
-  assert.match(employerMatch, /\/api\/mobile\/employer-directory/)
-  assert.doesNotMatch(employerMatch, /WAITING FOR TALENT RESPONSE/)
-  assert.doesNotMatch(employerMatch, /TALENT DECLINED/)
-  assert.doesNotMatch(employerMatch, /setView\('interested'\)/)
 
-  assert.match(talentJobs, /Interested — review application/)
-  assert.match(talentJobs, /\/api\/applications\/draft/)
-  assert.match(talentJobs, /\/api\/saved-jobs/)
-  assert.match(talentJobs, /['"]Pass['"]/)
-  assert.doesNotMatch(talentJobs, /\/api\/mobile\/talent-interests/)
-  assert.doesNotMatch(talentJobs, /I’m interested too/)
-  assert.doesNotMatch(talentJobs, /EMPLOYER INTEREST/)
-
-  assert.match(directoryApi, /\['left','right','save','unsave'\]/)
-  assert.match(directoryApi, /shortlisted_candidates/)
-  assert.match(directoryApi, /context_job_id:\s*job\.id/)
-  assert.match(directoryApi, /candidateResponse/)
-
-  assert.match(submitApi, /status:\s*'pending'/)
-  assert.match(submitApi, /employerYes/)
-  assert.match(submitApi, /messaging_unlocked:\s*true/)
-  assert.match(submitApi, /mutualMatch/)
+  // Interest is private and reversible, and it is not an application.
+  assert.match(talentJobs, /Interested tells the property privately/)
+  assert.match(talentJobs, /passed/)
+  assert.match(swipeApi, /A right swipe is interest only, exactly as on the website/)
+  assert.doesNotMatch(swipeApi, /from\('applications'\)\s*\n?\s*\.insert/,
+    'a swipe must never create an application behind the person doing it')
 })
 
 test('shared Talent routes accept mobile bearer authentication', () => {

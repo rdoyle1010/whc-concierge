@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { NEWSLETTER_CONSENT_WORDING, PRIVACY_POLICY_VERSION, hashToken, newConfirmationToken, sendNewsletterDoubleOptInEmail } from '@/lib/privacy-consent'
+import { enforceRateLimit } from '@/lib/rate-limit'
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
@@ -11,6 +12,19 @@ export async function POST(req: NextRequest) {
     const honeypot = String(body?.company || '').trim()
     if (honeypot) return NextResponse.json({ success: true })
     if (!EMAIL_RE.test(email) || email.length > 254) return NextResponse.json({ error: 'Please enter a valid email address.' }, { status: 400 })
+
+    // This endpoint sends a real email, through Talent House's own domain, to any
+    // address handed to it. The 120-second per-address hold below does
+    // nothing against a list of distinct victim addresses, which turns the
+    // newsletter form into a mail-bombing service and burns the sending
+    // reputation every transactional email on the platform depends on.
+    const limited = await enforceRateLimit(req, 'newsletter-subscribe', { windowMs: 60 * 60_000, maxRequests: 10 })
+    if (limited) {
+      // Deliberately the same shape as success: an attacker learns nothing
+      // about whether the limit exists, and a genuine person who tried twice
+      // is not told off.
+      return NextResponse.json({ success: true, pending: true })
+    }
 
     const admin = createAdminClient()
     const normalized = email.toLowerCase()

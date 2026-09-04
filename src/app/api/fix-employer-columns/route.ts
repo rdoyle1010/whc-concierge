@@ -8,7 +8,7 @@ export async function GET() {
   if (!(await isAdminRequest())) return NextResponse.json({ error: 'Not found' }, { status: 404 })
   const supabase = createAdminClient()
 
-  // Add missing columns one by one — each is safe to re-run
+  // Add missing columns one by one - each is safe to re-run
   const columns = [
     "ALTER TABLE employer_profiles ADD COLUMN IF NOT EXISTS contact_name text",
     "ALTER TABLE employer_profiles ADD COLUMN IF NOT EXISTS phone text",
@@ -32,7 +32,7 @@ export async function GET() {
     results.push({ sql: sql.split('IF NOT EXISTS ')[1], error: error?.message || null })
   }
 
-  // The rpc approach may not work — try direct insert test
+  // The rpc approach may not work - try direct insert test
   const { error: testError } = await supabase
     .from('employer_profiles')
     .select('contact_name')

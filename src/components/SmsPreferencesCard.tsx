@@ -38,15 +38,15 @@ export default function SmsPreferencesCard() {
   return <div className="mt-6 max-w-2xl dashboard-card">
     <div className="flex items-start justify-between gap-5">
       <div className="flex min-w-0 gap-3">
-        <div className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#f6f0e5] text-[#9c7a42]"><MessageSquareText size={18}/></div>
+        <div className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#f1f1f1] text-[#1c1c1c]"><MessageSquareText size={18}/></div>
         <div>
           <h3 className="font-serif text-lg font-semibold text-ink">Important SMS alerts</h3>
-          <p className="mt-1 text-[13px] leading-5 text-gray-500">Receive text alerts for important recruitment milestones such as shortlist, interview invitations and job offers. Email and in-app notifications continue as normal.</p>
-          {phone ? <p className="mt-2 text-[11px] text-gray-400">Mobile on profile: {phone}</p> : <p className="mt-2 text-[11px] font-medium text-amber-700">Add a mobile number to your profile before enabling SMS.</p>}
+          <p className="mt-1 text-[13px] leading-5 text-secondary">Receive text alerts for important recruitment milestones such as shortlist, interview invitations and job offers. Email and in-app notifications continue as normal.</p>
+          {phone ? <p className="mt-2 text-[11px] text-muted">Mobile on profile: {phone}</p> : <p className="mt-2 text-[11px] font-medium text-amber-700">Add a mobile number to your profile before enabling SMS.</p>}
           {message && <p className={`mt-2 text-[11px] ${message.includes('enabled') || message.includes('disabled') ? 'text-emerald-700' : 'text-red-600'}`}>{message}</p>}
         </div>
       </div>
-      <button type="button" onClick={toggle} disabled={loading || saving || (!phone && !optIn)} aria-label={optIn ? 'Turn SMS alerts off' : 'Turn SMS alerts on'} className={`relative mt-1 inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors disabled:opacity-40 ${optIn ? 'bg-[#0b2f4d]' : 'bg-gray-200'}`}>
+      <button type="button" onClick={toggle} disabled={loading || saving || (!phone && !optIn)} aria-label={optIn ? 'Turn SMS alerts off' : 'Turn SMS alerts on'} className={`relative mt-1 inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors disabled:opacity-40 ${optIn ? 'bg-[#1c1c1c]' : 'bg-gray-200'}`}>
         <span className={`inline-block h-4 w-4 rounded-full bg-white transition-transform ${optIn ? 'translate-x-6' : 'translate-x-1'}`} />
       </button>
     </div>

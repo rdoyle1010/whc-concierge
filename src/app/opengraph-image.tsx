@@ -1,7 +1,7 @@
 import { ImageResponse } from 'next/og'
 
 export const runtime = 'edge'
-export const alt = 'WHC Concierge — Luxury Wellness Careers Platform'
+export const alt = 'Talent House Collective - Luxury Wellness Careers Platform'
 export const size = { width: 1200, height: 630 }
 export const contentType = 'image/png'
 
@@ -19,7 +19,7 @@ export default function OGImage() {
           background: '#F8F7F5',
           padding: '80px',
           position: 'relative',
-          fontFamily: 'Georgia, "Times New Roman", serif',
+          fontFamily: 'Helvetica, Arial, sans-serif',
         }}
       >
         {/* Brand eyebrow */}
@@ -28,13 +28,13 @@ export default function OGImage() {
             display: 'flex',
             fontSize: 18,
             fontWeight: 600,
-            color: '#C9A96E',
+            color: '#555555',
             letterSpacing: '6px',
             textTransform: 'uppercase',
             marginBottom: 56,
           }}
         >
-          WHC Concierge
+          Talent House Collective
         </div>
 
         {/* Gold rule */}
@@ -43,7 +43,7 @@ export default function OGImage() {
             display: 'flex',
             width: 80,
             height: 1,
-            background: '#C9A96E',
+            background: '#555555',
             marginBottom: 40,
           }}
         />
@@ -55,7 +55,7 @@ export default function OGImage() {
             textAlign: 'center',
             fontSize: 68,
             fontWeight: 500,
-            color: '#1a1a1a',
+            color: '#1c1c1c',
             lineHeight: 1.12,
             letterSpacing: '-1px',
             maxWidth: 940,
@@ -71,7 +71,7 @@ export default function OGImage() {
             display: 'flex',
             fontSize: 24,
             fontWeight: 400,
-            color: '#6B7280',
+            color: '#555555',
             textAlign: 'center',
             maxWidth: 760,
             lineHeight: 1.5,
@@ -89,12 +89,12 @@ export default function OGImage() {
             right: 80,
             display: 'flex',
             fontSize: 16,
-            color: '#9CA3AF',
+            color: '#6b6b6b',
             letterSpacing: '1px',
             fontFamily: 'system-ui, -apple-system, "Segoe UI", sans-serif',
           }}
         >
-          talent.wellnesshousecollective.co.uk
+          talenthousecollective.co.uk
         </div>
       </div>
     ),

@@ -20,6 +20,7 @@ export async function GET() {
     .in('role_id', jobIds)
     .in('status', ['shortlisted','interview','offered','accepted'])
     .is('archived_at', null)
+    .is('hired_at', null)
     .order('updated_at', { ascending: false })
 
   const rows = applications || []

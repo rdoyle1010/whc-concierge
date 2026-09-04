@@ -22,7 +22,8 @@ export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => ({}))
   const bookingId = String(body.bookingId || '')
   const reason = String(body.reason || '').trim()
-  if (!bookingId || reason.length < 5) return NextResponse.json({ error: 'Choose a booking and explain the cancellation.' }, { status: 400 })
+  if (!bookingId) return NextResponse.json({ error: 'Choose a booking to cancel.' }, { status: 400 })
+  if (reason.length < 5) return NextResponse.json({ error: 'Please give a short reason for the cancellation - a few words is enough.' }, { status: 400 })
 
   const admin = createAdminClient()
   const [{ data: candidate }, { data: employer }, { data: booking }] = await Promise.all([
@@ -33,14 +34,21 @@ export async function POST(req: NextRequest) {
   if (!booking) return NextResponse.json({ error: 'Booking not found' }, { status: 404 })
   const role = booking.candidate_id === candidate?.id ? 'candidate' : booking.employer_id === employer?.id ? 'employer' : null
   if (!role) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-  if (!['accepted','confirmed'].includes(booking.status)) return NextResponse.json({ error: 'Only accepted or confirmed future shifts can be cancelled here.' }, { status: 400 })
+  if (!['accepted','confirmed'].includes(booking.status)) return NextResponse.json({ error: `This shift is currently '${booking.status}', so there is nothing to cancel - it may have just been actioned from the other side. Refresh the page to see its latest state.` }, { status: 400 })
   if (booking.shift_date < londonToday()) return NextResponse.json({ error: 'This shift has already passed. Use Shift Resolution instead.' }, { status: 400 })
 
   const fee = Math.max(0, Number(booking.platform_fee || 0))
   const gross = Math.max(0, Number(booking.rate || 0) * Number(booking.hours || 8))
   const paid = Boolean(booking.paid_at)
 
-  // Before payment there is no money to retain. After payment WHC's agreed
+  // Late-cancellation policy: a property cancelling within 24 hours of the
+  // shift is asking a professional to absorb a day they held for the booking.
+  // Policy default: 50% refund to the property, 50% compensates the
+  // professional. Admin reviews every case and can override either way.
+  const tomorrow = (() => { const d = new Date(`${londonToday()}T12:00:00Z`); d.setUTCDate(d.getUTCDate() + 1); return d.toISOString().slice(0, 10) })()
+  const lateEmployerCancellation = role === 'employer' && String(booking.shift_date) <= tomorrow
+
+  // Before payment there is no money to retain. After payment Talent House's agreed
   // admin/platform fee remains earned; the shift money is frozen for Admin to
   // decide any refund/compensation under the cancellation policy.
   const update: Record<string, any> = {
@@ -69,8 +77,10 @@ export async function POST(req: NextRequest) {
         issue_type: role === 'candidate' ? 'professional_cancelled' : 'property_cancelled',
         description: reason,
         requested_adjustment_type: role === 'employer' ? 'refund' : 'none',
-        requested_amount: role === 'employer' ? gross : null,
-        requested_reason: `Pre-shift cancellation. WHC admin fee of £${fee} is retained.`,
+        requested_amount: role === 'employer' ? (lateEmployerCancellation ? Math.round(gross / 2) : gross) : null,
+        requested_reason: lateEmployerCancellation
+          ? `Late cancellation by the property within 24 hours of the shift. Policy default: 50% refund (£${Math.round(gross / 2)}), 50% (£${gross - Math.round(gross / 2)}) compensates the professional for the held day. Talent House admin fee of £${fee} is retained.`
+          : `Pre-shift cancellation. Talent House admin fee of £${fee} is retained.`,
         status: 'under_review',
       })
     }
@@ -83,7 +93,7 @@ export async function POST(req: NextRequest) {
   const otherUser = role === 'candidate' ? emp?.user_id : cand?.user_id
   if (otherUser) {
     await createNotification(otherUser, 'general', 'Agency shift cancelled',
-      `${role === 'candidate' ? cand?.full_name || 'The professional' : emp?.property_name || emp?.company_name || 'The property'} cancelled the ${booking.shift_date} Agency shift. ${paid ? `WHC will review the money; the £${fee} admin fee is retained.` : 'No payment had been collected.'}`,
+      `${role === 'candidate' ? cand?.full_name || 'The professional' : emp?.property_name || emp?.company_name || 'The property'} cancelled the ${booking.shift_date} Agency shift. ${paid ? `Talent House will review the money; the £${fee} admin fee is retained.` : 'No payment had been collected.'}`,
       role === 'candidate' ? '/employer/agency' : '/talent/agency')
   }
 

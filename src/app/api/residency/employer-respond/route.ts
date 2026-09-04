@@ -11,7 +11,7 @@ export async function POST(req: NextRequest) {
     const body = await req.json()
     const bookingId = String(body.bookingId || '')
     const action = String(body.action || '')
-    if (!bookingId || !['accept', 'decline'].includes(action)) return NextResponse.json({ error: 'Invalid response.' }, { status: 400 })
+    if (!bookingId || !['accept', 'decline', 'counter'].includes(action)) return NextResponse.json({ error: 'Invalid response.' }, { status: 400 })
 
     const admin = createAdminClient()
     const { data: employer } = await admin.from('employer_profiles').select('id,user_id').eq('user_id', user.id).maybeSingle()
@@ -19,11 +19,22 @@ export async function POST(req: NextRequest) {
 
     const { data: booking } = await admin.from('residency_bookings').select('*').eq('id', bookingId).eq('employer_id', employer.id).maybeSingle()
     if (!booking || booking.status !== 'countered') return NextResponse.json({ error: 'Counter-offer not found.' }, { status: 404 })
+    if (action === 'accept' && booking.countered_by === 'employer') {
+      return NextResponse.json({ error: 'You have countered - the specialist needs to respond before anything can be agreed.' }, { status: 409 })
+    }
 
     const total = Number(booking.proposed_total)
-    const patch = action === 'accept'
-      ? { status: 'accepted', agreed_day_rate: booking.proposed_day_rate, agreed_total: total, platform_fee: Number((total * 0.10).toFixed(2)), updated_at: new Date().toISOString() }
-      : { status: 'declined', updated_at: new Date().toISOString() }
+    let patch: Record<string, any>
+    if (action === 'accept') {
+      patch = { status: 'accepted', agreed_day_rate: booking.proposed_day_rate, agreed_total: total, platform_fee: Number((total * 0.10).toFixed(2)), updated_at: new Date().toISOString() }
+    } else if (action === 'counter') {
+      const counterDayRate = Number(body.counterDayRate || 0)
+      if (counterDayRate <= 0) return NextResponse.json({ error: 'Enter a valid counter day rate.' }, { status: 400 })
+      const counterTotal = Number((counterDayRate * Number(booking.days_required)).toFixed(2))
+      patch = { status: 'countered', countered_by: 'employer', proposed_day_rate: counterDayRate, proposed_total: counterTotal, platform_fee: Number((counterTotal * 0.10).toFixed(2)), updated_at: new Date().toISOString() }
+    } else {
+      patch = { status: 'declined', updated_at: new Date().toISOString() }
+    }
 
     const { error } = await admin.from('residency_bookings').update(patch).eq('id', bookingId)
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
@@ -33,8 +44,8 @@ export async function POST(req: NextRequest) {
       await createNotification(
         candidate.user_id,
         'general',
-        action === 'accept' ? 'Residency counter-offer accepted' : 'Residency offer closed',
-        action === 'accept' ? 'The property accepted your counter-offer. The booking is awaiting secure payment.' : 'The property declined the counter-offer.',
+        action === 'accept' ? 'Residency counter-offer accepted' : action === 'counter' ? 'New counter-offer from the property' : 'Residency offer closed',
+        action === 'accept' ? 'The property accepted your counter-offer. The booking is awaiting secure payment.' : action === 'counter' ? `The property has countered at £${patch.proposed_day_rate}/day. Review and respond from your Residency page.` : 'The property declined the counter-offer.',
         '/talent/residency',
       )
     }

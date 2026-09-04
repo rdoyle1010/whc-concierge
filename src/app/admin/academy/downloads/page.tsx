@@ -125,8 +125,9 @@ export default function AcademyDownloadsAdminPage() {
   return (
     <DashboardShell role="admin" userName="Admin">
       <div className="mb-6">
-        <div className="mb-2 flex items-center gap-2"><Download size={21} className="text-accent" /><h1 className="text-2xl font-semibold tracking-tight text-ink">Academy Downloads</h1></div>
-        <p className="max-w-3xl text-[13px] leading-6 text-gray-500">Upload your own workbooks, templates, PDFs, spreadsheets or guides and attach them to a whole course or to a specific module. Files are stored privately.</p>
+        <p className="dashboard-eyebrow">Content & revenue</p>
+        <div className="mb-2 flex items-center gap-2"><Download size={21} className="text-accent" /><h1 className="dashboard-title">Academy Downloads</h1></div>
+        <p className="dashboard-intro max-w-3xl">Upload your own workbooks, templates, PDFs, spreadsheets or guides and attach them to a whole course or to a specific module. Files are stored privately.</p>
       </div>
 
       {notice && <div className="mb-4 rounded-lg bg-green-50 px-4 py-3 text-sm text-green-700">{notice}</div>}
@@ -134,8 +135,8 @@ export default function AcademyDownloadsAdminPage() {
 
       <div className="dashboard-card mb-8">
         <div className="mb-5 flex items-start gap-3">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#f3f1ec] text-[#9c7a42]"><FileUp size={18} /></div>
-          <div><h2 className="text-[16px] font-semibold text-ink">Add a download</h2><p className="mt-1 text-[12px] text-gray-500">PDF, Word, Excel, CSV or text files. Maximum 20 MB per file.</p></div>
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#f1f1f1] text-[#1c1c1c]"><FileUp size={18} /></div>
+          <div><h2 className="text-[16px] font-semibold text-ink">Add a download</h2><p className="mt-1 text-[12px] text-secondary">PDF, Word, Excel, CSV or text files. Maximum 20 MB per file.</p></div>
         </div>
 
         <div className="grid gap-4 md:grid-cols-2">
@@ -144,7 +145,7 @@ export default function AcademyDownloadsAdminPage() {
               {courses.map(course => <option key={course.slug} value={course.slug}>{course.title}</option>)}
             </select>
           </label>
-          <label className="text-[12px] text-gray-600">Attach to module <span className="text-gray-400">(optional)</span>
+          <label className="text-[12px] text-gray-600">Attach to module <span className="text-muted">(optional)</span>
             <select value={moduleIndex} onChange={event => setModuleIndex(event.target.value)} className="input-field mt-1">
               <option value="">Whole course / general resources</option>
               {(selectedCourse?.lessons || []).map((lesson, index) => <option key={index} value={index}>Module {index + 1}: {lesson.title}</option>)}
@@ -154,9 +155,9 @@ export default function AcademyDownloadsAdminPage() {
             <input value={title} onChange={event => setTitle(event.target.value)} placeholder="e.g. Spa P&L Workbook" className="input-field mt-1" />
           </label>
           <label className="text-[12px] text-gray-600">File
-            <input id="academy-download-file" type="file" accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.txt" onChange={event => setFile(event.target.files?.[0] || null)} className="input-field mt-1 file:mr-3 file:rounded-md file:border-0 file:bg-[#10283b] file:px-3 file:py-1.5 file:text-[11px] file:font-medium file:text-white" />
+            <input id="academy-download-file" type="file" accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.txt" onChange={event => setFile(event.target.files?.[0] || null)} className="input-field mt-1 file:mr-3 file:rounded-md file:border-0 file:bg-[#1c1c1c] file:px-3 file:py-1.5 file:text-[11px] file:font-medium file:text-white" />
           </label>
-          <label className="text-[12px] text-gray-600 md:col-span-2">Short description <span className="text-gray-400">(optional)</span>
+          <label className="text-[12px] text-gray-600 md:col-span-2">Short description <span className="text-muted">(optional)</span>
             <textarea value={description} onChange={event => setDescription(event.target.value)} rows={3} placeholder="Explain what this resource is for and when the learner should use it." className="input-field mt-1 resize-y" />
           </label>
         </div>
@@ -168,9 +169,9 @@ export default function AcademyDownloadsAdminPage() {
 
       <div className="mb-3 flex items-center gap-2"><Paperclip size={16} className="text-accent" /><h2 className="text-[16px] font-medium text-ink">Attached downloads</h2></div>
       {loading ? (
-        <div className="flex h-44 items-center justify-center"><div className="h-8 w-8 animate-spin rounded-full border-2 border-gold border-t-transparent" /></div>
+        <div className="flex h-44 items-center justify-center"><div className="h-8 w-8 animate-spin rounded-full border-2 border-accent border-t-transparent" /></div>
       ) : resources.length === 0 ? (
-        <div className="dashboard-card text-[13px] text-gray-500">No Academy downloads have been uploaded yet.</div>
+        <div className="dashboard-card text-[13px] text-secondary">No Academy downloads have been uploaded yet.</div>
       ) : (
         <div className="space-y-3">
           {resources.map(resource => {
@@ -181,11 +182,11 @@ export default function AcademyDownloadsAdminPage() {
                 <div className="min-w-0">
                   <div className="mb-1 flex flex-wrap items-center gap-2">
                     <p className="text-[14px] font-semibold text-ink">{resource.title}</p>
-                    <span className="rounded-full bg-[#f3f1ec] px-2 py-0.5 text-[10px] font-medium text-[#6c7780]">{course?.title || resource.course_slug}</span>
-                    {module && <span className="rounded-full bg-[#f8f3e8] px-2 py-0.5 text-[10px] font-medium text-[#9c7a42]">Module {Number(resource.module_index) + 1}</span>}
+                    <span className="rounded-full bg-[#f1f1f1] px-2 py-0.5 text-[10px] font-medium text-[#555555]">{course?.title || resource.course_slug}</span>
+                    {module && <span className="rounded-full bg-[#f1f1f1] px-2 py-0.5 text-[10px] font-medium text-[#1c1c1c]">Module {Number(resource.module_index) + 1}</span>}
                   </div>
-                  {resource.description && <p className="mb-1 text-[12px] leading-5 text-gray-500">{resource.description}</p>}
-                  <p className="text-[11px] text-gray-400">{resource.file_name} · {formatBytes(resource.file_size)}{module ? ` · ${module.title}` : ' · whole-course resource'}</p>
+                  {resource.description && <p className="mb-1 text-[12px] leading-5 text-secondary">{resource.description}</p>}
+                  <p className="text-[11px] text-muted">{resource.file_name} · {formatBytes(resource.file_size)}{module ? ` · ${module.title}` : ' · whole-course resource'}</p>
                 </div>
                 <button type="button" onClick={() => remove(resource)} disabled={deleting === resource.id} className="btn-secondary inline-flex shrink-0 items-center justify-center gap-2 text-[12px] text-red-600 disabled:opacity-50">
                   <Trash2 size={13} /> {deleting === resource.id ? 'Removing...' : 'Remove'}

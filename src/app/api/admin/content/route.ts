@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { adminRequestUser } from '@/lib/admin-api-auth'
+import { revalidateTag } from 'next/cache'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { createServerClient } from '@supabase/ssr'
-import { cookies } from 'next/headers'
 import {
   parseWebsiteContent,
   WebsiteContentSchema,
@@ -13,24 +13,15 @@ import {
 import { getWebsiteContent } from '@/lib/site-content-server'
 
 const RESEND_API_KEY = process.env.RESEND_API_KEY
-const FROM_EMAIL = 'WHC Concierge <noreply@mail.wellnesshousecollective.co.uk>'
+const FROM_EMAIL = 'Talent House Collective <noreply@mail.wellnesshousecollective.co.uk>'
 const DEFAULT_CONTACT_PAGE_SIZE = 25
 const MAX_CONTACT_PAGE_SIZE = 100
-const CONTACT_STATUSES = new Set(['open', 'replied', 'closed'])
+const CONTACT_STATUSES = new Set(['open', 'replied', 'closed', 'investigating', 'resolved', 'dismissed'])
 
+// Delegated to the shared admin guard, which enforces two-step
+// verification as well as the admin role.
 async function requireAdmin() {
-  const cookieStore = await cookies()
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    { cookies: { getAll() { return cookieStore.getAll() }, setAll() {} } }
-  )
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return null
-  const admin = createAdminClient()
-  const { data: profile } = await admin.from('profiles').select('role').eq('id', user.id).single()
-  if (profile?.role !== 'admin') return null
-  return user
+  return adminRequestUser()
 }
 
 async function saveConfigValue(
@@ -108,15 +99,22 @@ export async function GET(req: NextRequest) {
       const from = (page - 1) * perPage
       const to = from + perPage - 1
 
-      let query = admin.from('contact_queries')
-        .select('id,name,email,subject,message,status,type,created_at', { count: 'exact' })
-        .neq('type', 'complaint')
-        .order('created_at', { ascending: false })
-        .range(from, to)
-
-      if (status !== 'all') query = query.eq('status', status)
-
-      const { data, count, error } = await query
+      const complaintsOnly = req.nextUrl.searchParams.get('view') === 'complaints'
+      // subject and type arrive with today's migration - retry without them
+      // (and without the type-based filters) so the inboxes work either way.
+      const buildQuery = (withNewColumns: boolean) => {
+        let query = admin.from('contact_queries')
+          .select(withNewColumns
+            ? 'id,name,email,subject,message,status,type,created_at,admin_reply,replied_at'
+            : 'id,name,email,message,status,created_at,admin_reply,replied_at', { count: 'exact' })
+          .order('created_at', { ascending: false })
+          .range(from, to)
+        if (withNewColumns) query = complaintsOnly ? query.eq('type', 'complaint') : query.or('type.neq.complaint,type.is.null')
+        if (status !== 'all') query = query.eq('status', status)
+        return query
+      }
+      let { data, count, error } = await buildQuery(true)
+      if (error) ({ data, count, error } = await buildQuery(false))
       if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
       const total = count || 0
@@ -136,6 +134,11 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: e.message }, { status: 500 })
   }
 }
+
+// The keys that decide whether anyone can sign in. Writing one of these has
+// to clear the cache in front of it or the change lands up to 30 seconds late,
+// per server instance.
+const ACCESS_KEYS = new Set(['platform_access', 'platform_preview_code'])
 
 export async function POST(req: NextRequest) {
   const user = await requireAdmin()
@@ -166,6 +169,15 @@ export async function POST(req: NextRequest) {
       const { key, value } = body
       if (!key) return NextResponse.json({ error: 'Missing key' }, { status: 400 })
       await saveConfigValue(admin, key, String(value ?? ''))
+      // Closing the doors reads through a 30 second cache, and on Netlify each
+      // lambda instance holds its own copy - so without this the setting looks
+      // broken: one refresh shows the waiting list, the next shows the form,
+      // and an administrator reasonably concludes the switch does nothing.
+      if (ACCESS_KEYS.has(String(key))) revalidateTag('platform-access', 'max')
+      // Same trap: the billing identity is read through a cache with its own
+      // tag, so without this a saved company number goes on missing from
+      // receipts for five minutes and looks like the form did nothing.
+      if (String(key) === 'billing_identity') revalidateTag('billing-identity', 'max')
       return NextResponse.json({ success: true })
     }
 
@@ -206,6 +218,9 @@ export async function POST(req: NextRequest) {
         saveConfigValue(admin, WEBSITE_PUBLISHED_KEY, JSON.stringify(parsed.data), now),
         saveConfigValue(admin, WEBSITE_HISTORY_KEY, JSON.stringify(history), now),
       ])
+      // Bust the cached published content immediately - without this the
+      // public site keeps serving the old version for up to 60 seconds.
+      revalidateTag('website-content', 'max')
       return NextResponse.json({ success: true, publishedAt: now, history })
     }
 
@@ -226,6 +241,9 @@ export async function POST(req: NextRequest) {
     }
 
     if (action === 'query_status') {
+      if (!CONTACT_STATUSES.has(String(body.status))) {
+        return NextResponse.json({ error: 'Invalid status.' }, { status: 400 })
+      }
       const { error } = await admin.from('contact_queries').update({ status: body.status }).eq('id', body.id)
       if (error) return NextResponse.json({ error: error.message }, { status: 500 })
       return NextResponse.json({ success: true })
@@ -252,13 +270,13 @@ export async function POST(req: NextRequest) {
         body: JSON.stringify({
           from: FROM_EMAIL,
           to: q.email,
-          subject: `Re: your message to Wellness House Collective`,
+          subject: `Re: your message to Talent House Collective`,
           html: `
             <div style="font-family: Inter, -apple-system, sans-serif; max-width: 560px; margin: 0 auto; padding: 40px 20px;">
-              <p style="font-size: 16px; font-weight: 600; margin-bottom: 24px;">WHC Concierge</p>
+              <p style="font-size: 16px; font-weight: 600; margin-bottom: 24px;">Talent House Collective</p>
               <p style="color: #374151; white-space: pre-wrap;">${replyText.replace(/</g, '&lt;')}</p>
-              <hr style="border: none; border-top: 1px solid #E5E7EB; margin: 24px 0;" />
-              <p style="font-size: 12px; color: #9CA3AF;">Your original message: ${String(q.message || '').slice(0, 500).replace(/</g, '&lt;')}</p>
+              <hr style="border: none; border-top: 1px solid #dddddd; margin: 24px 0;" />
+              <p style="font-size: 12px; color: #6b6b6b;">Your original message: ${String(q.message || '').slice(0, 500).replace(/</g, '&lt;')}</p>
             </div>`,
         }),
       })
@@ -267,7 +285,10 @@ export async function POST(req: NextRequest) {
         console.error(`[Admin reply email FAILED ${res.status}] ${detail.slice(0, 300)}`)
         return NextResponse.json({ error: 'The email could not be sent - check resend.com/logs.' }, { status: 502 })
       }
-      await admin.from('contact_queries').update({ status: body.markStatus || 'replied' }).eq('id', q.id)
+      const markStatus = CONTACT_STATUSES.has(String(body.markStatus)) ? body.markStatus : 'replied'
+      await admin.from('contact_queries')
+        .update({ status: markStatus, admin_reply: replyText, replied_at: new Date().toISOString() })
+        .eq('id', q.id)
       return NextResponse.json({ success: true })
     }
 

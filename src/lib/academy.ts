@@ -1,4 +1,4 @@
-// WHC Academy - the course catalogue. Content lives in code (no CMS needed);
+// Talent House Academy - the course catalogue. Content lives in code (no CMS needed);
 // enrolments, progress and certificates live in the course_enrollments table.
 // IMPORTANT: quiz answer keys are NOT in this file - they live in
 // academy-answers.ts, which is only ever imported server-side.
@@ -29,7 +29,7 @@ export const ACADEMY: AcademyCourse[] = [
     title: 'The Perfect Consultation',
     tagline: 'Turn the first five minutes into the whole treatment',
     category: 'Guest Experience',
-    minutes: 35,
+    minutes: 75,
     lessons: [
       { title: 'Why the consultation is the treatment', content: `A five-star treatment does not start at the massage couch. It starts the moment the guest sits down opposite you. The consultation is where trust is built, expectations are set and the treatment is personalised - and it is the single part of the experience most often rushed.
 
@@ -72,7 +72,7 @@ Finally, record anything useful for next time on the guest's record: preferences
     title: 'Retail & Recommendation',
     tagline: 'Sell like a therapist, not a salesperson',
     category: 'Commercial',
-    minutes: 30,
+    minutes: 75,
     lessons: [
       { title: 'Reframing retail', content: `Most therapists dislike "selling". Good ones realise they are not selling - they are finishing the treatment.
 
@@ -119,7 +119,7 @@ And remember the quiet rule of luxury retail: the guest should leave feeling loo
     title: 'Five-Star Customer Service',
     tagline: 'The details that separate good from unforgettable',
     category: 'Guest Experience',
-    minutes: 35,
+    minutes: 75,
     lessons: [
       { title: 'What five-star actually means', content: `Five-star service is not politeness. Politeness is the entry ticket. Five-star service is anticipation: solving needs the guest has not voiced yet.
 
@@ -158,7 +158,7 @@ Cues are everywhere: short answers mean wind down the talk; a guest checking the
     title: 'LQA & Forbes Standards',
     tagline: 'How the world’s toughest inspectors score your spa',
     category: 'Standards',
-    minutes: 40,
+    minutes: 75,
     lessons: [
       { title: 'Who inspects, and why it matters to you', content: `Two names dominate luxury hospitality auditing: LQA (Leading Quality Assurance) and Forbes Travel Guide. Both send anonymous inspectors who book, arrive, experience and score every touchpoint of a spa visit against hundreds of detailed standards. Forbes star ratings and LQA scores decide marketing claims, management bonuses and, bluntly, careers.
 
@@ -203,7 +203,7 @@ When something conflicts, guest wellbeing beats the checklist - and the great op
     title: 'Health, Safety & Hygiene in the Spa',
     tagline: 'The non-negotiables that protect every guest and your licence',
     category: 'Standards',
-    minutes: 40,
+    minutes: 75,
     lessons: [
       { title: 'Your legal and professional duty', content: `Health and safety in a UK spa is not optional culture - it is law. Under the Health and Safety at Work Act, employers must provide a safe environment, and every worker has a personal legal duty to take reasonable care of themselves and others, follow training, and report hazards. "I was busy" is not a defence for anyone.
 
@@ -245,7 +245,7 @@ Fire: know the alarm sound, the exits from every room you work in, and the assem
     title: 'Treatment Room Standards',
     tagline: 'Set the stage before the guest ever walks in',
     category: 'Standards',
-    minutes: 25,
+    minutes: 60,
     lessons: [
       { title: 'The room speaks first', content: `Before you say a word, the room has already told the guest what kind of hour this will be. Luxury guests read rooms instantly: temperature, scent, light, sound, order. A perfect treatment in a sloppy room scores like a sloppy treatment.
 
@@ -285,7 +285,7 @@ If turnaround time is genuinely impossible - back-to-back bookings with no gap -
     title: 'Upgrading Treatments',
     tagline: 'Grow every booking with integrity',
     category: 'Commercial',
-    minutes: 25,
+    minutes: 60,
     lessons: [
       { title: 'The economics of the upgrade', content: `A spa's costliest asset is an empty treatment room; its second costliest is a booked hour that could have been worth more. Upgrades - lengthening a treatment, adding an enhancement, moving to a superior product line - are the highest-margin revenue in the building, because the guest, the room and your hands are already there.
 
@@ -323,7 +323,7 @@ And accept the no beautifully: "Of course - I will make the sixty minutes count.
     title: 'Personal Presentation & Hygiene',
     tagline: 'You are part of the product',
     category: 'Standards',
-    minutes: 20,
+    minutes: 45,
     lessons: [
       { title: 'Why presentation is professional, not personal', content: `In luxury wellness, the therapist is inside the guest's personal space for a full hour. Your presentation is not about vanity; it is a clinical and commercial standard, exactly like a chef's whites.
 
@@ -354,7 +354,7 @@ Posture and energy: stand tall, move calmly, never yawn in guest areas, never le
     title: 'The Perfect Massage',
     tagline: 'Structure, flow and the details that get you requested by name',
     category: 'Treatments',
-    minutes: 40,
+    minutes: 75,
     lessons: [
       { title: 'The architecture of a great massage', content: `Every memorable massage has the same architecture: a settled beginning, a purposeful middle, and an unhurried ending - inside an unbroken flow.
 
@@ -399,7 +399,7 @@ Outside, close the loop with substance: what you found ("a lot of holding in the
     title: 'The Perfect Facial',
     tagline: 'Skin analysis, protocol and results guests can see',
     category: 'Treatments',
-    minutes: 40,
+    minutes: 60,
     lessons: [
       { title: 'Analysis before everything', content: `A facial without proper skin analysis is a product demonstration. The analysis is where the expert earns the title.
 
@@ -437,7 +437,7 @@ Record everything: analysis, products used, skin's response, recommendations. Th
     title: 'Product House Knowledge',
     tagline: 'Speak ESPA, Elemis and Dermalogica like a native',
     category: 'Brands',
-    minutes: 35,
+    minutes: 60,
     lessons: [
       { title: 'Why brands are a language', content: `Luxury spas do not buy products; they buy partnerships with product houses - ESPA, Elemis, Dermalogica, Comfort Zone, Aromatherapy Associates, Natura Bissé, Bamford, VOYA and their peers. The house defines the treatment menu, the training, the retail wall and much of the spa's identity.
 
@@ -466,6 +466,33 @@ The universal rule across all houses: never blag a brand. "I trained with Elemis
       { q: 'An ESPA guest expects a ritual; an Elemis guest expects...', options: ['A discount', 'A visible result, talked about confidently', 'A longer treatment', 'Silence'] },
       { q: 'VOYA’s signature story is...', options: ['Alpine herbs', 'Hand-harvested Irish seaweed', 'Diamond dust', 'Marine collagen'] },
       { q: 'You are offered an agency shift at a house you have never trained with. The professional move is...', options: ['Improvise their signature ritual', 'Be honest about your training and learn their house rather than blag it', 'Decline all such shifts forever', 'Perform your usual routine and rename it'] },
+    ],
+  },
+  {
+    slug: 'spa-revenue-fundamentals',
+    title: 'Spa Revenue Fundamentals',
+    tagline: 'Capacity, utilisation, rate and RevPATH - read your spa the way a director does',
+    category: 'Commercial',
+    minutes: 75,
+    lessons: [
+      { title: 'Understanding Spa Capacity', content: 'Two ceilings - room-hours and honest sellable therapist-hours - and why the lower one caps revenue at every moment.' },
+      { title: 'Utilisation', content: 'Booked hours over sellable hours, read by daypart: the earning rate of the capacity you pay for, and the ten-second revenue diagnosis.' },
+      { title: 'Average Treatment Rate', content: 'Value per treatment versus value per hour, and the three forces that move the rate: mix, discounting and duration.' },
+      { title: 'RevPATH', content: 'Revenue per available treatment hour - the one number that combines everything and cannot be flattered - and how to decompose it.' },
+      { title: 'Pricing and Demand', content: 'The diary as a pricing report: protect the peak, fence every offer, and fill the trough with products rather than discounts.' },
+      { title: 'Commercial Case Study', content: 'The full diagnosis run on a realistic 12-room spa - quantified, prioritised, and written up the way an owner approves.' },
+    ],
+    quiz: [
+      { q: 'A spa has 8 rooms open 12 hours a day and rosters 7 therapists on 8-hour shifts (5.75 sellable hours each). Today\'s sellable capacity is:', options: ['96 hours', '56 hours', '40.25 hours', '84 hours'] },
+      { q: 'Booked treatment hours 31; sellable hours 40.25. Utilisation is closest to:', options: ['67%', '82%', '77%', '91%'] },
+      { q: 'A daypart runs at 96% utilisation for six straight weeks with logged refusals. The evidence-led response is:', options: ['A loyalty discount at that time', 'Extend opening hours immediately', 'A measured price rise or premium tier at that daypart', 'Nothing - full is the target'] },
+      { q: 'Revenue £26,400; 288 treatments; 262 booked hours; 340 sellable hours. Rate per treatment HOUR is closest to:', options: ['£91.67', '£100.76', '£77.65', '£110.20'] },
+      { q: 'Using the same figures, RevPATH is closest to:', options: ['£100.76', '£91.67', '£77.65', '£84.20'] },
+      { q: 'RevPATH fell 6% while utilisation held. Which family of causes CANNOT be responsible?', options: ['A mix shift toward cheaper treatments', 'Discount leakage into full-price demand', 'Treatments habitually over-running at the same price', 'Fewer bookings arriving'] },
+      { q: 'A blanket 20% discount applied to all bookings must lift volume by at least roughly what to break even?', options: ['20%', 'A quarter', 'A third', 'Half'] },
+      { q: 'The primary purpose of a fence on an offer is to:', options: ['Meet advertising regulations', 'Keep the lower price away from demand that would have paid full rate', 'Simplify reception\'s scripts', 'Cap total redemptions'] },
+      { q: 'Moving one rostered therapist-hour weekly from a £30-RevPATH daypart to a therapist-constrained £105-RevPATH daypart is worth roughly:', options: ['Nothing - revenue just relocates', '£75 a week', '£135 a week', '£30 a week'] },
+      { q: 'A 14-month unfenced midweek discount has pulled achieved rate £30 below menu. The professional repair is:', options: ['Cancel it overnight and hold firm', 'Deepen it to drive more volume', 'Replace it with fenced, value-led products and rebuild the rate over a quarter', 'Extend it to weekends for fairness'] },
     ],
   },
 ]

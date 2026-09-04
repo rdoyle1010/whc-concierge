@@ -5,13 +5,13 @@ import { PASS_MARK } from '@/lib/academy'
 import { getAcademyAnswerKey, getAcademyCourseBySlug } from '@/lib/academy-catalog-server'
 import { getRequestUser } from '@/lib/request-user'
 
-// WHC Academy - enrolments, lesson progress and the server-graded quiz.
+// Talent House Academy - enrolments, lesson progress and the server-graded quiz.
 // Payment happens via Stripe checkout; the webhook sets paid_at. Quizzes are
 // graded HERE so answer keys never reach the browser or mobile app.
 
 function makeCertificateCode() {
   const alphabet = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'
-  let code = 'WHC-'
+  let code = 'Talent House-'
   for (let i = 0; i < 8; i++) code += alphabet[Math.floor(Math.random() * alphabet.length)]
   return code
 }
@@ -96,6 +96,11 @@ export async function POST(req: NextRequest) {
       const correct = key.reduce((n, k, i) => n + (answers[i] === k ? 1 : 0), 0)
       const score = Math.round((correct / key.length) * 100)
       const passed = score >= PASS_MARK
+      try {
+        await admin.from('assessment_attempts').insert({
+          enrollment_id: enrolment.id, candidate_id: cand.id, course_slug: slug, score, passed,
+        })
+      } catch { /* attempt history is best-effort */ }
       const update: Record<string, any> = { quiz_score: Math.max(score, enrolment.quiz_score || 0) }
       if (passed && !enrolment.completed_at) {
         update.completed_at = new Date().toISOString()
@@ -106,6 +111,10 @@ export async function POST(req: NextRequest) {
       if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
       if (passed && !enrolment.completed_at) {
+        try {
+          const { trackEvent } = await import('@/lib/analytics')
+          await trackEvent('course_completed', { actorUserId: user.id, candidateId: cand.id }, { course_slug: slug, score })
+        } catch { /* best-effort */ }
         try {
           await createNotification(user.id, 'general', 'Course complete - certificate earned',
             `Congratulations - you passed ${course.title} with ${score}%. Your certificate is ready, and the badge now shows on your profile for employers to see.`,

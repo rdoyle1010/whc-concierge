@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import DashboardShell from '@/components/DashboardShell'
-import { Check, Zap, MapPin, CalendarDays, Clock3 } from 'lucide-react'
+import { Check, Zap, MapPin, CalendarDays, Clock3, Banknote } from 'lucide-react'
 import { AGENCY_LISTING_TIERS } from '@/lib/constants'
 
 const dayKey = (d: Date) => d.toLocaleDateString('en-CA')
@@ -61,8 +61,36 @@ export default function AgencySettingsPage() {
   const [startTime, setStartTime] = useState('09:00')
   const [endTime, setEndTime] = useState('17:00')
   const [dayBusy, setDayBusy] = useState<string | null>(null)
+  // The button itself confirms. A line of green text under it was there, but
+  // people press a button and look at the button, not below it.
+  const [daySaved, setDaySaved] = useState(false)
   const [referral, setReferral] = useState<{ code: string | null; total: number; converted: number }>({ code: null, total: 0, converted: 0 })
   const [copied, setCopied] = useState(false)
+  const [payoutState, setPayoutState] = useState<'loading' | 'not_started' | 'incomplete' | 'active' | 'unavailable'>('loading')
+  const [payoutBusy, setPayoutBusy] = useState(false)
+
+  // Stripe Connect payout readiness, shared with Residency - same account,
+  // same onboarding endpoint.
+  useEffect(() => {
+    fetch('/api/talent/payouts')
+      .then(res => res.ok ? res.json() : { state: 'unavailable' })
+      .then(json => setPayoutState(json.state || 'unavailable'))
+      .catch(() => setPayoutState('unavailable'))
+  }, [])
+
+  async function startPayouts() {
+    if (payoutBusy) return
+    setPayoutBusy(true); setError('')
+    try {
+      const res = await fetch('/api/talent/payouts', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ returnUrl: window.location.origin, returnPath: '/talent/agency/settings' }),
+      })
+      const json = await res.json()
+      if (!res.ok || !json.url) { setError(json.error || 'Could not start payout setup.'); return }
+      window.location.href = json.url
+    } catch { setError('Could not start payout setup.') } finally { setPayoutBusy(false) }
+  }
 
   useEffect(() => {
     async function load() {
@@ -140,7 +168,11 @@ export default function AgencySettingsPage() {
         return { ...current, [key]: [nextWindow] }
       })
       setNotice(state === 'available' ? `${prettyDate(key)} saved as available ${startTime}–${endTime}.` : state === 'unavailable' ? `${prettyDate(key)} saved as not available.` : 'Availability cleared.')
-    } catch { setError('Could not save availability.') } finally { setDayBusy(null) }
+    } catch { setError('Could not save availability.') } finally {
+      setDayBusy(null)
+      setDaySaved(true)
+      window.setTimeout(() => setDaySaved(false), 2200)
+    }
   }
 
   async function saveDetails(joining: boolean): Promise<boolean> {
@@ -187,11 +219,12 @@ export default function AgencySettingsPage() {
   return (
     <DashboardShell role="talent">
       <div className="max-w-3xl">
-        <h1 className="text-2xl font-serif font-bold text-ink mb-2">Agency Settings</h1>
-        <p className="text-[13px] text-gray-500 mb-6">Be bookable for agency shifts - planned cover and urgent same-day work. You set the rate; properties pay Wellness House Collective, and you receive 100% of the agreed shift rate after the shift. Urgent offers reach you by text.</p>
+        <p className="dashboard-eyebrow">Agency register</p>
+        <h1 className="dashboard-title">Agency Settings</h1>
+        <p className="dashboard-intro mb-6">Be bookable for agency shifts - planned cover and urgent same-day work. You set the rate; properties pay Talent House Collective, and you receive 100% of the agreed shift rate after the shift. Urgent offers reach you by text.</p>
 
-        {notice && <div className="bg-green-50 text-green-700 text-sm px-4 py-3 rounded-lg mb-4">{notice}</div>}
-        {error && <div className="bg-red-50 text-red-600 text-sm px-4 py-3 rounded-lg mb-4">{error}</div>}
+        {notice && <div role="status" className="bg-green-50 text-green-700 text-sm px-4 py-3 rounded-lg mb-4">{notice}</div>}
+        {error && <div role="alert" className="bg-red-50 text-red-600 text-sm px-4 py-3 rounded-lg mb-4">{error}</div>}
 
         {live.available ? (
           <div className="bg-green-50 border border-green-200 rounded-xl px-5 py-4 mb-6">
@@ -205,33 +238,72 @@ export default function AgencySettingsPage() {
           </div>
         )}
 
+        {/* Connected payouts mean the property's payment reaches the
+            professional at the moment it clears, instead of waiting on a Talent House
+            bank transfer after the shift. */}
+        {live.available && payoutState !== 'loading' && payoutState !== 'unavailable' && (
+          payoutState === 'active' ? (
+            <div className="mb-6 flex items-start gap-3 border border-green-200 bg-green-50 px-5 py-4">
+              <Banknote size={18} className="text-green-700 mt-0.5 shrink-0" />
+              <div>
+                <p className="text-[14px] font-medium text-green-800">Payouts are connected</p>
+                <p className="text-[12px] leading-5 text-green-700 mt-0.5">Your full agreed shift amount is sent straight to your bank account by Stripe the moment a property pays. Nothing is deducted and nothing waits on a Talent House transfer.</p>
+              </div>
+            </div>
+          ) : (
+            <div className="mb-6 border border-[#1c1c1c]/25 bg-[#f1f1f1] px-5 py-4">
+              <div className="flex items-start gap-3">
+                <Banknote size={18} className="text-[#1c1c1c] mt-0.5 shrink-0" />
+                <div>
+                  <p className="text-[14px] font-medium text-ink">{payoutState === 'incomplete' ? 'Finish connecting your payouts' : 'Get paid the moment a property pays'}</p>
+                  <p className="text-[12px] leading-5 text-secondary mt-1">
+                    {payoutState === 'incomplete'
+                      ? 'Your Stripe payout setup is not finished, so shift money still comes to you by Talent House bank transfer after the shift. Complete it and you are paid automatically instead.'
+                      : 'Connect your bank account securely through Stripe and your full agreed shift amount is paid to you automatically as soon as the property pays, rather than by a Talent House bank transfer after the shift. It takes about two minutes, and your rate and fee do not change.'}
+                  </p>
+                  <button type="button" onClick={startPayouts} disabled={payoutBusy} className="btn-primary mt-3 text-[12px] disabled:opacity-50">
+                    {payoutBusy ? 'Opening Stripe...' : payoutState === 'incomplete' ? 'Continue payout setup' : 'Connect payouts with Stripe'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )
+        )}
+
         <div className="dashboard-card mb-6 space-y-5">
           <h3 className="font-serif text-lg font-semibold">Your Details</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div><label className="eyebrow block mb-1.5">Hourly Rate (£) *</label><input type="number" min={1} value={form.hourly_rate} onChange={e => setForm({ ...form, hourly_rate: e.target.value })} className="input-field" placeholder="e.g. 25" /><p className="text-[11px] text-muted mt-1">What properties see when they make you an offer.</p></div>
-            <div><label className="eyebrow block mb-1.5">Mobile Number *</label><input type="tel" value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} className="input-field" placeholder="07700 900123" /><p className="text-[11px] text-muted mt-1">Urgent same-day offers are sent by text.</p></div>
+            <div><label className="eyebrow block mb-1.5">Hourly Rate (£) *</label><input aria-label="Hourly Rate (£)" type="number" min={1} value={form.hourly_rate} onChange={e => setForm({ ...form, hourly_rate: e.target.value })} className="input-field" placeholder="e.g. 25" /><p className="text-[11px] text-muted mt-1">What properties see when they make you an offer.</p></div>
+            <div><label className="eyebrow block mb-1.5">Mobile Number *</label><input aria-label="Mobile Number" type="tel" value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} className="input-field" placeholder="07700 900123" /><p className="text-[11px] text-muted mt-1">Urgent same-day offers are sent by text.</p></div>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div><label className="eyebrow block mb-1.5">Postcode *</label><input type="text" value={form.postcode} onChange={e => setForm({ ...form, postcode: e.target.value })} className="input-field" placeholder="SW1A 1AA" /><p className="text-[11px] text-muted mt-1 inline-flex items-center gap-1"><MapPin size={10} />{hasCoords ? 'Location verified - offers show real distance in miles.' : 'Used to work out real distance to each property.'}</p></div>
-            <div><label className="eyebrow block mb-1.5">Travel Radius (miles)</label><input type="number" min={1} value={form.travel_radius_miles} onChange={e => setForm({ ...form, travel_radius_miles: e.target.value })} className="input-field" placeholder="e.g. 15" /><p className="text-[11px] text-muted mt-1">Offers outside this are flagged so you can judge the commute.</p></div>
+            <div><label className="eyebrow block mb-1.5">Postcode *</label><input aria-label="Postcode" type="text" value={form.postcode} onChange={e => setForm({ ...form, postcode: e.target.value })} className="input-field" placeholder="SW1A 1AA" /><p className="text-[11px] text-muted mt-1 inline-flex items-center gap-1"><MapPin size={10} />{hasCoords ? 'Location verified - offers show real distance in miles.' : 'Used to work out real distance to each property.'}</p></div>
+            <div><label className="eyebrow block mb-1.5">Travel Radius (miles)</label><input aria-label="Travel Radius (miles)" type="number" min={1} value={form.travel_radius_miles} onChange={e => setForm({ ...form, travel_radius_miles: e.target.value })} className="input-field" placeholder="e.g. 15" /><p className="text-[11px] text-muted mt-1">Offers outside this are flagged so you can judge the commute.</p></div>
           </div>
           <button onClick={handleSave} disabled={saving} className="btn-secondary text-[13px] disabled:opacity-50">{saving ? 'Saving...' : 'Save Details'}</button>
         </div>
 
         <div className="dashboard-card mb-6">
           <div className="flex items-center gap-2 mb-1"><CalendarDays size={17} className="text-ink" /><h3 className="font-serif text-lg font-semibold">Your Availability</h3></div>
-          <p className="text-[12px] text-gray-500 mb-5">Choose the day, say whether you are available, then add the exact hours you can genuinely work. A property only sees you as available when its entire shift fits inside the hours you have set.</p>
+          <p className="text-[12px] text-secondary mb-5">Choose the day, say whether you are available, then add the exact hours you can genuinely work. A property only sees you as available when its entire shift fits inside the hours you have set.</p>
+
+          {!live.available && (
+            <div className="mb-5 border border-amber-300 bg-amber-50 px-4 py-3">
+              <p className="text-[13px] font-semibold text-amber-900">Properties cannot see any of this yet</p>
+              <p className="mt-1 text-[12px] leading-5 text-amber-800">Your hours are saved, but you are not on the agency register, so you do not appear in any property&apos;s search. Subscribe below and everything you have set here goes live immediately.</p>
+            </div>
+          )}
 
           <div className="border border-border bg-white p-5 mb-5">
             <p className="text-[10px] uppercase tracking-[.14em] text-muted font-semibold">Selected day</p>
             <p className="mt-1 text-[24px] font-serif font-semibold text-ink">{prettyDate(selectedDate)}</p>
-            <div className="mt-4 max-w-xs"><label className="eyebrow block mb-1">Change date</label><input type="date" value={selectedDate} min={dayKey(new Date())} onChange={e => chooseDate(e.target.value)} className="input-field" /></div>
+            <div className="mt-4 max-w-xs"><label className="eyebrow block mb-1">Change date</label><input aria-label="Change date" type="date" value={selectedDate} min={dayKey(new Date())} onChange={e => chooseDate(e.target.value)} className="input-field" /></div>
 
             <div className="mt-5 border-t border-border pt-5">
               <p className="text-[11px] font-semibold text-ink mb-2">Can you work this day?</p>
               <div className="inline-flex border border-border bg-surface p-1">
-                <button type="button" onClick={() => setAvailabilityMode('available')} className={`px-5 py-2.5 text-[12px] font-semibold transition-colors ${availabilityMode === 'available' ? 'bg-[#0b2f4d] text-white' : 'text-secondary hover:text-ink'}`}>Available</button>
-                <button type="button" onClick={() => setAvailabilityMode('unavailable')} className={`px-5 py-2.5 text-[12px] font-semibold transition-colors ${availabilityMode === 'unavailable' ? 'bg-[#0b2f4d] text-white' : 'text-secondary hover:text-ink'}`}>Not available</button>
+                <button type="button" onClick={() => setAvailabilityMode('available')} className={`px-5 py-2.5 text-[12px] font-semibold transition-colors ${availabilityMode === 'available' ? 'bg-[#1c1c1c] text-white' : 'text-secondary hover:text-ink'}`}>Available</button>
+                <button type="button" onClick={() => setAvailabilityMode('unavailable')} className={`px-5 py-2.5 text-[12px] font-semibold transition-colors ${availabilityMode === 'unavailable' ? 'bg-[#1c1c1c] text-white' : 'text-secondary hover:text-ink'}`}>Not available</button>
               </div>
             </div>
 
@@ -239,8 +311,8 @@ export default function AgencySettingsPage() {
               <div className="mt-5 border-t border-border pt-5">
                 <div className="flex items-center gap-2 mb-3"><Clock3 size={15} className="text-ink"/><p className="text-[11px] font-semibold text-ink">What hours can you work?</p></div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div><label className="eyebrow block mb-1">From</label><input type="time" value={startTime} onChange={e => setStartTime(e.target.value)} className="input-field" /></div>
-                  <div><label className="eyebrow block mb-1">Until</label><input type="time" value={endTime} onChange={e => setEndTime(e.target.value)} className="input-field" /></div>
+                  <div><label className="eyebrow block mb-1">From</label><input aria-label="From" type="time" value={startTime} onChange={e => setStartTime(e.target.value)} className="input-field" /></div>
+                  <div><label className="eyebrow block mb-1">Until</label><input aria-label="Until" type="time" value={endTime} onChange={e => setEndTime(e.target.value)} className="input-field" /></div>
                 </div>
                 <div className="mt-3 flex flex-wrap gap-2">
                   <button type="button" onClick={() => setEndTime(addHours(startTime, 4))} className="btn-secondary !px-3 !py-2 text-[11px]">4 hours</button>
@@ -248,7 +320,7 @@ export default function AgencySettingsPage() {
                   <button type="button" onClick={() => { setStartTime('09:00'); setEndTime('17:00') }} className="btn-secondary !px-3 !py-2 text-[11px]">Full day · 09:00–17:00</button>
                   <span className="self-center text-[11px] text-muted">or enter any custom hours</span>
                 </div>
-                <div className="mt-4 bg-[#f7f8fa] border border-border px-4 py-3">
+                <div className="mt-4 bg-[#f1f1f1] border border-border px-4 py-3">
                   <p className="text-[12px] font-semibold text-ink">You are setting: {startTime}–{endTime}{selectedDuration > 0 ? ` · ${selectedDuration % 1 === 0 ? selectedDuration : selectedDuration.toFixed(1)} hours` : ''}</p>
                   <p className="mt-1 text-[11px] leading-5 text-muted">Example: if you set 09:00–13:00, you can be matched to a 4-hour shift inside that window. If you set 09:00–17:00, you can be matched to shifts that start and finish within that full window.</p>
                 </div>
@@ -258,14 +330,14 @@ export default function AgencySettingsPage() {
             )}
 
             <div className="mt-5 flex flex-wrap items-center gap-3 border-t border-border pt-5">
-              <button type="button" onClick={() => saveDay(availabilityMode)} disabled={!!dayBusy} className="btn-primary text-[12px]">{dayBusy ? 'Saving...' : availabilityMode === 'available' ? 'Save available hours' : 'Save as not available'}</button>
+              <button type="button" onClick={() => saveDay(availabilityMode)} disabled={!!dayBusy} className={`btn-primary text-[12px] inline-flex items-center gap-2 ${daySaved ? '!bg-emerald-700' : ''}`}>{dayBusy ? 'Saving...' : daySaved ? <><Check size={13} /> Saved</> : availabilityMode === 'available' ? 'Save available hours' : 'Save as not available'}</button>
               {days[selectedDate] && <button type="button" onClick={() => saveDay('clear')} disabled={!!dayBusy} className="text-[12px] underline text-muted">Clear this day</button>}
             </div>
             {(windows[selectedDate] || []).map((w, i) => <p key={i} className="mt-3 text-[12px] font-medium text-green-700">Saved: Available {w.start_time.slice(0,5)}–{w.end_time.slice(0,5)}</p>)}
             {days[selectedDate] === 'unavailable' && <p className="mt-3 text-[12px] font-medium text-secondary">Saved: Not available</p>}
           </div>
 
-          <div className="mb-4 border border-border bg-[#f7f8fa] p-4">
+          <div className="mb-4 border border-border bg-[#f1f1f1] p-4">
             <p className="text-[11px] font-semibold text-ink mb-2">How availability works</p>
             <div className="grid gap-2 text-[11px] leading-5 text-secondary sm:grid-cols-2">
               <p><strong className="text-ink">Available:</strong> set the real start and finish time you could accept work.</p>
@@ -275,7 +347,7 @@ export default function AgencySettingsPage() {
             </div>
           </div>
 
-          <div className="grid grid-cols-7 gap-1.5 mb-1.5">{WEEKDAY_LABELS.map(l => <div key={l} className="text-center text-[10px] uppercase tracking-wide text-gray-400">{l}</div>)}</div>
+          <div className="grid grid-cols-7 gap-1.5 mb-1.5">{WEEKDAY_LABELS.map(l => <div key={l} className="text-center text-[10px] uppercase tracking-wide text-muted">{l}</div>)}</div>
           {calendarWeeks().map((week, wi) => (
             <div key={wi} className="grid grid-cols-7 gap-1.5 mb-1.5">
               {week.map(day => {
@@ -283,25 +355,27 @@ export default function AgencySettingsPage() {
                 const isPast = key < dayKey(new Date())
                 const isToday = key === dayKey(new Date())
                 const state = days[key]
+                const window = state === 'available' ? windows[key]?.[0] : undefined
                 return (
-                  <button key={key} type="button" disabled={isPast || dayBusy === key} onClick={() => chooseDate(key)} title={state === 'available' ? 'Available - tap to edit' : state === 'unavailable' ? 'Not available - tap to edit' : 'Not set - tap to add availability'} className={`relative min-h-[58px] border px-1 py-2 text-[11px] font-medium transition-colors ${isPast ? 'bg-gray-50 text-gray-300 border-transparent cursor-default' : state === 'available' ? 'bg-green-50 text-green-800 border-green-300' : state === 'unavailable' ? 'bg-red-50 text-red-600 border-red-200' : 'bg-white text-ink border-border hover:border-ink/30'} ${selectedDate === key ? 'ring-2 ring-[#0b2f4d]/20 border-[#0b2f4d]' : ''} ${isToday ? 'font-bold' : ''}`}>
+                  <button key={key} type="button" disabled={isPast || dayBusy === key} onClick={() => chooseDate(key)} title={state === 'available' ? (window ? `Available ${window.start_time.slice(0, 5)}–${window.end_time.slice(0, 5)} - tap to edit` : 'Available - tap to edit') : state === 'unavailable' ? 'Not available - tap to edit' : 'Not set - tap to add availability'} className={`relative min-h-[64px] border px-1 py-2 text-[11px] font-medium transition-colors ${isPast ? 'bg-[#f1f1f1] text-gray-300 border-transparent cursor-default' : state === 'available' ? 'bg-green-50 text-green-800 border-green-300' : state === 'unavailable' ? 'bg-red-50 text-red-600 border-red-200' : 'bg-white text-ink border-border hover:border-ink/30'} ${selectedDate === key ? 'ring-2 ring-[#1c1c1c]/20 border-[#1c1c1c]' : ''} ${isToday ? 'font-bold' : ''}`}>
                     <span className="block text-[9px] uppercase tracking-wide opacity-65">{day.toLocaleDateString('en-GB', { weekday: 'short' })}</span>
                     <span className="block mt-0.5 text-[13px]">{day.getDate()}</span>
                     <span className="block text-[8px] uppercase opacity-60">{day.toLocaleDateString('en-GB', { month: 'short' })}</span>
+                    {window && <span className="block mt-0.5 text-[8.5px] font-semibold tabular-nums text-green-700 whitespace-nowrap">{window.start_time.slice(0, 5)}–{window.end_time.slice(0, 5)}</span>}
                   </button>
                 )
               })}
             </div>
           ))}
-          <div className="flex flex-wrap items-center gap-4 mt-3 text-[11px] text-gray-500"><span className="inline-flex items-center gap-1.5"><span className="w-3 h-3 bg-green-50 border border-green-300 inline-block" /> Available</span><span className="inline-flex items-center gap-1.5"><span className="w-3 h-3 bg-red-50 border border-red-200 inline-block" /> Not available</span><span className="inline-flex items-center gap-1.5"><span className="w-3 h-3 bg-white border border-border inline-block" /> Not set</span></div>
+          <div className="flex flex-wrap items-center gap-4 mt-3 text-[11px] text-secondary"><span className="inline-flex items-center gap-1.5"><span className="w-3 h-3 bg-green-50 border border-green-300 inline-block" /> Available</span><span className="inline-flex items-center gap-1.5"><span className="w-3 h-3 bg-red-50 border border-red-200 inline-block" /> Not available</span><span className="inline-flex items-center gap-1.5"><span className="w-3 h-3 bg-white border border-border inline-block" /> Not set</span></div>
         </div>
 
         {referral.code && (
           <div className="dashboard-card mb-6">
             <h3 className="font-serif text-lg font-semibold mb-1">Refer a Friend</h3>
-            <p className="text-[12px] text-gray-500 mb-3">Know a brilliant therapist? When they join the register with your link and subscribe, you get a <span className="font-medium text-ink">free month</span> on your listing. No limit.</p>
-            <div className="flex items-center gap-2"><input readOnly value={`https://talent.wellnesshousecollective.co.uk/register/talent?ref=${referral.code}`} className="input-field text-[12px] flex-1" onFocus={e => e.currentTarget.select()} /><button type="button" className="btn-secondary text-[12px] shrink-0" onClick={() => { navigator.clipboard?.writeText(`https://talent.wellnesshousecollective.co.uk/register/talent?ref=${referral.code}`); setCopied(true); setTimeout(() => setCopied(false), 2000) }}>{copied ? 'Copied' : 'Copy link'}</button></div>
-            {referral.total > 0 && <p className="text-[12px] text-gray-500 mt-2">{referral.total} friend{referral.total > 1 ? 's' : ''} signed up · {referral.converted} joined the register{referral.converted > 0 ? ' - free months on their way' : ''}.</p>}
+            <p className="text-[12px] text-secondary mb-3">Know a brilliant therapist? When they join the register with your link and subscribe, you get a <span className="font-medium text-ink">free month</span> on your listing. No limit.</p>
+            <div className="flex items-center gap-2"><input readOnly aria-label="Your referral link" value={`https://talenthousecollective.co.uk/register/talent?ref=${referral.code}`} className="input-field text-[12px] flex-1" onFocus={e => e.currentTarget.select()} /><button type="button" className="btn-secondary text-[12px] shrink-0" onClick={() => { navigator.clipboard?.writeText(`https://talenthousecollective.co.uk/register/talent?ref=${referral.code}`); setCopied(true); setTimeout(() => setCopied(false), 2000) }}>{copied ? 'Copied' : 'Copy link'}</button></div>
+            {referral.total > 0 && <p className="text-[12px] text-secondary mt-2">{referral.total} friend{referral.total > 1 ? 's' : ''} signed up · {referral.converted} joined the register{referral.converted > 0 ? ' - free months on their way' : ''}.</p>}
           </div>
         )}
 

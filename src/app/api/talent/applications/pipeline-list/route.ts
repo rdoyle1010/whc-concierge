@@ -15,6 +15,9 @@ export async function GET() {
     .select('id,role_id,job_id,status,match_score,updated_at,archived_at')
     .eq('candidate_id', candidate.id)
     .is('archived_at', null)
+    // A completed hire belongs on the Hired page, not among active
+    // applications - even if the employer has cleared their own archive flag.
+    .is('hired_at', null)
     .in('status', ['shortlisted','interview','offered','accepted'])
     .order('updated_at', { ascending: false })
 

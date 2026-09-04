@@ -30,7 +30,7 @@ function RequirementRow({ id, data, onUpdate, onRemove }: { id: string; data: an
   return (
     <div className="flex items-center gap-3 p-2 bg-surface rounded-lg">
       <span className="text-[13px] text-ink flex-1">{data.name}</span>
-      <select value={data.level || 'required'} onChange={e => onUpdate('level', e.target.value)} className="input-field !py-1 !px-2 text-[11px] w-24">
+      <select value={data.level || 'required'} aria-label={`Requirement level for ${data.name}`} onChange={e => onUpdate('level', e.target.value)} className="input-field !py-1 !px-2 text-[11px] w-24">
         <option value="required">Required</option><option value="preferred">Preferred</option>
       </select>
       <label className="flex items-center gap-1 cursor-pointer"><input type="checkbox" checked={data.is_trainable || false} onChange={e => onUpdate('is_trainable', e.target.checked)} className="w-3 h-3 border-border rounded text-ink" /><span className="text-[10px] text-muted">Trainable</span></label>
@@ -180,34 +180,34 @@ export default function NewJobWizard() {
         {/* ═══ STEP 1: Job Details ═══ */}
         {step === 1 && (
           <div className="space-y-5">
-            <div><label className="eyebrow block mb-1.5">Job Title *</label><input type="text" value={job.job_title} onChange={e => setJob({ ...job, job_title: e.target.value })} className="input-field" placeholder="e.g. Senior Spa Therapist" /></div>
-            <div><label className="eyebrow block mb-1.5">Description</label><textarea rows={4} value={job.job_description} onChange={e => setJob({ ...job, job_description: e.target.value })} className="input-field" /></div>
+            <div><label className="eyebrow block mb-1.5">Job Title *</label><input aria-label="Job Title" type="text" value={job.job_title} onChange={e => setJob({ ...job, job_title: e.target.value })} className="input-field" placeholder="e.g. Senior Spa Therapist" /></div>
+            <div><label className="eyebrow block mb-1.5">Description</label><textarea aria-label="Description" rows={4} value={job.job_description} onChange={e => setJob({ ...job, job_description: e.target.value })} className="input-field" /></div>
             <div className="grid grid-cols-2 gap-4">
-              <div><label className="eyebrow block mb-1.5">Location *</label><input type="text" value={job.location} onChange={e => setJob({ ...job, location: e.target.value })} className="input-field" /></div>
-              <div><label className="eyebrow block mb-1.5">Postcode</label><input type="text" value={job.location_postcode} onChange={e => setJob({ ...job, location_postcode: e.target.value })} className="input-field" /></div>
+              <div><label className="eyebrow block mb-1.5">Location *</label><input aria-label="Location" type="text" value={job.location} onChange={e => setJob({ ...job, location: e.target.value })} className="input-field" /></div>
+              <div><label className="eyebrow block mb-1.5">Postcode</label><input aria-label="Postcode" type="text" value={job.location_postcode} onChange={e => setJob({ ...job, location_postcode: e.target.value })} className="input-field" /></div>
             </div>
             <div className="grid grid-cols-3 gap-4">
               <div><label className="eyebrow block mb-1.5">Employment Type</label>
-                <select value={job.employment_type} onChange={e => setJob({ ...job, employment_type: e.target.value })} className="input-field">
+                <select aria-label="Employment Type" value={job.employment_type} onChange={e => setJob({ ...job, employment_type: e.target.value })} className="input-field">
                   <option value="full_time">Full Time</option><option value="part_time">Part Time</option><option value="contract">Contract</option><option value="agency">Agency</option><option value="seasonal">Seasonal</option>
                 </select></div>
               <div><label className="eyebrow block mb-1.5">Role Level</label>
-                <select value={job.role_level} onChange={e => setJob({ ...job, role_level: e.target.value })} className="input-field">
+                <select aria-label="Role Level" value={job.role_level} onChange={e => setJob({ ...job, role_level: e.target.value })} className="input-field">
                   <option value="junior">Junior</option><option value="therapist">Therapist</option><option value="senior">Senior</option><option value="supervisor">Supervisor</option><option value="manager">Manager</option><option value="director">Director</option><option value="executive">Executive</option>
                 </select></div>
               <div><label className="eyebrow block mb-1.5">Listing Tier</label>
-                <select value={job.tier} onChange={e => setJob({ ...job, tier: e.target.value })} className="input-field">
+                <select aria-label="Listing Tier" value={job.tier} onChange={e => setJob({ ...job, tier: e.target.value })} className="input-field">
                   <option value="bronze">Bronze £150</option><option value="silver">Silver £175</option><option value="gold">Gold £200</option><option value="platinum">Platinum £250</option>
                 </select></div>
             </div>
             <div className="grid grid-cols-3 gap-4">
-              <div><label className="eyebrow block mb-1.5">Salary Min (£)</label><input type="number" value={job.salary_min} onChange={e => setJob({ ...job, salary_min: e.target.value })} className="input-field" /></div>
-              <div><label className="eyebrow block mb-1.5">Salary Max (£)</label><input type="number" value={job.salary_max} onChange={e => setJob({ ...job, salary_max: e.target.value })} className="input-field" /></div>
-              <div><label className="eyebrow block mb-1.5">Start Date</label><input type="date" value={job.start_date} onChange={e => setJob({ ...job, start_date: e.target.value })} className="input-field" /></div>
+              <div><label className="eyebrow block mb-1.5">Salary Min (£)</label><input aria-label="Salary Min (£)" type="number" value={job.salary_min} onChange={e => setJob({ ...job, salary_min: e.target.value })} className="input-field" /></div>
+              <div><label className="eyebrow block mb-1.5">Salary Max (£)</label><input aria-label="Salary Max (£)" type="number" value={job.salary_max} onChange={e => setJob({ ...job, salary_max: e.target.value })} className="input-field" /></div>
+              <div><label className="eyebrow block mb-1.5">Start Date</label><input aria-label="Start Date" type="date" value={job.start_date} onChange={e => setJob({ ...job, start_date: e.target.value })} className="input-field" /></div>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div><label className="eyebrow block mb-1.5">Right to Work Required</label>
-                <select value={job.right_to_work_required} onChange={e => setJob({ ...job, right_to_work_required: e.target.value })} className="input-field">
+                <select aria-label="Right to Work Required" value={job.right_to_work_required} onChange={e => setJob({ ...job, right_to_work_required: e.target.value })} className="input-field">
                   <option value="any">Any</option><option value="uk_only">UK Only</option><option value="eu_only">EU Only</option><option value="visa_sponsored">Visa Sponsored</option>
                 </select></div>
               <div className="flex items-end pb-2"><label className="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked={job.relocation_support} onChange={e => setJob({ ...job, relocation_support: e.target.checked })} className="w-3.5 h-3.5 border-border rounded text-ink" /><span className="text-[13px] text-secondary">Relocation support offered</span></label></div>
@@ -219,7 +219,7 @@ export default function NewJobWizard() {
         {step === 2 && (
           <div className="space-y-5">
             <p className="text-[14px] text-secondary">Select the treatment skills required for this role. Mark each as required or preferred, and flag trainable items.</p>
-            <div className="relative"><Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" /><input type="text" placeholder="Search skills..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="input-field pl-9 !py-2 text-[13px]" /></div>
+            <div className="relative"><Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" /><input type="text" placeholder="Search skills..." aria-label="Search skills" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="input-field pl-9 !py-2 text-[13px]" /></div>
             <ChipGrid items={treatmentSkills} selected={selSkills} onToggle={(id, name) => toggle(selSkills, setSelSkills, id, name)} search={searchTerm} />
             {selSkills.size > 0 && (
               <div className="space-y-2 pt-4 border-t border-border">

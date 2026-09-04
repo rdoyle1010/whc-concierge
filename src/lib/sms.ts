@@ -14,7 +14,17 @@ const TWILIO_API_KEY_SECRET = process.env.TWILIO_API_KEY_SECRET
 const TWILIO_AUTH_TOKEN = process.env.TWILIO_AUTH_TOKEN
 const TWILIO_FROM_NUMBER = process.env.TWILIO_FROM_NUMBER
 
-const PLATFORM_URL = 'https://talent.wellnesshousecollective.co.uk'
+const PLATFORM_URL = 'https://talenthousecollective.co.uk'
+
+// Imported lazily inside the senders: this module is imported by routes that
+// have no business touching the database, and a top-level import would drag
+// the admin client into all of them.
+async function log(entry: { to: string; body: string; status: 'sent' | 'failed' | 'skipped'; error?: string }) {
+  try {
+    const { recordSms } = await import('@/lib/send-email')
+    await recordSms(entry)
+  } catch { /* a text must never fail because the log did */ }
+}
 
 export function smsConfigured(): boolean {
   const hasProductionKey = Boolean(TWILIO_API_KEY_SID && TWILIO_API_KEY_SECRET)
@@ -41,41 +51,41 @@ function privateNotificationBody(original: string): string {
   const text = original.toLowerCase()
 
   if (text.includes('urgent') && (text.includes('agency') || text.includes('cover') || text.includes('shift'))) {
-    return `WHC Concierge: You have an urgent Agency Cover update. Sign in to view and respond: ${PLATFORM_URL}`
+    return `Talent House Collective: You have an urgent Agency Cover update. Sign in to view and respond: ${PLATFORM_URL}`
   }
 
   if (text.includes('interview')) {
-    return `WHC Concierge: You have an interview update. Sign in to view the details: ${PLATFORM_URL}`
+    return `Talent House Collective: You have an interview update. Sign in to view the details: ${PLATFORM_URL}`
   }
 
   if (text.includes('agency') || text.includes('cover') || text.includes('shift')) {
-    return `WHC Concierge: You have a new Agency Cover update. Sign in to view and respond: ${PLATFORM_URL}`
+    return `Talent House Collective: You have a new Agency Cover update. Sign in to view and respond: ${PLATFORM_URL}`
   }
 
   if (text.includes('residency')) {
-    return `WHC Concierge: You have a new Residency update. Sign in to view the details: ${PLATFORM_URL}`
+    return `Talent House Collective: You have a new Residency update. Sign in to view the details: ${PLATFORM_URL}`
   }
 
   if (text.includes('message') || text.includes('inbox')) {
-    return `WHC Concierge: You have a new message waiting. Sign in to read it: ${PLATFORM_URL}`
+    return `Talent House Collective: You have a new message waiting. Sign in to read it: ${PLATFORM_URL}`
   }
 
   if (text.includes('application') || text.includes('shortlist') || text.includes('job offer') || text.includes('offer you') || text.includes('candidate')) {
-    return `WHC Concierge: You have a recruitment update. Sign in to view the details: ${PLATFORM_URL}`
+    return `Talent House Collective: You have a recruitment update. Sign in to view the details: ${PLATFORM_URL}`
   }
 
-  return `WHC Concierge: You have a new update. Sign in to view the details: ${PLATFORM_URL}`
+  return `Talent House Collective: You have a new update. Sign in to view the details: ${PLATFORM_URL}`
 }
 
 export async function sendSms(to: string | null | undefined, body: string): Promise<boolean> {
   const number = normaliseUkMobile(to)
   const safeBody = privateNotificationBody(body)
   if (!number) {
-    console.log(`[SMS skipped - no valid mobile] body: ${safeBody.slice(0, 60)}`)
+    await log({ to: String(to || ''), body: safeBody, status: 'skipped', error: 'No usable UK mobile number on the account' })
     return false
   }
   if (!smsConfigured()) {
-    console.log(`[SMS skipped - Twilio not configured] To: ${number}, body: ${safeBody.slice(0, 60)}`)
+    await log({ to: number, body: safeBody, status: 'skipped', error: 'Twilio is not configured on this deployment' })
     return false
   }
 
@@ -96,12 +106,55 @@ export async function sendSms(to: string | null | undefined, body: string): Prom
     )
     if (!res.ok) {
       const detail = await res.text().catch(() => '')
-      console.error(`[SMS FAILED ${res.status}] To: ${number} - ${detail.slice(0, 300)}`)
+      await log({ to: number, body: safeBody, status: 'failed', error: `Twilio returned ${res.status}: ${detail.slice(0, 200)}` })
       return false
     }
+    await log({ to: number, body: safeBody, status: 'sent' })
     return true
-  } catch (err) {
-    console.error('[SMS FAILED] network error:', err)
+  } catch (err: any) {
+    await log({ to: number, body: safeBody, status: 'failed', error: err?.message || 'Could not reach Twilio' })
+    return false
+  }
+}
+
+/**
+ * Send exactly the text given, with no privacy rewrite.
+ *
+ * Only for messages to WHC's own operators about their own platform. Every
+ * message to a member goes through sendSms, which strips names, rates and
+ * details so they never appear on somebody's lock screen.
+ */
+export async function rawSms(to: string | null | undefined, body: string): Promise<boolean> {
+  const number = normaliseUkMobile(to)
+  if (!number) {
+    await log({ to: String(to || ''), body, status: 'skipped', error: 'No usable UK mobile number set' })
+    return false
+  }
+  if (!smsConfigured()) {
+    await log({ to: number, body, status: 'skipped', error: 'Twilio is not configured on this deployment' })
+    return false
+  }
+  try {
+    const username = TWILIO_API_KEY_SID || TWILIO_ACCOUNT_SID!
+    const password = TWILIO_API_KEY_SECRET || TWILIO_AUTH_TOKEN!
+    const auth = Buffer.from(`${username}:${password}`).toString('base64')
+    const res = await fetch(
+      `https://api.twilio.com/2010-04-01/Accounts/${TWILIO_ACCOUNT_SID}/Messages.json`,
+      {
+        method: 'POST',
+        headers: { Authorization: `Basic ${auth}`, 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({ To: number, From: TWILIO_FROM_NUMBER!, Body: body.slice(0, 600) }).toString(),
+      }
+    )
+    if (!res.ok) {
+      const detail = await res.text().catch(() => '')
+      await log({ to: number, body, status: 'failed', error: `Twilio returned ${res.status}: ${detail.slice(0, 200)}` })
+      return false
+    }
+    await log({ to: number, body, status: 'sent' })
+    return true
+  } catch (err: any) {
+    await log({ to: number, body, status: 'failed', error: err?.message || 'Could not reach Twilio' })
     return false
   }
 }

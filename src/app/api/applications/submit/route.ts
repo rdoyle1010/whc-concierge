@@ -5,9 +5,11 @@ import { createNotification } from '@/lib/notifications'
 import { applicantConfirmationHtml, employerNotificationHtml } from '@/lib/application-email-templates'
 import { sendNewMatchEmail } from '@/lib/emails'
 import { calculateMatchScore } from '@/lib/matching'
+import { emailAllowed } from '@/lib/notification-prefs'
+import { trackEvent } from '@/lib/analytics'
 
 const RESEND_API_KEY = process.env.RESEND_API_KEY
-const FROM_EMAIL = 'WHC Concierge <noreply@mail.wellnesshousecollective.co.uk>'
+const FROM_EMAIL = 'Talent House Collective <noreply@mail.wellnesshousecollective.co.uk>'
 
 async function sendEmail(to: string, subject: string, html: string) {
   if (!RESEND_API_KEY) return
@@ -54,9 +56,28 @@ export async function POST(req: NextRequest) {
 
   let swipeSynced = true
   const { error: swipeError } = await admin.from('swipes').upsert({
-    swiper_id: user.id, swiper_type: 'candidate', target_id: job.id, target_type: 'job', action: 'right', context_job_id: job.id,
-  }, { onConflict: 'swiper_id,swiper_type,target_id,target_type,context_job_id', ignoreDuplicates: false })
-  if (swipeError) { swipeSynced = false; console.error('Could not record submitted application as candidate interest:', swipeError.message) }
+    swiper_id: user.id,
+    swiper_type: 'candidate',
+    target_id: job.id,
+    target_type: 'job',
+    action: 'right',
+    context_job_id: job.id,
+  }, {
+    onConflict: 'swiper_id,swiper_type,target_id,target_type,context_job_id',
+    ignoreDuplicates: false,
+  })
+  if (swipeError) {
+    // The application itself has already been submitted successfully. A failure
+    // recording the secondary interest row must not fail the whole request -
+    // that would show the talent an error (and skip the employer notification)
+    // for an application that actually went through.
+    //
+    // swipeSynced still goes back to the caller, because the mobile app uses
+    // it to decide whether to re-sync interest later rather than assume it
+    // landed.
+    swipeSynced = false
+    console.error('Could not record submitted application as candidate interest:', swipeError.message)
+  }
 
   const employerName = employer.property_name || employer.company_name || 'the employer'
   if (employer.user_id) {
@@ -102,16 +123,36 @@ export async function POST(req: NextRequest) {
 
   try {
     const jobs: Promise<void>[] = []
+    // Always-send (transactional): the applicant's confirmation is a receipt
+    // of their own action, so no preference gate applies to it.
     if (user.email) jobs.push(sendEmail(user.email, `Application Received - ${job.job_title}`, applicantConfirmationHtml({ applicantName: candidate.full_name || 'there', jobTitle: job.job_title, propertyName: employerName })))
-    let employerEmail = employer.contact_email || null
-    if (!employerEmail && employer.user_id) {
-      const { data: employerUser } = await admin.auth.admin.getUserById(employer.user_id)
-      employerEmail = employerUser?.user?.email || null
+    // Preference-gated ('application_updates'): the employer's new-application
+    // email honours their opt-out; the in-app notification above always fires.
+    if (await emailAllowed(admin, employer.user_id, 'application_updates')) {
+      let employerEmail = employer.contact_email || null
+      if (!employerEmail && employer.user_id) {
+        const { data: employerUser } = await admin.auth.admin.getUserById(employer.user_id)
+        employerEmail = employerUser?.user?.email || null
+      }
+      if (employerEmail) jobs.push(sendEmail(employerEmail, `New Application - ${job.job_title}`, employerNotificationHtml({ applicantName: candidate.full_name || 'A candidate', jobTitle: job.job_title, propertyName: employerName, roleLevel: candidate.role_level || undefined })))
     }
-    if (employerEmail) jobs.push(sendEmail(employerEmail, `New Application - ${job.job_title}`, employerNotificationHtml({ applicantName: candidate.full_name || 'A candidate', jobTitle: job.job_title, propertyName: employerName, roleLevel: candidate.role_level || undefined })))
     await Promise.allSettled(jobs)
   } catch (e: any) { console.error('Application email failed:', e?.message) }
 
-  return NextResponse.json({ success: true, application: updatedApplication, swipeSynced, mutualMatch, matchId,
-    progress: { current: 'submitted', next: 'under_review', message: mutualMatch ? 'Application submitted. You and the property are a mutual match. The employer can now review your application.' : 'Application submitted. The property can now review it.' } })
+  await trackEvent('application_submitted', { actorUserId: user.id, candidateId: candidate.id, jobId: application.role_id, applicationId: application.id })
+
+  return NextResponse.json({
+    success: true,
+    application: updatedApplication,
+    swipeSynced,
+    mutualMatch,
+    matchId,
+    progress: {
+      current: 'submitted',
+      next: 'under_review',
+      message: mutualMatch
+        ? 'Application submitted. You and the property are a mutual match. The employer can now review your application.'
+        : 'Application submitted. The property can now review it.',
+    },
+  })
 }

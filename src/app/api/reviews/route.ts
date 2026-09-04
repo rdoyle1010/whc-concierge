@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { createNotification } from '@/lib/notifications'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { reviewSchema, validateRequest } from '@/lib/validations'
 import { getRequestUser } from '@/lib/request-user'
@@ -23,21 +24,17 @@ async function insertReviewDefensively(admin: any, row: Record<string, any>) {
 }
 
 async function findExistingReview(admin: any, reviewerId: string, reviewedId: string) {
-  for (const col of ['reviewed_id', 'reviewee_id']) {
-    const { data, error } = await admin
-      .from('reviews').select('id')
-      .eq('reviewer_id', reviewerId).eq(col, reviewedId)
-      .limit(1).maybeSingle()
-    if (!error && data) return data
-  }
+  const { data, error } = await admin
+    .from('reviews').select('id')
+    .eq('reviewer_id', reviewerId).eq('reviewee_id', reviewedId)
+    .limit(1).maybeSingle()
+  if (!error && data) return data
   return null
 }
 
 async function fetchRatingsFor(admin: any, reviewedId: string) {
-  for (const col of ['reviewed_id', 'reviewee_id']) {
-    const { data, error } = await admin.from('reviews').select('rating').eq(col, reviewedId)
-    if (!error) return data
-  }
+  const { data, error } = await admin.from('reviews').select('rating').eq('reviewee_id', reviewedId)
+  if (!error) return data
   return null
 }
 
@@ -183,12 +180,10 @@ export async function POST(req: NextRequest) {
 
     const { error: reviewError } = await insertReviewDefensively(supabase, {
       reviewer_id,
-      reviewed_id,
       reviewee_id: reviewed_id,
       rating: ratingInt,
       criteria_scores: criteria_scores || null,
       text: comment || '',
-      comment: comment || null,
       type: type || 'candidate',
       booking_id: booking_id || null,
     })
@@ -209,6 +204,35 @@ export async function POST(req: NextRequest) {
       }).eq('user_id', reviewed_id)
       if (aggError) console.error('Review aggregate update failed (non-fatal):', aggError.message)
     }
+
+    // Tell the person they have been reviewed.
+    //
+    // The review_received notification type exists, has an icon in the bell
+    // and in the activity centre, and is accepted by the notifications API -
+    // and no code path anywhere created one. A property could leave a
+    // five-star review of a therapist and the therapist would never be told;
+    // they would only find it by visiting their reviews page unprompted.
+    try {
+      // The link has to land on a page that actually shows the review.
+      // Talent have /talent/reviews; a property's reviews live on its public
+      // profile, so the employer notification points there rather than at a
+      // page that does not exist.
+      let link = '/talent/reviews'
+      if (type === 'employer') {
+        const { data: employer } = await supabase.from('employer_profiles')
+          .select('id').eq('user_id', reviewed_id).maybeSingle()
+        link = employer?.id ? `/properties/${employer.id}#reviews` : '/employer/profile'
+      }
+      await createNotification(
+        reviewed_id,
+        'review_received',
+        ratingInt >= 4 ? `You have a new ${ratingInt}-star review` : 'You have a new review',
+        comment
+          ? `"${String(comment).slice(0, 120)}${String(comment).length > 120 ? '…' : ''}"`
+          : 'A review has been left on your Talent House profile.',
+        link,
+      )
+    } catch { /* the review itself is saved either way */ }
 
     return NextResponse.json({ success: true })
   } catch (error: any) {

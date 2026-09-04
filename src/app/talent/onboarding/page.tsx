@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/client'
 import DashboardShell from '@/components/DashboardShell'
 import Link from 'next/link'
 import { Check, Upload, ArrowRight, ArrowLeft, Search, Zap } from 'lucide-react'
+import { SERVICES_CATEGORIES, BUSINESS_SKILLS_FULL, SYSTEMS_FULL, PRODUCT_HOUSES_FULL, QUALS_CATEGORIES, HOTEL_BRANDS_FULL } from '@/lib/taxonomy'
 
 // ── Chip selector component ──
 function ChipGrid({ items, selected, onToggle, search }: { items: any[]; selected: Map<string, any>; onToggle: (id: string, name: string) => void; search?: string }) {
@@ -29,8 +30,8 @@ function ChipGrid({ items, selected, onToggle, search }: { items: any[]; selecte
 // ── Proficiency selector ──
 function ProficiencySelect({ value, onChange }: { value: string; onChange: (v: string) => void }) {
   return (
-    <select value={value} onChange={e => onChange(e.target.value)}
-      className="input-field !py-1 !px-2 text-[11px] w-32 focus:border-[#C9A96E] focus:ring-[#C9A96E]/20">
+    <select value={value} aria-label="Proficiency level" onChange={e => onChange(e.target.value)}
+      className="input-field !py-1 !px-2 text-[11px] w-32 focus:border-accent focus:ring-accent/20">
       <option value="beginner">Beginner</option>
       <option value="intermediate">Intermediate</option>
       <option value="advanced">Advanced</option>
@@ -60,6 +61,7 @@ export default function OnboardingWizard() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState('')
+  const [saveWarning, setSaveWarning] = useState('')
   const [userId, setUserId] = useState<string | null>(null)
   const [profileId, setProfileId] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
@@ -147,52 +149,40 @@ export default function OnboardingWizard() {
           until: profile.agency_listed_until || null,
         })
 
-        // Load existing selections
-        const [sk, sy, ph, ce, br] = await Promise.all([
-          supabase.from('candidate_skills').select('*, skills(name)').eq('candidate_id', profile.id),
-          supabase.from('candidate_systems').select('*, systems(name)').eq('candidate_id', profile.id),
-          supabase.from('candidate_product_houses').select('*, product_houses(name)').eq('candidate_id', profile.id),
-          supabase.from('candidate_certifications').select('*, certifications(name)').eq('candidate_id', profile.id),
-          supabase.from('candidate_hotel_brands').select('*, hotel_brands(name)').eq('candidate_id', profile.id),
-        ])
-
+        // Existing selections come from the profile itself - the same arrays
+        // the matching engine and the profile editor use. Items are keyed by
+        // name (names ARE the ids in the shared code taxonomy).
+        const proficiencies: Record<string, string> = profile.skill_proficiencies || {}
         const skMap = new Map<string, any>()
-        for (const s of sk.data || []) skMap.set(s.skill_id, { name: s.skills?.name, proficiency: s.proficiency || 'competent', years_using: s.years_using })
+        for (const name of profile.services_offered || []) skMap.set(name, { name, proficiency: proficiencies[name] || 'intermediate' })
+        for (const name of profile.business_skills || []) skMap.set(name, { name, proficiency: proficiencies[name] || 'intermediate' })
         setSelectedSkills(skMap)
 
         const syMap = new Map<string, any>()
-        for (const s of sy.data || []) syMap.set(s.system_id, { name: s.systems?.name, proficiency: s.proficiency || 'competent' })
+        for (const name of profile.systems_experience || []) syMap.set(name, { name, proficiency: 'intermediate' })
         setSelectedSystems(syMap)
 
         const phMap = new Map<string, any>()
-        for (const p of ph.data || []) phMap.set(p.product_house_id, { name: p.product_houses?.name, years_using: p.years_using })
+        for (const name of profile.product_houses || []) phMap.set(name, { name })
         setSelectedPH(phMap)
 
         const ceMap = new Map<string, any>()
-        for (const c of ce.data || []) ceMap.set(c.certification_id, { name: c.certifications?.name, issued_date: c.issued_date, expiry_date: c.expiry_date })
+        for (const name of profile.qualifications || []) ceMap.set(name, { name })
         setSelectedCerts(ceMap)
 
         const brMap = new Map<string, any>()
-        for (const b of br.data || []) brMap.set(b.hotel_brand_id, { name: b.hotel_brands?.name, years_worked: b.years_worked, role_held: b.role_held })
+        for (const name of profile.hotel_brands_worked || []) brMap.set(name, { name })
         setSelectedBrands(brMap)
       }
 
-      // Load taxonomy
-      const [ts, bs, sys, phs, certs, brands] = await Promise.all([
-        supabase.from('skills').select('*').eq('is_active', true).eq('category', 'treatment').order('sort_order'),
-        supabase.from('skills').select('*').eq('is_active', true).in('category', ['commercial', 'leadership', 'operational']).order('category').order('sort_order'),
-        supabase.from('systems').select('*').eq('is_active', true).order('sort_order'),
-        supabase.from('product_houses').select('*').eq('is_active', true).order('sort_order'),
-        supabase.from('certifications').select('*').eq('is_active', true).order('sort_order'),
-        supabase.from('hotel_brands').select('*').eq('is_active', true).order('sort_order'),
-      ])
-
-      setTreatmentSkills(ts.data || [])
-      setBusinessSkills(bs.data || [])
-      setSystemsList(sys.data || [])
-      setProductHousesList(phs.data || [])
-      setCertsList(certs.data || [])
-      setBrandsList(brands.data || [])
+      // The shared code taxonomy is the single source of truth - the same
+      // lists the profile editor, employers and the matching engine use.
+      setTreatmentSkills(SERVICES_CATEGORIES.flatMap(group => group.items.map(name => ({ id: name, name, category: group.name }))))
+      setBusinessSkills(BUSINESS_SKILLS_FULL.map(name => ({ id: name, name, category: 'Business & Leadership' })))
+      setSystemsList(SYSTEMS_FULL.map(name => ({ id: name, name })))
+      setProductHousesList(PRODUCT_HOUSES_FULL.map(name => ({ id: name, name })))
+      setCertsList(QUALS_CATEGORIES.flatMap(group => group.items.map(name => ({ id: name, name, category: group.name }))))
+      setBrandsList(HOTEL_BRANDS_FULL.map(name => ({ id: name, name })))
       setLoading(false)
     }
     load()
@@ -213,18 +203,6 @@ export default function OnboardingWizard() {
     setMap(next)
   }
 
-  // Delete-then-insert for a selections table, checking both results so a
-  // failed write can never silently wipe previously saved rows.
-  const replaceRows = async (table: string, rows: any[]) => {
-    const del = await supabase.from(table).delete().eq('candidate_id', profileId)
-    if (del.error) return false
-    if (rows.length > 0) {
-      const ins = await supabase.from(table).insert(rows)
-      if (ins.error) return false
-    }
-    return true
-  }
-
   const STEP_SAVE_ERROR = 'This step could not be saved - please try again before continuing.'
 
   // ── Save step data ──
@@ -236,6 +214,7 @@ export default function OnboardingWizard() {
     setSaving(true)
 
     setSaveError('')
+    setSaveWarning('')
     setPayError('')
     if (step === 1) {
       const res1 = await fetch('/api/profile/update', {
@@ -282,60 +261,48 @@ export default function OnboardingWizard() {
       }
     }
 
+    // Selections save onto the profile itself - the same arrays the
+    // matching engine, employers and the profile editor read.
+    const saveProfileData = async (data: Record<string, unknown>) => {
+      const res = await fetch('/api/profile/update', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ profileId, data }),
+      })
+      return res.ok
+    }
+
     if (step === 3 || step === 4) {
-      // Save skills: delete existing, re-insert
-      const allSkills = Array.from(selectedSkills.entries()).map(([skill_id, data]) => ({
-        candidate_id: profileId, skill_id, proficiency: data.proficiency || 'intermediate', years_using: data.years_using || null,
-      }))
-      if (!(await replaceRows('candidate_skills', allSkills))) {
-        setSaveError(STEP_SAVE_ERROR)
-        setSaving(false)
-        return false
-      }
+      const treatmentNames = new Set(treatmentSkills.map(item => item.name))
+      const businessNames = new Set(businessSkills.map(item => item.name))
+      const selectedNames = Array.from(selectedSkills.values()).map(data => data.name).filter(Boolean)
+      const proficiencies: Record<string, string> = {}
+      for (const data of selectedSkills.values()) if (data.name && data.proficiency) proficiencies[data.name] = data.proficiency
+      const ok = await saveProfileData({
+        services_offered: selectedNames.filter(name => treatmentNames.has(name)),
+        business_skills: selectedNames.filter(name => businessNames.has(name)),
+        skill_proficiencies: proficiencies,
+      })
+      if (!ok) { setSaveError(STEP_SAVE_ERROR); setSaving(false); return false }
     }
 
     if (step === 5) {
-      const rows = Array.from(selectedSystems.entries()).map(([system_id, data]) => ({
-        candidate_id: profileId, system_id, proficiency: data.proficiency || 'intermediate',
-      }))
-      if (!(await replaceRows('candidate_systems', rows))) {
-        setSaveError(STEP_SAVE_ERROR)
-        setSaving(false)
-        return false
-      }
+      const ok = await saveProfileData({ systems_experience: Array.from(selectedSystems.values()).map(data => data.name).filter(Boolean) })
+      if (!ok) { setSaveError(STEP_SAVE_ERROR); setSaving(false); return false }
     }
 
     if (step === 6) {
-      const rows = Array.from(selectedPH.entries()).map(([product_house_id, data]) => ({
-        candidate_id: profileId, product_house_id, years_using: data.years_using || null, proficiency: data.proficiency || 'intermediate',
-      }))
-      if (!(await replaceRows('candidate_product_houses', rows))) {
-        setSaveError(STEP_SAVE_ERROR)
-        setSaving(false)
-        return false
-      }
+      const ok = await saveProfileData({ product_houses: Array.from(selectedPH.values()).map(data => data.name).filter(Boolean) })
+      if (!ok) { setSaveError(STEP_SAVE_ERROR); setSaving(false); return false }
     }
 
     if (step === 7) {
-      const rows = Array.from(selectedCerts.entries()).map(([certification_id, data]) => ({
-        candidate_id: profileId, certification_id, issued_date: data.issued_date || null, expiry_date: data.expiry_date || null, is_verified: false,
-      }))
-      if (!(await replaceRows('candidate_certifications', rows))) {
-        setSaveError(STEP_SAVE_ERROR)
-        setSaving(false)
-        return false
-      }
+      const ok = await saveProfileData({ qualifications: Array.from(selectedCerts.values()).map(data => data.name).filter(Boolean) })
+      if (!ok) { setSaveError(STEP_SAVE_ERROR); setSaving(false); return false }
     }
 
     if (step === 8) {
-      const rows = Array.from(selectedBrands.entries()).map(([hotel_brand_id, data]) => ({
-        candidate_id: profileId, hotel_brand_id, years_worked: data.years_worked || null, role_held: data.role_held || null,
-      }))
-      if (!(await replaceRows('candidate_hotel_brands', rows))) {
-        setSaveError(STEP_SAVE_ERROR)
-        setSaving(false)
-        return false
-      }
+      const ok = await saveProfileData({ hotel_brands_worked: Array.from(selectedBrands.values()).map(data => data.name).filter(Boolean) })
+      if (!ok) { setSaveError(STEP_SAVE_ERROR); setSaving(false); return false }
     }
 
     if (step === 9) {
@@ -375,6 +342,10 @@ export default function OnboardingWizard() {
         setPayError(j.error || 'Your agency details could not be saved - please try again.')
         return false
       }
+      // A warning means everything else saved but the postcode could not be
+      // mapped - tell the person without blocking the wizard.
+      const j = await res.json().catch(() => ({}))
+      if (j.warning) setSaveWarning(String(j.warning))
       return true
     } catch {
       setPayError('Your agency details could not be saved - please check your connection and try again.')
@@ -442,12 +413,12 @@ export default function OnboardingWizard() {
         {step === 1 && (
           <div className="space-y-5">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="col-span-2"><label className="eyebrow block mb-1.5">Full Name *</label><input type="text" value={basic.full_name} onChange={e => setBasic({ ...basic, full_name: e.target.value })} className="input-field" /></div>
-              <div><label className="eyebrow block mb-1.5">City / Location *</label><input type="text" value={basic.location_city} onChange={e => setBasic({ ...basic, location_city: e.target.value })} className="input-field" /></div>
-              <div><label className="eyebrow block mb-1.5">Country</label><input type="text" value={basic.location_country} onChange={e => setBasic({ ...basic, location_country: e.target.value })} className="input-field" /></div>
+              <div className="col-span-2"><label className="eyebrow block mb-1.5">Full Name *</label><input aria-label="Full Name" type="text" value={basic.full_name} onChange={e => setBasic({ ...basic, full_name: e.target.value })} className="input-field" /></div>
+              <div><label className="eyebrow block mb-1.5">City / Location *</label><input aria-label="City / Location" type="text" value={basic.location_city} onChange={e => setBasic({ ...basic, location_city: e.target.value })} className="input-field" /></div>
+              <div><label className="eyebrow block mb-1.5">Country</label><input aria-label="Country" type="text" value={basic.location_country} onChange={e => setBasic({ ...basic, location_country: e.target.value })} className="input-field" /></div>
             </div>
             <div><label className="eyebrow block mb-1.5">Right to Work</label>
-              <select value={basic.right_to_work} onChange={e => setBasic({ ...basic, right_to_work: e.target.value })} className="input-field">
+              <select aria-label="Right to Work" value={basic.right_to_work} onChange={e => setBasic({ ...basic, right_to_work: e.target.value })} className="input-field">
                 <option value="citizen">UK Citizen</option><option value="visa_holder">Visa Holder</option><option value="visa_required">Visa Required</option><option value="open_to_work">Open to Work (Any)</option>
               </select>
             </div>
@@ -463,17 +434,18 @@ export default function OnboardingWizard() {
               </div>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div><label className="eyebrow block mb-1.5">Years of Experience</label><input type="number" value={basic.years_experience} onChange={e => setBasic({ ...basic, years_experience: e.target.value })} className="input-field" /></div>
-              <div><label className="eyebrow block mb-1.5">Current Job Title</label><input type="text" value={basic.current_job_title} onChange={e => setBasic({ ...basic, current_job_title: e.target.value })} className="input-field" /></div>
+              <div><label className="eyebrow block mb-1.5">Years of Experience</label><input aria-label="Years of Experience" type="number" value={basic.years_experience} onChange={e => setBasic({ ...basic, years_experience: e.target.value })} className="input-field" /></div>
+              <div><label className="eyebrow block mb-1.5">Current Job Title</label><input aria-label="Current Job Title" type="text" value={basic.current_job_title} onChange={e => setBasic({ ...basic, current_job_title: e.target.value })} className="input-field" /></div>
             </div>
-            <div><label className="eyebrow block mb-1.5">Headline</label><input type="text" value={basic.headline} onChange={e => setBasic({ ...basic, headline: e.target.value })} className="input-field" placeholder="e.g. Senior Spa Therapist | CIDESCO | 6 Years Luxury" /></div>
-            <div><label className="eyebrow block mb-1.5">Short Bio</label><textarea rows={3} value={basic.bio} onChange={e => setBasic({ ...basic, bio: e.target.value })} className="input-field" /></div>
+            <div><label className="eyebrow block mb-1.5">Headline</label><input aria-label="Headline" type="text" value={basic.headline} onChange={e => setBasic({ ...basic, headline: e.target.value })} className="input-field" placeholder="e.g. Senior Spa Therapist | CIDESCO | 6 Years Luxury" /></div>
+            <div><label className="eyebrow block mb-1.5">Short Bio</label><textarea aria-label="Short Bio" rows={3} value={basic.bio} onChange={e => setBasic({ ...basic, bio: e.target.value })} className="input-field" /></div>
             <div className="grid grid-cols-3 gap-4">
-              <div><label className="eyebrow block mb-1.5">Availability Date</label><input type="date" value={basic.availability_date} onChange={e => setBasic({ ...basic, availability_date: e.target.value })} className="input-field" /></div>
-              <div><label className="eyebrow block mb-1.5">Salary Min (£)</label><input type="number" value={basic.salary_min} onChange={e => setBasic({ ...basic, salary_min: e.target.value })} className="input-field" /></div>
-              <div><label className="eyebrow block mb-1.5">Salary Max (£)</label><input type="number" value={basic.salary_max} onChange={e => setBasic({ ...basic, salary_max: e.target.value })} className="input-field" /></div>
+              <div><label className="eyebrow block mb-1.5">Availability Date</label><input aria-label="Availability Date" type="date" value={basic.availability_date} onChange={e => setBasic({ ...basic, availability_date: e.target.value })} className="input-field" /></div>
+              <div><label className="eyebrow block mb-1.5">Agency day rate min (£ per day)</label><input aria-label="Agency day rate min (£ per day)" type="number" value={basic.salary_min} onChange={e => setBasic({ ...basic, salary_min: e.target.value })} className="input-field" /></div>
+              <div><label className="eyebrow block mb-1.5">Agency day rate max (£ per day)</label><input aria-label="Agency day rate max (£ per day)" type="number" value={basic.salary_max} onChange={e => setBasic({ ...basic, salary_max: e.target.value })} className="input-field" /></div>
             </div>
-            <div><label className="eyebrow block mb-1.5">Languages (comma separated)</label><input type="text" value={basic.languages} onChange={e => setBasic({ ...basic, languages: e.target.value })} className="input-field" placeholder="English, French, Spanish" /></div>
+            <p className="text-[11px] text-muted -mt-3">Your day rate for agency work - properties see it on your listing as &quot;£X /day&quot;. It is not a salary expectation.</p>
+            <div><label className="eyebrow block mb-1.5">Languages (comma separated)</label><input aria-label="Languages (comma separated)" type="text" value={basic.languages} onChange={e => setBasic({ ...basic, languages: e.target.value })} className="input-field" placeholder="English, French, Spanish" /></div>
             <label className="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked={basic.willing_to_relocate} onChange={e => setBasic({ ...basic, willing_to_relocate: e.target.checked })} className="w-3.5 h-3.5 border-border rounded text-ink" /><span className="text-[13px] text-secondary">Willing to relocate</span></label>
           </div>
         )}
@@ -483,14 +455,14 @@ export default function OnboardingWizard() {
           <div className="space-y-5">
             <div>
               <label className="eyebrow block mb-1.5">Transport Method</label>
-              <select value={basic.transport_method} onChange={e => setBasic({ ...basic, transport_method: e.target.value })} className="input-field">
+              <select aria-label="Transport Method" value={basic.transport_method} onChange={e => setBasic({ ...basic, transport_method: e.target.value })} className="input-field">
                 <option value="">Select...</option>
                 {TRANSPORT_OPTIONS.map(t => <option key={t} value={t}>{t}</option>)}
               </select>
             </div>
             <div>
               <label className="eyebrow block mb-1.5">Maximum Commute</label>
-              <select value={basic.max_commute} onChange={e => setBasic({ ...basic, max_commute: e.target.value })} className="input-field">
+              <select aria-label="Maximum Commute" value={basic.max_commute} onChange={e => setBasic({ ...basic, max_commute: e.target.value })} className="input-field">
                 <option value="">Select...</option>
                 {COMMUTE_OPTIONS.map(t => <option key={t} value={t}>{t}</option>)}
               </select>
@@ -528,7 +500,7 @@ export default function OnboardingWizard() {
         {step === 3 && (
           <div className="space-y-5">
             <p className="text-[14px] text-secondary">Select the treatment skills you can deliver. Set your proficiency level for each.</p>
-            <div className="relative"><Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" /><input type="text" placeholder="Search skills..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="input-field pl-9 !py-2 text-[13px]" /></div>
+            <div className="relative"><Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" /><input type="text" placeholder="Search skills..." aria-label="Search skills" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="input-field pl-9 !py-2 text-[13px]" /></div>
             <ChipGrid items={treatmentSkills} selected={selectedSkills} onToggle={(id, name) => toggleInMap(selectedSkills, setSelectedSkills, id, name)} search={searchTerm} />
             {selectedSkills.size > 0 && (
               <div className="space-y-2 mt-4 pt-4 border-t border-border">
@@ -536,7 +508,7 @@ export default function OnboardingWizard() {
                 {Array.from(selectedSkills.entries()).map(([id, data]) => (
                   <div key={id} className="flex items-center justify-between p-2 bg-surface rounded-lg">
                     <span className="text-[13px] text-ink">{data.name}</span>
-                    <ProficiencySelect value={data.proficiency || 'competent'} onChange={v => updateInMap(selectedSkills, setSelectedSkills, id, 'proficiency', v)} />
+                    <ProficiencySelect value={data.proficiency || 'intermediate'} onChange={v => updateInMap(selectedSkills, setSelectedSkills, id, 'proficiency', v)} />
                   </div>
                 ))}
               </div>
@@ -560,7 +532,7 @@ export default function OnboardingWizard() {
                 {Array.from(selectedSkills.entries()).filter(([id]) => businessSkills.some(s => s.id === id)).map(([id, data]) => (
                   <div key={id} className="flex items-center justify-between p-2 bg-surface rounded-lg">
                     <span className="text-[13px] text-ink">{data.name}</span>
-                    <ProficiencySelect value={data.proficiency || 'competent'} onChange={v => updateInMap(selectedSkills, setSelectedSkills, id, 'proficiency', v)} />
+                    <ProficiencySelect value={data.proficiency || 'intermediate'} onChange={v => updateInMap(selectedSkills, setSelectedSkills, id, 'proficiency', v)} />
                   </div>
                 ))}
               </div>
@@ -573,17 +545,7 @@ export default function OnboardingWizard() {
           <div className="space-y-5">
             <p className="text-[14px] text-secondary">Select the booking, POS and management systems you&apos;ve used.</p>
             <ChipGrid items={systemsList} selected={selectedSystems} onToggle={(id, name) => toggleInMap(selectedSystems, setSelectedSystems, id, name)} />
-            {selectedSystems.size > 0 && (
-              <div className="space-y-2 pt-4 border-t border-border">
-                <p className="eyebrow">Selected ({selectedSystems.size})</p>
-                {Array.from(selectedSystems.entries()).map(([id, data]) => (
-                  <div key={id} className="flex items-center justify-between p-2 bg-surface rounded-lg">
-                    <span className="text-[13px] text-ink">{data.name}</span>
-                    <ProficiencySelect value={data.proficiency || 'competent'} onChange={v => updateInMap(selectedSystems, setSelectedSystems, id, 'proficiency', v)} />
-                  </div>
-                ))}
-              </div>
-            )}
+            {selectedSystems.size > 0 && <p className="eyebrow pt-4 border-t border-border">Selected ({selectedSystems.size})</p>}
           </div>
         )}
 
@@ -591,28 +553,9 @@ export default function OnboardingWizard() {
         {step === 6 && (
           <div className="space-y-5">
             <p className="text-[14px] text-secondary">Select the product houses and skincare brands you have experience with.</p>
-            {['ultra_luxury', 'luxury', 'professional', 'mass'].map(tier => {
-              const items = productHousesList.filter(p => p.tier === tier)
-              if (items.length === 0) return null
-              return (
-                <div key={tier}>
-                  <p className="eyebrow mb-2 capitalize">{tier.replace('_', ' ')}</p>
-                  <ChipGrid items={items} selected={selectedPH} onToggle={(id, name) => toggleInMap(selectedPH, setSelectedPH, id, name)} />
-                </div>
-              )
-            })}
-            {selectedPH.size > 0 && (
-              <div className="space-y-2 pt-4 border-t border-border">
-                <p className="eyebrow">Selected ({selectedPH.size}) - set proficiency &amp; years</p>
-                {Array.from(selectedPH.entries()).map(([id, data]) => (
-                  <div key={id} className="flex items-center gap-3 p-2 bg-surface rounded-lg">
-                    <span className="text-[13px] text-ink flex-1">{data.name}</span>
-                    <ProficiencySelect value={data.proficiency || 'intermediate'} onChange={v => updateInMap(selectedPH, setSelectedPH, id, 'proficiency', v)} />
-                    <input type="number" placeholder="Years" value={data.years_using || ''} onChange={e => updateInMap(selectedPH, setSelectedPH, id, 'years_using', e.target.value ? parseInt(e.target.value) : null)} className="input-field !py-1 !px-2 text-[11px] w-20" />
-                  </div>
-                ))}
-              </div>
-            )}
+            <div className="relative"><Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" /><input type="text" placeholder="Search product houses..." aria-label="Search product houses" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="input-field pl-9 !py-2 text-[13px]" /></div>
+            <ChipGrid items={productHousesList} selected={selectedPH} onToggle={(id, name) => toggleInMap(selectedPH, setSelectedPH, id, name)} search={searchTerm} />
+            {selectedPH.size > 0 && <p className="eyebrow pt-4 border-t border-border">Selected ({selectedPH.size})</p>}
           </div>
         )}
 
@@ -626,17 +569,7 @@ export default function OnboardingWizard() {
                 <ChipGrid items={items} selected={selectedCerts} onToggle={(id, name) => toggleInMap(selectedCerts, setSelectedCerts, id, name)} />
               </div>
             ))}
-            {selectedCerts.size > 0 && (
-              <div className="space-y-2 pt-4 border-t border-border">
-                <p className="eyebrow">Selected ({selectedCerts.size})</p>
-                {Array.from(selectedCerts.entries()).map(([id, data]) => (
-                  <div key={id} className="flex items-center gap-3 p-2 bg-surface rounded-lg">
-                    <span className="text-[13px] text-ink flex-1">{data.name}</span>
-                    <input type="date" placeholder="Issued" value={data.issued_date || ''} onChange={e => updateInMap(selectedCerts, setSelectedCerts, id, 'issued_date', e.target.value)} className="input-field !py-1 !px-2 text-[11px] w-32" />
-                  </div>
-                ))}
-              </div>
-            )}
+            {selectedCerts.size > 0 && <p className="eyebrow pt-4 border-t border-border">Selected ({selectedCerts.size})</p>}
           </div>
         )}
 
@@ -644,39 +577,20 @@ export default function OnboardingWizard() {
         {step === 8 && (
           <div className="space-y-5">
             <p className="text-[14px] text-secondary">Select the hotel and spa brands you&apos;ve worked with.</p>
-            {['ultra_luxury', 'luxury', 'lifestyle', 'boutique', 'independent'].map(tier => {
-              const items = brandsList.filter(b => b.tier === tier)
-              if (items.length === 0) return null
-              return (
-                <div key={tier}>
-                  <p className="eyebrow mb-2 capitalize">{tier.replace('_', ' ')}</p>
-                  <ChipGrid items={items} selected={selectedBrands} onToggle={(id, name) => toggleInMap(selectedBrands, setSelectedBrands, id, name)} />
-                </div>
-              )
-            })}
-            {selectedBrands.size > 0 && (
-              <div className="space-y-2 pt-4 border-t border-border">
-                <p className="eyebrow">Selected ({selectedBrands.size})</p>
-                {Array.from(selectedBrands.entries()).map(([id, data]) => (
-                  <div key={id} className="flex items-center gap-3 p-2 bg-surface rounded-lg">
-                    <span className="text-[13px] text-ink flex-1">{data.name}</span>
-                    <input type="number" placeholder="Years" value={data.years_worked || ''} onChange={e => updateInMap(selectedBrands, setSelectedBrands, id, 'years_worked', e.target.value ? parseInt(e.target.value) : null)} className="input-field !py-1 !px-2 text-[11px] w-20" />
-                    <input type="text" placeholder="Role held" value={data.role_held || ''} onChange={e => updateInMap(selectedBrands, setSelectedBrands, id, 'role_held', e.target.value)} className="input-field !py-1 !px-2 text-[11px] w-36" />
-                  </div>
-                ))}
-              </div>
-            )}
+            <div className="relative"><Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" /><input type="text" placeholder="Search brands..." aria-label="Search brands" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="input-field pl-9 !py-2 text-[13px]" /></div>
+            <ChipGrid items={brandsList} selected={selectedBrands} onToggle={(id, name) => toggleInMap(selectedBrands, setSelectedBrands, id, name)} search={searchTerm} />
+            {selectedBrands.size > 0 && <p className="eyebrow pt-4 border-t border-border">Selected ({selectedBrands.size})</p>}
           </div>
         )}
 
         {/* ═══ STEP 9: Agency Work ═══ */}
         {step === 9 && (
           <div className="space-y-5">
-            <div className="flex items-start gap-3 p-4 bg-[#FDF6EC] rounded-xl">
+            <div className="flex items-start gap-3 p-4 bg-[#f1f1f1] rounded-xl">
               <Zap size={18} className="text-accent mt-0.5 shrink-0" />
               <div>
                 <p className="text-[14px] font-medium text-ink">Join the agency register</p>
-                <p className="text-[13px] text-secondary mt-1">Properties book agency cover when someone calls in sick or they need extra hands. Set your hourly rate, tell us where you can work, and you&apos;ll receive shift offers - urgent same-day offers arrive by text so you never miss one. Hotels pay Wellness House Collective and WHC pays you after the shift, so you never have to chase a property for money.</p>
+                <p className="text-[13px] text-secondary mt-1">Properties book agency cover when someone calls in sick or they need extra hands. Set your hourly rate, tell us where you can work, and you&apos;ll receive shift offers - urgent same-day offers arrive by text so you never miss one. Hotels pay Talent House Collective and Talent House pays you after the shift, so you never have to chase a property for money.</p>
               </div>
             </div>
 
@@ -699,23 +613,23 @@ export default function OnboardingWizard() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="eyebrow block mb-1.5">Hourly Rate (£) *</label>
-                    <input type="number" min={1} value={agency.hourly_rate} onChange={e => setAgency({ ...agency, hourly_rate: e.target.value })} className="input-field" placeholder="e.g. 25" />
+                    <input aria-label="Hourly Rate (£)" type="number" min={1} value={agency.hourly_rate} onChange={e => setAgency({ ...agency, hourly_rate: e.target.value })} className="input-field" placeholder="e.g. 25" />
                     <p className="text-[11px] text-muted mt-1">What properties see when they make you an offer. You receive this in full.</p>
                   </div>
                   <div>
                     <label className="eyebrow block mb-1.5">Mobile Number *</label>
-                    <input type="tel" value={agency.phone} onChange={e => setAgency({ ...agency, phone: e.target.value })} className="input-field" placeholder="07700 900123" />
+                    <input aria-label="Mobile Number" type="tel" value={agency.phone} onChange={e => setAgency({ ...agency, phone: e.target.value })} className="input-field" placeholder="07700 900123" />
                     <p className="text-[11px] text-muted mt-1">Urgent same-day offers are sent by text.</p>
                   </div>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="eyebrow block mb-1.5">Postcode</label>
-                    <input type="text" value={agency.postcode} onChange={e => setAgency({ ...agency, postcode: e.target.value })} className="input-field" placeholder="SW1A 1AA" />
+                    <input aria-label="Postcode" type="text" value={agency.postcode} onChange={e => setAgency({ ...agency, postcode: e.target.value })} className="input-field" placeholder="SW1A 1AA" />
                   </div>
                   <div>
                     <label className="eyebrow block mb-1.5">Travel Radius (miles)</label>
-                    <input type="number" min={1} value={agency.travel_radius_miles} onChange={e => setAgency({ ...agency, travel_radius_miles: e.target.value })} className="input-field" placeholder="e.g. 15" />
+                    <input aria-label="Travel Radius (miles)" type="number" min={1} value={agency.travel_radius_miles} onChange={e => setAgency({ ...agency, travel_radius_miles: e.target.value })} className="input-field" placeholder="e.g. 15" />
                     <p className="text-[11px] text-muted mt-1">How far you&apos;ll travel for a shift.</p>
                   </div>
                 </div>
@@ -740,8 +654,8 @@ export default function OnboardingWizard() {
             <div className="flex items-center gap-4 p-4 bg-surface rounded-xl">
               <div className="relative w-16 h-16">
                 <svg className="w-16 h-16 -rotate-90" viewBox="0 0 36 36">
-                  <circle cx="18" cy="18" r="16" fill="none" stroke="#E5E5E3" strokeWidth="3" />
-                  <circle cx="18" cy="18" r="16" fill="none" stroke={completionPct >= 80 ? '#16A34A' : completionPct >= 50 ? '#C9A96E' : '#E5E5E3'} strokeWidth="3" strokeDasharray={`${completionPct} ${100 - completionPct}`} strokeLinecap="round" />
+                  <circle cx="18" cy="18" r="16" fill="none" stroke="#e5e5e5" strokeWidth="3" />
+                  <circle cx="18" cy="18" r="16" fill="none" stroke={completionPct >= 80 ? '#16A34A' : completionPct >= 50 ? '#1c1c1c' : '#e5e5e5'} strokeWidth="3" strokeDasharray={`${completionPct} ${100 - completionPct}`} strokeLinecap="round" />
                 </svg>
                 <span className="absolute inset-0 flex items-center justify-center text-[13px] font-semibold text-ink">{completionPct}%</span>
               </div>
@@ -764,6 +678,7 @@ export default function OnboardingWizard() {
 
         {/* ═══ Navigation ═══ */}
         {saveError && <div className="bg-red-50 text-red-600 text-sm px-4 py-3 rounded-lg mt-6">{saveError}</div>}
+        {saveWarning && <div className="bg-amber-50 text-amber-700 text-sm px-4 py-3 rounded-lg mt-6">{saveWarning}</div>}
         <div className="flex gap-3 mt-8 pt-6 border-t border-border">
           {step > 1 && <button type="button" onClick={goBack} className="btn-secondary flex items-center gap-2 flex-1"><ArrowLeft size={14} />Back</button>}
           {step < STEPS.length ? (

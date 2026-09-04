@@ -18,6 +18,8 @@ type BreakdownData = {
   proficiencyDepth: number
   profileCompleteness: number
   reviewScore: number
+  salaryFit?: number
+  availability?: number
 }
 
 const CATEGORIES: { key: keyof BreakdownData; label: string; weight: number }[] = [
@@ -31,15 +33,17 @@ const CATEGORIES: { key: keyof BreakdownData; label: string; weight: number }[] 
   { key: 'businessSkills', label: 'Business Skills', weight: 8 },
   { key: 'systems', label: 'Systems', weight: 7 },
   { key: 'shiftCompatibility', label: 'Shift Fit', weight: 5 },
+  { key: 'salaryFit', label: 'Salary Fit', weight: 6 },
+  { key: 'availability', label: 'Availability', weight: 4 },
   { key: 'transport', label: 'Transport', weight: 3 },
   { key: 'accommodation', label: 'Accommodation', weight: 2 },
 ]
 
 function barColour(score: number): string {
   if (score >= 80) return '#22C55E'
-  if (score >= 60) return '#C9A96E'
+  if (score >= 60) return '#1c1c1c'
   if (score >= 40) return '#D97706'
-  return '#E5E5E3'
+  return '#e5e5e5'
 }
 
 function barLabel(score: number): string {
@@ -65,7 +69,7 @@ export default function MatchBreakdown({
 }) {
   const [open, setOpen] = useState(!compact)
 
-  const specified = CATEGORIES.filter(cat => breakdown[cat.key] >= 0)
+  const specified = CATEGORIES.filter(cat => (breakdown[cat.key] ?? -1) >= 0)
   const notAssessedCount = CATEGORIES.length - specified.length
 
   // Sort categories by weighted contribution (score × weight), highest first
@@ -97,11 +101,11 @@ export default function MatchBreakdown({
         {open && (
           <div className="mt-3 space-y-1.5 animate-fade-in">
             {sorted.map(cat => {
-              const val = breakdown[cat.key]
+              const val = breakdown[cat.key] ?? 0
               return (
                 <div key={cat.key} className="flex items-center gap-2">
                   <span className="text-[10px] text-muted w-[80px] shrink-0 text-right">{cat.label}</span>
-                  <div className="flex-1 h-[6px] bg-[#F5F4F2] rounded-full overflow-hidden">
+                  <div className="flex-1 h-[6px] bg-[#f1f1f1] rounded-full overflow-hidden">
                     <div
                       className="h-full rounded-full transition-all duration-500"
                       style={{ width: `${val}%`, backgroundColor: barColour(val) }}
@@ -129,7 +133,7 @@ export default function MatchBreakdown({
       <div className="flex items-center gap-4">
         <div className="relative w-16 h-16 shrink-0">
           <svg className="w-16 h-16 -rotate-90" viewBox="0 0 36 36">
-            <circle cx="18" cy="18" r="16" fill="none" stroke="#F5F4F2" strokeWidth="2.5" />
+            <circle cx="18" cy="18" r="16" fill="none" stroke="#f1f1f1" strokeWidth="2.5" />
             <circle
               cx="18" cy="18" r="16" fill="none" stroke={colour} strokeWidth="2.5"
               strokeDasharray={`${score} ${100 - score}`} strokeLinecap="round"
@@ -149,11 +153,11 @@ export default function MatchBreakdown({
       {/* Category bars */}
       <div className="space-y-2">
         {sorted.map(cat => {
-          const val = breakdown[cat.key]
+          const val = breakdown[cat.key] ?? 0
           return (
             <div key={cat.key} className="flex items-center gap-2.5">
               <span className="text-[11px] text-muted w-[90px] shrink-0 text-right">{cat.label}</span>
-              <div className="flex-1 h-[8px] bg-[#F5F4F2] rounded-full overflow-hidden">
+              <div className="flex-1 h-[8px] bg-[#f1f1f1] rounded-full overflow-hidden">
                 <div
                   className="h-full rounded-full transition-all duration-700"
                   style={{ width: `${val}%`, backgroundColor: barColour(val) }}

@@ -53,22 +53,22 @@ export default function PlatformExperienceReview({ applicationId }: { applicatio
 
   if (reviewed) {
     return (
-      <div className="rounded-2xl border border-[#e4ddd1] bg-[#fcfaf5] p-5">
-        <p className="text-[10px] font-semibold uppercase tracking-[.15em] text-[#9c7a42]">Spa Platform experience</p>
+      <div className="rounded-2xl border border-[#dddddd] bg-[#f1f1f1] p-5">
+        <p className="text-[10px] font-semibold uppercase tracking-[.15em] text-[#1c1c1c]">Spa Platform experience</p>
         <div className="mt-3 flex items-center gap-1">
           {[1,2,3,4,5].map(i => <Star key={i} size={16} className={i <= rating ? 'fill-amber-400 text-amber-400' : 'text-gray-200'} />)}
         </div>
         <p className="mt-2 text-[13px] font-medium text-ink">Thank you for reviewing your Spa Platform experience.</p>
-        {googleReviewUrl && <a href={googleReviewUrl} target="_blank" rel="noopener noreferrer" className="mt-3 inline-flex items-center gap-1.5 text-[12px] font-medium text-[#9c7a42] hover:underline">Share your experience on Google <ExternalLink size={12}/></a>}
+        {googleReviewUrl && <a href={googleReviewUrl} target="_blank" rel="noopener noreferrer" className="mt-3 inline-flex items-center gap-1.5 text-[12px] font-medium text-[#1c1c1c] hover:underline">Share your experience on Google <ExternalLink size={12}/></a>}
       </div>
     )
   }
 
   return (
-    <div className="rounded-2xl border border-[#e4ddd1] bg-[#fcfaf5] p-5">
-      <p className="text-[10px] font-semibold uppercase tracking-[.15em] text-[#9c7a42]">Spa Platform experience</p>
+    <div className="rounded-2xl border border-[#dddddd] bg-[#f1f1f1] p-5">
+      <p className="text-[10px] font-semibold uppercase tracking-[.15em] text-[#1c1c1c]">Spa Platform experience</p>
       <h3 className="mt-1 text-[17px] font-semibold text-ink">How was the recruitment journey?</h3>
-      <p className="mt-1 text-[12px] leading-5 text-muted">Your feedback helps Wellness House Collective improve the platform for verified professionals and properties.</p>
+      <p className="mt-1 text-[12px] leading-5 text-muted">Your feedback helps Talent House Collective improve the platform for verified professionals and properties.</p>
       <div className="mt-4 flex items-center gap-1">
         {[1,2,3,4,5].map(i => (
           <button key={i} type="button" onMouseEnter={()=>setHover(i)} onMouseLeave={()=>setHover(0)} onClick={()=>setRating(i)} aria-label={`${i} stars`} className="p-0.5">
@@ -76,9 +76,9 @@ export default function PlatformExperienceReview({ applicationId }: { applicatio
           </button>
         ))}
       </div>
-      <textarea value={comment} onChange={e=>setComment(e.target.value)} maxLength={1000} rows={3} className="input-field mt-4 resize-y text-[12px] leading-5" placeholder="Tell us what worked well or what we could improve..." />
+      <textarea aria-label="Your review comment" value={comment} onChange={e=>setComment(e.target.value)} maxLength={1000} rows={3} className="input-field mt-4 resize-y text-[12px] leading-5" placeholder="Tell us what worked well or what we could improve..." />
       <div className="mt-2 flex items-center justify-between gap-3"><span className="text-[10px] text-muted">{comment.length}/1000</span><button type="button" onClick={submit} disabled={!rating || submitting} className="btn-primary !py-2.5 !px-4 disabled:opacity-40">{submitting ? 'Submitting…' : 'Submit platform review'}</button></div>
-      {error && <div className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-[11px] text-red-600">{error}</div>}
+      {error && <div role="alert" className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-[11px] text-red-600">{error}</div>}
     </div>
   )
 }

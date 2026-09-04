@@ -40,7 +40,7 @@ const uniq = (values: unknown, limit = 20) => Array.from(new Set((Array.isArray(
 
 async function aiEnhanceCv(text: string, deterministic: CvSuggestions): Promise<CvSuggestions | null> {
   if (!OPENAI_API_KEY) return null
-  const prompt = `You are analysing a CV for Wellness House Collective, a spa and wellness recruitment platform.
+  const prompt = `You are analysing a CV for Talent House Collective, a spa and wellness recruitment platform.
 Rules:
 - Extract only evidence genuinely supported by the CV text. Never invent employers, results, qualifications, dates, job titles or responsibilities.
 - Do not change the person's current/actual seniority just because they appear ready for progression.
@@ -68,7 +68,7 @@ export async function POST(req: NextRequest) {
     const { data:{ user } } = await auth.auth.getUser(); if (!user) return NextResponse.json({error:'Unauthorised'},{status:401})
     const body = await req.json().catch(()=>({})); const profileId = typeof body.profileId === 'string' ? body.profileId : ''
     if (!profileId) return NextResponse.json({error:'Profile is required'},{status:400})
-    if (body.aiConsent !== true) return NextResponse.json({error:'Please confirm that you want WHC AI to analyse your CV.'},{status:400})
+    if (body.aiConsent !== true) return NextResponse.json({error:'Please confirm that you want Talent House AI to analyse your CV.'},{status:400})
 
     const admin=createAdminClient(); const {data:profile}=await admin.from('candidate_profiles').select('user_id, cv_url').eq('id',profileId).single()
     if(!profile||profile.user_id!==user.id)return NextResponse.json({error:'Forbidden'},{status:403}); if(!profile.cv_url)return NextResponse.json({error:'Upload a CV first'},{status:400})
@@ -78,7 +78,7 @@ export async function POST(req: NextRequest) {
     const {data:file,error}=await admin.storage.from(bucket).download(path); if(error||!file)return NextResponse.json({error:'CV could not be read'},{status:500}); if(file.size>MAX_CV_SIZE)return NextResponse.json({error:'CV is too large to analyse'},{status:400})
     const text=await extractText(Buffer.from(await file.arrayBuffer()),extension); if(text.trim().length<80)return NextResponse.json({error:'Very little readable text was found. If this is a scanned CV, upload a text-based PDF or Word .docx file.'},{status:422})
     const deterministic=analyseCvText(text), suggestions=await aiEnhanceCv(text,deterministic)||deterministic
-    try { await admin.from('consent_events').insert({user_id:user.id,consent_type:'ai_cv_analysis',action:'accepted',policy_version:'2026-08',wording:'User requested WHC AI CV analysis. CV text is processed for suggestions and is not added to the profile without approval.',source:'talent_profile_cv_analysis'}) } catch {}
+    try { await admin.from('consent_events').insert({user_id:user.id,consent_type:'ai_cv_analysis',action:'accepted',policy_version:'2026-08',wording:'User requested Talent House AI CV analysis. CV text is processed for suggestions and is not added to the profile without approval.',source:'talent_profile_cv_analysis'}) } catch {}
     return NextResponse.json({suggestions})
   } catch { return NextResponse.json({error:'CV analysis failed. Please try a different PDF or Word .docx file.'},{status:500}) }
 }

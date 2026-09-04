@@ -26,17 +26,17 @@ export default function PublicRolesBrowser({ jobs }: { jobs: any[] }) {
 
   return (
     <>
-      <section className="bg-white border-b border-border sticky top-[60px] z-40">
+      <section className="bg-white border-b border-border sticky top-[76px] z-40">
         <div className="max-w-[1440px] mx-auto px-6 lg:px-10 py-4">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
             <div className="md:col-span-2 relative">
               <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
-              <input type="text" placeholder="Search roles, skills or locations..." value={search} onChange={e => { setSearch(e.target.value); setPage(1) }} className="input-field pl-9 !py-2 text-[13px]" />
+              <input type="text" placeholder="Search roles, skills or locations..." aria-label="Search roles, skills or locations" value={search} onChange={e => { setSearch(e.target.value); setPage(1) }} className="input-field pl-9 !py-2 text-[13px]" />
             </div>
-            <select value={roleType} onChange={e => { setRoleType(e.target.value); setPage(1) }} className="input-field !py-2 text-[13px]">
+            <select value={roleType} aria-label="Filter by role type" onChange={e => { setRoleType(e.target.value); setPage(1) }} className="input-field !py-2 text-[13px]">
               {ROLE_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
             </select>
-            <input type="text" placeholder="Location..." value={locationFilter} onChange={e => { setLocationFilter(e.target.value); setPage(1) }} className="input-field !py-2 text-[13px]" />
+            <input type="text" placeholder="Location..." aria-label="Filter by location" value={locationFilter} onChange={e => { setLocationFilter(e.target.value); setPage(1) }} className="input-field !py-2 text-[13px]" />
           </div>
           <p className="text-[11px] text-muted mt-2">{filtered.length} opportunity{filtered.length !== 1 ? 'ies' : 'y'} available</p>
         </div>
@@ -71,7 +71,7 @@ export default function PublicRolesBrowser({ jobs }: { jobs: any[] }) {
 
                   {job.description && <p className="text-[13px] leading-6 text-secondary line-clamp-3">{job.description}</p>}
 
-                  {(job.required_brands || []).length > 0 && <div className="flex flex-wrap gap-1.5 mt-4">{(job.required_brands || []).slice(0, 4).map((brand: string) => <span key={brand} className="text-[10px] font-medium bg-[#FDF6EC] text-accent border border-accent/20 px-2 py-1 rounded-full">{brand}</span>)}</div>}
+                  {(job.required_brands || []).length > 0 && <div className="flex flex-wrap gap-1.5 mt-4">{(job.required_brands || []).slice(0, 4).map((brand: string) => <span key={brand} className="text-[10px] font-medium bg-[#f1f1f1] text-accent border border-accent/20 px-2 py-1 rounded-full">{brand}</span>)}</div>}
 
                   <div className="mt-6 pt-5 border-t border-border flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
                     <div>

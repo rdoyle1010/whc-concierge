@@ -1,26 +1,44 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { adminRequestUser } from '@/lib/admin-api-auth'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { createServerClient } from '@supabase/ssr'
-import { cookies } from 'next/headers'
 import { getStripe } from '@/lib/stripe'
+import {
+  AGENCY_PAYOUT_CONNECT,
+  AGENCY_PAYOUT_MANUAL,
+  MIN_PAYOUT_REFERENCE_LENGTH,
+  agencyResolutionExceedsCollected,
+  bookingPaidByConnect,
+} from '@/lib/agency-payouts'
 
 const BOOKING_LIMIT = 250
 const REFERRAL_LIMIT = 100
 const RECENT_ENROLMENT_LIMIT = 12
 
+const BOOKING_LIST_FIELDS = 'id,employer_id,candidate_id,shift_date,shift_start_time,shift_end_time,rate,hours,status,created_at,paid_at,amount_paid,payout_amount,payout_status,payout_at,dispute_status,dispute_reason,dispute_requested,refund_amount,stripe_payment_intent'
+const BOOKING_MONEY_FIELDS = 'id,employer_id,candidate_id,shift_date,shift_end_time,status,paid_at,amount_paid,payout_amount,payout_status,dispute_status,stripe_payment_intent'
+
+// Which money model a booking used. payout_method is the record of truth once
+// migration 20260901100000 is live. For a booking taken before that, ask
+// Stripe: a destination charge carries transfer_data, a plain charge does
+// not. Neither wrong answer is acceptable with real money - calling a
+// destination charge "manual" pays the therapist twice - so an unreadable
+// payment intent returns 'unknown' and the payout is refused rather than guessed.
+async function bookingPayoutModel(booking: any): Promise<'stripe_connect' | 'manual' | 'unknown'> {
+  if (booking?.payout_method === AGENCY_PAYOUT_CONNECT) return AGENCY_PAYOUT_CONNECT
+  if (booking?.payout_method === AGENCY_PAYOUT_MANUAL) return AGENCY_PAYOUT_MANUAL
+  if (!booking?.stripe_payment_intent) return AGENCY_PAYOUT_MANUAL
+  try {
+    const intent = await getStripe().paymentIntents.retrieve(String(booking.stripe_payment_intent))
+    return (intent as any)?.transfer_data?.destination ? AGENCY_PAYOUT_CONNECT : AGENCY_PAYOUT_MANUAL
+  } catch {
+    return 'unknown'
+  }
+}
+
+// Delegated to the shared admin guard, which enforces two-step
+// verification as well as the admin role.
 async function requireAdmin() {
-  const cookieStore = await cookies()
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    { cookies: { getAll() { return cookieStore.getAll() }, setAll() {} } }
-  )
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return null
-  const admin = createAdminClient()
-  const { data: profile } = await admin.from('profiles').select('role').eq('id', user.id).single()
-  if (profile?.role !== 'admin') return null
-  return user
+  return adminRequestUser()
 }
 
 function londonClockKey(date = new Date()) {
@@ -45,10 +63,20 @@ export async function GET() {
 
   try {
     const admin = createAdminClient()
-    const { data: bookings, error: bookingsError } = await admin.from('agency_bookings')
-      .select('id,employer_id,candidate_id,shift_date,shift_start_time,shift_end_time,rate,hours,status,created_at,paid_at,amount_paid,payout_amount,payout_status,payout_at,dispute_status,dispute_reason,dispute_requested,refund_amount,stripe_payment_intent')
+    // payout_method / payout_reference arrive with migration 20260901100000;
+    // the money view must still load before it has been run.
+    let bookings: any[] | null = null
+    let bookingsError: any = null
+    ;({ data: bookings, error: bookingsError } = await admin.from('agency_bookings')
+      .select(`${BOOKING_LIST_FIELDS},payout_method,payout_reference`)
       .order('created_at', { ascending: false })
-      .limit(BOOKING_LIMIT)
+      .limit(BOOKING_LIMIT))
+    if (bookingsError) {
+      ;({ data: bookings, error: bookingsError } = await admin.from('agency_bookings')
+        .select(BOOKING_LIST_FIELDS)
+        .order('created_at', { ascending: false })
+        .limit(BOOKING_LIMIT))
+    }
     if (bookingsError) return NextResponse.json({ error: bookingsError.message }, { status: 500 })
 
     const empIds = Array.from(new Set((bookings || []).map(b => b.employer_id).filter(Boolean)))
@@ -91,8 +119,8 @@ export async function GET() {
 
     let academy: any = null
     try {
-      const [{ data: summaryRows }, { data: recentEnrols }] = await Promise.all([
-        admin.rpc('get_academy_revenue_summary'),
+      const [{ data: allEnrols }, { data: recentEnrols }] = await Promise.all([
+        admin.from('course_enrollments').select('amount_paid, paid_at, completed_at').not('paid_at', 'is', null),
         admin.from('course_enrollments')
           .select('course_slug, amount_paid, paid_at, completed_at, candidate_id')
           .not('paid_at', 'is', null)
@@ -100,7 +128,11 @@ export async function GET() {
           .limit(RECENT_ENROLMENT_LIMIT),
       ])
 
-      const summary = Array.isArray(summaryRows) ? summaryRows[0] : null
+      const summary = {
+        revenue: (allEnrols || []).reduce((sum: number, row: any) => sum + Number(row.amount_paid || 0), 0),
+        enrolments: (allEnrols || []).length,
+        completions: (allEnrols || []).filter((row: any) => row.completed_at).length,
+      }
       const candIds2 = Array.from(new Set((recentEnrols || []).map((e: any) => e.candidate_id).filter(Boolean)))
       const { data: names } = candIds2.length
         ? await admin.from('candidate_profiles').select('id, full_name').in('id', candIds2)
@@ -121,10 +153,42 @@ export async function GET() {
       }
     } catch { /* table/function not live yet */ }
 
+    // The register itself: who is listed, who has set up but never joined,
+    // and the reasons someone who thinks they are visible is not.
+    let register: any[] = []
+    try {
+      const { data: regRows } = await admin.from('candidate_profiles')
+        .select('id, full_name, agency_available, agency_tier, agency_listed_until, hourly_rate, postcode, travel_radius_miles, latitude, approval_status, profile_visible')
+        .or('agency_available.eq.true,hourly_rate.not.is.null')
+        .order('full_name')
+        .limit(200)
+      const regIds = (regRows || []).map((row: any) => row.id)
+      const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Europe/London' })
+      const { data: windowRows } = regIds.length
+        ? await admin.from('agency_availability_windows').select('candidate_id').in('candidate_id', regIds).gte('date', today)
+        : { data: [] as any[] }
+      const windowCount = new Map<string, number>()
+      for (const row of windowRows || []) windowCount.set(row.candidate_id, (windowCount.get(row.candidate_id) || 0) + 1)
+      register = (regRows || []).map((row: any) => ({
+        id: row.id,
+        full_name: row.full_name,
+        listed: Boolean(row.agency_available) && (!row.agency_listed_until || new Date(row.agency_listed_until).getTime() >= Date.now()),
+        agency_tier: row.agency_tier || null,
+        agency_listed_until: row.agency_listed_until || null,
+        hourly_rate: row.hourly_rate || null,
+        location_mapped: row.latitude != null,
+        travel_radius_miles: row.travel_radius_miles || null,
+        approved: row.approval_status === 'approved',
+        visible: row.profile_visible !== false,
+        upcoming_windows: windowCount.get(row.id) || 0,
+      }))
+    } catch { /* columns not live yet - panel simply not shown */ }
+
     return NextResponse.json({
       bookings: rows,
       referral_credits: referralCredits,
       academy,
+      register,
       pagination: {
         bookings_limit: BOOKING_LIMIT,
         bookings_returned: rows.length,
@@ -155,15 +219,49 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true })
     }
 
+    // List or delist a professional on the register without a charge - for
+    // testing, goodwill or comped listings. Clearly labelled in the UI so it
+    // is never mistaken for the paid route.
+    if (body.action === 'register_list' && body.candidateId) {
+      const adminC = createAdminClient()
+      const { error } = await adminC.from('candidate_profiles')
+        .update({
+          agency_available: true,
+          agency_tier: 'basic',
+          agency_listed_until: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+        })
+        .eq('id', body.candidateId)
+      if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+      return NextResponse.json({ success: true })
+    }
+    if (body.action === 'register_delist' && body.candidateId) {
+      const adminC = createAdminClient()
+      const { error } = await adminC.from('candidate_profiles')
+        .update({ agency_available: false, agency_listed_until: null })
+        .eq('id', body.candidateId)
+      if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+      return NextResponse.json({ success: true })
+    }
+
     if (!['mark_paid_out', 'resolve_dispute'].includes(body.action) || !body.bookingId) {
       return NextResponse.json({ error: 'Invalid request' }, { status: 400 })
     }
 
     const admin = createAdminClient()
-    const { data: booking, error: bookingError } = await admin.from('agency_bookings')
-      .select('id,employer_id,candidate_id,shift_date,shift_end_time,status,paid_at,amount_paid,payout_amount,payout_status,dispute_status,stripe_payment_intent')
+    // payout_method / payout_reference arrive with migration 20260901100000;
+    // fall back to the pre-migration column set so payouts never block.
+    let booking: any = null
+    let bookingError: any = null
+    ;({ data: booking, error: bookingError } = await admin.from('agency_bookings')
+      .select(`${BOOKING_MONEY_FIELDS},payout_method,payout_reference`)
       .eq('id', body.bookingId)
-      .maybeSingle()
+      .maybeSingle())
+    if (bookingError) {
+      ;({ data: booking, error: bookingError } = await admin.from('agency_bookings')
+        .select(BOOKING_MONEY_FIELDS)
+        .eq('id', body.bookingId)
+        .maybeSingle())
+    }
     if (bookingError) return NextResponse.json({ error: bookingError.message }, { status: 500 })
     if (!booking) return NextResponse.json({ error: 'Booking not found' }, { status: 404 })
 
@@ -173,23 +271,78 @@ export async function POST(req: NextRequest) {
       if (booking.payout_status === 'paid') return NextResponse.json({ error: 'Already marked as paid out.' }, { status: 400 })
       if (booking.dispute_status === 'open') return NextResponse.json({ error: 'This booking has an open dispute - resolve it before paying out.' }, { status: 400 })
 
-      const { error } = await admin.from('agency_bookings')
-        .update({ payout_status: 'paid', payout_at: new Date().toISOString(), status: 'completed' })
+      const payoutModel = await bookingPayoutModel(booking)
+      if (payoutModel === 'unknown') {
+        return NextResponse.json({ error: 'Stripe could not confirm how this booking was paid, so the payout has not been recorded. Try again in a moment rather than transferring anything.' }, { status: 502 })
+      }
+      const paidByConnect = payoutModel === AGENCY_PAYOUT_CONNECT
+      const payoutReference = String(body.payoutReference || '').trim().slice(0, 140)
+
+      // A manual payout can no longer be recorded with nothing behind it: the
+      // bank reference for the transfer that actually left the account is
+      // required, and stored alongside the admin who confirmed it.
+      if (!paidByConnect && payoutReference.length < MIN_PAYOUT_REFERENCE_LENGTH) {
+        return NextResponse.json({ error: `Enter the bank transfer reference (at least ${MIN_PAYOUT_REFERENCE_LENGTH} characters) for the payment you have made to the therapist. A payout cannot be marked paid without one.` }, { status: 400 })
+      }
+
+      const payoutAt = new Date().toISOString()
+      const baseUpdate = { payout_status: 'paid', payout_at: payoutAt, status: 'completed' }
+      const fullUpdate: Record<string, any> = {
+        ...baseUpdate,
+        // A destination charge already moved this money at payment. Recording
+        // it here completes the record; it does not pay anyone a second time.
+        payout_method: paidByConnect ? AGENCY_PAYOUT_CONNECT : AGENCY_PAYOUT_MANUAL,
+        payout_reference: paidByConnect ? null : payoutReference,
+        payout_confirmed_by: user.id,
+      }
+      // Claim the booking rather than overwrite it. The check further up reads
+      // payout_status and this writes it, and between those two statements
+      // another administrator can do exactly the same thing - so two people
+      // working the money page at once both passed the check, both wrote
+      // 'paid', and the second silently destroyed the reference and the name
+      // of whoever confirmed the first. On a manual payout that is an
+      // invitation to make the same bank transfer twice with no record that
+      // it happened.
+      const claim = (update: Record<string, any>) => admin.from('agency_bookings')
+        .update(update)
         .eq('id', booking.id)
+        .neq('payout_status', 'paid')
+        .select('id')
+
+      let { data: claimed, error } = await claim(fullUpdate)
+      if (error && /column|payout_method|payout_reference|payout_confirmed_by/i.test(error.message || '')) {
+        // Integrity columns not live yet - record the status honestly anyway.
+        ;({ data: claimed, error } = await claim(baseUpdate))
+      }
       if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-      return NextResponse.json({ success: true })
+      if (!claimed || claimed.length === 0) {
+        return NextResponse.json(
+          { error: 'This payout was recorded by someone else a moment ago. Refresh before paying anything.' },
+          { status: 409 },
+        )
+      }
+      return NextResponse.json({ success: true, payout_method: paidByConnect ? AGENCY_PAYOUT_CONNECT : AGENCY_PAYOUT_MANUAL })
     }
 
     if (booking.dispute_status !== 'open') {
       return NextResponse.json({ error: 'No open dispute on this booking.' }, { status: 400 })
     }
 
-    const refundAmount = Math.max(0, parseInt(String(body.refundAmount ?? 0), 10) || 0)
-    const payoutAmount = Math.max(0, parseInt(String(body.payoutAmount ?? booking.payout_amount ?? 0), 10) || 0)
+    // Pounds and pence, not whole pounds. A half-hour shift collects £x.50,
+    // and parseInt made a "full refund" £x - short-changing the property by
+    // up to 99p on every fractional-hour cancellation.
+    const refundAmount = Math.round(Math.max(0, Number(body.refundAmount ?? 0) || 0) * 100) / 100
+    const payoutAmount = Math.round(Math.max(0, Number(body.payoutAmount ?? booking.payout_amount ?? 0) || 0) * 100) / 100
     const amountPaid = Math.max(0, Number(booking.amount_paid || 0))
+    const resolutionReason = String(body.reason || '').trim().slice(0, 1000)
 
     if (refundAmount > amountPaid) {
-      return NextResponse.json({ error: `Refund cannot exceed the £${amountPaid} collected for this booking.` }, { status: 400 })
+      return NextResponse.json({ error: `Refund cannot exceed the £${amountPaid.toFixed(2)} collected for this booking.` }, { status: 400 })
+    }
+    // Money invariant: Talent House can never pay out more than it took in. The refund
+    // to the property plus the payout to the therapist must fit inside it.
+    if (agencyResolutionExceedsCollected(amountPaid, refundAmount, payoutAmount)) {
+      return NextResponse.json({ error: `A £${refundAmount} refund plus a £${payoutAmount} therapist payout comes to £${refundAmount + payoutAmount}, more than the £${amountPaid} collected for this booking. Lower one of them before resolving.` }, { status: 400 })
     }
 
     let stripeRefundId: string | null = null
@@ -199,13 +352,23 @@ export async function POST(req: NextRequest) {
       }
       try {
         const stripe = getStripe()
+        // On a destination charge the professional was paid at the moment the
+        // property paid - Talent House only ever held its own fee. Refunding without
+        // reverse_transfer therefore takes the whole refund out of Talent House's own
+        // balance while the professional keeps the lot: on a £600 shift, a
+        // £600 loss. reverse_transfer pulls the shift money back from the
+        // connected account, and refund_application_fee returns the Talent House fee
+        // so the property is made whole from the right pockets.
+        const viaConnect = bookingPaidByConnect(booking)
         const refund = await stripe.refunds.create({
           payment_intent: booking.stripe_payment_intent,
-          amount: refundAmount * 100,
+          amount: Math.round(refundAmount * 100),
           reason: 'requested_by_customer',
+          ...(viaConnect ? { reverse_transfer: true, refund_application_fee: true } : {}),
           metadata: {
             whc_booking_id: booking.id,
             whc_dispute_resolution: 'true',
+            whc_payout_model: viaConnect ? 'stripe_connect' : 'manual',
           },
         }, {
           idempotencyKey: `agency-dispute-${booking.id}-${refundAmount}`,
@@ -241,8 +404,8 @@ export async function POST(req: NextRequest) {
       if (bEmp?.user_id) {
         await createNotification(bEmp.user_id, 'general', 'Booking issue resolved',
           refundAmount > 0
-            ? `WHC has resolved the issue on the ${when} shift. A refund of £${refundAmount} has been issued.`
-            : `WHC has resolved the issue on the ${when} shift. No refund was agreed on this occasion.`,
+            ? `Talent House has resolved the issue on the ${when} shift. A refund of £${refundAmount} has been issued.`
+            : `Talent House has resolved the issue on the ${when} shift. No refund was agreed on this occasion.`,
           '/employer/agency')
       }
       if (bCand?.user_id) {
@@ -253,6 +416,35 @@ export async function POST(req: NextRequest) {
           '/talent/agency')
       }
     } catch { /* non-fatal */ }
+
+    // Audit trail: attach the money decision to this booking's case so the
+    // resolution can be explained months later. Never breaks the resolution.
+    try {
+      const { data: caseRow } = await admin.from('agency_cases')
+        .select('id')
+        .eq('booking_id', booking.id)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle()
+      if (caseRow?.id) {
+        await admin.from('agency_case_events').insert({
+          case_id: caseRow.id,
+          actor_user_id: user.id,
+          actor_role: 'admin',
+          event_type: 'admin_dispute_resolved',
+          details: {
+            amount_paid: amountPaid,
+            refund_amount: refundAmount,
+            payout_amount: payoutAmount,
+            retained_by_whc: amountPaid - refundAmount - payoutAmount,
+            reason: resolutionReason || null,
+            stripe_refund_id: stripeRefundId,
+          },
+        })
+      }
+    } catch (auditError: any) {
+      console.error('Agency dispute audit event failed (non-fatal):', auditError?.message)
+    }
 
     return NextResponse.json({ success: true, refundId: stripeRefundId })
   } catch (e: any) {

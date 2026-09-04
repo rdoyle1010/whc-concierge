@@ -1,37 +1,38 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { welcomeEmailHtml } from '@/lib/welcome-email-template'
+import { sendTransactionalEmail } from '@/lib/send-email'
+import { alertAdminOfSignup } from '@/lib/admin-alerts'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { sanitiseEmployerRegistration, verifyRegistrationProof } from '@/lib/registration'
 import { canCompleteRegistration } from '@/lib/role-access'
 
-const RESEND_API_KEY = process.env.RESEND_API_KEY
-const FROM_EMAIL = 'WHC Concierge <noreply@mail.wellnesshousecollective.co.uk>'
-
 async function sleep(ms: number) {
   return new Promise(resolve => setTimeout(resolve, ms))
 }
 
-async function sendWelcomeEmail(email: string, firstName: string) {
-  const html = welcomeEmailHtml({ firstName, userType: 'employer', dashboardUrl: 'https://talent.wellnesshousecollective.co.uk/employer/dashboard' })
-  if (!RESEND_API_KEY) { console.log(`[Welcome email skipped] To: ${email}`); return }
-  // Awaited by callers (fire-and-forget dies on serverless) and failures logged loudly.
-  try {
-    const res = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: { 'Authorization': `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ from: FROM_EMAIL, to: email, subject: 'Welcome to WHC Concierge', html }),
-    })
-    if (!res.ok) {
-      const detail = await res.text().catch(() => '')
-      console.error(`[Welcome email FAILED ${res.status}] To: ${email} - ${detail.slice(0, 300)}`)
-    }
-  } catch (err) {
-    console.error('Welcome email failed:', err)
-  }
+async function sendWelcomeEmail(email: string, firstName: string, userId?: string | null) {
+  await sendTransactionalEmail({
+    to: email,
+    subject: 'Welcome to Talent House Collective',
+    html: welcomeEmailHtml({ firstName, userType: 'employer', dashboardUrl: 'https://talenthousecollective.co.uk/employer/dashboard' }),
+    kind: 'welcome_employer',
+    userId,
+  })
 }
 
+// The alert to the operator and the welcome to the property are two different
+// messages to two different people. They were on one line joined by a
+// semicolon, which read as one guarded statement and was not: the guard
+// covered only the alert, so a sign-up with no address on it sent nothing to
+// Rebecca while still calling the welcome sender with an empty string.
+async function announceSignup(email: string, profile: Record<string, any>, userId: string) {
+  await alertAdminOfSignup('employer', profile.property_name || profile.company_name)
+  if (!email) return
+  const firstName = String(profile.contact_name || profile.company_name || '').split(' ')[0] || 'there'
+  await sendWelcomeEmail(email, firstName, userId)
+}
 
 // Insert, stripping ONLY columns the DB reports as unknown (keeps all other data).
 async function insertStrippingUnknownColumns(supabase: any, table: string, row: Record<string, any>, maxStrips = 8) {
@@ -154,7 +155,7 @@ export async function POST(req: NextRequest) {
         .insert(safeProfile)
 
       if (!profileError) {
-        if (userEmail) await sendWelcomeEmail(userEmail, String(safeProfile.contact_name || safeProfile.company_name).split(' ')[0] || 'there')
+        await announceSignup(userEmail, safeProfile, userId)
         return NextResponse.json({ success: true })
       }
 
@@ -168,7 +169,7 @@ export async function POST(req: NextRequest) {
       // Column mismatch: strip only the offending columns, keep the rest of the data
       const result = await insertStrippingUnknownColumns(supabase, 'employer_profiles', safeProfile)
       if (result.ok) {
-        if (userEmail) await sendWelcomeEmail(userEmail, String(safeProfile.contact_name || safeProfile.company_name).split(' ')[0] || 'there')
+        await announceSignup(userEmail, safeProfile, userId)
         return NextResponse.json({ success: true })
       }
       lastError = result.error

@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { rightToWorkVerified } from '@/lib/verification-badges'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { normaliseAccountRole } from '@/lib/role-access'
 import { canEmployerDiscoverCandidate, mutualRadiusResult } from '@/lib/discovery'
 import { validShiftWindow, windowCovers, windowsOverlap } from '@/lib/agency-time'
 import { getRequestUser } from '@/lib/request-user'
+import { presentCandidateForEmployer } from '@/lib/private-mode'
 
 export const dynamic = 'force-dynamic'
 
@@ -14,8 +16,8 @@ const SAFE_FIELDS = [
   'review_count', 'whc_verified', 'has_insurance', 'availability_status',
   'travel_availability', 'travel_radius_miles', 'hourly_rate', 'day_rate_min',
   'day_rate_max', 'agency_tier', 'is_featured', 'latitude', 'longitude',
-  'approval_status', 'profile_visible', 'created_at',
-  'agency_listed_until',
+  'approval_status', 'profile_visible', 'stealth_mode', 'show_first_name_only', 'created_at',
+  'agency_listed_until', 'right_to_work_status', 'insurance_expiry_date',
 ].join(',')
 
 export async function GET(req: NextRequest) {
@@ -46,12 +48,18 @@ export async function GET(req: NextRequest) {
   const lngParam = req.nextUrl.searchParams.get('lng')
   const requestedLat = Number(latParam)
   const requestedLng = Number(lngParam)
-  const requestedRadius = Number(req.nextUrl.searchParams.get('radius'))
+  const radiusParam = req.nextUrl.searchParams.get('radius')
+  // 'uk' is an explicit UK-wide search: no radius cap, no mandatory-radius
+  // error, and the stored radius preference is left untouched.
+  const ukWide = radiusParam === 'uk'
+  const requestedRadius = Number(radiusParam)
   const hasSearchPoint = latParam != null && lngParam != null
     && Number.isFinite(requestedLat) && Number.isFinite(requestedLng)
-  const radius = Number.isFinite(requestedRadius) && requestedRadius > 0
-    ? Math.min(requestedRadius, 250)
-    : (Number(employer?.agency_search_radius_miles) > 0 ? Number(employer?.agency_search_radius_miles) : null)
+  const radius = ukWide
+    ? null
+    : Number.isFinite(requestedRadius) && requestedRadius > 0
+      ? Math.min(requestedRadius, 250)
+      : (Number(employer?.agency_search_radius_miles) > 0 ? Number(employer?.agency_search_radius_miles) : null)
 
   if (!isAdmin && employer && radius != null && radius !== Number(employer.agency_search_radius_miles || 0)) {
     await admin.from('employer_profiles').update({ agency_search_radius_miles: radius }).eq('id', employer.id)
@@ -64,7 +72,7 @@ export async function GET(req: NextRequest) {
   if (hasShiftSearch && !validShiftWindow(shiftDate, shiftStartTime, shiftEndTime)) {
     return NextResponse.json({ error: 'Choose a valid shift date, start time and finish time' }, { status: 400 })
   }
-  if (!isAdmin && !radius) {
+  if (!isAdmin && !ukWide && !radius) {
     return NextResponse.json({ error: 'Set a search radius before looking for Agency Talent.' }, { status: 400 })
   }
 
@@ -81,6 +89,12 @@ export async function GET(req: NextRequest) {
     .eq('approval_status', 'approved')
     .or('profile_visible.eq.true,profile_visible.is.null')
     .eq('agency_available', true)
+    // Agency Cover is a UK product: supplying somebody into a shift makes
+    // Talent House an employment business, licensed country by country. A
+    // professional abroad who has ticked the register must not be offered to a
+    // property, because the booking that follows is one we cannot lawfully
+    // make. Rows written before country existed are null and are British.
+    .or('country_code.eq.GB,country_code.is.null')
 
   if (id) query = query.eq('id', id)
   const [{ data, error }, { data: blocks }] = await Promise.all([
@@ -95,14 +109,23 @@ export async function GET(req: NextRequest) {
   if (error) return NextResponse.json({ error: 'Directory unavailable' }, { status: 500 })
   const blockedIds = new Set((blocks || []).map((row: any) => row.candidate_id))
   const candidateIds = (data || []).map((row: any) => row.id)
-  const [{ data: dayRows }, { data: windows }, { data: bookings }, { data: completedShifts }] = hasShiftSearch && candidateIds.length
+  const [{ data: dayRows }, { data: windows }, { data: bookings }] = hasShiftSearch && candidateIds.length
     ? await Promise.all([
         admin.from('agency_availability').select('candidate_id, available').in('candidate_id', candidateIds).eq('date', shiftDate),
         admin.from('agency_availability_windows').select('candidate_id, start_time, end_time').in('candidate_id', candidateIds).eq('date', shiftDate),
         admin.from('agency_bookings').select('candidate_id, shift_start_time, shift_end_time').in('candidate_id', candidateIds).eq('shift_date', shiftDate).in('status', ['pending', 'countered', 'accepted', 'confirmed']),
-        admin.from('agency_bookings').select('candidate_id').in('candidate_id', candidateIds).eq('status', 'completed'),
       ])
-    : [{ data: [] }, { data: [] }, { data: [] }, { data: [] }]
+    : [{ data: [] }, { data: [] }, { data: [] }]
+
+  // Shift history and reliability travel on every card, not just shift
+  // searches - a property is buying reduced risk, and a professional's
+  // track record of honoured shifts is the evidence.
+  const [{ data: completedShifts }, { data: candidateCancellations }] = candidateIds.length
+    ? await Promise.all([
+        admin.from('agency_bookings').select('candidate_id').in('candidate_id', candidateIds).eq('status', 'completed'),
+        admin.from('agency_bookings').select('candidate_id').in('candidate_id', candidateIds).eq('status', 'cancelled').eq('cancellation_requested_by', 'candidate'),
+      ])
+    : [{ data: [] }, { data: [] }]
   const unavailableIds = new Set((dayRows || []).filter((row: any) => row.available === false).map((row: any) => row.candidate_id))
   const windowsByCandidate = new Map<string, any[]>()
   for (const window of windows || []) windowsByCandidate.set(window.candidate_id, [...(windowsByCandidate.get(window.candidate_id) || []), window])
@@ -110,10 +133,24 @@ export async function GET(req: NextRequest) {
   for (const booking of bookings || []) bookingsByCandidate.set(booking.candidate_id, [...(bookingsByCandidate.get(booking.candidate_id) || []), booking])
   const completedCount = new Map<string, number>()
   for (const booking of completedShifts || []) completedCount.set(booking.candidate_id, (completedCount.get(booking.candidate_id) || 0) + 1)
+  const cancelledCount = new Map<string, number>()
+  for (const booking of candidateCancellations || []) cancelledCount.set(booking.candidate_id, (cancelledCount.get(booking.candidate_id) || 0) + 1)
+
+  // Private Career Mode. Looked up separately and tolerantly: the column
+  // arrives with migration 20260831190000, and a directory must not break
+  // before it runs. A failed read means nobody is treated as private, which
+  // is the state the platform was already in.
+  const privateIds = new Set<string>()
+  try {
+    const { data: privateRows, error: privateError } = await admin.from('candidate_profiles')
+      .select('id').eq('private_mode', true)
+    if (!privateError) for (const row of privateRows || []) privateIds.add(row.id)
+  } catch { }
 
   const candidates = (data || [])
     .filter((candidate: any) => !candidate.agency_listed_until || new Date(candidate.agency_listed_until).getTime() >= Date.now())
     .filter((candidate: any) => isAdmin || canEmployerDiscoverCandidate(candidate, blockedIds))
+    .map((candidate: any) => privateIds.has(candidate.id) ? { ...candidate, private_mode: true } : candidate)
     .map((candidate: any) => {
       const result = mutualRadiusResult(origin, candidate, radius)
       let availabilityMatch: 'confirmed' | 'already_booked' | 'unavailable' | 'not_confirmed' | null = null
@@ -131,20 +168,53 @@ export async function GET(req: NextRequest) {
           : coversShift ? 'confirmed'
           : 'not_confirmed'
       }
-      const { latitude: _latitude, longitude: _longitude, postcode: _postcode, approval_status: _approval, profile_visible: _visible, agency_listed_until: _listedUntil, ...safe } = candidate
+      // Agency Ready: identity verified, insured (and not expired), right to
+      // work verified, a rate set, and a mapped location. Computed here so
+      // the raw compliance fields never leave the server.
+      const insuranceCurrent = Boolean(candidate.has_insurance)
+        && (!candidate.insurance_expiry_date || new Date(candidate.insurance_expiry_date).getTime() >= Date.now())
+      const agencyReady = Boolean(candidate.whc_verified)
+        && insuranceCurrent
+        && rightToWorkVerified(candidate)
+        && Number(candidate.hourly_rate) > 0
+        && candidate.latitude != null
+      const completed = completedCount.get(candidate.id) || 0
+      const cancelled = cancelledCount.get(candidate.id) || 0
+      const { latitude: _latitude, longitude: _longitude, postcode: _postcode, approval_status: _approval, profile_visible: _visible, stealth_mode: _stealth, agency_listed_until: _listedUntil, right_to_work_status: _rtw, insurance_expiry_date: _insExpiry, ...safe } = candidate
       return {
-        ...safe,
+        ...presentCandidateForEmployer(safe),
         distance_miles: result.distanceMiles,
         within_radius: result.withinRadius,
         distance_status: result.reason,
         availability_match: availabilityMatch,
-        completed_shift_count: completedCount.get(candidate.id) || 0,
+        completed_shift_count: completed,
+        agency_ready: agencyReady,
+        // Reliability is only stated once there is a real track record.
+        reliability_pct: completed + cancelled >= 3 ? Math.round((completed / (completed + cancelled)) * 100) : null,
       }
     })
     .filter((candidate: any) => isAdmin || candidate.within_radius)
     .filter((candidate: any) => !hasShiftSearch || candidate.availability_match === 'confirmed')
   if (id && candidates.length === 0) return NextResponse.json({ error: 'Profile not found' }, { status: 404 })
-  return NextResponse.json(id ? { candidate: candidates[0] } : {
+
+  // Reviews of a professional are private to their two parties in the
+  // database. The agency profile page used to read them with the browser's
+  // anon key; it now receives them here, already checked for an approved
+  // employer viewer and shaped to rating, comment and date - never the
+  // reviewer's identity.
+  if (id) {
+    const candidate = candidates[0]
+    const { data: reviewRows } = await admin
+      .from('reviews')
+      .select('id,rating,text,criteria_scores,created_at')
+      .eq('reviewee_id', candidate.user_id || candidate.id)
+      .order('created_at', { ascending: false })
+      .limit(100)
+    const reviews = (reviewRows || []).filter((review: any) => Number(review.rating) >= 1 && Number(review.rating) <= 5)
+    return NextResponse.json({ candidate, reviews })
+  }
+
+  return NextResponse.json({
     candidates,
     origin: {
       postcode: employer?.postcode || null,

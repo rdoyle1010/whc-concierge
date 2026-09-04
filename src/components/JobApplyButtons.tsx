@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { getViewer } from '@/lib/viewer'
 import Link from 'next/link'
 import { ArrowRight, Bookmark } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
@@ -16,13 +17,14 @@ export default function JobApplyButtons({ roleId }: Props) {
   const [auth, setAuth] = useState<AuthState>({ loading: true })
   const [saved, setSaved] = useState(false)
   const [applying, setApplying] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     const supabase = createClient()
     let cancelled = false
 
     ;(async () => {
-      const { data: { user } } = await supabase.auth.getUser()
+      const user = await getViewer()
       if (cancelled) return
 
       if (!user) {
@@ -63,8 +65,8 @@ export default function JobApplyButtons({ roleId }: Props) {
   if (auth.loading) {
     return (
       <div className="flex flex-col sm:flex-row gap-3">
-        <div className="h-12 w-44 rounded-lg bg-[#F0EEEA] animate-pulse" />
-        <div className="h-12 w-36 rounded-lg bg-[#F0EEEA] animate-pulse" />
+        <div className="h-12 w-44 rounded-lg bg-[#f1f1f1] animate-pulse" />
+        <div className="h-12 w-36 rounded-lg bg-[#f1f1f1] animate-pulse" />
       </div>
     )
   }
@@ -74,8 +76,8 @@ export default function JobApplyButtons({ roleId }: Props) {
       <div
         className="rounded-lg p-4 text-[13px] max-w-md"
         style={{
-          background: '#FDF6EC',
-          border: '1px solid rgba(201, 169, 110, 0.4)',
+          background: '#f1f1f1',
+          border: '1px solid rgba(28,28,28, 0.4)',
           color: '#374151',
         }}
       >
@@ -89,6 +91,7 @@ export default function JobApplyButtons({ roleId }: Props) {
   const handleApplyClick = async () => {
     if (applying) return
     setApplying(true)
+    setError(null)
     try {
       const res = await fetch('/api/applications/draft', {
         method: 'POST',
@@ -107,9 +110,9 @@ export default function JobApplyButtons({ roleId }: Props) {
         return
       }
 
-      alert(d.error || 'Could not start your application - please try again.')
+      setError(d.error || 'Could not start your application - please try again.')
     } catch {
-      alert('Could not start your application - please try again.')
+      setError('Could not start your application - please try again.')
     }
     setApplying(false)
   }
@@ -131,12 +134,18 @@ export default function JobApplyButtons({ roleId }: Props) {
   }
 
   return (
-    <div className="flex flex-col sm:flex-row gap-3">
+    <div>
+      {error && (
+        <div className="mb-3 max-w-md border border-red-200 bg-red-50 px-4 py-3 text-[13px] text-red-700" role="alert">
+          {error}
+        </div>
+      )}
+      <div className="flex flex-col sm:flex-row gap-3">
       {!auth.loggedIn ? (
         <Link
           href={applyHref}
-          className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg text-[14px] font-semibold text-white transition-all hover:shadow-lg hover:shadow-[#C9A96E]/25"
-          style={{ backgroundColor: '#C9A96E' }}
+          className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg text-[14px] font-semibold text-white transition-all hover:shadow-lg hover:shadow-[#555555]/25"
+          style={{ backgroundColor: '#555555' }}
         >
           Apply for this role <ArrowRight size={16} />
         </Link>
@@ -145,8 +154,8 @@ export default function JobApplyButtons({ roleId }: Props) {
           type="button"
           onClick={handleApplyClick}
           disabled={applying}
-          className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg text-[14px] font-semibold text-white transition-all hover:shadow-lg hover:shadow-[#C9A96E]/25 disabled:opacity-70"
-          style={{ backgroundColor: '#C9A96E' }}
+          className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg text-[14px] font-semibold text-white transition-all hover:shadow-lg hover:shadow-[#555555]/25 disabled:opacity-70"
+          style={{ backgroundColor: '#555555' }}
         >
           {applying ? 'Preparing application...' : 'Review application'} <ArrowRight size={16} />
         </button>
@@ -155,7 +164,7 @@ export default function JobApplyButtons({ roleId }: Props) {
         <Link
           href={`/login?next=${encodeURIComponent(`/jobs/${roleId}`)}`}
           className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg text-[14px] font-semibold transition-all bg-white"
-          style={{ border: '1px solid #E5E5E5', color: '#1a1a1a' }}
+          style={{ border: '1px solid #E5E5E5', color: '#1c1c1c' }}
         >
           <Bookmark size={16} /> Save for later
         </Link>
@@ -165,14 +174,15 @@ export default function JobApplyButtons({ roleId }: Props) {
           onClick={handleSaveClick}
           className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg text-[14px] font-semibold transition-all bg-white"
           style={{
-            border: `1px solid ${saved ? '#C9A96E' : '#E5E5E5'}`,
-            color: saved ? '#C9A96E' : '#1a1a1a',
+            border: `1px solid ${saved ? '#555555' : '#E5E5E5'}`,
+            color: saved ? '#555555' : '#1c1c1c',
           }}
         >
           <Bookmark size={16} fill={saved ? 'currentColor' : 'none'} />
           {saved ? 'Saved' : 'Save for later'}
         </button>
       )}
+      </div>
     </div>
   )
 }

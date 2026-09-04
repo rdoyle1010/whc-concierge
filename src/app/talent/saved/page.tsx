@@ -33,7 +33,11 @@ export default function SavedJobsPage() {
 
   return (
     <DashboardShell role="talent">
-      <h1 className="text-2xl font-serif font-bold text-ink mb-6">Saved Roles</h1>
+      <div className="mb-6">
+        <p className="dashboard-eyebrow">Jobs &amp; matches</p>
+        <h1 className="dashboard-title">Saved Roles</h1>
+        <p className="dashboard-intro">Roles you have bookmarked to review and apply for later.</p>
+      </div>
 
       {loading ? (
         <div className="flex items-center justify-center h-64"><div className="animate-spin w-8 h-8 border-2 border-ink border-t-transparent rounded-full" /></div>
@@ -53,9 +57,9 @@ export default function SavedJobsPage() {
             return (
               <div key={saved.id} className="bg-white border border-border rounded-xl p-5 hover:shadow-sm transition-all">
                 <div className="flex items-center justify-between mb-3">
-                  <span className={`text-[10px] font-semibold px-2.5 py-1 rounded-full ${job.tier === 'Platinum' ? 'bg-ink text-white' : job.tier === 'Gold' ? 'bg-[#FDF6EC] text-[#C9A96E]' : 'bg-surface text-muted'}`}>{job.tier || 'Standard'}</span>
-                  <button type="button" onClick={() => removeSaved(saved.job_id)}
-                    className="p-1 text-muted hover:text-red-500 transition-colors" title="Remove">
+                  <span className={`text-[10px] font-semibold px-2.5 py-1 rounded-full ${job.tier === 'Platinum' ? 'bg-ink text-white' : job.tier === 'Gold' ? 'bg-[#f1f1f1] text-[#1c1c1c]' : 'bg-surface text-muted'}`}>{job.tier || 'Standard'}</span>
+                  <button type="button" onClick={() => removeSaved(saved.job_id)} aria-label="Remove saved role"
+                    className="p-2.5 text-muted hover:text-red-500 transition-colors" title="Remove">
                     <Trash2 size={14} />
                   </button>
                 </div>

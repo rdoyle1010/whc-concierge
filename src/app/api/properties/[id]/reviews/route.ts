@@ -14,21 +14,25 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
 
     if (!employer?.user_id) return NextResponse.json({ reviews: [], summary: { count: 0, average: null } })
 
-    let reviews: any[] = []
-    for (const reviewedColumn of ['reviewed_id', 'reviewee_id']) {
-      const { data, error } = await admin
+    // Old rows predate the type column, so a null type on a review of this
+    // employer still counts as an employer review. The type column itself is
+    // newer than some environments, so fall back to a plain select if the
+    // typed query fails.
+    const buildReviewQuery = (withType: boolean) => {
+      let query = admin
         .from('reviews')
-        .select('id,reviewer_id,rating,text,comment,criteria_scores,booking_id,created_at,type')
-        .eq(reviewedColumn, employer.user_id)
-        .eq('type', 'employer')
-        .order('created_at', { ascending: false })
-        .limit(30)
-      if (!error) { reviews = data || []; break }
+        .select(withType ? 'id,reviewer_id,rating,text,criteria_scores,booking_id,created_at,type' : 'id,reviewer_id,rating,text,criteria_scores,booking_id,created_at')
+        .eq('reviewee_id', employer.user_id)
+      if (withType) query = query.or('type.eq.employer,type.is.null')
+      return query.order('created_at', { ascending: false }).limit(30)
     }
+    let { data: reviewRows, error: reviewError } = await buildReviewQuery(true)
+    if (reviewError) ({ data: reviewRows } = await buildReviewQuery(false))
+    const reviews: any[] = reviewRows || []
 
     const reviewerIds = [...new Set(reviews.map(r => r.reviewer_id).filter(Boolean))]
     const { data: candidates } = reviewerIds.length
-      ? await admin.from('candidate_profiles').select('user_id,full_name,current_role').in('user_id', reviewerIds)
+      ? await admin.from('candidate_profiles').select('user_id,role_level').in('user_id', reviewerIds)
       : { data: [] as any[] }
     const candidateMap = new Map((candidates || []).map((c: any) => [c.user_id, c]))
 
@@ -39,13 +43,15 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
         return {
           id: r.id,
           rating: Number(r.rating),
-          comment: r.comment || r.text || '',
+          comment: r.text || '',
           criteria_scores: r.criteria_scores || null,
           created_at: r.created_at,
           verified: true,
-          source: r.booking_id ? 'Completed WHC agency shift' : 'WHC placement',
-          reviewer_name: reviewer?.full_name || 'WHC professional',
-          reviewer_role: reviewer?.current_role || null,
+          source: r.booking_id ? 'Completed Talent House agency shift' : 'Talent House placement',
+          // Published by role, never by name: nobody consented to a public,
+          // permanent attribution of their opinion of a named employer.
+          reviewer_name: reviewer?.role_level || 'Verified Talent House professional',
+          reviewer_role: null,
         }
       })
 

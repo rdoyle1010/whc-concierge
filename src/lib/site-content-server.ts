@@ -26,11 +26,11 @@ function applyLegacyImages(content: WebsiteContent, rows: LegacyImage[]): Websit
     next.hero.slides = heroes.slice(0, 8).map((row, index) => ({
       image: {
         url: row.image_url || next.hero.slides[index]?.image.url || '',
-        alt: row.heading || next.hero.slides[index]?.image.alt || 'Wellness House Collective',
+        alt: row.heading || next.hero.slides[index]?.image.alt || 'Talent House Collective',
         focalX: 50,
         focalY: 50,
       },
-      eyebrow: index === 0 ? 'WHC Concierge' : 'Why WHC Concierge',
+      eyebrow: index === 0 ? 'Talent House Collective' : 'Why Talent House Collective',
       heading: row.heading || next.hero.slides[index]?.heading || '',
       text: row.subtext || next.hero.slides[index]?.text || '',
     }))
@@ -67,7 +67,9 @@ async function readWebsiteContent(key: string): Promise<WebsiteContent> {
 const getCachedPublishedWebsiteContent = unstable_cache(
   () => readWebsiteContent(WEBSITE_PUBLISHED_KEY),
   ['website-content-published-v1'],
-  { revalidate: 60 }
+  // Tagged so the admin publish action can revalidate it instantly instead
+  // of waiting out the 60-second window.
+  { revalidate: 60, tags: ['website-content'] }
 )
 
 export async function getWebsiteContent(useDraft = false): Promise<WebsiteContent> {

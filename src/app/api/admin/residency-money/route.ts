@@ -1,22 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { cookies } from 'next/headers'
-import { createServerClient } from '@supabase/ssr'
+import { adminRequestUser } from '@/lib/admin-api-auth'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getStripe } from '@/lib/stripe'
 import { createNotification } from '@/lib/notifications'
 
+// Delegated to the shared admin guard, which enforces two-step
+// verification as well as the admin role.
 async function requireAdmin() {
-  const cookieStore = await cookies()
-  const auth = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    { cookies: { getAll() { return cookieStore.getAll() }, setAll() {} } }
-  )
-  const { data: { user } } = await auth.auth.getUser()
-  if (!user) return null
-  const admin = createAdminClient()
-  const { data: profile } = await admin.from('profiles').select('role').eq('id', user.id).maybeSingle()
-  return profile?.role === 'admin' ? user : null
+  return adminRequestUser()
 }
 
 function londonDate() {
@@ -51,10 +42,11 @@ export async function GET() {
   if (!await requireAdmin()) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
 
   const admin = createAdminClient()
+  const BOOKING_LIMIT = 250
   const { data: bookings, error } = await admin.from('residency_bookings')
     .select('id,candidate_id,employer_id,property_name,start_date,end_date,days_required,agreed_day_rate,agreed_total,proposed_total,platform_fee,amount_paid,payout_amount,payout_status,payout_at,status,paid_at,dispute_status,dispute_reason,refund_amount,refunded_at,stripe_payment_intent,created_at')
     .order('created_at', { ascending: false })
-    .limit(250)
+    .limit(BOOKING_LIMIT)
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
   const candidateIds = Array.from(new Set((bookings || []).map(row => row.candidate_id).filter(Boolean)))
@@ -73,7 +65,10 @@ export async function GET() {
     payout_ready: payoutReady(booking),
   }))
 
-  return NextResponse.json({ bookings: rows })
+  return NextResponse.json({
+    bookings: rows,
+    pagination: { limit: BOOKING_LIMIT, returned: rows.length, capped: rows.length >= BOOKING_LIMIT },
+  })
 }
 
 export async function POST(req: NextRequest) {
@@ -95,12 +90,44 @@ export async function POST(req: NextRequest) {
     if (!payoutReady(booking)) {
       return NextResponse.json({ error: 'Payout is only available after the paid Residency has ended and no dispute is open.' }, { status: 400 })
     }
+
+    // Real payout when the specialist has an active Stripe Connect account;
+    // manual settlement recorded honestly otherwise.
+    let payoutMethod: 'stripe' | 'manual' = 'manual'
+    let transferId: string | null = null
+    const payoutPounds = Number(booking.payout_amount || 0)
+    try {
+      const { data: payee } = await admin.from('candidate_profiles')
+        .select('stripe_connect_account_id,connect_payouts_enabled')
+        .eq('id', booking.candidate_id).maybeSingle()
+      if (payee?.stripe_connect_account_id && payee.connect_payouts_enabled && payoutPounds > 0) {
+        const stripe = getStripe()
+        const transfer = await stripe.transfers.create({
+          amount: Math.round(payoutPounds * 100),
+          currency: 'gbp',
+          destination: payee.stripe_connect_account_id,
+          transfer_group: `residency_${booking.id}`,
+          metadata: { type: 'residency_payout', booking_id: booking.id, candidate_id: booking.candidate_id },
+        }, { idempotencyKey: `residency-payout-${booking.id}` })
+        payoutMethod = 'stripe'
+        transferId = transfer.id
+      }
+    } catch (transferError: any) {
+      return NextResponse.json({ error: `Stripe transfer failed: ${transferError?.message || 'unknown error'}. Nothing was recorded - fix the issue or settle manually and try again.` }, { status: 502 })
+    }
+
     const { error: updateError } = await admin.from('residency_bookings')
-      .update({ payout_status: 'paid', payout_at: new Date().toISOString(), status: 'completed' })
+      .update({ payout_status: 'paid', payout_at: new Date().toISOString(), status: 'completed', payout_method: payoutMethod, stripe_transfer_id: transferId })
       .eq('id', booking.id)
-    if (updateError) return NextResponse.json({ error: updateError.message }, { status: 500 })
-    await notifyParties(admin, booking, 'Residency payout completed', 'Your Residency payout has been marked as paid.', 'The specialist payout for this Residency has been completed.')
-    return NextResponse.json({ success: true })
+    if (updateError) {
+      if (transferId) return NextResponse.json({ error: `The Stripe transfer ${transferId} was sent but the record could not be updated: ${updateError.message}. Check Stripe before retrying.` }, { status: 500 })
+      return NextResponse.json({ error: updateError.message }, { status: 500 })
+    }
+    await notifyParties(admin, booking,
+      'Residency payout completed',
+      payoutMethod === 'stripe' ? `Your residency payout of £${payoutPounds.toLocaleString('en-GB')} has been sent to your connected bank account. It typically arrives within 2-3 working days.` : 'Your Residency payout has been marked as paid.',
+      'The specialist payout for this Residency has been completed.')
+    return NextResponse.json({ success: true, payout_method: payoutMethod, transfer_id: transferId })
   }
 
   if (body.action === 'open_dispute') {

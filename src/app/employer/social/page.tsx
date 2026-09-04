@@ -5,7 +5,7 @@ import DashboardShell from '@/components/DashboardShell'
 import { createClient } from '@/lib/supabase/client'
 import { Megaphone, Linkedin, Facebook, Instagram, Mail, Link as LinkIcon, MessageCircle, Copy, ExternalLink, Sparkles, CheckCircle2 } from 'lucide-react'
 
-const SITE = 'https://talent.wellnesshousecollective.co.uk'
+const SITE = 'https://talenthousecollective.co.uk'
 
 export default function EmployerSocialPage() {
   const supabase = createClient()
@@ -21,7 +21,9 @@ export default function EmployerSocialPage() {
       const { data: prof } = await supabase.from('employer_profiles').select('*').eq('user_id', user.id).maybeSingle()
       setProfile(prof)
       if (prof) {
-        const { data } = await supabase.from('job_listings').select('*').eq('employer_id', prof.id).order('posted_date', { ascending: false })
+        const { data } = await supabase.from('job_listings')
+        // This page writes posts from the description, but needs none of the requirement fields.
+        .select('id, job_title, title, job_description, description, is_live, status, job_type, location, salary_display_text, salary_min, salary_max').eq('employer_id', prof.id).order('posted_date', { ascending: false })
         setJobs((data || []).map((j: any) => ({ ...j, title: j.job_title || j.title, description: j.job_description || j.description })))
       }
       setLoading(false)
@@ -33,7 +35,7 @@ export default function EmployerSocialPage() {
 
   const shareText = (job: any) => {
     const salary = job.salary_display_text || (job.salary_min && job.salary_max ? `£${Number(job.salary_min).toLocaleString()}–£${Number(job.salary_max).toLocaleString()}` : 'Competitive salary')
-    return `${profile?.company_name || 'We are'} hiring: ${job.title}\n${job.location || ''}${job.job_type ? ` · ${job.job_type}` : ''}\n${salary}\n\nApply through Wellness House Collective:`
+    return `${profile?.company_name || 'We are'} hiring: ${job.title}\n${job.location || ''}${job.job_type ? ` · ${job.job_type}` : ''}\n${salary}\n\nApply through Talent House Collective:`
   }
 
   const jobUrl = (job: any) => `${SITE}/jobs/${job.id}`
@@ -49,7 +51,7 @@ export default function EmployerSocialPage() {
   }
 
   async function nativeShare(job: any) {
-    const data = { title: `${job.title} at ${profile?.company_name || 'Wellness House Collective'}`, text: shareText(job), url: jobUrl(job) }
+    const data = { title: `${job.title} at ${profile?.company_name || 'Talent House Collective'}`, text: shareText(job), url: jobUrl(job) }
     if (navigator.share) {
       try { await navigator.share(data); return } catch {}
     }
@@ -57,36 +59,36 @@ export default function EmployerSocialPage() {
   }
 
   const platforms = [
-    { name: 'LinkedIn', icon: Linkedin, status: 'Share now', text: 'Share the live WHC job link into your company or personal LinkedIn feed.' },
-    { name: 'Facebook', icon: Facebook, status: 'Share now', text: 'Share live vacancies directly to Facebook with the WHC application link.' },
+    { name: 'LinkedIn', icon: Linkedin, status: 'Share now', text: 'Share the live Talent House job link into your company or personal LinkedIn feed.' },
+    { name: 'Facebook', icon: Facebook, status: 'Share now', text: 'Share live vacancies directly to Facebook with the Talent House application link.' },
     { name: 'Instagram', icon: Instagram, status: 'Caption ready', text: 'Copy a recruitment-ready caption and job link for your Instagram post or Story.' },
-    { name: 'Meta Ads', icon: Megaphone, status: 'Connection ready', text: 'Architecture is ready for a future Meta Business connection for paid Facebook and Instagram recruitment campaigns.' },
+    { name: 'Meta Ads', icon: Megaphone, status: 'Planned', text: 'Paid Facebook and Instagram recruitment campaigns through a Meta Business connection are planned.' },
   ]
 
   return <DashboardShell role="employer" userName={profile?.company_name}>
     <div className="mb-8">
       <p className="dashboard-eyebrow">Recruitment marketing</p>
       <h1 className="dashboard-title">Social & Advertising</h1>
-      <p className="dashboard-intro">Post a role once in WHC, then share the same live application link across LinkedIn, Facebook, Instagram, WhatsApp and email. This keeps applicants coming back to one job record and one application process.</p>
+      <p className="dashboard-intro">Post a role once in Talent House, then share the same live application link across LinkedIn, Facebook, Instagram, WhatsApp and email. This keeps applicants coming back to one job record and one application process.</p>
     </div>
 
     <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4 mb-9">
       {platforms.map(({ name, icon: Icon, status, text }) => <div key={name} className="dashboard-card">
-        <div className="flex items-start justify-between gap-3"><div className="h-10 w-10 rounded-lg bg-[#f1f4f6] text-[#0b2f4d] flex items-center justify-center"><Icon size={18}/></div><span className="text-[10px] uppercase tracking-[.12em] text-[#6f7f88]">{status}</span></div>
+        <div className="flex items-start justify-between gap-3"><div className="h-10 w-10 rounded-lg bg-[#f1f1f1] text-[#1c1c1c] flex items-center justify-center"><Icon size={18}/></div><span className="text-[10px] uppercase tracking-[.12em] text-[#555555]">{status}</span></div>
         <h2 className="text-[20px] mt-4">{name}</h2><p className="text-[12px] leading-5 text-secondary mt-2">{text}</p>
       </div>)}
     </div>
 
-    <div className="dashboard-card mb-8 bg-[#0b2f4d] text-white border-[#0b2f4d]">
+    <div className="dashboard-card mb-8 bg-[#1c1c1c] text-white border-[#1c1c1c]">
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5">
-        <div><p className="text-[9px] uppercase tracking-[.18em] text-white/55">One role. Multiple channels.</p><h2 className="text-white text-[26px] mt-2">Every share sends candidates back to WHC.</h2><p className="text-[13px] leading-6 text-white/65 mt-2 max-w-3xl">That means the property keeps one applicant list, one shortlist, one set of messages and one source of truth instead of losing applications across several social platforms.</p></div>
+        <div><p className="text-[9px] uppercase tracking-[.18em] text-white/55">One role. Multiple channels.</p><h2 className="text-white text-[26px] mt-2">Every share sends candidates back to Talent House.</h2><p className="text-[13px] leading-6 text-white/65 mt-2 max-w-3xl">That means the property keeps one applicant list, one shortlist, one set of messages and one source of truth instead of losing applications across several social platforms.</p></div>
         <div className="flex flex-wrap gap-2 text-[11px]"><span className="rounded-full border border-white/15 px-3 py-1.5">LinkedIn</span><span className="rounded-full border border-white/15 px-3 py-1.5">Facebook</span><span className="rounded-full border border-white/15 px-3 py-1.5">Instagram</span><span className="rounded-full border border-white/15 px-3 py-1.5">WhatsApp</span></div>
       </div>
     </div>
 
     <section>
       <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-4"><div><p className="dashboard-eyebrow">Live vacancies</p><h2 className="dashboard-section-title">Promote a job</h2></div><a href="/employer/jobs" className="btn-secondary text-center">Manage job listings</a></div>
-      {loading ? <div className="skeleton h-44 rounded-lg"/> : liveJobs.length === 0 ? <div className="dashboard-card py-12 text-center"><Megaphone size={24} className="mx-auto text-[#6f7f88] mb-3"/><h3 className="text-[20px]">No live jobs to promote</h3><p className="text-[12px] text-secondary mt-2">Once a paid job is live it will appear here with its social sharing controls.</p></div> : <div className="space-y-4">{liveJobs.map(job => {
+      {loading ? <div className="skeleton h-44 rounded-lg"/> : liveJobs.length === 0 ? <div className="dashboard-card py-12 text-center"><Megaphone size={24} className="mx-auto text-[#555555] mb-3"/><h3 className="text-[20px]">No live jobs to promote</h3><p className="text-[12px] text-secondary mt-2">Once a paid job is live it will appear here with its social sharing controls.</p></div> : <div className="space-y-4">{liveJobs.map(job => {
         const url = jobUrl(job)
         const text = shareText(job)
         const encodedUrl = encodeURIComponent(url)
@@ -108,14 +110,17 @@ export default function EmployerSocialPage() {
       })}</div>}
     </section>
 
-    <section className="mt-9 grid lg:grid-cols-3 gap-4">
-      <div className="dashboard-card"><Sparkles size={18} className="text-[#6f7f88]"/><h3 className="text-[19px] mt-4">WHC Social Feature</h3><p className="text-[12px] leading-5 text-secondary mt-2">Designed for a future paid option where WHC features the vacancy through its own LinkedIn, Instagram, Facebook and employer newsletter channels.</p><p className="text-[22px] text-ink mt-4">£49 <span className="text-[11px] text-muted">planned</span></p></div>
-      <div className="dashboard-card"><Megaphone size={18} className="text-[#6f7f88]"/><h3 className="text-[19px] mt-4">Meta Recruitment Campaign</h3><p className="text-[12px] leading-5 text-secondary mt-2">Connection-ready for a managed Facebook + Instagram recruitment advert using the live WHC application link.</p><p className="text-[22px] text-ink mt-4">£99 <span className="text-[11px] text-muted">+ ad spend · planned</span></p></div>
-      <div className="dashboard-card"><CheckCircle2 size={18} className="text-[#6f7f88]"/><h3 className="text-[19px] mt-4">Multi-channel campaign</h3><p className="text-[12px] leading-5 text-secondary mt-2">Prepared for future LinkedIn/Meta partner integrations so one WHC job can be distributed and measured across channels.</p><p className="text-[22px] text-ink mt-4">£199 <span className="text-[11px] text-muted">+ ad spend · planned</span></p></div>
+    <section className="mt-9">
+      <div className="mb-4"><p className="dashboard-eyebrow">Managed campaigns - coming soon</p><h2 className="dashboard-section-title">Let Talent House run the promotion for you</h2><p className="text-[12px] text-secondary mt-1 max-w-2xl">These managed options are not available to purchase yet. Register your interest and we will contact you when they launch.</p></div>
+      <div className="grid lg:grid-cols-3 gap-4">
+        <div className="dashboard-card"><Sparkles size={18} className="text-[#555555]"/><h3 className="text-[19px] mt-4">Talent House Social Feature</h3><p className="text-[12px] leading-5 text-secondary mt-2">Talent House features your vacancy through its own LinkedIn, Instagram, Facebook and employer newsletter channels.</p><a href="/contact" className="btn-secondary inline-flex mt-4 text-[12px]">Register interest</a></div>
+        <div className="dashboard-card"><Megaphone size={18} className="text-[#555555]"/><h3 className="text-[19px] mt-4">Meta Recruitment Campaign</h3><p className="text-[12px] leading-5 text-secondary mt-2">A managed Facebook and Instagram recruitment advert using the live Talent House application link.</p><a href="/contact" className="btn-secondary inline-flex mt-4 text-[12px]">Register interest</a></div>
+        <div className="dashboard-card"><CheckCircle2 size={18} className="text-[#555555]"/><h3 className="text-[19px] mt-4">Multi-channel campaign</h3><p className="text-[12px] leading-5 text-secondary mt-2">One Talent House job distributed and measured across LinkedIn and Meta channels.</p><a href="/contact" className="btn-secondary inline-flex mt-4 text-[12px]">Register interest</a></div>
+      </div>
     </section>
 
-    <div className="mt-8 border border-[#dfe5e8] bg-[#f7f9fa] p-5 text-[12px] leading-6 text-secondary">
-      <strong className="text-ink">About account connections:</strong> WHC currently provides safe sharing and social-ready content. Direct posting into a company’s LinkedIn Jobs account or paid Meta Ads account requires the employer to authorise those external platforms through their official integration/partner permissions. Until that connection is enabled, WHC will not claim that an account is connected when it is not.
+    <div className="mt-8 border border-[#dddddd] bg-[#f1f1f1] p-5 text-[12px] leading-6 text-secondary">
+      <strong className="text-ink">About account connections:</strong> Sharing tools and social-ready content are available now. Posting directly into your company LinkedIn Jobs account or a paid Meta Ads account requires you to authorise those platforms first - we will let you know when those connections become available.
     </div>
   </DashboardShell>
 }

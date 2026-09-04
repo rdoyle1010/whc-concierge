@@ -51,10 +51,45 @@ export async function POST(req: NextRequest) {
       approval_status: 'pending',
     }
 
+    // One listing per specialist: an existing listing is updated (and goes
+    // back to pending review), never duplicated.
+    const { data: existing } = await admin.from('residency_profiles')
+      .select('id').eq('candidate_profile_id', cand.id)
+      .order('created_at', { ascending: false }).limit(1).maybeSingle()
+
+    if (existing) {
+      const { error } = await admin.from('residency_profiles').update(row).eq('id', existing.id)
+      if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+      return NextResponse.json({ success: true, id: existing.id, updated: true })
+    }
+
     const { data, error } = await admin.from('residency_profiles').insert(row).select('id').single()
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
     return NextResponse.json({ success: true, id: data.id })
   } catch (e: any) {
     return NextResponse.json({ error: e.message }, { status: 500 })
+  }
+}
+
+export async function GET() {
+  try {
+    const cookieStore = await cookies()
+    const supabaseAuth = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      { cookies: { getAll() { return cookieStore.getAll() }, setAll() {} } }
+    )
+    const { data: { user } } = await supabaseAuth.auth.getUser()
+    if (!user) return NextResponse.json({ listing: null })
+    const admin = createAdminClient()
+    const { data: cand } = await admin.from('candidate_profiles').select('id').eq('user_id', user.id).maybeSingle()
+    if (!cand) return NextResponse.json({ listing: null })
+    const { data: listing } = await admin.from('residency_profiles')
+      .select('*')
+      .eq('candidate_profile_id', cand.id)
+      .order('created_at', { ascending: false }).limit(1).maybeSingle()
+    return NextResponse.json({ listing: listing || null })
+  } catch {
+    return NextResponse.json({ listing: null })
   }
 }

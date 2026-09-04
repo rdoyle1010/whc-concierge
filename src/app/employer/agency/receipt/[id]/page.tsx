@@ -3,8 +3,10 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
-import { Printer, ArrowLeft } from 'lucide-react'
+import PaymentDocument from '@/components/PaymentDocument'
 import { AGENCY_PLATFORM_FEE_PCT } from '@/lib/constants'
+import type { BillingIdentity } from '@/lib/billing-identity'
+import { createClient } from '@/lib/supabase/client'
 
 // Printable receipt for a paid agency booking - what accountants ask for.
 // Print to PDF via the browser; everything on this page is print-safe.
@@ -13,15 +15,33 @@ export default function AgencyReceiptPage() {
   const params = useParams()
   const id = params?.id as string
   const [booking, setBooking] = useState<any>(null)
+  const [identity, setIdentity] = useState<BillingIdentity | null>(null)
+  // Read from the property's own profile rather than the booking payload: that
+  // payload is shared with the professional on the other side of the shift,
+  // and a property's purchase order is not theirs to see.
+  const [poRef, setPoRef] = useState('')
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     async function load() {
       try {
-        const res = await fetch('/api/agency/booking')
+        const [res, identityRes] = await Promise.all([
+          fetch('/api/agency/booking'),
+          fetch('/api/billing-identity', { cache: 'no-store' }).catch(() => null),
+        ])
         if (res.ok) {
           const j = await res.json()
           setBooking((j.bookings || []).find((b: any) => b.id === id && b.viewer_role === 'employer') || null)
+        }
+        if (identityRes?.ok) {
+          const json = await identityRes.json().catch(() => null)
+          if (json?.identity) setIdentity(json.identity)
+        }
+        const supabase = createClient()
+        const { data: auth } = await supabase.auth.getUser()
+        if (auth.user) {
+          const { data: profile } = await supabase.from('employer_profiles').select('purchase_order_ref').eq('user_id', auth.user.id).maybeSingle()
+          setPoRef(profile?.purchase_order_ref || '')
         }
       } catch { /* shown as not found */ }
       setLoading(false)
@@ -29,11 +49,11 @@ export default function AgencyReceiptPage() {
     load()
   }, [id])
 
-  if (loading) return <div className="min-h-screen bg-white flex items-center justify-center"><div className="animate-spin w-8 h-8 border-2 border-gold border-t-transparent rounded-full" /></div>
+  if (loading) return <div className="min-h-screen bg-white flex items-center justify-center"><div className="animate-spin w-8 h-8 border-2 border-accent border-t-transparent rounded-full" /></div>
   if (!booking || !booking.paid_at) {
     return (
       <div className="min-h-screen bg-white flex flex-col items-center justify-center gap-4">
-        <p className="text-gray-500">Receipt not available - this booking has not been paid yet.</p>
+        <p className="text-secondary">Receipt not available - this booking has not been paid yet.</p>
         <Link href="/employer/agency" className="btn-secondary text-[13px]">Back to Agency Bookings</Link>
       </div>
     )
@@ -42,73 +62,36 @@ export default function AgencyReceiptPage() {
   const hours = booking.hours && booking.hours > 0 ? booking.hours : 8
   const subtotal = booking.rate * hours
   const fee = booking.platform_fee || Math.ceil(subtotal * AGENCY_PLATFORM_FEE_PCT)
-  const feePct = Math.round(AGENCY_PLATFORM_FEE_PCT * 100)
+  // Derive the percentage from the stored amounts so urgent bookings (which
+  // carry a higher fee) show their real rate, not the standard default.
+  const feePct = subtotal > 0 && fee > 0 ? Math.round((fee / subtotal) * 100) : Math.round(AGENCY_PLATFORM_FEE_PCT * 100)
   const total = booking.amount_paid || subtotal + fee
-  const ref = `WHC-${String(booking.id).slice(0, 8).toUpperCase()}`
+  const ref = `Talent House-${String(booking.id).slice(0, 8).toUpperCase()}`
 
   return (
-    <div className="min-h-screen bg-white">
-      {/* Toolbar - hidden when printing */}
-      <div className="print:hidden border-b border-gray-100 px-6 py-4 flex items-center justify-between max-w-3xl mx-auto">
-        <Link href="/employer/agency" className="text-[13px] text-gray-500 hover:text-black inline-flex items-center gap-1.5"><ArrowLeft size={14} /> Agency Bookings</Link>
-        <button onClick={() => window.print()} className="btn-primary text-[13px] inline-flex items-center gap-2"><Printer size={14} /> Print / Save as PDF</button>
-      </div>
-
-      <div className="max-w-3xl mx-auto px-6 py-12">
-        <div className="flex items-start justify-between mb-10">
-          <div>
-            <p className="text-[22px] font-serif font-bold text-black">Wellness House Collective</p>
-            <p className="text-[12px] text-gray-500">talent.wellnesshousecollective.co.uk</p>
-          </div>
-          <div className="text-right">
-            <p className="text-[13px] font-semibold text-black">RECEIPT</p>
-            <p className="text-[12px] text-gray-500">Ref: {ref}</p>
-            <p className="text-[12px] text-gray-500">Paid: {booking.paid_at ? new Date(booking.paid_at).toLocaleDateString('en-GB') : ''}</p>
-          </div>
-        </div>
-
-        <div className="mb-8">
-          <p className="text-[11px] uppercase tracking-wide text-gray-400 mb-1">Billed to</p>
-          <p className="text-[14px] font-medium text-black">{booking.employer_name}</p>
-        </div>
-
-        <table className="w-full text-left text-[13px] mb-8">
-          <thead>
-            <tr className="text-[11px] uppercase tracking-wide text-gray-400 border-b border-gray-200">
-              <th className="py-2 pr-4">Description</th>
-              <th className="py-2 pr-4 text-right">Amount</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr className="border-b border-gray-100">
-              <td className="py-3 pr-4">
-                Agency therapist cover - {booking.candidate_name}
-                <span className="block text-[12px] text-gray-500">
-                  Shift on {booking.shift_date ? new Date(booking.shift_date).toLocaleDateString('en-GB') : 'agreed date'}{booking.shift_type ? ` · ${booking.shift_type}` : ''} · {hours}h × £{booking.rate}/hr
-                </span>
-              </td>
-              <td className="py-3 pr-4 text-right">£{subtotal.toFixed(2)}</td>
-            </tr>
-            <tr className="border-b border-gray-100">
-              <td className="py-3 pr-4">WHC platform fee ({feePct}%)</td>
-              <td className="py-3 pr-4 text-right">£{fee.toFixed(2)}</td>
-            </tr>
-            <tr>
-              <td className="py-3 pr-4 font-semibold text-black">Total paid</td>
-              <td className="py-3 pr-4 text-right font-semibold text-black">£{total.toFixed(2)}</td>
-            </tr>
-          </tbody>
-        </table>
-
-        {booking.refund_amount ? (
-          <p className="text-[12px] text-gray-500 mb-6">A refund of £{booking.refund_amount} was subsequently agreed on this booking{booking.refunded_at ? ` (${new Date(booking.refunded_at).toLocaleDateString('en-GB')})` : ''}.</p>
-        ) : null}
-
-        <div className="text-[11px] text-gray-400 space-y-1 border-t border-gray-100 pt-6">
-          <p>Payment received in full by Wellness House Collective, who manages the professional payout after the completed shift. No VAT has been charged on this receipt.</p>
-          <p>Questions about this receipt? Reply to any WHC email or contact us through your dashboard.</p>
-        </div>
-      </div>
-    </div>
+    <PaymentDocument
+      identity={identity}
+      reference={ref}
+      issuedAt={booking.paid_at}
+      buyerName={booking.employer_name}
+      poNumber={poRef}
+      lines={[
+        {
+          description: `Agency therapist cover - ${booking.candidate_name}`,
+          detail: `Shift on ${booking.shift_date ? new Date(booking.shift_date).toLocaleDateString('en-GB') : 'agreed date'}${booking.shift_type ? ` \u00b7 ${booking.shift_type}` : ''} \u00b7 ${hours}h \u00d7 \u00a3${booking.rate}/hr`,
+          amount: subtotal,
+        },
+        { description: `Talent House platform fee (${feePct}%)`, amount: fee },
+      ]}
+      total={total}
+      backHref="/employer/agency"
+      backLabel="Agency Bookings"
+      notes={[
+        'Payment received in full by Talent House Collective, who manages the professional payout after the completed shift.',
+        ...(booking.refund_amount
+          ? [`A refund of \u00a3${booking.refund_amount} was subsequently agreed on this booking${booking.refunded_at ? ` (${new Date(booking.refunded_at).toLocaleDateString('en-GB')})` : ''}.`]
+          : []),
+      ]}
+    />
   )
 }

@@ -6,7 +6,7 @@ import {
   isWhcDeployPreviewOrigin,
 } from '../src/lib/site-origin.ts'
 
-const LIVE_SITE = 'https://talent.wellnesshousecollective.co.uk'
+const LIVE_SITE = 'https://talenthousecollective.co.uk'
 const PREVIEW = 'https://deploy-preview-1--whc-concierge.netlify.app'
 
 test('accepts the configured live site and the fixed production Netlify origin', () => {

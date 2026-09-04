@@ -14,9 +14,12 @@ export async function GET() {
   const { data: applications, error } = await admin.from('applications')
     .select('id,candidate_id,role_id,job_id,status,match_score,cover_note,cover_letter,created_at,updated_at,hired_at,archived_at')
     .eq('candidate_id', candidate.id)
-    .not('archived_at', 'is', null)
+    // hired_at is the fact; archived_at is the employer's own filing state,
+    // which they can clear from their Hired page. Reading archived_at here
+    // meant a placement silently vanished from the professional's record
+    // because the property tidied their side of it.
     .not('hired_at', 'is', null)
-    .order('archived_at', { ascending: false })
+    .order('hired_at', { ascending: false })
 
   if (error) return NextResponse.json({ error: 'Could not load completed placements.' }, { status: 500 })
 

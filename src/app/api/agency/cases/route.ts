@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { agencyResolutionExceedsCollected, bookingPaidByConnect } from '@/lib/agency-payouts'
 import { cookies } from 'next/headers'
 import { createServerClient } from '@supabase/ssr'
 import { createAdminClient } from '@/lib/supabase/admin'
@@ -34,8 +35,30 @@ export async function GET() {
   if (!user) return NextResponse.json({ error: 'Please sign in' }, { status: 401 })
   const admin = createAdminClient()
   const { candidate, employer, profile } = await partyContext(admin, user.id)
-  const { data: cases } = await admin.from('agency_cases').select('*, booking:agency_bookings(*)').order('created_at', { ascending: false }).limit(100)
-  const visible = (cases || []).filter((row: any) => profile?.role === 'admin' || row.booking?.candidate_id === candidate?.id || row.booking?.employer_id === employer?.id)
+  // Non-admins get cases scoped to their own bookings, so a global cap can
+  // never hide a user's case behind other people's newer ones.
+  let cases: any[] = []
+  if (profile?.role === 'admin') {
+    const { data } = await admin.from('agency_cases').select('*, booking:agency_bookings(*)').order('created_at', { ascending: false }).limit(100)
+    cases = data || []
+  } else {
+    const bookingIds: string[] = []
+    if (candidate?.id) {
+      const { data } = await admin.from('agency_bookings').select('id').eq('candidate_id', candidate.id)
+      for (const row of data || []) bookingIds.push(row.id)
+    }
+    if (employer?.id) {
+      const { data } = await admin.from('agency_bookings').select('id').eq('employer_id', employer.id)
+      for (const row of data || []) bookingIds.push(row.id)
+    }
+    const uniqueIds = Array.from(new Set(bookingIds))
+    for (let i = 0; i < uniqueIds.length; i += 200) {
+      const { data } = await admin.from('agency_cases').select('*, booking:agency_bookings(*)').in('booking_id', uniqueIds.slice(i, i + 200)).order('created_at', { ascending: false }).limit(100)
+      cases.push(...(data || []))
+    }
+    cases.sort((a: any, b: any) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime())
+  }
+  const visible = cases.filter((row: any) => profile?.role === 'admin' || row.booking?.candidate_id === candidate?.id || row.booking?.employer_id === employer?.id)
   const ids = visible.map((x: any) => x.id)
   const { data: messages } = ids.length ? await admin.from('agency_case_messages').select('*').in('case_id', ids).order('created_at', { ascending: true }) : { data: [] as any[] }
   const grouped = new Map<string, any[]>()
@@ -125,9 +148,20 @@ export async function POST(req: NextRequest) {
     const payout = Number(updated?.proposed_payout_amount ?? row.booking?.payout_amount ?? 0)
     let refundId: string | null = null
     if (refund > 0) {
-      if (!row.booking?.stripe_payment_intent || row.booking.stripe_payment_intent === 'manual_audit_no_charge') return NextResponse.json({ error: 'This audit booking has no real Stripe payment to refund. Ask WHC Admin to amend the proposal.' }, { status: 400 })
+      if (!row.booking?.stripe_payment_intent || row.booking.stripe_payment_intent === 'manual_audit_no_charge') return NextResponse.json({ error: 'This audit booking has no real Stripe payment to refund. Ask Talent House Admin to amend the proposal.' }, { status: 400 })
       const stripe = getStripe()
-      const result = await stripe.refunds.create({ payment_intent: row.booking.stripe_payment_intent, amount: Math.round(refund * 100), reason: 'requested_by_customer', metadata: { whc_booking_id: row.booking.id, whc_case_id: row.id } }, { idempotencyKey: `agency-case-agreed-${row.id}-${Math.round(refund * 100)}` })
+      // Same reasoning as the admin dispute path: on a destination charge the
+      // professional was paid when the property paid, so a refund without
+      // reverse_transfer comes out of Talent House's own balance while they keep the
+      // shift money.
+      const viaConnect = bookingPaidByConnect(row.booking)
+      const result = await stripe.refunds.create({
+        payment_intent: row.booking.stripe_payment_intent,
+        amount: Math.round(refund * 100),
+        reason: 'requested_by_customer',
+        ...(viaConnect ? { reverse_transfer: true, refund_application_fee: true } : {}),
+        metadata: { whc_booking_id: row.booking.id, whc_case_id: row.id, whc_payout_model: viaConnect ? 'stripe_connect' : 'manual' },
+      }, { idempotencyKey: `agency-case-agreed-${row.id}-${Math.round(refund * 100)}` })
       refundId = result.id
     }
 

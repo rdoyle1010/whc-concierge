@@ -17,20 +17,26 @@ export default function AdminJobsPage() {
   async function load() {
     try {
       const res = await fetch('/api/admin/listings?kind=jobs')
-      const j = res.ok ? await res.json() : { rows: [] }
-      setRows(j.rows || [])
-    } catch { /* empty */ }
+      const j = await res.json().catch(() => ({}))
+      if (!res.ok) { setError(j.error || 'Could not load job listings.'); setRows([]) }
+      else setRows(j.rows || [])
+    } catch { setError('Could not load job listings.') }
     setLoading(false)
   }
   useEffect(() => { load() }, [])
 
   async function toggleLive(id: string) {
     setError('')
+    const row = rows.find(r => r.id === id)
+    // Relisting a filled role must be an explicit, acknowledged act - the API
+    // refuses it without confirmReopenFilled.
+    const reopeningFilled = Boolean(row && !row.is_live && row.status === 'filled')
+    if (reopeningFilled && !window.confirm('This role was filled through a completed hire. Are you sure you want to relist it? Consider asking the employer to repost the role instead.')) return
     setBusyId(id)
     try {
       const res = await fetch('/api/admin/listings', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'job_toggle_live', id }),
+        body: JSON.stringify({ action: 'job_toggle_live', id, ...(reopeningFilled ? { confirmReopenFilled: true } : {}) }),
       })
       const j = await res.json()
       if (!res.ok) { setError(j.error || 'Could not update.'); return }
@@ -47,22 +53,26 @@ export default function AdminJobsPage() {
 
   return (
     <DashboardShell role="admin" userName="Admin">
-      <h1 className="text-2xl font-serif font-bold text-ink mb-6">Job Listings</h1>
-      {error && <div className="bg-red-50 text-red-600 text-sm px-4 py-3 rounded-lg mb-6">{error}</div>}
+      <div className="mb-7">
+        <p className="dashboard-eyebrow">Platform</p>
+        <h1 className="dashboard-title">Job Listings</h1>
+        <p className="dashboard-intro">Every job listing on the platform. Pause anything inappropriate instantly, and relist when resolved.</p>
+      </div>
+      {error && <div className="bg-red-50 text-red-600 text-sm px-4 py-3 mb-6 border border-red-100">{error}</div>}
 
       <div className="flex space-x-2 mb-6">
         {['all', 'live', 'paused', 'pending_payment'].map(f => (
           <button key={f} onClick={() => setFilter(f)}
-            className={`px-4 py-2 text-sm font-medium rounded-xl transition-colors capitalize ${filter === f ? 'bg-ink text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}>
+            className={`px-4 py-2 text-sm font-medium rounded-xl transition-colors capitalize ${filter === f ? 'bg-ink text-white' : 'bg-gray-100 text-secondary hover:bg-gray-200'}`}>
             {f.replace('_', ' ')} {f !== 'all' && `(${rows.filter(r => f === 'live' ? r.is_live : f === 'paused' ? (!r.is_live && r.status !== 'pending_payment') : r.status === 'pending_payment').length})`}
           </button>
         ))}
       </div>
 
       {loading ? (
-        <div className="flex items-center justify-center h-64"><div className="animate-spin w-8 h-8 border-2 border-gold border-t-transparent rounded-full" /></div>
+        <div className="flex items-center justify-center h-64"><div className="animate-spin w-8 h-8 border-2 border-accent border-t-transparent rounded-full" /></div>
       ) : filtered.length === 0 ? (
-        <div className="dashboard-card text-center py-16 text-gray-400">
+        <div className="dashboard-card text-center py-16 text-muted">
           <Briefcase size={48} className="mx-auto mb-4 opacity-30" />
           <p>No job listings{filter !== 'all' ? ' in this state' : ' yet'}.</p>
         </div>
@@ -70,7 +80,7 @@ export default function AdminJobsPage() {
         <div className="dashboard-card overflow-x-auto">
           <table className="w-full text-left text-[13px]">
             <thead>
-              <tr className="text-[11px] uppercase tracking-wide text-gray-400 border-b border-border">
+              <tr className="text-[11px] uppercase tracking-wide text-muted border-b border-border">
                 <th className="py-2 pr-4">Role</th>
                 <th className="py-2 pr-4">Property</th>
                 <th className="py-2 pr-4">Tier</th>
@@ -89,7 +99,7 @@ export default function AdminJobsPage() {
                   <td className="py-2.5 pr-4 whitespace-nowrap">{j.posted_date ? new Date(j.posted_date).toLocaleDateString('en-GB') : '-'}</td>
                   <td className="py-2.5 pr-4 whitespace-nowrap">{j.expires_at ? new Date(j.expires_at).toLocaleDateString('en-GB') : '-'}</td>
                   <td className="py-2.5 pr-4">
-                    <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${j.is_live ? 'bg-green-50 text-green-700' : j.status === 'pending_payment' ? 'bg-amber-50 text-amber-700' : 'bg-gray-100 text-gray-500'}`}>
+                    <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${j.is_live ? 'bg-green-50 text-green-700' : j.status === 'pending_payment' ? 'bg-amber-50 text-amber-700' : 'bg-gray-100 text-secondary'}`}>
                       {j.is_live ? 'live' : (j.status || 'paused')}
                     </span>
                   </td>

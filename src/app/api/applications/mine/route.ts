@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { createServerSupabaseClient } from '@/lib/supabase/server'
+import { getRequestUser } from '@/lib/request-user'
 
 const DEFAULT_PER_PAGE = 25
 const MAX_PER_PAGE = 100
@@ -9,8 +9,10 @@ const APPLICATION_SELECT = `id,status,match_score,cover_note,cover_letter,create
 const CANDIDATE_MATCH_FIELDS = 'id,role_level,has_insurance,treatment_skills,services_offered,product_houses,qualifications,experience_years,years_experience,systems_experience,latitude,longitude,travel_radius_miles,max_commute,transport_method,location_preferences,shift_preferences,needs_accommodation,profile_completion_score,profile_completion_pct,review_score'
 
 export async function GET(req: NextRequest) {
-  const supabase = await createServerSupabaseClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  // getRequestUser accepts both browser cookies and the mobile app's Bearer
+  // tokens, and enforces two-step verification on both - this route was
+  // cookie-only, which left the app's Applications tab unable to load.
+  const user = await getRequestUser(req)
   if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
 
   const pageParam = Number(req.nextUrl.searchParams.get('page'))
@@ -30,18 +32,37 @@ export async function GET(req: NextRequest) {
   let query = admin.from('applications').select(APPLICATION_SELECT, { count: 'exact' })
     .eq('candidate_id', candidate.id)
     .is('archived_at', null)
+    // A completed hire belongs on the Hired page, not among active
+    // applications - even if the employer has cleared their own archive flag.
+    .is('hired_at', null)
     .order('created_at', { ascending: false })
     .range(from, to)
-  if (status !== 'all') query = query.eq('status', status)
+
+  // My Applications is for applications that have actually been sent.
+  // Drafts belong to the Apply/Review & Send journey and must not appear as
+  // submitted recruitment activity simply because a role was matched or opened.
+  if (status === 'all') query = query.neq('status', 'draft')
+  else query = query.eq('status', status)
 
   const [{ data: rows, error, count }, { data: statusRows, error: countsError }] = await Promise.all([
     query,
+    // Include drafts here: the counts drive the filter chips, and the draft chip
+    // is the talent's only route back to an unsent "Review & Send" application.
     admin.from('applications').select('status').eq('candidate_id', candidate.id).is('archived_at', null),
   ])
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   if (countsError) return NextResponse.json({ error: countsError.message }, { status: 500 })
 
+  // Distinguish "the employer did not progress you" from "you declined their
+  // offer" - both live as status 'rejected', but must read differently.
+  const rowIds = (rows || []).map((application: any) => application.id)
+  const { data: offerRows } = rowIds.length
+    ? await admin.from('application_offers').select('application_id,status').in('application_id', rowIds)
+    : { data: [] as any[] }
+  const declinedOffers = new Set((offerRows || []).filter((offer: any) => offer.status === 'declined').map((offer: any) => offer.application_id))
+
   let applications = (rows || []).map((application: any) => application.job_listings ? ({
+    offer_declined: application.status === 'rejected' && declinedOffers.has(application.id),
     ...application,
     job_listings: {
       ...application.job_listings,
@@ -64,7 +85,8 @@ export async function GET(req: NextRequest) {
   const counts: Record<string, number> = { all: 0 }
   for (const row of statusRows || []) {
     counts[row.status] = (counts[row.status] || 0) + 1
-    counts.all += 1
+    // "All" means applications actually sent; drafts keep their own count only.
+    if (row.status !== 'draft') counts.all += 1
   }
   const total = count || 0
 

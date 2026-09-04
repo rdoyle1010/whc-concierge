@@ -38,7 +38,7 @@ const SEED_JOBS = [
     insurance_required: false, is_agency_role: false,
   },
   {
-    title: 'Spa Therapist — Agency Cover',
+    title: 'Spa Therapist - Agency Cover',
     description: 'We are seeking experienced spa therapists for agency cover shifts at our Cheshire property. Flexible shifts available including weekends. Must hold valid professional insurance and be ESPA trained or willing to complete brand induction.',
     location: 'Knutsford, Cheshire',
     location_postcode: 'WA16 0SU',
@@ -99,7 +99,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ message: 'Seed data already exists', count })
     }
 
-    // Need an employer to attach jobs to — create Fairmont if not exists
+    // Need an employer to attach jobs to - create Fairmont if not exists
     let employerId: string | null = null
     const { data: existing } = await supabase.from('employer_profiles').select('id').eq('company_name', 'Fairmont').single()
 
@@ -115,7 +115,7 @@ export async function POST(req: NextRequest) {
         product_houses_used: ['ESPA', 'Elemis', 'Comfort Zone'],
         systems_used: ['Spa Booker'],
         approval_status: 'approved',
-        description: 'Fairmont is a luxury hotel and spa in the heart of the Cheshire countryside.',
+        property_description: 'Fairmont is a luxury hotel and spa in the heart of the Cheshire countryside.',
       }).select('id').single()
       employerId = newEmp?.id || null
     }
@@ -124,7 +124,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Could not create employer' }, { status: 500 })
     }
 
-    // Insert jobs — use real DB column names only
+    // Insert jobs - use real DB column names only
     const jobs = SEED_JOBS.map(j => ({
       employer_id: employerId,
       job_title: j.title,

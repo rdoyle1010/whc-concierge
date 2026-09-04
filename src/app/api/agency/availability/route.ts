@@ -63,14 +63,18 @@ export async function POST(req: NextRequest) {
       if (!validShiftWindow(date, startTime, endTime)) {
         return NextResponse.json({ error: 'Choose a valid start and finish time' }, { status: 400 })
       }
-      const { error: windowError } = await admin.from('agency_availability_windows').upsert({
+      // Replace, never accumulate: editing a day's window must withdraw the
+      // old one, otherwise a narrowed window leaves the wider one bookable.
+      const { error: clearError } = await admin.from('agency_availability_windows').delete().eq('candidate_id', cand.id).eq('date', date)
+      if (clearError) return NextResponse.json({ error: clearError.message }, { status: 500 })
+      const { error: windowError } = await admin.from('agency_availability_windows').insert({
         candidate_id: cand.id,
         date,
         start_time: startTime,
         end_time: endTime,
         timezone: 'Europe/London',
         updated_at: new Date().toISOString(),
-      }, { onConflict: 'candidate_id,date,start_time,end_time' })
+      })
       if (windowError) return NextResponse.json({ error: windowError.message }, { status: 500 })
     } else {
       const { error: windowError } = await admin.from('agency_availability_windows').delete().eq('candidate_id', cand.id).eq('date', date)

@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { getViewer } from '@/lib/viewer'
 import { Award, Plus, Save, Trash2 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 
@@ -15,11 +16,14 @@ export default function ProfileAwardsEditor({ kind }: { kind: Kind }) {
   const [awards, setAwards] = useState<AwardItem[]>([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
-  const [message, setMessage] = useState('')
+  // The outcome travels with the text. Deciding the colour by searching the
+  // message for the word "success" meant a reworded message silently turned
+  // every save red.
+  const [notice, setNotice] = useState<{ kind: 'success' | 'error'; text: string } | null>(null)
 
   useEffect(() => {
     ;(async () => {
-      const { data: { user } } = await supabase.auth.getUser()
+      const user = await getViewer()
       if (!user) { setLoading(false); return }
       const table = kind === 'talent' ? 'candidate_profiles' : 'employer_profiles'
       const { data } = await supabase.from(table).select('id, awards').eq('user_id', user.id).maybeSingle()
@@ -45,12 +49,12 @@ export default function ProfileAwardsEditor({ kind }: { kind: Kind }) {
         url: String(award.url || '').trim().slice(0, 500),
       }))
       .filter(award => award.name)
-    setSaving(true); setMessage('')
+    setSaving(true); setNotice(null)
     const table = kind === 'talent' ? 'candidate_profiles' : 'employer_profiles'
     const { error } = await supabase.from(table).update({ awards: clean }).eq('id', profileId)
     setSaving(false)
-    if (error) setMessage(error.message)
-    else { setAwards(clean); setMessage('Awards saved successfully.') }
+    if (error) setNotice({ kind: 'error', text: error.message })
+    else { setAwards(clean); setNotice({ kind: 'success', text: 'Awards saved.' }) }
   }
 
   if (loading) return <div className="dashboard-card">Loading awards…</div>
@@ -66,7 +70,7 @@ export default function ProfileAwardsEditor({ kind }: { kind: Kind }) {
 
     <div className="mt-5 space-y-3">
       {awards.length === 0 ? <div className="rounded-xl border border-dashed border-border bg-surface/50 p-5 text-[12px] text-muted">No awards added yet.</div> : awards.map((award, index) => <div key={index} className="rounded-xl border border-border p-4">
-        <div className="mb-3 flex items-center justify-between"><p className="text-[11px] font-semibold uppercase tracking-[.12em] text-muted">Award {index + 1}</p><button type="button" onClick={() => setAwards(current => current.filter((_, i) => i !== index))} className="text-red-500"><Trash2 size={14}/></button></div>
+        <div className="mb-3 flex items-center justify-between"><p className="text-[11px] font-semibold uppercase tracking-[.12em] text-muted">Award {index + 1}</p><button type="button" onClick={() => setAwards(current => current.filter((_, i) => i !== index))} aria-label="Remove award" className="p-2 -m-2 text-red-500"><Trash2 size={14}/></button></div>
         <div className="grid gap-3 sm:grid-cols-2">
           <label className="text-[11px] text-muted">Award name<input className="input-field mt-1" value={award.name || ''} onChange={e => update(index, 'name', e.target.value)} placeholder="e.g. Best Hotel Spa UK"/></label>
           <label className="text-[11px] text-muted">Awarding body<input className="input-field mt-1" value={award.issuer || ''} onChange={e => update(index, 'issuer', e.target.value)} placeholder="e.g. Good Spa Guide"/></label>
@@ -76,7 +80,7 @@ export default function ProfileAwardsEditor({ kind }: { kind: Kind }) {
       </div>)}
     </div>
 
-    {message && <p className={`mt-4 text-[12px] ${message.includes('success') ? 'text-emerald-700' : 'text-red-600'}`}>{message}</p>}
+    {notice && <p role={notice.kind === 'error' ? 'alert' : 'status'} className={`mt-4 text-[12px] ${notice.kind === 'success' ? 'text-emerald-700' : 'text-red-600'}`}>{notice.text}</p>}
     <button type="button" onClick={save} disabled={saving} className="btn-primary mt-5 inline-flex items-center gap-2 disabled:opacity-50"><Save size={14}/>{saving ? 'Saving…' : 'Save awards'}</button>
   </div>
 }

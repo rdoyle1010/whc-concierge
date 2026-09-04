@@ -2,11 +2,49 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
+import { getRequestUser } from '@/lib/request-user'
 import { createNotification } from '@/lib/notifications'
-import { AGENCY_PLATFORM_FEE_PCT } from '@/lib/constants'
+import { AGENCY_PLATFORM_FEE_PCT, agencyFeePctForShift, agencyFeePctForShiftPlus } from '@/lib/constants'
+import { agencyFeeBpsForShift, agencyShiftMoney } from '@/lib/agency-money'
+
+// Agency Plus members pay a reduced base fee. Judged at booking time so the
+// subscription state on the day of booking decides the fee that is stored.
+async function employerHasAgencyPlus(admin: any, employerId: string | null | undefined): Promise<boolean> {
+  try {
+    if (!employerId) return false
+    const { data } = await admin.from('employer_profiles')
+      .select('agency_plus_active, agency_plus_until').eq('id', employerId).maybeSingle()
+    return Boolean(data?.agency_plus_active) && (!data?.agency_plus_until || new Date(data.agency_plus_until).getTime() > Date.now())
+  } catch {
+    return false
+  }
+}
+
+export async function feePctForEmployerShift(admin: any, employerId: string | null | undefined, shiftDate: string | null | undefined): Promise<number> {
+  const plus = await employerHasAgencyPlus(admin, employerId)
+  return agencyFeePctForShiftPlus(shiftDate, todayInLondon(), plus)
+}
+
+// The fee in basis points, which is what the money maths actually uses.
+// Percentages as floats produced 0.10 + 0.05 = 0.15000000000000002, and that
+// tipped Math.ceil into an extra whole pound on one gross in twenty - always
+// against an Agency Plus member, who is paying £99 a month precisely to be
+// charged less.
+export async function feeBpsForEmployerShift(admin: any, employerId: string | null | undefined, shiftDate: string | null | undefined): Promise<number> {
+  const plus = await employerHasAgencyPlus(admin, employerId)
+  return agencyFeeBpsForShift(shiftDate, todayInLondon(), plus)
+}
+
+// The stored whole-pound fee for a shift, computed in integers end to end.
+export async function shiftFeePounds(admin: any, employerId: string | null | undefined, shiftDate: string | null | undefined, rate: number, hours: number | null | undefined): Promise<number> {
+  const feeBps = await feeBpsForEmployerShift(admin, employerId, shiftDate)
+  return agencyShiftMoney({ ratePounds: rate, hours, feeBps }).feePounds
+}
 import { sendSms } from '@/lib/sms'
 import { sendAgencyOfferEmail, sendReviewRequestEmail, sendInsuranceExpiryEmail, sendAgencyUpdateEmail, sendFeaturedExpiringEmail } from '@/lib/emails'
+import { emailAllowed, smsAllowed } from '@/lib/notification-prefs'
 import { profileDistanceMiles } from '@/lib/geo'
+import { productAvailableIn, unavailableReason } from '@/lib/countries'
 import { shiftHours, validShiftWindow, windowCovers, windowsOverlap } from '@/lib/agency-time'
 
 // Offers expire so urgent cover doesn't sit unanswered while the property
@@ -31,11 +69,21 @@ function isExpired(booking: any): boolean {
 
 // Agency offer / counter-offer flow.
 // All writes use the service-role client because client-side RLS on
-// agency_bookings is unreliable. The caller is authenticated via cookies.
+// agency_bookings is unreliable. The caller is authenticated by cookie session
+// in the browser, or by Bearer access token from the mobile app.
 
 const OPEN_STATUSES = ['pending', 'countered']
 
-async function getAuthedUser() {
+// The browser authenticates with a cookie session. The mobile app has no
+// cookie jar and sends the same Supabase access token as a Bearer header, so
+// when one is present the shared request-user helper reads it - and enforces
+// two-step verification on it exactly as it does everywhere else. Cookie
+// callers keep the behaviour they have always had.
+async function getAuthedUser(req?: NextRequest) {
+  const authorization = req?.headers.get('authorization') || ''
+  if (authorization.startsWith('Bearer ')) {
+    return { data: { user: await getRequestUser(req as NextRequest) } }
+  }
   const cookieStore = await cookies()
   const supabaseAuth = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -114,9 +162,13 @@ async function notifyOtherParty(
   } catch { /* non-fatal */ }
   if (sendEmailToo) {
     try {
-      const { data: u } = await admin.auth.admin.getUserById(recipientUserId)
-      const em = u?.user?.email
-      if (em) await sendAgencyUpdateEmail(em, 'there', title, body, link)
+      // Preference-gated ('booking_updates'): agency booking update emails
+      // honour the recipient's opt-out; bell + inbox above always fire.
+      if (await emailAllowed(admin, recipientUserId, 'booking_updates')) {
+        const { data: u } = await admin.auth.admin.getUserById(recipientUserId)
+        const em = u?.user?.email
+        if (em) await sendAgencyUpdateEmail(em, 'there', title, body, link)
+      }
     } catch { /* non-fatal */ }
   }
 }
@@ -125,7 +177,7 @@ async function notifyOtherParty(
 // email + SMS, all awaited (fire-and-forget dies on serverless), none fatal.
 async function alertCascadeHolder(
   admin: any,
-  candidate: { user_id?: string | null; full_name?: string | null; phone?: string | null },
+  candidate: { user_id?: string | null; full_name?: string | null; phone?: string | null; sms_opt_in?: boolean | null },
   empName: string,
   empUserId: string,
   b: { shift_date: string; rate: number; hours: number | null; expires_at: string },
@@ -136,7 +188,9 @@ async function alertCascadeHolder(
   await notifyOtherParty(admin, candidate.user_id, empUserId, 'URGENT: shift offer for today', body, '/talent/agency', false)
   try {
     const jobs: Promise<unknown>[] = []
-    if (candidate.user_id) {
+    // Preference-gated ('booking_updates'): the shift-offer email honours the
+    // therapist's opt-out; bell + inbox above always fire. Fail-open.
+    if (candidate.user_id && await emailAllowed(admin, candidate.user_id, 'booking_updates')) {
       const { data: candUser } = await admin.auth.admin.getUserById(candidate.user_id)
       const candEmail = candUser?.user?.email
       if (candEmail) {
@@ -145,10 +199,13 @@ async function alertCascadeHolder(
         }))
       }
     }
-    jobs.push(sendSms(
-      candidate.phone,
-      `WHC Concierge: ${empName} needs cover TODAY - £${b.rate}/hr${b.hours ? ` for ${b.hours}h` : ''}. You have ${mins} mins before this offer moves on. Accept: https://talent.wellnesshousecollective.co.uk/talent/agency`,
-    ))
+    // SMS is consent-gated: only texts therapists with sms_opt_in and a phone.
+    if (smsAllowed(candidate)) {
+      jobs.push(sendSms(
+        candidate.phone,
+        `Talent House Collective: ${empName} needs cover TODAY - £${b.rate}/hr${b.hours ? ` for ${b.hours}h` : ''}. You have ${mins} mins before this offer moves on. Accept: https://talenthousecollective.co.uk/talent/agency`,
+      ))
+    }
     await Promise.allSettled(jobs)
   } catch (e: any) { console.error('Cascade alert failed:', e?.message) }
 }
@@ -197,11 +254,11 @@ async function advanceCascade(admin: any, booking: any): Promise<any | null> {
   const rate = parseInt(String(entry.rate), 10) || booking.rate
   const deadline = new Date(Date.now() + CASCADE_WINDOW_MS).toISOString()
 
-  const { data: updated } = await admin.from('agency_bookings')
+  const { data: updated, error: advanceError } = await admin.from('agency_bookings')
     .update({
       candidate_id: entry.id,
       rate,
-      platform_fee: Math.ceil(rate * effHours * AGENCY_PLATFORM_FEE_PCT),
+      platform_fee: await shiftFeePounds(admin, booking.employer_id, booking.shift_date, rate, effHours),
       status: 'pending',
       cascade_index: next,
       cascade_deadline: deadline,
@@ -212,10 +269,17 @@ async function advanceCascade(admin: any, booking: any): Promise<any | null> {
     .in('status', OPEN_STATUSES)
     .select('*')
     .maybeSingle()
+  if (advanceError) {
+    // A rejected update (e.g. an overlap exclusion constraint on the next
+    // therapist) must not strand the request mid-queue: log it and end the
+    // cascade so the property is told cover was not filled.
+    console.error('Cascade advance failed:', advanceError.message)
+    return giveUp('the next offer could not be issued')
+  }
   if (!updated) return null // someone else advanced or the offer closed - do not notify
 
   const { data: nextCand } = await admin.from('candidate_profiles')
-    .select('id, full_name, user_id, phone').eq('id', entry.id).maybeSingle()
+    .select('id, full_name, user_id, phone, sms_opt_in').eq('id', entry.id).maybeSingle()
   if (nextCand && bookingEmp?.user_id) {
     await alertCascadeHolder(admin, nextCand, empName, bookingEmp.user_id, {
       shift_date: booking.shift_date, rate, hours, expires_at: deadline,
@@ -258,7 +322,7 @@ async function maintenanceSweep(admin: any) {
   try {
     const { data: doneShifts } = await admin.from('agency_bookings')
       .select('id, candidate_id, employer_id, shift_date, review_requested')
-      .eq('status', 'confirmed')
+      .in('status', ['confirmed', 'completed'])
       .not('paid_at', 'is', null)
       .lt('shift_date', todayLondon)
       .or('review_requested.is.null,review_requested.eq.false')
@@ -278,27 +342,33 @@ async function maintenanceSweep(admin: any) {
       const empName = employerDisplayName(e)
       const candName = c?.full_name || 'the therapist'
       const jobs: Promise<unknown>[] = []
+      // Review-nudge emails are preference-gated ('booking_updates') - they
+      // follow a booking; the in-app nudges are always created.
       if (c?.user_id) {
         jobs.push(createNotification(c.user_id, 'general', 'How was your shift?',
           `How was your shift at ${empName} on ${b.shift_date}? Leave a review - properties with reviews book faster, and so do therapists.`, '/talent/agency'))
-        jobs.push(admin.auth.admin.getUserById(c.user_id).then(({ data }: any) => {
-          const email = data?.user?.email
-          return email ? sendReviewRequestEmail(email, c.full_name || 'there', empName) : null
-        }))
+        jobs.push(emailAllowed(admin, c.user_id, 'booking_updates').then(allowed => allowed
+          ? admin.auth.admin.getUserById(c.user_id).then(({ data }: any) => {
+              const email = data?.user?.email
+              return email ? sendReviewRequestEmail(email, c.full_name || 'there', empName) : null
+            })
+          : null))
       }
       if (e?.user_id) {
         jobs.push(createNotification(e.user_id, 'general', 'How did the shift go?',
           `How did ${candName}'s shift on ${b.shift_date} go? Leave a review to help other properties - and keep your own score strong.`, '/employer/agency'))
-        jobs.push(admin.auth.admin.getUserById(e.user_id).then(({ data }: any) => {
-          const email = data?.user?.email
-          return email ? sendReviewRequestEmail(email, empName, candName) : null
-        }))
+        jobs.push(emailAllowed(admin, e.user_id, 'booking_updates').then(allowed => allowed
+          ? admin.auth.admin.getUserById(e.user_id).then(({ data }: any) => {
+              const email = data?.user?.email
+              return email ? sendReviewRequestEmail(email, empName, candName) : null
+            })
+          : null))
       }
       await Promise.allSettled(jobs)
     }
   } catch { /* review nudges are never fatal */ }
 
-  // ── Insurance expiry chasing (WHC Verified) ──
+  // ── Insurance expiry chasing (Talent House Verified) ──
   try {
     // Expired → badge paused, therapist told how to get it back
     const { data: lapsed } = await admin.from('candidate_profiles')
@@ -313,7 +383,7 @@ async function maintenanceSweep(admin: any) {
         .eq('id', c.id).eq('whc_verified', true)
       if (c.user_id) {
         try {
-          await createNotification(c.user_id, 'general', 'WHC Verified badge paused',
+          await createNotification(c.user_id, 'general', 'Talent House Verified badge paused',
             `Your insurance expired on ${c.insurance_expiry_date} so your badge is paused. Upload your renewal from the Verification page and it comes straight back after review.`, '/talent/verification')
           const { data: u } = await admin.auth.admin.getUserById(c.user_id)
           if (u?.user?.email) await sendInsuranceExpiryEmail(u.user.email, c.full_name || 'there', c.insurance_expiry_date, true)
@@ -335,7 +405,7 @@ async function maintenanceSweep(admin: any) {
       if (c.user_id) {
         try {
           await createNotification(c.user_id, 'general', 'Your insurance expires soon',
-            `Your insurance expires on ${c.insurance_expiry_date}. Upload your renewal from the Verification page and your WHC Verified badge carries straight on.`, '/talent/verification')
+            `Your insurance expires on ${c.insurance_expiry_date}. Upload your renewal from the Verification page and your Talent House Verified badge carries straight on.`, '/talent/verification')
           const { data: u } = await admin.auth.admin.getUserById(c.user_id)
           if (u?.user?.email) await sendInsuranceExpiryEmail(u.user.email, c.full_name || 'there', c.insurance_expiry_date, false)
         } catch { /* non-fatal */ }
@@ -468,7 +538,7 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   try {
-    const { data: { user } } = await getAuthedUser()
+    const { data: { user } } = await getAuthedUser(req)
     if (!user) return NextResponse.json({ error: 'Please log in' }, { status: 401 })
 
     const body = await req.json()
@@ -484,10 +554,18 @@ export async function POST(req: NextRequest) {
     ])
 
     // ── create: employer sends an offer to a candidate ──
-    // Rates are HOURLY. The therapist receives rate × hours in full; WHC's
+    // Rates are HOURLY. The therapist receives rate × hours in full; Talent House's
     // platform fee is calculated on top and payable by the property.
     if (action === 'create') {
       if (!emp) return NextResponse.json({ error: 'Only employers can make offers' }, { status: 403 })
+      // Agency Cover is the one product line with a border on it. Supplying
+      // somebody into a shift makes Talent House an employment business,
+      // licensed country by country, so a property outside the UK cannot book
+      // cover however much it would like to. Roles, Residency and Consultancy
+      // are open to it.
+      if (!productAvailableIn('agency', emp.country_code || emp.country)) {
+        return NextResponse.json({ error: unavailableReason('agency') }, { status: 403 })
+      }
       // Agency cover is a Preferred Employer benefit (£150/year registration)
       if (!emp.preferred_employer) {
         return NextResponse.json({ error: 'Agency bookings are for registered Preferred Employers. Register from your Agency Bookings page (£150/year) to book cover.' }, { status: 403 })
@@ -507,7 +585,7 @@ export async function POST(req: NextRequest) {
 
       const { data: targetCand } = await admin
         .from('candidate_profiles')
-        .select('id, full_name, user_id, phone, approval_status, profile_visible, agency_available, agency_listed_until, latitude, longitude, travel_radius_miles')
+        .select('id, full_name, user_id, phone, sms_opt_in, approval_status, profile_visible, agency_available, agency_listed_until, latitude, longitude, travel_radius_miles, country_code, location_country')
         .eq('id', body.candidateId)
         .maybeSingle()
       if (!targetCand) return NextResponse.json({ error: 'Candidate not found' }, { status: 404 })
@@ -528,7 +606,7 @@ export async function POST(req: NextRequest) {
 
       const hours = shiftHours(shiftStartTime, shiftEndTime) || 0
       const effectiveHours = hours || 8
-      const platformFee = Math.ceil(rate * effectiveHours * AGENCY_PLATFORM_FEE_PCT)
+      const platformFee = await shiftFeePounds(admin, emp.id, String(body.shiftDate), rate, effectiveHours)
 
       // Same-day offers are URGENT (sickness cover): tighter expiry + SMS.
       const urgent = String(body.shiftDate) === todayInLondon()
@@ -606,7 +684,9 @@ export async function POST(req: NextRequest) {
       // on serverless. None of these may fail the offer itself.
       try {
         const jobs: Promise<unknown>[] = []
-        if (targetCand.user_id) {
+        // Preference-gated ('booking_updates'): the offer email honours the
+        // therapist's opt-out; bell + inbox above always fire. Fail-open.
+        if (targetCand.user_id && await emailAllowed(admin, targetCand.user_id, 'booking_updates')) {
           const { data: candUser } = await admin.auth.admin.getUserById(targetCand.user_id)
           const candEmail = candUser?.user?.email
           if (candEmail) {
@@ -620,10 +700,11 @@ export async function POST(req: NextRequest) {
             }))
           }
         }
-        if (urgent) {
+        // SMS is consent-gated: sms_opt_in plus a phone number on file.
+        if (urgent && smsAllowed(targetCand)) {
           jobs.push(sendSms(
             targetCand.phone,
-            `WHC Concierge: ${empName} needs cover TODAY - £${rate}/hr${hours ? ` for ${hours}h` : ''}. Offer expires in 4 hrs. Accept or counter: https://talent.wellnesshousecollective.co.uk/talent/agency`,
+            `Talent House Collective: ${empName} needs cover TODAY - £${rate}/hr${hours ? ` for ${hours}h` : ''}. Offer expires in 4 hrs. Accept or counter: https://talenthousecollective.co.uk/talent/agency`,
           ))
         }
         await Promise.allSettled(jobs)
@@ -634,7 +715,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true, booking, created: createdCount })
     }
 
-    // ── urgent_cascade: the property asks for cover and WHC finds someone ──
+    // ── urgent_cascade: the property asks for cover and Talent House finds someone ──
     // Builds a distance-sorted queue of available therapists and offers the
     // shift to them one at a time (30-minute windows) until someone accepts.
     if (action === 'urgent_cascade') {
@@ -655,7 +736,7 @@ export async function POST(req: NextRequest) {
 
       // Everyone on the register with a rate set (and within the cap, if any)
       const { data: pool } = await admin.from('candidate_profiles')
-        .select('id, full_name, user_id, phone, hourly_rate, latitude, longitude, travel_radius_miles, review_score, approval_status, profile_visible, agency_listed_until')
+        .select('id, full_name, user_id, phone, sms_opt_in, hourly_rate, latitude, longitude, travel_radius_miles, review_score, approval_status, profile_visible, agency_listed_until')
         .eq('agency_available', true)
         .not('hourly_rate', 'is', null)
       let eligible = (pool || []).filter((c: any) => c.hourly_rate > 0
@@ -715,41 +796,70 @@ export async function POST(req: NextRequest) {
           : `No available therapists found for ${shiftDate}. Try the agency directory to make a direct offer.` }, { status: 400 })
       }
 
-      const queue = ranked.map(({ c, dist }: any) => ({
-        id: c.id,
-        name: c.full_name || 'Therapist',
-        rate: c.hourly_rate,
-        distance: dist != null ? Math.round(dist * 10) / 10 : null,
-      }))
-      const first = ranked[0].c
+      // "I need three therapists next Saturday": one request can ask for up
+      // to five people. The ranked pool is dealt round-robin into that many
+      // independent cascades, so no therapist is queued for two of the
+      // group's slots and each slot hunts in parallel.
+      const requestedCount = Math.min(5, Math.max(1, parseInt(String(body.count), 10) || 1))
+      const count = Math.min(requestedCount, ranked.length)
+      const feePct = await feePctForEmployerShift(admin, emp.id, shiftDate)
       const deadline = new Date(Date.now() + CASCADE_WINDOW_MS).toISOString()
+      const groupId = count > 1 ? `urgent-${Date.now()}-${Math.random().toString(36).slice(2, 8)}` : null
 
-      const row: Record<string, any> = {
-        candidate_id: first.id,
-        employer_id: emp.id,
-        shift_date: shiftDate,
-        shift_start_time: shiftStartTime,
-        shift_end_time: shiftEndTime,
-        shift_type: body.shiftType || null,
-        hours: hours && hours > 0 ? hours : null,
-        rate: first.hourly_rate,
-        platform_fee: Math.ceil(first.hourly_rate * effHours * AGENCY_PLATFORM_FEE_PCT),
-        status: 'pending',
-        urgent: true,
-        expires_at: deadline,
-        cascade_queue: queue,
-        cascade_index: 0,
-        cascade_deadline: deadline,
-        cascade_notes: String(body.notes || '').slice(0, 500) || null,
+      const created: Array<{ first_name: string; queue_size: number }> = []
+      let firstBooking: any = null
+      for (let lane = 0; lane < count; lane++) {
+        const laneRanked = ranked.filter((_: any, index: number) => index % count === lane)
+        const queue = laneRanked.map(({ c, dist }: any) => ({
+          id: c.id,
+          name: c.full_name || 'Therapist',
+          rate: c.hourly_rate,
+          distance: dist != null ? Math.round(dist * 10) / 10 : null,
+        }))
+        const first = laneRanked[0].c
+
+        const row: Record<string, any> = {
+          candidate_id: first.id,
+          employer_id: emp.id,
+          shift_date: shiftDate,
+          shift_start_time: shiftStartTime,
+          shift_end_time: shiftEndTime,
+          shift_type: body.shiftType || null,
+          hours: hours && hours > 0 ? hours : null,
+          rate: first.hourly_rate,
+          platform_fee: Math.ceil(first.hourly_rate * effHours * feePct),
+          status: 'pending',
+          urgent: true,
+          expires_at: deadline,
+          cascade_queue: queue,
+          cascade_index: 0,
+          cascade_deadline: deadline,
+          cascade_notes: String(body.notes || '').slice(0, 500) || null,
+          ...(groupId ? { booking_group: groupId } : {}),
+        }
+        const { data: booking, error } = await insertBookingDefensively(admin, row)
+        if (error) {
+          if (created.length === 0) return NextResponse.json({ error: error.message }, { status: 500 })
+          break
+        }
+        if (!firstBooking) firstBooking = booking
+
+        await alertCascadeHolder(admin, first, employerDisplayName(emp), user.id, {
+          shift_date: shiftDate, rate: first.hourly_rate, hours, expires_at: deadline,
+        })
+        created.push({ first_name: queue[0].name, queue_size: queue.length })
       }
-      const { data: booking, error } = await insertBookingDefensively(admin, row)
-      if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-      await alertCascadeHolder(admin, first, employerDisplayName(emp), user.id, {
-        shift_date: shiftDate, rate: first.hourly_rate, hours, expires_at: deadline,
+      return NextResponse.json({
+        success: true,
+        booking: firstBooking,
+        count: created.length,
+        requested: requestedCount,
+        shortfall: Math.max(0, requestedCount - created.length),
+        offers: created,
+        queue_size: created[0]?.queue_size || 0,
+        first_name: created[0]?.first_name || 'Therapist',
       })
-
-      return NextResponse.json({ success: true, booking, queue_size: queue.length, first_name: queue[0].name })
     }
 
     // ── counter / accept / decline all operate on an existing booking ──
@@ -775,7 +885,7 @@ export async function POST(req: NextRequest) {
     const shiftDate = booking.shift_date || 'the agreed date'
 
     // ── dispute: the property reports a problem with a PAID booking ──
-    // (no-show, left early, quality). Payout freezes until WHC resolves it;
+    // (no-show, left early, quality). Payout freezes until Talent House resolves it;
     // any refund is minus the 10% admin fee, decided case-by-case in Admin.
     if (action === 'dispute') {
       if (!isEmployerParty) {
@@ -785,7 +895,7 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: 'Issues can be reported on paid bookings only.' }, { status: 400 })
       }
       if (booking.dispute_status === 'open') {
-        return NextResponse.json({ error: 'An issue is already open on this booking - WHC is reviewing it.' }, { status: 400 })
+        return NextResponse.json({ error: 'An issue is already open on this booking - Talent House is reviewing it.' }, { status: 400 })
       }
       const reason = String(body.reason || '').trim()
       if (!reason) return NextResponse.json({ error: 'Please describe what happened.' }, { status: 400 })
@@ -805,7 +915,7 @@ export async function POST(req: NextRequest) {
       await notifyOtherParty(
         admin, otherUserId, user.id,
         'Issue reported on a booking',
-        `${actorName} has reported an issue with the shift on ${shiftDate}. Your payout for this booking is on hold while Wellness House Collective reviews it - you'll be notified of the outcome.`,
+        `${actorName} has reported an issue with the shift on ${shiftDate}. Your payout for this booking is on hold while Talent House Collective reviews it - you'll be notified of the outcome.`,
         otherLink,
       )
       return NextResponse.json({ success: true, booking: updated })
@@ -834,7 +944,7 @@ export async function POST(req: NextRequest) {
       await notifyOtherParty(
         admin, otherUserId, user.id,
         'Standing booking accepted',
-        `${actorName} has accepted all ${acceptedRows.length} shifts in your standing booking (weekly from ${booking.shift_date}) at £${booking.rate} per hour. Pay each shift from your Agency Bookings page to confirm it - WHC pays the therapist after each shift.`,
+        `${actorName} has accepted all ${acceptedRows.length} shifts in your standing booking (weekly from ${booking.shift_date}) at £${booking.rate} per hour. Pay each shift from your Agency Bookings page to confirm it - Talent House pays the therapist after each shift.`,
         '/employer/agency',
       )
       return NextResponse.json({ success: true, accepted: acceptedRows.length })
@@ -856,17 +966,20 @@ export async function POST(req: NextRequest) {
     }
 
     if (action === 'counter') {
-      if (!isCandidateParty) {
-        return NextResponse.json({ error: 'Only the candidate can counter an offer' }, { status: 403 })
-      }
+      // Negotiation runs both ways and can go multiple rounds. The status
+      // carries whose turn it is: 'countered' means the ball is with the
+      // property, 'pending' means it is with the professional - so a
+      // property countering back simply returns the offer to 'pending'
+      // at the new rate, and either side can keep going until someone
+      // accepts or declines.
       const rate = parseInt(String(body.rate), 10)
       if (!rate || rate <= 0) return NextResponse.json({ error: 'A valid counter rate is required' }, { status: 400 })
 
       // Recalculate the platform fee against the countered hourly rate.
       // On a cascade offer the counter resets the 30-minute window so the
-      // property gets a fresh clock to accept it before the queue moves on.
-      const counterFee = Math.ceil(rate * (booking.hours && booking.hours > 0 ? booking.hours : 8) * AGENCY_PLATFORM_FEE_PCT)
-      const counterUpdate: Record<string, any> = { rate, platform_fee: counterFee, status: 'countered' }
+      // other side gets a fresh clock before the queue moves on.
+      const counterFee = await shiftFeePounds(admin, booking.employer_id, booking.shift_date, rate, booking.hours)
+      const counterUpdate: Record<string, any> = { rate, platform_fee: counterFee, status: isCandidateParty ? 'countered' : 'pending' }
       if (Array.isArray(booking.cascade_queue)) {
         const fresh = new Date(Date.now() + CASCADE_WINDOW_MS).toISOString()
         counterUpdate.cascade_deadline = fresh
@@ -876,14 +989,16 @@ export async function POST(req: NextRequest) {
         .from('agency_bookings')
         .update(counterUpdate)
         .eq('id', booking.id)
+        .in('status', OPEN_STATUSES)
         .select('*')
-        .single()
+        .maybeSingle()
       if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+      if (!updated) return NextResponse.json({ error: 'This offer is no longer open - it may have just been actioned elsewhere.' }, { status: 409 })
 
       await notifyOtherParty(
         admin, otherUserId, user.id,
         'Counter-offer received',
-        `${actorName} has countered your agency offer for ${shiftDate} with a rate of £${rate} per hour. You can accept or decline from their profile page.`,
+        `${actorName} has come back at £${rate} per hour for the ${shiftDate} shift. Accept, counter again or decline from your Agency page.`,
         otherLink,
       )
       return NextResponse.json({ success: true, booking: updated })
@@ -903,10 +1018,10 @@ export async function POST(req: NextRequest) {
       if (!updated) return NextResponse.json({ error: 'This offer is no longer open - it may have just been actioned elsewhere.' }, { status: 409 })
 
       const effHours = booking.hours && booking.hours > 0 ? booking.hours : 8
-      const totalDue = booking.rate * effHours + (updated.platform_fee || Math.ceil(booking.rate * effHours * AGENCY_PLATFORM_FEE_PCT))
+      const totalDue = agencyShiftMoney({ ratePounds: booking.rate, hours: effHours, storedFeePounds: updated.platform_fee }).totalPounds
       const acceptBody = isCandidateParty
-        // Candidate accepted → the property now pays WHC in full to confirm
-        ? `${actorName} has accepted the agency offer for ${shiftDate} at £${booking.rate} per hour. To confirm the booking, pay £${totalDue} (rate plus the 10% WHC fee) from your Agency Bookings page. WHC pays the therapist after the shift.`
+        // Candidate accepted → the property now pays Talent House in full to confirm
+        ? `${actorName} has accepted the agency offer for ${shiftDate} at £${booking.rate} per hour. To confirm the booking, pay £${totalDue} (rate plus the Talent House fee) from your Agency Bookings page. Talent House pays the therapist after the shift.`
         : `${actorName} has accepted the agency offer for ${shiftDate} at £${booking.rate} per hour. The booking is confirmed once payment is made.`
       await notifyOtherParty(
         admin, otherUserId, user.id,

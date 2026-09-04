@@ -20,6 +20,7 @@ export default function Pagination({ page, perPage, total, showPerPage = true, o
       <div className="flex items-center gap-3">
         {showPerPage && onPerPageChange && (
           <select
+            aria-label="Results per page"
             value={perPage}
             onChange={e => { onPerPageChange(parseInt(e.target.value)); onPageChange(1) }}
             className="text-[12px] text-secondary bg-white border border-border rounded-lg px-2 py-1.5"
@@ -28,13 +29,13 @@ export default function Pagination({ page, perPage, total, showPerPage = true, o
           </select>
         )}
         <div className="flex items-center gap-1">
-          <button type="button" disabled={page <= 1} onClick={() => onPageChange(page - 1)}
-            className="p-1.5 rounded-lg border border-border text-muted hover:text-ink hover:border-ink/20 disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
+          <button type="button" disabled={page <= 1} onClick={() => onPageChange(page - 1)} aria-label="Previous page"
+            className="p-2.5 rounded-lg border border-border text-muted hover:text-ink hover:border-ink/20 disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
             <ChevronLeft size={14} />
           </button>
           <span className="text-[12px] text-secondary px-3">Page <span className="font-medium text-ink">{page}</span> of {totalPages}</span>
-          <button type="button" disabled={page >= totalPages} onClick={() => onPageChange(page + 1)}
-            className="p-1.5 rounded-lg border border-border text-muted hover:text-ink hover:border-ink/20 disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
+          <button type="button" disabled={page >= totalPages} onClick={() => onPageChange(page + 1)} aria-label="Next page"
+            className="p-2.5 rounded-lg border border-border text-muted hover:text-ink hover:border-ink/20 disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
             <ChevronRight size={14} />
           </button>
         </div>

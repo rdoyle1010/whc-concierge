@@ -2,93 +2,137 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ---------------------------------------------------------------------------
+   WHC brand system: a neutral grey scale on off-white, Manrope headings,
+   Poppins body, square corners. The Website & Brand
+   admin settings feed the --site-* variables (set on the root wrapper in
+   layout.tsx) and every shared class below reads them with fallbacks.
+   --------------------------------------------------------------------------- */
+
 @layer base {
-  html { font-family: var(--font-manrope), "Segoe UI", sans-serif; }
-  body { @apply bg-white text-body antialiased font-sans; font-size: 15px; line-height: 1.7; }
+  html { font-family: var(--font-poppins), "Segoe UI", sans-serif; }
+  body { @apply bg-parchment text-body antialiased font-sans; font-size: 15px; line-height: 1.7; }
   h1, h2, h3, h4 {
-    color: #10283b;
-    font-family: var(--font-editorial), Georgia, serif;
+    color: var(--site-ink, #1c1c1c);
+    font-family: var(--site-heading-font, var(--font-manrope), "Segoe UI", sans-serif);
     font-weight: 600;
-    letter-spacing: -0.022em;
-    line-height: 1.08;
+    letter-spacing: -0.02em;
+    line-height: 1.12;
   }
   button, input, select, textarea { font: inherit; }
 }
 
 @layer components {
-  .btn-primary { @apply bg-ink text-white px-5 py-2.5 text-[13px] font-semibold hover:bg-navy-light transition-all duration-150; border-radius: 7px; }
-  .btn-secondary { @apply bg-white text-ink border border-border px-5 py-2.5 text-[13px] font-semibold hover:bg-surface transition-all duration-150; border-radius: 7px; }
-  .btn-accent { background:#0b2f4d; color:#fff; @apply px-5 py-2.5 text-[13px] font-semibold transition-all duration-150; border-radius: 7px; }
-  .btn-accent:hover { background:#123f64; }
+  /* One button language: colour + transform transition ~150ms, existing
+     hover colours, a 1px press on :active and a grey focus-visible ring. */
+  .btn-primary { @apply text-white px-5 py-2.5 text-[13px] font-semibold; background: #1c1c1c; border-radius: var(--site-button-radius, 0px); transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease, transform 150ms ease; }
+  .btn-primary:hover { background: #333333; }
+  .btn-secondary { @apply bg-white text-ink border border-border px-5 py-2.5 text-[13px] font-semibold hover:bg-surface; border-radius: var(--site-button-radius, 0px); transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease, transform 150ms ease; }
+  .btn-accent { @apply text-white px-5 py-2.5 text-[13px] font-semibold; background: var(--site-accent, #1c1c1c); border-radius: var(--site-button-radius, 0px); transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease, transform 150ms ease; }
+  .btn-accent:hover { background: #333333; }
+  .btn-primary:active, .btn-secondary:active, .btn-accent:active { transform: translateY(1px); }
   .btn-ghost { @apply text-secondary text-[13px] font-medium hover:text-ink transition-colors; }
-  .input-field { @apply w-full px-3.5 py-2.5 bg-white border border-border text-[14px] text-ink focus:outline-none focus:ring-2 focus:ring-ink/10 focus:border-ink/30 transition-all duration-150 placeholder:text-muted; border-radius: 7px; }
-  .card { @apply bg-white border border-border p-6 transition-all duration-200 hover:shadow-sm; border-radius: 8px; }
-  .card-flat { @apply bg-white border border-border p-6; border-radius: 8px; }
+  .input-field { @apply w-full px-3.5 py-2.5 bg-white border border-border text-[14px] text-ink focus:outline-none focus:ring-2 focus:ring-ink/10 focus:border-ink/40 transition-all duration-150 placeholder:text-muted; border-radius: 0; }
+  .card { @apply bg-white border border-border p-6 transition-all duration-200 hover:shadow-sm; border-radius: 0; }
+  .card-flat { @apply bg-white border border-border p-6; border-radius: 0; }
   .eyebrow { @apply text-eyebrow uppercase text-muted font-medium; }
-  .dashboard-card { @apply bg-white border border-border p-5; border-radius: 6px; }
-  .section-heading { @apply text-[42px] md:text-[52px] font-medium text-ink leading-[1.02]; font-family: var(--font-editorial), Georgia, serif; letter-spacing: -.025em; }
+  .dashboard-card { @apply bg-white border border-border p-5; border-radius: 0; }
+  .section-heading { @apply text-[34px] md:text-[44px] font-semibold text-ink leading-[1.08]; font-family: var(--site-heading-font, var(--font-manrope), sans-serif); letter-spacing: -.02em; }
 
   .badge-platinum { @apply bg-ink text-white text-[10px] font-semibold px-2.5 py-0.5 rounded-full; }
-  .badge-gold { background:#6f7f88; color:#fff; @apply text-[10px] font-semibold px-2.5 py-0.5 rounded-full; }
+  .badge-gold { background:#1c1c1c; color:#fff; @apply text-[10px] font-semibold px-2.5 py-0.5 rounded-full; }
   .badge-silver { @apply bg-neutral-400 text-white text-[10px] font-semibold px-2.5 py-0.5 rounded-full; }
-  .badge-bronze { background:#60717b; color:#fff; @apply text-[10px] font-semibold px-2.5 py-0.5 rounded-full; }
+  .badge-bronze { background:#555555; color:#fff; @apply text-[10px] font-semibold px-2.5 py-0.5 rounded-full; }
 
   .match-perfect { @apply bg-match-perfect-bg text-match-perfect-text text-[11px] font-semibold px-2.5 py-1 rounded-full; }
   .match-strong { @apply bg-match-strong-bg text-match-strong-text text-[11px] font-semibold px-2.5 py-1 rounded-full; }
   .match-good { @apply bg-match-good-bg text-match-good-text text-[11px] font-semibold px-2.5 py-1 rounded-full; }
   .match-partial { @apply bg-match-partial-bg text-match-partial-text text-[11px] font-semibold px-2.5 py-1 rounded-full; }
 
-  .gold-gradient { background:#0b2f4d; }
-  .gradient-text-gold { color:#6f7f88; }
-  .animate-pulse-gold {}
 
-  .public-page { @apply min-h-screen bg-white text-body; }
+  .public-page { @apply min-h-screen bg-parchment text-body; }
   .public-hero { @apply bg-white border-b border-border; }
-  .public-eyebrow { color:#6f7f88; @apply text-[10px] uppercase tracking-[0.18em] font-semibold; }
-  .public-title { @apply text-ink font-semibold leading-[1.01]; font-family: var(--font-editorial), Georgia, serif; letter-spacing: -0.025em; font-size: clamp(2.5rem, 4.5vw, 4rem); }
+  .public-eyebrow { color:var(--site-accent, #1c1c1c); @apply text-[10px] uppercase tracking-[0.18em] font-semibold; }
+  .public-title { @apply text-ink font-semibold leading-[1.06]; font-family: var(--site-heading-font, var(--font-manrope), sans-serif); letter-spacing: -0.02em; font-size: clamp(2.1rem, 3.6vw, 3.2rem); }
   .public-intro { @apply text-secondary text-[15px] leading-7; }
-  .public-panel { @apply bg-white border border-border; border-radius: 8px; box-shadow: 0 8px 24px rgba(16,40,59,.035); }
+  .public-panel { @apply bg-white border border-border; border-radius: 0; box-shadow: none; }
 
-  .skeleton { background:#f5f7f8; @apply rounded animate-pulse; }
+  /* One intentional loading shimmer: surface base with a moving highlight. */
+  .skeleton {
+    @apply rounded;
+    background: #f1f1f1 linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,.75) 50%, rgba(255,255,255,0) 100%) no-repeat -60% 0 / 55% 100%;
+    animation: skeleton-shimmer 1.4s ease infinite;
+  }
 }
 
-/* Legacy public utilities now inherit the cleaner WHC white + navy design language. */
-.text-black { color: #10283b !important; }
-.bg-black { background-color: #0b2f4d !important; }
-.hover\:text-black:hover { color: #10283b !important; }
-.hover\:bg-black:hover { background-color: #123f64 !important; }
-.border-neutral-100 { border-color: #e3e8eb !important; }
-.text-neutral-400 { color: #7f8a91 !important; }
-.text-neutral-600 { color: #65717a !important; }
-.bg-neutral-100 { background-color: #f5f7f8 !important; }
+@keyframes skeleton-shimmer {
+  from { background-position: -60% 0; }
+  to { background-position: 160% 0; }
+}
+
+/* One focus language across the platform: a grey focus-visible ring on
+   interactive elements. Mouse focus keeps existing styling untouched. */
+a:focus-visible, button:focus-visible, input:focus-visible,
+select:focus-visible, textarea:focus-visible, [role="button"]:focus-visible {
+  outline: 2px solid #1c1c1c;
+  outline-offset: 2px;
+}
+
+/* Quiet entrance for freshly arrived content - restraint over spectacle. */
+.fade-in { animation: fadeRise 200ms ease-out both; }
+@keyframes fadeRise { from { opacity: 0; transform: translateY(2px); } to { opacity: 1; transform: translateY(0); } }
+
+/* Honest indeterminate upload progress: a thin grey sweep, no fake numbers. */
+.progress-track { height: 3px; background: #dddddd; overflow: hidden; }
+.progress-indeterminate { height: 100%; width: 36%; background: #1c1c1c; animation: progressSweep 1.2s ease-in-out infinite; }
+@keyframes progressSweep { from { transform: translateX(-120%); } to { transform: translateX(320%); } }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Legacy public utilities inherit the monochrome language. */
+.text-black { color: #1c1c1c !important; }
+.bg-black { background-color: #1c1c1c !important; }
+.hover\:text-black:hover { color: #0f0f0f !important; }
+.hover\:bg-black:hover { background-color: #333333 !important; }
+.border-neutral-100 { border-color: #dddddd !important; }
+.text-neutral-400 { color: #6b6b6b !important; }
+.text-neutral-600 { color: #555555 !important; }
+.bg-neutral-100 { background-color: #f1f1f1 !important; }
 
 /* Editorial workspace shared by Talent, Employer and Admin. */
 .dashboard-shell {
   background: #ffffff;
-  color: #17202a;
-  font-family: var(--font-manrope), "Segoe UI", sans-serif;
+  color: #1c1c1c;
+  font-family: var(--font-poppins), "Segoe UI", sans-serif;
 }
 .dashboard-sidebar {
-  background: #092b45;
-  border-right: 1px solid rgba(255,255,255,.10);
+  background: #f1f1f1;
+  border-right: 1px solid #dddddd;
   box-shadow: none;
 }
 .dashboard-shell h1,
 .dashboard-shell h2,
 .dashboard-shell h3,
 .dashboard-shell .dashboard-title {
-  font-family: var(--font-editorial), Georgia, serif;
+  font-family: var(--site-heading-font, var(--font-manrope), "Segoe UI", sans-serif);
 }
 .dashboard-title {
-  color: #10283b;
-  font-size: clamp(2.55rem, 4vw, 4.1rem);
-  line-height: .98;
+  color: #1c1c1c;
+  font-size: clamp(2rem, 3vw, 2.9rem);
+  line-height: 1.05;
   font-weight: 600;
-  letter-spacing: -.025em;
+  letter-spacing: -.02em;
 }
 .dashboard-eyebrow {
   margin-bottom: .65rem;
-  color: #6f7f88;
+  color: #6b6b6b;
   font-size: 9px;
   line-height: 1.4;
   font-weight: 700;
@@ -98,88 +142,99 @@
 .dashboard-intro {
   max-width: 720px;
   margin-top: .9rem;
-  color: #65717a;
+  color: #555555;
   font-size: 13px;
   line-height: 1.75;
 }
 .dashboard-shell .dashboard-card,
 .dashboard-panel {
   background: #ffffff;
-  border: 1px solid #dfe5e8;
-  border-radius: 6px;
+  border: 1px solid #dddddd;
+  border-radius: 0;
   padding: 1.5rem;
   box-shadow: none;
 }
-.dashboard-shell .dashboard-card:hover { border-color: #cbd4d9; }
+.dashboard-shell .dashboard-card:hover { border-color: #6b6b6b; }
 .dashboard-shell .btn-primary,
 .dashboard-shell .btn-secondary,
 .dashboard-shell .btn-accent,
-.dashboard-shell .input-field { border-radius: 6px; }
+.dashboard-shell .input-field { border-radius: 0; }
 .dashboard-shell select,
 .dashboard-shell textarea,
-.dashboard-shell input:not([type="checkbox"]):not([type="radio"]) { border-radius: 6px; }
+.dashboard-shell input:not([type="checkbox"]):not([type="radio"]) { border-radius: 0; }
 .dashboard-shell table { border-radius: 0; }
 .dashboard-shell .btn-primary,
-.dashboard-shell .btn-accent { background: #0b2f4d; color:#fff; }
+.dashboard-shell .btn-accent { background: #1c1c1c; color:#fff; }
+
+/* A disabled button has to look disabled. Half-opacity on a mid-grey button is
+   indistinguishable from an enabled one, which is how every button on the
+   platform came to read as dead. */
+.dashboard-shell .btn-primary:disabled,
+.dashboard-shell .btn-accent:disabled,
+.btn-primary:disabled,
+.btn-accent:disabled {
+  background: #dddddd;
+  color: #6b6b6b;
+  cursor: not-allowed;
+}
+.dashboard-shell .btn-secondary:disabled,
+.btn-secondary:disabled { color: #6b6b6b; border-color: #e7e7e7; cursor: not-allowed; }
 .dashboard-shell .btn-primary:hover,
-.dashboard-shell .btn-accent:hover { background: #123f64; }
-.dashboard-shell .input-field:focus { border-color: #6f7f88; box-shadow: 0 0 0 2px rgba(111,127,136,.10); }
+.dashboard-shell .btn-accent:hover { background: #333333; }
+.dashboard-shell .input-field:focus { border-color: #6b6b6b; box-shadow: 0 0 0 2px rgba(0,0,0,.06); }
 .dashboard-metrics {
   display: grid;
   grid-template-columns: repeat(2,minmax(0,1fr));
   background: #ffffff;
-  border-top: 1px solid #dfe5e8;
-  border-bottom: 1px solid #dfe5e8;
+  border-top: 1px solid #dddddd;
+  border-bottom: 1px solid #dddddd;
 }
-.dashboard-metric { min-height: 112px; padding: 1.25rem; border-right: 1px solid #e5eaed; }
+.dashboard-metric { min-height: 112px; padding: 1.25rem; border-right: 1px solid #dddddd; }
 .dashboard-metric:nth-child(2n) { border-right: 0; }
 .dashboard-metric-value {
-  color: #10283b;
-  font-family: var(--font-editorial), Georgia, serif;
-  font-size: 2.5rem;
-  line-height: .95;
+  color: #1c1c1c;
+  font-family: var(--site-heading-font, var(--font-manrope), sans-serif);
+  font-size: 2.3rem;
+  line-height: .98;
   font-weight: 600;
   letter-spacing: -.02em;
 }
-.dashboard-nav-item { border-radius: 4px; }
-.dashboard-metric-label { margin-top: .55rem; color: #7a8288; font-size: 9px; font-weight: 650; text-transform: uppercase; letter-spacing: .14em; }
-.dashboard-list-row { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 1rem 0; border-top: 1px solid #e7ecee; }
+.dashboard-nav-item { border-radius: 0; }
+.dashboard-metric-label { margin-top: .55rem; color: #6b6b6b; font-size: 9px; font-weight: 650; text-transform: uppercase; letter-spacing: .14em; }
+.dashboard-list-row { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 1rem 0; border-top: 1px solid #dddddd; }
 .dashboard-list-row:first-child { border-top: 0; }
-.dashboard-rule { border-top: 1px solid #dfe5e8; }
-.dashboard-section-title { font-family: var(--font-editorial), Georgia, serif; font-size: 1.65rem; font-weight: 600; color: #10283b; letter-spacing: -.015em; }
+.dashboard-rule { border-top: 1px solid #dddddd; }
+.dashboard-section-title { font-family: var(--site-heading-font, var(--font-manrope), sans-serif); font-size: 1.45rem; font-weight: 600; color: #1c1c1c; letter-spacing: -.015em; }
 
-/* Bring older portal screens into the same white / navy / cool-grey system. */
-.dashboard-shell .rounded-lg,
-.dashboard-shell .rounded-xl,
-.dashboard-shell .rounded-2xl { border-radius: 6px; }
-.dashboard-shell .bg-gray-50 { background-color: #f7f9fa; }
-.dashboard-shell .bg-gray-100 { background-color: #f0f3f5; }
-.dashboard-shell .border-gray-100 { border-color: #e7ecee; }
-.dashboard-shell .border-gray-200 { border-color: #dfe5e8; }
-.dashboard-shell .text-gray-300 { color: #a8adaf; }
-.dashboard-shell .text-gray-400 { color: #858e94; }
-.dashboard-shell .text-gray-500 { color: #65717a; }
-.dashboard-shell .text-gray-600 { color: #4f5d67; }
-.dashboard-shell .text-gray-700 { color: #374550; }
+/* Older portal screens fold into the same monochrome system. */
+.dashboard-shell .bg-gray-50 { background-color: #f1f1f1; }
+.dashboard-shell .bg-gray-100 { background-color: #dddddd; }
+.dashboard-shell .border-gray-100 { border-color: #dddddd; }
+.dashboard-shell .border-gray-200 { border-color: #dddddd; }
+.dashboard-shell .text-gray-300 { color: #6b6b6b; }
+.dashboard-shell .text-gray-400 { color: #6b6b6b; }
+.dashboard-shell .text-gray-500 { color: #555555; }
+.dashboard-shell .text-gray-600 { color: #555555; }
+.dashboard-shell .text-gray-700 { color: #3a3a3a; }
 .dashboard-shell .shadow-xl,
-.dashboard-shell .shadow-2xl { box-shadow: 0 18px 54px rgba(10,34,52,.12); }
-.dashboard-shell .ring-1 { --tw-ring-color: rgba(111,127,136,.16); }
-.dashboard-shell .hover\:bg-gray-100:hover { background-color: #f0f3f5; }
-.dashboard-shell .hover\:bg-gray-50:hover { background-color: #f7f9fa; }
+.dashboard-shell .shadow-2xl { box-shadow: 0 18px 54px rgba(0,0,0,.10); }
+.dashboard-shell .ring-1 { --tw-ring-color: rgba(0,0,0,.10); }
+.dashboard-shell .hover\:bg-gray-100:hover { background-color: #dddddd; }
+.dashboard-shell .hover\:bg-gray-50:hover { background-color: #f1f1f1; }
 .dashboard-shell > main h1.text-2xl,
 .dashboard-shell > main h1.text-3xl {
-  font-size: clamp(2.35rem, 3.5vw, 3.65rem) !important;
-  line-height: 1 !important;
+  font-size: clamp(1.9rem, 2.6vw, 2.6rem) !important;
+  line-height: 1.05 !important;
   font-weight: 600 !important;
-  letter-spacing: -.025em !important;
+  letter-spacing: -.02em !important;
   margin-bottom: 1.75rem;
 }
 .dashboard-shell > main h2.text-lg,
-.dashboard-shell > main h2.text-xl { font-size: 1.55rem !important; letter-spacing: -.015em; }
+.dashboard-shell > main h2.text-xl { font-size: 1.35rem !important; letter-spacing: -.015em; }
 
 @media (min-width: 1024px) {
   .dashboard-metrics { grid-template-columns: repeat(4,minmax(0,1fr)); }
-  .dashboard-metric:nth-child(2n) { border-right: 1px solid #e5eaed; }
+  .dashboard-metric:nth-child(2n) { border-right: 1px solid #dddddd; }
   .dashboard-metric:last-child { border-right: 0; }
 }
 
@@ -200,129 +255,78 @@
 .swipe-left { transform: translateX(-120%) rotate(-8deg); opacity:0; }
 .swipe-right { transform: translateX(120%) rotate(8deg); opacity:0; }
 
-::-webkit-scrollbar { width:4px; } ::-webkit-scrollbar-track { background:transparent; } ::-webkit-scrollbar-thumb { background:#d4d4d4; border-radius:2px; }
+::-webkit-scrollbar { width:4px; } ::-webkit-scrollbar-track { background:transparent; } ::-webkit-scrollbar-thumb { background:#6b6b6b; border-radius:2px; }
 html { scroll-behavior:smooth; }
 
-/* Website & Brand editor variables. Defaults match the white/cool editorial system. */
+/* Website & Brand editor variables. Defaults are the WHC monochrome system;
+   admin-published values on the root wrapper override them everywhere. */
 .website-theme {
-  font-family: var(--site-body-font, var(--font-manrope), "Segoe UI", sans-serif);
-  color: var(--site-ink, #10283b);
-  background: var(--site-background, #ffffff);
+  font-family: var(--site-body-font, var(--font-poppins), "Segoe UI", sans-serif);
+  color: var(--site-ink, #1c1c1c);
+  background: var(--site-background, #f7f7f7);
 }
 .website-theme .site-heading {
-  font-family: var(--site-heading-font, var(--font-editorial), Georgia, serif);
-  color: var(--site-ink, #10283b);
-  letter-spacing: -0.025em;
+  font-family: var(--site-heading-font, var(--font-manrope), sans-serif);
+  color: var(--site-ink, #1c1c1c);
+  letter-spacing: -0.02em;
 }
-.website-theme .site-accent { color: var(--site-accent, #6f7f88); }
-.website-theme .site-accent-bg { background-color: var(--site-accent, #0b2f4d); }
-.website-theme .site-surface { background-color: var(--site-surface, #ffffff); }
+.website-theme .site-accent { color: var(--site-accent, #1c1c1c); }
+.website-theme .site-accent-bg { background-color: var(--site-accent, #1c1c1c); }
+.website-theme .site-surface { background-color: var(--site-surface, #f1f1f1); }
 .website-theme .site-section {
   padding-top: calc(5rem * var(--site-space, 1));
   padding-bottom: calc(5rem * var(--site-space, 1));
 }
 .website-theme .site-button {
-  border-radius: var(--site-button-radius, 7px);
+  border-radius: var(--site-button-radius, 0px);
   transition: transform 150ms ease, opacity 150ms ease;
 }
 .website-theme .site-button:hover { transform: translateY(-1px); opacity: .92; }
 
-/* --------------------------------------------------------------------------
-   SITE-WIDE VISUAL REFRESH
-   Remove the legacy cream + gold palette from older hard-coded page classes
-   without changing any booking, application, payment or dashboard logic.
-   -------------------------------------------------------------------------- */
-[class*="bg-[#f3f1ec]"],
-[class*="bg-[#F3F1EC]"],
-[class*="bg-[#f4f1ea]"],
-[class*="bg-[#F4F1EA]"],
-[class*="bg-[#f7f4ed]"],
-[class*="bg-[#F7F4ED]"],
-[class*="bg-[#f9f7f2]"],
-[class*="bg-[#F9F7F2]"],
-[class*="bg-[#faf8f3]"],
-[class*="bg-[#FAF8F3]"],
-[class*="bg-[#FAF8F4]"],
-[class*="bg-[#faf8f4]"],
-[class*="bg-[#FBFAF7]"],
-[class*="bg-[#fbfaf7]"],
-[class*="bg-[#f1eee7]"],
-[class*="bg-[#F1EEE7]"],
-[class*="bg-[#f5efe2]"],
-[class*="bg-[#F5EFE2]"] {
-  background-color: #ffffff !important;
-}
+/* Square corners across the platform - the WHC brand does not round cards,
+   inputs or buttons. Circles (rounded-full) are untouched; arbitrary values
+   like rounded-[22px] are neutralised by the attribute selector. */
+.rounded, .rounded-md, .rounded-lg, .rounded-xl, .rounded-2xl, .rounded-3xl,
+[class*="rounded-["] { border-radius: 0; }
 
-[class*="text-[#d4b477]"],
-[class*="text-[#D4B477]"],
-[class*="text-[#9c7a42]"],
-[class*="text-[#9C7A42]"],
-[class*="text-[#c9a96e]"],
-[class*="text-[#C9A96E]"],
-[class*="text-[#e6c98e]"],
-[class*="text-[#E6C98E]"],
-[class*="text-[#B8945A]"],
-[class*="text-[#b8945a]"],
-[class*="text-[#C4A574]"],
-[class*="text-[#c4a574]"],
-[class*="text-[#d2b574]"],
-[class*="text-[#D2B574]"] {
-  color: #6f7f88 !important;
+/* Journal article bodies, and the editor that writes them.
+   The page used the `prose` classes, and @tailwindcss/typography is not
+   installed - so they matched nothing and a heading in an article looked
+   exactly like a paragraph. These are the real styles, applied to both the
+   published article and the editing surface, so what a writer sees while
+   typing is what a reader gets. */
+.article-body { color: #333333; font-size: 16px; line-height: 1.85; }
+.article-body > * + * { margin-top: 1.15em; }
+.article-body p { margin: 0; }
+.article-body h2 {
+  font-family: var(--site-heading-font, var(--font-manrope), sans-serif);
+  font-size: 1.6rem; font-weight: 600; color: #1c1c1c;
+  letter-spacing: -.02em; line-height: 1.25; margin-top: 2em;
 }
-
-[class*="border-[#d4b477]"],
-[class*="border-[#D4B477]"],
-[class*="border-[#9c7a42]"],
-[class*="border-[#9C7A42]"],
-[class*="border-[#c9a96e]"],
-[class*="border-[#C9A96E]"],
-[class*="border-[#B8945A]"],
-[class*="border-[#b8945a]"],
-[class*="border-[#ddd9d1]"],
-[class*="border-[#DDD9D1]"],
-[class*="border-[#d8d3c9]"],
-[class*="border-[#D8D3C9]"] {
-  border-color: #dfe5e8 !important;
+.article-body h3 {
+  font-family: var(--site-heading-font, var(--font-manrope), sans-serif);
+  font-size: 1.25rem; font-weight: 600; color: #1c1c1c;
+  letter-spacing: -.015em; margin-top: 1.7em;
 }
-
-[class*="ring-[#c9a96e]"],
-[class*="ring-[#C9A96E]"],
-[class*="ring-[#B8945A]"],
-[class*="ring-[#b8945a]"] {
-  --tw-ring-color: rgba(111,127,136,.18) !important;
+.article-body h4 { font-size: 1.05rem; font-weight: 600; color: #1c1c1c; margin-top: 1.5em; }
+.article-body strong, .article-body b { font-weight: 600; color: #1c1c1c; }
+.article-body em, .article-body i { font-style: italic; }
+.article-body u { text-decoration: underline; text-underline-offset: 3px; }
+.article-body s { text-decoration: line-through; }
+.article-body ul, .article-body ol { padding-left: 1.35rem; }
+.article-body ul { list-style: disc; }
+.article-body ol { list-style: decimal; }
+.article-body li { margin-top: .4em; padding-left: .2rem; }
+.article-body li::marker { color: #6b6b6b; }
+.article-body blockquote {
+  border-left: 2px solid #1c1c1c; padding: .15rem 0 .15rem 1.15rem;
+  font-size: 1.08rem; line-height: 1.7; color: #1c1c1c;
 }
-
-[class*="bg-[#d4b477]"],
-[class*="bg-[#D4B477]"],
-[class*="bg-[#9c7a42]"],
-[class*="bg-[#9C7A42]"],
-[class*="bg-[#c9a96e]"],
-[class*="bg-[#C9A96E]"],
-[class*="bg-[#B8945A]"],
-[class*="bg-[#b8945a]"],
-[class*="bg-[#C4A574]"],
-[class*="bg-[#c4a574]"],
-[class*="bg-[#d2b574]"],
-[class*="bg-[#D2B574]"] {
-  background-color: #0b2f4d !important;
-  color: #ffffff !important;
-}
-
-[class*="hover:bg-[#e0c48e]"]:hover,
-[class*="hover:bg-[#E0C48E]"]:hover,
-[class*="hover:bg-[#b8945a]"]:hover,
-[class*="hover:bg-[#B8945A]"]:hover,
-[class*="hover:bg-[#c9a96e]"]:hover,
-[class*="hover:bg-[#C9A96E]"]:hover {
-  background-color: #123f64 !important;
-}
-
-/* Beige borders/surfaces that made public pages feel warm/dated become cool neutral. */
-[class*="border-[#e6e1d9]"],
-[class*="border-[#E6E1D9]"],
-[class*="border-[#eee9e1]"],
-[class*="border-[#EEE9E1]"],
-[class*="border-[#ded9cf]"],
-[class*="border-[#DED9CF]"] {
-  border-color: #e2e7ea !important;
+.article-body a { color: #1c1c1c; text-decoration: underline; text-underline-offset: 3px; }
+.article-body a:hover { color: #555555; }
+/* The editing surface is empty on a new article, and an empty contentEditable
+   gives no hint of what to do with it. */
+.article-body[contenteditable]:empty::before {
+  content: 'Write the article. Use the toolbar for headings, bold, lists and links.';
+  color: #6b6b6b;
 }

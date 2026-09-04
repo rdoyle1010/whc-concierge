@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react'
 import DashboardShell from '@/components/DashboardShell'
 import { createClient } from '@/lib/supabase/client'
 import { ArrowRight, Check, Crown, Home, Megaphone, Sparkles, Users } from 'lucide-react'
+import Link from 'next/link'
 
 type CommercialSetting = {
   product_key: string
@@ -86,32 +87,35 @@ export default function EmployerFeaturedPage() {
       <div className="mb-8">
         <p className="dashboard-eyebrow">Visibility</p>
         <h1 className="dashboard-title">Get Featured</h1>
-        <p className="dashboard-intro">Put your property in front of approved spa and wellness professionals across WHC Concierge.</p>
+        <p className="dashboard-intro">Put your property in front of approved spa and wellness professionals across Talent House Collective.</p>
       </div>
 
       {error && <div className="mb-6 rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-[13px] text-red-600">{error}</div>}
 
       <div className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
         <div className="dashboard-card !p-0 overflow-hidden">
-          <div className="bg-[#0b2f4d] px-7 py-8 text-white">
-            <div className="mb-5 flex h-11 w-11 items-center justify-center rounded-full bg-white/10 text-[#d4b477]"><Crown size={20} /></div>
-            <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#d4b477]">Featured Hotel / Employer</p>
+          <div className="bg-[#1c1c1c] px-7 py-8 text-white">
+            <div className="mb-5 flex h-11 w-11 items-center justify-center rounded-full bg-white/10 text-white/80"><Crown size={20} /></div>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/80">Featured Hotel / Employer</p>
             <div className="mt-2 flex flex-wrap items-end gap-3">
               <h2 className="!text-white text-[34px] font-semibold tracking-[-0.03em]">{priceLabel(setting)}</h2>
               <span className="mb-1 !text-white/70 text-[12px]">cancel through billing</span>
             </div>
-            <p className="mt-4 max-w-2xl !text-white/75 text-[13px] leading-6">{setting?.description || 'Premium property visibility across WHC Concierge.'}</p>
+            <p className="mt-4 max-w-2xl !text-white/75 text-[13px] leading-6">{setting?.description || 'Premium property visibility across Talent House Collective.'}</p>
           </div>
 
+          <p className="px-7 pt-6 text-[12px] leading-6 text-secondary">
+            Featured is about being seen. Searching the talent pool and role analytics come with <Link href="/employer/membership" className="underline">Employer Pro</Link>, and the two work well together: Featured brings people to your property, Pro lets you go and find them.
+          </p>
           <div className="grid gap-5 p-7 sm:grid-cols-2">
             {[
-              [Home, 'Featured property placement', 'Appear above standard properties in the public property directory with a gold Featured badge.'],
+              [Home, 'Featured property placement', 'Appear above standard properties in the public property directory with a Featured badge.'],
               [Sparkles, 'Homepage exposure', 'Eligible Featured properties appear in a dedicated homepage section for active talent.'],
               [Users, 'Talent announcement', 'Approved Talent receive a one-time in-app and email announcement when your Featured subscription first starts.'],
               [Megaphone, 'Extra role prominence', 'Your property brand is more visible wherever candidates are researching employers and opportunities.'],
             ].map(([Icon, title, copy]: any) => (
-              <div key={title} className="rounded-2xl border border-border bg-[#f7f5f0] p-5">
-                <Icon size={17} className="mb-3 text-[#9c7a42]" />
+              <div key={title} className="dashboard-card">
+                <Icon size={17} className="mb-3 text-[#1c1c1c]" />
                 <p className="text-[13px] font-semibold text-ink">{title}</p>
                 <p className="mt-1.5 text-[12px] leading-5 text-muted">{copy}</p>
               </div>
@@ -126,14 +130,14 @@ export default function EmployerFeaturedPage() {
               <>
                 <div className="mt-3 flex items-center gap-2 text-[18px] font-semibold text-ink"><Check size={18} className="text-emerald-600" /> Featured is active</div>
                 <p className="mt-2 text-[12px] leading-5 text-muted">{profile?.featured_until ? `Current paid period runs until ${new Date(profile.featured_until).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}.` : 'Your property is currently featured.'}</p>
-                <a href="/employer/billing" className="mt-5 inline-flex items-center gap-1 text-[12px] font-semibold text-[#0b2f4d]">Manage billing <ArrowRight size={13} /></a>
+                <a href="/employer/billing" className="mt-5 inline-flex items-center gap-1 text-[12px] font-semibold text-[#1c1c1c]">Manage billing <ArrowRight size={13} /></a>
               </>
             ) : (
               <>
                 <p className="mt-3 text-[18px] font-semibold text-ink">Standard visibility</p>
-                <p className="mt-2 text-[12px] leading-5 text-muted">Upgrade whenever you want. The price shown here is controlled by WHC Admin and is the exact amount sent to Stripe at checkout.</p>
-                <button type="button" onClick={startCheckout} disabled={!setting || checkoutLoading} className="mt-5 w-full rounded-xl bg-[#0b2f4d] px-5 py-3 text-[13px] font-semibold text-white transition-colors hover:bg-[#123f64] disabled:opacity-50">
-                  {checkoutLoading ? 'Opening secure checkout…' : `Go Featured — ${priceLabel(setting)}`}
+                <p className="mt-2 text-[12px] leading-5 text-muted">Upgrade whenever you want. Pricing shown is current and confirmed at checkout.</p>
+                <button type="button" onClick={startCheckout} disabled={!setting || checkoutLoading} className="btn-primary mt-5 w-full disabled:opacity-50">
+                  {checkoutLoading ? 'Opening secure checkout…' : `Go Featured - ${priceLabel(setting)}`}
                 </button>
               </>
             )}

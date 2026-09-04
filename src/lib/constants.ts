@@ -121,9 +121,37 @@ export const EXECUTIVE_SEARCH_GUIDE_RATE = 0.18
 export const EXECUTIVE_SEARCH_RATE_RANGE = [0.15, 0.20] as const
 
 // Agency commercial promise: the professional keeps the full agreed rate.
-// WHC charges the property 15% on top of the shift value.
+// Talent House charges the property 15% on top of the shift value.
 export const AGENCY_COMMISSION_RATE = 0.15
 export const AGENCY_PLATFORM_FEE_PCT = 0.15
+// Same-day and next-day cover carries an urgency premium on the Talent House fee -
+// the professional still receives the full agreed rate; the premium prices
+// the emergency service the property is buying.
+export const AGENCY_URGENT_FEE_SURCHARGE = 0.05
+
+// Agency Plus: the frequent-employer subscription. A monthly fee buys a
+// reduced booking fee, priority cover and a recognisable badge - converting
+// the best transaction customers into recurring revenue. The professional
+// still keeps 100% of the agreed rate on every model.
+export const AGENCY_PLUS_MONTHLY_PRICE = 9900 // £99/mo
+export const AGENCY_PLUS_FEE_PCT = 0.10      // vs 15% standard
+
+// The Talent House fee percentage for a shift, judged by how close the shift date is
+// to today (both YYYY-MM-DD, Europe/London). Same-day or next-day => premium.
+// Agency Plus members pay the reduced base; the urgency premium applies to
+// everyone because it prices the emergency, not the relationship.
+export function agencyFeePctForShiftPlus(shiftDate: string | null | undefined, todayLondon: string, plusActive: boolean): number {
+  const base = plusActive ? AGENCY_PLUS_FEE_PCT : AGENCY_PLATFORM_FEE_PCT
+  if (!shiftDate || !todayLondon) return base
+  const d = new Date(`${todayLondon}T12:00:00Z`)
+  d.setUTCDate(d.getUTCDate() + 1)
+  const tomorrow = d.toISOString().slice(0, 10)
+  return String(shiftDate) <= tomorrow ? base + AGENCY_URGENT_FEE_SURCHARGE : base
+}
+
+export function agencyFeePctForShift(shiftDate: string | null | undefined, todayLondon: string): number {
+  return agencyFeePctForShiftPlus(shiftDate, todayLondon, false)
+}
 
 // Kept as a legacy alias for old Featured Profile code. New one-off featured
 // options are £9.99 / 7 days and £24.99 / 30 days.
@@ -139,3 +167,18 @@ export const AGENCY_LISTING_TIERS = {
 } as const
 
 export type AgencyTier = keyof typeof AGENCY_LISTING_TIERS
+
+export const FACILITY_OPTIONS = [
+  'Hydrotherapy pool','Vitality pool','Indoor pool','Outdoor pool','Thermal suite','Sauna','Steam room','Hammam',
+  'Snow cave / ice fountain','Experience showers','Salt room','Cryotherapy','Flotation','Relaxation lounge',
+  'Rooftop terrace','Gym','Fitness studio','Yoga / Pilates studio','Padel or tennis courts','Nail salon','Hair salon',
+  'Spa café / healthy dining','Private spa suites','Couples suites',
+] as const
+
+export const STAFF_BENEFIT_OPTIONS = [
+  'Service charge / tronc','Retail commission','Treatment commission','Spa treatment allowance','Product discount',
+  'Free meals on duty','Uniform provided & laundered','Hotel discounts worldwide','Friends & family rates',
+  'Pension scheme','Private healthcare','Mental health support','Training budget','Brand training',
+  'Clear progression pathway','Accommodation available','Relocation support','Gym use','28+ days holiday',
+  'Birthday day off','Employee assistance programme',
+] as const

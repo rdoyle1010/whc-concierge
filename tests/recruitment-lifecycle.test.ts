@@ -6,11 +6,17 @@ function read(path: string) {
   return readFileSync(path, 'utf8')
 }
 
-test('interview pipeline supports up to two rounds and candidate confirmation', () => {
+// The cap moved from two rounds to three, deliberately - a director-level
+// process routinely runs screen, panel, final. What matters to this test is
+// that a cap exists and is checked before anything is written: unbounded
+// rounds let a property string somebody along indefinitely with no stage
+// ever being the last one.
+test('interview pipeline is bounded and requires candidate confirmation', () => {
   const employer = read('src/app/api/employer/applications/interview/route.ts')
   const talent = read('src/app/api/talent/applications/interview/route.ts')
   assert.match(employer, /roundNumber/)
-  assert.match(employer, /roundNumber\s*>\s*2/)
+  assert.match(employer, /roundNumber > 3/, 'the number of rounds must be capped')
+  assert.match(employer, /Invalid interview round/)
   assert.match(employer, /application_interviews/)
   assert.match(talent, /application_interviews/)
   assert.match(talent, /selected_slot/)
@@ -57,9 +63,15 @@ test('completed talent placements leave active applications and move to the arch
   const pipeline = read('src/app/api/talent/applications/pipeline-list/route.ts')
   const archive = read('src/app/api/talent/hired/route.ts')
   const archivePage = read('src/app/talent/hired/page.tsx')
+  // hired_at is the fact; archived_at is the EMPLOYER's own filing state,
+  // which they can clear from their Hired page. Reading archived_at on the
+  // talent side meant "reopen record" silently deleted a placement from the
+  // professional's history and pushed it back into their active
+  // applications. Both sides now key on hired_at.
   assert.match(mine, /\.is\('archived_at', null\)/)
+  assert.match(mine, /\.is\('hired_at', null\)/)
   assert.match(pipeline, /\.is\('archived_at', null\)/)
-  assert.match(archive, /\.not\('archived_at', 'is', null\)/)
+  assert.match(pipeline, /\.is\('hired_at', null\)/)
   assert.match(archive, /\.not\('hired_at', 'is', null\)/)
   assert.match(archivePage, /PostHireReviews/)
   assert.match(archivePage, /View communication/)

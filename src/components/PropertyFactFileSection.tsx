@@ -32,12 +32,14 @@ export default function PropertyFactFileSection({
             {LARGE_FIELDS.has(key) ? (
               <textarea
                 rows={3}
+                aria-label={label}
                 className="input-field text-[13px] resize-y"
                 value={form[key] || ''}
                 onChange={e => onChange(key, e.target.value)}
               />
             ) : (
               <input
+                aria-label={label}
                 className="input-field text-[13px]"
                 value={form[key] ?? ''}
                 onChange={e => onChange(key, e.target.value)}

@@ -17,6 +17,7 @@ export default function AcademyPage() {
   const [profileId, setProfileId] = useState<string | null>(null)
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
+  const [career, setCareer] = useState<any>(null)
 
   async function load() {
     try {
@@ -39,6 +40,8 @@ export default function AcademyPage() {
       }
     } catch { /* empty catalogue state */ }
     setLoading(false)
+    // Career intelligence loads after the catalogue so the page renders fast.
+    fetch('/api/academy/career').then(r => r.ok ? r.json() : null).then(setCareer).catch(() => null)
   }
 
   useEffect(() => {
@@ -92,16 +95,86 @@ export default function AcademyPage() {
   return (
     <DashboardShell role="talent">
       <div className="max-w-6xl">
+        <p className="dashboard-eyebrow">Learning &amp; development</p>
         <div className="flex items-center gap-2 mb-2">
           <GraduationCap size={22} className="text-accent" />
-          <h1 className="text-3xl font-sans font-semibold tracking-tight text-ink">WHC Academy</h1>
+          <h1 className="dashboard-title">Talent House Academy</h1>
         </div>
-        <p className="text-[13px] text-gray-500 mb-6 max-w-2xl">
-          Serious courses for luxury spa professionals - core curriculum £{(COURSE_PRICE / 100).toFixed(0)}, brand masterclasses £5, specialist care £{(COURSE_PRICE / 100).toFixed(0)}. Pass the final quiz (80%) and you earn a certificate - and the badge appears on your profile, where properties can see exactly what you&apos;ve trained in before they book you.
+        <p className="dashboard-intro mb-6 max-w-2xl">
+          The Academy exists to move your career forward: learn, pass the assessment, and the verified badge joins your profile - where it strengthens your matches and shows employers exactly what you can do. Core curriculum £{(COURSE_PRICE / 100).toFixed(0)} per course, brand masterclasses £5, leadership programmes with practical toolkits.
         </p>
 
         {notice && <div className="bg-green-50 text-green-700 text-sm px-4 py-3 rounded-lg mb-4">{notice}</div>}
         {error && <div className="bg-red-50 text-red-600 text-sm px-4 py-3 rounded-lg mb-4">{error}</div>}
+
+        {career && (
+          <div className="mb-8 rounded-2xl border border-[#dddddd] bg-[#f1f1f1] p-6">
+            <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+              <div className="min-w-0">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#1c1c1c]">Your career position</p>
+                <h2 className="mt-1 font-sans text-[22px] font-semibold tracking-tight text-ink">{career.position?.current || 'Building your profile'} → {career.position?.next}</h2>
+                <p className="mt-1 text-[12px] leading-5 text-secondary max-w-xl">
+                  {career.position?.average_match ? <>Across {career.position.live_roles_assessed} live roles you average a {career.position.average_match}% match{career.position?.top_match ? <> - strongest: {career.position.top_match.score}% for {career.position.top_match.title}</> : null}. The learning below is chosen to move those numbers, not to sell you courses.</> : 'Complete your profile and the Academy will read the live market against your skills to recommend exactly what to learn next.'}
+                </p>
+              </div>
+              <div className="flex shrink-0 gap-6 text-center">
+                <div><p className="text-[22px] font-semibold text-ink">{career.progress?.completed || 0}</p><p className="text-[10px] uppercase tracking-wide text-muted">Completed</p></div>
+                <div><p className="text-[22px] font-semibold text-ink">{career.progress?.certificates || 0}</p><p className="text-[10px] uppercase tracking-wide text-muted">Certificates</p></div>
+                <div><p className="text-[22px] font-semibold text-ink">{career.progress?.cpd_hours || 0}</p><p className="text-[10px] uppercase tracking-wide text-muted">CPD hours</p></div>
+              </div>
+            </div>
+
+            {career.progress?.in_progress?.length > 0 && (
+              <div className="mt-5 border-t border-[#dddddd] pt-4">
+                <p className="mb-2 text-[11px] font-semibold text-[#1c1c1c]">Continue learning</p>
+                <div className="flex flex-wrap gap-2">
+                  {career.progress.in_progress.map((item: any) => (
+                    <Link key={item.slug} href={`/talent/academy/${item.slug}`} className="inline-flex items-center gap-2 rounded-xl border border-[#dddddd] bg-white px-3.5 py-2 text-[12px] font-medium text-ink hover:border-[#1c1c1c]">
+                      {item.title}
+                      <span className="text-[10px] text-muted">{item.lessons_done}/{item.lessons_total} lessons</span>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {career.gaps?.length > 0 && (
+              <div className="mt-5 border-t border-[#dddddd] pt-4">
+                <p className="mb-1 text-[11px] font-semibold text-[#1c1c1c]">Skills employers are asking for right now - that your profile doesn&apos;t show yet</p>
+                <p className="mb-3 text-[11px] text-secondary">From the requirements of live roles you could match. Closing a gap strengthens real applications - directional, honest, no invented percentages.</p>
+                <div className="grid gap-2 sm:grid-cols-2">
+                  {career.gaps.map((gap: any) => (
+                    <div key={gap.skill} className="rounded-xl border border-[#dddddd] bg-white p-3.5">
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="text-[13px] font-semibold text-ink truncate">{gap.skill}</p>
+                        <span className="shrink-0 text-[10px] text-muted">{gap.demanded_in} live role{gap.demanded_in === 1 ? '' : 's'}</span>
+                      </div>
+                      {gap.courses?.length ? gap.courses.map((c: any) => (
+                        <Link key={c.slug} href={`/talent/academy/${c.slug}`} className="mt-1.5 flex items-center justify-between gap-2 text-[12px] text-[#1c1c1c] hover:underline">
+                          <span className="truncate">→ {c.title}</span><span className="shrink-0 text-[10px] text-muted">~{c.minutes} min</span>
+                        </Link>
+                      )) : <p className="mt-1.5 text-[11px] text-muted">Evidence this on your profile - no course needed.</p>}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {career.pathway?.length > 0 && (
+              <div className="mt-5 border-t border-[#dddddd] pt-4">
+                <p className="mb-2 text-[11px] font-semibold text-[#1c1c1c]">Recommended for your step up to {career.position?.next}</p>
+                <div className="flex flex-wrap gap-2">
+                  {career.pathway.map((item: any) => (
+                    <Link key={item.slug} href={`/talent/academy/${item.slug}`} className="inline-flex items-center gap-2 rounded-xl border border-[#dddddd] bg-white px-3.5 py-2 text-[12px] font-medium text-ink hover:border-[#1c1c1c]">
+                      {item.title}
+                      <span className="rounded-full bg-[#f1f1f1] px-2 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-[#1c1c1c]">{item.level}</span>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
         {!loading && enrollments.filter(e => e.paid_at && activeCoreSlugs.includes(e.course_slug)).length < activeCoreSlugs.length && activeCoreSlugs.length > 0 && (
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-ink rounded-xl px-5 py-4 mb-6">
@@ -109,7 +182,7 @@ export default function AcademyPage() {
               <p className="text-[14px] font-medium text-white">The Core Curriculum - all {activeCoreSlugs.length} core courses for £{(BUNDLE_PRICE / 100).toFixed(0)}</p>
               <p className="text-[12px] text-white/60 mt-0.5">Save £{Math.max(0, (coreCourses.reduce((sum, course) => sum + coursePrice(course), 0) - BUNDLE_PRICE) / 100).toFixed(0)} against buying individually. Certificates and profile badges are included. Brand masterclasses and specialist care are priced separately.</p>
             </div>
-            <button type="button" onClick={buyBundle} disabled={busySlug === '__bundle__'} className="btn-primary !bg-gold !text-ink text-[12px] shrink-0 disabled:opacity-50">
+            <button type="button" onClick={buyBundle} disabled={busySlug === '__bundle__'} className="btn-primary !bg-white !text-ink text-[12px] shrink-0 disabled:opacity-50">
               {busySlug === '__bundle__' ? 'Taking you to payment...' : `Get the bundle - £${(BUNDLE_PRICE / 100).toFixed(0)}`}
             </button>
           </div>
@@ -123,11 +196,11 @@ export default function AcademyPage() {
         )}
 
         {loading ? (
-          <div className="flex items-center justify-center h-64"><div className="animate-spin w-8 h-8 border-2 border-gold border-t-transparent rounded-full" /></div>
+          <div className="flex items-center justify-center h-64"><div className="animate-spin w-8 h-8 border-2 border-accent border-t-transparent rounded-full" /></div>
         ) : (
           categories.map(cat => (
             <div key={cat} className="mb-8">
-              <h2 className="text-[11px] uppercase tracking-[0.14em] text-gray-400 mb-3">{cat}</h2>
+              <h2 className="text-[11px] uppercase tracking-[0.14em] text-muted mb-3">{cat}</h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
                 {courses.filter(c => c.category === cat).map(course => {
                   const enr = enrolmentFor(course.slug)
@@ -135,20 +208,20 @@ export default function AcademyPage() {
                   const lessonsDone = enr ? Object.keys(enr.progress || {}).length : 0
                   const isManagement = MANAGEMENT_PROGRAMMES.has(course.slug)
                   return (
-                    <div key={course.slug} className={`dashboard-card !p-0 overflow-hidden flex flex-col ${done ? 'border-green-300 ring-2 ring-green-200' : enr ? 'border-gold ring-2 ring-gold shadow-lg shadow-gold/20' : ''}`}>
+                    <div key={course.slug} className={`dashboard-card !p-0 overflow-hidden flex flex-col ${done ? 'border-green-300 ring-2 ring-green-200' : enr ? 'border-accent ring-2 ring-accent shadow-lg shadow-accent/20' : ''}`}>
                       <div className="relative h-28 shrink-0">
-                        <img src={course.image_url || courseImage(course.slug)} alt="" className="absolute inset-0 w-full h-full object-cover" />
+                        <img loading="lazy" decoding="async" src={course.image_url || courseImage(course.slug)} alt="" className="absolute inset-0 w-full h-full object-cover" />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
-                        {isManagement && <span className="absolute left-3 top-3 rounded-full bg-ink/90 px-2.5 py-1 text-[9px] font-semibold uppercase tracking-[0.14em] text-gold">Leadership programme</span>}
+                        {isManagement && <span className="absolute left-3 top-3 rounded-full bg-ink/90 px-2.5 py-1 text-[9px] font-semibold uppercase tracking-[0.14em] text-white/80">Leadership programme</span>}
                       </div>
                       <div className="p-5 flex flex-col flex-1">
                         <div className="flex items-start justify-between gap-2 mb-1">
                           <h3 className="font-sans text-[17px] font-semibold tracking-tight text-ink leading-snug">{course.title}</h3>
-                          {done ? <span className="inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide bg-green-600 text-white px-2 py-0.5 rounded-full shrink-0"><Check size={10} /> Certified</span> : enr ? <span className="inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide bg-gold text-ink px-2 py-0.5 rounded-full shrink-0">Yours - in progress</span> : null}
+                          {done ? <span className="inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide bg-green-600 text-white px-2 py-0.5 rounded-full shrink-0"><Check size={10} /> Certified</span> : enr ? <span className="inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide bg-accent text-white px-2 py-0.5 rounded-full shrink-0">Yours - in progress</span> : null}
                         </div>
-                        <p className="text-[12px] text-gray-500 mb-2">{course.tagline}</p>
-                        <p className="text-[11px] text-gray-400 mb-4 inline-flex items-center gap-1"><Clock size={11} /> {course.lessons.length} modules · objectives, case studies &amp; assessment · ~{course.minutes} min</p>
-                        {isManagement && <div className="mb-4 rounded-xl border border-gold/20 bg-[#f7f5f0] p-3"><p className="text-[11px] font-semibold text-ink">Includes practical management labs + downloadable toolkit</p><p className="mt-1 text-[10px] leading-4 text-muted">Work with rota, payroll, profitability, P&amp;L, forecasting and planning templates rather than just reading theory.</p></div>}
+                        <p className="text-[12px] text-secondary mb-2">{course.tagline}</p>
+                        <p className="text-[11px] text-muted mb-4 inline-flex items-center gap-1"><Clock size={11} /> {course.lessons.length} modules · objectives, case studies &amp; assessment · ~{course.minutes} min</p>
+                        {isManagement && <div className="mb-4 rounded-xl border border-accent/20 bg-[#f1f1f1] p-3"><p className="text-[11px] font-semibold text-ink">Includes practical management labs + downloadable toolkit</p><p className="mt-1 text-[10px] leading-4 text-muted">Work with rota, payroll, profitability, P&amp;L, forecasting and planning templates rather than just reading theory.</p></div>}
                         <div className="mt-auto">
                           {done ? (
                             <div className="grid grid-cols-1 gap-2">
@@ -178,7 +251,7 @@ export default function AcademyPage() {
           ))
         )}
 
-        <p className="text-[11px] text-muted">Certificates are issued by Wellness House Collective and carry a unique verification code. They evidence course completion and knowledge assessment; they are not a substitute for accredited qualifications or insurance requirements.</p>
+        <p className="text-[11px] text-muted">Certificates are issued by Talent House Collective and carry a unique verification code. They evidence course completion and knowledge assessment; they are not a substitute for accredited qualifications or insurance requirements.</p>
       </div>
     </DashboardShell>
   )

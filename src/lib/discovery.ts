@@ -4,17 +4,35 @@ export type DiscoverableCandidate = {
   id: string
   approval_status?: string | null
   profile_visible?: boolean | null
+  stealth_mode?: boolean | null
   travel_radius_miles?: number | null
   latitude?: number | null
   longitude?: number | null
 }
 
+/**
+ * The one place that decides whether an employer may see a professional.
+ *
+ * Stealth Mode was missing from this test. The database enforced it, and the
+ * app's own copy told the professional it meant "hide me from every
+ * employer" - but every server route that actually serves employers uses the
+ * service-role client, which bypasses row-level security and comes through
+ * here instead. So the control worked only on the paths nobody used and
+ * failed on the ones everybody did.
+ *
+ * Note the asymmetry between the two flags, which is deliberate and matches
+ * the database predicate. `profile_visible` is opt-out: null means visible,
+ * because most professionals never touch it. `stealth_mode` is opt-in: only
+ * an explicit true hides someone, so a null does not quietly remove people
+ * from the register.
+ */
 export function canEmployerDiscoverCandidate(
   candidate: DiscoverableCandidate,
   blockedCandidateIds: ReadonlySet<string>,
 ): boolean {
   return candidate.approval_status === 'approved'
     && candidate.profile_visible !== false
+    && candidate.stealth_mode !== true
     && !blockedCandidateIds.has(candidate.id)
 }
 

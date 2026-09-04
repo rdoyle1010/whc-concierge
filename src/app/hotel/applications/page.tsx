@@ -31,8 +31,8 @@ export default function HotelApplicationsPage() {
         .order('created_at', { ascending: false })
 
       // Get job titles
-      const { data: jobs } = await supabase.from('job_listings').select('id, job_title, title').eq('employer_id', prof.id)
-      const jobMap = new Map((jobs || []).map(j => [j.id, j.job_title || j.title]))
+      const { data: jobs } = await supabase.from('job_listings').select('id, job_title').eq('employer_id', prof.id)
+      const jobMap = new Map((jobs || []).map(j => [j.id, j.job_title]))
 
       setApplications((apps || []).map(a => ({ ...a, jobTitle: jobMap.get(a.role_id) || 'Role' })))
       setLoading(false)

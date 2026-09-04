@@ -66,12 +66,14 @@ function FactFileSection({
             {LONG_FIELDS.has(key) ? (
               <textarea
                 rows={3}
+                aria-label={label}
                 className="input-field text-[13px] resize-y"
                 value={form[key] || ''}
                 onChange={e => onChange(key, e.target.value)}
               />
             ) : (
               <input
+                aria-label={label}
                 className="input-field text-[13px]"
                 value={form[key] ?? ''}
                 onChange={e => onChange(key, e.target.value)}
@@ -236,8 +238,8 @@ export default function PropertyFactFilePage() {
       <h1 className="dashboard-title">Property Fact File</h1>
       <p className="dashboard-intro max-w-3xl">Create the operational information every Agency worker and Residency specialist needs before arriving at your property.</p>
 
-      <div className="my-7 border-l-2 border-[#0b2f4d] bg-white px-5 py-4">
-        <div className="flex gap-3"><Sparkles size={17} className="text-ink shrink-0 mt-0.5" /><div><p className="text-[13px] font-medium text-ink">One master file. Automatic Before You Arrive packs.</p><p className="text-[12px] text-muted mt-1 leading-5">When a booking is confirmed, Spa Platform takes a snapshot of this file and adds the booking-specific date, times and details. Agency receives the concise operational version; Residency receives the extended stay information too.</p></div></div>
+      <div className="my-7 border-l-2 border-[#1c1c1c] bg-white px-5 py-4">
+        <div className="flex gap-3"><Sparkles size={17} className="text-ink shrink-0 mt-0.5" /><div><p className="text-[13px] font-medium text-ink">One master file. Automatic Before You Arrive packs.</p><p className="text-[12px] text-muted mt-1 leading-5">When a booking is confirmed, Talent House Collective takes a snapshot of this file and adds the booking-specific date, times and details. Agency receives the concise operational version; Residency receives the extended stay information too.</p></div></div>
       </div>
 
       {notice && <div className="mb-5 bg-green-50 text-green-700 px-4 py-3 text-sm flex items-center gap-2"><CheckCircle2 size={16}/>{notice}</div>}
@@ -246,8 +248,8 @@ export default function PropertyFactFilePage() {
       <section className="dashboard-panel mb-6">
         <div className="flex items-center gap-3"><Building2 size={18} className="text-ink"/><div><h2 className="dashboard-section-title">Property basics</h2><p className="text-[12px] text-muted mt-1">{profile?.property_name || profile?.company_name || 'Your property'}</p></div></div>
         <div className="mt-5 grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div><label className="block text-[11px] font-medium text-ink mb-1.5">Parking available?</label><select className="input-field text-[13px]" value={form.parking_available ? 'yes' : 'no'} onChange={e => set('parking_available', e.target.value === 'yes')}><option value="yes">Yes</option><option value="no">No</option></select></div>
-          <div><label className="block text-[11px] font-medium text-ink mb-1.5">Recommended arrival buffer</label><input type="number" min="0" max="120" className="input-field text-[13px]" value={form.recommended_arrival_buffer_minutes ?? 15} onChange={e => set('recommended_arrival_buffer_minutes', e.target.value)} /></div>
+          <div><label className="block text-[11px] font-medium text-ink mb-1.5">Parking available?</label><select aria-label="Parking available?" className="input-field text-[13px]" value={form.parking_available ? 'yes' : 'no'} onChange={e => set('parking_available', e.target.value === 'yes')}><option value="yes">Yes</option><option value="no">No</option></select></div>
+          <div><label className="block text-[11px] font-medium text-ink mb-1.5">Recommended arrival buffer</label><input aria-label="Recommended arrival buffer" type="number" min="0" max="120" className="input-field text-[13px]" value={form.recommended_arrival_buffer_minutes ?? 15} onChange={e => set('recommended_arrival_buffer_minutes', e.target.value)} /></div>
         </div>
       </section>
 
@@ -255,22 +257,22 @@ export default function PropertyFactFilePage() {
         <h2 className="dashboard-section-title">Getting here & arrival</h2>
         <p className="text-[12px] text-muted mt-1 mb-5 max-w-3xl">Remove the uncertainty before someone travels to you.</p>
 
-        <div className="border border-border bg-[#f7f8fa] p-4 mb-5">
+        <div className="border border-border bg-[#f1f1f1] p-4 mb-5">
           <div className="flex items-center gap-2 mb-3"><MapPin size={15} className="text-ink"/><p className="text-[12px] font-semibold text-ink">Find the property address</p></div>
           <div className="flex flex-col sm:flex-row gap-2">
-            <input className="input-field text-[13px] flex-1" value={postcode} onChange={e => setPostcode(e.target.value.toUpperCase())} placeholder="Enter postcode, e.g. BD20 5QG" />
+            <input aria-label="Postcode" className="input-field text-[13px] flex-1" value={postcode} onChange={e => setPostcode(e.target.value.toUpperCase())} placeholder="Enter postcode, e.g. BD20 5QG" />
             <button type="button" onClick={findAddress} disabled={findingAddress} className="btn-secondary flex items-center justify-center gap-2 text-[12px] shrink-0"><Search size={14}/>{findingAddress ? 'Finding...' : 'Find address'}</button>
           </div>
-          {addressSuggestions.length > 0 && <div className="mt-3"><label className="block text-[11px] font-medium text-ink mb-1.5">Choose the correct address</label><select className="input-field text-[13px]" defaultValue="" onChange={e => chooseAddress(e.target.value)}><option value="" disabled>Select an address...</option>{addressSuggestions.map(item => <option key={item.id} value={item.id}>{item.address}</option>)}</select></div>}
+          {addressSuggestions.length > 0 && <div className="mt-3"><label className="block text-[11px] font-medium text-ink mb-1.5">Choose the correct address</label><select aria-label="Choose the correct address" className="input-field text-[13px]" defaultValue="" onChange={e => chooseAddress(e.target.value)}><option value="" disabled>Select an address...</option>{addressSuggestions.map(item => <option key={item.id} value={item.id}>{item.address}</option>)}</select></div>}
           {addressLookupMessage && <p className="mt-2 text-[11px] text-muted">{addressLookupMessage}</p>}
           <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div><label className="block text-[11px] font-medium text-ink mb-1.5">Property address</label><input className="input-field text-[13px]" value={form.property_address || ''} onChange={e => set('property_address', e.target.value)} placeholder="Full address" /></div>
-            <div><label className="block text-[11px] font-medium text-ink mb-1.5">Map link</label><input className="input-field text-[13px] bg-[#f7f8fa]" value={form.map_url || ''} onChange={e => set('map_url', e.target.value)} placeholder="Created automatically after address selection" /></div>
+            <div><label className="block text-[11px] font-medium text-ink mb-1.5">Property address</label><input aria-label="Property address" className="input-field text-[13px]" value={form.property_address || ''} onChange={e => set('property_address', e.target.value)} placeholder="Full address" /></div>
+            <div><label className="block text-[11px] font-medium text-ink mb-1.5">Map link</label><input aria-label="Map link" className="input-field text-[13px] bg-[#f1f1f1]" value={form.map_url || ''} onChange={e => set('map_url', e.target.value)} placeholder="Created automatically after address selection" /></div>
           </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {fields.arrival.map(([key, label]) => <div key={key} className={LONG_FIELDS.has(key) ? 'md:col-span-2' : ''}><label className="block text-[11px] font-medium text-ink mb-1.5">{label}</label>{LONG_FIELDS.has(key) ? <textarea rows={3} className="input-field text-[13px] resize-y" value={form[key] || ''} onChange={e => set(key, e.target.value)} /> : <input className="input-field text-[13px]" value={form[key] ?? ''} onChange={e => set(key, e.target.value)} />}</div>)}
+          {fields.arrival.map(([key, label]) => <div key={key} className={LONG_FIELDS.has(key) ? 'md:col-span-2' : ''}><label className="block text-[11px] font-medium text-ink mb-1.5">{label}</label>{LONG_FIELDS.has(key) ? <textarea rows={3} aria-label={label} className="input-field text-[13px] resize-y" value={form[key] || ''} onChange={e => set(key, e.target.value)} /> : <input aria-label={label} className="input-field text-[13px]" value={form[key] ?? ''} onChange={e => set(key, e.target.value)} />}</div>)}
         </div>
       </section>
 
@@ -288,7 +290,7 @@ export default function PropertyFactFilePage() {
 
       <FactFileSection title="Residency extended stay" intro="Only shown in the richer Residency Before You Arrive pack." items={fields.residency} form={form} onChange={set} />
 
-      <div className="sticky bottom-4 z-10 flex justify-end"><button type="button" onClick={save} disabled={saving} className="btn-primary px-7 py-3 shadow-lg disabled:opacity-50">{saving ? 'Saving...' : 'Save Property Fact File'}</button></div>
+      <div className="sticky bottom-4 z-10 flex justify-end"><button type="button" onClick={save} disabled={saving} className="btn-primary px-7 py-3 disabled:opacity-50">{saving ? 'Saving...' : 'Save Property Fact File'}</button></div>
     </div>
   </DashboardShell>
 }

@@ -1,17 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { cookies } from 'next/headers'
-import { createServerClient } from '@supabase/ssr'
+import { agencyResolutionExceedsCollected } from '@/lib/agency-payouts'
+import { adminRequestUser } from '@/lib/admin-api-auth'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createNotification } from '@/lib/notifications'
 
+// Delegated to the shared admin guard, which enforces two-step
+// verification as well as the admin role.
 async function requireAdmin() {
-  const store = await cookies()
-  const client = createServerClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, { cookies: { getAll() { return store.getAll() }, setAll() {} } })
-  const { data: { user } } = await client.auth.getUser()
-  if (!user) return null
-  const admin = createAdminClient()
-  const { data: profile } = await admin.from('profiles').select('role').eq('id', user.id).maybeSingle()
-  return profile?.role === 'admin' ? user : null
+  return adminRequestUser()
 }
 
 export async function GET() {
@@ -68,6 +64,20 @@ export async function POST(req: NextRequest) {
   const resolution = String(body.resolution || '').trim().slice(0, 4000)
   if (!resolution) return NextResponse.json({ error: 'Add a proposed resolution.' }, { status: 400 })
   if (refund > Number(booking.amount_paid || 0)) return NextResponse.json({ error: 'Refund exceeds the amount collected.' }, { status: 400 })
+  // The same invariant the admin dispute route enforces, and this one was
+  // missing it: refund plus payout cannot exceed what the property actually
+  // paid in. Without it an administrator could propose a full refund AND the
+  // full shift value, both parties could sign, and Talent House would pay the
+  // professional out of its own money on top of refunding the property.
+  //
+  // The extra the property is being asked to pay counts as collected, since
+  // the resolution only completes once that payment clears.
+  if (agencyResolutionExceedsCollected(Number(booking.amount_paid || 0) + extra, refund, adjustedPayout)) {
+    return NextResponse.json(
+      { error: `The refund (£${refund.toFixed(2)}) plus the payout (£${adjustedPayout.toFixed(2)}) is more than the £${(Number(booking.amount_paid || 0) + extra).toFixed(2)} this booking will have collected. Talent House cannot hand out more than it took in.` },
+      { status: 400 },
+    )
+  }
   if (refund > 0 && (!booking.stripe_payment_intent || booking.stripe_payment_intent === 'manual_audit_no_charge')) return NextResponse.json({ error: 'This audit booking has no real Stripe payment to refund. Set the refund to £0 for this test case.' }, { status: 400 })
 
   const { error } = await admin.from('agency_cases').update({
@@ -91,8 +101,8 @@ export async function POST(req: NextRequest) {
     admin.from('employer_profiles').select('user_id').eq('id', booking.employer_id).maybeSingle(),
   ])
   await Promise.allSettled([
-    c?.user_id ? createNotification(c.user_id, 'general', 'Agency case resolution ready', 'WHC has proposed a resolution. Please review the terms and sign if you agree.', '/talent/agency/cases') : Promise.resolve(),
-    e?.user_id ? createNotification(e.user_id, 'general', 'Agency case resolution ready', 'WHC has proposed a resolution. Please review the terms and sign if you agree.', '/employer/agency/cases') : Promise.resolve(),
+    c?.user_id ? createNotification(c.user_id, 'general', 'Agency case resolution ready', 'Talent House has proposed a resolution. Please review the terms and sign if you agree.', '/talent/agency/cases') : Promise.resolve(),
+    e?.user_id ? createNotification(e.user_id, 'general', 'Agency case resolution ready', 'Talent House has proposed a resolution. Please review the terms and sign if you agree.', '/employer/agency/cases') : Promise.resolve(),
   ])
   return NextResponse.json({ success: true, awaitingAgreement: true })
 }

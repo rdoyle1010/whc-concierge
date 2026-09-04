@@ -3,6 +3,23 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { createNotification } from '@/lib/notifications'
 import { getRequestUser } from '@/lib/request-user'
 
+export async function GET(req: NextRequest) {
+  try {
+    const listingId = String(req.nextUrl.searchParams.get('listing') || '')
+    if (!listingId) return NextResponse.json({ exists: false })
+    const user = await getRequestUser(req)
+    if (!user) return NextResponse.json({ exists: false, signedOut: true })
+    const admin = createAdminClient()
+    const { data: employer } = await admin.from('employer_profiles').select('id').eq('user_id', user.id).maybeSingle()
+    if (!employer) return NextResponse.json({ exists: false, notEmployer: true })
+    const { data: conversation } = await admin.from('residency_conversations')
+      .select('id').eq('residency_profile_id', listingId).eq('employer_id', employer.id).maybeSingle()
+    return NextResponse.json({ exists: Boolean(conversation) })
+  } catch {
+    return NextResponse.json({ exists: false })
+  }
+}
+
 export async function POST(req: NextRequest) {
   try {
     const user = await getRequestUser(req)

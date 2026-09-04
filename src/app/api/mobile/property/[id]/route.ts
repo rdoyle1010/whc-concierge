@@ -4,20 +4,24 @@ import { getRequestUser } from '@/lib/request-user'
 
 async function loadReviews(admin: ReturnType<typeof createAdminClient>, employerUserId?: string | null) {
   if (!employerUserId) return []
-  let rows: any[] = []
-  for (const reviewedColumn of ['reviewed_id', 'reviewee_id']) {
-    const { data, error } = await admin
+  // Old rows predate the type column, so a null type on a review of this
+  // employer still counts as an employer review. The type column itself is
+  // newer than some environments, so fall back to a plain select if the
+  // typed query fails.
+  const buildReviewQuery = (withType: boolean) => {
+    let query = admin
       .from('reviews')
-      .select('id,reviewer_id,rating,text,comment,booking_id,created_at,type')
-      .eq(reviewedColumn, employerUserId)
-      .eq('type', 'employer')
-      .order('created_at', { ascending: false })
-      .limit(20)
-    if (!error) { rows = data || []; break }
+      .select(withType ? 'id,reviewer_id,rating,text,booking_id,created_at,type' : 'id,reviewer_id,rating,text,booking_id,created_at')
+      .eq('reviewee_id', employerUserId)
+    if (withType) query = query.or('type.eq.employer,type.is.null')
+    return query.order('created_at', { ascending: false }).limit(20)
   }
+  let { data: reviewRows, error: reviewError } = await buildReviewQuery(true)
+  if (reviewError) ({ data: reviewRows } = await buildReviewQuery(false))
+  const rows: any[] = reviewRows || []
   const reviewerIds = [...new Set(rows.map(row => row.reviewer_id).filter(Boolean))]
   const { data: candidates } = reviewerIds.length
-    ? await admin.from('candidate_profiles').select('user_id,full_name,current_role').in('user_id', reviewerIds)
+    ? await admin.from('candidate_profiles').select('user_id,full_name,role_level').in('user_id', reviewerIds)
     : { data: [] as any[] }
   const candidateMap = new Map((candidates || []).map((row: any) => [row.user_id, row]))
   return rows
@@ -27,11 +31,11 @@ async function loadReviews(admin: ReturnType<typeof createAdminClient>, employer
       return {
         id: row.id,
         rating: Number(row.rating),
-        comment: row.comment || row.text || '',
+        comment: row.text || '',
         created_at: row.created_at,
-        source: row.booking_id ? 'Completed WHC Agency shift' : 'WHC placement',
-        reviewer_name: reviewer?.full_name || 'WHC professional',
-        reviewer_role: reviewer?.current_role || null,
+        source: row.booking_id ? 'Completed Talent House Agency shift' : 'Talent House placement',
+        reviewer_name: reviewer?.full_name || 'Talent House professional',
+        reviewer_role: reviewer?.role_level || null,
       }
     })
 }

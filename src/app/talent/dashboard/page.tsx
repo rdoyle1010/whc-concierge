@@ -4,21 +4,77 @@ import { useEffect, useState } from 'react'
 import DashboardShell from '@/components/DashboardShell'
 import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
-import {
-  Briefcase, FileText, MessageSquare, GraduationCap, User, Star, ArrowRight, Search, EyeOff, Calendar, MapPin,
-} from 'lucide-react'
+import { Star, ArrowRight, EyeOff } from 'lucide-react'
+import SponsoredAd from '@/components/SponsoredAd'
 
 // Talent home - the landing page after login. Greeting, a few live counts
 // (best-effort - failures are silent) and quick links into the main areas.
+
+// Time-of-day greeting for the personal brief. Computed on the client so it
+// reflects the professional's own clock.
+function timeOfDayGreeting(): string {
+  const hour = new Date().getHours()
+  if (hour < 12) return 'Good morning'
+  if (hour < 18) return 'Good afternoon'
+  return 'Good evening'
+}
 
 export default function TalentDashboard() {
   const supabase = createClient()
   const [profile, setProfile] = useState<any>(null)
   const [stats, setStats] = useState({ applications: 0, messages: 0 })
+  const [brief, setBrief] = useState<any>(null)
   const [loading, setLoading] = useState(true)
+  const [approaches, setApproaches] = useState<any[]>([])
+  const [approachBusy, setApproachBusy] = useState('')
+  const [approachNote, setApproachNote] = useState('')
+  const [consultancyEnquiries, setConsultancyEnquiries] = useState(0)
+  const isConsultant = profile?.account_focus === 'consultant'
+
+  useEffect(() => {
+    if (!isConsultant) return
+    fetch('/api/consultancy/mine', { cache: 'no-store' })
+      .then(res => res.ok ? res.json() : null)
+      .then(json => setConsultancyEnquiries((json?.enquiries || []).length))
+      .catch(() => {})
+  }, [isConsultant])
+
+  // Confidential approaches: a property has asked for an introduction to this
+  // private profile. Accepting reveals the full profile and opens messaging.
+  async function respondToApproach(employerId: string, action: 'accept' | 'decline') {
+    if (approachBusy) return
+    setApproachBusy(`${action}:${employerId}`)
+    setApproachNote('')
+    try {
+      const res = await fetch('/api/private-approach', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action, employerId }),
+      })
+      const body = await res.json().catch(() => ({}))
+      if (!res.ok) { setApproachNote(body.error || 'Could not record your response - please try again.'); return }
+      setApproaches(prev => prev.filter(a => a.employer_id !== employerId))
+      setApproachNote(action === 'accept'
+        ? 'Introduction accepted. The property can now see your full profile and message you.'
+        : 'Approach declined. The property learns nothing about who you are.')
+    } catch {
+      setApproachNote('Could not record your response - please try again.')
+    } finally {
+      setApproachBusy('')
+    }
+  }
 
   useEffect(() => {
     async function load() {
+      // The personal brief loads alongside the page data; if it fails the
+      // dashboard simply renders without it.
+      fetch('/api/talent/brief')
+        .then(res => (res.ok ? res.json() : null))
+        .then(data => { if (data && !data.error) setBrief(data) })
+        .catch(() => { /* the brief is optional */ })
+      fetch('/api/private-approach')
+        .then(res => (res.ok ? res.json() : null))
+        .then(data => { if (data && Array.isArray(data.approaches)) setApproaches(data.approaches) })
+        .catch(() => { /* the card simply does not render */ })
       try {
         const { data: { user } } = await supabase.auth.getUser()
         if (!user) { setLoading(false); return }
@@ -33,7 +89,7 @@ export default function TalentDashboard() {
         try {
           const [appsRes, msgsRes] = await Promise.all([
             prof?.id
-              ? supabase.from('applications').select('id', { count: 'exact', head: true }).eq('candidate_id', prof.id)
+              ? supabase.from('applications').select('id', { count: 'exact', head: true }).eq('candidate_id', prof.id).neq('status', 'draft').is('archived_at', null)
               : Promise.resolve({ count: 0 } as any),
             supabase.from('messages').select('id', { count: 'exact', head: true }).eq('recipient_id', user.id).eq('read', false),
           ])
@@ -48,17 +104,8 @@ export default function TalentDashboard() {
     load()
   }, [])
 
-  const quickLinks = [
-    { label: 'Browse Jobs', desc: 'Find your next permanent or fixed-term role.', href: '/talent/jobs', icon: <Briefcase size={17} /> },
-    { label: 'Agency Shifts', desc: 'Manage planned cover and urgent shift offers.', href: '/talent/agency', icon: <Calendar size={17} /> },
-    { label: 'Residency', desc: 'Build your specialist profile for short-term residencies.', href: '/talent/residency', icon: <MapPin size={17} /> },
-    { label: 'Applications', desc: 'Track every role you have applied for.', href: '/talent/applications', icon: <FileText size={17} /> },
-    { label: 'Messages', desc: 'Private conversations with properties and matches.', href: '/talent/messages', icon: <MessageSquare size={17} /> },
-    { label: 'Academy', desc: 'Courses, certificates and profile badges.', href: '/talent/academy', icon: <GraduationCap size={17} /> },
-    { label: 'My Profile', desc: 'Keep your professional profile polished and current.', href: '/talent/profile', icon: <User size={17} /> },
-    { label: 'Get Verified', desc: 'Add trust signals for properties reviewing your profile.', href: '/talent/verification', icon: <Star size={17} /> },
-  ]
-
+  // The sidebar already navigates everywhere - this list keeps only the
+  // destinations a professional actually opens daily.
   if (loading) return (
     <DashboardShell role="talent">
       <div className="animate-pulse space-y-6">
@@ -75,15 +122,145 @@ export default function TalentDashboard() {
     </DashboardShell>
   )
 
+  const briefRoles: any[] = brief?.newMatchingRoles || []
+  const briefCourses: any[] = brief?.strengthenCourses || []
+  const briefInterview = brief?.upcomingInterview || null
+  const briefOffers: number = brief?.offersAwaiting || 0
+  const briefViews: number | null = typeof brief?.profileViews === 'number' ? brief.profileViews : null
+  const briefFirstName = brief?.firstName || (profile?.full_name ? profile.full_name.split(' ')[0] : null)
+  // Every row in the brief is conditional, so with nothing to say it rendered
+  // a greeting, two zeros and blank space.
+  const hasBriefContent = briefRoles.length > 0 || briefCourses.length > 0 || Boolean(briefInterview)
+    || (briefViews !== null && briefViews > 0) || briefOffers > 0
+
   return (
-    <DashboardShell role="talent" userName={profile?.full_name}>
-      <div className="mb-9">
+    <DashboardShell
+      role="talent"
+      userName={profile?.full_name}
+      intro={<>
         <p className="dashboard-eyebrow">Your career</p>
-        <h1 className="dashboard-title">
-          {profile?.full_name ? `Welcome back, ${profile.full_name.split(' ')[0]}` : 'Welcome back'}
-        </h1>
-        <p className="dashboard-intro">Permanent roles, flexible work, private conversations and your professional profile in one workspace.</p>
-      </div>
+        <h1 className="dashboard-title">{timeOfDayGreeting()}{briefFirstName ? `, ${briefFirstName}` : ''}.</h1>
+        <p className="dashboard-intro">{isConsultant
+          ? 'Your practice, your enquiries and the Academy, in one workspace.'
+          : 'Permanent roles, flexible work, private conversations and your professional profile in one workspace.'}</p>
+      </>}
+    >
+
+      <section className="dashboard-card mb-8">
+          <p className="dashboard-eyebrow">Your brief</p>
+          <h2 className="dashboard-section-title mb-2">What has moved</h2>
+          <div className="mt-4 mb-2 grid max-w-md grid-cols-2 gap-x-8">
+            <div className="border-t border-border pt-3">
+              <p className="text-[10px] uppercase tracking-[.14em] text-muted">{isConsultant ? 'Enquiries' : 'Applications'}</p>
+              <p className="mt-1 text-[18px] font-serif font-semibold text-ink">{isConsultant ? consultancyEnquiries : stats.applications}</p>
+            </div>
+            <div className="border-t border-border pt-3">
+              <p className="text-[10px] uppercase tracking-[.14em] text-muted">Unread messages</p>
+              <p className="mt-1 text-[18px] font-serif font-semibold text-ink">{stats.messages}</p>
+            </div>
+          </div>
+          <div>
+            {briefRoles.length > 0 && (
+              <div className="dashboard-list-row">
+                <div>
+                  <p className="text-[13px] font-medium text-ink">{briefRoles.length} new role{briefRoles.length === 1 ? '' : 's'} match your profile</p>
+                  <p className="text-[12px] text-muted mt-0.5">
+                    {briefRoles.map((role: any, index: number) => (
+                      <span key={role.jobId}>
+                        {index > 0 && <span> · </span>}
+                        <Link href={`/jobs/${role.jobId}`} className="text-accent hover:underline">{role.property} - {role.score}%</Link>
+                      </span>
+                    ))}
+                  </p>
+                </div>
+              </div>
+            )}
+            {briefCourses.map((course: any) => (
+              <div key={course.slug} className="dashboard-list-row">
+                <p className="text-[13px] text-ink">
+                  Complete <Link href={`/talent/academy/${course.slug}`} className="font-medium text-accent hover:underline">{course.title}</Link> to strengthen {course.strengthens} application{course.strengthens === 1 ? '' : 's'}
+                </p>
+              </div>
+            ))}
+            {briefInterview && (
+              <div className="dashboard-list-row">
+                <p className="text-[13px] text-ink">
+                  Interview ahead: <span className="font-medium">{briefInterview.jobTitle}</span>
+                  {briefInterview.property ? ` at ${briefInterview.property}` : ''}
+                  {briefInterview.selectedSlot ? ` on ${new Date(briefInterview.selectedSlot).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })}` : ''}
+                  {briefInterview.method ? ` (${briefInterview.method})` : ''}.{' '}
+                  <Link href="/talent/applications" className="text-accent hover:underline">View details</Link>
+                </p>
+              </div>
+            )}
+            {briefViews !== null && briefViews > 0 && (
+              <div className="dashboard-list-row">
+                <p className="text-[13px] text-ink">{briefViews} employer view{briefViews === 1 ? '' : 's'} of your profile in the last fortnight</p>
+              </div>
+            )}
+            {briefOffers > 0 && (
+              <div className="dashboard-list-row">
+                <p className="text-[13px] text-ink">
+                  {briefOffers} agency shift offer{briefOffers === 1 ? '' : 's'} awaiting your response.{' '}
+                  <Link href="/talent/agency" className="text-accent hover:underline">Respond</Link>
+                </p>
+              </div>
+            )}
+            {!hasBriefContent && (
+              <div className="dashboard-list-row">
+                <p className="text-[13px] text-ink">Nothing has moved yet.</p>
+                <p className="text-[12px] text-secondary mt-1 max-w-[54ch]">
+                  {isConsultant ? (
+                    <>
+                      Properties find you through the directory, so the projects on your listing do the work here.{' '}
+                      <Link href="/talent/consultancy" className="text-accent hover:underline">Open your practice</Link>
+                      {' '}or <Link href="/consultancy" className="text-accent hover:underline">see the directory</Link>.
+                    </>
+                  ) : (
+                    <>
+                      Matching runs on what your profile says about your skills, qualifications and
+                      product houses. The more of it that is filled in, the more this brief has to tell
+                      you. <Link href="/talent/profile" className="text-accent hover:underline">Complete your profile</Link>
+                      {' '}or <Link href="/jobs" className="text-accent hover:underline">browse live roles</Link>.
+                    </>
+                  )}
+                </p>
+              </div>
+            )}
+          </div>
+      </section>
+
+      {(approaches.length > 0 || approachNote) && (
+        <section className="dashboard-card mb-8">
+          <p className="dashboard-eyebrow">Private Career Mode</p>
+          <h2 className="dashboard-section-title mb-1">Confidential approaches</h2>
+          <p className="text-[12px] text-muted mb-2">A property would like an introduction. Accepting reveals your full profile to that property and opens messaging - declining tells them nothing about who you are.</p>
+          {approachNote && <p className="text-[12px] text-ink border border-border bg-surface px-3 py-2 mb-2">{approachNote}</p>}
+          <div>
+            {approaches.map(approach => (
+              <div key={approach.employer_id} className="dashboard-list-row flex-wrap gap-3">
+                <div className="min-w-0">
+                  <p className="text-[13px] font-medium text-ink truncate">{approach.property_name}</p>
+                  <p className="text-[12px] text-muted mt-0.5">
+                    {approach.location ? `${approach.location} · ` : ''}
+                    <Link href={`/properties/${approach.employer_id}`} className="text-accent hover:underline">View property</Link>
+                  </p>
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  <button type="button" disabled={!!approachBusy} onClick={() => respondToApproach(approach.employer_id, 'accept')}
+                    className="px-3 py-2 bg-[#1c1c1c] text-white text-[12px] font-medium disabled:opacity-50">
+                    {approachBusy === `accept:${approach.employer_id}` ? 'Accepting...' : 'Accept introduction'}
+                  </button>
+                  <button type="button" disabled={!!approachBusy} onClick={() => respondToApproach(approach.employer_id, 'decline')}
+                    className="px-3 py-2 border border-border bg-white text-secondary text-[12px] font-medium hover:text-ink disabled:opacity-50">
+                    {approachBusy === `decline:${approach.employer_id}` ? 'Declining...' : 'Decline'}
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
       {profile && profile.approval_status && profile.approval_status !== 'approved' && (
         <div className="border-l-2 border-amber-500 bg-white/65 px-5 py-4 mb-7 flex items-start gap-3">
@@ -95,47 +272,15 @@ export default function TalentDashboard() {
         </div>
       )}
 
-      <div className="dashboard-metrics mb-8">
-        {[
-          { label: 'Applications', value: stats.applications, icon: <FileText size={16} /> },
-          { label: 'Unread messages', value: stats.messages, icon: <MessageSquare size={16} /> },
-          { label: 'Profile status', value: profile?.approval_status === 'approved' ? 'Approved' : 'In review', icon: <User size={16} /> },
-          { label: 'Featured', value: profile?.is_featured ? 'Active' : 'Off', icon: <Star size={16} /> },
-        ].map(s => (
-          <div key={s.label} className="dashboard-metric">
-            <div className="text-accent mb-3">{s.icon}</div>
-            <p className="dashboard-metric-value">{s.value}</p>
-            <p className="dashboard-metric-label">{s.label}</p>
-          </div>
-        ))}
-      </div>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-2.5 mb-9">
-        <Link href="/talent/jobs" className="btn-primary flex items-center justify-center gap-2 py-3"><Search size={14} />Browse roles</Link>
-        <Link href="/talent/agency" className="btn-secondary flex items-center justify-center gap-2 py-3"><Calendar size={14} />Agency shifts</Link>
-        <Link href="/talent/residency" className="btn-secondary flex items-center justify-center gap-2 py-3"><MapPin size={14} />Residency</Link>
-        <Link href="/talent/profile" className="btn-secondary flex items-center justify-center gap-2 py-3">Update profile</Link>
-      </div>
-
+      {/* The old "Career workspace" list lived here. Every one of its six
+          links is already in the sidebar, two clicks from any page, and it
+          sat directly above a second grid of links to the public site - two
+          near-identical blocks that made the page read as filler. The
+          sidebar is the navigation; this panel is the one thing the
+          dashboard can say that the sidebar cannot. */}
       <div className="grid grid-cols-1 lg:grid-cols-[1.55fr_.85fr] gap-6">
-        <section className="dashboard-panel">
-          <p className="dashboard-eyebrow">Continue your journey</p>
-          <h2 className="dashboard-section-title mb-4">Career workspace</h2>
-          <div>
-            {quickLinks.map(link => (
-              <Link key={link.href} href={link.href} className="dashboard-list-row group">
-                <div className="flex items-start gap-3">
-                  <span className="text-accent mt-0.5">{link.icon}</span>
-                  <span><span className="block text-[13px] font-medium text-ink">{link.label}</span><span className="block text-[12px] text-muted mt-0.5">{link.desc}</span></span>
-                </div>
-                <ArrowRight size={14} className="text-muted group-hover:text-accent shrink-0" />
-              </Link>
-            ))}
-          </div>
-        </section>
-
-        <aside className="dashboard-panel bg-[#092b45] !border-[#092b45] text-white">
-          <EyeOff size={19} className="text-gold mb-5" />
+        <aside className="dashboard-panel !bg-[#1c1c1c] !border-[#1c1c1c] text-white lg:col-start-2">
+          <EyeOff size={19} className="text-white/80 mb-5" />
           <p className="text-[9px] uppercase tracking-[.2em] text-white/48 mb-2">Profile privacy</p>
           <h2 className="text-[28px] !text-white mb-3">{profile?.stealth_mode ? 'Stealth Mode is on' : 'Control who sees you'}</h2>
           <p className="text-[12px] leading-6 text-white/65 mb-5">
@@ -144,9 +289,10 @@ export default function TalentDashboard() {
               : 'Hide from a current employer without disappearing from suitable opportunities elsewhere.'}
           </p>
           {profile?.travel_radius_miles && <p className="text-[11px] text-white/52 mb-5">Agency travel limit: {profile.travel_radius_miles} miles</p>}
-          <Link href="/talent/settings" className="inline-flex items-center gap-2 text-[12px] font-medium text-gold">Review privacy settings <ArrowRight size={13} /></Link>
+          <Link href="/talent/settings" className="inline-flex items-center gap-2 text-[12px] font-medium text-white/80 hover:text-white">Review privacy settings <ArrowRight size={13} /></Link>
         </aside>
       </div>
+          <SponsoredAd placement="talent_dashboard_sponsor" />
     </DashboardShell>
   )
 }

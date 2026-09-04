@@ -1,4 +1,5 @@
 import { createHmac, timingSafeEqual } from 'node:crypto'
+import { isOwnedFileReference } from './file-references.ts'
 
 export type RegistrationRole = 'talent' | 'employer'
 
@@ -9,7 +10,7 @@ type RegistrationProof = {
   exp: number
 }
 
-const PROOF_LIFETIME_SECONDS = 15 * 60
+const PROOF_LIFETIME_SECONDS = 24 * 60 * 60
 
 function proofSecret() {
   const secret = process.env.REGISTRATION_PROOF_SECRET || process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -84,18 +85,7 @@ function textArray(value: unknown, maxItems = 100, maxLength = 120) {
 }
 
 export function isOwnedRegistrationDocumentUrl(value: unknown, userId: string) {
-  if (typeof value !== 'string' || !value.startsWith('/api/files?')) return false
-  try {
-    const url = new URL(value, 'https://whc.local')
-    const path = url.searchParams.get('path') || ''
-    return url.pathname === '/api/files'
-      && url.searchParams.get('bucket') === 'talent-documents'
-      && path.startsWith(`${userId}/`)
-      && !path.includes('..')
-      && !path.includes('\\')
-  } catch {
-    return false
-  }
+  return isOwnedFileReference(value, userId, 'talent-documents')
 }
 
 export function sanitiseTalentRegistration(input: unknown, userId: string) {
@@ -135,7 +125,7 @@ export function sanitiseTalentRegistration(input: unknown, userId: string) {
     cv_url: cvUrl,
     certificates_urls: certificateUrls.length ? certificateUrls : null,
     agreed_terms: source.agreed_terms === true,
-    approval_status: 'pending',
+    approval_status: 'approved',
   }
 
   let score = 0

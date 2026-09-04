@@ -4,12 +4,14 @@ import { getRequestUser } from '@/lib/request-user'
 import { calculateMatchScore } from '@/lib/matching'
 import { canEmployerDiscoverCandidate, mutualRadiusResult } from '@/lib/discovery'
 import { createNotification } from '@/lib/notifications'
+import { createMutualMatch } from '@/lib/mutual-match'
+import { candidateNameForEmployer, presentCandidateForEmployer } from '@/lib/private-mode'
 
 const CANDIDATE_FIELDS = [
   'id','user_id','full_name','headline','role_level','location','services_offered','experience_years','years_experience',
   'profile_image_url','review_score','bio','qualifications','treatment_skills','product_houses','systems_experience',
   'business_skills','career_evidence','has_insurance','awards','availability_status','travel_radius_miles','has_car',
-  'latitude','longitude','approval_status','profile_visible','is_featured','featured_until','created_at',
+  'latitude','longitude','approval_status','profile_visible','stealth_mode','show_first_name_only','is_featured','featured_until','created_at',
 ].join(',')
 
 async function getEmployer(admin: any, userId: string) {
@@ -17,23 +19,6 @@ async function getEmployer(admin: any, userId: string) {
     .select('id,user_id,company_name,property_name,approval_status,latitude,longitude,postcode,featured_employer,featured_until,membership_tier')
     .eq('user_id', userId).maybeSingle()
   return data
-}
-
-function candidateResult(employer: any, candidate: any, job: any) {
-  const travel = mutualRadiusResult(employer, candidate, null)
-  if (!travel.withinRadius) return null
-  const match = calculateMatchScore(candidate, job)
-  if (match.hardStop) return null
-  return {
-    ...candidate,
-    latitude: undefined,
-    longitude: undefined,
-    match_score: match.score,
-    match_label: match.label,
-    match_explanation: match.matchExplanation || [],
-    distance_miles: travel.distanceMiles,
-    role_title: job.job_title,
-  }
 }
 
 export async function GET(req: NextRequest) {
@@ -52,65 +37,48 @@ export async function GET(req: NextRequest) {
   ])
   const liveJobs = jobs || []
   const selectedJob = requestedJobId ? liveJobs.find((job: any) => job.id === requestedJobId) : liveJobs[0]
-  if (!selectedJob) return NextResponse.json({ jobs: liveJobs, candidates: [], interested_candidates: [], selected_job_id: null, eligible_count: 0, reviewed_count: 0 })
+  if (!selectedJob) return NextResponse.json({ jobs: liveJobs, candidates: [], selected_job_id: null })
 
-  const [{ data: rows, error }, { data: swipes }, { data: applications }] = await Promise.all([
+  const [{ data: rows, error }, { data: swipes }] = await Promise.all([
     admin.from('candidate_profiles').select(CANDIDATE_FIELDS).eq('approval_status', 'approved').or('profile_visible.eq.true,profile_visible.is.null').order('is_featured', { ascending: false }).limit(100),
     admin.from('swipes').select('target_id,action,context_job_id').eq('swiper_id', user.id).eq('swiper_type', 'employer').eq('target_type', 'candidate'),
-    admin.from('applications').select('id,candidate_id,status,job_id,role_id').or(`job_id.eq.${selectedJob.id},role_id.eq.${selectedJob.id}`),
   ])
   if (error) return NextResponse.json({ error: 'Talent matches are unavailable.' }, { status: 500 })
 
   const blocked = new Set((blocks || []).map((row: any) => row.candidate_id))
-  const roleSwipes = (swipes || []).filter((row: any) => row.context_job_id === selectedJob.id)
-  const reviewedForRole = new Set(roleSwipes.map((row: any) => row.target_id))
-  const interestedForRole = new Set(roleSwipes.filter((row: any) => row.action === 'right').map((row: any) => row.target_id))
-  const applicationsByCandidate = new Map((applications || []).map((row: any) => [row.candidate_id, row]))
-  const eligibleRows = (rows || []).filter((candidate: any) => canEmployerDiscoverCandidate(candidate, blocked))
-
-  const candidateUserIds = eligibleRows.map((candidate: any) => candidate.user_id).filter(Boolean)
-  const { data: candidateResponses } = candidateUserIds.length
-    ? await admin.from('swipes')
-        .select('swiper_id,action,target_id,context_job_id')
-        .in('swiper_id', candidateUserIds)
-        .eq('swiper_type', 'candidate')
-        .eq('target_type', 'job')
-        .eq('target_id', selectedJob.id)
-    : { data: [] as any[] }
-  const responseByUser = new Map((candidateResponses || []).map((row: any) => [row.swiper_id, row.action]))
-
-  const candidates = eligibleRows.map((candidate: any) => {
+  // Private Career Mode, read tolerantly - the column arrives with migration
+  // 20260831190000 and the feed must not break before it runs.
+  const privateIds = new Set<string>()
+  try {
+    const { data: privateRows, error: privateError } = await admin.from('candidate_profiles')
+      .select('id').eq('private_mode', true)
+    if (!privateError) for (const row of privateRows || []) privateIds.add(row.id)
+  } catch { }
+  const reviewedForRole = new Set((swipes || []).filter((row: any) => row.action === 'left' || row.context_job_id === selectedJob.id).map((row: any) => row.target_id))
+  const candidates = (rows || []).map((raw: any) => {
+    const candidate = privateIds.has(raw.id) ? { ...raw, private_mode: true } : raw
     if (reviewedForRole.has(candidate.id)) return null
-    return candidateResult(employer, candidate, selectedJob)
-  }).filter(Boolean).sort((a: any, b: any) => Number(Boolean(b.is_featured)) - Number(Boolean(a.is_featured)) || Number(b.match_score || 0) - Number(a.match_score || 0))
-
-  const interestedCandidates = eligibleRows.map((candidate: any) => {
-    if (!interestedForRole.has(candidate.id)) return null
-    const result = candidateResult(employer, candidate, selectedJob)
-    if (!result) return null
-    const application: any = applicationsByCandidate.get(candidate.id) || null
-    const talentResponse = responseByUser.get(candidate.user_id)
-    const declined = talentResponse === 'left'
-    const accepted = talentResponse === 'right'
+    if (!canEmployerDiscoverCandidate(candidate, blocked)) return null
+    const travel = mutualRadiusResult(employer, candidate, null)
+    if (!travel.withinRadius) return null
+    const match = calculateMatchScore(candidate, selectedJob)
+    if (match.hardStop) return null
     return {
-      ...result,
-      application_id: application?.id || null,
-      application_status: application?.status || null,
-      mutual: Boolean(application?.id || accepted),
-      interest_status: declined ? 'declined' : (application?.id || accepted) ? 'matched' : 'waiting',
+      ...presentCandidateForEmployer(candidate),
+      latitude: undefined,
+      longitude: undefined,
+      match_score: match.score,
+      match_label: match.label,
+      match_explanation: match.matchExplanation || [],
+      distance_miles: travel.distanceMiles,
+      role_title: selectedJob.job_title,
     }
-  }).filter(Boolean).sort((a: any, b: any) => {
-    const rank = (value: string) => value === 'matched' ? 0 : value === 'waiting' ? 1 : 2
-    return rank(a.interest_status) - rank(b.interest_status) || Number(b.match_score || 0) - Number(a.match_score || 0)
-  })
+  }).filter(Boolean).sort((a: any, b: any) => Number(Boolean(b.is_featured)) - Number(Boolean(a.is_featured)) || Number(b.match_score || 0) - Number(a.match_score || 0))
 
   return NextResponse.json({
     jobs: liveJobs.map((job: any) => ({ id: job.id, job_title: job.job_title, location: job.location, job_type: job.job_type })),
     selected_job_id: selectedJob.id,
     candidates,
-    interested_candidates: interestedCandidates,
-    eligible_count: eligibleRows.length,
-    reviewed_count: reviewedForRole.size,
   })
 }
 
@@ -143,9 +111,12 @@ export async function POST(req: NextRequest) {
     if (match.hardStop) return NextResponse.json({ error: match.hardStopReason || 'This professional is not compatible with that role.' }, { status: 400 })
   }
 
-  await admin.from('swipes').delete()
+  const contextForAction = action === 'right' ? jobId : null
+  let deleteQuery = admin.from('swipes').delete()
     .eq('swiper_id', user.id).eq('swiper_type', 'employer')
-    .eq('target_id', candidateId).eq('target_type', 'candidate').eq('context_job_id', jobId)
+    .eq('target_id', candidateId).eq('target_type', 'candidate')
+  deleteQuery = contextForAction ? deleteQuery.eq('context_job_id', contextForAction) : deleteQuery.is('context_job_id', null)
+  await deleteQuery
 
   const { error: swipeError } = await admin.from('swipes').insert({
     swiper_id: user.id,
@@ -153,65 +124,66 @@ export async function POST(req: NextRequest) {
     target_id: candidateId,
     target_type: 'candidate',
     action,
-    context_job_id: jobId,
+    // Passes are global (matching the web convention); interest is role-specific.
+    context_job_id: contextForAction,
   })
   if (swipeError) return NextResponse.json({ error: 'Your decision could not be saved.' }, { status: 500 })
+
   if (action === 'left') return NextResponse.json({ success: true, matched: false })
 
   let applicationId: string | null = null
   const { data: application } = await admin.from('applications').select('id,status')
-    .eq('candidate_id', candidateId).or(`job_id.eq.${jobId},role_id.eq.${jobId}`).order('created_at', { ascending: false }).limit(1).maybeSingle()
+    .eq('candidate_id', candidateId).or(`job_id.eq.${jobId},role_id.eq.${jobId}`)
+    .neq('status', 'draft')
+    .order('created_at', { ascending: false }).limit(1).maybeSingle()
   applicationId = application?.id || null
 
   let mutual = false
-  let declined = false
   if (candidate.user_id) {
-    const { data: candidateResponse } = await admin.from('swipes').select('id,action')
+    const { data: candidateYes } = await admin.from('swipes').select('id')
       .eq('swiper_id', candidate.user_id).eq('swiper_type', 'candidate')
-      .eq('target_id', jobId).eq('target_type', 'job').maybeSingle()
-    mutual = Boolean(candidateResponse?.action === 'right' || applicationId)
-    declined = candidateResponse?.action === 'left'
-    await createNotification(
-      candidate.user_id,
-      'general',
-      mutual ? "It's a match" : 'A property is interested in you',
-      `${employer.property_name || employer.company_name || 'A property'} is interested in you for ${job.job_title}.`,
-      '/talent/jobs?interest=1',
-    )
+      .eq('target_id', jobId).eq('target_type', 'job').eq('action', 'right').maybeSingle()
+    mutual = Boolean(candidateYes)
+    if (mutual) {
+      // A mobile match must behave exactly like a web match: create the
+      // matches row (which unlocks messaging), message both sides, and email
+      // them - not just drop an unactionable notification.
+      const match = calculateMatchScore(candidate, job)
+      let employerEmail: string | null = null
+      let candidateEmail: string | null = null
+      const [{ data: employerUser }, { data: candidateUser }] = await Promise.all([
+        admin.auth.admin.getUserById(user.id),
+        admin.auth.admin.getUserById(candidate.user_id),
+      ])
+      employerEmail = employerUser?.user?.email || null
+      candidateEmail = candidateUser?.user?.email || null
+      try {
+        await createMutualMatch(admin, {
+          candidate, employer, job, score: match.score,
+          candidateUserId: candidate.user_id, employerUserId: user.id,
+          candidateEmail, employerEmail,
+        })
+      } catch (matchError: any) {
+        console.error('Mobile mutual match failed:', matchError?.message)
+      }
+    } else {
+      await createNotification(candidate.user_id, 'general', 'A property is interested in you',
+        `${employer.property_name || employer.company_name || 'A property'} is interested in you for ${job.job_title}.`, '/talent/jobs')
+    }
   }
 
-  return NextResponse.json({ success: true, matched: mutual, declined, applicationId, candidateName: candidate.full_name || 'Candidate', jobTitle: job.job_title })
+  return NextResponse.json({ success: true, matched: mutual, applicationId, candidateName: candidate.full_name || 'Candidate', jobTitle: job.job_title })
 }
 
 export async function DELETE(req: NextRequest) {
   const user = await getRequestUser(req)
   if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
   const jobId = String(req.nextUrl.searchParams.get('jobId') || '')
-  const candidateId = String(req.nextUrl.searchParams.get('candidateId') || '')
   if (!jobId) return NextResponse.json({ error: 'Choose a role first.' }, { status: 400 })
-
   const admin = createAdminClient()
-  const employer = await getEmployer(admin, user.id)
-  if (!employer) return NextResponse.json({ error: 'Employer profile not found.' }, { status: 404 })
-  const { data: job } = await admin.from('job_listings').select('id').eq('id', jobId).eq('employer_id', employer.id).maybeSingle()
-  if (!job) return NextResponse.json({ error: 'This role does not belong to your account.' }, { status: 403 })
-
-  if (candidateId) {
-    const { data: application } = await admin.from('applications').select('id,status')
-      .eq('candidate_id', candidateId).or(`job_id.eq.${jobId},role_id.eq.${jobId}`).order('created_at', { ascending: false }).limit(1).maybeSingle()
-    if (application && !['draft','withdrawn','rejected'].includes(String(application.status || '').toLowerCase())) {
-      return NextResponse.json({ error: 'This person is already in an active recruitment journey. Manage them from Applications.' }, { status: 409 })
-    }
-    const { error } = await admin.from('swipes').delete()
-      .eq('swiper_id', user.id).eq('swiper_type', 'employer')
-      .eq('target_type', 'candidate').eq('target_id', candidateId)
-      .eq('context_job_id', jobId).eq('action', 'right')
-    if (error) return NextResponse.json({ error: 'Could not withdraw this interest.' }, { status: 500 })
-    return NextResponse.json({ success: true, withdrawn: true })
-  }
-
   const { error } = await admin.from('swipes').delete()
-    .eq('swiper_id', user.id).eq('swiper_type', 'employer').eq('target_type', 'candidate').eq('context_job_id', jobId).eq('action', 'left')
-  if (error) return NextResponse.json({ error: 'Could not restore passed professionals.' }, { status: 500 })
+    .eq('swiper_id', user.id).eq('swiper_type', 'employer').eq('target_type', 'candidate')
+    .or(`context_job_id.eq.${jobId},context_job_id.is.null`)
+  if (error) return NextResponse.json({ error: 'Could not reset matches.' }, { status: 500 })
   return NextResponse.json({ success: true })
 }

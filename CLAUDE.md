@@ -1,4 +1,4 @@
-# CLAUDE.md — WHC Concierge
+# CLAUDE.md — Talent House Collective
 
 This file tells Claude Code exactly what this project is and how to work on it.
 Read this before touching anything.
@@ -7,12 +7,14 @@ Read this before touching anything.
 
 ## What this project is
 
-**WHC Concierge** is a luxury spa and wellness talent platform built by Rebecca Doyle /
+**Talent House Collective** is a luxury spa and wellness talent platform built by Rebecca Doyle /
 Wellness House Collective. It connects spa and wellness professionals (Talent) with
 luxury hotel employers (Hotel / Employer).
 
-Live URL: https://talent.wellnesshousecollective.co.uk
-Netlify project: whc-concierge
+Live URL: https://talenthousecollective.co.uk
+(Old domain talent.wellnesshousecollective.co.uk 301s here; /api/* on the old host is
+deliberately left unredirected so the existing Stripe webhook keeps working.)
+Netlify project: whc-concierge (repo name unchanged)
 Stack: Next.js (App Router) · Supabase (auth + database) · Stripe (payments) · Netlify (hosting)
 
 ---
@@ -120,3 +122,13 @@ All secrets live in Netlify environment variables:
 - Always handle loading and error states visibly in the UI
 - Use `type="button"` on all non-submit buttons inside forms
 - Use the `/api/` routes for any database writes that need service role access
+
+<!-- BEGIN:nextjs-agent-rules -->
+
+# This is NOT the Next.js you know
+
+This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
+
+This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
+
+<!-- END:nextjs-agent-rules -->

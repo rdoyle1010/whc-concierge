@@ -214,7 +214,7 @@ export async function GET() {
     tables_missing: missing,
     seeded,
     action: missing.length > 0
-      ? `${missing.length} tables are MISSING. The Supabase JS client cannot create tables — you must run the CREATE TABLE SQL directly in the Supabase SQL Editor. Copy ONLY the CREATE TABLE and CREATE INDEX statements from the migration (the ENUMs already exist). Then visit this endpoint again to seed data.`
+      ? `${missing.length} tables are MISSING. The Supabase JS client cannot create tables - you must run the CREATE TABLE SQL directly in the Supabase SQL Editor. Copy ONLY the CREATE TABLE and CREATE INDEX statements from the migration (the ENUMs already exist). Then visit this endpoint again to seed data.`
       : 'All tables exist and data has been seeded.',
   })
 }

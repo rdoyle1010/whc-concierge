@@ -1,4 +1,4 @@
-// WHC Academy answer keys - SERVER-SIDE ONLY. Imported exclusively by
+// Talent House Academy answer keys - SERVER-SIDE ONLY. Imported exclusively by
 // /api/academy; never import this from a client component, or the answers
 // ship in the browser bundle.
 
@@ -17,4 +17,5 @@ export const ACADEMY_ANSWERS: Record<string, number[]> = {
   'perfect-massage': [1, 1, 1, 1, 1, 0, 1, 1],
   'perfect-facial': [1, 1, 1, 1, 0, 1, 1, 1],
   'brand-knowledge': [1, 1, 1, 1, 0, 1, 1, 1],
+  'spa-revenue-fundamentals': [2, 2, 2, 1, 2, 3, 1, 1, 1, 2],
 }

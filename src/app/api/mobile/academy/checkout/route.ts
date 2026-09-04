@@ -5,7 +5,7 @@ import { getStripe } from '@/lib/stripe'
 import { BUNDLE_PRICE, coursePrice } from '@/lib/academy'
 import { getAcademyCatalog, getAcademyCourseBySlug } from '@/lib/academy-catalog-server'
 
-const SITE = 'https://talent.wellnesshousecollective.co.uk'
+const SITE = 'https://talenthousecollective.co.uk'
 const WEB_ACADEMY_RETURN = `${SITE}/talent/academy`
 const APP_RETURN = `${SITE}/app-return/academy`
 
@@ -58,7 +58,7 @@ export async function POST(req: NextRequest) {
         line_items: [{
           price_data: {
             currency: 'gbp',
-            product_data: { name: `WHC Academy - ${course.title}`, description: 'Online course with assessment, certificate and profile badge on completion.' },
+            product_data: { name: `Talent House Academy - ${course.title}`, description: 'Online course with assessment, certificate and profile badge on completion.' },
             unit_amount: amountPence,
           },
           quantity: 1,
@@ -91,7 +91,7 @@ export async function POST(req: NextRequest) {
         line_items: [{
           price_data: {
             currency: 'gbp',
-            product_data: { name: `WHC Academy - Core Curriculum Bundle (${courses.length} courses)`, description: 'All active core curriculum courses, each with an assessment, certificate and profile badge.' },
+            product_data: { name: `Talent House Academy - Core Curriculum Bundle (${courses.length} courses)`, description: 'All active core curriculum courses, each with an assessment, certificate and profile badge.' },
             unit_amount: amountPence,
           },
           quantity: 1,

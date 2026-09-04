@@ -17,7 +17,7 @@ export default function EmployerShortlistPage() {
   useEffect(() => {
     async function load() {
       const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return
+      if (!user) { setLoading(false); return }
       const { data: prof } = await supabase.from('employer_profiles').select('*').eq('user_id', user.id).single()
       setProfile(prof)
 
@@ -58,7 +58,11 @@ export default function EmployerShortlistPage() {
 
   return (
     <DashboardShell role="employer" userName={profile?.company_name}>
-      <h1 className="text-[24px] font-medium text-ink mb-6">Shortlist</h1>
+      <div className="mb-6">
+        <p className="dashboard-eyebrow">Talent pipeline</p>
+        <h1 className="dashboard-title">Shortlist</h1>
+        <p className="dashboard-intro">Your saved candidates, grouped by role, with private notes.</p>
+      </div>
 
       {loading ? (
         <div className="flex items-center justify-center h-64"><div className="animate-spin w-8 h-8 border-2 border-ink border-t-transparent rounded-full" /></div>
@@ -66,7 +70,7 @@ export default function EmployerShortlistPage() {
         <div className="dashboard-card text-center py-16">
           <Star size={40} className="mx-auto mb-3 text-muted/40" />
           <p className="text-[15px] font-medium text-ink mb-1">No shortlisted candidates</p>
-          <p className="text-[13px] text-muted mb-6">Browse candidates and shortlist those you&apos;re interested in.</p>
+          <p className="text-[13px] text-secondary mb-6">Browse candidates and shortlist those you&apos;re interested in.</p>
           <Link href="/employer/candidates" className="btn-primary">Browse Candidates</Link>
         </div>
       ) : (
@@ -82,11 +86,11 @@ export default function EmployerShortlistPage() {
                   const c = s.candidate_profiles
                   if (!c) return null
                   return (
-                    <div key={s.id} className="bg-white border border-border rounded-xl p-4 hover:shadow-sm transition-all">
+                    <div key={s.id} className="dashboard-card !p-4">
                       <div className="flex items-start justify-between">
                         <div className="flex items-center gap-3">
                           <div className="w-10 h-10 rounded-full bg-surface flex items-center justify-center overflow-hidden shrink-0">
-                            {c.profile_image_url ? <img src={c.profile_image_url} alt="" className="w-full h-full object-cover" />
+                            {c.profile_image_url ? <img loading="lazy" decoding="async" src={c.profile_image_url} alt="" className="w-full h-full object-cover" />
                             : <span className="text-[14px] font-semibold text-muted">{c.full_name?.[0]}</span>}
                           </div>
                           <div>
@@ -106,8 +110,8 @@ export default function EmployerShortlistPage() {
                             className="p-1.5 rounded-lg hover:bg-surface text-muted hover:text-ink transition-colors" title="Add note">
                             <Edit3 size={14} />
                           </button>
-                          <button type="button" onClick={() => removeFromShortlist(s.id)}
-                            className="p-1.5 rounded-lg hover:bg-red-50 text-muted hover:text-red-500 transition-colors" title="Remove">
+                          <button type="button" onClick={() => removeFromShortlist(s.id)} aria-label="Remove from shortlist"
+                            className="p-2.5 rounded-lg hover:bg-red-50 text-muted hover:text-red-500 transition-colors" title="Remove">
                             <Trash2 size={14} />
                           </button>
                         </div>
@@ -117,7 +121,7 @@ export default function EmployerShortlistPage() {
                       {c.services_offered?.length > 0 && (
                         <div className="flex flex-wrap gap-1 mt-2 ml-[52px]">
                           {c.services_offered.slice(0, 4).map((sk: string) => (
-                            <span key={sk} className="text-[10px] bg-[#FDF6EC] text-accent border border-accent/20 px-2 py-0.5 rounded-full">{sk}</span>
+                            <span key={sk} className="text-[10px] bg-[#f1f1f1] text-accent border border-accent/20 px-2 py-0.5 rounded-full">{sk}</span>
                           ))}
                         </div>
                       )}
@@ -125,10 +129,10 @@ export default function EmployerShortlistPage() {
                       {/* Notes */}
                       {editingNote === s.id ? (
                         <div className="mt-3 ml-[52px] flex items-center gap-2">
-                          <input type="text" value={noteText} onChange={e => setNoteText(e.target.value)}
+                          <input type="text" aria-label="Note about this candidate" value={noteText} onChange={e => setNoteText(e.target.value)}
                             className="input-field text-[12px] flex-1" placeholder="Add a note about this candidate..." autoFocus />
-                          <button type="button" onClick={() => saveNote(s.id)} className="p-1.5 text-emerald-600 hover:bg-emerald-50 rounded-lg"><Check size={14} /></button>
-                          <button type="button" onClick={() => setEditingNote(null)} className="p-1.5 text-muted hover:bg-surface rounded-lg"><X size={14} /></button>
+                          <button type="button" onClick={() => saveNote(s.id)} aria-label="Save note" className="p-2.5 text-emerald-600 hover:bg-emerald-50 rounded-lg"><Check size={14} /></button>
+                          <button type="button" onClick={() => setEditingNote(null)} aria-label="Cancel note" className="p-2.5 text-muted hover:bg-surface rounded-lg"><X size={14} /></button>
                         </div>
                       ) : s.notes ? (
                         <p className="mt-2 ml-[52px] text-[12px] text-muted italic">&ldquo;{s.notes}&rdquo;</p>

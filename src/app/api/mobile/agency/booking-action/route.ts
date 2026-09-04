@@ -3,8 +3,10 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { getRequestUser } from '@/lib/request-user'
 import { createNotification } from '@/lib/notifications'
 import { AGENCY_PLATFORM_FEE_PCT } from '@/lib/constants'
+import { feePctForEmployerShift } from '@/app/api/agency/booking/core'
 import { sendSms } from '@/lib/sms'
 import { sendAgencyOfferEmail, sendAgencyUpdateEmail } from '@/lib/emails'
+import { emailAllowed, smsAllowed } from '@/lib/notification-prefs'
 
 const OPEN_STATUSES = ['pending', 'countered']
 const CASCADE_WINDOW_MS = 30 * 60 * 1000
@@ -23,27 +25,37 @@ async function notifyOtherParty(admin: ReturnType<typeof createAdminClient>, rec
   await Promise.allSettled([
     createNotification(recipientUserId, 'general', title, body, link),
     admin.from('messages').insert({ sender_id: senderUserId, recipient_id: recipientUserId, content: body, read: false }).then(() => null),
-    admin.auth.admin.getUserById(recipientUserId).then(({ data }: any) => {
-      const email = data?.user?.email
-      return email ? sendAgencyUpdateEmail(email, 'there', title, body, link) : null
-    }),
+    // Preference-gated ('booking_updates'): booking update emails honour the
+    // recipient's opt-out; bell + inbox always fire. Fail-open.
+    emailAllowed(admin, recipientUserId, 'booking_updates').then(allowed => allowed
+      ? admin.auth.admin.getUserById(recipientUserId).then(({ data }: any) => {
+          const email = data?.user?.email
+          return email ? sendAgencyUpdateEmail(email, 'there', title, body, link) : null
+        })
+      : null),
   ])
 }
 
-async function alertCascadeHolder(admin: ReturnType<typeof createAdminClient>, candidate: { user_id?: string | null; full_name?: string | null; phone?: string | null }, empName: string, empUserId: string, booking: { shift_date: string; rate: number; hours: number | null; expires_at: string }) {
+async function alertCascadeHolder(admin: ReturnType<typeof createAdminClient>, candidate: { user_id?: string | null; full_name?: string | null; phone?: string | null; sms_opt_in?: boolean | null }, empName: string, empUserId: string, booking: { shift_date: string; rate: number; hours: number | null; expires_at: string }) {
   const mins = Math.max(1, Math.round((new Date(booking.expires_at).getTime() - Date.now()) / 60000))
   const body = `URGENT: ${empName} needs cover TODAY and has offered you a shift at £${booking.rate} per hour${booking.hours ? ` (${booking.hours} hours - £${booking.rate * booking.hours} total)` : ''}. You have ${mins} minutes before the offer moves to the next therapist.`
   if (candidate.user_id) {
+    const userId = candidate.user_id
     await Promise.allSettled([
-      createNotification(candidate.user_id, 'general', 'URGENT: shift offer for today', body, '/talent/agency'),
-      admin.from('messages').insert({ sender_id: empUserId, recipient_id: candidate.user_id, content: body, read: false }).then(() => null),
-      admin.auth.admin.getUserById(candidate.user_id).then(({ data }: any) => {
-        const email = data?.user?.email
-        return email ? sendAgencyOfferEmail(email, candidate.full_name || 'there', { propertyName: empName, shiftDate: booking.shift_date, rate: booking.rate, hours: booking.hours, urgent: true, expiresAt: booking.expires_at }) : null
-      }),
+      createNotification(userId, 'general', 'URGENT: shift offer for today', body, '/talent/agency'),
+      admin.from('messages').insert({ sender_id: empUserId, recipient_id: userId, content: body, read: false }).then(() => null),
+      // Preference-gated ('booking_updates'): offer email honours the opt-out;
+      // bell + inbox always fire. Fail-open.
+      emailAllowed(admin, userId, 'booking_updates').then(allowed => allowed
+        ? admin.auth.admin.getUserById(userId).then(({ data }: any) => {
+            const email = data?.user?.email
+            return email ? sendAgencyOfferEmail(email, candidate.full_name || 'there', { propertyName: empName, shiftDate: booking.shift_date, rate: booking.rate, hours: booking.hours, urgent: true, expiresAt: booking.expires_at }) : null
+          })
+        : null),
     ])
   }
-  await sendSms(candidate.phone, `WHC Concierge: ${empName} needs cover TODAY - £${booking.rate}/hr. You have ${mins} mins to respond in Agency.`).catch(() => null)
+  // SMS is consent-gated: sms_opt_in plus a phone number on file.
+  if (smsAllowed(candidate)) await sendSms(candidate.phone, `Talent House Collective: ${empName} needs cover TODAY - £${booking.rate}/hr. You have ${mins} mins to respond in Agency.`).catch(() => null)
 }
 
 async function advanceCascade(admin: ReturnType<typeof createAdminClient>, booking: any) {
@@ -71,10 +83,16 @@ async function advanceCascade(admin: ReturnType<typeof createAdminClient>, booki
   const effectiveHours = hours || 8
   const rate = parseInt(String(entry.rate), 10) || booking.rate
   const deadline = new Date(Date.now() + CASCADE_WINDOW_MS).toISOString()
-  const { data: updated } = await admin.from('agency_bookings').update({ candidate_id: entry.id, rate, platform_fee: Math.ceil(rate * effectiveHours * AGENCY_PLATFORM_FEE_PCT), status: 'pending', cascade_index: next, cascade_deadline: deadline, expires_at: deadline }).eq('id', booking.id).eq('cascade_index', index).in('status', OPEN_STATUSES).select('*').maybeSingle()
+  const { data: updated, error: advanceError } = await admin.from('agency_bookings').update({ candidate_id: entry.id, rate, platform_fee: Math.ceil(rate * effectiveHours * await feePctForEmployerShift(admin, booking.employer_id, booking.shift_date)), status: 'pending', cascade_index: next, cascade_deadline: deadline, expires_at: deadline }).eq('id', booking.id).eq('cascade_index', index).in('status', OPEN_STATUSES).select('*').maybeSingle()
+  if (advanceError) {
+    // A rejected update must not strand the cascade mid-queue: log it and end
+    // the cascade so the property is told cover was not filled.
+    console.error('Cascade advance failed:', advanceError.message)
+    return endCascade('the next offer could not be issued')
+  }
   if (!updated) return null
 
-  const { data: candidate } = await admin.from('candidate_profiles').select('id,user_id,full_name,phone').eq('id', entry.id).maybeSingle()
+  const { data: candidate } = await admin.from('candidate_profiles').select('id,user_id,full_name,phone,sms_opt_in').eq('id', entry.id).maybeSingle()
   if (candidate && employer?.user_id) {
     await alertCascadeHolder(admin, candidate, empName, employer.user_id, { shift_date: booking.shift_date, rate, hours, expires_at: deadline })
   }
@@ -134,11 +152,15 @@ export async function POST(req: NextRequest) {
     }
 
     if (action === 'counter') {
-      if (!isCandidateParty) return NextResponse.json({ error: 'Only the professional can counter an offer.' }, { status: 403 })
+      // Negotiation runs both ways and can go several rounds, exactly as it
+      // does on the web (src/app/api/agency/booking/core.ts). The status
+      // carries whose turn it is: 'countered' means the ball is with the
+      // property, 'pending' means it is with the professional - so a property
+      // countering back simply returns the offer to 'pending' at its new rate.
       const rate = parseInt(String(body.rate || ''), 10)
       if (!rate || rate <= 0) return NextResponse.json({ error: 'Enter a valid hourly rate.' }, { status: 400 })
       const effectiveHours = booking.hours && booking.hours > 0 ? booking.hours : 8
-      const update: Record<string, any> = { rate, platform_fee: Math.ceil(rate * effectiveHours * AGENCY_PLATFORM_FEE_PCT), status: 'countered' }
+      const update: Record<string, any> = { rate, platform_fee: Math.ceil(rate * effectiveHours * await feePctForEmployerShift(admin, booking.employer_id, booking.shift_date)), status: isCandidateParty ? 'countered' : 'pending' }
       if (Array.isArray(booking.cascade_queue)) {
         const fresh = new Date(Date.now() + CASCADE_WINDOW_MS).toISOString()
         update.cascade_deadline = fresh
@@ -147,7 +169,7 @@ export async function POST(req: NextRequest) {
       const { data: updated, error } = await admin.from('agency_bookings').update(update).eq('id', booking.id).in('status', OPEN_STATUSES).select('*').maybeSingle()
       if (error) return NextResponse.json({ error: error.message }, { status: 500 })
       if (!updated) return NextResponse.json({ error: 'This offer is no longer open.' }, { status: 409 })
-      await notifyOtherParty(admin, otherUserId, user.id, 'Counter-offer received', `${actorName} has countered the agency offer for ${shiftDate} at £${rate} per hour.`, otherLink)
+      await notifyOtherParty(admin, otherUserId, user.id, 'Counter-offer received', `${actorName} has come back at £${rate} per hour for the ${shiftDate} shift. Accept, counter again or decline from your Agency page.`, otherLink)
       return NextResponse.json({ success: true, booking: updated })
     }
 

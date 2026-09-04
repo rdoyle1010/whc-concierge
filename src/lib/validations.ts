@@ -1,7 +1,7 @@
 import { z } from 'zod'
 
 // ── Shared enums ──
-const contactType = z.enum(['general', 'complaint', 'partnership'])
+const contactType = z.enum(['general', 'complaint', 'partnership', 'certification'])
 const contractType = z.enum(['permanent', 'fixed_term', 'freelance', 'agency', 'seasonal'])
 const roleLevelEnum = z.enum([
   'Apprentice', 'Junior', 'Junior Therapist', 'Therapist', 'Senior Therapist',

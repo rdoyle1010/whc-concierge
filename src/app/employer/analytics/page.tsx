@@ -12,10 +12,10 @@ type JobRow = {
 
 const STATUS_LABELS: Record<string, string> = {
   total: 'Applications received', pending: 'Pending review',
-  shortlisted: 'Shortlisted', accepted: 'Accepted',
+  shortlisted: 'Shortlisted', interview: 'Interview', offered: 'Offer made', accepted: 'Accepted',
 }
-const FUNNEL_ORDER = ['total', 'pending', 'shortlisted', 'accepted']
-const FUNNEL_COLOURS = ['#1a1a1a', '#D97706', '#C9A96E', '#16A34A']
+const FUNNEL_ORDER = ['total', 'pending', 'shortlisted', 'interview', 'offered', 'accepted']
+const FUNNEL_COLOURS = ['#1c1c1c', '#333333', '#474747', '#1c1c1c', '#333333', '#16a34a']
 
 export default function EmployerAnalyticsPage() {
   const supabase = createClient()
@@ -37,7 +37,9 @@ export default function EmployerAnalyticsPage() {
       setProfile(prof)
 
       // Load jobs
-      const { data: jobs } = await supabase.from('job_listings').select('*').eq('employer_id', prof.id).order('posted_date', { ascending: false })
+      const { data: jobs } = await supabase.from('job_listings')
+        // This page lists and counts roles, and draws no description.
+        .select('id, job_title, title, is_live, status, tier, posted_date, created_at').eq('employer_id', prof.id).order('posted_date', { ascending: false })
       if (!jobs || jobs.length === 0) { setLoading(false); return }
 
       const jobIds = jobs.map(j => j.id)
@@ -50,14 +52,11 @@ export default function EmployerAnalyticsPage() {
         .from('applications')
         .select('*')
         .in('role_id', jobIds)
-      const candIdsForApps = Array.from(new Set((rawApps || []).map((a: any) => a.candidate_id).filter(Boolean)))
-      const { data: appCands } = candIdsForApps.length
-        ? await supabase.from('candidate_profiles').select('*').in('id', candIdsForApps)
-        : { data: [] as any[] }
-      const candByIdForApps = new Map((appCands || []).map((c: any) => [c.id, c]))
-      const allApps = (rawApps || []).map((a: any) => ({ ...a, candidate_profiles: candByIdForApps.get(a.candidate_id) || null }))
-
-      const apps = allApps || []
+        .neq('status', 'draft')
+      // Applicant skills are counted on the server and returned as five
+      // words. This page used to fetch every column of every applicant's
+      // record to do that counting in the browser.
+      const apps = rawApps || []
       const now = new Date()
       const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1)
       const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1)
@@ -105,7 +104,7 @@ export default function EmployerAnalyticsPage() {
           tier: job.tier || 'Standard',
           daysLive,
           totalApps: jobApps.length,
-          shortlisted: jobApps.filter(a => a.status === 'shortlisted' || a.status === 'accepted').length,
+          shortlisted: jobApps.filter(a => ['shortlisted', 'interview', 'offered', 'accepted'].includes(a.status)).length,
           avgScore: jobScores.length > 0 ? Math.round(jobScores.reduce((a, b) => a + b, 0) / jobScores.length) : 0,
           status: jobStatus,
         }
@@ -117,14 +116,14 @@ export default function EmployerAnalyticsPage() {
       for (const app of apps) funnelCounts[app.status] = (funnelCounts[app.status] || 0) + 1
       setFunnel(funnelCounts)
 
-      // Top skills across applicants
-      const skillCounts: Record<string, number> = {}
-      for (const app of apps) {
-        const skills = app.candidate_profiles?.services_offered || app.candidate_profiles?.treatment_skills || []
-        for (const s of skills) skillCounts[s] = (skillCounts[s] || 0) + 1
-      }
-      const sorted = Object.entries(skillCounts).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([s]) => s)
-      setTopSkills(sorted)
+      // Top skills across applicants, counted server-side.
+      try {
+        const response = await fetch('/api/employer/analytics/applicant-skills')
+        if (response.ok) {
+          const body = await response.json()
+          setTopSkills(Array.isArray(body.skills) ? body.skills : [])
+        }
+      } catch { /* the panel simply stays empty */ }
 
       setLoading(false)
     }
@@ -159,7 +158,11 @@ export default function EmployerAnalyticsPage() {
 
   return (
     <DashboardShell role="employer" userName={profile?.company_name}>
-      <h1 className="text-[24px] font-medium text-ink mb-6">Analytics</h1>
+      <div className="mb-8">
+        <p className="dashboard-eyebrow">Insight</p>
+        <h1 className="dashboard-title">Analytics</h1>
+        <p className="dashboard-intro">Track applications, funnel progress and per-role performance across your listings.</p>
+      </div>
 
       {/* Overview Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
@@ -182,7 +185,7 @@ export default function EmployerAnalyticsPage() {
         </div>
         <div className="dashboard-card">
           <div className="text-muted mb-2"><TrendingUp size={16} /></div>
-          <p className="text-[28px] font-semibold" style={{ color: '#C9A96E' }}>{stats.avgMatch > 0 ? `${stats.avgMatch}%` : '-'}</p>
+          <p className="text-[28px] font-semibold" style={{ color: '#555555' }}>{stats.avgMatch > 0 ? `${stats.avgMatch}%` : '-'}</p>
           <p className="text-[11px] text-muted">{stats.avgMatch > 0 ? 'Avg match score' : 'Avg match score (no scored applications yet)'}</p>
         </div>
         <div className="dashboard-card">
@@ -228,7 +231,7 @@ export default function EmployerAnalyticsPage() {
             <div className="space-y-2.5">
               {topSkills.map((skill, i) => (
                 <div key={skill} className="flex items-center gap-3">
-                  <span className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-semibold shrink-0" style={{ backgroundColor: '#FDF6EC', color: '#C9A96E' }}>{i + 1}</span>
+                  <span className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-semibold shrink-0" style={{ backgroundColor: '#f1f1f1', color: '#555555' }}>{i + 1}</span>
                   <span className="text-[13px] text-ink">{skill}</span>
                 </div>
               ))}
@@ -268,7 +271,7 @@ export default function EmployerAnalyticsPage() {
                   <tr key={row.id} className="hover:bg-surface/50 transition-colors">
                     <td className="px-5 py-3 text-[13px] font-medium text-ink max-w-[200px] truncate">{row.title}</td>
                     <td className="px-5 py-3">
-                      <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${row.tier === 'Platinum' ? 'bg-ink text-white' : row.tier === 'Gold' ? 'bg-[#FDF6EC] text-accent' : row.tier === 'Silver' ? 'bg-neutral-100 text-neutral-600' : 'bg-surface text-muted'}`}>{row.tier}</span>
+                      <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${row.tier === 'Platinum' ? 'bg-ink text-white' : row.tier === 'Gold' ? 'bg-[#f1f1f1] text-accent' : row.tier === 'Silver' ? 'bg-neutral-100 text-neutral-600' : 'bg-surface text-muted'}`}>{row.tier}</span>
                     </td>
                     <td className="px-5 py-3">
                       <span className={`text-[11px] font-medium px-2 py-0.5 rounded-full ${row.status === 'live' ? 'bg-emerald-50 text-emerald-700' : row.status === 'filled' ? 'bg-blue-50 text-blue-700' : 'bg-neutral-100 text-neutral-500'}`}>{row.status}</span>
@@ -278,7 +281,7 @@ export default function EmployerAnalyticsPage() {
                     <td className="px-5 py-3 text-[13px] text-ink">{row.shortlisted}</td>
                     <td className="px-5 py-3">
                       {row.avgScore > 0 ? (
-                        <span className="text-[13px] font-medium" style={{ color: row.avgScore >= 80 ? '#16A34A' : row.avgScore >= 60 ? '#C9A96E' : '#6B7280' }}>{row.avgScore}%</span>
+                        <span className="text-[13px] font-medium" style={{ color: row.avgScore >= 80 ? '#16A34A' : row.avgScore >= 60 ? '#555555' : '#555555' }}>{row.avgScore}%</span>
                       ) : <span className="text-[11px] text-muted">-</span>}
                     </td>
                   </tr>

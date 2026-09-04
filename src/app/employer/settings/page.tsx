@@ -1,9 +1,30 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { getViewer } from '@/lib/viewer'
+import { useDialog } from '@/components/useDialog'
 import DashboardShell from '@/components/DashboardShell'
 import { createClient } from '@/lib/supabase/client'
+import EmailAddressPanel from '@/components/EmailAddressPanel'
 import { Save, Download, AlertTriangle } from 'lucide-react'
+import { deletionSummary } from '@/lib/account-deletion'
+
+// Square-cornered toggle row for the notification preference centre (brand
+// rule: no new rounded corners).
+function PrefRow({ title, description, on, onToggle }: { title: string; description: string; on: boolean; onToggle: () => void }) {
+  return (
+    <div className="flex items-start justify-between gap-4 py-3 border-b border-border last:border-b-0">
+      <div>
+        <p className="text-[13px] font-medium text-ink">{title}</p>
+        <p className="text-[12px] leading-5 text-muted mt-0.5">{description}</p>
+      </div>
+      <button type="button" onClick={onToggle} aria-pressed={on} aria-label={`${on ? 'Turn off' : 'Turn on'} ${title}`}
+        className={`relative inline-flex h-6 w-11 items-center border transition-colors shrink-0 ${on ? 'bg-ink border-ink' : 'bg-gray-200 border-border'}`}>
+        <span className={`inline-block h-4 w-4 transform bg-white transition-transform ${on ? 'translate-x-6' : 'translate-x-1'}`} />
+      </button>
+    </div>
+  )
+}
 
 export default function EmployerSettingsPage() {
   const supabase = createClient()
@@ -18,9 +39,16 @@ export default function EmployerSettingsPage() {
   const [smsPhone, setSmsPhone] = useState('')
   const [smsSaving, setSmsSaving] = useState(false)
 
+  // Email notification preferences (privacy_preferences)
+  const [emailPrefs, setEmailPrefs] = useState<Record<string, boolean>>({
+    application_updates_email: true,
+    booking_updates_email: true,
+    product_news_email: false,
+  })
+
   useEffect(() => {
     async function loadSmsSettings() {
-      const { data: { user } } = await supabase.auth.getUser()
+      const user = await getViewer()
       if (!user) return
       const { data } = await supabase.from('employer_profiles').select('id,contact_phone,sms_opt_in').eq('user_id', user.id).maybeSingle()
       if (!data) return
@@ -28,8 +56,39 @@ export default function EmployerSettingsPage() {
       setSmsPhone(data.contact_phone || '')
       setSmsEnabled(Boolean(data.sms_opt_in))
     }
+    async function loadEmailPrefs() {
+      try {
+        const res = await fetch('/api/privacy/preferences')
+        if (!res.ok) return
+        const json = await res.json()
+        const p = json.preferences || {}
+        setEmailPrefs(prev => {
+          const next = { ...prev }
+          for (const key of Object.keys(prev)) if (typeof p[key] === 'boolean') next[key] = p[key]
+          return next
+        })
+      } catch { /* defaults stand */ }
+    }
     loadSmsSettings()
+    loadEmailPrefs()
   }, [])
+
+  const saveEmailPref = async (field: string, value: boolean) => {
+    const previous = emailPrefs[field]
+    setEmailPrefs(prev => ({ ...prev, [field]: value }))
+    try {
+      const res = await fetch('/api/privacy/preferences', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ [field]: value }),
+      })
+      if (!res.ok) throw new Error('save failed')
+    } catch {
+      setEmailPrefs(prev => ({ ...prev, [field]: previous }))
+      setMessage('Could not save your notification preference - please try again.')
+      setMessageType('error')
+      setTimeout(() => setMessage(''), 4000)
+    }
+  }
 
   const saveSmsSettings = async (enabled = smsEnabled) => {
     if (!employerId) return
@@ -68,7 +127,7 @@ export default function EmployerSettingsPage() {
 
     setLoading(true)
 
-    const { data: { user } } = await supabase.auth.getUser()
+    const user = await getViewer()
     if (!user?.email) {
       setLoading(false)
       setMessage('Unable to verify your identity. Please sign in again.')
@@ -107,6 +166,7 @@ export default function EmployerSettingsPage() {
   const [deleting, setDeleting] = useState(false)
   const [exporting, setExporting] = useState(false)
   const [showDeleteRequest, setShowDeleteRequest] = useState(false)
+  const deleteDialog = useDialog(() => setShowDeleteRequest(false), 'employer-delete-account-heading', { enabled: showDeleteRequest })
   const [deleteRequested, setDeleteRequested] = useState(false)
 
   const handleExportData = async () => {
@@ -126,29 +186,30 @@ export default function EmployerSettingsPage() {
   }
 
   const handleDeletionRequest = async () => {
-    const { data: { user } } = await supabase.auth.getUser()
+    const user = await getViewer()
     if (!user) return
     await fetch('/api/contact-notify', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: 'Account Deletion Request', email: user.email, subject: `Account Deletion Request — ${user.id}`, message: `User ${user.email} (ID: ${user.id}) has requested account deletion via employer settings.`, type: 'general' }),
+      body: JSON.stringify({ name: 'Account Deletion Request', email: user.email, subject: `Account Deletion Request - ${user.id}`, message: `User ${user.email} (ID: ${user.id}) has requested account deletion via employer settings.`, type: 'general' }),
     }).catch(() => {})
     setDeleteRequested(true)
     setShowDeleteRequest(false)
   }
 
   const handleDeleteAccount = async () => {
-    if (!confirm('Are you sure you want to delete your account? All your data — profile, job listings, applications, and messages — will be permanently removed. This cannot be undone.')) return
+    if (!confirm('Are you sure you want to delete your account? Your property profile, job listings, applications, shortlists and messages are permanently removed. Booking and payment records are kept with the property link removed from them, because UK company and tax law requires it. This cannot be undone.')) return
     if (!confirm('Final confirmation: delete your account and all associated data?')) return
 
     setDeleting(true)
     try {
       const res = await fetch('/api/account/delete', { method: 'POST' })
+      const data = await res.json().catch(() => ({} as any))
       if (!res.ok) {
-        const data = await res.json()
         alert(data.error || 'Failed to delete account. Please contact support.')
         setDeleting(false)
         return
       }
+      alert(deletionSummary(data))
       await supabase.auth.signOut()
       window.location.href = '/?deleted=true'
     } catch {
@@ -158,15 +219,43 @@ export default function EmployerSettingsPage() {
   }
   return (
     <DashboardShell role="employer">
-      <h1 className="text-2xl font-serif font-bold text-ink mb-6">Settings</h1>
+      <div className="mb-6">
+        <p className="dashboard-eyebrow">Account</p>
+        <h1 className="dashboard-title">Settings</h1>
+        <p className="dashboard-intro">Notifications, password and your data in one place.</p>
+      </div>
       <div className="max-w-2xl space-y-6">
         {message && <div className={`px-4 py-3 rounded-lg text-sm ${messageType === 'success' ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'}`}>{message}</div>}
+
+        {/* Email notification preference centre */}
+        <div className="dashboard-card">
+          <h3 className="font-serif text-lg font-semibold">Email Notifications</h3>
+          <p className="text-sm text-gray-500 mt-1 mb-2">In-app notifications always appear here. These controls govern what reaches your inbox.</p>
+          <PrefRow
+            title="Applications and candidate replies"
+            description="An email when a candidate applies, responds to an interview, or messages you."
+            on={emailPrefs.application_updates_email}
+            onToggle={() => saveEmailPref('application_updates_email', !emailPrefs.application_updates_email)}
+          />
+          <PrefRow
+            title="Agency booking updates"
+            description="An email when a therapist accepts, counters or declines a shift, or a booking changes."
+            on={emailPrefs.booking_updates_email}
+            onToggle={() => saveEmailPref('booking_updates_email', !emailPrefs.booking_updates_email)}
+          />
+          <PrefRow
+            title="Market intelligence and featured talent"
+            description="The weekly intelligence email plus occasional featured-professional announcements."
+            on={emailPrefs.product_news_email}
+            onToggle={() => saveEmailPref('product_news_email', !emailPrefs.product_news_email)}
+          />
+        </div>
 
         <div className="dashboard-card">
           <div className="flex items-start justify-between gap-4 mb-4">
             <div>
               <h3 className="font-serif text-lg font-semibold">SMS Notifications</h3>
-              <p className="text-sm text-gray-500 mt-1">Get short text alerts when something important needs attention. Full details stay inside WHC Concierge.</p>
+              <p className="text-sm text-gray-500 mt-1">Get short text alerts when something important needs attention. Full details stay inside Talent House Collective.</p>
             </div>
             <button type="button" onClick={() => saveSmsSettings(!smsEnabled)} disabled={smsSaving}
               aria-label={smsEnabled ? 'Turn SMS notifications off' : 'Turn SMS notifications on'}
@@ -183,6 +272,8 @@ export default function EmployerSettingsPage() {
             <button type="button" onClick={() => saveSmsSettings()} disabled={smsSaving} className="btn-secondary text-[13px] disabled:opacity-50">{smsSaving ? 'Saving...' : 'Save SMS settings'}</button>
           </div>
         </div>
+
+        <EmailAddressPanel />
 
         <div className="dashboard-card">
           <h3 className="font-serif text-lg font-semibold mb-4">Change Password</h3>
@@ -231,11 +322,11 @@ export default function EmployerSettingsPage() {
 
         {showDeleteRequest && (
           <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setShowDeleteRequest(false)}>
-            <div className="bg-white rounded-xl max-w-sm w-full p-6 text-center" onClick={e => e.stopPropagation()}>
+            <div {...deleteDialog.panelProps} className="bg-white rounded-xl max-w-sm w-full p-6 text-center">
               <div className="w-12 h-12 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-4">
                 <AlertTriangle size={20} className="text-red-500" />
               </div>
-              <h3 className="text-[16px] font-medium text-ink mb-2">Request Account Deletion</h3>
+              <h3 id="employer-delete-account-heading" className="text-[16px] font-medium text-ink mb-2">Request Account Deletion</h3>
               <p className="text-[13px] text-muted mb-2">This will send a deletion request to our team. We will:</p>
               <ul className="text-[12px] text-muted text-left mb-6 space-y-1 pl-4">
                 <li>&bull; Verify your identity</li>

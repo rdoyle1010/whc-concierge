@@ -1,5 +1,5 @@
 /**
- * WHC CONCIERGE — STRUCTURED TAXONOMY MATCHING ENGINE v2
+ * TALENT HOUSE COLLECTIVE - STRUCTURED TAXONOMY MATCHING ENGINE v2
  *
  * Weights:
  *   Required Skills:          30%
@@ -205,7 +205,7 @@ function scoreEligibility(candidate: CandidateData, job: JobData): CategoryResul
     else if (diffDays >= -90) { points += 10; matched.push('Available within 90 days') }
     else { missing.push('Not available within 90 days') }
   } else {
-    points += 15 // No dates specified — assume reasonable
+    points += 15 // No dates specified - assume reasonable
     matched.push('Availability assumed')
   }
 
@@ -228,8 +228,8 @@ function getLabel(score: number): { label: string; colour: string; bgColour: str
   if (score >= 80) return { label: 'Strong Match', colour: '#1D4ED8', bgColour: '#DBEAFE' }
   if (score >= 70) return { label: 'Good Match', colour: '#2563EB', bgColour: '#DBEAFE' }
   if (score >= 60) return { label: 'Moderate Match', colour: '#D97706', bgColour: '#FEF3C7' }
-  if (score >= 45) return { label: 'Partial Match', colour: '#6B7280', bgColour: '#F3F4F6' }
-  return { label: 'Low Match', colour: '#6B7280', bgColour: '#F3F4F6' }
+  if (score >= 45) return { label: 'Partial Match', colour: '#555555', bgColour: '#F3F4F6' }
+  return { label: 'Low Match', colour: '#555555', bgColour: '#F3F4F6' }
 }
 
 // ═══════ MAIN FUNCTION ═══════
@@ -250,7 +250,7 @@ export function calculateStructuredMatch(
     const empty: CategoryResult = { score: 0, matched: [], missing: [], trainable: [] }
     return {
       candidateId: candidate.id, jobId: job.id, totalScore: 0,
-      label: 'Blocked', colour: '#6B7280', bgColour: '#F3F4F6',
+      label: 'Blocked', colour: '#555555', bgColour: '#F3F4F6',
       breakdown: { requiredSkills: empty, preferredSkills: empty, systems: empty, productHouses: empty, certifications: empty, commercialSkills: empty, leadershipSkills: empty, eligibility: empty },
       strengths: [], missingRequired: [], trainableGaps: [],
       hasHardBlocker: true, blockerReason: blocker.reason,

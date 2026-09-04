@@ -1,10 +1,9 @@
-// WHC Academy brand masterclass: Bamford. Independent WHC training - not
+// Talent House Academy brand masterclass: Bamford. Independent Talent House training - not
 // affiliated with or endorsed by Bamford. Answer key lives in
 // academy-more-answers/bamford-masterclass.ts (server-only).
 
 import type { AcademyCourse } from '../academy'
 import type { CourseExtras } from '../academy-extras'
-import type { CourseContent } from '../academy-types'
 
 export const course: AcademyCourse = {
   slug: 'bamford-masterclass',
@@ -156,136 +155,6 @@ export const extras: CourseExtras = {
         'Prescribe two or three products linked to the treatment and the consultation',
         'Upsell along natural paths: loved the massage phases means the fuller signature experience next visit',
       ],
-    },
-  ],
-}
-
-export const content: CourseContent = {
-  slug: 'bamford-masterclass',
-  aims: `This masterclass gives working spa therapists genuine professional depth in Bamford, the English organic house whose story runs from the fields of Daylesford in the Cotswolds to the treatment rooms of luxury hotels. It covers the founding story and nature-led philosophy that shape every treatment, the hero products, mood-led collections and organic credentials a therapist must know cold, and the practical craft of the Bamford shift: reading the treatment menu, delivering the mindful, holistic signature style, retailing the range by linking products to treatments and consultations, building honest upsell paths, and upholding the standards that protect the brand's name. Where house-specific details vary by spa, the course teaches the professional method for learning them fast and accurately on day one. This is independent WHC training and is not affiliated with or endorsed by Bamford.`,
-  audience: `Spa and wellness therapists working in, or preparing to work in, Bamford spas across UK luxury hotels, destination spas and premium day spas. It suits therapists interviewing for a Bamford account who want to arrive fluent, agency and freelance therapists who may be asked to deliver the house style at short notice, experienced therapists moving to Bamford from a results-led or clinical house, and spa managers or head therapists who coach brand standards. Reception and retail colleagues in Bamford spas will also gain a working command of the range, its credentials and its language.`,
-  outcomes: [
-    `Tell Bamford's founding story and articulate its philosophy and USP in confident, guest-ready language`,
-    'Name the hero products and mood-led collections and explain their ingredient stories accurately and honestly',
-    `Explain the house's organic and ethical credentials, including Soil Association certification and B Corp status, to a discerning guest`,
-    `Deliver Bamford's mindful, holistic signature style, from unhurried opening to grounded close, at five-star standard`,
-    'Retail the range by linking products used in treatment and consultation findings to a two or three item home prescription',
-    `Build integrity-led upgrade paths between treatments and uphold the house's standards on every shift`,
-  ],
-  lessons: [
-    {
-      title: 'The house: history, philosophy and USP',
-      objectives: [
-        `Recount Bamford's founding story and explain why its farm-born heritage sets it apart from laboratory-born brands`,
-        'Explain the house philosophy of organic botanicals, sustainability and holistic wellbeing for mind, body and spirit',
-        `Articulate Bamford's USP to a guest in one confident, accurate sentence, using the house's own tone of voice`,
-      ],
-      sections: [
-        {
-          heading: 'A house born from an organic farm',
-          body: `Bamford began not with a formula but with a philosophy of living. Its founder, Carole Bamford, created Daylesford Organic, the renowned organic farm in the Cotswolds, out of a conviction that food, farming and daily life should work with nature rather than against it. She championed organic methods long before they were fashionable, and her contribution to sustainable business has been widely recognised. The Bamford brand grew directly from that world: body care, skincare and wellness shaped by the same values that governed the farm, made with organic and natural ingredients and an insistence on provenance and craftsmanship. This origin is the answer to the guest who asks what makes the brand different. Most houses began at a counter or in a laboratory and later borrowed the language of nature; Bamford's connection to the English countryside is literal, and its spa story grew from the Haybarn spa at Daylesford into Bamford wellness spas within some of the world's most admired hotels. A therapist who can tell that story simply has already separated the house from every competitor on the shelf.`,
-        },
-        {
-          heading: 'The philosophy: nature, wholeness and slowness',
-          body: `The Bamford philosophy rests on two intertwined convictions. The first is botanical integrity: products should be made with organic and natural ingredients wherever possible, sourced with care, formulated gently and produced sustainably. This is not decoration; it is the point of the brand, and it is why the house pursues independent verification rather than relying on marketing language alone. The second conviction is wholeness. Bamford's approach to wellbeing is holistic in the true sense, treating mind, body and spirit as one, which is why its spa world embraces not only massage and skincare but practices such as yoga and meditation that quiet the mind as well as the body. In the treatment room this translates into slowness and presence. A Bamford treatment is not a procedure performed on a guest; it is an hour of genuine calm, built from unhurried touch, attention to breath and a therapist who is fully present. Understand both convictions together, the organic and the holistic, and every product and protocol in the house suddenly makes sense as one idea.`,
-        },
-        {
-          heading: 'The USP in one breath',
-          body: `Every therapist on a Bamford account should be able to state the house USP in a single sentence, because guests ask, interviewers ask, and hesitation reads as ignorance. A reliable version: Bamford offers organic, botanically led skincare and body care born from an English organic farm, delivered through mindful, holistic treatments that reconnect guests with nature. Each clause earns its place. Organic and botanically led, because ingredient integrity is the brand's foundation and its formulations carry genuine credentials rather than vague natural claims. Born from an English organic farm, because the Daylesford heritage is a provenance story no rival can copy. Mindful and holistic, because the delivery style, slow, breath-led and deeply present, is as much the product as anything in a jar. Reconnecting guests with nature, because that is the feeling guests describe when the brand is delivered well. When a guest compares Bamford with a cheaper natural range, this sentence gives you an honest, specific answer that elevates the house without disparaging anything else, which is exactly how luxury speaks.`,
-        },
-        {
-          heading: 'Speaking Bamford: the house voice',
-          body: `A product house is also a vocabulary, and using the wrong one is as jarring as using the wrong products. The Bamford voice is quiet, warm and grounded. Its natural words are nurture, balance, nature, calm, breathe, restore and mindful. It speaks of provenance and craft, of how ingredients are grown and where they come from, and of how a guest will feel rather than what percentage of anything they will absorb. Contrast this with a clinical, results-led house, where the voice is confident, technical and outcome-driven; neither voice is superior, but each belongs to its own brand, and a therapist quoting active concentrations in a Bamford treatment room sounds like a visitor rather than a resident. Practise translating your knowledge into the house voice: not this contains a proven soothing agent, but this balm is made with organic botanicals, and it will comfort that dry skin through the winter. The voice matters most on agency shifts, where you may have a single treatment to convince a regular guest that you belong to their house.`,
-        },
-      ],
-      keyTerms: [
-        { term: 'Provenance', definition: `The verifiable origin story of a product's ingredients and making; Bamford's provenance runs from the organic fields of Daylesford, and it is the house's deepest point of difference.` },
-        { term: 'Organic', definition: `Grown and produced without synthetic pesticides and to strict independent standards; in the UK the Soil Association is the best-known certifier, and many Bamford formulations carry its mark.` },
-        { term: 'Holistic wellbeing', definition: `Treating mind, body and spirit as one, through touch, breath and practices such as yoga and meditation; the shape of the entire Bamford spa experience.` },
-        { term: 'USP', definition: `Unique selling point: the specific, honest claim that distinguishes a house from its competitors, which every therapist should be able to state in one sentence.` },
-      ],
-      caseStudy: {
-        title: 'The comparison shopper at Fernleigh Manor, the Cotswolds',
-        scenario: `Priya is a therapist at Fernleigh Manor, a country house hotel spa in the Cotswolds running a Bamford menu. During consultation her guest Mrs Whitfield, who arrives with a tote bag from a well-known natural beauty chain, says pleasantly: I already buy natural products on the high street for a third of the price, so convince me. Priya feels the pull to criticise the high-street range's ingredient list, which she half remembers, and to defend Bamford line by line. She has thirty seconds to answer before the treatment begins, and she knows a defensive comparison will sour the calm she is about to create.`,
-        insight: `Priya answers with provenance and the house voice instead of a lists battle: Bamford was born from Daylesford, an English organic farm, its formulations carry independent organic certification, and what Mrs Whitfield is buying today is not only a product but an hour of mindful, holistic treatment no shelf can sell. Then she lets the slow opening, the breathwork and the botanicals make the rest of the argument. The professional lesson: never disparage a competitor and never fight on price. Provenance, credentials and the delivered experience are the honest, unanswerable case for the house.`,
-      },
-      summary: `Bamford is an English house founded by Carole Bamford, creator of Daylesford Organic, and its deepest point of difference is that it was born from an organic farm in the Cotswolds rather than a laboratory or a retail counter. Its philosophy joins botanical integrity, organic and natural ingredients with real credentials, to true holistic wellbeing for mind, body and spirit, delivered slowly and mindfully. Its USP, organic botanically led care born from an English farm and delivered through mindful treatment, should live on every therapist's tongue in the house's quiet, grounded voice.`,
-    },
-    {
-      title: 'Product knowledge and hero ingredients',
-      objectives: [
-        `Identify Bamford's hero products and mood-led collections and describe what each is famous for`,
-        `Explain the house's ingredient story and its organic and ethical credentials in guest-ready language`,
-        'Apply a reliable, honest method for learning any range quickly without inventing claims',
-      ],
-      sections: [
-        {
-          heading: 'Heroes first: the icons guests remember',
-          body: `In any house a small number of products carry the reputation, and mastering them first buys most of your credibility for a fraction of the effort. For Bamford, begin with the Geranium All Rounder, the house's much-loved multi-purpose balm. It does exactly what its name promises, comforting dry patches, hands, lips, elbows and anywhere skin needs rescue, and it is one of the easiest honest recommendations in spa retail because nearly every guest has a daily use for it. A therapist who applies it to a guest's hands at the close of a treatment, with one sentence about the organic botanicals inside, has made the most natural retail introduction possible. Around the All Rounder, learn the botanic bath and body oils that carry the aromatherapy heart of the range, and the core skincare the spa stocks, category by category. Aim to present each hero in a single fluent sentence: what it is, what it is famous for, and who it suits. That fluency, more than any encyclopaedic knowledge, is what guests and head therapists hear as expertise.`,
-        },
-        {
-          heading: 'The mood-led collections: B Silent and B Vibrant',
-          body: `Bamford's aromatherapy collections are organised by mood and moment rather than by skin type, and knowing the poles of that spectrum turns consultations into effortless recommendations. The B Silent range is the night-time collection, designed to quiet the mind and prepare the body for sleep, traditionally including guest favourites such as a pillow mist and a temple balm. It is the natural answer to one of the most common things guests confess in consultation: I am not sleeping well. A therapist who hears that and can respond with a genuine night-time ritual, a misted pillow, a balm smoothed into the temples, is prescribing rather than selling. At the other pole, the B Vibrant collection is created to uplift and energise, suiting the depleted guest, the early flight, the foggy morning. Between them sit the wider body and bath products that let a guest build a daily rhythm from the range. Always connect the collection to the guest's own words from consultation; a mood-led range retails itself when the mood was theirs to begin with.`,
-        },
-        {
-          heading: 'Ingredients and credentials: the story behind the jar',
-          body: `Bamford's ingredient story is the founding philosophy made physical: organic and natural botanicals, essential oils chosen for their effect on mind and mood as well as skin, gentle formulation, and sourcing governed by genuine care for people and planet. What sets the house apart from the crowd of natural-sounding brands is verification. Many Bamford formulations carry independent organic certification from the Soil Association, the UK's best-known organic standard, and the wider business holds B Corp certification, an independent accreditation of social and environmental performance. Know both credentials, because Bamford guests are often precisely the people who read labels and ask sharp questions, and a therapist who can answer them calmly turns scepticism into loyalty. When narrating products in treatment, keep the story simple and sensory: one sentence on what it contains, what it does and how it will feel. Lead with feeling and provenance, not chemistry, because that is the house voice. And never claim an ingredient, a percentage or a certification for a specific product unless you have verified it from the brand's own materials.`,
-        },
-        {
-          heading: 'How to learn a range properly',
-          body: `No course can teach every product on your particular spa's shelf, because ranges evolve and stock lists differ, so the meta-skill matters more than any list: the professional method for learning a house fast and honestly. First, heroes before everything; they answer most guest questions and anchor most retail. Second, one category at a time: cleansers as a family, then moisturisers, then body, then bath, learning each category's logic rather than memorising isolated items. Third, use the testers and the training materials the spa holds; the house's own words are your safest source for any claim. Fourth, use the key products on your own skin and in your own evenings, because conviction cannot be faked, and a therapist who genuinely reaches for the pillow mist at home sells it with a sentence. Fifth, keep the habit of the honest gap: when a guest asks something you do not know, say what you do know, offer to check the rest, and then actually check it. A therapist who follows this method can walk into an unfamiliar Bamford spa and be genuinely fluent within their first week.`,
-        },
-      ],
-      keyTerms: [
-        { term: 'Hero product', definition: `An iconic product that carries a house's reputation and that guests ask for by name; for Bamford, think of the Geranium All Rounder and the B Silent night-time favourites.` },
-        { term: 'Mood-led collection', definition: `A product family organised by emotional moment rather than skin type, such as B Silent for night-time and sleep or B Vibrant for energy, matched to the guest's own words in consultation.` },
-        { term: 'Soil Association', definition: `The UK's best-known organic certification body; its mark on a formulation is independent verification of organic standards, not a marketing claim.` },
-        { term: 'B Corp', definition: `An independent certification of a whole business's social and environmental performance; Bamford holds it, and discerning guests increasingly recognise and ask about it.` },
-      ],
-      caseStudy: {
-        title: 'The label reader at The Hartwell, Mayfair',
-        scenario: `Leo has recently joined the spa at The Hartwell, a luxury hotel in Mayfair with a Bamford treatment menu, and his formal brand training is still two weeks away. His guest Ms Okafor arrives for a body treatment, turns a retail jar over in her hands and asks precisely the questions he feared: is this actually certified organic, or just natural-ish, and what exactly would you send me home with for the terrible sleep I mentioned on my form? Leo knows a vague answer will lose her, and an invented one would be worse, because she is clearly the kind of guest who checks.`,
-        insight: `Leo's hero-first preparation carries him. He explains honestly that many Bamford formulations are certified organic by the Soil Association and that the business itself is a certified B Corp, and offers to confirm the certification on her specific jar from the brand's own materials before she leaves. For the sleep, he prescribes from the B Silent night-time collection, describing the pillow mist and temple balm ritual in one warm sentence. She buys the ritual and asks for him by name next visit. Credentials answered honestly, plus a prescription drawn from the guest's own words, is the whole craft in miniature.`,
-      },
-      summary: `Bamford product mastery starts with the heroes: the Geranium All Rounder, the do-everything organic balm, the B Silent night-time collection with its loved pillow mist and temple balm, the uplifting B Vibrant collection, and the botanic bath and body oils that carry the house's aromatherapy heart. The ingredient story is organic and natural botanicals backed by real credentials, Soil Association certification on many formulations and B Corp status for the business. Beyond any list, the lasting skill is the method: heroes first, one category at a time, the house's own materials, personal use, and the honest gap instead of invention.`,
-    },
-    {
-      title: 'Signature treatments, retail and upselling',
-      objectives: [
-        `Navigate a Bamford treatment menu on day one and deliver the house's mindful, holistic signature style with confidence`,
-        'Retail the range by linking the products used in treatment and the consultation findings to a short, honest home prescription',
-        `Build integrity-led upsell paths between treatments and uphold the brand's standards on every shift`,
-      ],
-      sections: [
-        {
-          heading: 'Reading the treatment menu like a professional',
-          body: `Every Bamford spa's menu differs in detail, so the day one discipline is a reading method rather than a memorised list. Start with the signature treatment, because a house's signature is the purest expression of its philosophy and the booking guests most often arrive already wanting; learn it first and in full. Then map the menu in layers: the facials and what distinguishes each tier, the body treatments and massages and how the product choices work within them, and finally the enhancements, the add-ons that extend or deepen a booking. For each treatment note four things: duration, protocol source, products used, and who it is for. Read the written protocols the spa holds, shadow a senior therapist where the rota allows, and take your questions to the head therapist before your first guest rather than improvising in front of one. Note too what makes a Bamford menu distinctive: expect treatments framed around wellbeing and restoration, often sitting alongside wider wellness offerings such as yoga and meditation, rather than a list of machine-led results. A therapist who can honestly say I know this menu by the end of day one is rare, and remembered.`,
-        },
-        {
-          heading: 'Delivering the signature style',
-          body: `Bamford treatments are recognisable before a single product is applied, because the style itself is the brand. The house manner is slow, present and grounded: an unhurried welcome, attention to the guest's breath, and openings that mark a clear boundary between the guest's day and the calm to come. Through the treatment, the standard is generous, flowing bodywork, mindful pacing and a therapist who is genuinely present rather than mechanically proficient; guests describe a well-delivered Bamford hour as feeling held, not processed. Protect the quiet completely: no rushed transitions, no chatter beyond what the guest invites, no abrupt endings, and a gentle, gradual return at the close. Under schedule pressure, the slow opening and the mindful pacing are the first things a rushed therapist trims and the last things this house would ever sacrifice, because the calm is the product. If the column genuinely does not allow the ritual its time, flag the schedule to the coordinator; quietly shortening a Bamford treatment to stay on time is not efficiency, it is removing the thing the guest paid for. Deliver the slowness faithfully and you are delivering Bamford; skip it and you are merely using its products.`,
-        },
-        {
-          heading: 'Retail: the countryside taken home',
-          body: `Bamford retail succeeds when it is framed as the guest taking the calm home, and the mechanics follow the house's own logic. During the treatment, narrate the key products at natural moments, one sensory sentence each, while the guest is experiencing them; the balm they can feel comforting their hands and the oil scenting the room are already selling themselves honestly. At the close, prescribe rather than pitch: two or three products, each linked explicitly to the treatment just delivered and to what the guest told you in consultation. The strongest links are the personal ones. The guest who confessed poor sleep leaves with the B Silent ritual, the pillow mist and temple balm, prescribed as a genuine answer to their own words. The guest with winter-ravaged hands leaves with the Geranium All Rounder. The guest who sank into the massage leaves with the body oil that scented their hour. Tell them what not to buy as well, which builds the trust that compounds over years. Write the prescription down, and record it on the guest's history so the next therapist can continue the story rather than starting again.`,
-        },
-        {
-          heading: 'Upselling with integrity, and protecting the brand on shift',
-          body: `Upsell paths in a Bamford spa are natural because the menu is a connected landscape of wellbeing, not a price list. The facial guest who visibly melted during the massage phases suits the fuller signature body experience next visit; say so warmly at the close and note it on their record. The sixty-minute guest carrying genuine tension benefits from ninety minutes, offered once, at booking or in consultation, and never repeated. Enhancements let a guest deepen today's booking without changing it, and the spa's wider wellness offering, where classes or mindful practices exist, gives you honest forward paths for the guest seeking more than touch. The integrity rule is absolute: every upgrade must improve the guest's outcome, not merely the bill, and in a house built on trust and provenance a pushy offer is doubly damaging. Alongside selling the brand, you protect it: correct products in correct quantities, protocols followed faithfully rather than privately improved, testers and retail kept immaculate, low stock reported before it forces substitutions, and the ritual never diluted under time pressure. Guests experience the brand only through its therapists. On a Bamford shift, you are Bamford.`,
-        },
-      ],
-      keyTerms: [
-        { term: 'Signature treatment', definition: `The treatment that most purely expresses a house's philosophy and the first one to master on any new menu; for Bamford, expect it to be holistic, mindful and unhurried.` },
-        { term: 'Enhancement', definition: `An add-on that extends or deepens an existing booking, allowing a guest to upgrade the outcome without changing the treatment itself.` },
-        { term: 'Upgrade path', definition: `The natural route from one treatment to a richer one, built on what the guest genuinely loved or needs, such as facial to the fuller signature body experience, or sixty minutes to ninety.` },
-        { term: 'Brand standards', definition: `The practices that protect a house's reputation on shift: correct products and quantities, faithful protocols, immaculate presentation, stock reporting and the ritual delivered in full.` },
-      ],
-      caseStudy: {
-        title: 'The agency shift at Elmwood Park, Oxfordshire',
-        scenario: `Hannah, an experienced agency therapist trained in a results-led clinical house, arrives at Elmwood Park, a five-star country hotel in Oxfordshire, for her first shift on its Bamford menu. She has forty minutes before her first guest. She asks the head therapist for the menu and protocols, learns the signature treatment structure first, and confirms the products and pacing for her first two bookings. Her second guest, Mrs Calloway, is a spa regular who mentions in consultation that she has barely slept all month, loves the massage element of her usual facial, and has never been offered anything beyond it.`,
-        insight: `Hannah resists her clinical instincts and delivers the house style faithfully: slow opening, attention to breath, generous unhurried flow. At the close she prescribes from the consultation, the B Silent pillow mist and temple balm for the sleepless month, and opens the honest upgrade path: since the massage is what Mrs Calloway loves, the fuller signature body experience is the natural next visit, noted on her record for whoever treats her next. Nothing was pushed; a genuine need was heard and answered in the brand's own manner. One shift, one honest prescription, one guest given a reason to return, and an agency therapist Elmwood Park asks for by name.`,
-      },
-      summary: `Mastering a Bamford shift is a craft with four faces. Read the menu like a professional, signature treatment first, noting duration, protocol, products and fit for every booking. Deliver the style faithfully: slow, present, breath-led and grounded, because the calm is the product and is never the thing you trim. Retail as the countryside taken home, prescribing two or three products linked to the treatment and the guest's own consultation words, the B Silent ritual for the poor sleeper above all. And build honest upgrade paths while protecting the standards, because on shift the therapist is the brand.`,
     },
   ],
 }

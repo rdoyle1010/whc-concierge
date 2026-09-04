@@ -1,21 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerClient } from '@supabase/ssr'
-import { cookies } from 'next/headers'
+import { adminRequestUser } from '@/lib/admin-api-auth'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { AD_PLACEMENTS } from '@/lib/advertising'
 import { sendAdvertLiveEmail, sendAdvertRejectedEmail } from '@/lib/advertising-emails'
 
+// Delegated to the shared admin guard, which enforces two-step
+// verification as well as the admin role.
 async function requireAdmin() {
-  const cookieStore = await cookies()
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    { cookies: { getAll() { return cookieStore.getAll() }, setAll() {} } }
-  )
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return null
-  const admin = createAdminClient()
-  const { data: profile } = await admin.from('profiles').select('role').eq('id', user.id).maybeSingle()
-  return profile?.role === 'admin' ? user : null
+  return adminRequestUser()
 }
 
 export async function GET() {
@@ -50,6 +42,16 @@ export async function POST(req: NextRequest) {
     update = { status: 'active', start_date: advert.start_date || today }
   }
   if (action === 'archive') update = { review_status: 'archived', status: 'archived', end_date: today }
+  // Archiving used to be a one-way door: an archived advert showed only an
+  // Archive control, so a brand that had paid and been archived by mistake
+  // could never be put back. Restore returns it to live, on the same terms
+  // Approve applies.
+  if (action === 'restore') {
+    if (!['paid', 'direct'].includes(String(advert.payment_status))) {
+      return NextResponse.json({ error: 'Only paid or direct adverts can be restored.' }, { status: 400 })
+    }
+    update = { review_status: 'approved', status: 'active', approved_at: now.toISOString(), start_date: advert.start_date || today, end_date: null }
+  }
   if (!update) return NextResponse.json({ error: 'Unknown action' }, { status: 400 })
 
   const { error } = await admin.from('ad_placements').update({ ...update, updated_at: now.toISOString() }).eq('id', id)

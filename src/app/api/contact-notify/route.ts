@@ -1,12 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { rateLimit, getClientIp } from '@/lib/rate-limit'
 import { contactFormSchema, validateRequest } from '@/lib/validations'
+import { createAdminClient } from '@/lib/supabase/admin'
 
 const limiter = rateLimit('contact-notify', { windowMs: 15 * 60 * 1000, maxRequests: 5 })
 
 const RESEND_API_KEY = process.env.RESEND_API_KEY
-const FROM_EMAIL = 'WHC Concierge <noreply@mail.wellnesshousecollective.co.uk>'
-const ADMIN_EMAIL = 'rebecca.whc@outlook.com'
+const FROM_EMAIL = 'Talent House Collective <noreply@mail.wellnesshousecollective.co.uk>'
+// Fallback only - the admin-configured platform_config contact_email wins.
+const DEFAULT_ADMIN_EMAIL = 'rebecca.whc@outlook.com'
+
+async function getNotificationRecipient(): Promise<string> {
+  try {
+    const admin = createAdminClient()
+    const { data } = await admin.from('platform_config').select('value').eq('key', 'contact_email').maybeSingle()
+    const configured = String(data?.value || '').trim()
+    if (configured && configured.includes('@')) return configured
+  } catch { /* fall back to the default address */ }
+  return DEFAULT_ADMIN_EMAIL
+}
 
 export async function POST(req: NextRequest) {
   const { success, remaining } = limiter.check(getClientIp(req))
@@ -20,35 +32,37 @@ export async function POST(req: NextRequest) {
     }
     const { name, email, subject, message, type } = validation.data!
 
-    const emailSubject = `New WHC Contact: ${type || 'general'} - ${subject}`
+    const emailSubject = `New Talent House Contact: ${type || 'general'} - ${subject}`
 
     const html = `
       <div style="font-family: Inter, -apple-system, sans-serif; max-width: 560px; margin: 0 auto; padding: 40px 20px;">
-        <p style="font-size: 16px; font-weight: 600; margin-bottom: 32px;">WHC Concierge</p>
+        <p style="font-size: 16px; font-weight: 600; margin-bottom: 32px;">Talent House Collective</p>
         <p style="font-size: 20px; font-weight: 700; margin-bottom: 20px;">New Contact Form Submission</p>
         <table style="width: 100%; border-collapse: collapse; margin-bottom: 24px;">
-          <tr><td style="padding: 8px 0; color: #9CA3AF; font-size: 13px; width: 100px;">Name</td><td style="padding: 8px 0; font-size: 14px; color: #1a1a1a; font-weight: 500;">${name}</td></tr>
-          <tr><td style="padding: 8px 0; color: #9CA3AF; font-size: 13px;">Email</td><td style="padding: 8px 0; font-size: 14px;"><a href="mailto:${email}" style="color: #C9A96E;">${email}</a></td></tr>
-          <tr><td style="padding: 8px 0; color: #9CA3AF; font-size: 13px;">Type</td><td style="padding: 8px 0; font-size: 14px; color: #1a1a1a; text-transform: capitalize;">${type || 'general'}</td></tr>
-          <tr><td style="padding: 8px 0; color: #9CA3AF; font-size: 13px;">Subject</td><td style="padding: 8px 0; font-size: 14px; color: #1a1a1a; font-weight: 500;">${subject}</td></tr>
+          <tr><td style="padding: 8px 0; color: #6b6b6b; font-size: 13px; width: 100px;">Name</td><td style="padding: 8px 0; font-size: 14px; color: #1c1c1c; font-weight: 500;">${name}</td></tr>
+          <tr><td style="padding: 8px 0; color: #6b6b6b; font-size: 13px;">Email</td><td style="padding: 8px 0; font-size: 14px;"><a href="mailto:${email}" style="color: #555555;">${email}</a></td></tr>
+          <tr><td style="padding: 8px 0; color: #6b6b6b; font-size: 13px;">Type</td><td style="padding: 8px 0; font-size: 14px; color: #1c1c1c; text-transform: capitalize;">${type || 'general'}</td></tr>
+          <tr><td style="padding: 8px 0; color: #6b6b6b; font-size: 13px;">Subject</td><td style="padding: 8px 0; font-size: 14px; color: #1c1c1c; font-weight: 500;">${subject}</td></tr>
         </table>
-        <div style="background: #F9FAFB; border-radius: 8px; padding: 16px; margin-bottom: 24px;">
-          <p style="font-size: 12px; color: #9CA3AF; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.05em;">Message</p>
+        <div style="background: #fafafa; border-radius: 8px; padding: 16px; margin-bottom: 24px;">
+          <p style="font-size: 12px; color: #6b6b6b; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.05em;">Message</p>
           <p style="font-size: 14px; color: #374151; line-height: 1.7; white-space: pre-wrap;">${message}</p>
         </div>
-        <p style="font-size: 12px; color: #9CA3AF;">Wellness House Collective &middot; wellnesshousecollective.co.uk</p>
+        <p style="font-size: 12px; color: #6b6b6b;">Talent House Collective &middot; talenthousecollective.co.uk</p>
       </div>
     `
 
+    const recipient = await getNotificationRecipient()
+
     if (!RESEND_API_KEY) {
-      console.log(`[Email skipped - no API key] To: ${ADMIN_EMAIL}, Subject: ${emailSubject}`)
+      console.log(`[Email skipped - no API key] To: ${recipient}, Subject: ${emailSubject}`)
       return NextResponse.json({ success: true, skipped: true })
     }
 
     await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ from: FROM_EMAIL, to: ADMIN_EMAIL, subject: emailSubject, html }),
+      body: JSON.stringify({ from: FROM_EMAIL, to: recipient, subject: emailSubject, html }),
     })
 
     return NextResponse.json({ success: true })

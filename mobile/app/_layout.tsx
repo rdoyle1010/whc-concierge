@@ -1,13 +1,35 @@
-import { useEffect } from 'react'
-import { Stack } from 'expo-router'
+import { useCallback, useEffect, useRef } from 'react'
+import { Stack, router, usePathname } from 'expo-router'
 import { StatusBar } from 'expo-status-bar'
 import { AppState, View } from 'react-native'
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context'
 import MobileNav from '../src/components/MobileNav'
 import { supabase } from '../src/lib/supabase'
 import { registerPushNotifications } from '../src/lib/push'
+import { mfaRequirement } from '../src/lib/mfa-guard'
+
+// Screens a half-verified session is allowed to sit on. Everything else is
+// account data and must wait for the second step.
+const MFA_EXEMPT = ['/', '/index', '/login', '/mfa-challenge']
 
 export default function RootLayout() {
+  const pathname = usePathname()
+  const pathnameRef = useRef(pathname)
+  pathnameRef.current = pathname
+
+  const enforceMfa = useCallback(async () => {
+    const current = pathnameRef.current || '/'
+    if (MFA_EXEMPT.includes(current)) return
+    const requirement = await mfaRequirement()
+    if (!requirement.required) return
+    router.replace({
+      pathname: '/mfa-challenge',
+      params: { factorId: requirement.factorId || '', role: requirement.role || '' },
+    })
+  }, [])
+
+  useEffect(() => { enforceMfa() }, [pathname, enforceMfa])
+
   useEffect(() => {
     let active = true
 
@@ -23,11 +45,14 @@ export default function RootLayout() {
 
     register()
     const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
-      if (!active || !session || (event !== 'SIGNED_IN' && event !== 'TOKEN_REFRESHED')) return
-      registerPushNotifications().catch(error => console.warn('[Push registration skipped]', error))
+      if (!active) return
+      if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+        if (session) registerPushNotifications().catch(error => console.warn('[Push registration skipped]', error))
+        enforceMfa()
+      }
     })
     const appStateListener = AppState.addEventListener('change', state => {
-      if (state === 'active') register()
+      if (state === 'active') { register(); enforceMfa() }
     })
 
     return () => {
@@ -35,7 +60,7 @@ export default function RootLayout() {
       listener.subscription.unsubscribe()
       appStateListener.remove()
     }
-  }, [])
+  }, [enforceMfa])
 
   return (
     <SafeAreaProvider>

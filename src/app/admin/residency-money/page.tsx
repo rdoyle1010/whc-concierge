@@ -9,6 +9,7 @@ export default function AdminResidencyMoneyPage() {
   const [loading, setLoading] = useState(true)
   const [busy, setBusy] = useState<string | null>(null)
   const [error, setError] = useState('')
+  const [capped, setCapped] = useState(false)
 
   async function load() {
     setLoading(true)
@@ -17,7 +18,10 @@ export default function AdminResidencyMoneyPage() {
       const res = await fetch('/api/admin/residency-money', { cache: 'no-store' })
       const data = await res.json().catch(() => ({}))
       if (!res.ok) setError(data.error || 'Could not load Residency money.')
-      else setBookings(data.bookings || [])
+      else {
+        setBookings(data.bookings || [])
+        setCapped(Boolean(data.pagination?.capped) || (data.bookings || []).length >= 250)
+      }
     } catch { setError('Could not load Residency money.') }
     setLoading(false)
   }
@@ -77,6 +81,8 @@ export default function AdminResidencyMoneyPage() {
         <button onClick={load} className="btn-secondary inline-flex items-center gap-2 self-start"><RefreshCw size={14}/>Refresh</button>
       </div>
 
+      {capped && <div className="mb-6 border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">Totals below cover the most recent 250 rows.</div>}
+
       <div className="dashboard-metrics mb-8">
         <div className="dashboard-metric"><Banknote size={16} className="text-accent mb-3"/><p className="dashboard-metric-value">£{metrics.collected.toLocaleString('en-GB')}</p><p className="dashboard-metric-label">Collected from properties</p></div>
         <div className="dashboard-metric"><Banknote size={16} className="text-accent mb-3"/><p className="dashboard-metric-value">£{metrics.fees.toLocaleString('en-GB')}</p><p className="dashboard-metric-label">Platform fees</p></div>
@@ -110,7 +116,7 @@ export default function AdminResidencyMoneyPage() {
                   <div><p className="text-[10px] uppercase tracking-[.12em] text-muted">Collected</p><p className="mt-1 font-semibold text-ink">£{Number(booking.amount_paid || 0).toLocaleString('en-GB')}</p></div>
                   <div><p className="text-[10px] uppercase tracking-[.12em] text-muted">Platform fee</p><p className="mt-1 font-semibold text-accent">£{fee.toLocaleString('en-GB')}</p></div>
                   <div><p className="text-[10px] uppercase tracking-[.12em] text-muted">Specialist</p><p className="mt-1 font-semibold text-ink">£{payout.toLocaleString('en-GB')}</p></div>
-                  <div><p className="text-[10px] uppercase tracking-[.12em] text-muted">Payout</p><p className="mt-1 font-semibold text-ink">{booking.payout_status || '—'}</p></div>
+                  <div><p className="text-[10px] uppercase tracking-[.12em] text-muted">Payout</p><p className="mt-1 font-semibold text-ink">{booking.payout_status || '-'}</p></div>
                 </div>
               </div>
 

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { canEmployerDiscoverCandidate } from '@/lib/discovery'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
@@ -68,7 +69,12 @@ export async function POST(req: NextRequest) {
       blockedCandidateIds = (blocks || []).map((b: any) => b.candidate_id)
     }
 
-    const filtered = candidates.filter(c => !blockedCandidateIds.includes(c.id))
+    // Stealth Mode and a hidden profile were both missing here, so this route
+    // answered with people the rest of the platform had already agreed no
+    // employer may see. One gate, the same one every other employer-facing
+    // route uses, rather than a fourth hand-written copy of the rule.
+    const blockedIds = new Set(blockedCandidateIds)
+    const filtered = candidates.filter(c => canEmployerDiscoverCandidate(c, blockedIds))
     const results = rankCandidates(filtered, job)
 
     return NextResponse.json({ results })

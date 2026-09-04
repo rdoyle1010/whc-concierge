@@ -2,9 +2,10 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getRequestUser } from '@/lib/request-user'
 import { createNotification } from '@/lib/notifications'
-import { AGENCY_PLATFORM_FEE_PCT } from '@/lib/constants'
+import { feePctForEmployerShift } from '@/app/api/agency/booking/core'
 import { sendSms } from '@/lib/sms'
 import { sendAgencyOfferEmail } from '@/lib/emails'
+import { emailAllowed, smsAllowed } from '@/lib/notification-prefs'
 import { profileDistanceMiles } from '@/lib/geo'
 import { shiftHours, validShiftWindow, windowCovers, windowsOverlap } from '@/lib/agency-time'
 
@@ -68,10 +69,15 @@ export async function POST(req: NextRequest) {
     if (employer.preferred_until && new Date(employer.preferred_until).getTime() < Date.now()) return NextResponse.json({ error: 'Your Preferred Employer registration has expired.' }, { status: 403 })
 
     const { data: candidate } = await admin.from('candidate_profiles')
-      .select('id,user_id,full_name,phone,approval_status,profile_visible,agency_available,agency_listed_until,latitude,longitude,travel_radius_miles')
+      .select('id,user_id,full_name,phone,sms_opt_in,approval_status,profile_visible,stealth_mode,agency_available,agency_listed_until,latitude,longitude,travel_radius_miles')
       .eq('id', candidateId).maybeSingle()
     if (!candidate) return NextResponse.json({ error: 'Professional not found.' }, { status: 404 })
-    if (candidate.approval_status !== 'approved' || candidate.profile_visible === false || !candidate.agency_available) {
+    // Stealth Mode belongs here for the same reason it belongs on a private
+    // approach: hiding from employers is worth nothing if one of them can
+    // still put a shift offer in front of you. The mobile API is a second
+    // door to the same action and needs the same lock.
+    if (candidate.approval_status !== 'approved' || candidate.profile_visible === false
+      || candidate.stealth_mode === true || !candidate.agency_available) {
       return NextResponse.json({ error: 'This professional is not currently bookable on the Agency register.' }, { status: 403 })
     }
     if (candidate.agency_listed_until && new Date(candidate.agency_listed_until).getTime() < Date.now()) {
@@ -101,7 +107,7 @@ export async function POST(req: NextRequest) {
 
     const hours = shiftHours(shiftStartTime, shiftEndTime) || 0
     const effectiveHours = hours || 8
-    const platformFee = Math.ceil(rate * effectiveHours * AGENCY_PLATFORM_FEE_PCT)
+    const platformFee = Math.ceil(rate * effectiveHours * await feePctForEmployerShift(admin, employer.id, shiftDate))
     const urgent = shiftDate === todayInLondon()
     const groupId = repeatWeeks > 1 && globalThis.crypto?.randomUUID ? globalThis.crypto.randomUUID() : null
     const baseRow: Record<string, any> = {
@@ -141,23 +147,28 @@ export async function POST(req: NextRequest) {
       : `${propertyName} has offered you an Agency shift on ${shiftDate} at £${rate} per hour${hours ? ` for ${hours} hours` : ''}. Respond from Agency in the app.${standingLine}`
 
     if (candidate.user_id) {
+      // Offer email is preference-gated ('booking_updates'); bell + inbox
+      // always fire. Fail-open on lookup errors.
       await Promise.allSettled([
         createNotification(candidate.user_id, 'general', urgent ? 'URGENT: shift offer for today' : 'New Agency offer', offerBody, '/talent/agency'),
         admin.from('messages').insert({ sender_id: user.id, recipient_id: candidate.user_id, content: offerBody, read: false }).then(() => null),
-        admin.auth.admin.getUserById(candidate.user_id).then(({ data }: any) => {
-          const email = data?.user?.email
-          return email ? sendAgencyOfferEmail(email, candidate.full_name || 'there', {
-            propertyName,
-            shiftDate,
-            rate,
-            hours: hours || null,
-            urgent,
-            expiresAt: baseRow.expires_at,
-          }) : null
-        }),
+        emailAllowed(admin, candidate.user_id, 'booking_updates').then(allowed => allowed
+          ? admin.auth.admin.getUserById(candidate.user_id).then(({ data }: any) => {
+              const email = data?.user?.email
+              return email ? sendAgencyOfferEmail(email, candidate.full_name || 'there', {
+                propertyName,
+                shiftDate,
+                rate,
+                hours: hours || null,
+                urgent,
+                expiresAt: baseRow.expires_at,
+              }) : null
+            })
+          : null),
       ])
     }
-    if (urgent) await sendSms(candidate.phone, `WHC Concierge: ${propertyName} needs cover TODAY - £${rate}/hr. Open Agency in the app to respond.`).catch(() => null)
+    // SMS is consent-gated: sms_opt_in plus a phone number on file.
+    if (urgent && smsAllowed(candidate)) await sendSms(candidate.phone, `Talent House Collective: ${propertyName} needs cover TODAY - £${rate}/hr. Open Agency in the app to respond.`).catch(() => null)
 
     return NextResponse.json({ success: true, booking, created, urgent })
   } catch (error: any) {

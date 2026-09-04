@@ -1,4 +1,4 @@
-// WHC Academy specialist care course: Pregnancy & Post-Natal Treatments.
+// Talent House Academy specialist care course: Pregnancy & Post-Natal Treatments.
 // Awareness-level training - it does not replace accredited pregnancy or
 // post-natal massage certification, venue protocols or insurer requirements.
 // Answer key lives in academy-more-answers/pregnancy-postnatal-spa.ts
@@ -6,14 +6,13 @@
 
 import type { AcademyCourse } from '../academy'
 import type { CourseExtras } from '../academy-extras'
-import type { CourseContent } from '../academy-types'
 
 export const course: AcademyCourse = {
   slug: 'pregnancy-postnatal-spa',
   title: 'Pregnancy & Post-Natal Treatments',
   tagline: `Safe, confident, compassionate care for guests before and after birth`,
   category: 'Specialist Care',
-  minutes: 45,
+  minutes: 90,
   lessons: [
     {
       title: 'The pregnant and post-natal guest: what changes',
@@ -168,173 +167,6 @@ export const extras: CourseExtras = {
         'Referral is a professional act, not a failure - adapt conservatively, defer or refer',
         'For cancer care, accredited oncology-touch programmes such as Made for Life or Jennifer Young style training are required by many insurers',
       ],
-    },
-  ],
-}
-
-export const content: CourseContent = {
-  slug: 'pregnancy-postnatal-spa',
-  aims: `This course gives spa and wellness therapists a clear, compassionate, safety-first grounding in caring for pregnant and post-natal guests in luxury spa settings. It explains how pregnancy and the post-natal period change the body a treatment touches, sets out the classic contraindications, cautions and adaptations, and builds the consultation and communication skills these guests deserve, including sensitivity around pregnancy loss and post-natal mental health. Above all it teaches professional scope: this is awareness-level training, and it does not replace accredited pregnancy or post-natal massage certification, venue protocols, insurer requirements or the guest's own medical guidance. Therapists learn to adapt conservatively, seek consent properly, refer without embarrassment, and recognise where accredited training, such as the oncology-touch programmes required by many insurers for cancer care, is the necessary next step.`,
-  audience: `Spa and wellness therapists in UK luxury hotels, destination spas and premium day spas who meet pregnant and post-natal guests on their columns, whether or not they yet hold an accredited pregnancy massage qualification. It suits newly qualified therapists building safe habits before specialist training, experienced therapists refreshing their contraindication knowledge, agency and freelance therapists who must learn a venue's protocols quickly, and spa managers, head therapists and reception teams who take bookings, write protocols and decide when a treatment should be adapted, deferred or referred.`,
-  outcomes: [
-    'Describe how pregnancy and the post-natal period change circulation, joints, posture, temperature regulation and recovery, and what that means for spa treatments',
-    'Apply the classic contraindications and cautions, including heat avoidance, adapted positioning, light leg work and protection of abdominal and caesarean scar areas, within venue protocol',
-    'Conduct sensitive, private consultations that never assume, honour pregnancy loss and post-natal emotional health, and secure informed, recorded consent',
-    'Recognise red-flag symptoms and respond by pausing, following protocol and encouraging urgent medical advice, without ever diagnosing',
-    'Work within professional scope, knowing when to adapt conservatively, defer or refer, and where accredited certification is required before hands-on treatment',
-  ],
-  lessons: [
-    {
-      title: 'The pregnant and post-natal guest: what changes',
-      objectives: [
-        'Explain the major physical changes of pregnancy that affect spa treatments, including circulation, joint laxity, posture and temperature regulation',
-        'Describe the post-natal period as a distinct recovery stage, including caesarean recovery, persistent laxity and the strain of early parenthood',
-        'Recognise why pregnant and post-natal guests visit spas, and why informed adaptation serves them better than anxiety or avoidance',
-      ],
-      sections: [
-        {
-          heading: 'A different body, not a broken one',
-          body: `The starting point for this whole course is respect without fear. A pregnant guest is not ill, and she has not become fragile; she is living in a body that is working extraordinarily hard and changing week by week. Blood volume rises substantially across pregnancy, which changes circulation, can make her feel warm or flushed, and can leave her light-headed if she stands up quickly or lies in the wrong position. Hormonal changes, including the hormone relaxin, soften ligaments throughout the body in preparation for birth, which means joints move further than usual and are easier to overstretch. Her centre of gravity shifts forward as the bump grows, loading the lower back, hips and pelvis, which is why back ache, pelvic discomfort and tired legs are among the most common reasons pregnant guests book treatments at all. None of this makes touch dangerous in itself. It makes uninformed touch risky and informed, adapted touch genuinely valuable, and the difference between the two is exactly what this course exists to build.`,
-        },
-        {
-          heading: 'The changes that drive the safety rules',
-          body: `Three physical changes explain most of the cautions you will meet in the next lesson, and understanding them turns rules into judgement. First, positioning: in later pregnancy, lying flat on the back allows the weight of the uterus to press on a major blood vessel returning blood to the heart, which can make the guest faint, nauseous or breathless. That is why side-lying and semi-reclined positions dominate pregnancy treatment protocols. Second, temperature: the body's ability to shed heat matters more in pregnancy, and raising core temperature is a recognised concern, which is why saunas, steam rooms, hot tubs, heated wraps and hot stones are generally avoided rather than merely reduced. Third, circulation: pregnancy changes the blood's clotting behaviour, and the risk of a clot forming in the deep veins of the leg is raised during pregnancy and in the weeks after birth. That single fact explains why so many protocols keep leg work light, flowing and superficial, and why one-sided calf pain, heat or swelling is treated as a medical matter, never a massage target.`,
-        },
-        {
-          heading: 'The post-natal period: recovery, not rewind',
-          body: `It is tempting to treat a guest who has had her baby as simply back to normal, and it is wrong. The post-natal period is a recovery stage in its own right. Ligament laxity persists for months after birth, so joints still need protecting from overstretching. The abdominal wall may have separated during pregnancy and is slowly knitting back together, and the pelvic floor is rebuilding strength; neither wants deep, ambitious pressure. A caesarean section is major abdominal surgery, and the scar and the tissue around it are left alone until healed and medically cleared. Layered on top of the physical recovery is the workload of early parenthood: feeding in sustained, awkward positions, carrying a growing baby on one hip, lifting cots and car seats, and surviving on broken sleep. The result is a guest whose neck, shoulders, wrists and lower back are often under more strain than at any point in her pregnancy, and whose one booked hour of rest may matter more to her than any treatment you deliver this month. Adapt for the recovery; honour the exhaustion.`,
-        },
-        {
-          heading: 'Why these guests come, and what they are really booking',
-          body: `Understand the motivation and you will pitch every treatment correctly. Some pregnant guests book because they are aching: lower back, pelvis, legs and feet carry the story of the changing body. Some book because sleep has become difficult and an hour of supported, comfortable stillness is the best rest available to them. Some book as a ritual, marking the pregnancy kindly, often with a partner or mother alongside. Post-natal guests frequently book because someone who loves them insisted, and they arrive feeling guilty about the time; the greatest gift your treatment gives them is permission to rest. What no guest is booking is a lecture, an anxious therapist, or a treatment so cautious it becomes a token gesture. The professional aim, inside your training and your venue's protocols, is a treatment that feels complete, luxurious and designed around her, not a standard treatment with pieces nervously removed. That is the standard this course points you towards, and it is why the awareness in this lesson matters before a single adaptation is learned.`,
-        },
-      ],
-      keyTerms: [
-        { term: 'Relaxin', definition: `A hormone of pregnancy that softens ligaments in preparation for birth, leaving joints more mobile and easier to overstretch, an effect that persists for months after delivery.` },
-        { term: 'Supine hypotension', definition: `Faintness, nausea or breathlessness caused in later pregnancy by lying flat on the back, as the uterus presses on a major blood vessel; the reason side-lying and semi-reclined positioning is preferred.` },
-        { term: 'Post-natal period', definition: `The months of recovery after birth, in which joint laxity, abdominal and pelvic floor recovery, surgical healing and the physical strain of caring for a baby all shape safe treatment.` },
-        { term: 'Awareness-level training', definition: `Education that builds understanding, safe habits and confident communication, but does not qualify a therapist to deliver specialist treatments; accredited certification, venue protocol and insurer requirements govern hands-on practice.` },
-      ],
-      caseStudy: {
-        title: 'The tired guest at Elmwood Manor, the Cotswolds',
-        scenario: `Priya, a therapist at Elmwood Manor, a country house spa in the Cotswolds, welcomes Mrs Okafor, who is thirty weeks pregnant and visibly exhausted. Mrs Okafor apologises the moment she sits down: she knows she is probably a nuisance to treat, she says, and she will understand if the massage has to be a token effort. She mentions an aching lower back, restless legs at night, and that she nearly fainted at a previous spa when she was left lying flat on her back while a therapist fetched towels. She is braced for another disappointing, nervous hour.`,
-        insight: `Priya's response is knowledge worn lightly. She explains, in two warm sentences, that her venue's pregnancy protocol is designed for exactly this stage: side-lying with full cushion support, a comfortably warm rather than hot room, light flowing legwork and unhurried focus on the aching back. She explains why the flat position caused the faintness, so Mrs Okafor understands it was positioning, not her body, that failed. The treatment feels complete and designed for her, not diminished. The lesson: understanding what has changed lets a therapist replace apology with expertise, and the guest can feel the difference within minutes.`,
-      },
-      summary: `Pregnancy changes circulation, ligaments, posture and temperature regulation, and each change drives a treatment rule: side-lying or semi-reclined positioning in later pregnancy, careful temperature management, and light leg work because clot risk is raised. The post-natal period is a genuine recovery stage, with persistent joint laxity, healing abdominal and pelvic structures, caesarean scars to protect, and the heavy physical workload of early parenthood. These guests are often carrying more discomfort than anyone on the column, and informed, confident adaptation, within accredited training and venue protocol, serves them far better than anxiety or avoidance.`,
-    },
-    {
-      title: 'Contraindications, cautions and treatment adaptations',
-      objectives: [
-        'Apply venue and insurer rules on pregnancy treatments, including first trimester restrictions and required training, without improvising',
-        'Adapt heat, positioning, pressure, products and treatment areas safely for pregnant and post-natal guests',
-        'Respond correctly to red-flag symptoms by pausing, following protocol and encouraging urgent medical advice, never diagnosing',
-      ],
-      sections: [
-        {
-          heading: 'The rules that arrive before the guest does',
-          body: `Some of the most important decisions about a pregnancy treatment are made long before the consultation, by people who are not in the room. Many venues and insurers restrict or decline spa treatments in the first trimester, commonly defined as the first twelve weeks, and many require therapists to hold an accredited pregnancy massage qualification before delivering pregnancy treatments at all. Booking teams should be screening for this, but the therapist is the final check, and a guest who mentions early pregnancy at consultation changes the plan regardless of what the diary says. Two disciplines follow. First, know your venue's written protocol cold: which treatments are offered in pregnancy, from which week, with which adaptations, delivered by whom. Second, never relax a protocol on your own judgement, however experienced you feel or however disappointed the guest is. The protocol exists because the venue's insurance and clinical advice stand behind it; a therapist who quietly overrides it is working uninsured. If a rule seems wrong or unclear, raise it with your manager, never with an exception.`,
-        },
-        {
-          heading: 'Heat, positioning and pressure: the big three adaptations',
-          body: `Heat first, because it is absolute in most protocols: saunas, steam rooms, hot tubs, heated body wraps and hot stones are generally avoided throughout pregnancy, and the treatment room itself should be comfortably warm rather than hot, with the guest's temperature checked by asking rather than assuming. Positioning next: from mid-pregnancy onwards, protocols move away from lying flat on the back and away from unsupported face-down positions, towards side-lying with generous cushion support, or a semi-reclined position with the upper body raised. Build the position with the guest's guidance, and expect to rebuild it during the treatment as comfort shifts. Pressure last: the aim is a treatment that feels substantial, not timid, but with clear boundaries. Deep, specific abdominal work is avoided; the abdomen, if touched at all under your protocol, receives only the lightest resting or gliding contact with consent. Leg work stays light and flowing, avoiding deep, specific pressure into the calves, because of the raised clot risk covered in lesson one. Overstretching is avoided everywhere, because lax ligaments will let you go further than is wise.`,
-        },
-        {
-          heading: 'Products, areas and the post-natal return',
-          body: `Product choice is part of the protocol, not a personal flourish. Some essential oils are traditionally avoided in pregnancy, and product houses publish their own guidance on which ranges and blends they consider suitable; the professional rule is to use only the products and blends your venue and brand approve for pregnancy, and to check rather than assume when a guest asks about a specific oil. Skin can also be more sensitive and more prone to reaction in pregnancy, which strengthens the case for patch testing where the brand requires it. Post-natally, the gateway in many venues is the doctor's postnatal check, commonly around six to eight weeks after birth, before treatments resume; agency and freelance therapists should ask rather than guess. A caesarean scar is left alone until healed and medically cleared, and the surrounding abdomen is treated with respect long after that. Breast tenderness and feeding comfort shape positioning for many post-natal guests, so offer options rather than assumptions, and keep products away from the chest area for a guest who is breastfeeding unless the brand's guidance and the guest herself are comfortable.`,
-        },
-        {
-          heading: 'Red flags: when the treatment stops being the point',
-          body: `A small set of symptoms moves the situation out of spa territory entirely, and every therapist who meets pregnant guests should know them. A severe or unusual headache, visual disturbance such as flashing lights or blurring, and sudden swelling of the face, hands or feet can be associated with a serious pregnancy complication and call for urgent medical assessment. So do bleeding, abdominal pain, fluid loss, or a guest's worry that her baby's movements have changed. One-sided calf pain, heat, redness or swelling raises the question of a clot and is never massaged. Your response to any of these is the same and it is simple: pause the treatment calmly, keep the guest comfortable and accompanied, follow your venue's protocol, and encourage her to seek urgent advice from her midwife, maternity unit or doctor. What you never do is diagnose, and the discipline cuts both ways: no frightening speculation about what it might be, and no false reassurance that it is probably nothing. You are not the clinician; you are the professional who noticed, paused and handed over well, and that is exactly enough.`,
-        },
-      ],
-      keyTerms: [
-        { term: 'First trimester restriction', definition: `The common venue and insurer rule limiting or declining spa treatments in roughly the first twelve weeks of pregnancy; a protocol the therapist follows exactly and never relaxes on personal judgement.` },
-        { term: 'Side-lying position', definition: `The supported, cushioned position on the guest's side that replaces flat and face-down positioning in later pregnancy, rebuilt with the guest's guidance as comfort shifts.` },
-        { term: 'Deep vein caution', definition: `The rule keeping pregnancy and post-natal leg work light and flowing, avoiding deep calf pressure, because clot risk is raised; one-sided calf pain, heat or swelling is referred urgently, never massaged.` },
-        { term: 'Red flags', definition: `Symptoms such as severe headache, visual disturbance, sudden swelling, bleeding or one-sided calf pain that require the therapist to pause, follow protocol and encourage urgent medical advice without diagnosing.` },
-      ],
-      caseStudy: {
-        title: 'The hot stone booking at The Harborne, Edinburgh',
-        scenario: `Callum, a senior therapist at The Harborne, a five-star spa hotel in Edinburgh, checks his afternoon column and finds a hot stone massage booked for Mrs Laidlaw, who notes on her consultation form that she is twenty-four weeks pregnant. The booking was taken online and slipped past screening. Mrs Laidlaw has been looking forward to the hot stones for weeks, her lower back is genuinely aching, and when Callum gently raises the issue she pushes back: her friend had hot stones while pregnant abroad, she says, and she is happy to sign anything.`,
-        insight: `Callum holds the protocol and saves the experience. He explains warmly that heat treatments, including hot stones, are avoided in pregnancy under the spa's protocol, and that no signature changes that, because the rule protects her rather than the hotel. Then he offers the genuine alternative: the pregnancy massage he is trained and insured to deliver, side-lying, comfortably warm, with unhurried focus on her aching back. She accepts, and later reviews the spa glowingly. The lesson: a protocol delivered with warmth and a well-designed alternative feels like expertise, not refusal, and a waiver is never a substitute for safety.`,
-      },
-      summary: `Safe pregnancy and post-natal treatment rests on rules the therapist follows rather than invents: trimester restrictions and training requirements set by venues and insurers, heat experiences avoided, positioning moved to supported side-lying or semi-reclined from mid-pregnancy, deep abdominal work avoided, leg work kept light because clot risk is raised, and only approved products used. Post-natally, treatments commonly wait for the doctor's check, and caesarean scars are protected until healed and cleared. Red-flag symptoms end the treatment conversation: pause, keep the guest safe, follow protocol and encourage urgent medical advice, never diagnosing and never falsely reassuring.`,
-    },
-    {
-      title: 'Consultation, communication and emotional care',
-      objectives: [
-        'Conduct private, dignified consultations that never assume pregnancy and give every guest a safe way to share what matters',
-        `Adapt language and emotional care for guests affected by pregnancy loss, anxiety or post-natal struggles, taking the guest's lead throughout`,
-        'Practise warm, boundaried listening, and signpost guests to midwife, GP or health visitor support without counselling or advising',
-      ],
-      sections: [
-        {
-          heading: 'Never assume: the golden rule of this territory',
-          body: `Every experienced spa professional carries a version of the same cautionary tale: the well-meant congratulation offered to a guest who was not pregnant, or was no longer pregnant, and the damage done in five friendly words. The rule that prevents it is absolute. Never comment on a guest's body. Never guess at a pregnancy, however visible it seems. Never raise the subject at reception, in a corridor, or in front of a companion who may not know. The consultation form and a private, unhurried conversation carry the load instead: a calm, routine question, asked of every guest, about whether there is anything in her health, including pregnancy or recent birth, that should shape today's treatment. Asked that way, the question is dignified, expected and easy to answer, and it gives the guest full control of what she shares. If a guest declines to share, note it, follow your protocol, and adapt conservatively. The form is also where an existing pregnancy noted at booking gets gently reconfirmed, because circumstances change between booking and arrival, and assuming continuity can be as painful as assuming pregnancy.`,
-        },
-        {
-          heading: 'The guests you cannot see: loss, anxiety and the invisible story',
-          body: `The therapist's real challenge is that the guest's story is invisible. The woman on your couch may be pregnant after previous loss, monitoring every sensation with quiet dread. She may have miscarried a fortnight ago, with a booking note that still says congratulations. She may be attending on a voucher bought when the pregnancy was still happy news. She may be carrying a baby with a difficult diagnosis, or she may simply be exhausted, sick and far from glowing. The professional response is not to walk on eggshells; it is to take the guest's lead in everything. Mirror her language: if she talks about the baby warmly, you may reflect that warmth; if she is neutral or quiet, stay neutral and quiet. Celebrate only when she invites it. Ask nothing beyond what the treatment needs. If she shares something painful, receive it simply, with words like acknowledging how hard that must be, and let her decide whether the subject stays open. The finest emotional care in a spa is almost invisible: it is the absence of every wrong note.`,
-        },
-        {
-          heading: 'Listening without counselling: the boundary that protects everyone',
-          body: `Post-natal guests bring a particular emotional weight into the treatment room. For some, your treatment is their first hour alone since the birth, and the quiet can release tears that surprise even them. Some will mention feeling low, anxious, overwhelmed or not themselves, and post-natal mental health struggles are common enough that every therapist should expect these conversations across a career. Your role has a clear shape: warm, unhurried, non-judgemental listening, and nothing more. You do not probe, interpret, advise, or share opinions on feeding, sleep or parenting, however kindly meant, because a therapist's casual advice can land with surprising force on an exhausted new parent. What you can do is normalise rest, adapt the hour to what she needs now, perhaps more stillness and less conversation, and afterwards signpost gently: her midwife, GP or health visitor is the right person for how she is feeling, and mentioning that as care rather than dismissal takes one sentence. If anything a guest says ever suggests she or her baby may be at risk, follow your venue's safeguarding protocol and tell your manager promptly.`,
-        },
-        {
-          heading: 'Practical communication that builds safety',
-          body: `Emotional care and physical safety meet in how you communicate the treatment itself. Explain the positioning before the guest is on the couch: what side-lying looks like, where the cushions go, why the position protects her comfort, and how easy it is to change. Invite her to be demanding: agree before you begin that she should say the word if anything feels wrong, uncomfortable, too warm or simply not right, and that stopping or changing course is normal in pregnancy treatments, never an inconvenience. Check in more often than you would with other guests, but keep the check-ins soft so the treatment stays restful. Offer choices rather than assumptions throughout: which side to start on, whether she wants the bump acknowledged in the treatment or left entirely alone, whether she wants silence or conversation. Make it explicitly fine to leave anything out. And close the loop at the end: unhurried time to get up, water, honest aftercare, and a note on her record of positions, preferences and adaptations, so her next visit begins where this one ended. Communication, done this well, is itself a safety system.`,
-        },
-      ],
-      keyTerms: [
-        { term: 'The golden rule', definition: `Never assume: no comments on a guest's body, no guessed pregnancies, no congratulations until the guest herself opens the subject, and no pregnancy conversation within earshot of others.` },
-        { term: `Taking the guest's lead`, definition: `Matching the guest's own language, tone and openness about her pregnancy or loss, celebrating only when invited, and asking nothing beyond what the treatment needs.` },
-        { term: 'Signposting', definition: `Gently directing a struggling guest towards the right professional support, such as her midwife, GP or health visitor, rather than counselling or advising her yourself.` },
-        { term: 'Boundaried listening', definition: `Warm, unhurried, non-judgemental attention to whatever a guest shares, without probing, interpreting or giving advice; the emotional-care skill that protects both guest and therapist.` },
-      ],
-      caseStudy: {
-        title: 'The quiet consultation at Silverbeck Hall, the Yorkshire Dales',
-        scenario: `Megan, a therapist at Silverbeck Hall, a luxury spa hotel in the Yorkshire Dales, prepares for a guest whose booking note reads: pregnancy massage, twenty weeks, gift from husband. In the treatment room, going through the consultation privately, Megan asks her routine question about anything in the guest's health that should shape the treatment. Mrs Ellison is quiet for a moment, then says that she lost the baby three weeks ago, that her husband thought the booking should not be wasted, and that she almost cancelled at the door. She apologises for making things awkward.`,
-        insight: `Megan's reply is short and exactly right: she is so sorry, there is nothing to apologise for, and this hour is entirely Mrs Ellison's. She offers choices rather than sympathy speeches: a nurturing full body massage instead of the pregnancy protocol, silence or gentle conversation, anything left out that she wishes. She follows her guest's lead for the whole hour, mentions nothing unasked, and afterwards quietly updates the record so no colleague ever repeats the booking note's assumption. The lesson: in the presence of loss, the finest care is composed of small, unforced kindnesses and flawless discretion, not words.`,
-      },
-      summary: `Communication in pregnancy and post-natal care begins with the golden rule: never assume, never comment on a body, and let a private, routine consultation question give every guest a dignified way to share. The guest's story is invisible, so take her lead in language and warmth, remembering that loss, anxiety and difficult pregnancies pass through every spa. Listen warmly within boundaries, never counsel or advise, and signpost struggling guests to their midwife, GP or health visitor. Explain positioning in advance, invite honest feedback, offer choices throughout, and record preferences so the next visit starts well.`,
-    },
-    {
-      title: 'Scope of practice, consent, referral and accredited training',
-      objectives: [
-        'Define the limits of awareness-level training and identify the three authorities that govern hands-on practice: venue protocol, insurer requirements and medical guidance',
-        'Secure and record informed, specific consent, including adaptations made and anything the guest declined to share',
-        'Decide confidently between adapting conservatively, deferring and referring, and identify where accredited certification is required before treating',
-      ],
-      sections: [
-        {
-          heading: 'What this course is, and what it is not',
-          body: `Professional scope begins with an honest sentence you should be able to say without discomfort: this course makes me aware, it does not make me certified. Awareness-level training earns its place, because it builds the understanding, the safe instincts and the communication skill that every therapist needs the day a pregnant guest appears on an ordinary column. What it does not do is qualify you to deliver pregnancy or post-natal massage. That authority comes from three places, and all three outrank any course, including this one. Your venue's protocols say which treatments are offered, from which week of pregnancy, with which adaptations, and by whom. Your insurer's requirements say what training you must hold before your work is covered, and many insurers require a recognised pregnancy massage qualification before you deliver pregnancy treatments. And the guest's own medical guidance, from her midwife, doctor or consultant, overrides everything: if her healthcare team has set conditions, the treatment follows them or does not happen. Working inside those three authorities is not timidity. It is what being a professional means.`,
-        },
-        {
-          heading: 'Consent that would survive scrutiny',
-          body: `In specialist care, consent has to be informed and specific, not a signature collected at reception. Informed means the guest knows what you propose to do, what you have adapted and why: that she will be side-lying with cushion support, that the leg work will be light and flowing, that the abdomen will not be worked, that the room will be comfortably warm rather than hot. Explained in a few warm sentences, this is not bureaucracy; it is expertise made visible, and guests consistently find it reassuring rather than alarming. Specific means consent to this treatment, today, in this form, and it can be withdrawn or changed at any point in the hour. Then comes the discipline that protects everyone afterwards: record it. Note the consultation, the week of pregnancy or stage of recovery, the adaptations made, the guidance the guest reported from her midwife or doctor, and anything she declined to share. If a question is ever asked, weeks or months later, your calm, contemporaneous record is the difference between a closed matter and a serious problem, and it is also the map that lets the next therapist care for her properly.`,
-        },
-        {
-          heading: 'Adapt, defer or refer: the professional triangle',
-          body: `Every uncertain moment in specialist care resolves into one of three professional moves, and knowing them removes the panic from the decision. Adapt conservatively: where the guest is cleared for treatment and the uncertainty is small, choose the gentler option, the lighter pressure, the shorter list of areas worked, and say clearly what you are doing and why. Defer: where the question is bigger, such as early pregnancy against a venue restriction, a caesarean scar not yet cleared, or a guest awaiting medical review, offer to rebook for the right moment, warmly and without drama, ideally with an alternative she can enjoy today, such as a facial or a scalp treatment permitted under your protocol. Refer: where the matter belongs to someone else, pass it there gracefully, whether that is a senior therapist, reception, or the guest's own midwife or doctor. The sentence that carries all three is worth rehearsing until it is natural: based on what you have told me, the safest and most enjoyable option today is this, and here is what I suggest for next time. Referral is not failure; it is the behaviour that distinguishes professionals from enthusiasts.`,
-        },
-        {
-          heading: 'Where accredited training is the door, not the decoration',
-          body: `Across specialist care, a consistent pattern holds: awareness courses open your understanding, and accredited certification opens the treatment room door. For pregnancy and post-natal massage, recognised qualifications exist and many venues and insurers require them before you may deliver these treatments; if your spa offers a pregnancy menu, ask precisely what training and sign-off it requires, and do not treat beyond what you hold. The same logic applies even more strongly elsewhere. For guests living with cancer or in active treatment, accredited oncology-touch programmes, such as Made for Life or Jennifer Young style training, exist for exactly this purpose, and many insurers require them before hands-on treatment of guests in active treatment; awareness of that boundary is itself a safety skill. Treat these requirements as career opportunities rather than obstacles. Specialist certifications make a therapist more employable, more requested and more trusted with the bookings that matter, and spas increasingly build their reputations on being able to say yes, safely, to guests other venues turn away. Choose the accredited course, do it properly, and let your scope grow with your certificates rather than ahead of them.`,
-        },
-      ],
-      keyTerms: [
-        { term: 'Scope of practice', definition: `The boundary of what a therapist is trained, authorised and insured to do; defined by qualifications held, venue protocol and insurer requirements, never by confidence or good intentions.` },
-        { term: 'Informed consent', definition: `The guest's agreement to a specific treatment after a clear explanation of what will be done and what has been adapted; recorded, specific to today, and changeable at any point.` },
-        { term: 'Adapt, defer, refer', definition: `The three professional responses to uncertainty in specialist care: choose the conservative option, rebook for the right moment, or pass the matter to a senior colleague or the guest's healthcare team.` },
-        { term: 'Oncology-touch training', definition: `Accredited programmes, such as Made for Life or Jennifer Young style training, that qualify therapists to treat guests living with cancer; required by many insurers before hands-on treatment of guests in active treatment.` },
-      ],
-      caseStudy: {
-        title: 'The scar question at The Lanyard Hotel, Cornwall',
-        scenario: `Sophie, a therapist at The Lanyard Hotel, a coastal luxury spa in Cornwall, consults with Mrs Petrov, six weeks after a caesarean birth. Mrs Petrov has not yet had her postnatal check, which is booked for the following week, and she asks Sophie directly for firm abdominal massage over and around the scar, having read online that massage helps scars, because she wants to feel like herself again before a family wedding. She is articulate, determined, and clearly expects a luxury spa to say yes to a paying guest's request.`,
-        insight: `Sophie works the professional triangle in plain sight. She defers the abdominal request warmly: under the spa's protocol, work near a caesarean scar waits until it is healed and medically cleared, and her postnatal check next week is the natural gateway, after which specialist scar care, guided by her doctor or a women's health physiotherapist, may be exactly right. She adapts today instead: a nurturing back, neck and shoulder treatment for the strain of carrying a newborn. And she records the conversation fully. Mrs Petrov leaves cared for, not refused. Scope, delivered with warmth and a plan, reads as five-star expertise.`,
-      },
-      summary: `Scope of practice is the discipline that holds this course together. Awareness-level training builds understanding; hands-on pregnancy and post-natal treatment is governed by venue protocol, insurer requirements and the guest's medical guidance, and many insurers require accredited qualifications first, just as many require accredited oncology-touch programmes such as Made for Life or Jennifer Young style training before treating guests in active cancer treatment. Consent must be informed, specific and recorded. Faced with uncertainty, the professional moves are always the same: adapt conservatively, defer to the right moment, or refer gracefully, and let your scope grow with your certificates.`,
     },
   ],
 }

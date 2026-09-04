@@ -146,36 +146,36 @@ export default function TalentMessagesPage() {
         <p className="dashboard-intro">Continue conversations with matched properties and keep every opportunity organised in one secure place.</p>
       </div>
 
-      <div className="overflow-hidden rounded-[22px] border border-[#ded8cc] bg-white shadow-[0_18px_55px_rgba(22,40,55,0.08)]" style={{ height: 'calc(100vh - 245px)', minHeight: 560 }}>
+      <div className="dashboard-card !p-0 overflow-hidden" style={{ height: 'calc(100vh - 245px)', minHeight: 560 }}>
         <div className="flex h-full">
-          <aside className={`${activeConvo ? 'hidden md:flex' : 'flex'} w-full md:w-[330px] lg:w-[360px] flex-col border-r border-[#e7e1d7] bg-[#fbfaf7]`}>
-            <div className="border-b border-[#e7e1d7] px-5 py-5">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#a48752]">Conversations</p>
-              <p className="mt-1 text-[12px] text-[#7c7a74]">{conversations.length} active thread{conversations.length === 1 ? '' : 's'}</p>
+          <aside className={`${activeConvo ? 'hidden md:flex' : 'flex'} w-full md:w-[330px] lg:w-[360px] flex-col border-r border-[#dddddd] bg-[#f1f1f1]`}>
+            <div className="border-b border-[#dddddd] px-5 py-5">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#1c1c1c]">Conversations</p>
+              <p className="mt-1 text-[12px] text-[#6b6b6b]">{conversations.length} active thread{conversations.length === 1 ? '' : 's'}</p>
             </div>
             <div className="flex-1 overflow-y-auto">
               {loading ? (
-                <div className="space-y-3 p-4">{[1,2,3].map(i => <div key={i} className="h-[76px] animate-pulse rounded-2xl bg-[#f0ede7]" />)}</div>
+                <div className="space-y-3 p-4">{[1,2,3].map(i => <div key={i} className="h-[76px] animate-pulse rounded-2xl bg-[#f1f1f1]" />)}</div>
               ) : conversations.length === 0 ? (
                 <div className="flex h-full flex-col items-center justify-center px-8 text-center">
-                  <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl border border-[#e2dbcf] bg-white text-[#a48752]"><MessageSquare size={20} /></div>
-                  <p className="text-[15px] font-medium text-[#17344d]">No conversations yet</p>
-                  <p className="mt-2 text-[12px] leading-5 text-[#8b877f]">When interest is mutual, the property conversation will appear here automatically.</p>
+                  <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl border border-[#dddddd] bg-white text-[#1c1c1c]"><MessageSquare size={20} /></div>
+                  <p className="text-[15px] font-medium text-[#1c1c1c]">No conversations yet</p>
+                  <p className="mt-2 text-[12px] leading-5 text-[#6b6b6b]">When interest is mutual, the property conversation will appear here automatically.</p>
                 </div>
               ) : conversations.map((convo) => {
                 const selected = activeConvo === convo.partnerId
                 const initials = String(convo.partnerName || 'U').split(' ').map((part: string) => part[0]).join('').slice(0,2).toUpperCase()
                 return (
-                  <button type="button" key={convo.partnerId} onClick={() => setActiveConvo(convo.partnerId)} className={`group w-full border-b border-[#eee9e0] px-4 py-4 text-left transition ${selected ? 'bg-white' : 'hover:bg-white/70'}`}>
+                  <button type="button" key={convo.partnerId} onClick={() => setActiveConvo(convo.partnerId)} className={`group w-full border-b border-[#dddddd] px-4 py-4 text-left transition ${selected ? 'bg-white' : 'hover:bg-white/70'}`}>
                     <div className="flex items-start gap-3">
-                      <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full border text-[11px] font-semibold ${selected ? 'border-[#c9a96e] bg-[#f8f1e4] text-[#8d6b31]' : 'border-[#ddd6c9] bg-white text-[#59636c]'}`}>{initials}</div>
+                      <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full border text-[11px] font-semibold ${selected ? 'border-accent bg-surface text-ink' : 'border-border bg-white text-secondary'}`}>{initials}</div>
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2">
-                          <p className="min-w-0 flex-1 truncate text-[13px] font-semibold text-[#17344d]">{convo.partnerName || 'Unknown User'}</p>
-                          {convo.unread > 0 && <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-[#0b2f4d] px-1.5 text-[10px] font-semibold text-white">{convo.unread > 9 ? '9+' : convo.unread}</span>}
+                          <p className="min-w-0 flex-1 truncate text-[13px] font-semibold text-[#1c1c1c]">{convo.partnerName || 'Unknown User'}</p>
+                          {convo.unread > 0 && <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-[#1c1c1c] px-1.5 text-[10px] font-semibold text-white">{convo.unread > 9 ? '9+' : convo.unread}</span>}
                         </div>
-                        {convo.residencyPrivate && <p className="mt-1 text-[9px] font-semibold uppercase tracking-[0.12em] text-[#a48752]">Protected Residency</p>}
-                        <p className="mt-1.5 truncate text-[11px] leading-4 text-[#8b877f]">{convo.lastMessage?.content || (convo.lastMessage?.attachment_name ? `Attachment: ${convo.lastMessage.attachment_name}` : 'Conversation ready')}</p>
+                        {convo.residencyPrivate && <p className="mt-1 text-[9px] font-semibold uppercase tracking-[0.12em] text-[#1c1c1c]">Protected Residency</p>}
+                        <p className="mt-1.5 truncate text-[11px] leading-4 text-[#6b6b6b]">{convo.lastMessage?.content || (convo.lastMessage?.attachment_name ? `Attachment: ${convo.lastMessage.attachment_name}` : 'Conversation ready')}</p>
                       </div>
                     </div>
                   </button>
@@ -184,34 +184,34 @@ export default function TalentMessagesPage() {
             </div>
           </aside>
 
-          <section className={`${activeConvo ? 'flex' : 'hidden md:flex'} min-w-0 flex-1 flex-col bg-[#fdfcf9]`}>
+          <section className={`${activeConvo ? 'flex' : 'hidden md:flex'} min-w-0 flex-1 flex-col bg-[#f1f1f1]`}>
             {!activeConvo ? (
               <div className="flex flex-1 flex-col items-center justify-center px-8 text-center">
-                <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-2xl border border-[#e3dccf] bg-white text-[#a48752]"><MessageSquare size={22} /></div>
-                <p className="text-[20px] font-medium tracking-[-0.02em] text-[#17344d]">Select a conversation</p>
-                <p className="mt-2 max-w-sm text-[12px] leading-5 text-[#8b877f]">Matched properties and protected Residency discussions will stay organised here.</p>
+                <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-2xl border border-[#dddddd] bg-white text-[#1c1c1c]"><MessageSquare size={22} /></div>
+                <p className="text-[20px] font-medium tracking-[-0.02em] text-[#1c1c1c]">Select a conversation</p>
+                <p className="mt-2 max-w-sm text-[12px] leading-5 text-[#6b6b6b]">Matched properties and protected Residency discussions will stay organised here.</p>
               </div>
             ) : (
               <>
-                <header className="flex min-h-[76px] items-center gap-3 border-b border-[#e7e1d7] bg-white px-4 md:px-6">
-                  <button type="button" onClick={() => setActiveConvo(null)} className="flex h-9 w-9 items-center justify-center rounded-full border border-[#e4ded4] text-[#59636c] md:hidden"><ChevronLeft size={17} /></button>
-                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#0b2f4d] text-[11px] font-semibold text-white">{String(activePartner?.partnerName || 'U').split(' ').map((part: string) => part[0]).join('').slice(0,2).toUpperCase()}</div>
+                <header className="flex min-h-[76px] items-center gap-3 border-b border-[#dddddd] bg-white px-4 md:px-6">
+                  <button type="button" onClick={() => setActiveConvo(null)} aria-label="Back to conversations" className="flex h-9 w-9 items-center justify-center rounded-full border border-[#dddddd] text-[#555555] md:hidden"><ChevronLeft size={17} /></button>
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#1c1c1c] text-[11px] font-semibold text-white">{String(activePartner?.partnerName || 'U').split(' ').map((part: string) => part[0]).join('').slice(0,2).toUpperCase()}</div>
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-[14px] font-semibold text-[#17344d]">{activePartner?.partnerName || 'Unknown User'}</p>
-                    <p className="mt-0.5 text-[10px] text-[#8b877f]">{residencyPrivate ? 'Protected Residency conversation' : 'Private matched conversation'}</p>
+                    <p className="truncate text-[14px] font-semibold text-[#1c1c1c]">{activePartner?.partnerName || 'Unknown User'}</p>
+                    <p className="mt-0.5 text-[10px] text-[#6b6b6b]">{residencyPrivate ? 'Protected Residency conversation' : 'Private matched conversation'}</p>
                   </div>
                 </header>
 
                 {residencyPrivate && (
-                  <div className="mx-4 mt-4 flex items-start gap-3 rounded-2xl border border-[#e8dcc4] bg-[#faf5e9] px-4 py-3 md:mx-6">
-                    <ShieldCheck size={16} className="mt-0.5 shrink-0 text-[#9c7a42]" />
-                    <p className="text-[11px] leading-5 text-[#6d6559]">Discuss dates, treatments, hours and rate here. Direct contact details, links and attachments remain restricted until the Residency booking is confirmed.</p>
+                  <div className="mx-4 mt-4 flex items-start gap-3 rounded-2xl border border-[#dddddd] bg-[#f1f1f1] px-4 py-3 md:mx-6">
+                    <ShieldCheck size={16} className="mt-0.5 shrink-0 text-[#1c1c1c]" />
+                    <p className="text-[11px] leading-5 text-[#555555]">Discuss dates, treatments, hours and rate here. Direct contact details, links and attachments remain restricted until the Residency booking is confirmed.</p>
                   </div>
                 )}
 
                 <div className="flex-1 overflow-y-auto px-4 py-6 md:px-7">
                   {messages.length === 0 ? (
-                    <div className="flex h-full items-center justify-center text-center"><p className="max-w-xs text-[12px] leading-5 text-[#9a958d]">You are connected. Send the first message when you are ready.</p></div>
+                    <div className="flex h-full items-center justify-center text-center"><p className="max-w-xs text-[12px] leading-5 text-[#6b6b6b]">You are connected. Send the first message when you are ready.</p></div>
                   ) : (
                     <div className="mx-auto max-w-3xl space-y-4">
                       {messages.map((msg, i) => {
@@ -219,11 +219,11 @@ export default function TalentMessagesPage() {
                         return (
                           <div key={msg.id || i} className={`flex ${mine ? 'justify-end' : 'justify-start'}`}>
                             <div className={`max-w-[82%] md:max-w-[68%] ${mine ? 'items-end' : 'items-start'} flex flex-col`}>
-                              <div className={`px-4 py-3 text-[13px] leading-5 shadow-sm ${mine ? 'rounded-[18px] rounded-br-[5px] bg-[#0b2f4d] text-white' : 'rounded-[18px] rounded-bl-[5px] border border-[#e5dfd5] bg-white text-[#253a4a]'}`}>
+                              <div className={`px-4 py-3 text-[13px] leading-5 ${mine ? 'bg-accent text-white' : 'bg-surface text-ink'}`}>
                                 {msg.content && <p className="whitespace-pre-wrap">{msg.content}</p>}
-                                {msg.attachment_url && <div className="mt-2">{msg.attachment_type?.startsWith('image/') ? <a href={msg.attachment_url} target="_blank" rel="noopener noreferrer"><img src={msg.attachment_url} alt={msg.attachment_name} className="max-w-[220px] rounded-xl" /></a> : <div className="flex items-center gap-2 text-xs"><FileText size={14} /><a href={msg.attachment_url} download={msg.attachment_name} className="underline hover:opacity-80">{msg.attachment_name}</a></div>}</div>}
+                                {msg.attachment_url && <div className="mt-2">{msg.attachment_type?.startsWith('image/') ? <a href={msg.attachment_url} target="_blank" rel="noopener noreferrer"><img loading="lazy" decoding="async" src={msg.attachment_url} alt={msg.attachment_name} className="max-w-[220px] rounded-xl" /></a> : <div className="flex items-center gap-2 text-xs"><FileText size={14} /><a href={msg.attachment_url} download={msg.attachment_name} className="underline hover:opacity-80">{msg.attachment_name}</a></div>}</div>}
                               </div>
-                              <p className="mt-1 px-1 text-[9px] tracking-wide text-[#aaa49a]">{formatTimestamp(msg.created_at)}</p>
+                              <p className="mt-1 px-1 text-[9px] tracking-wide text-[#6b6b6b]">{formatTimestamp(msg.created_at)}</p>
                             </div>
                           </div>
                         )
@@ -233,19 +233,19 @@ export default function TalentMessagesPage() {
                   )}
                 </div>
 
-                <div className="border-t border-[#e7e1d7] bg-white p-3 md:p-4">
+                <div className="border-t border-[#dddddd] bg-white p-3 md:p-4">
                   {!residencyPrivate && attachmentFile && (
-                    <div className="mb-3 flex items-center justify-between rounded-xl border border-[#e6e0d6] bg-[#fbfaf7] px-3 py-2.5">
-                      <div className="flex min-w-0 items-center gap-2 text-[12px] text-[#334b5d]"><FileText size={15} /><span className="truncate">{attachmentFile.name}</span></div>
-                      <button type="button" onClick={removeAttachment} className="ml-3 text-[#9b958b] hover:text-[#17344d]">×</button>
+                    <div className="mb-3 flex items-center justify-between rounded-xl border border-[#dddddd] bg-[#f1f1f1] px-3 py-2.5">
+                      <div className="flex min-w-0 items-center gap-2 text-[12px] text-[#3a3a3a]"><FileText size={15} /><span className="truncate">{attachmentFile.name}</span></div>
+                      <button type="button" onClick={removeAttachment} className="ml-3 text-[#6b6b6b] hover:text-[#1c1c1c]">×</button>
                     </div>
                   )}
                   <div className="flex items-end gap-2">
-                    <div className="flex min-w-0 flex-1 items-center rounded-2xl border border-[#ddd6cb] bg-[#fbfaf7] px-3 py-1.5 focus-within:border-[#b99a63] focus-within:bg-white">
-                      <input type="text" value={newMsg} onChange={e => setNewMsg(e.target.value)} onKeyDown={e => e.key === 'Enter' && !attachmentUploading && sendMessage()} className="min-w-0 flex-1 bg-transparent px-1 py-2 text-[13px] text-[#17344d] outline-none placeholder:text-[#aaa49a]" placeholder={residencyPrivate ? 'Discuss the Residency without sharing contact details…' : 'Write a message…'} disabled={attachmentUploading} />
-                      {!residencyPrivate && <><input ref={fileInputRef} type="file" onChange={handleFileSelected} accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" style={{ display: 'none' }} /><button type="button" onClick={handleAttachmentClick} className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[#7d7a74] transition hover:bg-[#f0ece4] hover:text-[#0b2f4d]" disabled={attachmentUploading} title="Attach file"><Paperclip size={17} /></button></>}
+                    <div className="flex min-w-0 flex-1 items-center border border-[#dddddd] bg-[#f1f1f1] px-3 py-1.5 focus-within:border-accent focus-within:bg-white">
+                      <input type="text" aria-label="Write a message" value={newMsg} onChange={e => setNewMsg(e.target.value)} onKeyDown={e => e.key === 'Enter' && !attachmentUploading && sendMessage()} className="min-w-0 flex-1 bg-transparent px-1 py-2 text-[13px] text-[#1c1c1c] outline-none placeholder:text-[#6b6b6b]" placeholder={residencyPrivate ? 'Discuss the Residency without sharing contact details…' : 'Write a message…'} disabled={attachmentUploading} />
+                      {!residencyPrivate && <><input ref={fileInputRef} type="file" aria-label="Attach a file" onChange={handleFileSelected} accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" style={{ display: 'none' }} /><button type="button" onClick={handleAttachmentClick} aria-label="Attach a file" className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[#6b6b6b] transition hover:bg-[#f1f1f1] hover:text-[#1c1c1c]" disabled={attachmentUploading} title="Attach file"><Paperclip size={17} /></button></>}
                     </div>
-                    <button type="button" onClick={sendMessage} className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#0b2f4d] text-white shadow-sm transition hover:bg-[#123d5d] disabled:opacity-50" disabled={attachmentUploading || (!newMsg.trim() && !attachmentFile)}><Send size={17} /></button>
+                    <button type="button" onClick={sendMessage} aria-label="Send message" className="flex h-11 w-11 shrink-0 items-center justify-center bg-accent text-white transition hover:bg-[#333333] disabled:opacity-50" disabled={attachmentUploading || (!newMsg.trim() && !attachmentFile)}><Send size={17} /></button>
                   </div>
                 </div>
               </>

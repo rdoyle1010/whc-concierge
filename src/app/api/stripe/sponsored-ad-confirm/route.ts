@@ -72,6 +72,6 @@ export async function POST(req: NextRequest) {
     })
   } catch (error: any) {
     console.error('[Sponsored advert confirmation]', error?.message)
-    return NextResponse.json({ error: 'We confirmed your Stripe checkout but could not finish the advert submission. Please contact WHC with your payment receipt.' }, { status: 500 })
+    return NextResponse.json({ error: 'We confirmed your Stripe checkout but could not finish the advert submission. Please contact Talent House with your payment receipt.' }, { status: 500 })
   }
 }
