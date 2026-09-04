@@ -9,23 +9,30 @@ type Card={title:string;copy:string;href:string;badge?:string;locked?:boolean}
 
 const talentCards:Card[]=[
  {title:'Agency shifts',copy:'Flexible spa shifts and live responses.',href:'/agency'},
+ // A shift goes wrong while somebody is standing in a spa, not sitting at a
+ // laptop, and this was on the website only.
+ {title:'Shift Resolution',copy:'Raise or answer an issue about a shift.',href:'/agency-cases'},
+ {title:'Saved Roles',copy:'Roles you bookmarked to read properly later.',href:'/saved'},
  {title:'Residency',copy:'Specialist opportunities and confirmed placements.',href:'/residency'},
  {title:'Interview Ready',copy:'Prepare using your CV, the role and the employer.',href:'/interview-ready'},
  {title:'Talent House Academy',copy:'Professional development and certificates.',href:'/academy'},
  {title:'Before You Arrive',copy:'Arrival packs for confirmed work.',href:'/before-you-arrive'},
  {title:'Membership & Billing',copy:'Plan, credits and Featured Talent.',href:'/billing'},
  {title:'Notifications',copy:'Platform updates and account history.',href:'/notifications'},
+ {title:'Settings',copy:'Your account, your data and how to leave.',href:'/settings'},
 ]
 
 const employerCards:Card[]=[
  {title:'Talent Match',copy:'Match a live role with the strongest professionals.',href:'/match'},
  {title:'Agency bookings',copy:'Flexible staffing and live responses.',href:'/agency'},
+ {title:'Shift Resolution',copy:'Raise or answer an issue about a shift.',href:'/agency-cases'},
  {title:'Property Profile',copy:'Photos, spa information and employer presence.',href:'/property-profile'},
  {title:'Residency',copy:'Specialist residency opportunities.',href:'/residency'},
  {title:'Analytics',copy:'Recruitment and role performance.',href:'/analytics'},
  {title:'Membership & Billing',copy:'Plan and Featured Employer visibility.',href:'/billing'},
  {title:'Notifications',copy:'Platform updates and account history.',href:'/notifications'},
  {title:'Security, Safety & Legal',copy:'Privacy, GDPR and account protection.',href:'/security'},
+ {title:'Settings',copy:'Your account, your data and how to leave.',href:'/settings'},
 ]
 
 export default function HomeScreen(){
