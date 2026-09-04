@@ -7,7 +7,8 @@ import { createAdminClient } from '@/lib/supabase/admin'
 // leave this route - just three integers, cached for five minutes.
 //
 // "On the register" mirrors the directory's own listing rule: agency_available,
-// approved, and either no agency_listed_until or one still in the future.
+// approved, right to work established, and either no agency_listed_until or
+// one still in the future.
 // Agency Ready is not computable without exposing raw compliance fields, so
 // the page states Talent House Verified and Insured counts instead.
 
@@ -20,6 +21,10 @@ const readPublicStats = unstable_cache(async () => {
     .eq('approval_status', 'approved')
     .eq('agency_available', true)
     .or(`agency_listed_until.is.null,agency_listed_until.gte.${nowIso}`)
+    // Right to work is a condition of the listing, so the public count has to
+    // apply it too - otherwise the headline number counts people the
+    // directory will not show.
+    .in('right_to_work_status', ['approved', 'verified'])
 
   const [registerRes, verifiedRes, insuredRes] = await Promise.all([
     onRegister(),
