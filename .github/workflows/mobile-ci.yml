@@ -1,14 +1,17 @@
 name: Mobile CI
 
 on:
+  workflow_dispatch:
   push:
     branches: [main]
     paths:
       - 'mobile/**'
+      - 'src/app/api/mobile/**'
       - '.github/workflows/mobile-ci.yml'
   pull_request:
     paths:
       - 'mobile/**'
+      - 'src/app/api/mobile/**'
       - '.github/workflows/mobile-ci.yml'
 
 concurrency:
@@ -33,9 +36,9 @@ jobs:
         with:
           node-version: 22
           cache: npm
-          cache-dependency-path: mobile/package.json
-      - name: Install dependencies
-        run: npm install --no-audit --no-fund
+          cache-dependency-path: mobile/package-lock.json
+      - name: Expo-style clean install
+        run: npm ci --include=dev --no-audit --no-fund
       - name: Route integrity audit
         run: npm run routecheck
       - name: Typecheck

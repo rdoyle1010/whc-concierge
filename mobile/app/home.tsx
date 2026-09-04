@@ -2,29 +2,30 @@ import { useCallback, useState } from 'react'
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
 import { router, useFocusEffect } from 'expo-router'
 import { supabase } from '../src/lib/supabase'
+import { palette, radius, space, type } from '../src/lib/theme'
 
 type Role='talent'|'employer'|'admin'
 type Card={title:string;copy:string;href:string;badge?:string;locked?:boolean}
 
 const talentCards:Card[]=[
- {title:'Agency shifts',copy:'Find and manage flexible spa shifts.',href:'/agency'},
- {title:'Residency',copy:'Manage specialist residency opportunities.',href:'/residency'},
- {title:'Interview Ready',copy:'Prepare from your CV, the role and the employer.',href:'/interview-ready'},
- {title:'WHC Academy',copy:'Build your professional development and certificates.',href:'/academy'},
- {title:'Before You Arrive',copy:'Open arrival packs for confirmed placements and shifts.',href:'/before-you-arrive'},
- {title:'Membership & Billing',copy:'Manage your plan, credits and Featured Talent.',href:'/billing'},
- {title:'Notifications',copy:'See updates and platform history. These do not inflate the red attention count.',href:'/notifications'},
+ {title:'Agency shifts',copy:'Flexible spa shifts and live responses.',href:'/agency'},
+ {title:'Residency',copy:'Specialist opportunities and confirmed placements.',href:'/residency'},
+ {title:'Interview Ready',copy:'Prepare using your CV, the role and the employer.',href:'/interview-ready'},
+ {title:'WHC Academy',copy:'Professional development and certificates.',href:'/academy'},
+ {title:'Before You Arrive',copy:'Arrival packs for confirmed work.',href:'/before-you-arrive'},
+ {title:'Membership & Billing',copy:'Plan, credits and Featured Talent.',href:'/billing'},
+ {title:'Notifications',copy:'Platform updates and account history.',href:'/notifications'},
 ]
 
 const employerCards:Card[]=[
- {title:'Talent Match',copy:'Choose a live role and swipe the professionals who match it best.',href:'/match'},
- {title:'Agency bookings',copy:'Manage flexible staffing responses.',href:'/agency'},
- {title:'Property Profile',copy:'Manage property photos and spa information.',href:'/property-profile'},
- {title:'Residency',copy:'Manage specialist residency opportunities.',href:'/residency'},
- {title:'Analytics',copy:'Track recruitment and role performance.',href:'/analytics'},
- {title:'Membership & Billing',copy:'Manage your plan and Featured Employer visibility.',href:'/billing'},
- {title:'Notifications',copy:'See updates and platform history. These do not inflate the red attention count.',href:'/notifications'},
- {title:'Security, Safety & Legal',copy:'Privacy, GDPR, safety guidance and account protection.',href:'/security'},
+ {title:'Talent Match',copy:'Match a live role with the strongest professionals.',href:'/match'},
+ {title:'Agency bookings',copy:'Flexible staffing and live responses.',href:'/agency'},
+ {title:'Property Profile',copy:'Photos, spa information and employer presence.',href:'/property-profile'},
+ {title:'Residency',copy:'Specialist residency opportunities.',href:'/residency'},
+ {title:'Analytics',copy:'Recruitment and role performance.',href:'/analytics'},
+ {title:'Membership & Billing',copy:'Plan and Featured Employer visibility.',href:'/billing'},
+ {title:'Notifications',copy:'Platform updates and account history.',href:'/notifications'},
+ {title:'Security, Safety & Legal',copy:'Privacy, GDPR and account protection.',href:'/security'},
 ]
 
 export default function HomeScreen(){
@@ -66,31 +67,108 @@ export default function HomeScreen(){
  async function signOut(){await supabase.auth.signOut();router.replace('/')}
 
  const totalAttention=unreadMessages+agencyAttention
+ const firstName=name?name.split(' ')[0]:''
  const cards=(role==='employer'?employerCards:talentCards).map(card=>{
-  if(role==='talent'&&card.title==='Interview Ready')return{...card,locked:interviewCredits<1,badge:interviewCredits>0?`${interviewCredits} LEFT`:'LOCKED'}
-  if((card.title==='Agency shifts'||card.title==='Agency bookings')&&agencyAttention>0)return{...card,badge:`${agencyAttention} ACTION`}
+  if(role==='talent'&&card.title==='Interview Ready')return{...card,locked:interviewCredits<1,badge:interviewCredits>0?`${interviewCredits} credit${interviewCredits===1?'':'s'}`:'Locked'}
+  if((card.title==='Agency shifts'||card.title==='Agency bookings')&&agencyAttention>0)return{...card,badge:`${agencyAttention} to review`}
   return card
  })
 
  return <ScrollView style={styles.scroll} contentContainerStyle={styles.page}>
-  <View style={styles.topRow}><View><Text style={styles.wordmark}>WELLNESS HOUSE</Text><Text style={styles.sub}>{role==='employer'?'EMPLOYER':'TALENT'}</Text></View><Pressable onPress={signOut}><Text style={styles.signOut}>Sign out</Text></Pressable></View>
-  <Text style={styles.eyebrow}>{role==='employer'?'PROPERTY WORKSPACE':'YOUR CAREER'}</Text>
-  <Text style={styles.title}>{name?`Hello, ${name.split(' ')[0]}.`:'Welcome back.'}</Text>
-  <Text style={styles.intro}>{role==='employer'?'Post roles, match with the right professionals and manage recruitment.':'Discover roles in Jobs, apply with AI and track everything in Applications.'}</Text>
-
-  {totalAttention>0?<View style={styles.attentionBox}><View style={styles.attentionHeader}><Text style={styles.attentionTitle}>Needs your attention</Text><Text style={styles.attentionTotal}>{totalAttention}</Text></View><Text style={styles.attentionHelp}>Only unread messages and Agency responses that still need action count here.</Text>{unreadMessages>0?<Pressable onPress={()=>router.push('/messages')} style={styles.attentionRow}><Text style={styles.attentionText}>Unread messages</Text><Text style={styles.attentionCount}>{unreadMessages}</Text></Pressable>:null}{agencyAttention>0?<Pressable onPress={()=>router.push('/agency')} style={styles.attentionRow}><Text style={styles.attentionText}>{role==='employer'?'Agency responses waiting':'Agency shifts needing a response'}</Text><Text style={styles.attentionCount}>{agencyAttention}</Text></Pressable>:null}</View>:<View style={styles.caughtUp}><Text style={styles.caughtUpTitle}>You’re up to date</Text><Text style={styles.caughtUpCopy}>No unread messages or Agency responses are waiting.</Text></View>}
-
-  <View style={styles.quickRow}>
-   <Pressable onPress={()=>router.push('/jobs')} style={styles.quickPrimary}><Text style={styles.quickPrimaryTitle}>{role==='employer'?'Manage jobs':'Find jobs'}</Text><Text style={styles.quickPrimaryCopy}>{role==='employer'?'Post and manage live roles.':'Swipe roles and apply with AI.'}</Text></Pressable>
-   <Pressable onPress={()=>router.push(role==='employer'?'/match':'/applications')} style={styles.quickSecondary}><Text style={styles.quickSecondaryTitle}>{role==='employer'?'Talent Match':'Applications'}</Text><Text style={styles.quickSecondaryCopy}>{role==='employer'?'Swipe candidates against a live role.':'Active recruitment and hired history.'}</Text></Pressable>
+  <View style={styles.topRow}>
+   <View><Text style={styles.wordmark}>WELLNESS HOUSE</Text><Text style={styles.sub}>{role==='employer'?'EMPLOYER':'TALENT'}</Text></View>
+   <Pressable onPress={signOut} hitSlop={10}><Text style={styles.signOut}>Sign out</Text></Pressable>
   </View>
 
-  <Pressable onPress={()=>router.push('/reputation')} style={styles.ratingCard}><View><Text style={styles.ratingLabel}>{role==='employer'?'PROPERTY REPUTATION':'YOUR REPUTATION'}</Text><Text style={styles.ratingValue}>{reviewCount>0?`${reviewScore.toFixed(1)} ★`:'New'}</Text></View><View style={styles.ratingRight}><Text style={styles.ratingCount}>{reviewCount} verified review{reviewCount===1?'':'s'}</Text><Text style={styles.ratingOpen}>View full reputation →</Text></View></Pressable>
+  <Text style={styles.eyebrow}>{role==='employer'?'PROPERTY WORKSPACE':'YOUR CAREER'}</Text>
+  <Text style={styles.title}>{firstName?`Good evening, ${firstName}.`:'Welcome back.'}</Text>
+  <Text style={styles.intro}>{role==='employer'?'Everything you need to recruit, match and manage great people.':'Your jobs, applications, Agency work and career tools in one place.'}</Text>
 
-  {role==='talent'&&profileCompletion<100?<Pressable onPress={()=>router.push('/profile')} style={styles.progressCard}><Text style={styles.progressTitle}>Profile {profileCompletion}% complete</Text><Text style={styles.progressCopy}>Improve your profile to strengthen matching and applications.</Text></Pressable>:null}
+  <Pressable onPress={()=>router.push(role==='employer'?'/jobs':'/jobs')} style={styles.primaryAction}>
+   <Text style={styles.primaryEyebrow}>{role==='employer'?'RECRUITMENT':'NEXT STEP'}</Text>
+   <Text style={styles.primaryTitle}>{role==='employer'?'Manage your live roles':'Find your next role'}</Text>
+   <Text style={styles.primaryCopy}>{role==='employer'?'Post, edit and review roles, then move straight into matching and applications.':'Browse matched opportunities and move directly into your application journey.'}</Text>
+   <Text style={styles.primaryLink}>{role==='employer'?'Open jobs':'Explore jobs'}  →</Text>
+  </Pressable>
 
-  <View style={styles.grid}>{cards.map(card=><Pressable key={card.title} onPress={()=>router.push(card.href as never)} style={[styles.card,card.locked&&styles.lockedCard,card.badge?.includes('ACTION')&&styles.attentionCard]}><View style={styles.cardTop}><Text style={styles.cardTitle}>{card.title}</Text>{card.badge?<Text style={[styles.badge,card.badge.includes('ACTION')&&styles.newBadge]}>{card.badge}</Text>:null}</View><Text style={styles.cardCopy}>{card.copy}</Text><Text style={styles.open}>{card.locked?'View access →':'Open →'}</Text></Pressable>)}</View>
+  <View style={styles.snapshotRow}>
+   <Pressable onPress={()=>router.push('/messages')} style={styles.snapshotItem}>
+    <Text style={styles.snapshotValue}>{unreadMessages}</Text><Text style={styles.snapshotLabel}>Unread</Text>
+   </Pressable>
+   <View style={styles.snapshotDivider}/>
+   <Pressable onPress={()=>router.push('/agency')} style={styles.snapshotItem}>
+    <Text style={styles.snapshotValue}>{agencyAttention}</Text><Text style={styles.snapshotLabel}>Agency actions</Text>
+   </Pressable>
+   <View style={styles.snapshotDivider}/>
+   <Pressable onPress={()=>router.push('/reputation')} style={styles.snapshotItem}>
+    <Text style={styles.snapshotValue}>{reviewCount>0?reviewScore.toFixed(1):'New'}</Text><Text style={styles.snapshotLabel}>Reputation</Text>
+   </Pressable>
+  </View>
+
+  {totalAttention>0?<View style={styles.attentionBox}>
+   <View style={styles.attentionHeader}><Text style={styles.attentionTitle}>Needs your attention</Text><Text style={styles.attentionTotal}>{totalAttention}</Text></View>
+   {unreadMessages>0?<Pressable onPress={()=>router.push('/messages')} style={styles.attentionRow}><Text style={styles.attentionText}>Unread messages</Text><Text style={styles.attentionArrow}>→</Text></Pressable>:null}
+   {agencyAttention>0?<Pressable onPress={()=>router.push('/agency')} style={styles.attentionRow}><Text style={styles.attentionText}>{role==='employer'?'Agency responses waiting':'Agency shifts needing a response'}</Text><Text style={styles.attentionArrow}>→</Text></Pressable>:null}
+  </View>:null}
+
+  {role==='talent'&&profileCompletion<100?<Pressable onPress={()=>router.push('/profile')} style={styles.profilePrompt}>
+   <View style={styles.profilePromptTop}><Text style={styles.profilePromptTitle}>Complete your profile</Text><Text style={styles.profilePromptPct}>{profileCompletion}%</Text></View>
+   <View style={styles.progressTrack}><View style={[styles.progressFill,{width:`${profileCompletion}%`}]} /></View>
+   <Text style={styles.profilePromptCopy}>A stronger profile improves matching and applications.</Text>
+  </Pressable>:null}
+
+  <View style={styles.sectionHeader}><Text style={styles.sectionEyebrow}>YOUR WORKSPACE</Text><Text style={styles.sectionTitle}>{role==='employer'?'Run your recruitment':'Career tools'}</Text></View>
+  <View style={styles.list}>{cards.map((card,index)=><Pressable key={card.title} onPress={()=>router.push(card.href as never)} style={[styles.listRow,index===0&&styles.listRowFirst]}>
+   <View style={styles.listText}><View style={styles.listTitleRow}><Text style={styles.listTitle}>{card.title}</Text>{card.badge?<Text style={styles.badge}>{card.badge}</Text>:null}</View><Text style={styles.listCopy}>{card.copy}</Text></View>
+   <Text style={styles.chevron}>›</Text>
+  </Pressable>)}</View>
  </ScrollView>
 }
 
-const styles=StyleSheet.create({scroll:{flex:1,backgroundColor:'#fff'},page:{paddingHorizontal:22,paddingTop:22,paddingBottom:32},topRow:{flexDirection:'row',justifyContent:'space-between',alignItems:'flex-start',marginBottom:32},wordmark:{color:'#0b2f4d',fontSize:21,letterSpacing:2,fontWeight:'600'},sub:{color:'#6f7f88',marginTop:4,fontSize:9,letterSpacing:3},signOut:{color:'#71808a',fontSize:12},eyebrow:{color:'#71808a',fontSize:9,letterSpacing:2.1,marginBottom:10},title:{color:'#0b2f4d',fontSize:30,lineHeight:36,fontWeight:'500'},intro:{color:'#66747c',fontSize:14,lineHeight:21,marginTop:10,marginBottom:18},attentionBox:{borderWidth:1,borderColor:'#f1b5b5',backgroundColor:'#fff8f8',padding:15,marginBottom:14},attentionHeader:{flexDirection:'row',justifyContent:'space-between',alignItems:'center',marginBottom:6},attentionTitle:{color:'#8f1d1d',fontSize:14,fontWeight:'700'},attentionTotal:{backgroundColor:'#d62828',color:'#fff',minWidth:22,height:22,borderRadius:11,textAlign:'center',lineHeight:22,fontSize:10,fontWeight:'800'},attentionHelp:{color:'#7b5555',fontSize:10,lineHeight:15,marginBottom:5},attentionRow:{flexDirection:'row',justifyContent:'space-between',alignItems:'center',paddingVertical:8,borderTopWidth:1,borderTopColor:'#f5dada'},attentionText:{color:'#5c3434',fontSize:12},attentionCount:{color:'#d62828',fontSize:12,fontWeight:'800'},caughtUp:{borderWidth:1,borderColor:'#d8e6dd',backgroundColor:'#f7fbf8',padding:14,marginBottom:14},caughtUpTitle:{color:'#315846',fontSize:13,fontWeight:'700'},caughtUpCopy:{color:'#60776a',fontSize:10.5,lineHeight:16,marginTop:4},quickRow:{flexDirection:'row',gap:10,marginBottom:14},quickPrimary:{flex:1,backgroundColor:'#0b2f4d',padding:16},quickPrimaryTitle:{color:'#fff',fontSize:15,fontWeight:'700'},quickPrimaryCopy:{color:'#d6e0e6',fontSize:10.5,lineHeight:15,marginTop:5},quickSecondary:{flex:1,borderWidth:1,borderColor:'#cfd9de',padding:16},quickSecondaryTitle:{color:'#0b2f4d',fontSize:15,fontWeight:'700'},quickSecondaryCopy:{color:'#71808a',fontSize:10.5,lineHeight:15,marginTop:5},ratingCard:{backgroundColor:'#0b2f4d',padding:16,marginBottom:14,flexDirection:'row',justifyContent:'space-between',alignItems:'center',gap:12},ratingLabel:{color:'#b8c4cc',fontSize:8,letterSpacing:1.5},ratingValue:{color:'#fff',fontSize:24,fontWeight:'600',marginTop:4},ratingRight:{alignItems:'flex-end',flex:1},ratingCount:{color:'#d7e0e5',fontSize:10},ratingOpen:{color:'#fff',fontSize:10,fontWeight:'700',marginTop:6},progressCard:{backgroundColor:'#f4f7f8',padding:16,marginBottom:16},progressTitle:{color:'#173246',fontSize:13,fontWeight:'600'},progressCopy:{color:'#71808a',fontSize:11,lineHeight:17,marginTop:6},grid:{gap:12},card:{borderWidth:1,borderColor:'#dce3e7',padding:18,backgroundColor:'#fff'},lockedCard:{backgroundColor:'#f8f9fa'},attentionCard:{borderColor:'#efb2b2',backgroundColor:'#fffafa'},cardTop:{flexDirection:'row',justifyContent:'space-between',gap:10},cardTitle:{color:'#173246',fontSize:17,fontWeight:'600',flex:1},badge:{color:'#71808a',fontSize:8,letterSpacing:1},newBadge:{color:'#d62828',fontWeight:'800'},cardCopy:{color:'#71808a',fontSize:12,lineHeight:18,marginTop:7},open:{color:'#0b2f4d',fontSize:11,fontWeight:'700',marginTop:12}})
+const styles=StyleSheet.create({
+ scroll:{flex:1,backgroundColor:palette.paper},
+ page:{paddingHorizontal:space.page,paddingTop:22,paddingBottom:36},
+ topRow:{flexDirection:'row',justifyContent:'space-between',alignItems:'flex-start',marginBottom:38},
+ wordmark:{color:palette.inkStrong,fontSize:20,letterSpacing:2.2,fontWeight:'700',fontFamily:type.sans},
+ sub:{color:palette.quiet,marginTop:4,fontSize:9,letterSpacing:3,fontFamily:type.sans},
+ signOut:{color:palette.muted,fontSize:12,fontFamily:type.sans},
+ eyebrow:{color:palette.sage,fontSize:9,letterSpacing:2.2,marginBottom:10,fontWeight:'700',fontFamily:type.sans},
+ title:{color:palette.inkStrong,fontSize:34,lineHeight:40,fontWeight:'400',fontFamily:type.serif},
+ intro:{color:palette.muted,fontSize:14,lineHeight:21,marginTop:10,marginBottom:24,fontFamily:type.sans},
+ primaryAction:{backgroundColor:palette.inkStrong,padding:22,borderRadius:radius.medium,marginBottom:18},
+ primaryEyebrow:{color:'#BFC9C4',fontSize:8,letterSpacing:1.9,fontWeight:'700',fontFamily:type.sans},
+ primaryTitle:{color:'#fff',fontSize:24,lineHeight:29,fontFamily:type.serif,marginTop:8},
+ primaryCopy:{color:'#D5DEDA',fontSize:12.5,lineHeight:19,marginTop:10,fontFamily:type.sans},
+ primaryLink:{color:'#fff',fontSize:12,fontWeight:'700',marginTop:18,fontFamily:type.sans},
+ snapshotRow:{flexDirection:'row',alignItems:'stretch',borderTopWidth:1,borderBottomWidth:1,borderColor:palette.line,marginBottom:20},
+ snapshotItem:{flex:1,paddingVertical:16,alignItems:'center'},
+ snapshotDivider:{width:1,backgroundColor:palette.line,marginVertical:12},
+ snapshotValue:{color:palette.inkStrong,fontSize:20,fontFamily:type.serif},
+ snapshotLabel:{color:palette.quiet,fontSize:9,marginTop:4,fontFamily:type.sans},
+ attentionBox:{backgroundColor:palette.dangerSoft,borderRadius:radius.medium,paddingHorizontal:16,paddingTop:14,marginBottom:18},
+ attentionHeader:{flexDirection:'row',justifyContent:'space-between',alignItems:'center',paddingBottom:8},
+ attentionTitle:{color:palette.danger,fontSize:13,fontWeight:'700',fontFamily:type.sans},
+ attentionTotal:{color:palette.danger,fontSize:13,fontWeight:'800'},
+ attentionRow:{borderTopWidth:1,borderTopColor:'#EEDDD9',paddingVertical:12,flexDirection:'row',justifyContent:'space-between',alignItems:'center'},
+ attentionText:{color:'#6E4540',fontSize:12,fontFamily:type.sans},
+ attentionArrow:{color:palette.danger,fontSize:15},
+ profilePrompt:{backgroundColor:palette.sageSoft,borderRadius:radius.medium,padding:16,marginBottom:24},
+ profilePromptTop:{flexDirection:'row',justifyContent:'space-between',alignItems:'center'},
+ profilePromptTitle:{color:palette.inkStrong,fontSize:13,fontWeight:'700',fontFamily:type.sans},
+ profilePromptPct:{color:palette.sage,fontSize:11,fontWeight:'700'},
+ progressTrack:{height:4,backgroundColor:'#DDE5DE',borderRadius:2,marginTop:12,overflow:'hidden'},
+ progressFill:{height:4,backgroundColor:palette.sage,borderRadius:2},
+ profilePromptCopy:{color:palette.muted,fontSize:10.5,lineHeight:16,marginTop:9,fontFamily:type.sans},
+ sectionHeader:{marginTop:4,marginBottom:9},
+ sectionEyebrow:{color:palette.quiet,fontSize:8,letterSpacing:1.9,fontWeight:'700',fontFamily:type.sans},
+ sectionTitle:{color:palette.inkStrong,fontSize:22,fontFamily:type.serif,marginTop:6},
+ list:{borderBottomWidth:1,borderBottomColor:palette.line},
+ listRow:{minHeight:76,borderTopWidth:1,borderTopColor:palette.line,flexDirection:'row',alignItems:'center',paddingVertical:14},
+ listRowFirst:{borderTopColor:palette.lineStrong},
+ listText:{flex:1,paddingRight:14},
+ listTitleRow:{flexDirection:'row',alignItems:'center',gap:8},
+ listTitle:{color:palette.text,fontSize:15,fontWeight:'600',fontFamily:type.sans},
+ badge:{color:palette.sage,fontSize:8.5,fontWeight:'700',textTransform:'uppercase'},
+ listCopy:{color:palette.muted,fontSize:11,lineHeight:16,marginTop:4,fontFamily:type.sans},
+ chevron:{color:palette.quiet,fontSize:25,fontWeight:'300'},
+})

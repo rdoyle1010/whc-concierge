@@ -50,7 +50,10 @@ export async function POST(req: NextRequest) {
     // candidate's availability, and ask the employer for new times.
     if (action === 'request_alternative') {
       if (interview.status !== 'proposed') return NextResponse.json({ error: 'This interview has already been confirmed.' }, { status: 409 })
-      await admin.from('application_interviews').update({ candidate_note: candidateNote, updated_at: new Date().toISOString() }).eq('id', interview.id)
+      // selected_slot is cleared alongside the note, as the mobile branch did.
+      // Leaving a stale choice on an invitation the candidate has just said
+      // they cannot make shows the property a time nobody has agreed to.
+      await admin.from('application_interviews').update({ candidate_note: candidateNote, selected_slot: null, updated_at: new Date().toISOString() }).eq('id', interview.id)
       const jobIdAlt = application.role_id || application.job_id
       const { data: jobAlt } = await admin.from('job_listings').select('id,job_title,employer_id').eq('id', jobIdAlt).maybeSingle()
       if (jobAlt?.employer_id) {

@@ -9,27 +9,15 @@ type Intent = 'shortlist' | 'interview' | 'decline' | 'offer'
 
 function extractResponseText(payload: any): string {
   if (typeof payload?.output_text === 'string') return payload.output_text
-  for (const item of payload?.output || []) {
-    for (const content of item?.content || []) {
-      if (content?.type === 'output_text' && typeof content.text === 'string') return content.text
-    }
-  }
+  for (const item of payload?.output || []) for (const content of item?.content || []) if (content?.type === 'output_text' && typeof content.text === 'string') return content.text
   return ''
 }
 
 function stageError(intent: Intent, status: string, completedInterviews: number) {
-  if (intent === 'shortlist' && !['pending', 'reviewed', 'shortlisted'].includes(status)) {
-    return 'A shortlist message is only available while reviewing an application.'
-  }
-  if (intent === 'interview' && !['shortlisted', 'interview'].includes(status)) {
-    return 'Shortlist the candidate before creating an interview message.'
-  }
-  if (intent === 'offer' && (!['interview', 'offered'].includes(status) || completedInterviews < 1)) {
-    return 'Complete at least one confirmed interview before creating an offer message.'
-  }
-  if (intent === 'decline' && !['pending', 'reviewed', 'shortlisted', 'interview'].includes(status)) {
-    return 'This application is no longer at a stage where a decline message can be created.'
-  }
+  if (intent === 'shortlist' && !['pending', 'reviewed', 'shortlisted'].includes(status)) return 'A shortlist message is only available while reviewing an application.'
+  if (intent === 'interview' && !['shortlisted', 'interview'].includes(status)) return 'Shortlist the candidate before creating an interview message.'
+  if (intent === 'offer' && (!['interview', 'offered'].includes(status) || completedInterviews < 1)) return 'Complete at least one confirmed interview before creating an offer message.'
+  if (intent === 'decline' && !['pending', 'reviewed', 'shortlisted', 'interview'].includes(status)) return 'This application is no longer at a stage where a decline message can be created.'
   return null
 }
 
@@ -37,16 +25,9 @@ function fallbackMessage(intent: Intent, candidate: any, job: any, employer: any
   const firstName = String(candidate?.full_name || '').trim().split(/\s+/)[0] || 'there'
   const property = employer?.property_name || employer?.company_name || 'our team'
   const role = job?.job_title || 'the role'
-
-  if (intent === 'shortlist') {
-    return `Hi ${firstName},\n\nThank you for your application for the ${role} position. We are pleased to let you know that you have been shortlisted and we would like to progress you to the interview stage. We will share the next steps with you through the platform shortly.\n\nBest wishes,\n${property}`
-  }
-  if (intent === 'interview') {
-    return `Hi ${firstName},\n\nThank you for your interest in the ${role} position. We would be delighted to invite you to interview and learn more about your experience. Please review the interview time options shared through the platform and choose the one that works best for you.\n\nBest wishes,\n${property}`
-  }
-  if (intent === 'offer') {
-    return `Hi ${firstName},\n\nThank you for taking the time to meet with us regarding the ${role} position. We are pleased to let you know that we would like to offer you the role. You can review the offer and respond through the platform.\n\nBest wishes,\n${property}`
-  }
+  if (intent === 'shortlist') return `Hi ${firstName},\n\nThank you for your application for the ${role} position. We are pleased to let you know that you have been shortlisted and we would like to progress you to the interview stage. We will share the next steps with you through the platform shortly.\n\nBest wishes,\n${property}`
+  if (intent === 'interview') return `Hi ${firstName},\n\nThank you for your application for the ${role} position. We would be delighted to invite you to interview and learn more about your experience. Please review the interview details and time options shared through the platform and choose the one that works best for you.\n\nBest wishes,\n${property}`
+  if (intent === 'offer') return `Hi ${firstName},\n\nThank you for taking the time to meet with us regarding the ${role} position. We are pleased to let you know that we would like to offer you the role. You can review the offer and respond through the platform.\n\nBest wishes,\n${property}`
   return `Hi ${firstName},\n\nThank you for your time and for your interest in the ${role} position. After careful consideration, we will not be progressing your application further on this occasion. We appreciate the time you invested in the process and wish you every success with your next opportunity.\n\nBest wishes,\n${property}`
 }
 
@@ -58,31 +39,20 @@ export async function POST(req: NextRequest) {
     const body = await req.json()
     const applicationId = String(body.applicationId || '')
     const intent = String(body.intent || '') as Intent
-    if (!applicationId || !['shortlist', 'interview', 'decline', 'offer'].includes(intent)) {
-      return NextResponse.json({ error: 'Choose a valid candidate message type.' }, { status: 400 })
-    }
+    if (!applicationId || !['shortlist', 'interview', 'decline', 'offer'].includes(intent)) return NextResponse.json({ error: 'Choose a valid candidate message type.' }, { status: 400 })
 
     const admin = createAdminClient()
-    const { data: employer } = await admin.from('employer_profiles')
-      .select('id,company_name,property_name,contact_name')
-      .eq('user_id', user.id)
-      .maybeSingle()
+    const { data: employer } = await admin.from('employer_profiles').select('id,company_name,property_name,contact_name').eq('user_id', user.id).maybeSingle()
     if (!employer) return NextResponse.json({ error: 'Employer account not found.' }, { status: 404 })
 
-    const { data: application } = await admin.from('applications')
-      .select('id,status,match_score,candidate_profiles(full_name,headline,role_level,bio,location),job_listings(id,job_title,location,employer_id)')
-      .eq('id', applicationId)
-      .maybeSingle()
+    const { data: application } = await admin.from('applications').select('id,status,match_score,candidate_profiles(full_name,headline,role_level,bio,location),job_listings(id,job_title,location,employer_id)').eq('id', applicationId).maybeSingle()
     if (!application) return NextResponse.json({ error: 'Application not found.' }, { status: 404 })
 
     const job: any = Array.isArray(application.job_listings) ? application.job_listings[0] : application.job_listings
     const candidate: any = Array.isArray(application.candidate_profiles) ? application.candidate_profiles[0] : application.candidate_profiles
     if (!job || job.employer_id !== employer.id) return NextResponse.json({ error: 'This application does not belong to your property.' }, { status: 403 })
 
-    const { count: completedInterviewCount } = await admin.from('application_interviews')
-      .select('id', { count: 'exact', head: true })
-      .eq('application_id', application.id)
-      .eq('status', 'completed')
+    const { count: completedInterviewCount } = await admin.from('application_interviews').select('id', { count: 'exact', head: true }).eq('application_id', application.id).eq('status', 'completed')
     const stageProblem = stageError(intent, String(application.status || ''), completedInterviewCount || 0)
     if (stageProblem) return NextResponse.json({ error: stageProblem }, { status: 409 })
 
@@ -92,7 +62,7 @@ export async function POST(req: NextRequest) {
     const actionInstruction = intent === 'shortlist'
       ? 'Write a warm message telling the candidate they have been shortlisted and that the property would like to progress them to the interview stage.'
       : intent === 'interview'
-        ? 'Write a warm interview invitation introduction. Explain that the property would like to meet the candidate and that they will be asked to choose from the interview times supplied separately in the platform.'
+        ? 'Write a warm interview invitation introduction. Explain that the property would like to meet the candidate and that the interview method, contact details and time options will be supplied separately in the platform.'
         : intent === 'decline'
           ? 'Write a respectful, kind decline message. Do not invent a reason. Thank the candidate for their time and interest and leave the relationship positive.'
           : 'Write a warm job-offer message after a completed interview. Tell the candidate the property would like to offer them the role and that they can review and respond to the offer through the platform.'
@@ -101,31 +71,17 @@ export async function POST(req: NextRequest) {
 
     try {
       const response = await fetch('https://api.openai.com/v1/responses', {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${OPENAI_API_KEY}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          model: OPENAI_APPLICATION_MODEL,
-          reasoning: { effort: 'low' },
-          input: prompt,
-          max_output_tokens: 350,
-        }),
+        method: 'POST', headers: { Authorization: `Bearer ${OPENAI_API_KEY}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ model: OPENAI_APPLICATION_MODEL, reasoning: { effort: 'low' }, input: prompt, max_output_tokens: 350 }),
       })
-
-      if (!response.ok) {
-        const detail = await response.text().catch(() => '')
-        console.error(`OpenAI employer message failed ${response.status}:`, detail.slice(0, 400))
-        return NextResponse.json({ message: fallback, intent, model: 'fallback' })
-      }
-
+      if (!response.ok) return NextResponse.json({ message: fallback, intent, model: 'fallback' })
       const payload = await response.json()
       const message = extractResponseText(payload).trim().slice(0, 1600)
       return NextResponse.json({ message: message || fallback, intent, model: message ? OPENAI_APPLICATION_MODEL : 'fallback' })
-    } catch (aiError: any) {
-      console.error('OpenAI employer message request failed:', aiError?.message || aiError)
+    } catch {
       return NextResponse.json({ message: fallback, intent, model: 'fallback' })
     }
   } catch (e: any) {
-    console.error('Employer draft message route failed:', e?.message || e)
     return NextResponse.json({ error: e?.message || 'Could not draft the candidate message.' }, { status: 500 })
   }
 }

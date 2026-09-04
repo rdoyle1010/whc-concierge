@@ -2,9 +2,12 @@ import { useCallback, useMemo, useState } from 'react'
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
 import { router, useFocusEffect } from 'expo-router'
 import { supabase } from '../src/lib/supabase'
+import { palette, radius, space, type } from '../src/lib/theme'
 
 type MessageRow = { id: string; sender_id: string; recipient_id: string; content: string; read: boolean | null; created_at: string | null }
 type Person = { id: string; full_name: string | null; email: string | null; role: string | null }
+
+function roleLabel(role?:string|null){return role==='employer'?'Employer':role==='admin'?'Wellness House':'Talent'}
 
 export default function MessagesScreen() {
   const [userId, setUserId] = useState('')
@@ -51,29 +54,76 @@ export default function MessagesScreen() {
   const unreadCount = messages.filter(message => message.recipient_id === userId && !message.read).length
 
   return <ScrollView style={styles.scroll} contentContainerStyle={styles.page}>
-    <Pressable onPress={() => router.back()}><Text style={styles.back}>‹ Back</Text></Pressable>
-    <View style={styles.headingRow}><View style={{flex:1}}><Text style={styles.eyebrow}>CONVERSATIONS</Text><Text style={styles.title}>Messages</Text></View>{unreadCount>0?<View style={styles.count}><Text style={styles.countText}>{unreadCount}</Text></View>:null}</View>
-    <Text style={styles.intro}>Your Wellness House conversations in one place. Opening a conversation marks received messages as read.</Text>
-    {loading ? <ActivityIndicator color="#0b2f4d" style={{ marginTop: 24 }} /> : null}
+    <Pressable onPress={() => router.back()} style={styles.backButton}><Text style={styles.back}>‹ Back</Text></Pressable>
+    <Text style={styles.eyebrow}>CONVERSATIONS</Text>
+    <View style={styles.headingRow}>
+      <Text style={styles.title}>Messages</Text>
+      {unreadCount>0?<View style={styles.count}><Text style={styles.countText}>{unreadCount}</Text></View>:null}
+    </View>
+    <Text style={styles.intro}>Private conversations linked to recruitment, Agency work and Residency. Open a thread to continue where you left off.</Text>
+
+    {loading ? <ActivityIndicator color={palette.ink} style={{ marginTop: 24 }} /> : null}
     {error ? <Text style={styles.error}>{error}</Text> : null}
-    {!loading && threads.length === 0 ? <View style={styles.empty}><Text style={styles.emptyTitle}>No conversations yet.</Text><Text style={styles.emptyCopy}>Applications, Agency activity and employer conversations will appear here when they begin.</Text></View> : null}
+
+    {!loading && threads.length === 0 ? <View style={styles.empty}>
+      <Text style={styles.emptyEyebrow}>INBOX CLEAR</Text>
+      <Text style={styles.emptyTitle}>No conversations yet.</Text>
+      <Text style={styles.emptyCopy}>Messages begin from real platform activity, so there is no need to start cold conversations here.</Text>
+    </View> : null}
+
     <View style={styles.list}>{threads.map(message => {
       const otherId = message.sender_id === userId ? message.recipient_id : message.sender_id
       const person = people[otherId]
       const unread = message.recipient_id === userId && !message.read
+      const name=person?.full_name || person?.email || 'Platform member'
       return <Pressable key={message.id} onPress={()=>router.push(`/message/${otherId}`)} style={[styles.card, unread && styles.unreadCard]}>
-        <View style={styles.row}><View style={styles.avatar}><Text style={styles.avatarText}>{(person?.full_name || person?.email || 'P').slice(0,1).toUpperCase()}</Text></View><View style={{flex:1}}><View style={styles.nameRow}><Text numberOfLines={1} style={styles.name}>{person?.full_name || person?.email || 'Platform member'}</Text>{unread ? <Text style={styles.unread}>NEW</Text> : null}</View><Text numberOfLines={2} style={styles.preview}>{message.content}</Text><Text style={styles.date}>{message.created_at ? new Date(message.created_at).toLocaleString('en-GB', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' }) : ''}</Text></View></View>
+        <View style={styles.row}>
+          <View style={[styles.avatar,unread&&styles.avatarUnread]}><Text style={styles.avatarText}>{name.slice(0,1).toUpperCase()}</Text></View>
+          <View style={{flex:1}}>
+            <View style={styles.nameRow}>
+              <View style={{flex:1}}><Text numberOfLines={1} style={styles.name}>{name}</Text><Text style={styles.personRole}>{roleLabel(person?.role)}</Text></View>
+              {unread ? <View style={styles.unreadPill}><Text style={styles.unread}>NEW</Text></View> : null}
+            </View>
+            <Text numberOfLines={2} style={[styles.preview,unread&&styles.previewUnread]}>{message.content}</Text>
+            <Text style={styles.date}>{message.created_at ? new Date(message.created_at).toLocaleString('en-GB', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' }) : ''}</Text>
+          </View>
+          <Text style={styles.arrow}>›</Text>
+        </View>
       </Pressable>
     })}</View>
   </ScrollView>
 }
 
 const styles = StyleSheet.create({
-  scroll:{flex:1,backgroundColor:'#fff'}, page:{paddingHorizontal:22,paddingTop:18,paddingBottom:30}, back:{color:'#66747c',fontSize:14,marginBottom:26},
-  headingRow:{flexDirection:'row',alignItems:'flex-start',gap:12},eyebrow:{color:'#71808a',fontSize:8,letterSpacing:2,marginBottom:8}, title:{color:'#0b2f4d',fontSize:29,lineHeight:34,fontWeight:'500'},
-  count:{minWidth:30,height:30,borderRadius:15,backgroundColor:'#0b2f4d',alignItems:'center',justifyContent:'center',marginTop:4},countText:{color:'#fff',fontSize:11,fontWeight:'700'},
-  intro:{color:'#66747c',fontSize:13,lineHeight:20,marginTop:9,marginBottom:22}, list:{gap:9}, card:{borderWidth:1,borderColor:'#dce3e7',padding:15}, unreadCard:{backgroundColor:'#f6f9fa',borderColor:'#b9c7ce'},
-  row:{flexDirection:'row',gap:12},avatar:{width:38,height:38,borderRadius:19,backgroundColor:'#edf2f4',alignItems:'center',justifyContent:'center'},avatarText:{color:'#0b2f4d',fontSize:13,fontWeight:'700'},
-  nameRow:{flexDirection:'row',justifyContent:'space-between',gap:8},name:{color:'#173246',fontSize:14,fontWeight:'600',flex:1}, unread:{color:'#0b2f4d',fontSize:8,letterSpacing:1.2,fontWeight:'700'}, preview:{color:'#66747c',fontSize:11,lineHeight:17,marginTop:5}, date:{color:'#8b989f',fontSize:9,marginTop:7},
-  empty:{backgroundColor:'#f4f7f8',padding:18}, emptyTitle:{color:'#173246',fontSize:14,fontWeight:'600'}, emptyCopy:{color:'#71808a',fontSize:11,lineHeight:17,marginTop:6}, error:{color:'#9b2c2c',fontSize:11,marginBottom:16}
+  scroll:{flex:1,backgroundColor:palette.stone},
+  page:{paddingHorizontal:space.page,paddingTop:18,paddingBottom:118},
+  backButton:{alignSelf:'flex-start',paddingVertical:6,marginBottom:22},
+  back:{color:palette.muted,fontSize:13},
+  eyebrow:{color:palette.quiet,fontSize:8,letterSpacing:2.2,fontWeight:'700',marginBottom:9},
+  headingRow:{flexDirection:'row',alignItems:'center',gap:10},
+  title:{color:palette.inkStrong,fontFamily:type.serif,fontSize:34,lineHeight:40,fontWeight:'400'},
+  count:{minWidth:26,height:26,borderRadius:13,backgroundColor:palette.inkStrong,alignItems:'center',justifyContent:'center'},
+  countText:{color:palette.paper,fontSize:10,fontWeight:'800'},
+  intro:{color:palette.muted,fontSize:13,lineHeight:20,marginTop:10,marginBottom:22,maxWidth:365},
+  list:{gap:9},
+  card:{borderWidth:1,borderColor:palette.line,padding:15,backgroundColor:palette.paper,borderRadius:radius.large},
+  unreadCard:{borderColor:'#BCC8BF',backgroundColor:'#FBFCFA'},
+  row:{flexDirection:'row',gap:12,alignItems:'center'},
+  avatar:{width:42,height:42,borderRadius:21,backgroundColor:palette.stoneDeep,alignItems:'center',justifyContent:'center'},
+  avatarUnread:{backgroundColor:palette.sageSoft},
+  avatarText:{color:palette.inkStrong,fontFamily:type.serif,fontSize:17,fontWeight:'400'},
+  nameRow:{flexDirection:'row',justifyContent:'space-between',gap:8,alignItems:'flex-start'},
+  name:{color:palette.inkStrong,fontSize:13.5,fontWeight:'700'},
+  personRole:{color:palette.quiet,fontSize:7.5,letterSpacing:1.1,fontWeight:'700',marginTop:3,textTransform:'uppercase'},
+  unreadPill:{backgroundColor:palette.sageSoft,paddingHorizontal:7,paddingVertical:4,borderRadius:999},
+  unread:{color:palette.sage,fontSize:7.5,letterSpacing:1,fontWeight:'800'},
+  preview:{color:palette.muted,fontSize:10.5,lineHeight:16,marginTop:7},
+  previewUnread:{color:palette.text,fontWeight:'600'},
+  date:{color:palette.quiet,fontSize:9,marginTop:7},
+  arrow:{color:palette.quiet,fontSize:18},
+  empty:{backgroundColor:palette.paper,borderWidth:1,borderColor:palette.line,padding:20,borderRadius:radius.large},
+  emptyEyebrow:{color:palette.quiet,fontSize:7.5,letterSpacing:1.2,fontWeight:'700'},
+  emptyTitle:{color:palette.inkStrong,fontFamily:type.serif,fontSize:20,fontWeight:'400',marginTop:5},
+  emptyCopy:{color:palette.muted,fontSize:10.5,lineHeight:17,marginTop:6},
+  error:{color:palette.danger,fontSize:11,lineHeight:17,marginBottom:16}
 })

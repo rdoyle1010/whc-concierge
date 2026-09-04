@@ -1,230 +1,193 @@
 import { useEffect, useMemo, useState } from 'react'
-import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native'
+import { ActivityIndicator, Alert, Image, Linking, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native'
 import { router, useLocalSearchParams } from 'expo-router'
 import { supabase } from '../../src/lib/supabase'
+import { palette, radius, space, type } from '../../src/lib/theme'
 
-type InterviewMethod = 'teams' | 'video' | 'phone' | 'in_person'
-type MessageIntent = 'shortlist' | 'decline' | 'offer'
-type ApplicationRow = {
-  id: string
-  status: string
-  match_score: number | null
-  offer_declined?: boolean
-  interviews?: { id: string; round_number: number; status: string; selected_slot?: string | null }[]
-  candidate_profiles?: { full_name?: string | null; headline?: string | null; role_level?: string | null; location?: string | null; bio?: string | null; review_score?: number | null } | { full_name?: string | null; headline?: string | null; role_level?: string | null; location?: string | null; bio?: string | null; review_score?: number | null }[] | null
-  job_listings?: { job_title?: string | null; location?: string | null } | { job_title?: string | null; location?: string | null }[] | null
-}
+const WEB_URL = process.env.EXPO_PUBLIC_WEB_URL || 'https://talenthousecollective.co.uk'
+type InterviewMethod = 'teams'|'google_meet'|'zoom'|'phone'|'in_person'
+type MessageIntent = 'shortlist'|'interview'|'decline'|'offer'
+type Interview = { id:string; round_number:number; interview_method:InterviewMethod; proposed_slots:string[]|null; selected_slot:string|null; status:string; employer_note?:string|null; candidate_note?:string|null; meeting_link?:string|null; venue_address?:string|null; contact_name?:string|null }
 
-const WEB_URL = process.env.EXPO_PUBLIC_WEB_URL || 'https://talent.wellnesshousecollective.co.uk'
+type Detail = { application:any; candidate:any; job:any; employer:any }
 
-function localDateInput(days: number, hour: number) {
-  const date = new Date()
-  date.setDate(date.getDate() + days)
-  date.setHours(hour, 0, 0, 0)
-  const pad = (value: number) => String(value).padStart(2, '0')
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:00`
-}
+function values(value:any){ return Array.isArray(value) ? value.filter(Boolean) : [] }
+function when(value?:string|null){ if(!value) return '—'; const d=new Date(value); return Number.isNaN(d.getTime())?'—':d.toLocaleString('en-GB',{dateStyle:'medium',timeStyle:'short'}) }
+function localInput(days:number,hour:number){ const d=new Date(); d.setDate(d.getDate()+days); d.setHours(hour,0,0,0); const pad=(n:number)=>String(n).padStart(2,'0'); return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:00` }
+function parseLocal(value:string){ const m=value.trim().match(/^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})$/); if(!m)return null; const[,y,mo,da,h,mi]=m; const d=new Date(Number(y),Number(mo)-1,Number(da),Number(h),Number(mi)); return Number.isNaN(d.getTime())?null:d }
+function methodLabel(method:InterviewMethod){ return method==='teams'?'Microsoft Teams':method==='google_meet'?'Google Meet':method==='zoom'?'Zoom':method==='phone'?'Phone':'In person' }
+function stageLabel(status:string){ const map:Record<string,string>={pending:'Under review',reviewed:'Under review',shortlisted:'Shortlisted',interview:'Interview',offered:'Offer sent',accepted:'Accepted',rejected:'Not progressing',withdrawn:'Withdrawn'}; return map[status]||status }
 
-function parseLocalDate(value: string) {
-  const match = value.trim().match(/^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})$/)
-  if (!match) return null
-  const [, y, m, d, h, min] = match
-  const date = new Date(Number(y), Number(m) - 1, Number(d), Number(h), Number(min), 0, 0)
-  return Number.isNaN(date.getTime()) ? null : date
-}
+export default function EmployerApplicationScreen(){
+  const { id } = useLocalSearchParams<{id:string}>()
+  const [detail,setDetail]=useState<Detail|null>(null)
+  const [interviews,setInterviews]=useState<Interview[]>([])
+  const [loading,setLoading]=useState(true)
+  const [busy,setBusy]=useState('')
+  const [error,setError]=useState('')
+  const [note,setNote]=useState('')
+  const [method,setMethod]=useState<InterviewMethod>('teams')
+  const [slotOne,setSlotOne]=useState(localInput(1,10))
+  const [slotTwo,setSlotTwo]=useState(localInput(2,14))
+  const [meetingLink,setMeetingLink]=useState('')
+  const [venue,setVenue]=useState('')
+  const [contact,setContact]=useState('')
+  const [phoneInstructions,setPhoneInstructions]=useState('')
 
-export default function EmployerApplicationScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>()
-  const [application, setApplication] = useState<ApplicationRow | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [busy, setBusy] = useState('')
-  const [error, setError] = useState('')
-  const [note, setNote] = useState('')
-  const [method, setMethod] = useState<InterviewMethod>('video')
-  const [slotOne, setSlotOne] = useState(localDateInput(1, 10))
-  const [slotTwo, setSlotTwo] = useState(localDateInput(2, 14))
-  const [meetingLink, setMeetingLink] = useState('')
-  const [venueAddress, setVenueAddress] = useState('')
+  useEffect(()=>{ void load() },[id])
 
-  useEffect(() => { load() }, [id])
-
-  async function load() {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user || !id) { router.replace('/login'); return }
-    const { data: account } = await supabase.from('profiles').select('role').eq('id', user.id).maybeSingle()
-    if (account?.role !== 'employer') { router.replace('/applications'); return }
-    try {
-      // The inbox API returns the applicant's full profile whatever their
-      // privacy settings (they applied to you), plus interview rounds.
-      const inbox = await callApi('/api/employer/applications/inbox', undefined, 'GET')
-      const row = (inbox.applications || []).find((application: any) => application.id === id)
-      if (!row) { setError('Application not found.'); setLoading(false); return }
-      setApplication(row as ApplicationRow)
-    } catch (e: any) {
-      setError(e?.message || 'Could not load this application.')
-    }
-    setLoading(false)
-  }
-
-  const candidate = useMemo(() => application ? (Array.isArray(application.candidate_profiles) ? application.candidate_profiles[0] : application.candidate_profiles) : null, [application])
-  const job = useMemo(() => application ? (Array.isArray(application.job_listings) ? application.job_listings[0] : application.job_listings) : null, [application])
-
-  async function callApi(path: string, payload?: Record<string, unknown>, methodOverride: 'GET' | 'POST' | 'PATCH' = 'POST') {
-    const { data: { session } } = await supabase.auth.getSession()
-    if (!session?.access_token) throw new Error('Your session has expired. Please sign in again.')
-    const response = await fetch(`${WEB_URL}${path}`, {
-      method: methodOverride,
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
-      ...(payload !== undefined && methodOverride !== 'GET' ? { body: JSON.stringify(payload) } : {}),
-    })
-    const body = await response.json().catch(() => ({}))
-    if (!response.ok) throw new Error(body?.error || 'Could not update this application.')
+  async function api(path:string, options?:RequestInit){
+    const {data:{session}}=await supabase.auth.getSession()
+    if(!session?.access_token) throw new Error('Your session has expired. Please sign in again.')
+    const response=await fetch(`${WEB_URL}${path}`,{...options,headers:{Authorization:`Bearer ${session.access_token}`,...(options?.body?{'Content-Type':'application/json'}:{}),...(options?.headers||{})}})
+    const body=await response.json().catch(()=>({}))
+    if(!response.ok) throw new Error(body?.error||'Could not update this application.')
     return body
   }
 
-  async function writeAiMessage(intent: MessageIntent) {
-    if (!application || busy) return
-    setBusy(`ai-${intent}`)
-    setError('')
-    try {
-      const data = await callApi('/api/employer/applications/message-ai', { applicationId: application.id, intent })
-      setNote(String(data.message || ''))
-    } catch (e: any) {
-      setError(e.message || 'Could not write the candidate message.')
-    }
-    setBusy('')
+  async function load(){
+    if(!id)return
+    setLoading(true); setError('')
+    try{
+      const data=await api(`/api/employer/applications/detail?applicationId=${encodeURIComponent(id)}`)
+      setDetail(data)
+      const interviewData=await api(`/api/employer/applications/interview?applicationId=${encodeURIComponent(id)}`)
+      setInterviews(interviewData.interviews||[])
+    }catch(e:any){ setError(e?.message||'Could not load this application.') }
+    finally{ setLoading(false) }
   }
 
-  function requireNote(label: string) {
-    if (note.trim().length < 20) {
-      Alert.alert(`${label} message needed`, 'Use the AI assistant or write a short, clear message for the candidate before sending.')
-      return false
-    }
-    return true
+  const application=detail?.application
+  const candidate=detail?.candidate
+  const job=detail?.job
+  const ordered=useMemo(()=>[...interviews].sort((a,b)=>a.round_number-b.round_number),[interviews])
+  const completed=ordered.filter(i=>i.status==='completed')
+  const openInterview=ordered.find(i=>i.status==='proposed'||i.status==='confirmed')||null
+  const roundOne=ordered.find(i=>i.round_number===1)||null
+  const roundTwo=ordered.find(i=>i.round_number===2)||null
+  const experience=Number(candidate?.experience_years||candidate?.years_experience||0)
+
+  async function draftMessage(intent:MessageIntent){
+    if(!application||busy)return
+    setBusy(`ai-${intent}`); setError('')
+    try{ const data=await api('/api/employer/applications/message-ai',{method:'POST',body:JSON.stringify({applicationId:application.id,intent})}); setNote(String(data.message||'')) }
+    catch(e:any){ setError(e?.message||'Could not draft the candidate message.') }
+    finally{ setBusy('') }
   }
 
-  async function decision(decisionValue: 'shortlisted' | 'rejected') {
-    if (!application || !requireNote(decisionValue === 'shortlisted' ? 'Shortlist' : 'Candidate')) return
-    setBusy(decisionValue); setError('')
-    try {
-      await callApi('/api/employer/applications/decision', { applicationId: application.id, decision: decisionValue, note: note.trim() })
-      setApplication({ ...application, status: decisionValue })
-      Alert.alert(decisionValue === 'shortlisted' ? 'Candidate shortlisted' : 'Application updated', 'The candidate has been notified through the platform.')
-    } catch (e: any) { setError(e.message) }
-    setBusy('')
+  async function shortlist(){
+    if(!application||busy)return
+    if(note.trim().length<20){ Alert.alert('Add a shortlist message','Use AI shortlist or write a short message before progressing the candidate.'); return }
+    setBusy('shortlist'); setError('')
+    try{ await api('/api/employer/applications/decision',{method:'POST',body:JSON.stringify({applicationId:application.id,decision:'shortlisted',note:note.trim()})}); setNote(''); await load(); Alert.alert('Candidate shortlisted','You can now arrange the first interview.') }
+    catch(e:any){ setError(e.message) }
+    finally{ setBusy('') }
   }
 
-  async function inviteInterview() {
-    if (!application) return
-    const dates = [parseLocalDate(slotOne), parseLocalDate(slotTwo)].filter(Boolean) as Date[]
-    if (!dates.length || dates.some(date => date.getTime() <= Date.now())) {
-      Alert.alert('Check interview times', 'Use future times in the format YYYY-MM-DD HH:mm.')
-      return
-    }
-    setBusy('interview'); setError('')
-    try {
-      await callApi('/api/employer/applications/interview', {
-        applicationId: application.id,
-        roundNumber: nextRound,
-        interviewMethod: method,
-        note: note.trim(),
-        slots: dates.map(date => date.toISOString()),
-        meetingLink: method === 'in_person' ? '' : meetingLink.trim(),
-        venueAddress: method === 'in_person' ? venueAddress.trim() : '',
-      })
-      setApplication({ ...application, status: 'interview' })
-      Alert.alert('Interview invitation sent', 'The candidate can now choose from the proposed times in My Applications.')
-    } catch (e: any) { setError(e.message) }
-    setBusy('')
+  async function invite(roundNumber:number){
+    if(!application||busy)return
+    const dates=[parseLocal(slotOne),parseLocal(slotTwo)]
+    if(dates.some(d=>!d||d.getTime()<=Date.now())){ Alert.alert('Check interview times','Use two future times in the format YYYY-MM-DD HH:mm.'); return }
+    if(!contact.trim()){ Alert.alert('Add the interviewer','Enter the name of the person the candidate will meet.'); return }
+    if(['teams','google_meet','zoom'].includes(method)&&!meetingLink.trim()){ Alert.alert('Add the meeting link',`Paste the ${methodLabel(method)} link before sending.`); return }
+    if(method==='in_person'&&!venue.trim()){ Alert.alert('Add the location','Enter the interview address and arrival point.'); return }
+    if(method==='phone'&&!phoneInstructions.trim()){ Alert.alert('Add phone details','Add who will call whom and the phone number to use.'); return }
+    setBusy(`interview-${roundNumber}`); setError('')
+    try{
+      await api('/api/employer/applications/interview',{method:'POST',body:JSON.stringify({action:'schedule',applicationId:application.id,roundNumber,interviewMethod:method,slots:(dates as Date[]).map(d=>d.toISOString()),note:note.trim(),meetingLink:meetingLink.trim(),venueAddress:venue.trim(),contactName:contact.trim(),phoneInstructions:phoneInstructions.trim()})})
+      setNote(''); await load(); Alert.alert(`${roundNumber===1?'First':'Second'} interview invitation sent`,'The candidate can choose a time or request alternatives in their application.')
+    }catch(e:any){ setError(e.message) }
+    finally{ setBusy('') }
   }
 
-  async function makeOffer() {
-    if (!application || !requireNote('Offer')) return
+  async function completeInterview(interview:Interview){
+    if(!application||busy)return
+    setBusy(`complete-${interview.id}`); setError('')
+    try{ await api('/api/employer/applications/interview',{method:'POST',body:JSON.stringify({action:'complete',applicationId:application.id,interviewId:interview.id})}); await load(); Alert.alert('Interview completed','The next website-equivalent recruitment options are now available.') }
+    catch(e:any){ setError(e.message) }
+    finally{ setBusy('') }
+  }
+
+  async function decline(){
+    if(!application||busy)return
+    if(note.trim().length<20){ Alert.alert('Add a candidate message','Use AI decline or write a respectful message before closing the application.'); return }
+    setBusy('decline'); setError('')
+    try{ await api('/api/employer/applications/decision',{method:'POST',body:JSON.stringify({applicationId:application.id,decision:'rejected',note:note.trim()})}); setNote(''); await load(); Alert.alert('Candidate notified','The application is now closed. You can reopen it later if you reconsider.') }
+    catch(e:any){ setError(e.message) }
+    finally{ setBusy('') }
+  }
+
+  async function reopen(){
+    if(!application||busy)return
+    setBusy('reopen'); setError('')
+    try{ await api('/api/employer/applications/reopen',{method:'POST',body:JSON.stringify({applicationId:application.id})}); await load(); Alert.alert('Application reopened','The candidate is back under review and can be progressed again.') }
+    catch(e:any){ setError(e.message) }
+    finally{ setBusy('') }
+  }
+
+  async function offer(){
+    if(!application||busy)return
+    if(note.trim().length<20){ Alert.alert('Add an offer message','Use AI offer or write the candidate offer message first.'); return }
     setBusy('offer'); setError('')
-    try {
-      await callApi('/api/employer/applications/offer', { applicationId: application.id, note: note.trim() })
-      setApplication({ ...application, status: 'offered' })
-      Alert.alert('Offer sent', 'The candidate has been notified and can review the offer in My Applications.')
-    } catch (e: any) { setError(e.message) }
-    setBusy('')
+    try{ await api('/api/employer/applications/offer',{method:'POST',body:JSON.stringify({applicationId:application.id,note:note.trim()})}); setNote(''); await load(); Alert.alert('Offer sent','The candidate can review and respond from their Applications area.') }
+    catch(e:any){ setError(e.message) }
+    finally{ setBusy('') }
   }
 
-  async function markInterviewComplete() {
-    if (!application || !latestInterview || busy) return
-    setBusy('complete-interview'); setError('')
-    try {
-      await callApi('/api/employer/applications/interview', { interviewId: latestInterview.id }, 'PATCH')
-      await load()
-      Alert.alert('Interview marked complete', 'You can now arrange the next interview or make an offer.')
-    } catch (e: any) { setError(e.message) }
-    setBusy('')
-  }
+  if(loading)return <View style={styles.center}><ActivityIndicator color={palette.ink}/></View>
+  if(!detail)return <View style={styles.center}><Text style={styles.error}>{error||'Application not found.'}</Text><Pressable onPress={()=>router.back()}><Text style={styles.back}>‹ Applications</Text></Pressable></View>
 
-  async function completeHire() {
-    if (!application || busy) return
-    Alert.alert('Complete hire & close role?', 'The role will be closed, other applicants will be notified, and this placement will move to Hired history.', [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Complete hire', onPress: async () => {
-        setBusy('complete-hire'); setError('')
-        try {
-          await callApi('/api/employer/applications/complete-hire', { applicationId: application.id })
-          Alert.alert('Hire completed', 'Congratulations - the placement is recorded and the role has been closed.')
-          router.replace('/applications')
-        } catch (e: any) { setError(e.message) }
-        setBusy('')
-      } },
-    ])
-  }
+  const underReview=['pending','reviewed'].includes(application.status)
+  const shortlisted=application.status==='shortlisted'
+  const interviewing=application.status==='interview'
+  const rejected=application.status==='rejected'
+  const offerReady=interviewing&&completed.length>0&&!openInterview&&!application.status.includes('offered')
+  const canArrangeFirst=shortlisted&&!roundOne
+  const canArrangeSecond=interviewing&&completed.length===1&&!roundTwo&&!openInterview
+  const canComplete=openInterview?.status==='confirmed'&&openInterview.selected_slot&&new Date(openInterview.selected_slot).getTime()<=Date.now()
+  const qualifications=values(candidate.qualifications), brands=values(candidate.product_houses), systems=values(candidate.systems_experience), skills=values(candidate.business_skills)
 
-  if (loading) return <View style={styles.center}><ActivityIndicator color="#0b2f4d" /></View>
-  if (!application) return <View style={styles.center}><Text style={styles.error}>{error || 'Application not found.'}</Text><Pressable onPress={() => router.back()}><Text style={styles.back}>‹ Back</Text></Pressable></View>
+  return <ScrollView style={styles.scroll} contentContainerStyle={styles.page} keyboardShouldPersistTaps="handled">
+    <Pressable onPress={()=>router.back()}><Text style={styles.back}>‹ Applications</Text></Pressable>
+    <Text style={styles.eyebrow}>SUBMITTED APPLICATION</Text><Text style={styles.title}>Review the person before the process.</Text>
 
-  const interviews = application.interviews || []
-  const latestInterview = interviews.length ? interviews[interviews.length - 1] : null
-  const latestHeld = !!latestInterview && (latestInterview.status === 'completed' || (latestInterview.status === 'confirmed' && !!latestInterview.selected_slot && new Date(latestInterview.selected_slot).getTime() <= Date.now()))
-  const latestAwaitingCompletion = !!latestInterview && latestInterview.status === 'confirmed' && !!latestInterview.selected_slot && new Date(latestInterview.selected_slot).getTime() <= Date.now()
-  // Round to send next: update the current round while it is still proposed;
-  // otherwise the next round (once the previous one has been held).
-  const nextRound = !latestInterview ? 1 : latestInterview.status === 'proposed' ? latestInterview.round_number : latestHeld ? Math.min(latestInterview.round_number + 1, 3) : latestInterview.round_number
-  const canInterview = ['shortlisted', 'interview'].includes(application.status) && (!latestInterview || latestInterview.status === 'proposed' || latestHeld)
-  const canOffer = ['interview', 'offered'].includes(application.status) && (latestHeld || application.status === 'offered')
-  const accepted = application.status === 'accepted'
-  const closed = ['rejected', 'withdrawn'].includes(application.status)
+    <View style={styles.card}>
+      <View style={styles.personRow}>{candidate.profile_image_url?<Image source={{uri:candidate.profile_image_url}} style={styles.photo}/>:<View style={styles.photoPlaceholder}><Text style={styles.initial}>{String(candidate.full_name||'T').slice(0,1)}</Text></View>}<View style={{flex:1}}><Text style={styles.name}>{candidate.full_name||'Candidate'}</Text><Text style={styles.meta}>{candidate.headline||candidate.role_level||'Spa & wellness professional'}</Text><Text style={styles.small}>{[candidate.location,experience?`${experience} years experience`:null].filter(Boolean).join(' · ')}</Text></View>{application.match_score!=null?<View><Text style={styles.score}>{application.match_score}%</Text><Text style={styles.scoreLabel}>MATCH</Text></View>:null}</View>
+      <View style={styles.roleBox}><Text style={styles.label}>APPLIED FOR</Text><Text style={styles.role}>{job.job_title}</Text><Text style={styles.small}>{[job.location,job.salary_display_text,job.job_type].filter(Boolean).join(' · ')}</Text><Text style={styles.small}>Submitted {when(application.submitted_at)}</Text></View>
+    </View>
 
-  return <ScrollView style={styles.scroll} contentContainerStyle={styles.page}>
-    <Pressable onPress={() => router.back()}><Text style={styles.back}>‹ Applications</Text></Pressable>
-    <Text style={styles.eyebrow}>MANAGE CANDIDATE</Text>
-    <View style={styles.titleRow}><View style={{ flex: 1 }}><Text style={styles.title}>{candidate?.full_name || 'Candidate'}</Text><Text style={styles.meta}>{[candidate?.headline || candidate?.role_level, candidate?.location].filter(Boolean).join(' · ')}</Text></View>{application.match_score ? <View style={styles.scoreBox}><Text style={styles.score}>{application.match_score}%</Text><Text style={styles.scoreLabel}>MATCH</Text></View> : null}</View>
-    <Text style={styles.role}>{job?.job_title || 'Role'}{job?.location ? ` · ${job.location}` : ''}</Text>
-    <Text style={styles.stage}>CURRENT STAGE  {application.status.replaceAll('_', ' ').toUpperCase()}</Text>
-    {candidate?.bio ? <View style={styles.section}><Text style={styles.sectionTitle}>Candidate profile</Text><Text style={styles.copy}>{candidate.bio}</Text></View> : null}
+    {application.match_explanation?<View style={styles.reason}><Text style={styles.label}>WHY THEY MATCH THIS ROLE</Text>{application.match_label?<Text style={styles.reasonTitle}>{application.match_label}</Text>:null}<Text style={styles.copy}>{application.match_explanation}</Text></View>:null}
+    <View style={styles.stage}><Text style={styles.label}>CURRENT STAGE</Text><Text style={styles.stageValue}>{stageLabel(application.status)}</Text></View>
 
-    {!closed && !accepted ? <>
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Message to candidate</Text>
-        <Text style={styles.help}>Use AI to create a polished first draft from the real candidate, role and property details. You can edit every word before sending.</Text>
-        <View style={styles.aiRow}>
-          <Pressable onPress={() => writeAiMessage('shortlist')} disabled={!!busy} style={[styles.aiButton, !!busy && styles.disabled]}><Text style={styles.aiButtonText}>{busy === 'ai-shortlist' ? 'Writing…' : 'AI shortlist'}</Text></Pressable>
-          <Pressable onPress={() => writeAiMessage('decline')} disabled={!!busy} style={[styles.aiButton, !!busy && styles.disabled]}><Text style={styles.aiButtonText}>{busy === 'ai-decline' ? 'Writing…' : 'AI decline'}</Text></Pressable>
-          <Pressable onPress={() => writeAiMessage('offer')} disabled={!!busy} style={[styles.aiButton, !!busy && styles.disabled]}><Text style={styles.aiButtonText}>{busy === 'ai-offer' ? 'Writing…' : 'AI offer'}</Text></Pressable>
-        </View>
-        <TextInput value={note} onChangeText={setNote} multiline placeholder="AI message will appear here, or write your own..." style={styles.textarea} />
-      </View>
-      <View style={styles.actionGrid}>
-        <Pressable onPress={() => decision('shortlisted')} disabled={!!busy || application.status === 'shortlisted'} style={[styles.primary, (busy !== '' || application.status === 'shortlisted') && styles.disabled]}><Text style={styles.primaryText}>{busy === 'shortlisted' ? 'Sending...' : application.status === 'shortlisted' ? 'Shortlisted ✓' : 'Shortlist candidate'}</Text></Pressable>
-        <Pressable onPress={() => decision('rejected')} disabled={!!busy} style={[styles.secondary, busy !== '' && styles.disabled]}><Text style={styles.dangerText}>{busy === 'rejected' ? 'Sending...' : 'Not progressing'}</Text></Pressable>
-      </View>
+    {candidate.bio?<Section title="Candidate overview"><Text style={styles.copy}>{candidate.bio}</Text></Section>:null}
+    <Section title="Covering letter"><Text style={styles.copy}>{application.cover_letter||'No covering letter was submitted.'}</Text></Section>
+    {candidate.cv_signed_url?<Pressable onPress={()=>Linking.openURL(candidate.cv_signed_url)} style={styles.linkCard}><Text style={styles.linkText}>Open candidate CV</Text><Text style={styles.arrow}>→</Text></Pressable>:null}
+    <Section title="Career evidence"><Text style={styles.small}>{experience||'—'} years experience</Text>{qualifications.length?<Tags title="Qualifications" items={qualifications}/>:null}{brands.length?<Tags title="Product houses" items={brands}/>:null}{systems.length?<Tags title="Systems" items={systems}/>:null}{skills.length?<Tags title="Business skills" items={skills}/>:null}</Section>
 
-      {canInterview ? <View style={styles.section}><Text style={styles.sectionTitle}>Interview invitation</Text><Text style={styles.help}>Offer one or two future times. The candidate chooses their preferred slot.</Text><View style={styles.methodRow}>{(['video','teams','phone','in_person'] as InterviewMethod[]).map(value => <Pressable key={value} onPress={() => setMethod(value)} style={[styles.method, method === value && styles.methodActive]}><Text style={[styles.methodText, method === value && styles.methodTextActive]}>{value === 'in_person' ? 'In person' : value === 'teams' ? 'Teams' : value === 'video' ? 'Video' : 'Phone'}</Text></Pressable>)}</View><Text style={styles.label}>First option</Text><TextInput value={slotOne} onChangeText={setSlotOne} style={styles.input} placeholder="YYYY-MM-DD HH:mm" /><Text style={styles.label}>Second option</Text><TextInput value={slotTwo} onChangeText={setSlotTwo} style={styles.input} placeholder="YYYY-MM-DD HH:mm" />{method === 'in_person' ? <><Text style={styles.label}>Venue</Text><TextInput value={venueAddress} onChangeText={setVenueAddress} style={styles.input} placeholder="Interview address" /></> : <><Text style={styles.label}>Meeting link (optional)</Text><TextInput value={meetingLink} onChangeText={setMeetingLink} style={styles.input} placeholder="Teams / video link" autoCapitalize="none" /></>}<Pressable onPress={inviteInterview} disabled={!!busy} style={[styles.primary, busy !== '' && styles.disabled]}><Text style={styles.primaryText}>{busy === 'interview' ? 'Sending...' : latestInterview && latestInterview.status === 'proposed' && nextRound === latestInterview.round_number ? `Update interview ${nextRound} invitation` : `Send interview ${nextRound} invitation`}</Text></Pressable></View> : null}
+    {ordered.length?<Section title="Interview history">{ordered.map(iv=><View key={iv.id} style={styles.interview}><View style={styles.row}><Text style={styles.interviewTitle}>Interview {iv.round_number} · {methodLabel(iv.interview_method)}</Text><Text style={styles.status}>{iv.status.toUpperCase()}</Text></View><Text style={styles.small}>{iv.selected_slot?when(iv.selected_slot):'Waiting for candidate time confirmation'}</Text>{iv.candidate_note?<Text style={styles.reply}>Candidate: {iv.candidate_note}</Text>:null}{iv.id===openInterview?.id&&canComplete?<Pressable onPress={()=>completeInterview(iv)} style={styles.secondary}><Text style={styles.secondaryText}>Mark interview completed</Text></Pressable>:null}</View>)}</Section>:null}
 
-      {latestAwaitingCompletion ? <View style={styles.section}><Text style={styles.sectionTitle}>Interview held?</Text><Text style={styles.help}>Interview {latestInterview?.round_number} was scheduled for a time that has now passed. Mark it complete to unlock the next interview or an offer.</Text><Pressable onPress={markInterviewComplete} disabled={!!busy} style={[styles.secondary, busy !== '' && styles.disabled]}><Text style={styles.completeText}>{busy === 'complete-interview' ? 'Saving...' : 'Mark interview complete'}</Text></Pressable></View> : null}
+    {rejected?<View style={styles.workflow}><Text style={styles.label}>RECONSIDER</Text><Text style={styles.workflowTitle}>Reopen this application?</Text><Text style={styles.copy}>Move the candidate back to Under review so you can shortlist and progress them again.</Text><Pressable disabled={!!busy} onPress={reopen} style={styles.primary}><Text style={styles.primaryText}>{busy==='reopen'?'Reopening…':'Reopen application'}</Text></Pressable></View>:null}
 
-      {canOffer ? <View style={styles.section}><Text style={styles.sectionTitle}>Make an offer</Text><Text style={styles.help}>The candidate will receive an offer alert and can respond from My Applications.</Text><Pressable onPress={makeOffer} disabled={!!busy} style={[styles.offer, busy !== '' && styles.disabled]}><Text style={styles.offerText}>{busy === 'offer' ? 'Sending...' : application.status === 'offered' ? 'Resend / update offer' : 'Send job offer'}</Text></Pressable></View> : null}
-    </> : accepted ? <View style={styles.section}><Text style={styles.sectionTitle}>Offer accepted 🎉</Text><Text style={styles.help}>Complete the hire to close the role, notify the other applicants and archive this placement to Hired history.</Text><Pressable onPress={completeHire} disabled={!!busy} style={[styles.primary, busy !== '' && styles.disabled]}><Text style={styles.primaryText}>{busy === 'complete-hire' ? 'Completing...' : 'Complete hire & close role'}</Text></Pressable></View> : <View style={styles.closed}><Text style={styles.closedTitle}>{(application as any).offer_declined ? 'The candidate declined the offer.' : 'This application is closed.'}</Text><Text style={styles.help}>No further recruitment action is available from this stage.</Text></View>}
-    {error ? <Text style={styles.error}>{error}</Text> : null}
+    {underReview?<View style={styles.workflow}><Text style={styles.label}>NEXT ACTION</Text><Text style={styles.workflowTitle}>Shortlist or close the application</Text><Text style={styles.copy}>This mirrors the website: an application must be shortlisted before the first interview.</Text><View style={styles.aiRow}><AiButton label="AI shortlist" busy={busy==='ai-shortlist'} onPress={()=>draftMessage('shortlist')}/><AiButton label="AI decline" busy={busy==='ai-decline'} onPress={()=>draftMessage('decline')}/></View><MessageBox note={note} setNote={setNote}/><Pressable disabled={!!busy} onPress={shortlist} style={styles.primary}><Text style={styles.primaryText}>{busy==='shortlist'?'Shortlisting…':'Shortlist candidate'}</Text></Pressable><Pressable disabled={!!busy} onPress={decline} style={styles.danger}><Text style={styles.dangerText}>Not progressing</Text></Pressable></View>:null}
+
+    {shortlisted?<View style={styles.workflow}><Text style={styles.label}>NEXT ACTION</Text><Text style={styles.workflowTitle}>Arrange the first interview</Text><View style={styles.aiRow}><AiButton label="AI interview letter" busy={busy==='ai-interview'} onPress={()=>draftMessage('interview')}/><AiButton label="AI decline" busy={busy==='ai-decline'} onPress={()=>draftMessage('decline')}/></View><MessageBox note={note} setNote={setNote}/>{canArrangeFirst?<InterviewForm round={1} method={method} setMethod={setMethod} contact={contact} setContact={setContact} slotOne={slotOne} setSlotOne={setSlotOne} slotTwo={slotTwo} setSlotTwo={setSlotTwo} meetingLink={meetingLink} setMeetingLink={setMeetingLink} venue={venue} setVenue={setVenue} phoneInstructions={phoneInstructions} setPhoneInstructions={setPhoneInstructions} busy={busy} onSend={()=>invite(1)}/>:null}<Pressable disabled={!!busy} onPress={decline} style={styles.danger}><Text style={styles.dangerText}>Not progressing</Text></Pressable></View>:null}
+
+    {interviewing?<View style={styles.workflow}><Text style={styles.label}>RECRUITMENT DECISION</Text>{openInterview?<><Text style={styles.workflowTitle}>{openInterview.status==='proposed'?'Waiting for candidate response':'Interview confirmed'}</Text><Text style={styles.copy}>{openInterview.status==='proposed'?'The candidate must choose a proposed time or request alternatives before this stage can move forward.':'The interview is booked. Once the confirmed interview time has passed, mark it completed to unlock the next stage.'}</Text></>:<><Text style={styles.workflowTitle}>Choose the next step</Text><Text style={styles.copy}>{completed.length===1?'Interview 1 is complete. Arrange Interview 2, make an offer, or close the application.':'Interview 2 is complete. Make an offer or close the application.'}</Text></>}
+      {!openInterview&&completed.length>0?<View style={styles.aiRow}><AiButton label={completed.length===1?'AI second interview':'AI interview'} busy={busy==='ai-interview'} onPress={()=>draftMessage('interview')}/><AiButton label="AI offer" busy={busy==='ai-offer'} onPress={()=>draftMessage('offer')}/><AiButton label="AI decline" busy={busy==='ai-decline'} onPress={()=>draftMessage('decline')}/></View>:null}
+      {!openInterview&&completed.length>0?<MessageBox note={note} setNote={setNote}/>:null}
+      {canArrangeSecond?<InterviewForm round={2} method={method} setMethod={setMethod} contact={contact} setContact={setContact} slotOne={slotOne} setSlotOne={setSlotOne} slotTwo={slotTwo} setSlotTwo={setSlotTwo} meetingLink={meetingLink} setMeetingLink={setMeetingLink} venue={venue} setVenue={setVenue} phoneInstructions={phoneInstructions} setPhoneInstructions={setPhoneInstructions} busy={busy} onSend={()=>invite(2)}/>:null}
+      {offerReady?<Pressable disabled={!!busy} onPress={offer} style={styles.primary}><Text style={styles.primaryText}>{busy==='offer'?'Sending offer…':'Make offer'}</Text></Pressable>:null}
+      <Pressable disabled={!!busy} onPress={decline} style={styles.danger}><Text style={styles.dangerText}>Not progressing</Text></Pressable>
+    </View>:null}
+
+    {error?<Text style={styles.error}>{error}</Text>:null}
   </ScrollView>
 }
 
-const styles = StyleSheet.create({
-  scroll:{flex:1,backgroundColor:'#fff'},page:{paddingHorizontal:22,paddingTop:64,paddingBottom:48},center:{flex:1,alignItems:'center',justifyContent:'center',padding:28,backgroundColor:'#fff'},back:{color:'#66747c',fontSize:13,marginBottom:34},eyebrow:{color:'#71808a',fontSize:9,letterSpacing:2.1,marginBottom:10},titleRow:{flexDirection:'row',gap:16,alignItems:'flex-start'},title:{color:'#0b2f4d',fontSize:29,lineHeight:35,fontWeight:'500'},meta:{color:'#71808a',fontSize:12,lineHeight:18,marginTop:6},scoreBox:{borderWidth:1,borderColor:'#ccd8dd',paddingHorizontal:12,paddingVertical:8,alignItems:'center'},score:{color:'#0b2f4d',fontSize:17,fontWeight:'700'},scoreLabel:{color:'#71808a',fontSize:7,letterSpacing:1.2,marginTop:2},role:{color:'#173246',fontSize:14,fontWeight:'600',marginTop:22},stage:{color:'#71808a',fontSize:9,letterSpacing:1.1,marginTop:8},section:{borderTopWidth:1,borderTopColor:'#e3e8eb',paddingTop:22,marginTop:26},sectionTitle:{color:'#173246',fontSize:17,fontWeight:'600',marginBottom:7},copy:{color:'#66747c',fontSize:13,lineHeight:21},help:{color:'#71808a',fontSize:11,lineHeight:17,marginBottom:12},aiRow:{flexDirection:'row',gap:8,marginBottom:12},aiButton:{flex:1,borderWidth:1,borderColor:'#9fb1bb',backgroundColor:'#f4f7f8',paddingVertical:10,paddingHorizontal:6,alignItems:'center'},aiButtonText:{color:'#0b2f4d',fontSize:9.5,fontWeight:'700'},textarea:{borderWidth:1,borderColor:'#d7e0e4',minHeight:110,padding:13,textAlignVertical:'top',fontSize:13,color:'#173246'},actionGrid:{gap:10,marginTop:14},primary:{backgroundColor:'#0b2f4d',paddingVertical:15,alignItems:'center',marginTop:12},primaryText:{color:'#fff',fontSize:12,fontWeight:'700'},secondary:{borderWidth:1,borderColor:'#d7e0e4',paddingVertical:14,alignItems:'center'},dangerText:{color:'#7c3f3f',fontSize:12,fontWeight:'600'},completeText:{color:'#0b6245',fontSize:12,fontWeight:'700'},disabled:{opacity:.45},methodRow:{flexDirection:'row',flexWrap:'wrap',gap:8,marginVertical:10},method:{borderWidth:1,borderColor:'#d7e0e4',paddingHorizontal:11,paddingVertical:9},methodActive:{backgroundColor:'#0b2f4d',borderColor:'#0b2f4d'},methodText:{color:'#66747c',fontSize:10},methodTextActive:{color:'#fff',fontWeight:'700'},label:{color:'#173246',fontSize:11,fontWeight:'600',marginTop:11,marginBottom:6},input:{borderWidth:1,borderColor:'#d7e0e4',paddingHorizontal:12,paddingVertical:12,color:'#173246',fontSize:12},offer:{borderWidth:1,borderColor:'#0b2f4d',paddingVertical:15,alignItems:'center',marginTop:10},offerText:{color:'#0b2f4d',fontSize:12,fontWeight:'700'},closed:{backgroundColor:'#f4f7f8',padding:18,marginTop:28},closedTitle:{color:'#173246',fontSize:14,fontWeight:'600',marginBottom:5},error:{color:'#9b2c2c',fontSize:12,lineHeight:18,marginTop:18},
-})
+function Section({title,children}:{title:string;children:any}){ return <View style={styles.card}><Text style={styles.sectionTitle}>{title}</Text>{children}</View> }
+function Tags({title,items}:{title:string;items:string[]}){ return <View style={{marginTop:14}}><Text style={styles.label}>{title.toUpperCase()}</Text><View style={styles.tags}>{items.map(item=><View key={item} style={styles.tag}><Text style={styles.tagText}>{item}</Text></View>)}</View></View> }
+function AiButton({label,busy,onPress}:{label:string;busy:boolean;onPress:()=>void}){ return <Pressable onPress={onPress} disabled={busy} style={styles.ai}><Text style={styles.aiText}>{busy?'Writing…':label}</Text></Pressable> }
+function MessageBox({note,setNote}:{note:string;setNote:(v:string)=>void}){ return <TextInput value={note} onChangeText={setNote} multiline placeholder="AI draft will appear here, or write your own candidate message..." placeholderTextColor={palette.quiet} style={styles.note}/> }
+function InterviewForm(props:any){ const methods:InterviewMethod[]=['teams','google_meet','zoom','phone','in_person']; return <View style={styles.interviewForm}><Text style={styles.formTitle}>{props.round===1?'First interview':'Second interview'}</Text><View style={styles.methodRow}>{methods.map(item=><Pressable key={item} onPress={()=>props.setMethod(item)} style={[styles.method,props.method===item&&styles.methodActive]}><Text style={[styles.methodText,props.method===item&&styles.methodTextActive]}>{methodLabel(item)}</Text></Pressable>)}</View><TextInput value={props.contact} onChangeText={props.setContact} placeholder="Interviewer / contact name" placeholderTextColor={palette.quiet} style={styles.input}/><TextInput value={props.slotOne} onChangeText={props.setSlotOne} placeholder="First option · YYYY-MM-DD HH:mm" placeholderTextColor={palette.quiet} style={styles.input}/><TextInput value={props.slotTwo} onChangeText={props.setSlotTwo} placeholder="Second option · YYYY-MM-DD HH:mm" placeholderTextColor={palette.quiet} style={styles.input}/>{['teams','google_meet','zoom'].includes(props.method)?<TextInput value={props.meetingLink} onChangeText={props.setMeetingLink} placeholder={`${methodLabel(props.method)} meeting link`} placeholderTextColor={palette.quiet} style={styles.input}/>:null}{props.method==='in_person'?<TextInput value={props.venue} onChangeText={props.setVenue} placeholder="Interview address and arrival point" placeholderTextColor={palette.quiet} style={styles.input}/>:null}{props.method==='phone'?<TextInput value={props.phoneInstructions} onChangeText={props.setPhoneInstructions} multiline placeholder="Who calls whom + contact number" placeholderTextColor={palette.quiet} style={styles.note}/>:null}<Pressable disabled={!!props.busy} onPress={props.onSend} style={styles.primary}><Text style={styles.primaryText}>{props.busy?.startsWith('interview-')?'Sending…':`Send ${props.round===1?'first':'second'} interview invitation`}</Text></Pressable></View> }
+
+const styles=StyleSheet.create({scroll:{flex:1,backgroundColor:palette.stone},page:{paddingHorizontal:space.page,paddingTop:space.lg,paddingBottom:110,gap:14},center:{flex:1,alignItems:'center',justifyContent:'center',backgroundColor:palette.stone,padding:24},back:{color:palette.muted,fontSize:13},eyebrow:{fontSize:9,letterSpacing:2.2,fontWeight:'800',color:palette.quiet,marginTop:8},title:{fontFamily:type.serif,fontSize:34,lineHeight:40,color:palette.inkStrong},card:{backgroundColor:palette.paper,borderWidth:1,borderColor:palette.line,borderRadius:radius.large,padding:18},personRow:{flexDirection:'row',alignItems:'center',gap:12},photo:{width:58,height:58,borderRadius:29},photoPlaceholder:{width:58,height:58,borderRadius:29,backgroundColor:palette.stoneDeep,alignItems:'center',justifyContent:'center'},initial:{fontFamily:type.serif,fontSize:24,color:palette.inkStrong},name:{fontFamily:type.serif,fontSize:25,color:palette.inkStrong},meta:{fontSize:12,lineHeight:18,color:palette.muted},small:{fontSize:10.5,lineHeight:16,color:palette.quiet,marginTop:4},score:{fontSize:27,fontWeight:'700',color:palette.muted},scoreLabel:{fontSize:8,letterSpacing:1.5,color:palette.quiet,textAlign:'center'},roleBox:{marginTop:16,borderTopWidth:1,borderTopColor:palette.line,paddingTop:14},label:{fontSize:8,letterSpacing:1.6,fontWeight:'800',color:palette.sage},role:{fontFamily:type.serif,fontSize:22,color:palette.inkStrong,marginTop:4},reason:{backgroundColor:palette.sageSoft,borderRadius:radius.large,padding:18},reasonTitle:{fontSize:15,fontWeight:'700',color:palette.inkStrong,marginTop:7},copy:{fontSize:12,lineHeight:19,color:palette.muted,marginTop:8},stage:{backgroundColor:palette.paper,borderWidth:1,borderColor:palette.line,borderRadius:radius.large,padding:16,flexDirection:'row',justifyContent:'space-between',alignItems:'center'},stageValue:{fontSize:14,fontWeight:'800',color:palette.inkStrong},sectionTitle:{fontFamily:type.serif,fontSize:23,color:palette.inkStrong,marginBottom:8},linkCard:{backgroundColor:palette.paper,borderWidth:1,borderColor:palette.line,borderRadius:radius.large,padding:18,flexDirection:'row',justifyContent:'space-between',alignItems:'center'},linkText:{fontWeight:'800',fontSize:13,color:palette.ink},arrow:{fontSize:20,color:palette.ink},tags:{flexDirection:'row',flexWrap:'wrap',gap:7,marginTop:8},tag:{backgroundColor:palette.stoneDeep,borderRadius:99,paddingHorizontal:10,paddingVertical:6},tagText:{fontSize:10,color:palette.muted},interview:{backgroundColor:palette.stone,borderRadius:radius.medium,padding:14,marginTop:8},row:{flexDirection:'row',justifyContent:'space-between',gap:10},interviewTitle:{fontWeight:'800',fontSize:12,color:palette.inkStrong},status:{fontSize:8,fontWeight:'800',color:palette.quiet},reply:{fontSize:10.5,lineHeight:16,color:palette.muted,marginTop:7},workflow:{backgroundColor:palette.sageSoft,borderRadius:radius.large,padding:18,gap:12},workflowTitle:{fontFamily:type.serif,fontSize:27,lineHeight:32,color:palette.inkStrong},aiRow:{flexDirection:'row',flexWrap:'wrap',gap:8},ai:{borderWidth:1,borderColor:palette.line,borderRadius:99,paddingHorizontal:13,paddingVertical:9,backgroundColor:palette.paper},aiText:{fontSize:10.5,fontWeight:'800',color:palette.inkStrong},note:{minHeight:120,borderWidth:1,borderColor:palette.line,borderRadius:radius.medium,backgroundColor:palette.paper,padding:13,fontSize:12,color:palette.text,textAlignVertical:'top'},interviewForm:{gap:10},formTitle:{fontSize:14,fontWeight:'800',color:palette.inkStrong},methodRow:{flexDirection:'row',flexWrap:'wrap',gap:7},method:{borderWidth:1,borderColor:palette.line,borderRadius:99,paddingHorizontal:11,paddingVertical:8,backgroundColor:palette.paper},methodActive:{backgroundColor:palette.inkStrong,borderColor:palette.inkStrong},methodText:{fontSize:10,color:palette.muted},methodTextActive:{color:palette.paper,fontWeight:'800'},input:{borderWidth:1,borderColor:palette.line,borderRadius:radius.medium,backgroundColor:palette.paper,padding:13,fontSize:12,color:palette.text},primary:{backgroundColor:palette.inkStrong,borderRadius:radius.medium,paddingVertical:14,alignItems:'center'},primaryText:{color:palette.paper,fontWeight:'800',fontSize:12},secondary:{marginTop:10,borderWidth:1,borderColor:palette.line,borderRadius:radius.medium,paddingVertical:10,alignItems:'center',backgroundColor:palette.paper},secondaryText:{fontSize:10.5,fontWeight:'800',color:palette.inkStrong},danger:{borderWidth:1,borderColor:'#d8b8b8',borderRadius:radius.medium,paddingVertical:13,alignItems:'center',backgroundColor:palette.paper},dangerText:{color:palette.danger,fontWeight:'800',fontSize:11},error:{color:palette.danger,fontSize:11,lineHeight:17,marginTop:4}})

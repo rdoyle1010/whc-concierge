@@ -31,6 +31,9 @@ export async function POST(req: NextRequest) {
   if (!user) return NextResponse.json({ error:'Unauthorised' }, { status:401 })
 
   try {
+    const user = await getRequestUser(req)
+    if (!user) return NextResponse.json({ error:'Your session could not be verified. Please sign in again.' }, { status:401 })
+
     const { applicationId } = await req.json()
     if (!applicationId) return NextResponse.json({ error:'Application is required.' }, { status:400 })
 

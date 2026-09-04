@@ -1,165 +1,95 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
-import { ActivityIndicator, Alert, Animated, Dimensions, Image, PanResponder, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
-import { router } from 'expo-router'
+import { useCallback, useState } from 'react'
+import { ActivityIndicator, Alert, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
+import { router, useFocusEffect } from 'expo-router'
 import { supabase } from '../src/lib/supabase'
+import { palette, radius, space, type } from '../src/lib/theme'
 
-const WEB_URL=process.env.EXPO_PUBLIC_WEB_URL||'https://talent.wellnesshousecollective.co.uk'
-const SCREEN_WIDTH=Dimensions.get('window').width
-const SWIPE_THRESHOLD=Math.min(100,SCREEN_WIDTH*.24)
+const WEB_URL=process.env.EXPO_PUBLIC_WEB_URL||'https://talenthousecollective.co.uk'
 
-type Job={id:string;job_title:string;location?:string|null;job_type?:string|null}
 type Candidate={
-  id:string;full_name?:string|null;headline?:string|null;role_level?:string|null;location?:string|null;bio?:string|null;
-  profile_image_url?:string|null;review_score?:number|null;experience_years?:number|null;years_experience?:number|null;
-  qualifications?:any;product_houses?:any;systems_experience?:any;services_offered?:any;awards?:any;is_featured?:boolean|null;
-  match_score?:number|null;match_label?:string|null;match_explanation?:string[]|null;distance_miles?:number|null;role_title?:string|null
+  id:string;full_name?:string|null;headline?:string|null;role_level?:string|null;location?:string|null;bio?:string|null;profile_image_url?:string|null;review_score?:number|null;experience_years?:number|null;years_experience?:number|null;distance_miles?:number|null;matchScore?:number|null;matchLabel?:string|null;matchExplanation?:string|null;bestJob?:string|null;bestJobId?:string|null;interested?:boolean;mutual?:boolean;applicationId?:string|null;applicationStatus?:string|null;shortlisted?:boolean;is_featured?:boolean
 }
 
 export default function EmployerMatchScreen(){
-  const [jobs,setJobs]=useState<Job[]>([])
-  const [jobId,setJobId]=useState('')
   const [candidates,setCandidates]=useState<Candidate[]>([])
+  const [liveRoleCount,setLiveRoleCount]=useState(0)
   const [loading,setLoading]=useState(true)
-  const [busy,setBusy]=useState(false)
+  const [busy,setBusy]=useState('')
   const [error,setError]=useState('')
-  const position=useRef(new Animated.ValueXY()).current
 
-  useEffect(()=>{void initialise()},[])
-  useEffect(()=>{if(jobId)void loadMatches(jobId)},[jobId])
+  useFocusEffect(useCallback(()=>{void load()},[]))
 
-  async function api(path:string,options?:RequestInit){
+  async function api(options?:RequestInit){
     const {data:{session}}=await supabase.auth.getSession()
     if(!session?.access_token)throw new Error('Your session has expired. Please sign in again.')
-    const response=await fetch(`${WEB_URL}${path}`,{...options,headers:{Authorization:`Bearer ${session.access_token}`,'Content-Type':'application/json',...(options?.headers||{})}})
+    const response=await fetch(`${WEB_URL}/api/mobile/employer-directory`,{...options,headers:{Authorization:`Bearer ${session.access_token}`,'Content-Type':'application/json',...(options?.headers||{})}})
     const body=await response.json().catch(()=>({}))
-    if(!response.ok)throw new Error(body?.error||'Could not complete this request.')
+    if(!response.ok)throw new Error(body?.error||'Could not load Talent.')
     return body
   }
 
-  async function initialise(){
-    setLoading(true);setError('')
-    const {data:{user}}=await supabase.auth.getUser()
-    if(!user){router.replace('/login');return}
-    const {data:profile}=await supabase.from('profiles').select('role').eq('id',user.id).maybeSingle()
-    if(profile?.role!=='employer'){router.replace('/home');return}
-    try{
-      const data=await api('/api/mobile/employer-matches')
-      const rows=(data.jobs||[]) as Job[]
-      setJobs(rows)
-      setJobId(data.selected_job_id||rows[0]?.id||'')
-      setCandidates((data.candidates||[]) as Candidate[])
-    }catch(e:any){setError(e?.message||'Could not load talent matches.')}
-    setLoading(false)
-  }
-
-  async function loadMatches(selected:string){
+  async function load(){
     setLoading(true);setError('')
     try{
-      const data=await api(`/api/mobile/employer-matches?jobId=${encodeURIComponent(selected)}`)
-      setCandidates((data.candidates||[]) as Candidate[])
-      position.setValue({x:0,y:0})
-    }catch(e:any){setError(e?.message||'Could not load talent matches.')}
-    setLoading(false)
+      const {data:{user}}=await supabase.auth.getUser()
+      if(!user){router.replace('/login');return}
+      const {data:profile}=await supabase.from('profiles').select('role').eq('id',user.id).maybeSingle()
+      if(profile?.role!=='employer'){router.replace('/home');return}
+      const data=await api();setCandidates(data.candidates||[]);setLiveRoleCount(Number(data.live_role_count||0))
+    }catch(e:any){setError(e?.message||'Could not load Talent.')}finally{setLoading(false)}
   }
 
-  const current=candidates[0]
-  const next=candidates[1]
-  const selectedJob=useMemo(()=>jobs.find(job=>job.id===jobId)||null,[jobs,jobId])
-
-  function resetPosition(){Animated.spring(position,{toValue:{x:0,y:0},useNativeDriver:false,friction:5}).start()}
-  function removeCurrent(){setCandidates(prev=>prev.slice(1));position.setValue({x:0,y:0})}
-
-  async function decide(action:'left'|'right'){
-    if(!current||!jobId||busy)return
-    setBusy(true);setError('')
+  async function decide(candidate:Candidate,action:'left'|'right'|'save'|'unsave'){
+    if(busy)return
+    if(action==='right'&&!candidate.bestJobId){Alert.alert('Post a suitable live role first','Interested is role-specific. This professional does not currently have an eligible live role match.');return}
+    setBusy(`${candidate.id}-${action}`);setError('')
     try{
-      const result=await api('/api/mobile/employer-matches',{method:'POST',body:JSON.stringify({candidateId:current.id,jobId,action})})
-      const name=current.full_name||'Candidate'
-      removeCurrent()
-      if(action==='right'){
-        if(result?.applicationId){
-          Alert.alert(result?.matched?'Mutual match':'Interest saved',`${name} is already in the recruitment journey for this role.`,[
-            {text:'Continue',onPress:()=>router.push({pathname:'/application/[id]',params:{id:result.applicationId}})},
-            {text:'Keep matching',style:'cancel'},
-          ])
-        }else{
-          Alert.alert(result?.matched?'It’s a match':'Interest sent',result?.matched?`${name} is interested in this role too.`:`${name} will be notified that your property is interested.`)
-        }
-      }
-    }catch(e:any){setError(e?.message||'Could not save your decision.');resetPosition()}
-    setBusy(false)
+      const result=await api({method:'POST',body:JSON.stringify({candidateId:candidate.id,jobId:candidate.bestJobId||null,action})})
+      if(action==='left'){setCandidates(current=>current.filter(item=>item.id!==candidate.id));return}
+      if(action==='save'||action==='unsave'){setCandidates(current=>current.map(item=>item.id===candidate.id?{...item,shortlisted:action==='save'}:item));return}
+      setCandidates(current=>current.map(item=>item.id===candidate.id?{...item,interested:true,mutual:Boolean(result.matched),applicationId:result.applicationId||item.applicationId}:item))
+      if(result.matched){
+        Alert.alert("It's a match!",`${result.candidateName||candidate.full_name||'This professional'} has also submitted interest in ${result.jobTitle||candidate.bestJob}. Review the application before deciding the next recruitment step.`,[
+          ...(result.applicationId?[{text:'Review application',onPress:()=>router.push({pathname:'/application/[id]',params:{id:result.applicationId}})}]:[]),
+          {text:'Keep browsing',style:'cancel'},
+        ] as any)
+      }else Alert.alert('Interest saved',`Your interest in ${candidate.full_name||'this professional'} for ${candidate.bestJob||'this role'} has been recorded. You can keep browsing.`)
+    }catch(e:any){setError(e?.message||'Could not save your decision.')}finally{setBusy('')}
   }
-
-  function animateAction(direction:'left'|'right'){
-    if(!current||busy)return
-    Animated.timing(position,{toValue:{x:direction==='right'?SCREEN_WIDTH:-SCREEN_WIDTH,y:0},duration:170,useNativeDriver:false}).start(()=>void decide(direction))
-  }
-
-  async function resetDeck(){
-    if(!jobId||busy)return
-    setBusy(true);setError('')
-    try{await api(`/api/mobile/employer-matches?jobId=${encodeURIComponent(jobId)}`,{method:'DELETE'});await loadMatches(jobId)}
-    catch(e:any){setError(e?.message||'Could not reset this role’s match deck.')}
-    setBusy(false)
-  }
-
-  const panResponder=useMemo(()=>PanResponder.create({
-    onStartShouldSetPanResponder:()=>true,
-    onMoveShouldSetPanResponder:(_,g)=>Math.abs(g.dx)>4,
-    onPanResponderMove:Animated.event([null,{dx:position.x,dy:position.y}],{useNativeDriver:false}),
-    onPanResponderRelease:(_,g)=>{if(g.dx>SWIPE_THRESHOLD)animateAction('right');else if(g.dx< -SWIPE_THRESHOLD)animateAction('left');else resetPosition()},
-  }),[current?.id,jobId,busy])
-
-  const rotate=position.x.interpolate({inputRange:[-SCREEN_WIDTH/2,0,SCREEN_WIDTH/2],outputRange:['-8deg','0deg','8deg'],extrapolate:'clamp'})
-  const yesOpacity=position.x.interpolate({inputRange:[0,SWIPE_THRESHOLD],outputRange:[0,1],extrapolate:'clamp'})
-  const passOpacity=position.x.interpolate({inputRange:[-SWIPE_THRESHOLD,0],outputRange:[1,0],extrapolate:'clamp'})
 
   function candidateCard(candidate:Candidate){
     const experience=Number(candidate.experience_years||candidate.years_experience||0)
-    const score=Number(candidate.match_score||0)
-    return <View style={styles.cardInner}>
-      {candidate.profile_image_url?<Image source={{uri:candidate.profile_image_url}} style={styles.photo}/>:<View style={styles.photoPlaceholder}><Text style={styles.initial}>{(candidate.full_name||'T').slice(0,1).toUpperCase()}</Text></View>}
-      <View style={styles.cardBody}>
-        <View style={styles.topRow}><View style={{flex:1}}><Text style={styles.name}>{candidate.full_name||'Wellness professional'}</Text><Text style={styles.headline}>{candidate.headline||candidate.role_level||'Spa & wellness professional'}</Text></View><View style={styles.scoreBox}><Text style={styles.score}>{score}%</Text><Text style={styles.scoreLabel}>MATCH</Text></View></View>
-        <Text style={styles.meta}>{[candidate.location,experience?`${experience} yrs experience`:null,candidate.distance_miles!=null?`${Math.round(Number(candidate.distance_miles))} miles away`:null].filter(Boolean).join(' · ')}</Text>
-        {candidate.review_score?<Text style={styles.rating}>{Number(candidate.review_score).toFixed(1)} ★ verified reputation</Text>:null}
-        {candidate.bio?<Text numberOfLines={4} style={styles.bio}>{candidate.bio}</Text>:null}
-        {Array.isArray(candidate.match_explanation)&&candidate.match_explanation.length?<View style={styles.why}><Text style={styles.whyTitle}>Why this match</Text>{candidate.match_explanation.slice(0,3).map((item,index)=><Text key={`${item}-${index}`} style={styles.whyText}>• {item}</Text>)}</View>:null}
+    const score=Number(candidate.matchScore||0)
+    return <View key={candidate.id} style={[styles.card,candidate.is_featured&&styles.featuredCard]}>
+      {candidate.is_featured?<Text style={styles.featured}>★ FEATURED</Text>:null}
+      <View style={styles.personRow}>
+        {candidate.profile_image_url?<Image source={{uri:candidate.profile_image_url}} style={styles.photo}/>:<View style={styles.photoPlaceholder}><Text style={styles.initial}>{(candidate.full_name||'T').slice(0,1).toUpperCase()}</Text></View>}
+        <View style={{flex:1}}><Text style={styles.name}>{candidate.full_name||'Wellness professional'}</Text><Text style={styles.headline}>{candidate.headline||candidate.role_level||'Spa & wellness professional'}</Text></View>
+        {candidate.bestJobId?<View style={styles.scoreBox}><Text style={styles.score}>{score}%</Text><Text style={styles.scoreLabel}>MATCH</Text></View>:null}
       </View>
+      <Text style={styles.meta}>{[candidate.location,experience?`${experience} yrs experience`:null,candidate.distance_miles!=null?`${Math.round(Number(candidate.distance_miles))} miles away`:null].filter(Boolean).join(' · ')}</Text>
+      {candidate.bestJob?<View style={styles.bestRole}><Text style={styles.bestEyebrow}>WHY THEY MATCH THIS ROLE</Text><Text style={styles.bestTitle}>{candidate.bestJob}{candidate.matchScore!=null?` · ${candidate.matchScore}%`:''}</Text>{candidate.matchLabel?<Text style={styles.matchLabel}>{candidate.matchLabel}</Text>:null}{candidate.matchExplanation?<Text style={styles.bestCopy}>{candidate.matchExplanation}</Text>:null}</View>:<Text style={styles.noRole}>Browse and save this professional. Post a compatible live role to unlock Interested.</Text>}
+      {candidate.bio?<Text numberOfLines={3} style={styles.bio}>{candidate.bio}</Text>:null}
+      <View style={styles.actions}>
+        <Pressable disabled={!!busy} onPress={()=>decide(candidate,'left')} style={styles.pass}><Text style={styles.passText}>{busy===`${candidate.id}-left`?'Saving…':'Pass'}</Text></Pressable>
+        <Pressable disabled={!!busy} onPress={()=>decide(candidate,candidate.shortlisted?'unsave':'save')} style={[styles.save,candidate.shortlisted&&styles.saveActive]}><Text style={[styles.saveText,candidate.shortlisted&&styles.saveTextActive]}>{busy.startsWith(`${candidate.id}-`)?'…':candidate.shortlisted?'Saved':'Save'}</Text></Pressable>
+        <Pressable disabled={!!busy||!candidate.bestJobId||candidate.interested} onPress={()=>decide(candidate,'right')} style={[styles.interested,(!candidate.bestJobId||candidate.interested)&&styles.disabled]}><Text style={styles.interestedText}>{candidate.mutual?'Matched':candidate.interested?'Interested':'Interested'}</Text></Pressable>
+      </View>
+      {candidate.interested&&!candidate.mutual?<Text style={styles.interestNote}>Interest recorded for {candidate.bestJob}. Keep browsing; if Talent submits for the same role, it becomes a match.</Text>:null}
+      {candidate.mutual&&candidate.applicationId?<Pressable onPress={()=>router.push({pathname:'/application/[id]',params:{id:candidate.applicationId}})} style={styles.matchRow}><View><Text style={styles.matchText}>Matched · Review application</Text><Text style={styles.matchSub}>Read the application before interview or decline.</Text></View><Text style={styles.matchArrow}>→</Text></Pressable>:null}
     </View>
   }
 
-  return <View style={styles.screen}><ScrollView contentContainerStyle={styles.page} scrollEnabled={!current}>
-    <Text style={styles.eyebrow}>RECRUITMENT</Text><Text style={styles.title}>Talent Match</Text>
-    <Text style={styles.intro}>Choose a live role, then review the professionals who fit it best. Swipe left to pass. Swipe right to show interest.</Text>
-
-    <Text style={styles.label}>MATCH FOR ROLE</Text>
-    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.jobRow}>
-      {jobs.map(job=><Pressable key={job.id} onPress={()=>setJobId(job.id)} style={[styles.jobChip,job.id===jobId&&styles.jobChipActive]}><Text numberOfLines={1} style={[styles.jobChipText,job.id===jobId&&styles.jobChipTextActive]}>{job.job_title}</Text></Pressable>)}
-    </ScrollView>
-    {!jobs.length&&!loading?<View style={styles.empty}><Text style={styles.emptyTitle}>Post a live role first.</Text><Text style={styles.emptyCopy}>Talent Match ranks professionals against a specific vacancy, so the hotel needs a live job before matching.</Text><Pressable onPress={()=>router.push({pathname:'/employer-job/[id]',params:{id:'new'}})} style={styles.primary}><Text style={styles.primaryText}>Post a role</Text></Pressable></View>:null}
-
-    {selectedJob?<Text style={styles.roleContext}>{selectedJob.job_title}{selectedJob.location?` · ${selectedJob.location}`:''}</Text>:null}
-    {loading?<ActivityIndicator color="#0b2f4d" style={{marginTop:30}}/>:null}
-    {error?<Text style={styles.error}>{error}</Text>:null}
-
-    {!loading&&!error&&jobs.length>0&&!current?<View style={styles.empty}><Text style={styles.emptyTitle}>You’ve reviewed the current matches.</Text><Text style={styles.emptyCopy}>Reset this role’s deck if you want to review the current professionals again.</Text><Pressable onPress={resetDeck} style={styles.secondary}><Text style={styles.secondaryText}>{busy?'Resetting…':'Reset match deck'}</Text></Pressable></View>:null}
-
-    {!loading&&!error&&current?<>
-      <View style={styles.deck}>
-        {next?<View style={[styles.card,styles.nextCard]}>{candidateCard(next)}</View>:null}
-        <Animated.View {...panResponder.panHandlers} style={[styles.card,styles.topCard,{transform:[{translateX:position.x},{translateY:position.y},{rotate}]}]}>
-          <Animated.View pointerEvents="none" style={[styles.swipeLabel,styles.passLabel,{opacity:passOpacity}]}><Text style={styles.passText}>PASS</Text></Animated.View>
-          <Animated.View pointerEvents="none" style={[styles.swipeLabel,styles.yesLabel,{opacity:yesOpacity}]}><Text style={styles.yesText}>INTERESTED</Text></Animated.View>
-          {candidateCard(current)}
-        </Animated.View>
-      </View>
-      <View style={styles.actions}><Pressable onPress={()=>animateAction('left')} disabled={busy} style={[styles.action,styles.passButton]}><Text style={styles.passButtonText}>PASS</Text></Pressable><Pressable onPress={()=>animateAction('right')} disabled={busy} style={[styles.action,styles.yesButton]}><Text style={styles.yesButtonText}>{busy?'SAVING…':'INTERESTED'}</Text></Pressable></View>
-      <Text style={styles.help}>A right swipe notifies the professional. If they have already shown interest in the same role, it becomes a mutual match and you can move straight into the recruitment conversation.</Text>
-    </>:null}
-  </ScrollView></View>
+  return <ScrollView style={styles.scroll} contentContainerStyle={styles.page} keyboardShouldPersistTaps="handled">
+    <Text style={styles.eyebrow}>TALENT DISCOVERY</Text><Text style={styles.title}>Browse candidates</Text>
+    <Text style={styles.intro}>Pass, privately Save, or show role-specific Interest. A mutual match moves into application review before interview or messaging.</Text>
+    {liveRoleCount===0&&!loading?<View style={styles.notice}><Text style={styles.noticeTitle}>Post a live role to unlock intelligent matching.</Text><Text style={styles.noticeCopy}>You can browse and save professionals now. Interested unlocks when a compatible live role exists.</Text><Pressable onPress={()=>router.push({pathname:'/employer-job/[id]',params:{id:'new'}})} style={styles.primary}><Text style={styles.primaryText}>Post a role</Text></Pressable></View>:null}
+    {loading?<ActivityIndicator color={palette.ink} style={{marginTop:30}}/>:null}{error?<Text style={styles.error}>{error}</Text>:null}
+    {!loading&&!error&&candidates.length===0?<View style={styles.empty}><Text style={styles.emptyTitle}>New professionals are joining the platform.</Text><Text style={styles.emptyCopy}>There are no discoverable professionals currently available to this property. Passed profiles stay hidden.</Text></View>:null}
+    {!loading&&!error&&candidates.length>0?<View style={styles.list}>{candidates.map(candidateCard)}</View>:null}
+  </ScrollView>
 }
 
 const styles=StyleSheet.create({
-  screen:{flex:1,backgroundColor:'#f7f8f8'},page:{paddingHorizontal:20,paddingTop:22,paddingBottom:110,minHeight:'100%'},eyebrow:{color:'#71808a',fontSize:9,letterSpacing:2.1,marginBottom:8},title:{color:'#0b2f4d',fontSize:30,lineHeight:36,fontWeight:'600'},intro:{color:'#66747c',fontSize:13,lineHeight:20,marginTop:10,marginBottom:18},label:{color:'#71808a',fontSize:8,letterSpacing:1.4,marginBottom:8},jobRow:{gap:8,paddingBottom:14},jobChip:{borderWidth:1,borderColor:'#cad5da',backgroundColor:'#fff',paddingHorizontal:12,paddingVertical:10,maxWidth:210},jobChipActive:{backgroundColor:'#0b2f4d',borderColor:'#0b2f4d'},jobChipText:{color:'#526976',fontSize:10,fontWeight:'600'},jobChipTextActive:{color:'#fff'},roleContext:{color:'#173246',fontSize:12,fontWeight:'700',marginBottom:12},error:{color:'#9b2c2c',fontSize:12,lineHeight:18,marginVertical:14},deck:{height:560,position:'relative'},card:{position:'absolute',left:0,right:0,minHeight:520,backgroundColor:'#fff',borderWidth:1,borderColor:'#d9e0e3',overflow:'hidden',shadowColor:'#0b2f4d',shadowOpacity:.10,shadowRadius:16,shadowOffset:{width:0,height:8},elevation:4},topCard:{zIndex:2},nextCard:{top:10,left:8,right:8,opacity:.5,transform:[{scale:.975}]},cardInner:{flex:1},photo:{width:'100%',height:205,backgroundColor:'#e9eef0'},photoPlaceholder:{height:205,backgroundColor:'#e8edef',alignItems:'center',justifyContent:'center'},initial:{color:'#0b2f4d',fontSize:56,fontWeight:'500'},cardBody:{padding:18},topRow:{flexDirection:'row',gap:12,alignItems:'flex-start'},name:{color:'#0b2f4d',fontSize:22,fontWeight:'600'},headline:{color:'#66747c',fontSize:11,lineHeight:16,marginTop:4},scoreBox:{borderWidth:1,borderColor:'#cbd6db',paddingHorizontal:10,paddingVertical:7,alignItems:'center'},score:{color:'#0b2f4d',fontSize:17,fontWeight:'800'},scoreLabel:{color:'#71808a',fontSize:7,letterSpacing:1},meta:{color:'#526976',fontSize:10.5,lineHeight:16,marginTop:12},rating:{color:'#173246',fontSize:10.5,fontWeight:'600',marginTop:8},bio:{color:'#66747c',fontSize:11,lineHeight:17,marginTop:13},why:{backgroundColor:'#f4f7f8',padding:12,marginTop:14},whyTitle:{color:'#173246',fontSize:10,fontWeight:'700',marginBottom:5},whyText:{color:'#66747c',fontSize:9.5,lineHeight:15},swipeLabel:{position:'absolute',top:22,zIndex:5,borderWidth:2,paddingHorizontal:10,paddingVertical:7,backgroundColor:'#fff'},passLabel:{left:18,borderColor:'#9b2c2c'},yesLabel:{right:18,borderColor:'#0b6245'},passText:{color:'#9b2c2c',fontSize:13,fontWeight:'900'},yesText:{color:'#0b6245',fontSize:11,fontWeight:'900'},actions:{flexDirection:'row',gap:10,marginTop:12},action:{flex:1,minHeight:52,alignItems:'center',justifyContent:'center',borderWidth:1},passButton:{backgroundColor:'#fff',borderColor:'#c7d1d6'},yesButton:{backgroundColor:'#0b2f4d',borderColor:'#0b2f4d'},passButtonText:{color:'#8f1d1d',fontSize:11,fontWeight:'800'},yesButtonText:{color:'#fff',fontSize:11,fontWeight:'800'},help:{color:'#71808a',fontSize:10.5,lineHeight:16,marginTop:11,textAlign:'center'},empty:{backgroundColor:'#fff',borderWidth:1,borderColor:'#d9e0e3',padding:22,marginTop:18},emptyTitle:{color:'#0b2f4d',fontSize:19,fontWeight:'700'},emptyCopy:{color:'#66747c',fontSize:12.5,lineHeight:20,marginTop:8},primary:{backgroundColor:'#0b2f4d',paddingVertical:14,alignItems:'center',marginTop:16},primaryText:{color:'#fff',fontSize:11,fontWeight:'800'},secondary:{borderWidth:1,borderColor:'#0b2f4d',paddingVertical:14,alignItems:'center',marginTop:16},secondaryText:{color:'#0b2f4d',fontSize:11,fontWeight:'800'}
+  scroll:{flex:1,backgroundColor:palette.stone},page:{paddingHorizontal:space.page,paddingTop:space.lg,paddingBottom:115},eyebrow:{color:palette.sage,fontSize:8,letterSpacing:2.1,fontWeight:'800',marginBottom:9},title:{color:palette.inkStrong,fontSize:34,lineHeight:40,fontFamily:type.serif,fontWeight:'400'},intro:{color:palette.muted,fontSize:13,lineHeight:20,marginTop:10,marginBottom:20},notice:{backgroundColor:'#FDF8F0',borderWidth:1,borderColor:'#E8D8BC',borderRadius:radius.large,padding:17,marginBottom:18},noticeTitle:{color:palette.inkStrong,fontSize:16,fontWeight:'700'},noticeCopy:{color:palette.muted,fontSize:11,lineHeight:17,marginTop:6},primary:{backgroundColor:palette.inkStrong,borderRadius:radius.medium,paddingVertical:12,alignItems:'center',marginTop:12},primaryText:{color:palette.paper,fontSize:11,fontWeight:'800'},list:{gap:13},card:{backgroundColor:palette.paper,borderWidth:1,borderColor:palette.line,borderRadius:radius.large,padding:17},featuredCard:{borderColor:'#D9C39A'},featured:{color:'#9A7436',fontSize:8,fontWeight:'800',letterSpacing:1.1,marginBottom:10},personRow:{flexDirection:'row',alignItems:'center',gap:11},photo:{width:58,height:58,borderRadius:29,backgroundColor:palette.stoneDeep},photoPlaceholder:{width:58,height:58,borderRadius:29,backgroundColor:palette.sageSoft,alignItems:'center',justifyContent:'center'},initial:{fontFamily:type.serif,fontSize:22,color:palette.inkStrong},name:{fontFamily:type.serif,fontSize:22,lineHeight:27,color:palette.inkStrong},headline:{fontSize:10.5,lineHeight:15,color:palette.muted,marginTop:2},scoreBox:{alignItems:'flex-end',minWidth:54},score:{fontSize:20,fontWeight:'800',color:palette.sage},scoreLabel:{fontSize:7,letterSpacing:1.2,fontWeight:'800',color:palette.quiet},meta:{color:palette.muted,fontSize:10,lineHeight:16,marginTop:12},bestRole:{backgroundColor:'#FDF6EC',borderWidth:1,borderColor:'#EADFC9',borderRadius:radius.medium,padding:12,marginTop:12},bestEyebrow:{fontSize:7.5,letterSpacing:1.2,fontWeight:'800',color:'#9A7436'},bestTitle:{fontSize:11.5,fontWeight:'700',color:palette.inkStrong,marginTop:4},matchLabel:{fontSize:9,fontWeight:'800',color:palette.sage,marginTop:5},bestCopy:{fontSize:9.5,lineHeight:15,color:palette.muted,marginTop:4},noRole:{fontSize:10,lineHeight:16,color:palette.quiet,marginTop:12},bio:{fontSize:10.5,lineHeight:17,color:palette.text,marginTop:11},actions:{flexDirection:'row',gap:7,marginTop:15,paddingTop:13,borderTopWidth:1,borderTopColor:palette.line},pass:{flex:1,paddingVertical:12,alignItems:'center',borderRadius:radius.medium,backgroundColor:palette.stoneDeep},passText:{fontSize:10,fontWeight:'700',color:palette.muted},save:{flex:1,paddingVertical:12,alignItems:'center',borderRadius:radius.medium,backgroundColor:palette.stoneDeep},saveActive:{backgroundColor:'#FDF6EC'},saveText:{fontSize:10,fontWeight:'700',color:palette.muted},saveTextActive:{color:'#9A7436'},interested:{flex:1.45,paddingVertical:12,alignItems:'center',borderRadius:radius.medium,backgroundColor:palette.inkStrong},interestedText:{fontSize:10,fontWeight:'800',color:palette.paper},disabled:{opacity:.45},interestNote:{color:palette.muted,fontSize:9.5,lineHeight:15,marginTop:9},matchRow:{backgroundColor:palette.sageSoft,borderRadius:radius.medium,padding:12,marginTop:10,flexDirection:'row',justifyContent:'space-between',alignItems:'center'},matchText:{color:palette.sage,fontSize:10.5,fontWeight:'800'},matchSub:{color:palette.muted,fontSize:9,lineHeight:14,marginTop:2},matchArrow:{color:palette.sage,fontSize:15},empty:{backgroundColor:palette.paper,borderWidth:1,borderColor:palette.line,borderRadius:radius.large,padding:20},emptyTitle:{fontFamily:type.serif,fontSize:20,color:palette.inkStrong},emptyCopy:{color:palette.muted,fontSize:11,lineHeight:17,marginTop:6},error:{color:palette.danger,fontSize:11,lineHeight:17,marginBottom:12}
 })

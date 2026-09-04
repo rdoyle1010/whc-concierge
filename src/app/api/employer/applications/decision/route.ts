@@ -46,6 +46,17 @@ export async function POST(req: NextRequest) {
     // A draft has not been sent by the candidate - it must never be actioned.
     if (application.status === 'draft') return NextResponse.json({ error: 'This candidate has not sent their application yet.' }, { status: 409 })
 
+    // Stage order, carried over from the mobile hardening branch. Without
+    // these an employer can shortlist somebody already at interview, or
+    // reject a candidate whose offer has been accepted, and the pipeline
+    // stops meaning anything to either side.
+    if (decision === 'shortlisted' && !['pending', 'reviewed', 'shortlisted'].includes(application.status)) {
+      return NextResponse.json({ error: 'Only an application under review can be shortlisted.' }, { status: 409 })
+    }
+    if (decision === 'rejected' && !['pending', 'reviewed', 'shortlisted', 'interview', 'rejected'].includes(application.status)) {
+      return NextResponse.json({ error: 'This application can no longer be marked as not progressing.' }, { status: 409 })
+    }
+
     const { data: liveOffer, error: offerError } = await admin.from('application_offers').select('id,status').eq('application_id', application.id).in('status', ['offered', 'accepted']).maybeSingle()
     if (offerError) return NextResponse.json({ error: `Could not check live offer: ${offerError.message}` }, { status: 500 })
     if (decision === 'rejected' && liveOffer) return NextResponse.json({ error: 'This candidate already has a live job offer. Withdraw or resolve the offer before marking the application as not progressing.' }, { status: 409 })

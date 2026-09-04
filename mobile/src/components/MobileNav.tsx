@@ -3,24 +3,24 @@ import { Pressable, StyleSheet, Text, View } from 'react-native'
 import { router, usePathname } from 'expo-router'
 import * as Notifications from 'expo-notifications'
 import { supabase } from '../lib/supabase'
+import { palette, type } from '../lib/theme'
 
 type Role = 'talent' | 'employer'
-type NavItem = { label:string; href:string; symbol:string }
+type NavItem = { label:string; href:string }
 
 const talentItems:NavItem[]=[
-  {label:'Home',href:'/home',symbol:'⌂'},
-  {label:'Jobs',href:'/jobs',symbol:'◉'},
-  {label:'Applications',href:'/applications',symbol:'◇'},
-  {label:'Messages',href:'/messages',symbol:'✉'},
-  {label:'Profile',href:'/profile',symbol:'○'},
+  {label:'Home',href:'/home'},
+  {label:'Jobs',href:'/jobs'},
+  {label:'Applications',href:'/applications'},
+  {label:'Messages',href:'/messages'},
+  {label:'Profile',href:'/profile'},
 ]
 const employerItems:NavItem[]=[
-  {label:'Home',href:'/home',symbol:'⌂'},
-  {label:'Jobs',href:'/jobs',symbol:'◉'},
-  {label:'Match',href:'/match',symbol:'♡'},
-  {label:'Applications',href:'/applications',symbol:'◇'},
-  {label:'Messages',href:'/messages',symbol:'✉'},
-  {label:'Agency',href:'/agency',symbol:'○'},
+  {label:'Home',href:'/home'},
+  {label:'Jobs',href:'/jobs'},
+  {label:'Match',href:'/match'},
+  {label:'Applications',href:'/applications'},
+  {label:'Messages',href:'/messages'},
 ]
 
 export default function MobileNav(){
@@ -30,7 +30,7 @@ export default function MobileNav(){
   const [agencyCount,setAgencyCount]=useState(0)
 
   useEffect(()=>{
-    if(pathname==='/'||pathname==='/login'||pathname==='/admin')return
+    if(pathname==='/'||pathname==='/login'||pathname==='/signup'||pathname==='/mfa-challenge'||pathname==='/admin')return
     let active=true
     let channel:any
 
@@ -76,18 +76,31 @@ export default function MobileNav(){
     }
   },[pathname])
 
-  if(pathname==='/'||pathname==='/login'||pathname==='/admin'||pathname.startsWith('/message/')||pathname.startsWith('/job/')||pathname.startsWith('/application/')||pathname.startsWith('/talent-application/'))return null
+  if(pathname==='/'||pathname==='/login'||pathname==='/signup'||pathname==='/mfa-challenge'||pathname==='/admin'||pathname.startsWith('/message/')||pathname.startsWith('/job/')||pathname.startsWith('/application/')||pathname.startsWith('/talent-application/'))return null
   const items=role==='employer'?employerItems:talentItems
   const totalAttention=unreadMessages+agencyCount
 
   return <View style={styles.wrap}>{items.map(item=>{
     const active=pathname===item.href
-    const badge=item.href==='/messages'?unreadMessages:item.href==='/home'?totalAttention:item.href==='/agency'?agencyCount:0
-    return <Pressable key={item.href} onPress={()=>router.replace(item.href as never)} style={styles.item}>
-      <View style={styles.iconWrap}><Text style={[styles.symbol,active&&styles.active]}>{item.symbol}</Text>{badge>0?<View style={styles.badge}><Text style={styles.badgeText}>{badge>99?'99+':badge}</Text></View>:null}</View>
-      <Text numberOfLines={1} style={[styles.label,active&&styles.active,badge>0&&styles.attentionLabel]}>{item.label}</Text>
+    const badge=item.href==='/messages'?unreadMessages:item.href==='/home'?totalAttention:0
+    return <Pressable key={item.href} onPress={()=>router.replace(item.href as never)} style={[styles.item,active&&styles.activeItem]}>
+      {active?<View style={styles.activeLine}/>:null}
+      <View style={styles.labelWrap}>
+        <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.82} style={[styles.label,active&&styles.activeLabel]}>{item.label}</Text>
+        {badge>0?<View style={styles.badge}><Text style={styles.badgeText}>{badge>99?'99+':badge}</Text></View>:null}
+      </View>
     </Pressable>
   })}</View>
 }
 
-const styles=StyleSheet.create({wrap:{height:64,borderTopWidth:1,borderTopColor:'#e6ebee',backgroundColor:'#fff',flexDirection:'row',alignItems:'center',justifyContent:'space-around'},item:{flex:1,alignItems:'center',justifyContent:'center',gap:2,paddingHorizontal:1},iconWrap:{position:'relative',minWidth:24,alignItems:'center'},symbol:{color:'#8a969d',fontSize:18,lineHeight:20},label:{color:'#8a969d',fontSize:7.7},active:{color:'#0b2f4d',fontWeight:'700'},attentionLabel:{color:'#8f1d1d',fontWeight:'800'},badge:{position:'absolute',top:-8,right:-12,minWidth:19,height:19,paddingHorizontal:4,borderRadius:10,backgroundColor:'#d62828',alignItems:'center',justifyContent:'center',borderWidth:1.5,borderColor:'#fff'},badgeText:{color:'#fff',fontSize:8,fontWeight:'900'}})
+const styles=StyleSheet.create({
+  wrap:{height:58,borderTopWidth:1,borderTopColor:palette.line,backgroundColor:palette.paper,flexDirection:'row',alignItems:'stretch'},
+  item:{flex:1,alignItems:'center',justifyContent:'center',paddingHorizontal:3,position:'relative'},
+  activeItem:{backgroundColor:palette.paper},
+  labelWrap:{position:'relative',alignItems:'center',justifyContent:'center',minWidth:44,maxWidth:'100%'},
+  label:{color:palette.quiet,fontSize:9.25,lineHeight:13,fontFamily:type.sans,fontWeight:'500',letterSpacing:.05,textAlign:'center'},
+  activeLabel:{color:palette.inkStrong,fontWeight:'700'},
+  activeLine:{position:'absolute',top:-1,width:30,height:2,backgroundColor:palette.ink,borderRadius:1},
+  badge:{position:'absolute',top:-13,right:-10,minWidth:16,height:16,paddingHorizontal:4,borderRadius:8,backgroundColor:palette.danger,alignItems:'center',justifyContent:'center',borderWidth:1.5,borderColor:palette.paper},
+  badgeText:{color:palette.paper,fontSize:7.5,fontWeight:'800'},
+})

@@ -6,11 +6,17 @@ function read(path: string) {
   return readFileSync(path, 'utf8')
 }
 
-test('interview pipeline supports up to three rounds and candidate confirmation', () => {
+// The cap moved from two rounds to three, deliberately - a director-level
+// process routinely runs screen, panel, final. What matters to this test is
+// that a cap exists and is checked before anything is written: unbounded
+// rounds let a property string somebody along indefinitely with no stage
+// ever being the last one.
+test('interview pipeline is bounded and requires candidate confirmation', () => {
   const employer = read('src/app/api/employer/applications/interview/route.ts')
   const talent = read('src/app/api/talent/applications/interview/route.ts')
   assert.match(employer, /roundNumber/)
-  assert.match(employer, /roundNumber\s*>\s*3/)
+  assert.match(employer, /roundNumber > 3/, 'the number of rounds must be capped')
+  assert.match(employer, /Invalid interview round/)
   assert.match(employer, /application_interviews/)
   assert.match(talent, /application_interviews/)
   assert.match(talent, /selected_slot/)
