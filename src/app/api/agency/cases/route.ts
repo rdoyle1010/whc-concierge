@@ -1,18 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { agencyResolutionExceedsCollected, bookingPaidByConnect } from '@/lib/agency-payouts'
-import { cookies } from 'next/headers'
-import { createServerClient } from '@supabase/ssr'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createNotification } from '@/lib/notifications'
+import { getRequestUser } from '@/lib/request-user'
 import { getStripe } from '@/lib/stripe'
 
-async function currentUser() {
-  const store = await cookies()
-  const client = createServerClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, {
-    cookies: { getAll() { return store.getAll() }, setAll() {} },
-  })
-  return (await client.auth.getUser()).data.user
-}
+// Read the session from a cookie or a bearer token, so the phone can reach
+// this too. Shift Resolution existed only on the website, and a shift goes
+// wrong while somebody is standing in a spa holding a phone, not sitting at a
+// laptop - which made the dispute route unreachable at exactly the moment it
+// was needed. getRequestUser applies the same two-step verification rule to a
+// bearer token as to a browser session.
 
 async function partyContext(admin: ReturnType<typeof createAdminClient>, userId: string) {
   const [{ data: candidate }, { data: employer }, { data: profile }] = await Promise.all([
@@ -30,8 +28,8 @@ function roleForCase(row: any, candidate: any, employer: any, profile: any): 'ca
   return null
 }
 
-export async function GET() {
-  const user = await currentUser()
+export async function GET(req: NextRequest) {
+  const user = await getRequestUser(req)
   if (!user) return NextResponse.json({ error: 'Please sign in' }, { status: 401 })
   const admin = createAdminClient()
   const { candidate, employer, profile } = await partyContext(admin, user.id)
@@ -67,7 +65,7 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
-  const user = await currentUser()
+  const user = await getRequestUser(req)
   if (!user) return NextResponse.json({ error: 'Please sign in' }, { status: 401 })
   const body = await req.json().catch(() => ({}))
   const admin = createAdminClient()

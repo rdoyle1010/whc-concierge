@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { createServerClient } from '@supabase/ssr'
-import { cookies } from 'next/headers'
+import { getRequestUser } from '@/lib/request-user'
 
 type Admin = ReturnType<typeof createAdminClient>
 
@@ -45,21 +44,11 @@ async function listObjectPaths(admin: Admin, bucket: string, prefix: string): Pr
   return found
 }
 
-export async function POST(_req: NextRequest) {
+export async function POST(req: NextRequest) {
   try {
-    // Verify caller is authenticated
-    const cookieStore = await cookies()
-    const supabaseAuth = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          getAll() { return cookieStore.getAll() },
-          setAll() {},
-        },
-      }
-    )
-    const { data: { user } } = await supabaseAuth.auth.getUser()
+    // A cookie or a bearer token. Erasure is a right, and it was reachable
+    // only from a browser.
+    const user = await getRequestUser(req)
     if (!user) {
       return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
     }

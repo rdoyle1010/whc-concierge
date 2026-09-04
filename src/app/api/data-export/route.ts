@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { createServerClient } from '@supabase/ssr'
-import { cookies } from 'next/headers'
+import { getRequestUser } from '@/lib/request-user'
 
 type Admin = ReturnType<typeof createAdminClient>
 
@@ -69,15 +68,11 @@ async function listStoredFiles(admin: Admin, bucket: string, prefix: string): Pr
   return found
 }
 
-export async function GET(_req: NextRequest) {
-  // Authenticate
-  const cookieStore = await cookies()
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    { cookies: { getAll() { return cookieStore.getAll() }, setAll() {} } }
-  )
-  const { data: { user } } = await supabase.auth.getUser()
+export async function GET(req: NextRequest) {
+  // A cookie or a bearer token. The right to a copy of your own data does not
+  // depend on which device you happen to be holding, and the app had no way
+  // to ask for one.
+  const user = await getRequestUser(req)
   if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
 
   const admin = createAdminClient()
