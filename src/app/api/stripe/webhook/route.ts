@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { triggerJobAlerts } from '@/lib/job-alerts-trigger'
+import { publishPaidJobPosting } from '@/lib/job-posting-fulfilment'
 import { getStripe } from '@/lib/stripe'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createNotification, notifyAdmins } from '@/lib/notifications'
@@ -520,61 +521,12 @@ export async function POST(req: NextRequest) {
       }
 
       if (meta?.type === 'job_posting' && meta?.job_id) {
-        // Job adverts are the commonest thing a property buys and until now
-        // they left no financial record at all: no receipt could be printed
-        // for one, and the month's revenue simply did not count them.
-        await recordCommercialPurchase(
-          supabase, session,
-          String(meta.tier || '').toLowerCase() === 'bronze' ? 'standard_job' : `job_${String(meta.tier || 'standard').toLowerCase()}`,
-          String(meta.user_id || ''),
-        )
-        const days = meta.days ? parseInt(meta.days) : 30
-        const expiresAt = new Date(Date.now() + days * 24 * 60 * 60 * 1000).toISOString()
-        // Safety net behind the publish gate: if payment completes while the
-        // employer is still unapproved, keep the paid term but hold the role
-        // as a draft until approval.
-        let employerApproved = true
-        if (meta.employer_id) {
-          const { data: paidEmployer } = await supabase.from('employer_profiles').select('approval_status,user_id').eq('id', meta.employer_id).maybeSingle()
-          employerApproved = paidEmployer?.approval_status === 'approved'
-          if (!employerApproved && paidEmployer?.user_id) {
-            await createNotification(paidEmployer.user_id, 'general', 'Payment received - role held for approval', 'Your role is paid for and will go live automatically as soon as Talent House approves your employer account.', '/employer/jobs').catch?.(() => {})
-          }
-        }
-        await supabase.from('job_listings').update({
-          is_live: employerApproved,
-          status: employerApproved ? 'active' : 'draft',
-          expires_at: expiresAt,
-          // The free publish path stamps posted_date too - without it paid
-          // roles sort and display as undated.
-          posted_date: new Date().toISOString(),
-        }).eq('id', meta.job_id)
-
-        // Instrumentation: the paid posting is the moment a role truly enters
-        // the market. Record the event and the advertised salary history row.
-        try {
-          const { trackEvent, recordSalary } = await import('@/lib/analytics')
-          const { data: postedJob } = await supabase.from('job_listings').select('id,salary_min,salary_max,required_role_level').eq('id', meta.job_id).maybeSingle()
-          await trackEvent('job_posted', { employerId: meta.employer_id || null, jobId: meta.job_id }, { tier: meta.tier || null, held_for_approval: !employerApproved })
-          if (postedJob && (postedJob.salary_min || postedJob.salary_max)) {
-            await recordSalary({
-              kind: 'advertised', source: 'employer_advertised',
-              amountMin: postedJob.salary_min ? Number(postedJob.salary_min) : null,
-              amountMax: postedJob.salary_max ? Number(postedJob.salary_max) : null,
-              employerId: meta.employer_id || null, jobId: meta.job_id,
-              roleLevel: postedJob.required_role_level ? String(postedJob.required_role_level) : null,
-            })
-          }
-        } catch { /* best-effort */ }
-
-        if (meta.employer_id) {
-          await supabase.from('employer_profiles').update({
-            subscription_tier: meta.tier,
-            stripe_customer_id: session.customer as string,
-          }).eq('id', meta.employer_id)
-        }
-
-        triggerJobAlerts(meta.job_id, req.url)
+        // Shared with /api/employer/jobs/confirm-payment, which runs the same
+        // publish when the browser comes back from Stripe. Two copies of this
+        // would drift, and the one that drifts is the one nobody watches.
+        await publishPaidJobPosting(supabase, session, {
+          onPublished: jobId => triggerJobAlerts(jobId, req.url),
+        })
       }
       break
     }
