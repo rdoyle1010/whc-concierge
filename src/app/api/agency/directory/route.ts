@@ -72,7 +72,12 @@ export async function GET(req: NextRequest) {
   if (hasShiftSearch && !validShiftWindow(shiftDate, shiftStartTime, shiftEndTime)) {
     return NextResponse.json({ error: 'Choose a valid shift date, start time and finish time' }, { status: 400 })
   }
-  if (!isAdmin && !ukWide && !radius) {
+  // Opening one professional is a lookup, not a search. An employer who has
+  // already found somebody in the directory must be able to open them, and
+  // distance is information to show on the profile rather than a gate to pass.
+  // Requiring a radius here meant a UK-wide search - which deliberately stores
+  // no radius preference - found a professional and then could not open them.
+  if (!isAdmin && !id && !ukWide && !radius) {
     return NextResponse.json({ error: 'Set a search radius before looking for Agency Talent.' }, { status: 400 })
   }
 
@@ -80,7 +85,7 @@ export async function GET(req: NextRequest) {
     latitude: hasSearchPoint ? requestedLat : employer?.latitude,
     longitude: hasSearchPoint ? requestedLng : employer?.longitude,
   }
-  if (!isAdmin && (origin.latitude == null || origin.longitude == null)) {
+  if (!isAdmin && !id && (origin.latitude == null || origin.longitude == null)) {
     return NextResponse.json({ error: 'Your property location must be mapped before Agency search can calculate real travel distance.' }, { status: 400 })
   }
 
@@ -193,9 +198,18 @@ export async function GET(req: NextRequest) {
         reliability_pct: completed + cancelled >= 3 ? Math.round((completed / (completed + cancelled)) * 100) : null,
       }
     })
-    .filter((candidate: any) => isAdmin || candidate.within_radius)
-    .filter((candidate: any) => !hasShiftSearch || candidate.availability_match === 'confirmed')
-  if (id && candidates.length === 0) return NextResponse.json({ error: 'Profile not found' }, { status: 404 })
+    // Both of these narrow a search. On a single profile the distance and the
+    // availability are computed and returned so the page can show them - being
+    // outside the radius, or busy on the shift searched for, is something a
+    // property needs to read, not a reason to be told the person does not
+    // exist.
+    .filter((candidate: any) => isAdmin || id || candidate.within_radius)
+    .filter((candidate: any) => isAdmin || id || !hasShiftSearch || candidate.availability_match === 'confirmed')
+  if (id && candidates.length === 0) {
+    return NextResponse.json({
+      error: 'This professional is no longer available on the Agency Register.',
+    }, { status: 404 })
+  }
 
   // Reviews of a professional are private to their two parties in the
   // database. The agency profile page used to read them with the browser's
