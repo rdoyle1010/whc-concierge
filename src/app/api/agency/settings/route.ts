@@ -60,6 +60,11 @@ export async function GET() {
         postcode: cand.postcode ?? null,
         travel_radius_miles: cand.travel_radius_miles ?? null,
         has_coords: cand.latitude != null && cand.longitude != null,
+        // What the register actually asks for, so the page can say so before
+        // somebody pays rather than after.
+        right_to_work_verified: ['approved', 'verified'].includes(String(cand.right_to_work_status || '').toLowerCase()),
+        has_insurance: Boolean(cand.has_insurance),
+        qualifications_count: Array.isArray(cand.qualifications) ? cand.qualifications.length : 0,
       },
     })
   } catch (e: any) {

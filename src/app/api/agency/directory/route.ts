@@ -154,6 +154,15 @@ export async function GET(req: NextRequest) {
 
   const candidates = (data || [])
     .filter((candidate: any) => !candidate.agency_listed_until || new Date(candidate.agency_listed_until).getTime() >= Date.now())
+    // Right to work is a condition of being on the register, not a badge that
+    // makes a profile look better. Supplying somebody into a shift makes
+    // Talent House an employment business, and an employment business that
+    // has not established right to work is the one exposure no disclaimer on
+    // a card covers. This runs alongside the listing rules rather than with
+    // the search filters, so it holds for a direct profile lookup too - a
+    // person who cannot lawfully be supplied must not be openable and
+    // bookable by link.
+    .filter((candidate: any) => isAdmin || rightToWorkVerified(candidate))
     .filter((candidate: any) => isAdmin || canEmployerDiscoverCandidate(candidate, blockedIds))
     .map((candidate: any) => privateIds.has(candidate.id) ? { ...candidate, private_mode: true } : candidate)
     .map((candidate: any) => {

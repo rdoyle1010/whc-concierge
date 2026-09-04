@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import DashboardShell from '@/components/DashboardShell'
-import { Check, Zap, MapPin, CalendarDays, Clock3, Banknote } from 'lucide-react'
+import { AlertCircle, Check, Zap, MapPin, CalendarDays, Clock3, Banknote } from 'lucide-react'
 import { AGENCY_LISTING_TIERS } from '@/lib/constants'
 
 const dayKey = (d: Date) => d.toLocaleDateString('en-CA')
@@ -52,6 +52,7 @@ export default function AgencySettingsPage() {
   const [notice, setNotice] = useState('')
   const [profileId, setProfileId] = useState<string | null>(null)
   const [live, setLive] = useState<{ available: boolean; tier: string | null; until: string | null }>({ available: false, tier: null, until: null })
+  const [readiness, setReadiness] = useState({ rightToWork: false, insured: false, qualifications: 0 })
   const [form, setForm] = useState({ hourly_rate: '', phone: '', postcode: '', travel_radius_miles: '', tier: 'basic' as 'basic' | 'featured' })
   const [hasCoords, setHasCoords] = useState(false)
   const [days, setDays] = useState<Record<string, 'available' | 'unavailable'>>({})
@@ -101,6 +102,11 @@ export default function AgencySettingsPage() {
           const s = j.settings || {}
           setProfileId(s.profile_id || null)
           setLive({ available: Boolean(s.agency_available), tier: s.agency_tier || null, until: s.agency_listed_until || null })
+          setReadiness({
+            rightToWork: Boolean(s.right_to_work_verified),
+            insured: Boolean(s.has_insurance),
+            qualifications: Number(s.qualifications_count || 0),
+          })
           setForm({
             hourly_rate: s.hourly_rate?.toString() || '',
             phone: s.phone || '',
@@ -225,6 +231,55 @@ export default function AgencySettingsPage() {
 
         {notice && <div role="status" className="bg-green-50 text-green-700 text-sm px-4 py-3 rounded-lg mb-4">{notice}</div>}
         {error && <div role="alert" className="bg-red-50 text-red-600 text-sm px-4 py-3 rounded-lg mb-4">{error}</div>}
+
+        {/* What the register asks for, said before somebody pays rather than
+            after. Right to work is the only requirement: supplying somebody
+            into a shift makes Talent House an employment business, and that is
+            the one check no disclaimer covers. Certificates are what a spa
+            director actually reads. Insurance is genuinely optional - plenty
+            of placements sit under the property's own cover - but properties
+            can filter to insured only, so it is worth having. */}
+        <div className="mb-6 border border-border bg-white p-5">
+          <p className="text-[10px] font-semibold uppercase tracking-[.15em] text-ink">What the register asks for</p>
+          <div className="mt-4 space-y-3">
+            <div className="flex items-start gap-3">
+              {readiness.rightToWork
+                ? <Check size={15} className="mt-0.5 shrink-0 text-green-700" />
+                : <AlertCircle size={15} className="mt-0.5 shrink-0 text-amber-600" />}
+              <div className="min-w-0">
+                <p className="text-[13px] font-medium text-ink">Right to work <span className="ml-1 text-[10px] font-semibold uppercase tracking-[.1em] text-amber-700">Required</span></p>
+                <p className="text-[12px] leading-5 text-muted">{readiness.rightToWork
+                  ? 'Confirmed. You can be listed for shifts.'
+                  : 'Properties cannot be offered your cover until this is confirmed. It is free, and usually takes a day once your document is uploaded.'}</p>
+                {!readiness.rightToWork && <Link href="/talent/verification" className="btn-primary mt-2 inline-flex !py-2 !px-3 text-[12px]">Upload your document</Link>}
+              </div>
+            </div>
+            <div className="flex items-start gap-3">
+              {readiness.qualifications > 0
+                ? <Check size={15} className="mt-0.5 shrink-0 text-green-700" />
+                : <AlertCircle size={15} className="mt-0.5 shrink-0 text-muted" />}
+              <div className="min-w-0">
+                <p className="text-[13px] font-medium text-ink">Certificates</p>
+                <p className="text-[12px] leading-5 text-muted">{readiness.qualifications > 0
+                  ? `${readiness.qualifications} on your profile. This is what a spa director reads first.`
+                  : 'The single thing a spa director reads first. Upload them on your profile - reviewed certificates are shown apart from self-declared ones.'}</p>
+                {readiness.qualifications === 0 && <Link href="/talent/profile" className="mt-2 inline-flex text-[12px] font-semibold text-[#1c1c1c] underline">Add your certificates</Link>}
+              </div>
+            </div>
+            <div className="flex items-start gap-3">
+              {readiness.insured
+                ? <Check size={15} className="mt-0.5 shrink-0 text-green-700" />
+                : <AlertCircle size={15} className="mt-0.5 shrink-0 text-muted" />}
+              <div className="min-w-0">
+                <p className="text-[13px] font-medium text-ink">Insurance <span className="ml-1 text-[10px] font-semibold uppercase tracking-[.1em] text-muted">Optional</span></p>
+                <p className="text-[12px] leading-5 text-muted">{readiness.insured
+                  ? 'On file, and shown to properties as an Insured mark.'
+                  : 'Not every placement needs your own cover - many sit under the property\u2019s. But properties can filter the register to insured professionals only, so having it widens the work you are offered.'}</p>
+                {!readiness.insured && <p className="mt-2 text-[12px] leading-5 text-muted">Freelance and mobile therapist policies are widely available - <a href="https://www.salongold.co.uk/mobile-freelance-insurance" target="_blank" rel="noreferrer noopener" className="font-semibold text-[#1c1c1c] underline">Salon Gold</a> is one option. Talent House does not sell insurance or take a commission on it; once you hold a policy, upload it on your profile and the Insured mark appears.</p>}
+              </div>
+            </div>
+          </div>
+        </div>
 
         {live.available ? (
           <div className="bg-green-50 border border-green-200 rounded-xl px-5 py-4 mb-6">

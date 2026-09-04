@@ -333,9 +333,21 @@ export async function POST(req: NextRequest) {
 
       const { createAdminClient } = await import('@/lib/supabase/admin')
       const admin = createAdminClient()
-      const { data: cand } = await admin.from('candidate_profiles').select('id, user_id').eq('id', candidateId).maybeSingle()
+      const { data: cand } = await admin.from('candidate_profiles').select('id, user_id, right_to_work_status').eq('id', candidateId).maybeSingle()
       if (!cand || cand.user_id !== user.id) {
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+      }
+
+      // Right to work is a condition of appearing on the register, so taking
+      // the money first would be selling a listing that cannot be shown -
+      // exactly the fault this platform has been fixing all week, in reverse.
+      const { rightToWorkVerified } = await import('@/lib/verification-badges')
+      if (!rightToWorkVerified(cand)) {
+        return NextResponse.json({
+          error: 'Your right to work needs to be confirmed before you can be listed for agency shifts. It usually takes a day once your document is uploaded, and there is no charge for it.',
+          code: 'RIGHT_TO_WORK_REQUIRED',
+          actionHref: '/talent/verification',
+        }, { status: 409 })
       }
 
       const meta = { type: 'agency_listing', candidate_id: candidateId, tier, user_id: user.id }
