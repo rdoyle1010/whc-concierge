@@ -57,6 +57,19 @@ test('a missing column makes a thinner pack, not no pack', () => {
     'no record-field access survives in the payload')
 })
 
+// A PL/pgSQL variable sharing a column's name makes every comparison against
+// that column ambiguous, and Postgres refuses the whole statement.
+test('no variable is named after a column it is compared to', () => {
+  const rebuilt = read(REBUILT)
+  const declarations = rebuilt.slice(rebuilt.indexOf('DECLARE'), rebuilt.indexOf('BEGIN'))
+  for (const column of ['employer_id', 'candidate_id', 'fact_file_id']) {
+    assert.ok(!new RegExp(`^\\s+${column} uuid;`, 'm').test(declarations), `${column} must be prefixed`)
+    assert.match(declarations, new RegExp(`v_${column} uuid;`))
+  }
+  // The insert still names the real columns.
+  assert.match(rebuilt, /\(booking_type, booking_id, employer_id, candidate_id, fact_file_id, snapshot/)
+})
+
 // A backfill that reports success while generating nothing is how this stayed
 // invisible for a day.
 test('a backfill that fails says so', () => {

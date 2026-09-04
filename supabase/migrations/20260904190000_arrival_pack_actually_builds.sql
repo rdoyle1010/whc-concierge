@@ -45,9 +45,11 @@ DECLARE
   booking_json jsonb;
   residency_json jsonb;
   payload jsonb;
-  employer_id uuid;
-  candidate_id uuid;
-  fact_file_id uuid;
+  -- Prefixed, because a variable named employer_id makes
+  -- "where t.employer_id = employer_id" ambiguous and Postgres refuses it.
+  v_employer_id uuid;
+  v_candidate_id uuid;
+  v_fact_file_id uuid;
 BEGIN
   IF p_booking_type = 'agency' THEN
     SELECT to_jsonb(t) INTO b FROM public.agency_bookings t
@@ -60,15 +62,15 @@ BEGIN
   END IF;
   IF b IS NULL THEN RETURN; END IF;
 
-  employer_id := (b->>'employer_id')::uuid;
-  candidate_id := (b->>'candidate_id')::uuid;
+  v_employer_id := (b->>'employer_id')::uuid;
+  v_candidate_id := (b->>'candidate_id')::uuid;
 
-  SELECT to_jsonb(t) INTO e FROM public.employer_profiles t WHERE t.id = employer_id;
+  SELECT to_jsonb(t) INTO e FROM public.employer_profiles t WHERE t.id = v_employer_id;
   IF e IS NULL THEN RETURN; END IF;
 
-  SELECT to_jsonb(t) INTO f FROM public.property_fact_files t WHERE t.employer_id = employer_id;
+  SELECT to_jsonb(t) INTO f FROM public.property_fact_files t WHERE t.employer_id = v_employer_id;
   f := coalesce(f, '{}'::jsonb);
-  fact_file_id := nullif(f->>'id', '')::uuid;
+  v_fact_file_id := nullif(f->>'id', '')::uuid;
 
   -- Only the columns that exist on the row in hand.
   IF p_booking_type = 'agency' THEN
@@ -174,7 +176,7 @@ BEGIN
   INSERT INTO public.booking_arrival_packs
     (booking_type, booking_id, employer_id, candidate_id, fact_file_id, snapshot, generated_at, updated_at)
   VALUES
-    (p_booking_type, p_booking_id, employer_id, candidate_id, fact_file_id, payload, now(), now())
+    (p_booking_type, p_booking_id, v_employer_id, v_candidate_id, v_fact_file_id, payload, now(), now())
   ON CONFLICT (booking_type, booking_id) DO UPDATE SET
     snapshot = excluded.snapshot,
     fact_file_id = excluded.fact_file_id,
