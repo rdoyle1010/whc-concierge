@@ -32,7 +32,7 @@ export default function HowToUsePage(){
   return <main id="main-content" className="min-h-screen bg-white text-[#1c1c1c]">
     <section className="mx-auto max-w-6xl px-6 py-16 md:py-24">
       <div className="mb-12 max-w-3xl">
-        <p className="mb-4 text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">How Wellness House works</p>
+        <p className="mb-4 text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">How Talent House works</p>
         <h1 className="text-4xl font-medium leading-tight text-[#1c1c1c] md:text-6xl">One platform. A much simpler way to move through spa careers and recruitment.</h1>
         <p className="mt-6 max-w-2xl text-base leading-7 text-slate-600">Use the website or the app. Your account and live data stay together, so you can start something in one and continue in the other.</p>
       </div>
@@ -52,7 +52,7 @@ export default function HowToUsePage(){
 
       <div className="mt-12 flex flex-col gap-4 bg-[#f1f1f1] p-7 md:flex-row md:items-center md:justify-between">
         <div><h2 className="text-lg font-semibold text-[#1c1c1c]">You do not have to learn the platform first.</h2><p className="mt-2 text-sm leading-6 text-slate-600">Start with the next thing you need to do. The app now includes the same 60-second guide from Home whenever you want it.</p></div>
-        <Link href="/" className="shrink-0 bg-[#1c1c1c] px-5 py-3 text-center text-sm font-semibold text-white">Go to Wellness House</Link>
+        <Link href="/" className="shrink-0 bg-[#1c1c1c] px-5 py-3 text-center text-sm font-semibold text-white">Go to Talent House</Link>
       </div>
     </section>
   </main>

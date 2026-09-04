@@ -33,7 +33,7 @@ export default function LoginScreen() {
     if (profileError) {
       await supabase.auth.signOut()
       setLoading(false)
-      Alert.alert('Account setup', 'We could not load your Wellness House profile. Please try again.')
+      Alert.alert('Account setup', 'We could not load your Talent House profile. Please try again.')
       return
     }
 
@@ -53,7 +53,7 @@ export default function LoginScreen() {
     if (!profile) {
       await supabase.auth.signOut()
       setLoading(false)
-      Alert.alert('Account not ready', 'This account is not linked to a Wellness House profile yet. If you are Talent, choose Talent and try again. Employer accounts should contact the property administrator.')
+      Alert.alert('Account not ready', 'This account is not linked to a Talent House profile yet. If you are Talent, choose Talent and try again. Employer accounts should contact the property administrator.')
       return
     }
 
@@ -110,7 +110,7 @@ export default function LoginScreen() {
 
         <Text style={styles.eyebrow}>WELCOME BACK</Text>
         <Text style={styles.title}>Sign in to your account.</Text>
-        <Text style={styles.intro}>Your website and app use the same Wellness House account.</Text>
+        <Text style={styles.intro}>Your website and app use the same Talent House account.</Text>
 
         <View style={styles.switcher}>{(['talent','employer'] as Role[]).map(item => <Pressable key={item} onPress={() => setRole(item)} style={[styles.switch, role === item && styles.switchActive]}><Text style={[styles.switchText, role === item && styles.switchTextActive]}>{item === 'employer' ? 'Employer' : 'Talent'}</Text></Pressable>)}</View>
 
@@ -120,7 +120,7 @@ export default function LoginScreen() {
           <Text style={styles.inputLabel}>Password</Text>
           <TextInput ref={passwordRef} value={password} onChangeText={setPassword} secureTextEntry returnKeyType="go" onSubmitEditing={signIn} placeholder="Your password" placeholderTextColor={palette.quiet} style={styles.input}/>
           <Pressable onPress={signIn} disabled={loading} style={({ pressed }) => [styles.button, pressed && { opacity: 0.9 }, loading && { opacity: 0.6 }]}><Text style={styles.buttonText}>{loading ? 'Checking security…' : 'Sign in'}</Text></Pressable>
-          {role==='talent'?<Pressable onPress={()=>router.push('/signup')} style={styles.signupLink}><Text style={styles.signupText}>New to Wellness House? Create Talent account</Text></Pressable>:null}
+          {role==='talent'?<Pressable onPress={()=>router.push('/signup')} style={styles.signupLink}><Text style={styles.signupText}>New to Talent House? Create Talent account</Text></Pressable>:null}
           <View style={styles.securityNote}><Text style={styles.securityTitle}>Secure account access</Text><Text style={styles.securityCopy}>Accounts protected by Authenticator will be asked for the current six-digit code before access.</Text></View>
         </View>
       </ScrollView>

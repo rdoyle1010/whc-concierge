@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "Wellness House Talent",
+    "name": "Talent House",
     "slug": "talent-wellness-house",
     "scheme": "whctalent",
     "version": "0.2.0",
@@ -21,7 +21,7 @@
       [
         "expo-image-picker",
         {
-          "photosPermission": "Wellness House uses your photo library only when you choose property images to add to your employer profile.",
+          "photosPermission": "Talent House uses your photo library only when you choose property images to add to your employer profile.",
           "cameraPermission": false,
           "microphonePermission": false
         }

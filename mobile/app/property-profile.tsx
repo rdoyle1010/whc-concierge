@@ -68,7 +68,7 @@ export default function PropertyProfileScreen() {
       }
       const data = await authFetch('/api/mobile/employer/property', { method: 'POST', body: JSON.stringify(payload) })
       setProfile({ ...data.profile, property_photos: data.profile?.property_photos || [] })
-      Alert.alert('Property profile saved', 'Your property, travel and staff-access information is now updated across Wellness House.')
+      Alert.alert('Property profile saved', 'Your property, travel and staff-access information is now updated across Talent House.')
     } catch (e: any) { setError(e?.message || 'Could not save property profile.') }
     finally { setSaving(false) }
   }

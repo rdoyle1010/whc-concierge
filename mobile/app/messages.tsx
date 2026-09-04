@@ -7,7 +7,7 @@ import { palette, radius, space, type } from '../src/lib/theme'
 type MessageRow = { id: string; sender_id: string; recipient_id: string; content: string; read: boolean | null; created_at: string | null }
 type Person = { id: string; full_name: string | null; email: string | null; role: string | null }
 
-function roleLabel(role?:string|null){return role==='employer'?'Employer':role==='admin'?'Wellness House':'Talent'}
+function roleLabel(role?:string|null){return role==='employer'?'Employer':role==='admin'?'Talent House':'Talent'}
 
 export default function MessagesScreen() {
   const [userId, setUserId] = useState('')

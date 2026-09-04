@@ -29,8 +29,8 @@ export default function MobileReturnPage(){
     <div style={{maxWidth:480,width:'100%',background:'#fff',border:'1px solid #dedbd3',borderRadius:18,padding:28,textAlign:'center'}}>
       <div style={{fontSize:11,letterSpacing:1.7,fontWeight:700,color:'#718078'}}>WELLNESS HOUSE</div>
       <h1 style={{fontFamily:'Georgia, serif',fontWeight:400,fontSize:30,margin:'12px 0'}}>Returning to the app…</h1>
-      <p style={{fontSize:14,lineHeight:1.6,color:'#60707a'}}>Your secure browser step is complete. Wellness House Talent should reopen automatically.</p>
-      <a href={deepLink} style={{display:'inline-block',marginTop:16,background:'#17344d',color:'#fff',padding:'13px 18px',borderRadius:10,textDecoration:'none',fontWeight:700,fontSize:13}}>Open Wellness House Talent</a>
+      <p style={{fontSize:14,lineHeight:1.6,color:'#60707a'}}>Your secure browser step is complete. Talent House should reopen automatically.</p>
+      <a href={deepLink} style={{display:'inline-block',marginTop:16,background:'#17344d',color:'#fff',padding:'13px 18px',borderRadius:10,textDecoration:'none',fontWeight:700,fontSize:13}}>Open Talent House</a>
     </div>
   </main>
 }

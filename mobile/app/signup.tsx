@@ -37,7 +37,7 @@ export default function TalentSignupScreen(){
 
       if(data.session){
         const bootstrap=await ensureTalentRecords(data.user,name)
-        if(bootstrap.role!=='talent')throw new Error('This email is already linked to a different Wellness House account type.')
+        if(bootstrap.role!=='talent')throw new Error('This email is already linked to a different Talent House account type.')
         router.replace('/home')
         return
       }
@@ -73,7 +73,7 @@ export default function TalentSignupScreen(){
 
         <Pressable onPress={()=>setAccepted(current=>!current)} style={styles.consentRow}>
           <View style={[styles.checkbox,accepted&&styles.checkboxOn]}>{accepted?<Text style={styles.tick}>✓</Text>:null}</View>
-          <Text style={styles.consent}>I agree to the Wellness House Terms and Privacy Notice and understand that my professional profile is used to provide Talent services.</Text>
+          <Text style={styles.consent}>I agree to the Talent House Terms and Privacy Notice and understand that my professional profile is used to provide Talent services.</Text>
         </Pressable>
 
         <Pressable disabled={loading} onPress={createAccount} style={[styles.primary,loading&&styles.disabled]}><Text style={styles.primaryText}>{loading?'Creating account…':'Create Talent account'}</Text></Pressable>
