@@ -6,7 +6,7 @@ import { supabase } from '../src/lib/supabase'
 import { candidateBadges } from '../src/lib/verification-badges'
 import { careerValue } from '../src/lib/career-value'
 
-const WEB_URL=process.env.EXPO_PUBLIC_WEB_URL||'https://talent.wellnesshousecollective.co.uk'
+const WEB_URL=process.env.EXPO_PUBLIC_WEB_URL||'https://talenthousecollective.co.uk'
 function certificateLabel(url:string,index:number){try{const tail=decodeURIComponent(url.split('/').pop()||'').replace(/^cert_[0-9]+_/,'').replace(/[-_]+/g,' ').trim();return tail||`Certificate ${index+1}`}catch{return `Certificate ${index+1}`}}
 
 export default function ProfileScreen() {

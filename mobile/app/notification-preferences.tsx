@@ -15,7 +15,7 @@ import { supabase } from '../src/lib/supabase'
 //   - SMS is opt-in only and needs a mobile number on file, so the toggle is
 //     disabled until there is one.
 
-const WEB_URL = process.env.EXPO_PUBLIC_WEB_URL || 'https://talent.wellnesshousecollective.co.uk'
+const WEB_URL = process.env.EXPO_PUBLIC_WEB_URL || 'https://talenthousecollective.co.uk'
 
 type EmailPrefs = Record<string, boolean>
 type Frequency = 'instant' | 'daily' | 'weekly'

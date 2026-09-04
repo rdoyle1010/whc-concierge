@@ -14,7 +14,7 @@ type FeaturedEmployerOffer={
 }
 type StatusPayload={role:Role;profile:any;featuredEmployerOffer?:FeaturedEmployerOffer|null}
 
-const WEB_URL=process.env.EXPO_PUBLIC_WEB_URL||'https://talent.wellnesshousecollective.co.uk'
+const WEB_URL=process.env.EXPO_PUBLIC_WEB_URL||'https://talenthousecollective.co.uk'
 
 function dateLabel(value?:string|null){
   if(!value)return''

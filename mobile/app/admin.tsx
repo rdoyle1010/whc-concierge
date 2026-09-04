@@ -6,7 +6,7 @@ import { palette, radius, space, type } from '../src/lib/theme'
 
 type Counts = { users:number; employers:number; jobs:number; applications:number; agency:number }
 type AdminTool={title:string;copy:string;path:string;eyebrow:string}
-const WEB = (process.env.EXPO_PUBLIC_WEB_URL || 'https://talent.wellnesshousecollective.co.uk').replace(/\/$/,'')
+const WEB = (process.env.EXPO_PUBLIC_WEB_URL || 'https://talenthousecollective.co.uk').replace(/\/$/,'')
 
 const CORE_TOOLS:AdminTool[]=[
   {eyebrow:'ANALYTICS & REPORTS',title:'Platform health',copy:'Recruitment funnel, scale, payment sources and operational attention.',path:'dashboard'},

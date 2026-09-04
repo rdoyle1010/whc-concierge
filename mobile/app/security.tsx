@@ -5,7 +5,7 @@ import Constants from 'expo-constants'
 import * as Updates from 'expo-updates'
 import { supabase } from '../src/lib/supabase'
 
-const SITE='https://talent.wellnesshousecollective.co.uk'
+const SITE='https://talenthousecollective.co.uk'
 
 export default function SecurityLegalScreen(){
   const params=useLocalSearchParams<{required?:string;role?:string}>()

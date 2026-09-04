@@ -43,7 +43,7 @@
           "data": [
             {
               "scheme": "https",
-              "host": "talent.wellnesshousecollective.co.uk",
+              "host": "talenthousecollective.co.uk",
               "pathPrefix": "/"
             }
           ],

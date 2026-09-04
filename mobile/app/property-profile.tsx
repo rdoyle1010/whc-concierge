@@ -4,7 +4,7 @@ import { router } from 'expo-router'
 import * as ImagePicker from 'expo-image-picker'
 import { supabase } from '../src/lib/supabase'
 
-const WEB_URL = process.env.EXPO_PUBLIC_WEB_URL || 'https://talent.wellnesshousecollective.co.uk'
+const WEB_URL = process.env.EXPO_PUBLIC_WEB_URL || 'https://talenthousecollective.co.uk'
 const listFromText = (value: string) => value.split('\n').map(v => v.trim()).filter(Boolean)
 const textFromList = (value: unknown) => Array.isArray(value) ? value.join('\n') : ''
 

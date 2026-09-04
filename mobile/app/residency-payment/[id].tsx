@@ -22,7 +22,7 @@ type Booking = {
   payout_amount?: number | null
 }
 
-const WEB_URL = process.env.EXPO_PUBLIC_WEB_URL || 'https://talent.wellnesshousecollective.co.uk'
+const WEB_URL = process.env.EXPO_PUBLIC_WEB_URL || 'https://talenthousecollective.co.uk'
 
 export default function ResidencyPaymentScreen() {
   const { id } = useLocalSearchParams<{ id: string }>()

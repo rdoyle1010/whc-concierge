@@ -4,7 +4,7 @@ import { router, useLocalSearchParams } from 'expo-router'
 import { supabase } from '../../src/lib/supabase'
 import { palette, radius, space, type } from '../../src/lib/theme'
 
-const WEB_URL = process.env.EXPO_PUBLIC_WEB_URL || 'https://talent.wellnesshousecollective.co.uk'
+const WEB_URL = process.env.EXPO_PUBLIC_WEB_URL || 'https://talenthousecollective.co.uk'
 type InterviewMethod = 'teams'|'google_meet'|'zoom'|'phone'|'in_person'
 type MessageIntent = 'shortlist'|'interview'|'decline'|'offer'
 type Interview = { id:string; round_number:number; interview_method:InterviewMethod; proposed_slots:string[]|null; selected_slot:string|null; status:string; employer_note?:string|null; candidate_note?:string|null; meeting_link?:string|null; venue_address?:string|null; contact_name?:string|null }

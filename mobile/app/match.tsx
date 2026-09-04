@@ -4,7 +4,7 @@ import { router, useFocusEffect } from 'expo-router'
 import { supabase } from '../src/lib/supabase'
 import { palette, radius, space, type } from '../src/lib/theme'
 
-const WEB_URL=process.env.EXPO_PUBLIC_WEB_URL||'https://talent.wellnesshousecollective.co.uk'
+const WEB_URL=process.env.EXPO_PUBLIC_WEB_URL||'https://talenthousecollective.co.uk'
 
 type Candidate={
   id:string;full_name?:string|null;headline?:string|null;role_level?:string|null;location?:string|null;bio?:string|null;profile_image_url?:string|null;review_score?:number|null;experience_years?:number|null;years_experience?:number|null;distance_miles?:number|null;matchScore?:number|null;matchLabel?:string|null;matchExplanation?:string|null;bestJob?:string|null;bestJobId?:string|null;interested?:boolean;mutual?:boolean;applicationId?:string|null;applicationStatus?:string|null;shortlisted?:boolean;is_featured?:boolean

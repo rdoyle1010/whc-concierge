@@ -19,7 +19,7 @@ type Booking={
   services_required?:string|null;notes?:string|null;status:string;paid_at?:string|null
 }
 
-const WEB_URL=process.env.EXPO_PUBLIC_WEB_URL||'https://talent.wellnesshousecollective.co.uk'
+const WEB_URL=process.env.EXPO_PUBLIC_WEB_URL||'https://talenthousecollective.co.uk'
 
 function futureDate(days:number){const date=new Date();date.setDate(date.getDate()+days);return date.toISOString().slice(0,10)}
 function dateLabel(value?:string|null){if(!value)return'';const date=new Date(`${value}T12:00:00`);return Number.isNaN(date.getTime())?value:date.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'})}

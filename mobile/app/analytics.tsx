@@ -5,7 +5,7 @@ import { supabase } from '../src/lib/supabase'
 import { palette, radius, space, type } from '../src/lib/theme'
 
 type JobRow={id:string;title:string;tier:string;daysLive:number;totalApps:number;shortlisted:number;avgScore:number;status:string}
-const WEB_URL=process.env.EXPO_PUBLIC_WEB_URL||'https://talent.wellnesshousecollective.co.uk'
+const WEB_URL=process.env.EXPO_PUBLIC_WEB_URL||'https://talenthousecollective.co.uk'
 
 export default function AnalyticsScreen(){
  const [loading,setLoading]=useState(true)

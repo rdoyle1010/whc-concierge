@@ -49,7 +49,7 @@ type BookingRow = {
   candidate_review_completed_at?:string|null
 }
 
-const WEB_URL = process.env.EXPO_PUBLIC_WEB_URL || 'https://talent.wellnesshousecollective.co.uk'
+const WEB_URL = process.env.EXPO_PUBLIC_WEB_URL || 'https://talenthousecollective.co.uk'
 const TIMES = Array.from({ length: 33 }, (_, index) => {
   const total = 6 * 60 + index * 30
   const hour = Math.floor(total / 60)

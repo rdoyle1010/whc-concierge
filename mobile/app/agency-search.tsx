@@ -4,7 +4,7 @@ import { router } from 'expo-router'
 import { supabase } from '../src/lib/supabase'
 
 type Candidate={id:string;full_name?:string|null;headline?:string|null;role_level?:string|null;experience_years?:number|null;location?:string|null;hourly_rate?:number|null;review_score?:number|null;review_count?:number|null;whc_verified?:boolean|null;has_insurance?:boolean|null;distance_miles?:number|null;travel_radius_miles?:number|null;completed_shift_count?:number|null;services_offered?:string[]|null;is_featured?:boolean|null}
-const WEB_URL=process.env.EXPO_PUBLIC_WEB_URL||'https://talent.wellnesshousecollective.co.uk'
+const WEB_URL=process.env.EXPO_PUBLIC_WEB_URL||'https://talenthousecollective.co.uk'
 const SCREEN_WIDTH=Dimensions.get('window').width
 const SWIPE_THRESHOLD=Math.min(105,SCREEN_WIDTH*.25)
 const TIMES=['07:00','08:00','09:00','10:00','11:00','12:00','13:00','14:00','15:00','16:00','17:00','18:00','19:00','20:00','21:00']
