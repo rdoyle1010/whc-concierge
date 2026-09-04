@@ -89,6 +89,7 @@ export default function SwipeMatchPage() {
             matchingSkills: result.matchingSkills || [],
             matchExplanation: result.matchExplanation || '',
             matchBreakdown: result.breakdown,
+            matchEvidence: result.evidence,
             hardStop: result.hardStop,
             hardStopReason: result.hardStopReason,
           }
@@ -264,7 +265,7 @@ export default function SwipeMatchPage() {
             {!canApply && <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-[12px] text-amber-800 mb-4">This role is below the 45% application threshold. You can review or pass it, but you cannot apply unless your profile becomes a stronger match.</div>}
 
             <button type="button" onClick={() => setExpanded(!expanded)} className="w-fit text-[12px] font-semibold text-[#1c1c1c] inline-flex items-center gap-1.5"><ChevronDown size={13} className={expanded ? 'rotate-180 transition-transform' : 'transition-transform'}/>{expanded ? 'Hide detailed match' : 'See detailed match & role'}</button>
-            {expanded && <div className="mt-5 space-y-5 border-t border-border pt-5">{job.matchBreakdown && <MatchBreakdown breakdown={job.matchBreakdown} score={job.matchScore} label={job.matchLabel} colour={job.matchColour}/>}<div><p className="text-[10px] uppercase tracking-[.14em] text-muted font-semibold mb-2">Role overview</p><p className="text-[13px] leading-6 text-secondary whitespace-pre-line line-clamp-[12]">{job.description || 'The property has not added a full role description yet.'}</p></div></div>}
+            {expanded && <div className="mt-5 space-y-5 border-t border-border pt-5">{job.matchBreakdown && <MatchBreakdown breakdown={job.matchBreakdown} evidence={job.matchEvidence} score={job.matchScore} label={job.matchLabel} colour={job.matchColour}/>}<div><p className="text-[10px] uppercase tracking-[.14em] text-muted font-semibold mb-2">Role overview</p><p className="text-[13px] leading-6 text-secondary whitespace-pre-line line-clamp-[12]">{job.description || 'The property has not added a full role description yet.'}</p></div></div>}
 
             {error && <div className="mt-5 rounded-xl bg-red-50 px-4 py-3 text-[12px] text-red-600">{error}</div>}
 

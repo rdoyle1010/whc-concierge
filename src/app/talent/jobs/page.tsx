@@ -88,6 +88,7 @@ export default function TalentJobsPage() {
         let matchColour = '#555555'
         let matchBg = '#F3F4F6'
         let matchBreakdown: any = null
+        let matchEvidence: any = null
         let hardStop = false
         let hardStopReason: string | undefined
         let matchExplanation = ''
@@ -99,12 +100,13 @@ export default function TalentJobsPage() {
           matchColour = r.colour
           matchBg = r.bgColour
           matchBreakdown = r.breakdown
+          matchEvidence = r.evidence
           hardStop = r.hardStop
           hardStopReason = r.hardStopReason
           matchExplanation = r.matchExplanation
           distanceMiles = r.distanceMiles
         }
-        return { ...j, title, description, employer_profiles: { ...j.employer_profiles, company_name: companyName }, matchScore, matchLabel, matchColour, matchBg, matchBreakdown, hardStop, hardStopReason, matchExplanation, distanceMiles }
+        return { ...j, title, description, employer_profiles: { ...j.employer_profiles, company_name: companyName }, matchScore, matchLabel, matchColour, matchBg, matchBreakdown, matchEvidence, hardStop, hardStopReason, matchExplanation, distanceMiles }
       })
 
       setJobs(normalized)
@@ -297,7 +299,7 @@ export default function TalentJobsPage() {
 
                     {job.matchExplanation && <p className="text-[12px] text-secondary mb-3">{job.matchExplanation}</p>}
                     {job.matchBreakdown && job.matchScore != null && (
-                      <MatchBreakdown breakdown={job.matchBreakdown} score={job.matchScore} label={job.matchLabel} colour={job.matchColour} compact />
+                      <MatchBreakdown breakdown={job.matchBreakdown} evidence={job.matchEvidence} score={job.matchScore} label={job.matchLabel} colour={job.matchColour} compact />
                     )}
 
                     <div className="flex flex-wrap gap-2 mt-4">

@@ -125,7 +125,7 @@ export default function TalentApplicationsWorkspace(){
       {match&&<div className="rounded-xl border border-[#dddddd] bg-[#f1f1f1] p-4">
         <div className="flex items-start justify-between gap-3 mb-3"><div><p className="text-[10px] uppercase tracking-[.14em] text-[#1c1c1c] font-semibold">Why you match</p><p className="mt-1 text-[13px] leading-5 text-secondary">{match.matchExplanation||'Your profile has been compared with the requirements of this role.'}</p></div><span className="rounded-full bg-white border border-[#dddddd] px-3 py-1 text-[13px] font-semibold text-ink shrink-0">{match.score}%</span></div>
         {match.matchingSkills?.length>0&&<div className="flex flex-wrap gap-1.5 mb-3">{match.matchingSkills.slice(0,6).map((s:string)=><span key={s} className="rounded-full border border-[#dddddd] bg-white px-2.5 py-1 text-[10px] font-medium text-[#1c1c1c]">✓ {s}</span>)}</div>}
-        {match.breakdown&&<MatchBreakdown breakdown={match.breakdown} score={match.score} label={match.label} colour={match.colour}/>} 
+        {match.breakdown&&<MatchBreakdown breakdown={match.breakdown} evidence={match.evidence} score={match.score} label={match.label} colour={match.colour}/>} 
       </div>}
     </div>
   }
