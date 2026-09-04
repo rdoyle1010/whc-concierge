@@ -19,6 +19,7 @@ export default function AgencyProfilePage() {
   const profileId = Array.isArray(id) ? id[0] : (id as string)
   const supabase = createClient()
   const [profile, setProfile] = useState<any>(null)
+  const [loadError, setLoadError] = useState('')
   const [reviews, setReviews] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [isEmployer, setIsEmployer] = useState(false)
@@ -64,8 +65,12 @@ export default function AgencyProfilePage() {
         directoryParams.set('shiftEndTime', searchedEnd)
       }
       const directoryRes = await fetch(`/api/agency/directory?${directoryParams.toString()}`)
-      const directoryJson = directoryRes.ok ? await directoryRes.json() : null
-      const data = directoryJson?.candidate || null
+      const directoryJson = await directoryRes.json().catch(() => null)
+      // Every failure used to read as "Profile not found" - a refused search
+      // radius, an unapproved account, a server error. So the one message a
+      // property saw was the one thing that was not wrong.
+      if (!directoryRes.ok) setLoadError(directoryJson?.error || 'We could not open this profile just now. Please try again.')
+      const data = directoryRes.ok ? (directoryJson?.candidate || null) : null
       setProfile(data)
       if (data?.hourly_rate) setOfferRate(String(data.hourly_rate))
       if (data) {
@@ -145,7 +150,7 @@ export default function AgencyProfilePage() {
   }
 
   if (loading) return <DashboardShell role="employer"><div className="max-w-6xl mx-auto"><div className="skeleton h-48 rounded-2xl mb-6" /><div className="skeleton h-8 w-1/3 mb-3" /><div className="skeleton h-4 w-1/2 mb-6" /><div className="skeleton h-32" /></div></DashboardShell>
-  if (!profile) return <DashboardShell role="employer"><div className="max-w-6xl mx-auto text-center py-24"><p className="text-muted">Profile not found.</p><Link href="/agency" className="btn-primary inline-block mt-4">Back to Agency</Link></div></DashboardShell>
+  if (!profile) return <DashboardShell role="employer"><div className="max-w-6xl mx-auto text-center py-24"><p className="text-muted">{loadError || 'Profile not found.'}</p><Link href="/agency" className="btn-primary inline-block mt-4">Back to Agency</Link></div></DashboardShell>
 
   const pc = profile.postcode?.split(' ')[0] || profile.location || ''
   const selectedShiftLabel = selectedShift ? `${new Date(`${selectedShift.date}T12:00:00`).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })} · ${selectedShift.start}–${selectedShift.end}` : null
