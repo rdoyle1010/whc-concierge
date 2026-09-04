@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { canEmployerDiscoverCandidate } from '@/lib/discovery'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
@@ -29,16 +30,19 @@ export async function GET() {
   const admin = createAdminClient()
   const [{ data }, { data: blocks }] = await Promise.all([
     admin.from('shortlisted_candidates')
-      .select('*, candidate_profiles(id, user_id, full_name, headline, role_level, location, services_offered, experience_years, profile_image_url, review_score, profile_visible, approval_status), job_listings(id, job_title)')
+      .select('*, candidate_profiles(id, user_id, full_name, headline, role_level, location, services_offered, experience_years, profile_image_url, review_score, profile_visible, approval_status, stealth_mode), job_listings(id, job_title)')
       .eq('employer_id', profile.id)
       .order('created_at', { ascending: false }),
     admin.from('profile_blocks').select('candidate_id').eq('blocked_employer_id', profile.id),
   ])
 
   const blockedIds = new Set((blocks || []).map((row: any) => row.candidate_id))
+  // Turning on Stealth Mode has to remove somebody from the shortlists they
+  // are already on. A control that only applies to future searches protects
+  // nobody who has already been found, which is everybody who needs it.
   const visible = (data || []).filter((entry: any) => {
     const candidate = Array.isArray(entry.candidate_profiles) ? entry.candidate_profiles[0] : entry.candidate_profiles
-    return candidate && candidate.approval_status === 'approved' && candidate.profile_visible !== false && !blockedIds.has(entry.candidate_id)
+    return Boolean(candidate) && canEmployerDiscoverCandidate(candidate, blockedIds)
   })
   return NextResponse.json({ shortlisted: visible })
 }

@@ -33,6 +33,10 @@ export async function GET(req: NextRequest) {
       admin.from('candidate_profiles').select('id')
         .eq('approval_status', 'approved')
         .or('profile_visible.eq.true,profile_visible.is.null')
+        // Counting somebody in "talent available near you" who has hidden
+        // themselves is a small leak and a wrong number at once: it promises
+        // a property reach it does not have.
+        .or('stealth_mode.eq.false,stealth_mode.is.null')
         .gte('created_at', fortnightAgo),
       // Unfilled agency cover, honestly counted: cascades that expired without
       // acceptance, for shifts that have not yet passed.

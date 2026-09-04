@@ -112,10 +112,15 @@ async function handleEmployerRequest(admin: ReturnType<typeof createAdminClient>
   }
 
   const { data: candidate } = await admin.from('candidate_profiles')
-    .select('id, user_id, approval_status, profile_visible')
+    .select('id, user_id, approval_status, profile_visible, stealth_mode')
     .eq('id', candidateId)
     .maybeSingle()
-  if (!candidate || candidate.approval_status !== 'approved' || candidate.profile_visible === false) {
+  // Stealth Mode was missing from this check, which made it the sharpest
+  // failure of the three: the whole promise of Stealth Mode is that no
+  // employer reaches you, and a private approach is exactly an employer
+  // reaching you. Somebody hiding from a current employer could have been
+  // messaged by them.
+  if (!candidate || candidate.approval_status !== 'approved' || candidate.profile_visible === false || candidate.stealth_mode === true) {
     return NextResponse.json({ error: 'This professional is not currently available' }, { status: 404 })
   }
 
