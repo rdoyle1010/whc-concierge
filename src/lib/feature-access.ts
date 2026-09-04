@@ -100,10 +100,10 @@ export function employerFeatureAccess(profile?: EmployerAccessProfile | null): R
     talent_interview_ready: { state: 'included' },
     employer_talent_search: premium
       ? { state: 'included' }
-      : { state: 'locked', label: 'Premium feature', upgradeHref: '/employer/billing' },
+      : { state: 'locked', label: 'Premium feature', upgradeHref: '/employer/membership' },
     employer_analytics: premium
       ? { state: 'included' }
-      : { state: 'locked', label: 'Premium feature', upgradeHref: '/employer/billing' },
+      : { state: 'locked', label: 'Premium feature', upgradeHref: '/employer/membership' },
   }
 }
 

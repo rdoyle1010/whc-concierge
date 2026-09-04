@@ -11,8 +11,14 @@ export default function UpgradePanel({
   heading,
   intro,
   points,
-  href = '/employer/billing',
+  // Membership, not Billing. Billing's only offer to an account with no
+  // subscription is Featured Employer - and Featured stopped carrying these
+  // tools, so a property could pay for it and hit this same wall. Pro and
+  // Group, which do unlock them, are sold on Membership and nothing here
+  // linked to it.
+  href = '/employer/membership',
   cta = 'See membership options',
+  advertRoute = true,
 }: {
   eyebrow: string
   heading: string
@@ -20,6 +26,7 @@ export default function UpgradePanel({
   points: string[]
   href?: string
   cta?: string
+  advertRoute?: boolean
 }) {
   return (
     <DashboardShell role="employer">
@@ -41,8 +48,14 @@ export default function UpgradePanel({
 
         <div className="mt-7 flex flex-wrap items-center gap-3">
           <Link href={href} className="btn-primary">{cta}</Link>
+          {/* A live advert unlocks these tools for as long as it runs, which
+              is the cheaper way in for a property with one vacancy rather
+              than a hiring programme. Saying so sells an advert instead of
+              losing the property at a price it was not ready for. */}
+          {advertRoute && <Link href="/employer/post-role" className="btn-secondary">Or post a role</Link>}
           <Link href="/employer/dashboard" className="btn-ghost">Back to dashboard</Link>
         </div>
+        {advertRoute && <p className="mt-3 text-[11px] leading-5 text-muted">A live paid advert unlocks Talent Search and Analytics for as long as it runs.</p>}
       </div>
     </DashboardShell>
   )
