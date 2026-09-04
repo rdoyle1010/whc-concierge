@@ -90,6 +90,21 @@ test('either side can message the other from the interview itself', () => {
   assert.match(read('src/app/api/talent/applications/pipeline-list/route.ts'), /select\('id,user_id,company_name,property_name'\)/)
 })
 
+// The recruitment-progress card sits at the top of the page. Somebody reading
+// their own application, further down, was looking at a screen that told them
+// they had an interview and gave them no way to ask about it.
+test('the talent sees the message link on their own application, not only on the card above', () => {
+  const workspace = read('src/components/TalentApplicationsWorkspace.tsx')
+  assert.match(workspace, /\/talent\/messages\?to=\$\{app\.job_listings\.employer_profiles\.user_id\}/)
+  assert.match(workspace, /Message \{property\|\|'the property'\}/)
+  // Next to the interview prompt, which is where somebody with a question is
+  // already looking.
+  const banner = workspace.slice(workspace.indexOf('You have an interview'), workspace.indexOf('Hide role & match'))
+  assert.ok(banner.includes('/talent/messages?to='), 'it belongs in the interview banner itself')
+  // Which needs the property's user id on the applications payload.
+  assert.match(read('src/app/api/applications/mine/route.ts'), /select\('id,user_id,company_name,property_name'\)/)
+})
+
 // Both emails come from one place, so the second cannot quietly stop showing
 // what the first showed.
 test('the invitation and the change email are built by the same code', () => {
