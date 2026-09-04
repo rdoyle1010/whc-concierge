@@ -87,6 +87,9 @@ function buildFit(candidate: any, job: any) {
     // The same factor-by-factor breakdown the talent sees when they match -
     // both sides of a placement should be reading from one algorithm.
     breakdown: match.breakdown || null,
+    // And the working behind each factor, so a hiring director can defend the
+    // score rather than take it on faith.
+    evidence: match.evidence || null,
     progression: match.progression || null,
     gaps,
   }

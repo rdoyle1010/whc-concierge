@@ -80,9 +80,14 @@ export function talentFeatureAccess(profile?: TalentAccessProfile | null): Recor
   const credits = Math.max(0, Number(profile?.interview_ready_credits || 0))
 
   return {
+    // Membership, not billing. Billing manages what you already pay for and
+    // its only offer to somebody with no subscription is Featured Talent,
+    // which grants no Interview Ready credits at all - so the padlock used to
+    // lead to a page that could sell them everything except the thing they
+    // came for.
     talent_interview_ready: credits > 0
-      ? { state: 'limited', label: `${credits} ${credits === 1 ? 'credit' : 'credits'} left`, upgradeHref: '/talent/billing' }
-      : { state: 'locked', label: 'Upgrade to unlock', upgradeHref: '/talent/billing' },
+      ? { state: 'limited', label: `${credits} ${credits === 1 ? 'credit' : 'credits'} left`, upgradeHref: '/talent/membership' }
+      : { state: 'locked', label: 'Upgrade to unlock', upgradeHref: '/talent/membership' },
     employer_talent_search: { state: 'included' },
     employer_analytics: { state: 'included' },
   }

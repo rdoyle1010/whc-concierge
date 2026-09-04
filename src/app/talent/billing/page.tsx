@@ -143,10 +143,18 @@ export default function TalentBillingPage() {
                 {redirecting ? 'Redirecting...' : 'Manage Subscription'}
               </button>
             ) : (
-              <Link href="/talent/upgrade" className="btn-primary w-full flex items-center justify-center gap-2">
-                <CreditCard size={14} />
-                Upgrade to Featured
-              </Link>
+              <div className="space-y-2">
+                <Link href="/talent/membership" className="btn-primary w-full flex items-center justify-center gap-2">
+                  <CreditCard size={14} />
+                  See membership plans
+                </Link>
+                {/* Featured buys visibility, not Interview Ready credits.
+                    Leading with it sent anybody hunting for credits to the one
+                    product that does not include them. */}
+                <Link href="/talent/upgrade" className="btn-secondary w-full flex items-center justify-center gap-2">
+                  Or feature my profile
+                </Link>
+              </div>
             )}
           </div>
         </div>

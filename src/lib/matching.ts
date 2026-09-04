@@ -37,10 +37,14 @@ function roleFamily(value: string): RoleFamily {
   return 'other'
 }
 
-function overlapScore(candidateArr: string[], requiredArr: string[]): { score: number; matches: string[] } {
-  if (!requiredArr.length) return { score: -1, matches: [] }
+function overlapScore(candidateArr: string[], requiredArr: string[]): { score: number; matches: string[]; missing: string[] } {
+  if (!requiredArr.length) return { score: -1, matches: [], missing: [] }
   const matches = requiredArr.filter(r => candidateArr.some(c => c.toLowerCase() === r.toLowerCase()))
-  return { score: Math.round(matches.length / requiredArr.length * 100), matches }
+  // What was asked for and not found matters as much as what was. A bar that
+  // says "Partial" and nothing else leaves a hiring manager to guess whether
+  // the gap is one nice-to-have or the whole requirement.
+  const missing = requiredArr.filter(r => !candidateArr.some(c => c.toLowerCase() === r.toLowerCase()))
+  return { score: Math.round(matches.length / requiredArr.length * 100), matches, missing }
 }
 
 function validCoordinate(value: unknown, min: number, max: number): value is number {
@@ -112,7 +116,7 @@ function progressionPolicy(candidate:any, job:any, candidateRole:string, require
 }
 
 export function calculateMatchScore(candidate:any, job:any): {
-  score:number; label:string; colour:string; bgColour:string; breakdown:any; matchingSkills:string[]; hardStop:boolean; hardStopReason?:string; matchExplanation:string; distanceMiles:number|null; locationBasis:'distance'|'text'|'unknown'; progression?:any; mode?:'permanent'|'agency'|'leadership'
+  score:number; label:string; colour:string; bgColour:string; breakdown:any; evidence?:Record<string,{met?:string[];missing?:string[];note?:string}>; matchingSkills:string[]; hardStop:boolean; hardStopReason?:string; matchExplanation:string; distanceMiles:number|null; locationBasis:'distance'|'text'|'unknown'; progression?:any; mode?:'permanent'|'agency'|'leadership'
 } {
   const emptyBreakdown={roleLevel:-1,treatmentSkills:-1,brands:-1,qualifications:-1,experience:-1,businessSkills:-1,systems:-1,location:-1,shiftCompatibility:-1,transport:-1,accommodation:-1,proficiencyDepth:-1,salaryFit:-1,availability:-1,profileCompleteness:0,reviewScore:0}
   const empty={score:10,label:'Requirement Missing',colour:'#555555',bgColour:'#F3F4F6',breakdown:emptyBreakdown,matchingSkills:[] as string[],hardStop:true,matchExplanation:'',distanceMiles:null,locationBasis:'unknown' as const}
@@ -214,7 +218,61 @@ export function calculateMatchScore(candidate:any, job:any): {
   if (mode==='leadership') matchExplanation += ` Weighted for a leadership appointment: level, commercial and people experience count most.`
   if (salaryScore>=0&&salaryScore<50) matchExplanation += ` Note: the advertised salary sits below their stated expectation.`
 
-  return {score:rounded,label,colour,bgColour,breakdown:{roleLevel:policy.score,treatmentSkills:treatmentResult.score,brands:brandResult.score,qualifications:qualResult.score,experience:expScore,businessSkills:bizResult.score,systems:sysResult.score,location:locationScore,shiftCompatibility:shiftScore,transport:transportScore,accommodation:accommodationScore,proficiencyDepth:proficiencyScore,salaryFit:salaryScore,availability:availabilityScore,profileCompleteness:profileScore,reviewScore:reviewScoreNorm},matchingSkills,hardStop:false,matchExplanation,distanceMiles:geo.distance,locationBasis:geo.basis,mode,progression:{scope:policy.scope,levelGap:policy.levelGap,isStepUp:policy.levelGap===1&&policy.allowed,bridge:policy.progressionBridge}}
+  // Why each bar reads the way it does.
+  //
+  // A bar labelled "Excellent" or "Partial" is a verdict without a reason, and
+  // a hiring director cannot defend a verdict to their general manager. The
+  // matcher already knows which qualifications were found and which were not,
+  // how far away the person lives, and whether the salary clears their
+  // expectation - it simply threw all of it away and kept the number.
+  const evidence: Record<string, { met?: string[]; missing?: string[]; note?: string }> = {
+    roleLevel: {
+      // With no level named on either side the gap computes as zero, which is
+      // not the same as a level match and must not be dressed up as one.
+      note: !requiredRole ? 'The role does not state a level, so this could not be judged.'
+        : !candidateRole ? 'They have not stated their current level, so this could not be judged.'
+        : policy.levelGap === 0 ? `Already working at ${requiredRole}.`
+        : policy.levelGap === 1 && policy.allowed ? `One level below, and ready for the step up.${policy.progressionBridge ? ' Leadership evidence supports it.' : ''}`
+        : policy.levelGap < 0 ? 'Currently at a more senior level than the role.'
+        : `${policy.levelGap} levels below the role as advertised.`,
+    },
+    treatmentSkills: { met: treatmentResult.matches, missing: treatmentResult.missing },
+    brands: { met: brandResult.matches, missing: brandResult.missing },
+    qualifications: { met: qualResult.matches, missing: qualResult.missing },
+    businessSkills: { met: bizResult.matches, missing: bizResult.missing },
+    systems: { met: sysResult.matches, missing: sysResult.missing },
+    experience: {
+      note: minYears === 0 ? 'No minimum was set for this role.'
+        : candYears >= minYears ? `${candYears} years against the ${minYears} asked for.`
+        : `${candYears} years against the ${minYears} asked for - ${minYears - candYears} short.`,
+    },
+    location: {
+      note: geo.distance != null ? `${geo.distance.toFixed(1)} miles from the role.`
+        : geo.basis === 'text' ? 'Judged on the town given, because one side has no map position yet.'
+        : 'Neither side has a map position, so distance could not be worked out.',
+    },
+    salaryFit: {
+      note: salaryScore < 0 ? 'No salary was advertised, or none expected.'
+        : salaryScore >= 100 ? 'The advertised salary clears what they are looking for.'
+        : salaryScore >= 50 ? 'The advertised salary is close to what they are looking for.'
+        : 'The advertised salary sits below what they are looking for.',
+    },
+    availability: {
+      note: candidate.availability_status ? `Available: ${String(candidate.availability_status).replace(/_/g, ' ')}.` : 'No availability stated.',
+    },
+    shiftCompatibility: {
+      note: !jobShift ? 'No shift pattern was set for this role.'
+        : candidateShifts.length ? `Role runs ${jobShift}; they have said they can work ${candidateShifts.join(', ')}.`
+        : `Role runs ${jobShift}; they have not said which patterns suit them.`,
+    },
+    transport: {
+      note: candidateTransport || candidateCommute
+        ? [candidateTransport, candidateCommute && `will travel ${candidateCommute}`].filter(Boolean).join(', ') + '.'
+        : 'No transport or commute preference given.',
+    },
+  }
+
+  return {score:rounded,label,colour,bgColour,breakdown:{roleLevel:policy.score,treatmentSkills:treatmentResult.score,brands:brandResult.score,qualifications:qualResult.score,experience:expScore,businessSkills:bizResult.score,systems:sysResult.score,location:locationScore,shiftCompatibility:shiftScore,transport:transportScore,accommodation:accommodationScore,proficiencyDepth:proficiencyScore,salaryFit:salaryScore,availability:availabilityScore,profileCompleteness:profileScore,reviewScore:reviewScoreNorm},evidence,matchingSkills,hardStop:false,matchExplanation,distanceMiles:geo.distance,locationBasis:geo.basis,mode,progression:{scope:policy.scope,levelGap:policy.levelGap,isStepUp:policy.levelGap===1&&policy.allowed,bridge:policy.progressionBridge}}
 }
 
 export function rankCandidates(candidates:any[],job:any,minScore=10,blockedEmployerIds?:string[]) {
