@@ -207,7 +207,7 @@ export default function EmployerJobEditor() {
     <View style={styles.two}><View style={styles.flex}><Field label="Search radius (miles)"><TextInput editable={!closed} value={form.radius_miles} onChangeText={v => update('radius_miles', v)} keyboardType="number-pad" style={styles.input} placeholder="25" placeholderTextColor={palette.quiet} /></Field></View><View style={styles.flex}><Field label="Role level"><TextInput editable={!closed} value={form.required_role_level} onChangeText={v => update('required_role_level', v)} style={styles.input} placeholder="e.g. Spa Manager" placeholderTextColor={palette.quiet} /></Field></View></View>
     <View style={styles.two}><View style={styles.flex}><Field label="Job type"><TextInput editable={!closed} value={form.job_type} onChangeText={v => update('job_type', v)} style={styles.input} /></Field></View><View style={styles.flex}><Field label="Contract"><TextInput editable={!closed} value={form.contract_type} onChangeText={v => update('contract_type', v)} style={styles.input} /></Field></View></View>
 
-    <Field label="Who should WHC consider?">
+    <Field label="Who should Talent House consider?">
       <Text style={styles.fieldHelp}>This changes who enters the match pool. Choose the broadest level you would genuinely interview.</Text>
       <View style={styles.scopeRow}>{[['same_level','Same level'],['step_up','Ready to step up'],['emerging','Emerging'],['open_transferable','Transferable']].map(([value,label]) => <Pressable disabled={closed} key={value} onPress={() => update('candidate_scope', value)} style={[styles.scope,form.candidate_scope===value&&styles.scopeActive]}><Text style={[styles.scopeText,form.candidate_scope===value&&styles.scopeTextActive]}>{label}</Text></Pressable>)}</View>
     </Field>

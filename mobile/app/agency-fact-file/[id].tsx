@@ -100,7 +100,7 @@ export default function AgencyFactFileScreen(){
       <View style={styles.propertyTop}>
         {p.logo_url?<Image source={{uri:p.logo_url}} style={styles.logo} resizeMode="contain"/>:null}
         <View style={{flex:1}}><Text style={styles.propertyEyebrow}>PROPERTY PROFILE</Text><Text style={styles.propertyName}>{p.name}</Text><Text style={styles.propertyLocation}>{[p.location,p.postcode].filter(Boolean).join(' · ')}</Text></View>
-        <View style={styles.ratingBox}><Text style={styles.rating}>{rating?rating.toFixed(1):(p.star_rating?String(p.star_rating):'—')}</Text><Text style={styles.ratingCount}>{rating?'★ WHC':p.star_rating?'★ PROPERTY':'NEW'}</Text></View>
+        <View style={styles.ratingBox}><Text style={styles.rating}>{rating?rating.toFixed(1):(p.star_rating?String(p.star_rating):'—')}</Text><Text style={styles.ratingCount}>{rating?'★ TALENT HOUSE':p.star_rating?'★ PROPERTY':'NEW'}</Text></View>
       </View>
       {p.description?<Text style={styles.description}>{p.description}</Text>:null}
       {photos.length>1?<ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.gallery}>{photos.slice(1,6).map((photo:string,i:number)=><Image key={`${photo}-${i}`} source={{uri:photo}} style={styles.thumb}/>)}</ScrollView>:null}
@@ -172,7 +172,7 @@ export default function AgencyFactFileScreen(){
         <Line label="Fire & emergency basics" value={f.fire_emergency_basics}/>
         <Line label="Assembly point" value={f.assembly_point}/>
         <Line label="Health & safety" value={f.health_safety_acknowledgement}/>
-        <Pressable onPress={()=>router.push('/security')} style={styles.security}><Text style={styles.securityEyebrow}>WHC SHIFT PROTECTION</Text><Text style={styles.securityTitle}>Safety & Security</Text><Text style={styles.securityText}>Review platform safety, privacy and what to do if something feels wrong before or during a shift.</Text><Text style={styles.securityLink}>Open guidance →</Text></Pressable>
+        <Pressable onPress={()=>router.push('/security')} style={styles.security}><Text style={styles.securityEyebrow}>TALENT HOUSE SHIFT PROTECTION</Text><Text style={styles.securityTitle}>Safety & Security</Text><Text style={styles.securityText}>Review platform safety, privacy and what to do if something feels wrong before or during a shift.</Text><Text style={styles.securityLink}>Open guidance →</Text></Pressable>
       </Section>
 
       {highlights.length?<Section eyebrow="PROPERTY" title="Useful facts"><Chips items={highlights}/></Section>:null}

@@ -58,9 +58,9 @@ export default function AcademyTranscriptScreen(){
 
   return <ScrollView style={styles.scroll} contentContainerStyle={styles.page}>
     <Pressable onPress={()=>router.back()} style={styles.backButton}><Text style={styles.back}>‹ Academy</Text></Pressable>
-    <Text style={styles.eyebrow}>WHC ACADEMY · STUDENT RECORDS</Text>
+    <Text style={styles.eyebrow}>TALENT HOUSE ACADEMY · STUDENT RECORDS</Text>
     <Text style={styles.title}>Academic transcript</Text>
-    <Text style={styles.intro}>A consolidated record of your WHC Academy enrolments, documented study time, module progress, assessment results and certificates.</Text>
+    <Text style={styles.intro}>A consolidated record of your Talent House Academy enrolments, documented study time, module progress, assessment results and certificates.</Text>
 
     {loading?<ActivityIndicator color={palette.ink} style={{marginTop:26}}/>:null}
     {error?<Text style={styles.error}>{error}</Text>:null}
@@ -69,7 +69,7 @@ export default function AcademyTranscriptScreen(){
       <View style={styles.identityCard}>
         <Text style={styles.identityEyebrow}>LEARNER</Text>
         <Text style={styles.identityName}>{name}</Text>
-        <Text style={styles.identityCopy}>WHC Academy professional-development record</Text>
+        <Text style={styles.identityCopy}>Talent House Academy professional-development record</Text>
       </View>
 
       <View style={styles.summaryGrid}>
@@ -91,7 +91,7 @@ export default function AcademyTranscriptScreen(){
       <Text style={styles.sectionHeaderEyebrow}>PROGRAMMES</Text>
       <Text style={styles.sectionHeaderTitle}>Transcript entries</Text>
 
-      {rows.length===0?<View style={styles.empty}><Text style={styles.emptyTitle}>No learning record yet.</Text><Text style={styles.emptyCopy}>Your transcript will populate automatically once you enrol on a WHC Academy programme.</Text></View>:rows.map(({course,enrollment})=>{
+      {rows.length===0?<View style={styles.empty}><Text style={styles.emptyTitle}>No learning record yet.</Text><Text style={styles.emptyCopy}>Your transcript will populate automatically once you enrol on a Talent House Academy programme.</Text></View>:rows.map(({course,enrollment})=>{
         const done=Object.keys(enrollment.progress||{}).length
         const complete=Boolean(enrollment.completed_at)
         return <Pressable key={course.slug} onPress={()=>router.push({pathname:'/academy-course/[slug]',params:{slug:course.slug}})} style={styles.entry}>
@@ -113,7 +113,7 @@ export default function AcademyTranscriptScreen(){
       <View style={styles.disclaimer}>
         <Text style={styles.disclaimerEyebrow}>RECORD STATUS</Text>
         <Text style={styles.disclaimerTitle}>Professional-development transcript</Text>
-        <Text style={styles.disclaimerCopy}>This transcript records WHC Academy learning and assessment activity. Documented learning time reflects the course durations held in the Academy catalogue. It is not a university transcript, regulated qualification record or externally accredited CPD statement unless a future programme is explicitly awarded that status.</Text>
+        <Text style={styles.disclaimerCopy}>This transcript records Talent House Academy learning and assessment activity. Documented learning time reflects the course durations held in the Academy catalogue. It is not a university transcript, regulated qualification record or externally accredited CPD statement unless a future programme is explicitly awarded that status.</Text>
       </View>
     </>:null}
   </ScrollView>

@@ -11,7 +11,7 @@ const talentCards:Card[]=[
  {title:'Agency shifts',copy:'Flexible spa shifts and live responses.',href:'/agency'},
  {title:'Residency',copy:'Specialist opportunities and confirmed placements.',href:'/residency'},
  {title:'Interview Ready',copy:'Prepare using your CV, the role and the employer.',href:'/interview-ready'},
- {title:'WHC Academy',copy:'Professional development and certificates.',href:'/academy'},
+ {title:'Talent House Academy',copy:'Professional development and certificates.',href:'/academy'},
  {title:'Before You Arrive',copy:'Arrival packs for confirmed work.',href:'/before-you-arrive'},
  {title:'Membership & Billing',copy:'Plan, credits and Featured Talent.',href:'/billing'},
  {title:'Notifications',copy:'Platform updates and account history.',href:'/notifications'},
