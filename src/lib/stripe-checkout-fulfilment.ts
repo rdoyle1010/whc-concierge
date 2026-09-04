@@ -102,6 +102,49 @@ async function announceFeaturedEmployer(supabase: any, employerId: string) {
   }
 }
 
+// Types whose delivery happens on a different path, so falling through here
+// is correct rather than a failure. Residency checkouts are intercepted by
+// handleResidencyStripeEvent before the webhook's switch ever runs.
+const DELIVERED_ELSEWHERE = new Set(['residency_booking', 'residency_listing'])
+
+// Money in, nothing out.
+//
+// Every branch below returned a bare { ok: true } whether or not it had
+// recognised the purchase, so a checkout carrying an unknown type - or the
+// right type with its companion id missing, which is the same thing to an
+// `&&` - took the payment, delivered nothing, and said the word "ok" on the
+// way out. Nobody would have found out until the buyer complained, and most
+// people do not complain, they just never come back.
+//
+// One-off payments get one chance: there is no invoice.paid to follow, no
+// subscription lifecycle to catch it later. So this shouts. It still returns
+// ok, because a retry would match nothing a second time either - the point is
+// that a human sees it while the payment is still refundable.
+async function nothingWasDelivered(
+  session: Stripe.Checkout.Session,
+  meta: Stripe.Metadata | null,
+): Promise<FulfilmentOutcome> {
+  const type = meta?.type || '(none)'
+  if (DELIVERED_ELSEWHERE.has(type)) return { ok: true, note: 'delivered elsewhere' }
+  // Subscriptions are delivered by invoice.paid and the subscription events.
+  if (session.mode === 'subscription') return { ok: true, note: 'subscription' }
+  if (session.payment_status !== 'paid') return { ok: true, note: 'unpaid' }
+
+  const amount = typeof session.amount_total === 'number'
+    ? `\u00a3${(session.amount_total / 100).toFixed(2)}`
+    : 'An amount'
+  const who = session.customer_details?.email || session.customer_email || 'an unidentified buyer'
+  await notifyAdmins(
+    'A payment was taken and nothing was delivered',
+    `${amount} was paid by ${who} on Stripe checkout ${session.id}, and no fulfilment matched it. `
+    + `The purchase was marked "${type}"${meta && Object.keys(meta).length ? ` with ${Object.keys(meta).filter(k => k !== 'type').join(', ') || 'no other details'}` : ' with no other details'}. `
+    + 'Deliver it by hand or refund it in Stripe - the buyer has paid and has nothing.',
+    '/admin/dashboard',
+  )
+  console.error('[Stripe fulfilment] nothing delivered for session', session.id, 'type', type)
+  return { ok: true, note: 'undelivered' }
+}
+
 /**
  * Deliver a completed checkout.
  *
@@ -117,8 +160,10 @@ export async function fulfilCheckoutSession(
 ): Promise<FulfilmentOutcome> {
   const stripe = getStripe()
   const meta = session.metadata
+  let delivered = false
 
   if (meta?.type === 'commercial_product' && meta?.product) {
+    delivered = true
     // Guaranteed fulfilment for memberships and featured products - the
     // redirect to /api/commercial/confirm never fires if the tab closes.
     const result = await fulfilCommercialPurchase(supabase, stripe, session)
@@ -129,6 +174,7 @@ export async function fulfilCheckoutSession(
   }
 
   if (meta?.type === 'sponsored_ad' && meta?.placement && meta?.brand_name) {
+    delivered = true
     const subscriptionId = typeof session.subscription === 'string' ? session.subscription : session.subscription?.id
     const { error } = await supabase.from('ad_placements').upsert({
       brand_name: meta.brand_name,
@@ -155,6 +201,7 @@ export async function fulfilCheckoutSession(
   }
 
   if (meta?.type === 'featured_profile' && meta?.candidate_id) {
+    delivered = true
     const { data: featuredCandidate } = await supabase.from('candidate_profiles').update({
       is_featured: true,
       featured_until: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
@@ -193,6 +240,7 @@ export async function fulfilCheckoutSession(
   }
 
   if (meta?.type === 'featured_employer' && meta?.employer_id) {
+    delivered = true
     let featuredUntil = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
     const subscriptionId = typeof session.subscription === 'string' ? session.subscription : session.subscription?.id
     if (subscriptionId) {
@@ -219,6 +267,7 @@ export async function fulfilCheckoutSession(
   // meant Stripe held the property's money, the case never closed and
   // the professional was never paid.
   if (meta?.type === 'agency_case_adjustment' && meta?.case_id) {
+    delivered = true
     const result = await applyAgencyCaseAdjustment(supabase, {
       caseId: String(meta.case_id),
       bookingId: meta.booking_id ? String(meta.booking_id) : null,
@@ -240,6 +289,7 @@ export async function fulfilCheckoutSession(
   }
 
   if (meta?.type === 'agency_booking' && meta?.booking_id) {
+    delivered = true
     // Pence are authoritative. parseInt on a pound string silently
     // truncated every half-hour shift - "382.5" became 382 - so the
     // recorded amount_paid sat up to 99p below what was actually
@@ -371,6 +421,7 @@ export async function fulfilCheckoutSession(
   }
 
   if (meta?.type === 'course_public' && meta?.course_slug && meta?.buyer_email) {
+    delivered = true
     try {
       const email = String(meta.buyer_email).toLowerCase()
       const buyerName = session.customer_details?.name || email.split('@')[0]
@@ -433,6 +484,7 @@ export async function fulfilCheckoutSession(
   }
 
   if (meta?.type === 'course_bundle' && meta?.candidate_id) {
+    delivered = true
     const coreCourses = (await getAcademyCatalog(false)).filter(course => course.is_core)
     const total = session.amount_total ?? 7900
     const { data: owned } = await supabase.from('course_enrollments')
@@ -457,6 +509,7 @@ export async function fulfilCheckoutSession(
   }
 
   if (meta?.type === 'course' && meta?.candidate_id && meta?.course_slug) {
+    delivered = true
     await supabase.from('course_enrollments').upsert(
       {
         candidate_id: meta.candidate_id,
@@ -469,6 +522,7 @@ export async function fulfilCheckoutSession(
   }
 
   if (meta?.type === 'agency_listing' && meta?.candidate_id) {
+    delivered = true
     await supabase.from('candidate_profiles').update({
       agency_available: true,
       agency_tier: meta.tier || 'basic',
@@ -479,6 +533,7 @@ export async function fulfilCheckoutSession(
   }
 
   if (meta?.type === 'employer_registration' && meta?.employer_id) {
+    delivered = true
     await supabase.from('employer_profiles').update({
       preferred_employer: true,
       preferred_until: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
@@ -487,6 +542,7 @@ export async function fulfilCheckoutSession(
   }
 
   if (meta?.type === 'agency_plus' && meta?.employer_id) {
+    delivered = true
     await supabase.from('employer_profiles').update({
       agency_plus_active: true,
       agency_plus_until: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
@@ -495,6 +551,7 @@ export async function fulfilCheckoutSession(
   }
 
   if (meta?.type === 'job_posting' && meta?.job_id) {
+    delivered = true
     // Shared with /api/employer/jobs/confirm-payment, which runs the same
     // publish when the browser comes back from Stripe. Two copies of this
     // would drift, and the one that drifts is the one nobody watches.
@@ -503,5 +560,6 @@ export async function fulfilCheckoutSession(
     })
   }
 
+  if (!delivered) return await nothingWasDelivered(session, meta)
   return { ok: true }
 }

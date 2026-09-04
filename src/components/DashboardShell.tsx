@@ -23,7 +23,7 @@ import { TrendingUp,
   AlertTriangle, Heart, Building2, ChevronRight, BarChart3, CreditCard, GraduationCap,
   Palette, Banknote, Download, MapPin, Brain, ClipboardList, ShieldCheck, Lock,
   Search, Mail, Image as ImageIcon, LayoutGrid, Lightbulb,
-  Activity,
+  Activity, Award,
 } from 'lucide-react'
 
 interface NavItem {
@@ -63,6 +63,10 @@ const navItems: Record<string, NavItem[]> = {
     { label: 'Go Featured', href: '/talent/upgrade', icon: <Heart size={17} /> },
     { label: 'Membership', href: '/talent/membership', icon: <CreditCard size={17} /> },
     { label: 'My Profile', href: '/talent/profile', icon: <User size={17} />, section: 'Account' },
+    // Awards were built, are shown on a portfolio, in Discover Talent and in the
+    // mobile directory - and had no door. Nobody can be recognised for something
+    // there is no way to enter.
+    { label: 'Awards & Recognition', href: '/talent/awards', icon: <Award size={17} /> },
     { label: 'Billing', href: '/talent/billing', icon: <CreditCard size={17} /> },
     { label: 'Privacy & Preferences', href: '/talent/privacy', icon: <ShieldCheck size={17} /> },
     { label: 'Security', href: '/talent/security', icon: <ShieldCheck size={17} /> },
@@ -83,6 +87,7 @@ const navItems: Record<string, NavItem[]> = {
     { label: 'Consultancy', href: '/consultancy', icon: <Lightbulb size={17} /> },
     { label: 'Company Profile', href: '/employer/profile', icon: <Building2 size={17} />, section: 'Your property' },
     { label: 'Property Fact File', href: '/employer/property-fact-file', icon: <FileText size={17} /> },
+    { label: 'Awards & Recognition', href: '/employer/awards', icon: <Award size={17} /> },
     { label: 'Analytics', href: '/employer/analytics', icon: <BarChart3 size={17} />, section: 'Visibility', accessKey: 'employer_analytics' },
     { label: 'Social & Advertising', href: '/employer/social', icon: <Megaphone size={17} /> },
     { label: 'Get Featured', href: '/employer/featured', icon: <Star size={17} /> },
