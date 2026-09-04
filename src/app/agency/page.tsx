@@ -66,13 +66,22 @@ export default function AgencyPage() {
   const [candidates, setCandidates] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [directoryChecked, setDirectoryChecked] = useState(false)
-  const [postcode, setPostcode] = useState('')
-  const [radius, setRadius] = useState('UK-wide')
+  // The search lives in the URL, so coming back from a profile brings it with
+  // you. It used to be state alone: you set a date and a postcode, opened
+  // somebody, pressed back, and the whole search was gone - which on a screen
+  // whose entire job is "who can work this shift, near me" meant starting
+  // again every time you looked at anybody.
+  const urlParam = (key: string, fallback = '') => {
+    if (typeof window === 'undefined') return fallback
+    return new URLSearchParams(window.location.search).get(key) || fallback
+  }
+  const [postcode, setPostcode] = useState(() => urlParam('postcode'))
+  const [radius, setRadius] = useState(() => urlParam('radius', 'UK-wide'))
   // No default date: the first view of the register is everyone on it.
   // A date narrows to confirmed availability; without one, you browse.
-  const [shiftDate, setShiftDate] = useState('')
-  const [shiftStartTime, setShiftStartTime] = useState('09:00')
-  const [shiftEndTime, setShiftEndTime] = useState('17:00')
+  const [shiftDate, setShiftDate] = useState(() => urlParam('shiftDate'))
+  const [shiftStartTime, setShiftStartTime] = useState(() => urlParam('shiftStartTime', '09:00'))
+  const [shiftEndTime, setShiftEndTime] = useState(() => urlParam('shiftEndTime', '17:00'))
   const [services, setServices] = useState<string[]>([])
   const [brands, setBrands] = useState<string[]>([])
   const [roles, setRoles] = useState<string[]>([])
@@ -110,6 +119,16 @@ export default function AgencyPage() {
   // Explicit UK-wide marker so the API never falls back to a stored radius
   // (or 400s when no radius has ever been stored).
   const ukWideParams = () => { const params = shiftParams(); params.set('radius', 'uk'); return params }
+
+  function rememberSearch(params: URLSearchParams) {
+    if (typeof window === 'undefined') return
+    const remembered = new URLSearchParams(params)
+    if (postcode) remembered.set('postcode', postcode)
+    else remembered.delete('postcode')
+    remembered.set('radius', radius === 'UK-wide' ? 'UK-wide' : radius)
+    const query = remembered.toString()
+    window.history.replaceState(null, '', query ? `/agency?${query}` : '/agency')
+  }
 
   async function loadDirectory(params = shiftParams()) {
     setLoading(true)
@@ -151,7 +170,22 @@ export default function AgencyPage() {
   }
 
   useEffect(() => {
-    loadDirectory(ukWideParams())
+    // Restore the search the address bar is carrying - a Back from a profile,
+    // or a link somebody was sent - rather than resetting to the whole
+    // register and losing what they had set up.
+    const restored = new URLSearchParams(typeof window === 'undefined' ? '' : window.location.search)
+    const savedLat = restored.get('lat')
+    const savedLng = restored.get('lng')
+    const savedRadius = restored.get('radius')
+    if (savedLat && savedLng && savedRadius && savedRadius !== 'UK-wide' && savedRadius !== 'uk') {
+      const params = shiftParams()
+      params.set('lat', savedLat); params.set('lng', savedLng); params.set('radius', String(parseInt(savedRadius, 10)))
+      const outward = normaliseOutward(restored.get('postcode') || '')
+      if (outward) setAppliedSearch({ outward, radius: savedRadius })
+      loadDirectory(params)
+    } else {
+      loadDirectory(ukWideParams())
+    }
     loadFavourites()
     supabase.from('course_enrollments').select('candidate_id, course_slug').not('completed_at', 'is', null).then(({ data }) => {
       if (!data) return
@@ -176,18 +210,18 @@ export default function AgencyPage() {
   }, [publicView])
 
   const toggleFilter = (arr: string[], set: (v: string[]) => void, val: string) => set(arr.includes(val) ? arr.filter(v => v !== val) : [...arr, val])
-  async function clearFilters() { setServices([]); setBrands([]); setRoles([]); setInsuredOnly(false); setConfirmedOnly(false); setAcademySel([]); setPostcode(''); setAppliedSearch(null); setPostcodeError(''); setDirectoryError(''); setRadius('UK-wide'); await loadDirectory(ukWideParams()) }
+  async function clearFilters() { setServices([]); setBrands([]); setRoles([]); setInsuredOnly(false); setConfirmedOnly(false); setAcademySel([]); setPostcode(''); setAppliedSearch(null); setPostcodeError(''); setDirectoryError(''); setRadius('UK-wide'); const params = ukWideParams(); if (typeof window !== 'undefined') window.history.replaceState(null, '', '/agency'); await loadDirectory(params) }
   async function handleSearch() {
     const params = shiftParams()
-    if (radius === 'UK-wide') { setAppliedSearch(null); setPostcodeError(''); setVisible(12); params.set('radius', 'uk'); await loadDirectory(params); return }
+    if (radius === 'UK-wide') { setAppliedSearch(null); setPostcodeError(''); setVisible(12); params.set('radius', 'uk'); rememberSearch(params); await loadDirectory(params); return }
     const outward = normaliseOutward(postcode)
     if (!outward) { setPostcodeError('Please enter a valid UK postcode, e.g. BS1 or SW1A 1AA'); return }
     const coords = await geocodeSearch(postcode)
     if (!coords) { setPostcodeError('We could not locate that postcode. Please enter a full UK postcode for an accurate mileage search.'); return }
     params.set('lat', String(coords.lat)); params.set('lng', String(coords.lng)); params.set('radius', String(parseInt(radius, 10)))
-    setAppliedSearch({ outward: areaOf(outward) === outward ? outward : outward, radius }); setPostcodeError(''); setVisible(12); await loadDirectory(params)
+    setAppliedSearch({ outward: areaOf(outward) === outward ? outward : outward, radius }); setPostcodeError(''); setVisible(12); rememberSearch(params); await loadDirectory(params)
   }
-  async function searchUkWide() { setRadius('UK-wide'); setAppliedSearch(null); setPostcodeError(''); setVisible(12); await loadDirectory(ukWideParams()) }
+  async function searchUkWide() { setRadius('UK-wide'); setAppliedSearch(null); setPostcodeError(''); setVisible(12); const params = ukWideParams(); rememberSearch(params); await loadDirectory(params) }
 
   const filtered = useMemo(() => candidates.filter(c => {
     if (c.agency_available === false) return false
@@ -373,7 +407,7 @@ export default function AgencyPage() {
   }
 
   return <DashboardShell role="employer">
-    <section className="mb-8"><div className="max-w-[1460px] mx-auto"><p className="dashboard-eyebrow">Agency staffing</p><h1 className="dashboard-title">Find available spa professionals</h1><p className="dashboard-intro">Search the register by date, hours, distance and skill. Every profile shows what Talent House has checked and what it has not, so you decide what a shift needs.</p><form onSubmit={e=>{e.preventDefault();handleSearch()}} className="max-w-5xl space-y-4 mt-7 bg-white border border-border p-5 md:p-6"><div className="grid grid-cols-1 sm:grid-cols-3 gap-3"><label className="text-[11px] font-medium text-secondary">Shift date (optional)<input type="date" min={new Date().toLocaleDateString('en-CA')} value={shiftDate} onChange={e=>setShiftDate(e.target.value)} className="input-field mt-1 w-full"/></label><label className="text-[11px] font-medium text-secondary">Starts<input required type="time" value={shiftStartTime} onChange={e=>setShiftStartTime(e.target.value)} className="input-field mt-1 w-full"/></label><label className="text-[11px] font-medium text-secondary">Finishes<input required type="time" value={shiftEndTime} onChange={e=>setShiftEndTime(e.target.value)} className="input-field mt-1 w-full"/></label></div><div className="flex flex-col sm:flex-row gap-3"><input type="text" placeholder="Enter postcode" aria-label="Postcode" value={postcode} onChange={e=>{setPostcode(e.target.value);setPostcodeError('')}} className="input-field flex-1"/><select value={radius} onChange={e=>setRadius(e.target.value)} aria-label="Search radius" className="input-field sm:w-40"><option>UK-wide</option><option>5 miles</option><option>10 miles</option><option>25 miles</option><option>50 miles</option><option>100 miles</option></select><button type="submit" className="btn-primary flex items-center justify-center gap-2"><Search size={14}/>Find available talent</button></div><p className="text-[11px] text-muted">Leave the date blank to browse everyone on the register. With a date and hours set, availability is checked for the whole shift and overlapping bookings are excluded.</p></form>{postcodeError&&<p role="alert" className="text-[12px] text-red-600 mt-2">{postcodeError}</p>}{appliedSearch&&<div className="mt-3"><span className="inline-flex items-center gap-1.5 text-[12px] font-medium bg-surface text-accent border border-accent/20 px-3 py-1"><MapPin size={11}/>Near {appliedSearch.outward} (within ~{appliedSearch.radius})<button type="button" onClick={searchUkWide} aria-label="Clear location filter" className="p-2 -m-1"><X size={12}/></button></span></div>}<div className="max-w-5xl mt-5 border border-border bg-surface p-5"><p className="text-[10px] font-semibold uppercase tracking-[.15em] text-ink">What the marks on a profile mean</p><p className="mt-2 text-[12px] leading-5 text-secondary">Each mark below appears only once that check is complete. Everyone listed has had their right to work established by Talent House - that one is a condition of being on the register at all. The marks below are separate, and each appears only once that check is complete. A profile without one has not been through it, and every card says so in as many words.</p><div className="mt-3 grid gap-4 sm:grid-cols-3 text-[12px] leading-5 text-secondary"><div><p className="font-semibold text-ink mb-1">Insured</p>Optional, because many placements sit under the property's own cover. Where a therapist holds their own policy the mark appears once the documents are uploaded, and you can filter the register to insured professionals only.</div><div><p className="font-semibold text-ink mb-1">Qualifications</p>Certificates are uploaded and reviewed, including overseas training. Profiles distinguish reviewed qualifications from self-declared ones, so HR is not left decoding unfamiliar certificate names.</div><div><p className="font-semibold text-ink mb-1">Talent House Verified</p>Identity checked by Talent House, on top of the right to work every listed professional has already established. Academy training appears alongside it with certificate codes. Somebody who has just joined the register does not carry this mark.</div></div></div></div></section>
+    <section className="mb-8"><div className="max-w-[1460px] mx-auto"><p className="dashboard-eyebrow">Agency staffing</p><h1 className="dashboard-title">Find available spa professionals</h1><p className="dashboard-intro">Search the register by date, hours, distance and skill. Every profile shows what Talent House has checked and what it has not, so you decide what a shift needs.</p><form onSubmit={e=>{e.preventDefault();handleSearch()}} className="max-w-5xl space-y-4 mt-7 bg-white border border-border p-5 md:p-6"><div className="grid grid-cols-1 sm:grid-cols-3 gap-3"><label className="text-[11px] font-medium text-secondary">Shift date (optional)<input type="date" min={new Date().toLocaleDateString('en-CA')} value={shiftDate} onChange={e=>setShiftDate(e.target.value)} className="input-field mt-1 w-full"/></label><label className="text-[11px] font-medium text-secondary">Starts<input required type="time" value={shiftStartTime} onChange={e=>setShiftStartTime(e.target.value)} className="input-field mt-1 w-full"/></label><label className="text-[11px] font-medium text-secondary">Finishes<input required type="time" value={shiftEndTime} onChange={e=>setShiftEndTime(e.target.value)} className="input-field mt-1 w-full"/></label></div><div className="flex flex-col sm:flex-row gap-3"><input type="text" placeholder="Enter postcode" aria-label="Postcode" value={postcode} onChange={e=>{setPostcode(e.target.value);setPostcodeError('')}} className="input-field flex-1"/><select value={radius} onChange={e=>setRadius(e.target.value)} aria-label="Search radius" className="input-field sm:w-40"><option>UK-wide</option><option>5 miles</option><option>10 miles</option><option>25 miles</option><option>50 miles</option><option>100 miles</option></select><button type="submit" className="btn-primary flex items-center justify-center gap-2"><Search size={14}/>Find available talent</button></div><p className="text-[11px] text-muted">Distances are measured from your property\u2019s postcode unless you enter another one here, and nobody is shown whose own travel radius does not reach you. Leave the date blank to browse everyone on the register; set a date and hours and availability is checked for the whole shift, with overlapping bookings excluded.</p></form>{postcodeError&&<p role="alert" className="text-[12px] text-red-600 mt-2">{postcodeError}</p>}{appliedSearch&&<div className="mt-3"><span className="inline-flex items-center gap-1.5 text-[12px] font-medium bg-surface text-accent border border-accent/20 px-3 py-1"><MapPin size={11}/>Near {appliedSearch.outward} (within ~{appliedSearch.radius})<button type="button" onClick={searchUkWide} aria-label="Clear location filter" className="p-2 -m-1"><X size={12}/></button></span></div>}<div className="max-w-5xl mt-5 border border-border bg-surface p-5"><p className="text-[10px] font-semibold uppercase tracking-[.15em] text-ink">What the marks on a profile mean</p><p className="mt-2 text-[12px] leading-5 text-secondary">Each mark below appears only once that check is complete. Everyone listed has had their right to work established by Talent House - that one is a condition of being on the register at all. The marks below are separate, and each appears only once that check is complete. A profile without one has not been through it, and every card says so in as many words.</p><div className="mt-3 grid gap-4 sm:grid-cols-3 text-[12px] leading-5 text-secondary"><div><p className="font-semibold text-ink mb-1">Insured</p>Optional, because many placements sit under the property's own cover. Where a therapist holds their own policy the mark appears once the documents are uploaded, and you can filter the register to insured professionals only.</div><div><p className="font-semibold text-ink mb-1">Qualifications</p>Certificates are uploaded and reviewed, including overseas training. Profiles distinguish reviewed qualifications from self-declared ones, so HR is not left decoding unfamiliar certificate names.</div><div><p className="font-semibold text-ink mb-1">Talent House Verified</p>Identity checked by Talent House, on top of the right to work every listed professional has already established. Academy training appears alongside it with certificate codes. Somebody who has just joined the register does not carry this mark.</div></div></div></div></section>
 
     <div className="max-w-[1460px] mx-auto pb-10"><div className="flex gap-8"><aside className="hidden lg:block w-[260px] shrink-0 sticky top-[76px] self-start max-h-[calc(100vh-100px)] overflow-y-auto">{filterPanel}</aside>{filtersOpen&&<div className="fixed inset-0 z-50 lg:hidden"><div className="absolute inset-0 bg-black/50" onClick={()=>setFiltersOpen(false)}/><div {...filtersDialog.panelProps} className="absolute inset-y-0 left-0 w-[300px] max-w-[85vw] bg-surface overflow-y-auto p-4"><div className="flex items-center justify-between mb-3"><p className="text-[14px] font-semibold text-ink">Refine search</p><button type="button" onClick={()=>setFiltersOpen(false)} aria-label="Close filters" className="p-2 -m-2"><X size={18}/></button></div>{filterPanel}<button type="button" onClick={()=>setFiltersOpen(false)} className="btn-primary w-full mt-4">Show {sorted.length} professionals</button></div></div>}<div className="flex-1 min-w-0"><div className="flex flex-col gap-3 mb-5 sm:flex-row sm:items-center sm:justify-between"><div className="flex items-center gap-3"><button type="button" onClick={()=>setFiltersOpen(true)} className="lg:hidden inline-flex items-center gap-1.5 text-[12px] font-medium border border-border bg-white px-3 py-1.5"><SlidersHorizontal size={13}/>Filters</button><p className="text-[13px] text-muted">{sorted.length} professional{sorted.length!==1?'s':''}</p></div><div className="flex flex-wrap items-center gap-2"><div className="inline-flex border border-border bg-white p-1"><button type="button" onClick={()=>setViewMode('list')} className={`inline-flex items-center gap-2 px-3 py-2 text-[11px] font-semibold ${viewMode==='list'?'bg-[#1c1c1c] text-white':'text-secondary'}`}><Rows3 size={13}/>List</button><button type="button" onClick={()=>setViewMode('swipe')} className={`inline-flex items-center gap-2 px-3 py-2 text-[11px] font-semibold ${viewMode==='swipe'?'bg-[#1c1c1c] text-white':'text-secondary'}`}><Layers3 size={13}/>Swipe</button></div><select value={sortBy} onChange={e=>setSortBy(e.target.value)} aria-label="Sort professionals" className="input-field !w-auto !py-1.5 text-[12px]"><option value="match">Best Match</option><option value="rated">Highest Rated</option><option value="rate_low">Hourly Rate: low to high</option><option value="rate_high">Hourly Rate: high to low</option><option value="recent">Most Recent</option></select></div></div>
       {loading?<div className="grid grid-cols-1 xl:grid-cols-2 gap-5">{Array.from({length:4}).map((_,i)=><div key={i} className="skeleton h-72"/>)}</div>:directoryError?<div className="bg-white border border-border p-10 text-center text-sm text-red-600">{directoryError}</div>:sorted.length===0?<div className="bg-white border border-border p-12 text-center"><h2 className="text-xl font-serif text-ink mb-2">No available professionals match this search.</h2><p className="text-[13px] text-secondary mb-5">Try widening the radius, changing the shift hours or clearing filters.</p><div className="flex gap-3 justify-center flex-wrap"><button type="button" onClick={searchUkWide} className="btn-primary">Search UK-wide</button><button type="button" onClick={clearFilters} className="btn-secondary">Clear filters</button>{!originGeocoded&&<Link href="/employer/profile" className="btn-secondary">Add property postcode</Link>}</div></div>:viewMode==='swipe'?<div><div className="mb-5 border border-border bg-surface px-5 py-4"><p className="text-[12px] font-semibold text-ink">Swipe through available professionals</p><p className="mt-1 text-[11px] text-muted">Swipe right to continue with that professional and make an offer. Swipe left to pass. Nothing is booked until you review the profile and send the offer.</p></div><SwipeDeck items={sorted} renderItem={(c)=>candidateCard(c,true)} onLeft={async()=>{}} onRight={async(c)=>{window.location.href=profileParams(c)}}/></div>:<><div className="fade-in grid grid-cols-1 xl:grid-cols-2 gap-5">{sorted.slice(0,visible).map(c=><div key={c.id}>{candidateCard(c)}</div>)}</div>{visible<sorted.length&&<div className="text-center mt-8"><button type="button" onClick={()=>setVisible(v=>v+12)} className="btn-secondary">Load more professionals</button></div>}</>}
