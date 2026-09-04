@@ -5,6 +5,7 @@ import { moneyTone, toneClasses } from '../src/lib/status-tone.ts'
 
 const read = (path: string) => readFileSync(new URL(`../${path}`, import.meta.url), 'utf8')
 const MIGRATION = 'supabase/migrations/20260904180000_arrival_packs_for_accepted_shifts.sql'
+const REBUILT = 'supabase/migrations/20260904190000_arrival_pack_actually_builds.sql'
 const PAGE = 'src/app/talent/before-you-arrive/page.tsx'
 
 // The arrival pack - the address, the staff entrance, who to ask for, parking,
@@ -26,7 +27,43 @@ test('a pack is generated for the status the platform actually writes', () => {
 test('the packs that were never made are made now', () => {
   const sql = read(MIGRATION)
   assert.match(sql, /SELECT id FROM public\.agency_bookings WHERE status IN \('accepted','confirmed','completed'\)/)
-  assert.match(sql, /EXCEPTION WHEN others THEN/, 'one bad fact file must not stop the rest')
+})
+
+// The status was only the first fault. Running the generator by hand gave
+// `record "b" has no field "start_date"`: the booking section was a SQL CASE
+// naming agency columns in one branch and residency columns in the other, and
+// PL/pgSQL resolves every field in the expression against the row it holds
+// whichever branch wins. So an agency booking died on the residency columns
+// and a residency booking would have died on shift_date. It had never produced
+// a pack for anything.
+test('the two booking shapes stop naming each other’s columns', () => {
+  const rebuilt = read(REBUILT)
+  const body = rebuilt.slice(rebuilt.indexOf('IF p_booking_type = \'agency\' THEN\n    booking_json'))
+  assert.match(body, /booking_json := jsonb_build_object\(\n      'date', b->'shift_date'/, 'agency fields in the agency branch')
+  assert.match(body, /booking_json := jsonb_build_object\(\n      'start_date', b->'start_date'/, 'residency fields in the residency branch')
+  // Procedural branching, not a SQL CASE, is what keeps them apart.
+  assert.ok(!/case when p_booking_type = 'agency' then jsonb_build_object/i.test(rebuilt))
+})
+
+// A pack is assembled from around fifty optional columns across two tables.
+// Any one of them missing took the whole thing down with an error nobody saw,
+// because the trigger swallowed it and the professional simply got no pack.
+test('a missing column makes a thinner pack, not no pack', () => {
+  const rebuilt = read(REBUILT)
+  assert.match(rebuilt, /SELECT to_jsonb\(t\) INTO e FROM public\.employer_profiles/, 'read as jsonb, where an absent key is null')
+  assert.match(rebuilt, /f := coalesce\(f, '\{\}'::jsonb\)/, 'and no fact file at all is an empty one')
+  assert.match(rebuilt, /jsonb_typeof\(e->'product_houses_used'\) = 'array'/, 'a column that is not an array is not treated as one')
+  assert.ok(!/\be\.\w+|\bf\.\w+/.test(rebuilt.slice(rebuilt.indexOf('payload := jsonb_build_object'), rebuilt.indexOf('INSERT INTO public.booking_arrival_packs'))),
+    'no record-field access survives in the payload')
+})
+
+// A backfill that reports success while generating nothing is how this stayed
+// invisible for a day.
+test('a backfill that fails says so', () => {
+  const rebuilt = read(REBUILT)
+  const backfill = rebuilt.slice(rebuilt.indexOf('DO $backfill$'))
+  assert.ok(!/EXCEPTION WHEN others/.test(backfill), 'the failure is not swallowed this time')
+  assert.match(backfill, /RAISE NOTICE 'arrival packs attempted for % agency bookings'/)
 })
 
 // Once a shift has passed the pack stops being a briefing and becomes a
@@ -61,6 +98,37 @@ test('a colour means one thing everywhere', () => {
   assert.match(toneClasses('waiting').card, /amber/)
   assert.match(toneClasses('action').card, /red/)
   assert.match(toneClasses('quiet').card, /#dddddd/)
+})
+
+// The portal repaints every text-amber-* to grey and every bg-amber-50 to
+// near-white, deliberately - grey is the brand and a dashboard full of warning
+// colours reads as panic. A status carried by amber text is therefore a status
+// nobody ever sees, which is exactly what happened to the first version of
+// these tiles.
+test('no tone relies on a colour the portal strips', () => {
+  const tones = read('src/lib/status-tone.ts')
+  const css = read('src/app/portal-clean.css')
+  assert.match(css, /\[class\*="text-amber-"\]/, 'the rule this is avoiding still exists')
+  const values = ['done', 'waiting', 'action', 'quiet'] as const
+  for (const tone of values) {
+    const classes = toneClasses(tone)
+    const all = `${classes.card} ${classes.pill}`
+    assert.ok(!/text-amber-|text-yellow-/.test(all), `${tone} must not signal through stripped text`)
+    assert.ok(!/\bbg-amber-50\b|\bbg-yellow-50\b/.test(all), `${tone} must not signal through a stripped tint`)
+  }
+  // Borders and saturated fills survive, so that is what carries it.
+  assert.match(tones, /border-l-amber-500/)
+  assert.match(tones, /bg-amber-500 text-white/)
+})
+
+// A colour nobody can name is decoration. Each tone says its state in words as
+// well, which also survives a screenshot, a colourblind reader and the portal.
+test('every tone says what it means in words', () => {
+  assert.equal(toneClasses('done').word, 'Paid')
+  assert.equal(toneClasses('waiting').word, 'Waiting')
+  assert.equal(toneClasses('action').word, 'Needs you')
+  assert.equal(toneClasses('quiet').word, '', 'nothing to say about nothing')
+  assert.match(read('src/app/talent/agency/page.tsx'), /\{classes\.word\}<\/span>/)
 })
 
 test('the money row says which figure needs something from you', () => {

@@ -27,8 +27,11 @@ function expiryLabel(expiresAt: string | null | undefined): string | null {
 function MoneyTile({ label, amount, tone, note }: { label: string; amount: number; tone: StatusTone; note: string }) {
   const classes = toneClasses(tone)
   return <div className={`dashboard-card !py-4 ${classes.card}`}>
-    <p className={`text-[11px] uppercase tracking-wide mb-1 ${classes.label}`}>{label}</p>
-    <p className={`text-[20px] font-semibold ${classes.value}`}>£{amount}</p>
+    <div className="flex items-start justify-between gap-2 mb-1">
+      <p className="text-[11px] uppercase tracking-wide text-muted">{label}</p>
+      {classes.word && <span className={`shrink-0 px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[.08em] ${classes.pill}`}>{classes.word}</span>}
+    </div>
+    <p className="text-[20px] font-semibold text-ink">£{amount}</p>
     <p className="text-[10px] text-muted mt-0.5">{note}</p>
   </div>
 }
