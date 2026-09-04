@@ -91,7 +91,7 @@ export default function AgencyAccountScreen(){
     <Pressable onPress={()=>router.back()} style={styles.backButton}><Text style={styles.back}>‹ Back</Text></Pressable>
     <Text style={styles.eyebrow}>AGENCY · YOUR ACCOUNT</Text>
     <Text style={styles.title}>Be bookable on your terms.</Text>
-    <Text style={styles.intro}>Control your rate, travel area and urgent-cover contact preferences. Subscription visibility and WHC trust checks stay separate so properties can see both clearly.</Text>
+    <Text style={styles.intro}>Control your rate, travel area and urgent-cover contact preferences. Subscription visibility and Talent House trust checks stay separate so properties can see both clearly.</Text>
     {error?<View style={styles.errorCard}><Text style={styles.errorTitle}>We could not update Agency</Text><Text style={styles.error}>{error}</Text></View>:null}
 
     <View style={[styles.statusCard,active&&styles.statusCardActive]}>
@@ -99,7 +99,7 @@ export default function AgencyAccountScreen(){
         <View style={{flex:1}}>
           <Text style={[styles.statusEyebrow,active&&styles.statusEyebrowActive]}>{active?'AGENCY REGISTER ACTIVE':'REGISTER STATUS'}</Text>
           <Text style={[styles.statusTitle,active&&styles.statusTitleActive]}>{active?`${currentTier} Agency membership`:'Not currently listed'}</Text>
-          <Text style={[styles.statusCopy,active&&styles.statusCopyActive]}>{active?`${currentTier==='Featured'?'Priority placement and Featured visibility':'Standard register visibility and shift access'}${candidate?.agency_listed_until?` · current period to ${new Date(candidate.agency_listed_until).toLocaleDateString('en-GB')}`:''}`:'Choose a register tier once your Talent profile has WHC approval.'}</Text>
+          <Text style={[styles.statusCopy,active&&styles.statusCopyActive]}>{active?`${currentTier==='Featured'?'Priority placement and Featured visibility':'Standard register visibility and shift access'}${candidate?.agency_listed_until?` · current period to ${new Date(candidate.agency_listed_until).toLocaleDateString('en-GB')}`:''}`:'Choose a register tier once your Talent profile has Talent House approval.'}</Text>
         </View>
         <View style={[styles.statusBadge,active&&styles.statusBadgeActive]}><Text style={[styles.statusBadgeText,active&&styles.statusBadgeTextActive]}>{active?'LIVE':'OFF'}</Text></View>
       </View>
@@ -109,12 +109,12 @@ export default function AgencyAccountScreen(){
     <SectionHeader eyebrow="TRUST & READINESS" title="What properties can rely on" copy="Your membership controls visibility. Approval, verification, insurance and location are independent trust signals." />
     <View style={styles.trustGrid}>
       <TrustItem label="Talent approval" value={candidate?.approval_status==='approved'?'Approved':'Pending'} complete={candidate?.approval_status==='approved'} />
-      <TrustItem label="WHC verification" value={candidate?.whc_verified?'Verified':'Not yet'} complete={Boolean(candidate?.whc_verified)} />
+      <TrustItem label="Talent House verification" value={candidate?.whc_verified?'Verified':'Not yet'} complete={Boolean(candidate?.whc_verified)} />
       <TrustItem label="Insurance" value={candidate?.has_insurance?'Recorded':'Not recorded'} complete={Boolean(candidate?.has_insurance)} />
       <TrustItem label="Location" value={candidate?.location_verified?'Verified':'Needs postcode'} complete={Boolean(candidate?.location_verified)} />
     </View>
 
-    <SectionHeader eyebrow="WORKING PREFERENCES" title="Your Agency details" copy="Set the practical information WHC uses when matching you to flexible work." />
+    <SectionHeader eyebrow="WORKING PREFERENCES" title="Your Agency details" copy="Set the practical information Talent House uses when matching you to flexible work." />
     <View style={styles.card}>
       <Field label="Hourly rate (£)" help="Your requested hourly rate for Agency work."><TextInput value={rate} onChangeText={setRate} keyboardType="decimal-pad" placeholder="25" placeholderTextColor={palette.quiet} style={styles.input}/></Field>
       <Field label="Mobile number" help="Used for booking contact and urgent cover where you opt in."><TextInput value={phone} onChangeText={setPhone} keyboardType="phone-pad" placeholder="07700 900123" placeholderTextColor={palette.quiet} style={styles.input}/></Field>
@@ -123,19 +123,19 @@ export default function AgencyAccountScreen(){
         <View style={styles.col}><Field label="Travel radius" help="Maximum miles you want to travel."><TextInput value={radius} onChangeText={setRadius} keyboardType="number-pad" placeholder="15" placeholderTextColor={palette.quiet} style={styles.input}/></Field></View>
       </View>
       <View style={styles.switchRow}>
-        <View style={{flex:1}}><Text style={styles.switchEyebrow}>URGENT COVER</Text><Text style={styles.switchTitle}>Same-day shift texts</Text><Text style={styles.help}>Allow WHC to text you when a property urgently needs cover that fits your Agency settings.</Text></View>
+        <View style={{flex:1}}><Text style={styles.switchEyebrow}>URGENT COVER</Text><Text style={styles.switchTitle}>Same-day shift texts</Text><Text style={styles.help}>Allow Talent House to text you when a property urgently needs cover that fits your Agency settings.</Text></View>
         <Switch value={sms} onValueChange={setSms} trackColor={{false:palette.lineStrong,true:'#A8B9C3'}} thumbColor={sms?palette.ink:palette.paper}/>
       </View>
       <Pressable disabled={!!busy} onPress={save} style={[styles.secondary,!!busy&&styles.disabled]}><Text style={styles.secondaryText}>{busy==='save'?'Saving details…':'Save Agency details'}</Text></Pressable>
     </View>
 
     {!active?<>
-      <SectionHeader eyebrow="MEMBERSHIP" title="Join the Agency register" copy="Choose how visible you want to be. Your profile must still pass WHC approval before payment is enabled." />
+      <SectionHeader eyebrow="MEMBERSHIP" title="Join the Agency register" copy="Choose how visible you want to be. Your profile must still pass Talent House approval before payment is enabled." />
       <View style={styles.planStack}>
         <Plan selected={tier==='basic'} onPress={()=>setTier('basic')} name="Basic Agency" price="£10 / month" kicker="REGISTER ACCESS" points={['Listed on the Agency register','Receive relevant shift offers','Eligible for urgent-cover alerts']} />
         <Plan selected={tier==='featured'} onPress={()=>setTier('featured')} name="Featured Agency" price="£20 / month" kicker="PRIORITY VISIBILITY" points={['Everything in Basic','Priority register placement','Featured status shown to properties']} />
       </View>
-      {candidate?.approval_status!=='approved'?<View style={styles.warning}><Text style={styles.warningEyebrow}>APPROVAL REQUIRED</Text><Text style={styles.warningText}>Your Talent profile must be approved by WHC before Agency payment can be started.</Text></View>:null}
+      {candidate?.approval_status!=='approved'?<View style={styles.warning}><Text style={styles.warningEyebrow}>APPROVAL REQUIRED</Text><Text style={styles.warningText}>Your Talent profile must be approved by Talent House before Agency payment can be started.</Text></View>:null}
       <Pressable disabled={!!busy||candidate?.approval_status!=='approved'} onPress={checkout} style={[styles.primary,(!!busy||candidate?.approval_status!=='approved')&&styles.disabled]}><Text style={styles.primaryText}>{busy==='checkout'?'Opening secure payment…':`Join ${tier==='featured'?'Featured':'Basic'} Agency`}</Text></Pressable>
       <Text style={styles.secureNote}>Secure subscription checkout is handled through Stripe.</Text>
     </>:<>
@@ -147,7 +147,7 @@ export default function AgencyAccountScreen(){
       <Pressable disabled={!!busy} onPress={manageSubscription} style={[styles.primary,!!busy&&styles.disabled]}><Text style={styles.primaryText}>{busy==='portal'?'Opening Stripe…':'Manage Agency subscription'}</Text></Pressable>
     </>}
 
-    <View style={styles.note}><Text style={styles.noteEyebrow}>YOUR CONTROL</Text><Text style={styles.noteTitle}>Visibility does not override suitability.</Text><Text style={styles.noteCopy}>Featured placement can increase visibility, but WHC matching, approval, verification, travel practicality and property requirements remain separate. Properties should still choose the right professional for the shift.</Text></View>
+    <View style={styles.note}><Text style={styles.noteEyebrow}>YOUR CONTROL</Text><Text style={styles.noteTitle}>Visibility does not override suitability.</Text><Text style={styles.noteCopy}>Featured placement can increase visibility, but Talent House matching, approval, verification, travel practicality and property requirements remain separate. Properties should still choose the right professional for the shift.</Text></View>
   </ScrollView>
 }
 

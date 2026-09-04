@@ -37,7 +37,7 @@ export default function DiscoverTalent(){
  if(locked)return <View style={styles.lockPage}>
   <Text style={styles.lockEyebrow}>EMPLOYER PRO</Text>
   <Text style={styles.lockTitle}>Search the market, not just your inbox.</Text>
-  <Text style={styles.lockCopy}>Discover Talent gives Pro employers access to visible professionals across WHC, ranked against your live roles using the same matching logic as the website.</Text>
+  <Text style={styles.lockCopy}>Discover Talent gives Pro employers access to visible professionals across Talent House, ranked against your live roles using the same matching logic as the website.</Text>
   <View style={styles.lockCard}><Text style={styles.lockCardTitle}>Included with Pro</Text><Text style={styles.lockLine}>Role-based match ranking</Text><Text style={styles.lockLine}>Verified and featured profile signals</Text><Text style={styles.lockLine}>Direct employer-to-talent messaging</Text></View>
   <Pressable onPress={()=>router.back()} style={styles.outline}><Text style={styles.outlineText}>Back to employer home</Text></Pressable>
  </View>
@@ -69,7 +69,7 @@ export default function DiscoverTalent(){
 
      <View style={styles.metaRow}>{item.location?<Text style={styles.meta}>{item.location}</Text>:null}{item.years_experience?<Text style={styles.meta}>{item.years_experience} yrs experience</Text>:null}</View>
 
-     <View style={styles.signalRow}>{item.whc_verified?<View style={styles.signal}><Text style={styles.signalText}>WHC VERIFIED</Text></View>:null}{item.is_featured?<View style={styles.signal}><Text style={styles.signalText}>FEATURED</Text></View>:null}{Number(item.review_count||0)>0?<View style={styles.signal}><Text style={styles.signalText}>{Number(item.review_score||0).toFixed(1)} / 5 · {item.review_count} review{item.review_count===1?'':'s'}</Text></View>:null}</View>
+     <View style={styles.signalRow}>{item.whc_verified?<View style={styles.signal}><Text style={styles.signalText}>TALENT HOUSE VERIFIED</Text></View>:null}{item.is_featured?<View style={styles.signal}><Text style={styles.signalText}>FEATURED</Text></View>:null}{Number(item.review_count||0)>0?<View style={styles.signal}><Text style={styles.signalText}>{Number(item.review_score||0).toFixed(1)} / 5 · {item.review_count} review{item.review_count===1?'':'s'}</Text></View>:null}</View>
 
      {match?.matchExplanation?<View style={styles.insight}><Text style={styles.insightEyebrow}>WHY THIS MATCH</Text><Text style={styles.explanation}>{match.matchExplanation}</Text></View>:null}
      {match?.hardStop?<View style={styles.warningBox}><Text style={styles.warningEyebrow}>CHECK BEFORE CONTACT</Text><Text style={styles.warning}>{match.hardStopReason}</Text></View>:null}

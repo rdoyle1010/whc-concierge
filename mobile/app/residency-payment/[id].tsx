@@ -119,7 +119,7 @@ export default function ResidencyPaymentScreen() {
       </View>
       <View style={styles.breakdown}>
         <CostRow label="Specialist booking value" value={`£${gross.toFixed(2)}`} dark />
-        <CostRow label="WHC platform fee (10%)" value={`£${fee.toFixed(2)}`} dark />
+        <CostRow label="Talent House platform fee (10%)" value={`£${fee.toFixed(2)}`} dark />
         <View style={styles.breakdownDivider} />
         <CostRow label="Total due" value={`£${total.toFixed(2)}`} dark strong />
       </View>
@@ -128,7 +128,7 @@ export default function ResidencyPaymentScreen() {
     {paid ? <View style={styles.confirmedCard}>
       <Text style={styles.confirmedEyebrow}>CONFIRMED PLACEMENT</Text>
       <Text style={styles.confirmedTitle}>Payment received. The Residency is secured.</Text>
-      <Text style={styles.confirmedCopy}>The specialist booking value is recorded for payout after the Residency under the existing WHC payout process.</Text>
+      <Text style={styles.confirmedCopy}>The specialist booking value is recorded for payout after the Residency under the existing Talent House payout process.</Text>
       {booking.amount_paid ? <View style={styles.confirmedMeta}><Text style={styles.confirmedMetaLabel}>Amount paid</Text><Text style={styles.confirmedMetaValue}>£{Number(booking.amount_paid).toFixed(2)}</Text></View> : null}
     </View> : booking.status === 'accepted' ? <>
       <View style={styles.paymentCard}>
@@ -145,9 +145,9 @@ export default function ResidencyPaymentScreen() {
     </View>}
 
     <View style={styles.protectionCard}>
-      <Text style={styles.protectionEyebrow}>WHC PAYMENT PROTECTION</Text>
+      <Text style={styles.protectionEyebrow}>TALENT HOUSE PAYMENT PROTECTION</Text>
       <Text style={styles.protectionTitle}>Clear terms before money moves.</Text>
-      <Text style={styles.protectionCopy}>The agreed day rate, booking value and WHC fee are shown before checkout. Stripe handles card processing securely and WHC records the confirmed payment against this Residency booking.</Text>
+      <Text style={styles.protectionCopy}>The agreed day rate, booking value and Talent House fee are shown before checkout. Stripe handles card processing securely and Talent House records the confirmed payment against this Residency booking.</Text>
     </View>
 
     <Pressable onPress={() => load(false)} style={styles.refreshButton}><Text style={styles.refresh}>Refresh payment status</Text><Text style={styles.refreshArrow}>↻</Text></Pressable>

@@ -150,7 +150,7 @@ export default function AgencyUrgentScreen() {
     <Text style={styles.eyebrow}>URGENT COVER</Text>
     <Text style={styles.title}>Request sent</Text>
     <View style={styles.confirmBox}><Text style={styles.confirmCopy}>{confirmation}</Text></View>
-    <Text style={styles.help}>Nothing is charged until somebody accepts. When they do, you pay their hourly rate plus the {feePct}% WHC fee to confirm the shift.</Text>
+    <Text style={styles.help}>Nothing is charged until somebody accepts. When they do, you pay their hourly rate plus the {feePct}% Talent House fee to confirm the shift.</Text>
     <Pressable onPress={() => router.replace('/agency')} style={styles.primary}><Text style={styles.primaryText}>Back to Agency bookings</Text></Pressable>
     <Pressable onPress={() => { setConfirmation(''); setError('') }} style={styles.secondary}><Text style={styles.secondaryText}>Send another request</Text></Pressable>
   </ScrollView>
@@ -172,7 +172,7 @@ export default function AgencyUrgentScreen() {
     <Text style={styles.eyebrow}>URGENT COVER</Text>
     <Text style={styles.title}>Cover, found for you</Text>
     <Text style={styles.intro}>We offer the shift to the nearest genuinely available professionals in turn. Each has 30 minutes to accept before it moves on, and the whole search gives up after four hours if nobody takes it.</Text>
-    <Text style={styles.help}>You pay their hourly rate plus the {feePct}% WHC fee once somebody accepts{isPremiumDate(shiftDate) ? ` (same-day and next-day cover carries a premium; booked further ahead it is ${basePct}%)` : ''}. The professional always receives their full rate.</Text>
+    <Text style={styles.help}>You pay their hourly rate plus the {feePct}% Talent House fee once somebody accepts{isPremiumDate(shiftDate) ? ` (same-day and next-day cover carries a premium; booked further ahead it is ${basePct}%)` : ''}. The professional always receives their full rate.</Text>
 
     {!preferred ? <View style={styles.warning}><Text style={styles.warningTitle}>Preferred Employer registration needed</Text><Text style={styles.warningCopy}>Urgent cover is part of Preferred Employer registration (£150/year). Register from Agency Bookings on the web to unlock it.</Text></View> : null}
 

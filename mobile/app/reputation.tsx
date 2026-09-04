@@ -56,7 +56,7 @@ export default function ReputationScreen(){
     setBusy(`request-${employer.id}`);setError('')
     try{
       await authFetch('/api/mobile/reputation',{method:'POST',body:JSON.stringify({action:'request_reference',employerId:employer.id,message:(requestMessages[employer.id]||'').trim()})})
-      Alert.alert('Reference requested',`${employer.name} has been asked to complete a verified WHC reference.`)
+      Alert.alert('Reference requested',`${employer.name} has been asked to complete a verified Talent House reference.`)
       await load()
     }catch(e:any){setError(e.message||'Could not request reference.')}
     setBusy('')
@@ -66,7 +66,7 @@ export default function ReputationScreen(){
     setBusy(`${status}-${ref.id}`);setError('')
     try{
       await authFetch('/api/mobile/reputation',{method:'POST',body:JSON.stringify({action:'respond_reference',referenceId:ref.id,status,responseText:responses[ref.id]||'',wouldRehire:Boolean(rehire[ref.id])})})
-      Alert.alert(status==='completed'?'Reference submitted':'Request declined',status==='completed'?'The verified reference is now attached to the Talent member’s WHC reputation.':'The Talent member has been notified.')
+      Alert.alert(status==='completed'?'Reference submitted':'Request declined',status==='completed'?'The verified reference is now attached to the Talent member’s Talent House reputation.':'The Talent member has been notified.')
       await load()
     }catch(e:any){setError(e.message||'Could not respond to reference.')}
     setBusy('')
@@ -96,7 +96,7 @@ export default function ReputationScreen(){
         </View>
         <View style={styles.heroDivider}/>
         <View style={styles.heroRight}>
-          <Text style={styles.verifiedLabel}>WHC VERIFIED</Text>
+          <Text style={styles.verifiedLabel}>TALENT HOUSE VERIFIED</Text>
           <Text style={styles.verifiedTitle}>{profile.name}</Text>
           <Text style={styles.verifiedCopy}>Ratings are only attached to work or relationships Talent House can verify.</Text>
         </View>
@@ -128,7 +128,7 @@ export default function ReputationScreen(){
 
       <Text style={[styles.sectionEyebrow,{marginTop:26}]}>REQUEST</Text>
       <Text style={styles.sectionTitle}>Request a verified reference</Text>
-      <Text style={styles.help}>Only properties where WHC can verify completed work appear here.</Text>
+      <Text style={styles.help}>Only properties where Talent House can verify completed work appear here.</Text>
       {eligible.length===0?<Text style={styles.empty}>No new eligible properties at the moment.</Text>:eligible.map(emp=><View key={emp.id} style={styles.card}>
         <Text style={styles.cardTitle}>{emp.name}</Text>
         {emp.location?<Text style={styles.muted}>{emp.location}</Text>:null}
@@ -158,11 +158,11 @@ export default function ReputationScreen(){
       {reviews.length===0?<Text style={styles.empty}>No reviews yet.</Text>:reviews.map(review=><View key={review.id} style={styles.reviewCard}>
         <View style={styles.row}><View><Text style={styles.reviewScore}>{Number(review.rating||0).toFixed(1)} / 5</Text><Text style={styles.reviewStars}>{stars(review.rating)}</Text></View><Text style={styles.date}>{review.created_at?new Date(review.created_at).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}):''}</Text></View>
         {review.text?<Text style={styles.referenceText}>“{review.text}”</Text>:<Text style={styles.muted}>A verified star rating was left without a written comment.</Text>}
-        {review.property_name?<Text style={styles.reviewSource}>Verified at {review.property_name}</Text>:<Text style={styles.reviewSource}>Verified WHC relationship</Text>}
+        {review.property_name?<Text style={styles.reviewSource}>Verified at {review.property_name}</Text>:<Text style={styles.reviewSource}>Verified Talent House relationship</Text>}
       </View>)}
     </>:null}
 
-    <View style={styles.note}><Text style={styles.noteEyebrow}>TRUST</Text><Text style={styles.noteTitle}>Verified, not anonymous.</Text><Text style={styles.noteCopy}>WHC only unlocks reviews and references where the platform can confirm a genuine working relationship. Reviews cannot be bought or anonymously added to a profile.</Text></View>
+    <View style={styles.note}><Text style={styles.noteEyebrow}>TRUST</Text><Text style={styles.noteTitle}>Verified, not anonymous.</Text><Text style={styles.noteCopy}>Talent House only unlocks reviews and references where the platform can confirm a genuine working relationship. Reviews cannot be bought or anonymously added to a profile.</Text></View>
   </ScrollView>
 }
 

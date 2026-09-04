@@ -106,7 +106,7 @@ export default function ResidencySetupScreen(){
         action:'save_listing',primary_specialism:primary,bio,secondary_specialisms:csv(specialisms),qualifications:csv(qualifications),brand_experience:csv(brands),current_location:location,will_travel_to:travel,preferred_duration:duration,day_rate:dayRate?Number(dayRate):null,weekly_rate:weeklyRate?Number(weeklyRate):null,monthly_rate:monthlyRate?Number(monthlyRate):null,negotiable,available_from:availableFrom||null,
       })})
       setListing(data.listing||listing)
-      Alert.alert('Residency listing saved',data.listing?.approval_status==='approved'?'Your live listing has been updated.':'Your listing is saved and will appear once WHC approval is complete.')
+      Alert.alert('Residency listing saved',data.listing?.approval_status==='approved'?'Your live listing has been updated.':'Your listing is saved and will appear once Talent House approval is complete.')
     }catch(e:any){setError(e.message||'Could not save Residency listing.')}
     setBusy(false)
   }
@@ -143,7 +143,7 @@ export default function ResidencySetupScreen(){
           <View style={{flex:1}}><Text style={styles.recordEyebrow}>LISTING STATUS</Text><Text style={styles.recordTitle}>{listing?approved?'Approved & discoverable':'Approval in progress':'Profile not submitted'}</Text></View>
           <View style={[styles.statusPill,approved&&styles.statusPillActive]}><Text style={[styles.statusText,approved&&styles.statusTextActive]}>{approved?'LIVE':listing?'PENDING':'DRAFT'}</Text></View>
         </View>
-        <Text style={styles.recordCopy}>{approved?'Your listing is discoverable by eligible employers in the protected Residency directory.':listing?'WHC approval is pending before your listing becomes discoverable.':'Complete the specialist profile below to create your Residency listing.'}</Text>
+        <Text style={styles.recordCopy}>{approved?'Your listing is discoverable by eligible employers in the protected Residency directory.':listing?'Talent House approval is pending before your listing becomes discoverable.':'Complete the specialist profile below to create your Residency listing.'}</Text>
         <View style={styles.progressRow}><MiniStatus value={profileComplete?'Ready':'Build'} label="profile"/><MiniStatus value={travel} label="travel"/><MiniStatus value={duration} label="duration"/></View>
       </View>
 
@@ -180,7 +180,7 @@ export default function ResidencySetupScreen(){
 
       <Pressable disabled={busy} onPress={save} style={[styles.primary,busy&&styles.disabled]}><Text style={styles.primaryText}>{busy?'Saving specialist profile…':listing?'Save Residency changes':'Create Residency listing'}</Text></Pressable>
 
-      <View style={styles.note}><Text style={styles.noteEyebrow}>PROTECTED DIRECTORY</Text><Text style={styles.noteTitle}>A Residency listing is not a public CV board.</Text><Text style={styles.noteCopy}>WHC approval controls whether the listing is discoverable. Your specialist positioning, availability and commercial expectations are there to make relevant employer conversations clearer, not to expose unnecessary personal information.</Text></View>
+      <View style={styles.note}><Text style={styles.noteEyebrow}>PROTECTED DIRECTORY</Text><Text style={styles.noteTitle}>A Residency listing is not a public CV board.</Text><Text style={styles.noteCopy}>Talent House approval controls whether the listing is discoverable. Your specialist positioning, availability and commercial expectations are there to make relevant employer conversations clearer, not to expose unnecessary personal information.</Text></View>
     </>:null}
   </ScrollView>
 }

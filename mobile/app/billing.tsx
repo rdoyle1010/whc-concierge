@@ -143,7 +143,7 @@ export default function BillingScreen(){
 
       <View style={styles.section}>
         <Text style={styles.sectionEyebrow}>OPTIONAL VISIBILITY</Text><Text style={styles.sectionTitle}>Featured Talent</Text><Text style={styles.sectionCopy}>Use this only when you want an extra visibility boost. It is separate from your core Talent profile.</Text>
-        {profile.is_featured&&profile.featured_until?<View style={styles.activeBox}><Text style={styles.activeEyebrow}>FEATURED ACTIVE</Text><Text style={styles.activeTitle}>Visible until {dateLabel(profile.featured_until)}</Text><Text style={styles.copy}>Your profile currently receives premium placement in employer discovery and WHC featured areas.</Text></View>:null}
+        {profile.is_featured&&profile.featured_until?<View style={styles.activeBox}><Text style={styles.activeEyebrow}>FEATURED ACTIVE</Text><Text style={styles.activeTitle}>Visible until {dateLabel(profile.featured_until)}</Text><Text style={styles.copy}>Your profile currently receives premium placement in employer discovery and Talent House featured areas.</Text></View>:null}
         <View style={styles.optionRow}>
           <View style={styles.optionCopy}><Text style={styles.optionTitle}>7 days</Text><Text style={styles.optionText}>Short visibility boost</Text></View>
           <View style={styles.optionAction}><Text style={styles.optionPrice}>£9.99</Text><Pressable disabled={!!busy} onPress={()=>checkout('featured_talent_7')} style={styles.compactButton}><Text style={styles.compactButtonText}>{busy==='featured_talent_7'?'Opening…':'Choose'}</Text></Pressable></View>

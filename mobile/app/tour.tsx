@@ -13,7 +13,7 @@ const talentSteps: Step[] = [
   { number:'03', title:'Apply and track', copy:'Apply from one place, save roles for later and withdraw interest if your plans change.', action:'Applications', href:'/applications' },
   { number:'04', title:'Prepare properly', copy:'Interview Ready combines your CV, the job description and employer information to help you understand what to talk about and where questions may be harder.', action:'Interview Ready', href:'/interview-ready' },
   { number:'05', title:'Build your reputation', copy:'Completed work can lead to verified ratings, reviews and employer references that strengthen your profile over time.', action:'Reputation', href:'/reputation' },
-  { number:'06', title:'Keep developing', copy:'Use WHC Academy courses, assessments and certificates to add visible professional development to your profile.', action:'Academy', href:'/academy' },
+  { number:'06', title:'Keep developing', copy:'Use Talent House Academy courses, assessments and certificates to add visible professional development to your profile.', action:'Academy', href:'/academy' },
 ]
 
 const employerSteps: Step[] = [

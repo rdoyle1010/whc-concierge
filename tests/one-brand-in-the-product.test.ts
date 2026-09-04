@@ -69,3 +69,24 @@ test('the mobile app introduces itself as Talent House', () => {
   assert.equal(config.expo.name, 'Talent House',
     'the name in app.json is the name under the icon on somebody’s home screen')
 })
+
+test('the app does not speak in initials the website never uses', () => {
+  // The website says Talent House Academy, a Talent House fee, Talent House
+  // Verified. The app said WHC Academy, a WHC fee, WHC VERIFIED - seventy-one
+  // times across twenty-three screens, and not once on the web. Somebody
+  // moving between the two was reading about two different companies, which
+  // is a large part of why the app felt like a lesser thing rather than the
+  // same thing in your pocket.
+  //
+  // whctalent (the deep-link scheme), whc- prefixes and WHC_ variables are
+  // machine names nobody reads, and stay.
+  const offenders: string[] = []
+  for (const file of sourceFiles('mobile/app')) {
+    const lines = readFileSync(file, 'utf8').split('\n')
+    lines.forEach((line, index) => {
+      if (/\bWHC\b/.test(line)) offenders.push(`${file}:${index + 1}`)
+    })
+  }
+  assert.deepEqual(offenders, [],
+    `the app calls the brand WHC here, and the website never does: ${offenders.join(', ')}`)
+})

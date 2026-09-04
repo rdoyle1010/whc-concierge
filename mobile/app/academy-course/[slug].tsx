@@ -85,7 +85,7 @@ export default function AcademyCourseScreen(){
       if(j.passed){
         setEnrollment({...enrollment,completed_at:new Date().toISOString(),quiz_score:j.score,certificate_code:j.certificate_code||enrollment.certificate_code})
         setView('record')
-        Alert.alert('Course completed',`You passed the final assessment with ${j.score}%. Your WHC Academy certificate is ready.`)
+        Alert.alert('Course completed',`You passed the final assessment with ${j.score}%. Your Talent House Academy certificate is ready.`)
       }else{
         setEnrollment({...enrollment,quiz_score:j.score})
         Alert.alert('Assessment result',`You scored ${j.score}%. The pass mark is ${PASS_MARK}%. Review the syllabus and try again when you are ready.`)
@@ -107,7 +107,7 @@ export default function AcademyCourseScreen(){
 
   if(!enrollment)return <View style={styles.pageStatic}>
     <Pressable onPress={()=>router.back()} style={styles.backButton}><Text style={styles.back}>‹ Academy</Text></Pressable>
-    <Text style={styles.eyebrow}>WHC ACADEMY · PROFESSIONAL LEARNING</Text>
+    <Text style={styles.eyebrow}>TALENT HOUSE ACADEMY · PROFESSIONAL LEARNING</Text>
     <Text style={styles.title}>{course.title}</Text>
     <Text style={styles.intro}>{course.tagline}</Text>
     <View style={styles.lockedCard}><Text style={styles.lockedEyebrow}>ENROLMENT REQUIRED</Text><Text style={styles.lockedTitle}>This course is not yet on your learning record.</Text><Text style={styles.lockedCopy}>Return to the Academy catalogue to enrol. Once enrolled, your modules, assessment and certificate will all be tracked here.</Text></View>
@@ -115,7 +115,7 @@ export default function AcademyCourseScreen(){
 
   return <ScrollView style={styles.scroll} contentContainerStyle={styles.page}>
     <Pressable onPress={()=>router.back()} style={styles.backButton}><Text style={styles.back}>‹ Academy</Text></Pressable>
-    <Text style={styles.eyebrow}>WHC ACADEMY · {course.category.toUpperCase()}</Text>
+    <Text style={styles.eyebrow}>TALENT HOUSE ACADEMY · {course.category.toUpperCase()}</Text>
     <Text style={styles.title}>{course.title}</Text>
     <Text style={styles.intro}>{course.tagline}</Text>
 
@@ -147,7 +147,7 @@ export default function AcademyCourseScreen(){
       <View style={styles.paperSection}>
         <Text style={styles.sectionEyebrow}>COURSE HANDBOOK</Text>
         <Text style={styles.sectionTitle}>About this course</Text>
-        <Text style={styles.body}>{course.tagline}. This WHC Academy professional-development course is designed to be completed in sequence, followed by a final knowledge assessment.</Text>
+        <Text style={styles.body}>{course.tagline}. This Talent House Academy professional-development course is designed to be completed in sequence, followed by a final knowledge assessment.</Text>
       </View>
 
       <View style={styles.paperSection}>
@@ -166,7 +166,7 @@ export default function AcademyCourseScreen(){
         <Text style={styles.sectionTitle}>How completion works</Text>
         <Requirement number="01" title="Complete the syllabus" copy={`Complete all ${course.lessons.length} learning modules before the final assessment unlocks.`}/>
         <Requirement number="02" title="Sit the final assessment" copy={`Answer ${course.quiz.length} knowledge questions. The pass mark is ${PASS_MARK}%.`}/>
-        <Requirement number="03" title="Earn your WHC Academy certificate" copy="A successful assessment creates a verified completion record and certificate code on your WHC profile."/>
+        <Requirement number="03" title="Earn your Talent House Academy certificate" copy="A successful assessment creates a verified completion record and certificate code on your Talent House profile."/>
       </View>
     </>:null}
 
@@ -213,11 +213,11 @@ export default function AcademyCourseScreen(){
         <RecordRow label="Certificate" value={enrollment.completed_at?'Awarded':'Pending completion'}/>
       </View>
       {enrollment.completed_at?<View style={styles.certificate}>
-        <Text style={styles.certificateEyebrow}>WHC ACADEMY CERTIFICATE</Text>
+        <Text style={styles.certificateEyebrow}>TALENT HOUSE ACADEMY CERTIFICATE</Text>
         <Text style={styles.certificateTitle}>Certificate of completion</Text>
         <Text style={styles.certificateCourse}>{course.title}</Text>
         <Text style={styles.certificateCode}>{enrollment.certificate_code||'Verification code pending'}</Text>
-        <Text style={styles.certificateCopy}>This completion record is attached to your WHC professional profile. WHC Academy certificates evidence course completion and knowledge assessment; they do not replace accredited qualifications, licences or insurance requirements.</Text>
+        <Text style={styles.certificateCopy}>This completion record is attached to your Talent House professional profile. Talent House Academy certificates evidence course completion and knowledge assessment; they do not replace accredited qualifications, licences or insurance requirements.</Text>
       </View>:null}
       <Text style={styles.recordModuleHeading}>MODULE RECORD</Text>
       {course.lessons.map((lesson,index)=><View key={lesson.title} style={styles.recordModuleRow}><Text style={styles.recordModuleIndex}>{String(index+1).padStart(2,'0')}</Text><Text style={styles.recordModuleTitle}>{lesson.title}</Text><Text style={[styles.recordModuleStatus,moduleDone(index)&&styles.recordModuleStatusDone]}>{moduleDone(index)?'Complete':'Pending'}</Text></View>)}

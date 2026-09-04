@@ -73,7 +73,7 @@ export default function AcademyScreen(){
 
   return <ScrollView style={styles.scroll} contentContainerStyle={styles.page}>
     <Pressable onPress={()=>router.back()} style={styles.backButton}><Text style={styles.back}>‹ Back</Text></Pressable>
-    <Text style={styles.eyebrow}>WHC ACADEMY · STUDENT PORTAL</Text>
+    <Text style={styles.eyebrow}>TALENT HOUSE ACADEMY · STUDENT PORTAL</Text>
     <Text style={styles.title}>Professional learning, properly structured.</Text>
     <Text style={styles.intro}>Your studies, progress, assessments and certificates in one academic-style learning record for spa and wellness development.</Text>
 
@@ -98,7 +98,7 @@ export default function AcademyScreen(){
         <View style={{flex:1}}>
           <Text style={styles.transcriptEyebrow}>STUDENT RECORDS</Text>
           <Text style={styles.transcriptTitle}>Academic Transcript</Text>
-          <Text style={styles.transcriptCopy}>View your complete WHC Academy learning history, study time, module progress, assessment results and certificate codes.</Text>
+          <Text style={styles.transcriptCopy}>View your complete Talent House Academy learning history, study time, module progress, assessment results and certificate codes.</Text>
         </View>
         <Text style={styles.transcriptArrow}>→</Text>
       </Pressable>
@@ -117,8 +117,8 @@ export default function AcademyScreen(){
         </Pressable>
       })}
 
-      <SectionHeader eyebrow="ACADEMIC RECORD" title="Certificates & completions" copy="Your completed WHC Academy learning stays attached to your professional development record." />
-      {completedCourses.length===0?<View style={styles.recordEmpty}><Text style={styles.recordEmptyTitle}>No certificates earned yet.</Text><Text style={styles.recordEmptyCopy}>Complete every module and pass the final assessment to create your first verified WHC Academy completion record.</Text></View>:completedCourses.map(course=>{
+      <SectionHeader eyebrow="ACADEMIC RECORD" title="Certificates & completions" copy="Your completed Talent House Academy learning stays attached to your professional development record." />
+      {completedCourses.length===0?<View style={styles.recordEmpty}><Text style={styles.recordEmptyTitle}>No certificates earned yet.</Text><Text style={styles.recordEmptyCopy}>Complete every module and pass the final assessment to create your first verified Talent House Academy completion record.</Text></View>:completedCourses.map(course=>{
         const enrollment=enrollmentMap.get(course.slug)
         return <Pressable key={course.slug} onPress={()=>router.push({pathname:'/academy-course/[slug]',params:{slug:course.slug}})} style={styles.recordRow}>
           <View style={styles.recordTick}><Text style={styles.recordTickText}>✓</Text></View>
@@ -129,7 +129,7 @@ export default function AcademyScreen(){
 
       {!loading&&core.length>0&&coreOwned<core.length?<View style={styles.curriculum}>
         <Text style={styles.curriculumEyebrow}>FOUNDATION CURRICULUM</Text>
-        <Text style={styles.curriculumTitle}>Complete the WHC core learning pathway.</Text>
+        <Text style={styles.curriculumTitle}>Complete the Talent House core learning pathway.</Text>
         <Text style={styles.curriculumCopy}>{core.length} core programmes covering guest experience, standards, commercial awareness and professional practice. £79 before any member learning reduction.</Text>
         <View style={styles.curriculumMetaRow}><Text style={styles.curriculumMeta}>{coreOwned}/{core.length} already enrolled</Text><Text style={styles.curriculumMeta}>Certificates included</Text></View>
         <Pressable disabled={busy==='__bundle__'} onPress={()=>checkout('bundle')} style={styles.curriculumButton}><Text style={styles.curriculumButtonText}>{busy==='__bundle__'?'Opening enrolment…':'Enrol on the core pathway'}</Text></Pressable>
@@ -153,7 +153,7 @@ export default function AcademyScreen(){
         })}
       </View>)}
 
-      <View style={styles.footBox}><Text style={styles.footEyebrow}>ACADEMIC INTEGRITY</Text><Text style={styles.footTitle}>Professional development, clearly represented.</Text><Text style={styles.foot}>WHC Academy certificates evidence completion and knowledge assessment. They do not replace accredited qualifications, licences, regulated training or insurance requirements.</Text></View>
+      <View style={styles.footBox}><Text style={styles.footEyebrow}>ACADEMIC INTEGRITY</Text><Text style={styles.footTitle}>Professional development, clearly represented.</Text><Text style={styles.foot}>Talent House Academy certificates evidence completion and knowledge assessment. They do not replace accredited qualifications, licences, regulated training or insurance requirements.</Text></View>
     </>:null}
   </ScrollView>
 }

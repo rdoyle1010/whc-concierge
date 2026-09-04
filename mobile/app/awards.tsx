@@ -81,7 +81,7 @@ export default function AwardsScreen(){
    {award.url?<Pressable onPress={()=>Linking.openURL(award.url!)} style={styles.evidenceRow}><Text style={styles.evidenceText}>Open supporting evidence</Text><Text style={styles.arrow}>→</Text></Pressable>:null}
   </View>)}</View>
 
-  <View style={styles.note}><Text style={styles.noteEyebrow}>CREDIBILITY</Text><Text style={styles.noteTitle}>Recognition should add trust, not decoration.</Text><Text style={styles.noteCopy}>Use this record for genuine industry, property, professional or employer awards. WHC can then present recognition as evidence rather than a promotional badge.</Text></View>
+  <View style={styles.note}><Text style={styles.noteEyebrow}>CREDIBILITY</Text><Text style={styles.noteTitle}>Recognition should add trust, not decoration.</Text><Text style={styles.noteCopy}>Use this record for genuine industry, property, professional or employer awards. Talent House can then present recognition as evidence rather than a promotional badge.</Text></View>
 
   <Pressable disabled={saving} onPress={save} style={[styles.save,saving&&styles.disabled]}><Text style={styles.saveText}>{saving?'Saving…':'Save recognition record'}</Text></Pressable>
  </ScrollView>

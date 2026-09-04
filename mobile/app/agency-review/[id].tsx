@@ -61,7 +61,7 @@ export default function AgencyReviewScreen() {
     <View style={styles.trustNote}>
       <Text style={styles.trustEyebrow}>VERIFIED WORKING RELATIONSHIP</Text>
       <Text style={styles.trustTitle}>This review is linked to a completed Agency booking.</Text>
-      <Text style={styles.trustCopy}>WHC uses booking-linked feedback to build a more useful reputation record for both Talent and properties.</Text>
+      <Text style={styles.trustCopy}>Talent House uses booking-linked feedback to build a more useful reputation record for both Talent and properties.</Text>
     </View>
 
     <View style={styles.card}>
