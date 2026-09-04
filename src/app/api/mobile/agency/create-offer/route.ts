@@ -69,10 +69,15 @@ export async function POST(req: NextRequest) {
     if (employer.preferred_until && new Date(employer.preferred_until).getTime() < Date.now()) return NextResponse.json({ error: 'Your Preferred Employer registration has expired.' }, { status: 403 })
 
     const { data: candidate } = await admin.from('candidate_profiles')
-      .select('id,user_id,full_name,phone,sms_opt_in,approval_status,profile_visible,agency_available,agency_listed_until,latitude,longitude,travel_radius_miles')
+      .select('id,user_id,full_name,phone,sms_opt_in,approval_status,profile_visible,stealth_mode,agency_available,agency_listed_until,latitude,longitude,travel_radius_miles')
       .eq('id', candidateId).maybeSingle()
     if (!candidate) return NextResponse.json({ error: 'Professional not found.' }, { status: 404 })
-    if (candidate.approval_status !== 'approved' || candidate.profile_visible === false || !candidate.agency_available) {
+    // Stealth Mode belongs here for the same reason it belongs on a private
+    // approach: hiding from employers is worth nothing if one of them can
+    // still put a shift offer in front of you. The mobile API is a second
+    // door to the same action and needs the same lock.
+    if (candidate.approval_status !== 'approved' || candidate.profile_visible === false
+      || candidate.stealth_mode === true || !candidate.agency_available) {
       return NextResponse.json({ error: 'This professional is not currently bookable on the Agency register.' }, { status: 403 })
     }
     if (candidate.agency_listed_until && new Date(candidate.agency_listed_until).getTime() < Date.now()) {
