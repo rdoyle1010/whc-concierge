@@ -19,10 +19,43 @@ const PAGE = 'src/app/agency/[id]/page.tsx'
 // showed.
 test('opening one professional is a lookup, not a search', () => {
   const route = read(ROUTE)
-  assert.match(route, /if \(!isAdmin && !id && !ukWide && !radius\)/, 'a single profile must not demand a search radius')
-  assert.match(route, /if \(!isAdmin && !id && \(origin\.latitude == null/, 'nor a mapped property')
-  assert.match(route, /isAdmin \|\| id \|\| candidate\.within_radius/, 'nor drop the person for being outside it')
+  assert.match(route, /isAdmin \|\| id \|\| candidate\.within_radius/, 'a single profile must not be dropped for being outside a radius')
   assert.match(route, /isAdmin \|\| id \|\| !hasShiftSearch/, 'nor for being busy on the shift searched for')
+})
+
+// A property is never asked for a search radius when it signs up, and a
+// UK-wide search deliberately stores none. So "set a search radius" was a
+// demand for a preference the product had never requested - it refused
+// searches, and it refused to open a profile the same search had just
+// returned.
+test('an unset radius means the whole country, not an error', () => {
+  const route = read(ROUTE)
+  assert.ok(!/Set a search radius before looking for Agency Talent/.test(route),
+    'an unset preference must not block the register')
+  assert.match(route, /No radius set means UK-wide, not an error/)
+  // The professional's own travel radius is the limit that actually matters.
+  assert.match(read('src/lib/discovery.ts'), /candidateRadius/, 'still honoured through mutualRadiusResult')
+  const unset = mutualRadiusResult(
+    { latitude: 51.45, longitude: -2.58 },
+    { latitude: 51.38, longitude: -2.36, travel_radius_miles: 30 } as any,
+    null,
+  )
+  assert.equal(unset.withinRadius, true, 'no property radius means everyone willing to travel is shown')
+  const tooFar = mutualRadiusResult(
+    { latitude: 51.45, longitude: -2.58 },
+    { latitude: 55.95, longitude: -3.19, travel_radius_miles: 30 } as any,
+    null,
+  )
+  assert.equal(tooFar.withinRadius, false, 'but the professional still decides how far they will go')
+})
+
+// A property that has not added a postcode gets the register with the distance
+// simply unknown, rather than a locked screen.
+test('an unmapped property is not locked out of the register', () => {
+  assert.match(read(ROUTE), /or search UK-wide/)
+  const unknown = mutualRadiusResult({}, { latitude: 51.38, longitude: -2.36 } as any, null)
+  assert.equal(unknown.withinRadius, true)
+  assert.equal(unknown.reason, 'distance_unknown')
 })
 
 // Distance and availability still have to reach the page - they are things a

@@ -72,21 +72,25 @@ export async function GET(req: NextRequest) {
   if (hasShiftSearch && !validShiftWindow(shiftDate, shiftStartTime, shiftEndTime)) {
     return NextResponse.json({ error: 'Choose a valid shift date, start time and finish time' }, { status: 400 })
   }
-  // Opening one professional is a lookup, not a search. An employer who has
-  // already found somebody in the directory must be able to open them, and
-  // distance is information to show on the profile rather than a gate to pass.
-  // Requiring a radius here meant a UK-wide search - which deliberately stores
-  // no radius preference - found a professional and then could not open them.
-  if (!isAdmin && !id && !ukWide && !radius) {
-    return NextResponse.json({ error: 'Set a search radius before looking for Agency Talent.' }, { status: 400 })
-  }
+  // No radius set means UK-wide, not an error.
+  //
+  // A property is never asked for a search radius when it signs up, and a
+  // UK-wide search deliberately stores none - so "you have not set one" was a
+  // demand for a preference the product had never requested. It refused
+  // searches, and it refused to open a profile the same search had just
+  // returned. Defaulting to the whole country is the honest reading of an
+  // unset preference, and it shows a property more cover rather than less.
+  // The professional's own travel radius still applies, which is the limit
+  // that actually matters: they decide how far they will go.
 
   const origin = {
     latitude: hasSearchPoint ? requestedLat : employer?.latitude,
     longitude: hasSearchPoint ? requestedLng : employer?.longitude,
   }
-  if (!isAdmin && !id && (origin.latitude == null || origin.longitude == null)) {
-    return NextResponse.json({ error: 'Your property location must be mapped before Agency search can calculate real travel distance.' }, { status: 400 })
+  // A property with no map position still gets the register; distance simply
+  // reads as unknown on each card until they add a postcode.
+  if (!isAdmin && !id && !hasSearchPoint && (origin.latitude == null || origin.longitude == null) && radius != null) {
+    return NextResponse.json({ error: 'Add your property postcode in Company Profile so Agency search can work out travel distance, or search UK-wide.' }, { status: 400 })
   }
 
   let query = admin.from('candidate_profiles')
