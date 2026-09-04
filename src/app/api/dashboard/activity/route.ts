@@ -40,7 +40,11 @@ export async function GET(req: NextRequest) {
     admin.from('notifications').select('id,type,title,message,link,is_read,created_at').eq('user_id', user.id).order('created_at', { ascending: false }).limit(8),
   ])
 
-  const attention: Array<{ label: string; count: number; href: string; tone: string }> = []
+  // 'action' is somebody waiting on this person, 'waiting' is in motion,
+  // 'done' is a good outcome. The old violet/gold/blue names were decorative
+  // and the dashboard ignored them, which is part of why nothing on that
+  // screen ever looked urgent.
+  const attention: Array<{ label: string; count: number; href: string; tone: 'action' | 'waiting' | 'done' }> = []
 
   if (role === 'talent') {
     const { data: candidate } = await admin.from('candidate_profiles').select('id').eq('user_id', user.id).maybeSingle()
@@ -59,13 +63,29 @@ export async function GET(req: NextRequest) {
         offerCount = offers || 0
       }
       const hiredCount = (apps || []).filter(app => Boolean(app.archived_at) && Boolean(app.hired_at)).length
-      if (interviewCount) attention.push({ label: 'Interview times to review', count: interviewCount, href: '/talent/applications', tone: 'violet' })
-      if (offerCount) attention.push({ label: 'Offers awaiting your response', count: offerCount, href: '/talent/applications', tone: 'gold' })
-      if (hiredCount) attention.push({ label: 'Successful placements', count: hiredCount, href: '/talent/hired', tone: 'green' })
+      // An Agency offer is the most time-critical thing on this platform - an
+      // urgent one expires in four hours - and the attention block had never
+      // heard of it. So somebody with a counter-offer waiting was told they
+      // were up to date while the row underneath said otherwise.
+      // 'pending' means the ball is with the professional; 'countered' hands
+      // it back to the property.
+      const { count: agencyOffers } = await admin.from('agency_bookings')
+        .select('id', { count: 'exact', head: true })
+        .eq('candidate_id', candidate.id).eq('status', 'pending')
+      if (agencyOffers) attention.push({ label: 'Agency shift offers to answer', count: agencyOffers, href: '/talent/agency', tone: 'action' })
+      if (interviewCount) attention.push({ label: 'Interview times to review', count: interviewCount, href: '/talent/applications', tone: 'action' })
+      if (offerCount) attention.push({ label: 'Offers awaiting your response', count: offerCount, href: '/talent/applications', tone: 'action' })
+      if (hiredCount) attention.push({ label: 'Successful placements', count: hiredCount, href: '/talent/hired', tone: 'done' })
     }
   } else {
     const { data: employer } = await admin.from('employer_profiles').select('id').eq('user_id', user.id).maybeSingle()
     if (employer) {
+      // A professional has countered and is waiting on the property.
+      const { count: counteredOffers } = await admin.from('agency_bookings')
+        .select('id', { count: 'exact', head: true })
+        .eq('employer_id', employer.id).eq('status', 'countered')
+      if (counteredOffers) attention.push({ label: 'Counter-offers to answer', count: counteredOffers, href: '/employer/agency', tone: 'action' })
+
       const { data: jobs } = await admin.from('job_listings').select('id').eq('employer_id', employer.id)
       const jobIds = (jobs || []).map(job => job.id)
       if (jobIds.length) {
@@ -84,10 +104,10 @@ export async function GET(req: NextRequest) {
           offerCount = offers || 0
         }
         const archivedCount = (apps || []).filter(app => Boolean(app.archived_at)).length
-        if (submittedCount) attention.push({ label: 'Applications in progress', count: submittedCount, href: '/employer/applications', tone: 'blue' })
-        if (interviewCount) attention.push({ label: 'Confirmed interviews', count: interviewCount, href: '/employer/applications', tone: 'violet' })
-        if (offerCount) attention.push({ label: 'Accepted offers to complete', count: offerCount, href: '/employer/applications', tone: 'green' })
-        if (archivedCount) attention.push({ label: 'Hired placements', count: archivedCount, href: '/employer/hired', tone: 'gold' })
+        if (submittedCount) attention.push({ label: 'Applications in progress', count: submittedCount, href: '/employer/applications', tone: 'waiting' })
+        if (interviewCount) attention.push({ label: 'Confirmed interviews', count: interviewCount, href: '/employer/applications', tone: 'waiting' })
+        if (offerCount) attention.push({ label: 'Accepted offers to complete', count: offerCount, href: '/employer/applications', tone: 'action' })
+        if (archivedCount) attention.push({ label: 'Hired placements', count: archivedCount, href: '/employer/hired', tone: 'done' })
       }
     }
   }
