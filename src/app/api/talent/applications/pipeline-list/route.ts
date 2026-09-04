@@ -32,7 +32,7 @@ export async function GET() {
 
   const employerIds = Array.from(new Set((jobs || []).map((job: any) => job.employer_id).filter(Boolean)))
   const { data: employers } = employerIds.length
-    ? await admin.from('employer_profiles').select('id,company_name,property_name').in('id', employerIds)
+    ? await admin.from('employer_profiles').select('id,user_id,company_name,property_name').in('id', employerIds)
     : { data: [] as any[] }
 
   const jobMap = new Map((jobs || []).map((job: any) => [job.id, job]))

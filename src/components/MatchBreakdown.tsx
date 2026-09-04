@@ -56,7 +56,7 @@ function barLabel(score: number): string {
   if (score >= 70) return 'Strong'
   if (score >= 50) return 'Partial'
   if (score > 0) return 'Low'
-  return '—'
+  return '\u2014'
 }
 
 function hasDetail(entry?: MatchEvidence[string]) {

@@ -41,29 +41,33 @@ test('who they will meet and what to prepare are asked for', () => {
 
 // The email is where most people read an invitation. It carried the times and
 // the note and nothing else, so the details could be stored perfectly and the
-// candidate would still not have them.
+// candidate would still not have them. The markup now lives in one library
+// shared with the "details changed" email, because two copies would drift and
+// the one that drifts is the one nobody watches.
 test('the invitation email carries the joining details', () => {
-  const route = read(ROUTE)
-  const email = route.slice(route.indexOf('const detailRows'))
+  const lib = read('src/lib/interview-briefing.ts')
   for (const field of ['venueAddress', 'meetingLink', 'contactName', 'preparationRequired']) {
-    assert.ok(email.includes(field), `the email must include ${field}`)
+    assert.ok(lib.includes(field), `the email must include ${field}`)
   }
-  assert.match(route, /\$\{detailsHtml\}/, 'and the block has to reach the body, not just be built')
-  assert.match(email, /You will meet/)
-  assert.match(email, /To prepare/)
+  assert.match(lib, /You will meet/)
+  assert.match(lib, /To prepare/)
+  // And the block has to reach the body, not just be built.
+  const route = read(ROUTE)
+  assert.match(route, /const detailsHtml = briefingDetailsHtml\(\{/)
+  assert.match(route, /detailsHtml,/)
 })
 
 // A phone number is not a URL, and an address typed over three lines is not
 // one line.
 test('the email renders each detail as what it is', () => {
-  const route = read(ROUTE)
-  assert.match(route, /\^https\?:/, 'only a real link is made clickable')
-  assert.match(route, /replace\(\/\\n\/g, '<br>'\)/, 'a multi-line address keeps its lines')
+  const lib = read('src/lib/interview-briefing.ts')
+  assert.match(lib, /\^https\?:/, 'only a real link is made clickable')
+  assert.match(lib, /replace\(\/\\n\/g, '<br>'\)/, 'a multi-line address keeps its lines')
   // Everything a property types reaches a candidate's inbox, so it is escaped.
-  // Only the rows built here: the surrounding template interpolates fragments
+  // Only the rows built here: the surrounding frame interpolates fragments
   // that were escaped when they were built, and re-escaping those would print
   // the markup rather than render it.
-  const rows = route.slice(route.indexOf('const detailRows'), route.indexOf('const detailsHtml'))
+  const rows = lib.slice(lib.indexOf('export function briefingDetailRows'), lib.indexOf('export function briefingDetailsHtml'))
   const unescaped = (rows.match(/\$\{[a-zA-Z][a-zA-Z0-9_.]*/g) || [])
     .filter(hit => !/^\$\{(escapeHtml|label|value)/.test(hit))
   assert.deepEqual(unescaped, [], 'every value a property typed must be escaped before it reaches an inbox')
