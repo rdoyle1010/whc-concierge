@@ -23,7 +23,9 @@ test('a live paid advert unlocks Discover Talent', () => {
 test('the unlock expires with the advert that paid for it', () => {
   const lapsed = employerFeatureAccess({ membership_tier: 'free', talent_search_until: past })
   assert.equal(isFeatureLocked(lapsed.employer_talent_search), true)
-  assert.equal(lapsed.employer_talent_search.upgradeHref, '/employer/billing')
+  // Membership, not Billing: Billing's only purchase is Featured Employer,
+  // which no longer carries these tools.
+  assert.equal(lapsed.employer_talent_search.upgradeHref, '/employer/membership')
 
   const never = employerFeatureAccess({ membership_tier: 'free' })
   assert.equal(isFeatureLocked(never.employer_talent_search), true)

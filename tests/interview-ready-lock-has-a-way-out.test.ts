@@ -1,7 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
-import { talentFeatureAccess } from '../src/lib/feature-access.ts'
+import { employerFeatureAccess, talentFeatureAccess } from '../src/lib/feature-access.ts'
 
 const read = (path: string) => readFileSync(new URL(`../${path}`, import.meta.url), 'utf8')
 
@@ -61,4 +61,31 @@ test('the mobile app gets the same destination', () => {
   const mobile = read('src/app/api/mobile/interview-ready/route.ts')
   assert.match(mobile, /upgradeHref: '\/talent\/membership'/)
   assert.match(mobile, /A membership adds credits every month/)
+})
+
+
+// The same fault on the employer side, and a dearer one. The padlock on
+// Talent Search and Analytics pointed at Billing, whose only purchase is
+// Featured Employer - and Featured stopped carrying those tools, so a
+// property could pay for it and hit the identical wall. Pro at £499 and Group
+// at £999 do unlock them, on a page nothing in that trail linked to.
+test('the employer padlock leads to the page that sells the thing', () => {
+  for (const key of ['employer_talent_search', 'employer_analytics'] as const) {
+    assert.equal(employerFeatureAccess({ membership_tier: 'free' })[key].upgradeHref, '/employer/membership')
+  }
+  const panel = read('src/components/UpgradePanel.tsx')
+  assert.match(panel, /href = '\/employer\/membership'/)
+  const billing = read('src/app/employer/billing/page.tsx')
+  assert.match(billing, /href="\/employer\/membership" className="btn-primary/)
+  assert.match(billing, /href="\/employer\/featured" className="btn-secondary/, 'Featured stays, just not as the headline answer')
+})
+
+// A property with one vacancy is not going to buy a £499 subscription to look
+// at who could fill it, and a paid advert already unlocks the same tools while
+// it runs. Naming that sells an advert rather than losing the property.
+test('the block offers the cheaper way in as well', () => {
+  const panel = read('src/components/UpgradePanel.tsx')
+  assert.match(panel, /Or post a role/)
+  assert.match(panel, /href="\/employer\/post-role"/)
+  assert.match(panel, /unlocks Talent Search and Analytics for as long as it runs/)
 })

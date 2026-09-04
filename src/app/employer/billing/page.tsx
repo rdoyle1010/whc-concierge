@@ -135,7 +135,13 @@ export default function EmployerBillingPage() {
           <div className="flex items-center gap-2 text-[#1c1c1c]"><Star size={16} /><p className="text-[14px] font-semibold">Featured Hotel</p></div>
           <p className="mt-3 text-[13px] text-ink">{featuredActive ? 'Your property currently receives premium visibility.' : 'Put your property in front of approved Talent House Talent.'}</p>
           <p className="mt-2 text-[12px] leading-5 text-muted">{featuredPrice ? `Current new-subscription price: ${featuredPrice}.` : ''} Pricing shown is current and confirmed at checkout.</p>
-          <Link href="/employer/featured" className="btn-primary mt-5 inline-flex text-[12px]">{featuredActive ? 'View Featured status' : 'Get Featured'}</Link>
+          <div className="mt-5 flex flex-wrap gap-2">
+            {/* Featured buys visibility. It no longer carries Talent Search or
+                Analytics, so leading with it sent anybody hunting for those to
+                the one product that does not include them. */}
+            <Link href="/employer/membership" className="btn-primary inline-flex text-[12px]">See membership plans</Link>
+            <Link href="/employer/featured" className="btn-secondary inline-flex text-[12px]">{featuredActive ? 'View Featured status' : 'Get Featured'}</Link>
+          </div>
         </div>
       </div>
 
