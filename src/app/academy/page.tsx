@@ -1,5 +1,6 @@
 'use client'
 
+import { useConfirmPaymentOnReturn } from '@/lib/use-confirm-payment'
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import Navbar from '@/components/Navbar'
@@ -19,6 +20,9 @@ const MODERN_COURSE_IMAGES: Record<string, string> = {
 }
 
 export default function PublicAcademyPage() {
+  // Stripe has just sent this person back. Confirm the purchase from the
+  // browser as well, so a missed webhook is a delay rather than a loss.
+  useConfirmPaymentOnReturn()
   const supabase = createClient()
   const [isCandidate, setIsCandidate] = useState(false)
   const [courses, setCourses] = useState<(AcademyCourse & { image_url?: string })[]>(ACADEMY)

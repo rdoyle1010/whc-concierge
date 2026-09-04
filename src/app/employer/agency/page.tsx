@@ -1,5 +1,6 @@
 'use client'
 
+import { useConfirmPaymentOnReturn } from '@/lib/use-confirm-payment'
 import { useEffect, useState } from 'react'
 import { useDialog } from '@/components/useDialog'
 import Link from 'next/link'
@@ -9,6 +10,9 @@ import ReviewForm from '@/components/ReviewForm'
 import { AGENCY_PLATFORM_FEE_PCT, AGENCY_PLUS_FEE_PCT } from '@/lib/constants'
 
 export default function EmployerAgencyPage() {
+  // Stripe has just sent this person back. Confirm the purchase from the
+  // browser as well, so a missed webhook is a delay rather than a loss.
+  useConfirmPaymentOnReturn()
   const [profile, setProfile] = useState<any>(null)
   const [bookings, setBookings] = useState<any[]>([])
   const [loading, setLoading] = useState(true)

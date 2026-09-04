@@ -14,12 +14,18 @@ test('Agency commercial constants keep the property 15% fee and no therapist boo
   assert.doesNotMatch(constants, /AGENCY_CANDIDATE_FEE_PCT/)
 })
 
+// Fulfilling a checkout moved out of the webhook into a library the webhook
+// and the confirm route both call, so the money rule is asserted where it now
+// lives - and against both callers, since a rule enforced in one path and not
+// the other is not enforced.
 test('Agency Stripe fulfilment records the full agreed shift value as therapist payout', () => {
-  const webhook = read('src/app/api/stripe/webhook/route.ts')
-  assert.match(webhook, /meta\?\.type === 'agency_booking'/)
-  assert.match(webhook, /payout_amount:\s*gross/)
-  assert.doesNotMatch(webhook, /candidateFee/)
-  assert.doesNotMatch(webhook, /gross\s*-\s*.*0\.05/)
+  const fulfilment = read('src/lib/stripe-checkout-fulfilment.ts')
+  assert.match(fulfilment, /meta\?\.type === 'agency_booking'/)
+  assert.match(fulfilment, /payout_amount:\s*gross/)
+  assert.doesNotMatch(fulfilment, /candidateFee/)
+  assert.doesNotMatch(fulfilment, /gross\s*-\s*.*0\.05/)
+  // Both paths must run this same code rather than a copy of it.
+  assert.match(read('src/app/api/stripe/webhook/route.ts'), /fulfilCheckoutSession/)
 })
 
 test('Agency talent-facing money wording promises the full agreed shift rate', () => {

@@ -1,5 +1,6 @@
 'use client'
 
+import { useConfirmPaymentOnReturn } from '@/lib/use-confirm-payment'
 import { Suspense, useEffect, useState } from 'react'
 import { useDialog } from '@/components/useDialog'
 import { useRouter, useSearchParams } from 'next/navigation'
@@ -9,6 +10,9 @@ import { Plus, Edit2, Trash2, Eye, EyeOff, Copy, RotateCcw, CheckCircle2, Upload
 import ResidencySuggestions from '@/components/ResidencySuggestions'
 
 export default function EmployerJobsPage() {
+  // Stripe now sends the session id back, so the same confirm every other
+  // purchase uses runs here too - exact rather than a search by job id.
+  useConfirmPaymentOnReturn()
   return <Suspense fallback={null}><EmployerJobs /></Suspense>
 }
 

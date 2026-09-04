@@ -68,7 +68,7 @@ export async function POST(req: NextRequest) {
       }],
       mode: 'subscription',
       allow_promotion_codes: true,
-      success_url: `${origin}${returnPath}?featured=success`,
+      success_url: `${origin}${returnPath}?featured=success&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${origin}${returnPath}?featured=cancelled`,
       metadata,
       subscription_data: { metadata },

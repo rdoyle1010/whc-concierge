@@ -1,5 +1,6 @@
 'use client'
 
+import { useConfirmPaymentOnReturn } from '@/lib/use-confirm-payment'
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import DashboardShell from '@/components/DashboardShell'
@@ -10,6 +11,9 @@ import { GraduationCap, Award, Clock, Check, Download } from 'lucide-react'
 const MANAGEMENT_PROGRAMMES = new Set(['spa-manager-programme', 'spa-director-programme'])
 
 export default function AcademyPage() {
+  // Stripe has just sent this person back. Confirm the purchase from the
+  // browser as well, so a missed webhook is a delay rather than a loss.
+  useConfirmPaymentOnReturn()
   const [courses, setCourses] = useState<(AcademyCourse & { image_url?: string; is_core?: boolean })[]>(ACADEMY)
   const [enrollments, setEnrollments] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
