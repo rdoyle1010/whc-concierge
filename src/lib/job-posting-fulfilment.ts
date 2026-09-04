@@ -87,8 +87,23 @@ export async function publishPaidJobPosting(
   } catch { /* best-effort */ }
 
   if (meta.employer_id) {
+    // A paid advert carries Discover Talent for as long as it runs. A property
+    // that pays to fill a role and is then locked out of the screen showing
+    // who could fill it has been sold an advert when it wanted a hire.
+    //
+    // Extended by a later advert, never shortened: somebody running two roles
+    // keeps the tools until the last one lapses, and re-publishing a shorter
+    // advert must not cut short a window they have already paid for.
+    const { data: current } = await admin.from('employer_profiles')
+      .select('talent_search_until').eq('id', meta.employer_id).maybeSingle()
+    const existing = current?.talent_search_until ? new Date(current.talent_search_until).getTime() : 0
+    const searchUntil = Number.isFinite(existing) && existing > new Date(expiresAt).getTime()
+      ? current!.talent_search_until
+      : expiresAt
+
     await admin.from('employer_profiles').update({
       subscription_tier: meta.tier,
+      talent_search_until: searchUntil,
       stripe_customer_id: typeof session.customer === 'string' ? session.customer : session.customer?.id,
     }).eq('id', meta.employer_id)
   }

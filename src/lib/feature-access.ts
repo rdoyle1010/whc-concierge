@@ -19,6 +19,7 @@ export type EmployerAccessProfile = {
   annual_jobs_used?: number | null
   featured_employer?: boolean | null
   featured_until?: string | null
+  talent_search_until?: string | null
 }
 
 export type FeatureKey =
@@ -53,9 +54,25 @@ function featuredStillCarriesPremium(profile?: EmployerAccessProfile | null) {
   return Number.isFinite(expiry) && expiry <= Date.parse(FEATURED_PREMIUM_GRANDFATHER_UNTIL)
 }
 
+// A paid advert unlocks the recruitment tools for as long as it runs.
+//
+// A property that pays to fill a role and is then locked out of the screen
+// showing who could fill it has been sold an advert when it wanted a hire.
+// This is time-boxed to the advert deliberately: the reason Featured stopped
+// granting these tools was that one payment bought them permanently, so
+// nobody ever subscribed. Thirty days that expire keeps the subscription
+// worth buying, and is the only thing that ever shows a property what search
+// is worth.
+function advertStillCarriesTalentSearch(profile?: EmployerAccessProfile | null) {
+  if (!profile?.talent_search_until) return false
+  const until = new Date(profile.talent_search_until).getTime()
+  return Number.isFinite(until) && until > Date.now()
+}
+
 function activeEmployerPremium(profile?: EmployerAccessProfile | null) {
   const tier = String(profile?.membership_tier || '').toLowerCase()
   if (tier === 'pro' || tier === 'group') return true
+  if (advertStillCarriesTalentSearch(profile)) return true
   return featuredStillCarriesPremium(profile)
 }
 

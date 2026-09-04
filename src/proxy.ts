@@ -173,11 +173,16 @@ export async function proxy(request: NextRequest) {
     if (premiumEntry) {
       const { data: employer } = await supabase
         .from('employer_profiles')
-        .select('membership_tier,featured_employer,featured_until')
+        .select('membership_tier,featured_employer,featured_until,talent_search_until')
         .eq('user_id', user.id)
         .maybeSingle()
       const tier = String(employer?.membership_tier || '').toLowerCase()
-      const premium = tier === 'pro' || tier === 'group' || activeFeaturedEmployer(employer)
+      // A live paid advert carries the recruitment tools for its own duration.
+      // Without this the middleware would bounce a property off a page its
+      // own sidebar had just told it was unlocked.
+      const advertUntil = employer?.talent_search_until ? new Date(employer.talent_search_until).getTime() : 0
+      const advertPremium = Number.isFinite(advertUntil) && advertUntil > Date.now()
+      const premium = tier === 'pro' || tier === 'group' || advertPremium || activeFeaturedEmployer(employer)
       if (!premium) {
         const billingUrl = request.nextUrl.clone()
         billingUrl.pathname = '/employer/billing'

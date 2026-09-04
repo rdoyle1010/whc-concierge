@@ -1,5 +1,6 @@
 'use client'
 
+import { useConfirmPaymentOnReturn } from '@/lib/use-confirm-payment'
 import { useEffect, useState, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import DashboardShell from '@/components/DashboardShell'
@@ -11,6 +12,9 @@ import { Star, Check, Sparkles } from 'lucide-react'
 // ?cancelled=true), so it must read the query string.
 
 export default function UpgradePage() {
+  // Stripe has just sent this person back. Confirm the purchase from the
+  // browser as well, so a missed webhook is a delay rather than a loss.
+  useConfirmPaymentOnReturn()
   return (
     <Suspense fallback={<DashboardShell role="talent"><div className="skeleton h-64 w-full" /></DashboardShell>}>
       <UpgradeContent />

@@ -1,5 +1,6 @@
 'use client'
 
+import { useConfirmPaymentOnReturn } from '@/lib/use-confirm-payment'
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import DashboardShell from '@/components/DashboardShell'
@@ -21,6 +22,9 @@ function expiryLabel(expiresAt: string | null | undefined): string | null {
 }
 
 export default function TalentAgencyPage() {
+  // Stripe has just sent this person back. Confirm the purchase from the
+  // browser as well, so a missed webhook is a delay rather than a loss.
+  useConfirmPaymentOnReturn()
   const [bookings, setBookings] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [counteringId, setCounteringId] = useState<string | null>(null)

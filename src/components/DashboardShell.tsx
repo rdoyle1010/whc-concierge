@@ -222,7 +222,7 @@ export default function DashboardShell({ children, role, userName, intro }: Dash
           .then(res => res.ok ? res.json() : null).catch(() => null)
         if (active) setHasConsultancy(Boolean(consultancy?.profile))
       } else {
-        const { data } = await supabase.from('employer_profiles').select('membership_tier,annual_job_allowance,annual_jobs_used,featured_employer,featured_until').eq('user_id', user.id).maybeSingle()
+        const { data } = await supabase.from('employer_profiles').select('membership_tier,annual_job_allowance,annual_jobs_used,featured_employer,featured_until,talent_search_until').eq('user_id', user.id).maybeSingle()
         if (active) setAccess(employerFeatureAccess(data))
       }
     }
