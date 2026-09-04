@@ -229,18 +229,19 @@ function EmployerJobs() {
     const isCurrentlyActive = job.status === 'active'
     const newIsLive = !isCurrentlyActive
     if (newIsLive) {
-      if (profile?.approval_status !== 'approved') {
-        alert('Your employer account is awaiting Talent House approval. Roles go live the moment your account is approved.')
+      // Putting a role back up is a server decision now. The approval and the
+      // paid term used to be checked here, in a page anybody can step around,
+      // and the write went straight to the database.
+      const res = await fetch('/api/employer/jobs/status', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ jobId: job.id, action: 'reopen' }) })
+      const result = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        alert(result.error || 'Could not put this role back up.')
+        if (result.code === 'TERM_ENDED') router.push(result.repostHref || `/employer/post-role?repost=${job.id}`)
         return
       }
-      const paidUntil = job.expires_at ? new Date(job.expires_at).getTime() : 0
-      if (!paidUntil || paidUntil <= Date.now()) {
-        alert('This listing’s paid term has ended. Use Repost to relist it - your details carry over and payment is taken at checkout.')
-        router.push(`/employer/post-role?repost=${job.id}`)
-        return
-      }
+      setJobs(jobs.map(j => j.id === job.id ? { ...j, status: 'active', is_live: true } : j))
+      return
     }
-    const newStatus = newIsLive ? 'active' : 'closed'
     if (!newIsLive) {
       // Taking a role down must go through the API so open applications are
       // closed and every applicant is told - a silent client-side write left
@@ -252,12 +253,6 @@ function EmployerJobs() {
       setJobs(jobs.map(j => j.id === job.id ? { ...j, status: 'closed', is_live: false } : j))
       return
     }
-    const { data: updated, error } = await supabase.from('job_listings').update({ is_live: newIsLive, status: newStatus }).eq('id', job.id).select('id')
-    if (error || !updated?.length) {
-      alert('Could not update listing status' + (error ? ': ' + error.message : '') + '. Please try again.')
-      return
-    }
-    setJobs(jobs.map(j => j.id === job.id ? { ...j, status: newStatus, is_live: newIsLive } : j))
   }
 
   const markFilled = async (job: any) => {

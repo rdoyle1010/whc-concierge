@@ -15,14 +15,35 @@ export async function POST(req: NextRequest) {
   if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
 
   const { jobId, action } = await req.json()
-  if (!jobId || !['filled', 'closed'].includes(action)) return NextResponse.json({ error: 'Invalid request' }, { status: 400 })
+  if (!jobId || !['filled', 'closed', 'reopen'].includes(action)) return NextResponse.json({ error: 'Invalid request' }, { status: 400 })
 
   const admin = createAdminClient()
-  const { data: employer } = await admin.from('employer_profiles').select('id, property_name, company_name').eq('user_id', user.id).maybeSingle()
+  const { data: employer } = await admin.from('employer_profiles').select('id, property_name, company_name, approval_status').eq('user_id', user.id).maybeSingle()
   if (!employer) return NextResponse.json({ error: 'Employer profile not found' }, { status: 404 })
 
-  const { data: job } = await admin.from('job_listings').select('id, employer_id, job_title').eq('id', jobId).maybeSingle()
+  const { data: job } = await admin.from('job_listings').select('id, employer_id, job_title, expires_at').eq('id', jobId).maybeSingle()
   if (!job || job.employer_id !== employer.id) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+
+  // Putting a role back up used to be a write straight from the browser to
+  // the database, guarded by nothing but a JavaScript alert about the paid
+  // term. The term is checked here now, where it cannot be stepped around.
+  if (action === 'reopen') {
+    if (employer.approval_status !== 'approved') {
+      return NextResponse.json({ error: 'Your employer account is awaiting Talent House approval. Roles go live the moment it is approved.' }, { status: 409 })
+    }
+    const paidUntil = job.expires_at ? new Date(job.expires_at).getTime() : 0
+    if (!paidUntil || !Number.isFinite(paidUntil) || paidUntil <= Date.now()) {
+      return NextResponse.json({
+        error: 'This listing\u2019s paid term has ended. Use Repost to relist it - your details carry over and payment is taken at checkout.',
+        code: 'TERM_ENDED',
+        repostHref: `/employer/post-role?repost=${job.id}`,
+      }, { status: 402 })
+    }
+    const { error: reopenError } = await admin.from('job_listings')
+      .update({ is_live: true, status: 'active' }).eq('id', job.id)
+    if (reopenError) return NextResponse.json({ error: 'Could not put this role back up.' }, { status: 500 })
+    return NextResponse.json({ success: true, status: 'active', is_live: true, expiresAt: job.expires_at })
+  }
 
   const status = action === 'filled' ? 'filled' : 'closed'
   const { error: updateError } = await admin.from('job_listings').update({ is_live: false, status }).eq('id', jobId)
