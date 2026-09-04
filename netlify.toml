@@ -24,16 +24,23 @@
     Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js.stripe.com https://checkout.stripe.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.stripe.com https://checkout.stripe.com https://api.resend.com; frame-src 'self' https://js.stripe.com https://checkout.stripe.com; object-src 'none'; base-uri 'self'"
 
 # --- Domain move: talent.wellnesshousecollective.co.uk -> talenthousecollective.co.uk ---
-# The old host keeps serving /api/* untouched so the live Stripe webhook and any
-# other integration still pointing at it keep working until they are re-pointed.
-# This no-op rule must stay ABOVE the catch-all redirect below.
-[[redirects]]
-  from = "https://talent.wellnesshousecollective.co.uk/api/*"
-  to = "https://talent.wellnesshousecollective.co.uk/api/:splat"
-  status = 200
-  force = false
-
-# Everything else on the old host moves permanently to the new canonical domain.
+#
+# There was a rule here claiming to keep the old host serving /api/* so the
+# live Stripe webhook would keep working. It never did: it rewrote the old URL
+# to itself with status 200, which Netlify cannot resolve to a function, so
+# every request got the 404 page. Stripe recorded an 83% error rate against a
+# live endpoint for days, every checkout.session.completed among them, and the
+# roles people paid for were never published.
+#
+# It is not replaced with a proxy to the new domain. Stripe's signature is
+# computed over the exact request body, and a proxy that alters it by a byte
+# fails verification - silently, in the same way, for the same reason nobody
+# would look. Integrations must be re-pointed at talenthousecollective.co.uk
+# instead, which is a two-minute change in each provider's dashboard and then
+# correct forever.
+#
+# Everything on the old host, /api included, moves permanently to the new
+# canonical domain.
 [[redirects]]
   from = "https://talent.wellnesshousecollective.co.uk/*"
   to = "https://talenthousecollective.co.uk/:splat"

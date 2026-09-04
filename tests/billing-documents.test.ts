@@ -66,11 +66,18 @@ test('bank details never leave through the public identity endpoint', () => {
 
 // Job adverts are the commonest employer purchase. Without a ledger row there
 // is no receipt to print and the month's revenue does not count them.
+// Publishing a paid role now lives in one library shared by the webhook and
+// the confirm route the browser calls on its way back from Stripe, so the
+// ordering is asserted where the work happens rather than in one of its two
+// callers.
 test('a paid job advert is written to the purchase ledger', () => {
-  const webhook = read('src/app/api/stripe/webhook/route.ts')
-  const branch = webhook.slice(webhook.indexOf("meta?.type === 'job_posting' && meta?.job_id"))
-  const untilUpdate = branch.slice(0, branch.indexOf('job_listings'))
+  const lib = read('src/lib/job-posting-fulfilment.ts')
+  const publish = lib.slice(lib.indexOf('export async function publishPaidJobPosting'))
+  const untilUpdate = publish.slice(0, publish.indexOf('job_listings'))
   assert.match(untilUpdate, /recordCommercialPurchase/, 'the ledger row is written before the listing goes live')
+  // And both callers go through it, or one of them banks nothing.
+  assert.match(read('src/app/api/stripe/webhook/route.ts'), /publishPaidJobPosting/)
+  assert.match(read('src/app/api/employer/jobs/confirm-payment/route.ts'), /publishPaidJobPosting/)
 })
 
 // The ledger is idempotent on the Stripe session, so a webhook replay must not

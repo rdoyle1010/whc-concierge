@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { triggerJobAlerts } from '@/lib/job-alerts-trigger'
+import { publishPaidJobPosting } from '@/lib/job-posting-fulfilment'
 import { getStripe } from '@/lib/stripe'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createNotification, notifyAdmins } from '@/lib/notifications'
@@ -91,12 +92,47 @@ export async function POST(req: NextRequest) {
   const sig = req.headers.get('stripe-signature')
   if (!sig) return NextResponse.json({ error: 'Missing signature' }, { status: 400 })
 
-  let event: Stripe.Event
-  try {
-    event = stripe.webhooks.constructEvent(body, sig, process.env.STRIPE_WEBHOOK_SECRET!)
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 400 })
+  // Stripe signs each endpoint with its own secret, and an account can have
+  // more than one endpoint - a live one, a spare, one left over from a rename.
+  // A single STRIPE_WEBHOOK_SECRET therefore verifies deliveries from one of
+  // them and rejects the rest with a bare 400, which is what an 83% error rate
+  // on a live endpoint looks like from the Stripe dashboard. Accepting every
+  // configured secret also makes rotating one a non-event rather than an
+  // outage.
+  const secrets = [
+    process.env.STRIPE_WEBHOOK_SECRET,
+    process.env.STRIPE_WEBHOOK_SECRET_2,
+    process.env.STRIPE_WEBHOOK_SECRET_ALT,
+  ].flatMap(value => String(value || '').split(',')).map(value => value.trim()).filter(Boolean)
+
+  if (!secrets.length) {
+    console.error('[Stripe webhook] no STRIPE_WEBHOOK_SECRET is configured, so every delivery will be rejected')
+    return NextResponse.json({ error: 'Webhook secret is not configured on this deployment' }, { status: 500 })
   }
+
+  let event: Stripe.Event | null = null
+  let lastError = ''
+  for (const secret of secrets) {
+    try {
+      event = stripe.webhooks.constructEvent(body, sig, secret)
+      break
+    } catch (err: any) {
+      lastError = err?.message || 'signature verification failed'
+    }
+  }
+  if (!event) {
+    // Said plainly in the logs, because from Stripe's side this is an opaque
+    // 400 and from the platform's side it was previously nothing at all.
+    console.error(
+      `[Stripe webhook] signature rejected against ${secrets.length} configured secret(s): ${lastError}. `
+      + 'The signing secret in Netlify does not match the endpoint that sent this. '
+      + 'Stripe > Developers > Webhooks > the endpoint > Signing secret.',
+    )
+    return NextResponse.json({ error: lastError || 'Signature verification failed' }, { status: 400 })
+  }
+  // Past this point the event is verified. Naming it separately keeps the rest
+  // of the handler working on a non-null value without a cast at every use.
+  const verified: Stripe.Event = event
 
   const supabase = createAdminClient()
 
@@ -106,7 +142,7 @@ export async function POST(req: NextRequest) {
   // processed this event, so acknowledge it and do nothing.
   try {
     const { error: ledgerError } = await supabase.from('stripe_events')
-      .insert({ event_id: event.id, type: event.type, payload: event as any })
+      .insert({ event_id: verified.id, type: verified.type, payload: verified as any })
     if (ledgerError) {
       const message = String(ledgerError.message || '')
       if ((ledgerError as any).code === '23505' || /duplicate key|already exists/i.test(message)) {
@@ -124,7 +160,7 @@ export async function POST(req: NextRequest) {
   // work rather than a duplicate we silently acknowledge. The ledger stops
   // double fulfilment; it must never stop a failed one being retried.
   async function releaseLedger() {
-    try { await supabase.from('stripe_events').delete().eq('event_id', event.id) } catch { /* nothing to release */ }
+    try { await supabase.from('stripe_events').delete().eq('event_id', verified.id) } catch { /* nothing to release */ }
   }
   async function fulfilmentFailed(message: string) {
     await releaseLedger()
@@ -138,9 +174,9 @@ export async function POST(req: NextRequest) {
   const residencyHandled = await handleResidencyStripeEvent(event, stripe, supabase)
   if (residencyHandled) return NextResponse.json({ received: true })
 
-  switch (event.type) {
+  switch (verified.type) {
     case 'checkout.session.completed': {
-      const session = event.data.object as Stripe.Checkout.Session
+      const session = verified.data.object as Stripe.Checkout.Session
       const meta = session.metadata
 
       if (meta?.type === 'commercial_product' && meta?.product) {
@@ -520,68 +556,19 @@ export async function POST(req: NextRequest) {
       }
 
       if (meta?.type === 'job_posting' && meta?.job_id) {
-        // Job adverts are the commonest thing a property buys and until now
-        // they left no financial record at all: no receipt could be printed
-        // for one, and the month's revenue simply did not count them.
-        await recordCommercialPurchase(
-          supabase, session,
-          String(meta.tier || '').toLowerCase() === 'bronze' ? 'standard_job' : `job_${String(meta.tier || 'standard').toLowerCase()}`,
-          String(meta.user_id || ''),
-        )
-        const days = meta.days ? parseInt(meta.days) : 30
-        const expiresAt = new Date(Date.now() + days * 24 * 60 * 60 * 1000).toISOString()
-        // Safety net behind the publish gate: if payment completes while the
-        // employer is still unapproved, keep the paid term but hold the role
-        // as a draft until approval.
-        let employerApproved = true
-        if (meta.employer_id) {
-          const { data: paidEmployer } = await supabase.from('employer_profiles').select('approval_status,user_id').eq('id', meta.employer_id).maybeSingle()
-          employerApproved = paidEmployer?.approval_status === 'approved'
-          if (!employerApproved && paidEmployer?.user_id) {
-            await createNotification(paidEmployer.user_id, 'general', 'Payment received - role held for approval', 'Your role is paid for and will go live automatically as soon as Talent House approves your employer account.', '/employer/jobs').catch?.(() => {})
-          }
-        }
-        await supabase.from('job_listings').update({
-          is_live: employerApproved,
-          status: employerApproved ? 'active' : 'draft',
-          expires_at: expiresAt,
-          // The free publish path stamps posted_date too - without it paid
-          // roles sort and display as undated.
-          posted_date: new Date().toISOString(),
-        }).eq('id', meta.job_id)
-
-        // Instrumentation: the paid posting is the moment a role truly enters
-        // the market. Record the event and the advertised salary history row.
-        try {
-          const { trackEvent, recordSalary } = await import('@/lib/analytics')
-          const { data: postedJob } = await supabase.from('job_listings').select('id,salary_min,salary_max,required_role_level').eq('id', meta.job_id).maybeSingle()
-          await trackEvent('job_posted', { employerId: meta.employer_id || null, jobId: meta.job_id }, { tier: meta.tier || null, held_for_approval: !employerApproved })
-          if (postedJob && (postedJob.salary_min || postedJob.salary_max)) {
-            await recordSalary({
-              kind: 'advertised', source: 'employer_advertised',
-              amountMin: postedJob.salary_min ? Number(postedJob.salary_min) : null,
-              amountMax: postedJob.salary_max ? Number(postedJob.salary_max) : null,
-              employerId: meta.employer_id || null, jobId: meta.job_id,
-              roleLevel: postedJob.required_role_level ? String(postedJob.required_role_level) : null,
-            })
-          }
-        } catch { /* best-effort */ }
-
-        if (meta.employer_id) {
-          await supabase.from('employer_profiles').update({
-            subscription_tier: meta.tier,
-            stripe_customer_id: session.customer as string,
-          }).eq('id', meta.employer_id)
-        }
-
-        triggerJobAlerts(meta.job_id, req.url)
+        // Shared with /api/employer/jobs/confirm-payment, which runs the same
+        // publish when the browser comes back from Stripe. Two copies of this
+        // would drift, and the one that drifts is the one nobody watches.
+        await publishPaidJobPosting(supabase, session, {
+          onPublished: jobId => triggerJobAlerts(jobId, req.url),
+        })
       }
       break
     }
 
     case 'account.updated': {
       // Stripe Connect: keep the specialist's payout-readiness in step.
-      const account = event.data.object as Stripe.Account
+      const account = verified.data.object as Stripe.Account
       const candidateId = account.metadata?.candidate_id
       const enabled = Boolean(account.payouts_enabled)
       if (candidateId) {
@@ -593,7 +580,7 @@ export async function POST(req: NextRequest) {
     }
 
     case 'checkout.session.expired': {
-      const session = event.data.object as Stripe.Checkout.Session
+      const session = verified.data.object as Stripe.Checkout.Session
       const meta = session.metadata
       if (meta?.type === 'job_posting' && meta?.job_id) {
         await supabase.from('job_listings').delete()
@@ -612,14 +599,14 @@ export async function POST(req: NextRequest) {
     case 'charge.refunded':
     case 'charge.dispute.created':
     case 'charge.dispute.closed': {
-      const isDispute = event.type.startsWith('charge.dispute')
-      const object = event.data.object as any
+      const isDispute = verified.type.startsWith('charge.dispute')
+      const object = verified.data.object as any
       const paymentIntent = typeof object?.payment_intent === 'string'
         ? object.payment_intent
         : object?.payment_intent?.id
       if (!paymentIntent) break
 
-      const disputeStatus = event.type === 'charge.dispute.closed'
+      const disputeStatus = verified.type === 'charge.dispute.closed'
         ? (object?.status === 'won' ? 'resolved' : 'open')
         : 'open'
 
@@ -635,7 +622,7 @@ export async function POST(req: NextRequest) {
             // never appear on the admin page as ready to pay.
             if (booking.payout_status !== 'paid') update.payout_status = 'on_hold'
           }
-          if (event.type === 'charge.refunded') {
+          if (verified.type === 'charge.refunded') {
             const refundedPence = Number(object?.amount_refunded || 0)
             if (refundedPence > 0) update.refund_amount = refundedPence / 100
             update.refunded_at = new Date().toISOString()
@@ -684,7 +671,7 @@ export async function POST(req: NextRequest) {
     // A payout to a professional's connected account bounced. Silent failure
     // here means somebody believes they have been paid and has not been.
     case 'payout.failed': {
-      const payout = event.data.object as any
+      const payout = verified.data.object as any
       await notifyAdmins('A Stripe payout failed',
         `Stripe could not pay out ${payout?.amount ? `£${(Number(payout.amount) / 100).toFixed(2)}` : 'an amount'}${payout?.failure_message ? `: ${payout.failure_message}` : ''}. Check the connected account's bank details.`,
         '/admin/agency')
@@ -692,7 +679,7 @@ export async function POST(req: NextRequest) {
     }
 
     case 'invoice.paid': {
-      const invoice = event.data.object as Stripe.Invoice
+      const invoice = verified.data.object as Stripe.Invoice
       const rawSubscription = (invoice as any).subscription
         || (invoice as any).parent?.subscription_details?.subscription
       const subscriptionId = typeof rawSubscription === 'string' ? rawSubscription : rawSubscription?.id
@@ -794,7 +781,7 @@ export async function POST(req: NextRequest) {
     }
 
     case 'invoice.payment_failed': {
-      const invoice = event.data.object as Stripe.Invoice
+      const invoice = verified.data.object as Stripe.Invoice
       const customerId = invoice.customer as string
       if (!customerId) break
 
@@ -839,7 +826,7 @@ export async function POST(req: NextRequest) {
     }
 
     case 'customer.subscription.updated': {
-      const subscription = event.data.object as Stripe.Subscription
+      const subscription = verified.data.object as Stripe.Subscription
       const customerId = subscription.customer as string
       const subType = subscription.metadata?.type
       const lapsed = subscription.status === 'past_due' || subscription.status === 'unpaid'
@@ -918,7 +905,7 @@ export async function POST(req: NextRequest) {
     }
 
     case 'customer.subscription.deleted': {
-      const subscription = event.data.object as Stripe.Subscription
+      const subscription = verified.data.object as Stripe.Subscription
       const customerId = subscription.customer as string
       const subType = subscription.metadata?.type
 

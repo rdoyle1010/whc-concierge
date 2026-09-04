@@ -12,8 +12,12 @@ Wellness House Collective. It connects spa and wellness professionals (Talent) w
 luxury hotel employers (Hotel / Employer).
 
 Live URL: https://talenthousecollective.co.uk
-(Old domain talent.wellnesshousecollective.co.uk 301s here; /api/* on the old host is
-deliberately left unredirected so the existing Stripe webhook keeps working.)
+(Old domain talent.wellnesshousecollective.co.uk 301s here, /api/* included. It
+does NOT serve the API: a rule that claimed to was a self-referential rewrite
+Netlify could not resolve, so every call to the old host got a 404 page. Stripe
+sat at an 83% error rate against it and paid roles never published. Every
+integration - Stripe webhooks above all - must point at
+talenthousecollective.co.uk.)
 Netlify project: whc-concierge (repo name unchanged)
 Stack: Next.js (App Router) · Supabase (auth + database) · Stripe (payments) · Netlify (hosting)
 

@@ -62,14 +62,59 @@ function EmployerJobs() {
     else if (included) setBanner({ tone: 'good', text: 'Role published from your annual allowance. Matched professionals are alerted automatically.' })
     else if (cancelled) setBanner({ tone: 'quiet', text: 'Payment was not completed, so this role is saved and not yet live. Use "Complete payment" on it whenever you are ready.' })
 
-    // Stripe's webhook is what flips the role live, and it lands a moment
-    // after the redirect. Re-read once so the employer is not looking at a
-    // stale "pending payment" on a role they have just paid for.
-    if (paid || included) {
+    // Waiting four seconds and reloading was a hope, not a mechanism: if the
+    // webhook never arrived - late, refused, or pointed at the wrong host -
+    // the reload showed the same "Complete payment" on a role already paid
+    // for, and nothing would ever fix it. Ask Stripe instead.
+    if (paid) {
+      confirmOutstandingPayments()
+      return
+    }
+    if (included) {
       const timer = window.setTimeout(() => { window.location.replace('/employer/jobs') }, 4000)
       return () => window.clearTimeout(timer)
     }
   }, [searchParams])
+
+  // Asks Stripe directly whether a role has been paid for, and publishes it if
+  // so. The webhook does the same thing from the other side; whichever arrives
+  // first wins and the second is a no-op.
+  async function confirmPayment(jobId: string, quiet = false) {
+    try {
+      const res = await fetch('/api/employer/jobs/confirm-payment', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ jobId }),
+      })
+      const body = await res.json().catch(() => ({}))
+      if (body?.ok) {
+        setBanner({ tone: 'good', text: body.detail || 'Payment confirmed.' })
+        window.setTimeout(() => window.location.replace('/employer/jobs'), 1200)
+        return true
+      }
+      if (!quiet) setBanner({ tone: 'quiet', text: body?.detail || body?.error || 'No completed payment found for this role yet.' })
+      return false
+    } catch {
+      if (!quiet) setBanner({ tone: 'quiet', text: 'We could not check with Stripe just now. Try again in a moment.' })
+      return false
+    }
+  }
+
+  // Straight after checkout: Stripe can take a few seconds to settle, so this
+  // asks twice before giving up rather than once and concluding nothing was
+  // paid.
+  async function confirmOutstandingPayments() {
+    const pending = jobs.filter((job: any) => job.status === 'pending_payment')
+    const targets = pending.length ? pending : []
+    for (const job of targets) {
+      if (await confirmPayment(job.id, true)) return
+    }
+    window.setTimeout(async () => {
+      for (const job of targets) {
+        if (await confirmPayment(job.id, true)) return
+      }
+    }, 4000)
+  }
 
   // A role stuck at pending_payment had no route forward at all: "Activate"
   // told the employer their paid term had ended, and "Repost" only pre-filled
@@ -256,7 +301,7 @@ function EmployerJobs() {
       {loading ? <div className="flex h-64 items-center justify-center"><div className="h-8 w-8 animate-spin rounded-full border-2 border-accent border-t-transparent" /></div> : jobs.length === 0 ? <div className="dashboard-panel py-16 text-center"><p className="dashboard-eyebrow">No listings yet</p><h2 className="dashboard-section-title">Start with your first permanent role</h2><p className="mx-auto mt-2 max-w-lg text-[13px] leading-6 text-secondary">Your full job description, property details and requirements will appear to suitable talent once the listing is live.</p><button onClick={() => router.push('/employer/post-role')} className="btn-primary mt-5 inline-flex items-center gap-2"><Plus size={14} />Post a role</button></div> : <div className="border-y border-[#6b6b6b] bg-white/45">{jobs.map((job, index) => <div key={job.id} className={`grid gap-5 px-4 py-5 md:px-5 xl:grid-cols-[96px_minmax(0,1fr)_auto] xl:items-center ${index > 0 ? 'border-t border-[#dddddd]' : ''}`}>
         <div className="hidden xl:block h-20 w-24 overflow-hidden rounded-lg border border-border bg-white">{job.job_image_url ? <img loading="lazy" decoding="async" src={job.job_image_url} alt="" className="h-full w-full object-cover"/> : <div className="h-full w-full flex items-center justify-center text-muted"><ImageIcon size={20}/></div>}</div>
         <div className="min-w-0"><div className="mb-2 flex flex-wrap items-center gap-2.5"><h3 className="text-[22px] text-ink">{job.title}</h3><span className={`rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[.1em] ${job.status === 'active' ? 'bg-green-50 text-green-700' : job.status === 'draft' ? 'bg-amber-50 text-amber-700' : job.status === 'filled' ? 'bg-[#edf4ef] text-[#42634b]' : 'bg-gray-100 text-secondary'}`}>{job.status}</span>{job.tier && <span className={job.tier === 'Platinum' ? 'badge-platinum' : job.tier === 'Gold' ? 'badge-gold' : 'badge-silver'}>{job.tier}</span>}</div><p className="text-[12px] font-medium text-secondary">{job.location} · {job.job_type}</p>{job.description && <p className="mt-2 max-w-3xl text-[13px] leading-6 text-secondary line-clamp-2">{job.description}</p>}{job.expires_at && <p className="mt-2 text-[11px] text-muted">Paid listing term: {new Date(job.expires_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</p>}{job.is_residency_role && job.status === 'active' && <ResidencySuggestions jobId={job.id} />}</div>
-        <div className="flex flex-wrap items-center gap-2 xl:justify-end">{job.status === 'active' && <button onClick={() => markFilled(job)} className="btn-secondary !px-3 !py-2 inline-flex items-center gap-1.5 text-emerald-700"><CheckCircle2 size={15} />Mark filled</button>}{job.status === 'pending_payment' && <button onClick={() => completePayment(job)} disabled={resuming === job.id} className="btn-primary !px-3 !py-2 inline-flex items-center gap-1.5 disabled:opacity-50">{resuming === job.id ? 'Opening…' : 'Complete payment'}</button>}{job.status !== 'draft' && job.status !== 'filled' && job.status !== 'pending_payment' && <button onClick={() => toggleStatus(job)} className="btn-secondary !px-3 !py-2 inline-flex items-center gap-1.5">{job.status === 'active' ? <><EyeOff size={15} />Take down</> : <><Eye size={15} />Activate</>}</button>}<button onClick={() => handleEdit(job)} className="btn-secondary !px-3 !py-2 inline-flex items-center gap-1.5"><Edit2 size={15} />Edit</button><button onClick={() => router.push(`/employer/post-role?clone=${job.id}`)} className="inline-flex h-9 w-9 items-center justify-center border border-border text-muted hover:bg-[#f1f1f1] hover:text-ink" title="Clone"><Copy size={15} /></button>{(job.status === 'closed' || job.status === 'expired') && <button onClick={() => router.push(`/employer/post-role?repost=${job.id}`)} className="inline-flex h-9 w-9 items-center justify-center border border-border text-muted hover:bg-[#f1f1f1] hover:text-ink" title="Repost"><RotateCcw size={15} /></button>}<button onClick={() => handleDelete(job.id)} aria-label="Delete job" className="inline-flex h-9 w-9 items-center justify-center border border-border text-muted hover:border-red-200 hover:bg-red-50 hover:text-red-600" title="Delete"><Trash2 size={15} /></button></div>
+        <div className="flex flex-wrap items-center gap-2 xl:justify-end">{job.status === 'active' && <button onClick={() => markFilled(job)} className="btn-secondary !px-3 !py-2 inline-flex items-center gap-1.5 text-emerald-700"><CheckCircle2 size={15} />Mark filled</button>}{job.status === 'pending_payment' && <><button onClick={() => completePayment(job)} disabled={resuming === job.id} className="btn-primary !px-3 !py-2 inline-flex items-center gap-1.5 disabled:opacity-50">{resuming === job.id ? 'Opening…' : 'Complete payment'}</button><button onClick={() => confirmPayment(job.id)} className="btn-secondary !px-3 !py-2 inline-flex items-center gap-1.5" title="Checks Stripe for a payment that has already gone through">Already paid?</button></>}{job.status !== 'draft' && job.status !== 'filled' && job.status !== 'pending_payment' && <button onClick={() => toggleStatus(job)} className="btn-secondary !px-3 !py-2 inline-flex items-center gap-1.5">{job.status === 'active' ? <><EyeOff size={15} />Take down</> : <><Eye size={15} />Activate</>}</button>}<button onClick={() => handleEdit(job)} className="btn-secondary !px-3 !py-2 inline-flex items-center gap-1.5"><Edit2 size={15} />Edit</button><button onClick={() => router.push(`/employer/post-role?clone=${job.id}`)} className="inline-flex h-9 w-9 items-center justify-center border border-border text-muted hover:bg-[#f1f1f1] hover:text-ink" title="Clone"><Copy size={15} /></button>{(job.status === 'closed' || job.status === 'expired') && <button onClick={() => router.push(`/employer/post-role?repost=${job.id}`)} className="inline-flex h-9 w-9 items-center justify-center border border-border text-muted hover:bg-[#f1f1f1] hover:text-ink" title="Repost"><RotateCcw size={15} /></button>}<button onClick={() => handleDelete(job.id)} aria-label="Delete job" className="inline-flex h-9 w-9 items-center justify-center border border-border text-muted hover:border-red-200 hover:bg-red-50 hover:text-red-600" title="Delete"><Trash2 size={15} /></button></div>
       </div>)}</div>}
     </DashboardShell>
   )
