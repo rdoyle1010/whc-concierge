@@ -1,3 +1,4 @@
+import { formatSalary } from '@/lib/money'
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { cache } from 'react'
@@ -65,7 +66,7 @@ export default async function RoleDetailPage(props: { params: Promise<{ id: stri
   const propertyName = employer.property_name || employer.company_name || 'Property'
   const titleText = job.job_title || job.title || 'Role'
   const description = String(job.job_description || job.description || '')
-  const salaryRange = job.salary_min && job.salary_max ? `£${Number(job.salary_min).toLocaleString()} - £${Number(job.salary_max).toLocaleString()}` : null
+  const salaryRange = formatSalary(job.salary_min, job.salary_max, job.salary_currency, { abbreviate: false })
   const propertyPhoto = Array.isArray(employer.property_photos) && employer.property_photos.length ? employer.property_photos[0] : null
   const reviewScore = Number(employer.review_score || 0)
   const reviewCount = Number(employer.review_count || 0)

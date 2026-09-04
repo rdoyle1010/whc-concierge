@@ -1,5 +1,6 @@
 'use client'
 
+import { formatSalary } from '@/lib/money'
 import { Suspense, useEffect, useState } from 'react'
 import { useTaxonomy } from '@/lib/use-sectors'
 import { liveDoors, liveSectorsForDoor } from '@/lib/sectors'
@@ -19,8 +20,8 @@ const UK_POSTCODE = /^[A-Za-z]{1,2}\d[A-Za-z\d]?\s*\d[A-Za-z]{2}$/
 
 function jobSalary(job: any): string | null {
   if (job.salary_display_text) return String(job.salary_display_text)
-  if (job.salary_min && job.salary_max) return `£${Number(job.salary_min).toLocaleString()} - £${Number(job.salary_max).toLocaleString()}`
-  if (job.salary_min) return `From £${Number(job.salary_min).toLocaleString()}`
+  const range = formatSalary(job.salary_min, job.salary_max, job.salary_currency, { abbreviate: false })
+  if (range) return range
   return null
 }
 

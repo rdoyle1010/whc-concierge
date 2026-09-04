@@ -1,5 +1,6 @@
 'use client'
 
+import { formatSalary } from '@/lib/money'
 import { useEffect, useState } from 'react'
 import DashboardShell from '@/components/DashboardShell'
 import { createClient } from '@/lib/supabase/client'
@@ -263,7 +264,7 @@ export default function TalentJobsPage() {
                     <div className="flex flex-wrap gap-2 text-[12px] text-muted mb-3">
                       <span className="flex items-center gap-1"><MapPin size={11} />{job.location}{job.distanceMiles != null ? ` · ${job.distanceMiles.toFixed(1)} miles` : ''}</span>
                       <span>{job.contract_type?.replace('_', ' ') || job.job_type}</span>
-                      {job.salary_min && job.salary_max && <span>£{(job.salary_min/1000).toFixed(0)}k-£{(job.salary_max/1000).toFixed(0)}k</span>}
+                      {job.salary_min && job.salary_max && <span>{formatSalary(job.salary_min, job.salary_max, job.salary_currency)}</span>}
                     </div>
 
                     {job.description && <p className="text-[13px] leading-6 text-secondary line-clamp-3 mb-4">{job.description}</p>}
