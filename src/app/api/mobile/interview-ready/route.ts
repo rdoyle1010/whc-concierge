@@ -245,7 +245,11 @@ export async function POST(req: NextRequest) {
     if (candidateError || !candidate) return NextResponse.json({ error: 'Complete your talent profile first.' }, { status: 404 })
 
     const credits = Math.max(0, Number(candidate.interview_ready_credits || 0))
-    if (credits < 1) return NextResponse.json({ error: 'You have used your Interview Ready allowance.', code: 'FEATURE_LOCKED' }, { status: 403 })
+    if (credits < 1) return NextResponse.json({
+      error: 'You have used your Interview Ready allowance. A membership adds credits every month.',
+      code: 'FEATURE_LOCKED',
+      upgradeHref: '/talent/membership',
+    }, { status: 403 })
 
     const { data: job, error: jobError } = await supabase.from('job_listings').select('*, employer_profiles(*)').eq('id', jobId).maybeSingle()
     if (jobError || !job) return NextResponse.json({ error: 'This role is no longer available.' }, { status: 404 })

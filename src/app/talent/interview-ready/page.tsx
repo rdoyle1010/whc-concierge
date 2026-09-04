@@ -2,10 +2,11 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import DashboardShell from '@/components/DashboardShell'
+import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import {
   ArrowRight, Brain, Briefcase, Building2, CheckCircle2, CircleHelp, FileText,
-  MessageSquareText, RefreshCw, ShieldCheck, Sparkles, Star, Target, Users,
+  Lock, MessageSquareText, RefreshCw, ShieldCheck, Sparkles, Star, Target, Users,
 } from 'lucide-react'
 
 type StyleName = 'Driver' | 'Connector' | 'Planner' | 'Explorer'
@@ -110,6 +111,30 @@ function ReadinessBar({ label, value }: { label: string; value?: number }) {
   </div>
 }
 
+// Running out of credits is a decision to put in front of somebody, not an
+// error to report at them. It used to be a line of red text with no link, at
+// the bottom of a form they had just spent ten minutes filling in - and the
+// padlock elsewhere pointed at Billing, whose only offer to a free account is
+// Featured Talent, which grants no Interview Ready credits at all.
+function AllowancePanel({ message, upgradeHref }: { message: string; upgradeHref: string | null }) {
+  return (
+    <div className="mb-8 border border-[#dddddd] bg-white p-5">
+      <div className="flex items-start gap-3">
+        <Lock size={17} className="mt-0.5 shrink-0 text-[#1c1c1c]" />
+        <div className="min-w-0 flex-1">
+          <p className="text-[13px] font-medium text-ink">{message}</p>
+          {upgradeHref ? <>
+            <p className="mt-1 text-[12px] leading-5 text-muted">Talent Standard is £9.99 a month for a credit every month and 10% off the Academy. Talent Pro is £19.99 for ten, and rolls up to twenty.</p>
+            <Link href={upgradeHref} className="btn-primary mt-4 inline-flex items-center gap-2">See membership plans <ArrowRight size={14} /></Link>
+          </> : (
+            <p className="mt-1 text-[12px] leading-5 text-muted">You are already on the highest allowance, so there is nothing to buy. Your credits refresh at renewal.</p>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function InterviewReadyPage() {
   const supabase = createClient()
   const [profile, setProfile] = useState<any>(null)
@@ -128,6 +153,7 @@ export default function InterviewReadyPage() {
   const [prep, setPrep] = useState<Prep | null>(null)
   const [preparing, setPreparing] = useState(false)
   const [error, setError] = useState('')
+  const [locked, setLocked] = useState<{ message: string; upgradeHref: string | null } | null>(null)
   const [tab, setTab] = useState<'dossier' | 'practice'>('dossier')
   const [questionIndex, setQuestionIndex] = useState(0)
   const [practiceAnswer, setPracticeAnswer] = useState('')
@@ -138,7 +164,7 @@ export default function InterviewReadyPage() {
     async function load() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { setLoading(false); return }
-      const { data: prof } = await supabase.from('candidate_profiles').select('id,full_name,headline,cv_url').eq('user_id', user.id).maybeSingle()
+      const { data: prof } = await supabase.from('candidate_profiles').select('id,full_name,headline,cv_url,membership_tier,interview_ready_credits,membership_renews_at').eq('user_id', user.id).maybeSingle()
       setProfile(prof)
       const now = new Date().toISOString()
       const { data: liveJobs } = await supabase.from('job_listings')
@@ -159,13 +185,37 @@ export default function InterviewReadyPage() {
 
   const selectStyle = (index: number, style: StyleName) => setAnswers(prev => { const next = [...prev]; next[index] = style; return next })
 
+  // Six choices, a pasted job description, then a padlock is a rotten way to
+  // find out. The allowance is shown before any of it is filled in.
+  const credits = Math.max(0, Number(profile?.interview_ready_credits || 0))
+  const tier = String(profile?.membership_tier || '').toLowerCase()
+  const subscriber = tier === 'standard' || tier === 'pro'
+  const renewsAt = profile?.membership_renews_at
+    ? new Date(profile.membership_renews_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'long' })
+    : null
+  const outOfCredits = Boolean(profile) && credits < 1 && !prep
+  const allowanceMessage = subscriber
+    ? renewsAt
+      ? `You have used this month's Interview Ready credits. More arrive on ${renewsAt}.`
+      : 'You have used this month\u2019s Interview Ready credits. More arrive when your membership renews.'
+    : 'You have used your Interview Ready allowance. A membership adds credits every month.'
+  const allowanceHref = tier === 'pro' ? null : '/talent/membership'
+
   const buildPrep = async () => {
     if (!jobId && !targetRole.trim()) { setError('Choose one of the live roles or enter the role you are preparing for.'); return }
     if (!assessmentComplete) { setError('Complete the short working-style assessment first. It takes six choices.'); return }
-    setPreparing(true); setError(''); setPrep(null); setFeedback(null)
+    setPreparing(true); setError(''); setLocked(null); setPrep(null); setFeedback(null)
     try {
       const res = await fetch('/api/interview-ready', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mode: 'prepare', jobId, targetRole, companyName, jobDescription, styleAnswers: answers }) })
       const data = await res.json().catch(() => ({}))
+      // Being told you have run out is not an error message, it is a decision
+      // to put in front of somebody - so it gets a button rather than a line
+      // of red text they cannot act on.
+      if (res.status === 403 && data.code === 'FEATURE_LOCKED') {
+        setLocked({ message: data.error || 'You have used your Interview Ready allowance.', upgradeHref: data.upgradeHref || null })
+        setPreparing(false)
+        return
+      }
       if (!res.ok) throw new Error(data.error || 'Interview Ready could not build your preparation. Please try again.')
       setPrep(data); setQuestionIndex(0); setTab('dossier')
     } catch (e: any) { setError(e.message || 'Interview Ready is unavailable.') } finally { setPreparing(false) }
@@ -201,6 +251,8 @@ export default function InterviewReadyPage() {
       <div className="flex items-start gap-3"><Sparkles size={17} className="text-accent shrink-0 mt-0.5" /><div><p className="text-[13px] font-medium text-ink">Not an answer machine. A confidence builder.</p><p className="text-[12px] text-muted mt-1 leading-5">We never invent an achievement, brand, salary or result. We help you understand the employer, identify the evidence you already have and strengthen how you communicate it.</p></div></div>
     </div>
 
+    {outOfCredits && <AllowancePanel message={allowanceMessage} upgradeHref={allowanceHref} />}
+
     {!prep ? <div className="grid grid-cols-1 xl:grid-cols-[.9fr_1.1fr] gap-6">
       <section className="dashboard-panel">
         <p className="dashboard-eyebrow">1. The opportunity</p>
@@ -229,7 +281,8 @@ export default function InterviewReadyPage() {
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 mb-7">{(Object.keys(styles) as StyleName[]).map(name => <div key={name} className="border border-border bg-white px-3.5 py-3"><p className="text-[12px] font-semibold text-ink">{name}</p><p className="text-[10.5px] text-muted leading-4 mt-1">{styles[name]}</p></div>)}</div>
         <div className="space-y-6">{styleQuestions.map((q, index) => <div key={q.question}><p className="text-[12px] font-medium text-ink mb-2.5"><span className="text-accent mr-2">{index + 1}.</span>{q.question}</p><div className="grid grid-cols-1 sm:grid-cols-2 gap-2">{(Object.keys(q.options) as StyleName[]).map(name => <button key={name} type="button" onClick={() => selectStyle(index, name)} className={`text-left border px-3.5 py-3 transition-colors ${answers[index] === name ? 'border-accent bg-[#f1f1f1]' : 'border-border bg-white hover:border-accent/60'}`}><span className="block text-[10px] uppercase tracking-[.12em] text-accent mb-1">{name}</span><span className="block text-[11.5px] text-secondary leading-4">{q.options[name]}</span></button>)}</div></div>)}</div>
         {error && <p className="mt-5 border-l-2 border-red-500 pl-3 text-[12px] text-red-700">{error}</p>}
-        <button type="button" disabled={preparing} onClick={buildPrep} className="btn-primary mt-7 w-full flex items-center justify-center gap-2 py-3.5 disabled:opacity-50">{preparing ? <><RefreshCw size={14} className="animate-spin" />Building your personalised dossier</> : <>Build my Interview Ready dossier <ArrowRight size={14} /></>}</button>
+        {locked && <div className="mt-5"><AllowancePanel message={locked.message} upgradeHref={locked.upgradeHref} /></div>}
+        <button type="button" disabled={preparing || outOfCredits} onClick={buildPrep} className="btn-primary mt-7 w-full flex items-center justify-center gap-2 py-3.5 disabled:opacity-50">{preparing ? <><RefreshCw size={14} className="animate-spin" />Building your personalised dossier</> : <>Build my Interview Ready dossier <ArrowRight size={14} /></>}</button>
       </section>
     </div> : <>
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-7">

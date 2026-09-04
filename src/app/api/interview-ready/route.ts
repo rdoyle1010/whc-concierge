@@ -299,10 +299,24 @@ export async function POST(req: NextRequest) {
 
     const credits = Math.max(0, Number(candidate.interview_ready_credits || 0))
     if (mode === 'prepare' && credits < 1) {
+      // A subscriber who has spent this month's credits has nothing to buy -
+      // theirs come back on renewal, and telling them to upgrade is both
+      // useless and slightly insulting. Everybody else has somewhere to go,
+      // and it is Membership: Billing's only offer to a free account is
+      // Featured Talent, which grants no Interview Ready credits.
+      const tier = String(candidate.membership_tier || '').toLowerCase()
+      const subscriber = tier === 'standard' || tier === 'pro'
+      const renewsAt = candidate.membership_renews_at || null
       return NextResponse.json({
-        error: 'You have used your Interview Ready allowance. Upgrade or add more access to continue.',
+        error: subscriber
+          ? renewsAt
+            ? `You have used this month's Interview Ready credits. More arrive on ${new Date(renewsAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'long' })}.`
+            : 'You have used this month\u2019s Interview Ready credits. More arrive when your membership renews.'
+          : 'You have used your Interview Ready allowance. A membership adds credits every month.',
         code: 'FEATURE_LOCKED',
-        upgradeHref: '/talent/billing',
+        tier: tier || 'free',
+        renewsAt,
+        upgradeHref: subscriber && tier === 'pro' ? null : '/talent/membership',
       }, { status: 403 })
     }
 
