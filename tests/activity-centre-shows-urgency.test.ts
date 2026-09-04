@@ -69,11 +69,10 @@ test('classification does not depend on a type that is always the same', () => {
 })
 
 // The portal repaints text-amber-* grey, so urgency cannot ride on amber text.
-test('the row signals in ways the portal keeps', () => {
+test('the screen signals in ways the portal keeps', () => {
   const centre = read(CENTRE)
-  assert.match(centre, /const tone = activityTone\(item\.type, item\.title, item\.message\)/)
-  assert.match(centre, /\$\{classes\.card\}/, 'a coloured left border')
-  assert.match(centre, /\$\{classes\.pill\}/, 'and a filled pill')
+  assert.match(centre, /\$\{tile\.card\}/, 'a coloured left border on the live tiles')
+  assert.match(centre, /\$\{tile\.pill\}/, 'and a filled pill')
   // Comments stripped: the note above the icon map names the very class it is
   // avoiding, and naming it there is not using it.
   const code = centre.replace(/^\s*\/\/.*$/gm, '')
@@ -84,8 +83,34 @@ test('the row signals in ways the portal keeps', () => {
   assert.match(toneClasses('action').pill, /bg-red-600/)
 })
 
-// An item already read is history; shouting about it is noise.
-test('a read item stops shouting', () => {
-  assert.match(read(CENTRE), /word && !item\.is_read &&/)
-  assert.match(read(CENTRE), /item\.is_read \? 'text-muted' : TONE_ICON\[tone\]/)
+// "You are up to date" sat directly above three rows shouting ACTION at things
+// that had already been dealt with. A log entry records what happened; it is
+// not a demand, and the block above it is the one that knows what is still
+// outstanding.
+test('recent activity records rather than demands', () => {
+  const centre = read(CENTRE)
+  const log = centre.slice(centre.indexOf('Recent activity'))
+  assert.ok(!/activityWord\(tone\)/.test(log), 'no action pill on a historical row')
+  assert.match(log, /const tone = activityTone/, 'the tone still tints the row for scanning')
+  assert.match(centre, /item\.is_read \? 'text-muted' : TONE_ICON\[tone\]/, 'and a read item fades')
+})
+
+// An Agency offer is the most time-critical thing on this platform - an urgent
+// one expires in four hours - and the attention block had never heard of it.
+// So somebody with a counter-offer waiting was told they were up to date.
+test('the block that claims to know what needs you knows about agency offers', () => {
+  const api = read('src/app/api/dashboard/activity/route.ts')
+  assert.match(api, /Agency shift offers to answer/)
+  assert.match(api, /\.eq\('candidate_id', candidate\.id\)\.eq\('status', 'pending'\)/, 'pending is the professional’s move')
+  assert.match(api, /Counter-offers to answer/)
+  assert.match(api, /\.eq\('employer_id', employer\.id\)\.eq\('status', 'countered'\)/, 'countered hands it back to the property')
+})
+
+// violet, gold and blue were decorative names the dashboard ignored, which is
+// part of why nothing on that screen ever looked urgent.
+test('the attention tones are the platform’s own vocabulary', () => {
+  const api = read('src/app/api/dashboard/activity/route.ts')
+  assert.ok(!/tone: 'violet'|tone: 'gold'|tone: 'blue'/.test(api))
+  assert.match(api, /tone: 'action' \| 'waiting' \| 'done'/)
+  assert.match(read(CENTRE), /toneClasses\(item\.tone\)/, 'and the tiles actually use them')
 })
