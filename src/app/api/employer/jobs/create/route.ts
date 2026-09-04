@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { geocodeLocation } from '@/lib/geo'
 import { countryCode, DEFAULT_COUNTRY, productAvailableIn } from '@/lib/countries'
+import { CURRENCIES, currencyForCountry } from '@/lib/money'
 import { getRequestUser } from '@/lib/request-user'
 
 // Job storytelling columns (20260831170000). Optional narrative fields; if the
@@ -14,6 +15,11 @@ const STORY_FIELDS = [
 
 const ALLOWED_FIELDS = [
   'job_title', 'job_description', 'job_image_url', 'location', 'location_postcode', 'radius_miles',
+  // Without these on the list the country picker was read and thrown away, so
+  // every role inherited the property's country - a London group posting for
+  // its Hong Kong resort would have advertised a UK job, mapped to Yorkshire,
+  // priced in pounds.
+  'country_code', 'location_city', 'salary_currency',
   'job_type', 'contract_type', 'required_role_level', 'candidate_scope', 'salary_min', 'salary_max',
   'required_skills', 'required_brands', 'required_qualifications', 'required_systems',
   'preferred_business_skills', 'min_years_experience', 'shift_pattern',
@@ -64,6 +70,14 @@ export async function POST(req: NextRequest) {
   // of the role is perfectly postable and refusing the whole thing over a
   // checkbox would read as the country being unsupported.
   if (!productAvailableIn('agency', roleCountry)) payload.is_agency_role = false
+
+  // A currency the platform cannot render is worse than the default: it would
+  // print a pound sign in front of a Hong Kong figure. An unknown code falls
+  // back to what the country would normally quote in.
+  const currency = String(payload.salary_currency || '').toUpperCase()
+  payload.salary_currency = CURRENCIES.some(known => known.code === currency)
+    ? currency
+    : currencyForCountry(roleCountry)
 
   const rolePostcode = String(payload.location_postcode || '').trim()
   const roleTown = String(payload.location_city || payload.location || '').trim()
