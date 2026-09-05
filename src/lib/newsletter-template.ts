@@ -66,7 +66,7 @@ export function renderNewsletterHtml(
           ${featuredHtml}
           ${ctaUrl && ctaLabel ? `<div style="margin:30px 0 8px"><a href="${escapeHtml(ctaUrl)}" style="display:inline-block;background:#1c1c1c;color:#fff;text-decoration:none;padding:13px 20px;border-radius:8px;font-size:13px;font-weight:650">${ctaLabel}</a></div>` : ''}
         </td></tr>
-        <tr><td style="background:#f7f7f7;border-top:1px solid #e5e5e5;padding:24px 30px;font-size:11px;line-height:1.65;color:#73818a">
+        <tr><td style="background:#f1f1f1;border-top:1px solid #e5e5e5;padding:24px 30px;font-size:11px;line-height:1.65;color:#73818a">
           <div style="font-weight:600;color:#4d4d4d;margin-bottom:7px">Talent House Collective</div>
           <div>${footer}</div>
           <div style="margin-top:10px">talenthousecollective.co.uk</div>

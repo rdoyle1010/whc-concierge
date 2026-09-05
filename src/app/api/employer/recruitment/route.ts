@@ -29,7 +29,7 @@ async function alertAdmin(propertyName: string, request: { job_title: string; se
       <tr><td style="padding:6px 0;color:#6b6b6b;">Location</td><td>${esc(String(request.location || 'Not stated'))}</td></tr>
       <tr><td style="padding:6px 0;color:#6b6b6b;">Timeline</td><td>${esc(String(request.timeline || 'Not stated'))}</td></tr>
     </table>
-    <div style="background:#fafafa;border-radius:8px;padding:14px 16px;margin:18px 0;">
+    <div style="background:#f1f1f1;border-radius:8px;padding:14px 16px;margin:18px 0;">
       <p style="font-size:11px;color:#6b6b6b;text-transform:uppercase;letter-spacing:.05em;margin:0 0 6px;">Brief</p>
       <p style="font-size:14px;line-height:1.7;white-space:pre-wrap;margin:0;">${esc(request.brief)}</p>
     </div>

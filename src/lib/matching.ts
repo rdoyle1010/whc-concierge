@@ -1,3 +1,5 @@
+import { teamScaleVerdict, revenueScaleVerdict, scaleCeiling } from './hard-facts'
+
 const ROLE_LEVELS: Record<string, number> = {
   'Apprentice': 1, 'Junior': 2, 'Junior Therapist': 2, 'Receptionist': 2, 'Spa Receptionist': 2,
   'Spa Attendant': 1, 'Nail Technician': 2, 'Therapist': 3, 'Beauty Therapist': 3,
@@ -118,7 +120,7 @@ function progressionPolicy(candidate:any, job:any, candidateRole:string, require
 export function calculateMatchScore(candidate:any, job:any): {
   score:number; label:string; confidence:number; thinEvidence:boolean; colour:string; bgColour:string; breakdown:any; evidence?:Record<string,{met?:string[];missing?:string[];note?:string}>; matchingSkills:string[]; hardStop:boolean; hardStopReason?:string; matchExplanation:string; distanceMiles:number|null; locationBasis:'distance'|'text'|'unknown'; progression?:any; mode?:'permanent'|'agency'|'leadership'
 } {
-  const emptyBreakdown={roleLevel:-1,treatmentSkills:-1,brands:-1,qualifications:-1,experience:-1,businessSkills:-1,systems:-1,location:-1,shiftCompatibility:-1,transport:-1,accommodation:-1,proficiencyDepth:-1,salaryFit:-1,availability:-1,profileCompleteness:0,reviewScore:0}
+  const emptyBreakdown={teamScale:-1,revenueScale:-1,roleLevel:-1,treatmentSkills:-1,brands:-1,qualifications:-1,experience:-1,businessSkills:-1,systems:-1,location:-1,shiftCompatibility:-1,transport:-1,accommodation:-1,proficiencyDepth:-1,salaryFit:-1,availability:-1,profileCompleteness:0,reviewScore:0}
   const empty={score:10,label:'Requirement Missing',confidence:0,thinEvidence:true,colour:'#555555',bgColour:'#F3F4F6',breakdown:emptyBreakdown,matchingSkills:[] as string[],hardStop:true,matchExplanation:'',distanceMiles:null,locationBasis:'unknown' as const}
 
   const candidateRole=String(candidate.role_level||candidate.current_role||candidate.job_title||'')
@@ -160,6 +162,19 @@ export function calculateMatchScore(candidate:any, job:any): {
   const profileScore=Math.min(100,candidate.profile_completion_score||candidate.profile_completion_pct||0)
   const rv=candidate.review_score||0, reviewScoreNorm=rv>=4.5?100:rv>=4?85:rv>=3.5?65:rv>0?40:50
 
+  // The two facts on the page that were not in the score.
+  //
+  // A Director of Spa profile states the largest team they have run and the
+  // revenue they have owned, and the advert states both for the role. Both
+  // were printed on the applications page and neither reached the ranking, so
+  // the platform showed a hiring manager the most relevant number on the page
+  // and then sorted as if nobody had written it down. Silence on either side
+  // returns -1 and the factor drops out, which is what keeps the profile
+  // page's promise that the optional leadership questions never count against
+  // anybody who leaves them blank.
+  const teamScale=teamScaleVerdict(candidate,job)
+  const revenueScale=revenueScaleVerdict(candidate,job)
+
   // Different logic for agency, permanent and leadership roles: the same
   // factors matter differently for a Saturday shift, a permanent post and a
   // Director appointment.
@@ -182,13 +197,14 @@ export function calculateMatchScore(candidate:any, job:any): {
   const availabilityScore=candidate.availability_status?AVAILABILITY_SCORE[String(candidate.availability_status)]??60:-1
 
   const MODE_WEIGHTS:Record<string,Record<string,number>>={
-    permanent:{roleLevel:30,treatments:15,brands:8,qualifications:12,experience:10,business:11,systems:6,location:10,shift:5,transport:3,accommodation:2,proficiency:3,salary:6,availability:4,review:0},
-    agency:{roleLevel:10,treatments:24,brands:10,qualifications:12,experience:8,business:3,systems:6,location:16,shift:8,transport:6,accommodation:1,proficiency:6,salary:0,availability:10,review:8},
-    leadership:{roleLevel:36,treatments:5,brands:6,qualifications:10,experience:14,business:18,systems:4,location:8,shift:2,transport:2,accommodation:1,proficiency:0,salary:8,availability:4,review:4},
+    permanent:{teamScale:0,revenueScale:0,roleLevel:30,treatments:15,brands:8,qualifications:12,experience:10,business:11,systems:6,location:10,shift:5,transport:3,accommodation:2,proficiency:3,salary:6,availability:4,review:0},
+    agency:{teamScale:0,revenueScale:0,roleLevel:10,treatments:24,brands:10,qualifications:12,experience:8,business:3,systems:6,location:16,shift:8,transport:6,accommodation:1,proficiency:6,salary:0,availability:10,review:8},
+    leadership:{teamScale:16,revenueScale:13,roleLevel:36,treatments:5,brands:6,qualifications:10,experience:14,business:18,systems:4,location:8,shift:2,transport:2,accommodation:1,proficiency:0,salary:8,availability:4,review:4},
   }
   const w=MODE_WEIGHTS[mode]
   const allComponents=[
     {value:policy.score,weight:w.roleLevel},{value:treatmentResult.score,weight:w.treatments},{value:brandResult.score,weight:w.brands},{value:qualResult.score,weight:w.qualifications},{value:expScore,weight:w.experience},{value:bizResult.score,weight:w.business},{value:sysResult.score,weight:w.systems},{value:locationScore,weight:w.location},{value:shiftScore,weight:w.shift},{value:transportScore,weight:w.transport},{value:accommodationScore,weight:w.accommodation},{value:proficiencyScore,weight:w.proficiency},{value:salaryScore,weight:w.salary},{value:availabilityScore,weight:w.availability},{value:rv>0?reviewScoreNorm:-1,weight:w.review},
+    {value:teamScale.score,weight:w.teamScale},{value:revenueScale.score,weight:w.revenueScale},
   ]
   const components=allComponents.filter(c=>c.value>=0&&c.weight>0)
   const weight=components.reduce((t,c)=>t+c.weight,0)
@@ -212,6 +228,14 @@ export function calculateMatchScore(candidate:any, job:any): {
   let score=weight?components.reduce((t,c)=>t+c.value*c.weight,0)/weight:10
   if (!policy.allowed && policy.scope!=='open_transferable') score=Math.min(score,44)
   if (!policy.sameFamily && policy.scope!=='open_transferable') score=Math.min(score,25)
+  // Scale, for a leadership appointment only. The job's team-size field does
+  // not say whose team it counts, so outside leadership it could as easily be
+  // the team somebody joins as the team they run, and a number that ambiguous
+  // has no business in a score.
+  if (mode==='leadership') {
+    const ceiling=scaleCeiling(teamScale,revenueScale)
+    if (ceiling!==null) score=Math.min(score,ceiling)
+  }
   const rounded=Math.max(10,Math.round(score))
   // A verdict is only as strong as the evidence under it. With less than
   // sixty per cent of the role's weight assessable, the top two labels are
@@ -223,6 +247,12 @@ export function calculateMatchScore(candidate:any, job:any): {
   const bgColour=rounded>=90?'#DCFCE7':rounded>=75?'#DBEAFE':rounded>=60?'#FEF3C7':'#F3F4F6'
   const matchingSkills=[...treatmentResult.matches,...brandResult.matches,...qualResult.matches,...bizResult.matches].slice(0,6)
   const reasons:string[]=[]
+  // A hard number first, when there is one. "Strong match based on having led
+  // a team of 84" is an argument a spa manager can take to their general
+  // manager; "strong match based on Elemis product experience" is not, for a
+  // Director appointment.
+  if (teamScale.score>=85&&teamScale.label) reasons.push(teamScale.label)
+  if (revenueScale.score>=85&&revenueScale.label) reasons.push(revenueScale.label)
   if (policy.levelGap===1 && policy.allowed) reasons.push('career progression fit')
   if (policy.progressionBridge) reasons.push('leadership evidence supports progression')
   if (qualResult.matches.length) reasons.push(`${qualResult.matches[0]} qualification`)
@@ -259,6 +289,8 @@ export function calculateMatchScore(candidate:any, job:any): {
         : policy.levelGap < 0 ? 'Currently at a more senior level than the role.'
         : `${policy.levelGap} levels below the role as advertised.`,
     },
+    teamScale: { note: teamScale.note },
+    revenueScale: { note: revenueScale.note },
     treatmentSkills: { met: treatmentResult.matches, missing: treatmentResult.missing },
     brands: { met: brandResult.matches, missing: brandResult.missing },
     qualifications: { met: qualResult.matches, missing: qualResult.missing },
@@ -295,7 +327,7 @@ export function calculateMatchScore(candidate:any, job:any): {
     },
   }
 
-  return {score:rounded,label,confidence,thinEvidence,colour,bgColour,breakdown:{roleLevel:policy.score,treatmentSkills:treatmentResult.score,brands:brandResult.score,qualifications:qualResult.score,experience:expScore,businessSkills:bizResult.score,systems:sysResult.score,location:locationScore,shiftCompatibility:shiftScore,transport:transportScore,accommodation:accommodationScore,proficiencyDepth:proficiencyScore,salaryFit:salaryScore,availability:availabilityScore,profileCompleteness:profileScore,reviewScore:reviewScoreNorm},evidence,matchingSkills,hardStop:false,matchExplanation,distanceMiles:geo.distance,locationBasis:geo.basis,mode,progression:{scope:policy.scope,levelGap:policy.levelGap,isStepUp:policy.levelGap===1&&policy.allowed,bridge:policy.progressionBridge}}
+  return {score:rounded,label,confidence,thinEvidence,colour,bgColour,breakdown:{teamScale:teamScale.score,revenueScale:revenueScale.score,roleLevel:policy.score,treatmentSkills:treatmentResult.score,brands:brandResult.score,qualifications:qualResult.score,experience:expScore,businessSkills:bizResult.score,systems:sysResult.score,location:locationScore,shiftCompatibility:shiftScore,transport:transportScore,accommodation:accommodationScore,proficiencyDepth:proficiencyScore,salaryFit:salaryScore,availability:availabilityScore,profileCompleteness:profileScore,reviewScore:reviewScoreNorm},evidence,matchingSkills,hardStop:false,matchExplanation,distanceMiles:geo.distance,locationBasis:geo.basis,mode,progression:{scope:policy.scope,levelGap:policy.levelGap,isStepUp:policy.levelGap===1&&policy.allowed,bridge:policy.progressionBridge}}
 }
 
 export function rankCandidates(candidates:any[],job:any,minScore=10,blockedEmployerIds?:string[]) {

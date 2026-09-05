@@ -45,7 +45,7 @@ export async function POST(req: NextRequest) {
           <tr><td style="padding: 8px 0; color: #6b6b6b; font-size: 13px;">Type</td><td style="padding: 8px 0; font-size: 14px; color: #1c1c1c; text-transform: capitalize;">${type || 'general'}</td></tr>
           <tr><td style="padding: 8px 0; color: #6b6b6b; font-size: 13px;">Subject</td><td style="padding: 8px 0; font-size: 14px; color: #1c1c1c; font-weight: 500;">${subject}</td></tr>
         </table>
-        <div style="background: #fafafa; border-radius: 8px; padding: 16px; margin-bottom: 24px;">
+        <div style="background: #f1f1f1; border-radius: 8px; padding: 16px; margin-bottom: 24px;">
           <p style="font-size: 12px; color: #6b6b6b; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.05em;">Message</p>
           <p style="font-size: 14px; color: #374151; line-height: 1.7; white-space: pre-wrap;">${message}</p>
         </div>

@@ -67,7 +67,7 @@ export function newsletterWelcomeHtml({ unsubscribeUrl }: { unsubscribeUrl?: str
           </p>
         </td></tr>
 
-        <tr><td style="background:#f7f7f7;border-top:1px solid #e5e5e5;padding:24px 30px;font-size:11px;line-height:1.65;color:#73818a">
+        <tr><td style="background:#f1f1f1;border-top:1px solid #e5e5e5;padding:24px 30px;font-size:11px;line-height:1.65;color:#73818a">
           <div style="font-weight:600;color:#4d4d4d;margin-bottom:7px">Talent House Collective</div>
           <div>Better matches. Better careers. Better teams.</div>
           <div style="margin-top:10px">talenthousecollective.co.uk</div>

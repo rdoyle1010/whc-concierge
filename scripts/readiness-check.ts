@@ -412,9 +412,19 @@ check('linear-gradient appears only as image overlays or in allowlisted files', 
 check('no stray cream or off-white surfaces under src', () => {
   // The neutral system allows warm white and #f1f1f1 only. globals.css keeps the
   // legacy .bg-gray-50 mapping selector, so this check covers ts/tsx.
-  const creamPattern = /bg-\[#fafafa\]|bg-\[#f7f7f7\]|bg-gray-50\b/i
+  //
+  // It used to read Tailwind classes alone, which meant the same two colours
+  // walked straight past it as raw hexes in a style attribute: seventeen inset
+  // panels across the email templates, plus the share image every link to the
+  // site renders with. An email is the brand in somebody's inbox and the share
+  // image is the brand in somebody's feed, so both are covered now.
+  //
+  // site-content-values.ts is exempt: #F7F7F7 there is the CMS "background"
+  // token, deliberately a shade off the "surface" token beside it.
+  const creamPattern = /bg-\[#fafafa\]|bg-\[#f7f7f7\]|bg-gray-50\b|#fafafa|#f7f7f7/i
   const offenders = designSourceFiles()
     .filter(file => /\.(ts|tsx)$/.test(file))
+    .filter(file => !file.endsWith('src/lib/site-content-values.ts'))
     .filter(file => creamPattern.test(read(file)))
   assert.deepEqual(offenders, [])
 })

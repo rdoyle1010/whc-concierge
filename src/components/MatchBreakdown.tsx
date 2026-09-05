@@ -5,6 +5,8 @@ import { ChevronDown } from 'lucide-react'
 
 type BreakdownData = {
   roleLevel: number
+  teamScale?: number
+  revenueScale?: number
   treatmentSkills: number
   brands: number
   qualifications: number
@@ -30,6 +32,11 @@ export type MatchEvidence = Record<string, { met?: string[]; missing?: string[];
 const CATEGORIES: { key: keyof BreakdownData; label: string; weight: number }[] = [
   { key: 'roleLevel', label: 'Job Role & Level', weight: 40 },
   { key: 'treatmentSkills', label: 'Treatment Skills', weight: 18 },
+  // Leadership appointments only. Everywhere else the matcher returns -1 for
+  // these and the filter above drops the rows, so a therapist never sees two
+  // empty bars about team size and revenue.
+  { key: 'teamScale', label: 'Team Scale', weight: 16 },
+  { key: 'revenueScale', label: 'Revenue Scale', weight: 13 },
   { key: 'proficiencyDepth', label: 'Skill Depth', weight: 2 },
   { key: 'brands', label: 'Product Houses', weight: 10 },
   { key: 'qualifications', label: 'Qualifications', weight: 12 },

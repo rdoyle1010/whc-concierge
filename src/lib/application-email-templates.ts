@@ -23,7 +23,7 @@ export function applicantConfirmationHtml({ applicantName, jobTitle, propertyNam
           <p style="margin: 0 0 24px; font-size: 15px; line-height: 1.7; color: #3a3a3a;">Your application has been submitted successfully. Here are the details:</p>
 
           <!-- Application details -->
-          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color: #fafafa; border-radius: 8px; margin-bottom: 24px;">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color: #f1f1f1; border-radius: 8px; margin-bottom: 24px;">
             <tr><td style="padding: 20px;">
               <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
                 <tr>
@@ -54,7 +54,7 @@ export function applicantConfirmationHtml({ applicantName, jobTitle, propertyNam
         </td></tr>
 
         <!-- Footer -->
-        <tr><td style="background-color: #fafafa; border-radius: 0 0 12px 12px; padding: 28px 40px; border-top: 1px solid #dddddd;">
+        <tr><td style="background-color: #f1f1f1; border-radius: 0 0 12px 12px; padding: 28px 40px; border-top: 1px solid #dddddd;">
           <p style="margin: 0 0 4px; font-size: 12px; color: #8c8c8c;">Talent House Collective</p>
           <p style="margin: 0 0 12px; font-size: 12px; color: #8c8c8c;">United Kingdom &middot; <a href="mailto:rebecca.whc@outlook.com" style="color: #555555; text-decoration: none;">rebecca.whc@outlook.com</a></p>
           <p style="margin: 0; font-size: 11px; color: #d9d9d9;">You received this email because you applied for a role on Talent House Collective.</p>
@@ -91,7 +91,7 @@ export function employerNotificationHtml({ applicantName, jobTitle, propertyName
           <p style="margin: 0 0 24px; font-size: 15px; line-height: 1.7; color: #3a3a3a;">A new candidate has expressed interest in your role at ${propertyName}.</p>
 
           <!-- Applicant details -->
-          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color: #fafafa; border-radius: 8px; margin-bottom: 24px;">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color: #f1f1f1; border-radius: 8px; margin-bottom: 24px;">
             <tr><td style="padding: 20px;">
               <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
                 <tr>
@@ -121,7 +121,7 @@ export function employerNotificationHtml({ applicantName, jobTitle, propertyName
         </td></tr>
 
         <!-- Footer -->
-        <tr><td style="background-color: #fafafa; border-radius: 0 0 12px 12px; padding: 28px 40px; border-top: 1px solid #dddddd;">
+        <tr><td style="background-color: #f1f1f1; border-radius: 0 0 12px 12px; padding: 28px 40px; border-top: 1px solid #dddddd;">
           <p style="margin: 0 0 4px; font-size: 12px; color: #8c8c8c;">Talent House Collective</p>
           <p style="margin: 0 0 12px; font-size: 12px; color: #8c8c8c;">United Kingdom &middot; <a href="mailto:rebecca.whc@outlook.com" style="color: #555555; text-decoration: none;">rebecca.whc@outlook.com</a></p>
           <p style="margin: 0; font-size: 11px; color: #d9d9d9;">You received this email because a candidate applied for a role you posted on Talent House Collective.</p>

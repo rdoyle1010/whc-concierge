@@ -1,6 +1,5 @@
 import { ImageResponse } from 'next/og'
 
-export const runtime = 'edge'
 export const alt = 'Talent House Collective - Luxury Wellness Careers Platform'
 export const size = { width: 1200, height: 630 }
 export const contentType = 'image/png'
@@ -16,7 +15,7 @@ export default function OGImage() {
           flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
-          background: '#F8F7F5',
+          background: '#f1f1f1',
           padding: '80px',
           position: 'relative',
           fontFamily: 'Helvetica, Arial, sans-serif',

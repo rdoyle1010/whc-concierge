@@ -80,12 +80,15 @@ export default function Footer({ siteContent }: { siteContent?: WebsiteContent }
     { href: '/residency', label: content.navigation.residency },
     { href: '/blog', label: content.navigation.blog },
   ]
+  // Specialisms and How It Works were in the sitemap and in nobody's reach:
+  // a crawler could find them, a visitor could not, and an orphan page earns
+  // no internal link equity however good the copy on it is.
   const company = [
-    { href: '/properties', label: 'Properties' }, { href: '/pricing', label: 'Pricing' }, { href: '/advertise', label: 'Advertise' },
+    { href: '/properties', label: 'Properties' }, { href: '/specialisms', label: 'Specialisms' }, { href: '/pricing', label: 'Pricing' }, { href: '/advertise', label: 'Advertise' },
     { href: '/coming-soon', label: 'Coming Soon' }, { href: '/testimonials', label: 'Testimonials' }, { href: '/about', label: 'About' }, { href: '/contact', label: 'Contact' },
   ]
   const support = [
-    { href: '/verify', label: 'Verify a Certificate' }, { href: '/faq', label: 'FAQ' }, { href: '/privacy', label: 'Privacy Policy' }, { href: '/terms', label: 'Terms' },
+    { href: '/verify', label: 'Verify a Certificate' }, { href: '/how-to-use', label: 'How It Works' }, { href: '/faq', label: 'FAQ' }, { href: '/privacy', label: 'Privacy Policy' }, { href: '/terms', label: 'Terms' },
   ]
 
   const LinkList = ({ items }: { items: { href: string; label: string }[] }) => <div className="space-y-2.5">{items.map(link => <Link key={link.href} href={link.href} className="block text-[12px] text-secondary hover:text-ink transition-colors">{link.label}</Link>)}</div>

@@ -15,6 +15,8 @@ const CATEGORY_LABELS: Record<string, string> = {
   qualifications: 'Qualifications',
   experience: 'Experience',
   businessSkills: 'Leadership and business skills',
+  teamScale: 'Team scale',
+  revenueScale: 'Revenue scale',
   systems: 'Booking systems',
   location: 'Location',
   salaryFit: 'Salary alignment',
