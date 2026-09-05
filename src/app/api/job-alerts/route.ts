@@ -5,9 +5,10 @@ import { calculateMatchScore } from '@/lib/matching'
 import { jobAlertEmailHtml } from '@/lib/job-alert-email-template'
 import { isInternalApiRequest } from '@/lib/internal-request'
 import { emailAllowed } from '@/lib/notification-prefs'
+import { TRANSACTIONAL_FROM } from '@/lib/send-email'
 
 const RESEND_API_KEY = process.env.RESEND_API_KEY
-const FROM_EMAIL = 'Talent House Collective <noreply@mail.wellnesshousecollective.co.uk>'
+const FROM_EMAIL = TRANSACTIONAL_FROM
 
 export async function POST(req: NextRequest) {
   try {

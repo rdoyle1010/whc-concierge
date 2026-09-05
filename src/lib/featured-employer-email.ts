@@ -1,5 +1,6 @@
 const RESEND_API_KEY = process.env.RESEND_API_KEY
-const FROM_EMAIL = 'Talent House Collective <noreply@mail.wellnesshousecollective.co.uk>'
+import { TRANSACTIONAL_FROM } from '@/lib/send-email'
+const FROM_EMAIL = TRANSACTIONAL_FROM
 
 export async function sendFeaturedEmployerEmail(email: string, talentName: string, propertyName: string, location: string) {
   if (!RESEND_API_KEY) {

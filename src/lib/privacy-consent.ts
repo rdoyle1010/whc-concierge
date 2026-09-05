@@ -1,3 +1,4 @@
+import { TRANSACTIONAL_FROM } from '@/lib/send-email'
 import { createHash, createHmac, randomBytes, timingSafeEqual } from 'node:crypto'
 
 export const PRIVACY_POLICY_VERSION = '2026-08-26'
@@ -5,7 +6,7 @@ export const MARKETING_CONSENT_WORDING = 'I would like Wellness House Collective
 export const NEWSLETTER_CONSENT_WORDING = 'I would like Wellness House Collective to email me its newsletter, including industry news, jobs, Academy updates, events and relevant Talent House services. I can unsubscribe at any time.'
 
 const SITE = 'https://talenthousecollective.co.uk'
-const FROM_EMAIL = 'Talent House Collective <noreply@mail.wellnesshousecollective.co.uk>'
+const FROM_EMAIL = TRANSACTIONAL_FROM
 
 export function hashToken(token: string) {
   return createHash('sha256').update(token).digest('hex')

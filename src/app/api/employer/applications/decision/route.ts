@@ -5,9 +5,10 @@ import { trackEvent } from '@/lib/analytics'
 import { createNotification } from '@/lib/notifications'
 import { sendSmsIfOptedIn } from '@/lib/sms'
 import { emailAllowed } from '@/lib/notification-prefs'
+import { TRANSACTIONAL_FROM } from '@/lib/send-email'
 
 const RESEND_API_KEY = process.env.RESEND_API_KEY
-const FROM_EMAIL = 'Talent House Collective <noreply@mail.wellnesshousecollective.co.uk>'
+const FROM_EMAIL = TRANSACTIONAL_FROM
 
 const ALLOWED = ['shortlisted', 'rejected', 'accepted'] as const
 type Decision = typeof ALLOWED[number]

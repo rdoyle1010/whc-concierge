@@ -3,12 +3,13 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { getRequestUser } from '@/lib/request-user'
 import { createNotification } from '@/lib/notifications'
 import { trackEvent } from '@/lib/analytics'
+import { TRANSACTIONAL_FROM } from '@/lib/send-email'
 
 // Managed recruitment intake: the employer asks Talent House to run the search.
 // 12.5% of first-year salary (15-20% executive), payable on placement.
 
 const RESEND_API_KEY = process.env.RESEND_API_KEY
-const FROM_EMAIL = 'Talent House Collective <noreply@mail.wellnesshousecollective.co.uk>'
+const FROM_EMAIL = TRANSACTIONAL_FROM
 const ADMIN_EMAIL = 'rebecca.whc@outlook.com'
 
 const esc = (v: string) => v.replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;')

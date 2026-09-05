@@ -11,9 +11,10 @@ import {
   type WebsiteHistoryEntry,
 } from '@/lib/site-content'
 import { getWebsiteContent } from '@/lib/site-content-server'
+import { TRANSACTIONAL_FROM } from '@/lib/send-email'
 
 const RESEND_API_KEY = process.env.RESEND_API_KEY
-const FROM_EMAIL = 'Talent House Collective <noreply@mail.wellnesshousecollective.co.uk>'
+const FROM_EMAIL = TRANSACTIONAL_FROM
 const DEFAULT_CONTACT_PAGE_SIZE = 25
 const MAX_CONTACT_PAGE_SIZE = 100
 const CONTACT_STATUSES = new Set(['open', 'replied', 'closed', 'investigating', 'resolved', 'dismissed'])
