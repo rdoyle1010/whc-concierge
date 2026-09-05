@@ -10,6 +10,7 @@ import { Plus, Edit2, Trash2, Eye, EyeOff, Copy, RotateCcw, CheckCircle2, Upload
 import ResidencySuggestions from '@/components/ResidencySuggestions'
 import CollapsibleCheckboxSection from '@/components/CollapsibleCheckboxSection'
 import { SERVICES_CATEGORIES, PRODUCT_HOUSES_FULL, QUALS_CATEGORIES, SYSTEMS_FULL } from '@/lib/taxonomy'
+import { PolishButton, StoryDrafter } from '@/components/JobCopyAssistant'
 
 // The same list the app editor and the talent profile use. Three copies is
 // two too many, but making them one is a separate job to giving this form
@@ -60,6 +61,18 @@ function EmployerJobs() {
     key_kpis: '', why_move: '', career_progression: '', interview_process: '',
   }
   const [form, setForm] = useState(emptyJob)
+  // What the assistant is allowed to know: the role as the form has it now.
+  const roleContext = {
+    job_title: form.title, job_description: form.description, location: form.location,
+    job_type: form.job_type, salary_min: form.salary_min, salary_max: form.salary_max,
+    required_skills: form.required_skills, required_brands: form.required_product_houses,
+    required_qualifications: form.required_qualifications, required_systems: form.required_systems,
+    shift_pattern: form.shift_pattern, reporting_line: form.reporting_line,
+    team_size: form.team_size, opening_hours: form.opening_hours,
+    membership_size: form.membership_size,
+    benefits: form.benefits ? (form.benefits as string).split('\n').filter(Boolean) : [],
+  }
+
   const formDialog = useDialog(() => setShowForm(false), 'job-form-dialog-heading', { enabled: showForm })
 
   useEffect(() => {
@@ -344,7 +357,7 @@ function EmployerJobs() {
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2"><div><label className="mb-1.5 block text-[12px] font-semibold text-secondary">Location *</label><input aria-label="Location" type="text" value={form.location} onChange={(e) => setForm({ ...form, location: e.target.value })} className="input-field" /></div><div><label className="mb-1.5 block text-[12px] font-semibold text-secondary">Job type</label><select aria-label="Job type" value={form.job_type} onChange={(e) => setForm({ ...form, job_type: e.target.value })} className="input-field"><option>Full-time</option><option>Part-time</option><option>Contract</option><option>Temporary</option><option>Freelance</option></select></div></div>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3"><div><label className="mb-1.5 block text-[12px] font-semibold text-secondary">Min salary (£)</label><input aria-label="Min salary (£)" type="number" value={form.salary_min} onChange={(e) => setForm({ ...form, salary_min: e.target.value })} className="input-field" /></div><div><label className="mb-1.5 block text-[12px] font-semibold text-secondary">Max salary (£)</label><input aria-label="Max salary (£)" type="number" value={form.salary_max} onChange={(e) => setForm({ ...form, salary_max: e.target.value })} className="input-field" /></div><div><label className="mb-1.5 block text-[12px] font-semibold text-secondary">Tier</label><div className="input-field bg-[#f1f1f1] text-secondary">{form.tier || 'Bronze'}</div><p className="mt-1 text-[10px] text-muted">Set when the listing is purchased.</p></div></div>
           <div><label className="mb-1.5 block text-[12px] font-semibold text-secondary">Specialism</label><input aria-label="Specialism" type="text" value={form.specialism} onChange={(e) => setForm({ ...form, specialism: e.target.value })} className="input-field" placeholder="e.g. Massage Therapy" /></div>
-          <div><label className="mb-1.5 block text-[12px] font-semibold text-secondary">Description *</label><textarea aria-label="Description" rows={5} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} className="input-field" /></div>
+          <div><label className="mb-1.5 block text-[12px] font-semibold text-secondary">Description *</label><textarea aria-label="Description" rows={5} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} className="input-field" /><PolishButton field="job_description" text={form.description} role={roleContext} jobId={editing?.id} onApply={value => setForm(current => ({ ...current, description: value }))} /></div>
           <div><label className="mb-1.5 block text-[12px] font-semibold text-secondary">Requirements <span className="font-normal text-muted">- one per line</span></label><textarea rows={3} aria-label="Requirements" value={form.requirements} onChange={(e) => setForm({ ...form, requirements: e.target.value })} className="input-field" /></div>
           <div><label className="mb-1.5 block text-[12px] font-semibold text-secondary">Benefits <span className="font-normal text-muted">- one per line</span></label><textarea rows={3} aria-label="Benefits" value={form.benefits} onChange={(e) => setForm({ ...form, benefits: e.target.value })} className="input-field" /></div>
 
@@ -367,9 +380,10 @@ function EmployerJobs() {
           <div className="border-t border-border pt-5">
             <p className="text-[11px] uppercase tracking-[.14em] font-semibold text-muted">The role story</p>
             <p className="mt-1 text-[12px] leading-5 text-secondary">A salary band is not a reason to move. These are what a Director of Spa reads before deciding whether to apply, and they could previously only be written once, at Post a Role, and never corrected.</p>
+            <div className="mt-3"><StoryDrafter role={roleContext} jobId={editing?.id} onApply={draft => setForm(current => ({ ...current, ...draft }))} /></div>
             <div className="mt-4 space-y-4">
-              <div><label className="mb-1.5 block text-[12px] font-semibold text-secondary">Why does this role exist?</label><textarea rows={2} aria-label="Why does this role exist?" value={form.why_role_exists} onChange={e => setForm({ ...form, why_role_exists: e.target.value })} className="input-field" placeholder="A new opening, a promotion, a gap left by somebody leaving - say which." /></div>
-              <div><label className="mb-1.5 block text-[12px] font-semibold text-secondary">What does success look like in ninety days?</label><textarea rows={2} aria-label="What does success look like in ninety days?" value={form.success_90_days} onChange={e => setForm({ ...form, success_90_days: e.target.value })} className="input-field" /></div>
+              <div><label className="mb-1.5 block text-[12px] font-semibold text-secondary">Why does this role exist?</label><textarea rows={2} aria-label="Why does this role exist?" value={form.why_role_exists} onChange={e => setForm({ ...form, why_role_exists: e.target.value })} className="input-field" placeholder="A new opening, a promotion, a gap left by somebody leaving - say which." /><PolishButton field="why_role_exists" text={form.why_role_exists} role={roleContext} jobId={editing?.id} onApply={value => setForm(current => ({ ...current, why_role_exists: value }))} /></div>
+              <div><label className="mb-1.5 block text-[12px] font-semibold text-secondary">What does success look like in ninety days?</label><textarea rows={2} aria-label="What does success look like in ninety days?" value={form.success_90_days} onChange={e => setForm({ ...form, success_90_days: e.target.value })} className="input-field" /><PolishButton field="success_90_days" text={form.success_90_days} role={roleContext} jobId={editing?.id} onApply={value => setForm(current => ({ ...current, success_90_days: value }))} /></div>
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div><label className="mb-1.5 block text-[12px] font-semibold text-secondary">Reporting line</label><input aria-label="Reporting line" type="text" value={form.reporting_line} onChange={e => setForm({ ...form, reporting_line: e.target.value })} className="input-field" placeholder="e.g. General Manager" /></div>
                 <div><label className="mb-1.5 block text-[12px] font-semibold text-secondary">Team size</label><input aria-label="Team size" type="number" value={form.team_size} onChange={e => setForm({ ...form, team_size: e.target.value })} className="input-field" placeholder="12" /></div>
@@ -378,14 +392,14 @@ function EmployerJobs() {
                 <div><label className="mb-1.5 block text-[12px] font-semibold text-secondary">Opening hours</label><input aria-label="Opening hours" type="text" value={form.opening_hours} onChange={e => setForm({ ...form, opening_hours: e.target.value })} className="input-field" placeholder="e.g. 7am - 9pm, seven days" /></div>
                 <div><label className="mb-1.5 block text-[12px] font-semibold text-secondary">Membership size</label><input aria-label="Membership size" type="text" value={form.membership_size} onChange={e => setForm({ ...form, membership_size: e.target.value })} className="input-field" placeholder="e.g. 400 members" /></div>
               </div>
-              <div><label className="mb-1.5 block text-[12px] font-semibold text-secondary">Commercial responsibility</label><textarea rows={2} aria-label="Commercial responsibility" value={form.commercial_responsibility} onChange={e => setForm({ ...form, commercial_responsibility: e.target.value })} className="input-field" placeholder="Budget, revenue line, retail target - whatever this person actually owns." /></div>
+              <div><label className="mb-1.5 block text-[12px] font-semibold text-secondary">Commercial responsibility</label><textarea rows={2} aria-label="Commercial responsibility" value={form.commercial_responsibility} onChange={e => setForm({ ...form, commercial_responsibility: e.target.value })} className="input-field" placeholder="Budget, revenue line, retail target - whatever this person actually owns." /><PolishButton field="commercial_responsibility" text={form.commercial_responsibility} role={roleContext} jobId={editing?.id} onApply={value => setForm(current => ({ ...current, commercial_responsibility: value }))} /></div>
               <div><label className="mb-1.5 block text-[12px] font-semibold text-secondary">Key measures <span className="font-normal text-muted">- one per line</span></label><textarea rows={3} aria-label="Key measures" value={form.key_kpis} onChange={e => setForm({ ...form, key_kpis: e.target.value })} className="input-field" placeholder={'Treatment room occupancy\nRetail per treatment\nGuest satisfaction score'} /></div>
-              <div><label className="mb-1.5 block text-[12px] font-semibold text-secondary">Why move here?</label><textarea rows={2} aria-label="Why move here?" value={form.why_move} onChange={e => setForm({ ...form, why_move: e.target.value })} className="input-field" placeholder="The honest case for your property over the one they are in now." /></div>
-              <div><label className="mb-1.5 block text-[12px] font-semibold text-secondary">Where does this role lead?</label><textarea rows={2} aria-label="Where does this role lead?" value={form.career_progression} onChange={e => setForm({ ...form, career_progression: e.target.value })} className="input-field" /></div>
+              <div><label className="mb-1.5 block text-[12px] font-semibold text-secondary">Why move here?</label><textarea rows={2} aria-label="Why move here?" value={form.why_move} onChange={e => setForm({ ...form, why_move: e.target.value })} className="input-field" placeholder="The honest case for your property over the one they are in now." /><PolishButton field="why_move" text={form.why_move} role={roleContext} jobId={editing?.id} onApply={value => setForm(current => ({ ...current, why_move: value }))} /></div>
+              <div><label className="mb-1.5 block text-[12px] font-semibold text-secondary">Where does this role lead?</label><textarea rows={2} aria-label="Where does this role lead?" value={form.career_progression} onChange={e => setForm({ ...form, career_progression: e.target.value })} className="input-field" /><PolishButton field="career_progression" text={form.career_progression} role={roleContext} jobId={editing?.id} onApply={value => setForm(current => ({ ...current, career_progression: value }))} /></div>
               <div>
                 <label className="mb-1.5 block text-[12px] font-semibold text-secondary">Interview process</label>
                 <p className="mb-1.5 text-[11px] leading-5 text-muted">How many stages, who they meet, roughly how long. Stated plainly, this is one of the strongest reasons good people apply rather than wonder.</p>
-                <textarea rows={3} aria-label="Interview process" value={form.interview_process} onChange={e => setForm({ ...form, interview_process: e.target.value })} className="input-field" placeholder="Informal call with the Spa Manager, then a treatment assessment and a meeting with the GM. Usually two weeks start to finish." />
+                <textarea rows={3} aria-label="Interview process" value={form.interview_process} onChange={e => setForm({ ...form, interview_process: e.target.value })} className="input-field" placeholder="Informal call with the Spa Manager, then a treatment assessment and a meeting with the GM. Usually two weeks start to finish." /><PolishButton field="interview_process" text={form.interview_process} role={roleContext} jobId={editing?.id} onApply={value => setForm(current => ({ ...current, interview_process: value }))} />
               </div>
             </div>
           </div>
