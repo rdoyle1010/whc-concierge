@@ -2,8 +2,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { adminRequestUser } from '@/lib/admin-api-auth'
 import { createNotification } from '@/lib/notifications'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { sendApprovalEmail, sendRejectionEmail } from '@/lib/emails'
+import { sendApprovalEmail, sendRejectionEmail, sendWelcomeEmail } from '@/lib/emails'
 import { sendTransactionalEmail } from '@/lib/send-email'
+import { startMarketingOptIn } from '@/lib/privacy-consent'
 
 // Delegated to the shared admin guard, which enforces two-step
 // verification as well as the admin role.
@@ -39,7 +40,7 @@ export async function POST(req: NextRequest) {
   const { type, id, action, reason } = body as {
     type: 'candidate' | 'employer'
     id: string
-    action: 'approve' | 'reject' | 'emails' | 'email_log' | 'reachability_check'
+    action: 'approve' | 'reject' | 'emails' | 'email_log' | 'reachability_check' | 'resend'
     reason?: string
   }
 
@@ -75,6 +76,92 @@ export async function POST(req: NextRequest) {
   //
   // The message is written to be worth receiving. A bare test email from a
   // platform somebody barely knows reads as a phishing attempt.
+  // Send one of the handful of emails people actually chase, again.
+  //
+  // "I never got it" had no answer but a shrug. Not every sender belongs
+  // here: an interview invitation or an offer is tied to one application at
+  // one moment, and resending a two-month-old offer creates a real question
+  // about which offer is live. Those stay on the application, where the
+  // context is. These five stand alone and are the ones somebody rings up
+  // about.
+  if (action === 'resend') {
+    const userId = typeof body.user_id === 'string' ? body.user_id : ''
+    const template = String(body.template || '')
+    if (!userId) return NextResponse.json({ error: 'user_id required' }, { status: 400 })
+
+    const client = createAdminClient()
+    const { data: authUser } = await client.auth.admin.getUserById(userId)
+    const address = authUser?.user?.email
+    if (!address) return NextResponse.json({ error: 'There is no email address on this account.' }, { status: 400 })
+
+    const [{ data: candidate }, { data: employer }] = await Promise.all([
+      client.from('candidate_profiles').select('full_name, approval_status').eq('user_id', userId).maybeSingle(),
+      client.from('employer_profiles').select('property_name, company_name, approval_status').eq('user_id', userId).maybeSingle(),
+    ])
+    const name = candidate?.full_name || employer?.property_name || employer?.company_name || 'there'
+    const approved = (candidate?.approval_status || employer?.approval_status) === 'approved'
+
+    try {
+      if (template === 'welcome') {
+        await sendWelcomeEmail(address, name)
+        return NextResponse.json({ success: true, detail: `Welcome email sent to ${address}.` })
+      }
+
+      if (template === 'approval') {
+        // Telling somebody they are approved when they are not is worse than
+        // sending nothing at all.
+        if (!approved) return NextResponse.json({ error: 'This account is not approved, so the approval email would not be true.' }, { status: 400 })
+        await sendApprovalEmail(address, name)
+        return NextResponse.json({ success: true, detail: `Approval email sent to ${address}.` })
+      }
+
+      if (template === 'marketing_confirmation') {
+        const { data: prefs } = await client.from('privacy_preferences')
+          .select('marketing_email_status').eq('user_id', userId).maybeSingle()
+        if (prefs?.marketing_email_status === 'confirmed') {
+          return NextResponse.json({ error: 'They have already confirmed. Sending it again would put them back to pending.' }, { status: 400 })
+        }
+        if (prefs?.marketing_email_status === 'unsubscribed') {
+          return NextResponse.json({ error: 'They have unsubscribed. Asking again by email is not something to do on their behalf.' }, { status: 400 })
+        }
+        const started = await startMarketingOptIn(client, userId, address, 'account_preferences')
+        return started.ok
+          ? NextResponse.json({ success: true, detail: `Confirmation link sent to ${address}. Marketing stays off until they click it.` })
+          : NextResponse.json({ error: started.error || 'The confirmation email could not be sent.' }, { status: 502 })
+      }
+
+      if (template === 'sign_in_link') {
+        // For somebody who never confirmed their address, or cannot get in.
+        // A one-time link both signs them in and settles the confirmation.
+        const { data: link, error: linkError } = await client.auth.admin.generateLink({ type: 'magiclink', email: address })
+        const actionLink = (link as any)?.properties?.action_link
+        if (linkError || !actionLink) {
+          return NextResponse.json({ error: linkError?.message || 'Could not create a sign-in link.' }, { status: 502 })
+        }
+        const result = await sendTransactionalEmail({
+          to: address,
+          subject: 'Your sign-in link for Talent House',
+          kind: 'notification',
+          userId,
+          html: `<div style="font-family: Inter, -apple-system, sans-serif; max-width: 560px; margin: 0 auto; padding: 40px 20px;">
+            <p style="font-size: 16px; font-weight: 600; margin-bottom: 32px;">Talent House Collective</p>
+            <p style="font-size: 22px; font-weight: 700; margin-bottom: 16px;">Here is your way in, ${name}</p>
+            <p style="color: #555555;">This link signs you straight in, and confirms your email address at the same time. It works once and then expires.</p>
+            <p style="margin-top: 24px;"><a href="${actionLink}" style="display: inline-block; background: #1c1c1c; color: #fff; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600;">Sign in to Talent House</a></p>
+            <p style="color: #555555; font-size: 12px; margin-top: 24px;">If you did not ask for this, ignore it and nothing changes.</p>
+          </div>`,
+        })
+        return result.ok
+          ? NextResponse.json({ success: true, detail: `Sign-in link sent to ${address}. It works once.` })
+          : NextResponse.json({ error: result.error || 'The link could not be sent.' }, { status: 502 })
+      }
+    } catch (sendError: any) {
+      return NextResponse.json({ error: sendError?.message || 'The email could not be sent.' }, { status: 500 })
+    }
+
+    return NextResponse.json({ error: 'Unknown template' }, { status: 400 })
+  }
+
   if (action === 'reachability_check') {
     const userId = typeof body.user_id === 'string' ? body.user_id : ''
     if (!userId) return NextResponse.json({ error: 'user_id required' }, { status: 400 })

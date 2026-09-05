@@ -34,6 +34,11 @@ export default function AdminUsersPage() {
   // "Is their email actually working?" - answered by sending one, not by
   // deleting their account and making them sign up again to find out.
   const [reachability, setReachability] = useState<{ busy: boolean; detail: string; ok: boolean | null }>({ busy: false, detail: '', ok: null })
+  // The handful of emails people actually ring up about. Interview
+  // invitations and offers are deliberately absent: those belong to one
+  // application at one moment, and resending an old one raises a real
+  // question about which offer is live.
+  const [resendTemplate, setResendTemplate] = useState('welcome')
 
   // The drawer stands down while the nested reject modal is open, so Escape
   // there closes only the modal and leaves the drawer behind it.
@@ -56,6 +61,21 @@ export default function AdminUsersPage() {
     setReachability({ busy: false, detail: '', ok: null })
     return () => { active = false }
   }, [selected])
+
+  async function resend(template: string) {
+    if (!selected?.user_id) return
+    setReachability({ busy: true, detail: '', ok: null })
+    try {
+      const res = await fetch('/api/admin/users', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'resend', user_id: selected.user_id, template }),
+      })
+      const json = await res.json().catch(() => ({}))
+      setReachability({ busy: false, ok: Boolean(json?.success), detail: json?.detail || json?.error || 'No answer from the server.' })
+    } catch {
+      setReachability({ busy: false, ok: false, detail: 'Could not reach the server to send it.' })
+    }
+  }
 
   async function checkReachable() {
     if (!selected?.user_id) return
@@ -288,12 +308,25 @@ export default function AdminUsersPage() {
               </div></div>
               <div>
                 <p className="text-xs text-muted uppercase tracking-wider mb-2">Emails we sent</p>
-                {selected.user_id && <div className="mb-3">
-                  <button type="button" onClick={checkReachable} disabled={reachability.busy}
-                    className="btn-secondary text-[12px] disabled:opacity-50">
-                    {reachability.busy ? 'Sending…' : 'Check we can reach them'}
-                  </button>
+                {selected.user_id && <div className="mb-4 rounded-xl border border-border bg-white p-3">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <button type="button" onClick={checkReachable} disabled={reachability.busy}
+                      className="btn-secondary text-[12px] disabled:opacity-50">
+                      {reachability.busy ? 'Sending…' : 'Check we can reach them'}
+                    </button>
+                    <span className="text-[11px] text-muted">or send again:</span>
+                    <select aria-label="Email to resend" value={resendTemplate} onChange={e => setResendTemplate(e.target.value)}
+                      className="input-field !py-1.5 !text-[12px] w-auto">
+                      <option value="welcome">Welcome</option>
+                      <option value="approval">Profile approved</option>
+                      <option value="sign_in_link">Sign-in link</option>
+                      <option value="marketing_confirmation">Marketing confirmation</option>
+                    </select>
+                    <button type="button" onClick={() => resend(resendTemplate)} disabled={reachability.busy}
+                      className="btn-primary text-[12px] disabled:opacity-50">Send</button>
+                  </div>
                   {reachability.detail && <p className={`mt-2 text-[11.5px] leading-5 ${reachability.ok ? 'text-green-700' : 'text-red-600'}`}>{reachability.detail}</p>}
+                  <p className="mt-2 text-[10.5px] leading-4 text-muted">Interview invitations and offers are sent from the application, where the context is.</p>
                 </div>}
                 {!emailLog ? <p className="text-muted text-[12px]">Checking…</p>
                   : emailLog.unavailable ? <p className="text-[12px] text-amber-700">The email log table has not been created yet - run the email_log migration and sends from then on will be recorded here.</p>
