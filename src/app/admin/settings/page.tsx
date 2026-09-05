@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import DashboardShell from '@/components/DashboardShell'
 import AuthenticatorSecurity from '@/components/AuthenticatorSecurity'
+import AdminPasswordPanel from '@/components/AdminPasswordPanel'
 import RetentionPanel from '@/components/RetentionPanel'
 import BillingIdentityPanel from '@/components/BillingIdentityPanel'
 import DeliveryTestPanel from '@/components/DeliveryTestPanel'
@@ -130,6 +131,8 @@ export default function AdminSettingsPage() {
       </div>}
 
       <AuthenticatorSecurity required />
+
+      <AdminPasswordPanel />
 
       <BillingIdentityPanel />
 
