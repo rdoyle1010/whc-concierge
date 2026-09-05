@@ -25,6 +25,20 @@ function activityLink(role: 'talent' | 'employer', item: { title?: string | null
   return item.link || `/${role}/dashboard`
 }
 
+// Recent activity is recent.
+//
+// It took the last eight notifications with no age limit, so "URGENT: shift
+// offer for TODAY" and "your insurance expires soon" sat on the dashboard
+// long after both had been settled, waiting to be pushed off by eight newer
+// things. On a quiet account that is never, and the effect is a dashboard
+// that looks alarming about events from a fortnight ago.
+//
+// Fourteen days. Anything older belongs in Notifications, which keeps
+// everything, rather than on the screen somebody opens to see what needs
+// doing today.
+const ACTIVITY_WINDOW_DAYS = 14
+const ACTIVITY_SINCE = () => new Date(Date.now() - ACTIVITY_WINDOW_DAYS * 24 * 60 * 60 * 1000).toISOString()
+
 export async function GET(req: NextRequest) {
   const auth = await createServerSupabaseClient()
   const { data: { user } } = await auth.auth.getUser()
@@ -37,7 +51,7 @@ export async function GET(req: NextRequest) {
 
   const [{ count: unreadMessages }, { data: notifications }] = await Promise.all([
     admin.from('messages').select('id', { count: 'exact', head: true }).eq('recipient_id', user.id).eq('read', false),
-    admin.from('notifications').select('id,type,title,message,link,is_read,created_at').eq('user_id', user.id).order('created_at', { ascending: false }).limit(8),
+    admin.from('notifications').select('id,type,title,message,link,is_read,created_at').eq('user_id', user.id).gte('created_at', ACTIVITY_SINCE()).order('created_at', { ascending: false }).limit(8),
   ])
 
   // 'action' is somebody waiting on this person, 'waiting' is in motion,
