@@ -8,6 +8,13 @@ import DashboardShell from '@/components/DashboardShell'
 import { createClient } from '@/lib/supabase/client'
 import { Plus, Edit2, Trash2, Eye, EyeOff, Copy, RotateCcw, CheckCircle2, Upload, Image as ImageIcon, X } from 'lucide-react'
 import ResidencySuggestions from '@/components/ResidencySuggestions'
+import CollapsibleCheckboxSection from '@/components/CollapsibleCheckboxSection'
+import { SERVICES_CATEGORIES, PRODUCT_HOUSES_FULL, QUALS_CATEGORIES, SYSTEMS_FULL } from '@/lib/taxonomy'
+
+// The same list the app editor and the talent profile use. Three copies is
+// two too many, but making them one is a separate job to giving this form
+// the fields it has always been missing.
+const BUSINESS_SKILLS = ['Reception & Front of House','Revenue Management','Stock Control','Team Leadership','Staff Training','Rota Management','KPI Reporting','Health & Safety','COSHH Management','Budget Management','Client Consultation','Upselling & Retail','Social Media','Event Coordination','Membership Management']
 
 export default function EmployerJobsPage() {
   // Stripe now sends the session id back, so the same confirm every other
@@ -35,10 +42,22 @@ function EmployerJobs() {
   const [banner, setBanner] = useState<{ tone: 'good' | 'quiet'; text: string } | null>(null)
   const [resuming, setResuming] = useState('')
 
+  // Everything a role can say about itself. This form used to offer the
+  // title, the salary and little else - so a live role could never have its
+  // matching criteria corrected, and the eleven fields that make somebody
+  // want the job could only be written once, at Post a Role, and never
+  // again. The phone app could edit all of it; the website could not.
   const emptyJob = {
     title: '', description: '', job_image_url: '', location: '', job_type: 'Full-time',
     specialism: '', salary_min: '', salary_max: '', tier: 'Bronze',
     benefits: '', requirements: '', status: 'active',
+    required_skills: [] as string[], required_product_houses: [] as string[],
+    required_qualifications: [] as string[], required_systems: [] as string[],
+    preferred_business_skills: [] as string[],
+    min_years_experience: '', shift_pattern: '',
+    why_role_exists: '', success_90_days: '', reporting_line: '', team_size: '',
+    opening_hours: '', commercial_responsibility: '', membership_size: '',
+    key_kpis: '', why_move: '', career_progression: '', interview_process: '',
   }
   const [form, setForm] = useState(emptyJob)
   const formDialog = useDialog(() => setShowForm(false), 'job-form-dialog-heading', { enabled: showForm })
@@ -182,6 +201,27 @@ function EmployerJobs() {
       requirements: form.requirements ? (form.requirements as string).split('\n').filter(Boolean) : null,
       status: wantsActive && !wasLive ? 'draft' : form.status,
       is_live: wantsActive && wasLive,
+      // The column is required_brands; the form calls them product houses
+      // because that is what a spa calls them. Post a Role maps it the same
+      // way, and getting this wrong writes the list to a column nothing reads.
+      required_skills: form.required_skills.length ? form.required_skills : null,
+      required_brands: form.required_product_houses.length ? form.required_product_houses : null,
+      required_qualifications: form.required_qualifications.length ? form.required_qualifications : null,
+      required_systems: form.required_systems.length ? form.required_systems : null,
+      preferred_business_skills: form.preferred_business_skills.length ? form.preferred_business_skills : null,
+      min_years_experience: form.min_years_experience ? parseInt(form.min_years_experience as string) : null,
+      shift_pattern: form.shift_pattern || null,
+      why_role_exists: form.why_role_exists || null,
+      success_90_days: form.success_90_days || null,
+      reporting_line: form.reporting_line || null,
+      team_size: form.team_size ? parseInt(form.team_size as string) : null,
+      opening_hours: form.opening_hours || null,
+      commercial_responsibility: form.commercial_responsibility || null,
+      membership_size: form.membership_size || null,
+      key_kpis: form.key_kpis ? (form.key_kpis as string).split('\n').map(v => v.trim()).filter(Boolean) : null,
+      why_move: form.why_move || null,
+      career_progression: form.career_progression || null,
+      interview_process: form.interview_process || null,
     }
     if (wantsActive && !wasLive) {
       alert('Saved as a draft. To take a role live, use Post a Role and complete payment - your details carry over.')
@@ -210,6 +250,20 @@ function EmployerJobs() {
       salary_min: job.salary_min?.toString() || '', salary_max: job.salary_max?.toString() || '',
       benefits: job.benefits?.join('\n') || '', requirements: job.requirements?.join('\n') || '',
       status: job.status,
+      required_skills: job.required_skills || [],
+      required_product_houses: job.required_brands || job.required_product_houses || [],
+      required_qualifications: job.required_qualifications || [],
+      required_systems: job.required_systems || [],
+      preferred_business_skills: job.preferred_business_skills || [],
+      min_years_experience: job.min_years_experience?.toString() || '',
+      shift_pattern: job.shift_pattern || '',
+      why_role_exists: job.why_role_exists || '', success_90_days: job.success_90_days || '',
+      reporting_line: job.reporting_line || '', team_size: job.team_size?.toString() || '',
+      opening_hours: job.opening_hours || '', commercial_responsibility: job.commercial_responsibility || '',
+      membership_size: job.membership_size || '',
+      key_kpis: Array.isArray(job.key_kpis) ? job.key_kpis.join('\n') : (job.key_kpis || ''),
+      why_move: job.why_move || '', career_progression: job.career_progression || '',
+      interview_process: job.interview_process || '',
     })
     setEditing(job)
     setShowForm(true)
@@ -293,6 +347,49 @@ function EmployerJobs() {
           <div><label className="mb-1.5 block text-[12px] font-semibold text-secondary">Description *</label><textarea aria-label="Description" rows={5} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} className="input-field" /></div>
           <div><label className="mb-1.5 block text-[12px] font-semibold text-secondary">Requirements <span className="font-normal text-muted">- one per line</span></label><textarea rows={3} aria-label="Requirements" value={form.requirements} onChange={(e) => setForm({ ...form, requirements: e.target.value })} className="input-field" /></div>
           <div><label className="mb-1.5 block text-[12px] font-semibold text-secondary">Benefits <span className="font-normal text-muted">- one per line</span></label><textarea rows={3} aria-label="Benefits" value={form.benefits} onChange={(e) => setForm({ ...form, benefits: e.target.value })} className="input-field" /></div>
+
+          <div className="border-t border-border pt-5">
+            <p className="text-[11px] uppercase tracking-[.14em] font-semibold text-muted">Matching criteria</p>
+            <p className="mt-1 text-[12px] leading-5 text-secondary">These feed the match score. Keep genuine must-haves separate from nice-to-have experience - a long list of requirements does not raise the bar, it hides who should apply and stops good people matching at all.</p>
+            <div className="mt-4 space-y-3">
+              <CollapsibleCheckboxSection title="Required services & treatment skills" categories={SERVICES_CATEGORIES} selected={form.required_skills} onChange={v => setForm({ ...form, required_skills: v })} />
+              <CollapsibleCheckboxSection title="Required product houses" flatItems={[...PRODUCT_HOUSES_FULL]} selected={form.required_product_houses} onChange={v => setForm({ ...form, required_product_houses: v })} />
+              <CollapsibleCheckboxSection title="Required qualifications" categories={QUALS_CATEGORIES} selected={form.required_qualifications} onChange={v => setForm({ ...form, required_qualifications: v })} />
+              <CollapsibleCheckboxSection title="Required systems" flatItems={[...SYSTEMS_FULL]} selected={form.required_systems} onChange={v => setForm({ ...form, required_systems: v })} />
+              <CollapsibleCheckboxSection title="Preferred leadership & business skills" flatItems={BUSINESS_SKILLS} selected={form.preferred_business_skills} onChange={v => setForm({ ...form, preferred_business_skills: v })} />
+            </div>
+            <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div><label className="mb-1.5 block text-[12px] font-semibold text-secondary">Minimum years of experience</label><input aria-label="Minimum years of experience" type="number" value={form.min_years_experience} onChange={e => setForm({ ...form, min_years_experience: e.target.value })} className="input-field" placeholder="3" /></div>
+              <div><label className="mb-1.5 block text-[12px] font-semibold text-secondary">Shift pattern</label><input aria-label="Shift pattern" type="text" value={form.shift_pattern} onChange={e => setForm({ ...form, shift_pattern: e.target.value })} className="input-field" placeholder="e.g. 5 days over 7" /></div>
+            </div>
+          </div>
+
+          <div className="border-t border-border pt-5">
+            <p className="text-[11px] uppercase tracking-[.14em] font-semibold text-muted">The role story</p>
+            <p className="mt-1 text-[12px] leading-5 text-secondary">A salary band is not a reason to move. These are what a Director of Spa reads before deciding whether to apply, and they could previously only be written once, at Post a Role, and never corrected.</p>
+            <div className="mt-4 space-y-4">
+              <div><label className="mb-1.5 block text-[12px] font-semibold text-secondary">Why does this role exist?</label><textarea rows={2} aria-label="Why does this role exist?" value={form.why_role_exists} onChange={e => setForm({ ...form, why_role_exists: e.target.value })} className="input-field" placeholder="A new opening, a promotion, a gap left by somebody leaving - say which." /></div>
+              <div><label className="mb-1.5 block text-[12px] font-semibold text-secondary">What does success look like in ninety days?</label><textarea rows={2} aria-label="What does success look like in ninety days?" value={form.success_90_days} onChange={e => setForm({ ...form, success_90_days: e.target.value })} className="input-field" /></div>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div><label className="mb-1.5 block text-[12px] font-semibold text-secondary">Reporting line</label><input aria-label="Reporting line" type="text" value={form.reporting_line} onChange={e => setForm({ ...form, reporting_line: e.target.value })} className="input-field" placeholder="e.g. General Manager" /></div>
+                <div><label className="mb-1.5 block text-[12px] font-semibold text-secondary">Team size</label><input aria-label="Team size" type="number" value={form.team_size} onChange={e => setForm({ ...form, team_size: e.target.value })} className="input-field" placeholder="12" /></div>
+              </div>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div><label className="mb-1.5 block text-[12px] font-semibold text-secondary">Opening hours</label><input aria-label="Opening hours" type="text" value={form.opening_hours} onChange={e => setForm({ ...form, opening_hours: e.target.value })} className="input-field" placeholder="e.g. 7am - 9pm, seven days" /></div>
+                <div><label className="mb-1.5 block text-[12px] font-semibold text-secondary">Membership size</label><input aria-label="Membership size" type="text" value={form.membership_size} onChange={e => setForm({ ...form, membership_size: e.target.value })} className="input-field" placeholder="e.g. 400 members" /></div>
+              </div>
+              <div><label className="mb-1.5 block text-[12px] font-semibold text-secondary">Commercial responsibility</label><textarea rows={2} aria-label="Commercial responsibility" value={form.commercial_responsibility} onChange={e => setForm({ ...form, commercial_responsibility: e.target.value })} className="input-field" placeholder="Budget, revenue line, retail target - whatever this person actually owns." /></div>
+              <div><label className="mb-1.5 block text-[12px] font-semibold text-secondary">Key measures <span className="font-normal text-muted">- one per line</span></label><textarea rows={3} aria-label="Key measures" value={form.key_kpis} onChange={e => setForm({ ...form, key_kpis: e.target.value })} className="input-field" placeholder={'Treatment room occupancy\nRetail per treatment\nGuest satisfaction score'} /></div>
+              <div><label className="mb-1.5 block text-[12px] font-semibold text-secondary">Why move here?</label><textarea rows={2} aria-label="Why move here?" value={form.why_move} onChange={e => setForm({ ...form, why_move: e.target.value })} className="input-field" placeholder="The honest case for your property over the one they are in now." /></div>
+              <div><label className="mb-1.5 block text-[12px] font-semibold text-secondary">Where does this role lead?</label><textarea rows={2} aria-label="Where does this role lead?" value={form.career_progression} onChange={e => setForm({ ...form, career_progression: e.target.value })} className="input-field" /></div>
+              <div>
+                <label className="mb-1.5 block text-[12px] font-semibold text-secondary">Interview process</label>
+                <p className="mb-1.5 text-[11px] leading-5 text-muted">How many stages, who they meet, roughly how long. Stated plainly, this is one of the strongest reasons good people apply rather than wonder.</p>
+                <textarea rows={3} aria-label="Interview process" value={form.interview_process} onChange={e => setForm({ ...form, interview_process: e.target.value })} className="input-field" placeholder="Informal call with the Spa Manager, then a treatment assessment and a meeting with the GM. Usually two weeks start to finish." />
+              </div>
+            </div>
+          </div>
+
           <div className="flex flex-col-reverse gap-3 border-t border-border pt-5 sm:flex-row sm:justify-end"><button onClick={() => setShowForm(false)} className="btn-secondary sm:min-w-28">Cancel</button><button onClick={handleSave} disabled={saving||uploadingImage} className="btn-primary disabled:opacity-50 sm:min-w-36">{saving ? 'Saving...' : editing ? 'Save changes' : 'Save draft'}</button></div>
         </div>
       </div></div>}
