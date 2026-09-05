@@ -8,6 +8,16 @@ export const runtime = 'nodejs'
 
 const MAX_CV_SIZE = 10 * 1024 * 1024
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY
+// A reasoning model reading eighteen thousand characters of CV does not
+// answer in seven seconds. The abort below was set to 7000ms and the route
+// had no maxDuration at all, so it inherited the platform default of ten -
+// which meant the AI half of "Analyse CV with Talent House AI" timed out
+// almost every time and fell back to plain extraction. On screen that read
+// "AI was unavailable", which is true and tells nobody anything: not the
+// professional, not the administrator, and not whoever is asked to fix it.
+export const maxDuration = 60
+const AI_TIMEOUT_MS = 45000
+
 const CV_MODEL = process.env.OPENAI_CV_MODEL || process.env.OPENAI_APPLICATION_MODEL || 'gpt-5-mini'
 
 async function extractText(buffer: Buffer, extension: string): Promise<string> {
@@ -38,8 +48,13 @@ function parseJson(text: string) {
 }
 const uniq = (values: unknown, limit = 20) => Array.from(new Set((Array.isArray(values) ? values : []).map(v => String(v).trim()).filter(Boolean))).slice(0, limit)
 
+// Why the AI half did not run, when it did not run. Returned alongside the
+// suggestions so the screen can say something a person can act on.
+let lastAiFailure = ''
+
 async function aiEnhanceCv(text: string, deterministic: CvSuggestions): Promise<CvSuggestions | null> {
-  if (!OPENAI_API_KEY) return null
+  lastAiFailure = ''
+  if (!OPENAI_API_KEY) { lastAiFailure = 'No OpenAI key is set on the server.'; return null }
   const prompt = `You are analysing a CV for Talent House Collective, a spa and wellness recruitment platform.
 Rules:
 - Extract only evidence genuinely supported by the CV text. Never invent employers, results, qualifications, dates, job titles or responsibilities.
@@ -52,13 +67,28 @@ Rules:
 Deterministic extraction already found: ${JSON.stringify(deterministic)}
 CV text: ${text.slice(0, 18000)}
 Return exactly: {"businessSkills":["..."],"careerEvidence":["..."],"progressionSignals":["..."]}`
-  const controller = new AbortController(); const timeout = setTimeout(() => controller.abort(), 7000)
+  const controller = new AbortController(); const timeout = setTimeout(() => controller.abort(), AI_TIMEOUT_MS)
   try {
     const response = await fetch('https://api.openai.com/v1/responses', { method:'POST', signal:controller.signal, headers:{Authorization:`Bearer ${OPENAI_API_KEY}`,'Content-Type':'application/json'}, body:JSON.stringify({model:CV_MODEL,reasoning:{effort:'low'},input:prompt,max_output_tokens:1200}) })
-    if (!response.ok) { console.error('CV AI analysis error', response.status); return null }
-    const parsed = parseJson(extractResponseText(await response.json())); if (!parsed) return null
+    if (!response.ok) {
+      const detail = await response.text().catch(() => '')
+      console.error('CV AI analysis error', response.status, detail.slice(0, 400))
+      lastAiFailure = response.status === 401 ? 'The OpenAI key was rejected.'
+        : response.status === 404 ? `The model "${CV_MODEL}" is not available on this account.`
+        : response.status === 429 ? 'OpenAI rate limited or the account is out of credit.'
+        : `OpenAI answered ${response.status}.`
+      return null
+    }
+    const parsed = parseJson(extractResponseText(await response.json())); if (!parsed) { lastAiFailure = 'The model replied with something that was not JSON.'; return null }
     return { ...deterministic, businessSkills:uniq([...(deterministic.businessSkills||[]),...uniq(parsed.businessSkills)],20), careerEvidence:uniq(parsed.careerEvidence,8), progressionSignals:uniq(parsed.progressionSignals,6), evidence:uniq([...(deterministic.evidence||[]),'AI reviewed transferable leadership and commercial evidence'],20), aiEnhanced:true }
-  } catch (error) { console.error('CV AI analysis fallback', error instanceof Error ? error.message : error); return null } finally { clearTimeout(timeout) }
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error)
+    console.error('CV AI analysis fallback', message)
+    lastAiFailure = /abort/i.test(message)
+      ? `The model did not answer within ${Math.round(AI_TIMEOUT_MS / 1000)} seconds.`
+      : `The request to OpenAI failed: ${message}`
+    return null
+  } finally { clearTimeout(timeout) }
 }
 
 export async function POST(req: NextRequest) {
@@ -79,6 +109,8 @@ export async function POST(req: NextRequest) {
     const text=await extractText(Buffer.from(await file.arrayBuffer()),extension); if(text.trim().length<80)return NextResponse.json({error:'Very little readable text was found. If this is a scanned CV, upload a text-based PDF or Word .docx file.'},{status:422})
     const deterministic=analyseCvText(text), suggestions=await aiEnhanceCv(text,deterministic)||deterministic
     try { await admin.from('consent_events').insert({user_id:user.id,consent_type:'ai_cv_analysis',action:'accepted',policy_version:'2026-08',wording:'User requested Talent House AI CV analysis. CV text is processed for suggestions and is not added to the profile without approval.',source:'talent_profile_cv_analysis'}) } catch {}
-    return NextResponse.json({suggestions})
+    // The reason travels with the answer. "AI was unavailable" on its own
+    // sends somebody to check a key that was never the problem.
+    return NextResponse.json({ suggestions, aiFailure: suggestions.aiEnhanced ? null : (lastAiFailure || null) })
   } catch { return NextResponse.json({error:'CV analysis failed. Please try a different PDF or Word .docx file.'},{status:500}) }
 }
