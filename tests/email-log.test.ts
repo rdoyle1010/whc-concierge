@@ -47,17 +47,30 @@ test('both registration welcomes are logged', () => {
 // Resend verifies domains. Sending from one it has not verified is rejected,
 // which is exactly the silent failure this work exists to stop.
 test('email is sent from the verified domain', () => {
-  // This asserted the old subdomain, because for a long time that was the
-  // only one Resend had verified. mail.talenthousecollective.co.uk is
-  // verified now, so somebody who signed up to Talent House hears from
-  // Talent House rather than from a company they have never heard of.
+  // This reads the default written in the source, not the value the constant
+  // resolves to at build time, and the difference matters.
   //
-  // The point of the test is unchanged: an unverified sending domain is
-  // rejected outright by Resend, and a From address is not something to
-  // change on a hunch.
-  assert.match(TRANSACTIONAL_FROM, /mail\.talenthousecollective\.co\.uk/)
-  assert.match(read('src/lib/send-email.ts'), /process\.env\.EMAIL_FROM/,
+  // It used to assert the resolved constant. EMAIL_FROM exists so that a
+  // sending domain which stops working can be repointed from Netlify in two
+  // minutes instead of waiting on a deploy - and the first time that lever was
+  // ever pulled, in the middle of an outage where no email at all was being
+  // delivered, this test failed the build and made deploying impossible. An
+  // emergency override that cannot be used during an emergency is not an
+  // override, and a test that only passes while nothing is wrong is worse than
+  // no test, because it fails at precisely the moment you need to ship.
+  //
+  // So: the default in the code must be the brand's own domain, and the
+  // override must exist. What somebody sets the override to is their business.
+  const source = read('src/lib/send-email.ts')
+  assert.match(source, /noreply@mail\.talenthousecollective\.co\.uk/,
+    'the default sender must be on the domain the brand actually uses')
+  assert.match(source, /process\.env\.EMAIL_FROM/,
     'and there must be a way back that does not need a deploy')
+
+  // With nothing overriding it, the resolved address is that default.
+  if (!process.env.EMAIL_FROM) {
+    assert.match(TRANSACTIONAL_FROM, /mail\.talenthousecollective\.co\.uk/)
+  }
 })
 
 // The answer has to be visible where the question is asked.
