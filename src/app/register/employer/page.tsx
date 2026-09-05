@@ -6,6 +6,7 @@ import Link from 'next/link'
 import Wordmark from '@/components/Wordmark'
 import { createClient } from '@/lib/supabase/client'
 import { AGENCY_PLATFORM_FEE_PCT, COMPANY_TYPES, EMPLOYER_MEMBERSHIPS, JOB_TIERS, RECRUITMENT_SERVICE_RATE } from '@/lib/constants'
+import { MARKETING_CONSENT_WORDING } from '@/lib/privacy-consent'
 
 const pounds = (pence: number) => `£${(pence / 100).toFixed(pence % 100 === 0 ? 0 : 2)}`
 const percent = (rate: number) => `${(rate * 100).toFixed(rate * 100 % 1 === 0 ? 0 : 1)}%`
@@ -14,6 +15,7 @@ export default function EmployerRegisterPage() {
   const router = useRouter()
   const supabase = createClient()
   const [loading, setLoading] = useState(false)
+  const [marketingOptIn, setMarketingOptIn] = useState(false)
   const [error, setError] = useState('')
 
   const [form, setForm] = useState({
@@ -39,6 +41,7 @@ export default function EmployerRegisterPage() {
         email: form.email,
         password: form.password,
         role: 'employer',
+        marketingOptIn,
         displayName: form.company_name,
       }),
     })
@@ -159,6 +162,14 @@ export default function EmployerRegisterPage() {
               <label className="mt-5 flex items-start gap-3 cursor-pointer">
                 <input type="checkbox" checked={form.agreed_terms} onChange={(e) => update('agreed_terms', e.target.checked)} className="w-4 h-4 border-border text-ink focus:ring-ink mt-0.5" />
                 <span className="text-[13px] text-secondary">I have read and agree to the <Link href="/terms" className="underline text-ink">Terms &amp; Conditions</Link> and <Link href="/privacy" className="underline text-ink">Privacy Policy</Link></span>
+              </label>
+
+              {/* Separate from the terms box above, and unticked. Bundling
+                  marketing into a terms acceptance is not valid consent, and
+                  a pre-ticked box is not consent at all. */}
+              <label className="mt-4 flex items-start gap-3 cursor-pointer">
+                <input type="checkbox" checked={marketingOptIn} onChange={e => setMarketingOptIn(e.target.checked)} className="w-4 h-4 border-border text-ink focus:ring-ink mt-0.5" />
+                <span className="text-[12px] leading-5 text-secondary">{MARKETING_CONSENT_WORDING} Optional, and separate from the emails needed to run your account.</span>
               </label>
 
               <button type="button" onClick={handleSubmit} disabled={loading || !form.agreed_terms} className="btn-primary w-full mt-7 disabled:opacity-40">{loading ? 'Creating account...' : 'Submit for Approval'}</button>

@@ -4,6 +4,7 @@ import { createRegistrationProof, type RegistrationRole } from '@/lib/registrati
 import { createAdminClient } from '@/lib/supabase/admin'
 import { geocodePostcode } from '@/lib/geo'
 import { getClientIp, rateLimit } from '@/lib/rate-limit'
+import { startMarketingOptIn } from '@/lib/privacy-consent'
 
 export const runtime = 'nodejs'
 
@@ -58,6 +59,8 @@ export async function POST(req: NextRequest) {
     const phone = typeof body.phone === 'string' ? body.phone.trim().slice(0, 40) : ''
     const postcode = typeof body.postcode === 'string' ? body.postcode.trim().slice(0, 20) : ''
     const hasCar = body.hasCar === true
+    // Strictly true. An absent or truthy-ish value is not consent.
+    const marketingOptIn = body.marketingOptIn === true
 
     if (!email || !password || !role || password.length < 8) {
       return NextResponse.json({ error: 'Please provide a valid email and a password of at least 8 characters.' }, { status: 400 })
@@ -141,8 +144,27 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    // Asked at the moment somebody is most willing, and never assumed: the
+    // box is unticked, and ticking it starts the same double opt-in as the
+    // preferences page. Their marketing status stays off until they click.
+    //
+    // Best effort on purpose. An account is not withheld because a marketing
+    // email failed to send.
+    let marketingOptInStarted = false
+    if (marketingOptIn === true) {
+      try {
+        const consentAdmin = createAdminClient()
+        const started = await startMarketingOptIn(consentAdmin, data.user.id, email, 'registration')
+        marketingOptInStarted = started.ok
+        if (!started.ok) console.error('Registration marketing opt-in failed:', started.error)
+      } catch (optInError: any) {
+        console.error('Registration marketing opt-in threw:', optInError?.message)
+      }
+    }
+
     return NextResponse.json({
       userId: data.user.id,
+      marketingOptInStarted,
       registrationProof: createRegistrationProof({ userId: data.user.id, role, email }),
       requiresEmailConfirmation: !data.session,
       session: data.session ? {
