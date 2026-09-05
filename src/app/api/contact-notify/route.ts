@@ -3,22 +3,26 @@ import { rateLimit, getClientIp } from '@/lib/rate-limit'
 import { contactFormSchema, validateRequest } from '@/lib/validations'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { TRANSACTIONAL_FROM } from '@/lib/send-email'
+import { administratorEmails } from '@/lib/administrators'
 
 const limiter = rateLimit('contact-notify', { windowMs: 15 * 60 * 1000, maxRequests: 5 })
 
 const RESEND_API_KEY = process.env.RESEND_API_KEY
 const FROM_EMAIL = TRANSACTIONAL_FROM
-// Fallback only - the admin-configured platform_config contact_email wins.
-const DEFAULT_ADMIN_EMAIL = 'rebecca.whc@outlook.com'
-
-async function getNotificationRecipient(): Promise<string> {
+// Where a contact form lands. The admin-configured contact_email wins; with
+// nothing set it goes to every administrator.
+//
+// It used to fall back to one person's personal address, written into the
+// source. That address was the whole disaster recovery plan: change it and you
+// ship a deploy, add a second partner and she never sees a single enquiry.
+async function getNotificationRecipients(): Promise<string[]> {
   try {
     const admin = createAdminClient()
     const { data } = await admin.from('platform_config').select('value').eq('key', 'contact_email').maybeSingle()
     const configured = String(data?.value || '').trim()
-    if (configured && configured.includes('@')) return configured
-  } catch { /* fall back to the default address */ }
-  return DEFAULT_ADMIN_EMAIL
+    if (configured && configured.includes('@')) return [configured]
+  } catch { /* fall through to the administrator list */ }
+  return await administratorEmails()
 }
 
 export async function POST(req: NextRequest) {
@@ -53,18 +57,22 @@ export async function POST(req: NextRequest) {
       </div>
     `
 
-    const recipient = await getNotificationRecipient()
+    const recipients = await getNotificationRecipients()
 
     if (!RESEND_API_KEY) {
-      console.log(`[Email skipped - no API key] To: ${recipient}, Subject: ${emailSubject}`)
+      console.log(`[Email skipped - no API key] To: ${recipients.join(', ') || '(nobody)'}, Subject: ${emailSubject}`)
       return NextResponse.json({ success: true, skipped: true })
     }
 
-    await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: { 'Authorization': `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ from: FROM_EMAIL, to: recipient, subject: emailSubject, html }),
-    })
+    // One send each rather than one send to many, so a single bad address
+    // cannot take the enquiry away from everybody else on the list.
+    for (const recipient of recipients) {
+      await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ from: FROM_EMAIL, to: recipient, subject: emailSubject, html }),
+      }).catch(() => {})
+    }
 
     return NextResponse.json({ success: true })
   } catch (error: any) {

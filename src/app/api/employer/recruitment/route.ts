@@ -4,13 +4,13 @@ import { getRequestUser } from '@/lib/request-user'
 import { createNotification } from '@/lib/notifications'
 import { trackEvent } from '@/lib/analytics'
 import { TRANSACTIONAL_FROM } from '@/lib/send-email'
+import { administratorEmails } from '@/lib/administrators'
 
 // Managed recruitment intake: the employer asks Talent House to run the search.
 // 12.5% of first-year salary (15-20% executive), payable on placement.
 
 const RESEND_API_KEY = process.env.RESEND_API_KEY
 const FROM_EMAIL = TRANSACTIONAL_FROM
-const ADMIN_EMAIL = 'rebecca.whc@outlook.com'
 
 const esc = (v: string) => v.replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;')
 
@@ -35,11 +35,16 @@ async function alertAdmin(propertyName: string, request: { job_title: string; se
     </div>
     <p style="font-size:13px;color:#516371;">Reply to the employer within one working day - this is the highest-value enquiry the platform takes.</p>
   </div>`
-  await fetch('https://api.resend.com/emails', {
-    method: 'POST',
-    headers: { Authorization: `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ from: FROM_EMAIL, to: ADMIN_EMAIL, subject: `Managed search request - ${request.job_title} (${propertyName})`, html }),
-  }).catch(() => {})
+  // Every administrator. This is the highest-value enquiry the platform takes
+  // and it used to reach one personal address written into the source, so a
+  // second partner never saw one.
+  for (const to of await administratorEmails()) {
+    await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ from: FROM_EMAIL, to, subject: `Managed search request - ${request.job_title} (${propertyName})`, html }),
+    }).catch(() => {})
+  }
 }
 
 export async function GET(req: NextRequest) {

@@ -208,13 +208,24 @@ test('delivery can be proved without registering a fake account', () => {
 // when somebody signs up - had nowhere to send and would have failed in
 // silence. An alert that quietly goes nowhere is worse than no alert, because
 // it gets trusted.
-test('a sign-up alert falls back to the administrator, not to nowhere', () => {
+//
+// The lookup has since moved to lib/administrators and gone plural: the
+// fallback is now every administrator rather than only the oldest one, so a
+// business partner is told about a sign-up too. The guarantee under test is
+// unchanged - a configured address wins, and something catches what it misses.
+test('a sign-up alert falls back to the administrators, not to nowhere', () => {
   const lib = read('src/lib/admin-alerts.ts')
-  assert.match(lib, /async function administratorEmail/)
-  assert.match(lib, /config\(ADMIN_EMAIL_KEY\)\) \|\| \(await administratorEmail\(\)\)/,
-    'the configured address wins, and the account address catches what it misses')
-  assert.match(lib, /order\('created_at', \{ ascending: true \}\)/,
-    'two administrators must resolve to the owner, not to whoever came back first')
+  assert.match(lib, /alertRecipients\(await config\(ADMIN_EMAIL_KEY\), await administratorEmails\(\)\)/,
+    'the configured address wins, and the administrator list catches what it misses')
+  assert.match(lib, /for \(const email of recipients\)/,
+    'and every recipient is actually sent to, not just the first')
+
+  const admins = read('src/lib/administrators.ts')
+  assert.match(admins, /\.eq\('role', 'admin'\)/, 'the list is the administrators, not a guess')
+  assert.match(admins, /order\('created_at', \{ ascending: true \}\)/,
+    'founder first, for the rare place that can only carry one address')
+  assert.doesNotMatch(admins, /\.limit\(1\)/,
+    'a second administrator must not be dropped by the query that finds them')
 })
 
 // The panel said "Nothing saved to send to" on a button that then delivered

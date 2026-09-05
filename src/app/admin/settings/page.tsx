@@ -7,7 +7,7 @@ import RetentionPanel from '@/components/RetentionPanel'
 import BillingIdentityPanel from '@/components/BillingIdentityPanel'
 import DeliveryTestPanel from '@/components/DeliveryTestPanel'
 import AccountAccessPanel from '@/components/AccountAccessPanel'
-import { Save, Settings, CreditCard, Share2, ExternalLink } from 'lucide-react'
+import { Save, Settings, CreditCard, Share2, ExternalLink, ShieldAlert } from 'lucide-react'
 
 type CommercialSetting = { product_key: string; label: string; description: string; price_pence: number; billing_interval: 'month' | 'year' | 'one_off'; is_active: boolean }
 type SocialLinks = { linkedin_url: string; instagram_url: string; facebook_url: string; tiktok_url: string; youtube_url: string }
@@ -18,6 +18,22 @@ export default function AdminSettingsPage() {
   const [products, setProducts] = useState<CommercialSetting[]>([])
   const [socialLinks, setSocialLinks] = useState<SocialLinks>(EMPTY_SOCIAL)
   const [loading, setLoading] = useState(true)
+
+  // Why a new administrator is looking at Platform Settings.
+  //
+  // Signing in without an authenticator sends an admin here with
+  // ?security=required on the address, and nothing read it. So the first thing
+  // a new administrator saw was a settings page, with no sentence anywhere
+  // saying why they were not on the dashboard they asked for. The reason was
+  // computed, passed along, and thrown away one step before the person who
+  // needed it. Read in the browser rather than from searchParams, the way
+  // Pricing and Residency do, so the page keeps its render behaviour.
+  const [sentHereForSecurity, setSentHereForSecurity] = useState(false)
+  useEffect(() => {
+    try {
+      setSentHereForSecurity(new URLSearchParams(window.location.search).get('security') === 'required')
+    } catch { /* no address bar to read */ }
+  }, [])
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState('')
 
@@ -102,6 +118,16 @@ export default function AdminSettingsPage() {
 
     {loading ? <div className="flex h-64 items-center justify-center"><div className="h-8 w-8 animate-spin rounded-full border-2 border-[#1c1c1c] border-t-transparent" /></div> : <div className="max-w-4xl space-y-6">
       {message && <div className={`rounded-xl px-4 py-3 text-[13px] ${message.includes('Error') ? 'bg-red-50 text-red-600' : 'bg-emerald-50 text-emerald-700'}`}>{message}</div>}
+
+      {sentHereForSecurity && <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3.5">
+        <div className="flex gap-3">
+          <ShieldAlert size={17} className="mt-[1px] shrink-0 text-amber-700" />
+          <div>
+            <p className="text-[13px] font-semibold text-amber-900">You are here because two-step verification is not set up yet</p>
+            <p className="mt-1 text-[12.5px] leading-5 text-amber-800">Administrators can see every CV, payment and message on the platform, so an authenticator app is required before the dashboard will let you work. Set it up below, then <a href="/admin/dashboard" className="font-semibold underline">go to your dashboard</a>. It takes about two minutes and you only do it once.</p>
+          </div>
+        </div>
+      </div>}
 
       <AuthenticatorSecurity required />
 
