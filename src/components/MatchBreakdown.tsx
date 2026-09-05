@@ -265,7 +265,24 @@ export default function MatchBreakdown({
         })}
       </div>
 
-      {/* Weight hint */}
+      {/* How much was actually judged.
+          The score is the average of the factors that could be assessed,
+          which is the right arithmetic and a misleading headline on its own.
+          A role that asks for almost nothing leaves two or three factors
+          standing, and everybody who clears those scores ninety-something.
+          Saying so in the small print was not enough: the badge above it
+          said "Perfect Match" and that is what a hiring manager reads. */}
+      {notAssessedCount > 0 && specified.length < 5 && (
+        <div className="rounded-lg border border-[#dddddd] bg-[#f1f1f1] px-3 py-2.5">
+          <p className="text-[11px] font-semibold text-[#1c1c1c]">
+            This score is based on {specified.length} of {specified.length + notAssessedCount} factors.
+          </p>
+          <p className="mt-1 text-[10.5px] leading-4 text-[#555555]">
+            The role does not state the rest, so they could not be judged either way. Add the qualifications, product houses and systems that genuinely matter to the role and the score becomes worth acting on.
+          </p>
+        </div>
+      )}
+
       <p className="text-[10px] text-muted pt-1 border-t border-border">
         {anyDetail && 'Open any factor to see what it was judged on. '}
         Calculated from {specified.length} specified factor{specified.length === 1 ? '' : 's'}.

@@ -116,10 +116,10 @@ function progressionPolicy(candidate:any, job:any, candidateRole:string, require
 }
 
 export function calculateMatchScore(candidate:any, job:any): {
-  score:number; label:string; colour:string; bgColour:string; breakdown:any; evidence?:Record<string,{met?:string[];missing?:string[];note?:string}>; matchingSkills:string[]; hardStop:boolean; hardStopReason?:string; matchExplanation:string; distanceMiles:number|null; locationBasis:'distance'|'text'|'unknown'; progression?:any; mode?:'permanent'|'agency'|'leadership'
+  score:number; label:string; confidence:number; thinEvidence:boolean; colour:string; bgColour:string; breakdown:any; evidence?:Record<string,{met?:string[];missing?:string[];note?:string}>; matchingSkills:string[]; hardStop:boolean; hardStopReason?:string; matchExplanation:string; distanceMiles:number|null; locationBasis:'distance'|'text'|'unknown'; progression?:any; mode?:'permanent'|'agency'|'leadership'
 } {
   const emptyBreakdown={roleLevel:-1,treatmentSkills:-1,brands:-1,qualifications:-1,experience:-1,businessSkills:-1,systems:-1,location:-1,shiftCompatibility:-1,transport:-1,accommodation:-1,proficiencyDepth:-1,salaryFit:-1,availability:-1,profileCompleteness:0,reviewScore:0}
-  const empty={score:10,label:'Requirement Missing',colour:'#555555',bgColour:'#F3F4F6',breakdown:emptyBreakdown,matchingSkills:[] as string[],hardStop:true,matchExplanation:'',distanceMiles:null,locationBasis:'unknown' as const}
+  const empty={score:10,label:'Requirement Missing',confidence:0,thinEvidence:true,colour:'#555555',bgColour:'#F3F4F6',breakdown:emptyBreakdown,matchingSkills:[] as string[],hardStop:true,matchExplanation:'',distanceMiles:null,locationBasis:'unknown' as const}
 
   const candidateRole=String(candidate.role_level||candidate.current_role||candidate.job_title||'')
   const requiredRole=String(job.required_role_level||job.job_title||job.title||'')
@@ -187,15 +187,38 @@ export function calculateMatchScore(candidate:any, job:any): {
     leadership:{roleLevel:36,treatments:5,brands:6,qualifications:10,experience:14,business:18,systems:4,location:8,shift:2,transport:2,accommodation:1,proficiency:0,salary:8,availability:4,review:4},
   }
   const w=MODE_WEIGHTS[mode]
-  const components=[
+  const allComponents=[
     {value:policy.score,weight:w.roleLevel},{value:treatmentResult.score,weight:w.treatments},{value:brandResult.score,weight:w.brands},{value:qualResult.score,weight:w.qualifications},{value:expScore,weight:w.experience},{value:bizResult.score,weight:w.business},{value:sysResult.score,weight:w.systems},{value:locationScore,weight:w.location},{value:shiftScore,weight:w.shift},{value:transportScore,weight:w.transport},{value:accommodationScore,weight:w.accommodation},{value:proficiencyScore,weight:w.proficiency},{value:salaryScore,weight:w.salary},{value:availabilityScore,weight:w.availability},{value:rv>0?reviewScoreNorm:-1,weight:w.review},
-  ].filter(c=>c.value>=0&&c.weight>0)
+  ]
+  const components=allComponents.filter(c=>c.value>=0&&c.weight>0)
   const weight=components.reduce((t,c)=>t+c.weight,0)
+
+  // How much of the role was actually judged.
+  //
+  // The score is the average of the factors that could be assessed, which is
+  // the right arithmetic and, on its own, a misleading headline. A role that
+  // specifies almost nothing leaves two or three factors standing, and
+  // everybody who clears those comes out at ninety-something. A "Perfect
+  // Match" built on three of fourteen factors is not a perfect match, it is a
+  // small sample with a confident label on it, and a hiring manager who acts
+  // on it once and is disappointed never trusts the number again.
+  //
+  // So confidence travels with the score, and the label below is held back
+  // when there was not enough to go on.
+  const possibleWeight=allComponents.filter(c=>c.weight>0).reduce((t,c)=>t+c.weight,0)
+  const confidence=possibleWeight?Math.round((weight/possibleWeight)*100):0
+  const thinEvidence=confidence<60
+
   let score=weight?components.reduce((t,c)=>t+c.value*c.weight,0)/weight:10
   if (!policy.allowed && policy.scope!=='open_transferable') score=Math.min(score,44)
   if (!policy.sameFamily && policy.scope!=='open_transferable') score=Math.min(score,25)
   const rounded=Math.max(10,Math.round(score))
-  const label=rounded>=90?'Perfect Match':rounded>=75?'Strong Match':rounded>=60?'Good Match':rounded>=45?'Partial Match':'Low Match'
+  // A verdict is only as strong as the evidence under it. With less than
+  // sixty per cent of the role's weight assessable, the top two labels are
+  // withheld: the number still says what it found, the words stop
+  // overclaiming what that means.
+  const fullLabel=rounded>=90?'Perfect Match':rounded>=75?'Strong Match':rounded>=60?'Good Match':rounded>=45?'Partial Match':'Low Match'
+  const label=thinEvidence&&rounded>=75?'Promising, briefly checked':fullLabel
   const colour=rounded>=90?'#16A34A':rounded>=75?'#1D4ED8':rounded>=60?'#D97706':'#555555'
   const bgColour=rounded>=90?'#DCFCE7':rounded>=75?'#DBEAFE':rounded>=60?'#FEF3C7':'#F3F4F6'
   const matchingSkills=[...treatmentResult.matches,...brandResult.matches,...qualResult.matches,...bizResult.matches].slice(0,6)
@@ -272,7 +295,7 @@ export function calculateMatchScore(candidate:any, job:any): {
     },
   }
 
-  return {score:rounded,label,colour,bgColour,breakdown:{roleLevel:policy.score,treatmentSkills:treatmentResult.score,brands:brandResult.score,qualifications:qualResult.score,experience:expScore,businessSkills:bizResult.score,systems:sysResult.score,location:locationScore,shiftCompatibility:shiftScore,transport:transportScore,accommodation:accommodationScore,proficiencyDepth:proficiencyScore,salaryFit:salaryScore,availability:availabilityScore,profileCompleteness:profileScore,reviewScore:reviewScoreNorm},evidence,matchingSkills,hardStop:false,matchExplanation,distanceMiles:geo.distance,locationBasis:geo.basis,mode,progression:{scope:policy.scope,levelGap:policy.levelGap,isStepUp:policy.levelGap===1&&policy.allowed,bridge:policy.progressionBridge}}
+  return {score:rounded,label,confidence,thinEvidence,colour,bgColour,breakdown:{roleLevel:policy.score,treatmentSkills:treatmentResult.score,brands:brandResult.score,qualifications:qualResult.score,experience:expScore,businessSkills:bizResult.score,systems:sysResult.score,location:locationScore,shiftCompatibility:shiftScore,transport:transportScore,accommodation:accommodationScore,proficiencyDepth:proficiencyScore,salaryFit:salaryScore,availability:availabilityScore,profileCompleteness:profileScore,reviewScore:reviewScoreNorm},evidence,matchingSkills,hardStop:false,matchExplanation,distanceMiles:geo.distance,locationBasis:geo.basis,mode,progression:{scope:policy.scope,levelGap:policy.levelGap,isStepUp:policy.levelGap===1&&policy.allowed,bridge:policy.progressionBridge}}
 }
 
 export function rankCandidates(candidates:any[],job:any,minScore=10,blockedEmployerIds?:string[]) {
