@@ -8,6 +8,16 @@ import { cloneDefaultPublicPagesContent, PUBLIC_PAGE_SLUGS, type PublicPageSlug,
 const pageNames: Record<PublicPageSlug,string> = { properties:'Properties', agency:'Agency', residency:'Residency', pricing:'Pricing', 'coming-soon':'Coming Soon' }
 const pagePaths: Record<PublicPageSlug,string> = { properties:'/properties', agency:'/agency/about', residency:'/residency', pricing:'/pricing', 'coming-soon':'/coming-soon' }
 
+// Where "Preview page" goes.
+//
+// Pricing and Residency load their copy in the browser, so they can read the
+// draft flag from the address bar and stay static for everybody else. The
+// other three render their copy on the server, so their preview has its own
+// admin-only address and the public page keeps its cache.
+const previewOnItsOwnAddress = new Set<PublicPageSlug>(['properties','agency','coming-soon'])
+const previewHref = (slug: PublicPageSlug) =>
+  previewOnItsOwnAddress.has(slug) ? `/preview/${slug}` : `${pagePaths[slug]}?pagePreview=draft`
+
 export default function PublicPagesEditor() {
   const [content, setContent] = useState<PublicPagesContent>(cloneDefaultPublicPagesContent())
   const [published, setPublished] = useState<PublicPagesContent>(cloneDefaultPublicPagesContent())
@@ -95,7 +105,7 @@ export default function PublicPagesEditor() {
 
   return <DashboardShell role="admin" userName="Admin">
     <div className="max-w-[1400px] mx-auto">
-      <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4 mb-7"><div><p className="dashboard-eyebrow">Website & Brand</p><h1 className="dashboard-title">Public Pages</h1><p className="dashboard-intro">Change the wording and photography for each major public page without touching GitHub.</p></div><div className="flex flex-wrap gap-2">{changed && <span className="px-3 py-2 bg-amber-50 text-amber-700 text-[11px]">Unpublished changes</span>}<button onClick={()=>save('save')} disabled={!!busy} className="btn-secondary inline-flex gap-2 items-center"><Save size={14}/>{busy==='save'?'Saving...':'Save draft'}</button><a href={`${pagePaths[selected]}?pagePreview=draft`} target="_blank" className="btn-secondary inline-flex gap-2 items-center"><Eye size={14}/>Preview page</a><button onClick={()=>save('publish')} disabled={!!busy} className="btn-primary inline-flex gap-2 items-center"><Send size={14}/>{busy==='publish'?'Publishing...':'Publish pages'}</button></div></div>
+      <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4 mb-7"><div><p className="dashboard-eyebrow">Website & Brand</p><h1 className="dashboard-title">Public Pages</h1><p className="dashboard-intro">Change the wording and photography for each major public page without touching GitHub.</p></div><div className="flex flex-wrap gap-2">{changed && <span className="px-3 py-2 bg-amber-50 text-amber-700 text-[11px]">Unpublished changes</span>}<button onClick={()=>save('save')} disabled={!!busy} className="btn-secondary inline-flex gap-2 items-center"><Save size={14}/>{busy==='save'?'Saving...':'Save draft'}</button><a href={previewHref(selected)} target="_blank" className="btn-secondary inline-flex gap-2 items-center"><Eye size={14}/>Preview page</a><button onClick={()=>save('publish')} disabled={!!busy} className="btn-primary inline-flex gap-2 items-center"><Send size={14}/>{busy==='publish'?'Publishing...':'Publish pages'}</button></div></div>
       {notice && <div className="mb-5 px-4 py-3 bg-white border border-border text-[12px] flex items-center gap-2"><CheckCircle2 size={14} className="text-accent"/>{notice}</div>}
 
       <section className="dashboard-panel mb-6">

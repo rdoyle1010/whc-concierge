@@ -22,7 +22,7 @@ export function jobAlertEmailHtml({ firstName, jobTitle, propertyName, matchScor
           <h2 style="margin: 0 0 16px; font-size: 22px; font-weight: 600; color: #1c1c1c;">Hi ${firstName}, a new role matches your profile</h2>
           <p style="margin: 0 0 24px; font-size: 15px; line-height: 1.7; color: #3a3a3a;">A role has just been posted that aligns with your skills and experience.</p>
 
-          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color: #fafafa; border-radius: 8px; margin-bottom: 24px;">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color: #f1f1f1; border-radius: 8px; margin-bottom: 24px;">
             <tr><td style="padding: 20px;">
               <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
                 <tr>
@@ -56,7 +56,7 @@ export function jobAlertEmailHtml({ firstName, jobTitle, propertyName, matchScor
           </table>
         </td></tr>
 
-        <tr><td style="background-color: #fafafa; border-radius: 0 0 12px 12px; padding: 28px 40px; border-top: 1px solid #dddddd;">
+        <tr><td style="background-color: #f1f1f1; border-radius: 0 0 12px 12px; padding: 28px 40px; border-top: 1px solid #dddddd;">
           <p style="margin: 0 0 4px; font-size: 12px; color: #8c8c8c;">Talent House Collective</p>
           <p style="margin: 0 0 12px; font-size: 12px; color: #8c8c8c;">United Kingdom &middot; <a href="mailto:rebecca.whc@outlook.com" style="color: #555555; text-decoration: none;">rebecca.whc@outlook.com</a></p>
           <p style="margin: 0; font-size: 11px; color: #d9d9d9;">You received this because job alerts are enabled on your Talent House Collective profile. Manage alerts in your <a href="https://talenthousecollective.co.uk/talent/settings" style="color: #555555; text-decoration: none;">settings</a>.</p>

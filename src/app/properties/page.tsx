@@ -95,9 +95,12 @@ async function readPublicProperties() {
 
 const getPublicProperties = unstable_cache(readPublicProperties, ['public-properties-v4'], { revalidate: 60 })
 
-export default async function PropertiesPage({ searchParams }: { searchParams?: Promise<Record<string,string|string[]|undefined>> }) {
-  const params = searchParams ? await searchParams : {}
-  const useDraft = params?.pagePreview === 'draft'
+export default async function PropertiesPage() {
+  return renderProperties(false)
+}
+
+export async function renderProperties(previewingDraft: boolean) {
+  const useDraft = previewingDraft
   const [properties, cms] = await Promise.all([getPublicProperties(), getPublicPageContent('properties', useDraft)])
   const featuredSlotId = properties.length && (properties[0] as any).is_featured_now ? (properties[0] as any).id : null
 

@@ -53,9 +53,12 @@ function ProfessionalDemoCard() {
   </div>
 }
 
-export default async function PublicAgencyPage({ searchParams }: { searchParams?: Promise<Record<string,string|string[]|undefined>> }) {
-  const params = searchParams ? await searchParams : {}
-  const cms = await getPublicPageContent('agency', params?.pagePreview === 'draft')
+export default async function PublicAgencyPage() {
+  return renderPublicAgency(false)
+}
+
+export async function renderPublicAgency(previewingDraft: boolean) {
+  const cms = await getPublicPageContent('agency', previewingDraft)
   const site = await getWebsiteContent()
   return <div className="min-h-screen bg-[#f1f1f1]">
     <Navbar />

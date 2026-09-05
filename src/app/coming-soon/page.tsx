@@ -6,9 +6,12 @@ import { getPublicPageContent } from '@/lib/public-page-content-server'
 
 export const revalidate = 3600
 
-export default async function ComingSoonPage({ searchParams }: { searchParams?: Promise<Record<string,string|string[]|undefined>> }) {
-  const params = searchParams ? await searchParams : {}
-  const cms = await getPublicPageContent('coming-soon', params?.pagePreview === 'draft')
+export default async function ComingSoonPage() {
+  return renderComingSoon(false)
+}
+
+export async function renderComingSoon(previewingDraft: boolean) {
+  const cms = await getPublicPageContent('coming-soon', previewingDraft)
   return <div className="min-h-screen bg-[#f1f1f1]">
     <Navbar />
     <main id="main-content" className="pt-[76px]">
