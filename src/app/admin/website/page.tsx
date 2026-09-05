@@ -117,7 +117,7 @@ export default function WebsiteEditorPage() {
   const openFullPreview = async () => {
     const preview = window.open('', '_blank')
     const saved = await saveDraft()
-    if (saved && preview) preview.location.href = '/?websitePreview=draft'
+    if (saved && preview) preview.location.href = '/preview/home'
     else preview?.close()
   }
 

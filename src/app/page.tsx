@@ -11,7 +11,6 @@ import SponsoredAd from '@/components/SponsoredAd'
 import { getWebsiteContent } from '@/lib/site-content-server'
 import { websiteCssVariables, type WebsiteContent, type WebsiteSectionId } from '@/lib/site-content'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { createServerSupabaseClient } from '@/lib/supabase/server'
 
 export const revalidate = 60
 
@@ -148,19 +147,6 @@ const getVerifiedReviews = unstable_cache(async (): Promise<VerifiedReview[]> =>
     return []
   }
 }, ['homepage-verified-reviews-v1'], { revalidate: 300 })
-
-async function canPreviewDraft() {
-  try {
-    const supabase = await createServerSupabaseClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return false
-    const admin = createAdminClient()
-    const { data } = await admin.from('profiles').select('role').eq('id', user.id).maybeSingle()
-    return data?.role === 'admin'
-  } catch {
-    return false
-  }
-}
 
 function Eyebrow({ children }: { children: ReactNode }) {
   return <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-accent">{children}</p>
@@ -418,12 +404,23 @@ function CalloutSection({ content }: { content: WebsiteContent }) {
   )
 }
 
-type HomePageProps = { searchParams?: Promise<{ websitePreview?: string | string[] }> }
+// The homepage is the most visited page on the site and the most cacheable,
+// and it was the only public page rendered from scratch on every request.
+//
+// It accepted ?websitePreview=draft so an administrator could see unpublished
+// website copy. In this version of Next, a page that reads searchParams is
+// dynamic - always, with no exception - so that one admin convenience took
+// the homepage out of the CDN and put a serverless function in front of every
+// first-time visitor, cold, five database round trips deep. /about and
+// /academy sat beside it being served as static files.
+//
+// The preview moved to /preview/home, which is dynamic and admin-gated
+// because it should be. This is static again.
+export default async function HomePage() {
+  return renderHome(false)
+}
 
-export default async function HomePage(props: HomePageProps) {
-  const searchParams = await props.searchParams
-  const previewRequested = searchParams?.websitePreview === 'draft'
-  const previewingDraft = previewRequested && (await canPreviewDraft())
+export async function renderHome(previewingDraft: boolean) {
   const [content, featuredRoles, liveNumbers, verifiedReviews, featuredPlacements] = await Promise.all([
     getWebsiteContent(previewingDraft),
     getFeaturedRoles(),
