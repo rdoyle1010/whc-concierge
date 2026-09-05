@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getRequestUser } from '@/lib/request-user'
 import { createNotification } from '@/lib/notifications'
+import { sendPrivateApproachEmail } from '@/lib/emails'
+import { emailAllowed } from '@/lib/notification-prefs'
 import { trackEvent } from '@/lib/analytics'
 import { PREMIUM_COLUMNS, isPremium } from '@/lib/employer-premium'
 
@@ -112,7 +114,7 @@ async function handleEmployerRequest(admin: ReturnType<typeof createAdminClient>
   }
 
   const { data: candidate } = await admin.from('candidate_profiles')
-    .select('id, user_id, approval_status, profile_visible, stealth_mode')
+    .select('id, user_id, full_name, approval_status, profile_visible, stealth_mode')
     .eq('id', candidateId)
     .maybeSingle()
   // Stealth Mode was missing from this check, which made it the sharpest
@@ -153,6 +155,19 @@ async function handleEmployerRequest(admin: ReturnType<typeof createAdminClient>
     approachLink(employer.id),
   )
   if (error) return NextResponse.json({ error: 'Could not send the approach - please try again' }, { status: 500 })
+
+  // The in-app notification is the record. The email is how anybody finds out
+  // it happened: somebody being approached confidentially has, by definition,
+  // not been looking for a job and has no reason to be logged in.
+  try {
+    if (await emailAllowed(admin, candidate.user_id, 'job_alerts')) {
+      const { data: authUser } = await admin.auth.admin.getUserById(candidate.user_id)
+      const address = authUser?.user?.email
+      if (address) await sendPrivateApproachEmail(address, candidate.full_name || '', propertyName)
+    }
+  } catch (emailError: any) {
+    console.error('[Private approach email failed]', emailError?.message)
+  }
 
   await trackEvent('confidential_approach_requested', { actorUserId: userId, candidateId: candidate.id, employerId: employer.id })
   return NextResponse.json({ success: true })

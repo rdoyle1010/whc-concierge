@@ -200,6 +200,36 @@ export async function sendFeaturedTalentEmail(email: string, employerName: strin
   `))
 }
 
+// A property reaching out to somebody who has never heard of them.
+//
+// Registering interest and requesting a private introduction both told the
+// employer "the professional has been notified" and sent no email at all -
+// only an in-app notification, a mobile push to an app most people do not
+// have, and an SMS if they had opted in. So the one message that matters
+// most, to the one person with no reason to log in and check, was the one
+// message the platform never sent. A property said "come and work for us"
+// and the professional heard nothing.
+export async function sendPropertyInterestEmail(email: string, name: string, propertyName: string, roleTitle: string) {
+  await sendEmail(email, `${propertyName} is interested in you`, wrapper(`
+    <p style="font-size: 24px; font-weight: 700; margin-bottom: 16px;">A property has asked for you by name</p>
+    <p style="color: #555555;">Hi ${name || 'there'}, <strong>${propertyName}</strong> has registered interest in you for their <strong>${roleTitle}</strong> role.</p>
+    <p style="color: #555555;">They have seen your profile and chosen you deliberately. Have a look at the role and, if it suits, apply - your interest goes straight back to them.</p>
+    <p style="margin-top: 24px;"><a href="https://talenthousecollective.co.uk/talent/jobs" style="display: inline-block; background: #1c1c1c; color: #fff; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600;">See the role</a></p>
+  `))
+}
+
+// The confidential version. The property is named; the professional is not
+// revealed to them until the introduction is accepted, and the email says so
+// because that is the whole reason somebody uses this rather than applying.
+export async function sendPrivateApproachEmail(email: string, name: string, propertyName: string) {
+  await sendEmail(email, `${propertyName} would like an introduction`, wrapper(`
+    <p style="font-size: 24px; font-weight: 700; margin-bottom: 16px;">A confidential introduction</p>
+    <p style="color: #555555;">Hi ${name || 'there'}, <strong>${propertyName}</strong> would like to be introduced to you.</p>
+    <p style="color: #555555;">Nothing has been shared yet. Accepting reveals your full profile to them and opens messaging. Declining tells them nothing at all about who you are - not your name, and not that you said no.</p>
+    <p style="margin-top: 24px;"><a href="https://talenthousecollective.co.uk/talent/dashboard" style="display: inline-block; background: #1c1c1c; color: #fff; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600;">Read the approach</a></p>
+  `))
+}
+
 // Generic agency booking update (accept / counter / decline / cover not
 // filled) - the outbound offer itself has its own richer sender above.
 export async function sendAgencyUpdateEmail(email: string, name: string, subject: string, line: string, link = '/') {

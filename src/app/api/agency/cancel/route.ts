@@ -3,6 +3,8 @@ import { cookies } from 'next/headers'
 import { createServerClient } from '@supabase/ssr'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createNotification } from '@/lib/notifications'
+import { sendAgencyUpdateEmail } from '@/lib/emails'
+import { emailAllowed } from '@/lib/notification-prefs'
 
 async function currentUser() {
   const store = await cookies()
@@ -92,9 +94,25 @@ export async function POST(req: NextRequest) {
   ])
   const otherUser = role === 'candidate' ? emp?.user_id : cand?.user_id
   if (otherUser) {
-    await createNotification(otherUser, 'general', 'Agency shift cancelled',
-      `${role === 'candidate' ? cand?.full_name || 'The professional' : emp?.property_name || emp?.company_name || 'The property'} cancelled the ${booking.shift_date} Agency shift. ${paid ? `Talent House will review the money; the £${fee} admin fee is retained.` : 'No payment had been collected.'}`,
-      role === 'candidate' ? '/employer/agency' : '/talent/agency')
+    const who = role === 'candidate' ? cand?.full_name || 'The professional' : emp?.property_name || emp?.company_name || 'The property'
+    const line = `${who} cancelled the ${booking.shift_date} Agency shift. ${paid ? `Talent House will review the money; the £${fee} admin fee is retained.` : 'No payment had been collected.'}`
+    const link = role === 'candidate' ? '/employer/agency' : '/talent/agency'
+    await createNotification(otherUser, 'general', 'Agency shift cancelled', line, link)
+
+    // A cancelled shift has to arrive, not sit in a notifications list. The
+    // professional has held that day, probably turned other work down for it,
+    // and the employer's screen has always said they were told. Until now
+    // they were told only if they happened to open the site.
+    try {
+      if (await emailAllowed(admin, otherUser, 'booking_updates')) {
+        const { data: authUser } = await admin.auth.admin.getUserById(otherUser)
+        const address = authUser?.user?.email
+        const name = role === 'candidate' ? emp?.property_name || emp?.company_name || '' : cand?.full_name || ''
+        if (address) await sendAgencyUpdateEmail(address, name, 'Agency shift cancelled', line, link)
+      }
+    } catch (emailError: any) {
+      console.error('[Shift cancellation email failed]', emailError?.message)
+    }
   }
 
   return NextResponse.json({ success: true, paid, admin_fee_retained: paid ? fee : 0, gross_shift_value: gross })
