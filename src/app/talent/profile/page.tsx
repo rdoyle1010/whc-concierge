@@ -17,6 +17,7 @@ import { SERVICES_CATEGORIES, PRODUCT_HOUSES_FULL as PRODUCT_HOUSES, QUALS_CATEG
 import type { CvSuggestions } from '@/lib/cv-analysis'
 import { Save, Upload, FileText, Sparkles, CheckCircle2, Eye, Award, ShieldCheck, BrainCircuit } from 'lucide-react'
 import { courseTitle } from '@/lib/academy'
+import { tidyProficiencies, PROFICIENCY_OPTIONS } from '@/lib/skill-depth'
 
 const BUSINESS_SKILLS = ['Reception & Front of House','Revenue Management','Stock Control','Team Leadership','Staff Training','Rota Management','KPI Reporting','Health & Safety','COSHH Management','Budget Management','Client Consultation','Upselling & Retail','Social Media','Event Coordination','Membership Management']
 
@@ -52,7 +53,11 @@ export default function TalentProfilePage() {
   const missingItems=completionChecklist.filter(([,done])=>!done).map(([label])=>label)
   const completionPct=profile?Math.round(completionItems.filter(Boolean).length/completionItems.length*100):0
 
-  async function handleSave(){if(!profile?.id)return;setSaving(true);setMessage('');const data={full_name:profile.full_name,language_skills:parseLanguageSkills(profile.language_skills),cv_language:profile.cv_language||null,phone:profile.phone||null,postcode:profile.postcode||null,...(profile.postcode?{location:profile.postcode}:{}),country_code:profile.country_code||DEFAULT_COUNTRY,open_to_countries:profile.open_to_countries?.length?profile.open_to_countries:null,has_car:!!profile.has_car,role_level:profile.role_level||null,headline:profile.headline||null,bio:profile.bio||null,experience_years:profile.experience_years?parseInt(profile.experience_years):null,day_rate_min:profile.day_rate_min?parseInt(profile.day_rate_min):null,day_rate_max:profile.day_rate_max?parseInt(profile.day_rate_max):null,availability_status:profile.availability_status||null,right_to_work:profile.right_to_work||null,services_offered:profile.services_offered?.length?profile.services_offered:null,product_houses:profile.product_houses?.length?profile.product_houses:null,qualifications:profile.qualifications?.length?profile.qualifications:null,systems_experience:profile.systems_experience?.length?profile.systems_experience:null,business_skills:profile.business_skills?.length?profile.business_skills:null,career_evidence:profile.career_evidence?.length?profile.career_evidence:null,travel_availability:profile.travel_availability||'uk_only',travel_radius_miles:profile.travel_radius_miles?parseInt(profile.travel_radius_miles):null,has_insurance:!!profile.has_insurance,salary_expectation_private:profile.salary_expectation_private!==false,salary_expectation_min:profile.salary_expectation_min?parseInt(profile.salary_expectation_min):null,salary_expectation_max:profile.salary_expectation_max?parseInt(profile.salary_expectation_max):null,commercial_experience:profile.commercial_experience||null,revenue_responsibility:profile.revenue_responsibility||null,team_size_managed:profile.team_size_managed?parseInt(profile.team_size_managed):null,desired_roles:profile.desired_roles?.length?profile.desired_roles:null,portfolio_url:profile.portfolio_url||null,profile_completion_score:completionPct,profile_completion_pct:completionPct}
+  // Depth is asked for the things it is scored on: treatments and business
+  // skills. Product houses, qualifications and systems are held or not held.
+  const depthSkills:string[]=Array.from(new Set([...(profile?.services_offered||[]),...(profile?.business_skills||[])])).filter(Boolean)
+
+  async function handleSave(){if(!profile?.id)return;setSaving(true);setMessage('');const data={full_name:profile.full_name,language_skills:parseLanguageSkills(profile.language_skills),cv_language:profile.cv_language||null,phone:profile.phone||null,postcode:profile.postcode||null,...(profile.postcode?{location:profile.postcode}:{}),country_code:profile.country_code||DEFAULT_COUNTRY,open_to_countries:profile.open_to_countries?.length?profile.open_to_countries:null,has_car:!!profile.has_car,role_level:profile.role_level||null,headline:profile.headline||null,bio:profile.bio||null,experience_years:profile.experience_years?parseInt(profile.experience_years):null,day_rate_min:profile.day_rate_min?parseInt(profile.day_rate_min):null,day_rate_max:profile.day_rate_max?parseInt(profile.day_rate_max):null,availability_status:profile.availability_status||null,right_to_work:profile.right_to_work||null,services_offered:profile.services_offered?.length?profile.services_offered:null,product_houses:profile.product_houses?.length?profile.product_houses:null,qualifications:profile.qualifications?.length?profile.qualifications:null,systems_experience:profile.systems_experience?.length?profile.systems_experience:null,business_skills:profile.business_skills?.length?profile.business_skills:null,skill_proficiencies:tidyProficiencies(profile.skill_proficiencies,depthSkills),career_evidence:profile.career_evidence?.length?profile.career_evidence:null,travel_availability:profile.travel_availability||'uk_only',travel_radius_miles:profile.travel_radius_miles?parseInt(profile.travel_radius_miles):null,has_insurance:!!profile.has_insurance,salary_expectation_private:profile.salary_expectation_private!==false,salary_expectation_min:profile.salary_expectation_min?parseInt(profile.salary_expectation_min):null,salary_expectation_max:profile.salary_expectation_max?parseInt(profile.salary_expectation_max):null,commercial_experience:profile.commercial_experience||null,revenue_responsibility:profile.revenue_responsibility||null,team_size_managed:profile.team_size_managed?parseInt(profile.team_size_managed):null,desired_roles:profile.desired_roles?.length?profile.desired_roles:null,portfolio_url:profile.portfolio_url||null,profile_completion_score:completionPct,profile_completion_pct:completionPct}
     const res=await fetch('/api/profile/update',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({profileId:profile.id,data})});const result=await res.json().catch(()=>({}));setSaving(false);setMessage(res.ok?'Profile saved.':result.error||'Save failed');setTimeout(()=>setMessage(''),4000)}
 
   const userId=profile?.user_id||profile?.id
@@ -192,6 +197,28 @@ export default function TalentProfilePage() {
       <CollapsibleCheckboxSection title="Qualifications & Certifications" categories={QUALS_CATEGORIES} selected={profile.qualifications||[]} onChange={v=>u('qualifications',v)}/>
       <CollapsibleCheckboxSection title="Systems Experience" flatItems={SYSTEMS_FULL} selected={profile.systems_experience||[]} onChange={v=>u('systems_experience',v)}/>
       <CollapsibleCheckboxSection title="Leadership & Business Skills" flatItems={BUSINESS_SKILLS} selected={profile.business_skills||[]} onChange={v=>u('business_skills',v)}/>
+
+      {/* Skill depth.
+          The Skills Wizard asks how good you are at each thing and writes it
+          to skill_proficiencies. This page never did, so a skill added here
+          arrived with no depth against it - and Skill Depth is a scored
+          matching factor. It is not that the profile page wiped anything: it
+          simply never filled it in, so the factor quietly shrank every time
+          somebody edited their skills outside the wizard. */}
+      {depthSkills.length>0&&<section className="dashboard-card space-y-4">
+        <div><p className="eyebrow">Skill depth</p><h2 className="text-[23px] mt-1">How good are you at each of these?</h2>
+        <p className="text-[12px] text-secondary mt-2">Employers score depth, not just the list. Anything left unset is treated as intermediate, which is fair but never wins you a role you would actually walk. This is the same question the Skills Wizard asks, so the two stay in step.</p></div>
+        <div className="divide-y divide-[#ececec]">
+          {depthSkills.map(skill=><div key={skill} className="flex items-center justify-between gap-4 py-2.5">
+            <span className="text-[13px] text-ink">{skill}</span>
+            <select aria-label={`Proficiency for ${skill}`} className="input-field !py-1.5 !px-2 !text-[12px] w-36"
+              value={(profile.skill_proficiencies||{})[skill]||'intermediate'}
+              onChange={e=>u('skill_proficiencies',{...(profile.skill_proficiencies||{}),[skill]:e.target.value})}>
+              {PROFICIENCY_OPTIONS.map(level=><option key={level} value={level}>{level[0].toUpperCase()+level.slice(1)}</option>)}
+            </select>
+          </div>)}
+        </div>
+      </section>}
 
       <section className="dashboard-card space-y-4"><div className="flex items-start justify-between gap-4"><div><p className="eyebrow">CV intelligence</p><h2 className="text-[23px] mt-1">Turn your CV into better matching evidence.</h2><p className="text-[12px] text-secondary mt-2">Talent House first extracts exact facts, then - only when you choose - uses AI to identify transferable leadership and commercial evidence. AI suggestions never change your profile automatically.</p></div><BrainCircuit size={22} className="text-[#555555]"/></div>
         {docUpload?.kind==='cv'?<div className="border border-border p-4" aria-live="polite"><div className="flex items-center gap-2 text-[12px] text-ink"><FileText size={14} className="shrink-0"/><span className="truncate flex-1">{docUpload.name}</span><span className="shrink-0 text-muted">{formatFileSize(docUpload.size)}</span></div><div className="progress-track mt-3"><div className="progress-indeterminate"/></div><p className="mt-2 text-[11px] text-secondary">{docUpload.stage==='uploading'?'Uploading your CV...':'Saving...'}</p></div>
