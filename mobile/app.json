@@ -6,6 +6,11 @@
     "version": "0.2.0",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
+    "icon": "./assets/icon.png",
+    "backgroundColor": "#1C1C1C",
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "runtimeVersion": {
       "policy": "appVersion"
     },
@@ -36,6 +41,10 @@
     },
     "android": {
       "package": "com.wellnesshousecollective.talent",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#1C1C1C"
+      },
       "intentFilters": [
         {
           "action": "VIEW",
@@ -47,7 +56,10 @@
               "pathPrefix": "/"
             }
           ],
-          "category": ["BROWSABLE", "DEFAULT"]
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
         }
       ]
     },
