@@ -5,6 +5,7 @@ import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { Star, ArrowLeft, ExternalLink, BadgeCheck, BookOpen } from 'lucide-react'
+import { externalUrl } from '@/lib/external-url'
 
 export const revalidate = 60
 
@@ -250,7 +251,7 @@ export default async function PropertyDestinationPage({ params }: { params: Prom
   const showTeam = Boolean(property.team_size) || leadership.length > 0
   const showCulture = Boolean(property.culture_statement) || culturePoints.length > 0
   const showLocation = Boolean(property.location_guide) || travelRows.length > 0
-  const showReputation = awards.length > 0 || Boolean(property.guest_review_summary) || Boolean(reviewScore) || Boolean(property.tripadvisor_url) || Boolean(property.website)
+  const showReputation = awards.length > 0 || Boolean(property.guest_review_summary) || Boolean(reviewScore) || Boolean(externalUrl(property.tripadvisor_url)) || Boolean(externalUrl(property.website))
 
   return (
     <div className="min-h-screen bg-white">
@@ -507,10 +508,10 @@ export default async function PropertyDestinationPage({ params }: { params: Prom
                 {reviewCount ? <span className="text-secondary">from {reviewCount} review{reviewCount === 1 ? '' : 's'}</span> : null}
               </p>
             )}
-            {(property.website || property.tripadvisor_url) && (
+            {(externalUrl(property.website) || externalUrl(property.tripadvisor_url)) && (
               <div className="mt-7 flex flex-wrap gap-x-8 gap-y-3">
-                {property.website && <a href={property.website} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-[13px] font-semibold text-accent hover:underline">Official website<ExternalLink size={13} /></a>}
-                {property.tripadvisor_url && <a href={property.tripadvisor_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-[13px] font-semibold text-accent hover:underline">TripAdvisor<ExternalLink size={13} /></a>}
+                {externalUrl(property.website) && <a href={externalUrl(property.website)!} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-[13px] font-semibold text-accent hover:underline">Official website<ExternalLink size={13} /></a>}
+                {externalUrl(property.tripadvisor_url) && <a href={externalUrl(property.tripadvisor_url)!} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-[13px] font-semibold text-accent hover:underline">TripAdvisor<ExternalLink size={13} /></a>}
               </div>
             )}
           </section>

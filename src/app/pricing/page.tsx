@@ -45,9 +45,28 @@ export default function PricingPage() {
   const [openFaq, setOpenFaq] = useState<number | null>(null)
   const [cms, setCms] = useState<PublicPageContent>(DEFAULT_PUBLIC_PAGES_CONTENT.pages.pricing)
 
+  const [academyPrices, setAcademyPrices] = useState<{ low: number; high: number } | null>(null)
+
   useEffect(() => {
     const draft = new URLSearchParams(window.location.search).get('pagePreview') === 'draft' ? '&draft=1' : ''
     fetch(`/api/public/page-content?slug=pricing${draft}`).then(r => r.ok ? r.json() : null).then(data => { if (data?.page) setCms(data.page) }).catch(() => {})
+  }, [])
+
+  // Academy prices were written into this page by hand as "£29-£199+" while
+  // the Academy itself sold the same courses at £10 and £15. Two prices for
+  // one thing, on two pages of the same site, is the sort of thing a buyer
+  // notices and a buyer remembers. The range is read from the catalogue now,
+  // so a price change in the admin panel cannot leave this page behind.
+  useEffect(() => {
+    fetch('/api/academy/catalog')
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        const prices = (data?.courses || [])
+          .map((course: any) => Number(course?.price))
+          .filter((price: number) => Number.isFinite(price) && price > 0)
+        if (prices.length) setAcademyPrices({ low: Math.min(...prices), high: Math.max(...prices) })
+      })
+      .catch(() => {})
   }, [])
 
   return <div className="public-page">
@@ -107,7 +126,7 @@ export default function PricingPage() {
 
       <section className="py-16 px-6 bg-[#f1f1f1] border-b border-[#dddddd]">
         <div className="max-w-7xl mx-auto grid md:grid-cols-3 gap-5">
-          <div className="rounded-[22px] bg-white border border-[#dddddd] p-6"><p className="text-[10px] uppercase tracking-[.16em] font-semibold text-[#1c1c1c]">Academy</p><h3 className="text-[22px] font-semibold text-[#1c1c1c] mt-2">£29–£199+</h3><p className="text-[12px] text-[#555555] mt-3">Free members pay standard price. Standard members receive 10% off. Pro members receive 20% off.</p></div>
+          <div className="rounded-[22px] bg-white border border-[#dddddd] p-6"><p className="text-[10px] uppercase tracking-[.16em] font-semibold text-[#1c1c1c]">Academy</p><h3 className="text-[22px] font-semibold text-[#1c1c1c] mt-2">{academyPrices ? (academyPrices.low === academyPrices.high ? pounds(academyPrices.low) : `${pounds(academyPrices.low)}-${pounds(academyPrices.high)}`) : 'See the Academy'}</h3><p className="text-[12px] text-[#555555] mt-3">Free members pay standard price. Standard members receive 10% off. Pro members receive 20% off.</p></div>
           <div className="rounded-[22px] bg-white border border-[#dddddd] p-6"><p className="text-[10px] uppercase tracking-[.16em] font-semibold text-[#1c1c1c]">Brand exposure</p><h3 className="text-[22px] font-semibold text-[#1c1c1c] mt-2">From £295</h3><p className="text-[12px] text-[#555555] mt-3">Brand Spotlight £295, Industry Feature £495 and Partner Campaigns from £995.</p></div>
           <div className="rounded-[22px] bg-white border border-[#dddddd] p-6"><p className="text-[10px] uppercase tracking-[.16em] font-semibold text-[#1c1c1c]">Employer profile</p><h3 className="text-[22px] font-semibold text-[#1c1c1c] mt-2">Free to start</h3><p className="text-[12px] text-[#555555] mt-3">Create your property profile, add photographs and information, receive applications and build employer reputation.</p></div>
         </div>

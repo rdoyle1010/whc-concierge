@@ -7,6 +7,7 @@ import { Save, Upload } from 'lucide-react'
 import { COMPANY_TYPES, FACILITY_OPTIONS, STAFF_BENEFIT_OPTIONS } from '@/lib/constants'
 import { SERVICES_CATEGORIES, PRODUCT_HOUSES_FULL, QUALS_CATEGORIES, SYSTEMS_FULL } from '@/lib/taxonomy'
 import CollapsibleCheckboxSection from '@/components/CollapsibleCheckboxSection'
+import { externalUrl } from '@/lib/external-url'
 
 const STAR_RATINGS = ['3', '4', '5', 'Boutique', 'Independent']
 
@@ -126,6 +127,13 @@ export default function EmployerProfilePage() {
         agency_available: profile.agency_available,
         agency_note: profile.agency_note,
     }
+    // Store the address in a form a browser can follow. Saved as
+    // "www.example.com" it renders as a relative link and lands on a 404 of
+    // our own making, which reads to a candidate as a broken property.
+    for (const field of ['website', 'tripadvisor_url'] as const) {
+      if (field in payload && payload[field]) payload[field] = externalUrl(payload[field]) ?? payload[field]
+    }
+
     const { error } = await supabase
       .from('employer_profiles')
       .update(payload)
