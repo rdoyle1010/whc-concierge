@@ -12,6 +12,8 @@ import SponsoredAd from '@/components/SponsoredAd'
 import JobMatchPanel from '@/components/JobMatchPanel'
 import TrackView from '@/components/TrackView'
 
+import { externalUrl } from '@/lib/external-url'
+
 export const revalidate = 60
 
 const SITE = 'https://talenthousecollective.co.uk'
@@ -33,6 +35,24 @@ function stripPlain(s: string) { return s.replace(/<[^>]+>/g, '').replace(/\s+/g
 function prettyChip(s: string) { return String(s).replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) }
 function hasAny(values: unknown[]) {
   return values.some(v => Array.isArray(v) ? v.length > 0 : typeof v === 'string' ? v.trim().length > 0 : Boolean(v))
+}
+
+// In JSX, {0 && <Thing/>} renders the number nought, not nothing. Every
+// numeric fact on this page was written that way, so a property that had not
+// filled in its team size or treatment rooms published a page with bare
+// zeroes scattered down it. These return a boolean, and the count comes with
+// its own plural.
+function count(value: unknown): number | null {
+  const n = Number(value)
+  return Number.isFinite(n) && n > 0 ? n : null
+}
+function text(value: unknown): string | null {
+  const s = String(value ?? '').trim()
+  return s ? s : null
+}
+function people(value: unknown): string | null {
+  const n = count(value)
+  return n === null ? null : `${n} ${n === 1 ? 'person' : 'people'}`
 }
 
 const EMPLOYMENT_TYPE_MAP: Record<string, string> = {
@@ -77,7 +97,7 @@ export default async function RoleDetailPage(props: { params: Promise<{ id: stri
     description: description ? `<p>${stripPlain(description).slice(0, 5000)}</p>` : '',
     datePosted: job.posted_date || job.created_at || new Date().toISOString(),
     employmentType: EMPLOYMENT_TYPE_MAP[String(job.contract_type || '').toLowerCase()] || 'FULL_TIME',
-    hiringOrganization: { '@type': 'Organization', name: employer.company_name || propertyName, ...(employer.website ? { sameAs: employer.website } : {}) },
+    hiringOrganization: { '@type': 'Organization', name: employer.company_name || propertyName, ...(externalUrl(employer.website) ? { sameAs: externalUrl(employer.website) } : {}) },
     jobLocation: { '@type': 'Place', address: { '@type': 'PostalAddress', addressLocality: job.location || employer.location || employer.city || undefined, addressCountry: 'GB' } },
   }
   if (job.application_deadline) jobPostingLd.validThrough = job.application_deadline
@@ -102,7 +122,7 @@ export default async function RoleDetailPage(props: { params: Promise<{ id: stri
             </Link>
             <div className="flex flex-wrap gap-x-5 gap-y-2 mt-4 text-[13px] text-[#555555]">
               {(job.location || employer.location) && <span className="inline-flex items-center gap-1.5"><MapPin size={14}/>{job.location || employer.location}</span>}
-              {employer.star_rating && <span className="inline-flex items-center gap-1.5"><Star size={14} fill="currentColor"/>{isNaN(Number(employer.star_rating)) ? employer.star_rating : `${employer.star_rating} star property`}</span>}
+              {count(employer.star_rating) && <span className="inline-flex items-center gap-1.5"><Star size={14} fill="currentColor"/>{isNaN(Number(employer.star_rating)) ? employer.star_rating : `${employer.star_rating} star property`}</span>}
               {reviewScore > 0 && <span className="inline-flex items-center gap-1.5"><BadgeCheck size={14}/>{reviewScore.toFixed(1)} Talent House rating{reviewCount ? ` · ${reviewCount} review${reviewCount === 1 ? '' : 's'}` : ''}</span>}
             </div>
             <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3 mt-7">
@@ -129,12 +149,12 @@ export default async function RoleDetailPage(props: { params: Promise<{ id: stri
             <h2 className="text-[28px] mt-2">{propertyName}</h2>
             {employer.tagline && <p className="text-[13px] text-[#555555] mt-2">{employer.tagline}</p>}
             <div className="flex flex-wrap gap-4 mt-4 text-[12px] text-[#555555]">
-              {employer.num_treatment_rooms && <span className="inline-flex items-center gap-1.5"><BedDouble size={14}/>{employer.num_treatment_rooms} treatment rooms</span>}
-              {employer.team_size && <span className="inline-flex items-center gap-1.5"><Users size={14}/>{employer.team_size} team members</span>}
+              {count(employer.num_treatment_rooms) && <span className="inline-flex items-center gap-1.5"><BedDouble size={14}/>{employer.num_treatment_rooms} treatment rooms</span>}
+              {count(employer.team_size) && <span className="inline-flex items-center gap-1.5"><Users size={14}/>{people(employer.team_size)}</span>}
               {employer.property_type && <span className="inline-flex items-center gap-1.5"><Building2 size={14}/>{prettyChip(String(employer.property_type))}</span>}
             </div>
           </div>
-          <div className="flex md:flex-col gap-2">{employer.id && <Link href={`/properties/${employer.id}`} className="btn-primary text-center">View full property profile</Link>}{employer.website && <a href={employer.website} target="_blank" rel="noopener noreferrer" className="btn-secondary inline-flex items-center justify-center gap-2">Property website <ExternalLink size={13}/></a>}</div>
+          <div className="flex md:flex-col gap-2">{employer.id && <Link href={`/properties/${employer.id}`} className="btn-primary text-center">View full property profile</Link>}{externalUrl(employer.website) && <a href={externalUrl(employer.website)!} target="_blank" rel="noopener noreferrer" className="btn-secondary inline-flex items-center justify-center gap-2">Property website <ExternalLink size={13}/></a>}</div>
         </div>
       </section>}
 
@@ -150,18 +170,18 @@ export default async function RoleDetailPage(props: { params: Promise<{ id: stri
             <JobSection eyebrow="The commercial picture" title="Commercial responsibility">
               {job.commercial_responsibility && <Prose text={job.commercial_responsibility}/>}
               {Array.isArray(job.key_kpis) && job.key_kpis.length > 0 && <div className={job.commercial_responsibility ? 'mt-6' : ''}><p className="text-[11px] uppercase tracking-[.12em] font-semibold text-[#6b6b6b] mb-3">The numbers this role owns</p><ul className="space-y-2">{job.key_kpis.map((kpi: string) => <li key={kpi} className="text-[13px] leading-6 text-[#555555] pl-3 border-l-2 border-[#1c1c1c]">{kpi}</li>)}</ul></div>}
-              {(job.membership_size || job.opening_hours) && <div className="grid sm:grid-cols-2 gap-3 mt-6">{job.membership_size && <Fact label="Membership" value={String(job.membership_size)}/>} {job.opening_hours && <Fact label="Opening hours" value={String(job.opening_hours)}/>}</div>}
+              {(job.membership_size || job.opening_hours) && <div className="grid sm:grid-cols-2 gap-3 mt-6">{text(job.membership_size) && <Fact label="Membership" value={String(job.membership_size)}/>} {job.opening_hours && <Fact label="Opening hours" value={String(job.opening_hours)}/>}</div>}
             </JobSection>}
 
           {hasAny([employer.num_treatment_rooms, employer.spa_size, employer.facilities, employer.product_houses_used || employer.product_houses, employer.team_size]) &&
             <JobSection eyebrow="The spa" title={`Inside the spa at ${propertyName}`}>
-              {(employer.num_treatment_rooms || employer.spa_size || employer.team_size) && <div className="grid sm:grid-cols-3 gap-3">{employer.num_treatment_rooms && <Fact label="Treatment rooms" value={String(employer.num_treatment_rooms)}/>} {employer.spa_size && <Fact label="Spa size" value={String(employer.spa_size)}/>} {employer.team_size && <Fact label="Spa team" value={`${employer.team_size} people`}/>}</div>}
+              {(employer.num_treatment_rooms || employer.spa_size || employer.team_size) && <div className="grid sm:grid-cols-3 gap-3">{count(employer.num_treatment_rooms) && <Fact label="Treatment rooms" value={String(employer.num_treatment_rooms)}/>} {text(employer.spa_size) && <Fact label="Spa size" value={String(employer.spa_size)}/>} {count(employer.team_size) && <Fact label="Spa team" value={people(employer.team_size)!}/>}</div>}
               {Array.isArray(employer.facilities) && employer.facilities.length > 0 && <div className="mt-6"><p className="text-[11px] uppercase tracking-[.12em] font-semibold text-[#6b6b6b] mb-3">Facilities</p><div className="flex flex-wrap gap-1.5">{employer.facilities.map((facility: string) => <span key={facility} className="text-[12px] bg-[#f1f1f1] text-[#555555] px-3 py-1.5">{facility}</span>)}</div></div>}
               {(() => { const partners = employer.product_houses_used || employer.product_houses; return Array.isArray(partners) && partners.length > 0 ? <div className="mt-6"><p className="text-[11px] uppercase tracking-[.12em] font-semibold text-[#6b6b6b] mb-3">Product partners</p><div className="flex flex-wrap gap-1.5">{partners.map((house: string) => <span key={house} className="text-[12px] border border-[#dddddd] bg-white text-[#1c1c1c] px-3 py-1.5">{house}</span>)}</div></div> : null })()}
             </JobSection>}
 
           {(job.reporting_line || job.team_size) && <JobSection eyebrow="The team" title="Team & reporting">
-            <div className="grid sm:grid-cols-2 gap-3">{job.reporting_line && <Fact label="Reporting line" value={String(job.reporting_line)}/>} {job.team_size && <Fact label="Team size" value={`${job.team_size} in this team`}/>}</div>
+            <div className="grid sm:grid-cols-2 gap-3">{job.reporting_line && <Fact label="Reporting line" value={String(job.reporting_line)}/>} {count(job.team_size) && <Fact label="Team size" value={people(job.team_size)!}/>}</div>
           </JobSection>}
 
           {hasAny([salaryRange, job.three_things, job.perks, job.benefits, ...packageItems]) && <JobSection eyebrow="The package" title="Salary & benefits">
@@ -194,7 +214,7 @@ export default async function RoleDetailPage(props: { params: Promise<{ id: stri
             <div className="grid md:grid-cols-[1fr_auto] gap-6 items-start border border-[#dddddd] rounded-[20px] p-6">
               <div>
                 <p className="text-[14px] leading-7 text-[#555555]">{employer.about_text || employer.description || employer.tagline || `Explore the full Talent House property profile for ${propertyName} to see its spa operation, staff reviews, property rating, brands, travel information and current opportunities.`}</p>
-                <div className="flex flex-wrap gap-3 mt-4 text-[12px] text-[#555555]">{employer.star_rating && <span>{isNaN(Number(employer.star_rating)) ? employer.star_rating : `${employer.star_rating}★ property`}</span>}{reviewScore > 0 && <span>{reviewScore.toFixed(1)} Talent House staff rating</span>}{employer.hotel_group && <span>{employer.hotel_group}</span>}{employer.room_count && <span>{employer.room_count} rooms</span>}{employer.spa_size && <span>{employer.spa_size}</span>}{employer.num_treatment_rooms && <span>{employer.num_treatment_rooms} treatment rooms</span>}{employer.team_size && <span>{employer.team_size} spa team</span>}{employer.opening_year && <span>Opened {employer.opening_year}</span>}</div>
+                <div className="flex flex-wrap gap-3 mt-4 text-[12px] text-[#555555]">{count(employer.star_rating) && <span>{isNaN(Number(employer.star_rating)) ? employer.star_rating : `${employer.star_rating}★ property`}</span>}{reviewScore > 0 && <span>{reviewScore.toFixed(1)} Talent House staff rating</span>}{employer.hotel_group && <span>{employer.hotel_group}</span>}{employer.room_count && <span>{employer.room_count} rooms</span>}{text(employer.spa_size) && <span>{employer.spa_size}</span>}{count(employer.num_treatment_rooms) && <span>{employer.num_treatment_rooms} treatment rooms</span>}{count(employer.team_size) && <span>{employer.team_size} spa team</span>}{employer.opening_year && <span>Opened {employer.opening_year}</span>}</div>
                 {Array.isArray(employer.facilities) && employer.facilities.length > 0 && <div className="flex flex-wrap gap-1.5 mt-4">{employer.facilities.map((facility: string) => <span key={facility} className="text-[11px] bg-[#f1f1f1] text-[#555555] px-2.5 py-1 rounded-full">{facility}</span>)}</div>}
                 {employer.culture_statement && <div className="mt-5"><p className="text-[10px] uppercase tracking-[.14em] text-[#1c1c1c] font-semibold mb-1.5">Working here</p><p className="text-[13px] leading-6 text-[#555555] whitespace-pre-line">{employer.culture_statement}</p></div>}
                 {Array.isArray(employer.staff_benefits) && employer.staff_benefits.length > 0 && <div className="mt-4"><p className="text-[10px] uppercase tracking-[.14em] text-[#1c1c1c] font-semibold mb-1.5">Staff benefits</p><div className="flex flex-wrap gap-1.5">{employer.staff_benefits.map((benefit: string) => <span key={benefit} className="text-[11px] bg-emerald-50 text-emerald-700 px-2.5 py-1 rounded-full">{benefit}</span>)}</div></div>}
@@ -209,7 +229,7 @@ export default async function RoleDetailPage(props: { params: Promise<{ id: stri
           <JobMatchPanel jobId={String(job.id)} />
           <div className="border border-[#dddddd] rounded-[18px] p-5">
             <p className="text-[10px] uppercase tracking-[.14em] text-[#6b6b6b]">Role at a glance</p>
-            <div className="space-y-4 mt-4">{salaryRange && <MiniFact icon={BriefcaseBusiness} label="Salary" value={salaryRange}/>} {(job.location || employer.location) && <MiniFact icon={MapPin} label="Location" value={job.location || employer.location}/>} {job.shift_pattern && <MiniFact icon={CalendarDays} label="Shift pattern" value={prettyChip(String(job.shift_pattern))}/>} {employer.star_rating && <MiniFact icon={Star} label="Property" value={isNaN(Number(employer.star_rating)) ? employer.star_rating : `${employer.star_rating} star`}/>}</div>
+            <div className="space-y-4 mt-4">{salaryRange && <MiniFact icon={BriefcaseBusiness} label="Salary" value={salaryRange}/>} {(job.location || employer.location) && <MiniFact icon={MapPin} label="Location" value={job.location || employer.location}/>} {job.shift_pattern && <MiniFact icon={CalendarDays} label="Shift pattern" value={prettyChip(String(job.shift_pattern))}/>} {count(employer.star_rating) && <MiniFact icon={Star} label="Property" value={isNaN(Number(employer.star_rating)) ? employer.star_rating : `${employer.star_rating} star`}/>}</div>
           </div>
         </aside>
       </section>
