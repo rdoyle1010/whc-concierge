@@ -1,4 +1,5 @@
 import { createAdminClient } from '@/lib/supabase/admin'
+import { administratorEmails, alertRecipients } from '@/lib/administrators'
 import { normaliseUkMobile, smsConfigured, rawSms } from '@/lib/sms'
 import { sendTransactionalEmail } from '@/lib/send-email'
 
@@ -35,30 +36,14 @@ async function config(key: string): Promise<string> {
   } catch { return '' }
 }
 
-/**
- * The administrator's own address, when no fallback has been configured.
- *
- * The delivery test in Admin Settings falls back to the signed-in
- * administrator's address, so it reported success while this path - the one
- * that actually matters - had nowhere to send. An alert that quietly goes
- * nowhere is worse than no alert, because it is trusted, and that is the exact
- * failure this file was written to stop.
- *
- * Ordered by created_at so a platform with two administrators picks the owner
- * rather than whoever the database happened to return first.
- */
-async function administratorEmail(): Promise<string> {
-  try {
-    const admin = createAdminClient()
-    const { data } = await admin.from('profiles')
-      .select('email, created_at')
-      .eq('role', 'admin')
-      .not('email', 'is', null)
-      .order('created_at', { ascending: true })
-      .limit(1)
-    return String(data?.[0]?.email || '').trim()
-  } catch { return '' }
-}
+// Where these land, when no fallback has been configured: every
+// administrator, from lib/administrators.
+//
+// The delivery test in Admin Settings falls back to the signed-in
+// administrator's address, so it reported success while this path - the one
+// that actually matters - had nowhere to send. An alert that quietly goes
+// nowhere is worse than no alert, because it is trusted, and that is the exact
+// failure this file was written to stop.
 
 /** "Hannah Lucy Francis" -> "Hannah F." Enough to recognise, not a full identity. */
 function shortName(fullName: string | null | undefined): string {
@@ -93,9 +78,10 @@ export async function alertAdminOfSignup(kind: SignupKind, name: string | null |
       if (sent) return
     }
 
-    // No number, no Twilio, or the text bounced. Email rather than silence.
-    const email = (await config(ADMIN_EMAIL_KEY)) || (await administratorEmail())
-    if (email) {
+    // No number, no Twilio, or the text bounced. Email rather than silence -
+    // and to every administrator, not just whichever one was created first.
+    const recipients = alertRecipients(await config(ADMIN_EMAIL_KEY), await administratorEmails())
+    for (const email of recipients) {
       await sendTransactionalEmail({
         to: email,
         subject: `New ${what} sign-up - ${who}`,
