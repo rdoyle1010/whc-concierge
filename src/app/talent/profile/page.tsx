@@ -100,7 +100,26 @@ export default function TalentProfilePage() {
   if(!profile?.id)return <DashboardShell role="talent"><p>Profile not found.</p></DashboardShell>
   return <DashboardShell role="talent" userName={profile.full_name}><div className="max-w-3xl">
     <div className="flex items-center justify-between gap-3 mb-2"><div><p className="dashboard-eyebrow">Career profile</p><h1 className="dashboard-title">Edit Profile</h1></div><div className="flex gap-2"><Link href="/talent/profile/preview" className="btn-secondary inline-flex items-center gap-2"><Eye size={14}/>Preview</Link><button onClick={handleSave} disabled={saving} className="btn-primary inline-flex items-center gap-2"><Save size={14}/>{saving?'Saving...':'Save Changes'}</button></div></div>
-    <div className="mb-8"><div className="flex items-center gap-3"><div className="flex-1 h-1.5 bg-[#e7e7e7] rounded-full overflow-hidden"><div className="h-full bg-[#1c1c1c]" style={{width:`${completionPct}%`}}/></div><span className="text-[12px]">{completionPct}%</span></div>{missingItems.length>0&&<p className="mt-2 text-[12px] text-[#1c1c1c]">To reach 100%, add: {missingItems.join(', ')}. <a href="/talent/onboarding" className="font-semibold underline">Use the Skills Wizard →</a></p>}{missingItems.length===0&&<p className="mt-2 text-[12px] text-emerald-700">Your profile is complete - it will rank at full strength in matching.</p>}</div>
+    <div className="mb-8"><div className="flex items-center gap-3"><div className="flex-1 h-1.5 bg-[#e7e7e7] rounded-full overflow-hidden"><div className="h-full bg-[#1c1c1c]" style={{width:`${completionPct}%`}}/></div><span className="text-[12px]">{completionPct}%</span></div>{missingItems.length>0&&<p className="mt-2 text-[12px] text-[#1c1c1c]">To reach 100%, add: {missingItems.join(', ')}. <a href="/talent/onboarding" className="font-semibold underline">Use the Skills Wizard →</a></p>}{missingItems.length===0&&<p className="mt-2 text-[12px] text-emerald-700">Your profile is complete - it will rank at full strength in matching.</p>}
+
+      {/* The CV is the reason to finish the profile. A document that visibly
+          has no qualifications on it argues for adding them better than any
+          reminder does, and a complete profile is the only thing that makes
+          matching worth anything. It is also the Talent House name landing on
+          a desk that has never heard of it. */}
+      <div className="mt-4 rounded-xl border border-border bg-white p-4">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div className="max-w-lg">
+            <p className="text-[13px] font-semibold text-ink">Your CV, built from this profile</p>
+            <p className="mt-1 text-[11.5px] leading-5 text-secondary">
+              {missingItems.length>0
+                ? `Everything above goes onto it. It will download now, but ${missingItems.length===1?'one section is':`${missingItems.length} sections are`} still empty and will simply be missing from the page.`
+                : 'Everything above is on it, with your Academy certificates and their verification codes.'}
+            </p>
+          </div>
+          <a href="/api/talent/cv" className="btn-secondary text-[12px] whitespace-nowrap">Download my CV</a>
+        </div>
+      </div></div>
     {message&&<div role="status" className="mb-6 rounded-lg bg-[#f1f1f1] px-4 py-3 text-[12px] text-[#555555]">{message}</div>}
     <div className="space-y-6">
       <section className="dashboard-card"><p className="eyebrow">Talent House Academy achievements</p>{academyBadges.length?<div className="mt-4 space-y-2">{academyBadges.map(b=><div key={b.course_slug} className="flex justify-between border border-border rounded-lg p-3"><div><p className="text-[13px] font-semibold">{courseTitle(b.course_slug)}</p><p className="text-[10px] text-muted">Completed {new Date(b.completed_at).toLocaleDateString('en-GB')}</p></div><Award size={17}/></div>)}</div>:<p className="text-[12px] text-muted mt-2">Completed Academy courses will appear here.</p>}</section>
