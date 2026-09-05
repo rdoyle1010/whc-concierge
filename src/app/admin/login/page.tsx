@@ -70,7 +70,13 @@ export default function AdminLoginPage() {
             </button>
           </form>
 
-          <p className="text-[12px] text-muted mt-6">Talent or employer? <Link href="/login" className="text-[#1c1c1c] font-semibold hover:underline">Use the main sign in</Link>.</p>
+          {/* There was no way to reset a password from this page, so an
+              administrator who had forgotten hers had to find /forgot-password
+              on her own, and it then returned her to /login, which refuses
+              admin accounts. The link carries the role so recovery comes back
+              here instead. */}
+          <p className="text-[12px] text-muted mt-6"><Link href="/forgot-password?role=admin" className="text-[#1c1c1c] font-semibold hover:underline">Forgotten your password?</Link></p>
+          <p className="text-[12px] text-muted mt-2">Talent or employer? <Link href="/login" className="text-[#1c1c1c] font-semibold hover:underline">Use the main sign in</Link>.</p>
         </div>
       </div>
     </main>
