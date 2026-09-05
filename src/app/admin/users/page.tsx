@@ -31,6 +31,9 @@ export default function AdminUsersPage() {
   const [loadError, setLoadError] = useState('')
   // What the platform actually sent this person, and whether it arrived.
   const [emailLog, setEmailLog] = useState<{ rows: any[]; unavailable: boolean } | null>(null)
+  // "Is their email actually working?" - answered by sending one, not by
+  // deleting their account and making them sign up again to find out.
+  const [reachability, setReachability] = useState<{ busy: boolean; detail: string; ok: boolean | null }>({ busy: false, detail: '', ok: null })
 
   // The drawer stands down while the nested reject modal is open, so Escape
   // there closes only the modal and leaves the drawer behind it.
@@ -50,8 +53,24 @@ export default function AdminUsersPage() {
       .then(res => res.ok ? res.json() : null)
       .then(json => { if (active) setEmailLog({ rows: json?.log || [], unavailable: Boolean(json?.unavailable) }) })
       .catch(() => { if (active) setEmailLog({ rows: [], unavailable: false }) })
+    setReachability({ busy: false, detail: '', ok: null })
     return () => { active = false }
   }, [selected])
+
+  async function checkReachable() {
+    if (!selected?.user_id) return
+    setReachability({ busy: true, detail: '', ok: null })
+    try {
+      const res = await fetch('/api/admin/users', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'reachability_check', user_id: selected.user_id }),
+      })
+      const json = await res.json().catch(() => ({}))
+      setReachability({ busy: false, ok: Boolean(json?.success), detail: json?.detail || json?.error || 'No answer from the server.' })
+    } catch {
+      setReachability({ busy: false, ok: false, detail: 'Could not reach the server to send it.' })
+    }
+  }
 
   const detailDialog = useDialog(() => setSelected(null), 'admin-user-detail-heading', { enabled: Boolean(selected) })
   const rejectDialog = useDialog(() => setShowReject(false), 'admin-user-reject-heading', { enabled: Boolean(showReject) })
@@ -269,6 +288,13 @@ export default function AdminUsersPage() {
               </div></div>
               <div>
                 <p className="text-xs text-muted uppercase tracking-wider mb-2">Emails we sent</p>
+                {selected.user_id && <div className="mb-3">
+                  <button type="button" onClick={checkReachable} disabled={reachability.busy}
+                    className="btn-secondary text-[12px] disabled:opacity-50">
+                    {reachability.busy ? 'Sending…' : 'Check we can reach them'}
+                  </button>
+                  {reachability.detail && <p className={`mt-2 text-[11.5px] leading-5 ${reachability.ok ? 'text-green-700' : 'text-red-600'}`}>{reachability.detail}</p>}
+                </div>}
                 {!emailLog ? <p className="text-muted text-[12px]">Checking…</p>
                   : emailLog.unavailable ? <p className="text-[12px] text-amber-700">The email log table has not been created yet - run the email_log migration and sends from then on will be recorded here.</p>
                   : emailLog.rows.length === 0 ? <p className="text-[12px] text-muted">Nothing recorded. Anything sent before the email log existed will not appear here.</p>

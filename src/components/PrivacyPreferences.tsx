@@ -46,8 +46,12 @@ export default function PrivacyPreferences() {
     setSaving(true); setMessage('')
     const res = await fetch('/api/privacy/marketing/request', { method: 'POST' })
     const data = await res.json().catch(() => ({}))
-    if (res.ok) { await load(); setMessage('Check your email and confirm before marketing is switched on.') }
-    else setMessage(data.error || 'Could not send the confirmation email.')
+    if (res.ok) {
+      await load()
+      setMessage(data.resent
+        ? 'Sent again. Check your inbox, and your junk folder - a confirmation link often lands there.'
+        : 'Check your email and confirm before marketing is switched on.')
+    } else setMessage(data.error || 'Could not send the confirmation email.')
     setSaving(false)
   }
 
@@ -73,8 +77,14 @@ export default function PrivacyPreferences() {
 
     <section className="dashboard-card">
       <div className="flex items-start justify-between gap-4"><div className="flex gap-3"><Mail size={19} className="text-[#555555] mt-0.5"/><div><h3 className="text-[19px]">Talent House marketing emails</h3><p className="text-[12px] leading-5 text-[#555555] mt-1 max-w-2xl">{marketingWording}</p></div></div><Status value={prefs.marketing_email_status}/></div>
-      <div className="mt-5 flex flex-wrap gap-3">{!marketingOn ? <button disabled={saving || marketingPending} onClick={requestMarketing} className="btn-primary disabled:opacity-50">{marketingPending ? 'Confirmation email sent' : 'Opt in by email'}</button> : <button disabled={saving} onClick={withdrawMarketing} className="btn-secondary disabled:opacity-50">Unsubscribe from marketing</button>}</div>
-      {marketingPending && <p className="text-[11px] text-[#555555] mt-3">Marketing remains OFF until you click the confirmation link in the email.</p>}
+      <div className="mt-5 flex flex-wrap gap-3">{!marketingOn
+        ? <button disabled={saving} onClick={requestMarketing} className="btn-primary disabled:opacity-50">{marketingPending ? 'Send the confirmation email again' : 'Opt in by email'}</button>
+        : <button disabled={saving} onClick={withdrawMarketing} className="btn-secondary disabled:opacity-50">Unsubscribe from marketing</button>}</div>
+      {/* The button used to be disabled here, reading "Confirmation email
+          sent". Anybody whose email never arrived, or who deleted it, was
+          then stuck at pending permanently with no way to ask again - and
+          that is where most of a marketing list quietly ends up. */}
+      {marketingPending && <p className="text-[11px] text-[#555555] mt-3">Marketing stays off until you click the link in that email. If it has not arrived, check your junk folder and then send it again.</p>}
     </section>
 
     <section className="dashboard-card">
