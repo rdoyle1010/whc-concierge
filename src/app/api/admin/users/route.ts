@@ -3,6 +3,7 @@ import { adminRequestUser } from '@/lib/admin-api-auth'
 import { createNotification } from '@/lib/notifications'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { sendApprovalEmail, sendRejectionEmail } from '@/lib/emails'
+import { sendTransactionalEmail } from '@/lib/send-email'
 
 // Delegated to the shared admin guard, which enforces two-step
 // verification as well as the admin role.
@@ -38,7 +39,7 @@ export async function POST(req: NextRequest) {
   const { type, id, action, reason } = body as {
     type: 'candidate' | 'employer'
     id: string
-    action: 'approve' | 'reject' | 'emails' | 'email_log'
+    action: 'approve' | 'reject' | 'emails' | 'email_log' | 'reachability_check'
     reason?: string
   }
 
@@ -64,6 +65,52 @@ export async function POST(req: NextRequest) {
     // rather than showing an empty list that reads as "nothing was sent".
     if (error) return NextResponse.json({ log: [], unavailable: true })
     return NextResponse.json({ log: data || [] })
+  }
+
+  // "Is their email actually working?" used to have no answer short of
+  // deleting the account and making them sign up again, which destroys a
+  // profile to test a mail server. This sends one real message down the real
+  // path to their own address and records the result in the email log, so
+  // the question ends in evidence rather than a guess.
+  //
+  // The message is written to be worth receiving. A bare test email from a
+  // platform somebody barely knows reads as a phishing attempt.
+  if (action === 'reachability_check') {
+    const userId = typeof body.user_id === 'string' ? body.user_id : ''
+    if (!userId) return NextResponse.json({ error: 'user_id required' }, { status: 400 })
+
+    const client = createAdminClient()
+    const { data: authUser } = await client.auth.admin.getUserById(userId)
+    const address = authUser?.user?.email
+    if (!address) return NextResponse.json({ error: 'There is no email address on this account.' }, { status: 400 })
+
+    const { data: candidate } = await client.from('candidate_profiles').select('full_name').eq('user_id', userId).maybeSingle()
+    const { data: employer } = await client.from('employer_profiles').select('property_name, company_name').eq('user_id', userId).maybeSingle()
+    const name = candidate?.full_name || employer?.property_name || employer?.company_name || 'there'
+
+    const result = await sendTransactionalEmail({
+      to: address,
+      subject: 'Checking we can reach you',
+      kind: 'notification',
+      userId,
+      html: `<div style="font-family: Inter, -apple-system, sans-serif; max-width: 560px; margin: 0 auto; padding: 40px 20px;">
+        <p style="font-size: 16px; font-weight: 600; margin-bottom: 32px;">Talent House Collective</p>
+        <p style="font-size: 22px; font-weight: 700; margin-bottom: 16px;">Just checking this reaches you, ${name}</p>
+        <p style="color: #555555;">Nothing needs doing. We are confirming that messages from Talent House arrive properly, so that when a property is interested in you, or a shift needs answering, you actually hear about it.</p>
+        <p style="color: #555555;">If this landed in your junk folder, marking it as safe will keep the ones that matter out of there.</p>
+        <p style="margin-top: 24px;"><a href="https://talenthousecollective.co.uk/login" style="display: inline-block; background: #1c1c1c; color: #fff; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600;">Sign in</a></p>
+      </div>`,
+    })
+
+    return NextResponse.json({
+      success: result.ok,
+      status: result.status,
+      to: address,
+      error: result.error || null,
+      detail: result.ok
+        ? `Sent to ${address}. It is in the email log either way, and in Resend if it left the building.`
+        : `Not sent: ${result.error || 'the provider refused it'}. That is the reason they have been hearing nothing.`,
+    })
   }
 
   if (!id || (type !== 'candidate' && type !== 'employer') || (action !== 'approve' && action !== 'reject')) {

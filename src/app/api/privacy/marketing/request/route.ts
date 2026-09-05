@@ -14,11 +14,38 @@ async function getUser() {
   return client.auth.getUser()
 }
 
+const RESEND_COOLDOWN_SECONDS = 60
+
 export async function POST() {
   const { data: { user } } = await getUser()
   if (!user?.email) return NextResponse.json({ error: 'Please sign in' }, { status: 401 })
 
   const admin = createAdminClient()
+
+  // Asking again is how somebody who never received the first one gets in.
+  // The button used to be disabled at "pending", which left anybody whose
+  // confirmation email went missing stuck there permanently - and that is
+  // where the largest part of a marketing list quietly sits.
+  //
+  // A short cooldown, because the button is now enabled and a confirmation
+  // link is an email somebody else's address receives.
+  const { data: existing } = await admin.from('privacy_preferences')
+    .select('marketing_email_status, marketing_email_requested_at')
+    .eq('user_id', user.id)
+    .maybeSingle()
+
+  if (existing?.marketing_email_status === 'confirmed') {
+    return NextResponse.json({ success: true, status: 'confirmed', note: 'already confirmed' })
+  }
+
+  const lastAsked = existing?.marketing_email_requested_at ? new Date(existing.marketing_email_requested_at).getTime() : 0
+  const waitedSeconds = Math.round((Date.now() - lastAsked) / 1000)
+  if (lastAsked && waitedSeconds < RESEND_COOLDOWN_SECONDS) {
+    return NextResponse.json({
+      error: `A confirmation email went out less than a minute ago. Check your junk folder, then try again in ${RESEND_COOLDOWN_SECONDS - waitedSeconds} seconds.`,
+    }, { status: 429 })
+  }
+
   const token = newConfirmationToken()
   const now = new Date()
   const expires = new Date(now.getTime() + 24 * 60 * 60 * 1000)
@@ -43,7 +70,7 @@ export async function POST() {
   await admin.from('consent_events').insert({
     user_id: user.id,
     consent_type: 'marketing_email',
-    action: 'requested',
+    action: existing?.marketing_email_status === 'pending' ? 'requested_again' : 'requested',
     policy_version: PRIVACY_POLICY_VERSION,
     wording: MARKETING_CONSENT_WORDING,
     source: 'account_preferences',
@@ -52,5 +79,5 @@ export async function POST() {
   const sent = await sendMarketingDoubleOptInEmail(user.email, token)
   if (!sent) return NextResponse.json({ error: 'We could not send the confirmation email. Your marketing preference is still off.' }, { status: 503 })
 
-  return NextResponse.json({ success: true, status: 'pending' })
+  return NextResponse.json({ success: true, status: 'pending', resent: existing?.marketing_email_status === 'pending' })
 }
