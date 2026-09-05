@@ -4,9 +4,10 @@ import { emailAllowed } from '@/lib/notification-prefs'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
+import { TRANSACTIONAL_FROM } from '@/lib/send-email'
 
 const RESEND_API_KEY = process.env.RESEND_API_KEY
-const FROM_EMAIL = 'Talent House Collective <noreply@mail.wellnesshousecollective.co.uk>'
+const FROM_EMAIL = TRANSACTIONAL_FROM
 
 export async function POST(req: NextRequest) {
   try {

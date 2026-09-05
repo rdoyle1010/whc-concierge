@@ -6,9 +6,10 @@ import { createNotification } from '@/lib/notifications'
 import { sendSmsIfOptedIn } from '@/lib/sms'
 import { emailAllowed } from '@/lib/notification-prefs'
 import { briefingDetailsHtml, briefingEmailHtml, escapeHtml } from '@/lib/interview-briefing'
+import { TRANSACTIONAL_FROM } from '@/lib/send-email'
 
 const RESEND_API_KEY = process.env.RESEND_API_KEY
-const FROM_EMAIL = 'Talent House Collective <noreply@mail.wellnesshousecollective.co.uk>'
+const FROM_EMAIL = TRANSACTIONAL_FROM
 const METHODS = ['teams','video','phone','in_person'] as const
 
 function methodLabel(method: string) {

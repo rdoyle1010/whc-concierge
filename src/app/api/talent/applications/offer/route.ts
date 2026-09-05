@@ -3,9 +3,10 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { createNotification } from '@/lib/notifications'
 import { getRequestUser } from '@/lib/request-user'
 import { trackEvent } from '@/lib/analytics'
+import { TRANSACTIONAL_FROM } from '@/lib/send-email'
 
 const RESEND_API_KEY = process.env.RESEND_API_KEY
-const FROM_EMAIL = 'Talent House Collective <noreply@mail.wellnesshousecollective.co.uk>'
+const FROM_EMAIL = TRANSACTIONAL_FROM
 
 async function sendOfferResponseEmail(to: string, subject: string, bodyHtml: string) {
   if (!RESEND_API_KEY || !to) return false

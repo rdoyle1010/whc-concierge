@@ -47,8 +47,17 @@ test('both registration welcomes are logged', () => {
 // Resend verifies domains. Sending from one it has not verified is rejected,
 // which is exactly the silent failure this work exists to stop.
 test('email is sent from the verified domain', () => {
-  assert.match(TRANSACTIONAL_FROM, /mail\.wellnesshousecollective\.co\.uk/)
-  assert.match(read('src/lib/send-email.ts'), /not verified yet/, 'the reason must travel with the address')
+  // This asserted the old subdomain, because for a long time that was the
+  // only one Resend had verified. mail.talenthousecollective.co.uk is
+  // verified now, so somebody who signed up to Talent House hears from
+  // Talent House rather than from a company they have never heard of.
+  //
+  // The point of the test is unchanged: an unverified sending domain is
+  // rejected outright by Resend, and a From address is not something to
+  // change on a hunch.
+  assert.match(TRANSACTIONAL_FROM, /mail\.talenthousecollective\.co\.uk/)
+  assert.match(read('src/lib/send-email.ts'), /process\.env\.EMAIL_FROM/,
+    'and there must be a way back that does not need a deploy')
 })
 
 // The answer has to be visible where the question is asked.

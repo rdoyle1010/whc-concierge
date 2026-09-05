@@ -1,3 +1,4 @@
+import { TRANSACTIONAL_FROM } from '@/lib/send-email'
 import { escapeHtml, safeHttpUrl } from '@/lib/newsletter-blocks'
 
 // The email a newsletter subscriber gets when they confirm.
@@ -19,7 +20,7 @@ const SITE = 'https://talenthousecollective.co.uk'
 // not verified yet, so sending from it would bounce silently - this stays on
 // the old verified subdomain until that changes, and every send uses this one
 // constant so it changes in one place.
-export const NEWSLETTER_FROM = 'Talent House Collective <noreply@mail.wellnesshousecollective.co.uk>'
+export const NEWSLETTER_FROM = TRANSACTIONAL_FROM
 
 export function newsletterWelcomeSubject(): string {
   return 'You are on the list - Talent House Collective'

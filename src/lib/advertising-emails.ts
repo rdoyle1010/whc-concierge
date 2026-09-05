@@ -1,5 +1,6 @@
 const RESEND_API_KEY = process.env.RESEND_API_KEY
-const FROM_EMAIL = 'Talent House Collective <noreply@mail.wellnesshousecollective.co.uk>'
+import { TRANSACTIONAL_FROM } from '@/lib/send-email'
+const FROM_EMAIL = TRANSACTIONAL_FROM
 
 async function sendEmail(to: string, subject: string, html: string) {
   if (!RESEND_API_KEY) {

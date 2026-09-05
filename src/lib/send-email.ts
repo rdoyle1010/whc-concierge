@@ -8,11 +8,20 @@ import { createAdminClient } from '@/lib/supabase/admin'
 // all looked identical from the outside, which made every question about a
 // missing email a guess.
 
-// Resend verifies domains, not brand names. mail.talenthousecollective.co.uk is
-// not verified yet, so this stays on the verified subdomain: sending from an
-// unverified domain is rejected, and the rejection is exactly the kind of
-// silent failure this file exists to stop.
-export const TRANSACTIONAL_FROM = 'Talent House Collective <noreply@mail.wellnesshousecollective.co.uk>'
+// Where everything the platform sends comes from.
+//
+// This was written out by hand in seventeen files. Changing the brand meant
+// editing all seventeen, and the one somebody missed would keep sending from
+// the old domain for months without anybody noticing, because a wrong From
+// address does not fail - it arrives, looking like a different company.
+//
+// Resend verifies domains, not brand names, so an unverified domain is
+// rejected outright. The environment variable is the way back: if this
+// address ever stops being verified, set EMAIL_FROM in Netlify to a domain
+// that is and every email recovers on the next request, with no deploy and
+// nobody waiting on a developer.
+export const TRANSACTIONAL_FROM = process.env.EMAIL_FROM
+  || 'Talent House Collective <noreply@mail.talenthousecollective.co.uk>'
 
 export type EmailKind =
   | 'welcome_talent' | 'welcome_employer' | 'newsletter_welcome'
