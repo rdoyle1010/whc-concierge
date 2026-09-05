@@ -101,6 +101,61 @@ export async function sendNewsletterDoubleOptInEmail(email: string, token: strin
   ))
 }
 
+// Start the double opt-in for somebody, from wherever they asked.
+//
+// This lived only inside /api/privacy/marketing/request, which needs a signed
+// in session - so the only place on the whole platform where anybody could
+// opt in was the Privacy & Preferences page, buried in account settings.
+// Six of the first eight members had never opted in, and none of them had
+// declined: nobody had asked them.
+//
+// Registration can now ask, which is the moment somebody is most willing and
+// the only moment you get for free. The record still says exactly what they
+// saw, and it is still pending until they click the link.
+export async function startMarketingOptIn(
+  admin: any,
+  userId: string,
+  email: string,
+  source: 'registration' | 'account_preferences',
+): Promise<{ ok: boolean; error?: string }> {
+  if (!userId || !email) return { ok: false, error: 'No account to opt in' }
+
+  const token = newConfirmationToken()
+  const now = new Date()
+  const expires = new Date(now.getTime() + 24 * 60 * 60 * 1000)
+
+  await admin.from('marketing_confirmation_tokens').delete().eq('user_id', userId).is('consumed_at', null)
+  const { error: tokenError } = await admin.from('marketing_confirmation_tokens').insert({
+    user_id: userId,
+    token_hash: hashToken(token),
+    expires_at: expires.toISOString(),
+  })
+  if (tokenError) return { ok: false, error: tokenError.message }
+
+  const { error: prefError } = await admin.from('privacy_preferences').upsert({
+    user_id: userId,
+    marketing_email_status: 'pending',
+    marketing_email_requested_at: now.toISOString(),
+    marketing_email_confirmed_at: null,
+    updated_at: now.toISOString(),
+  }, { onConflict: 'user_id' })
+  if (prefError) return { ok: false, error: prefError.message }
+
+  // The wording recorded is the wording they were shown. That is the whole
+  // point of keeping a consent record rather than a boolean.
+  await admin.from('consent_events').insert({
+    user_id: userId,
+    consent_type: 'marketing_email',
+    action: 'requested',
+    policy_version: PRIVACY_POLICY_VERSION,
+    wording: MARKETING_CONSENT_WORDING,
+    source,
+  })
+
+  const sent = await sendMarketingDoubleOptInEmail(email, token)
+  return sent ? { ok: true } : { ok: false, error: 'The confirmation email could not be sent' }
+}
+
 export function marketingUnsubscribeUrl(userId: string) {
   return `${SITE}/api/privacy/marketing/unsubscribe?uid=${encodeURIComponent(userId)}&token=${createUnsubscribeToken(userId)}`
 }

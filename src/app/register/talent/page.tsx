@@ -8,6 +8,7 @@ import { usePublicSiteContent } from '@/lib/use-site-content'
 import { Eye, EyeOff } from 'lucide-react'
 import Wordmark from '@/components/Wordmark'
 import { createClient } from '@/lib/supabase/client'
+import { MARKETING_CONSENT_WORDING } from '@/lib/privacy-consent'
 
 const MIN_PASSWORD_LENGTH = 8
 const MAX_PASSWORD_LENGTH = 64
@@ -19,6 +20,7 @@ export default function TalentRegisterPage() {
   const supabase = createClient()
   const site = usePublicSiteContent()
   const [loading, setLoading] = useState(false)
+  const [marketingOptIn, setMarketingOptIn] = useState(false)
   const [error, setError] = useState('')
   const [fullName, setFullName] = useState('')
   const [email, setEmail] = useState('')
@@ -63,6 +65,7 @@ export default function TalentRegisterPage() {
           email,
           password,
           role: 'talent',
+          marketingOptIn,
           displayName: fullName,
           refCode: refCode || undefined,
         }),
@@ -146,6 +149,22 @@ export default function TalentRegisterPage() {
                 </div>
                 <p className="mt-1.5 text-[11px] text-[#6b6b6b]">Use {MIN_PASSWORD_LENGTH}-{MAX_PASSWORD_LENGTH} characters.</p>
               </div>
+
+              {/* Unticked, always. A pre-ticked box is not consent under the
+                  UK GDPR, and the wording shown here is the wording recorded
+                  against the account so the two can never disagree. */}
+              <label className="flex items-start gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={marketingOptIn}
+                  onChange={event => setMarketingOptIn(event.target.checked)}
+                  className="mt-0.5 h-4 w-4 shrink-0"
+                />
+                <span className="text-[11.5px] leading-5 text-[#555555]">
+                  {MARKETING_CONSENT_WORDING}
+                  {' '}Optional, and separate from the emails needed to run your account.
+                </span>
+              </label>
 
               <button type="button" onClick={createAccount} disabled={loading} className="w-full bg-[#1c1c1c] hover:bg-[#333333] text-white px-5 py-3 text-[13px] font-semibold transition-colors disabled:opacity-40">
                 {loading ? 'Creating account...' : 'Create account and build profile'}
