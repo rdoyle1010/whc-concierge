@@ -283,7 +283,10 @@ export default function EmployerProfilePage() {
               <input aria-label="Website" type="url" value={profile.website || ''} onChange={(e) => update('website', e.target.value)} className="input-field" placeholder="https://" />
             </div>
           </div>
-          <div className="grid grid-cols-3 gap-4">
+          {/* Same fix as the talent onboarding form: three across applies at
+              every width without a breakpoint, phone included, and a label
+              that wraps then pushes its input out of line with its neighbours. */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-end">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1.5">Location</label>
               <input aria-label="Location" type="text" value={profile.location || ''} onChange={(e) => update('location', e.target.value)} className="input-field" placeholder="London" />
