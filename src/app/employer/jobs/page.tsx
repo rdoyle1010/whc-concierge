@@ -6,6 +6,9 @@ import { useDialog } from '@/components/useDialog'
 import { useRouter, useSearchParams } from 'next/navigation'
 import DashboardShell from '@/components/DashboardShell'
 import { createClient } from '@/lib/supabase/client'
+import { useTaxonomy } from '@/lib/use-sectors'
+import { doorSlugForSector } from '@/lib/sectors'
+import { fieldAppliesToRole, isBrandRole, WORK_SETTINGS, BRAND_ROLE_NOTE } from '@/lib/role-form-shape'
 import { Plus, Edit2, Trash2, Eye, EyeOff, Copy, RotateCcw, CheckCircle2, Upload, Image as ImageIcon, X } from 'lucide-react'
 import ResidencySuggestions from '@/components/ResidencySuggestions'
 import CollapsibleCheckboxSection from '@/components/CollapsibleCheckboxSection'
@@ -33,6 +36,12 @@ function EmployerJobs() {
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
   const [editing, setEditing] = useState<any>(null)
+  // A saved role stores only its sector, so the door has to be worked back to.
+  // Without it this form asks a brand about spa opening hours all over again,
+  // one screen after the posting form learned not to.
+  const { taxonomy } = useTaxonomy()
+  const doorSlug = doorSlugForSector(taxonomy, editing?.sector_id || editing?.sector)
+  const applies = (field: string) => fieldAppliesToRole(field, doorSlug)
   const [saving, setSaving] = useState(false)
   const [uploadingImage, setUploadingImage] = useState(false)
   // The checkout redirect has always carried ?success=true, and this page has
@@ -57,7 +66,7 @@ function EmployerJobs() {
     preferred_business_skills: [] as string[],
     min_years_experience: '', shift_pattern: '',
     why_role_exists: '', success_90_days: '', reporting_line: '', team_size: '',
-    opening_hours: '', commercial_responsibility: '', membership_size: '',
+    opening_hours: '', commercial_responsibility: '', membership_size: '', work_setting: '',
     key_kpis: '', why_move: '', career_progression: '', interview_process: '',
   }
   const [form, setForm] = useState(emptyJob)
@@ -68,7 +77,7 @@ function EmployerJobs() {
     required_skills: form.required_skills, required_brands: form.required_product_houses,
     required_qualifications: form.required_qualifications, required_systems: form.required_systems,
     shift_pattern: form.shift_pattern, reporting_line: form.reporting_line,
-    team_size: form.team_size, opening_hours: form.opening_hours,
+    team_size: form.team_size, opening_hours: form.opening_hours, work_setting: form.work_setting,
     membership_size: form.membership_size,
     benefits: form.benefits ? (form.benefits as string).split('\n').filter(Boolean) : [],
   }
@@ -229,6 +238,7 @@ function EmployerJobs() {
       reporting_line: form.reporting_line || null,
       team_size: form.team_size ? parseInt(form.team_size as string) : null,
       opening_hours: form.opening_hours || null,
+      work_setting: form.work_setting || null,
       commercial_responsibility: form.commercial_responsibility || null,
       membership_size: form.membership_size || null,
       key_kpis: form.key_kpis ? (form.key_kpis as string).split('\n').map(v => v.trim()).filter(Boolean) : null,
@@ -272,7 +282,7 @@ function EmployerJobs() {
       shift_pattern: job.shift_pattern || '',
       why_role_exists: job.why_role_exists || '', success_90_days: job.success_90_days || '',
       reporting_line: job.reporting_line || '', team_size: job.team_size?.toString() || '',
-      opening_hours: job.opening_hours || '', commercial_responsibility: job.commercial_responsibility || '',
+      opening_hours: job.opening_hours || '', work_setting: job.work_setting || '', commercial_responsibility: job.commercial_responsibility || '',
       membership_size: job.membership_size || '',
       key_kpis: Array.isArray(job.key_kpis) ? job.key_kpis.join('\n') : (job.key_kpis || ''),
       why_move: job.why_move || '', career_progression: job.career_progression || '',
@@ -373,7 +383,7 @@ function EmployerJobs() {
             </div>
             <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div><label className="mb-1.5 block text-[12px] font-semibold text-secondary">Minimum years of experience</label><input aria-label="Minimum years of experience" type="number" value={form.min_years_experience} onChange={e => setForm({ ...form, min_years_experience: e.target.value })} className="input-field" placeholder="3" /></div>
-              <div><label className="mb-1.5 block text-[12px] font-semibold text-secondary">Shift pattern</label><input aria-label="Shift pattern" type="text" value={form.shift_pattern} onChange={e => setForm({ ...form, shift_pattern: e.target.value })} className="input-field" placeholder="e.g. 5 days over 7" /></div>
+              {applies('shift_pattern') && <div><label className="mb-1.5 block text-[12px] font-semibold text-secondary">Shift pattern</label><input aria-label="Shift pattern" type="text" value={form.shift_pattern} onChange={e => setForm({ ...form, shift_pattern: e.target.value })} className="input-field" placeholder="e.g. 5 days over 7" /></div>}
             </div>
           </div>
 
@@ -388,10 +398,11 @@ function EmployerJobs() {
                 <div><label className="mb-1.5 block text-[12px] font-semibold text-secondary">Reporting line</label><input aria-label="Reporting line" type="text" value={form.reporting_line} onChange={e => setForm({ ...form, reporting_line: e.target.value })} className="input-field" placeholder="e.g. General Manager" /></div>
                 <div><label className="mb-1.5 block text-[12px] font-semibold text-secondary">Team size this role leads</label><input aria-label="Team size this role leads" type="number" value={form.team_size} onChange={e => setForm({ ...form, team_size: e.target.value })} className="input-field" placeholder="12" /></div>
               </div>
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              {applies('opening_hours') && <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div><label className="mb-1.5 block text-[12px] font-semibold text-secondary">Opening hours</label><input aria-label="Opening hours" type="text" value={form.opening_hours} onChange={e => setForm({ ...form, opening_hours: e.target.value })} className="input-field" placeholder="e.g. 7am - 9pm, seven days" /></div>
                 <div><label className="mb-1.5 block text-[12px] font-semibold text-secondary">Membership size</label><input aria-label="Membership size" type="text" value={form.membership_size} onChange={e => setForm({ ...form, membership_size: e.target.value })} className="input-field" placeholder="e.g. 400 members" /></div>
-              </div>
+              </div>}
+              {isBrandRole(doorSlug) && <div><label className="mb-1.5 block text-[12px] font-semibold text-secondary">Where this role is worked from</label><select aria-label="Where this role is worked from" value={form.work_setting} onChange={e => setForm({ ...form, work_setting: e.target.value })} className="input-field"><option value="">Select</option>{WORK_SETTINGS.map(w => <option key={w} value={w}>{w}</option>)}</select><p className="mt-1.5 text-[11px] text-secondary">{BRAND_ROLE_NOTE}</p></div>}
               <div><label className="mb-1.5 block text-[12px] font-semibold text-secondary">Commercial responsibility</label><textarea rows={2} aria-label="Commercial responsibility" value={form.commercial_responsibility} onChange={e => setForm({ ...form, commercial_responsibility: e.target.value })} className="input-field" placeholder="Budget, revenue line, retail target - whatever this person actually owns." /><PolishButton field="commercial_responsibility" text={form.commercial_responsibility} role={roleContext} jobId={editing?.id} onApply={value => setForm(current => ({ ...current, commercial_responsibility: value }))} /></div>
               <div><label className="mb-1.5 block text-[12px] font-semibold text-secondary">Key measures <span className="font-normal text-muted">- one per line</span></label><textarea rows={3} aria-label="Key measures" value={form.key_kpis} onChange={e => setForm({ ...form, key_kpis: e.target.value })} className="input-field" placeholder={'Treatment room occupancy\nRetail per treatment\nGuest satisfaction score'} /></div>
               <div><label className="mb-1.5 block text-[12px] font-semibold text-secondary">Why move here?</label><textarea rows={2} aria-label="Why move here?" value={form.why_move} onChange={e => setForm({ ...form, why_move: e.target.value })} className="input-field" placeholder="The honest case for your property over the one they are in now." /><PolishButton field="why_move" text={form.why_move} role={roleContext} jobId={editing?.id} onApply={value => setForm(current => ({ ...current, why_move: value }))} /></div>

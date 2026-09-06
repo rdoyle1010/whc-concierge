@@ -73,6 +73,21 @@ test('the form actually consults the door it already asked for', () => {
   assert.match(page, /isBrandRole\(doorSlug\)/, 'and the work setting must appear for brand roles')
 })
 
+test('the edit form asks the same questions the posting form did', () => {
+  // A brand employer posting a clean form and then meeting spa opening hours
+  // again on their first edit is the same fault, one screen later. A saved
+  // role stores only its sector, so the door has to be worked back to.
+  const page = read('src/app/employer/jobs/page.tsx')
+  assert.match(page, /doorSlugForSector\(taxonomy, editing\?\.sector_id \|\| editing\?\.sector\)/,
+    'the editor must work out which door the saved role belongs to')
+  for (const field of ['opening_hours', 'shift_pattern']) {
+    assert.ok(page.includes(`applies('${field}')`), `${field} must be gated in the editor too`)
+  }
+  assert.match(page, /isBrandRole\(doorSlug\)/, 'and offer the work setting on a brand role')
+  assert.match(page, /work_setting: job\.work_setting/, 'and load the saved value')
+  assert.match(page, /work_setting: form\.work_setting/, 'and save it back')
+})
+
 test('a work setting reaches the database', () => {
   // A field the form collects and the route drops is worse than no field: the
   // employer answers it, sees it saved, and it was never stored.
