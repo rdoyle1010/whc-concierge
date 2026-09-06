@@ -9,6 +9,7 @@ import { getRequestUser } from '@/lib/request-user'
 // live database does not have them yet, the insert retries without them.
 const STORY_FIELDS = [
   'why_role_exists', 'success_90_days', 'reporting_line', 'team_size', 'opening_hours',
+  'work_setting',
   'commercial_responsibility', 'membership_size', 'key_kpis', 'why_move',
   'career_progression', 'interview_process',
 ] as const

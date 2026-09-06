@@ -74,3 +74,17 @@ export function isSectorSelectable(taxonomy: Taxonomy, sectorId: string): boolea
 function bySortOrder(a: { sort_order: number; label: string }, b: { sort_order: number; label: string }) {
   return a.sort_order - b.sort_order || a.label.localeCompare(b.label)
 }
+
+/**
+ * Which door a sector belongs to, by slug.
+ *
+ * The job form asks for a door before a sector, but a saved role only stores
+ * the sector - the door is implied. Anything editing a role afterwards has to
+ * work back the other way, and the shape of the form depends on the answer.
+ */
+export function doorSlugForSector(taxonomy: Taxonomy, sectorId: string | null | undefined): string | null {
+  if (!sectorId) return null
+  const sector = taxonomy.sectors.find(s => s.id === sectorId || s.slug === sectorId)
+  if (!sector?.door_id) return null
+  return taxonomy.doors.find(d => d.id === sector.door_id)?.slug || null
+}
