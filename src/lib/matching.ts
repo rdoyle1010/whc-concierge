@@ -164,6 +164,22 @@ export function calculateMatchScore(candidate:any, job:any): {
 
   // The two facts on the page that were not in the score.
   //
+  // Team scale now counts outside leadership too, at a lighter weight. It was
+  // held to leadership only because the job form asked for "Team size" without
+  // saying whose, so on a therapist post the number could as easily have been
+  // the team somebody joins. The form asks for "Team size this role leads"
+  // now, which makes it answerable, and a Spa Supervisor running eight people
+  // is a real distinction the matcher was throwing away.
+  //
+  // Revenue scale stays leadership-only. A supervisor is rarely given a P&L,
+  // and a figure in a non-leadership advert is far more likely to be
+  // describing the spa than the person's own remit.
+  //
+  // The ceiling below stays leadership-only as well. For a Director, scale is
+  // close to decisive. For a supervisor it is one factor among many, and
+  // capping a strong therapist because they have led one person fewer than
+  // asked would be the tail wagging the dog.
+  //
   // A Director of Spa profile states the largest team they have run and the
   // revenue they have owned, and the advert states both for the role. Both
   // were printed on the applications page and neither reached the ranking, so
@@ -197,7 +213,7 @@ export function calculateMatchScore(candidate:any, job:any): {
   const availabilityScore=candidate.availability_status?AVAILABILITY_SCORE[String(candidate.availability_status)]??60:-1
 
   const MODE_WEIGHTS:Record<string,Record<string,number>>={
-    permanent:{teamScale:0,revenueScale:0,roleLevel:30,treatments:15,brands:8,qualifications:12,experience:10,business:11,systems:6,location:10,shift:5,transport:3,accommodation:2,proficiency:3,salary:6,availability:4,review:0},
+    permanent:{teamScale:8,revenueScale:0,roleLevel:30,treatments:15,brands:8,qualifications:12,experience:10,business:11,systems:6,location:10,shift:5,transport:3,accommodation:2,proficiency:3,salary:6,availability:4,review:0},
     agency:{teamScale:0,revenueScale:0,roleLevel:10,treatments:24,brands:10,qualifications:12,experience:8,business:3,systems:6,location:16,shift:8,transport:6,accommodation:1,proficiency:6,salary:0,availability:10,review:8},
     leadership:{teamScale:16,revenueScale:13,roleLevel:36,treatments:5,brands:6,qualifications:10,experience:14,business:18,systems:4,location:8,shift:2,transport:2,accommodation:1,proficiency:0,salary:8,availability:4,review:4},
   }

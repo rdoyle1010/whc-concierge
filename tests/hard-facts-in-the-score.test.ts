@@ -101,26 +101,58 @@ test('running well beyond the role is a fact for the employer, not a mark agains
   assert.match(verdict.note, /well beyond/, 'but the employer should be told')
 })
 
-test('scale is judged only where the job says whose team it counts', () => {
-  // job_listings.team_size is labelled only "Team size". For a therapist post
-  // that could as easily be the team they join, so it stays out of the score
-  // everywhere but leadership.
-  const therapistRole = {
-    job_title: 'Beauty Therapist', required_role_level: 'Therapist',
-    required_skills: ['Massage'], team_size: 40,
+test('team scale counts outside leadership, revenue scale does not', () => {
+  // This used to assert that neither factor could move a non-leadership score,
+  // because the job form asked for "Team size" without saying whose - so on a
+  // therapist post the number could as easily have been the team somebody
+  // joins. The form asks for "Team size this role leads" now, which makes it
+  // answerable, and a Spa Supervisor running eight people is a real
+  // distinction the matcher was throwing away.
+  //
+  // Revenue stays leadership-only: a supervisor is rarely given a P&L, and a
+  // figure in a non-leadership advert usually describes the spa rather than
+  // the person's remit.
+  const supervisorRole = {
+    job_title: 'Spa Supervisor', required_role_level: 'Supervisor',
+    required_skills: ['Massage'], team_size: 8,
     commercial_responsibility: 'The spa turns over £5m annually.',
   }
-  const therapist = {
-    role_level: 'Therapist', experience_years: 5, treatment_skills: ['Massage'],
-    team_size_managed: 2, revenue_responsibility: '£90k retail revenue', has_insurance: true,
+  const supervisor = (extra: Record<string, unknown> = {}) => ({
+    role_level: 'Supervisor', experience_years: 6, treatment_skills: ['Massage'],
+    has_insurance: true, ...extra,
+  })
+
+  const atScale = calculateMatchScore(supervisor({ team_size_managed: 10 }), supervisorRole)
+  const wellBelow = calculateMatchScore(supervisor({ team_size_managed: 1 }), supervisorRole)
+  const silent = calculateMatchScore(supervisor(), supervisorRole)
+
+  assert.equal(atScale.mode, 'permanent', 'a supervisor is not a leadership appointment')
+  assert.ok(atScale.score > wellBelow.score,
+    `team scale must separate them, got ${atScale.score} and ${wellBelow.score}`)
+  assert.ok(atScale.score >= silent.score,
+    'and stating a team you have led must never score worse than saying nothing')
+
+  // Revenue is ignored here, so two candidates differing only on revenue score alike.
+  const withRevenue = calculateMatchScore(
+    supervisor({ team_size_managed: 10, revenue_responsibility: '£90k retail revenue' }), supervisorRole)
+  assert.equal(withRevenue.score, atScale.score,
+    'revenue scale must carry no weight outside leadership')
+})
+
+test('a shortfall caps a Director but never a supervisor', () => {
+  // For a Director scale is close to decisive. For a supervisor it is one
+  // factor among many, and capping a strong therapist for having led one
+  // person fewer than asked would be the tail wagging the dog.
+  const supervisorRole = {
+    job_title: 'Spa Supervisor', required_role_level: 'Supervisor',
+    required_skills: ['Massage'], team_size: 20,
   }
-  const result = calculateMatchScore(therapist, therapistRole)
-  assert.equal(result.mode, 'permanent')
-  // The factor may be computed, but it must carry no weight outside leadership.
-  const withoutFacts = calculateMatchScore(
-    { ...therapist, team_size_managed: null, revenue_responsibility: null }, therapistRole)
-  assert.equal(result.score, withoutFacts.score,
-    'team and revenue scale must not move a non-leadership score')
+  const wellBelow = calculateMatchScore({
+    role_level: 'Supervisor', experience_years: 6, treatment_skills: ['Massage'],
+    team_size_managed: 1, has_insurance: true,
+  }, supervisorRole)
+  assert.ok(wellBelow.score > 58,
+    `a supervisor must not be capped the way a Director is, got ${wellBelow.score}`)
 })
 
 test('the explanation cites the number, not just the verdict', () => {
