@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import DashboardShell from '@/components/DashboardShell'
 import { createClient } from '@/lib/supabase/client'
 import { Save, Upload } from 'lucide-react'
-import { COMPANY_TYPES, FACILITY_OPTIONS, STAFF_BENEFIT_OPTIONS } from '@/lib/constants'
+import { COMPANY_TYPES, PROPERTY_TYPES, FACILITY_OPTIONS, STAFF_BENEFIT_OPTIONS } from '@/lib/constants'
 import { SERVICES_CATEGORIES, PRODUCT_HOUSES_FULL, QUALS_CATEGORIES, SYSTEMS_FULL } from '@/lib/taxonomy'
 import CollapsibleCheckboxSection from '@/components/CollapsibleCheckboxSection'
 import { externalUrl } from '@/lib/external-url'
@@ -312,8 +312,16 @@ export default function EmployerProfilePage() {
               </select>
             </div>
             <div>
+              {/* This asked for "hotel_spa, day_spa, resort" - database slugs,
+                  typed by a spa director. Whatever they wrote appeared on the
+                  public job page, so the field leaked our naming into their
+                  shop window. It is a list now. */}
               <label className="block text-sm font-medium text-gray-700 mb-1.5">Property Type</label>
-              <input aria-label="Property Type" type="text" value={profile.property_type || ''} onChange={(e) => update('property_type', e.target.value)} className="input-field" placeholder="e.g. hotel_spa, day_spa, resort" />
+              <select aria-label="Property Type" value={profile.property_type || ''} onChange={(e) => update('property_type', e.target.value)} className="input-field">
+                <option value="">Select</option>
+                {PROPERTY_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+              </select>
+              <p className="mt-1.5 text-[11px] text-secondary">Where a candidate would actually work. Candidates see this on your roles.</p>
             </div>
           </div>
         </div>

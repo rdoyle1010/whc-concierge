@@ -36,8 +36,51 @@ export const SYSTEMS = [
   'Premier Software', 'Rezlynx', 'Opera', 'Other',
 ] as const
 
+// What kind of organisation is hiring.
+//
+// This was six options and five of them were hotels in disguise. The market
+// this platform serves is much wider than hotel spas: clinics and day spas
+// employ more qualified therapists than hotels do, cruise lines recruit at
+// scale, and a product house hiring an educator is the best-paid role a senior
+// therapist is ever offered. The Brands door has been live and unusable
+// because a brand could not say it was a brand.
+//
+// The original six all survive verbatim, Clinic included. Renaming a value
+// somebody has already saved empties their dropdown the next time they open
+// it, which is a data loss that looks like a design choice.
 export const COMPANY_TYPES = [
-  'Hotel', 'Spa', 'Resort', 'Clinic', 'Cruise', 'Other',
+  'Hotel',
+  'Resort',
+  'Spa',
+  'Day Spa',
+  'Destination Spa',
+  'Clinic',
+  'Salon',
+  'Gym or Health Club',
+  'Wellness Retreat',
+  'Cruise',
+  'Product House or Brand',
+  'Spa Consultancy',
+  'Training Provider',
+  'Other',
+] as const
+
+// Where the work actually happens, which is not always the same thing. A brand
+// educator is employed by a product house and works from a head office and on
+// the road; a therapist at the same company might work a counter.
+export const PROPERTY_TYPES = [
+  'Hotel Spa',
+  'Resort Spa',
+  'Day Spa',
+  'Destination Spa',
+  'Clinic',
+  'Salon',
+  'Gym or Health Club',
+  'Wellness Retreat',
+  'On Board',
+  'Head Office',
+  'Mobile or Multi-site',
+  'Other',
 ] as const
 
 export const CONTRACT_TYPES = [
