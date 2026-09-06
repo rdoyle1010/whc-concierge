@@ -14,6 +14,92 @@ import { CONSULTANCY_SPECIALISMS, ENGAGEMENT_TYPES, WORKS_WITH } from '@/lib/con
 const worksWithLabel = (value: string) => WORKS_WITH.find(option => option.value === value)?.label || 'UK'
 const engagementLabel = (value: string) => ENGAGEMENT_TYPES.find(type => type.value === value)?.label || value
 
+/** Initials, for a practice that has not uploaded a mark. Better than a gap. */
+function monogram(name: string) {
+  return String(name || '')
+    .split(/\s+/).filter(Boolean).slice(0, 2)
+    .map(word => word[0]?.toUpperCase() || '').join('') || 'C'
+}
+
+// One practice in a three-column grid sat stranded on the left with two empty
+// columns beside it, which reads as a page that has broken rather than a
+// directory that is selective. A consultant looking at that does not think
+// "exclusive", they think "nobody is here and nothing works", and they close
+// the tab instead of listing.
+//
+// So the layout answers to how many there actually are: a single practice gets
+// the whole width and room to make its case, two share the row, and only at
+// three does the third column appear.
+function ConsultantCard({ profile, wide }: { profile: any; wide?: boolean }) {
+  const specialisms: string[] = profile.specialisms || []
+  const projects: any[] = profile.projects || []
+  const engagements: string[] = profile.engagement_types || []
+
+  const mark = profile.logo_url
+    ? <img src={profile.logo_url} alt="" loading="lazy" className="h-full w-full object-contain" />
+    : <span className="font-serif text-[20px] text-ink">{monogram(profile.practice_name)}</span>
+
+  const meta = (
+    <div className="flex flex-wrap items-center gap-x-5 gap-y-1.5 text-[11px] text-muted">
+      {profile.based_in && <span className="inline-flex items-center gap-1.5"><MapPin size={12} /> {profile.based_in}</span>}
+      <span className="inline-flex items-center gap-1.5"><Briefcase size={12} /> {worksWithLabel(profile.works_with)}</span>
+      {projects.length > 0 && <span>{projects.length} project{projects.length === 1 ? '' : 's'} on record</span>}
+      {engagements.length > 0 && <span>{engagementLabel(engagements[0])}</span>}
+    </div>
+  )
+
+  const chips = specialisms.length > 0 && (
+    <div className="flex flex-wrap gap-1.5">
+      {specialisms.slice(0, wide ? 5 : 3).map(item => (
+        <span key={item} className="border border-border bg-white px-2.5 py-1 text-[11px] text-secondary">{item}</span>
+      ))}
+      {specialisms.length > (wide ? 5 : 3) && (
+        <span className="px-2 py-1 text-[11px] text-muted">+{specialisms.length - (wide ? 5 : 3)} more</span>
+      )}
+    </div>
+  )
+
+  const featuredFlag = profile.featured && (
+    <p className="inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-ink">
+      <Star size={11} fill="currentColor" /> Featured
+    </p>
+  )
+
+  const surface = profile.featured ? 'border-ink bg-[#f1f1f1]' : 'border-border bg-white'
+
+  if (wide) {
+    return (
+      <Link href={`/consultancy/${profile.id}`}
+        className={`group grid gap-8 border p-8 transition-colors hover:border-ink md:grid-cols-[128px_minmax(0,1fr)] md:p-10 ${surface}`}>
+        <div className="flex h-32 w-32 items-center justify-center overflow-hidden border border-border bg-white">{mark}</div>
+        <div className="min-w-0">
+          {featuredFlag}
+          <p className={`text-[26px] font-semibold leading-tight tracking-tight text-ink ${profile.featured ? 'mt-2' : ''}`}>{profile.practice_name}</p>
+          {profile.headline && <p className="mt-2 max-w-2xl text-[14px] leading-7 text-secondary">{profile.headline}</p>}
+          {profile.summary && <p className="mt-3 max-w-2xl text-[13px] leading-6 text-muted line-clamp-3">{profile.summary}</p>}
+          <div className="mt-6">{chips}</div>
+          <div className="mt-6">{meta}</div>
+          <span className="mt-7 inline-flex items-center gap-2 text-[12px] font-semibold text-ink">
+            View the practice <ArrowRight size={13} className="transition-transform group-hover:translate-x-1" />
+          </span>
+        </div>
+      </Link>
+    )
+  }
+
+  return (
+    <Link href={`/consultancy/${profile.id}`}
+      className={`group flex flex-col border p-6 transition-colors hover:border-ink ${surface}`}>
+      {featuredFlag}
+      <div className={`flex h-14 w-14 items-center justify-center overflow-hidden border border-border bg-white ${profile.featured ? 'mt-3' : ''}`}>{mark}</div>
+      <p className="mt-4 text-[18px] font-semibold leading-snug text-ink">{profile.practice_name}</p>
+      {profile.headline && <p className="mt-1.5 text-[13px] leading-6 text-secondary">{profile.headline}</p>}
+      <div className="mt-4">{chips}</div>
+      <div className="mt-auto pt-6">{meta}</div>
+    </Link>
+  )
+}
+
 export default function ConsultancyDirectory() {
   const [profiles, setProfiles] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
@@ -114,39 +200,11 @@ export default function ConsultancyDirectory() {
               )}
             </div>
           ) : (
-            <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+            <div className={`grid gap-5 ${
+              filtered.length === 1 ? '' : filtered.length === 2 ? 'md:grid-cols-2' : 'md:grid-cols-2 xl:grid-cols-3'
+            }`}>
               {filtered.map(profile => (
-                <Link key={profile.id} href={`/consultancy/${profile.id}`}
-                  className={`group flex flex-col border p-6 transition-colors hover:border-ink ${profile.featured ? 'border-ink bg-[#f1f1f1]' : 'border-border bg-white'}`}>
-                  {profile.featured && (
-                    <p className="mb-3 inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-ink">
-                      <Star size={11} fill="currentColor" /> Featured
-                    </p>
-                  )}
-                  {profile.logo_url && (
-                    <div className="mb-3 h-11 w-11 overflow-hidden border border-border bg-white">
-                      <img src={profile.logo_url} alt="" loading="lazy" className="h-full w-full object-contain" />
-                    </div>
-                  )}
-                  <p className="text-[17px] font-semibold text-ink">{profile.practice_name}</p>
-                  {profile.headline && <p className="mt-1.5 text-[13px] leading-6 text-secondary">{profile.headline}</p>}
-
-                  <div className="mt-4 flex flex-wrap gap-1.5">
-                    {(profile.specialisms || []).slice(0, 3).map((item: string) => (
-                      <span key={item} className="border border-border px-2 py-1 text-[11px] text-secondary">{item}</span>
-                    ))}
-                    {(profile.specialisms || []).length > 3 && (
-                      <span className="px-2 py-1 text-[11px] text-muted">+{profile.specialisms.length - 3} more</span>
-                    )}
-                  </div>
-
-                  <div className="mt-auto pt-5 flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-muted">
-                    {profile.based_in && <span className="inline-flex items-center gap-1"><MapPin size={11} /> {profile.based_in}</span>}
-                    <span className="inline-flex items-center gap-1"><Briefcase size={11} /> {worksWithLabel(profile.works_with)}</span>
-                    {(profile.projects || []).length > 0 && <span>{profile.projects.length} project{profile.projects.length === 1 ? '' : 's'}</span>}
-                    {(profile.engagement_types || []).length > 0 && <span>{engagementLabel(profile.engagement_types[0])}</span>}
-                  </div>
-                </Link>
+                <ConsultantCard key={profile.id} profile={profile} wide={filtered.length === 1} />
               ))}
             </div>
           )}
