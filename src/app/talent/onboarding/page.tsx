@@ -439,7 +439,14 @@ export default function OnboardingWizard() {
             </div>
             <div><label className="eyebrow block mb-1.5">Headline</label><input aria-label="Headline" type="text" value={basic.headline} onChange={e => setBasic({ ...basic, headline: e.target.value })} className="input-field" placeholder="e.g. Senior Spa Therapist | CIDESCO | 6 Years Luxury" /></div>
             <div><label className="eyebrow block mb-1.5">Short Bio</label><textarea aria-label="Short Bio" rows={3} value={basic.bio} onChange={e => setBasic({ ...basic, bio: e.target.value })} className="input-field" /></div>
-            <div className="grid grid-cols-3 gap-4">
+            {/* Three across on a phone is what made the labels wrap: "Agency day
+                rate min (£ per day)" took two lines where "Availability Date"
+                took one, so the three inputs sat at three different heights.
+                A tester noticed within a minute of signing up. Full width on a
+                phone, three across from small screens up, and bottom-aligned
+                either way so a label that wraps can never push its box out of
+                line again. */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-end">
               <div><label className="eyebrow block mb-1.5">Availability Date</label><input aria-label="Availability Date" type="date" value={basic.availability_date} onChange={e => setBasic({ ...basic, availability_date: e.target.value })} className="input-field" /></div>
               <div><label className="eyebrow block mb-1.5">Agency day rate min (£ per day)</label><input aria-label="Agency day rate min (£ per day)" type="number" value={basic.salary_min} onChange={e => setBasic({ ...basic, salary_min: e.target.value })} className="input-field" /></div>
               <div><label className="eyebrow block mb-1.5">Agency day rate max (£ per day)</label><input aria-label="Agency day rate max (£ per day)" type="number" value={basic.salary_max} onChange={e => setBasic({ ...basic, salary_max: e.target.value })} className="input-field" /></div>
