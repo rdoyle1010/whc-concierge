@@ -105,25 +105,27 @@ export default function Navbar({ siteContent }: { siteContent?: WebsiteContent }
     { href: '/intelligence', label: 'Intelligence' },
   ]
 
-  const publicGroups = [
-    {
-      label: 'Careers',
-      paths: ['/jobs', '/match', '/roles/match', '/properties'],
-      items: [
-        { href: '/jobs', label: labels.jobs, note: 'Browse permanent opportunities' },
-        { href: '/match', label: 'Match', note: 'See how swipe matching works' },
-        { href: '/properties', label: 'Properties', note: 'Meet approved employers' },
-      ],
-    },
-    {
-      label: 'Flexible Work',
-      paths: ['/agency', '/residency', '/consultancy'],
-      items: [
-        { href: '/agency/about', label: labels.agency, note: 'Flexible shifts and cover' },
-        { href: '/residency', label: labels.residency, note: 'Specialist placements' },
-        { href: '/consultancy', label: 'Consultancy', note: 'Advisers, designers and operators' },
-      ],
-    },
+  // Every product, at the top level, in the order somebody meets them.
+  //
+  // These were two dropdowns: Careers held Roles, Match and Properties, and
+  // Flexible Work held Agency, Residency and Consultancy. Two things were
+  // wrong with that. Consultancy is not flexible work - it is advisers,
+  // designers and operators on projects, not shift cover - so the label was
+  // telling visitors something untrue about a paid product. And Properties,
+  // the page a hotel is most likely to want, was two clicks from the front
+  // door.
+  //
+  // Six revenue lines and half of them hidden behind a hover is a discovery
+  // problem dressed as tidiness. This is also exactly what a signed-in member
+  // already sees, so nobody has to relearn the navigation on the way in.
+  const publicLinks = [
+    { href: '/jobs', label: labels.jobs || 'Browse Roles' },
+    { href: '/properties', label: 'Properties' },
+    { href: '/agency/about', label: labels.agency || 'Agency' },
+    { href: '/residency', label: labels.residency || 'Residency' },
+    { href: '/consultancy', label: 'Consultancy' },
+    { href: '/academy', label: labels.academy || 'Academy' },
+    { href: '/intelligence', label: 'Intelligence' },
   ]
 
   const isActive = (href: string) => {
@@ -131,7 +133,6 @@ export default function Navbar({ siteContent }: { siteContent?: WebsiteContent }
     return pathname === path || (path !== '/' && pathname.startsWith(`${path}/`))
   }
 
-  const groupActive = (paths: string[]) => paths.some(path => pathname === path || pathname.startsWith(`${path}/`))
 
   return (
     <nav aria-label="Main navigation" className="fixed top-0 z-50 h-[76px] w-full border-b border-[#dddddd] bg-[#f1f1f1] text-ink shadow-[0_8px_24px_rgba(28,28,28,0.10)]">
@@ -150,25 +151,13 @@ export default function Navbar({ siteContent }: { siteContent?: WebsiteContent }
             </div>
           ) : (
             <div className="flex h-full items-center gap-8">
-              {publicGroups.map(group => {
-                const active = groupActive(group.paths)
-                return (
-                  <div key={group.label} className="group relative flex h-full items-center">
-                    <button type="button" className={`relative flex h-full items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] transition-colors ${active ? 'text-ink' : 'text-secondary group-hover:text-ink'}`}>
-                      {group.label}<ChevronDown size={11} className="opacity-65 transition-transform group-hover:rotate-180" />
-                      {active && <span className="absolute inset-x-0 bottom-0 h-[2px] bg-ink" />}
-                    </button>
-                    <div className="pointer-events-none absolute left-1/2 top-[64px] w-[290px] -translate-x-1/2 translate-y-2 border border-[#dddddd] bg-white p-2 opacity-0 shadow-[0_18px_48px_rgba(28,28,28,.16)] transition-all duration-150 group-hover:pointer-events-auto group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:translate-y-0 group-focus-within:opacity-100">
-                      {group.items.map(item => <Link key={item.href} href={item.href} className="block border-b border-[#dddddd] px-4 py-3.5 last:border-0 hover:bg-[#f1f1f1]">
-                        <span className="block text-[12px] font-semibold text-[#1c1c1c]">{item.label}</span>
-                        <span className="mt-1 block text-[10px] leading-4 text-[#6b6b6b]">{item.note}</span>
-                      </Link>)}
-                    </div>
-                  </div>
-                )
-              })}
-              <Link href="/academy" className={`relative flex h-full items-center text-[10px] font-semibold uppercase tracking-[0.16em] transition-colors ${isActive('/academy') ? 'text-ink' : 'text-secondary hover:text-ink'}`}>Academy{isActive('/academy') && <span className="absolute inset-x-0 bottom-0 h-[2px] bg-ink" />}</Link>
-              <Link href="/intelligence" className={`relative flex h-full items-center text-[10px] font-semibold uppercase tracking-[0.16em] transition-colors ${isActive('/intelligence') ? 'text-ink' : 'text-secondary hover:text-ink'}`}>Intelligence{isActive('/intelligence') && <span className="absolute inset-x-0 bottom-0 h-[2px] bg-ink" />}</Link>
+              {publicLinks.map(link => (
+                <Link key={link.href} href={link.href}
+                  className={`relative flex h-full items-center text-[10px] font-semibold uppercase tracking-[0.16em] transition-colors ${isActive(link.href) ? 'text-ink' : 'text-secondary hover:text-ink'}`}>
+                  {link.label}
+                  {isActive(link.href) && <span className="absolute inset-x-0 bottom-0 h-[2px] bg-ink" />}
+                </Link>
+              ))}
             </div>
           )}
         </div>
@@ -221,13 +210,11 @@ export default function Navbar({ siteContent }: { siteContent?: WebsiteContent }
             </div>
             {user ? loggedInSiteLinks.map(link => <Link key={link.href} href={link.href} className={`block border-b border-[#dddddd] py-3 text-[13px] font-medium ${isActive(link.href) ? 'text-ink' : 'text-secondary hover:text-ink'}`} onClick={() => setMobileOpen(false)}>{link.label}</Link>) : (
               <>
-                <p className="pb-2 text-[9px] font-semibold uppercase tracking-[.18em] text-secondary">Careers</p>
-                {publicGroups[0].items.map(item => <Link key={item.href} href={item.href} className="block border-b border-[#dddddd] py-3 text-[13px] text-body" onClick={() => setMobileOpen(false)}>{item.label}</Link>)}
-                <p className="pb-2 pt-6 text-[9px] font-semibold uppercase tracking-[.18em] text-secondary">Flexible Work</p>
-                {publicGroups[1].items.map(item => <Link key={item.href} href={item.href} className="block border-b border-[#dddddd] py-3 text-[13px] text-body" onClick={() => setMobileOpen(false)}>{item.label}</Link>)}
-                <p className="pb-2 pt-6 text-[9px] font-semibold uppercase tracking-[.18em] text-secondary">Development & Ideas</p>
-                <Link href="/academy" className="block border-b border-[#dddddd] py-3 text-[13px] text-body" onClick={() => setMobileOpen(false)}>Academy</Link>
-                <Link href="/intelligence" className="block border-b border-[#dddddd] py-3 text-[13px] text-body" onClick={() => setMobileOpen(false)}>Intelligence</Link>
+                {publicLinks.map(link => (
+                  <Link key={link.href} href={link.href}
+                    className={`block border-b border-[#dddddd] py-3 text-[13px] ${isActive(link.href) ? 'font-medium text-ink' : 'text-body'}`}
+                    onClick={() => setMobileOpen(false)}>{link.label}</Link>
+                ))}
               </>
             )}
 

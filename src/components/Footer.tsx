@@ -88,7 +88,7 @@ export default function Footer({ siteContent }: { siteContent?: WebsiteContent }
     { href: '/coming-soon', label: 'Coming Soon' }, { href: '/testimonials', label: 'Testimonials' }, { href: '/about', label: 'About' }, { href: '/contact', label: 'Contact' },
   ]
   const support = [
-    { href: '/verify', label: 'Verify a Certificate' }, { href: '/how-to-use', label: 'How It Works' }, { href: '/faq', label: 'FAQ' }, { href: '/privacy', label: 'Privacy Policy' }, { href: '/terms', label: 'Terms' },
+    { href: '/verify', label: 'Verify a Certificate' }, { href: '/how-to-use', label: 'How It Works' }, { href: '/match', label: 'How Matching Works' }, { href: '/faq', label: 'FAQ' }, { href: '/privacy', label: 'Privacy Policy' }, { href: '/terms', label: 'Terms' },
   ]
 
   const LinkList = ({ items }: { items: { href: string; label: string }[] }) => <div className="space-y-2.5">{items.map(link => <Link key={link.href} href={link.href} className="block text-[12px] text-secondary hover:text-ink transition-colors">{link.label}</Link>)}</div>
