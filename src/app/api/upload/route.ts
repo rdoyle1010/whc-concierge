@@ -47,7 +47,14 @@ export async function POST(req: NextRequest) {
 
     const sessionUser = await getRequestUser(req)
     const effectiveUserId = sessionUser?.id || registrationProof?.sub
-    if (!effectiveUserId) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+    // "Unauthorised" on an upload button tells the person nothing about what
+    // to do next, and the commonest cause by far is a two-step session that
+    // has lapsed rather than anything wrong with the file or the page.
+    if (!effectiveUserId) {
+      return NextResponse.json({
+        error: 'Your session has ended, or your two-step verification has lapsed. Sign in again, complete the authenticator step, and upload once more.',
+      }, { status: 401 })
+    }
 
     if (!file || !bucket || !path) return NextResponse.json({ error: 'Missing file, bucket, or path' }, { status: 400 })
 

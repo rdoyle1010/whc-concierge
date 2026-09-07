@@ -103,3 +103,23 @@ test('a page that loaded does not keep showing that it failed', () => {
   assert.match(load, /setLoading\(true\)[\s\S]{0,400}setError\(''\)/,
     'each attempt must clear the previous failure, or one refused request leaves a red banner over a page that works')
 })
+
+// Content an administrator edits must never be asked for with force-cache.
+// That setting reuses a stored response fresh or stale, so a picture changed
+// and published in admin can sit behind an old copy in a visitor's browser.
+test('admin-edited content is never requested from a stale cache', () => {
+  const footer = body('src/components/Footer.tsx')
+  assert.doesNotMatch(footer, /force-cache/,
+    'the footer serves the editorial strip and the social links, both edited in admin')
+  assert.match(footer, /\/api\/public-pages', \{ cache: 'no-store' \}/)
+  assert.match(footer, /\/api\/public-social-links', \{ cache: 'no-store' \}/)
+})
+
+test('an upload refused for a lapsed session says so', () => {
+  // This is the endpoint behind every picture button in the admin, including
+  // the course image. The bare word sent the administrator looking at the
+  // file, the page and the browser, none of which were the problem.
+  const upload = body('src/app/api/upload/route.ts')
+  assert.doesNotMatch(upload, /error: 'Unauthorised'/)
+  assert.match(upload, /two-step verification has lapsed/)
+})
