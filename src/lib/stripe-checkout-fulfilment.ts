@@ -446,24 +446,34 @@ export async function fulfilCheckoutSession(
           { id: userId, email, role: 'candidate', full_name: buyerName },
           { onConflict: 'id', ignoreDuplicates: true }
         )
+        // Every write from here to the enrolment row is checked and thrown on.
+        //
+        // They used to be checked by nobody. A learner record that failed to
+        // insert, or an enrolment that failed to upsert, left `userId` set, so
+        // nothing threw: this function returned ok, the webhook answered 200,
+        // Stripe marked the payment fulfilled and never retried, and no
+        // administrator was told. The buyer had paid and owned nothing, and
+        // the platform's own records agreed that all was well. The first
+        // person to find out was the customer.
         let { data: cand } = await supabase.from('candidate_profiles').select('id').eq('user_id', userId).maybeSingle()
         if (!cand) {
-          const { data: newCand } = await supabase.from('candidate_profiles')
+          const { data: newCand, error: candError } = await supabase.from('candidate_profiles')
             .insert({ user_id: userId, full_name: buyerName, approval_status: 'pending' })
             .select('id').single()
+          if (candError) throw new Error('could not create the learner record: ' + candError.message)
           cand = newCand
         }
-        if (cand) {
-          await supabase.from('course_enrollments').upsert(
-            {
-              candidate_id: cand.id,
-              course_slug: meta.course_slug,
-              paid_at: new Date().toISOString(),
-              amount_paid: session.amount_total ?? 1500,
-            },
-            { onConflict: 'candidate_id,course_slug', ignoreDuplicates: true }
-          )
-        }
+        if (!cand) throw new Error('no learner record for ' + email)
+        const { error: enrolError } = await supabase.from('course_enrollments').upsert(
+          {
+            candidate_id: cand.id,
+            course_slug: meta.course_slug,
+            paid_at: new Date().toISOString(),
+            amount_paid: session.amount_total ?? 1500,
+          },
+          { onConflict: 'candidate_id,course_slug', ignoreDuplicates: true }
+        )
+        if (enrolError) throw new Error('could not record the enrolment: ' + enrolError.message)
         try {
           const { data: link } = await supabase.auth.admin.generateLink({
             type: 'magiclink', email,
@@ -479,6 +489,14 @@ export async function fulfilCheckoutSession(
       if (!userId) throw new Error('course_public fulfilment: no user for ' + email)
     } catch (e: any) {
       console.error('[Academy public] fulfilment failed:', e?.message)
+      // A guest buyer has no account, no dashboard and no support thread. If
+      // this fails they have paid a stranger and have nowhere to say so, so
+      // the only person who can put it right has to be told by name.
+      await notifyAdmins(
+        'A course payment was taken and not delivered',
+        `${String(meta.buyer_email)} paid for ${String(meta.course_slug)} and the enrolment could not be created: ${e?.message || 'unknown error'}. Stripe session ${session.id}.`,
+        '/admin/academy',
+      )
       return { ok: false, retry: true, message: 'course_public fulfilment failed' }
     }
   }

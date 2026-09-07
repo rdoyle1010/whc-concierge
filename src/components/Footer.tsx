@@ -23,9 +23,16 @@ const DEFAULT_SOCIAL = {
 let cachedEditorialBand = DEFAULT_PUBLIC_PAGES_CONTENT.editorialBand
 let publicPagesPromise: Promise<any> | null = null
 
+// Both of these serve content an administrator edits, so neither may be asked
+// for with force-cache. That setting tells the browser to reuse a stored
+// response whether or not it is still fresh, and the social links endpoint is
+// deliberately cacheable - so a change made in admin could sit behind a stale
+// copy in somebody's browser long after it was published. Asked for normally,
+// each endpoint's own Cache-Control decides, which is what it was written to
+// do.
 function loadPublicPagesOnce() {
   if (!publicPagesPromise) {
-    publicPagesPromise = fetch('/api/public-pages', { cache: 'force-cache' }).then(response => response.ok ? response.json() : null).catch(() => null)
+    publicPagesPromise = fetch('/api/public-pages', { cache: 'no-store' }).then(response => response.ok ? response.json() : null).catch(() => null)
   }
   return publicPagesPromise
 }
@@ -66,7 +73,7 @@ export default function Footer({ siteContent }: { siteContent?: WebsiteContent }
         setEditorialImages(cachedEditorialBand)
       }
     })
-    fetch('/api/public-social-links', { cache:'force-cache' }).then(async response => response.ok ? response.json() : null).then(data => {
+    fetch('/api/public-social-links', { cache: 'no-store' }).then(async response => response.ok ? response.json() : null).then(data => {
       if (!active || !data?.links) return
       setSocial({ ...DEFAULT_SOCIAL, ...data.links })
     }).catch(() => {})

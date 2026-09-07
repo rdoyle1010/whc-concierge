@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { adminRequestUser } from '@/lib/admin-api-auth'
+import { ADMIN_REFUSAL_MESSAGE, adminRequestOutcome } from '@/lib/admin-api-auth'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createNotification } from '@/lib/notifications'
 import { sendCourseGiftEmail } from '@/lib/emails'
@@ -25,9 +25,11 @@ import {
 const CATEGORIES = new Set(['Guest Experience', 'Standards', 'Treatments', 'Commercial', 'Brands', 'Specialist Care'])
 
 // Delegated to the shared admin guard, which enforces two-step
-// verification as well as the admin role.
+// verification as well as the admin role. The refusal is passed through so the
+// screen can say which of the four things happened rather than "Unauthorised",
+// which describes all of them and helps with none.
 async function requireAdmin() {
-  return adminRequestUser()
+  return adminRequestOutcome()
 }
 
 function makeCertificateCode() {
@@ -103,8 +105,8 @@ async function courseDetail(slug: string) {
 }
 
 export async function GET(req: NextRequest) {
-  const user = await requireAdmin()
-  if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+  const { user, refusal } = await requireAdmin()
+  if (!user) return NextResponse.json({ error: ADMIN_REFUSAL_MESSAGE[refusal] }, { status: 401 })
   const admin = createAdminClient()
   try {
     const single = cleanSlug(req.nextUrl.searchParams.get('slug') || '')
@@ -166,8 +168,8 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const user = await requireAdmin()
-  if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+  const { user, refusal } = await requireAdmin()
+  if (!user) return NextResponse.json({ error: ADMIN_REFUSAL_MESSAGE[refusal] }, { status: 401 })
   const admin = createAdminClient()
   try {
     const body = await req.json()
