@@ -12,6 +12,12 @@ export type BrandProfile = {
   tagline: string | null
   usp: string | null
   why_spas: string | null
+  // The three voices. why_spas is the commercial case; why_we_love_it is our
+  // own verdict, which is the only reason anybody trusts a directory whose
+  // other words come from the brand; why_therapists_love_it is the view of the
+  // people who will actually have to work with it every day.
+  why_we_love_it: string | null
+  why_therapists_love_it: string | null
   how_to_sell: string | null
   director_quote: string | null
   director_name: string | null
@@ -23,19 +29,29 @@ export type BrandProfile = {
   notable_partners: string[]
   logo_url: string | null
   image_url: string | null
+  // The deck. One picture was never going to carry a brand: a house sells on
+  // the room, the product, the texture and the moment in the treatment.
+  gallery: string[]
   website_url: string | null
   academy_course_slug: string | null
   product_house_name: string | null
+  // A page that persuades and offers no way to act has wasted the persuasion.
+  contact_name: string | null
+  contact_role: string | null
+  contact_email: string | null
+  contact_phone: string | null
   is_published: boolean
   sort_order: number | null
 }
 
 export const BRAND_FIELDS = [
-  'slug', 'name', 'tagline', 'usp', 'why_spas', 'how_to_sell',
+  'slug', 'name', 'tagline', 'usp', 'why_spas', 'why_we_love_it', 'why_therapists_love_it', 'how_to_sell',
   'director_quote', 'director_name', 'director_role',
   'founded', 'origin', 'hero_ingredients', 'signature_treatments', 'notable_partners',
-  'logo_url', 'image_url', 'website_url',
-  'academy_course_slug', 'product_house_name', 'is_published', 'sort_order',
+  'logo_url', 'image_url', 'gallery', 'website_url',
+  'academy_course_slug', 'product_house_name',
+  'contact_name', 'contact_role', 'contact_email', 'contact_phone',
+  'is_published', 'sort_order',
 ].join(',')
 
 const text = (value: unknown, limit: number) => {
@@ -48,6 +64,13 @@ const listOf = (value: unknown, limit: number) =>
     .map(item => String(item ?? '').trim().slice(0, 200))
     .filter(Boolean)
     .slice(0, limit)
+
+// An address we are about to print on a public page and invite strangers to
+// write to. A malformed one is a dead end for the brand, not for us.
+export function cleanEmail(value: unknown) {
+  const email = String(value ?? '').trim().toLowerCase().slice(0, 254)
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) ? email : null
+}
 
 // A slug is the address of the page. Anything that is not a slug would be a
 // broken link, so it is cleaned rather than trusted.
@@ -75,6 +98,8 @@ export function normaliseBrand(raw: any): BrandProfile {
     tagline: text(raw?.tagline, 300),
     usp: text(raw?.usp, 1000),
     why_spas: text(raw?.why_spas, 4000),
+    why_we_love_it: text(raw?.why_we_love_it, 4000),
+    why_therapists_love_it: text(raw?.why_therapists_love_it, 4000),
     how_to_sell: text(raw?.how_to_sell, 4000),
     director_quote: text(raw?.director_quote, 2000),
     director_name: text(raw?.director_name, 140),
@@ -86,9 +111,19 @@ export function normaliseBrand(raw: any): BrandProfile {
     notable_partners: listOf(raw?.notable_partners, 16),
     logo_url: secureImageUrl(raw?.logo_url),
     image_url: secureImageUrl(raw?.image_url),
+    // Anything that is not a secure image address is dropped rather than
+    // printed as a broken picture on a page arguing for somebody's brand.
+    gallery: (Array.isArray(raw?.gallery) ? raw.gallery : [])
+      .map(secureImageUrl)
+      .filter((url: string | null): url is string => Boolean(url))
+      .slice(0, 12),
     website_url: secureImageUrl(raw?.website_url),
     academy_course_slug: text(raw?.academy_course_slug, 80),
     product_house_name: text(raw?.product_house_name, 140),
+    contact_name: text(raw?.contact_name, 140),
+    contact_role: text(raw?.contact_role, 140),
+    contact_email: cleanEmail(raw?.contact_email),
+    contact_phone: text(raw?.contact_phone, 60),
     is_published: Boolean(raw?.is_published),
     sort_order: Number.isFinite(Number(raw?.sort_order)) && raw?.sort_order !== null && raw?.sort_order !== ''
       ? Math.round(Number(raw.sort_order))

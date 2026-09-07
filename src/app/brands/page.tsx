@@ -103,7 +103,7 @@ export default async function BrandsPage() {
               <p className="mx-auto mt-2 max-w-md text-[13px] leading-6 text-secondary">
                 Product houses working with Talent House get a page here alongside their Academy masterclass.
               </p>
-              <Link href="/contact" className="btn-primary mt-6 inline-block text-[13px]">Talk to us about a brand page</Link>
+              <Link href="/brands/apply" className="btn-primary mt-6 inline-block text-[13px]">Apply for a brand page</Link>
             </div>
           ) : (
             <div className={`grid gap-6 ${brands.length === 1 ? '' : brands.length === 2 ? 'md:grid-cols-2' : 'md:grid-cols-2 xl:grid-cols-3'}`}>
@@ -124,7 +124,7 @@ export default async function BrandsPage() {
                 therapists to speak your house fluently. The page makes your case to the spa directors deciding what to
                 stock next season. Each one links to the other.
               </p>
-              <Link href="/contact" className="btn-primary mt-7 inline-block text-[13px]">Become a Talent House brand</Link>
+              <Link href="/brands/apply" className="btn-primary mt-7 inline-block text-[13px]">Apply for a brand page</Link>
             </div>
           </div>
         </section>
