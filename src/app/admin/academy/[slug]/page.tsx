@@ -387,7 +387,7 @@ export default function AcademyCourseEditorPage() {
                         <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
                           <div>
                             <p className="text-[13px] font-semibold text-[#1c1c1c]">Pictures and diagrams in this module</p>
-                            <p className="text-[11px] leading-5 text-[#6b6b6b]">Add your own pictures here. Diagrams and tables from the Talent House version are kept exactly as they are and cannot be rewritten yet, but you can remove one that no longer fits.</p>
+                            <p className="text-[11px] leading-5 text-[#6b6b6b]">Add your own pictures here. The first picture in a module becomes the banner at the top of it, and the rest appear in the lesson. With no picture, the module uses the course image from Course settings. Diagrams and tables from the Talent House version are kept exactly as they are and cannot be rewritten yet, but you can remove one that no longer fits.</p>
                           </div>
                           <label className="btn-secondary w-fit cursor-pointer inline-flex items-center gap-1 text-[12px]">
                             <ImageIcon size={12} /> {uploadingInto === index ? 'Uploading...' : 'Add a picture'}

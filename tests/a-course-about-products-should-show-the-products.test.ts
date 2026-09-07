@@ -82,3 +82,32 @@ test('the printed manual does not silently drop a picture', () => {
   assert.match(pdf, /visual\.kind === 'image'/)
   assert.doesNotMatch(pdf, /<Image /, 'a single unreachable image must not fail the whole manual')
 })
+
+// The banner at the top of every module was one of six stock photographs,
+// cycled by module index across all forty-six courses, unchangeable from
+// admin. Several were open-plan offices, laptops and whiteboard meetings. A
+// brand masterclass showed a stranger at a desk where the product should
+// have been.
+test('a module banner is a picture somebody chose', () => {
+  const page = read('src/app/talent/academy/[slug]/page.tsx')
+  assert.doesNotMatch(page, /MODULE_VISUALS/, 'the cycled stock list is gone')
+  assert.match(page, /function moduleBanner/)
+  // The order that matters: the module's own picture, then the course image an
+  // administrator set, then no photograph at all.
+  assert.match(page, /visual\?\.kind === 'image' && visual\.url/)
+  assert.match(page, /courseImage \|\| null/)
+  assert.match(page, /banner\.url \? <img/, 'no picture must render no picture, not a placeholder')
+})
+
+test('a banner picture is not also printed inside the lesson', () => {
+  const page = read('src/app/talent/academy/[slug]/page.tsx')
+  assert.match(page, /const bannerVisual =/)
+  assert.match(page, /filter\(visual => visual !== bannerVisual\)/,
+    'the same photograph twice in one module reads as a mistake')
+})
+
+test('the editor says what the first picture does', () => {
+  // Behaviour nobody is told about is behaviour nobody uses.
+  assert.match(read('src/app/admin/academy/[slug]/page.tsx'),
+    /The first picture in a module becomes the banner/)
+})
