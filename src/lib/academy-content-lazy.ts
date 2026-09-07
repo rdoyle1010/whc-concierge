@@ -32,6 +32,7 @@ const LOADERS: Record<string, Loader> = {
   'bamford-masterclass': () => import('./academy-more/bamford-masterclass.content').then(m => ({ default: m.content })),
   'biologique-recherche-masterclass': () => import('./academy-more/biologique-recherche-masterclass.content').then(m => ({ default: m.content })),
   'cancer-care-awareness': () => import('./academy-more/cancer-care-awareness.content').then(m => ({ default: m.content })),
+  'carol-joy-london-masterclass': () => import('./academy-more/carol-joy-london-masterclass.content').then(m => ({ default: m.content })),
   'clarins-masterclass': () => import('./academy-more/clarins-masterclass.content').then(m => ({ default: m.content })),
   'comfort-zone-masterclass': () => import('./academy-more/comfort-zone-masterclass.content').then(m => ({ default: m.content })),
   'decleor-masterclass': () => import('./academy-more/decleor-masterclass.content').then(m => ({ default: m.content })),

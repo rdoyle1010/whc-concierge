@@ -19,7 +19,7 @@ export const SEPARATE_TRACKS = [
 export const PRODUCT_HOUSES = [
   'ESPA', 'Elemis', 'Decléor', 'Comfort Zone', 'La Stone', 'Kama Ayurveda',
   '111SKIN', 'Wildsmith', 'Dr Barbara Sturm', 'VOYA', 'Bamford',
-  'Subtle Energies', 'Sodashi', 'Ila', 'Thalgo', 'Guinot', 'Dermalogica',
+  'Subtle Energies', 'Sodashi', 'Ila', 'Carol Joy London', 'Thalgo', 'Guinot', 'Dermalogica',
   'IMAGE Skincare', 'Environ', 'Medik8', 'Murad', 'Other',
 ] as const
 

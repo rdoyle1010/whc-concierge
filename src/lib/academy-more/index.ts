@@ -33,6 +33,7 @@ import * as decleor from './decleor-masterclass'
 import * as imageSkincare from './image-skincare-masterclass'
 import * as medik8 from './medik8-masterclass'
 import * as murad from './murad-masterclass'
+import * as carolJoyLondon from './carol-joy-london-masterclass'
 import * as cancerCare from './cancer-care-awareness'
 import * as menopause from './menopause-aware-spa'
 import * as pregnancy from './pregnancy-postnatal-spa'
@@ -44,7 +45,7 @@ import * as spaDirector from './spa-director-programme'
 type Pack = { course: AcademyCourse; extras: CourseExtras }
 
 const PACKS: Pack[] = [
-  espa, elemis, dermalogica, comfortZone, aromatherapyAssociates, naturaBisse, voya, bamford, wildsmith, templeSpa, oneElevenSkin, biologiqueRecherche, sisley, laMer, valmont, groundWellbeing, kamaAyurveda, clarins, sodashi, ilaSpa, susanneKaufmann, ishga, thalgo, guinot, decleor, imageSkincare, medik8, murad, cancerCare, menopause, pregnancy, spaManager, spaDirector,
+  espa, elemis, dermalogica, comfortZone, aromatherapyAssociates, naturaBisse, voya, bamford, wildsmith, templeSpa, oneElevenSkin, biologiqueRecherche, sisley, laMer, valmont, groundWellbeing, kamaAyurveda, clarins, sodashi, ilaSpa, susanneKaufmann, ishga, thalgo, guinot, decleor, imageSkincare, medik8, murad, carolJoyLondon, cancerCare, menopause, pregnancy, spaManager, spaDirector,
 ] as unknown as Pack[]
 
 export const MORE_COURSES: AcademyCourse[] = PACKS.map(p => p.course)

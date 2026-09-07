@@ -11,6 +11,7 @@ import { content as c2 } from './bamford-masterclass.content'
 import { content as c3 } from './biologique-recherche-masterclass.content'
 import { content as c4 } from './cancer-care-awareness.content'
 import { content as c5 } from './clarins-masterclass.content'
+import { content as c33 } from './carol-joy-london-masterclass.content'
 import { content as c6 } from './comfort-zone-masterclass.content'
 import { content as c7 } from './decleor-masterclass.content'
 import { content as c8 } from './dermalogica-masterclass.content'
@@ -45,6 +46,7 @@ export const MORE_CONTENT: Record<string, CourseContent> = {
   'bamford-masterclass': c2,
   'biologique-recherche-masterclass': c3,
   'cancer-care-awareness': c4,
+  'carol-joy-london-masterclass': c33,
   'clarins-masterclass': c5,
   'comfort-zone-masterclass': c6,
   'decleor-masterclass': c7,
