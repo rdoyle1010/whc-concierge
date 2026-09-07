@@ -49,6 +49,7 @@ export type ContentVisual =
   | { kind: 'flow'; title: string; steps: string[]; caption?: string }
   | { kind: 'table'; title: string; headers: string[]; rows: string[][]; caption?: string }
   | { kind: 'matrix'; title: string; xLabel: string; yLabel: string; quadrants: [string, string, string, string]; caption?: string }
+  | { kind: 'image'; title: string; url: string; alt: string; caption?: string }
   | { kind: 'image_placeholder'; title: string; description: string }
 
 export type ContentModule = {
@@ -181,6 +182,21 @@ function normaliseVisual(raw: unknown): ContentVisual | null {
         ...(caption ? { caption } : {}),
       }
     }
+    case 'image': {
+      // A picture with no source is not a picture. Refusing it here means a
+      // half-finished upload can never reach a learner as a broken image.
+      const url = trimmed(source.url, 1000)
+      if (!/^https:\/\//i.test(url)) return null
+      return {
+        kind: 'image',
+        title,
+        url,
+        // Alt text is what a screen reader says and what shows if the image
+        // fails. Falling back to the title means it is never empty.
+        alt: trimmed(source.alt, 300) || title,
+        ...(caption ? { caption } : {}),
+      }
+    }
     case 'image_placeholder':
       return { kind: 'image_placeholder', title, description: trimmed(source.description, 1000) }
     default:
@@ -193,6 +209,7 @@ export function describeVisual(visual: ContentVisual): string {
     case 'flow': return `Flow diagram, ${visual.steps.length} step${visual.steps.length === 1 ? '' : 's'}`
     case 'table': return `Table, ${visual.headers.length} column${visual.headers.length === 1 ? '' : 's'} and ${visual.rows.length} row${visual.rows.length === 1 ? '' : 's'}`
     case 'matrix': return 'Two-by-two matrix'
+    case 'image': return 'Image'
     case 'image_placeholder': return 'Image slot'
   }
 }

@@ -18,6 +18,11 @@ export type LessonVisual =
   | { kind: 'flow'; title: string; steps: string[]; caption?: string }
   | { kind: 'table'; title: string; headers: string[]; rows: string[][]; caption?: string }
   | { kind: 'matrix'; title: string; xLabel: string; yLabel: string; quadrants: [string, string, string, string]; caption?: string }
+  // A real picture, uploaded by an administrator. image_placeholder stays for
+  // the courses written before this existed: an honest empty slot is better
+  // than a broken image, and rewriting thirty course files to say the same
+  // thing would risk more than it gained.
+  | { kind: 'image'; title: string; url: string; alt: string; caption?: string }
   | { kind: 'image_placeholder'; title: string; description: string }
 
 // A formative knowledge check inside the lesson (practice, not the final
