@@ -84,6 +84,10 @@ export default function AcademyCourseEditorPage() {
 
   const load = useCallback(async () => {
     setLoading(true)
+    // Clear the last failure before trying again. Without this a single
+    // refused request left a red banner sitting above a course that had in
+    // fact loaded perfectly well, for as long as the tab stayed open.
+    setError('')
     try {
       const response = await fetch(`/api/admin/academy?slug=${encodeURIComponent(slug)}`)
       const json = await response.json()

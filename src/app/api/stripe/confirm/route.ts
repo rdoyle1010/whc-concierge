@@ -22,9 +22,19 @@ import { fulfilCheckoutSession } from '@/lib/stripe-checkout-fulfilment'
 // delivering a purchase nobody made would be a worse failure than the one
 // this fixes.
 
+// The checkout types that are sold to people who have no account, by design.
+// A guest buying a course is told no account is needed, pays by email, and is
+// sent access afterwards - so requiring a session here refused the safety net
+// to precisely the buyers who have no other way to complain.
+//
+// Letting them through is safe because nothing is granted to the caller.
+// Stripe is asked whether the session was paid, and fulfilment delivers to the
+// email address Stripe itself holds for that session. Presenting somebody
+// else's session id buys you nothing except finishing their delivery to them.
+const GUEST_CHECKOUT_TYPES = new Set(['course_public'])
+
 export async function POST(req: NextRequest) {
   const user = await getRequestUser(req)
-  if (!user) return NextResponse.json({ error: 'Please sign in again.' }, { status: 401 })
 
   const { sessionId } = await req.json().catch(() => ({ sessionId: '' }))
   if (!sessionId || typeof sessionId !== 'string' || !sessionId.startsWith('cs_')) {
@@ -39,6 +49,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'We could not find that payment with Stripe.' }, { status: 404 })
   }
 
+  const guestPurchase = GUEST_CHECKOUT_TYPES.has(String(session.metadata?.type || ''))
+  if (!user && !guestPurchase) return NextResponse.json({ error: 'Please sign in again.' }, { status: 401 })
+
   const paid = session.payment_status === 'paid' || session.payment_status === 'no_payment_required'
   if (!paid) {
     return NextResponse.json({ ok: false, detail: 'Stripe has not confirmed this payment yet.' }, { status: 409 })
@@ -46,9 +59,10 @@ export async function POST(req: NextRequest) {
 
   // The session records who was signed in when checkout began. Anyone else
   // presenting it - including somebody who found the id in a shared link or a
-  // browser history - gets nothing.
+  // browser history - gets nothing. A guest purchase records no buyer, and
+  // grants nothing to the caller, so there is no ownership to check.
   const buyer = String(session.metadata?.user_id || '')
-  if (buyer && buyer !== user.id) {
+  if (user && buyer && buyer !== user.id) {
     const admin = createAdminClient()
     const { data: account } = await admin.from('profiles').select('role').eq('id', user.id).maybeSingle()
     if (account?.role !== 'admin') return NextResponse.json({ error: 'This payment belongs to another account.' }, { status: 403 })

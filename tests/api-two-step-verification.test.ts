@@ -83,6 +83,28 @@ test('no admin route keeps a private copy of the admin check', () => {
     'the shared admin guard must check the assurance level',
   )
   // Fails closed: unlike the page middleware, an unreadable assurance level
-  // on an administrator's API must mean no session, not a session.
-  assert.ok(source.includes('if (error || !assurance) return null'), 'the admin guard must fail closed')
+  // on an administrator's API must mean no session, not a session. The guard
+  // now names which of the four refusals happened, so this asserts the
+  // property rather than one line's wording: every assurance failure hands
+  // back no user at all.
+  assert.ok(
+    source.includes("if (error || !assurance) return { user: null, refusal: 'check-failed' }"),
+    'an unreadable assurance level must yield no user',
+  )
+  assert.ok(
+    source.includes("assurance.currentLevel !== 'aal2') return { user: null, refusal: 'second-step' }"),
+    'a half-verified session must yield no user',
+  )
+  assert.ok(
+    source.includes("} catch {\n    return { user: null, refusal: 'check-failed' }"),
+    'a thrown assurance lookup must yield no user',
+  )
+  // Nothing may hand back a user without having passed both checks. Counting
+  // returns, not type positions: the union type names `refusal: null` too.
+  const grants = source.match(/return[^\n]*refusal: null/g) || []
+  assert.equal(grants.length, 1, 'there must be exactly one place that admits an administrator')
+  assert.ok(
+    (grants[0] || '').includes("profile?.role === 'admin'"),
+    'the only admission must be the one gated on the admin role',
+  )
 })
