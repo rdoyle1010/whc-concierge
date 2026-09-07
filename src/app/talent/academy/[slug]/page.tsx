@@ -102,6 +102,9 @@ export default function CoursePlayerPage() {
 
   const [loading, setLoading] = useState(true)
   const [enrolled, setEnrolled] = useState(false)
+  // An administrator reads any course without owning it. Read-only: nothing
+  // she does here is written down.
+  const [previewing, setPreviewing] = useState(false)
   const [progress, setProgress] = useState<Record<string, boolean>>({})
   const [completedAt, setCompletedAt] = useState<string | null>(null)
   const [view, setView] = useState<View>('overview')
@@ -112,12 +115,12 @@ export default function CoursePlayerPage() {
   const [uploads, setUploads] = useState<{ id: string; title: string; description: string | null; file_name: string | null }[]>([])
 
   useEffect(() => {
-    if (!enrolled || !slug) return
+    if ((!enrolled && !previewing) || !slug) return
     fetch(`/api/academy/uploads?course=${encodeURIComponent(String(slug))}`)
       .then(res => res.ok ? res.json() : { resources: [] })
       .then(json => setUploads(json.resources || []))
       .catch(() => {})
-  }, [enrolled, slug])
+  }, [enrolled, previewing, slug])
 
   useEffect(() => {
     async function load() {
@@ -137,6 +140,8 @@ export default function CoursePlayerPage() {
             setEnrolled(true)
             setProgress(enr.progress || {})
             setCompletedAt(enr.completed_at || null)
+          } else if (j.is_admin) {
+            setPreviewing(true)
           }
         }
       } catch { /* treated as not enrolled */ }
@@ -178,7 +183,8 @@ export default function CoursePlayerPage() {
       const j = await res.json()
       if (!res.ok) { setError(j.error || 'Could not submit - please try again.'); return }
       setResult({ score: j.score, passed: j.passed, correct: j.correct, total: j.total })
-      if (j.passed) setCompletedAt(new Date().toISOString())
+      // A preview is graded but never completed: no certificate exists to show.
+      if (j.passed && !j.preview) setCompletedAt(new Date().toISOString())
     } catch {
       setError('Something went wrong - please try again.')
     } finally {
@@ -193,7 +199,7 @@ export default function CoursePlayerPage() {
 
   if (loading) return <DashboardShell role="talent"><div className="flex items-center justify-center h-64"><div className="animate-spin w-8 h-8 border-2 border-accent border-t-transparent rounded-full" /></div></DashboardShell>
 
-  if (!enrolled) {
+  if (!enrolled && !previewing) {
     return (
       <DashboardShell role="talent">
         <div className="max-w-2xl dashboard-card text-center py-12">
@@ -236,6 +242,13 @@ export default function CoursePlayerPage() {
         <span className="rounded-full bg-gray-100 px-2.5 py-1 text-[10px] font-medium text-gray-600">{courseMeta(String(slug)).cpdHours} CPD hour{courseMeta(String(slug)).cpdHours === 1 ? '' : 's'}</span>
         {courseMeta(String(slug)).skills.map(skill => <span key={skill} className="rounded-full bg-[#f1f1f1] px-2.5 py-1 text-[10px] font-medium text-[#1c1c1c]">{skill}</span>)}
       </div>
+      {previewing && (
+        <div className="mb-6 border border-[#dddddd] bg-[#f1f1f1] px-5 py-4">
+          <p className="text-[13px] font-semibold text-ink">Administrator preview</p>
+          <p className="mt-1 text-[12px] leading-6 text-secondary">You are reading this course exactly as a learner sees it, without owning it. Nothing here is recorded: no progress, no assessment attempt, no completion and no certificate. Sitting the assessment will mark your answers so you can check it, and change nothing.</p>
+        </div>
+      )}
+
       <div className="flex items-center gap-3 mb-6">
         <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
           <div className="h-full bg-accent rounded-full transition-all" style={{ width: `${pct}%` }} />

@@ -123,3 +123,29 @@ test('an upload refused for a lapsed session says so', () => {
   assert.doesNotMatch(upload, /error: 'Unauthorised'/)
   assert.match(upload, /two-step verification has lapsed/)
 })
+
+// A guest buys by email, and the email decides the account: an address that
+// already has one gets the course there rather than on a new account. Pay with
+// a personal address, sign in with a work one, and the course is nowhere the
+// buyer thinks to look - which reads exactly like a platform that took the
+// money. Three surfaces now name the address: the form before paying, the page
+// on return, and the email that is kept.
+test('a guest is told which account the course landed on', () => {
+  const confirm = body('src/app/api/stripe/confirm/route.ts')
+  assert.match(confirm, /function deliveryAddress/)
+  assert.match(confirm, /deliveredTo: deliveryAddress\(session\)/)
+  // Both success paths, because the webhook usually wins the race and the
+  // buyer then reaches the already-fulfilled branch.
+  assert.equal((confirm.match(/deliveredTo: deliveryAddress\(session\)/g) || []).length, 2,
+    'the already-fulfilled reply must name the account too')
+
+  const page = body('src/app/academy/page.tsx')
+  assert.match(page, /Your course is on the account/)
+  assert.match(page, /This address becomes your Talent House account/,
+    'the buyer should be told before the money moves, not only after')
+
+  const email = body('src/lib/emails.ts')
+  const access = email.slice(email.indexOf('sendCourseAccessEmail'), email.indexOf('sendVerificationResultEmail'))
+  assert.match(access, /Your course is on the account/)
+  assert.match(access, /a different address will not find this course/)
+})

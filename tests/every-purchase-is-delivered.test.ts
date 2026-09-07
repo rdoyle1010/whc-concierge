@@ -87,7 +87,10 @@ test('the pages people land on after paying confirm the purchase', () => {
     'src/app/talent/agency/page.tsx',
     'src/app/employer/agency/page.tsx',
   ]) {
-    assert.match(read(page), /useConfirmPaymentOnReturn\(\)/, `${page} must confirm on return`)
+    // Called, with or without a callback: the Academy page passes one so it
+    // can name the account a guest purchase landed on. What matters here is
+    // that the page makes the call at all.
+    assert.match(read(page), /useConfirmPaymentOnReturn\(/, `${page} must confirm on return`)
   }
   const hook = read('src/lib/use-confirm-payment.ts')
   assert.match(hook, /session_id/)

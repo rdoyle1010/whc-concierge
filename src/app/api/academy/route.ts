@@ -27,20 +27,35 @@ async function makeUniqueCertificateCode(admin: any) {
   return code
 }
 
+async function callerIsAdmin(admin: ReturnType<typeof createAdminClient>, userId: string) {
+  const { data } = await admin.from('profiles').select('role').eq('id', userId).maybeSingle()
+  return data?.role === 'admin'
+}
+
 export async function GET(req: NextRequest) {
   try {
     const user = await getRequestUser(req)
     if (!user) return NextResponse.json({ error: 'Please log in' }, { status: 401 })
 
     const admin = createAdminClient()
+    const isAdmin = await callerIsAdmin(admin, user.id)
     const { data: cand } = await admin.from('candidate_profiles').select('id, full_name, academy_discount_pct').eq('user_id', user.id).maybeSingle()
-    if (!cand) return NextResponse.json({ error: 'No candidate profile found' }, { status: 404 })
+
+    // An administrator has no learner record, so this used to answer 404 and
+    // the course page concluded she was simply not enrolled. The only way to
+    // read a course you had written was to buy it. She may now read any of
+    // them; nothing about a learner's access changes.
+    if (!cand) {
+      if (isAdmin) return NextResponse.json({ enrollments: [], is_admin: true, candidate_name: null, candidate_id: null, academy_discount_pct: 0 })
+      return NextResponse.json({ error: 'No candidate profile found' }, { status: 404 })
+    }
 
     const { data: rows, error } = await admin.from('course_enrollments')
       .select('*').eq('candidate_id', cand.id)
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
     return NextResponse.json({
       enrollments: rows || [],
+      is_admin: isAdmin,
       candidate_name: cand.full_name,
       candidate_id: cand.id,
       academy_discount_pct: Number(cand.academy_discount_pct || 0),
@@ -56,8 +71,9 @@ export async function POST(req: NextRequest) {
     if (!user) return NextResponse.json({ error: 'Please log in' }, { status: 401 })
 
     const admin = createAdminClient()
+    const isAdmin = await callerIsAdmin(admin, user.id)
     const { data: cand } = await admin.from('candidate_profiles').select('id, full_name, user_id').eq('user_id', user.id).maybeSingle()
-    if (!cand) return NextResponse.json({ error: 'No candidate profile found' }, { status: 404 })
+    if (!cand && !isAdmin) return NextResponse.json({ error: 'No candidate profile found' }, { status: 404 })
 
     const body = await req.json()
     const action = String(body.action || '')
@@ -65,8 +81,37 @@ export async function POST(req: NextRequest) {
     const course = await getAcademyCourseBySlug(slug, true)
     if (!course) return NextResponse.json({ error: 'Unknown course' }, { status: 400 })
 
-    const { data: enrolment } = await admin.from('course_enrollments')
-      .select('*').eq('candidate_id', cand.id).eq('course_slug', slug).maybeSingle()
+    const { data: enrolment } = cand
+      ? await admin.from('course_enrollments').select('*').eq('candidate_id', cand.id).eq('course_slug', slug).maybeSingle()
+      : { data: null }
+
+    // Administrator preview. She reads the course and can sit the assessment
+    // to check it marks correctly, and none of it is written down: no lesson
+    // progress, no attempt history, no completion, no certificate, and nothing
+    // that would show up as an enrolment or a sale. A preview that quietly
+    // minted a certificate would be worse than no preview at all.
+    const previewing = isAdmin && (!enrolment || !enrolment.paid_at)
+    if (previewing) {
+      if (action === 'progress') {
+        const idx = parseInt(String(body.lesson), 10)
+        if (isNaN(idx) || idx < 0 || idx >= course.lessons.length) {
+          return NextResponse.json({ error: 'Invalid lesson' }, { status: 400 })
+        }
+        return NextResponse.json({ success: true, preview: true, progress: { ...(body.progress || {}), [idx]: true } })
+      }
+      if (action === 'quiz') {
+        const key = await getAcademyAnswerKey(slug)
+        if (!key.length || key.length !== course.quiz.length) return NextResponse.json({ error: 'Quiz unavailable' }, { status: 500 })
+        const answers = Array.isArray(body.answers) ? body.answers.map((a: any) => parseInt(String(a), 10)) : []
+        if (answers.length !== key.length) return NextResponse.json({ error: 'Please answer every question.' }, { status: 400 })
+        const correct = key.reduce((n, k, i) => n + (answers[i] === k ? 1 : 0), 0)
+        const score = Math.round((correct / key.length) * 100)
+        return NextResponse.json({ success: true, preview: true, score, passed: score >= PASS_MARK, correct, total: key.length, certificate_code: null })
+      }
+      return NextResponse.json({ error: 'Unknown action' }, { status: 400 })
+    }
+
+    if (!cand) return NextResponse.json({ error: 'No candidate profile found' }, { status: 404 })
     if (!enrolment || !enrolment.paid_at) {
       return NextResponse.json({ error: 'You are not enrolled on this course yet.' }, { status: 403 })
     }

@@ -22,7 +22,8 @@ const MODERN_COURSE_IMAGES: Record<string, string> = {
 export default function PublicAcademyPage() {
   // Stripe has just sent this person back. Confirm the purchase from the
   // browser as well, so a missed webhook is a delay rather than a loss.
-  useConfirmPaymentOnReturn()
+  const [deliveredTo, setDeliveredTo] = useState<string | null>(null)
+  useConfirmPaymentOnReturn((_ok, result) => setDeliveredTo(result?.deliveredTo || null))
   const supabase = createClient()
   const [isCandidate, setIsCandidate] = useState(false)
   const [courses, setCourses] = useState<(AcademyCourse & { image_url?: string })[]>(ACADEMY)
@@ -162,7 +163,13 @@ export default function PublicAcademyPage() {
         {purchased && (
           <div className="mb-8 rounded-xl border border-green-200 bg-green-50 px-5 py-4 text-sm text-green-800">
             <p className="font-medium">Payment received - check your email.</p>
-            <p className="mt-0.5 text-[13px]">Your course access link is on its way. Check spam if it has not landed within a few minutes.</p>
+            {/* The address is named while the buyer is still looking at the
+                screen. An address that already has an account gets the course
+                on that account, so somebody who pays with a personal address
+                and signs in with a work one would otherwise find nothing. */}
+            {deliveredTo
+              ? <p className="mt-1 text-[13px]">Your course is on the account <strong className="font-semibold">{deliveredTo}</strong>. Sign in with that address to start it, and use the link we have just emailed there.</p>
+              : <p className="mt-0.5 text-[13px]">Your course access link is on its way to the address you paid with. Sign in with that same address to find it, and check spam if the email has not landed within a few minutes.</p>}
           </div>
         )}
 
@@ -299,7 +306,11 @@ export default function PublicAcademyPage() {
             </div>
             <p className="mb-4 text-[12px] leading-5 text-[#555555]">£{(buying.price / 100).toFixed(0)} one-off. After payment your access link arrives by email. Your certificate is issued when you complete the learning and pass the assessment.</p>
             <label htmlFor="academy-buy-email" className="mb-1.5 block text-sm font-medium text-gray-700">Your email</label>
-            <input id="academy-buy-email" type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="you@example.com" className="input-field mb-3" />
+            <input id="academy-buy-email" type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="you@example.com" className="input-field mb-1.5" />
+            {/* Said before the money moves, not after. This address is the
+                account: pay with one and sign in with another and the course
+                is nowhere the buyer thinks to look. */}
+            <p className="mb-3 text-[12px] leading-5 text-[#555555]">This address becomes your Talent House account, and it is where the course lives. Use the one you will sign in with.</p>
             {error && <p role="alert" className="mb-3 text-[12px] text-red-600">{error}</p>}
             <button type="button" onClick={buyAsGuest} disabled={busy || !email.trim()} className="btn-primary w-full disabled:opacity-50">{busy ? 'Taking you to payment...' : `Pay £${(buying.price / 100).toFixed(0)} & start`}</button>
             <p className="mt-3 text-center text-[11px] text-muted">Already a Talent House member? <Link href="/login" className="underline">Sign in</Link> and pay the member price instead.</p>

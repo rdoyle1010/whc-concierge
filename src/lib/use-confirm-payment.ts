@@ -18,7 +18,9 @@ import { useEffect, useRef } from 'react'
 // a no-op and the person should see the page they expected rather than a
 // banner about plumbing.
 
-export function useConfirmPaymentOnReturn(onDone?: (ok: boolean) => void) {
+export type ConfirmResult = { ok: boolean; deliveredTo?: string | null; detail?: string }
+
+export function useConfirmPaymentOnReturn(onDone?: (ok: boolean, result: ConfirmResult) => void) {
   // React runs effects twice in development and a return page can be
   // reloaded. The server is idempotent either way; this saves the round trip.
   const attempted = useRef<string | null>(null)
@@ -39,8 +41,8 @@ export function useConfirmPaymentOnReturn(onDone?: (ok: boolean) => void) {
       keepalive: true,
     })
       .then(res => res.json().catch(() => ({})))
-      .then(body => { if (active) onDone?.(Boolean(body?.ok)) })
-      .catch(() => { if (active) onDone?.(false) })
+      .then(body => { if (active) onDone?.(Boolean(body?.ok), (body || {}) as ConfirmResult) })
+      .catch(() => { if (active) onDone?.(false, { ok: false }) })
 
     return () => { active = false }
     // Runs once per mount: the session id comes from the URL the page loaded
