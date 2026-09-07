@@ -222,6 +222,15 @@ check('all service-role API routes are protected or deliberately public', () => 
     // order, nothing per-person. The public jobs page filters on it while
     // signed out, and the post-a-role and profile forms read the same list.
     'src/app/api/sectors/route.ts',
+    // Public by design: a spa director asking a brand for its terms. She has
+    // no account here and the whole point is that she does not need one. It
+    // writes an enquiry and reads nothing back but the brand's own name, which
+    // is already on the public page she is reading. Rate limited, honeypotted,
+    // and it refuses a brand that is not published.
+    'src/app/api/brands/enquire/route.ts',
+    // Public by design: a brand applying for a page. Insert only, rate limited
+    // to five an hour per address, honeypotted, and it reads nothing at all.
+    'src/app/api/brands/apply/route.ts',
   ])
   // adminRequestUser is the actual admin guard on this platform. It was
   // missing here, so a route passed only if it happened to wrap the helper in

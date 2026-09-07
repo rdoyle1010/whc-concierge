@@ -4,7 +4,8 @@ import { notFound } from 'next/navigation'
 import { createClient } from '@supabase/supabase-js'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
-import { ArrowLeft, ArrowRight, ExternalLink, GraduationCap, Quote } from 'lucide-react'
+import { ArrowLeft, ArrowRight, ExternalLink, GraduationCap, Heart, Mail, Phone, Quote, Sparkles } from 'lucide-react'
+import BrandEnquiryForm from '@/components/BrandEnquiryForm'
 import { BRAND_FIELDS, normaliseBrand, type BrandProfile } from '@/lib/brand-profiles'
 
 export const revalidate = 60
@@ -124,6 +125,18 @@ export default async function BrandPage({ params }: { params: Promise<{ slug: st
           </div>
         </section>
 
+        {brand.gallery.length > 0 && (
+          <section className="mx-auto max-w-7xl px-6 pb-14 lg:px-8">
+            <div className={`grid gap-3 ${brand.gallery.length === 1 ? '' : brand.gallery.length === 2 ? 'sm:grid-cols-2' : 'sm:grid-cols-2 lg:grid-cols-4'}`}>
+              {brand.gallery.map((url, index) => (
+                <div key={url} className="aspect-[4/3] overflow-hidden border border-border bg-surface">
+                  <img src={url} alt={`${brand.name}, image ${index + 1}`} loading="lazy" decoding="async" className="h-full w-full object-cover" />
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+
         {brand.usp ? (
           <section className="border-y border-border bg-ink">
             <div className="mx-auto max-w-7xl px-6 py-14 lg:px-8">
@@ -140,6 +153,32 @@ export default async function BrandPage({ params }: { params: Promise<{ slug: st
                 <div>
                   <h2 className="site-heading text-[28px] leading-[1.15] tracking-[-.03em]">Why a spa stocks it</h2>
                   <div className="mt-6"><Prose text={brand.why_spas} /></div>
+                </div>
+              ) : null}
+
+              {/* Our own verdict. This is the only reason anybody trusts a
+                  directory whose other words come from the brand: a page where
+                  every entry is written by its subject is a brochure rack. */}
+              {brand.why_we_love_it ? (
+                <div className="border border-accent/30 bg-surface p-7">
+                  <div className="flex items-center gap-2">
+                    <Sparkles size={16} className="text-accent" />
+                    <p className="text-[10px] font-semibold uppercase tracking-[.16em] text-accent">Why Talent House loves it</p>
+                  </div>
+                  <div className="mt-5"><Prose text={brand.why_we_love_it} /></div>
+                </div>
+              ) : null}
+
+              {/* And the people who will actually work with it. A brand the
+                  team resents never gets retailed, whatever the margin looks
+                  like on the wholesale sheet. */}
+              {brand.why_therapists_love_it ? (
+                <div>
+                  <div className="flex items-center gap-2">
+                    <Heart size={16} className="text-accent" />
+                    <h2 className="site-heading text-[28px] leading-[1.15] tracking-[-.03em]">Why therapists love working on it</h2>
+                  </div>
+                  <div className="mt-6"><Prose text={brand.why_therapists_love_it} /></div>
                 </div>
               ) : null}
 
@@ -190,6 +229,26 @@ export default async function BrandPage({ params }: { params: Promise<{ slug: st
                 </div>
               )}
 
+              {(brand.contact_name || brand.contact_email || brand.contact_phone) && (
+                <div className="border border-border p-6">
+                  <p className="text-[10px] font-semibold uppercase tracking-[.16em] text-muted">Who to talk to</p>
+                  {brand.contact_name ? <p className="mt-3 text-[14px] font-medium text-ink">{brand.contact_name}</p> : null}
+                  {brand.contact_role ? <p className="text-[12px] text-secondary">{brand.contact_role}</p> : null}
+                  <div className="mt-4 space-y-2">
+                    {brand.contact_email ? (
+                      <a href={`mailto:${brand.contact_email}`} className="flex items-center gap-2 text-[12px] text-accent hover:underline">
+                        <Mail size={12} /> {brand.contact_email}
+                      </a>
+                    ) : null}
+                    {brand.contact_phone ? (
+                      <a href={`tel:${brand.contact_phone.replace(/\s+/g, '')}`} className="flex items-center gap-2 text-[12px] text-secondary hover:text-ink">
+                        <Phone size={12} /> {brand.contact_phone}
+                      </a>
+                    ) : null}
+                  </div>
+                </div>
+              )}
+
               {/* The other half of the bargain: the course this brand gave the
                   Academy. A page with no route to the training is only half of
                   what either side agreed to. */}
@@ -220,6 +279,12 @@ export default async function BrandPage({ params }: { params: Promise<{ slug: st
                 </div>
               ) : null}
             </aside>
+          </div>
+        </section>
+
+        <section className="border-t border-border bg-white">
+          <div className="mx-auto max-w-3xl px-6 py-16 lg:px-8">
+            <BrandEnquiryForm brandSlug={brand.slug} brandName={brand.name} />
           </div>
         </section>
       </main>
