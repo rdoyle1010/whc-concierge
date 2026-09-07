@@ -69,7 +69,7 @@ function BrandCard({ brand, wide }: { brand: BrandProfile; wide?: boolean }) {
           </div>
         )}
         <span className="mt-6 inline-flex items-center gap-1.5 text-[12px] font-semibold text-accent">
-          Why spas stock it <ArrowRight size={13} className="transition-transform group-hover:translate-x-0.5" />
+          Read the brand file <ArrowRight size={13} className="transition-transform group-hover:translate-x-0.5" />
         </span>
       </div>
     </Link>
@@ -92,6 +92,10 @@ export default async function BrandsPage() {
             Choosing a product house is a five-figure decision about a treatment menu, a retail wall and a training
             commitment. These pages make the case for each one, in the order it gets asked: the proposition, why a spa
             stocks it, what the person who runs it says, and how a therapist actually sells it.
+          </p>
+          <p className="mt-4 max-w-2xl text-[13px] leading-7 text-muted">
+            Every house is listed here for anyone to see. The full brand file behind each one is open to Talent House
+            members, and an account is free.
           </p>
         </section>
 

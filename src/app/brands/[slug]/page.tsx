@@ -2,13 +2,17 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { createClient } from '@supabase/supabase-js'
+import { createServerSupabaseClient } from '@/lib/supabase/server'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
-import { ArrowLeft, ArrowRight, ExternalLink, GraduationCap, Heart, Mail, Phone, Quote, Sparkles } from 'lucide-react'
+import { ArrowLeft, ArrowRight, ExternalLink, GraduationCap, Heart, Lock, Mail, Phone, Quote, Sparkles } from 'lucide-react'
 import BrandEnquiryForm from '@/components/BrandEnquiryForm'
 import { BRAND_FIELDS, normaliseBrand, type BrandProfile } from '@/lib/brand-profiles'
 
-export const revalidate = 60
+// No revalidate here, deliberately. This page reads whether the visitor is
+// signed in, which forces dynamic rendering, and a declared revalidate would
+// then be a setting that silently does nothing. The directory at /brands stays
+// cached, which is the page that carries the search traffic.
 
 async function readBrand(slug: string): Promise<BrandProfile | null> {
   try {
@@ -89,10 +93,29 @@ function Facts({ brand }: { brand: BrandProfile }) {
   )
 }
 
+// Whether the reader has an account. Not a role check: a therapist, a spa
+// director and an administrator all get the same brand file.
+async function readerIsSignedIn() {
+  try {
+    const supabase = await createServerSupabaseClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    return Boolean(user)
+  } catch {
+    // A failed lookup must not lock out somebody who is signed in and must not
+    // let somebody in who is not. Treated as signed out: the wall is a
+    // marketing gate, not a security boundary, and the safe failure is the one
+    // that shows less.
+    return false
+  }
+}
+
 export default async function BrandPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
-  const brand = await readBrand(slug)
+  const [brand, signedIn] = await Promise.all([readBrand(slug), readerIsSignedIn()])
   if (!brand) notFound()
+
+  // Where sign-in sends them back to, so nobody has to find the page twice.
+  const back = encodeURIComponent(`/brands/${brand.slug}`)
 
   return (
     <>
@@ -149,7 +172,34 @@ export default async function BrandPage({ params }: { params: Promise<{ slug: st
         <section className="mx-auto max-w-7xl px-6 py-16 lg:px-8">
           <div className="grid gap-12 lg:grid-cols-[1.35fr_.65fr]">
             <div className="space-y-14">
-              {brand.why_spas ? (
+              {/* The wall.
+                  The proposition, the facts, the treatments and the partners
+                  are open, because a page that proves nothing before it asks
+                  for something is a page nobody signs up from - and because
+                  they are what a search engine and the brand itself need to
+                  see. Everything below is the part worth registering for: the
+                  case, our verdict, the therapists' view, the founder and the
+                  retail method. */}
+              {!signedIn ? (
+                <div className="border border-border bg-surface px-7 py-10 text-center">
+                  <Lock size={20} className="mx-auto text-accent" />
+                  <h2 className="site-heading mt-4 text-[26px] leading-[1.15] tracking-[-.03em]">The rest of this brand file is for members.</h2>
+                  <p className="mx-auto mt-4 max-w-xl text-[14px] leading-7 text-secondary">
+                    Behind this: the commercial case for stocking {brand.name}, what Talent House makes of the house,
+                    why therapists like working on it, the founder in their own words, how a therapist sells it on the
+                    floor, and who to contact.
+                  </p>
+                  <p className="mx-auto mt-3 max-w-xl text-[13px] leading-6 text-muted">
+                    An account is free, and it is the same one you use to hire, to browse roles or to take the Academy.
+                  </p>
+                  <div className="mt-7 flex flex-wrap items-center justify-center gap-2">
+                    <Link href={`/register/employer?redirect=${back}`} className="btn-primary text-[13px]">Create a free account</Link>
+                    <Link href={`/login?redirect=${back}`} className="btn-secondary text-[13px]">Sign in</Link>
+                  </div>
+                </div>
+              ) : null}
+
+              {signedIn && brand.why_spas ? (
                 <div>
                   <h2 className="site-heading text-[28px] leading-[1.15] tracking-[-.03em]">Why a spa stocks it</h2>
                   <div className="mt-6"><Prose text={brand.why_spas} /></div>
@@ -159,7 +209,7 @@ export default async function BrandPage({ params }: { params: Promise<{ slug: st
               {/* Our own verdict. This is the only reason anybody trusts a
                   directory whose other words come from the brand: a page where
                   every entry is written by its subject is a brochure rack. */}
-              {brand.why_we_love_it ? (
+              {signedIn && brand.why_we_love_it ? (
                 <div className="border border-accent/30 bg-surface p-7">
                   <div className="flex items-center gap-2">
                     <Sparkles size={16} className="text-accent" />
@@ -172,7 +222,7 @@ export default async function BrandPage({ params }: { params: Promise<{ slug: st
               {/* And the people who will actually work with it. A brand the
                   team resents never gets retailed, whatever the margin looks
                   like on the wholesale sheet. */}
-              {brand.why_therapists_love_it ? (
+              {signedIn && brand.why_therapists_love_it ? (
                 <div>
                   <div className="flex items-center gap-2">
                     <Heart size={16} className="text-accent" />
@@ -182,7 +232,7 @@ export default async function BrandPage({ params }: { params: Promise<{ slug: st
                 </div>
               ) : null}
 
-              {brand.director_quote ? (
+              {signedIn && brand.director_quote ? (
                 <figure className="border-l-2 border-accent bg-surface px-7 py-8">
                   <Quote size={18} className="text-accent" />
                   <blockquote className="mt-4 text-[17px] leading-[1.7] tracking-[-.01em] text-ink">{brand.director_quote}</blockquote>
@@ -196,7 +246,7 @@ export default async function BrandPage({ params }: { params: Promise<{ slug: st
                 </figure>
               ) : null}
 
-              {brand.how_to_sell ? (
+              {signedIn && brand.how_to_sell ? (
                 <div>
                   <h2 className="site-heading text-[28px] leading-[1.15] tracking-[-.03em]">How your therapists sell it</h2>
                   <div className="mt-6"><Prose text={brand.how_to_sell} /></div>
@@ -229,7 +279,7 @@ export default async function BrandPage({ params }: { params: Promise<{ slug: st
                 </div>
               )}
 
-              {(brand.contact_name || brand.contact_email || brand.contact_phone) && (
+              {signedIn && (brand.contact_name || brand.contact_email || brand.contact_phone) && (
                 <div className="border border-border p-6">
                   <p className="text-[10px] font-semibold uppercase tracking-[.16em] text-muted">Who to talk to</p>
                   {brand.contact_name ? <p className="mt-3 text-[14px] font-medium text-ink">{brand.contact_name}</p> : null}
@@ -282,11 +332,13 @@ export default async function BrandPage({ params }: { params: Promise<{ slug: st
           </div>
         </section>
 
-        <section className="border-t border-border bg-white">
-          <div className="mx-auto max-w-3xl px-6 py-16 lg:px-8">
-            <BrandEnquiryForm brandSlug={brand.slug} brandName={brand.name} />
-          </div>
-        </section>
+        {signedIn ? (
+          <section className="border-t border-border bg-white">
+            <div className="mx-auto max-w-3xl px-6 py-16 lg:px-8">
+              <BrandEnquiryForm brandSlug={brand.slug} brandName={brand.name} />
+            </div>
+          </section>
+        ) : null}
       </main>
       <Footer />
     </>

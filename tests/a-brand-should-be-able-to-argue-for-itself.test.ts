@@ -81,8 +81,19 @@ test('the bargain is visible from both sides', () => {
 })
 
 test('brands are reachable and administrable', () => {
-  assert.match(read('src/components/Navbar.tsx'), /\{ href: '\/brands', label: 'Brands' \}/,
-    'a page nobody can navigate to is a page nobody reads')
+  // Both navigations, checked separately. The first version of this asserted
+  // the link appeared somewhere in the file, and it did - in the signed-in
+  // list. Signed-out visitors, who are the entire audience for a page that
+  // argues a brand's case, had no way to reach it.
+  const navbar = read('src/components/Navbar.tsx')
+  const listOf = (name: string) => {
+    const start = navbar.indexOf(`const ${name} = [`)
+    assert.ok(start > 0, `${name} should exist`)
+    return navbar.slice(start, navbar.indexOf(']', start))
+  }
+  assert.match(listOf('publicLinks'), /href: '\/brands'/,
+    'a signed-out spa director is exactly who this page is for')
+  assert.match(listOf('loggedInSiteLinks'), /href: '\/brands'/)
   assert.match(read('src/components/DashboardShell.tsx'), /href: '\/admin\/brands'/)
 
   const api = body('src/app/api/admin/brands/route.ts')
@@ -193,4 +204,42 @@ test('a broken picture never reaches a brand page', () => {
 test('a contact address is an address', () => {
   assert.equal(normaliseBrand({ slug: 'x', name: 'X', contact_email: ' Hello@Brand.COM ' }).contact_email, 'hello@brand.com')
   assert.equal(normaliseBrand({ slug: 'x', name: 'X', contact_email: 'not-an-address' }).contact_email, null)
+})
+
+// Signed out you can see every house and read what it claims to be. The case
+// for stocking it, our verdict, the therapists' view, the founder, the retail
+// method and the contact are what an account is for.
+
+test('the directory is open to everyone', () => {
+  const page = body('src/app/brands/page.tsx')
+  // No auth read at all: this is the page that carries the search traffic and
+  // the page a brand sends people to.
+  assert.doesNotMatch(page, /createServerSupabaseClient|auth\.getUser/)
+  assert.match(page, /export const revalidate/, 'the open page stays cached')
+  assert.match(page, /an account is free/, 'say what is behind the click before the click')
+})
+
+test('the argument is behind an account', () => {
+  const page = body('src/app/brands/[slug]/page.tsx')
+  for (const gated of ['brand.why_spas', 'brand.why_we_love_it', 'brand.why_therapists_love_it', 'brand.director_quote', 'brand.how_to_sell']) {
+    assert.match(page, new RegExp(`signedIn && ${gated.replace('.', '\\.')}`),
+      `${gated} is the part worth registering for`)
+  }
+  assert.match(page, /signedIn && \(brand\.contact_name/, 'the contact is the whole commercial point')
+  assert.match(page, /\{signedIn \? \([\s\S]{0,400}BrandEnquiryForm/, 'so is the enquiry form')
+  // And the wall has to name what is behind it rather than just refusing.
+  assert.match(page, /The rest of this brand file is for members/)
+  assert.match(page, /redirect=\$\{back\}/, 'nobody should have to find the page twice')
+})
+
+test('the gate is decided on the server', () => {
+  const page = read('src/app/brands/[slug]/page.tsx')
+  assert.match(page, /async function readerIsSignedIn/)
+  assert.match(page, /createServerSupabaseClient/)
+  // Hiding gated copy in the browser is a curtain, not a gate: it would sit in
+  // the page source for anyone who looked.
+  assert.doesNotMatch(page, /'use client'/)
+  // A page that reads the session cannot also claim to be revalidated. This
+  // project has shipped that silently-dead setting before.
+  assert.doesNotMatch(body('src/app/brands/[slug]/page.tsx'), /export const revalidate/)
 })

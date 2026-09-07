@@ -122,6 +122,7 @@ export default function Navbar({ siteContent }: { siteContent?: WebsiteContent }
   const publicLinks = [
     { href: '/jobs', label: labels.jobs || 'Browse Roles' },
     { href: '/properties', label: 'Properties' },
+    { href: '/brands', label: 'Brands' },
     { href: '/agency/about', label: labels.agency || 'Agency' },
     { href: '/residency', label: labels.residency || 'Residency' },
     { href: '/consultancy', label: 'Consultancy' },
