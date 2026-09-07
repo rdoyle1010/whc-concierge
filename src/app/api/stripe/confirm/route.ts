@@ -33,6 +33,18 @@ import { fulfilCheckoutSession } from '@/lib/stripe-checkout-fulfilment'
 // else's session id buys you nothing except finishing their delivery to them.
 const GUEST_CHECKOUT_TYPES = new Set(['course_public'])
 
+// The account a guest purchase was delivered to.
+//
+// A guest buys by email, and the email decides the account: an address that
+// already has one gets the course on that account, not on a new one. Somebody
+// who pays with a personal address and then signs in with a work one sees no
+// course and concludes the platform took their money. So the address is
+// returned here and named on the page, while the buyer is still looking at it.
+function deliveryAddress(session: { metadata?: Record<string, string> | null; customer_details?: { email?: string | null } | null }) {
+  if (!GUEST_CHECKOUT_TYPES.has(String(session.metadata?.type || ''))) return null
+  return String(session.metadata?.buyer_email || session.customer_details?.email || '').toLowerCase() || null
+}
+
 export async function POST(req: NextRequest) {
   const user = await getRequestUser(req)
 
@@ -78,7 +90,7 @@ export async function POST(req: NextRequest) {
     const { error } = await admin.from('stripe_events')
       .insert({ event_id: ledgerId, type: 'checkout.session.completed', payload: { session_id: session.id } as any })
     if (error && ((error as any).code === '23505' || /duplicate key|already exists/i.test(String(error.message)))) {
-      return NextResponse.json({ ok: true, alreadyFulfilled: true, detail: 'This payment has already been applied.' })
+      return NextResponse.json({ ok: true, alreadyFulfilled: true, detail: 'This payment has already been applied.', deliveredTo: deliveryAddress(session) })
     }
   } catch { /* a missing ledger must never stop somebody getting what they paid for */ }
 
@@ -94,5 +106,5 @@ export async function POST(req: NextRequest) {
     }, { status: 500 })
   }
 
-  return NextResponse.json({ ok: true, detail: 'Payment confirmed and applied.' })
+  return NextResponse.json({ ok: true, detail: 'Payment confirmed and applied.', deliveredTo: deliveryAddress(session) })
 }

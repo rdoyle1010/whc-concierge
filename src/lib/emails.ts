@@ -98,11 +98,17 @@ export async function sendCourseGiftEmail(email: string, name: string, course: s
   `))
 }
 
+// The account line is not decoration. A guest buys by email, and the email
+// decides the account: an address that already has one gets the course there.
+// Somebody who pays with a personal address and later signs in with a work one
+// finds no course and concludes the purchase failed. Naming the address here,
+// in the one message they keep, is what makes that recoverable without support.
 export async function sendCourseAccessEmail(email: string, name: string, course: string, link: string) {
   await sendEmail(email, `Your Talent House Academy course is ready - ${course}`, wrapper(`
     <p style="font-size: 24px; font-weight: 700; margin-bottom: 16px;">Welcome to the Academy, ${name}</p>
     <p style="color: #555555;">Thank you for your purchase. Your course <strong>${course}</strong> is ready - the button below signs you straight in, no password needed.</p>
     <p style="margin-top: 24px;"><a href="${link}" style="display: inline-block; background: #1c1c1c; color: #fff; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600;">Start your course</a></p>
+    <p style="color: #555555; margin-top: 24px; padding: 12px 16px; background: #f1f1f1; font-size: 13px;">Your course is on the account <strong>${email}</strong>. Sign in with that address whenever you come back to it - a different address will not find this course.</p>
     <p style="color: #555555; margin-top: 24px; font-size: 13px;">Complete the lessons, pass the final quiz (80%), and your certificate is issued instantly with a unique verification code. A free Talent House profile has been created for you - complete it any time to be visible to five-star properties hiring on the platform.</p>
   `))
 }
