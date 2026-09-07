@@ -17,14 +17,30 @@ import {
 
 type View = 'overview' | number | 'quiz'
 
-const MODULE_VISUALS = [
-  'https://images.unsplash.com/photo-1540555700478-4be289fbecef?w=1400&q=82&auto=format&fit=crop',
-  'https://images.unsplash.com/photo-1556761175-b413da4baf72?w=1400&q=82&auto=format&fit=crop',
-  'https://images.unsplash.com/photo-1556761175-4b46a572b786?w=1400&q=82&auto=format&fit=crop',
-  'https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=1400&q=82&auto=format&fit=crop',
-  'https://images.unsplash.com/photo-1552664730-d307ca884978?w=1400&q=82&auto=format&fit=crop',
-  'https://images.unsplash.com/photo-1521737711867-e3b97375f902?w=1400&q=82&auto=format&fit=crop',
-]
+// The banner at the top of a module, and where its picture comes from.
+//
+// This was six stock photographs cycled by module index across all forty-six
+// courses, and nobody could change them from admin. Several were open-plan
+// offices, laptops and whiteboard meetings, which is a strange thing to put at
+// the top of a lesson about a facial. A brand masterclass showed a stranger at
+// a desk where the product should have been.
+//
+// The order now is: the module's own first uploaded picture, then the course
+// image an administrator set in Course settings, then no photograph at all.
+// The last case is deliberate. A plain charcoal band says nothing; a stock
+// photograph of the wrong industry says something untrue.
+type ModuleBanner = { url: string | null; title: string; caption: string }
+
+const GENERIC_BANNER = {
+  title: 'Think like a spa professional',
+  caption: 'Connect the principle to what a guest, therapist, manager or owner would actually experience.',
+}
+
+function moduleBanner(richLesson: { visuals?: any[] } | undefined, courseImage: string | undefined): ModuleBanner {
+  const own = (richLesson?.visuals || []).find((visual: any) => visual?.kind === 'image' && visual.url)
+  if (own) return { url: own.url, title: own.title || GENERIC_BANNER.title, caption: own.caption || own.alt || '' }
+  return { url: courseImage || null, ...GENERIC_BANNER }
+}
 
 function LearningFramework({ title }: { title: string }) {
   const steps = [
@@ -349,14 +365,19 @@ export default function CoursePlayerPage() {
                 <p className="text-[10px] uppercase tracking-[0.18em] text-accent font-semibold mb-1.5">Module {i + 1} of {total}</p>
                 <h2 className="font-serif text-[22px] font-bold text-ink mb-4">{lesson.title}</h2>
 
-                <div className="relative mb-6 h-48 overflow-hidden rounded-2xl md:h-56">
-                  <img decoding="async" src={MODULE_VISUALS[i % MODULE_VISUALS.length]} alt="" className="absolute inset-0 h-full w-full object-cover" />
-                  <div className="absolute inset-0 bg-gradient-to-t from-[#1c1c1c]/80 via-[#1c1c1c]/20 to-transparent" />
-                  <div className="absolute bottom-0 left-0 right-0 p-5">
-                    <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#dddddd]">Think like a spa professional</p>
-                    <p className="mt-1 max-w-2xl text-[13px] leading-5 text-white/90">Connect the principle to what a guest, therapist, manager or owner would actually experience.</p>
-                  </div>
-                </div>
+                {(() => {
+                  const banner = moduleBanner(richLesson, (course as any).image_url)
+                  return (
+                    <div className="relative mb-6 h-48 overflow-hidden rounded-2xl bg-[#1c1c1c] md:h-56">
+                      {banner.url ? <img decoding="async" src={banner.url} alt="" className="absolute inset-0 h-full w-full object-cover" /> : null}
+                      <div className="absolute inset-0 bg-gradient-to-t from-[#1c1c1c]/80 via-[#1c1c1c]/20 to-transparent" />
+                      <div className="absolute bottom-0 left-0 right-0 p-5">
+                        <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#dddddd]">{banner.title}</p>
+                        {banner.caption ? <p className="mt-1 max-w-2xl text-[13px] leading-5 text-white/90">{banner.caption}</p> : null}
+                      </div>
+                    </div>
+                  )
+                })()}
 
                 <LearningFramework title={lesson.title} />
 
@@ -391,10 +412,13 @@ export default function CoursePlayerPage() {
                   <ManagedLessonContent content={lesson.content} />
                 )}
 
-                {richLesson?.visuals && richLesson.visuals.length > 0 && (
-                  <div className="mb-6">{richLesson.visuals.map((visual, vi) => <LessonVisualBlock key={vi} visual={visual} />)}</div>
-                )}
-
+                {(() => {
+                  // The first picture is the banner above, so it is dropped
+                  // here rather than shown twice in one module.
+                  const bannerVisual = (richLesson?.visuals || []).find((visual: any) => visual?.kind === 'image' && visual.url)
+                  const rest = (richLesson?.visuals || []).filter(visual => visual !== bannerVisual)
+                  return rest.length > 0 ? <div className="mb-6">{rest.map((visual, vi) => <LessonVisualBlock key={vi} visual={visual} />)}</div> : null
+                })()}
                 {richLesson?.scenario && (
                   <div className="rounded-xl border border-[#dddddd] bg-[#f1f1f1] p-5 mb-4">
                     <p className="text-[10px] uppercase tracking-[0.16em] text-[#1c1c1c] font-semibold mb-1.5">Scenario - think it through</p>
