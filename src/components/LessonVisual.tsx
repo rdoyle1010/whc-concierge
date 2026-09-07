@@ -60,6 +60,25 @@ export function LessonVisualBlock({ visual }: { visual: Visual }) {
     )
   }
 
+  if (visual.kind === 'image') {
+    return (
+      <figure className="rounded-xl border border-[#dddddd] bg-white p-5 my-4">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#1c1c1c] mb-3">{visual.title}</p>
+        {/* Plain img rather than next/image: the source is an administrator
+            upload whose dimensions nobody knows in advance, and a course page
+            that fails to render a picture teaches nothing. */}
+        <img
+          src={visual.url}
+          alt={visual.alt || visual.title}
+          loading="lazy"
+          decoding="async"
+          className="w-full rounded-lg border border-[#dddddd] object-cover"
+        />
+        {visual.caption && <figcaption className="mt-3 text-[11.5px] text-secondary leading-5">{visual.caption}</figcaption>}
+      </figure>
+    )
+  }
+
   // image_placeholder: an honest slot the admin fills through the Academy
   // Downloads/media flow - never a stock photo pasted for decoration.
   return (

@@ -5,7 +5,7 @@ import { useParams, useRouter } from 'next/navigation'
 import DashboardShell from '@/components/DashboardShell'
 import {
   AlertTriangle, ArrowLeft, ArrowUp, ArrowDown, BookOpen, Check, ExternalLink,
-  Eye, FileText, Lock, Plus, Save, Trash2, Undo2,
+  Eye, FileText, Image as ImageIcon, Lock, Plus, Save, Trash2, Undo2,
 } from 'lucide-react'
 import {
   CONTENT_CATEGORIES,
@@ -81,6 +81,44 @@ export default function AcademyCourseEditorPage() {
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
   const [openModule, setOpenModule] = useState<number | null>(0)
+
+  // Uploading a picture into a module.
+  //
+  // The editor could show a diagram and delete it, and that was all: there was
+  // no way to put a picture into a lesson at all, and the only image kind the
+  // model had was an empty slot holding a title and a description. A course
+  // about products with no product in it is a worse course.
+  const [uploadingInto, setUploadingInto] = useState<number | null>(null)
+
+  const addImageToModule = useCallback(async (moduleIndex: number, file: File) => {
+    setUploadingInto(moduleIndex)
+    setError(''); setNotice('')
+    try {
+      const form = new FormData()
+      form.append('file', file)
+      form.append('bucket', 'site-images')
+      const safeSlug = String(slug || 'course').toLowerCase().replace(/[^a-z0-9-]+/g, '-')
+      form.append('path', `academy/${safeSlug}/${Date.now()}-${file.name.replace(/[^a-zA-Z0-9._-]/g, '-')}`)
+      const response = await fetch('/api/upload', { method: 'POST', body: form })
+      const json = await response.json().catch(() => ({}))
+      if (!response.ok) throw new Error(json.error || 'The image could not be uploaded.')
+      const url = String(json.url || '')
+      if (!/^https:\/\//i.test(url)) throw new Error('The upload did not return a secure image address.')
+      setDoc(current => {
+        if (!current) return current
+        const modules = current.modules.map((module, i) => (i === moduleIndex
+          ? { ...module, visuals: [...module.visuals, { kind: 'image' as const, title: 'New image', url, alt: '', caption: '' }] }
+          : module))
+        return { ...current, modules }
+      })
+      setDirty(true)
+      setNotice('Image added to the module. Give it a title and alt text, then save.')
+    } catch (caught: any) {
+      setError(caught.message || 'The image could not be uploaded.')
+    } finally {
+      setUploadingInto(null)
+    }
+  }, [slug])
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -344,24 +382,50 @@ export default function AcademyCourseEditorPage() {
                         </div>
                       </div>
 
-                      {/* Diagrams carried over from the platform version */}
-                      {module.visuals.length > 0 && (
-                        <div className="mt-5 border-t border-[#dddddd] pt-4">
-                          <p className="text-[13px] font-semibold text-[#1c1c1c]">Diagrams and tables in this module</p>
-                          <p className="mt-0.5 text-[11px] leading-5 text-[#6b6b6b]">These come from the Talent House version of the course and are kept exactly as they are, so nothing is lost when you take control. They cannot be rewritten here yet - you can remove one if it no longer fits what you have written.</p>
+                      {/* Pictures, diagrams and tables */}
+                      <div className="mt-5 border-t border-[#dddddd] pt-4">
+                        <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+                          <div>
+                            <p className="text-[13px] font-semibold text-[#1c1c1c]">Pictures and diagrams in this module</p>
+                            <p className="text-[11px] leading-5 text-[#6b6b6b]">Add your own pictures here. Diagrams and tables from the Talent House version are kept exactly as they are and cannot be rewritten yet, but you can remove one that no longer fits.</p>
+                          </div>
+                          <label className="btn-secondary w-fit cursor-pointer inline-flex items-center gap-1 text-[12px]">
+                            <ImageIcon size={12} /> {uploadingInto === index ? 'Uploading...' : 'Add a picture'}
+                            <input type="file" accept="image/jpeg,image/png,image/webp" className="hidden" disabled={uploadingInto !== null}
+                              onChange={event => { const file = event.target.files?.[0]; if (file) addImageToModule(index, file); event.target.value = '' }} />
+                          </label>
+                        </div>
+                        {module.visuals.length === 0
+                          ? <p className="text-[11px] text-[#6b6b6b]">No pictures or diagrams in this module yet.</p>
+                          : (
                           <div className="mt-2 space-y-2">
                             {module.visuals.map((visual, visualIndex) => (
-                              <div key={visualIndex} className="flex items-center gap-2 border border-[#dddddd] bg-white p-3">
-                                <div className="min-w-0 flex-1">
-                                  <p className="truncate text-[12px] font-medium text-[#1c1c1c]">{visual.title || 'Untitled'}</p>
-                                  <p className="text-[11px] text-[#6b6b6b]">{describeVisual(visual)}</p>
+                              <div key={visualIndex} className="border border-[#dddddd] bg-white p-3">
+                                <div className="flex items-start gap-3">
+                                  {visual.kind === 'image'
+                                    ? <img src={visual.url} alt="" className="h-16 w-24 shrink-0 border border-[#dddddd] object-cover" />
+                                    : null}
+                                  <div className="min-w-0 flex-1">
+                                    <p className="truncate text-[12px] font-medium text-[#1c1c1c]">{visual.title || 'Untitled'}</p>
+                                    <p className="text-[11px] text-[#6b6b6b]">{describeVisual(visual)}</p>
+                                  </div>
+                                  <button type="button" onClick={() => { if (window.confirm(`Remove "${visual.title || 'this picture'}" from module ${index + 1}?`)) updateModule(index, current => ({ ...current, visuals: current.visuals.filter((_, i) => i !== visualIndex) })) }} className="border border-[#dddddd] p-2 text-[#6b6b6b] hover:text-red-600" aria-label="Remove picture"><Trash2 size={13} /></button>
                                 </div>
-                                <button type="button" onClick={() => { if (window.confirm(`Remove "${visual.title || 'this diagram'}" from module ${index + 1}?`)) updateModule(index, current => ({ ...current, visuals: current.visuals.filter((_, i) => i !== visualIndex) })) }} className="border border-[#dddddd] p-2 text-[#6b6b6b] hover:text-red-600" aria-label="Remove diagram"><Trash2 size={13} /></button>
+                                {visual.kind === 'image' && (
+                                  <div className="mt-3 grid grid-cols-1 gap-2 md:grid-cols-3">
+                                    <input value={visual.title} placeholder="Title, shown above the picture" className="input-field"
+                                      onChange={event => updateModule(index, current => ({ ...current, visuals: current.visuals.map((item, i) => (i === visualIndex ? { ...item, title: event.target.value } : item)) }))} />
+                                    <input value={visual.caption || ''} placeholder="Caption (optional)" className="input-field"
+                                      onChange={event => updateModule(index, current => ({ ...current, visuals: current.visuals.map((item, i) => (i === visualIndex ? { ...item, caption: event.target.value } : item)) }))} />
+                                    <input value={visual.alt} placeholder="Alt text, for screen readers" className="input-field"
+                                      onChange={event => updateModule(index, current => ({ ...current, visuals: current.visuals.map((item, i) => (i === visualIndex ? { ...item, alt: event.target.value } : item)) }))} />
+                                  </div>
+                                )}
                               </div>
                             ))}
                           </div>
-                        </div>
-                      )}
+                        )}
+                      </div>
 
                       {/* Key terms */}
                       <div className="mt-5 border-t border-[#dddddd] pt-4">

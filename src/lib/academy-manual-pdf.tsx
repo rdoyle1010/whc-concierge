@@ -129,6 +129,18 @@ function VisualBlock({ visual }: { visual: LessonVisual }) {
       </View>
     )
   }
+  if (visual.kind === 'image') {
+    // The picture itself is not embedded: this renders on the server from a
+    // remote URL, and one unreachable image would fail the whole manual. The
+    // title and caption are carried across so the printed manual acknowledges
+    // what the online course shows rather than silently omitting it.
+    return (
+      <View style={styles.block} wrap={false}>
+        <Text style={styles.blockLabel}>{visual.title}</Text>
+        <Text style={styles.caption}>{visual.caption || visual.alt || 'Shown as a picture in the online course.'}</Text>
+      </View>
+    )
+  }
   return null // image placeholders are digital-course furniture, not manual content
 }
 
