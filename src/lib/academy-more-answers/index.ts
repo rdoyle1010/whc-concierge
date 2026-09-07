@@ -29,6 +29,7 @@ import decleor from './decleor-masterclass'
 import imageSkincare from './image-skincare-masterclass'
 import medik8 from './medik8-masterclass'
 import murad from './murad-masterclass'
+import carolJoyLondon from './carol-joy-london-masterclass'
 import cancerCare from './cancer-care-awareness'
 import menopause from './menopause-aware-spa'
 import pregnancy from './pregnancy-postnatal-spa'
@@ -64,6 +65,7 @@ export const MORE_ANSWERS: Record<string, number[]> = {
   'image-skincare-masterclass': imageSkincare,
   'medik8-masterclass': medik8,
   'murad-masterclass': murad,
+  'carol-joy-london-masterclass': carolJoyLondon,
   'cancer-care-awareness': cancerCare,
   'menopause-aware-spa': menopause,
   'pregnancy-postnatal-spa': pregnancy,
