@@ -232,7 +232,13 @@ check('all service-role API routes are protected or deliberately public', () => 
   // The sign-in route reconciles the copies of a member's email address after
   // a confirmed change, which needs the service role and cannot happen before
   // the password has been accepted.
-  const authMarkers = /getUser\(|getRequestUser\(|adminRequestUser\(|requireAdmin|verifyAdmin|stripe-signature|isInternalApiRequest|signInWithPassword\(/
+  // adminRequestOutcome is the same guard as adminRequestUser - the latter now
+  // delegates to it - and it is the one a route calls when it wants to tell the
+  // administrator which of the four refusals happened rather than answering
+  // "Unauthorised" to all of them. Omitting it here would have failed a route
+  // for using the stronger call, which is the naming-over-substance mistake
+  // this list has already made once.
+  const authMarkers = /getUser\(|getRequestUser\(|adminRequestUser\(|adminRequestOutcome\(|requireAdmin|verifyAdmin|stripe-signature|isInternalApiRequest|signInWithPassword\(/
   const unguarded = files.filter(file => !authMarkers.test(read(file)) && !deliberatePublic.has(file))
   assert.deepEqual(unguarded, [])
 })

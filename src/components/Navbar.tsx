@@ -98,6 +98,7 @@ export default function Navbar({ siteContent }: { siteContent?: WebsiteContent }
   const loggedInSiteLinks = [
     { href: '/jobs', label: 'Browse Roles' },
     { href: '/properties', label: 'Properties' },
+    { href: '/brands', label: 'Brands' },
     { href: '/agency/about', label: 'Agency' },
     { href: '/academy', label: 'Academy' },
     { href: '/residency', label: 'Residency' },
