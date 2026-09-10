@@ -32,8 +32,43 @@ function postedLabel(value: any): string | null {
   return `posted ${date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}`
 }
 
+// The shell a crawler and a first paint actually receive.
+//
+// The whole page - Navbar, the h1, the listing and the Footer - sat inside a
+// Suspense boundary with fallback={null}, and the component inside it reads
+// useSearchParams. A subtree that reads the search params bails out of
+// prerendering, so the static HTML for /jobs was literally nothing: a blank
+// white page until JavaScript booted, and no heading, no copy and no
+// navigation for anything that does not run JavaScript. This is the first item
+// in the main navigation and the highest-priority page in the sitemap.
+//
+// The fallback now carries the same heading and description as the live page,
+// so the document is never empty and never says something the page does not.
+function JobsShell() {
+  return (
+    <div className="min-h-screen bg-surface">
+      <Navbar/>
+      <main id="main-content">
+        <section className="pt-[76px] bg-white border-b border-border">
+          <div className="max-w-[1440px] mx-auto px-6 lg:px-10 py-16">
+            <p className="public-eyebrow mb-4">Open positions</p>
+            <h1 className="public-title mb-4">Live roles at exceptional properties.</h1>
+            <p className="text-[15px] text-secondary max-w-[58ch]">Matched on real skills, qualifications and product houses - not CV keywords. Every property here has been approved by hand before its role went live.</p>
+          </div>
+        </section>
+        <section className="py-12">
+          <div className="max-w-[1440px] mx-auto px-6 lg:px-10">
+            <p className="text-[13px] text-secondary">Loading live roles...</p>
+          </div>
+        </section>
+      </main>
+      <Footer/>
+    </div>
+  )
+}
+
 export default function PublicJobsPage() {
-  return <Suspense fallback={null}><PublicJobsBrowser/></Suspense>
+  return <Suspense fallback={<JobsShell/>}><PublicJobsBrowser/></Suspense>
 }
 
 function PublicJobsBrowser() {

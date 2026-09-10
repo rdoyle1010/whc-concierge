@@ -558,6 +558,16 @@ export async function POST(req: NextRequest) {
     // platform fee is calculated on top and payable by the property.
     if (action === 'create') {
       if (!emp) return NextResponse.json({ error: 'Only employers can make offers' }, { status: 403 })
+      // Approval, checked before anybody's phone rings.
+      //
+      // Both booking actions checked only preferred_employer, so anyone who
+      // registered a property and paid £150 could send shifts to real people
+      // at an address nobody had vetted - and an employer whose approval an
+      // administrator had revoked could carry on booking. The mobile twin has
+      // always checked this; the web route the live site uses did not.
+      if (emp.approval_status !== 'approved') {
+        return NextResponse.json({ error: 'Your employer account must be approved before booking Agency Talent.' }, { status: 403 })
+      }
       // Agency Cover is the one product line with a border on it. Supplying
       // somebody into a shift makes Talent House an employment business,
       // licensed country by country, so a property outside the UK cannot book
@@ -720,6 +730,16 @@ export async function POST(req: NextRequest) {
     // shift to them one at a time (30-minute windows) until someone accepts.
     if (action === 'urgent_cascade') {
       if (!emp) return NextResponse.json({ error: 'Only employers can request urgent cover' }, { status: 403 })
+      if (emp.approval_status !== 'approved') {
+        return NextResponse.json({ error: 'Your employer account must be approved before booking Agency Talent.' }, { status: 403 })
+      }
+      // The same country gate 'create' applies. Supplying cover makes Talent
+      // House an employment business, licensed country by country, and this
+      // action broadcasts to the whole register rather than to one named
+      // person - so it was the more exposed of the two, not the less.
+      if (!productAvailableIn('agency', emp.country_code || emp.country)) {
+        return NextResponse.json({ error: unavailableReason('agency') }, { status: 403 })
+      }
       if (!emp.preferred_employer) {
         return NextResponse.json({ error: 'Urgent cover is for registered Preferred Employers. Register from your Agency Bookings page (£150/year).' }, { status: 403 })
       }

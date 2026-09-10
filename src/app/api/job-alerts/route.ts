@@ -73,13 +73,6 @@ export async function POST(req: NextRequest) {
       const email = emailMap.get(candidate.user_id)
       if (!email) continue
 
-      // Only process instant alerts for MVP
-      if (candidate.job_alerts_frequency && candidate.job_alerts_frequency !== 'instant') continue
-
-      // Preference-gated ('job_alerts'): also honour the privacy_preferences
-      // opt-out alongside job_alerts_enabled. Fail-open on lookup errors.
-      if (!(await emailAllowed(supabase, candidate.user_id, 'job_alerts'))) continue
-
       // Calculate match score
       const result = calculateMatchScore(candidate, job)
       if (result.hardStop) continue
@@ -101,6 +94,21 @@ export async function POST(req: NextRequest) {
           `/jobs/${job.id}`,
         )
       } catch { /* the email below still goes */ }
+
+      // Both of these are questions about the inbox, and they used to be asked
+      // three lines before the in-app notification above - so choosing "Daily"
+      // or "Weekly" turned off every alert on the platform, not just the
+      // emails, and there is no digest job anywhere to make up the difference.
+      // Somebody who picked Daily to keep their inbox quiet received nothing,
+      // ever, and the setting showed as saved.
+      //
+      // Instant is still the only frequency that emails. The rest now get the
+      // notification the settings page promises them.
+      const wantsInstantEmail = !candidate.job_alerts_frequency || candidate.job_alerts_frequency === 'instant'
+      if (!wantsInstantEmail) continue
+      // Preference-gated ('job_alerts'): also honour the privacy_preferences
+      // opt-out alongside job_alerts_enabled. Fail-open on lookup errors.
+      if (!(await emailAllowed(supabase, candidate.user_id, 'job_alerts'))) continue
 
       // Send email
       const firstName = candidate.full_name?.split(' ')[0] || 'there'
