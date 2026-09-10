@@ -51,6 +51,18 @@ async function getPublicRoles() {
   }
 }
 
+import type { Metadata } from 'next'
+
+export const metadata: Metadata = {
+  title: { absolute: 'Spa and Wellness Roles | Browse First, Decide Later | Talent House Collective' },
+  description: 'Browse luxury spa, wellness and hospitality roles across the UK without applying. See what is out there before you decide anything.',
+  alternates: { canonical: 'https://talenthousecollective.co.uk/roles' },
+  openGraph: {
+    title: 'Spa and Wellness Roles | Browse First, Decide Later | Talent House Collective',
+    description: 'Browse luxury spa, wellness and hospitality roles across the UK without applying. See what is out there before you decide anything.',
+  },
+}
+
 export default async function BrowseRolesPage() {
   const jobs = await getPublicRoles()
 

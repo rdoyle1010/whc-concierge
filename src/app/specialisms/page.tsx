@@ -60,6 +60,18 @@ const getSpecialismDemand = unstable_cache(async (): Promise<SpecialismDemand[]>
   }
 }, ['specialism-demand-v1'], { revalidate: 300 })
 
+import type { Metadata } from 'next'
+
+export const metadata: Metadata = {
+  title: { absolute: 'Spa and Wellness Specialisms in Demand | Talent House Collective' },
+  description: 'Where demand actually is across UK spa and wellness: the treatments, skills and specialisms properties are hiring for right now.',
+  alternates: { canonical: 'https://talenthousecollective.co.uk/specialisms' },
+  openGraph: {
+    title: 'Spa and Wellness Specialisms in Demand | Talent House Collective',
+    description: 'Where demand actually is across UK spa and wellness: the treatments, skills and specialisms properties are hiring for right now.',
+  },
+}
+
 export default async function SpecialismsPage() {
   const specialisms = await getSpecialismDemand()
   const open = specialisms.filter(item => item.liveRoles > 0).sort((a, b) => b.liveRoles - a.liveRoles)

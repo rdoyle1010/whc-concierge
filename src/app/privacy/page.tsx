@@ -1,6 +1,18 @@
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
 
+import type { Metadata } from 'next'
+
+export const metadata: Metadata = {
+  title: { absolute: 'Privacy Policy | Talent House Collective' },
+  description: 'How Talent House Collective collects, uses, stores and protects your personal data, and the rights you have over it.',
+  alternates: { canonical: 'https://talenthousecollective.co.uk/privacy' },
+  openGraph: {
+    title: 'Privacy Policy | Talent House Collective',
+    description: 'How Talent House Collective collects, uses, stores and protects your personal data, and the rights you have over it.',
+  },
+}
+
 export default function PrivacyPage() {
   return <div className="min-h-screen bg-white"><Navbar />
     <main id="main-content">

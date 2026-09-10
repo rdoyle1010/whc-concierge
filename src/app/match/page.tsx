@@ -29,6 +29,18 @@ const signals = [
   'Working preferences',
 ]
 
+import type { Metadata } from 'next'
+
+export const metadata: Metadata = {
+  title: { absolute: 'How Talent House Matching Works | Talent House Collective' },
+  description: 'How roles are matched to professionals on Talent House: what the score reads, what it weighs, and why you are never hidden from a property by a number.',
+  alternates: { canonical: 'https://talenthousecollective.co.uk/match' },
+  openGraph: {
+    title: 'How Talent House Matching Works | Talent House Collective',
+    description: 'How roles are matched to professionals on Talent House: what the score reads, what it weighs, and why you are never hidden from a property by a number.',
+  },
+}
+
 export default async function MatchExplainerPage() {
   const content = await getWebsiteContent(false)
 
