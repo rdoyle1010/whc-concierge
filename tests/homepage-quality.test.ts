@@ -52,7 +52,10 @@ test('site icon follows the uploaded brand logo', () => {
   // it without pulling zod into every page. The rule is unchanged: the site
   // icon follows the brand logo.
   const brand = read('src/lib/site-content-values.ts')
-  assert.match(source, /icons: \{ icon: logo\.url, apple: logo\.url \}/)
+  // The tab icon still follows the brand logo. The touch icon deliberately
+  // does not: iOS ignores transparency, drops the file on white and crops it
+  // square, so a wide SVG wordmark reaches a home screen as three letters.
+  assert.match(source, /icons: \{ icon: logo\.url, apple: '\/icons\/apple-touch-icon\.png' \}/)
   assert.match(source, /export async function generateMetadata/)
   assert.doesNotMatch(source, /icon: '\/favicon\.ico'/)
   assert.match(brand, /url: '\/images\/whc-logo-charcoal\.jpg'/)
