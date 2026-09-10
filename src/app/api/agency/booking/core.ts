@@ -22,7 +22,7 @@ async function employerHasAgencyPlus(admin: any, employerId: string | null | und
 
 export async function feePctForEmployerShift(admin: any, employerId: string | null | undefined, shiftDate: string | null | undefined): Promise<number> {
   const plus = await employerHasAgencyPlus(admin, employerId)
-  return agencyFeePctForShiftPlus(shiftDate, todayInLondon(), plus)
+  return agencyFeePctForShiftPlus(shiftDate, londonToday(), plus)
 }
 
 // The fee in basis points, which is what the money maths actually uses.
@@ -32,7 +32,7 @@ export async function feePctForEmployerShift(admin: any, employerId: string | nu
 // charged less.
 export async function feeBpsForEmployerShift(admin: any, employerId: string | null | undefined, shiftDate: string | null | undefined): Promise<number> {
   const plus = await employerHasAgencyPlus(admin, employerId)
-  return agencyFeeBpsForShift(shiftDate, todayInLondon(), plus)
+  return agencyFeeBpsForShift(shiftDate, londonToday(), plus)
 }
 
 // The stored whole-pound fee for a shift, computed in integers end to end.
@@ -45,7 +45,7 @@ import { sendAgencyOfferEmail, sendReviewRequestEmail, sendInsuranceExpiryEmail,
 import { emailAllowed, smsAllowed } from '@/lib/notification-prefs'
 import { profileDistanceMiles } from '@/lib/geo'
 import { productAvailableIn, unavailableReason } from '@/lib/countries'
-import { shiftHours, validShiftWindow, windowCovers, windowsOverlap } from '@/lib/agency-time'
+import { londonDateOffset, londonToday, shiftHours, validShiftWindow, windowCovers, windowsOverlap } from '@/lib/agency-time'
 
 // Offers expire so urgent cover doesn't sit unanswered while the property
 // waits: 4 hours for same-day (urgent) shifts, 48 hours otherwise.
@@ -58,10 +58,6 @@ const STANDARD_EXPIRY_MS = 48 * 60 * 60 * 1000
 const CASCADE_WINDOW_MS = 30 * 60 * 1000
 const CASCADE_TOTAL_MS = URGENT_EXPIRY_MS
 const CASCADE_MAX_QUEUE = 10
-
-function todayInLondon(): string {
-  return new Date().toLocaleDateString('en-CA', { timeZone: 'Europe/London' })
-}
 
 function isExpired(booking: any): boolean {
   return Boolean(booking.expires_at && new Date(booking.expires_at).getTime() < Date.now())
@@ -313,7 +309,7 @@ async function maintenanceSweep(admin: any) {
     admin.from('employer_profiles').update({ preferred_employer: false }).eq('preferred_employer', true).not('preferred_until', 'is', null).lt('preferred_until', grace),
   ])
 
-  const todayLondon = new Date().toLocaleDateString('en-CA', { timeZone: 'Europe/London' })
+  const todayLondon = londonToday()
 
   // ── Post-shift review requests ──
   // The day after a paid shift, both sides get one nudge to review each
@@ -391,7 +387,7 @@ async function maintenanceSweep(admin: any) {
       }
     }
     // Expiring within 30 days → chased at most once every 10 days
-    const soon = new Date(Date.now() + 30 * 86400000).toLocaleDateString('en-CA', { timeZone: 'Europe/London' })
+    const soon = londonDateOffset(30)
     const { data: expiring } = await admin.from('candidate_profiles')
       .select('id, user_id, full_name, insurance_expiry_date, insurance_chased_at')
       .eq('whc_verified', true)
@@ -619,7 +615,7 @@ export async function POST(req: NextRequest) {
       const platformFee = await shiftFeePounds(admin, emp.id, String(body.shiftDate), rate, effectiveHours)
 
       // Same-day offers are URGENT (sickness cover): tighter expiry + SMS.
-      const urgent = String(body.shiftDate) === todayInLondon()
+      const urgent = String(body.shiftDate) === londonToday()
       const expiresAt = new Date(Date.now() + (urgent ? URGENT_EXPIRY_MS : STANDARD_EXPIRY_MS)).toISOString()
 
       // Standing bookings: the same offer repeated weekly on the same weekday,
@@ -743,7 +739,7 @@ export async function POST(req: NextRequest) {
       if (!emp.preferred_employer) {
         return NextResponse.json({ error: 'Urgent cover is for registered Preferred Employers. Register from your Agency Bookings page (£150/year).' }, { status: 403 })
       }
-      const shiftDate = String(body.shiftDate || todayInLondon())
+      const shiftDate = String(body.shiftDate || londonToday())
       const shiftStartTime = String(body.shiftStartTime || '')
       const shiftEndTime = String(body.shiftEndTime || '')
       if (!validShiftWindow(shiftDate, shiftStartTime, shiftEndTime)) {

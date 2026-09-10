@@ -3,9 +3,21 @@ import { getStripe } from '@/lib/stripe'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { AD_PLACEMENTS, isAdPlacement } from '@/lib/advertising'
 import { sendAdvertSubmittedEmail } from '@/lib/advertising-emails'
+import { enforceRateLimit } from '@/lib/rate-limit'
 
 export async function POST(req: NextRequest) {
   try {
+    // Anonymous, like the checkout it follows. A session id is unguessable, so
+    // the limit is about the cost of somebody trying rather than the chance of
+    // them succeeding: every call is a live Stripe API request.
+    const limited = await enforceRateLimit(req, 'sponsored-ad-confirm', { windowMs: 60 * 60 * 1000, maxRequests: 30 })
+    if (limited) {
+      return NextResponse.json(
+        { error: 'Too many attempts from this connection. Please try again shortly.' },
+        { status: 429, headers: { 'Retry-After': String(limited.retryAfterSeconds) } },
+      )
+    }
+
     const { sessionId } = await req.json()
     if (!sessionId || typeof sessionId !== 'string') return NextResponse.json({ error: 'Missing checkout session.' }, { status: 400 })
 
@@ -57,7 +69,11 @@ export async function POST(req: NextRequest) {
         Number(advert.monthly_rate || 0),
       )
       if (sent) {
-        await admin.from('ad_placements').update({ confirmation_email_sent_at: new Date().toISOString() }).eq('id', advert.id)
+        // If this flag does not land the brand gets a second confirmation on a
+        // repeat visit to the success page. Not worth failing the request for,
+        // but worth knowing about.
+        const { error: flagError } = await admin.from('ad_placements').update({ confirmation_email_sent_at: new Date().toISOString() }).eq('id', advert.id)
+        if (flagError) console.error('[sponsored ad] confirmation flag not saved:', flagError.message)
       }
     }
 

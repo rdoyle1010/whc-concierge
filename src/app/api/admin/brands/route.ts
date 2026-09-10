@@ -64,7 +64,11 @@ export async function POST(req: NextRequest) {
     const draft = normaliseBrand({ ...application, slug, name: application.brand_name, is_published: false })
     const { error: writeError } = await admin.from('brand_profiles').insert(draft)
     if (writeError) return NextResponse.json({ error: writeError.message }, { status: 500 })
-    await admin.from('brand_applications').update({ status: 'converted', converted_slug: slug }).eq('id', id)
+    // The draft exists now. If this flag does not land, the application stays
+    // in the queue and the next person to press Convert hits a slug clash on a
+    // brand page that already exists, with nothing explaining why.
+    const { error: markError } = await admin.from('brand_applications').update({ status: 'converted', converted_slug: slug }).eq('id', id)
+    if (markError) return NextResponse.json({ error: `The brand page was created at /brands/${slug}, but the application could not be marked as converted. Mark it by hand before converting anything else.` }, { status: 500 })
     return NextResponse.json({ success: true, slug })
   }
 

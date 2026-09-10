@@ -50,7 +50,8 @@ export async function POST(req: NextRequest) {
   if (body.action === 'message') {
     const message = String(body.message || '').trim()
     if (!message) return NextResponse.json({ error: 'Write a message first.' }, { status: 400 })
-    await admin.from('agency_case_messages').insert({ case_id: row.id, sender_user_id: user.id, sender_role: 'admin', message: message.slice(0, 4000) })
+    const { error: messageError } = await admin.from('agency_case_messages').insert({ case_id: row.id, sender_user_id: user.id, sender_role: 'admin', message: message.slice(0, 4000) })
+    if (messageError) return NextResponse.json({ error: 'That message could not be sent. Please try again.' }, { status: 500 })
     await admin.from('agency_case_events').insert({ case_id: row.id, actor_user_id: user.id, actor_role: 'admin', event_type: 'admin_message_added' })
     return NextResponse.json({ success: true })
   }

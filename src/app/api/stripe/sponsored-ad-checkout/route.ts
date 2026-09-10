@@ -3,6 +3,7 @@ import { getStripe } from '@/lib/stripe'
 import { AD_PLACEMENTS, AD_TERMS_VERSION, isAdPlacement } from '@/lib/advertising'
 import { getCommercialSetting } from '@/lib/commercial-settings'
 import { assertStripeModeMatchesOrigin, getSafeSiteOrigin } from '@/lib/site-origin'
+import { enforceRateLimit } from '@/lib/rate-limit'
 
 function secureUrl(value: unknown) {
   try {
@@ -15,6 +16,19 @@ function secureUrl(value: unknown) {
 
 export async function POST(req: NextRequest) {
   try {
+    // Anonymous by design: this is the public advertising form, and asking a
+    // brand to register before it can pay us would be a strange way to sell
+    // advertising. Anonymous and unlimited is a different matter - every call
+    // creates a real Stripe checkout session, so an unthrottled endpoint is a
+    // way to fill the Stripe dashboard with rubbish at our expense.
+    const limited = await enforceRateLimit(req, 'sponsored-ad-checkout', { windowMs: 60 * 60 * 1000, maxRequests: 10 })
+    if (limited) {
+      return NextResponse.json(
+        { error: 'Too many attempts from this connection. Please try again shortly.' },
+        { status: 429, headers: { 'Retry-After': String(limited.retryAfterSeconds) } },
+      )
+    }
+
     const body = await req.json()
     const placement = body.placement
     if (!isAdPlacement(placement)) return NextResponse.json({ error: 'Choose an advert location.' }, { status: 400 })

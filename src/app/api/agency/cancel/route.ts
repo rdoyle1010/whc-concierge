@@ -5,6 +5,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { createNotification } from '@/lib/notifications'
 import { sendAgencyUpdateEmail } from '@/lib/emails'
 import { emailAllowed } from '@/lib/notification-prefs'
+import { londonToday } from '@/lib/agency-time'
 
 async function currentUser() {
   const store = await cookies()
@@ -12,10 +13,6 @@ async function currentUser() {
     cookies: { getAll() { return store.getAll() }, setAll() {} },
   })
   return (await client.auth.getUser()).data.user
-}
-
-function londonToday() {
-  return new Date().toLocaleDateString('en-CA', { timeZone: 'Europe/London' })
 }
 
 export async function POST(req: NextRequest) {

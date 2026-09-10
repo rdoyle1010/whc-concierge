@@ -10,6 +10,10 @@ import { Banknote, CheckCircle2 } from 'lucide-react'
 // nothing to transfer; otherwise a payout can only be marked paid against
 // the bank reference for the transfer that was actually made.
 
+// Whole pounds or pounds and pence, whichever was typed, rounded to the penny
+// so nothing arrives with a third decimal place from a stray keystroke.
+const pounds = (value: string) => Math.round((Number(value) || 0) * 100) / 100
+
 export default function AdminAgencyPage() {
   const [bookings, setBookings] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
@@ -99,8 +103,12 @@ export default function AdminAgencyPage() {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           action: 'resolve_dispute', bookingId,
-          refundAmount: inputs.refund === '' ? 0 : parseInt(inputs.refund, 10) || 0,
-          payoutAmount: inputs.payout === '' ? undefined : parseInt(inputs.payout, 10) || 0,
+          // Pounds and pence. amount_paid, refund_amount and payout_amount are
+          // all numeric(10,2), and the API rounds to the penny - but this form
+          // ran parseInt first, so a £187.50 refund typed here arrived as £187
+          // and the server's careful handling never saw the pence at all.
+          refundAmount: inputs.refund === '' ? 0 : pounds(inputs.refund),
+          payoutAmount: inputs.payout === '' ? undefined : pounds(inputs.payout),
         }),
       })
       const j = await res.json()
@@ -251,11 +259,11 @@ export default function AdminAgencyPage() {
                       <div className="flex items-end flex-wrap gap-3">
                         <div>
                           <label className="text-[11px] text-secondary block mb-1">Refund to property (£)</label>
-                          <input type="number" min={0} value={inputs.refund} onChange={e => setInputs({ refund: e.target.value })} className="input-field !py-1.5 text-[13px] w-36" placeholder="0" />
+                          <input type="number" min={0} step="0.01" inputMode="decimal" value={inputs.refund} onChange={e => setInputs({ refund: e.target.value })} className="input-field !py-1.5 text-[13px] w-36" placeholder="0.00" />
                         </div>
                         <div>
                           <label className="text-[11px] text-secondary block mb-1">Adjusted payout to therapist (£)</label>
-                          <input type="number" min={0} value={inputs.payout} onChange={e => setInputs({ payout: e.target.value })} className="input-field !py-1.5 text-[13px] w-36" />
+                          <input type="number" min={0} step="0.01" inputMode="decimal" value={inputs.payout} onChange={e => setInputs({ payout: e.target.value })} className="input-field !py-1.5 text-[13px] w-36" />
                         </div>
                         <button onClick={() => resolveDispute(b.id)} disabled={busyId === b.id}
                           className="btn-primary text-[12px] disabled:opacity-50">{busyId === b.id ? 'Resolving...' : 'Resolve'}</button>

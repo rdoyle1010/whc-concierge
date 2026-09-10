@@ -29,3 +29,31 @@ export function shiftHours(start: string, end: string) {
   const endMinutes = minutes(end)
   return startMinutes == null || endMinutes == null || endMinutes <= startMinutes ? null : (endMinutes - startMinutes) / 60
 }
+
+/**
+ * Today's date in London, as the shift_date column stores it.
+ *
+ * A shift is booked, cancelled, reviewed and paid against a British calendar
+ * day, and the server runs on UTC. In British Summer Time London is an hour
+ * ahead, so between midnight and one in the morning the UTC date is still
+ * yesterday: a shift that has finished reads as future, a cancellation that
+ * should have been late is treated as early, and the review nudge for a shift
+ * worked today does not go out until tomorrow.
+ *
+ * en-CA is not an affectation - it is the locale that formats a date as
+ * YYYY-MM-DD, which is exactly what the column holds and what a string
+ * comparison against it needs.
+ *
+ * There were two copies of this written inline and one place using the UTC
+ * date instead, which is how a rule ends up applying differently depending on
+ * which screen you came from.
+ */
+export function londonToday(): string {
+  return new Date().toLocaleDateString('en-CA', { timeZone: 'Europe/London' })
+}
+
+/** A London date offset by whole days, for windows either side of today. */
+export function londonDateOffset(days: number): string {
+  const at = new Date(Date.now() + days * 86400000)
+  return at.toLocaleDateString('en-CA', { timeZone: 'Europe/London' })
+}

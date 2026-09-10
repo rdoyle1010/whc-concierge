@@ -177,8 +177,15 @@ export async function POST(req: NextRequest) {
       }))
       for (const r of results) r.status === 'fulfilled' ? sent++ : failed++
     }
-    await admin.from('campaigns').update({ status: 'sent', sent_at: new Date().toISOString(), recipients_count: sent }).eq('id', campaign.id)
-    return NextResponse.json({ success: true, sent, failed, excluded_without_confirmed_consent: excludedWithoutConfirmedConsent.length })
+    // The send has happened by this point. If the campaign is not marked, the
+    // "this newsletter has already been sent" guard above never fires and the
+    // whole confirmed list gets it a second time.
+    const { error: markError } = await admin.from('campaigns').update({ status: 'sent', sent_at: new Date().toISOString(), recipients_count: sent }).eq('id', campaign.id)
+    return NextResponse.json({
+      success: true, sent, failed,
+      excluded_without_confirmed_consent: excludedWithoutConfirmedConsent.length,
+      ...(markError ? { warning: `The newsletter went to ${sent} people but could not be marked as sent. Do not send it again until that is fixed.` } : {}),
+    })
   } catch (e: any) {
     return NextResponse.json({ error: e.message }, { status: 500 })
   }

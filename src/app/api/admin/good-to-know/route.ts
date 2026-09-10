@@ -135,7 +135,8 @@ export async function POST(req: NextRequest) {
     const order: string[] = Array.isArray(body.order) ? body.order.map((id: unknown) => trim(id, 60)).filter(Boolean) : []
     if (!order.length) return NextResponse.json({ error: 'Nothing to reorder.' }, { status: 400 })
     for (const [index, id] of order.entries()) {
-      await admin.from('industry_bodies').update({ sort_order: index }).eq('id', id)
+      const { error } = await admin.from('industry_bodies').update({ sort_order: index }).eq('id', id)
+      if (error) return NextResponse.json({ error: 'The new order could not be saved. Refresh and try again.' }, { status: 500 })
     }
     published()
     return NextResponse.json({ success: true })

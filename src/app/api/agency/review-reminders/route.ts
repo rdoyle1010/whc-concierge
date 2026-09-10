@@ -4,6 +4,7 @@ import { isInternalApiRequest } from '@/lib/internal-request'
 import { createNotification } from '@/lib/notifications'
 import { sendAgencyUpdateEmail } from '@/lib/emails'
 import { emailAllowed } from '@/lib/notification-prefs'
+import { londonDateOffset, londonToday } from '@/lib/agency-time'
 
 // Chasing the reviews that used to be demanded.
 //
@@ -40,8 +41,11 @@ export async function POST(req: NextRequest) {
 
   const now = Date.now()
   const gapCutoff = new Date(now - REMINDER_GAP_HOURS * 60 * 60 * 1000).toISOString()
-  const windowStart = new Date(now - WINDOW_DAYS * 24 * 60 * 60 * 1000).toISOString().slice(0, 10)
-  const today = new Date(now).toISOString().slice(0, 10)
+  // London, not UTC. shift_date is a British calendar day, and in summer the
+  // UTC date is still yesterday for the first hour after midnight - so a shift
+  // worked today was excluded from its own reminder sweep.
+  const windowStart = londonDateOffset(-WINDOW_DAYS)
+  const today = londonToday()
 
   const { data: bookings, error } = await admin.from('agency_bookings')
     .select('id,candidate_id,employer_id,shift_date,candidate_review_completed_at,employer_review_completed_at,review_reminder_last_at,paid_at,payout_status,dispute_status')

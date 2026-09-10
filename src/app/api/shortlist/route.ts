@@ -139,6 +139,10 @@ export async function DELETE(req: NextRequest) {
   const { id } = await req.json()
   if (!id) return NextResponse.json({ error: 'id required' }, { status: 400 })
   const admin = createAdminClient()
-  await admin.from('shortlisted_candidates').delete().eq('id', id).eq('employer_id', profile.id)
+  // Removing somebody from a shortlist also removes the employer's permission
+  // to message them, so a delete that quietly failed would leave a channel
+  // open that the property believes it has closed.
+  const { error } = await admin.from('shortlisted_candidates').delete().eq('id', id).eq('employer_id', profile.id)
+  if (error) return NextResponse.json({ error: 'That could not be removed from your shortlist. Please try again.' }, { status: 500 })
   return NextResponse.json({ success: true })
 }

@@ -94,9 +94,14 @@ export async function DELETE(req: NextRequest) {
     if (!candidate) return NextResponse.json({ error: 'Candidate profile not found.' }, { status: 404 })
     const { data: row } = await admin.from('certificate_submissions').select('id,document_url').eq('id', id).eq('candidate_id', candidate.id).maybeSingle()
     if (!row) return NextResponse.json({ error: 'Certificate not found.' }, { status: 404 })
-    await admin.from('certificate_submissions').delete().eq('id', row.id)
+    // Somebody removing a certificate is usually correcting a mistake or
+    // taking down a document they did not mean to share. Telling them it is
+    // gone while it sits in the review queue is the worst possible answer.
+    const { error: deleteError } = await admin.from('certificate_submissions').delete().eq('id', row.id)
+    if (deleteError) return NextResponse.json({ error: 'The certificate could not be removed. Please try again.' }, { status: 500 })
     const urls = (candidate.certificates_urls || []).filter((url: string) => url !== row.document_url)
-    await admin.from('candidate_profiles').update({ certificates_urls: urls }).eq('id', candidate.id)
+    const { error: listError } = await admin.from('candidate_profiles').update({ certificates_urls: urls }).eq('id', candidate.id)
+    if (listError) return NextResponse.json({ error: 'The certificate was removed but your document list could not be updated. Please refresh.' }, { status: 500 })
     return NextResponse.json({ success: true })
   } catch (error: any) {
     return NextResponse.json({ error: error?.message || 'Could not remove the certificate.' }, { status: 500 })
