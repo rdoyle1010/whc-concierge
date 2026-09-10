@@ -2,6 +2,44 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getRequestUser } from '@/lib/request-user'
 import { calculateMatchScore } from '@/lib/matching'
+import { CURRENT_EMPLOYER_COLUMNS, PRIVATE_MODE_COLUMNS, isMissingColumnError, presentCandidateForEmployer } from '@/lib/private-mode'
+
+// What an employer may see about somebody who applied to their role.
+//
+// This route selected the whole candidate row and stripped one column. The
+// other twenty-odd went to the browser: phone number, home postcode, exact
+// latitude and longitude, work email, right-to-work and insurance document
+// URLs, verification notes, Stripe customer ids, and the salary floor the
+// professional had explicitly marked private.
+//
+// The sibling inbox route has always done this correctly with an explicit
+// list. Copied here rather than invented, so the two screens show the same
+// professional the same way.
+const CANDIDATE_FIELDS = [
+  'id','user_id','full_name','headline','role_level','location','location_country','services_offered','treatment_skills','experience_years',
+  'profile_image_url','review_score','review_count','bio','qualifications','product_houses','systems_experience',
+  'business_skills','career_evidence','has_insurance','cv_url','certificates_urls','is_featured','featured_until',
+  'awards','languages','hotel_brands_worked','skill_proficiencies','portfolio_url','availability_status','availability_date',
+  // Verification, so the employer can see it on the screen where they decide.
+  'whc_verified','right_to_work_status','insurance_expiry_date',
+  'salary_expectation_min','salary_expectation_max','salary_expectation_private',
+  'commercial_experience','revenue_responsibility','team_size_managed','desired_roles',
+  // Matching reads these, and the score is calculated on this row.
+  'travel_radius_miles','has_car','latitude','longitude','postcode',
+  // Anonymity, applied through the shared presenter below.
+  'show_first_name_only','stealth_mode','approval_status','profile_visible','created_at',
+].join(',')
+
+// The two optional column sets retry-drop exactly as they do elsewhere, so
+// this route keeps working before those migrations have run.
+async function selectCandidate(admin: ReturnType<typeof createAdminClient>, candidateId: string) {
+  const attempt = (fields: string) =>
+    admin.from('candidate_profiles').select(fields).eq('id', candidateId).maybeSingle()
+  let result: any = await attempt(`${CANDIDATE_FIELDS},${PRIVATE_MODE_COLUMNS.join(',')},${CURRENT_EMPLOYER_COLUMNS.join(',')}`)
+  if (isMissingColumnError(result.error)) result = await attempt(`${CANDIDATE_FIELDS},${PRIVATE_MODE_COLUMNS.join(',')}`)
+  if (isMissingColumnError(result.error)) result = await attempt(CANDIDATE_FIELDS)
+  return result
+}
 
 function cvStorageRef(value?: string | null) {
   if (!value) return null
@@ -40,11 +78,19 @@ export async function GET(req: NextRequest) {
     const jobId = application.role_id || application.job_id
     const [{ data: job }, { data: candidate }] = await Promise.all([
       admin.from('job_listings').select('*').eq('id', jobId).maybeSingle(),
-      admin.from('candidate_profiles').select('*').eq('id', application.candidate_id).maybeSingle(),
+      selectCandidate(admin, application.candidate_id),
     ])
 
     if (!job || job.employer_id !== employer.id) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     if (!candidate) return NextResponse.json({ error: 'Candidate profile not found.' }, { status: 404 })
+
+    // Anonymity and the salary the professional marked private, both applied
+    // before the row is shaped for the response. The match below is calculated
+    // on the full row, because the score is ours to compute and hers to keep.
+    const presented = presentCandidateForEmployer(candidate)
+    const safeCandidate = presented.salary_expectation_private !== false
+      ? { ...presented, salary_expectation_min: null, salary_expectation_max: null }
+      : presented
 
     const liveMatch = calculateMatchScore(candidate, job)
     const liveScore = liveMatch.hardStop ? Number(application.match_score || 0) : Number(liveMatch.score || 0)
@@ -78,7 +124,11 @@ export async function GET(req: NextRequest) {
         hired_at: application.hired_at,
       },
       candidate: {
-        ...candidate,
+        ...safeCandidate,
+        // Location is used to compute distance, never to hand over an address.
+        latitude: undefined,
+        longitude: undefined,
+        postcode: undefined,
         cv_url: undefined,
         cv_signed_url: cvSignedUrl,
       },

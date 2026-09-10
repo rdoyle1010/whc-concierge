@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getRequestUser } from '@/lib/request-user'
 import { calculateMatchScore } from '@/lib/matching'
+import { candidateNameForEmployer } from '@/lib/private-mode'
 import { createNotification } from '@/lib/notifications'
 import { createMutualMatch } from '@/lib/mutual-match'
 
@@ -74,7 +75,9 @@ export async function POST(req: NextRequest) {
       employer.user_id,
       'general',
       'A professional is interested in your role',
-      `${candidate.full_name || 'A professional'} is interested in ${job.job_title}.`,
+      // Interest is not yet a match, so a private profile stays private here.
+      // The web route at api/swipe has always used this helper.
+      `${candidateNameForEmployer(candidate)} is interested in ${job.job_title}.`,
       `/employer/candidates?candidate=${candidate.id}`,
     )
     const { data: employerYes } = await admin.from('swipes').select('id')

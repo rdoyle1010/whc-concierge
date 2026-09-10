@@ -81,7 +81,11 @@ test('a private approach cannot reach somebody in stealth', () => {
 test('turning on stealth removes you from shortlists you are already on', () => {
   const route = read('src/app/api/shortlist/route.ts')
   assert.match(route, /canEmployerDiscoverCandidate\(candidate, blockedIds\)/)
-  assert.match(route, /approval_status, stealth_mode\)/, 'the join must fetch the flag it filters on')
+  // Checked as a property of the join, not as the exact text next to it: the
+  // point is that the column is fetched, not what happens to sit beside it.
+  const join = route.slice(route.indexOf('candidate_profiles('), route.indexOf('), job_listings'))
+  assert.ok(join.includes('stealth_mode'), 'the join must fetch the flag it filters on')
+  assert.ok(join.includes('show_first_name_only'), 'and the flag the anonymity presenter reads')
 })
 
 test('the match endpoint does not answer with people it has been told to hide', () => {
