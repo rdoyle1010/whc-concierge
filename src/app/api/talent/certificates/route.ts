@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getRequestUser } from '@/lib/request-user'
 import { trackEvent } from '@/lib/analytics'
+import { notifyAdmins } from '@/lib/notifications'
 
 // The therapist's certificate manager: structured submissions with a review
 // lifecycle. Files are uploaded through the existing document upload path;
@@ -65,6 +66,17 @@ export async function POST(req: NextRequest) {
     }
 
     await trackEvent('certificate_submitted', { actorUserId: user.id, candidateId: candidate.id }, { title })
+
+    // A certificate sits at 'submitted' until a person looks at it, and
+    // nothing told anybody it had arrived. The professional sees "under
+    // review" and waits; the review queue is a page somebody has to remember
+    // to open. Verification is the whole promise of the register, so the
+    // submission has to reach an administrator rather than wait to be found.
+    await notifyAdmins(
+      'A certificate is waiting for review',
+      `${candidate.full_name || 'A professional'} submitted "${title}" for verification.`,
+      '/admin/certificates',
+    )
     return NextResponse.json({ success: true, certificate: row })
   } catch (error: any) {
     return NextResponse.json({ error: error?.message || 'Could not save the certificate.' }, { status: 500 })

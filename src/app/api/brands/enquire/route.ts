@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { rateLimit, getClientIp } from '@/lib/rate-limit'
+import { enforceRateLimit } from '@/lib/rate-limit'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { sendTransactionalEmail } from '@/lib/send-email'
 import { administratorEmails } from '@/lib/administrators'
@@ -12,7 +12,8 @@ import { cleanBrandSlug, cleanEmail } from '@/lib/brand-profiles'
 // contact, because a lead that sits in our inbox waiting to be forwarded is a
 // lead we have made slower than the brand's website.
 
-const limiter = rateLimit('brand-enquire', { windowMs: 15 * 60 * 1000, maxRequests: 6 })
+// The shared limiter, not the per-container one: an in-memory Map counts per
+// serverless instance, so the limit reset on every cold start.
 
 const trim = (value: unknown, limit: number) => String(value ?? '').trim().slice(0, limit)
 
@@ -20,8 +21,13 @@ const escape = (value: string) =>
   value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
 
 export async function POST(req: NextRequest) {
-  const { success } = limiter.check(getClientIp(req))
-  if (!success) return NextResponse.json({ error: 'Too many enquiries from this connection. Please try again shortly.' }, { status: 429 })
+  const limited = await enforceRateLimit(req, 'brand-enquire', { windowMs: 15 * 60 * 1000, maxRequests: 6 })
+  if (limited) {
+    return NextResponse.json(
+      { error: 'Too many enquiries from this connection. Please try again shortly.' },
+      { status: 429, headers: { 'Retry-After': String(limited.retryAfterSeconds) } },
+    )
+  }
 
   const body = await req.json().catch(() => ({}))
 

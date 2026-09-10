@@ -8,6 +8,7 @@ import { Briefcase, Users, ArrowRight, Plus, Clock, Calendar, MapPin } from 'luc
 import SkeletonTable from '@/components/SkeletonTable'
 import Link from 'next/link'
 import SponsoredAd from '@/components/SponsoredAd'
+import AmbassadorCodeBox from '@/components/AmbassadorCodeBox'
 
 // Time-of-day greeting for the property brief, computed on the client clock.
 function timeOfDayGreeting(): string {
@@ -372,6 +373,11 @@ export default function EmployerDashboard() {
           )}
         </section>
       </div>
+
+      <div className="mt-8">
+        <AmbassadorCodeBox audience="employer" />
+      </div>
+
           <SponsoredAd placement="employer_dashboard_sponsor" />
     </DashboardShell>
   )

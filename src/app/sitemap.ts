@@ -56,8 +56,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${BASE}/good-to-know`, lastModified: now, changeFrequency: 'monthly', priority: 0.7 },
     { url: `${BASE}/faq`, lastModified: now, changeFrequency: 'monthly', priority: 0.6 },
     { url: `${BASE}/contact`, lastModified: now, changeFrequency: 'monthly', priority: 0.5 },
-    { url: `${BASE}/register/talent`, lastModified: now, changeFrequency: 'monthly', priority: 0.6 },
-    { url: `${BASE}/register/employer`, lastModified: now, changeFrequency: 'monthly', priority: 0.6 },
+    // /register/* is disallowed in robots.txt: they are thin forms, and an
+    // indexed sign-up form outranking a real page helps nobody. Listing a
+    // blocked URL in the sitemap is not a small inconsistency - Search Console
+    // reports it as an error against the whole file, which is the file every
+    // other page depends on being trusted.
     { url: `${BASE}/privacy`, lastModified: now, changeFrequency: 'yearly', priority: 0.2 },
     { url: `${BASE}/terms`, lastModified: now, changeFrequency: 'yearly', priority: 0.2 },
   ]

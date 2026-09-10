@@ -3,25 +3,11 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { createNotification } from '@/lib/notifications'
 import { getRequestUser } from '@/lib/request-user'
 import { trackEvent } from '@/lib/analytics'
-import { TRANSACTIONAL_FROM } from '@/lib/send-email'
-
-const RESEND_API_KEY = process.env.RESEND_API_KEY
-const FROM_EMAIL = TRANSACTIONAL_FROM
+import { sendTransactionalEmail } from '@/lib/send-email'
 
 async function sendOfferResponseEmail(to: string, subject: string, bodyHtml: string) {
-  if (!RESEND_API_KEY || !to) return false
-  try {
-    const response = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ from: FROM_EMAIL, to, subject, html: bodyHtml }),
-    })
-    if (!response.ok) console.error('Offer response email failed:', response.status)
-    return response.ok
-  } catch (error: any) {
-    console.error('Offer response email failed:', error?.message)
-    return false
-  }
+  const result = await sendTransactionalEmail({ to, subject, html: bodyHtml, kind: 'offer' })
+  return result.ok
 }
 
 export async function POST(req: NextRequest) {

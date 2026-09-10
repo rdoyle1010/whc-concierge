@@ -5,10 +5,9 @@ import { calculateMatchScore } from '@/lib/matching'
 import { jobAlertEmailHtml } from '@/lib/job-alert-email-template'
 import { isInternalApiRequest } from '@/lib/internal-request'
 import { emailAllowed } from '@/lib/notification-prefs'
-import { TRANSACTIONAL_FROM } from '@/lib/send-email'
+import { sendTransactionalEmail } from '@/lib/send-email'
+import { marketingUnsubscribeUrl } from '@/lib/privacy-consent'
 
-const RESEND_API_KEY = process.env.RESEND_API_KEY
-const FROM_EMAIL = TRANSACTIONAL_FROM
 
 export async function POST(req: NextRequest) {
   try {
@@ -117,24 +116,21 @@ export async function POST(req: NextRequest) {
         matchScore: result.score, location: job.location, salary,
       })
 
-      if (!RESEND_API_KEY) {
-        console.log(`[Job alert skipped] To: ${email}, Job: ${jobTitle}, Score: ${result.score}%`)
-        sent++
-        continue
-      }
-
       try {
-        await fetch('https://api.resend.com/emails', {
-          method: 'POST',
-          headers: { 'Authorization': `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            from: FROM_EMAIL, to: email,
-            subject: `New role matching your profile - ${jobTitle} at ${propertyName}, ${result.score}% match`,
-            html,
-          }),
+        // A job alert is the one email the platform sends that a person did
+        // not individually ask for, so it carries the header that lets their
+        // mail client offer them the way out in one click.
+        const delivery = await sendTransactionalEmail({
+          to: email,
+          subject: `New role matching your profile - ${jobTitle} at ${propertyName}, ${result.score}% match`,
+          html,
+          kind: 'job_alert',
+          userId: candidate.user_id,
+          unsubscribeUrl: marketingUnsubscribeUrl(candidate.user_id),
         })
-        sent++
-      } catch (err) {
+        if (delivery.ok || delivery.status === 'skipped') sent++
+        else errors.push(`Failed to send to ${email}`)
+      } catch {
         errors.push(`Failed to send to ${email}`)
       }
     }

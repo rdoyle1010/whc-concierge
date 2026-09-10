@@ -28,7 +28,7 @@ const LIVE_DAYS = 30
 
 async function employerForUser(admin: ReturnType<typeof createAdminClient>, userId: string) {
   return admin.from('employer_profiles')
-    .select('id,user_id,postcode,latitude,longitude,membership_tier,annual_job_allowance,annual_jobs_used,approval_status')
+    .select('id,user_id,postcode,latitude,longitude,membership_tier,annual_job_allowance,annual_jobs_used,launch_listing_credits,approval_status')
     .eq('user_id', userId)
     .maybeSingle()
 }
@@ -101,22 +101,41 @@ export async function POST(req: NextRequest) {
   const allowance = Number(employer.annual_job_allowance || (membership === 'group' ? 20 : 0))
   const used = Number(employer.annual_jobs_used || 0)
 
-  if (tier === 'Bronze' && membership === 'group' && used < allowance) {
+  // Two ways a Standard listing can already be paid for: the Group
+  // membership's annual allowance, and a free listing credit - the
+  // opening-month offer, or one an administrator has granted. The credit is
+  // spent first: it is a one-off, the allowance renews every year, and a
+  // property that loses a gift because an allowance covered it has been given
+  // nothing at all.
+  const credits = Number((employer as any).launch_listing_credits || 0)
+  const useCredit = tier === 'Bronze' && credits > 0
+  const useAllowance = tier === 'Bronze' && !useCredit && membership === 'group' && used < allowance
+
+  if (useCredit || useAllowance) {
     const now = new Date()
     const expiresAt = new Date(now.getTime() + LIVE_DAYS * 86400000).toISOString()
-    const { data: claimed, error: claimError } = await admin.from('employer_profiles')
-      .update({ annual_jobs_used: used + 1 })
-      .eq('id', employer.id)
-      .eq('annual_jobs_used', used)
-      .select('id')
-      .maybeSingle()
+    // Claimed conditionally on the value just read, so two tabs publishing at
+    // once cannot spend the same credit twice.
+    const claim = useCredit
+      ? admin.from('employer_profiles')
+        .update({ launch_listing_credits: credits - 1 })
+        .eq('id', employer.id)
+        .eq('launch_listing_credits', credits)
+      : admin.from('employer_profiles')
+        .update({ annual_jobs_used: used + 1 })
+        .eq('id', employer.id)
+        .eq('annual_jobs_used', used)
+    const { data: claimed, error: claimError } = await claim.select('id').maybeSingle()
     if (claimError || !claimed) return NextResponse.json({ error: 'Job allowance changed. Refresh and try again.' }, { status: 409 })
 
     const { error: publishError } = await admin.from('job_listings').update({
       tier: 'Bronze', is_live: true, status: 'active', posted_date: now.toISOString(), expires_at: expiresAt,
     }).eq('id', job.id).eq('employer_id', employer.id).eq('is_live', false)
     if (publishError) {
-      await admin.from('employer_profiles').update({ annual_jobs_used: used }).eq('id', employer.id).eq('annual_jobs_used', used + 1)
+      // Hand back whichever one was spent. A property charged for a listing
+      // that never went live has been robbed by a bug.
+      if (useCredit) await admin.from('employer_profiles').update({ launch_listing_credits: credits }).eq('id', employer.id).eq('launch_listing_credits', credits - 1)
+      else await admin.from('employer_profiles').update({ annual_jobs_used: used }).eq('id', employer.id).eq('annual_jobs_used', used + 1)
       return NextResponse.json({ error: 'Could not publish this role.' }, { status: 500 })
     }
 
@@ -128,7 +147,7 @@ export async function POST(req: NextRequest) {
     // enters the market, exactly like the paid webhook path. Best-effort.
     try {
       const { trackEvent, recordSalary } = await import('@/lib/analytics')
-      await trackEvent('job_posted', { employerId: employer.id, jobId: job.id }, { tier: 'Bronze', included: true })
+      await trackEvent('job_posted', { employerId: employer.id, jobId: job.id }, { tier: 'Bronze', included: true, source: useCredit ? 'launch_credit' : 'membership_allowance' })
       if (job.salary_min || job.salary_max) {
         await recordSalary({
           kind: 'advertised', source: 'employer_advertised',
@@ -140,7 +159,12 @@ export async function POST(req: NextRequest) {
       }
     } catch { /* best-effort */ }
 
-    return NextResponse.json({ success: true, included: true, status: 'active', remainingJobs: Math.max(0, allowance - used - 1) })
+    return NextResponse.json({
+      success: true, included: true, status: 'active',
+      paidBy: useCredit ? 'free_listing' : 'membership',
+      remainingCredits: useCredit ? credits - 1 : credits,
+      remainingJobs: useCredit ? Math.max(0, allowance - used) : Math.max(0, allowance - used - 1),
+    })
   }
 
   const normalPrice = JOB_TIERS[tier].price

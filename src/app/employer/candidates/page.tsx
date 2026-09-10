@@ -36,11 +36,23 @@ export default function EmployerCandidatesPage() {
   const roleChooserDialog = useDialog(() => setRoleChooser(null), 'candidate-role-chooser-heading', { enabled: Boolean(roleChooser) })
   const matchInfoDialog = useDialog(() => setMatchInfo(null), 'candidate-match-heading', { enabled: Boolean(matchInfo) })
 
+  // Debounced so a search box does not fire a request per keystroke, and so
+  // the two filters travel to the API rather than being applied to whichever
+  // page happens to be loaded.
+  const [appliedSearch, setAppliedSearch] = useState('')
+  const [appliedSpec, setAppliedSpec] = useState('')
+  useEffect(() => {
+    const timer = setTimeout(() => { setAppliedSearch(search.trim()); setAppliedSpec(specFilter.trim()) }, 300)
+    return () => clearTimeout(timer)
+  }, [search, specFilter])
+
   function directoryUrl(offset = 0) {
     const params = new URLSearchParams()
     if (radius !== 'all') params.set('radius', radius)
     if (offset > 0) params.set('offset', String(offset))
     if (requestedCandidateId) params.set('candidate', requestedCandidateId)
+    if (appliedSearch) params.set('q', appliedSearch)
+    if (appliedSpec) params.set('specialism', appliedSpec)
     const qs = params.toString()
     return `/api/employer/candidates${qs ? `?${qs}` : ''}`
   }
@@ -85,7 +97,7 @@ export default function EmployerCandidatesPage() {
     }
     load()
     return () => { active = false }
-  }, [radius, requestedCandidateId, urlReady])
+  }, [radius, requestedCandidateId, urlReady, appliedSearch, appliedSpec])
 
   async function loadMore() {
     if (loadingMore || nextOffset == null) return
@@ -108,12 +120,14 @@ export default function EmployerCandidatesPage() {
     }
   }
 
-  const filtered = useMemo(() => candidates.filter(c => {
-    if (savedOnly && !shortlistedIds.has(c.id)) return false
-    if (search && !c.full_name?.toLowerCase().includes(search.toLowerCase()) && !c.headline?.toLowerCase().includes(search.toLowerCase())) return false
-    if (specFilter && !(c.services_offered || []).some((s: string) => s.toLowerCase().includes(specFilter.toLowerCase()))) return false
-    return true
-  }), [candidates, search, specFilter, savedOnly, shortlistedIds])
+  // The name and specialism filters run on the server now, across the whole
+  // register rather than the rows already on screen. Saved-only is genuinely
+  // local: the shortlist is already loaded, and toggling it should not cost a
+  // round trip.
+  const filtered = useMemo(
+    () => candidates.filter(c => !savedOnly || shortlistedIds.has(c.id)),
+    [candidates, savedOnly, shortlistedIds],
+  )
 
   function resetFilters() {
     setSearch('')

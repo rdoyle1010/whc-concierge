@@ -40,7 +40,8 @@ export async function POST(req: NextRequest) {
   if (booking.shift_date < londonToday()) return NextResponse.json({ error: 'This shift has already passed. Use Shift Resolution instead.' }, { status: 400 })
 
   const fee = Math.max(0, Number(booking.platform_fee || 0))
-  const gross = Math.max(0, Number(booking.rate || 0) * Number(booking.hours || 8))
+  const gross = Math.round(Math.max(0, Number(booking.rate || 0) * Number(booking.hours || 8)) * 100) / 100
+  const halfGross = Math.round(gross * 50) / 100
   const paid = Boolean(booking.paid_at)
 
   // Late-cancellation policy: a property cancelling within 24 hours of the
@@ -49,6 +50,10 @@ export async function POST(req: NextRequest) {
   // professional. Admin reviews every case and can override either way.
   const tomorrow = (() => { const d = new Date(`${londonToday()}T12:00:00Z`); d.setUTCDate(d.getUTCDate() + 1); return d.toISOString().slice(0, 10) })()
   const lateEmployerCancellation = role === 'employer' && String(booking.shift_date) <= tomorrow
+  // Pounds and pence. A seven-and-a-half hour shift at £25 is £187.50, and
+  // rounding the half to whole pounds proposed £94 to the property and £93.50
+  // to the professional - two numbers that do not add up to what was paid, in
+  // the one document both sides have to sign.
 
   // Before payment there is no money to retain. After payment Talent House's agreed
   // admin/platform fee remains earned; the shift money is frozen for Admin to
@@ -79,10 +84,10 @@ export async function POST(req: NextRequest) {
         issue_type: role === 'candidate' ? 'professional_cancelled' : 'property_cancelled',
         description: reason,
         requested_adjustment_type: role === 'employer' ? 'refund' : 'none',
-        requested_amount: role === 'employer' ? (lateEmployerCancellation ? Math.round(gross / 2) : gross) : null,
+        requested_amount: role === 'employer' ? (lateEmployerCancellation ? halfGross : gross) : null,
         requested_reason: lateEmployerCancellation
-          ? `Late cancellation by the property within 24 hours of the shift. Policy default: 50% refund (£${Math.round(gross / 2)}), 50% (£${gross - Math.round(gross / 2)}) compensates the professional for the held day. Talent House admin fee of £${fee} is retained.`
-          : `Pre-shift cancellation. Talent House admin fee of £${fee} is retained.`,
+          ? `Late cancellation by the property within 24 hours of the shift. Policy default: 50% refund (£${halfGross.toFixed(2)}), 50% (£${(gross - halfGross).toFixed(2)}) compensates the professional for the held day. Talent House admin fee of £${fee.toFixed(2)} is retained.`
+          : `Pre-shift cancellation. Talent House admin fee of £${fee.toFixed(2)} is retained.`,
         status: 'under_review',
       })
     }

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { rateLimit, getClientIp } from '@/lib/rate-limit'
+import { enforceRateLimit } from '@/lib/rate-limit'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { sendTransactionalEmail } from '@/lib/send-email'
 import { administratorEmails } from '@/lib/administrators'
@@ -12,7 +12,10 @@ import { cleanEmail, secureImageUrl } from '@/lib/brand-profiles'
 // rather than a lead to chase - and the brand has done the one part nobody
 // else can do, which is explain why a spa should stock it in their own words.
 
-const limiter = rateLimit('brand-apply', { windowMs: 60 * 60 * 1000, maxRequests: 5 })
+// The shared limiter, not the per-container one. A Map inside a serverless
+// function is one counter per instance, so "five an hour" was really five an
+// hour per container - and a cold start handed out five more. These are the
+// two public forms on the site that anyone can post to without an account.
 
 const trim = (value: unknown, limit: number) => String(value ?? '').trim().slice(0, limit)
 const listOf = (value: unknown, limit: number) =>
@@ -25,8 +28,13 @@ const escape = (value: string) =>
   value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
 
 export async function POST(req: NextRequest) {
-  const { success } = limiter.check(getClientIp(req))
-  if (!success) return NextResponse.json({ error: 'Too many applications from this connection. Please try again later.' }, { status: 429 })
+  const limited = await enforceRateLimit(req, 'brand-apply', { windowMs: 60 * 60 * 1000, maxRequests: 5 })
+  if (limited) {
+    return NextResponse.json(
+      { error: 'Too many applications from this connection. Please try again later.' },
+      { status: 429, headers: { 'Retry-After': String(limited.retryAfterSeconds) } },
+    )
+  }
 
   const body = await req.json().catch(() => ({}))
   if (trim(body.company, 200)) return NextResponse.json({ success: true })

@@ -11,10 +11,8 @@ import {
   type WebsiteHistoryEntry,
 } from '@/lib/site-content'
 import { getWebsiteContent } from '@/lib/site-content-server'
-import { TRANSACTIONAL_FROM } from '@/lib/send-email'
+import { sendTransactionalEmail } from '@/lib/send-email'
 
-const RESEND_API_KEY = process.env.RESEND_API_KEY
-const FROM_EMAIL = TRANSACTIONAL_FROM
 const DEFAULT_CONTACT_PAGE_SIZE = 25
 const MAX_CONTACT_PAGE_SIZE = 100
 const CONTACT_STATUSES = new Set(['open', 'replied', 'closed', 'investigating', 'resolved', 'dismissed'])
@@ -263,29 +261,19 @@ export async function POST(req: NextRequest) {
       if (!q.email) return NextResponse.json({ error: 'This enquiry has no email address to reply to.' }, { status: 400 })
       const replyText = String(body.message || '').trim()
       if (!replyText) return NextResponse.json({ error: 'Please write a reply.' }, { status: 400 })
-      if (!RESEND_API_KEY) return NextResponse.json({ error: 'Email is not configured (RESEND_API_KEY missing).' }, { status: 500 })
-
-      const res = await fetch('https://api.resend.com/emails', {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          from: FROM_EMAIL,
-          to: q.email,
-          subject: `Re: your message to Talent House Collective`,
-          html: `
+      const res = await sendTransactionalEmail({
+        to: q.email,
+        kind: 'contact',
+        subject: `Re: your message to Talent House Collective`,
+        html: `
             <div style="font-family: Inter, -apple-system, sans-serif; max-width: 560px; margin: 0 auto; padding: 40px 20px;">
               <p style="font-size: 16px; font-weight: 600; margin-bottom: 24px;">Talent House Collective</p>
               <p style="color: #374151; white-space: pre-wrap;">${replyText.replace(/</g, '&lt;')}</p>
               <hr style="border: none; border-top: 1px solid #dddddd; margin: 24px 0;" />
               <p style="font-size: 12px; color: #6b6b6b;">Your original message: ${String(q.message || '').slice(0, 500).replace(/</g, '&lt;')}</p>
             </div>`,
-        }),
       })
-      if (!res.ok) {
-        const detail = await res.text().catch(() => '')
-        console.error(`[Admin reply email FAILED ${res.status}] ${detail.slice(0, 300)}`)
-        return NextResponse.json({ error: 'The email could not be sent - check resend.com/logs.' }, { status: 502 })
-      }
+      if (!res.ok) return NextResponse.json({ error: res.error || 'The email could not be sent - check resend.com/logs.' }, { status: 502 })
       const markStatus = CONTACT_STATUSES.has(String(body.markStatus)) ? body.markStatus : 'replied'
       await admin.from('contact_queries')
         .update({ status: markStatus, admin_reply: replyText, replied_at: new Date().toISOString() })

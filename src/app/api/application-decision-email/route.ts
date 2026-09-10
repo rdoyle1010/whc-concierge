@@ -4,10 +4,7 @@ import { emailAllowed } from '@/lib/notification-prefs'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
-import { TRANSACTIONAL_FROM } from '@/lib/send-email'
-
-const RESEND_API_KEY = process.env.RESEND_API_KEY
-const FROM_EMAIL = TRANSACTIONAL_FROM
+import { sendTransactionalEmail } from '@/lib/send-email'
 
 export async function POST(req: NextRequest) {
   try {
@@ -80,22 +77,8 @@ export async function POST(req: NextRequest) {
       html = rejectionEmailHtml({ applicantName: name, jobTitle, propertyName: property })
     }
 
-    if (!RESEND_API_KEY) {
-      console.log(`[Decision email skipped - no API key] To: ${toEmail}, Decision: ${decision}`)
-      return NextResponse.json({ success: true, skipped: true })
-    }
-
-    const res = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: { 'Authorization': `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ from: FROM_EMAIL, to: toEmail, subject, html }),
-    })
-    if (!res.ok) {
-      const detail = await res.text().catch(() => '')
-      console.error(`[Decision email FAILED ${res.status}] To: ${toEmail} - ${detail.slice(0, 300)}`)
-    }
-
-    return NextResponse.json({ success: true })
+    const sent = await sendTransactionalEmail({ to: toEmail, subject, html, kind: 'decision' })
+    return NextResponse.json({ success: true, delivered: sent.ok, status: sent.status })
   } catch (error: any) {
     console.error('Decision email error:', error)
     return NextResponse.json({ error: error.message }, { status: 500 })

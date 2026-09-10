@@ -6,8 +6,7 @@ import { candidateCard, employerCard } from '@/lib/newsletter-cards'
 import { marketingUnsubscribeUrl, newsletterUnsubscribeUrl } from '@/lib/privacy-consent'
 import { renderNewsletterHtml } from '@/lib/newsletter-template'
 import { NEWSLETTER_FROM as FROM_EMAIL } from '@/lib/newsletter-welcome-email'
-
-const RESEND_API_KEY = process.env.RESEND_API_KEY
+import { sendTransactionalEmail } from '@/lib/send-email'
 
 const MAX_RECIPIENTS_PER_SEND = 500
 
@@ -127,16 +126,14 @@ export async function POST(req: NextRequest) {
     const blocks = cards + sponsor
 
     if (action === 'send_test') {
-      if (!RESEND_API_KEY) return NextResponse.json({ error: 'Email is not configured (RESEND_API_KEY missing).' }, { status: 500 })
       if (!user.email) return NextResponse.json({ error: 'Your admin account has no email address.' }, { status: 400 })
       const html = renderNewsletterHtml(campaign, { featuredHtml: blocks, test: true })
-      const res = await fetch('https://api.resend.com/emails', { method: 'POST', headers: { Authorization: `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ from: FROM_EMAIL, to: user.email, subject: `[TEST] ${campaign.name || 'Talent House Newsletter'}`, html }) })
-      if (!res.ok) return NextResponse.json({ error: 'Test send failed - check Resend logs.' }, { status: 502 })
+      const res = await sendTransactionalEmail({ to: user.email, from: FROM_EMAIL, subject: `[TEST] ${campaign.name || 'Talent House Newsletter'}`, html, kind: 'campaign', userId: user.id })
+      if (!res.ok) return NextResponse.json({ error: res.error || 'Test send failed - check Resend logs.' }, { status: 502 })
       return NextResponse.json({ success: true, email: user.email })
     }
 
     if (action !== 'send') return NextResponse.json({ error: 'Unknown action' }, { status: 400 })
-    if (!RESEND_API_KEY) return NextResponse.json({ error: 'Email is not configured (RESEND_API_KEY missing).' }, { status: 500 })
     if (campaign.status === 'sent') return NextResponse.json({ error: 'This newsletter has already been sent.' }, { status: 400 })
 
     const aud = String(campaign.target_audience || 'all').toLowerCase()
@@ -167,8 +164,16 @@ export async function POST(req: NextRequest) {
       const batch = recipients.slice(i, i + 10)
       const results = await Promise.allSettled(batch.map(async recipient => {
         const html = renderNewsletterHtml(campaign, { featuredHtml: blocks, unsubscribeUrl: recipient.unsubscribe })
-        const res = await fetch('https://api.resend.com/emails', { method: 'POST', headers: { Authorization: `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ from: FROM_EMAIL, to: recipient.email, subject: campaign.name || 'News from Talent House Collective', html }) })
-        if (!res.ok) throw new Error(String(res.status))
+        // The newsletter is the clearest case for the header: it goes out in
+        // volume, to people who consented once and may have forgotten, and a
+        // spam complaint from one of them costs the sending domain far more
+        // than the subscriber was worth.
+        const res = await sendTransactionalEmail({
+          to: recipient.email, from: FROM_EMAIL, html, kind: 'campaign',
+          subject: campaign.name || 'News from Talent House Collective',
+          unsubscribeUrl: recipient.unsubscribe,
+        })
+        if (!res.ok) throw new Error(res.error || 'send failed')
       }))
       for (const r of results) r.status === 'fulfilled' ? sent++ : failed++
     }

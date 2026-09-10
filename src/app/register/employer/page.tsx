@@ -7,6 +7,7 @@ import Wordmark from '@/components/Wordmark'
 import { createClient } from '@/lib/supabase/client'
 import { AGENCY_PLATFORM_FEE_PCT, COMPANY_TYPES, EMPLOYER_MEMBERSHIPS, JOB_TIERS, RECRUITMENT_SERVICE_RATE } from '@/lib/constants'
 import { MARKETING_CONSENT_WORDING } from '@/lib/privacy-consent'
+import { LAUNCH_OFFER_EMPLOYER, launchOfferClosesLabel, launchOfferOpen } from '@/lib/launch-offers'
 
 const pounds = (pence: number) => `£${(pence / 100).toFixed(pence % 100 === 0 ? 0 : 2)}`
 const percent = (rate: number) => `${(rate * 100).toFixed(rate * 100 % 1 === 0 ? 0 : 1)}%`
@@ -42,6 +43,7 @@ export default function EmployerRegisterPage() {
         password: form.password,
         role: 'employer',
         marketingOptIn,
+        agreedTerms: form.agreed_terms === true,
         displayName: form.company_name,
       }),
     })
@@ -118,6 +120,14 @@ export default function EmployerRegisterPage() {
         <div className="mt-12 grid lg:grid-cols-12 gap-12 xl:gap-16">
           {/* The form */}
           <div className="lg:col-span-7">
+            {launchOfferOpen() && (
+              <div className="mb-6 border border-border bg-surface px-4 py-3">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-ink">Opening month</p>
+                <p className="mt-1.5 text-[13px] leading-5 text-secondary">{LAUNCH_OFFER_EMPLOYER}</p>
+                <p className="mt-1.5 text-[11px] text-muted">Applied automatically. Closes {launchOfferClosesLabel()}.</p>
+              </div>
+            )}
+
             {error && <div role="alert" className="bg-red-50 text-red-600 text-sm px-4 py-3 mb-6">{error}</div>}
 
             <section aria-labelledby="emp-section-property">

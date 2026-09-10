@@ -40,7 +40,7 @@ test('one change is reported once', () => {
 
 test('a change goes out the way the invitation did', () => {
   const route = read(BRIEFING)
-  assert.match(route, /api\.resend\.com\/emails/, 'by email')
+  assert.match(route, /sendTransactionalEmail\(\{ to: email/, 'by email')
   assert.match(route, /sendSmsIfOptedIn/, 'and by text if they opted in')
   assert.match(route, /emailAllowed\(admin, candidate\.user_id, 'application_updates'\)/, 'respecting the same opt-out as every other application email')
   assert.match(route, /details changed/, 'and the subject says so')

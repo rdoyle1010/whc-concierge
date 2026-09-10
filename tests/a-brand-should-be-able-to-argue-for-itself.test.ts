@@ -147,7 +147,7 @@ test('an enquiry reaches the brand, not just us', () => {
   // somebody else's mouth in an email we send.
   assert.match(api, /\.from\('brand_profiles'\)/)
   assert.match(api, /if \(!brand \|\| !brand\.is_published\)/)
-  assert.match(api, /rateLimit\('brand-enquire'/)
+  assert.match(api, /enforceRateLimit\(req, 'brand-enquire'/)
   assert.match(api, /trim\(body\.company, 200\)/)
   // Everything printed into the email is escaped: this is a stranger's text
   // going into HTML we send to ourselves and to a partner.
@@ -162,7 +162,7 @@ test('a brand can apply, and the application is already most of the page', () =>
   assert.match(page, /Nothing is published without your approval/)
 
   const api = body('src/app/api/brands/apply/route.ts')
-  assert.match(api, /rateLimit\('brand-apply'/)
+  assert.match(api, /enforceRateLimit\(req, 'brand-apply'/)
   assert.match(api, /brand_applications/)
 
   // Turning one into a page must produce a draft. An application is a pitch,

@@ -2,13 +2,11 @@ import { NextRequest, NextResponse } from 'next/server'
 import { rateLimit, getClientIp } from '@/lib/rate-limit'
 import { contactFormSchema, validateRequest } from '@/lib/validations'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { TRANSACTIONAL_FROM } from '@/lib/send-email'
+import { sendTransactionalEmail } from '@/lib/send-email'
 import { administratorEmails } from '@/lib/administrators'
 
 const limiter = rateLimit('contact-notify', { windowMs: 15 * 60 * 1000, maxRequests: 5 })
 
-const RESEND_API_KEY = process.env.RESEND_API_KEY
-const FROM_EMAIL = TRANSACTIONAL_FROM
 // Where a contact form lands. The admin-configured contact_email wins; with
 // nothing set it goes to every administrator.
 //
@@ -59,19 +57,10 @@ export async function POST(req: NextRequest) {
 
     const recipients = await getNotificationRecipients()
 
-    if (!RESEND_API_KEY) {
-      console.log(`[Email skipped - no API key] To: ${recipients.join(', ') || '(nobody)'}, Subject: ${emailSubject}`)
-      return NextResponse.json({ success: true, skipped: true })
-    }
-
     // One send each rather than one send to many, so a single bad address
     // cannot take the enquiry away from everybody else on the list.
     for (const recipient of recipients) {
-      await fetch('https://api.resend.com/emails', {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ from: FROM_EMAIL, to: recipient, subject: emailSubject, html }),
-      }).catch(() => {})
+      await sendTransactionalEmail({ to: recipient, subject: emailSubject, html, kind: 'contact' })
     }
 
     return NextResponse.json({ success: true })

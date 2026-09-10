@@ -4,7 +4,8 @@ import { createRegistrationProof, type RegistrationRole } from '@/lib/registrati
 import { createAdminClient } from '@/lib/supabase/admin'
 import { geocodePostcode } from '@/lib/geo'
 import { getClientIp, rateLimit } from '@/lib/rate-limit'
-import { startMarketingOptIn } from '@/lib/privacy-consent'
+import { recordTermsAcceptance, startMarketingOptIn } from '@/lib/privacy-consent'
+import { LAUNCH_COURSE_SLUGS, grantCourses, launchOfferOpen } from '@/lib/launch-offers'
 
 export const runtime = 'nodejs'
 
@@ -61,9 +62,18 @@ export async function POST(req: NextRequest) {
     const hasCar = body.hasCar === true
     // Strictly true. An absent or truthy-ish value is not consent.
     const marketingOptIn = body.marketingOptIn === true
+    // Same standard, and now required. An account used to be created before
+    // anybody had agreed to anything: the talent sign-up asked at all, and
+    // the employer form asked on the page but never told the server, so the
+    // acceptance existed only in the browser that had already navigated away.
+    // Enforced here because this is the route that creates the account.
+    const agreedTerms = body.agreedTerms === true
 
     if (!email || !password || !role || password.length < 8) {
       return NextResponse.json({ error: 'Please provide a valid email and a password of at least 8 characters.' }, { status: 400 })
+    }
+    if (!agreedTerms) {
+      return NextResponse.json({ error: 'Please accept the Terms & Conditions and Privacy Policy to create an account.' }, { status: 400 })
     }
 
     const supabase = createClient(
@@ -84,6 +94,12 @@ export async function POST(req: NextRequest) {
     if (error || !data.user) {
       return NextResponse.json({ error: friendlySignupError(error?.message) }, { status: 400 })
     }
+
+    // Recorded against the account before anything else, so the ledger says
+    // what was accepted and when even if a later step of registration fails.
+    await recordTermsAcceptance(createAdminClient(), data.user.id, 'registration')
+
+    let launchOfferGranted: string[] = []
 
     if (role === 'talent') {
       const admin = createAdminClient()
@@ -112,6 +128,7 @@ export async function POST(req: NextRequest) {
         location: postcode || null,
         ...(coords ? { latitude: coords.latitude, longitude: coords.longitude } : {}),
         has_car: hasCar,
+        agreed_terms: true,
         approval_status: 'approved',
         profile_visible: true,
       }, { onConflict: 'user_id' })
@@ -122,6 +139,25 @@ export async function POST(req: NextRequest) {
 
       if (typeof body.refCode === 'string' && body.refCode.trim()) {
         await recordReferral(admin, data.user.id, body.refCode)
+      }
+
+      // The opening-month offer. Granted here, at the moment the account is
+      // created, rather than left as a promise to claim later: an offer you
+      // have to remember to redeem is an offer most people never get, and the
+      // two courses are worth far more to us sitting in somebody's Academy on
+      // day one than as a coupon in an email.
+      if (launchOfferOpen()) {
+        try {
+          const { data: newCandidate } = await admin.from('candidate_profiles')
+            .select('id').eq('user_id', data.user.id).maybeSingle()
+          if (newCandidate?.id) {
+            launchOfferGranted = (await grantCourses(admin, newCandidate.id, LAUNCH_COURSE_SLUGS, 'opening month')).granted
+          }
+        } catch (offerError: any) {
+          // Best effort, always. Nobody is refused an account because a gift
+          // failed to land.
+          console.error('Opening-month course grant failed:', offerError?.message)
+        }
       }
     } else {
       // Employers need the shared profiles row too: if the second registration
@@ -165,6 +201,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       userId: data.user.id,
       marketingOptInStarted,
+      launchOfferGranted,
       registrationProof: createRegistrationProof({ userId: data.user.id, role, email }),
       requiresEmailConfirmation: !data.session,
       session: data.session ? {

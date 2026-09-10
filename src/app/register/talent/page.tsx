@@ -9,6 +9,7 @@ import { Eye, EyeOff } from 'lucide-react'
 import Wordmark from '@/components/Wordmark'
 import { createClient } from '@/lib/supabase/client'
 import { MARKETING_CONSENT_WORDING } from '@/lib/privacy-consent'
+import { LAUNCH_OFFER_TALENT, launchOfferClosesLabel, launchOfferOpen } from '@/lib/launch-offers'
 
 const MIN_PASSWORD_LENGTH = 8
 const MAX_PASSWORD_LENGTH = 64
@@ -21,6 +22,7 @@ export default function TalentRegisterPage() {
   const site = usePublicSiteContent()
   const [loading, setLoading] = useState(false)
   const [marketingOptIn, setMarketingOptIn] = useState(false)
+  const [agreedTerms, setAgreedTerms] = useState(false)
   const [error, setError] = useState('')
   const [fullName, setFullName] = useState('')
   const [email, setEmail] = useState('')
@@ -55,6 +57,7 @@ export default function TalentRegisterPage() {
     if (!/^\S+@\S+\.\S+$/.test(email.trim())) return setError('Please enter a valid email address.')
     if (password.length < MIN_PASSWORD_LENGTH) return setError(`Use at least ${MIN_PASSWORD_LENGTH} characters.`)
     if (password.length > MAX_PASSWORD_LENGTH) return setError(`Use no more than ${MAX_PASSWORD_LENGTH} characters.`)
+    if (!agreedTerms) return setError('Please accept the Terms & Conditions and Privacy Policy.')
 
     setLoading(true)
     try {
@@ -66,6 +69,7 @@ export default function TalentRegisterPage() {
           password,
           role: 'talent',
           marketingOptIn,
+          agreedTerms,
           displayName: fullName,
           refCode: refCode || undefined,
         }),
@@ -130,6 +134,14 @@ export default function TalentRegisterPage() {
             <h1 className="mt-2 text-[30px] leading-tight tracking-[-0.02em] font-serif font-semibold text-[#1c1c1c]">Create your Talent account</h1>
             <p className="mt-2 mb-7 text-[13px] leading-6 text-[#555555]">Three fields now. You build your professional profile once you are inside - nothing is asked twice.</p>
 
+            {launchOfferOpen() && (
+              <div className="mb-5 border border-[#dddddd] bg-[#f1f1f1] px-3.5 py-3">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#1c1c1c]">Opening month</p>
+                <p className="mt-1.5 text-[12.5px] leading-5 text-[#333333]">{LAUNCH_OFFER_TALENT}</p>
+                <p className="mt-1.5 text-[11px] text-[#6b6b6b]">Applied automatically. Closes {launchOfferClosesLabel()}.</p>
+              </div>
+            )}
+
             {error && <div role="alert" className="bg-red-50 border border-red-100 text-red-600 text-[13px] px-3 py-2.5 mb-5">{error}</div>}
 
             <div className="space-y-4">
@@ -150,6 +162,22 @@ export default function TalentRegisterPage() {
                 <p className="mt-1.5 text-[11px] text-[#6b6b6b]">Use {MIN_PASSWORD_LENGTH}-{MAX_PASSWORD_LENGTH} characters.</p>
               </div>
 
+              {/* Required, and asked here rather than three screens later.
+                  The account is created on this button, so this is where the
+                  agreement has to be made - the employer form has always
+                  asked at this point and the talent form never did. */}
+              <label className="flex items-start gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={agreedTerms}
+                  onChange={event => { setError(''); setAgreedTerms(event.target.checked) }}
+                  className="mt-0.5 h-4 w-4 shrink-0"
+                />
+                <span className="text-[11.5px] leading-5 text-[#555555]">
+                  I have read and agree to the <Link href="/terms" className="underline text-[#1c1c1c]">Terms &amp; Conditions</Link> and <Link href="/privacy" className="underline text-[#1c1c1c]">Privacy Policy</Link>.
+                </span>
+              </label>
+
               {/* Unticked, always. A pre-ticked box is not consent under the
                   UK GDPR, and the wording shown here is the wording recorded
                   against the account so the two can never disagree. */}
@@ -166,7 +194,7 @@ export default function TalentRegisterPage() {
                 </span>
               </label>
 
-              <button type="button" onClick={createAccount} disabled={loading} className="w-full bg-[#1c1c1c] hover:bg-[#333333] text-white px-5 py-3 text-[13px] font-semibold transition-colors disabled:opacity-40">
+              <button type="button" onClick={createAccount} disabled={loading || !agreedTerms} className="w-full bg-[#1c1c1c] hover:bg-[#333333] text-white px-5 py-3 text-[13px] font-semibold transition-colors disabled:opacity-40">
                 {loading ? 'Creating account...' : 'Create account and build profile'}
               </button>
             </div>

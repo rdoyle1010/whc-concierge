@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { canEmployerDiscoverCandidate } from '@/lib/discovery'
 import { presentCandidateForEmployer } from '@/lib/private-mode'
+import { PREMIUM_COLUMNS, isPremium } from '@/lib/employer-premium'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
@@ -17,10 +18,35 @@ async function getEmployerProfile() {
 
   const admin = createAdminClient()
   const { data } = await admin.from('employer_profiles')
-    .select('id, user_id, property_name, company_name, approval_status')
+    .select(`id, user_id, property_name, company_name, approval_status, ${PREMIUM_COLUMNS}`)
     .eq('user_id', user.id)
     .maybeSingle()
   return data
+}
+
+// Shortlisting is how an employer starts a conversation: a shortlist entry is
+// one of the relationships /api/messages/send accepts as permission to write
+// to a professional. Discover Talent is gated on a paid membership or a
+// running advert, and its API refuses a free account outright - but this route
+// never checked, so a free account could POST a candidate id straight to it,
+// land on the shortlist, and message anybody on the register.
+//
+// The gate here is deliberately wider than Talent Search. A Standard advert
+// sells "applications and shortlist", and an advert that has since expired
+// should not strand the applications it bought, so anybody who has applied to
+// one of this property's roles stays shortlistable whatever the tier.
+async function mayShortlist(admin: ReturnType<typeof createAdminClient>, profile: any, candidateId: string) {
+  if (isPremium(profile, 'employer_talent_search')) return true
+
+  const { data: jobs } = await admin.from('job_listings').select('id').eq('employer_id', profile.id)
+  const jobIds = (jobs || []).map((job: any) => job.id)
+  if (!jobIds.length) return false
+
+  const [byRole, byJob] = await Promise.all([
+    admin.from('applications').select('id').eq('candidate_id', candidateId).in('role_id', jobIds).limit(1).maybeSingle(),
+    admin.from('applications').select('id').eq('candidate_id', candidateId).in('job_id', jobIds).limit(1).maybeSingle(),
+  ])
+  return Boolean((!byRole.error && byRole.data) || (!byJob.error && byJob.data))
 }
 
 export async function GET() {
@@ -71,6 +97,13 @@ export async function POST(req: NextRequest) {
   ])
   if (!candidate || candidate.approval_status !== 'approved' || candidate.profile_visible === false || block) {
     return NextResponse.json({ error: 'This profile is not available to your business' }, { status: 403 })
+  }
+
+  if (!await mayShortlist(admin, profile, candidateId)) {
+    return NextResponse.json(
+      { error: 'Shortlisting a professional you have not received an application from is part of Talent Search.', upgradeHref: '/employer/membership' },
+      { status: 402 },
+    )
   }
 
   // A shortlist is a private bookmark, not a Tinder-style "yes". Mutual
