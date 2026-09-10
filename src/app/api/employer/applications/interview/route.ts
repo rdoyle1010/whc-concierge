@@ -144,7 +144,11 @@ export async function POST(req: NextRequest) {
     }, { onConflict: 'application_id,round_number' }).select('*').single()
     if (interviewError) return NextResponse.json({ error: 'Could not create interview invitation.' }, { status: 500 })
 
-    await admin.from('applications').update({ status: 'interview', updated_at: new Date().toISOString() }).eq('id', application.id)
+    // The invitation has gone. If the stage does not move with it, this
+    // candidate stays in the pile as though nothing has happened.
+    const { error: stageError } = await admin.from('applications')
+      .update({ status: 'interview', updated_at: new Date().toISOString() }).eq('id', application.id)
+    if (stageError) return NextResponse.json({ error: 'The invitation was sent but the application stage did not move. Refresh before inviting them again.' }, { status: 500 })
 
     const propertyName = employer.property_name || employer.company_name || 'the property'
     const stageLabel = roundLabel(roundNumber)

@@ -79,7 +79,9 @@ export async function POST(req: NextRequest) {
     }).eq('id', interview.id).eq('status', 'proposed').select('*').maybeSingle()
     if (updateError || !updated) return NextResponse.json({ error: 'Could not confirm this interview time.' }, { status: 409 })
 
-    await admin.from('applications').update({ status: 'interview', updated_at: new Date().toISOString() }).eq('id', application.id)
+    const { error: stageError } = await admin.from('applications')
+      .update({ status: 'interview', updated_at: new Date().toISOString() }).eq('id', application.id)
+    if (stageError) return NextResponse.json({ error: 'Your time was confirmed but the application stage did not move. Please refresh before the interview.' }, { status: 500 })
 
     const jobId = application.role_id || application.job_id
     const { data: job } = await admin.from('job_listings').select('id,job_title,employer_id').eq('id', jobId).maybeSingle()

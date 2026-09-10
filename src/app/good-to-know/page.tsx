@@ -33,9 +33,20 @@ function monogram(body: IndustryBody) {
 function BodyPicture({ body }: { body: IndustryBody }) {
   if (body.image) {
     return (
-      <div className="relative h-44 overflow-hidden border-b border-border bg-surface md:h-full md:border-b-0 md:border-r">
+      // Contained, not cropped. This slot was drawn for photography, and
+      // object-cover fills it by cutting whatever does not fit - which is the
+      // right answer for a treatment room and the wrong one for a logo, where
+      // half the letters disappear. Most of what belongs on a page about
+      // organisations IS a logo, so the picture is shown whole on a plain
+      // ground and a photograph letterboxes rather than a mark being sliced.
+      <div className="flex h-36 items-center justify-center border-b border-border bg-surface p-6 md:h-full md:border-b-0 md:border-r">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={body.image} alt="" className="h-full w-full object-cover" loading="lazy" />
+        <img
+          src={body.image}
+          alt={`${body.shortName || body.name} logo`}
+          className="max-h-24 w-full object-contain"
+          loading="lazy"
+        />
       </div>
     )
   }
@@ -99,7 +110,7 @@ export default async function GoodToKnowPage() {
               <div className="mt-9 space-y-5">
                 {group.bodies.map(body => (
                   <article key={body.name} className="border border-border bg-white">
-                    <div className="grid grid-cols-1 md:grid-cols-[220px_1fr]">
+                    <div className="grid grid-cols-1 md:grid-cols-[240px_1fr]">
                       <BodyPicture body={body} />
 
                       <div className="p-7">

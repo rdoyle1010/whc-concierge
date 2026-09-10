@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { agencyResolutionExceedsCollected, bookingPaidByConnect } from '@/lib/agency-payouts'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { createNotification } from '@/lib/notifications'
+import { createNotification, notifyAdmins } from '@/lib/notifications'
 import { getRequestUser } from '@/lib/request-user'
 import { getStripe } from '@/lib/stripe'
 
@@ -94,7 +94,11 @@ export async function POST(req: NextRequest) {
       status: 'awaiting_response',
     }).select('*').single()
     if (error) return NextResponse.json({ error: 'Could not open this case.' }, { status: 500 })
-    await admin.from('agency_bookings').update({ dispute_status: 'open', payout_status: 'on_hold', dispute_reason: description }).eq('id', booking.id)
+    // Raising a case is what freezes the money. If this does not land, the
+    // payout sweep can pay the shift out while the dispute is still open.
+    const { error: holdError } = await admin.from('agency_bookings')
+      .update({ dispute_status: 'open', payout_status: 'on_hold', dispute_reason: description }).eq('id', booking.id)
+    if (holdError) return NextResponse.json({ error: 'The case could not be opened against this booking. Please try again, and tell us straight away if it keeps failing.' }, { status: 500 })
     await admin.from('agency_case_events').insert({ case_id: data.id, actor_user_id: user.id, actor_role: role, event_type: 'case_opened' })
 
     const [{ data: bookingCandidate }, { data: bookingEmployer }] = await Promise.all([
@@ -175,7 +179,15 @@ export async function POST(req: NextRequest) {
       refundId = result.id
     }
 
-    await admin.from('agency_cases').update({
+    // The Stripe refund has already gone by this point, and a refund cannot be
+    // taken back. So these two writes are the only record that it happened: if
+    // either is lost, the money has left the account and the platform believes
+    // it has not - the case reads unresolved, the payout status is wrong, and
+    // whoever picks it up next is working from a false position.
+    //
+    // Nothing here can be rolled back, so the honest response is to record what
+    // did happen and put it in front of a person immediately.
+    const { error: caseError } = await admin.from('agency_cases').update({
       resolution: updated?.proposed_resolution,
       approved_refund_amount: refund,
       approved_extra_amount: extra,
@@ -184,13 +196,27 @@ export async function POST(req: NextRequest) {
       status: extra > 0 ? 'awaiting_payment' : 'resolved',
       resolved_at: extra > 0 ? null : now,
     }).eq('id', row.id)
-    await admin.from('agency_bookings').update({
+    const { error: bookingError } = await admin.from('agency_bookings').update({
       dispute_status: extra > 0 ? 'open' : 'resolved',
       refund_amount: refund || null,
       refunded_at: refund ? now : null,
       payout_amount: payout,
       payout_status: extra > 0 ? 'on_hold' : (payout > 0 ? 'pending' : 'cancelled'),
     }).eq('id', row.booking.id)
+
+    if (caseError || bookingError) {
+      console.error('Agency resolution not fully recorded:', caseError?.message, bookingError?.message)
+      await notifyAdmins(
+        'A resolved Agency case was not fully recorded',
+        `Case ${row.id} was agreed by both sides${refundId ? ` and a £${refund.toFixed(2)} Stripe refund was issued (${refundId})` : ''}, but the record did not save. Check the booking and the case by hand before anything else touches this money.`,
+        '/admin/agency-cases',
+      )
+      return NextResponse.json({
+        error: refundId
+          ? 'The refund was issued but the case record did not save. Talent House has been alerted and will confirm by hand - do not repeat this action.'
+          : 'The resolution did not save. Please try again.',
+      }, { status: 500 })
+    }
     await admin.from('agency_case_events').insert({ case_id: row.id, actor_user_id: user.id, actor_role: role, event_type: extra > 0 ? 'agreement_complete_extra_payment_due' : 'agreement_complete', details: { refund, extra, payout, refund_id: refundId } })
     return NextResponse.json({ success: true, bothAgreed: true, awaitingPayment: extra > 0 })
   }

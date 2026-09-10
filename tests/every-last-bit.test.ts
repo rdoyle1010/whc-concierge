@@ -17,9 +17,36 @@ const body = (file: string) =>
 test('nothing reports success on a write it did not check', () => {
   const WRITE = /^\s*await\s+(admin|supabase)\.from\(['"]([a-z_]+)['"]\)\s*\.\s*(update|insert|upsert|delete)\b/
   const SUCCESS = /NextResponse\.json\(\s*\{\s*(success:\s*true|ok:\s*true)/
-  // Event logs and analytics are deliberately best-effort: a missing audit row
-  // must never be the reason somebody's action fails.
-  const BEST_EFFORT = new Set(['agency_case_events', 'analytics_events', 'referrals'])
+  // Deliberately best-effort, each for a reason. A missing row here must never
+  // be the reason somebody's action fails, and every one of these is either a
+  // record of something that already happened or a tidy-up after it.
+  const BEST_EFFORT = new Set([
+    'agency_case_events',   // the audit trail beside the write that matters
+    'analytics_events',     // instrumentation
+    'referrals',            // credit for an introduction, never the introduction
+    'assessment_attempts',  // the attempt log; the score itself is written and checked
+    'agency_rate_cards',    // seeded when a sector opens; the sector is the thing
+    'consent_events',       // the ledger beside privacy_preferences, which is checked
+    'marketing_confirmation_tokens', // consuming a token already acted on
+    'ambassador_redemptions',        // releasing a place after a refused claim
+    'swipes',               // clearing a passed-over card before deleting its role
+  ])
+
+  // A handful of specific lines, named rather than pattern-matched, where the
+  // write is genuinely a sweep or a note rather than the thing being asked
+  // for. Named so that adding to this list is a visible decision.
+  const DELIBERATE = new Set([
+    // Expiring an offer nobody answered, on the way past. The caller is doing
+    // something else; this is housekeeping and the conditional update makes it
+    // safe to miss and catch next time.
+    'src/app/api/agency/booking/core.ts:980',
+    'src/app/api/mobile/agency/booking-action/route.ts:150',
+    // A note the candidate added beside a time they cannot make. The refusal
+    // itself is the checked write above it.
+    'src/app/api/talent/applications/interview/route.ts:56',
+    // The legacy documents array, kept in step beside the real record.
+    'src/app/api/talent/certificates/route.ts:65',
+  ])
 
   const offenders: string[] = []
   const walk = (dir: string) => {
@@ -31,7 +58,18 @@ test('nothing reports success on a write it did not check', () => {
       lines.forEach((line, index) => {
         const match = WRITE.exec(line)
         if (!match || BEST_EFFORT.has(match[2])) return
-        if (SUCCESS.test(lines.slice(index + 1, index + 7).join('\n'))) {
+        // To the end of the handler, not a fixed few lines. The first version
+        // of this looked six lines ahead, so it missed every write whose
+        // success response sits below a notification, an email and a couple of
+        // lookups - which is most of the recruitment journey.
+        const rest: string[] = []
+        for (const next of lines.slice(index + 1)) {
+          if (/^export\s+async\s+function/.test(next)) break
+          rest.push(next)
+          if (rest.length > 60) break
+        }
+        if (DELIBERATE.has(`${rel}:${index + 1}`)) return
+        if (SUCCESS.test(rest.join('\n'))) {
           offenders.push(`${rel}:${index + 1} ${match[3]} ${match[2]}`)
         }
       })

@@ -45,12 +45,13 @@ export async function POST(req: NextRequest) {
       await createNotification(cand.user_id, 'general', `${empName} suggested a course for you`, message, '/talent/academy')
     } catch { /* non-fatal */ }
     try {
-      await admin.from('messages').insert({
+      const { error: messageError } = await admin.from('messages').insert({
         sender_id: user.id,
         recipient_id: cand.user_id,
         content: message,
         read: false,
       })
+      if (messageError) console.error('Message not delivered into the thread:', messageError.message)
     } catch { /* non-fatal */ }
 
     return NextResponse.json({ success: true })

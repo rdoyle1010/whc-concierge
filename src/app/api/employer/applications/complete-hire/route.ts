@@ -100,7 +100,11 @@ export async function POST(req: NextRequest) {
     const otherRows = otherApplications || []
     const otherIds = otherRows.map(row => row.id)
     if (otherIds.length) {
-      await admin.from('applications').update({ status:'rejected', updated_at:now }).in('id', otherIds)
+      // Everyone else on a filled role. If this fails they are left in a live
+      // pipeline for a job that has gone, waiting on an answer nobody is
+      // coming back to give.
+      const { error: closeError } = await admin.from('applications').update({ status:'rejected', updated_at:now }).in('id', otherIds)
+      if (closeError) console.error('Could not close the other applications on a filled role:', closeError.message)
       const otherCandidateIds = Array.from(new Set(otherRows.map(row => row.candidate_id).filter(Boolean))) as string[]
       if (otherCandidateIds.length) {
         const { data: others } = await admin.from('candidate_profiles').select('id,user_id,full_name').in('id', otherCandidateIds)

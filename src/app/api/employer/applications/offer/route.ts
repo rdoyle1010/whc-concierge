@@ -61,7 +61,12 @@ export async function POST(req: NextRequest) {
     }, { onConflict: 'application_id' }).select('*').single()
     if (error) return NextResponse.json({ error: 'Could not create the offer.' }, { status: 500 })
 
-    await admin.from('applications').update({ status: 'offered', updated_at: new Date().toISOString() }).eq('id', application.id)
+    // Without this the professional is shown an offer the pipeline does not
+    // know exists, so nothing on the property's side will let them respond to
+    // an answer when it comes.
+    const { error: stageError } = await admin.from('applications')
+      .update({ status: 'offered', updated_at: new Date().toISOString() }).eq('id', application.id)
+    if (stageError) return NextResponse.json({ error: 'The offer was created but the application stage did not move. Refresh before making it again.' }, { status: 500 })
     const propertyName = employer.property_name || employer.company_name || 'The property'
     await createNotification(candidate.user_id, 'general', `Job offer - ${job.job_title}`, `${propertyName} would like to offer you the role. Review the message in My Applications.`, '/talent/applications')
 

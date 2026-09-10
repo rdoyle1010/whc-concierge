@@ -15,7 +15,7 @@ export async function POST(req: NextRequest) {
   if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
 
   const { jobId, action } = await req.json()
-  if (!jobId || !['filled', 'closed', 'reopen'].includes(action)) return NextResponse.json({ error: 'Invalid request' }, { status: 400 })
+  if (!jobId || !['filled', 'closed', 'reopen', 'delete'].includes(action)) return NextResponse.json({ error: 'Invalid request' }, { status: 400 })
 
   const admin = createAdminClient()
   const { data: employer } = await admin.from('employer_profiles').select('id, property_name, company_name, approval_status').eq('user_id', user.id).maybeSingle()
@@ -43,6 +43,49 @@ export async function POST(req: NextRequest) {
       .update({ is_live: true, status: 'active' }).eq('id', job.id)
     if (reopenError) return NextResponse.json({ error: 'Could not put this role back up.' }, { status: 500 })
     return NextResponse.json({ success: true, status: 'active', is_live: true, expiresAt: job.expires_at })
+  }
+
+  // Deleting a listing.
+  //
+  // This used to be a delete straight from the browser, and the database
+  // refused it: matches point at job_listings with no cascade, so a role
+  // anybody had matched with could not be removed and the raw constraint
+  // error was shown to the property in an alert box.
+  //
+  // The refusal was right and the reason is a product one. A role people have
+  // applied to or matched with is a record - of their application, of a
+  // conversation, of a hire - and deleting it would take that history from
+  // them to tidy a screen. Roles like that are closed, which is what Close
+  // and Filled already do. Only a listing nobody ever reached can be removed,
+  // and then its own scaffolding goes with it.
+  if (action === 'delete') {
+    const [{ count: applicationCount }, { count: matchCount }] = await Promise.all([
+      admin.from('applications').select('id', { count: 'exact', head: true }).or(`job_id.eq.${jobId},role_id.eq.${jobId}`),
+      admin.from('matches').select('id', { count: 'exact', head: true }).eq('job_listing_id', jobId),
+    ])
+    const applications = Number(applicationCount || 0)
+    const matches = Number(matchCount || 0)
+
+    if (applications > 0 || matches > 0) {
+      const parts: string[] = []
+      if (applications > 0) parts.push(`${applications} application${applications === 1 ? '' : 's'}`)
+      if (matches > 0) parts.push(`${matches} match${matches === 1 ? '' : 'es'}`)
+      return NextResponse.json({
+        error: `This role has ${parts.join(' and ')} against it, so it cannot be deleted - that history belongs to the professionals as much as to you. Close it instead and it comes off the board while the record stays.`,
+        code: 'HAS_HISTORY',
+        applications,
+        matches,
+      }, { status: 409 })
+    }
+
+    // Nothing reached it, so the scaffolding goes too. Swipes are the only
+    // dependent without a cascade that a never-seen listing can still have.
+    await admin.from('swipes').delete().eq('target_id', jobId).eq('target_type', 'job')
+    const { error: deleteError } = await admin.from('job_listings').delete().eq('id', jobId).eq('employer_id', employer.id)
+    if (deleteError) {
+      return NextResponse.json({ error: 'This role could not be deleted. Close it instead, and tell us if it keeps happening.' }, { status: 500 })
+    }
+    return NextResponse.json({ success: true, deleted: true })
   }
 
   const status = action === 'filled' ? 'filled' : 'closed'

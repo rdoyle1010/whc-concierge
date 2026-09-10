@@ -65,12 +65,13 @@ export async function POST(req: NextRequest) {
       .maybeSingle()
 
     if (!existingMessage) {
-      await admin.from('messages').insert({
+      const { error: messageError } = await admin.from('messages').insert({
         sender_id: user.id,
         recipient_id: listing.user_id,
         content: `I'd like to discuss a possible ${listing.primary_specialism || 'wellness'} residency.`,
         read: false,
       })
+      if (messageError) console.error('Message not delivered into the thread:', messageError.message)
     }
 
     try {
