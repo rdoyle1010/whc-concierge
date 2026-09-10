@@ -91,6 +91,34 @@ export function secureImageUrl(value: unknown) {
   return /^https:\/\//i.test(url) ? url : null
 }
 
+// A brand's own website, which is a link rather than a picture.
+//
+// This used to run through secureImageUrl, an image validator, so a brand that
+// typed caroljoylondon.com - which is what people type - had its website
+// silently replaced with nothing. No error, no warning, and the link simply
+// missing from the page arguing for their brand. Nobody would ever find out
+// except the brand, eventually, asking why.
+//
+// A bare domain is upgraded to https rather than rejected, and plain http is
+// upgraded too: every site worth linking to serves https, and the ones that
+// redirect will do the work themselves. Anything that is not a web address at
+// all - javascript:, data:, a sentence - is still dropped, because this string
+// ends up in an href.
+export function cleanWebsiteUrl(value: unknown) {
+  const raw = String(value ?? '').trim().slice(0, 1000)
+  if (!raw) return null
+  const withScheme = /^https?:\/\//i.test(raw) ? raw.replace(/^http:\/\//i, 'https://') : `https://${raw}`
+  try {
+    const parsed = new URL(withScheme)
+    if (parsed.protocol !== 'https:') return null
+    // A hostname with no dot is not a public website, it is a typo.
+    if (!parsed.hostname.includes('.')) return null
+    return parsed.toString()
+  } catch {
+    return null
+  }
+}
+
 export function normaliseBrand(raw: any): BrandProfile {
   return {
     slug: cleanBrandSlug(raw?.slug),
@@ -117,7 +145,7 @@ export function normaliseBrand(raw: any): BrandProfile {
       .map(secureImageUrl)
       .filter((url: string | null): url is string => Boolean(url))
       .slice(0, 12),
-    website_url: secureImageUrl(raw?.website_url),
+    website_url: cleanWebsiteUrl(raw?.website_url),
     academy_course_slug: text(raw?.academy_course_slug, 80),
     product_house_name: text(raw?.product_house_name, 140),
     contact_name: text(raw?.contact_name, 140),

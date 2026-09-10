@@ -3,7 +3,7 @@ import { enforceRateLimit } from '@/lib/rate-limit'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { sendTransactionalEmail } from '@/lib/send-email'
 import { administratorEmails } from '@/lib/administrators'
-import { cleanEmail, secureImageUrl } from '@/lib/brand-profiles'
+import { cleanEmail, cleanWebsiteUrl, secureImageUrl } from '@/lib/brand-profiles'
 
 // A brand applying for a page.
 //
@@ -48,7 +48,7 @@ export async function POST(req: NextRequest) {
 
   const application = {
     brand_name: brandName,
-    website_url: secureImageUrl(body.website_url),
+    website_url: cleanWebsiteUrl(body.website_url),
     contact_name: contactName,
     contact_role: trim(body.contact_role, 140) || null,
     contact_email: contactEmail,
