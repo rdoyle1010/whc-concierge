@@ -124,3 +124,118 @@ test('no link in the product leads nowhere', () => {
   walk('src')
   assert.deepEqual(offenders, [], `these go nowhere:\n${offenders.join('\n')}`)
 })
+
+// ---------------------------------------------------------------------------
+// The sweeps that came back empty.
+//
+// These found nothing today, which is exactly why they are worth writing down.
+// A sweep run once tells you about today; a sweep that runs on every commit
+// tells you about the change somebody is about to make.
+// ---------------------------------------------------------------------------
+
+function sourceFiles(root: string, extension: string): string[] {
+  const found: string[] = []
+  const walk = (dir: string) => {
+    for (const entry of readdirSync(join(process.cwd(), dir))) {
+      if (entry === 'node_modules' || entry === '.expo') continue
+      const rel = `${dir}/${entry}`
+      if (statSync(join(process.cwd(), rel)).isDirectory()) walk(rel)
+      else if (entry.endsWith(extension)) found.push(rel)
+    }
+  }
+  walk(root)
+  return found
+}
+
+// A client action that reads the response body without ever looking at whether
+// the request was refused reports the optimistic answer either way: the
+// professional is told their application went, the property is told the offer
+// was sent, and neither happened.
+test('no client action reports success without checking it was allowed', () => {
+  // Deliberately NOT anchored to one line. A fetch call written across four
+  // lines is the normal way to write one, and a check that only sees
+  // single-line calls passes on the files most worth checking.
+  const call = /const\s+(\w+)\s*=\s*await\s+fetch\(/g
+  const offenders: string[] = []
+  for (const file of [...sourceFiles('src/app', '.tsx'), ...sourceFiles('src/components', '.tsx')]) {
+    const source = read(file)
+    if (!source.startsWith("'use client'")) continue
+    for (const match of source.matchAll(call)) {
+      const name = match[1]
+      // Generous on purpose. A profile save posts thirty fields, so the check
+      // that follows it can be a long way down the file - and a window that
+      // stops short reports a handled failure as an unhandled one.
+      const window = source.slice(match.index!, match.index! + 3000)
+      // Reads are not the concern here: a failed GET shows an empty list,
+      // which is visible. A failed write shows a tick that is a lie.
+      if (!window.includes('method')) continue
+      // Checking the status is one way.
+      if (new RegExp(`\\b${name}\\s*\\??\\s*\\.\\s*(ok|status)\\b`).test(window)) continue
+      // Reading the body's own error or success flag is the other, and it is
+      // just as good: these routes all answer with one. What is not allowed is
+      // reading neither, which is how a button ends up doing nothing at all
+      // with nothing said.
+      const parsed = new RegExp(`const\\s+(\\w+)\\s*=\\s*await\\s+${name}\\s*\\??\\s*\\.\\s*json\\(`).exec(window)
+      if (parsed && new RegExp(`\\b${parsed[1]}\\s*\\??\\s*\\.\\s*(error|success|ok|status)\\b`).test(window)) continue
+      offenders.push(`${file}:${source.slice(0, match.index).split('\n').length}`)
+    }
+  }
+  assert.deepEqual(offenders, [], `these cannot tell a refusal from a success:\n${offenders.join('\n')}`)
+})
+
+// A write addressed by an id the caller supplied, with nothing else scoping it,
+// edits whatever row that id names. It is only safe when something before it
+// has proved the caller owns that row - which in practice means reading the
+// row with the caller's own id first, and writing to the row that came back.
+test('no write outside admin is addressed straight from the request body', () => {
+  // The one exemption, named rather than pattern-matched. An unsubscribe link
+  // carries a signed token for exactly one subscriber id, and verifying that
+  // signature IS the ownership proof: there is no session to check against,
+  // because the whole point is that it works from an email client.
+  const SIGNED_TOKEN_ROUTES = new Set([
+    'src/app/api/newsletter/unsubscribe/route.ts',
+  ])
+
+  const offenders: string[] = []
+  for (const file of sourceFiles('src/app/api', '.ts')) {
+    if (file.includes('/admin/')) continue
+    if (SIGNED_TOKEN_ROUTES.has(file)) continue
+    const source = read(file)
+    for (const match of source.matchAll(/\.(update|delete)\([^;]*?\)((?:\s*\.eq\([^)]*\))+)/gs)) {
+      const eqs = [...match[2].matchAll(/\.eq\('([a-z_]+)',\s*([^)]+)\)/g)]
+      if (eqs.length !== 1 || eqs[0][1] !== 'id') continue
+      const expr = eqs[0][2].trim()
+      if (!/^(body\.\w+|id)$/.test(expr)) continue
+      offenders.push(`${file}:${source.slice(0, match.index).split('\n').length} writes .eq('id', ${expr})`)
+    }
+  }
+  assert.deepEqual(offenders, [], `prove the caller owns the row first:\n${offenders.join('\n')}`)
+})
+
+// A marker left in the source is a decision somebody deferred and nobody came
+// back to. On a live platform that is not a note, it is a defect with a label.
+test('nothing is left marked as unfinished', () => {
+  const offenders: string[] = []
+  for (const file of [...sourceFiles('src', '.ts'), ...sourceFiles('src', '.tsx'), ...sourceFiles('mobile/app', '.tsx')]) {
+    read(file).split('\n').forEach((line, index) => {
+      if (/\b(TODO|FIXME|HACK|XXX)\b/.test(line)) offenders.push(`${file}:${index + 1} ${line.trim().slice(0, 80)}`)
+    })
+  }
+  assert.deepEqual(offenders, [], `finish or delete these:\n${offenders.join('\n')}`)
+})
+
+// A button with neither a type nor a handler is either dead, or - inside a
+// form - an accidental submit, because that is what an untyped button defaults
+// to. Both look like the page ignoring somebody.
+test('every button does something, and says which', () => {
+  const offenders: string[] = []
+  for (const file of [...sourceFiles('src/app', '.tsx'), ...sourceFiles('src/components', '.tsx')]) {
+    const source = read(file)
+    for (const match of source.matchAll(/<button\b[^>]*?>/gs)) {
+      const tag = match[0]
+      if (tag.includes('type=') || tag.includes('onClick')) continue
+      offenders.push(`${file}:${source.slice(0, match.index).split('\n').length}`)
+    }
+  }
+  assert.deepEqual(offenders, [], `give these a type or a handler:\n${offenders.join('\n')}`)
+})

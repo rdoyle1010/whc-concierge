@@ -93,11 +93,16 @@ export default function EmployerBillingPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
       })
-      const data = await res.json()
-      if (data.url) window.location.href = data.url
-      else setRedirecting(false)
+      const data = await res.json().catch(() => ({}))
+      if (data.url) { window.location.href = data.url; return }
+      // Nothing was said before. The spinner stopped, the page did not move,
+      // and a property trying to change the card on a PS999 membership was
+      // left to guess whether it was them or us.
+      setBillingNotice({ kind: 'error', text: data.error || 'The billing portal could not be opened. Please try again, and tell us if it keeps happening.' })
+      setRedirecting(false)
     } catch (error) {
       console.error('Error redirecting to portal:', error)
+      setBillingNotice({ kind: 'error', text: 'We could not reach the billing portal. Please check your connection and try again.' })
       setRedirecting(false)
     }
   }
