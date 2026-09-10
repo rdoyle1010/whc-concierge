@@ -1,4 +1,4 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import { Cormorant_Garamond, Manrope, Poppins } from 'next/font/google'
 import './globals.css'
 import './public-clean.css'
@@ -84,13 +84,31 @@ const baseMetadata: Metadata = {
   },
   icons: {
     icon: DEFAULT_LOGO.url,
-    apple: DEFAULT_LOGO.url,
+    // The published logo is an SVG wordmark, which is right in a browser tab
+    // and wrong on a home screen: iOS ignores transparency, drops the file on
+    // white and crops it square, so a wide wordmark arrives as three letters.
+    // The touch icon is the monogram, at the size Safari actually asks for.
+    apple: '/icons/apple-touch-icon.png',
   },
+  manifest: '/manifest.webmanifest',
+  appleWebApp: {
+    capable: true,
+    title: 'Talent House',
+    // Black-translucent lets the page's own charcoal run under the status bar
+    // rather than leaving a white strip above it.
+    statusBarStyle: 'black-translucent',
+  },
+}
+
+// The colour Android paints the address bar and the task switcher. Left unset
+// it uses white, which is the one colour this platform never uses.
+export const viewport: Viewport = {
+  themeColor: '#1c1c1c',
 }
 
 export async function generateMetadata(): Promise<Metadata> {
   const logo = await publishedLogo()
-  return { ...baseMetadata, icons: { icon: logo.url, apple: logo.url } }
+  return { ...baseMetadata, icons: { icon: logo.url, apple: '/icons/apple-touch-icon.png' } }
 }
 
 // Static pages inherit this: brand changes published in admin reach every
