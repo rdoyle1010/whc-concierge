@@ -290,6 +290,16 @@ export default function WebsiteEditorPage() {
                       <Field label="Small heading" value={slide.eyebrow} onChange={value => update('hero.slides.' + index + '.eyebrow', value)} />
                       <Field label="Main heading" value={slide.heading} onChange={value => update('hero.slides.' + index + '.heading', value)} />
                       <TextArea label="Paragraph" value={slide.text} onChange={value => update('hero.slides.' + index + '.text', value)} />
+                      {/* One door per argument. Left empty, each slide falls
+                          back to a sensible default for its position: post a
+                          role, create a profile, residencies, the Academy,
+                          consultants. Fill both or neither - a label with no
+                          link is a button that goes nowhere. */}
+                      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                        <Field label="Button text" value={slide.ctaLabel || ''} onChange={value => update('hero.slides.' + index + '.ctaLabel', value)} />
+                        <Field label="Button link" value={slide.ctaHref || ''} onChange={value => update('hero.slides.' + index + '.ctaHref', value)} />
+                      </div>
+                      <p className="text-[11px] leading-5 text-muted">Leave both empty and this slide uses the default for its position.</p>
                     </div>)}
                     <div className="grid sm:grid-cols-2 gap-4">
                       <Field label="First button" value={content.hero.primaryLabel} onChange={value => update('hero.primaryLabel', value)} />

@@ -68,7 +68,7 @@ export const WebsiteContentSchema = z.object({
     talentSignIn: text, employerSignIn: text,
   }),
   hero: z.object({
-    slides: z.array(z.object({ image: imageSchema, eyebrow: text, heading: text, text })).min(1).max(8),
+    slides: z.array(z.object({ image: imageSchema, eyebrow: text, heading: text, text, ctaLabel: text.optional(), ctaHref: link.optional() })).min(1).max(8),
     primaryLabel: text, primaryHref: link, secondaryLabel: text, secondaryHref: link,
   }),
   proof: z.object({ items: z.array(text).min(1).max(6) }),
