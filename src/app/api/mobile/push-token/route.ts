@@ -37,7 +37,11 @@ export async function DELETE(req: NextRequest) {
   if (!token) return NextResponse.json({ success: true })
 
   const admin = createAdminClient()
-  await admin.from('mobile_push_tokens').update({ is_active: false, updated_at: new Date().toISOString() })
+  // This is the control that turns push notifications off. A privacy or
+  // quiet-hours setting that reports success and keeps sending is worse than
+  // one that refuses, because nobody goes back to check.
+  const { error } = await admin.from('mobile_push_tokens').update({ is_active: false, updated_at: new Date().toISOString() })
     .eq('expo_push_token', token).eq('user_id', user.id)
+  if (error) return NextResponse.json({ error: 'Notifications could not be turned off. Please try again.' }, { status: 500 })
   return NextResponse.json({ success: true })
 }

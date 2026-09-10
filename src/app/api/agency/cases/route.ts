@@ -115,8 +115,14 @@ export async function POST(req: NextRequest) {
     if (row.opened_by_user_id === user.id && role !== 'admin') return NextResponse.json({ error: 'The other party needs to respond first.' }, { status: 400 })
     const response = String(body.response || '').trim()
     if (!response) return NextResponse.json({ error: 'Please add your response.' }, { status: 400 })
-    await admin.from('agency_cases').update({ counterparty_response: response, counterparty_response_user_id: user.id, counterparty_responded_at: new Date().toISOString(), status: 'under_review' }).eq('id', row.id)
-    await admin.from('agency_case_messages').insert({ case_id: row.id, sender_user_id: user.id, sender_role: role, message: response })
+    // A case is a money dispute, and this thread is the record both sides
+    // argue from. Reporting success on a write that failed loses somebody's
+    // written response and leaves the case looking as though they never
+    // replied, which is the thing the other side is judged on.
+    const { error: responseError } = await admin.from('agency_cases').update({ counterparty_response: response, counterparty_response_user_id: user.id, counterparty_responded_at: new Date().toISOString(), status: 'under_review' }).eq('id', row.id)
+    if (responseError) return NextResponse.json({ error: 'Your response could not be saved. Please try again.' }, { status: 500 })
+    const { error: messageError } = await admin.from('agency_case_messages').insert({ case_id: row.id, sender_user_id: user.id, sender_role: role, message: response })
+    if (messageError) return NextResponse.json({ error: 'Your response was recorded on the case but could not be added to the thread. Please tell us before continuing.' }, { status: 500 })
     await admin.from('agency_case_events').insert({ case_id: row.id, actor_user_id: user.id, actor_role: role, event_type: 'response_added' })
     return NextResponse.json({ success: true })
   }
@@ -125,7 +131,8 @@ export async function POST(req: NextRequest) {
     const message = String(body.message || '').trim()
     if (!message) return NextResponse.json({ error: 'Write a message first.' }, { status: 400 })
     if (['resolved','rejected'].includes(row.status)) return NextResponse.json({ error: 'This case is closed.' }, { status: 400 })
-    await admin.from('agency_case_messages').insert({ case_id: row.id, sender_user_id: user.id, sender_role: role, message: message.slice(0, 4000) })
+    const { error: messageError } = await admin.from('agency_case_messages').insert({ case_id: row.id, sender_user_id: user.id, sender_role: role, message: message.slice(0, 4000) })
+    if (messageError) return NextResponse.json({ error: 'That message could not be sent. Please try again.' }, { status: 500 })
     await admin.from('agency_case_events').insert({ case_id: row.id, actor_user_id: user.id, actor_role: role, event_type: 'message_added' })
     return NextResponse.json({ success: true })
   }
@@ -135,7 +142,12 @@ export async function POST(req: NextRequest) {
     if (row.status !== 'awaiting_agreement') return NextResponse.json({ error: 'There is no resolution waiting for agreement.' }, { status: 400 })
     const now = new Date().toISOString()
     const patch = role === 'candidate' ? { candidate_agreed_at: now, candidate_agreed_by: user.id } : { employer_agreed_at: now, employer_agreed_by: user.id }
-    const { data: updated } = await admin.from('agency_cases').update(patch).eq('id', row.id).select('*').single()
+    // Both parties sign this, and the signature is what releases the money.
+    // The error was never read, so a failed write returned "signed, waiting
+    // for the other side" - and the other side waits for a signature that was
+    // never recorded, on a resolution somebody believes they have agreed to.
+    const { data: updated, error: signError } = await admin.from('agency_cases').update(patch).eq('id', row.id).select('*').single()
+    if (signError || !updated) return NextResponse.json({ error: 'Your signature could not be recorded. Please try again.' }, { status: 500 })
     await admin.from('agency_case_events').insert({ case_id: row.id, actor_user_id: user.id, actor_role: role, event_type: 'resolution_signed' })
 
     const bothAgreed = Boolean(updated?.candidate_agreed_at && updated?.employer_agreed_at)

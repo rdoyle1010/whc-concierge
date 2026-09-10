@@ -234,7 +234,7 @@ export default function AdvertisePage() {
             </div>
 
             {error && <p className="text-[12px] text-red-600 mt-4">{error}</p>}
-            <button disabled={busy || !termsAccepted} className="btn-primary w-full mt-6 disabled:opacity-50 inline-flex items-center justify-center gap-2">{busy ? 'Opening secure payment...' : <>Continue to Stripe - £{formatPounds(selectedPrice)}/month <ArrowRight size={13}/></>}</button>
+            <button type="submit" disabled={busy || !termsAccepted} className="btn-primary w-full mt-6 disabled:opacity-50 inline-flex items-center justify-center gap-2">{busy ? 'Opening secure payment...' : <>Continue to Stripe - £{formatPounds(selectedPrice)}/month <ArrowRight size={13}/></>}</button>
             <div className="flex gap-2 mt-4 text-[10px] leading-5 text-[#6b6b6b]"><ShieldCheck size={14} className="text-[#1c1c1c] shrink-0 mt-0.5" /><p>Payment does not automatically publish the advert. Talent House approval is required before the placement can go live.</p></div>
           </form>
         </div>
