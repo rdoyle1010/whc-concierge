@@ -46,7 +46,22 @@ const readAccess = unstable_cache(
     }
   },
   ['platform-access-v1'],
-  { revalidate: 30, tags: ['platform-access'] },
+  // An hour, not thirty seconds.
+  //
+  // This read happens in the ROOT layout, and a route's revalidate is the
+  // lowest of every cached read in its render. So thirty seconds here was not
+  // a thirty-second cache on one flag - it was a thirty-second revalidate on
+  // every static page of the site, dragging pages that had asked for an hour
+  // down with it and re-rendering the entire site twice a minute against the
+  // database. Every one of those regenerations is a cold serverless render
+  // somebody eventually waits on.
+  //
+  // Nothing is lost. The tag below is what actually makes a change land, and
+  // the admin route revalidates it the moment the setting is written, so
+  // opening or closing the doors still takes effect immediately. The only
+  // case that now waits is the value being edited by hand in the SQL editor,
+  // which is not how it is meant to be changed.
+  { revalidate: 3600, tags: ['platform-access'] },
 )
 
 export type AccessState = { closed: boolean; previewCode: string }
