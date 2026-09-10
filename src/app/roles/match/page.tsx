@@ -227,7 +227,7 @@ export default function SwipeMatchPage() {
         </div>
 
         <article className="overflow-hidden rounded-3xl border border-border bg-white shadow-[0_18px_55px_rgba(28,28,28,.08)] lg:grid lg:grid-cols-[42%_58%]">
-          <div className="relative min-h-[300px] lg:min-h-[620px] bg-[#1c1c1c] overflow-hidden">
+          <div className="relative min-h-[300px] lg:min-h-[620px] bg-charcoal overflow-hidden">
             {photo ? <img decoding="async" src={photo} alt={property} className="absolute inset-0 h-full w-full object-cover" /> : <div className="absolute inset-0 bg-[#1c1c1c]" />}
             <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-black/15" />
             <div className="absolute left-5 top-5 flex gap-2"><span className={tierClass(job.tier || 'Standard')}>{job.tier || 'Standard'}</span></div>

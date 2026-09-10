@@ -283,7 +283,7 @@ export default async function PropertyDestinationPage({ params }: { params: Prom
           </div>
         </header>
       ) : (
-        <header className="bg-accent">
+        <header className="bg-charcoal">
           <div className="max-w-6xl mx-auto px-6 py-20 md:py-28">
             <h1 className="text-white text-[40px] md:text-[62px] leading-[1.03] tracking-[-.04em] max-w-4xl">{name}</h1>
             {heroMeta.length > 0 && (
@@ -590,7 +590,7 @@ export default async function PropertyDestinationPage({ params }: { params: Prom
       </main>
 
       {/* Closing CTA */}
-      <section className="bg-accent">
+      <section className="bg-charcoal">
         <div className="max-w-6xl mx-auto px-6 py-16 md:py-20 text-center">
           <h2 className="text-white text-[30px] md:text-[38px]">Considering a move?</h2>
           <p className="mt-4 text-[14px] leading-7 text-white/70 max-w-xl mx-auto">Browse live roles across Talent House properties, or create a profile so employers like {name} can find you.</p>
