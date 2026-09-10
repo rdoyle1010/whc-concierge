@@ -7,6 +7,23 @@ import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { sanitiseEmployerRegistration, verifyRegistrationProof } from '@/lib/registration'
 import { canCompleteRegistration } from '@/lib/role-access'
+import { grantListingCredits, launchOfferOpen } from '@/lib/launch-offers'
+
+// The opening-month offer: one free Standard listing, granted the moment the
+// property's account exists rather than left as a promise. A property that has
+// a listing already paid for is one that posts a role in week one, and a role
+// on the board is what everything else on the platform runs on.
+async function grantOpeningMonthListing(supabase: any, userId: string) {
+  if (!launchOfferOpen()) return
+  try {
+    const { data: employer } = await supabase.from('employer_profiles')
+      .select('id').eq('user_id', userId).maybeSingle()
+    if (employer?.id) await grantListingCredits(supabase, employer.id, 1)
+  } catch (error: any) {
+    // Best effort. Nobody is refused an account because a gift failed to land.
+    console.error('Opening-month listing grant failed:', error?.message)
+  }
+}
 
 async function sleep(ms: number) {
   return new Promise(resolve => setTimeout(resolve, ms))
@@ -155,6 +172,7 @@ export async function POST(req: NextRequest) {
         .insert(safeProfile)
 
       if (!profileError) {
+        await grantOpeningMonthListing(supabase, userId)
         await announceSignup(userEmail, safeProfile, userId)
         return NextResponse.json({ success: true })
       }
@@ -169,6 +187,7 @@ export async function POST(req: NextRequest) {
       // Column mismatch: strip only the offending columns, keep the rest of the data
       const result = await insertStrippingUnknownColumns(supabase, 'employer_profiles', safeProfile)
       if (result.ok) {
+        await grantOpeningMonthListing(supabase, userId)
         await announceSignup(userEmail, safeProfile, userId)
         return NextResponse.json({ success: true })
       }

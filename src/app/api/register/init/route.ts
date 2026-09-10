@@ -5,6 +5,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { geocodePostcode } from '@/lib/geo'
 import { getClientIp, rateLimit } from '@/lib/rate-limit'
 import { recordTermsAcceptance, startMarketingOptIn } from '@/lib/privacy-consent'
+import { LAUNCH_COURSE_SLUGS, grantCourses, launchOfferOpen } from '@/lib/launch-offers'
 
 export const runtime = 'nodejs'
 
@@ -98,6 +99,8 @@ export async function POST(req: NextRequest) {
     // what was accepted and when even if a later step of registration fails.
     await recordTermsAcceptance(createAdminClient(), data.user.id, 'registration')
 
+    let launchOfferGranted: string[] = []
+
     if (role === 'talent') {
       const admin = createAdminClient()
       const { error: sharedProfileError } = await admin.from('profiles').upsert({
@@ -136,6 +139,25 @@ export async function POST(req: NextRequest) {
 
       if (typeof body.refCode === 'string' && body.refCode.trim()) {
         await recordReferral(admin, data.user.id, body.refCode)
+      }
+
+      // The opening-month offer. Granted here, at the moment the account is
+      // created, rather than left as a promise to claim later: an offer you
+      // have to remember to redeem is an offer most people never get, and the
+      // two courses are worth far more to us sitting in somebody's Academy on
+      // day one than as a coupon in an email.
+      if (launchOfferOpen()) {
+        try {
+          const { data: newCandidate } = await admin.from('candidate_profiles')
+            .select('id').eq('user_id', data.user.id).maybeSingle()
+          if (newCandidate?.id) {
+            launchOfferGranted = (await grantCourses(admin, newCandidate.id, LAUNCH_COURSE_SLUGS, 'opening month')).granted
+          }
+        } catch (offerError: any) {
+          // Best effort, always. Nobody is refused an account because a gift
+          // failed to land.
+          console.error('Opening-month course grant failed:', offerError?.message)
+        }
       }
     } else {
       // Employers need the shared profiles row too: if the second registration
@@ -179,6 +201,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       userId: data.user.id,
       marketingOptInStarted,
+      launchOfferGranted,
       registrationProof: createRegistrationProof({ userId: data.user.id, role, email }),
       requiresEmailConfirmation: !data.session,
       session: data.session ? {

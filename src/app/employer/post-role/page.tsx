@@ -83,11 +83,17 @@ export default function PostRolePage() {
 
   if(!profile)return <div/>
   const membership=String(profile.membership_tier||'free').toLowerCase();const allowance=Number(profile.annual_job_allowance||(membership==='group'?EMPLOYER_MEMBERSHIPS.group.includedJobs:0));const used=Number(profile.annual_jobs_used||0);const groupRemaining=membership==='group'?Math.max(0,allowance-used):0
-  const tierCards=TIER_KEYS.map(name=>{const base=JOB_TIERS[name];const price=name==='Bronze'&&membership==='pro'?EMPLOYER_MEMBERSHIPS.pro.discountedStandardJobPrice:base.price;const included=name==='Bronze'&&membership==='group'&&groupRemaining>0;return{name,price,included,features:base.features as readonly string[]}})
-  const selectedIncluded=selectedTier==='Bronze'&&membership==='group'&&groupRemaining>0;const selectedScopeLabels=SCOPE_OPTIONS.filter(o=>selectedScopes.includes(o.value)).map(o=>o.title)
+  // A free listing credit - the opening-month offer, or one an ambassador code
+  // brought in. Shown here because a property that does not know it has one
+  // will reach the price and stop, which is the opposite of what it is for.
+  const freeListings=Number(profile.launch_listing_credits||0)
+  const bronzeCovered=freeListings>0||groupRemaining>0
+  const tierCards=TIER_KEYS.map(name=>{const base=JOB_TIERS[name];const price=name==='Bronze'&&membership==='pro'?EMPLOYER_MEMBERSHIPS.pro.discountedStandardJobPrice:base.price;const included=name==='Bronze'&&bronzeCovered;return{name,price,included,features:base.features as readonly string[]}})
+  const selectedIncluded=selectedTier==='Bronze'&&bronzeCovered;const selectedScopeLabels=SCOPE_OPTIONS.filter(o=>selectedScopes.includes(o.value)).map(o=>o.title)
   return <DashboardShell role="employer" userName={profile.company_name}>
     <div className="max-w-4xl"><p className="dashboard-eyebrow">Recruitment</p><h1 className="dashboard-title">Post a Role</h1><p className="dashboard-intro">Tell Talent House what the job genuinely needs and how open you are to career progression.</p></div>
     {error&&<div role="alert" className="max-w-4xl mt-6 bg-red-50 text-red-700 text-sm px-4 py-3 rounded-lg">{error}</div>}
+    {freeListings>0&&<div className="max-w-4xl mt-6 border border-[#dddddd] bg-[#f1f1f1] px-4 py-3 text-[13px] leading-6 text-ink"><strong className="font-semibold">{freeListings} free Standard {freeListings===1?'listing':'listings'} on your account.</strong> Choose Standard below and this role publishes without payment.</div>}
     {phase==='form'?<div className="max-w-4xl mt-8 space-y-7">
       <section className="dashboard-card space-y-5"><p className="eyebrow">Job details</p>
         {doors.length===0&&(

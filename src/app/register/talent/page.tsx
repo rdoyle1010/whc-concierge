@@ -9,6 +9,7 @@ import { Eye, EyeOff } from 'lucide-react'
 import Wordmark from '@/components/Wordmark'
 import { createClient } from '@/lib/supabase/client'
 import { MARKETING_CONSENT_WORDING } from '@/lib/privacy-consent'
+import { LAUNCH_OFFER_TALENT, launchOfferClosesLabel, launchOfferOpen } from '@/lib/launch-offers'
 
 const MIN_PASSWORD_LENGTH = 8
 const MAX_PASSWORD_LENGTH = 64
@@ -132,6 +133,14 @@ export default function TalentRegisterPage() {
             <p className="text-[10px] uppercase tracking-[0.2em] text-[#6b6b6b] font-semibold">Talent House Collective</p>
             <h1 className="mt-2 text-[30px] leading-tight tracking-[-0.02em] font-serif font-semibold text-[#1c1c1c]">Create your Talent account</h1>
             <p className="mt-2 mb-7 text-[13px] leading-6 text-[#555555]">Three fields now. You build your professional profile once you are inside - nothing is asked twice.</p>
+
+            {launchOfferOpen() && (
+              <div className="mb-5 border border-[#dddddd] bg-[#f1f1f1] px-3.5 py-3">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#1c1c1c]">Opening month</p>
+                <p className="mt-1.5 text-[12.5px] leading-5 text-[#333333]">{LAUNCH_OFFER_TALENT}</p>
+                <p className="mt-1.5 text-[11px] text-[#6b6b6b]">Applied automatically. Closes {launchOfferClosesLabel()}.</p>
+              </div>
+            )}
 
             {error && <div role="alert" className="bg-red-50 border border-red-100 text-red-600 text-[13px] px-3 py-2.5 mb-5">{error}</div>}
 

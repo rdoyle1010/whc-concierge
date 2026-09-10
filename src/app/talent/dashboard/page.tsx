@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
 import { Star, ArrowRight, EyeOff } from 'lucide-react'
 import SponsoredAd from '@/components/SponsoredAd'
+import AmbassadorCodeBox from '@/components/AmbassadorCodeBox'
 
 // Talent home - the landing page after login. Greeting, a few live counts
 // (best-effort - failures are silent) and quick links into the main areas.
@@ -229,6 +230,10 @@ export default function TalentDashboard() {
             )}
           </div>
       </section>
+
+      <div className="mb-8">
+        <AmbassadorCodeBox audience="talent" />
+      </div>
 
       {(approaches.length > 0 || approachNote) && (
         <section className="dashboard-card mb-8">
