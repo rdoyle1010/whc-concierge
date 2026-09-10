@@ -85,3 +85,21 @@ test('somebody can find it', () => {
   assert.match(read('src/app/talent/dashboard/page.tsx'), /\/good-to-know/, 'and where they build the profile it applies to')
   assert.match(read('src/components/DashboardShell.tsx'), /\/admin\/good-to-know/, 'and she can reach the editor')
 })
+
+// The picture slot was drawn for photography. Most of what belongs on a page
+// about organisations is a logo, and object-cover fills the box by cutting
+// whatever does not fit - so a wide mark lost half its letters.
+test('a logo is shown whole, not cropped to fill the box', () => {
+  // Comments stripped first. The explanation of why object-cover is wrong
+  // contains the words "object-cover", and a check that reads its own reasoning
+  // as evidence of the bug is no check at all.
+  const page = body('src/app/good-to-know/page.tsx')
+  const picture = page.slice(page.indexOf('function BodyPicture'), page.indexOf('function Voice'))
+  assert.match(picture, /object-contain/)
+  assert.doesNotMatch(picture, /object-cover/, 'cropping a logo loses the name on it')
+  // Room across rather than down, and breathing space so a mark is not
+  // touching the rule beside it.
+  assert.match(picture, /p-6/)
+  // A logo carries the organisation's name, so it is not decorative.
+  assert.match(picture, /alt=\{`\$\{body\.shortName \|\| body\.name\} logo`\}/)
+})
