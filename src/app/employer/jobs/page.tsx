@@ -49,7 +49,7 @@ function EmployerJobs() {
   // with no confirmation at all. Worse, because is_live is flipped by the
   // async webhook, the role very often still read "pending_payment" at that
   // moment: they had paid, and the screen said the role was not live.
-  const [banner, setBanner] = useState<{ tone: 'good' | 'quiet'; text: string } | null>(null)
+  const [banner, setBanner] = useState<{ tone: 'good' | 'quiet' | 'bad'; text: string } | null>(null)
   const [resuming, setResuming] = useState('')
 
   // Everything a role can say about itself. This form used to offer the
@@ -198,7 +198,8 @@ function EmployerJobs() {
       if (!res.ok) throw new Error(body.error || 'Image upload failed')
       setForm(current => ({ ...current, job_image_url: body.url }))
     } catch (error: any) {
-      alert(error?.message || 'Could not upload image.')
+      console.error('Role image upload failed:', error?.message)
+      setBanner({ tone: 'bad', text: 'That picture could not be uploaded. Try a JPG or PNG under the size limit, and tell us if it keeps happening.' })
     } finally {
       setUploadingImage(false)
     }
@@ -247,15 +248,27 @@ function EmployerJobs() {
       interview_process: form.interview_process || null,
     }
     if (wantsActive && !wasLive) {
-      alert('Saved as a draft. To take a role live, use Post a Role and complete payment - your details carry over.')
+      setBanner({ tone: 'quiet', text: 'Saved as a draft. To take a role live, use Post a Role and complete payment - your details carry over.' })
     }
 
+    // A database message is written for whoever wrote the query, not for the
+    // person who filled in the form: "violates foreign key constraint" tells a
+    // spa director nothing they can act on, and an alert box makes it feel
+    // like the platform has fallen over.
     if (editing) {
       const { error: saveError } = await supabase.from('job_listings').update(payload).eq('id', editing.id)
-      if (saveError) { alert('Could not save role: ' + saveError.message); setSaving(false); return }
+      if (saveError) {
+        console.error('Role save failed:', saveError.message)
+        setBanner({ tone: 'bad', text: 'This role could not be saved. Check the required fields and try again, and tell us if it keeps happening.' })
+        setSaving(false); return
+      }
     } else {
       const { error: saveError } = await supabase.from('job_listings').insert(payload)
-      if (saveError) { alert('Could not save role: ' + saveError.message); setSaving(false); return }
+      if (saveError) {
+        console.error('Role save failed:', saveError.message)
+        setBanner({ tone: 'bad', text: 'This role could not be saved. Check the required fields and try again, and tell us if it keeps happening.' })
+        setSaving(false); return
+      }
     }
 
     const { data } = await supabase.from('job_listings').select('*').eq('employer_id', profile.id).order('posted_date', { ascending: false })
@@ -293,13 +306,24 @@ function EmployerJobs() {
   }
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Delete this listing?')) return
-    const { data, error } = await supabase.from('job_listings').delete().eq('id', id).select('id')
-    if (error || !data?.length) {
-      alert('Could not delete listing' + (error ? ': ' + error.message : '. Please try again.'))
+    if (!confirm('Delete this listing? This cannot be undone.')) return
+    setBanner(null)
+    // A delete straight from the browser, with a raw database error shown in
+    // an alert box, is how this used to work: matches point at job_listings
+    // with no cascade, so a role anybody had matched with simply refused, in
+    // language written for a developer. The decision belongs on the server,
+    // where the history can be counted and explained.
+    const res = await fetch('/api/employer/jobs/status', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ jobId: id, action: 'delete' }),
+    }).catch(() => null)
+    const result = res ? await res.json().catch(() => ({})) : {}
+    if (!res?.ok) {
+      setBanner({ tone: 'bad', text: result.error || 'This role could not be deleted. Please try again.' })
       return
     }
     setJobs(jobs.filter(j => j.id !== id))
+    setBanner({ tone: 'good', text: 'Listing deleted.' })
   }
 
   const toggleStatus = async (job: any) => {
@@ -348,7 +372,7 @@ function EmployerJobs() {
   return (
     <DashboardShell role="employer" userName={profile?.company_name}>
       {banner && (
-        <div role="status" className={`mb-6 border px-5 py-4 text-[13px] leading-relaxed ${banner.tone === 'good' ? 'border-green-200 bg-green-50 text-green-800' : 'border-amber-200 bg-amber-50 text-amber-900'}`}>
+        <div role="status" className={`mb-6 border px-5 py-4 text-[13px] leading-relaxed ${banner.tone === 'good' ? 'border-green-200 bg-green-50 text-green-800' : banner.tone === 'bad' ? 'border-red-100 bg-red-50 text-red-700' : 'border-amber-200 bg-amber-50 text-amber-900'}`}>
           {banner.text}
         </div>
       )}

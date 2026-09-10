@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { createServerClient } from '@supabase/ssr'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { createNotification } from '@/lib/notifications'
+import { createNotification, notifyAdmins } from '@/lib/notifications'
 import { sendAgencyUpdateEmail } from '@/lib/emails'
 import { emailAllowed } from '@/lib/notification-prefs'
 import { londonToday } from '@/lib/agency-time'
@@ -74,7 +74,7 @@ export async function POST(req: NextRequest) {
     const { data: existing } = await admin.from('agency_cases').select('id').eq('booking_id', booking.id)
       .in('status', ['open','awaiting_response','under_review','awaiting_payment']).maybeSingle()
     if (!existing) {
-      await admin.from('agency_cases').insert({
+      const { error: caseError } = await admin.from('agency_cases').insert({
         booking_id: booking.id,
         opened_by_user_id: user.id,
         opened_by_role: role,
@@ -87,6 +87,17 @@ export async function POST(req: NextRequest) {
           : `Pre-shift cancellation. Talent House admin fee of £${fee.toFixed(2)} is retained.`,
         status: 'under_review',
       })
+      // A cancelled shift that has been paid for freezes money for a person to
+      // review. Without the case there is nobody to review it, and the shift
+      // sits cancelled with the payment neither returned nor released.
+      if (caseError) {
+        console.error('Agency cancellation case not raised:', caseError.message)
+        await notifyAdmins(
+          'A cancelled shift has no case behind it',
+          `The ${booking.shift_date} booking was cancelled and paid for, but the review case could not be created. The money needs looking at by hand.`,
+          '/admin/agency-cases',
+        )
+      }
     }
   }
 

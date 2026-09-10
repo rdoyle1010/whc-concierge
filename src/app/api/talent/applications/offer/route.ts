@@ -38,7 +38,14 @@ export async function POST(req: NextRequest) {
     if (error || !offer) return NextResponse.json({ error: 'Could not update the offer.' }, { status: 409 })
 
     const nextApplicationStatus = action === 'accept' ? 'accepted' : 'rejected'
-    await admin.from('applications').update({ status: nextApplicationStatus, updated_at: new Date().toISOString() }).eq('id', application.id)
+    // The offer record moved a moment ago. If the application does not move
+    // with it, the professional has accepted a job the pipeline still shows as
+    // an open offer, and the property is waiting for an answer it already has.
+    const { error: applicationError } = await admin.from('applications')
+      .update({ status: nextApplicationStatus, updated_at: new Date().toISOString() }).eq('id', application.id)
+    if (applicationError) {
+      return NextResponse.json({ error: 'Your answer was recorded against the offer but the application did not update. Please refresh, and tell us if it still looks wrong.' }, { status: 500 })
+    }
 
     const jobId = application.role_id || application.job_id
     const { data: job } = await admin.from('job_listings').select('id,job_title,employer_id').eq('id', jobId).maybeSingle()
