@@ -239,3 +239,23 @@ test('every button does something, and says which', () => {
   }
   assert.deepEqual(offenders, [], `give these a type or a handler:\n${offenders.join('\n')}`)
 })
+
+// /api/upload refuses anything without a file, a bucket AND a path, with a
+// message that reads like the file was the problem. The Good to Know picture
+// button sent the file alone, so it failed on every image somebody tried -
+// and there is no way to tell from the screen that the page is at fault
+// rather than the photograph.
+test('every upload button sends what the upload route needs', () => {
+  const offenders: string[] = []
+  for (const file of [...sourceFiles('src/app', '.tsx'), ...sourceFiles('src/components', '.tsx'), ...sourceFiles('src/app', '.ts')]) {
+    const source = read(file)
+    for (const match of source.matchAll(/fetch\(\s*['"]\/api\/upload['"]/g)) {
+      // The form is built above the call, so look back rather than forward.
+      const window = source.slice(Math.max(0, match.index! - 1600), match.index! + 200)
+      const sends = (field: string) => window.includes(`append('${field}'`) || window.includes(`append("${field}"`)
+      if (sends('bucket') && sends('path')) continue
+      offenders.push(`${file}:${source.slice(0, match.index).split('\n').length}`)
+    }
+  }
+  assert.deepEqual(offenders, [], `these uploads will be refused:\n${offenders.join('\n')}`)
+})

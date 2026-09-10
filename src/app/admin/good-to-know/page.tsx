@@ -88,8 +88,17 @@ export default function AdminGoodToKnowPage() {
   async function uploadImage(file: File) {
     setUploading(true); setError('')
     try {
+      // The upload route needs a bucket and a path as well as the file, and
+      // says "Missing file, bucket, or path" when it does not get them. This
+      // sent the file alone, so the button failed on every picture with an
+      // error that read like the file was the problem.
+      const slug = (editing?.short_name || editing?.name || 'entry')
+        .toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 40) || 'entry'
+      const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '-')
       const form = new FormData()
       form.append('file', file)
+      form.append('bucket', 'site-images')
+      form.append('path', `good-to-know/${slug}/${Date.now()}-${safeName}`)
       const res = await fetch('/api/upload', { method: 'POST', body: form })
       const data = await res.json().catch(() => ({}))
       if (!res.ok || !data.url) { setError(data.error || 'The picture could not be uploaded.'); return }
