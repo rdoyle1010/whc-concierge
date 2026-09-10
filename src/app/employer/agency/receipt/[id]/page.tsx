@@ -40,7 +40,7 @@ export default function AgencyReceiptPage() {
         const supabase = createClient()
         const { data: auth } = await supabase.auth.getUser()
         if (auth.user) {
-          const { data: profile } = await supabase.from('employer_profiles').select('purchase_order_ref').eq('user_id', auth.user.id).maybeSingle()
+          const { data: profile } = await supabase.from('employer_profiles_private').select('purchase_order_ref').eq('user_id', auth.user.id).maybeSingle()
           setPoRef(profile?.purchase_order_ref || '')
         }
       } catch { /* shown as not found */ }

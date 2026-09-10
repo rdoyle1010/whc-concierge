@@ -100,7 +100,7 @@ export default function AdminUsersPage() {
     async function load() {
       const [c, e] = await Promise.all([
         supabase.from('candidate_profiles').select('*').order('created_at', { ascending: false }).limit(ADMIN_USER_LIMIT),
-        supabase.from('employer_profiles').select('*').order('created_at', { ascending: false }).limit(ADMIN_USER_LIMIT),
+        supabase.from('employer_profiles_private').select('*').order('created_at', { ascending: false }).limit(ADMIN_USER_LIMIT),
       ])
       if (!active) return
       if (c.error || e.error) setLoadError((c.error || e.error)?.message || 'Could not load users.')

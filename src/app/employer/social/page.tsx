@@ -18,7 +18,7 @@ export default function EmployerSocialPage() {
     async function load() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { setLoading(false); return }
-      const { data: prof } = await supabase.from('employer_profiles').select('*').eq('user_id', user.id).maybeSingle()
+      const { data: prof } = await supabase.from('employer_profiles_private').select('*').eq('user_id', user.id).maybeSingle()
       setProfile(prof)
       if (prof) {
         const { data } = await supabase.from('job_listings')

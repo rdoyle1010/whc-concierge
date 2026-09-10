@@ -13,7 +13,7 @@ export default function EmployerReceiptPage() {
     const supabase = createClient()
     supabase.auth.getUser().then(({ data }) => {
       if (!data.user) return
-      supabase.from('employer_profiles').select('company_name, contact_name').eq('user_id', data.user.id).maybeSingle()
+      supabase.from('employer_profiles_private').select('company_name, contact_name').eq('user_id', data.user.id).maybeSingle()
         .then(({ data: profile }) => setBuyerName(profile?.company_name || profile?.contact_name || ''))
     })
   }, [])

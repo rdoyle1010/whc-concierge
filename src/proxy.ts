@@ -172,7 +172,10 @@ export async function proxy(request: NextRequest) {
     const premiumEntry = Object.entries(EMPLOYER_PREMIUM_ROUTES).find(([route]) => matchesRoutePrefix(pathname, route))
     if (premiumEntry) {
       const { data: employer } = await supabase
-        .from('employer_profiles')
+        // The private view, not the table: membership_tier and
+        // talent_search_until are no longer readable by a signed-in browser
+        // on anybody's row, including its own.
+        .from('employer_profiles_private')
         .select('membership_tier,featured_employer,featured_until,talent_search_until')
         .eq('user_id', user.id)
         .maybeSingle()

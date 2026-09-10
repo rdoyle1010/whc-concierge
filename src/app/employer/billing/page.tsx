@@ -36,7 +36,7 @@ export default function EmployerBillingPage() {
       if (!user) { setLoading(false); return }
 
       const purchasesPromise = fetch('/api/purchases', { cache: 'no-store' }).then(r => r.ok ? r.json() : null).catch(() => null)
-      const { data: prof } = await supabase.from('employer_profiles').select('*').eq('user_id', user.id).single()
+      const { data: prof } = await supabase.from('employer_profiles_private').select('*').eq('user_id', user.id).single()
       setProfile(prof)
       if (prof) {
         setBilling({

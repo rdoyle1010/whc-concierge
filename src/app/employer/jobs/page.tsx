@@ -88,7 +88,7 @@ function EmployerJobs() {
     async function load() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
-      const { data: prof } = await supabase.from('employer_profiles').select('*').eq('user_id', user.id).single()
+      const { data: prof } = await supabase.from('employer_profiles_private').select('*').eq('user_id', user.id).single()
       setProfile(prof)
       if (prof) {
         const { data } = await supabase.from('job_listings').select('*').eq('employer_id', prof.id).order('posted_date', { ascending: false })
