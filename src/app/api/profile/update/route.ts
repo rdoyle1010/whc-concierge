@@ -24,6 +24,10 @@ const ALLOWED_COLUMNS = new Set([
   // Private Career Mode (20260831190000) - the retry loop below drops the two
   // new columns harmlessly if the live database has not been migrated yet.
   'show_first_name_only','private_mode','private_hide_photo',
+  // Where she works now (20260910110000), and her decision about whether an
+  // employer may see it. Both go through the same retry loop, so a profile
+  // still saves before the migration has run.
+  'current_employer','current_employer_visible',
 ])
 
 function stripToAllowed(data: Record<string, unknown>): Record<string, unknown> {

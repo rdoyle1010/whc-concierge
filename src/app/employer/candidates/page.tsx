@@ -5,7 +5,7 @@ import { useDialog } from '@/components/useDialog'
 import DashboardShell from '@/components/DashboardShell'
 import { careerValue } from '@/lib/career-value'
 import TrackView from '@/components/TrackView'
-import { Award, Search, MapPin, Star, X, Briefcase, Users, CheckCircle2, Lock } from 'lucide-react'
+import { Award, BadgeCheck, Building2, Check, Search, MapPin, ShieldCheck, Star, X, Briefcase, Users, CheckCircle2, Lock } from 'lucide-react'
 
 export default function EmployerCandidatesPage() {
   const [candidates, setCandidates] = useState<any[]>([])
@@ -255,13 +255,54 @@ export default function EmployerCandidatesPage() {
       {loading ? <div className="flex items-center justify-center h-64"><div className="animate-spin w-8 h-8 border-2 border-accent border-t-transparent rounded-full" /></div> : <>
         {filtered.length > 0 ? <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">{filtered.map(c => <div key={c.id} className={`dashboard-card relative ${c.is_featured ? 'border-accent ring-1 ring-accent/20' : ''}`}>
           {c.is_featured && <span className="absolute right-4 top-4 rounded-full bg-accent px-2.5 py-1 text-[10px] font-semibold text-white">★ Featured</span>}
-          <div className="flex items-center space-x-3 mb-3">{c.private_mode ? <div className="w-12 h-12 bg-[#f1f1f1] border border-[#dddddd] flex items-center justify-center flex-shrink-0"><span className="font-serif text-[15px] text-[#1c1c1c]">{c.full_name?.[0] || 'P'}</span></div> : <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden flex-shrink-0">{c.profile_image_url ? <img loading="lazy" decoding="async" src={c.profile_image_url} alt="" className="w-full h-full object-cover" /> : <span className="font-bold text-secondary text-lg">{c.full_name?.[0]}</span>}</div>}<button type="button" className={`min-w-0 text-left flex-1 ${c.is_featured ? 'pr-20' : ''}`} onClick={() => setViewing(c)}><h3 className="font-semibold text-ink truncate hover:underline">{c.full_name}</h3>{c.private_mode && <p className="text-[10px] uppercase tracking-[1.5px] text-muted">Private profile</p>}<p className="text-sm text-secondary truncate">{c.headline}</p></button></div>
+          <div className="flex items-center space-x-3 mb-3">{c.private_mode ? <div className="w-12 h-12 bg-[#f1f1f1] border border-[#dddddd] flex items-center justify-center flex-shrink-0"><span className="font-serif text-[15px] text-[#1c1c1c]">{c.full_name?.[0] || 'P'}</span></div> : <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden flex-shrink-0">{c.profile_image_url ? <img loading="lazy" decoding="async" src={c.profile_image_url} alt="" className="w-full h-full object-cover" /> : <span className="font-bold text-secondary text-lg">{c.full_name?.[0]}</span>}</div>}<button type="button" className={`min-w-0 text-left flex-1 ${c.is_featured ? 'pr-20' : ''}`} onClick={() => setViewing(c)}><h3 className="font-semibold text-ink truncate hover:underline">{c.full_name}</h3>{c.private_mode && <p className="text-[10px] uppercase tracking-[1.5px] text-muted">Private profile</p>}<p className="text-sm text-secondary truncate">{c.headline || c.role_level || 'Spa and wellness professional'}</p></button></div>
           {Array.isArray(c.awards) && c.awards.length > 0 && <div className="mb-3 inline-flex items-center gap-1.5 rounded-full bg-[#f1f1f1] px-2.5 py-1 text-[10px] font-semibold text-[#1c1c1c]"><Award size={11}/>{c.awards.length} award{c.awards.length === 1 ? '' : 's'}</div>}
           {typeof c.matchScore === 'number' ? <div className="mb-3"><div className="flex items-center gap-1.5"><span className="text-[11px] font-semibold px-2.5 py-1 rounded-full" style={{ backgroundColor: c.matchBg, color: c.matchColour }}>{c.matchScore}% · {c.matchLabel}</span><span className="text-[10px] text-muted truncate">for {c.bestJob}</span></div>{c.matchExplanation && <p className="mt-2 text-[11px] leading-5 text-secondary">{c.matchExplanation}</p>}</div> : <p className="mb-3 text-[11px] text-muted">Browse now. Post a live role to calculate a role-specific match.</p>}
+          {/* The trust row. Verified status, insurance and right to work were
+              all being fetched and thrown away, so a spa director could not
+              tell a checked professional from an unchecked one without opening
+              the profile. These are the three things she is looking for. */}
+          {(c.whc_verified || c.has_insurance || c.right_to_work_status === 'verified') && (
+            <div className="mb-3 flex flex-wrap gap-1.5">
+              {c.whc_verified && <span className="inline-flex items-center gap-1 rounded-full bg-[#1c1c1c] px-2.5 py-1 text-[10px] font-semibold text-white"><BadgeCheck size={11} />Talent House Verified</span>}
+              {c.has_insurance && <span className="inline-flex items-center gap-1 rounded-full border border-[#dddddd] px-2.5 py-1 text-[10px] font-medium text-[#1c1c1c]"><ShieldCheck size={11} />Insured</span>}
+              {c.right_to_work_status === 'verified' && <span className="inline-flex items-center gap-1 rounded-full border border-[#dddddd] px-2.5 py-1 text-[10px] font-medium text-[#1c1c1c]"><Check size={11} />Right to work</span>}
+            </div>
+          )}
+
+          {/* Where they are now, only ever when they have said it may be shown.
+              The API suppresses it otherwise, so an absent value here means
+              "not offered" rather than "not asked". */}
+          {c.current_employer && <p className="mb-2 flex items-center gap-1 text-sm text-ink"><Building2 size={14} className="text-secondary" /><span className="truncate">Currently at {c.current_employer}</span></p>}
+
           {c.location && <p className="text-sm text-secondary flex items-center gap-1 mb-2"><MapPin size={14} /><span>{c.location}{c.distance_miles != null ? ` · ${c.distance_miles} miles from property` : ''}</span></p>}
-          {c.travel_radius_miles && <p className="text-xs text-muted mb-3">Travels up to {c.travel_radius_miles} miles</p>}
-          {c.services_offered?.length > 0 && <div className="flex flex-wrap gap-1 mb-3">{c.services_offered.slice(0, 3).map((s: string) => <span key={s} className="text-xs bg-accent/10 text-accent px-2 py-0.5 rounded-full">{s}</span>)}</div>}
-          {c.experience_years && <p className="text-xs text-muted mb-3">{c.experience_years} years experience</p>}
+          {c.travel_radius_miles && <p className="text-xs text-muted mb-2">Travels up to {c.travel_radius_miles} miles{c.has_car ? ' · has a car' : ''}</p>}
+
+          {c.availability_status && <p className="mb-3 text-xs font-medium text-accent">{c.availability_status}</p>}
+
+          {c.services_offered?.length > 0 && <div className="flex flex-wrap gap-1 mb-3">{c.services_offered.slice(0, 3).map((s: string) => <span key={s} className="text-xs bg-accent/10 text-accent px-2 py-0.5 rounded-full">{s}</span>)}{c.services_offered.length > 3 && <span className="text-xs text-muted px-1 py-0.5">+{c.services_offered.length - 3}</span>}</div>}
+
+          {/* Product houses. A spa running a house wants somebody who has
+              already worked it, and this is the field the match score reads,
+              so showing it explains the score rather than contradicting it. */}
+          {c.product_houses?.length > 0 && <p className="mb-3 text-xs leading-5 text-secondary"><span className="text-muted">Brands: </span>{c.product_houses.slice(0, 4).join(', ')}{c.product_houses.length > 4 ? ` +${c.product_houses.length - 4}` : ''}</p>}
+
+          {/* One line rather than four, so a card without a headline still says
+              something. Every part is omitted when it is missing. */}
+          {(c.experience_years || c.qualifications?.length > 0 || c.review_score > 0) && (
+            <p className="mb-3 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted">
+              {c.experience_years ? <span>{c.experience_years} years experience</span> : null}
+              {c.qualifications?.length > 0 ? <span>· {c.qualifications.length} qualification{c.qualifications.length === 1 ? '' : 's'}</span> : null}
+              {c.review_score > 0 ? <span className="inline-flex items-center gap-0.5">· <Star size={10} fill="currentColor" className="text-accent" /> {Number(c.review_score).toFixed(1)}</span> : null}
+            </p>
+          )}
+
+          {/* A profile with nothing on it is worth saying so about. The card
+              used to render as a name and two buttons, which reads as a broken
+              page rather than an unfinished profile. */}
+          {!c.headline && !c.location && !c.services_offered?.length && !c.experience_years && (
+            <p className="mb-3 text-xs leading-5 text-muted">This professional has not finished their profile yet. Open it to see what they have added, or save them and come back.</p>
+          )}
           <button type="button" onClick={() => setViewing(c)} className="btn-secondary w-full mb-2 text-[12px]">View Full Profile</button>
           {c.private_mode ? <>
             <div className="grid grid-cols-3 gap-2 pt-3 border-t border-[#dddddd]">
