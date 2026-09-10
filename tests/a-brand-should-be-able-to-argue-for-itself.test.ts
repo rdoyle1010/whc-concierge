@@ -243,3 +243,17 @@ test('the gate is decided on the server', () => {
   // project has shipped that silently-dead setting before.
   assert.doesNotMatch(body('src/app/brands/[slug]/page.tsx'), /export const revalidate/)
 })
+
+test('a crawler is told the brand pages exist', () => {
+  // The whole commercial argument for a brand page is that it puts the house
+  // in front of the people choosing one. A page no crawler has been told about
+  // cannot do that, and Properties had been in this file for months while
+  // Brands and Consultancy were not.
+  const sitemap = body('src/app/sitemap.ts')
+  assert.match(sitemap, /\$\{BASE\}\/brands`/)
+  assert.match(sitemap, /\$\{BASE\}\/brands\/apply`/)
+  assert.match(sitemap, /\$\{BASE\}\/consultancy`/)
+  assert.match(sitemap, /\$\{BASE\}\/brands\/\$\{row\.slug\}`/, 'each published brand needs its own entry')
+  assert.match(sitemap, /\.eq\('is_published', true\)/, 'a draft is somebody unfinished pitch, not a public page')
+  assert.match(sitemap, /Promise\.all\(\[roles, properties, brands, posts\]\)/, 'and it has to actually be awaited')
+})

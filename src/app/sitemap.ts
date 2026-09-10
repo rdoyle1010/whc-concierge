@@ -40,6 +40,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${BASE}/agency`, lastModified: now, changeFrequency: 'daily', priority: 0.8 },
     { url: `${BASE}/residency`, lastModified: now, changeFrequency: 'weekly', priority: 0.8 },
     { url: `${BASE}/properties`, lastModified: now, changeFrequency: 'weekly', priority: 0.8 },
+    { url: `${BASE}/brands`, lastModified: now, changeFrequency: 'weekly', priority: 0.8 },
+    { url: `${BASE}/consultancy`, lastModified: now, changeFrequency: 'weekly', priority: 0.7 },
+    // The page a product house lands on when it decides it wants one of these.
+    { url: `${BASE}/brands/apply`, lastModified: now, changeFrequency: 'monthly', priority: 0.6 },
     { url: `${BASE}/specialisms`, lastModified: now, changeFrequency: 'monthly', priority: 0.7 },
     { url: `${BASE}/academy`, lastModified: now, changeFrequency: 'monthly', priority: 0.7 },
     { url: `${BASE}/intelligence`, lastModified: now, changeFrequency: 'weekly', priority: 0.7 },
@@ -99,6 +103,26 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     }))
   })
 
+  // Published brands. The whole commercial argument for a brand page is that
+  // it puts the house in front of the people choosing one, and a page a
+  // crawler has never been told about cannot do that. Only published rows: a
+  // draft is somebody's unfinished pitch.
+  const brands = safely(async () => {
+    const { data } = await supabase
+      .from('brand_profiles')
+      .select('slug, updated_at')
+      .eq('is_published', true)
+      .limit(500)
+    return (data ?? [])
+      .filter(row => Boolean(row.slug))
+      .map(row => ({
+        url: `${BASE}/brands/${row.slug}`,
+        lastModified: row.updated_at ? new Date(row.updated_at) : now,
+        changeFrequency: 'weekly' as const,
+        priority: 0.7,
+      }))
+  })
+
   const posts = safely(async () => {
     const { data } = await supabase
       .from('blog_posts')
@@ -116,6 +140,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       }))
   })
 
-  const dynamic = await Promise.all([roles, properties, posts])
+  const dynamic = await Promise.all([roles, properties, brands, posts])
   return [...staticPages, ...dynamic.flat()]
 }
