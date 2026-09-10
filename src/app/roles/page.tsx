@@ -25,7 +25,13 @@ async function getPublicRoles() {
     const { data, error } = await admin
       .from('job_listings')
       .select('id,job_title,job_description,location,country_code,salary_min,salary_max,salary_currency,contract_type,job_type,tier,required_brands,posted_date,is_live')
+      // An advert is paid for by the month, and nothing ever takes one down: no
+      // scheduled job flips is_live, and the admin health check already counts
+      // "live but expired" as a warning. The public jobs list filters expiry
+      // inside get_public_jobs_page; these two did not, so a term that had run
+      // out stayed visible and clickable, and Repost had no purpose.
       .eq('is_live', true)
+      .or(`expires_at.is.null,expires_at.gt.${new Date().toISOString()}`)
       .order('posted_date', { ascending: false })
       .limit(150)
 
