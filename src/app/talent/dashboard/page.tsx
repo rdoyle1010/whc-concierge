@@ -231,8 +231,19 @@ export default function TalentDashboard() {
           </div>
       </section>
 
-      <div className="mb-8">
+      <div className="mb-8 grid grid-cols-1 gap-4 lg:grid-cols-2">
         <AmbassadorCodeBox audience="talent" />
+        {/* The free reference page, where somebody building a profile is
+            already thinking about qualifications and insurance. It used to be
+            reachable only from the footer under Support. */}
+        <div className="dashboard-card">
+          <p className="text-[13px] font-semibold text-ink">Good to Know</p>
+          <p className="mt-1.5 text-[13px] leading-6 text-secondary">
+            Who governs, insures and qualifies this industry, what each one does for your career,
+            and what we make of them. Free, and worth ten minutes before your next interview.
+          </p>
+          <Link href="/good-to-know" className="btn-secondary mt-4 inline-flex text-[12px]">Read Good to Know</Link>
+        </div>
       </div>
 
       {(approaches.length > 0 || approachNote) && (

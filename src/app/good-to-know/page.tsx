@@ -3,7 +3,8 @@ import Link from 'next/link'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
 import { ArrowRight, ExternalLink, ShieldCheck } from 'lucide-react'
-import { INDUSTRY_GROUPS, TOTAL_BODIES, type IndustryBody } from '@/lib/industry-bodies'
+import { type IndustryBody } from '@/lib/industry-bodies'
+import { getIndustryGroups } from '@/lib/industry-bodies-server'
 
 export const revalidate = 3600
 
@@ -54,7 +55,11 @@ function Voice({ label, text, accented }: { label: string; text: string; accente
   )
 }
 
-export default function GoodToKnowPage() {
+export default async function GoodToKnowPage() {
+  // Read from the database, with the version written into the code as the seed:
+  // until somebody imports the page into the editor, that version IS the page.
+  const groups = await getIndustryGroups()
+  const total = groups.reduce((sum, group) => sum + group.bodies.length, 0)
   return (
     <>
       <Navbar />
@@ -65,7 +70,7 @@ export default function GoodToKnowPage() {
             Who governs, insures and qualifies this industry.
           </h1>
           <p className="mt-6 max-w-2xl text-[15px] leading-8 text-secondary">
-            Nobody hands you this list when you qualify. These are the {TOTAL_BODIES} organisations that set the
+            Nobody hands you this list when you qualify. These are the {total} organisations that set the
             standards, arrange the insurance, award the certificates and report the news in UK spa and wellness.
             Each one gets three answers: what it does for your career, what it does for a spa, and what we make of it.
           </p>
@@ -77,7 +82,7 @@ export default function GoodToKnowPage() {
 
         <nav aria-label="Sections" className="border-y border-border bg-surface">
           <div className="mx-auto flex max-w-7xl flex-wrap gap-x-6 gap-y-2 px-6 py-4 lg:px-8">
-            {INDUSTRY_GROUPS.map(group => (
+            {groups.map(group => (
               <a key={group.id} href={`#${group.id}`} className="text-[12px] font-medium text-secondary hover:text-ink">
                 {group.title}
               </a>
@@ -85,7 +90,7 @@ export default function GoodToKnowPage() {
           </div>
         </nav>
 
-        {INDUSTRY_GROUPS.map(group => (
+        {groups.map(group => (
           <section key={group.id} id={group.id} className="scroll-mt-24 border-b border-border">
             <div className="mx-auto max-w-7xl px-6 py-14 lg:px-8">
               <h2 className="site-heading text-[28px] leading-[1.15] tracking-[-.03em]">{group.title}</h2>

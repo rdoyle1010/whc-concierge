@@ -41,6 +41,18 @@ export type IndustryGroup = {
   bodies: IndustryBody[]
 }
 
+// The four sections, which are structure rather than content: what kind of
+// organisation sits in each, and in what order somebody meets them. Everything
+// inside them lives in the database and is Rebecca's to edit. A body pointing
+// at a section that is not here disappears quietly rather than breaking the
+// page.
+export const INDUSTRY_SECTIONS = [
+  { id: 'professional-bodies', title: 'Professional bodies and membership', intro: 'The organisations that represent the industry, insure the people working in it and speak for it where decisions get made.' },
+  { id: 'qualifications', title: 'Qualifications and awarding organisations', intro: 'Who awards the certificates on your CV, and who regulates the people who award them. This is the part employers and insurers actually check.' },
+  { id: 'safety', title: 'Safety, health and licensing', intro: 'The obligations that sit under every treatment room, whoever owns it.' },
+  { id: 'media', title: 'Industry media and intelligence', intro: 'Where the openings, the appointments and the numbers get reported first.' },
+] as const
+
 export const INDUSTRY_GROUPS: IndustryGroup[] = [
   {
     id: 'professional-bodies',
