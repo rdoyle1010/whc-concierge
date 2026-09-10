@@ -27,6 +27,21 @@ export type EmailKind =
   | 'welcome_talent' | 'welcome_employer' | 'newsletter_welcome'
   | 'verification' | 'certificate' | 'notification' | 'other'
   | 'admin_alert' | 'interview' | 'offer' | 'decision' | 'job_alert' | 'application'
+  | 'campaign' | 'booking' | 'agency' | 'recruitment' | 'contact' | 'marketing'
+
+// Where somebody who wants out is sent, in the header rather than only in the
+// footer.
+//
+// Gmail and Yahoo both expect a List-Unsubscribe header on anything sent in
+// volume, and treat its absence as a reason to hold mail back. More to the
+// point: a person who cannot find the way out marks the message as spam, and
+// that single click costs the domain far more than the one subscriber. The
+// header gives the mail client its own unsubscribe button.
+//
+// List-Unsubscribe-Post is the one-click form. It requires the endpoint to
+// accept a POST and to act without a confirmation screen, which both
+// unsubscribe routes now do.
+export const SUPPORT_MAILBOX = 'hello@talenthousecollective.co.uk'
 
 type SendResult = { ok: boolean; status: 'sent' | 'failed' | 'skipped'; error?: string }
 
@@ -80,6 +95,16 @@ export async function sendTransactionalEmail(opts: {
   html: string
   kind: EmailKind
   userId?: string | null
+  /**
+   * A one-click unsubscribe endpoint for this message. Pass it for anything
+   * a person could reasonably not want again - campaigns, job alerts,
+   * newsletters. Transactional mail about money or a booking they made does
+   * not carry one, because there is nothing to unsubscribe from.
+   */
+  unsubscribeUrl?: string | null
+  replyTo?: string | null
+  /** Overrides the transactional From. The newsletter sends under its own. */
+  from?: string | null
 }): Promise<SendResult> {
   const apiKey = process.env.RESEND_API_KEY
   const to = String(opts.to || '').trim()
@@ -97,7 +122,21 @@ export async function sendTransactionalEmail(opts: {
     const res = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ from: TRANSACTIONAL_FROM, to, subject: opts.subject, html: opts.html }),
+      body: JSON.stringify({
+        from: opts.from || TRANSACTIONAL_FROM,
+        to,
+        subject: opts.subject,
+        html: opts.html,
+        ...(opts.replyTo ? { reply_to: opts.replyTo } : {}),
+        ...(opts.unsubscribeUrl
+          ? {
+            headers: {
+              'List-Unsubscribe': `<${opts.unsubscribeUrl}>, <mailto:${SUPPORT_MAILBOX}?subject=unsubscribe>`,
+              'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+            },
+          }
+          : {}),
+      }),
     })
     const body = await res.json().catch(() => ({}))
     if (!res.ok) {

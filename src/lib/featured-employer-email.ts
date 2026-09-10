@@ -1,13 +1,6 @@
-const RESEND_API_KEY = process.env.RESEND_API_KEY
-import { TRANSACTIONAL_FROM } from '@/lib/send-email'
-const FROM_EMAIL = TRANSACTIONAL_FROM
+import { sendTransactionalEmail } from '@/lib/send-email'
 
 export async function sendFeaturedEmployerEmail(email: string, talentName: string, propertyName: string, location: string) {
-  if (!RESEND_API_KEY) {
-    console.log(`[Email skipped - no API key] Featured property to ${email}`)
-    return
-  }
-
   const subject = `Featured property: ${propertyName}`
   const html = `
     <div style="font-family: Inter, -apple-system, sans-serif; max-width: 560px; margin: 0 auto; padding: 40px 20px;">
@@ -20,17 +13,5 @@ export async function sendFeaturedEmployerEmail(email: string, talentName: strin
     </div>
   `
 
-  try {
-    const res = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ from: FROM_EMAIL, to: email, subject, html }),
-    })
-    if (!res.ok) {
-      const detail = await res.text().catch(() => '')
-      console.error(`[Featured employer email FAILED ${res.status}] ${detail.slice(0, 300)}`)
-    }
-  } catch (error) {
-    console.error('Featured employer email failed:', error)
-  }
+  await sendTransactionalEmail({ to: email, subject, html, kind: 'marketing' })
 }

@@ -1,12 +1,17 @@
-import { TRANSACTIONAL_FROM } from '@/lib/send-email'
+import { sendTransactionalEmail } from '@/lib/send-email'
 import { createHash, createHmac, randomBytes, timingSafeEqual } from 'node:crypto'
 
 export const PRIVACY_POLICY_VERSION = '2026-08-26'
 export const MARKETING_CONSENT_WORDING = 'I would like Wellness House Collective to send me marketing emails about jobs, Academy courses, platform features, events and relevant Talent House services. I can unsubscribe at any time.'
+// What somebody accepts at the moment their account is created, recorded
+// verbatim against the account. The wording lives here rather than in the form
+// so the sentence shown and the sentence stored can never drift apart, which
+// is the only thing that makes a consent record worth having.
+export const TERMS_ACCEPTANCE_WORDING = 'I have read and agree to the Talent House Collective Terms & Conditions and Privacy Policy.'
+
 export const NEWSLETTER_CONSENT_WORDING = 'I would like Wellness House Collective to email me its newsletter, including industry news, jobs, Academy updates, events and relevant Talent House services. I can unsubscribe at any time.'
 
 const SITE = 'https://talenthousecollective.co.uk'
-const FROM_EMAIL = TRANSACTIONAL_FROM
 
 export function hashToken(token: string) {
   return createHash('sha256').update(token).digest('hex')
@@ -51,21 +56,8 @@ export function verifyNewsletterUnsubscribeToken(subscriberId: string, token: st
 }
 
 async function sendEmail(to: string, subject: string, html: string) {
-  const apiKey = process.env.RESEND_API_KEY
-  if (!apiKey) {
-    console.log(`[Privacy email skipped - no RESEND_API_KEY] To: ${to}, Subject: ${subject}`)
-    return false
-  }
-  const response = await fetch('https://api.resend.com/emails', {
-    method: 'POST',
-    headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ from: FROM_EMAIL, to, subject, html }),
-  })
-  if (!response.ok) {
-    console.error(`[Privacy email failed ${response.status}] ${await response.text().catch(() => '')}`)
-    return false
-  }
-  return true
+  const result = await sendTransactionalEmail({ to, subject, html, kind: 'marketing' })
+  return result.ok
 }
 
 function confirmationEmailHtml(heading: string, intro: string, wording: string, url: string) {
@@ -163,4 +155,24 @@ export function marketingUnsubscribeUrl(userId: string) {
 
 export function newsletterUnsubscribeUrl(subscriberId: string) {
   return `${SITE}/api/newsletter/unsubscribe?id=${encodeURIComponent(subscriberId)}&token=${createNewsletterUnsubscribeToken(subscriberId)}`
+}
+
+/**
+ * Records that an account holder accepted the terms as their account was
+ * created. Best-effort by design: the ledger entry must never be the reason a
+ * registration fails, and the acceptance itself is enforced before this runs.
+ */
+export async function recordTermsAcceptance(admin: any, userId: string, source: string) {
+  try {
+    await admin.from('consent_events').insert({
+      user_id: userId,
+      consent_type: 'terms',
+      action: 'accepted',
+      policy_version: PRIVACY_POLICY_VERSION,
+      wording: TERMS_ACCEPTANCE_WORDING,
+      source,
+    })
+  } catch (error: any) {
+    console.error('Terms acceptance record failed (non-fatal):', error?.message)
+  }
 }

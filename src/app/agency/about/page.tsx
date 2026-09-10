@@ -1,3 +1,4 @@
+import type { Metadata } from 'next'
 import Link from 'next/link'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
@@ -7,6 +8,19 @@ import { getWebsiteContent } from '@/lib/site-content-server'
 import PanelPicture from '@/components/PanelPicture'
 
 export const revalidate = 3600
+
+// Its own canonical. The /agency layout sets one for every page beneath it, so
+// this page and every professional's Agency profile told Google they were
+// really /agency - which asks the index to drop them, and it does.
+export const metadata: Metadata = {
+  title: { absolute: 'How Agency & Freelance Spa Shifts Work | Talent House Collective' },
+  description: 'How last-minute spa cover works on Talent House Collective: post the shift, see verified professionals with real availability, and book at a rate agreed up front.',
+  alternates: { canonical: 'https://talenthousecollective.co.uk/agency/about' },
+  openGraph: {
+    title: 'How Agency & Freelance Spa Shifts Work | Talent House Collective',
+    description: 'Post the shift, see verified professionals with real availability, book at an agreed rate.',
+  },
+}
 
 const benefits = [
   { icon: ShieldCheck, title: 'Verified professionals', text: 'See approved professionals with skills, experience and availability relevant to the shift.' },

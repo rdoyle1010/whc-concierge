@@ -3,19 +3,16 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { getRequestUser } from '@/lib/request-user'
 import { createNotification } from '@/lib/notifications'
 import { trackEvent } from '@/lib/analytics'
-import { TRANSACTIONAL_FROM } from '@/lib/send-email'
+import { sendTransactionalEmail } from '@/lib/send-email'
 import { administratorEmails } from '@/lib/administrators'
 
 // Managed recruitment intake: the employer asks Talent House to run the search.
 // 12.5% of first-year salary (15-20% executive), payable on placement.
 
-const RESEND_API_KEY = process.env.RESEND_API_KEY
-const FROM_EMAIL = TRANSACTIONAL_FROM
 
 const esc = (v: string) => v.replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;')
 
 async function alertAdmin(propertyName: string, request: { job_title: string; service: string; role_level?: string | null; salary_min?: number | null; salary_max?: number | null; location?: string | null; timeline?: string | null; brief: string }) {
-  if (!RESEND_API_KEY) return
   const salary = request.salary_min || request.salary_max
     ? `£${Number(request.salary_min || 0).toLocaleString()}${request.salary_max ? ` - £${Number(request.salary_max).toLocaleString()}` : ''}`
     : 'Not stated'
@@ -39,11 +36,7 @@ async function alertAdmin(propertyName: string, request: { job_title: string; se
   // and it used to reach one personal address written into the source, so a
   // second partner never saw one.
   for (const to of await administratorEmails()) {
-    await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ from: FROM_EMAIL, to, subject: `Managed search request - ${request.job_title} (${propertyName})`, html }),
-    }).catch(() => {})
+    await sendTransactionalEmail({ to, subject: `Managed search request - ${request.job_title} (${propertyName})`, html, kind: 'admin_alert' })
   }
 }
 

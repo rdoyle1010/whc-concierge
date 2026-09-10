@@ -4,7 +4,7 @@ import { createRegistrationProof, type RegistrationRole } from '@/lib/registrati
 import { createAdminClient } from '@/lib/supabase/admin'
 import { geocodePostcode } from '@/lib/geo'
 import { getClientIp, rateLimit } from '@/lib/rate-limit'
-import { startMarketingOptIn } from '@/lib/privacy-consent'
+import { recordTermsAcceptance, startMarketingOptIn } from '@/lib/privacy-consent'
 
 export const runtime = 'nodejs'
 
@@ -61,9 +61,18 @@ export async function POST(req: NextRequest) {
     const hasCar = body.hasCar === true
     // Strictly true. An absent or truthy-ish value is not consent.
     const marketingOptIn = body.marketingOptIn === true
+    // Same standard, and now required. An account used to be created before
+    // anybody had agreed to anything: the talent sign-up asked at all, and
+    // the employer form asked on the page but never told the server, so the
+    // acceptance existed only in the browser that had already navigated away.
+    // Enforced here because this is the route that creates the account.
+    const agreedTerms = body.agreedTerms === true
 
     if (!email || !password || !role || password.length < 8) {
       return NextResponse.json({ error: 'Please provide a valid email and a password of at least 8 characters.' }, { status: 400 })
+    }
+    if (!agreedTerms) {
+      return NextResponse.json({ error: 'Please accept the Terms & Conditions and Privacy Policy to create an account.' }, { status: 400 })
     }
 
     const supabase = createClient(
@@ -84,6 +93,10 @@ export async function POST(req: NextRequest) {
     if (error || !data.user) {
       return NextResponse.json({ error: friendlySignupError(error?.message) }, { status: 400 })
     }
+
+    // Recorded against the account before anything else, so the ledger says
+    // what was accepted and when even if a later step of registration fails.
+    await recordTermsAcceptance(createAdminClient(), data.user.id, 'registration')
 
     if (role === 'talent') {
       const admin = createAdminClient()
@@ -112,6 +125,7 @@ export async function POST(req: NextRequest) {
         location: postcode || null,
         ...(coords ? { latitude: coords.latitude, longitude: coords.longitude } : {}),
         has_car: hasCar,
+        agreed_terms: true,
         approval_status: 'approved',
         profile_visible: true,
       }, { onConflict: 'user_id' })

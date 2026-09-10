@@ -6,10 +6,8 @@ import { createNotification } from '@/lib/notifications'
 import { sendSmsIfOptedIn } from '@/lib/sms'
 import { emailAllowed } from '@/lib/notification-prefs'
 import { briefingDetailsHtml, briefingEmailHtml, escapeHtml } from '@/lib/interview-briefing'
-import { TRANSACTIONAL_FROM } from '@/lib/send-email'
+import { sendTransactionalEmail } from '@/lib/send-email'
 
-const RESEND_API_KEY = process.env.RESEND_API_KEY
-const FROM_EMAIL = TRANSACTIONAL_FROM
 const METHODS = ['teams','video','phone','in_person'] as const
 
 function methodLabel(method: string) {
@@ -168,7 +166,7 @@ export async function POST(req: NextRequest) {
     const wantsEmail = await emailAllowed(admin, candidate.user_id, 'application_updates')
     const { data: authUser } = await admin.auth.admin.getUserById(candidate.user_id)
     const email = authUser?.user?.email || null
-    if (email && RESEND_API_KEY && wantsEmail) {
+    if (email && wantsEmail) {
       const slotHtml = uniqueIso.map((slot: string) => `<li style="margin:7px 0;">${escapeHtml(new Date(slot).toLocaleString('en-GB',{dateStyle:'full',timeStyle:'short',timeZone:'Europe/London'}))}</li>`).join('')
       // Everything the candidate needs in order to turn up. These columns were
       // stored from the first version of this form and never sent, so an
@@ -189,8 +187,7 @@ export async function POST(req: NextRequest) {
         ctaLabel: `Choose ${stageLabel.toLowerCase()} time`,
         ctaHref: 'https://talenthousecollective.co.uk/talent/applications',
       })
-      const res = await fetch('https://api.resend.com/emails',{method:'POST',headers:{Authorization:`Bearer ${RESEND_API_KEY}`,'Content-Type':'application/json'},body:JSON.stringify({from:FROM_EMAIL,to:email,subject:title,html})})
-      if (!res.ok) console.error('Interview invitation email failed:', res.status)
+      await sendTransactionalEmail({ to: email, subject: title, html, kind: 'interview', userId: candidate.user_id })
     }
 
     const smsSent = await sendSmsIfOptedIn({

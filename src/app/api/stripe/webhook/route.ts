@@ -10,6 +10,7 @@ import { emailAllowed } from '@/lib/notification-prefs'
 import { sendFeaturedEmployerEmail } from '@/lib/featured-employer-email'
 import Stripe from 'stripe'
 import { getInternalApiSecret } from '@/lib/internal-request'
+import { EMPLOYER_MEMBERSHIPS } from '@/lib/constants'
 import { handleResidencyStripeEvent } from '@/lib/residency-stripe-webhook'
 import { fulfilCommercialPurchase, recordCommercialPurchase } from '@/lib/commercial-fulfilment'
 import { applyAgencyCaseAdjustment } from '@/lib/agency-case-adjustment'
@@ -398,6 +399,17 @@ export async function POST(req: NextRequest) {
         .update(renewal)
         .or(`stripe_customer_id.eq.${customerId},membership_stripe_customer_id.eq.${customerId}`)
         .not('membership_tier', 'is', null)
+
+      // Employer Group buys twenty included job listings a year, and employer
+      // memberships bill annually - one paid invoice is one new year. The
+      // counter was set to zero once, at the moment the membership was bought,
+      // and never again, so a member who used their twenty in year one renewed
+      // at PS999 into an allowance that was already spent. Every renewal
+      // restores the year's allowance and resets what has been used.
+      await supabase.from('employer_profiles')
+        .update({ annual_job_allowance: EMPLOYER_MEMBERSHIPS.group.includedJobs, annual_jobs_used: 0 })
+        .or(`stripe_customer_id.eq.${customerId},membership_stripe_customer_id.eq.${customerId}`)
+        .eq('membership_tier', 'group')
       break
     }
 

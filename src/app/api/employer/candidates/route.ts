@@ -29,6 +29,35 @@ async function selectWithPrivateColumns(build: (fields: string) => PromiseLike<{
 
 const DEFAULT_LIMIT = 60
 const MAX_LIMIT = 100
+// How many rows one database round trip reads while looking for a page's
+// worth of matches, and how many it will read in total before giving up and
+// offering "load more". A page is not a page of rows: privacy settings,
+// travel radius, blocks and the filters below all remove candidates after the
+// database has handed them over.
+const SCAN_BATCH = 150
+const MAX_SCAN = 900
+
+// Filtering used to happen in the browser, over whatever the last request had
+// loaded. On a register of sixty that is invisible; on a register of six
+// hundred it means typing "massage" and being told there are two, because the
+// other forty are on pages nobody has fetched. The filter has to run where
+// the rows are.
+//
+// It runs on the PRESENTED candidate, not the stored one, which matters: a
+// professional in Private Career Mode must not be findable by typing her real
+// name and watching an anonymised card appear. By the time this sees her,
+// her name is "A spa professional" and that is what the search matches.
+function matchesFilters(candidate: any, query: string, specialism: string) {
+  if (query) {
+    const haystack = `${candidate.full_name || ''} ${candidate.headline || ''}`.toLowerCase()
+    if (!haystack.includes(query)) return false
+  }
+  if (specialism) {
+    const services: string[] = candidate.services_offered || []
+    if (!services.some(service => String(service).toLowerCase().includes(specialism))) return false
+  }
+  return true
+}
 
 export async function GET(req: NextRequest) {
   const auth = await createServerSupabaseClient()
@@ -61,23 +90,27 @@ export async function GET(req: NextRequest) {
   const requestedOffset = Number(req.nextUrl.searchParams.get('offset'))
   const offset = Number.isFinite(requestedOffset) && requestedOffset > 0 ? Math.floor(requestedOffset) : 0
   const requestedCandidateId = req.nextUrl.searchParams.get('candidate')
+  const query = String(req.nextUrl.searchParams.get('q') || '').trim().toLowerCase().slice(0, 80)
+  const specialism = String(req.nextUrl.searchParams.get('specialism') || '').trim().toLowerCase().slice(0, 80)
   const now = new Date().toISOString()
 
-  const candidatePageQuery = selectWithPrivateColumns(fields => admin.from('candidate_profiles')
+  const scanFrom = (from: number, size: number) => selectWithPrivateColumns(fields => admin.from('candidate_profiles')
     .select(fields)
     .eq('approval_status', 'approved')
     .or('profile_visible.eq.true,profile_visible.is.null')
     .order('is_featured', { ascending: false })
     .order('created_at', { ascending: false })
-    .range(offset, offset + limit - 1))
+    .range(from, from + size - 1))
+
+  const firstBatch = scanFrom(offset, Math.min(SCAN_BATCH, MAX_SCAN))
 
   const requestedCandidatePromise = requestedCandidateId
     ? selectWithPrivateColumns(fields => admin.from('candidate_profiles').select(fields).eq('id', requestedCandidateId).eq('approval_status', 'approved').or('profile_visible.eq.true,profile_visible.is.null').maybeSingle())
     : Promise.resolve({ data: null, error: null })
 
-  const [{ data: blocks }, { data: pageRows, error }, { data: requestedCandidate }, { data: liveJobs }, { data: matchRows }] = await Promise.all([
+  const [{ data: blocks }, { data: firstRows, error }, { data: requestedCandidate }, { data: liveJobs }, { data: matchRows }] = await Promise.all([
     admin.from('profile_blocks').select('candidate_id').eq('blocked_employer_id', employer.id),
-    candidatePageQuery,
+    firstBatch,
     requestedCandidatePromise,
     admin.from('job_listings')
       .select('id,job_title,required_skills,required_brands,required_qualifications,salary_min,salary_max,job_type,work_setting,sector,location,min_years_experience,required_systems,required_management_skills,required_role_level,candidate_scope,location_postcode,radius_miles,contract_type,insurance_required,preferred_business_skills,shift_pattern,offers_accommodation,latitude,longitude')
@@ -120,15 +153,37 @@ export async function GET(req: NextRequest) {
     return { ...presentCandidate(candidate), ...(best || {}), eligibleJobs, latitude: undefined, longitude: undefined, distance_miles: radiusResult.distanceMiles, distance_status: radiusResult.reason, within_radius: radiusResult.withinRadius }
   }
 
-  const pageCandidates = (pageRows || []).map(scoreCandidate).filter(Boolean).sort((a: any, b: any) => {
+  // Keep reading until there is a page worth showing. Everything that removes
+  // a candidate - stealth, a block, travel radius, a hard-stop on every live
+  // role, the filters - happens after the database has answered, so a batch of
+  // 150 rows can yield three cards. Stopping at the first batch is what made
+  // "no talent matches these filters" a lie.
+  const matched: any[] = []
+  let scanned = 0
+  let exhausted = false
+  let batch = firstRows || []
+  while (true) {
+    scanned += batch.length
+    for (const row of batch) {
+      const scored = scoreCandidate(row)
+      if (scored && matchesFilters(scored, query, specialism)) matched.push(scored)
+    }
+    if (batch.length < SCAN_BATCH) { exhausted = true; break }
+    if (matched.length >= limit || scanned >= MAX_SCAN) break
+    const next = await scanFrom(offset + scanned, Math.min(SCAN_BATCH, MAX_SCAN - scanned))
+    if (next.error) { exhausted = true; break }
+    batch = next.data || []
+    if (!batch.length) { exhausted = true; break }
+  }
+
+  const pageCandidates = matched.sort((a: any, b: any) => {
     if (!!a.is_featured !== !!b.is_featured) return a.is_featured ? -1 : 1
     return (b.matchScore ?? -1) - (a.matchScore ?? -1)
-  })
+  }).slice(0, limit)
 
   const requestedScored = requestedCandidate ? scoreCandidate(requestedCandidate) : null
   const candidates = requestedScored && !pageCandidates.some((candidate: any) => candidate.id === requestedScored.id) ? [requestedScored, ...pageCandidates] : pageCandidates
-  const scanned = (pageRows || []).length
-  const hasMore = scanned === limit
+  const hasMore = !exhausted
 
   return NextResponse.json({ candidates, live_role_count: jobs.length, pagination: { limit, offset, returned: candidates.length, scanned, has_more: hasMore, next_offset: hasMore ? offset + scanned : null }, employer: { id: employer.id, company_name: employer.company_name, property_name: employer.property_name }, origin: { postcode: employer.postcode || null, geocoded: employer.latitude != null && employer.longitude != null }, travel: travelAccessSummary(employer) })
 }

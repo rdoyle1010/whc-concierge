@@ -42,6 +42,7 @@ export default function EmployerRegisterPage() {
         password: form.password,
         role: 'employer',
         marketingOptIn,
+        agreedTerms: form.agreed_terms === true,
         displayName: form.company_name,
       }),
     })

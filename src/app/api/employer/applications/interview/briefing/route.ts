@@ -5,10 +5,7 @@ import { createNotification } from '@/lib/notifications'
 import { sendSmsIfOptedIn } from '@/lib/sms'
 import { emailAllowed } from '@/lib/notification-prefs'
 import { briefingDetailsHtml, briefingEmailHtml, describeBriefingChanges, escapeHtml, listInWords } from '@/lib/interview-briefing'
-import { TRANSACTIONAL_FROM } from '@/lib/send-email'
-
-const RESEND_API_KEY = process.env.RESEND_API_KEY
-const FROM_EMAIL = TRANSACTIONAL_FROM
+import { sendTransactionalEmail } from '@/lib/send-email'
 
 // A changed interview nobody was told about is worse than no change at all.
 //
@@ -97,7 +94,7 @@ export async function POST(req: NextRequest) {
     const wantsEmail = await emailAllowed(admin, candidate.user_id, 'application_updates')
     const { data: authUser } = await admin.auth.admin.getUserById(candidate.user_id)
     const email = authUser?.user?.email || null
-    if (email && RESEND_API_KEY && wantsEmail) {
+    if (email && wantsEmail) {
       const when = updated.status === 'confirmed' && updated.selected_slot
         ? new Date(updated.selected_slot).toLocaleString('en-GB', { dateStyle: 'full', timeStyle: 'short', timeZone: 'Europe/London' })
         : null
@@ -117,12 +114,7 @@ export async function POST(req: NextRequest) {
         ctaLabel: 'Open my applications',
         ctaHref: 'https://talenthousecollective.co.uk/talent/applications',
       })
-      const res = await fetch('https://api.resend.com/emails', {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ from: FROM_EMAIL, to: email, subject: title, html }),
-      })
-      if (!res.ok) console.error('Interview change email failed:', res.status)
+      await sendTransactionalEmail({ to: email, subject: title, html, kind: 'interview', userId: candidate.user_id })
     }
 
     const smsSent = await sendSmsIfOptedIn({

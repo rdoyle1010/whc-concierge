@@ -1,22 +1,8 @@
-const RESEND_API_KEY = process.env.RESEND_API_KEY
-import { TRANSACTIONAL_FROM } from '@/lib/send-email'
-const FROM_EMAIL = TRANSACTIONAL_FROM
+import { sendTransactionalEmail } from '@/lib/send-email'
 
 async function sendEmail(to: string, subject: string, html: string) {
-  if (!RESEND_API_KEY) {
-    console.log(`[Email skipped - no API key] To: ${to}, Subject: ${subject}`)
-    return true
-  }
-  const response = await fetch('https://api.resend.com/emails', {
-    method: 'POST',
-    headers: { Authorization: `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ from: FROM_EMAIL, to, subject, html }),
-  })
-  if (!response.ok) {
-    console.error(`[Advertising email failed ${response.status}] ${await response.text().catch(() => '')}`)
-    return false
-  }
-  return true
+  const result = await sendTransactionalEmail({ to, subject, html, kind: 'marketing' })
+  return result.ok
 }
 
 const wrap = (content: string) => `<div style="font-family:Inter,-apple-system,sans-serif;max-width:600px;margin:0 auto;padding:40px 22px;color:#1c1c1c"><p style="font-weight:700">Talent House Collective</p>${content}<p style="margin-top:36px;font-size:12px;color:#7a858c">Talent House Collective · talenthousecollective.co.uk</p></div>`

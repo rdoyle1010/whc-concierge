@@ -5,10 +5,8 @@ import { trackEvent } from '@/lib/analytics'
 import { createNotification } from '@/lib/notifications'
 import { sendSmsIfOptedIn } from '@/lib/sms'
 import { emailAllowed } from '@/lib/notification-prefs'
-import { TRANSACTIONAL_FROM } from '@/lib/send-email'
+import { sendTransactionalEmail } from '@/lib/send-email'
 
-const RESEND_API_KEY = process.env.RESEND_API_KEY
-const FROM_EMAIL = TRANSACTIONAL_FROM
 
 const ALLOWED = ['shortlisted', 'rejected', 'accepted'] as const
 type Decision = typeof ALLOWED[number]
@@ -101,11 +99,10 @@ export async function POST(req: NextRequest) {
         const wantsEmail = await emailAllowed(admin, candidate.user_id, 'application_updates')
         const { data: authUser } = await admin.auth.admin.getUserById(candidate.user_id)
         const email = authUser?.user?.email || null
-        if (email && RESEND_API_KEY && wantsEmail) {
+        if (email && wantsEmail) {
           const subject = decision === 'shortlisted' ? `You have been shortlisted - ${job.job_title}` : decision === 'accepted' ? `Application update - ${job.job_title}` : `Update on your application - ${job.job_title}`
-          const res = await fetch('https://api.resend.com/emails', { method: 'POST', headers: { Authorization: `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ from: FROM_EMAIL, to: email, subject, html: messageHtml({ note, jobTitle: job.job_title, propertyName, decision }) }) })
+          const res = await sendTransactionalEmail({ to: email, subject, html: messageHtml({ note, jobTitle: job.job_title, propertyName, decision }), kind: 'decision', userId: candidate.user_id })
           emailSent = res.ok
-          if (!res.ok) console.error('Recruitment decision email failed:', res.status, (await res.text().catch(() => '')).slice(0, 300))
         }
       } catch (emailError: any) {
         console.error('Recruitment decision email lookup/send failed:', emailError?.message || emailError)
