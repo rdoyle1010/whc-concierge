@@ -2,8 +2,27 @@ import { useEffect, useMemo, useState } from 'react'
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
 import { router } from 'expo-router'
 import { supabase } from '../src/lib/supabase'
-import { calculateMatchScore } from '../src/lib/matching'
 import { palette, radius, space, type } from '../src/lib/theme'
+
+const WEB_URL=process.env.EXPO_PUBLIC_WEB_URL||'https://talenthousecollective.co.uk'
+
+// This screen used to read candidate_profiles straight from the phone and do
+// its own filtering, which put it quietly out of step with the website in two
+// directions at once.
+//
+// It filtered `stealth_mode = false`. In Postgres `null = false` is null, not
+// true, so every professional who has never touched the setting - which is
+// nearly all of them - was invisible here while being perfectly visible on the
+// website, where an untouched setting deliberately means visible.
+//
+// And it built the display name itself. That honoured the first-name-only
+// choice and knew nothing about Private Career Mode, so a professional the
+// website anonymises could appear here under her real name.
+//
+// Both are the same mistake: a second copy of rules that already exist once.
+// The screen now calls the same route the phone's Match screen uses, which
+// runs the single discovery guard, the single anonymity presenter, the travel
+// radius and the match scoring - so the two surfaces cannot disagree again.
 
 export default function DiscoverTalent(){
  const [items,setItems]=useState<any[]>([])
@@ -11,28 +30,46 @@ export default function DiscoverTalent(){
  const [selectedJobId,setSelectedJobId]=useState('')
  const [loading,setLoading]=useState(true)
  const [locked,setLocked]=useState(false)
+ const [error,setError]=useState('')
 
  useEffect(()=>{void load()},[])
 
  async function load(){
-  const {data:{user}}=await supabase.auth.getUser()
-  if(!user){router.replace('/login');return}
-  const {data:employer}=await supabase.from('employer_profiles_private').select('id,membership_tier').eq('user_id',user.id).maybeSingle()
-  const tier=String(employer?.membership_tier||'free').toLowerCase()
-  if(!['pro','group'].includes(tier)){setLocked(true);setLoading(false);return}
-  const {data:jobRows}=employer?.id?await supabase.from('job_listings').select('*').eq('employer_id',employer.id).order('posted_date',{ascending:false}):{data:[] as any[]}
-  setJobs(jobRows||[])
-  if(jobRows?.[0]?.id)setSelectedJobId(jobRows[0].id)
-  const {data}=await supabase.from('candidate_profiles').select('*').eq('profile_visible',true).eq('stealth_mode',false).order('is_featured',{ascending:false}).limit(100)
-  setItems(data||[])
-  setLoading(false)
+  setLoading(true);setError('')
+  try{
+   const {data:{user}}=await supabase.auth.getUser()
+   if(!user){router.replace('/login');return}
+   const {data:employer}=await supabase.from('employer_profiles_private').select('id,membership_tier').eq('user_id',user.id).maybeSingle()
+   const tier=String(employer?.membership_tier||'free').toLowerCase()
+   if(!['pro','group'].includes(tier)){setLocked(true);return}
+   const {data:jobRows}=employer?.id?await supabase.from('job_listings').select('id,job_title').eq('employer_id',employer.id).eq('is_live',true).order('posted_date',{ascending:false}):{data:[] as any[]}
+   setJobs(jobRows||[])
+   if(jobRows?.[0]?.id)setSelectedJobId(jobRows[0].id)
+
+   const {data:{session}}=await supabase.auth.getSession()
+   if(!session?.access_token)throw new Error('Your session has expired. Please sign in again.')
+   const response=await fetch(`${WEB_URL}/api/mobile/employer-directory`,{headers:{Authorization:`Bearer ${session.access_token}`,'Content-Type':'application/json'}})
+   const body=await response.json().catch(()=>({}))
+   if(!response.ok)throw new Error(body?.error||'Could not load Talent.')
+   setItems(body.candidates||[])
+  }catch(e:any){
+   setError(e?.message||'Could not load Talent.')
+  }finally{
+   setLoading(false)
+  }
  }
 
  const selectedJob=jobs.find(job=>job.id===selectedJobId)||null
- const ranked=useMemo(()=>items.map(item=>({item,match:selectedJob?calculateMatchScore(item,selectedJob):null})).sort((a,b)=>{
-  if(Boolean(b.item.is_featured)!==Boolean(a.item.is_featured))return Number(Boolean(b.item.is_featured))-Number(Boolean(a.item.is_featured))
-  return Number(b.match?.score||0)-Number(a.match?.score||0)
- }),[items,selectedJobId,jobs])
+ // The route scores every candidate against this property's live roles and
+ // returns the presented record, so there is nothing left to work out here.
+ // When a role is chosen, only the people it actually ranked for are shown.
+ const ranked=useMemo(()=>items
+  .filter(item=>!selectedJob||!item.bestJobId||item.bestJobId===selectedJob.id)
+  .map(item=>({item,match:item.matchScore!=null?{score:item.matchScore,matchExplanation:item.matchExplanation,hardStop:false,hardStopReason:''}:null}))
+  .sort((a,b)=>{
+   if(Boolean(b.item.is_featured)!==Boolean(a.item.is_featured))return Number(Boolean(b.item.is_featured))-Number(Boolean(a.item.is_featured))
+   return Number(b.match?.score||0)-Number(a.match?.score||0)
+  }),[items,selectedJobId,jobs])
 
  if(locked)return <View style={styles.lockPage}>
   <Text style={styles.lockEyebrow}>EMPLOYER PRO</Text>
@@ -54,12 +91,16 @@ export default function DiscoverTalent(){
    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.jobPicker}>{jobs.map(job=><Pressable key={job.id} onPress={()=>setSelectedJobId(job.id)} style={[styles.jobChip,selectedJobId===job.id&&styles.jobChipActive]}><Text style={[styles.jobChipText,selectedJobId===job.id&&styles.jobChipTextActive]}>{job.job_title}</Text></Pressable>)}</ScrollView>
   </View>:<View style={styles.notice}><Text style={styles.noticeEyebrow}>START WITH A ROLE</Text><Text style={styles.noticeTitle}>Post a role to unlock meaningful ranking.</Text><Text style={styles.noticeCopy}>Without a real job description and requirements, Talent can be browsed but not intelligently prioritised for your vacancy.</Text></View>}
 
+  {error?<View style={styles.notice}><Text style={styles.noticeEyebrow}>COULD NOT LOAD</Text><Text style={styles.noticeTitle}>{error}</Text><Pressable onPress={()=>void load()} style={styles.outline}><Text style={styles.outlineText}>Try again</Text></Pressable></View>:null}
+
   {loading?<View style={styles.loading}><ActivityIndicator color={palette.ink}/><Text style={styles.loadingText}>Building your Talent view…</Text></View>:null}
 
   {!loading?<>
    <View style={styles.resultsHeader}><View><Text style={styles.resultsEyebrow}>TALENT POOL</Text><Text style={styles.resultsTitle}>{ranked.length} visible professional{ranked.length===1?'':'s'}</Text></View>{selectedJob?<Text style={styles.rankLabel}>Ranked by fit</Text>:null}</View>
    <View style={styles.list}>{ranked.length?ranked.map(({item,match},index)=>{
-    const display=item.show_first_name_only&&item.full_name?item.full_name.split(' ')[0]:item.full_name||'Talent profile'
+    // Already decided by the anonymity presenter on the server: a private
+    // profile arrives anonymised, a first-name-only profile arrives shortened.
+    const display=item.full_name||'Talent profile'
     const headline=item.headline||[item.role_level,item.primary_specialism].filter(Boolean).join(' · ')
     return <View key={item.id} style={[styles.card,item.is_featured&&styles.featured]}>
      <View style={styles.cardTop}>
@@ -76,7 +117,7 @@ export default function DiscoverTalent(){
 
      <Pressable onPress={()=>router.push(`/message/${item.user_id}`)} style={styles.messageBtn}><Text style={styles.messageText}>Start conversation</Text><Text style={styles.arrow}>→</Text></Pressable>
     </View>
-   }):<View style={styles.empty}><Text style={styles.emptyEyebrow}>NO VISIBLE TALENT</Text><Text style={styles.emptyTitle}>There is nobody to show here yet.</Text><Text style={styles.emptyCopy}>Visible professionals who are not using stealth mode will appear here automatically.</Text></View>}</View>
+   }):<View style={styles.empty}><Text style={styles.emptyEyebrow}>NO VISIBLE TALENT</Text><Text style={styles.emptyTitle}>There is nobody to show here yet.</Text><Text style={styles.emptyCopy}>Professionals who are visible to your property, and within reach of it, appear here automatically.</Text></View>}</View>
   </>:null}
  </ScrollView>
 }
