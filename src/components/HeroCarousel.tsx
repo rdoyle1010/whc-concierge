@@ -5,6 +5,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { DEFAULT_WEBSITE_CONTENT } from '@/lib/site-content-values'
 import type { WebsiteContent } from '@/lib/site-content'
+import { slideCta } from '@/lib/hero-slide-cta'
 
 export default function HeroCarousel({ siteContent }: { siteContent?: WebsiteContent }) {
   const content = siteContent || DEFAULT_WEBSITE_CONTENT
@@ -71,9 +72,16 @@ export default function HeroCarousel({ siteContent }: { siteContent?: WebsiteCon
             <p className="mb-5 text-[11px] font-semibold uppercase tracking-[0.22em] text-white/75">{slide.eyebrow}</p>
             <h1 className="site-heading !text-white text-[40px] md:text-[58px] lg:text-[68px] leading-[1.03] tracking-[-.04em] font-medium mb-6">{slide.heading}</h1>
             <p className="mb-9 max-w-2xl text-[15px] md:text-[17px] leading-[1.7] text-white/85">{slide.text}</p>
-            <Link href={content.hero.primaryHref} className="site-button site-accent inline-block bg-white px-7 py-3.5 text-[13px] font-semibold">
-              {content.hero.primaryLabel}
-            </Link>
+            {(() => {
+              // One door per argument. Every slide used to send everybody to
+              // Post a Role, including the ones written for therapists.
+              const cta = slideCta(slide, current, { label: content.hero.primaryLabel, href: content.hero.primaryHref })
+              return (
+                <Link href={cta.href} className="site-button site-accent inline-block bg-white px-7 py-3.5 text-[13px] font-semibold">
+                  {cta.label}
+                </Link>
+              )
+            })()}
           </div>
         </div>
       </div>
