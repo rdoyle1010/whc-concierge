@@ -95,6 +95,7 @@ export default function Footer({ siteContent }: { siteContent?: WebsiteContent }
     { href: '/coming-soon', label: 'Coming Soon' }, { href: '/testimonials', label: 'Testimonials' }, { href: '/about', label: 'About' }, { href: '/contact', label: 'Contact' },
   ]
   const support = [
+    { href: '/good-to-know', label: 'Good to Know' },
     { href: '/verify', label: 'Verify a Certificate' }, { href: '/how-to-use', label: 'How It Works' }, { href: '/match', label: 'How Matching Works' }, { href: '/faq', label: 'FAQ' }, { href: '/privacy', label: 'Privacy Policy' }, { href: '/terms', label: 'Terms' },
   ]
 

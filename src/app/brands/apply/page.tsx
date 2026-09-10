@@ -73,6 +73,13 @@ export default function BrandApplyPage() {
             on the floor. Fill this in and we will draft the page from your own words and come back to you before
             anything goes live.
           </p>
+          {/* Said now, while it is generous, rather than later when it is an
+              invoice. A brand that was never told a price existed hears the
+              first one as a change of terms. */}
+          <p className="mt-5 max-w-2xl border-l-2 border-accent pl-4 text-[14px] leading-7 text-ink">
+            Brand pages are complimentary for our founding houses. We are choosing a small number to build this
+            properly with, and those pages stay free. Later brands will be a paid listing.
+          </p>
         </section>
 
         {state === 'sent' ? (
