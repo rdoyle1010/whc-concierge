@@ -130,6 +130,7 @@ const navItems: Record<string, NavItem[]> = {
     { label: 'Academy', href: '/admin/academy', icon: <GraduationCap size={17} />, section: 'Content & revenue' },
     { label: 'Brands', href: '/admin/brands', icon: <Sparkles size={17} /> },
     { label: 'Ambassadors', href: '/admin/ambassadors', icon: <Ticket size={17} /> },
+    { label: 'Good to Know', href: '/admin/good-to-know', icon: <Lightbulb size={17} /> },
     { label: 'Academy Downloads', href: '/admin/academy/downloads', icon: <Download size={17} /> },
     { label: 'Residency Listings', href: '/admin/residency', icon: <Calendar size={17} /> },
     { label: 'Consultancy', href: '/admin/consultancy', icon: <Lightbulb size={17} /> },

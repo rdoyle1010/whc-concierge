@@ -129,6 +129,16 @@ export default function PublicAcademyPage() {
               <Link href={isCandidate ? '/talent/academy' : '/register/talent'} className="inline-flex items-center justify-center gap-2 rounded-xl border border-[#dddddd] px-6 py-3.5 text-[13px] font-semibold text-ink hover:bg-[#e7e7e7] transition-colors">Build my career profile <ArrowRight size={14} /></Link>
             </div>
             <p className="mt-4 text-[11px] text-muted">No membership required. Talent House members receive member pricing.</p>
+            {/* Good to Know sat only in the footer under Support, which is
+                where somebody looks when something has gone wrong rather than
+                when they are deciding what to study. This is where a therapist
+                is already thinking about qualifications, so it is where the
+                free reference version belongs. */}
+            <p className="mt-6 text-[13px] leading-6 text-secondary">
+              Working out which qualification counts, or who insures you?{' '}
+              <Link href="/good-to-know" className="font-semibold text-ink underline underline-offset-4">Good to Know</Link>{' '}
+              lists the bodies that govern, insure and qualify this industry, and what we make of each one. Free, and no account needed.
+            </p>
           </div>
 
           <div className="rounded-[28px] border border-[#dddddd] bg-white p-7 md:p-9 text-[#1c1c1c] shadow-[0_20px_60px_rgba(28,28,28,.06)]">

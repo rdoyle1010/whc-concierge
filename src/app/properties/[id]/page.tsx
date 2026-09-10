@@ -283,7 +283,7 @@ export default async function PropertyDestinationPage({ params }: { params: Prom
           </div>
         </header>
       ) : (
-        <header className="bg-accent">
+        <header className="bg-charcoal">
           <div className="max-w-6xl mx-auto px-6 py-20 md:py-28">
             <h1 className="text-white text-[40px] md:text-[62px] leading-[1.03] tracking-[-.04em] max-w-4xl">{name}</h1>
             {heroMeta.length > 0 && (
@@ -357,9 +357,19 @@ export default async function PropertyDestinationPage({ params }: { params: Prom
             {productHouses.length > 0 && (
               <div className="mt-10">
                 <p className="text-[11px] uppercase tracking-[.14em] font-semibold text-ink">Product partners</p>
-                <p className="mt-3 text-[19px] md:text-[22px] font-serif font-semibold text-ink leading-relaxed max-w-3xl">
-                  {productHouses.join('  ·  ')}
-                </p>
+                {/* A property that names four houses is making a statement, and
+                    it deserves the serif. A property that has ticked forty-seven
+                    is filling in a form, and setting that at display size turns
+                    the page into a wall of brand names that dwarfs the rooms,
+                    the team and the treatment menu underneath it. Past a handful
+                    they read as a list, in the same rhythm as Services below. */}
+                {productHouses.length <= 6 ? (
+                  <p className="mt-3 text-[19px] md:text-[22px] font-serif font-semibold text-ink leading-relaxed max-w-3xl">
+                    {productHouses.join('  ·  ')}
+                  </p>
+                ) : (
+                  <div className="mt-3"><QuietList items={productHouses} cap={24} noun="brands" /></div>
+                )}
               </div>
             )}
             {services.length > 0 && (
@@ -590,7 +600,7 @@ export default async function PropertyDestinationPage({ params }: { params: Prom
       </main>
 
       {/* Closing CTA */}
-      <section className="bg-accent">
+      <section className="bg-charcoal">
         <div className="max-w-6xl mx-auto px-6 py-16 md:py-20 text-center">
           <h2 className="text-white text-[30px] md:text-[38px]">Considering a move?</h2>
           <p className="mt-4 text-[14px] leading-7 text-white/70 max-w-xl mx-auto">Browse live roles across Talent House properties, or create a profile so employers like {name} can find you.</p>

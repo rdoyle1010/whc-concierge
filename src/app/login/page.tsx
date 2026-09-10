@@ -153,7 +153,7 @@ function LoginForm() {
       {/* The brand panel carries facts, not a stock photograph hotlinked from
           a third-party CDN with its URL in view-source. The registration page
           already does it this way and it reads considerably more expensive. */}
-      <div className="hidden lg:flex w-[42%] bg-[#1c1c1c] relative isolate overflow-hidden items-end">
+      <div className="hidden lg:flex w-[42%] bg-charcoal relative isolate overflow-hidden items-end">
         <PanelBackdrop panel={site.panels.authPanel} placement="auth_panel" />
         <div className="relative p-12 xl:p-16 max-w-xl">
           <p className="text-[10px] uppercase tracking-[0.2em] text-white/70 font-semibold mb-4">Talent House Collective</p>

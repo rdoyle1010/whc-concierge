@@ -17,6 +17,18 @@ module.exports = {
         border: '#dddddd',
         parchment: '#f7f7f7',
         accent: '#1c1c1c',
+        // The large dark bands, one step off the ink.
+        //
+        // A full-bleed surface at exactly the value of body text reads as flat
+        // black rather than as charcoal: there is nothing for the eye to place
+        // it against, so it stops looking like a material and starts looking
+        // like a hole in the page. Lifting the surface - and only the surface -
+        // gives it somewhere to sit. Type, buttons and marks stay on ink, so
+        // the contrast that carries the brand is untouched.
+        //
+        // Still perfectly neutral. The palette dropped its warm cast
+        // deliberately in September and this does not reopen that.
+        charcoal: '#262626',
         success: '#22C55E',
         gold: { DEFAULT: '#b39a6b', light: '#c9b68f', dark: '#96804f' },
         navy: { DEFAULT: '#1c1c1c', light: '#333333', dark: '#0f0f0f' },
