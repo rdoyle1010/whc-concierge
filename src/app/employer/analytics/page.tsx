@@ -32,7 +32,7 @@ export default function EmployerAnalyticsPage() {
     async function load() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { setLoading(false); return }
-      const { data: prof } = await supabase.from('employer_profiles').select('*').eq('user_id', user.id).single()
+      const { data: prof } = await supabase.from('employer_profiles_private').select('*').eq('user_id', user.id).single()
       if (!prof) { setLoading(false); return }
       setProfile(prof)
 

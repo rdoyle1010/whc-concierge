@@ -45,7 +45,7 @@ export default function EmployerDashboard() {
       const user = await getViewer()
       if (!user) { setLoading(false); return }
 
-      const { data: prof } = await supabase.from('employer_profiles').select('*').eq('user_id', user.id).single()
+      const { data: prof } = await supabase.from('employer_profiles_private').select('*').eq('user_id', user.id).single()
       setProfile(prof)
       if (!prof) { setLoading(false); return }
 

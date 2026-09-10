@@ -104,7 +104,7 @@ export default function PropertyFactFilePage() {
     async function load() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { setLoading(false); return }
-      const { data: employer } = await supabase.from('employer_profiles').select('*').eq('user_id', user.id).maybeSingle()
+      const { data: employer } = await supabase.from('employer_profiles_private').select('*').eq('user_id', user.id).maybeSingle()
       setProfile(employer)
       if (employer) {
         setPostcode(employer.postcode || '')

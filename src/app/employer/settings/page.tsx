@@ -50,7 +50,7 @@ export default function EmployerSettingsPage() {
     async function loadSmsSettings() {
       const user = await getViewer()
       if (!user) return
-      const { data } = await supabase.from('employer_profiles').select('id,contact_phone,sms_opt_in').eq('user_id', user.id).maybeSingle()
+      const { data } = await supabase.from('employer_profiles_private').select('id,contact_phone,sms_opt_in').eq('user_id', user.id).maybeSingle()
       if (!data) return
       setEmployerId(data.id)
       setSmsPhone(data.contact_phone || '')

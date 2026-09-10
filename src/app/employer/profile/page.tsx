@@ -49,7 +49,7 @@ export default function EmployerProfilePage() {
     async function load() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
-      const { data } = await supabase.from('employer_profiles').select('*').eq('user_id', user.id).single()
+      const { data } = await supabase.from('employer_profiles_private').select('*').eq('user_id', user.id).single()
       if (data) {
         // Ensure array fields are always arrays
         data.product_houses_used = data.product_houses_used || []

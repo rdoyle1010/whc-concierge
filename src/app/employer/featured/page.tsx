@@ -37,7 +37,7 @@ export default function EmployerFeaturedPage() {
         fetch('/api/commercial-settings?product=featured_employer', { cache: 'no-store' }),
       ])
       if (auth.user) {
-        const { data } = await supabase.from('employer_profiles').select('*').eq('user_id', auth.user.id).maybeSingle()
+        const { data } = await supabase.from('employer_profiles_private').select('*').eq('user_id', auth.user.id).maybeSingle()
         setProfile(data)
       }
       if (productRes.ok) {
