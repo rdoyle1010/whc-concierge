@@ -20,7 +20,12 @@ export async function GET() {
   const admin = createAdminClient()
   const { data, error } = await admin.from('public_social_links').select('*').eq('id', 1).maybeSingle()
   if (error) return NextResponse.json({ error: 'Could not load social links.' }, { status: 500 })
-  return NextResponse.json({ links: data || {} }, { headers: { 'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300' } })
+  return NextResponse.json({ links: data || {} }, { headers: {
+    // max-age as well as s-maxage. With only s-maxage the CDN caches this and
+    // the browser does not, so the Footer round-tripped for a handful of
+    // social links on every page a visitor opened.
+    'Cache-Control': 'public, max-age=60, s-maxage=60, stale-while-revalidate=300',
+  } })
 }
 
 export async function POST(req: NextRequest) {

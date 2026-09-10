@@ -111,8 +111,21 @@ test('admin-edited content is never requested from a stale cache', () => {
   const footer = body('src/components/Footer.tsx')
   assert.doesNotMatch(footer, /force-cache/,
     'the footer serves the editorial strip and the social links, both edited in admin')
-  assert.match(footer, /\/api\/public-pages', \{ cache: 'no-store' \}/)
-  assert.match(footer, /\/api\/public-social-links', \{ cache: 'no-store' \}/)
+  // no-store used to be the mechanism here, and it was the other extreme: it
+  // forbids the browser from keeping the response at all, so every page a
+  // visitor opened paid a fresh round trip for four image URLs and a few
+  // social links - which is most of the delay before the editorial band
+  // settles. What this test is actually protecting is that admin edits are
+  // never served from a stale cache, and that is the endpoints' job: each
+  // declares a short window with stale-while-revalidate, so a change lands
+  // within a minute and nobody waits on it twice.
+  assert.doesNotMatch(footer, /cache: 'no-store'/)
+  for (const route of ['src/app/api/public-pages/route.ts', 'src/app/api/public-social-links/route.ts']) {
+    const source = body(route)
+    assert.match(source, /Cache-Control/, `${route} has to declare its own window`)
+    assert.match(source, /max-age=60/, `${route} must not be cached for long`)
+    assert.match(source, /stale-while-revalidate/, `${route} must refresh in the background`)
+  }
 })
 
 test('an upload refused for a lapsed session says so', () => {

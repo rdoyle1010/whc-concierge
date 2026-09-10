@@ -11,11 +11,21 @@ import type { PublicPagesContent } from './public-page-content'
 // The type import above is erased at compile time, so nothing is pulled at
 // runtime and the cycle it appears to form does not exist.
 
+// The four labelled tiles above the footer. No pictures in the code.
+//
+// These used to ship as four Unsplash photographs, and the Footer painted them
+// on first render before fetching the real band - so every visitor saw four
+// stock images swap to Rebecca's a moment later, on every page, which reads as
+// a site that has not finished loading rather than one that has.
+//
+// The labels and the crops stay, because they are the design. The pictures
+// come from the database or the tile stays empty, which is also how the panel
+// backdrops work: a page shows the photography Talent House owns, or none.
 export const defaultEditorialBand = [
-  { url: 'https://images.unsplash.com/photo-1600334129128-685c5582fd35?auto=format&fit=crop&q=82&w=1600', alt: 'Luxury spa treatment in progress', label: 'Spa & wellness', focalX: 50, focalY: 50 },
-  { url: 'https://images.unsplash.com/photo-1759038086403-c607d67bb245?auto=format&fit=crop&q=82&w=1600', alt: 'Contemporary luxury hospitality interior', label: 'Exceptional properties', focalX: 50, focalY: 50 },
-  { url: 'https://images.unsplash.com/photo-1779956511234-963c515b0516?auto=format&fit=crop&q=82&w=1600', alt: 'Modern timber sauna and wellness space', label: 'Wellness environments', focalX: 50, focalY: 50 },
-  { url: 'https://images.unsplash.com/photo-1751972788348-3360f69603f6?auto=format&fit=crop&q=82&w=1600', alt: 'Warm Mediterranean hospitality courtyard', label: 'Destination hospitality', focalX: 50, focalY: 50 },
+  { url: '', alt: 'Luxury spa treatment in progress', label: 'Spa & wellness', focalX: 50, focalY: 50 },
+  { url: '', alt: 'Contemporary luxury hospitality interior', label: 'Exceptional properties', focalX: 50, focalY: 50 },
+  { url: '', alt: 'Modern timber sauna and wellness space', label: 'Wellness environments', focalX: 50, focalY: 50 },
+  { url: '', alt: 'Warm Mediterranean hospitality courtyard', label: 'Destination hospitality', focalX: 50, focalY: 50 },
 ]
 
 const image = (url: string, alt: string) => ({ url, alt, focalX: 50, focalY: 50 })
