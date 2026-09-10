@@ -3,7 +3,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { createServerSupabaseClient } from '@/lib/supabase/server'
 import { canEmployerDiscoverCandidate, mutualRadiusResult, travelAccessSummary } from '@/lib/discovery'
 import { calculateMatchScore } from '@/lib/matching'
-import { PRIVATE_MODE_COLUMNS, isMissingColumnError, presentCandidateForEmployer } from '@/lib/private-mode'
+import { PRIVATE_MODE_COLUMNS, CURRENT_EMPLOYER_COLUMNS, isMissingColumnError, presentCandidateForEmployer } from '@/lib/private-mode'
 import { PREMIUM_COLUMNS, isPremium } from '@/lib/employer-premium'
 
 export const dynamic = 'force-dynamic'
@@ -19,7 +19,7 @@ const EMPLOYER_CANDIDATE_FIELDS = [
 
 // Private Career Mode columns may not be migrated yet: select with them first,
 // and retry without them if the live database rejects the column list.
-const FIELDS_WITH_PRIVATE = `${EMPLOYER_CANDIDATE_FIELDS},${PRIVATE_MODE_COLUMNS.join(',')}`
+const FIELDS_WITH_PRIVATE = `${EMPLOYER_CANDIDATE_FIELDS},${PRIVATE_MODE_COLUMNS.join(',')},${CURRENT_EMPLOYER_COLUMNS.join(',')}`
 
 async function selectWithPrivateColumns(build: (fields: string) => PromiseLike<{ data: any; error: any }>) {
   let result = await build(FIELDS_WITH_PRIVATE)
