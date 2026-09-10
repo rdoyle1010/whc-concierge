@@ -7,13 +7,13 @@ import {
 } from '../src/lib/discovery.ts'
 
 test('blocked employers cannot discover a talent profile', () => {
-  const candidate = { id: 'candidate-1', approval_status: 'approved', profile_visible: true }
+  const candidate = { id: 'candidate-1', approval_status: 'approved', profile_visible: true, stealth_mode: false }
   assert.equal(canEmployerDiscoverCandidate(candidate, new Set(['candidate-1'])), false)
   assert.equal(canEmployerDiscoverCandidate(candidate, new Set()), true)
 })
 
 test('profile visibility is enforced independently of stealth wording', () => {
-  const hidden = { id: 'candidate-1', approval_status: 'approved', profile_visible: false }
+  const hidden = { id: 'candidate-1', approval_status: 'approved', profile_visible: false, stealth_mode: false }
   assert.equal(canEmployerDiscoverCandidate(hidden, new Set()), false)
 })
 

@@ -442,10 +442,13 @@ export async function fulfilCheckoutSession(
       }
 
       if (userId) {
-        await supabase.from('profiles').upsert(
+        // Incidental to the enrolment below, but not to the buyer: without a
+        // profiles row she has an auth account that routes nowhere.
+        const { error: profileError } = await supabase.from('profiles').upsert(
           { id: userId, email, role: 'candidate', full_name: buyerName },
           { onConflict: 'id', ignoreDuplicates: true }
         )
+        if (profileError) throw new Error('could not create the account record: ' + profileError.message)
         // Every write from here to the enrolment row is checked and thrown on.
         //
         // They used to be checked by nobody. A learner record that failed to
@@ -513,7 +516,7 @@ export async function fulfilCheckoutSession(
       const per = Math.floor(total / newCourses.length)
       let remainder = total - per * newCourses.length
       for (const course of newCourses) {
-        await supabase.from('course_enrollments').upsert(
+        const { error } = await supabase.from('course_enrollments').upsert(
           {
             candidate_id: meta.candidate_id,
             course_slug: course.slug,
@@ -522,13 +525,19 @@ export async function fulfilCheckoutSession(
           },
           { onConflict: 'candidate_id,course_slug', ignoreDuplicates: true }
         )
+        // A bundle that half-delivers is worse than one that fails: the buyer
+        // owns four of eleven courses and nothing says so.
+        if (error) {
+          console.error('[Course bundle] fulfilment failed:', course.slug, error.message)
+          return { ok: false, retry: true, message: 'course_bundle fulfilment failed' }
+        }
       }
     }
   }
 
   if (meta?.type === 'course' && meta?.candidate_id && meta?.course_slug) {
     delivered = true
-    await supabase.from('course_enrollments').upsert(
+    const { error } = await supabase.from('course_enrollments').upsert(
       {
         candidate_id: meta.candidate_id,
         course_slug: meta.course_slug,
@@ -537,35 +546,53 @@ export async function fulfilCheckoutSession(
       },
       { onConflict: 'candidate_id,course_slug' }
     )
+    if (error) {
+      console.error('[Course] fulfilment failed:', meta.course_slug, error.message)
+      return { ok: false, retry: true, message: 'course fulfilment failed' }
+    }
   }
 
   if (meta?.type === 'agency_listing' && meta?.candidate_id) {
     delivered = true
-    await supabase.from('candidate_profiles').update({
+    const { error } = await supabase.from('candidate_profiles').update({
       agency_available: true,
       agency_tier: meta.tier || 'basic',
       agency_listed_until: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
       stripe_customer_id: session.customer as string,
     }).eq('id', meta.candidate_id)
+    // Paid to be bookable and silently still unbookable is the whole product
+    // failing while the receipt says otherwise.
+    if (error) {
+      console.error('[Agency listing] fulfilment failed:', error.message)
+      return { ok: false, retry: true, message: 'agency_listing fulfilment failed' }
+    }
     await convertReferral(supabase, meta.candidate_id)
   }
 
   if (meta?.type === 'employer_registration' && meta?.employer_id) {
     delivered = true
-    await supabase.from('employer_profiles').update({
+    const { error } = await supabase.from('employer_profiles').update({
       preferred_employer: true,
       preferred_until: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
       stripe_customer_id: session.customer as string,
     }).eq('id', meta.employer_id)
+    if (error) {
+      console.error('[Preferred employer] fulfilment failed:', error.message)
+      return { ok: false, retry: true, message: 'employer_registration fulfilment failed' }
+    }
   }
 
   if (meta?.type === 'agency_plus' && meta?.employer_id) {
     delivered = true
-    await supabase.from('employer_profiles').update({
+    const { error } = await supabase.from('employer_profiles').update({
       agency_plus_active: true,
       agency_plus_until: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
       stripe_customer_id: session.customer as string,
     }).eq('id', meta.employer_id)
+    if (error) {
+      console.error('[Agency Plus] fulfilment failed:', error.message)
+      return { ok: false, retry: true, message: 'agency_plus fulfilment failed' }
+    }
   }
 
   if (meta?.type === 'job_posting' && meta?.job_id) {
@@ -573,9 +600,20 @@ export async function fulfilCheckoutSession(
     // Shared with /api/employer/jobs/confirm-payment, which runs the same
     // publish when the browser comes back from Stripe. Two copies of this
     // would drift, and the one that drifts is the one nobody watches.
-    await publishPaidJobPosting(supabase, session, {
+    // The result was discarded here, so a failed publish reached Stripe as a
+    // success whatever the function returned.
+    const published = await publishPaidJobPosting(supabase, session, {
       onPublished: jobId => triggerJobAlerts(jobId, ctx?.requestUrl || 'https://talenthousecollective.co.uk'),
     })
+    if (!published.ok) {
+      console.error('[Paid job posting] fulfilment failed:', published.reason)
+      await notifyAdmins(
+        'A job advert was paid for and not published',
+        `A property paid for a job advert and it could not be published: ${published.reason} Stripe session ${session.id}.`,
+        '/admin/listings',
+      )
+      return { ok: false, retry: true, message: 'job_posting fulfilment failed' }
+    }
   }
 
   if (!delivered) return await nothingWasDelivered(session, meta)

@@ -59,7 +59,12 @@ export async function publishPaidJobPosting(
     }
   }
 
-  await admin.from('job_listings').update({
+  // This one write is the whole product. Its error was discarded, so a
+  // publish that failed still returned ok: the webhook answered 200, Stripe
+  // marked the payment fulfilled and never retried, and the property was told
+  // "Payment confirmed and the role is now live" about an advert that was
+  // never published. Nothing was logged and no administrator was told.
+  const { error: publishError } = await admin.from('job_listings').update({
     is_live: employerApproved,
     status: employerApproved ? 'active' : 'draft',
     expires_at: expiresAt,
@@ -67,6 +72,10 @@ export async function publishPaidJobPosting(
     // sort and display as undated.
     posted_date: new Date().toISOString(),
   }).eq('id', meta.job_id)
+  if (publishError) {
+    console.error('[Paid job posting] could not publish', meta.job_id, publishError.message)
+    return { ok: false, reason: 'The advert was paid for but could not be published.' }
+  }
 
   // Instrumentation: the paid posting is the moment a role truly enters the
   // market. Record the event and the advertised salary history row.

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getRequestUser } from '@/lib/request-user'
 import { canEmployerDiscoverCandidate, mutualRadiusResult } from '@/lib/discovery'
+import { candidateNameForEmployer, presentCandidateForEmployer } from '@/lib/private-mode'
 import { calculateMatchScore } from '@/lib/matching'
 import { createNotification } from '@/lib/notifications'
 import { sendNewMatchEmail } from '@/lib/emails'
@@ -11,6 +12,10 @@ const CANDIDATE_FIELDS = [
   'profile_image_url','review_score','bio','qualifications','product_houses','systems_experience','business_skills',
   'career_evidence','has_insurance','awards','availability_status','travel_radius_miles','has_car','latitude','longitude',
   'approval_status','profile_visible','is_featured','featured_until','created_at',
+  // Stealth Mode and the first-name-only choice. Both were missing, so the
+  // discovery guard was judging a column it had never been given and the
+  // anonymity presenter was never applied at all.
+  'stealth_mode','show_first_name_only',
 ].join(',')
 
 async function employerFor(admin: any, userId: string) {
@@ -94,7 +99,7 @@ export async function GET(req: NextRequest) {
       const interested = Boolean(bestJobId && interestedKey.has(`${candidate.id}:${bestJobId}`))
       const mutual = Boolean(interested && candidate.user_id && candidateYes.has(`${candidate.user_id}:${bestJobId}`))
       const application:any=bestJobId?applicationMap.get(`${candidate.id}:${bestJobId}`):null
-      return { ...candidate, latitude: undefined, longitude: undefined, distance_miles: travel.distanceMiles, ...best, interested, mutual, applicationId: application?.id || null, applicationStatus: application?.status || null, shortlisted: shortlisted.has(candidate.id) }
+      return { ...presentCandidateForEmployer(candidate), latitude: undefined, longitude: undefined, distance_miles: travel.distanceMiles, ...best, interested, mutual, applicationId: application?.id || null, applicationStatus: application?.status || null, shortlisted: shortlisted.has(candidate.id) }
     }).filter(Boolean).sort((a: any, b: any) => { if (!!a.is_featured !== !!b.is_featured) return a.is_featured ? -1 : 1; return Number(b.matchScore ?? -1) - Number(a.matchScore ?? -1) })
 
     return NextResponse.json({ candidates, live_role_count: liveJobs.length, employer: { id: employer.id, company_name: employer.company_name, property_name: employer.property_name } })
@@ -138,10 +143,12 @@ export async function POST(req: NextRequest) {
     if (candidate.user_id) await createNotification(candidate.user_id, 'general', 'A property is interested in you', `${employer.property_name || employer.company_name || 'An employer'} is interested in you for ${job.job_title}.`, '/talent/jobs').catch(() => null)
     if (!candidate.user_id) return NextResponse.json({ success: true, matched: false })
     const { data: candidateResponse } = await admin.from('swipes').select('id').eq('swiper_id', candidate.user_id).eq('swiper_type', 'candidate').eq('target_id', job.id).eq('target_type', 'job').eq('action', 'right').eq('context_job_id', job.id).maybeSingle()
-    if (!candidateResponse) return NextResponse.json({ success: true, matched: false, candidateName: candidate.full_name, jobTitle: job.job_title })
+    // Not a match yet, so a private profile stays private. The web route at
+    // api/swipe has always done this; the phone was handing over the real name.
+    if (!candidateResponse) return NextResponse.json({ success: true, matched: false, candidateName: candidateNameForEmployer(candidate), jobTitle: job.job_title })
     const [{ data: candidateAuth }, employerEmailResult] = await Promise.all([admin.auth.admin.getUserById(candidate.user_id), employer.contact_email ? Promise.resolve({ email: employer.contact_email }) : admin.auth.admin.getUserById(user.id).then((r: any) => ({ email: r.data?.user?.email || null }))])
     const matchId = await ensureMutualMatch(admin, { candidate, employer, job, score: Number(score.score || 0), candidateUserId: candidate.user_id, employerUserId: user.id, candidateEmail: candidateAuth?.user?.email || null, employerEmail: (employerEmailResult as any)?.email || null })
     const application=await activeApplication(admin,candidate.id,job.id)
-    return NextResponse.json({ success: true, matched: true, matchId, applicationId:application?.id||null, candidateName: candidate.full_name, jobTitle: job.job_title })
+    return NextResponse.json({ success: true, matched: true, matchId, applicationId:application?.id||null, candidateName: candidateNameForEmployer(candidate, true), jobTitle: job.job_title })
   } catch (error: any) { return NextResponse.json({ error: error?.message || 'Could not save your decision' }, { status: 500 }) }
 }

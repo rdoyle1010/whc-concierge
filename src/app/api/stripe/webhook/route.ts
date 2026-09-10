@@ -412,14 +412,18 @@ export async function POST(req: NextRequest) {
 
       const attemptCount = invoice.attempt_count || 0
       if (attemptCount >= 2) {
-        await supabase.from('candidate_profiles').update({
-          is_featured: false,
-          featured_until: null,
-        }).eq('stripe_customer_id', customerId).eq('is_featured', true)
-        await supabase.from('employer_profiles').update({
-          featured_employer: false,
-          featured_until: null,
-        }).eq('stripe_customer_id', customerId).eq('featured_employer', true)
+        // Featured placements are deliberately not touched here.
+        //
+        // This revoked them for every profile sharing the Stripe customer id,
+        // whichever subscription had actually failed - so a £9.99 membership
+        // card decline destroyed the remaining days of a separately purchased
+        // £24.99 Featured Talent placement, and an employer's did the same to
+        // Featured Employer.
+        //
+        // A featured subscription that stops being paid reaches
+        // customer.subscription.updated as past_due or unpaid, where its own
+        // branch revokes it against its own candidate or employer id. One
+        // product's failure should never cancel another product.
 
         // A failing card used to leave every membership benefit switched on
         // until Stripe's dunning finally gave up - typically two to three
@@ -510,18 +514,32 @@ export async function POST(req: NextRequest) {
         break
       }
 
-      if (lapsed) {
-        await supabase.from('candidate_profiles').update({
-          is_featured: false,
-          featured_until: null,
-        }).eq('stripe_customer_id', customerId)
+      // Featured Talent, and only Featured Talent.
+      //
+      // This was the fall-through for every subscription type the branches
+      // above did not name, keyed on stripe_customer_id. Talent memberships
+      // carry type 'commercial_product' and write stripe_customer_id onto the
+      // candidate row, so every £9.99 and £19.99 member matched here and was
+      // granted the £24.99 Featured Talent placement free, re-extended on every
+      // subscription event Stripe sent. The same block in reverse meant a
+      // lapsing membership wiped a Featured placement somebody had bought
+      // separately.
+      //
+      // Now it names its type and its candidate, exactly as the five branches
+      // above name theirs. An unrecognised subscription type does nothing,
+      // which is the correct response to not knowing what something is.
+      if (subType === 'featured_profile') {
+        const candidateId = subscription.metadata?.candidate_id
+        if (candidateId && (lapsed || active)) {
+          await supabase.from('candidate_profiles').update(
+            lapsed
+              ? { is_featured: false, featured_until: null }
+              : { is_featured: true, featured_until: subscriptionPeriodEnd(subscription, 30) }
+          ).eq('id', candidateId)
+        }
+        break
       }
-      if (active) {
-        await supabase.from('candidate_profiles').update({
-          is_featured: true,
-          featured_until: subscriptionPeriodEnd(subscription, 30),
-        }).eq('stripe_customer_id', customerId)
-      }
+
       break
     }
 

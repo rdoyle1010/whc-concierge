@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getRequestUser } from '@/lib/request-user'
 import { calculateMatchScore } from '@/lib/matching'
+import { candidateNameForEmployer } from '@/lib/private-mode'
 import { createNotification } from '@/lib/notifications'
 
 const RESTARTABLE = new Set(['withdrawn', 'rejected'])
@@ -134,7 +135,11 @@ export async function POST(req: NextRequest) {
   if (swipeError) return NextResponse.json({ error: 'Your response could not be saved.' }, { status: 500 })
 
   const propertyName = employer.property_name || employer.company_name || 'the property'
-  const candidateName = candidate.full_name || 'Talent'
+  // Declining is not consent to be identified. A professional in Private
+  // Career Mode who says no should not be named to the property she said no
+  // to; accepting is a different act, and reveals her by her own choice.
+  const candidateName = candidateNameForEmployer(candidate) || 'Talent'
+  const revealedName = candidateNameForEmployer(candidate, true) || 'Talent'
 
   if (action === 'decline') {
     await createNotification(
@@ -206,8 +211,8 @@ export async function POST(req: NextRequest) {
     createNotification(
       employer.user_id,
       'general',
-      `${candidateName} is interested too`,
-      `${candidateName} accepted your interest in ${job.job_title}. The recruitment journey is now open.`,
+      `${revealedName} is interested too`,
+      `${revealedName} accepted your interest in ${job.job_title}. The recruitment journey is now open.`,
       '/employer/applications',
     ).catch(() => null),
     createNotification(

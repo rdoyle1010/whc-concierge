@@ -18,7 +18,8 @@ export async function POST(req: NextRequest) {
   const user = await getRequestUser(req)
   if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
 
-  const { jobId } = await req.json()
+  const body = await req.json().catch(() => ({}))
+  const { jobId } = body
   if (!jobId) return NextResponse.json({ error: 'Role is required' }, { status: 400 })
 
   const admin = createAdminClient()
@@ -49,9 +50,20 @@ export async function POST(req: NextRequest) {
     .maybeSingle()
 
   if (existing && existing.status === 'draft') {
-    const { error } = await admin.from('applications').update({ match_score: match.score, updated_at: new Date().toISOString() }).eq('id', existing.id)
-    if (error) return NextResponse.json({ error: 'Could not refresh your application draft.' }, { status: 500 })
-    return NextResponse.json({ success: true, applicationId: existing.id, draft: true, coverLetter: existing.cover_letter || '', matchScore: match.score, matchLabel: match.label, matchExplanation })
+    // A draft that cannot hold the letter is not a draft.
+    //
+    // cover_letter was written in exactly one place on this platform - the
+    // moment of submission - so a professional who spent twenty minutes on a
+    // covering letter and pressed the button marked "Keep as Draft" lost every
+    // word of it, with no warning and nothing to recover.
+    const keep = typeof body.coverLetter === 'string' ? body.coverLetter.slice(0, 5000) : null
+    const { error } = await admin.from('applications').update({
+      match_score: match.score,
+      ...(keep === null ? {} : { cover_letter: keep }),
+      updated_at: new Date().toISOString(),
+    }).eq('id', existing.id)
+    if (error) return NextResponse.json({ error: 'Could not save your application draft.' }, { status: 500 })
+    return NextResponse.json({ success: true, applicationId: existing.id, draft: true, coverLetter: keep ?? (existing.cover_letter || ''), matchScore: match.score, matchLabel: match.label, matchExplanation })
   }
 
   if (existing && RESTARTABLE_STATUSES.has(String(existing.status || '').toLowerCase())) {

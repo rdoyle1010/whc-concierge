@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { canEmployerDiscoverCandidate } from '@/lib/discovery'
+import { presentCandidateForEmployer } from '@/lib/private-mode'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
@@ -30,7 +31,7 @@ export async function GET() {
   const admin = createAdminClient()
   const [{ data }, { data: blocks }] = await Promise.all([
     admin.from('shortlisted_candidates')
-      .select('*, candidate_profiles(id, user_id, full_name, headline, role_level, location, services_offered, experience_years, profile_image_url, review_score, profile_visible, approval_status, stealth_mode), job_listings(id, job_title)')
+      .select('*, candidate_profiles(id, user_id, full_name, headline, role_level, location, services_offered, experience_years, profile_image_url, review_score, profile_visible, approval_status, stealth_mode, show_first_name_only), job_listings(id, job_title)')
       .eq('employer_id', profile.id)
       .order('created_at', { ascending: false }),
     admin.from('profile_blocks').select('candidate_id').eq('blocked_employer_id', profile.id),
@@ -44,7 +45,15 @@ export async function GET() {
     const candidate = Array.isArray(entry.candidate_profiles) ? entry.candidate_profiles[0] : entry.candidate_profiles
     return Boolean(candidate) && canEmployerDiscoverCandidate(candidate, blockedIds)
   })
-  return NextResponse.json({ shortlisted: visible })
+  // A shortlist is employer-initiated and the professional is never told she
+  // is on one, so nothing here counts as her having revealed herself. Private
+  // Career Mode and the first-name-only choice both apply, exactly as they do
+  // on the search that found her.
+  const presented = visible.map((entry: any) => {
+    const raw = Array.isArray(entry.candidate_profiles) ? entry.candidate_profiles[0] : entry.candidate_profiles
+    return { ...entry, candidate_profiles: presentCandidateForEmployer(raw) }
+  })
+  return NextResponse.json({ shortlisted: presented })
 }
 
 export async function POST(req: NextRequest) {

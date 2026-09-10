@@ -25,7 +25,13 @@ const getJob = cache(async (id: string): Promise<Job | null> => {
     .from('job_listings')
     .select('*, employer_profiles(*)')
     .eq('id', id)
+    // An advert is paid for by the month, and nothing ever takes one down: no
+    // scheduled job flips is_live, and the admin health check already counts
+    // "live but expired" as a warning. The public jobs list filters expiry
+    // inside get_public_jobs_page; these two did not, so a term that had run
+    // out stayed visible and clickable, and Repost had no purpose.
     .eq('is_live', true)
+    .or(`expires_at.is.null,expires_at.gt.${new Date().toISOString()}`)
     .maybeSingle()
   if (error || !data) return null
   return data as Job

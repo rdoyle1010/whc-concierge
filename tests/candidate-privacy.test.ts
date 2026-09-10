@@ -10,21 +10,21 @@ const NO_BLOCKS = new Set<string>()
 // routes use the service role, which bypasses row-level security - so the
 // control worked only where nobody looked.
 test('Stealth Mode hides a professional from employer discovery', () => {
-  const base = { id: 'c1', approval_status: 'approved', profile_visible: true }
+  const base = { id: 'c1', approval_status: 'approved', profile_visible: true, stealth_mode: false }
   assert.equal(canEmployerDiscoverCandidate({ ...base }, NO_BLOCKS), true)
   assert.equal(canEmployerDiscoverCandidate({ ...base, stealth_mode: true }, NO_BLOCKS), false)
 })
 
 // The two flags are deliberately asymmetric, matching the database predicate.
 test('a null flag never hides someone who never touched the setting', () => {
-  const base = { id: 'c1', approval_status: 'approved' }
+  const base = { id: 'c1', approval_status: 'approved', stealth_mode: false }
   assert.equal(canEmployerDiscoverCandidate({ ...base, profile_visible: null, stealth_mode: null }, NO_BLOCKS), true)
   assert.equal(canEmployerDiscoverCandidate({ ...base, profile_visible: false }, NO_BLOCKS), false)
   assert.equal(canEmployerDiscoverCandidate({ ...base, stealth_mode: false }, NO_BLOCKS), true)
 })
 
 test('approval and blocks still decide discovery as they always did', () => {
-  const base = { id: 'c1', approval_status: 'approved', profile_visible: true }
+  const base = { id: 'c1', approval_status: 'approved', profile_visible: true, stealth_mode: false }
   assert.equal(canEmployerDiscoverCandidate({ ...base, approval_status: 'pending' }, NO_BLOCKS), false)
   assert.equal(canEmployerDiscoverCandidate(base, new Set(['c1'])), false)
 })
@@ -91,4 +91,22 @@ test('anonymisation handles the awkward names as well as the easy ones', () => {
   assert.equal(anonymiseDisplayName('  '), 'Talent House professional')
   assert.equal(anonymiseDisplayName(null), 'Talent House professional')
   assert.equal(anonymiseDisplayName('mary jane o\'brien'), 'mary O.')
+})
+
+// The production failure this prevents: the mobile talent directory called
+// canEmployerDiscoverCandidate with a field list that omitted stealth_mode.
+// The guard ran, read undefined, and `undefined !== true` passed - so every
+// professional who had asked to be hidden was shown to every employer with her
+// name and photograph. The guard was working. It was being asked about a
+// column nobody had fetched.
+test('a column that was never selected hides her rather than guessing', () => {
+  const notSelected = { id: 'c1', approval_status: 'approved', profile_visible: true }
+  assert.equal(canEmployerDiscoverCandidate(notSelected, NO_BLOCKS), false,
+    'absent is not the same fact as null, and not knowing must never resolve to "show her"')
+
+  // null still means she never touched the setting, and stays visible.
+  assert.equal(
+    canEmployerDiscoverCandidate({ ...notSelected, stealth_mode: null }, NO_BLOCKS), true,
+    'a null must not quietly remove people from the register',
+  )
 })

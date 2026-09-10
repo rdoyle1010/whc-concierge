@@ -13,6 +13,18 @@ import {
 const pounds = (pence: number) => `£${(pence / 100).toFixed(pence % 100 === 0 ? 0 : 2)}`
 const agencyFeePct = Math.round(AGENCY_PLATFORM_FEE_PCT * 100)
 
+import type { Metadata } from 'next'
+
+export const metadata: Metadata = {
+  title: { absolute: 'Terms of Service | Talent House Collective' },
+  description: 'The terms governing use of Talent House Collective by professionals, properties, brands and advertisers.',
+  alternates: { canonical: 'https://talenthousecollective.co.uk/terms' },
+  openGraph: {
+    title: 'Terms of Service | Talent House Collective',
+    description: 'The terms governing use of Talent House Collective by professionals, properties, brands and advertisers.',
+  },
+}
+
 export default function TermsPage() {
   return (
     <div className="min-h-screen bg-white">
