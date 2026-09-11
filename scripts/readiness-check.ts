@@ -231,6 +231,14 @@ check('all service-role API routes are protected or deliberately public', () => 
     // Public by design: a brand applying for a page. Insert only, rate limited
     // to five an hour per address, honeypotted, and it reads nothing at all.
     'src/app/api/brands/apply/route.ts',
+    // Public by design: the visit beacon. Counting the people who never sign
+    // up cannot require them to be signed in, and validating a session on
+    // every page view would put a network round trip in front of a number
+    // that only needs to be roughly right. It writes one row - a hash that
+    // rotates every day, a path and a device - reads nothing back, returns
+    // 204 on every path including failure, refuses crawlers and any path
+    // outside the public site, and is rate limited per address.
+    'src/app/api/track-visit/route.ts',
   ])
   // adminRequestUser is the actual admin guard on this platform. It was
   // missing here, so a route passed only if it happened to wrap the helper in

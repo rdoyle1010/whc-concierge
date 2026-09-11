@@ -13,6 +13,7 @@ import {
 const SECTIONS = [
   { group: 'People & operations', label: 'Verification', desc: 'Approve talent and properties.', href: '/admin/verification', icon: <Users size={17} /> },
   { group: 'People & operations', label: 'Users', desc: 'Approve, reject and inspect talent and employer accounts.', href: '/admin/users', icon: <Users size={17} /> },
+  { group: 'People & operations', label: 'Sign-ups & Setup', desc: 'How far new accounts got, and offer them a hand.', href: '/admin/onboarding', icon: <Users size={17} /> },
   { group: 'People & operations', label: 'Certificates', desc: 'Review and verify submitted qualifications.', href: '/admin/certificates', icon: <GraduationCap size={17} /> },
   { group: 'People & operations', label: 'Messages', desc: 'Enquiries and complaints from the contact form.', href: '/admin/messages', icon: <MessageSquare size={17} /> },
   { group: 'People & operations', label: 'Platform Reviews', desc: 'Read Talent and property feedback about Spa Platform.', href: '/admin/platform-reviews', icon: <MessageSquare size={17} /> },
@@ -30,6 +31,7 @@ const SECTIONS = [
   { group: 'Content & revenue', label: 'Ad Slots', desc: 'Switch site ad positions on and off; place direct adverts.', href: '/admin/ad-slots', icon: <Megaphone size={17} /> },
   { group: 'Platform', label: 'Job Listings', desc: 'Review live and closed roles.', href: '/admin/jobs', icon: <Briefcase size={17} /> },
   { group: 'Platform', label: 'Matches', desc: 'Mutual matches between talent and properties.', href: '/admin/matches', icon: <Users size={17} /> },
+  { group: 'Platform', label: 'Who is Looking', desc: 'Website visitors, including everybody who never signed up.', href: '/admin/visitors', icon: <Users size={17} /> },
   { group: 'Platform', label: 'Residency Listings', desc: 'Review programmes and placements.', href: '/admin/residency', icon: <Calendar size={17} /> },
   { group: 'Platform', label: 'Residency Money', desc: 'Residency payments, platform fees and payouts.', href: '/admin/residency-money', icon: <CreditCard size={17} /> },
   { group: 'Platform', label: 'Agency Money', desc: 'Bookings, payouts and disputes.', href: '/admin/agency', icon: <CreditCard size={17} /> },
