@@ -28,6 +28,7 @@ export type EmailKind =
   | 'verification' | 'certificate' | 'notification' | 'other'
   | 'admin_alert' | 'interview' | 'offer' | 'decision' | 'job_alert' | 'application'
   | 'campaign' | 'booking' | 'agency' | 'recruitment' | 'contact' | 'marketing'
+  | 'onboarding'
 
 // Where somebody who wants out is sent, in the header rather than only in the
 // footer.

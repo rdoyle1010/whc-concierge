@@ -4,6 +4,8 @@ import './globals.css'
 import './public-clean.css'
 import './portal-clean.css'
 import CookieConsent from '@/components/CookieConsent'
+import DesktopInvite from '@/components/DesktopInvite'
+import TrackVisit from '@/components/TrackVisit'
 import ComingSoonGate from '@/components/ComingSoonGate'
 import { showEntryGate } from '@/lib/platform-access'
 import NewsletterSignupBar from '@/components/NewsletterSignupBar'
@@ -161,6 +163,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         </div>
         <NewsletterSignupBar />
         <CookieConsent />
+        <DesktopInvite />
+        <TrackVisit />
       </body>
     </html>
   )
