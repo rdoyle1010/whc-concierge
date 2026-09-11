@@ -24,6 +24,12 @@ export type OnboardingAccount = {
   email: string | null
   createdAt: string
   audience: OnboardingAudience
+  /**
+   * Whether the address has been confirmed. Null when there was nothing to
+   * check against, which is not the same as unconfirmed and must not be shown
+   * as though it were.
+   */
+  emailConfirmed: boolean | null
   score: number
   missing: string[]
   /** Whether the how-to-use-it email has gone, and what happened to it. */
@@ -92,6 +98,33 @@ export async function addressFor(admin: any, row: any, userId: string | null): P
 }
 
 /**
+ * The address and whether it has ever been confirmed.
+ *
+ * Signing up no longer waits on a confirmation click, which is right - the
+ * people lost at that door were real and the typos are few. But a typo is
+ * silent: everything sent to it goes nowhere and nobody finds out. So the
+ * answer is visible here rather than assumed.
+ */
+export async function contactFor(admin: any, row: any, userId: string | null): Promise<{
+  email: string | null
+  confirmed: boolean | null
+}> {
+  const onRow = row?.email || row?.contact_email || row?.work_email
+  if (!userId) return { email: onRow ? String(onRow).trim() : null, confirmed: null }
+  try {
+    const { data } = await admin.auth.admin.getUserById(userId)
+    const account = data?.user
+    return {
+      // The address on auth.users is the one everything is actually sent to.
+      email: account?.email || (onRow ? String(onRow).trim() : null),
+      confirmed: account ? Boolean(account.email_confirmed_at || (account as any).confirmed_at) : null,
+    }
+  } catch {
+    return { email: onRow ? String(onRow).trim() : null, confirmed: null }
+  }
+}
+
+/**
  * Accounts created inside a window, with completion and email status attached.
  * `withinHours` is the age band: [olderThanHours, youngerThanHours].
  */
@@ -152,12 +185,16 @@ export async function recentAccounts(admin: any, opts: {
 
   for (const row of candidates) {
     const strength = calculateProfileStrength(row)
+    const contact = opts.withEmail
+      ? await contactFor(admin, row, row.user_id || null)
+      : { email: null, confirmed: null }
     out.push({
       kind: 'candidate',
       id: row.id,
       userId: row.user_id || null,
       name: row.full_name || 'Unnamed',
-      email: opts.withEmail ? await addressFor(admin, row, row.user_id || null) : null,
+      email: contact.email,
+      emailConfirmed: contact.confirmed,
       createdAt: row.created_at,
       audience: audienceFor({
         role: 'talent',
@@ -173,12 +210,16 @@ export async function recentAccounts(admin: any, opts: {
 
   for (const row of employers) {
     const strength = employerStrength({ ...row, has_live_role: withLiveRole.has(row.id) })
+    const contact = opts.withEmail
+      ? await contactFor(admin, row, row.user_id || null)
+      : { email: null, confirmed: null }
     out.push({
       kind: 'employer',
       id: row.id,
       userId: row.user_id || null,
       name: row.property_name || row.contact_name || 'Unnamed property',
-      email: opts.withEmail ? await addressFor(admin, row, row.user_id || null) : null,
+      email: contact.email,
+      emailConfirmed: contact.confirmed,
       createdAt: row.created_at,
       audience: 'employer',
       score: strength.score,

@@ -18,6 +18,7 @@ type Account = {
   email: string | null
   createdAt: string
   audience: string
+  emailConfirmed: boolean | null
   score: number
   missing: string[]
   onboardingEmail: { sentAt: string; status: string } | null
@@ -32,6 +33,7 @@ const FILTERS = [
   { key: 'all', label: 'Everyone' },
   { key: 'stuck', label: 'Stuck (under 50%)' },
   { key: 'nomail', label: 'No guide sent' },
+  { key: 'unreachable', label: 'Address unconfirmed' },
 ] as const
 
 function hoursSince(iso: string) {
@@ -86,6 +88,9 @@ export default function AdminOnboardingPage() {
   const shown = useMemo(() => accounts.filter(account => {
     if (filter === 'stuck') return account.score < 50 && hoursSince(account.createdAt) > 24
     if (filter === 'nomail') return !account.onboardingEmail
+    // Null means the check itself did not answer, which is not the same as
+    // unconfirmed and must not be listed as though it were.
+    if (filter === 'unreachable') return account.emailConfirmed === false
     return true
   }), [accounts, filter])
 
@@ -152,6 +157,11 @@ export default function AdminOnboardingPage() {
                       {AUDIENCE_LABEL[account.audience] || account.audience} &middot; joined {ago(account.createdAt)}
                       {account.email ? ` · ${account.email}` : ' · no address found'}
                     </p>
+                    {account.emailConfirmed === false && (
+                      <p className="mt-1 text-[11px] text-amber-700">
+                        Address never confirmed. Anything we send may be going nowhere.
+                      </p>
+                    )}
                   </div>
                   <div className="text-right shrink-0">
                     <p className={`text-[22px] font-semibold ${account.score >= 70 ? 'text-[#166534]' : account.score >= 40 ? 'text-ink' : 'text-red-600'}`}>
