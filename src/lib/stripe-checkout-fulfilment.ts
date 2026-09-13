@@ -467,7 +467,16 @@ export async function fulfilCheckoutSession(
           cand = newCand
         }
         if (!cand) throw new Error('no learner record for ' + email)
-        const { error: enrolError } = await supabase.from('course_enrollments').upsert(
+        // Stripe delivers a webhook more than once as a matter of course, and
+        // this handler has to survive that. The enrolment always did: the
+        // upsert ignores a duplicate. The email did not, so a buyer was told
+        // her course was ready twice, five seconds apart, which reads as a
+        // platform that has lost track of her order.
+        //
+        // Asking for the rows back is what makes the difference visible. An
+        // ignored duplicate returns none, and no rows means she was already
+        // enrolled and has already been written to.
+        const { data: enrolled, error: enrolError } = await supabase.from('course_enrollments').upsert(
           {
             candidate_id: cand.id,
             course_slug: meta.course_slug,
@@ -475,9 +484,14 @@ export async function fulfilCheckoutSession(
             amount_paid: session.amount_total ?? 1500,
           },
           { onConflict: 'candidate_id,course_slug', ignoreDuplicates: true }
-        )
+        ).select('id')
         if (enrolError) throw new Error('could not record the enrolment: ' + enrolError.message)
-        try {
+
+        const alreadyEnrolled = !enrolled || enrolled.length === 0
+        if (alreadyEnrolled) {
+          console.log('[Academy public] repeat webhook for', email, meta.course_slug, '- already enrolled, no second email')
+        }
+        if (!alreadyEnrolled) try {
           const { data: link } = await supabase.auth.admin.generateLink({
             type: 'magiclink', email,
             options: { redirectTo: 'https://talenthousecollective.co.uk/talent/academy' },
