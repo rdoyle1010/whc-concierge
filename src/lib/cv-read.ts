@@ -60,7 +60,18 @@ const SCHEMA = {
   properties: {
     full_name: { type: ['string', 'null'] },
     headline: { type: ['string', 'null'], description: 'One line, under 90 characters. What they are, not what they want.' },
-    role_level: { type: ['string', 'null'], enum: [...ROLE_LEVELS, null] },
+    // A sentinel rather than a nullable enum.
+    //
+    // `type: ['string','null']` alongside `enum` is rejected outright: the
+    // validator will not accept a list of allowed values that does not match
+    // the declared type. Every other nullable field here has no enum and is
+    // fine. This one carries the vocabulary, so it says Unknown instead of
+    // null and is mapped back below.
+    role_level: {
+      type: 'string',
+      enum: [...ROLE_LEVELS, 'Unknown'],
+      description: 'Unknown when the CV does not make the level clear. Never guess a level from a job title alone.',
+    },
     experience_years: { type: ['integer', 'null'] },
     bio: { type: ['string', 'null'], description: 'Sixty to a hundred words in the third person, British English, drawn only from the CV.' },
     product_houses: { type: 'array', items: { type: 'string', enum: [...PRODUCT_HOUSES] } },
@@ -82,7 +93,8 @@ Rules, in order of importance:
 3. Prefer nothing to a guess. Every field may be null or empty. A human is reading this and filling in what you leave.
 4. British English throughout. No em dashes.
 5. The bio is written from the CV alone, in the third person, and claims nothing the CV does not support.
-6. gaps is where you are useful about what is missing: no qualifications listed, no systems named, dates unclear, no current role. Say it plainly so somebody knows what to ask for.`
+6. role_level must be Unknown unless the CV makes the level plain. A therapist who once covered a manager's holiday is not a Spa Manager.
+7. gaps is where you are useful about what is missing: no qualifications listed, no systems named, dates unclear, no current role. Say it plainly so somebody knows what to ask for.`
 
 type Source =
   | { kind: 'pdf'; base64: string }
@@ -177,6 +189,10 @@ function normalise(raw: any): CvReading {
   return {
     full_name: line(raw?.full_name, 200),
     headline: line(raw?.headline, 120),
+    // Unknown is the sentinel the schema needs, and null is what a profile
+    // wants. Anything outside the vocabulary is also null: a level the
+    // platform does not recognise matches nothing and would quietly make
+    // somebody unfindable rather than visibly wrong.
     role_level: ROLE_LEVELS.includes(raw?.role_level) ? raw.role_level : null,
     // Nobody has sixty years in this industry, and a stray 2015 read as a
     // duration would put somebody at the top of every experience filter.
