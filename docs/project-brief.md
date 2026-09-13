@@ -80,6 +80,29 @@ Not the product. Distribution and activation.
   and no hotels until there are thirty real profiles.
 - One LinkedIn post is an announcement, not a campaign.
 
+## Where AI is used, and where it deliberately is not
+
+**Used:** reading a CV into a draft profile. A person corrects every field and
+presses save; nothing is written until they do. That attacks the actual
+bottleneck, which is that a proper profile takes half an hour to fill in and
+nobody does it.
+
+**Deliberately not used:** deciding anything about a candidate. The matching
+engine is structured and deterministic, and it can tell somebody exactly why
+they scored what they scored: four of six required treatments, two of three
+systems. An automated decision about somebody's employment is a regulated
+thing, and "five agents debated your application" cannot be explained to a
+rejected candidate, defended to a regulator, or shown not to have discriminated
+on a proxy for a protected characteristic.
+
+That is a decision, not an oversight. Advice to add an LLM scoring panel should
+be weighed against it rather than treated as new.
+
+Two related points of accuracy: prompting a model is not training one, so the
+matching must never be described as trained on anything; and the vocabulary
+the reader picks from (product houses, systems, qualifications, role levels) is
+the actual intellectual property here, not the model.
+
 ## Technical shape
 
 Next.js 16 App Router · Supabase (auth, Postgres, storage) · Stripe · Netlify.

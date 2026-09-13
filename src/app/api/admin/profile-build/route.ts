@@ -4,6 +4,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { sendTransactionalEmail, SUPPORT_MAILBOX } from '@/lib/send-email'
 import { isBuildStatus } from '@/lib/profile-build'
 import { visibilityColumns } from '@/lib/talent-visibility'
+import { cvReadingConfigured, readCv, type CvReading } from '@/lib/cv-read'
 
 // Building somebody's profile for them, from the queue to the handover.
 //
@@ -177,6 +178,79 @@ export async function POST(req: NextRequest) {
     if (statusError) {
       return NextResponse.json({ success: true, warning: 'Sent, but the queue status did not update.' })
     }
+    return NextResponse.json({ success: true })
+  }
+
+  // Read the CV and propose a profile. Saves nothing: the draft goes back to
+  // the screen, a person corrects it, and only then is anything written.
+  if (action === 'read_cv') {
+    if (!cvReadingConfigured()) {
+      return NextResponse.json({ error: 'Reading CVs is not switched on: ANTHROPIC_API_KEY is not set in Netlify.' }, { status: 400 })
+    }
+
+    const pasted = String(body.text || '').trim()
+    let result
+
+    if (pasted) {
+      result = await readCv({ kind: 'text', text: pasted })
+    } else if (request.cv_path) {
+      // Only PDFs can be read directly. A Word document has to be saved as
+      // one, and saying so is better than a reader that quietly returns
+      // nothing useful from a file it never understood.
+      if (!request.cv_path.toLowerCase().endsWith('.pdf')) {
+        return NextResponse.json({
+          error: 'That CV is a Word document, which cannot be read directly. Open it, save it as a PDF, or paste the text in below.',
+        }, { status: 400 })
+      }
+      const { data: file, error: downloadError } = await admin.storage.from(BUCKET).download(request.cv_path)
+      if (downloadError || !file) {
+        return NextResponse.json({ error: 'That CV could not be fetched from storage.' }, { status: 502 })
+      }
+      const base64 = Buffer.from(await file.arrayBuffer()).toString('base64')
+      result = await readCv({ kind: 'pdf', base64 })
+    } else {
+      return NextResponse.json({ error: 'There is no CV on this request. Paste the text instead.' }, { status: 400 })
+    }
+
+    if (!result.ok) return NextResponse.json({ error: result.error }, { status: 502 })
+    return NextResponse.json({ success: true, reading: result.reading })
+  }
+
+  // Save the draft the administrator has corrected. This is the write, and it
+  // happens only after a person has read every field.
+  if (action === 'apply_reading') {
+    if (!request.created_user_id) return NextResponse.json({ error: 'Create the account first.' }, { status: 400 })
+    const reading = body.reading as CvReading | undefined
+    if (!reading || typeof reading !== 'object') {
+      return NextResponse.json({ error: 'There is nothing to save.' }, { status: 400 })
+    }
+
+    const list = (values: unknown, limit: number) =>
+      Array.isArray(values) ? values.map(String).slice(0, limit) : []
+    const line = (value: unknown, limit: number) => {
+      const text = typeof value === 'string' ? value.trim() : ''
+      return text ? text.slice(0, limit) : null
+    }
+    const years = Number(reading.experience_years)
+
+    const { error } = await admin.from('candidate_profiles').update({
+      full_name: line(reading.full_name, 200) || request.full_name,
+      headline: line(reading.headline, 120),
+      role_level: line(reading.role_level, 60),
+      experience_years: Number.isFinite(years) && years >= 0 && years <= 60 ? Math.round(years) : null,
+      bio: line(reading.bio, 4000),
+      product_houses: list(reading.product_houses, 30),
+      systems_experience: list(reading.systems_experience, 30),
+      qualifications: list(reading.qualifications, 30),
+      treatment_skills: list(reading.treatment_skills, 40),
+      hotel_brands: list(reading.hotel_brands, 30),
+      location: line(reading.location, 120),
+      // Still private. A draft somebody corrected is not the same as a person
+      // saying yes to being seen.
+      ...visibilityColumns('private'),
+    }).eq('user_id', request.created_user_id)
+
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
     return NextResponse.json({ success: true })
   }
 
