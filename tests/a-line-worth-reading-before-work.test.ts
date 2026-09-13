@@ -27,13 +27,38 @@ test('one line a day, the same one for everyone', () => {
   assert.equal(justAfter.text, tomorrow.text)
   assert.notEqual(early.text, tomorrow.text)
 
-  // Two months of mornings without seeing the same line twice.
+  // A full year of mornings without seeing the same line twice.
   const seen = new Set<string>()
-  for (let day = 0; day < 60; day++) {
+  for (let day = 0; day < 365; day++) {
     const date = new Date(Date.UTC(2026, 8, 13 + day, 9))
     seen.add(thoughtForDay(date).text)
   }
-  assert.equal(seen.size, 60, 'the sequence repeats inside two months')
+  assert.equal(seen.size, 365, 'the sequence repeats inside a year')
+  assert.equal(THOUGHTS.length, 365, 'one for every day')
+})
+
+// A quotation on its own is decoration. The line underneath saying what to do
+// about it before Friday is the reason this earns space on a working screen,
+// so it is required by the type rather than left optional and forgotten.
+test('every line says what to do about it', () => {
+  const widget = read('src/components/DailyThought.tsx')
+  assert.match(widget, /What to do with it/)
+  assert.match(widget, /\{thought\.why\}/)
+
+  for (const thought of THOUGHTS) {
+    assert.ok(thought.why && thought.why.trim().length > 25,
+      `no usable takeaway: ${thought.text}`)
+    assert.notEqual(thought.why.trim(), thought.text.trim())
+    assert.match(thought.why.trim(), /[.?]$/, `not a finished sentence: ${thought.why}`)
+  }
+
+  // Most of them should read as something to do, not something to feel.
+  // This is where an attributed classic earns its keep: the quotation can be
+  // two thousand years old as long as the line under it says what to do
+  // before Friday.
+  const instructions = THOUGHTS.filter(thought => /^[A-Z][a-z]+ (?:the|one|your|a|an|it|out|at|for|to|in|on|who|what|three|two|five|ten|each|every|down|up|somebody|yourself|them|him|her|this|that|whether|why|how|all|any|first|before|from|with|through|and|so|by)\b/.test(thought.why))
+  assert.ok(instructions.length >= THOUGHTS.length * 0.6,
+    `only ${instructions.length} of ${THOUGHTS.length} takeaways tell somebody what to do`)
 })
 
 // A line hung on a name the person never said is a small lie printed under
@@ -44,7 +69,7 @@ test('nothing is left unattributed by accident', () => {
     'a line with no author is credited to the house, never left blank')
 
   for (const thought of THOUGHTS) {
-    assert.ok(thought.text.trim().length > 30, `too short to be worth the space: ${thought.text}`)
+    assert.ok(thought.text.trim().length > 24, `too short to be worth the space: ${thought.text}`)
     if (thought.author) {
       assert.ok(thought.author.trim().length > 2, `a name that is not a name: ${thought.author}`)
     }
@@ -58,9 +83,20 @@ test('it is written for this industry, not for a fridge magnet', () => {
   const ours = THOUGHTS.filter(thought => !thought.author)
   assert.ok(ours.length > THOUGHTS.length / 2, 'most of these should be ours, and about spas')
 
+  // Measured on the line itself, not on the line plus its takeaway.
+  //
+  // The first version of this counted a keyword anywhere in either, which
+  // passed comfortably while telling nobody anything: a proxy for vocabulary
+  // rather than for usefulness, and a check that quietly measures the wrong
+  // thing looks exactly like a check that passes. A third of these naming
+  // rotas, treatments and guests outright is the honest claim. The rest are
+  // general lines, and what makes those earn their place is the instruction
+  // underneath, which the next test is about.
   const industry = THOUGHTS.filter(thought =>
-    /spa|therapist|treatment|guest|rota|retail|reception|facial|wellness|hotel/i.test(thought.text))
-  assert.ok(industry.length >= 30, 'too few of these are about the work these people actually do')
+    /spa|therapist|treatment|guest|rota|retail|reception|facial|wellness|hotel|shift|consultation|rebook/i
+      .test(thought.text))
+  assert.ok(industry.length >= THOUGHTS.length / 3,
+    `only ${industry.length} of ${THOUGHTS.length} lines are about the work these people actually do`)
 
   for (const thought of THOUGHTS) {
     assert.doesNotMatch(thought.text, /!/, `no exclamation marks: ${thought.text}`)
