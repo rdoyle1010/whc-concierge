@@ -12,6 +12,21 @@ export type CvSuggestions = {
   progressionSignals: string[]
   evidence: string[]
   aiEnhanced?: boolean
+  // The fields that were missing, and they are the ones nobody writes.
+  //
+  // A CV read that returns treatments and qualifications leaves a profile at
+  // eighty per cent with a blank headline and a blank About you underneath
+  // it, which is the shape of a profile somebody abandoned. Those two are the
+  // first thing a property reads and the last thing anybody gets round to
+  // writing, so a reader that cannot produce them has not finished the job.
+  headline?: string | null
+  bio?: string | null
+  languages?: string[]
+  currentEmployer?: string | null
+  location?: string | null
+  hotelBrands?: string[]
+  /** What the CV does not say, so they know what to add themselves. */
+  gaps?: string[]
 }
 
 function searchable(value: string): string {

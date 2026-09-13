@@ -100,7 +100,41 @@ export default function TalentProfilePage() {
   }
 
   async function analyseCurrentCv(){if(!profile?.id||!profile?.cv_url||!aiCvConsent)return;setAnalysingCv(true);setMessage('');const res=await fetch('/api/cv/analyse',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({profileId:profile.id,aiConsent:true})});const result=await res.json().catch(()=>({}));setAnalysingCv(false);if(!res.ok){setMessage(result.error||'CV analysis failed');return}setCvAiFailure(result.aiFailure||null);setCvSuggestions(result.suggestions)}
-  function applyCvSuggestions(){if(!cvSuggestions)return;setProfile((c:any)=>({...c,role_level:cvSuggestions.roleLevel||c.role_level,experience_years:cvSuggestions.experienceYears||c.experience_years,services_offered:Array.from(new Set([...(c.services_offered||[]),...(cvSuggestions.services||[])])),product_houses:Array.from(new Set([...(c.product_houses||[]),...(cvSuggestions.productHouses||[])])),qualifications:Array.from(new Set([...(c.qualifications||[]),...(cvSuggestions.qualifications||[])])),systems_experience:Array.from(new Set([...(c.systems_experience||[]),...(cvSuggestions.systems||[])])),business_skills:Array.from(new Set([...(c.business_skills||[]),...(cvSuggestions.businessSkills||[])])),career_evidence:Array.from(new Set([...(c.career_evidence||[]),...(cvSuggestions.careerEvidence||[])]))}));setCvSuggestions(null);setMessage('Suggestions added for your review. Nothing becomes final until you Save Changes.')}
+  // Everything the reader found, including the two fields nobody ever writes.
+  //
+  // This used to apply six of them and quietly drop the headline, the bio,
+  // the languages, where they work now and the brands they have worked with.
+  // A professional watched an AI read her CV and then still had a blank
+  // About you, which is the state a profile gets abandoned in.
+  //
+  // Anything already written is left exactly as it is. A suggestion fills a
+  // blank; it does not correct her.
+  function applyCvSuggestions(){
+    if(!cvSuggestions)return
+    const keep=(mine:any,found:any)=>String(mine??'').trim()?mine:(found??mine)
+    const both=(mine:string[]|null|undefined,found:string[]|null|undefined)=>Array.from(new Set([...(mine||[]),...(found||[])]))
+    setProfile((c:any)=>({...c,
+      role_level:keep(c.role_level,cvSuggestions.roleLevel),
+      experience_years:c.experience_years||cvSuggestions.experienceYears||c.experience_years,
+      headline:keep(c.headline,cvSuggestions.headline),
+      bio:keep(c.bio,cvSuggestions.bio),
+      current_employer:keep(c.current_employer,cvSuggestions.currentEmployer),
+      location:keep(c.location,cvSuggestions.location),
+      services_offered:both(c.services_offered,cvSuggestions.services),
+      product_houses:both(c.product_houses,cvSuggestions.productHouses),
+      qualifications:both(c.qualifications,cvSuggestions.qualifications),
+      systems_experience:both(c.systems_experience,cvSuggestions.systems),
+      business_skills:both(c.business_skills,cvSuggestions.businessSkills),
+      // Languages are deliberately not applied. The column holds a fluency
+      // per language and a CV listing "French" does not say whether that is
+      // conversational or native. Guessing it would put a claim on somebody's
+      // profile that she never made, so the reader's findings are shown in
+      // the panel and she picks the fluency herself.
+      career_evidence:both(c.career_evidence,cvSuggestions.careerEvidence),
+    }))
+    setCvSuggestions(null)
+    setMessage('Your profile is filled in below. Read it, change anything that is not right, then press Save Changes. Nothing is final until you do.')
+  }
 
   if(loading)return <DashboardShell role="talent"><div className="h-64 flex items-center justify-center">Loading…</div></DashboardShell>
   if(!profile?.id)return <DashboardShell role="talent"><p>Profile not found.</p></DashboardShell>
@@ -224,7 +258,11 @@ export default function TalentProfilePage() {
         {docUpload?.kind==='cv'?<div className="border border-border p-4" aria-live="polite"><div className="flex items-center gap-2 text-[12px] text-ink"><FileText size={14} className="shrink-0"/><span className="truncate flex-1">{docUpload.name}</span><span className="shrink-0 text-muted">{formatFileSize(docUpload.size)}</span></div><div className="progress-track mt-3"><div className="progress-indeterminate"/></div><p className="mt-2 text-[11px] text-secondary">{docUpload.stage==='uploading'?'Uploading your CV...':'Saving...'}</p></div>
         :profile.cv_url?<div className="flex items-center gap-2 border border-border rounded-lg p-3"><FileText size={14}/><a href={profile.cv_url} target="_blank" rel="noopener noreferrer" className="text-[13px] flex-1 truncate">Current CV</a><label className="text-[11px] cursor-pointer">Replace<input type="file" accept=".pdf,.docx" className="hidden" disabled={!!docUpload} onChange={handleCvUpload}/></label></div>:<label className="border border-dashed border-border rounded-lg p-5 text-center cursor-pointer block"><Upload size={16} className="mx-auto mb-2"/><span className="text-[12px]">Upload CV (PDF or .docx)</span><input type="file" accept=".pdf,.docx" className="hidden" disabled={!!docUpload} onChange={handleCvUpload}/></label>}
         {profile.cv_url&&<><label className="flex items-start gap-3 rounded-lg border border-[#dddddd] bg-[#f1f1f1] p-4"><input type="checkbox" checked={aiCvConsent} onChange={e=>setAiCvConsent(e.target.checked)} className="mt-1"/><span className="text-[11px] leading-5 text-secondary"><strong className="text-ink">Analyse my CV with Talent House AI.</strong> I understand Talent House will process the text of my CV to create career and matching suggestions. The raw CV text is not added to my public profile and suggestions are not saved unless I approve them.</span></label><button type="button" onClick={analyseCurrentCv} disabled={!aiCvConsent||analysingCv} className="btn-primary w-full inline-flex items-center justify-center gap-2 disabled:opacity-40"><Sparkles size={14}/>{analysingCv?'Analysing privately...':'Analyse CV with Talent House AI'}</button></>}
-        {cvSuggestions&&<div className="rounded-xl border border-[#dddddd] bg-white p-5 space-y-4"><div className="flex items-start gap-2"><ShieldCheck size={17} className="text-[#555555]"/><div><p className="text-[14px] font-semibold">Suggestions ready</p><p className="text-[11px] text-muted">{cvSuggestions.aiEnhanced?'AI-enhanced analysis completed.':`Exact CV extraction completed. The AI half did not run${cvAiFailure?`: ${cvAiFailure}`:''}`}</p></div></div><div className="grid sm:grid-cols-2 gap-3 text-[12px]"><Mini label="Current role" value={cvSuggestions.roleLevel||'Not confidently detected'}/><Mini label="Experience" value={cvSuggestions.experienceYears?`${cvSuggestions.experienceYears} years`:'Not confidently detected'}/><Mini label="Business skills" value={`${cvSuggestions.businessSkills?.length||0} found`}/><Mini label="Career evidence" value={`${cvSuggestions.careerEvidence?.length||0} evidence points`}/></div>
+        {cvSuggestions&&<div className="rounded-xl border border-[#dddddd] bg-white p-5 space-y-4"><div className="flex items-start gap-2"><ShieldCheck size={17} className="text-[#555555]"/><div><p className="text-[14px] font-semibold">Suggestions ready</p><p className="text-[11px] text-muted">{cvSuggestions.aiEnhanced?'AI-enhanced analysis completed.':`Exact CV extraction completed. The AI half did not run${cvAiFailure?`: ${cvAiFailure}`:''}`}</p></div></div><div className="grid sm:grid-cols-2 gap-3 text-[12px]"><Mini label="Current role" value={cvSuggestions.roleLevel||'Not confidently detected'}/><Mini label="Experience" value={cvSuggestions.experienceYears?`${cvSuggestions.experienceYears} years`:'Not confidently detected'}/><Mini label="Treatments" value={`${cvSuggestions.services?.length||0} found`}/><Mini label="Qualifications" value={`${cvSuggestions.qualifications?.length||0} found`}/><Mini label="Product houses" value={`${cvSuggestions.productHouses?.length||0} found`}/><Mini label="Business skills" value={`${cvSuggestions.businessSkills?.length||0} found`}/></div>
+          {cvSuggestions.headline&&<div><p className="eyebrow mb-1">Your headline</p><p className="text-[13px] leading-6 text-ink">{cvSuggestions.headline}</p></div>}
+          {cvSuggestions.bio&&<div><p className="eyebrow mb-1">About you, in your words</p><p className="text-[13px] leading-6 text-ink whitespace-pre-wrap">{cvSuggestions.bio}</p><p className="mt-1 text-[11px] text-muted">Written from your CV and nothing else. Change any of it once it is in.</p></div>}
+          {!!cvSuggestions.languages?.length&&<div><p className="eyebrow mb-1">Languages on your CV</p><p className="text-[12px] leading-5 text-secondary">{cvSuggestions.languages.join(', ')}. Add these below and choose your own fluency: we will not guess how well you speak something.</p></div>}
+          {!!cvSuggestions.gaps?.length&&<div><p className="eyebrow mb-2">What your CV does not say</p>{cvSuggestions.gaps.map(x=><p key={x} className="text-[12px] leading-5 text-secondary flex gap-2 mb-1.5"><CheckCircle2 size={13} className="mt-1 shrink-0"/>{x}</p>)}</div>}
           {!!cvSuggestions.progressionSignals?.length&&<div><p className="eyebrow mb-2">Progression signals</p>{cvSuggestions.progressionSignals.map(x=><p key={x} className="text-[12px] leading-5 text-secondary flex gap-2 mb-2"><CheckCircle2 size={13} className="mt-1 shrink-0"/>{x}</p>)}</div>}
           {!!cvSuggestions.careerEvidence?.length&&<div><p className="eyebrow mb-2">Evidence found in your CV</p>{cvSuggestions.careerEvidence.map(x=><p key={x} className="text-[12px] leading-5 text-secondary flex gap-2 mb-2"><CheckCircle2 size={13} className="mt-1 shrink-0"/>{x}</p>)}</div>}
           <div className="flex gap-2"><button onClick={applyCvSuggestions} className="btn-primary flex-1">Use approved suggestions</button><button onClick={()=>setCvSuggestions(null)} className="btn-secondary">Dismiss</button></div></div>}
