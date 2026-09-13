@@ -9,6 +9,7 @@ import SkeletonTable from '@/components/SkeletonTable'
 import Link from 'next/link'
 import SponsoredAd from '@/components/SponsoredAd'
 import AmbassadorCodeBox from '@/components/AmbassadorCodeBox'
+import DailyThought from '@/components/DailyThought'
 
 // Time-of-day greeting for the property brief, computed on the client clock.
 function timeOfDayGreeting(): string {
@@ -126,6 +127,8 @@ export default function EmployerDashboard() {
         <h1 className="dashboard-title">{profile?.property_name || profile?.company_name || 'Property dashboard'}</h1>
         <p className="dashboard-intro">Permanent recruitment, urgent agency cover, specialist Residencies and private candidate conversations in one verified property workspace.</p>
       </div>
+
+      <DailyThought className="mb-9" />
 
       {(!profile?.approval_status || profile?.approval_status === 'pending') && (
         <div className="border-l-2 border-amber-500 bg-white/65 px-5 py-4 mb-7 flex items-start gap-3">

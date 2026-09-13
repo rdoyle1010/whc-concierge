@@ -7,6 +7,7 @@ import Link from 'next/link'
 import { Star, ArrowRight, EyeOff } from 'lucide-react'
 import SponsoredAd from '@/components/SponsoredAd'
 import AmbassadorCodeBox from '@/components/AmbassadorCodeBox'
+import DailyThought from '@/components/DailyThought'
 
 // Talent home - the landing page after login. Greeting, a few live counts
 // (best-effort - failures are silent) and quick links into the main areas.
@@ -146,6 +147,7 @@ export default function TalentDashboard() {
           : 'Permanent roles, flexible work, private conversations and your professional profile in one workspace.'}</p>
       </>}
     >
+      <DailyThought className="mb-8" />
 
       <section className="dashboard-card mb-8">
           <p className="dashboard-eyebrow">Your brief</p>
