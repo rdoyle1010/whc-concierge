@@ -255,5 +255,9 @@ test('a crawler is told the brand pages exist', () => {
   assert.match(sitemap, /\$\{BASE\}\/consultancy`/)
   assert.match(sitemap, /\$\{BASE\}\/brands\/\$\{row\.slug\}`/, 'each published brand needs its own entry')
   assert.match(sitemap, /\.eq\('is_published', true\)/, 'a draft is somebody unfinished pitch, not a public page')
-  assert.match(sitemap, /Promise\.all\(\[roles, properties, brands, posts\]\)/, 'and it has to actually be awaited')
+  // The intent, not the line. This listed every section by name, so adding a
+  // sixth one failed a test about brands - which is a test reporting its own
+  // formatting rather than the thing it was written to protect.
+  const awaited = (sitemap.match(/Promise\.all\(\[([^\]]*)\]\)/) || [])[1] || ''
+  assert.match(awaited, /\bbrands\b/, 'and it has to actually be awaited')
 })

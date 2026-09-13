@@ -103,9 +103,18 @@ export async function POST(req: NextRequest) {
   if (activeApplications.length) {
     // Close the applications so neither side is left with a live-looking
     // application against a dead role.
-    await admin.from('applications')
+    const { error: closeError } = await admin.from('applications')
       .update({ status: 'rejected', updated_at: new Date().toISOString() })
       .in('id', activeApplications.map((a: any) => a.id))
+    // Refused rather than half-done. The next lines tell every one of these
+    // candidates the role is closed, and doing that while their application
+    // still reads as live is worse than not closing the role at all: they
+    // check, see it open, and conclude we are lying to them.
+    if (closeError) {
+      return NextResponse.json({
+        error: 'We could not close the applications on this role, so it has been left open. Please try again.',
+      }, { status: 500 })
+    }
 
     const candidateIds = Array.from(new Set(activeApplications.map((a: any) => a.candidate_id).filter(Boolean))) as string[]
     const { data: candidates } = await admin.from('candidate_profiles').select('id, user_id, full_name').in('id', candidateIds)

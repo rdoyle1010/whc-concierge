@@ -275,9 +275,18 @@ export async function POST(req: NextRequest) {
       })
       if (!res.ok) return NextResponse.json({ error: res.error || 'The email could not be sent - check resend.com/logs.' }, { status: 502 })
       const markStatus = CONTACT_STATUSES.has(String(body.markStatus)) ? body.markStatus : 'replied'
-      await admin.from('contact_queries')
+      // Checked, because the email has already gone. A silent failure here
+      // leaves the enquiry looking unanswered and she writes to the same
+      // person twice.
+      const { error: markError } = await admin.from('contact_queries')
         .update({ status: markStatus, admin_reply: replyText, replied_at: new Date().toISOString() })
         .eq('id', q.id)
+      if (markError) {
+        return NextResponse.json({
+          success: true,
+          warning: 'Your reply was sent, but we could not mark the enquiry as answered. It will still look unanswered in the list.',
+        })
+      }
       return NextResponse.json({ success: true })
     }
 

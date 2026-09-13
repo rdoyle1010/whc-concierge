@@ -10,6 +10,7 @@ import Wordmark from '@/components/Wordmark'
 import { createClient } from '@/lib/supabase/client'
 import { MARKETING_CONSENT_WORDING } from '@/lib/privacy-consent'
 import { LAUNCH_OFFER_TALENT, launchOfferClosesLabel, launchOfferOpen } from '@/lib/launch-offers'
+import { DEFAULT_VISIBILITY, VISIBILITY_COPY, type TalentVisibility } from '@/lib/talent-visibility'
 
 const MIN_PASSWORD_LENGTH = 8
 const MAX_PASSWORD_LENGTH = 64
@@ -29,6 +30,11 @@ export default function TalentRegisterPage() {
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [refCode, setRefCode] = useState('')
+  // Private until she says otherwise. The platform used to decide this for
+  // her and decide it wrong: registration published her, by name, to every
+  // verified property, without asking. In an industry this small that is the
+  // single thing professionals say they are afraid of.
+  const [visibility, setVisibility] = useState<TalentVisibility>(DEFAULT_VISIBILITY)
   // Set when somebody arrives through the consultancy door, so the account is
   // pointed at a listing from the first screen rather than at a treatment
   // profile they will never fill in.
@@ -71,6 +77,7 @@ export default function TalentRegisterPage() {
           marketingOptIn,
           agreedTerms,
           displayName: fullName,
+          visibility,
           refCode: refCode || undefined,
         }),
       })
@@ -162,6 +169,38 @@ export default function TalentRegisterPage() {
                 <p className="mt-1.5 text-[11px] text-[#6b6b6b]">Use {MIN_PASSWORD_LENGTH}-{MAX_PASSWORD_LENGTH} characters.</p>
               </div>
 
+              {/* Asked on the form, not buried in settings.
+                  A therapist joining is taking a risk her employer will see
+                  it, and the honest answer to that is to let her decide
+                  before the account exists rather than after. Private is
+                  preselected because the wrong default here is not a small
+                  inconvenience: it is her job. */}
+              <fieldset className="border border-[#dddddd] p-4">
+                <legend className="px-1.5 text-[11px] font-semibold uppercase tracking-[.14em] text-[#6b6b6b]">Who can see you</legend>
+                <p className="text-[12px] leading-relaxed text-[#555555]">
+                  You are private until you choose otherwise, and you can change this at any time.
+                </p>
+                <div className="mt-3 space-y-2">
+                  {(['private', 'discreet', 'open'] as TalentVisibility[]).map(option => (
+                    <label key={option}
+                      className={`flex cursor-pointer items-start gap-3 border p-3 transition-colors ${visibility === option ? 'border-[#1c1c1c] bg-[#f6f6f6]' : 'border-[#dddddd]'}`}>
+                      <input
+                        type="radio"
+                        name="visibility"
+                        value={option}
+                        checked={visibility === option}
+                        onChange={() => setVisibility(option)}
+                        className="mt-0.5 h-4 w-4 shrink-0"
+                      />
+                      <span>
+                        <span className="block text-[13px] font-semibold text-[#1c1c1c]">{VISIBILITY_COPY[option].label}</span>
+                        <span className="mt-0.5 block text-[11.5px] leading-5 text-[#555555]">{VISIBILITY_COPY[option].detail}</span>
+                      </span>
+                    </label>
+                  ))}
+                </div>
+              </fieldset>
+
               {/* Required, and asked here rather than three screens later.
                   The account is created on this button, so this is where the
                   agreement has to be made - the employer form has always
@@ -201,6 +240,10 @@ export default function TalentRegisterPage() {
 
             {refCode && <p className="mt-4 text-[11px] text-[#6b6b6b]">Referral code <span className="font-semibold text-[#1c1c1c]">{refCode}</span> will be applied to your account.</p>}
 
+            <p className="text-[12.5px] text-[#555555] mt-5 border-t border-[#dddddd] pt-5">
+              Would rather not do this yourself?{' '}
+              <Link href="/set-up-my-profile" className="font-semibold text-[#1c1c1c] underline">Send us your CV and we will build it for you</Link>, free.
+            </p>
             <p className="text-[13px] text-muted mt-7">Already have an account? <Link href="/login?role=talent" className="text-[#1c1c1c] font-semibold hover:underline">Sign in →</Link></p>
           </div>
         </div>

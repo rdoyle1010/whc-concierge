@@ -15,7 +15,14 @@ const body = (file: string) =>
 // their work is saved when it is gone. This is the sweep: every write followed
 // within a few lines by a success response, across the whole API.
 test('nothing reports success on a write it did not check', () => {
-  const WRITE = /^\s*await\s+(admin|supabase)\.from\(['"]([a-z_]+)['"]\)\s*\.\s*(update|insert|upsert|delete)\b/
+  // The chain, not the line.
+  //
+  // This required the whole call on one line, so `await admin.from('events')`
+  // with `.update(...)` underneath it was invisible - and a write nobody can
+  // see is a write nobody checks. A sweep that quietly matches nothing looks
+  // exactly like a sweep that passes, which is the third time that has caught
+  // us on this project.
+  const WRITE = /^\s*await\s+(admin|supabase)\s*\.\s*from\(['"]([a-z_]+)['"]\)\s*\.\s*(update|insert|upsert|delete)\b/
   const SUCCESS = /NextResponse\.json\(\s*\{\s*(success:\s*true|ok:\s*true)/
   // Deliberately best-effort, each for a reason. A missing row here must never
   // be the reason somebody's action fails, and every one of these is either a
@@ -46,6 +53,14 @@ test('nothing reports success on a write it did not check', () => {
     'src/app/api/talent/applications/interview/route.ts:56',
     // The legacy documents array, kept in step beside the real record.
     'src/app/api/talent/certificates/route.ts:65',
+    // A display counter on a consultancy listing. The enquiry itself is the
+    // checked write above it, and a lost count here is a number on a card.
+    'src/app/api/consultancy/enquiry/route.ts:71',
+    // Clearing the "somebody would like an introduction" notifications after
+    // she has answered them. Her actual answer is written and checked above;
+    // this is the tidy-up, and a missed one shows her a prompt she has
+    // already dealt with rather than losing her decision.
+    'src/app/api/private-approach/route.ts:226',
   ])
 
   const offenders: string[] = []
@@ -56,7 +71,11 @@ test('nothing reports success on a write it did not check', () => {
       if (!entry.endsWith('.ts')) continue
       const lines = read(rel).split('\n')
       lines.forEach((line, index) => {
-        const match = WRITE.exec(line)
+        // Three lines joined, so a fluent chain broken across them is still
+        // one write. Anchored on `await`, so the continuation lines cannot
+        // report the same write a second time.
+        const chained = lines.slice(index, index + 3).join(' ').replace(/\s+/g, ' ')
+        const match = WRITE.exec(chained)
         if (!match || BEST_EFFORT.has(match[2])) return
         // To the end of the handler, not a fixed few lines. The first version
         // of this looked six lines ahead, so it missed every write whose

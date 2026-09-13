@@ -239,6 +239,14 @@ check('all service-role API routes are protected or deliberately public', () => 
     // 204 on every path including failure, refuses crawlers and any path
     // outside the public site, and is rate limited per address.
     'src/app/api/track-visit/route.ts',
+    // Public by design: "send us your CV and we will do the rest". The entire
+    // point is that somebody with no account, and no intention of filling in
+    // a form, can still end up with a finished profile - so requiring a
+    // session would remove the only thing this route is for. Insert only,
+    // rate limited to five an hour per address, honeypotted, one narrow file
+    // type into a private bucket under a path the sender cannot choose, and
+    // it reads nothing back.
+    'src/app/api/profile-build/route.ts',
   ])
   // adminRequestUser is the actual admin guard on this platform. It was
   // missing here, so a route passed only if it happened to wrap the helper in
