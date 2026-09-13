@@ -1,0 +1,110 @@
+import { test } from 'node:test'
+import assert from 'node:assert/strict'
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
+import { WRITE_FIELDS, WRITE_MODEL, isWriteField, writeFieldLabel } from '../src/lib/ai-write'
+
+const read = (file: string) => readFileSync(join(process.cwd(), file), 'utf8')
+const body = (file: string) =>
+  read(file)
+    .replace(/\{\/\*[\s\S]*?\*\/\}/g, '')
+    .replace(/\/\*[\s\S]*?\*\//g, '')
+    .replace(/^\s*\/\/.*$/gm, '')
+
+const lib = body('src/lib/ai-write.ts')
+const route = body('src/app/api/ai/write/route.ts')
+const widget = body('src/components/AiWrite.tsx')
+const talent = read('src/app/talent/profile/page.tsx')
+const employer = read('src/app/employer/profile/page.tsx')
+
+// The same problem on every account type: a person who can do the job cannot
+// face writing a paragraph about doing the job, so the field stays empty and
+// the profile reads as abandoned.
+test('the blank box is answered wherever it appears', () => {
+  for (const field of ['talent_bio', 'talent_headline', 'employer_about', 'employer_tagline', 'job_description']) {
+    assert.ok(WRITE_FIELDS.includes(field as any), `${field} has no writing help`)
+    assert.ok(writeFieldLabel(field as any).length > 0)
+  }
+  assert.ok(!isWriteField('anything_else'))
+
+  assert.match(talent, /field="talent_bio"/)
+  assert.match(talent, /field="talent_headline"/)
+  assert.match(employer, /field="employer_about"/)
+  assert.match(employer, /field="employer_tagline"/)
+})
+
+// A route that writes a biography from whatever JSON it is handed will
+// cheerfully write somebody else's, and the only thing stopping it would be
+// that nobody had tried.
+test('it writes from their own record, not from the request', () => {
+  assert.match(route, /const user = await getRequestUser\(req\)/)
+  assert.match(route, /eq\('user_id', userId\)/)
+  const gather = route.slice(route.indexOf('async function gatherFacts'))
+  // The one exception is a role that does not exist yet, and even then the
+  // property it belongs to is read from the database.
+  assert.match(gather, /from\('employer_profiles'\)[\s\S]{0,400}eq\('user_id', userId\)/)
+  assert.ok(!/body\.(full_name|bio|about_text|property_name)/.test(gather),
+    'identity must never come from the body')
+})
+
+// Nothing is decided here and nothing is saved here. It is doing the typing.
+test('a draft is offered, never applied', () => {
+  assert.match(widget, /onAccept\(draft\)/)
+  assert.match(widget, /Nothing is saved until you say so/)
+  assert.match(widget, /Leave mine as it is/)
+  assert.doesNotMatch(route, /\.update\(|\.upsert\(/, 'the writing route writes no profile field')
+  // Except the consent record, which is an insert into its own ledger.
+  assert.match(route, /consent_events/)
+})
+
+// Somebody who does not like a draft says why in one line and presses again.
+// That is how a person works with a draft, and a button that can only try the
+// same thing again is a button pressed once.
+test('a draft can be argued with', () => {
+  assert.match(widget, /placeholder="Shorter\./)
+  assert.match(route, /steer = typeof body\.steer === 'string'/)
+  assert.match(lib, /What they have asked for: \$\{steer\}/)
+})
+
+// The house style is enforced rather than requested. A model asked nicely not
+// to use an em dash will use one eventually, and this platform fails its own
+// readiness check over a single one.
+test('the house style is not left to good manners', () => {
+  assert.match(lib, /British English/)
+  assert.match(lib, /Never invent an employer, a qualification, a treatment, a brand, a date, a number or an award/)
+  assert.match(lib, /\\u2014/, 'the em dash is stripped from the answer, not just discouraged')
+  assert.match(lib, /passionate, dynamic, vibrant/)
+})
+
+// A better paragraph that arrives after the function has been killed is not a
+// better paragraph.
+test('every writing route fits inside the ceiling the host enforces', () => {
+  assert.equal(WRITE_MODEL, 'claude-sonnet-5')
+  for (const file of [
+    'src/app/api/ai/write/route.ts',
+    'src/app/api/employer/jobs/ai/route.ts',
+    'src/app/api/applications/ai/route.ts',
+    'src/app/api/employer/applications/communication-ai/route.ts',
+    'src/app/api/employer/applications/message-ai/route.ts',
+  ]) {
+    const source = body(file)
+    const declared = Number(source.match(/maxDuration = (\d+)/)?.[1])
+    assert.ok(declared > 0 && declared <= 26, `${file} declares ${declared}, which the host will not honour`)
+  }
+  // And the model is cut off before the function is, so a failure can be
+  // written into a sentence instead of an error page.
+  for (const file of [
+    'src/app/api/employer/jobs/ai/route.ts',
+    'src/app/api/applications/ai/route.ts',
+    'src/app/api/employer/applications/communication-ai/route.ts',
+    'src/app/api/employer/applications/message-ai/route.ts',
+  ]) {
+    assert.match(body(file), /AbortSignal\.timeout\(AI_TIMEOUT_MS\)/, `${file} lets the model run until the host kills it`)
+  }
+})
+
+// One account, one allowance. A shared office address should not stop the
+// second person of the day from writing their own profile.
+test('the limit is per account', () => {
+  assert.match(route, /key: user\.id/)
+})

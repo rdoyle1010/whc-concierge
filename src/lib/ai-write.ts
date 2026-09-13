@@ -1,0 +1,213 @@
+import Anthropic from '@anthropic-ai/sdk'
+
+// The blank box, answered.
+//
+// Every account type on this platform has one field that decides whether
+// anybody reads the rest of it, and every one of them is left empty. A
+// therapist's About you. A property's description. A role's description. They
+// are left empty for the same reason: writing two hundred words about
+// yourself, well, in a box, is genuinely hard, and nobody joined a spa
+// platform to do it.
+//
+// So it is written here, from what they have already told us and nothing
+// else, and offered as a draft they read, edit and approve. Never saved by
+// itself. It is not deciding anything about anybody; it is doing the typing.
+
+export type WriteField =
+  | 'talent_bio'
+  | 'talent_headline'
+  | 'employer_about'
+  | 'employer_tagline'
+  | 'job_description'
+
+export type WriteMode = 'write' | 'improve'
+
+export const WRITE_FIELDS: WriteField[] = [
+  'talent_bio', 'talent_headline', 'employer_about', 'employer_tagline', 'job_description',
+]
+
+export function isWriteField(value: unknown): value is WriteField {
+  return WRITE_FIELDS.includes(value as WriteField)
+}
+
+// Sonnet, for the same reason the CV reader is. A synchronous function here
+// is killed at twenty-six seconds and a better paragraph that arrives after
+// that is not a better paragraph.
+export const WRITE_MODEL = 'claude-sonnet-5'
+const CALL_TIMEOUT_MS = 18000
+
+type Shape = {
+  /** What it is, in the words the person sees on their own screen. */
+  label: string
+  /** Roughly how long, said to the model and shown to the person. */
+  length: string
+  maxTokens: number
+  /** Whose voice it is written in. */
+  voice: string
+}
+
+const SHAPES: Record<WriteField, Shape> = {
+  talent_bio: {
+    label: 'About you',
+    length: 'eighty to a hundred and thirty words',
+    maxTokens: 700,
+    voice: 'the first person, as she would introduce herself to a spa director she respects',
+  },
+  talent_headline: {
+    label: 'Your headline',
+    length: 'one line, under a hundred and twenty characters',
+    maxTokens: 200,
+    voice: 'the third person as a title, with no full stop',
+  },
+  employer_about: {
+    label: 'About the property',
+    length: 'a hundred to a hundred and sixty words',
+    maxTokens: 800,
+    voice: 'the property speaking about itself, warm and specific, never a brochure',
+  },
+  employer_tagline: {
+    label: 'Tagline',
+    length: 'one line, under ninety characters',
+    maxTokens: 150,
+    voice: 'a plain statement of what this place is, with no full stop',
+  },
+  job_description: {
+    label: 'The role',
+    length: 'a hundred and fifty to two hundred and fifty words',
+    maxTokens: 1100,
+    voice: 'the property addressing the person who might take the job, as "you"',
+  },
+}
+
+export function writeFieldLabel(field: WriteField): string {
+  return SHAPES[field].label
+}
+
+const HOUSE_STYLE = `You write for Talent House Collective, a register of spa and wellness professionals and the luxury properties that hire them.
+
+How it reads:
+- British English. Every time.
+- Plain, confident, specific. A trusted industry insider, not a brochure and not a recruitment advert.
+- Short sentences next to longer ones. No list of adjectives.
+- Never use an em dash. Use a comma, a full stop, or a short dash with spaces.
+- Never use these words: passionate, dynamic, vibrant, cutting-edge, world-class, journey, elevate, unlock, seamless, bespoke experience, exciting opportunity, rockstar, ninja, family.
+- No exclamation marks. No emoji. No headings, no bullet points, no markdown. Plain prose only.
+- Do not open with the person's or property's name, and do not open with "With over".
+
+What you may say:
+- Only what the facts below support. You are rewriting what somebody has told us, not researching them.
+- Never invent an employer, a qualification, a treatment, a brand, a date, a number or an award.
+- Where the facts are thin, write something shorter and true rather than longer and padded.
+- No salary, no contact details, no promises about outcomes.
+
+Return the finished text and nothing else. No preamble, no quotation marks around it, no explanation.`
+
+export function writingConfigured(): boolean {
+  return Boolean(process.env.ANTHROPIC_API_KEY)
+}
+
+export type WriteRequest = {
+  field: WriteField
+  mode: WriteMode
+  /** What they have written already. Required for 'improve'. */
+  draft?: string
+  /** Everything true about them, gathered on the server from their own record. */
+  facts: Record<string, unknown>
+  /** In their own words: what they want said, or what is wrong with the draft. */
+  steer?: string
+}
+
+function factLines(facts: Record<string, unknown>): string {
+  const lines: string[] = []
+  for (const [key, value] of Object.entries(facts)) {
+    if (value === null || value === undefined || value === '') continue
+    if (Array.isArray(value)) {
+      if (!value.length) continue
+      lines.push(`${key}: ${value.slice(0, 40).join(', ')}`)
+      continue
+    }
+    lines.push(`${key}: ${String(value).slice(0, 600)}`)
+  }
+  return lines.join('\n')
+}
+
+/**
+ * Write it, or write it better. Never throws.
+ *
+ * The caller is somebody staring at an empty box, and a stack trace is not an
+ * answer to "why is this button not working".
+ */
+export async function writeText(request: WriteRequest): Promise<
+  { ok: true; text: string } | { ok: false; error: string }
+> {
+  const apiKey = process.env.ANTHROPIC_API_KEY
+  if (!apiKey) return { ok: false, error: 'Talent House AI is not switched on for this deployment.' }
+
+  const shape = SHAPES[request.field]
+  const facts = factLines(request.facts)
+  if (!facts.trim() && !String(request.draft || '').trim()) {
+    return {
+      ok: false,
+      error: 'There is not enough on your profile yet for this to be worth writing. Fill in a few of the fields above first, then come back to it.',
+    }
+  }
+
+  const steer = String(request.steer || '').trim().slice(0, 500)
+  const draft = String(request.draft || '').trim().slice(0, 4000)
+
+  const task = request.mode === 'improve' && draft
+    ? `Rewrite the draft below so it reads better. Keep every fact in it, keep the person's own voice and anything distinctive about how they put things, and cut what is padding. Do not add facts that are not in the draft or the details underneath it.
+
+Their draft:
+${draft}`
+    : `Write the "${shape.label}" from the details below. There is nothing written yet.`
+
+  const client = new Anthropic({ apiKey, maxRetries: 0 })
+
+  try {
+    const response = await client.messages.create({
+      model: WRITE_MODEL,
+      max_tokens: shape.maxTokens,
+      system: HOUSE_STYLE,
+      messages: [{
+        role: 'user',
+        content: `${task}
+
+Length: ${shape.length}.
+Voice: ${shape.voice}.
+${steer ? `\nWhat they have asked for: ${steer}\n` : ''}
+What is true about them:
+${facts || '(nothing beyond the draft above)'}`,
+      }],
+    }, { timeout: CALL_TIMEOUT_MS })
+
+    if (response.stop_reason === 'refusal') {
+      return { ok: false, error: 'That could not be written. Try putting a little more in the box first.' }
+    }
+
+    const block = response.content.find(item => item.type === 'text')
+    const text = block && block.type === 'text' ? block.text.trim() : ''
+    if (!text) return { ok: false, error: 'Nothing came back. Try again in a moment.' }
+
+    // The house rules, enforced rather than requested. A model asked nicely
+    // not to use an em dash will use one eventually, and this platform fails
+    // its own readiness check over a single one.
+    const cleaned = text
+      .replace(/[\u2014\u2013]/g, ' - ')
+      .replace(/^["'“‘]|["'”’]$/g, '')
+      .trim()
+
+    return { ok: true, text: cleaned }
+  } catch (error: any) {
+    if (error instanceof Anthropic.AuthenticationError) {
+      return { ok: false, error: 'The Anthropic API key on this deployment was refused. Check it in Netlify.' }
+    }
+    if (error instanceof Anthropic.RateLimitError) {
+      return { ok: false, error: 'Too many at once. Wait a minute and try again.' }
+    }
+    if (error instanceof Anthropic.APIConnectionTimeoutError) {
+      return { ok: false, error: 'That took too long. Try again, and it will usually come back second time.' }
+    }
+    return { ok: false, error: error?.message || 'That could not be written just now.' }
+  }
+}
