@@ -101,6 +101,7 @@ export default function Navbar({ siteContent }: { siteContent?: WebsiteContent }
     { href: '/brands', label: 'Brands' },
     { href: '/agency/about', label: 'Agency' },
     { href: '/academy', label: 'Academy' },
+    { href: '/events', label: 'Events' },
     { href: '/residency', label: 'Residency' },
     { href: '/consultancy', label: 'Consultancy' },
     { href: '/intelligence', label: 'Intelligence' },
@@ -127,6 +128,7 @@ export default function Navbar({ siteContent }: { siteContent?: WebsiteContent }
     { href: '/residency', label: labels.residency || 'Residency' },
     { href: '/consultancy', label: 'Consultancy' },
     { href: '/academy', label: labels.academy || 'Academy' },
+    { href: '/events', label: 'Events' },
     { href: '/intelligence', label: 'Intelligence' },
   ]
 

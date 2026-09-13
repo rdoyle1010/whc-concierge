@@ -46,6 +46,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${BASE}/brands/apply`, lastModified: now, changeFrequency: 'monthly', priority: 0.6 },
     { url: `${BASE}/specialisms`, lastModified: now, changeFrequency: 'monthly', priority: 0.7 },
     { url: `${BASE}/academy`, lastModified: now, changeFrequency: 'monthly', priority: 0.7 },
+    { url: `${BASE}/events`, lastModified: now, changeFrequency: 'weekly', priority: 0.7 },
     { url: `${BASE}/intelligence`, lastModified: now, changeFrequency: 'weekly', priority: 0.7 },
     { url: `${BASE}/pricing`, lastModified: now, changeFrequency: 'monthly', priority: 0.7 },
     { url: `${BASE}/advertise`, lastModified: now, changeFrequency: 'monthly', priority: 0.6 },
@@ -144,6 +145,24 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       }))
   })
 
-  const dynamic = await Promise.all([roles, properties, brands, posts])
+  // Published events. Search traffic for "spa masterclass London" or a named
+  // brand launch is exactly the audience this platform wants, and it arrives
+  // with no opinion about job hunting.
+  const events = safely(async () => {
+    const { data } = await supabase
+      .from('events')
+      .select('slug, starts_at, updated_at')
+      .eq('is_published', true)
+      .order('starts_at', { ascending: false })
+      .limit(500)
+    return (data ?? []).map(row => ({
+      url: `${BASE}/events/${row.slug}`,
+      lastModified: new Date(row.updated_at || row.starts_at),
+      changeFrequency: 'weekly' as const,
+      priority: 0.6,
+    }))
+  })
+
+  const dynamic = await Promise.all([roles, properties, brands, posts, events])
   return [...staticPages, ...dynamic.flat()]
 }

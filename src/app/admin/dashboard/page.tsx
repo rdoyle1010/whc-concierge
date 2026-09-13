@@ -25,6 +25,7 @@ const SECTIONS = [
   { group: 'Content & revenue', label: 'Academy', desc: 'Courses, learners and certificates.', href: '/admin/academy', icon: <GraduationCap size={17} /> },
   { group: 'Content & revenue', label: 'Academy Downloads', desc: 'Workbooks and files attached to courses and modules.', href: '/admin/academy/downloads', icon: <FileText size={17} /> },
   { group: 'Content & revenue', label: 'Blog & Journal', desc: 'Write, illustrate and publish editorial content.', href: '/admin/blog', icon: <FileText size={17} /> },
+  { group: 'Content & revenue', label: 'Events', desc: 'Launches, masterclasses and trade shows, and telling the register first.', href: '/admin/events', icon: <Calendar size={17} /> },
   { group: 'Content & revenue', label: 'Newsletters & Campaigns', desc: 'Create, preview, test and send newsletters.', href: '/admin/campaigns', icon: <Megaphone size={17} /> },
   { group: 'Content & revenue', label: 'Newsletter', desc: 'Subscribers, exports and the signup popup.', href: '/admin/newsletter', icon: <Megaphone size={17} /> },
   { group: 'Content & revenue', label: 'Sponsored Ads', desc: 'Approve paid brand placements.', href: '/admin/advertising', icon: <Megaphone size={17} /> },
