@@ -52,15 +52,41 @@ export async function GET() {
     .select('*').order('created_at', { ascending: false }).limit(200)
   if (error) return NextResponse.json({ rows: [], unavailable: true, reason: error.message })
 
+  // What we have actually sent each of them, on the card.
+  //
+  // "I pressed the button and they got nothing" was a question that could
+  // only be answered by leaving this screen, opening Messages We Sent and
+  // reading down a list. The queue said "Sent to them" because the status
+  // changed, which records that the button worked and says nothing whatever
+  // about whether an email left the building.
+  //
+  // One query for every address on the page rather than one per row.
+  const addresses = Array.from(new Set((data || []).map((row: any) => String(row.email || '').toLowerCase()).filter(Boolean)))
+  const post = new Map<string, any[]>()
+  if (addresses.length) {
+    const { data: log } = await admin.from('email_log')
+      .select('recipient, kind, subject, status, error, created_at')
+      .in('recipient', addresses)
+      .order('created_at', { ascending: false })
+      .limit(400)
+    for (const entry of log || []) {
+      const key = String(entry.recipient || '').toLowerCase()
+      const held = post.get(key) || []
+      if (held.length < 4) held.push(entry)
+      post.set(key, held)
+    }
+  }
+
   // A signed link per CV, valid for an hour. The bucket is private and must
   // stay that way: these are strangers' CVs.
   const rows = await Promise.all((data || []).map(async (row: any) => {
-    if (!row.cv_path) return { ...row, cv_url: null }
+    const emails = post.get(String(row.email || '').toLowerCase()) || []
+    if (!row.cv_path) return { ...row, cv_url: null, emails }
     try {
       const { data: signed } = await admin.storage.from(BUCKET).createSignedUrl(row.cv_path, 3600)
-      return { ...row, cv_url: signed?.signedUrl || null }
+      return { ...row, cv_url: signed?.signedUrl || null, emails }
     } catch {
-      return { ...row, cv_url: null }
+      return { ...row, cv_url: null, emails }
     }
   }))
 

@@ -27,6 +27,15 @@ type Request = {
   consent_wording: string
   answers: Record<string, unknown> | null
   archived_at: string | null
+  emails: SentEmail[]
+  created_at: string
+}
+
+type SentEmail = {
+  kind: string
+  subject: string
+  status: 'sent' | 'failed' | 'skipped'
+  error: string | null
   created_at: string
 }
 
@@ -168,6 +177,11 @@ export default function AdminProfileBuildPage() {
           <li><strong className="text-ink">3. Fill in the rest</strong> in the form on their card, without leaving this page</li>
           <li><strong className="text-ink">4. Send it to them</strong>, and they set a password</li>
         </ol>
+        <p className="text-[13px] text-secondary mt-3 max-w-2xl">
+          They already have an account: it is made the moment they send their CV, with no password on
+          it, and they never see it until you press Send it to them. That email is the sign-up, and
+          setting a password is the first and only thing they are ever asked to do.
+        </p>
         <p className="text-[13px] text-secondary mt-3 max-w-2xl">
           Nothing they have is visible to anybody until they say so.
         </p>
@@ -358,6 +372,36 @@ export default function AdminProfileBuildPage() {
                     )}
                   </div>
                 )}
+
+                {/* What has actually left the building. A status of "Sent to
+                    them" records that the button worked, which is not the
+                    same fact and was being read as though it were. */}
+                <div className="mt-4 border-t border-border pt-3">
+                  <p className="text-[11px] font-semibold uppercase tracking-[.14em] text-muted">What we have sent them</p>
+                  {row.emails?.length ? (
+                    <ul className="mt-2 space-y-1">
+                      {row.emails.map(sent => (
+                        <li key={`${sent.created_at}${sent.subject}`} className="flex flex-wrap items-baseline gap-2 text-[12px]">
+                          <span className={sent.status === 'sent' ? 'text-[#166534]' : 'text-red-700'}>
+                            {sent.status === 'sent' ? 'Sent' : sent.status === 'failed' ? 'Failed' : 'Not sent'}
+                          </span>
+                          <span className="text-ink">{sent.subject}</span>
+                          <span className="text-muted">
+                            {new Date(sent.created_at).toLocaleString('en-GB', { dateStyle: 'short', timeStyle: 'short' })}
+                          </span>
+                          {sent.error && <span className="text-red-700">{sent.error}</span>}
+                        </li>
+                      ))}
+                      <li className="pt-1 text-[11px] text-muted">
+                        Sent means our provider accepted it. If they still cannot find it, it is in a junk folder.
+                      </li>
+                    </ul>
+                  ) : (
+                    <p className="mt-1.5 text-[12px] text-muted">
+                      Nothing yet. They have had no email from us at all.
+                    </p>
+                  )}
+                </div>
 
                 {row.created_user_id && (
                   <AdminProfileEditor requestId={row.id} fullName={row.full_name} onSaved={load} />
