@@ -16,14 +16,22 @@ import Anthropic from '@anthropic-ai/sdk'
 export type WriteField =
   | 'talent_bio'
   | 'talent_headline'
+  | 'talent_commercial'
   | 'employer_about'
   | 'employer_tagline'
   | 'job_description'
+  | 'property_policy'
+  | 'practice_headline'
+  | 'practice_about'
+  | 'practice_work'
+  | 'practice_outcome'
 
 export type WriteMode = 'write' | 'improve'
 
 export const WRITE_FIELDS: WriteField[] = [
-  'talent_bio', 'talent_headline', 'employer_about', 'employer_tagline', 'job_description',
+  'talent_bio', 'talent_headline', 'talent_commercial',
+  'employer_about', 'employer_tagline', 'job_description', 'property_policy',
+  'practice_headline', 'practice_about', 'practice_work', 'practice_outcome',
 ]
 
 export function isWriteField(value: unknown): value is WriteField {
@@ -77,6 +85,46 @@ const SHAPES: Record<WriteField, Shape> = {
     maxTokens: 1100,
     voice: 'the property addressing the person who might take the job, as "you"',
   },
+  talent_commercial: {
+    label: 'Commercial experience',
+    length: 'forty to eighty words',
+    maxTokens: 500,
+    voice: 'the first person, plainly, about money and teams she has actually been responsible for',
+  },
+  // One shape for every box in the Property Fact File. They are all the same
+  // job - a property telling a worker who arrives on Tuesday how this place
+  // does something - and twelve near-identical entries here would drift apart
+  // within a month. Which box it is arrives as the subject.
+  property_policy: {
+    label: 'This section',
+    length: 'thirty to a hundred words, whichever the subject actually needs',
+    maxTokens: 600,
+    voice: 'the property telling a worker arriving for a shift what to do, direct and unfussy',
+  },
+  practice_headline: {
+    label: 'Practice headline',
+    length: 'one line, under a hundred and twenty characters',
+    maxTokens: 200,
+    voice: 'a plain claim about what this consultancy does, with no full stop',
+  },
+  practice_about: {
+    label: 'About the practice',
+    length: 'a hundred and twenty to two hundred words',
+    maxTokens: 900,
+    voice: 'the first person, as the consultant would describe her own practice to a hotel owner',
+  },
+  practice_work: {
+    label: 'What the work was',
+    length: 'sixty to a hundred and twenty words',
+    maxTokens: 600,
+    voice: 'the first person, past tense: the brief, the state she found it in, what she did',
+  },
+  practice_outcome: {
+    label: 'What changed',
+    length: 'one or two sentences, no more',
+    maxTokens: 300,
+    voice: 'a flat statement of the outcome, numbers first where there are numbers',
+  },
 }
 
 export function writeFieldLabel(field: WriteField): string {
@@ -100,6 +148,8 @@ What you may say:
 - Where the facts are thin, write something shorter and true rather than longer and padded.
 - No salary, no contact details, no promises about outcomes.
 
+One more thing about numbers. A number in the draft is a fact and must survive exactly as it is. A number that is not in the draft or the details does not exist: never round one, never add a percentage sign, and never write "significant" or "substantial" where a number was expected and is missing. Say what happened without one.
+
 Return the finished text and nothing else. No preamble, no quotation marks around it, no explanation.`
 
 export function writingConfigured(): boolean {
@@ -115,6 +165,8 @@ export type WriteRequest = {
   facts: Record<string, unknown>
   /** In their own words: what they want said, or what is wrong with the draft. */
   steer?: string
+  /** Which box this is, where one shape serves many. */
+  subject?: string | null
 }
 
 function factLines(facts: Record<string, unknown>): string {
@@ -155,12 +207,15 @@ export async function writeText(request: WriteRequest): Promise<
   const steer = String(request.steer || '').trim().slice(0, 500)
   const draft = String(request.draft || '').trim().slice(0, 4000)
 
+  const subject = String(request.subject || '').replace(/\s+/g, ' ').trim().slice(0, 120)
+  const named = subject || shape.label
+
   const task = request.mode === 'improve' && draft
     ? `Rewrite the draft below so it reads better. Keep every fact in it, keep the person's own voice and anything distinctive about how they put things, and cut what is padding. Do not add facts that are not in the draft or the details underneath it.
 
 Their draft:
 ${draft}`
-    : `Write the "${shape.label}" from the details below. There is nothing written yet.`
+    : `Write the "${named}" from the details below. There is nothing written yet.`
 
   const client = new Anthropic({ apiKey, maxRetries: 0 })
 
@@ -173,6 +228,7 @@ ${draft}`
         role: 'user',
         content: `${task}
 
+This is the "${named}" field.
 Length: ${shape.length}.
 Voice: ${shape.voice}.
 ${steer ? `\nWhat they have asked for: ${steer}\n` : ''}
