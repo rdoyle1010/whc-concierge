@@ -13,27 +13,39 @@ function body(path: string) {
 
 const CV = 'src/app/api/cv/analyse/route.ts'
 
-test('the CV analysis has long enough to actually answer', () => {
-  // A reasoning model reading eighteen thousand characters does not answer in
-  // seven seconds, and the route had no maxDuration so it inherited the
-  // platform default of ten. The AI half timed out almost every time.
+test('the CV analysis fits inside the time it is actually given', () => {
+  // Asking for more than the host allows is not a budget, it is a wish. This
+  // route had no maxDuration at all and timed out at ten seconds; then it
+  // asked for sixty, which the host caps at twenty-six, and gave the model
+  // forty-five inside that. Both versions could not finish in principle, and
+  // both read on screen as "AI was unavailable".
   const route = body(CV)
-  assert.match(route, /export const maxDuration = 60/,
-    'the route needs a time budget larger than the model takes')
-  assert.doesNotMatch(route, /abort\(\), 7000/, 'the seven-second abort was the bug')
+  const declared = Number(/export const maxDuration = (\d+)/.exec(route)?.[1])
+  assert.ok(declared > 0, 'the route must name its own budget rather than inherit ten seconds')
+  assert.ok(declared <= 26, `maxDuration ${declared} is above the twenty-six the host enforces`)
+  assert.doesNotMatch(route, /abort\(\), 7000/, 'the seven-second abort was the original bug')
 
-  const timeout = /const AI_TIMEOUT_MS = (\d+)/.exec(route)
-  assert.ok(timeout, 'the abort should be a named budget')
-  assert.ok(Number(timeout[1]) >= 20000, 'and it should be generous enough to be reached rarely')
+  // And the model's own budget has to leave room to answer inside that.
+  const reader = body('src/lib/cv-read.ts')
+  const call = Number(/const CALL_TIMEOUT_MS = (\d+)/.exec(reader)?.[1])
+  assert.ok(call >= 10000, 'generous enough to be reached rarely')
+  assert.ok(call <= (declared - 6) * 1000, 'and short enough that a refusal can still be written')
 })
 
 test('when the AI half does not run, it says which thing went wrong', () => {
   // "AI was unavailable" is true and tells nobody anything. It sends somebody
   // to check a key that was never the problem.
   const route = body(CV)
-  for (const cause of ['No OpenAI key', 'was rejected', 'not available on this account', 'rate limited', 'did not answer within']) {
-    assert.ok(route.includes(cause), `the failure "${cause}" must be named`)
+  assert.match(route, /lastAiFailure = result\.error/, 'the reader\'s own reason is kept, not flattened')
+  assert.match(route, /is not switched on for this deployment/)
+
+  // The reasons themselves live with the reader, which is the only thing that
+  // knows which of them happened.
+  const reader = body('src/lib/cv-read.ts')
+  for (const cause of ['is not set on this deployment', 'was refused', 'Too many CVs at once', 'took too long to read']) {
+    assert.ok(reader.includes(cause), `the failure "${cause}" must be named`)
   }
+
   assert.match(route, /aiFailure: suggestions\.aiEnhanced \? null/,
     'the reason must travel back with the answer')
 
