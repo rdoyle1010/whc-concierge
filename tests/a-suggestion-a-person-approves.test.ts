@@ -47,7 +47,10 @@ test('the reader may only choose from our own vocabulary', () => {
   assert.match(lib, /enum: \[\.\.\.PRODUCT_HOUSES\]/)
   assert.match(lib, /enum: \[\.\.\.SYSTEMS\]/)
   assert.match(lib, /enum: \[\.\.\.QUALIFICATIONS\]/)
-  assert.match(lib, /enum: \[\.\.\.ROLE_LEVELS, null\]/)
+  // A sentinel, not a nullable enum: declaring both a type union and a list
+  // of allowed values is rejected by the validator outright.
+  assert.match(lib, /enum: \[\.\.\.ROLE_LEVELS, 'Unknown'\]/)
+  assert.doesNotMatch(lib, /type: \['string', 'null'\], enum:/, 'a nullable enum is refused by the API')
   // And filtered again on the way back, because the schema constrains shape
   // and shape is not the risk.
   assert.match(lib, /pick\(raw\?\.product_houses, PRODUCT_HOUSES\)/)
