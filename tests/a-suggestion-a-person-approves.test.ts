@@ -178,3 +178,32 @@ test('the review shows the whole vocabulary, not just what was found', () => {
   assert.match(review, /What the CV does not say/i)
   assert.match(lib, /gaps/)
 })
+
+// The treatments are the whole point of the matching, and they were being
+// written only to treatment_skills. services_offered is the column the
+// engine reads, so a profile could be filled in and still match nothing.
+test('the treatments reach the column the matching actually reads', () => {
+  const adminRoute = body('src/app/api/admin/profile-build/route.ts')
+  assert.match(adminRoute, /services_offered: list\(reading\.treatment_skills/)
+  assert.match(adminRoute, /treatment_skills: list\(reading\.treatment_skills/)
+})
+
+// A CV holds far more than a name and a role level, and every field left for
+// somebody to type by hand is a field that does not get typed.
+test('the reader covers what a CV can actually answer', () => {
+  for (const field of ['business_skills', 'languages', 'current_employer']) {
+    assert.match(lib, new RegExp(`${field}:`), `${field} is not read`)
+    assert.match(lib, new RegExp(`'${field}'`), `${field} is not required in the schema`)
+  }
+  // And each one is correctable before it is saved.
+  const review = body('src/components/CvReadingReview.tsx')
+  assert.match(review, /business_skills: split/)
+  assert.match(review, /languages: split/)
+  assert.match(review, /current_employer: v/)
+})
+
+// What a CV genuinely cannot answer should be said, not silently absent.
+test('the screen says what a CV will never contain', () => {
+  const review = body('src/components/CvReadingReview.tsx')
+  assert.match(review, /Photographs, insurance, right to work, rates and availability are not on a CV/i)
+})

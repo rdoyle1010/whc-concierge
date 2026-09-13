@@ -36,6 +36,9 @@ export type CvReading = {
   systems_experience: string[]
   qualifications: string[]
   treatment_skills: string[]
+  business_skills: string[]
+  languages: string[]
+  current_employer: string | null
   hotel_brands: string[]
   location: string | null
   /** What the CV does not say, so somebody knows what to ask for. */
@@ -71,7 +74,8 @@ const SCHEMA = {
   required: [
     'full_name', 'headline', 'role_level', 'experience_years', 'bio',
     'product_houses', 'systems_experience', 'qualifications',
-    'treatment_skills', 'hotel_brands', 'location', 'gaps',
+    'treatment_skills', 'business_skills', 'languages', 'current_employer',
+    'hotel_brands', 'location', 'gaps',
   ],
   properties: {
     full_name: { type: ['string', 'null'] },
@@ -93,7 +97,10 @@ const SCHEMA = {
     product_houses: { type: 'array', items: { type: 'string', enum: [...PRODUCT_HOUSES] } },
     systems_experience: { type: 'array', items: { type: 'string', enum: [...SYSTEMS] } },
     qualifications: { type: 'array', items: { type: 'string', enum: [...QUALIFICATIONS] } },
-    treatment_skills: { type: 'array', items: { type: 'string' }, description: 'Treatments they can actually deliver, named as the industry names them.' },
+    treatment_skills: { type: 'array', items: { type: 'string' }, description: 'Treatments they can actually deliver, named as the industry names them. This is what the matching runs on, so be thorough: every facial, massage, body and specialist treatment the CV mentions.' },
+    business_skills: { type: 'array', items: { type: 'string' }, description: 'Commercial and management skills the CV evidences: budgeting, rotas, recruitment, retail targets, training, P&L, KPI reporting.' },
+    languages: { type: 'array', items: { type: 'string' }, description: 'Languages the CV says they speak. English included only if the CV names it.' },
+    current_employer: { type: ['string', 'null'], description: 'Where they work now, if the CV makes it clear. Not a previous employer.' },
     hotel_brands: { type: 'array', items: { type: 'string' }, description: 'Hotel groups and properties they have worked for.' },
     location: { type: ['string', 'null'], description: 'Town or city, if the CV gives one. Never inferred from an employer name.' },
     gaps: { type: 'array', items: { type: 'string' }, description: 'What this CV does not tell us that the profile needs.' },
@@ -235,7 +242,10 @@ function normalise(raw: any): CvReading {
     product_houses: pick(raw?.product_houses, PRODUCT_HOUSES),
     systems_experience: pick(raw?.systems_experience, SYSTEMS),
     qualifications: pick(raw?.qualifications, QUALIFICATIONS),
-    treatment_skills: free(raw?.treatment_skills, 30),
+    treatment_skills: free(raw?.treatment_skills, 40),
+    business_skills: free(raw?.business_skills, 20),
+    languages: free(raw?.languages, 12),
+    current_employer: line(raw?.current_employer, 160),
     hotel_brands: free(raw?.hotel_brands, 20),
     location: line(raw?.location, 120),
     gaps: free(raw?.gaps, 12),

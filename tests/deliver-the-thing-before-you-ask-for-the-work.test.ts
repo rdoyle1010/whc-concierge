@@ -284,8 +284,9 @@ test('a record is created when it is missing, and left alone when it is not', ()
 test('saving a draft cannot write into thin air', () => {
   const applyBlock = adminRoute.slice(adminRoute.indexOf("action === 'apply_reading'"))
   const ensure = applyBlock.indexOf('ensureCandidateProfile')
-  const update = applyBlock.indexOf("from('candidate_profiles').update")
-  assert.ok(ensure > 0 && ensure < update, 'the row must be guaranteed before it is updated')
+  const write = applyBlock.indexOf("tolerantUpsert(admin, 'candidate_profiles'")
+  assert.ok(ensure > 0 && write > 0 && ensure < write,
+    'the row must be guaranteed before anything is written to it')
 })
 
 // A spam check that trips must not be able to create auth users.
@@ -372,4 +373,29 @@ test('somebody who sends a CV and then registers is not locked out', () => {
   // guess that it is.
   assert.match(intake, /We have opened an account in your name/i)
   assert.match(intake, /Forgot your password/i)
+})
+
+
+// Postgres refuses a whole statement over one bad column name. A corrected
+// draft with eleven right fields saved none of them because of one wrong one,
+// which is the third time this exact shape has cost something here.
+test('one wrong column name cannot lose a whole corrected draft', () => {
+  const applyBlock = adminRoute.slice(adminRoute.indexOf("action === 'apply_reading'"))
+  assert.match(applyBlock, /tolerantUpsert\(admin, 'candidate_profiles'/)
+  assert.doesNotMatch(applyBlock, /from\('candidate_profiles'\)\.update\(\{/,
+    'a plain update dies on one unknown column')
+
+  // And what could not be stored is named, so a field cannot quietly vanish.
+  assert.match(applyBlock, /written\.stripped\.length/)
+  assert.match(applyBlock, /could not be stored and are missing from the profile/)
+})
+
+// The name that was wrong, and the ones that were not. Checked against the
+// columns the profile form itself writes, rather than assumed.
+test('the brand column is the one that exists', () => {
+  assert.match(adminRoute, /hotel_brands_worked: list\(reading\.hotel_brands/)
+  assert.doesNotMatch(adminRoute, /\bhotel_brands: list\(/, 'that column does not exist')
+
+  const profileUpdate = body('src/app/api/profile/update/route.ts')
+  assert.match(profileUpdate, /'hotel_brands_worked'/, 'the profile form writes this one')
 })
