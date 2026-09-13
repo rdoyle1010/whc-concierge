@@ -5,6 +5,7 @@ import DashboardShell from '@/components/DashboardShell'
 import { BUILD_STATUS_LABEL, type BuildStatus } from '@/lib/profile-build'
 import CvReadingReview, { type Reading } from '@/components/CvReadingReview'
 import AdminProfileEditor from '@/components/AdminProfileEditor'
+import { BUILD_QUESTIONS } from '@/lib/profile-build-questions'
 import { ExternalLink, FileText, RefreshCw, Send, Sparkles, UserPlus } from 'lucide-react'
 
 // The queue for "send us your CV and we will do the rest".
@@ -24,7 +25,22 @@ type Request = {
   status: BuildStatus
   created_user_id: string | null
   consent_wording: string
+  answers: Record<string, unknown> | null
   created_at: string
+}
+
+// What they answered at intake, read back in the words they were asked.
+// A select stores a value and shows a label, and an administrator looking at
+// "1_week" has been handed the database rather than the answer.
+function answered(answers: Record<string, unknown> | null | undefined) {
+  if (!answers) return []
+  return BUILD_QUESTIONS.flatMap(question => {
+    const value = answers[question.key]
+    if (value === undefined || value === null || value === '') return []
+    if (Array.isArray(value)) return value.length ? [{ label: question.label, value: value.join(', ') }] : []
+    const option = (question.options || []).find(choice => choice.value === String(value))
+    return [{ label: question.label, value: option?.label || String(value) }]
+  })
 }
 
 export default function AdminProfileBuildPage() {
@@ -199,6 +215,17 @@ export default function AdminProfileBuildPage() {
 
                 {row.note && (
                   <p className="mt-3 border-l-2 border-[#dddddd] pl-3 text-[13px] leading-relaxed text-secondary">{row.note}</p>
+                )}
+
+                {answered(row.answers).length > 0 && (
+                  <dl className="mt-3 grid gap-x-6 gap-y-1.5 border-l-2 border-[#dddddd] pl-3 text-[12px] sm:grid-cols-2">
+                    {answered(row.answers).map(item => (
+                      <div key={item.label} className="flex gap-2">
+                        <dt className="shrink-0 text-muted">{item.label}</dt>
+                        <dd className="min-w-0 font-medium text-ink">{item.value}</dd>
+                      </div>
+                    ))}
+                  </dl>
                 )}
 
                 <div className="mt-4 flex flex-wrap items-center gap-2">

@@ -29,16 +29,17 @@ export default function SetUpMyProfilePage() {
           <p className="mt-5 max-w-2xl text-[16px] leading-relaxed text-[#3a3a3a]">
             A proper profile takes about half an hour: qualifications, product houses, systems,
             treatments, the brands you have worked with. You have better things to do on a Sunday.
-            So send us what you have and we will build it for you, then send it back for you to
-            look at before anybody else sees a word of it.
+            So send us your CV, answer the eight things a CV cannot tell us, and we will build the
+            rest. It comes back to you finished, in your own words, before anybody else sees a word
+            of it.
           </p>
 
           <div className="mt-8 border border-[#dddddd] p-6">
             <p className="text-[11px] font-semibold uppercase tracking-[.16em] text-[#6b6b6b]">What happens</p>
             <ol className="mt-4 space-y-4">
               {[
-                ['You send a CV', 'Or an old profile, a few photographs, or a couple of lines telling us what you do. Whatever you already have.'],
-                ['We build it', 'Properly, in your words, with your qualifications and the houses you know. A couple of days.'],
+                ['You send a CV and answer eight things', 'The eight are the ones a CV never says: what you are now, when you could start, how far you would go, how visible you want to be. Two minutes.'],
+                ['We build it', 'Properly, in your own words, with your qualifications and the houses you know. It reads as though you wrote it, because everything in it came from you.'],
                 ['You look at it', 'We send it to you. Change anything you like. Nothing is visible to any property until you say yes.'],
                 ['You set a password', 'That is the first thing we ever ask you to do, and by then it is already finished.'],
               ].map(([title, detail], index) => (

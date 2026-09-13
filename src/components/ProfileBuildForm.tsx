@@ -2,11 +2,18 @@
 
 import { useState } from 'react'
 import { BUILD_CONSENT_WORDING, CV_MAX_BYTES, cvTypeAllowed } from '@/lib/profile-build'
+import { BUILD_QUESTIONS, unanswered, sanitiseAnswers, type BuildAnswers } from '@/lib/profile-build-questions'
 
-// Four fields and a file, because every extra one is somebody deciding to do
-// it later. The CV is optional on purpose: a person who has not got one to
-// hand can still say "I am a head therapist at a country house spa, I know
-// ESPA and Book4Time" and that is enough for us to start.
+// Send us your CV, answer eight things, and we build the rest.
+//
+// The eight are the ones a CV never says: when you could start, how far you
+// would go, what languages you hold, how visible you want to be. Without them
+// a built profile stops at eighty per cent and looks like somebody else
+// filled it in. With them it looks like yours, which is the whole point.
+//
+// Five of the eight are one tap. It has to be quicker than the fifteen-field
+// form people already declined to fill in, or it is that form with a better
+// name on it.
 
 export default function ProfileBuildForm() {
   const [fullName, setFullName] = useState('')
@@ -16,9 +23,16 @@ export default function ProfileBuildForm() {
   const [trap, setTrap] = useState('')
   const [consent, setConsent] = useState(false)
   const [file, setFile] = useState<File | null>(null)
+  const [answers, setAnswers] = useState<BuildAnswers>({})
   const [sending, setSending] = useState(false)
   const [done, setDone] = useState(false)
   const [error, setError] = useState('')
+
+  const answer = (key: string, value: unknown) => setAnswers(current => ({ ...current, [key]: value }))
+  const toggle = (key: string, value: string) => setAnswers(current => {
+    const held = Array.isArray(current[key]) ? current[key] as string[] : []
+    return { ...current, [key]: held.includes(value) ? held.filter(item => item !== value) : [...held, value] }
+  })
 
   async function submit(event: React.FormEvent) {
     event.preventDefault()
@@ -26,9 +40,13 @@ export default function ProfileBuildForm() {
 
     if (!fullName.trim()) return setError('Please tell us your name.')
     if (!/^\S+@\S+\.\S+$/.test(email.trim())) return setError('Please give us an email address we can reach you on.')
+
+    // Checked against the same rules the server uses, so somebody finds out
+    // now rather than after the upload.
+    const missing = unanswered(sanitiseAnswers(answers))
+    if (missing.length) return setError(`Still to answer: ${missing.join(', ')}.`)
+
     if (!consent) return setError('We need your permission before we can build anything.')
-    // Checked here as well as on the server, so somebody with a 40MB scan
-    // finds out now rather than after waiting for the upload.
     if (file) {
       if (!cvTypeAllowed(file.type)) return setError('Send a PDF or a Word document, and we will take it from there.')
       if (file.size > CV_MAX_BYTES) return setError('That file is over 8MB. Send a smaller one, or just tell us where to find you.')
@@ -43,6 +61,7 @@ export default function ProfileBuildForm() {
       form.set('note', note)
       form.set('thc_hp', trap)
       form.set('consent', String(consent))
+      form.set('answers', JSON.stringify(answers))
       if (file) form.set('cv', file)
 
       const res = await fetch('/api/profile-build', { method: 'POST', body: form })
@@ -70,35 +89,99 @@ export default function ProfileBuildForm() {
     )
   }
 
+  const label = (text: string, hint?: string) => (
+    <>
+      <span className="block text-[12px] font-semibold text-[#1c1c1c]">{text}</span>
+      {hint && <span className="mt-0.5 block text-[11px] leading-4 text-[#777777]">{hint}</span>}
+    </>
+  )
+
   return (
-    <form onSubmit={submit} className="space-y-5">
+    <form onSubmit={submit} className="space-y-6">
       <div className="grid gap-5 sm:grid-cols-2">
         <label className="block">
-          <span className="block text-[12px] font-semibold text-[#1c1c1c]">Your name</span>
+          {label('Your name')}
           <input value={fullName} onChange={e => setFullName(e.target.value)}
             className="mt-1.5 w-full border border-[#dddddd] px-3 py-2.5 text-[14px]" />
         </label>
         <label className="block">
-          <span className="block text-[12px] font-semibold text-[#1c1c1c]">Email</span>
+          {label('Email')}
           <input type="email" value={email} onChange={e => setEmail(e.target.value)}
             className="mt-1.5 w-full border border-[#dddddd] px-3 py-2.5 text-[14px]" />
         </label>
         <label className="block">
-          <span className="block text-[12px] font-semibold text-[#1c1c1c]">Phone (optional)</span>
+          {label('Phone (optional)')}
           <input value={phone} onChange={e => setPhone(e.target.value)}
             className="mt-1.5 w-full border border-[#dddddd] px-3 py-2.5 text-[14px]" />
         </label>
         <label className="block">
-          <span className="block text-[12px] font-semibold text-[#1c1c1c]">Your CV (optional)</span>
+          {label('Your CV', 'PDF or Word. Optional, but it is what we build from.')}
           <input type="file" accept=".pdf,.doc,.docx" onChange={e => setFile(e.target.files?.[0] || null)}
             className="mt-1.5 w-full border border-[#dddddd] px-3 py-2 text-[13px]" />
         </label>
       </div>
 
+      <div className="border-t border-[#eeeeee] pt-5">
+        <p className="text-[13px] font-semibold text-[#1c1c1c]">The bits a CV never says</p>
+        <p className="mt-1 text-[12px] leading-5 text-[#777777]">
+          Eight questions, most of them one tap. Everything else we take from your CV.
+        </p>
+
+        <div className="mt-4 grid gap-5 sm:grid-cols-2">
+          {BUILD_QUESTIONS.map(question => {
+            if (question.kind === 'many') {
+              const held = Array.isArray(answers[question.key]) ? answers[question.key] as string[] : []
+              return (
+                <div key={question.key} className="sm:col-span-2">
+                  {label(question.label, question.hint)}
+                  <div className="mt-2 flex flex-wrap gap-1.5">
+                    {(question.options || []).map(option => {
+                      const on = held.includes(option.value)
+                      return (
+                        <button type="button" key={option.value} onClick={() => toggle(question.key, option.value)}
+                          className={`border px-2.5 py-1 text-[12px] ${on ? 'border-[#1c1c1c] bg-[#1c1c1c] text-white' : 'border-[#dddddd] text-[#555555]'}`}>
+                          {option.label}
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+              )
+            }
+
+            if (question.kind === 'choose') {
+              const wide = question.key === 'visibility'
+              return (
+                <label key={question.key} className={`block ${wide ? 'sm:col-span-2' : ''}`}>
+                  {label(question.label, question.hint)}
+                  <select value={String(answers[question.key] || '')}
+                    onChange={e => answer(question.key, e.target.value)}
+                    className="mt-1.5 w-full border border-[#dddddd] px-3 py-2.5 text-[14px]">
+                    <option value="">Choose one</option>
+                    {(question.options || []).map(option => (
+                      <option key={option.value} value={option.value}>{option.label}</option>
+                    ))}
+                  </select>
+                </label>
+              )
+            }
+
+            return (
+              <label key={question.key} className="block">
+                {label(question.label, question.hint)}
+                <input type={question.kind === 'number' ? 'number' : 'text'}
+                  value={String(answers[question.key] ?? '')} placeholder={question.placeholder}
+                  onChange={e => answer(question.key, e.target.value)}
+                  className="mt-1.5 w-full border border-[#dddddd] px-3 py-2.5 text-[14px]" />
+              </label>
+            )
+          })}
+        </div>
+      </div>
+
       <label className="block">
-        <span className="block text-[12px] font-semibold text-[#1c1c1c]">Anything a CV would not say (optional)</span>
-        <textarea rows={4} value={note} onChange={e => setNote(e.target.value)}
-          placeholder="The treatments you are best at, the houses you have trained with, what you are hoping for next."
+        {label('Anything else worth knowing (optional)', 'The treatments you are best at, the houses you have trained with, what you are hoping for next.')}
+        <textarea rows={3} value={note} onChange={e => setNote(e.target.value)}
           className="mt-1.5 w-full border border-[#dddddd] px-3 py-2.5 text-[14px]" />
       </label>
 

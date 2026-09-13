@@ -7,6 +7,11 @@ import {
   BUILD_CONSENT_WORDING, CV_MAX_BYTES, cvStoragePath, cvTypeAllowed,
 } from '@/lib/profile-build'
 import { ensureCandidateProfile } from '@/lib/candidate-record'
+import { visibilityColumns } from '@/lib/talent-visibility'
+import { tolerantUpsert } from '@/lib/tolerant-upsert'
+import {
+  sanitiseAnswers, unanswered, answersToProfile, chosenVisibility, type BuildAnswers,
+} from '@/lib/profile-build-questions'
 
 // The intake for "send us your CV and we will do the rest".
 //
@@ -53,8 +58,20 @@ export async function POST(req: NextRequest) {
   const note = String(form.get('note') || '').trim().slice(0, 2000)
   const consent = form.get('consent') === 'true'
 
+  // The eight things a CV cannot say. Checked here as well as in the browser,
+  // because a form that validates only on screen validates only for people
+  // using the screen.
+  let answers: BuildAnswers = {}
+  try {
+    answers = sanitiseAnswers(JSON.parse(String(form.get('answers') || '{}')))
+  } catch {
+    answers = {}
+  }
+
   if (!fullName) return NextResponse.json({ error: 'Please tell us your name.' }, { status: 400 })
   if (!/^\S+@\S+\.\S+$/.test(email)) return NextResponse.json({ error: 'Please give us an email address we can reach you on.' }, { status: 400 })
+  const missing = unanswered(answers)
+  if (missing.length) return NextResponse.json({ error: `Still to answer: ${missing.join(', ')}.` }, { status: 400 })
   if (!consent) return NextResponse.json({ error: 'We need your permission before we can build anything.' }, { status: 400 })
 
   const file = form.get('cv') as File | null
@@ -75,6 +92,7 @@ export async function POST(req: NextRequest) {
     phone: phone || null,
     note: note || null,
     consent_wording: BUILD_CONSENT_WORDING,
+    answers,
     admin_note: suspected
       ? 'Our spam check was tripped by this one. It is probably a browser filling in a hidden field rather than a bot, so read it before dismissing it.'
       : null,
@@ -120,7 +138,7 @@ export async function POST(req: NextRequest) {
   // Not for a flagged submission: a spam check that trips should not be able
   // to create auth users. Those wait for a person.
   if (!suspected) {
-    await createAccountFor(admin, created.id, { email, fullName, phone, cvPath })
+    await createAccountFor(admin, created.id, { email, fullName, phone, cvPath, answers })
       .catch((accountError: any) => {
         // Never fails the request. Her CV is saved either way, and an account
         // that did not get made is a button away rather than a lost request.
@@ -158,7 +176,7 @@ export async function POST(req: NextRequest) {
 async function createAccountFor(
   admin: any,
   requestId: string,
-  person: { email: string; fullName: string; phone: string; cvPath: string | null },
+  person: { email: string; fullName: string; phone: string; cvPath: string | null; answers: BuildAnswers },
 ): Promise<void> {
   let userId: string | null = null
 
@@ -201,6 +219,29 @@ async function createAccountFor(
     cv_url: person.cvPath,
   })
   if (!record.ok) throw new Error(record.error)
+
+  // The answers, written now rather than waiting for somebody to press a
+  // button. By the time this reaches the queue the profile already knows what
+  // they are, where they are, when they could start and how far they would
+  // go, so reading the CV finishes it instead of starting it.
+  //
+  // Only on a record we just created. Somebody who already had a profile
+  // asked us to help with it, not to have their own answers overwritten by a
+  // form they filled in five minutes ago in a hurry.
+  const fields = answersToProfile(person.answers)
+  if (record.created && Object.keys(fields).length) {
+    const written = await tolerantUpsert(admin, 'candidate_profiles', {
+      user_id: userId,
+      ...fields,
+      // Their answer, through the one thing allowed to turn a preference into
+      // those four booleans. Private unless they said otherwise.
+      ...visibilityColumns(chosenVisibility(person.answers)),
+    }, { onConflict: 'user_id' })
+    if (written.stripped.length) {
+      console.error('Profile build answers written without unknown columns:', written.stripped.join(', '))
+    }
+    if (!written.ok) console.error('Profile build answers failed:', written.error)
+  }
 
   const { error: linkError } = await admin.from('profile_build_requests')
     .update({ created_user_id: userId, status: 'building', updated_at: new Date().toISOString() })
