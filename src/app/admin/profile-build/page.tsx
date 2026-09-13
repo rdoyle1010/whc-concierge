@@ -57,7 +57,11 @@ export default function AdminProfileBuildPage() {
       const body = await res.json().catch(() => ({}))
       if (!res.ok) { setError(body.error || 'That did not work.'); return null }
       if (body.warning) setError(body.warning)
-      else if (action === 'create') setNote(`Account created for ${row.full_name}. Now fill in the profile.`)
+      else if (action === 'create') {
+        setNote(body.reused
+          ? `${row.full_name} already had an account, so this is now linked to it. Nothing of theirs has been changed.`
+          : `Account created for ${row.full_name}. Now fill in the profile.`)
+      }
       else if (action === 'handover') setNote(`Sent to ${row.full_name}. They set a password from here.`)
       await load()
       return body
@@ -161,7 +165,10 @@ export default function AdminProfileBuildPage() {
                   </select>
                 </div>
 
-                {row.created_user_id && (
+                {/* Always available. Reading writes nothing, so hiding it behind
+                    account creation only put the useful button behind a step
+                    that can fail. */}
+                {(
                   <div className="mt-4 border-t border-border pt-4">
                     <div className="flex flex-wrap items-center gap-2">
                       <button type="button" disabled={busy === row.id}
@@ -173,7 +180,9 @@ export default function AdminProfileBuildPage() {
                         <Sparkles size={13} /> {busy === row.id ? 'Reading...' : 'Read the CV'}
                       </button>
                       <span className="text-[11px] text-muted">
-                        Fills in a draft you check. Nothing is saved until you say so.
+                        {row.created_user_id
+                          ? 'Fills in a draft you check. Nothing is saved until you say so.'
+                          : 'Reads a draft now. You will need their account before it can be saved.'}
                       </span>
                     </div>
 
@@ -182,7 +191,13 @@ export default function AdminProfileBuildPage() {
                       placeholder="Or paste the CV text here, for a Word document or anything they sent in an email."
                       className="input-field mt-3 w-full text-[12px]" />
 
-                    {readings[row.id] && (
+                    {readings[row.id] && !row.created_user_id && (
+                      <p className="mt-4 border border-amber-200 bg-amber-50 px-4 py-3 text-[13px] text-amber-800">
+                        Read and ready. Press &quot;Create their account&quot; above and it can be saved.
+                      </p>
+                    )}
+
+                    {readings[row.id] && row.created_user_id && (
                       <CvReadingReview
                         reading={readings[row.id]}
                         saving={busy === row.id}

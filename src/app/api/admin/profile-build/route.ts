@@ -74,20 +74,49 @@ export async function POST(req: NextRequest) {
   if (action === 'create') {
     if (request.created_user_id) return NextResponse.json({ error: 'This one already has an account.' }, { status: 400 })
 
+    let userId: string | null = null
+    let reused = false
+
     const { data: made, error: createError } = await admin.auth.admin.createUser({
       email: request.email,
       email_confirm: true,
       user_metadata: { role: 'talent', full_name: request.full_name },
     })
-    if (createError || !made?.user) {
+
+    if (made?.user) {
+      userId = made.user.id
+    } else if (alreadyRegistered(createError?.message)) {
+      // The most useful person in this queue is somebody who already signed
+      // up, got stuck at ten per cent and has now asked for help. Refusing
+      // her because an account exists would turn the one request we most want
+      // into a dead end.
+      userId = await findUserByEmail(admin, request.email)
+      reused = true
+      if (!userId) {
+        return NextResponse.json({
+          error: 'An account exists for that address but we could not find it. Look them up in Users.',
+        }, { status: 409 })
+      }
+    } else {
       return NextResponse.json({ error: createError?.message || 'That account could not be created.' }, { status: 400 })
     }
-    const userId = made.user.id
 
     const { error: profileError } = await admin.from('profiles').upsert({
       id: userId, email: request.email, role: 'candidate', full_name: request.full_name,
     }, { onConflict: 'id' })
     if (profileError) return NextResponse.json({ error: profileError.message }, { status: 500 })
+
+    // An existing account keeps everything it already has. She asked for help
+    // finishing her profile, not for it to be started again, and quietly
+    // resetting somebody's visibility or their name would be the opposite of
+    // help.
+    if (reused) {
+      const { error: linkError } = await admin.from('profile_build_requests')
+        .update({ created_user_id: userId, status: 'building', updated_at: new Date().toISOString() })
+        .eq('id', id)
+      if (linkError) return NextResponse.json({ error: linkError.message }, { status: 500 })
+      return NextResponse.json({ success: true, userId, reused: true })
+    }
 
     // Private, and not merely by default. She has not seen this yet, so
     // nobody else may either.
@@ -190,6 +219,9 @@ export async function POST(req: NextRequest) {
 
   // Read the CV and propose a profile. Saves nothing: the draft goes back to
   // the screen, a person corrects it, and only then is anything written.
+  // Deliberately available before the account exists. Reading writes nothing,
+  // so gating it behind account creation only hid the useful button behind a
+  // step that can fail.
   if (action === 'read_cv') {
     if (!cvReadingConfigured()) {
       return NextResponse.json({ error: 'Reading CVs is not switched on: ANTHROPIC_API_KEY is not set in Netlify.' }, { status: 400 })
@@ -204,17 +236,26 @@ export async function POST(req: NextRequest) {
       // Only PDFs can be read directly. A Word document has to be saved as
       // one, and saying so is better than a reader that quietly returns
       // nothing useful from a file it never understood.
-      if (!request.cv_path.toLowerCase().endsWith('.pdf')) {
-        return NextResponse.json({
-          error: 'That CV is a Word document, which cannot be read directly. Open it, save it as a PDF, or paste the text in below.',
-        }, { status: 400 })
-      }
       const { data: file, error: downloadError } = await admin.storage.from(BUCKET).download(request.cv_path)
       if (downloadError || !file) {
         return NextResponse.json({ error: 'That CV could not be fetched from storage.' }, { status: 502 })
       }
-      const base64 = Buffer.from(await file.arrayBuffer()).toString('base64')
-      result = await readCv({ kind: 'pdf', base64 })
+      const bytes = Buffer.from(await file.arrayBuffer())
+
+      if (request.cv_path.toLowerCase().endsWith('.pdf')) {
+        result = await readCv({ kind: 'pdf', base64: bytes.toString('base64') })
+      } else {
+        // Word, which is what spa professionals actually send. The reader
+        // takes a PDF or text and nothing else, so the text comes out here
+        // rather than telling somebody to go and convert their own CV.
+        const text = await wordText(bytes)
+        if (!text) {
+          return NextResponse.json({
+            error: 'We could not read that Word document. Paste the text in below, or ask them for a PDF.',
+          }, { status: 400 })
+        }
+        result = await readCv({ kind: 'text', text })
+      }
     } else {
       return NextResponse.json({ error: 'There is no CV on this request. Paste the text instead.' }, { status: 400 })
     }
@@ -262,6 +303,37 @@ export async function POST(req: NextRequest) {
   }
 
   return NextResponse.json({ error: 'Unknown action' }, { status: 400 })
+}
+
+/** Supabase says this several ways depending on the path it took. */
+function alreadyRegistered(message: string | null | undefined): boolean {
+  return /already been registered|already registered|already exists|duplicate key/i.test(String(message || ''))
+}
+
+/** There is no getUserByEmail, so the list is paged through rather than guessed at. */
+async function findUserByEmail(admin: any, email: string): Promise<string | null> {
+  const wanted = String(email || '').trim().toLowerCase()
+  for (let page = 1; page <= 20; page++) {
+    const { data, error } = await admin.auth.admin.listUsers({ page, perPage: 200 })
+    if (error || !data?.users?.length) return null
+    const found = data.users.find((user: any) => String(user.email || '').toLowerCase() === wanted)
+    if (found) return found.id
+    if (data.users.length < 200) return null
+  }
+  return null
+}
+
+/** The text of a Word document, or null if it cannot be read. */
+async function wordText(bytes: Buffer): Promise<string | null> {
+  try {
+    const mammoth = await import('mammoth')
+    const { value } = await mammoth.extractRawText({ buffer: bytes })
+    const text = String(value || '').trim()
+    return text.length >= 40 ? text : null
+  } catch (error: any) {
+    console.error('Word CV extraction failed:', error?.message)
+    return null
+  }
 }
 
 const escape = (value: string) =>
