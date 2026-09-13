@@ -6,6 +6,9 @@ import { geocodePostcode } from '@/lib/geo'
 import { getClientIp, rateLimit } from '@/lib/rate-limit'
 import { recordTermsAcceptance, startMarketingOptIn } from '@/lib/privacy-consent'
 import { LAUNCH_COURSE_SLUGS, grantCourses, launchOfferOpen } from '@/lib/launch-offers'
+import { alertAdminOfSignup } from '@/lib/admin-alerts'
+import { welcomeEmailHtml } from '@/lib/welcome-email-template'
+import { sendTransactionalEmail } from '@/lib/send-email'
 
 export const runtime = 'nodejs'
 
@@ -195,6 +198,51 @@ export async function POST(req: NextRequest) {
         if (!started.ok) console.error('Registration marketing opt-in failed:', started.error)
       } catch (optInError: any) {
         console.error('Registration marketing opt-in threw:', optInError?.message)
+      }
+    }
+
+    // Talent registration is finished here: the account, the shared profile
+    // and candidate_profiles are all written above, and the page redirects
+    // straight to the dashboard. Nothing else runs afterwards, which is why
+    // the alert has to fire here.
+    //
+    // It did not, and that is how a launch weekend passed with the platform
+    // apparently silent. The alert lived in /api/register/talent, a route the
+    // talent form has not called since this one took over, so every therapist
+    // who joined did so without a word reaching anybody. Properties were fine:
+    // their form calls /api/register/employer afterwards and that route still
+    // alerts, which is exactly why the gap was invisible - the alerts that
+    // were being tested were the ones that worked.
+    //
+    // Employers are deliberately not alerted from here. At this point their
+    // property row does not exist yet, so an alert now would announce a
+    // sign-up that may never be completed. Theirs fires once the profile is
+    // actually written.
+    if (role === 'talent') {
+      await alertAdminOfSignup('talent', displayName).catch(() => {})
+
+      // And the welcome, which went the same way for the same reason. A
+      // therapist signed up and heard nothing at all from us: no welcome, no
+      // orientation, just a confirmation link from a service she had never
+      // heard of. The quietest possible first impression of a platform whose
+      // whole argument is that somebody is paying attention.
+      //
+      // Best-effort, like the alert. A mail provider having a bad afternoon
+      // must never cost somebody the account they just created.
+      try {
+        await sendTransactionalEmail({
+          to: email,
+          subject: 'Welcome to Talent House Collective',
+          html: welcomeEmailHtml({
+            firstName: String(displayName || '').trim().split(/\s+/)[0] || 'there',
+            userType: 'talent',
+            dashboardUrl: 'https://talenthousecollective.co.uk/talent/dashboard',
+          }),
+          kind: 'welcome_talent',
+          userId: data.user.id,
+        })
+      } catch (welcomeError: any) {
+        console.error('Talent welcome email threw:', welcomeError?.message)
       }
     }
 
