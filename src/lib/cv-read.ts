@@ -44,6 +44,22 @@ export type CvReading = {
 
 export const CV_MODEL = 'claude-opus-5'
 
+// The whole request has to finish inside the host's twenty-six second ceiling,
+// so the work is cut to fit. Fifteen thousand characters is a long CV several
+// times over, and the answer is a short object rather than an essay: three
+// thousand output tokens is generous for it and caps the worst case, which is
+// what actually decides whether this returns at all.
+const MAX_CV_CHARS = 15000
+const MAX_OUTPUT_TOKENS = 3000
+
+// Give up before the host does.
+//
+// A function killed at twenty-six seconds returns an error page rather than
+// JSON, and the screen can only say something vague about the server. Abandon
+// the call at twenty and there is time left to answer properly, in a sentence
+// that tells somebody what to do instead.
+const CALL_TIMEOUT_MS = 20000
+
 /** Whether a reading can be attempted at all on this deployment. */
 export function cvReadingConfigured(): boolean {
   return Boolean(process.env.ANTHROPIC_API_KEY)
@@ -124,12 +140,12 @@ export async function readCv(source: Source): Promise<
         { type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: source.base64 } },
         { type: 'text', text: 'Read this CV and fill in the profile.' },
       ]
-    : [{ type: 'text', text: `Read this CV and fill in the profile.\n\n---\n${source.text.slice(0, 60000)}` }]
+    : [{ type: 'text', text: `Read this CV and fill in the profile.\n\n---\n${source.text.slice(0, MAX_CV_CHARS)}` }]
 
   try {
     const response = await client.messages.create({
       model: CV_MODEL,
-      max_tokens: 8000,
+      max_tokens: MAX_OUTPUT_TOKENS,
       system: SYSTEM,
       // A CV is a short document read against a fixed vocabulary. It does not
       // need the model's full deliberation, and the difference is somebody's
@@ -143,7 +159,7 @@ export async function readCv(source: Source): Promise<
         format: { type: 'json_schema', schema: SCHEMA as any },
       },
       messages: [{ role: 'user', content }],
-    })
+    }, { timeout: CALL_TIMEOUT_MS })
 
     if (response.stop_reason === 'refusal') {
       return { ok: false, error: 'The reader declined to process that document. Fill the profile in by hand.' }
@@ -161,6 +177,12 @@ export async function readCv(source: Source): Promise<
     }
     if (error instanceof Anthropic.RateLimitError) {
       return { ok: false, error: 'Too many CVs at once. Wait a minute and try again.' }
+    }
+    if (error instanceof Anthropic.APIConnectionTimeoutError) {
+      return {
+        ok: false,
+        error: 'That CV took too long to read. Paste the text into the box below instead, or try a shorter document.',
+      }
     }
     return { ok: false, error: error?.message || 'The CV could not be read.' }
   }
