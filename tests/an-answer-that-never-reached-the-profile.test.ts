@@ -70,12 +70,13 @@ test('the CV reader is chosen for speed, because the ceiling is fixed', () => {
 // opening five sections and pressing the link at the top of each did exactly
 // that in about ten seconds.
 test('nothing offers to tick the whole taxonomy at once', () => {
-  assert.match(section, /allowSelectAll = true/, 'the option exists')
-  assert.match(section, /\{allowSelectAll && \(/, 'and it actually hides the control')
-  const offers = editor.match(/<CollapsibleCheckboxSection/g) || []
-  const off = editor.match(/allowSelectAll=\{false\}/g) || []
-  assert.equal(off.length, offers.length, 'every section in the admin editor has it turned off')
-  assert.ok(offers.length >= 5)
+  // Not a setting, and not off by default. Gone. Every list this renders is a
+  // claim about somebody, and there is nowhere on this platform where ticking
+  // all of one is a true answer.
+  assert.doesNotMatch(section, /Select All/)
+  assert.doesNotMatch(section, /selectAll/)
+  assert.ok((editor.match(/<CollapsibleCheckboxSection/g) || []).length >= 5)
   // Clearing stays, because undoing it has to be one press.
   assert.match(section, /Clear All/)
+  assert.match(section, /Tick only what you would be happy to be asked about/)
 })
