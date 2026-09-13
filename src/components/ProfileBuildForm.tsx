@@ -13,7 +13,7 @@ export default function ProfileBuildForm() {
   const [email, setEmail] = useState('')
   const [phone, setPhone] = useState('')
   const [note, setNote] = useState('')
-  const [company, setCompany] = useState('')
+  const [trap, setTrap] = useState('')
   const [consent, setConsent] = useState(false)
   const [file, setFile] = useState<File | null>(null)
   const [sending, setSending] = useState(false)
@@ -41,7 +41,7 @@ export default function ProfileBuildForm() {
       form.set('email', email)
       form.set('phone', phone)
       form.set('note', note)
-      form.set('company', company)
+      form.set('thc_hp', trap)
       form.set('consent', String(consent))
       if (file) form.set('cv', file)
 
@@ -102,11 +102,22 @@ export default function ProfileBuildForm() {
           className="mt-1.5 w-full border border-[#dddddd] px-3 py-2.5 text-[14px]" />
       </label>
 
-      {/* Not visible to a person, filled in by nearly every bot. */}
+      {/* Not visible to a person, and named so no browser recognises it.
+          This was a hidden field labelled "Company", which is exactly what
+          autofill exists to complete - so a real professional with autofill
+          on tripped the spam check, was told her CV had arrived, and nothing
+          was saved. No word a browser knows, no label, and nothing an
+          autocomplete heuristic can match. */}
       <div aria-hidden className="absolute h-0 w-0 overflow-hidden opacity-0">
-        <label>Company
-          <input tabIndex={-1} autoComplete="off" value={company} onChange={e => setCompany(e.target.value)} />
-        </label>
+        <input
+          name="thc_hp"
+          type="text"
+          tabIndex={-1}
+          autoComplete="off"
+          aria-hidden="true"
+          value={trap}
+          onChange={e => setTrap(e.target.value)}
+        />
       </div>
 
       <label className="flex cursor-pointer items-start gap-3">

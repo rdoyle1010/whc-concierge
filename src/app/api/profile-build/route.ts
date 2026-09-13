@@ -32,8 +32,19 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'We could not read that. Please try again.' }, { status: 400 })
   }
 
-  // A field no person can see and every bot fills in.
-  if (String(form.get('company') || '').trim()) return NextResponse.json({ success: true })
+  // A field no person can see. Advisory, not a verdict.
+  //
+  // This used to return success and save nothing, which is the worst thing a
+  // form can do: a professional whose browser autofilled the hidden field was
+  // told her CV had arrived, and it had not. Losing one real therapist costs
+  // far more than storing one spam row, and the rate limit above is the
+  // actual defence.
+  //
+  // So a tripped check is written on the request and shown in the queue,
+  // where a person decides. The one thing it does suppress is the
+  // acknowledgement email, because sending mail to an address a bot supplied
+  // is how a form becomes somebody else's problem.
+  const suspected = Boolean(String(form.get('thc_hp') || '').trim())
 
   const fullName = String(form.get('full_name') || '').trim().slice(0, 200)
   const email = String(form.get('email') || '').trim().toLowerCase().slice(0, 200)
@@ -63,6 +74,9 @@ export async function POST(req: NextRequest) {
     phone: phone || null,
     note: note || null,
     consent_wording: BUILD_CONSENT_WORDING,
+    admin_note: suspected
+      ? 'Our spam check was tripped by this one. It is probably a browser filling in a hidden field rather than a bot, so read it before dismissing it.'
+      : null,
   }).select('id').maybeSingle()
 
   if (error || !created?.id) {
@@ -97,8 +111,9 @@ export async function POST(req: NextRequest) {
   await alertAdminOfSignup('talent', `${fullName} (profile build request)`).catch(() => {})
 
   // And they need to know it arrived. A form that swallows a CV and says
-  // nothing is worse than no form.
-  await sendTransactionalEmail({
+  // nothing is worse than no form. Held back only when the spam check tripped,
+  // so this cannot be used to post mail at somebody who never asked for it.
+  if (!suspected) await sendTransactionalEmail({
     to: email,
     subject: 'We have your details',
     html: acknowledgementHtml(fullName),

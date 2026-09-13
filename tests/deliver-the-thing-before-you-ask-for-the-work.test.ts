@@ -23,7 +23,9 @@ test('somebody with no account can still get a profile', () => {
     'requiring a session removes the only thing this route is for')
   // Fenced the way the other public write routes are.
   assert.match(intake, /enforceRateLimit\(req, 'profile-build'/)
-  assert.match(intake, /form\.get\('company'\)/, 'the honeypot')
+  // The hidden-field check, whatever it is currently called. It was named
+  // 'company', which is the one word autofill is certain to recognise.
+  assert.match(intake, /form\.get\('thc_hp'\)/, 'the honeypot')
   assert.match(intake, /status: 429/)
 })
 
@@ -54,6 +56,36 @@ test('a CV is a document, not anything anybody feels like sending', () => {
   // And the private bucket, never a public one.
   assert.match(intake, /const BUCKET = 'talent-documents'/)
   assert.doesNotMatch(intake, /getPublicUrl/)
+})
+
+// A spam check that silently discards a real submission is worse than no
+// spam check at all.
+//
+// The hidden field was labelled "Company", which is precisely what autofill
+// exists to complete. A professional with autofill on tripped it, was told her
+// CV had arrived, and nothing was saved - on the one page whose entire job is
+// capturing CVs.
+test('the spam check cannot lose somebody s CV', () => {
+  const form = body('src/components/ProfileBuildForm.tsx')
+  // Nothing a browser can recognise: no label, no known field word.
+  const start = form.indexOf('aria-hidden className="absolute')
+  assert.ok(start > 0, 'the hidden field moved; this test needs to follow it')
+  // To the end of its own element, not a fixed window: the consent label sits
+  // directly underneath and a wide slice reads it as part of the trap.
+  const trap = form.slice(start, form.indexOf('</div>', start))
+  assert.doesNotMatch(trap, /<label/, 'a labelled hidden field is an invitation to autofill')
+  assert.doesNotMatch(trap, /company|name=["'](name|email|phone|address|organisation|organization)["']/i)
+  assert.match(trap, /autoComplete="off"/)
+  assert.match(trap, /tabIndex=\{-1\}/)
+
+  // And tripping it never discards the request.
+  assert.match(intake, /const suspected = Boolean/)
+  assert.doesNotMatch(intake, /if \(String\(form\.get\('[a-z_]+'\) \|\| ''\)\.trim\(\)\) return NextResponse\.json\(\{ success: true \}\)/,
+    'a tripped check must not return success without writing anything')
+  // It is written on the row, where a person sees it and decides.
+  assert.match(intake, /admin_note: suspected/)
+  // The one thing it suppresses: mail to an address a bot supplied.
+  assert.match(intake, /if \(!suspected\) await sendTransactionalEmail/)
 })
 
 // A form that swallows a CV and says nothing is worse than no form.
