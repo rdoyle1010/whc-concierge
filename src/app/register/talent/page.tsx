@@ -240,6 +240,10 @@ export default function TalentRegisterPage() {
 
             {refCode && <p className="mt-4 text-[11px] text-[#6b6b6b]">Referral code <span className="font-semibold text-[#1c1c1c]">{refCode}</span> will be applied to your account.</p>}
 
+            <p className="text-[12.5px] text-[#555555] mt-5 border-t border-[#dddddd] pt-5">
+              Would rather not do this yourself?{' '}
+              <Link href="/set-up-my-profile" className="font-semibold text-[#1c1c1c] underline">Send us your CV and we will build it for you</Link>, free.
+            </p>
             <p className="text-[13px] text-muted mt-7">Already have an account? <Link href="/login?role=talent" className="text-[#1c1c1c] font-semibold hover:underline">Sign in →</Link></p>
           </div>
         </div>

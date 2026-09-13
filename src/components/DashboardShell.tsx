@@ -121,6 +121,7 @@ const navItems: Record<string, NavItem[]> = {
     { label: 'Doors & Sectors', href: '/admin/sectors', icon: <LayoutGrid size={17} /> },
     { label: 'Users', href: '/admin/users', icon: <Users size={17} /> },
     { label: 'Sign-ups & Setup', href: '/admin/onboarding', icon: <Users size={17} /> },
+    { label: 'Profiles We Build', href: '/admin/profile-build', icon: <Users size={17} /> },
     { label: 'Messages', href: '/admin/messages', icon: <MessageSquare size={17} /> },
     { label: 'Messages We Sent', href: '/admin/messages-sent', icon: <Mail size={17} /> },
     { label: 'Who Is Online', href: '/admin/activity', icon: <Activity size={17} /> },

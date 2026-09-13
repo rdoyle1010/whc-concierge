@@ -158,7 +158,7 @@ export function onboardingEmailHtml(context: OnboardingContext): string {
            back for you to approve. No charge, and no catch.
          </p>
          <p style="margin:14px 0 0;">
-           <a href="mailto:hello@talenthousecollective.co.uk?subject=Please%20set%20my%20profile%20up"
+           <a href="${SITE}/set-up-my-profile"
               style="display:inline-block;background:#1c1c1c;color:#ffffff;text-decoration:none;padding:11px 20px;font-size:13px;font-weight:600;">Ask us to set it up</a>
          </p>
        </div>`

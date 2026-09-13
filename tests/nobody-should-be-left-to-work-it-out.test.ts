@@ -58,7 +58,11 @@ test('the first-fifty offer appears only while it is open', () => {
   const open = onboardingEmailHtml({ firstName: 'Ana', audience: 'talent', setupOfferOpen: true })
   const closed = onboardingEmailHtml({ firstName: 'Ana', audience: 'talent', setupOfferOpen: false })
   assert.match(open, /first fifty/)
-  assert.match(open, /mailto:hello@talenthousecollective\.co\.uk/)
+  // A way to act on it, whatever that way currently is. This pinned the
+  // mailto, so pointing the offer at the page built for it - which asks for
+  // the CV rather than hoping somebody attaches one - failed a test about
+  // whether the offer appears at all.
+  assert.match(open, /href="(mailto:hello@talenthousecollective\.co\.uk|https:\/\/talenthousecollective\.co\.uk\/set-up-my-profile)/)
   assert.doesNotMatch(closed, /first fifty/)
   assert.equal(SETUP_HELP_LIMIT, 50)
 })

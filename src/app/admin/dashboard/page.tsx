@@ -14,6 +14,7 @@ const SECTIONS = [
   { group: 'People & operations', label: 'Verification', desc: 'Approve talent and properties.', href: '/admin/verification', icon: <Users size={17} /> },
   { group: 'People & operations', label: 'Users', desc: 'Approve, reject and inspect talent and employer accounts.', href: '/admin/users', icon: <Users size={17} /> },
   { group: 'People & operations', label: 'Sign-ups & Setup', desc: 'How far new accounts got, and offer them a hand.', href: '/admin/onboarding', icon: <Users size={17} /> },
+  { group: 'People & operations', label: 'Profiles We Build', desc: 'People who sent a CV instead of filling in a form.', href: '/admin/profile-build', icon: <Users size={17} /> },
   { group: 'People & operations', label: 'Certificates', desc: 'Review and verify submitted qualifications.', href: '/admin/certificates', icon: <GraduationCap size={17} /> },
   { group: 'People & operations', label: 'Messages', desc: 'Enquiries and complaints from the contact form.', href: '/admin/messages', icon: <MessageSquare size={17} /> },
   { group: 'People & operations', label: 'Platform Reviews', desc: 'Read Talent and property feedback about Spa Platform.', href: '/admin/platform-reviews', icon: <MessageSquare size={17} /> },
