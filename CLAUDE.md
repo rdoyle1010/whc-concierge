@@ -129,6 +129,17 @@ All secrets live in Netlify environment variables:
 
 <!-- BEGIN:nextjs-agent-rules -->
 
+## Shipping
+
+Rebecca has asked, as a standing instruction, that pull requests are merged
+without checking with her first. Finish the work, run the tests, the readiness
+checks and a production build, open the pull request and merge it. Tell her
+what changed and what she needs to do; do not ask permission to merge.
+
+This is recorded here so it survives a new session. It covers merging only.
+Anything that deletes data, changes a live setting outside the repository, or
+spends money is still hers to decide.
+
 ## Working alongside another assistant
 
 Rebecca also uses ChatGPT on this project. It cannot see this repository, so
