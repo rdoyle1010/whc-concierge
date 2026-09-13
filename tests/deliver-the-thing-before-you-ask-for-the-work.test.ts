@@ -134,8 +134,10 @@ test('signing in as somebody is consented, admin-only and always written down', 
   // No log, no link. An unrecorded sign-in as somebody else is exactly what
   // this is not allowed to be, so the refusal has to come before the URL.
   const openBlock = adminRoute.slice(adminRoute.indexOf("action === 'open'"), adminRoute.indexOf("action === 'handover'"))
+  const handedOver = openBlock.indexOf('url,')
+  assert.ok(handedOver > 0, 'the link is returned from this action')
   assert.ok(
-    openBlock.indexOf('profile_build_access_log') < openBlock.indexOf('success: true, url'),
+    openBlock.indexOf('profile_build_access_log') < handedOver,
     'the access is recorded before the link is handed over',
   )
   assert.match(openBlock, /if \(logError\)[\s\S]{0,200}status: 500/)
@@ -319,7 +321,7 @@ test('an address belonging to a property is left completely alone', () => {
 // which buttons happen to be enabled.
 test('the four steps are written down, in order', () => {
   const page = body('src/app/admin/profile-build/page.tsx')
-  const steps = ['1. Read the CV', '2. Save this to their profile', '3. Open their workspace', '4. Send it to them']
+  const steps = ['1. Read the CV', '2. Save this to their profile', '3. Fill in the rest', '4. Send it to them']
   let last = -1
   for (const step of steps) {
     const at = page.indexOf(step)
