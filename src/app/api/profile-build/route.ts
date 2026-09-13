@@ -6,7 +6,7 @@ import { alertAdminOfSignup } from '@/lib/admin-alerts'
 import {
   BUILD_CONSENT_WORDING, CV_MAX_BYTES, cvStoragePath, cvTypeAllowed,
 } from '@/lib/profile-build'
-import { ensureCandidateProfile } from '@/lib/candidate-record'
+import { ensureCandidateProfile, fillBlankProfileFields } from '@/lib/candidate-record'
 import { visibilityColumns } from '@/lib/talent-visibility'
 import { tolerantUpsert } from '@/lib/tolerant-upsert'
 import {
@@ -225,22 +225,24 @@ async function createAccountFor(
   // they are, where they are, when they could start and how far they would
   // go, so reading the CV finishes it instead of starting it.
   //
-  // Only on a record we just created. Somebody who already had a profile
-  // asked us to help with it, not to have their own answers overwritten by a
-  // form they filled in five minutes ago in a hurry.
+  // Into the blanks, on a new record and an old one alike. This used to run
+  // only when the record had just been created, to avoid replacing somebody's
+  // own work with a form they filled in five minutes ago. That was too blunt
+  // by half: an address that already had an account got every answer dropped,
+  // and the profile sat at eighty per cent complaining that the postcode was
+  // missing while the postcode was printed on the card above it.
   const fields = answersToProfile(person.answers)
-  if (record.created && Object.keys(fields).length) {
-    const written = await tolerantUpsert(admin, 'candidate_profiles', {
+  const filled = await fillBlankProfileFields(admin, userId, fields)
+  if (!filled.ok) console.error('Profile build answers failed:', filled.error)
+
+  // Visibility only on a record we made. Somebody who was already open chose
+  // that, and a fresh intake is not the moment to quietly change it back.
+  if (record.created) {
+    const seen = await tolerantUpsert(admin, 'candidate_profiles', {
       user_id: userId,
-      ...fields,
-      // Their answer, through the one thing allowed to turn a preference into
-      // those four booleans. Private unless they said otherwise.
       ...visibilityColumns(chosenVisibility(person.answers)),
     }, { onConflict: 'user_id' })
-    if (written.stripped.length) {
-      console.error('Profile build answers written without unknown columns:', written.stripped.join(', '))
-    }
-    if (!written.ok) console.error('Profile build answers failed:', written.error)
+    if (!seen.ok) console.error('Profile build visibility failed:', seen.error)
   }
 
   const { error: linkError } = await admin.from('profile_build_requests')

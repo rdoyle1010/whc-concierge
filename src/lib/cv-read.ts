@@ -45,7 +45,16 @@ export type CvReading = {
   gaps: string[]
 }
 
-export const CV_MODEL = 'claude-opus-5'
+// Sonnet, not Opus.
+//
+// This is extraction against a fixed vocabulary, not a judgement, and the
+// thing that actually decides whether it returns is how fast the tokens come
+// out. Opus spent longer than eighteen seconds producing the same object
+// three times in a row on a thirty year CV, so an administrator pressed the
+// button, waited, and was told to paste the text in instead. A model that
+// answers in seven seconds is a better model here than a cleverer one that
+// answers after the function has been killed.
+export const CV_MODEL = 'claude-sonnet-5'
 
 // The whole request has to finish inside the host's twenty-six second ceiling,
 // so the work is cut to fit. Fifteen thousand characters is a long CV several
@@ -53,7 +62,7 @@ export const CV_MODEL = 'claude-opus-5'
 // thousand output tokens is generous for it and caps the worst case, which is
 // what actually decides whether this returns at all.
 const MAX_CV_CHARS = 15000
-const MAX_OUTPUT_TOKENS = 3000
+const MAX_OUTPUT_TOKENS = 2200
 
 // Give up before the host does.
 //

@@ -69,3 +69,57 @@ export async function ensureCandidateProfile(
   if (!written.ok) return { ok: false, error: written.error }
   return { ok: true, created: false, filled: Object.keys(patch) }
 }
+
+/**
+ * Fill in what is blank, and touch nothing that is not.
+ *
+ * The intake answers had a rule of their own: write them only when the record
+ * had just been created, so that somebody who already had a profile did not
+ * have their own work replaced by a form they filled in five minutes ago.
+ * That rule was too blunt by half. Colin already had an account from an
+ * earlier test, so his record was not new, so every answer he gave - his
+ * postcode, when he could start, how far he would go - was dropped on the
+ * floor and the profile sat at eighty per cent saying "Postcode" was missing
+ * while his postcode was printed on the card above it.
+ *
+ * A blank field is not somebody's work. An empty string, a null and an empty
+ * list are all blank; a value anybody put there, including a false, is not.
+ */
+export async function fillBlankProfileFields(
+  admin: any,
+  userId: string,
+  fields: Record<string, unknown>,
+): Promise<{ ok: true; filled: string[] } | { ok: false; error: string }> {
+  if (!userId) return { ok: false, error: 'No account to attach a profile to.' }
+  const wanted = Object.keys(fields)
+  if (!wanted.length) return { ok: true, filled: [] }
+
+  const { data: existing, error } = await admin.from('candidate_profiles')
+    .select('*').eq('user_id', userId).maybeSingle()
+  if (error) return { ok: false, error: error.message }
+  if (!existing) return { ok: false, error: 'There is no profile to fill in.' }
+
+  const blank = (value: unknown) => {
+    if (value === null || value === undefined) return true
+    if (Array.isArray(value)) return value.length === 0
+    if (typeof value === 'string') return value.trim() === ''
+    return false
+  }
+
+  const patch: Record<string, unknown> = {}
+  for (const [field, value] of Object.entries(fields)) {
+    // A column the table does not have reads as blank here and would be
+    // written, which is the mistake that has cost this platform three
+    // registrations. tolerantUpsert strips it either way, but not asking is
+    // cheaper than being forgiven.
+    if (!(field in existing)) continue
+    if (blank(existing[field]) && !blank(value)) patch[field] = value
+  }
+
+  if (!Object.keys(patch).length) return { ok: true, filled: [] }
+
+  const written = await tolerantUpsert(admin, 'candidate_profiles',
+    { user_id: userId, ...patch }, { onConflict: 'user_id' })
+  if (!written.ok) return { ok: false, error: written.error }
+  return { ok: true, filled: Object.keys(patch) }
+}

@@ -92,9 +92,12 @@ test('how visible they are is their answer, and private when they gave none', ()
 })
 
 // Somebody who already has a profile asked for help with it, not to have
-// their own answers replaced by a form they filled in five minutes ago.
-test('an existing profile is not overwritten by a fresh intake', () => {
-  assert.match(route, /if \(record\.created && Object\.keys\(fields\)\.length\)/)
+// their own answers replaced by a form they filled in five minutes ago. The
+// answers still have to land, though: refusing them outright dropped every
+// one for anybody who already had an account.
+test('a fresh intake fills the gaps in an existing profile and nothing else', () => {
+  assert.match(route, /fillBlankProfileFields\(admin, userId, fields\)/)
+  assert.doesNotMatch(route, /if \(record\.created && Object\.keys\(fields\)\.length\)/)
 })
 
 // A profile that reads like a recruiter's write-up tells everybody it was
