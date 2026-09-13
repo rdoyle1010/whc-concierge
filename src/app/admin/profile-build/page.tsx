@@ -37,6 +37,10 @@ export default function AdminProfileBuildPage() {
   // The draft, per request. Held here and nowhere else until somebody saves it.
   const [readings, setReadings] = useState<Record<string, Reading>>({})
   const [pasted, setPasted] = useState<Record<string, string>>({})
+  // The sign-in link, shown rather than followed.
+  const [link, setLink] = useState<{ url: string; name: string; copied: boolean } | null>(null)
+  // Which row has been refused a handover once and is now one press from being sent anyway.
+  const [confirming, setConfirming] = useState('')
 
   async function load() {
     const res = await fetch('/api/admin/profile-build', { cache: 'no-store' })
@@ -84,6 +88,15 @@ export default function AdminProfileBuildPage() {
     }
   }
 
+  // Sending is refused once when the name on the profile and the name on the
+  // request disagree, because that is what a CV attached to the wrong person
+  // looks like. Pressing again is the administrator saying she has checked.
+  async function sendItToThem(row: Request) {
+    const confirmed = confirming === row.id
+    const sent = await act(row, 'handover', confirmed ? { confirm: true } : {})
+    setConfirming(sent ? '' : row.id)
+  }
+
   // The sign-in link, handed over rather than followed.
   //
   // This used to open the link in a new tab, which is the one thing it must
@@ -95,12 +108,15 @@ export default function AdminProfileBuildPage() {
   async function copyWorkspaceLink(row: Request) {
     const body = await act(row, 'open')
     if (!body?.url) return
+    setLink({ url: body.url, name: row.full_name, copied: false })
+    // Attempted, not relied on. The clipboard is refused often enough - a
+    // desktop shell, a permission, an await between the click and the write -
+    // and a link nobody can copy is not an error worth a red panel. It is
+    // shown either way, in a box, with a button that tries again.
     try {
       await navigator.clipboard.writeText(body.url)
-      setNote('Link copied. Paste it into a private window. If you open it here you will be signed out of admin.')
-    } catch {
-      setError(`Copy this and open it in a private window, or you will be signed out of admin here: ${body.url}`)
-    }
+      setLink({ url: body.url, name: row.full_name, copied: true })
+    } catch { /* the panel below is the fallback */ }
   }
 
   return (
@@ -129,6 +145,31 @@ export default function AdminProfileBuildPage() {
         )}
         {error && <p className="mt-4 border border-red-200 bg-red-50 px-4 py-3 text-[13px] text-red-700">{error}</p>}
         {note && <p className="mt-4 border border-[#166534]/30 bg-[#f3fbf5] px-4 py-3 text-[13px] text-[#166534]">{note}</p>}
+
+        {link && (
+          <div className="mt-4 border border-amber-200 bg-amber-50 px-4 py-3">
+            <p className="text-[13px] font-semibold text-amber-900">
+              {link.name}&rsquo;s sign-in link
+            </p>
+            <p className="mt-1 text-[12px] leading-relaxed text-amber-800">
+              Open this in a private window. If you open it in this one you will be signed in as them and
+              signed out of admin. You only need it for a photograph: everything else is on their card below.
+            </p>
+            <div className="mt-2 flex flex-wrap items-center gap-2">
+              <input readOnly value={link.url} onFocus={event => event.currentTarget.select()}
+                className="min-w-0 flex-1 border border-amber-300 bg-white px-2 py-1.5 text-[11px] text-amber-900" />
+              <button type="button"
+                onClick={() => navigator.clipboard.writeText(link.url)
+                  .then(() => setLink(current => current && { ...current, copied: true }))
+                  .catch(() => {})}
+                className="border border-amber-400 px-3 py-1.5 text-[12px] font-semibold text-amber-900">
+                {link.copied ? 'Copied' : 'Copy'}
+              </button>
+              <button type="button" onClick={() => setLink(null)}
+                className="text-[12px] text-amber-800 underline">Done</button>
+            </div>
+          </div>
+        )}
 
         <button type="button" onClick={load} className="mt-5 flex items-center gap-1.5 text-[12px] text-secondary hover:text-ink">
           <RefreshCw size={13} /> Refresh
@@ -184,9 +225,9 @@ export default function AdminProfileBuildPage() {
                         className="inline-flex items-center gap-1.5 border border-border px-3 py-1.5 text-[12px] font-medium text-secondary disabled:opacity-40">
                         <ExternalLink size={13} /> Copy their sign-in link
                       </button>
-                      <button type="button" disabled={busy === row.id} onClick={() => act(row, 'handover')}
+                      <button type="button" disabled={busy === row.id} onClick={() => sendItToThem(row)}
                         className="inline-flex items-center gap-1.5 border border-[#1c1c1c] bg-[#1c1c1c] px-3 py-1.5 text-[12px] font-semibold text-white disabled:opacity-40">
-                        <Send size={13} /> Send it to them
+                        <Send size={13} /> {confirming === row.id ? 'Send it anyway' : 'Send it to them'}
                       </button>
                     </>
                   )}

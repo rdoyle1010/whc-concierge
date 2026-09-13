@@ -50,3 +50,36 @@ export function cvStoragePath(requestId: string, filename: string): string {
   const extension = String(filename || '').toLowerCase().match(/\.(pdf|docx?|doc)$/)?.[0] || '.pdf'
   return `build-requests/${requestId}/cv${extension}`
 }
+
+/**
+ * Whether the name on a CV and the name on the request are the same person.
+ *
+ * Colin sent a CV belonging to Rebecca, and the reader did exactly as it was
+ * told: it read the name off the document and wrote it to Colin's profile.
+ * The account was then his, under her name, with her career on it. That is a
+ * data protection incident rather than a typo, and the only moment anybody
+ * could have caught it was the moment the two names disagreed.
+ *
+ * Deliberately forgiving about how a name is written and unforgiving about
+ * which name it is. Case, punctuation, extra spaces and middle names are the
+ * same person; a different surname is not.
+ */
+export function namesAgree(a: string | null | undefined, b: string | null | undefined): boolean {
+  const parts = (value: string | null | undefined) =>
+    String(value || '')
+      .toLowerCase()
+      .replace(/[^a-z\s]/g, ' ')
+      .split(/\s+/)
+      .filter(Boolean)
+
+  const one = parts(a)
+  const two = parts(b)
+  if (!one.length || !two.length) return true
+
+  // First and last, because a middle name on one side and not the other is
+  // the same person and always has been.
+  const ends = (names: string[]) => [names[0], names[names.length - 1]]
+  const [firstOne, lastOne] = ends(one)
+  const [firstTwo, lastTwo] = ends(two)
+  return firstOne === firstTwo && lastOne === lastTwo
+}
