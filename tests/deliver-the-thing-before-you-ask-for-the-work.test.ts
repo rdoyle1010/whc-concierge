@@ -72,8 +72,12 @@ test('a profile we built is private until its owner has seen it', () => {
   const columns = visibilityColumns('private')
   assert.equal(columns.profile_visible, false)
   assert.equal(columns.private_mode, true)
-  // And she has not agreed to any terms yet, because she has not been asked.
-  assert.match(adminRoute, /agreed_terms: false/)
+  // And she has agreed to nothing, because nobody has asked her. That was
+  // written as `agreed_terms: false` until the column turned out not to exist
+  // on this table - the same one word that cost three registrations on the
+  // launch weekend. Not writing it is now the correct expression of it, and
+  // the acceptance ledger is where an agreement would go if there were one.
+  assert.doesNotMatch(adminRoute, /agreed_terms/)
 })
 
 // The order matters. Emailing somebody a profile that does not exist yet is
