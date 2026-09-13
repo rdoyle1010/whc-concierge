@@ -2,6 +2,18 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createServerSupabaseClient } from '@/lib/supabase/server'
 
+// Twenty-six seconds, and eighteen for the model inside it.
+//
+// This route declared neither, so it inherited the platform default of ten
+// and the model was given no limit at all. A reasoning model asked to rewrite
+// a job description does not reliably answer in ten seconds, so the function
+// was killed mid-request and returned an error page rather than JSON. On
+// screen that is a writing assistant that "just does not work sometimes",
+// which is the hardest kind of broken to report and the easiest to live with.
+export const maxDuration = 26
+const AI_TIMEOUT_MS = 18000
+
+
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY
 const MODEL = process.env.OPENAI_APPLICATION_MODEL || 'gpt-5-mini'
 
@@ -19,6 +31,7 @@ async function generate(input: string) {
   if (!OPENAI_API_KEY) throw new Error('AI is not configured yet.')
   const response = await fetch('https://api.openai.com/v1/responses', {
     method: 'POST',
+    signal: AbortSignal.timeout(AI_TIMEOUT_MS),
     headers: { Authorization: `Bearer ${OPENAI_API_KEY}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({ model: MODEL, reasoning: { effort: 'low' }, input, max_output_tokens: 700 }),
   })

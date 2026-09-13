@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import DashboardShell from '@/components/DashboardShell'
+import AiWrite from '@/components/AiWrite'
 import { createClient } from '@/lib/supabase/client'
 import { Save, Upload } from 'lucide-react'
 import { COMPANY_TYPES, PROPERTY_TYPES, FACILITY_OPTIONS, STAFF_BENEFIT_OPTIONS } from '@/lib/constants'
@@ -384,10 +385,12 @@ export default function EmployerProfilePage() {
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1.5">Tagline</label>
             <input aria-label="Tagline" type="text" value={profile.tagline || ''} onChange={(e) => update('tagline', e.target.value)} className="input-field" placeholder="A short, memorable line about your property" />
+            <AiWrite className="mt-2" field="employer_tagline" value={profile.tagline || ''} onAccept={text => update('tagline', text)} />
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1.5">About / Description</label>
-            <textarea aria-label="About / Description" rows={5} value={profile.about_text || ''} onChange={(e) => update('about_text', e.target.value)} className="input-field" placeholder="Tell candidates about your property, culture, and what makes it special..." />
+            <textarea aria-label="About / Description" rows={6} value={profile.about_text || ''} onChange={(e) => update('about_text', e.target.value)} className="input-field" placeholder="What this place is actually like to work in. If you would rather not write it, press the button underneath." />
+            <AiWrite className="mt-2" field="employer_about" value={profile.about_text || ''} onAccept={text => update('about_text', text)} />
           </div>
         </div>
 
