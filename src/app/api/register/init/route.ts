@@ -7,6 +7,7 @@ import { getClientIp, rateLimit } from '@/lib/rate-limit'
 import { recordTermsAcceptance, startMarketingOptIn } from '@/lib/privacy-consent'
 import { LAUNCH_COURSE_SLUGS, grantCourses, launchOfferOpen } from '@/lib/launch-offers'
 import { alertAdminOfSignup } from '@/lib/admin-alerts'
+import { DEFAULT_VISIBILITY, isTalentVisibility, visibilityColumns } from '@/lib/talent-visibility'
 import { welcomeEmailHtml } from '@/lib/welcome-email-template'
 import { sendTransactionalEmail } from '@/lib/send-email'
 
@@ -63,6 +64,9 @@ export async function POST(req: NextRequest) {
     const phone = typeof body.phone === 'string' ? body.phone.trim().slice(0, 40) : ''
     const postcode = typeof body.postcode === 'string' ? body.postcode.trim().slice(0, 20) : ''
     const hasCar = body.hasCar === true
+    // Anything other than one of the three answers is private. A malformed
+    // body must not be the thing that publishes somebody's name.
+    const visibility = isTalentVisibility(body.visibility) ? body.visibility : DEFAULT_VISIBILITY
     // Strictly true. An absent or truthy-ish value is not consent.
     const marketingOptIn = body.marketingOptIn === true
     // Same standard, and now required. An account used to be created before
@@ -133,11 +137,33 @@ export async function POST(req: NextRequest) {
         has_car: hasCar,
         agreed_terms: true,
         approval_status: 'approved',
-        profile_visible: true,
+        ...visibilityColumns(visibility),
       }, { onConflict: 'user_id' })
       if (candidateError) {
         console.error('Talent signup candidate profile seed failed:', candidateError.message)
         return NextResponse.json({ error: 'Your account was created, but we could not open your Talent profile. Please sign in and try again.' }, { status: 500 })
+      }
+
+      // Read it back, because the write above reported success and did not
+      // happen. Three people signed up on the launch weekend, typed their
+      // names in, and ended up on the register as "Unnamed": the name reached
+      // auth.users and profiles and was absent from candidate_profiles, with
+      // no error anywhere. The cause is still being tracked down in the
+      // database rather than here.
+      //
+      // Until it is found, this refuses to take the write's word for it. A
+      // profile with no name on it is invisible to matching, unaddressable in
+      // an email, and reads as an abandoned account to whoever looks at it,
+      // so it is worth one extra read to be certain.
+      if (displayName) {
+        const { data: saved } = await admin.from('candidate_profiles')
+          .select('id, full_name').eq('user_id', data.user.id).maybeSingle()
+        if (saved && !String(saved.full_name || '').trim()) {
+          console.error('Talent signup name did not persist; repairing', { userId: data.user.id })
+          const { error: repairError } = await admin.from('candidate_profiles')
+            .update({ full_name: displayName }).eq('id', saved.id)
+          if (repairError) console.error('Talent signup name repair failed:', repairError.message)
+        }
       }
 
       if (typeof body.refCode === 'string' && body.refCode.trim()) {
