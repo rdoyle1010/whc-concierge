@@ -129,6 +129,27 @@ All secrets live in Netlify environment variables:
 
 <!-- BEGIN:nextjs-agent-rules -->
 
+## Working alongside another assistant
+
+Rebecca also uses ChatGPT on this project. It cannot see this repository, so
+it is the outside view: positioning, copy, pricing, strategy, and arguing with
+the plan. This session is the builder.
+
+`docs/project-brief.md` is the file she pastes into ChatGPT to bring it up to
+speed. Two obligations follow:
+
+1. **Keep it current.** When something material changes - a number in the
+   state table, a strategic decision, a new product surface - update the brief
+   in the same commit. A brief that describes last month is worse than none,
+   because it is believed.
+
+2. **Check its answers against the code before acting on them.** An assistant
+   working from a description will confidently name features that do not exist
+   and problems that were fixed last week. Say plainly which parts are right
+   and which are not, then build the ones worth building. Do not implement an
+   outside suggestion just because it arrived with confidence, and do not
+   dismiss one because it did.
+
 # This is NOT the Next.js you know
 
 This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
