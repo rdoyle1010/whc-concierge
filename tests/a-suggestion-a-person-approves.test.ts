@@ -163,7 +163,10 @@ test('the work is cut to fit the time it is actually given', () => {
 })
 
 test('the model is named explicitly rather than left to a default', () => {
-  assert.equal(CV_MODEL, 'claude-opus-5')
+  // Which model is a speed decision made in cv-read and asserted where the
+  // reason for it lives. What matters here is that one is named at all: a
+  // default silently becomes whatever the SDK ships next.
+  assert.match(CV_MODEL, /^claude-[a-z0-9-]+$/)
   assert.match(lib, /model: CV_MODEL/)
   assert.match(lib, /max_tokens: MAX_OUTPUT_TOKENS/, 'the output cap is named rather than left open')
 })

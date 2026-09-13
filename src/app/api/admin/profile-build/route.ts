@@ -5,7 +5,8 @@ import { sendTransactionalEmail, SUPPORT_MAILBOX } from '@/lib/send-email'
 import { isBuildStatus, namesAgree } from '@/lib/profile-build'
 import { visibilityColumns } from '@/lib/talent-visibility'
 import { tolerantUpsert } from '@/lib/tolerant-upsert'
-import { ensureCandidateProfile } from '@/lib/candidate-record'
+import { ensureCandidateProfile, fillBlankProfileFields } from '@/lib/candidate-record'
+import { answersToProfile, sanitiseAnswers } from '@/lib/profile-build-questions'
 import { cvReadingConfigured, readCv, type CvReading } from '@/lib/cv-read'
 import { sanitiseProfileEdit, completionPercent, missingFrom } from '@/lib/candidate-fields'
 
@@ -438,6 +439,19 @@ export async function POST(req: NextRequest) {
     // and says it worked.
     const record = await ensureCandidateProfile(admin, request.created_user_id, { full_name: request.full_name })
     if (!record.ok) return NextResponse.json({ error: record.error }, { status: 500 })
+
+    // Their own answers, put where they belong, every time this is opened.
+    //
+    // Not a repair job that runs once and is forgotten: an answer that never
+    // reached the profile is invisible, because the card shows what they said
+    // and the form shows what was stored and nobody compares the two. Filling
+    // blanks is idempotent, so doing it on every open costs one read and
+    // means the two can never drift apart again.
+    const fromAnswers = answersToProfile(sanitiseAnswers(request.answers))
+    if (Object.keys(fromAnswers).length) {
+      const filled = await fillBlankProfileFields(admin, request.created_user_id, fromAnswers)
+      if (!filled.ok) console.error('Applying intake answers failed:', filled.error)
+    }
 
     const { data: profile, error } = await admin.from('candidate_profiles')
       .select('*').eq('user_id', request.created_user_id).maybeSingle()

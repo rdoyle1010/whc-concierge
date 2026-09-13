@@ -187,15 +187,15 @@ export default function AdminProfileEditor({ requestId, fullName, onSaved }: Pro
       </label>
 
       <div className="mt-4 space-y-2">
-        <CollapsibleCheckboxSection title="Treatments and services" categories={SERVICES_CATEGORIES}
+        <CollapsibleCheckboxSection title="Treatments and services" categories={SERVICES_CATEGORIES} allowSelectAll={false}
           selected={listOf('services_offered')} onChange={value => set('services_offered', value)} />
-        <CollapsibleCheckboxSection title="Qualifications" categories={QUALS_CATEGORIES}
+        <CollapsibleCheckboxSection title="Qualifications" categories={QUALS_CATEGORIES} allowSelectAll={false}
           selected={listOf('qualifications')} onChange={value => set('qualifications', value)} />
-        <CollapsibleCheckboxSection title="Product houses" flatItems={PRODUCT_HOUSES_FULL}
+        <CollapsibleCheckboxSection title="Product houses" flatItems={PRODUCT_HOUSES_FULL} allowSelectAll={false}
           selected={listOf('product_houses')} onChange={value => set('product_houses', value)} />
-        <CollapsibleCheckboxSection title="Systems" flatItems={SYSTEMS_FULL}
+        <CollapsibleCheckboxSection title="Systems" flatItems={SYSTEMS_FULL} allowSelectAll={false}
           selected={listOf('systems_experience')} onChange={value => set('systems_experience', value)} />
-        <CollapsibleCheckboxSection title="Business skills" flatItems={BUSINESS_SKILLS}
+        <CollapsibleCheckboxSection title="Business skills" flatItems={BUSINESS_SKILLS} allowSelectAll={false}
           selected={listOf('business_skills')} onChange={value => set('business_skills', value)} />
       </div>
 

@@ -14,9 +14,20 @@ interface CollapsibleCheckboxSectionProps {
   flatItems?: string[]
   selected: string[]
   onChange: (selected: string[]) => void
+  /**
+   * Whether "Select All" is offered. Off where selecting everything is never
+   * a true answer.
+   *
+   * A profile claiming all sixty treatments, all thirty-nine qualifications
+   * and forty product houses is not an impressive profile, it is an
+   * unbelievable one, and it makes matching worthless for everybody else on
+   * the register. One administrator opening five sections and pressing the
+   * link at the top of each did exactly that in about ten seconds.
+   */
+  allowSelectAll?: boolean
 }
 
-export default function CollapsibleCheckboxSection({ title, categories, flatItems, selected, onChange }: CollapsibleCheckboxSectionProps) {
+export default function CollapsibleCheckboxSection({ title, categories, flatItems, selected, onChange, allowSelectAll = true }: CollapsibleCheckboxSectionProps) {
   const [open, setOpen] = useState(false)
 
   const allItems = flatItems || (categories?.flatMap(c => c.items) ?? [])
@@ -39,7 +50,7 @@ export default function CollapsibleCheckboxSection({ title, categories, flatItem
 
   return (
     <div className="border border-neutral-200">
-      <button onClick={() => setOpen(!open)} className="w-full flex items-center justify-between p-4 text-left hover:bg-neutral-50 transition-colors">
+      <button type="button" onClick={() => setOpen(!open)} className="w-full flex items-center justify-between p-4 text-left hover:bg-neutral-50 transition-colors">
         <div className="flex items-center space-x-3">
           <span className="text-sm font-semibold text-black">{title}</span>
           {count > 0 && <span className="text-xs bg-black text-white px-2 py-0.5">{count} selected</span>}
@@ -49,10 +60,11 @@ export default function CollapsibleCheckboxSection({ title, categories, flatItem
 
       {open && (
         <div className="px-4 pb-4 border-t border-neutral-100">
-          {/* Select All / Clear All */}
           <div className="flex space-x-4 py-3 mb-2">
-            <button onClick={selectAll} className="text-xs text-neutral-500 hover:text-black underline">Select All</button>
-            <button onClick={clearAll} className="text-xs text-neutral-500 hover:text-black underline">Clear All</button>
+            {allowSelectAll && (
+              <button type="button" onClick={selectAll} className="text-xs text-neutral-500 hover:text-black underline">Select All</button>
+            )}
+            <button type="button" onClick={clearAll} className="text-xs text-neutral-500 hover:text-black underline">Clear All</button>
           </div>
 
           {categories ? (
