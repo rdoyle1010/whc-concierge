@@ -101,22 +101,49 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: createError?.message || 'That account could not be created.' }, { status: 400 })
     }
 
-    const { error: profileError } = await admin.from('profiles').upsert({
-      id: userId, email: request.email, role: 'candidate', full_name: request.full_name,
-    }, { onConflict: 'id' })
-    if (profileError) return NextResponse.json({ error: profileError.message }, { status: 500 })
-
-    // An existing account keeps everything it already has. She asked for help
-    // finishing her profile, not for it to be started again, and quietly
-    // resetting somebody's visibility or their name would be the opposite of
-    // help.
+    // An existing account is read before anything is written to it.
+    //
+    // This used to write profiles first and check afterwards, which converted
+    // a live property account into a talent one: role overwritten, the
+    // property's name replaced with a person's, and the owner locked out of
+    // her own dashboard. The guard was there and the write ran in front of it.
+    // Nothing touches an account that already exists until we know what it is.
     if (reused) {
+      const { data: existing, error: lookupError } = await admin.from('profiles')
+        .select('role, full_name').eq('id', userId).maybeSingle()
+      if (lookupError) return NextResponse.json({ error: lookupError.message }, { status: 500 })
+
+      const existingRole = String(existing?.role || '')
+      if (existingRole && existingRole !== 'candidate') {
+        return NextResponse.json({
+          error: `That address already belongs to a ${existingRole === 'employer' ? 'property' : existingRole} account, and changing it would lock them out of it. Ask them for a different address, or build the profile from Users instead.`,
+        }, { status: 409 })
+      }
+
+      // Only what is genuinely absent. She asked for help finishing a profile,
+      // not for it to be started again.
+      if (!existing) {
+        const { error: seedError } = await admin.from('profiles')
+          .insert({ id: userId, email: request.email, role: 'candidate', full_name: request.full_name })
+        if (seedError) return NextResponse.json({ error: seedError.message }, { status: 500 })
+      } else if (!String(existing.full_name || '').trim() && request.full_name) {
+        const { error: nameError } = await admin.from('profiles')
+          .update({ full_name: request.full_name }).eq('id', userId)
+        if (nameError) return NextResponse.json({ error: nameError.message }, { status: 500 })
+      }
+
       const { error: linkError } = await admin.from('profile_build_requests')
         .update({ created_user_id: userId, status: 'building', updated_at: new Date().toISOString() })
         .eq('id', id)
       if (linkError) return NextResponse.json({ error: linkError.message }, { status: 500 })
       return NextResponse.json({ success: true, userId, reused: true })
     }
+
+    // A brand new account, which is ours to shape.
+    const { error: profileError } = await admin.from('profiles').upsert({
+      id: userId, email: request.email, role: 'candidate', full_name: request.full_name,
+    }, { onConflict: 'id' })
+    if (profileError) return NextResponse.json({ error: profileError.message }, { status: 500 })
 
     // Private, and not merely by default. She has not seen this yet, so
     // nobody else may either.

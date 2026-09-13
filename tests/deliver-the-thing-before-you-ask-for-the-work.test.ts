@@ -179,13 +179,33 @@ test('somebody who already has an account is the point, not an error', () => {
   assert.match(adminRoute, /findUserByEmail\(admin, request\.email\)/)
   assert.match(adminRoute, /reused = true/)
 
-  // And what she already built is left exactly as it was. She asked for help
-  // finishing a profile, not for it to be started again.
+  // And nothing is written to an account that already exists until we know
+  // what it is.
+  //
+  // This test used to check only that candidate_profiles was untouched on the
+  // reuse path. It was. The profiles write ran in front of the guard instead,
+  // converted a live property account into a talent one, and locked its owner
+  // out of her own dashboard. The test passed and the bug shipped, which is
+  // the whole reason to state the invariant as "no write before the check"
+  // rather than naming one table and hoping.
   const createBlock = adminRoute.slice(adminRoute.indexOf("action === 'create'"), adminRoute.indexOf("action === 'open'"))
-  const reuseReturn = createBlock.indexOf('reused: true')
-  const overwrite = createBlock.indexOf("from('candidate_profiles')")
-  assert.ok(reuseReturn > 0 && (overwrite < 0 || reuseReturn < overwrite),
-    'an existing profile must not be overwritten on the way past')
+  const guard = createBlock.indexOf('if (reused) {')
+  assert.ok(guard > 0, 'the reuse guard is gone')
+
+  const before = createBlock.slice(0, guard)
+  assert.doesNotMatch(before, /\.upsert\(|\.insert\(|\.update\(/,
+    'nothing may be written to an existing account before the guard reads it')
+
+  // Inside the guard, the role is read first and a non-talent account is
+  // refused rather than converted.
+  const reuseBlock = createBlock.slice(guard, createBlock.indexOf('reused: true'))
+  assert.match(reuseBlock, /select\('role, full_name'\)/)
+  assert.match(reuseBlock, /existingRole !== 'candidate'/)
+  assert.match(reuseBlock, /status: 409/)
+  // A name is filled in only when there is not one already.
+  assert.match(reuseBlock, /!String\(existing\.full_name \|\| ''\)\.trim\(\)/)
+  assert.doesNotMatch(reuseBlock, /role: 'candidate'[\s\S]{0,80}onConflict/,
+    'an existing account must never have its role rewritten')
 })
 
 // Supabase phrases this several ways depending on the path it took.
