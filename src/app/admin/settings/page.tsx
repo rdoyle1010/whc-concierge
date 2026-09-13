@@ -96,7 +96,7 @@ export default function AdminSettingsPage() {
     // Type on to show the live role and property counts beside the sign-in
     // form. Anything else, including blank, hides them - a marketplace with
     // two roles in it argues against itself.
-    { key: 'login_live_numbers', label: 'Show live numbers on the sign-in page (type on to show, leave blank to hide)', placeholder: 'off' },
+    { key: 'login_live_numbers', label: 'Show live numbers publicly - homepage, sign-in and registration (type on to show, leave blank to hide)', placeholder: 'off' },
     // Type closed to shut sign-in and registration behind a waiting list.
     // Every public page stays visible, and admin sign-in is never affected.
     { key: 'admin_alert_mobile', label: 'Your mobile for new sign-up alerts (leave blank for none)', placeholder: '07700 900123' },
