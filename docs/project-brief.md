@@ -82,10 +82,20 @@ Not the product. Distribution and activation.
 
 ## Where AI is used, and where it deliberately is not
 
-**Used:** reading a CV into a draft profile. A person corrects every field and
-presses save; nothing is written until they do. That attacks the actual
-bottleneck, which is that a proper profile takes half an hour to fill in and
-nobody does it.
+**Used:** reading a CV into a draft profile, in the professional's own account
+and in the concierge queue, from one reader against one taxonomy. A person
+corrects every field and presses save; nothing is written until they do. That
+attacks the actual bottleneck, which is that a proper profile takes half an
+hour to fill in and nobody does it.
+
+**Used:** writing the blank box. Every account type has one field that decides
+whether anybody reads the rest of it, and every one of them is left empty: a
+professional's About you, a property's description, every long box in the
+Property Fact File, and the whole of a consultancy listing. There is a button
+next to each. It writes from what is already on that account's own record,
+read on the server rather than taken from the request, and offers a draft that
+saves nothing by itself. Anything already written is never overwritten, and a
+number that is not in the draft is never invented.
 
 **Deliberately not used:** deciding anything about a candidate. The matching
 engine is structured and deterministic, and it can tell somebody exactly why
@@ -103,10 +113,32 @@ matching must never be described as trained on anything; and the vocabulary
 the reader picks from (product houses, systems, qualifications, role levels) is
 the actual intellectual property here, not the model.
 
+## Operational documents, the second revenue line
+
+Being built now, in two tiers. A library of professional templates (SOPs, risk
+assessments, health and safety, job descriptions, performance improvement,
+financial sheets), and the same documents generated for a specific property
+from its own Property Fact File: its products, its booking system, its
+protocols, its commission, its uniform.
+
+The Fact File is the reason the second tier cannot be copied. Anyone can sell
+templates by Friday; nobody else holds that data on a property. The argued
+position is that the library is free with a property account, because it
+drives Fact File completion, which is data the marketplace needs anyway, and
+the generated tier is what is charged for.
+
+Every document carries the same governance the modelled originals did not: an
+owner and an approver distinct from the author, a version, a review date, one
+line on why the procedure matters, how it is measured, and where it goes
+wrong. And every document states what it is: a professional template for the
+property to review, amend and sign off. A risk assessment carries a second,
+specific statement, because it is a legal artefact completed by a competent
+person who knows the premises. No signature is ever pre-printed.
+
 ## Technical shape
 
 Next.js 16 App Router · Supabase (auth, Postgres, storage) · Stripe · Netlify.
-227 API routes, 165 pages, 122 migrations, 117 test files.
+228 API routes, 166 pages, 124 migrations, 133 test files.
 
 Two roles: `talent` and `employer`, stored on `profiles.role` (talent is
 stored as `candidate`). Admin is a third role on the same column.

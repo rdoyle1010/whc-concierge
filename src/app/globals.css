@@ -330,3 +330,45 @@ html { scroll-behavior:smooth; }
   content: 'Write the article. Use the toolbar for headings, bold, lists and links.';
   color: #6b6b6b;
 }
+
+/* Printing an operational document.
+ *
+ * These go on a wall in a folder, so A4 is the design target and the screen
+ * is the preview. The dashboard furniture is removed, the page gets real
+ * margins, and every table repeats its heading when it breaks across a page,
+ * which is the difference between a document somebody files and one they
+ * reprint. */
+@media print {
+  @page {
+    size: A4;
+    margin: 14mm 12mm 16mm;
+  }
+
+  html, body {
+    background: #ffffff;
+  }
+
+  /* Nothing that belongs to the workspace rather than the document. */
+  nav, aside, header.dashboard-header, .dashboard-nav, .print\:hidden {
+    display: none !important;
+  }
+
+  /* A heading repeated at the top of every page a table spills onto. */
+  thead {
+    display: table-header-group;
+  }
+
+  tr, img {
+    break-inside: avoid;
+  }
+
+  /* Widows and orphans make a professional document look cheap. */
+  p, li {
+    orphans: 3;
+    widows: 3;
+  }
+
+  a[href]::after {
+    content: none !important;
+  }
+}
