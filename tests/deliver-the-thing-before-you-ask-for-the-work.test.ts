@@ -170,3 +170,50 @@ test('the offer is reachable from where people give up', () => {
   const sitemap = body('src/app/sitemap.ts')
   assert.match(sitemap, /set-up-my-profile/)
 })
+
+// The most useful person in this queue is somebody who already signed up, got
+// stuck at ten per cent, and has now asked for help. Refusing her because an
+// account exists turns the one request we most want into a dead end.
+test('somebody who already has an account is the point, not an error', () => {
+  assert.match(adminRoute, /alreadyRegistered\(createError\?\.message\)/)
+  assert.match(adminRoute, /findUserByEmail\(admin, request\.email\)/)
+  assert.match(adminRoute, /reused = true/)
+
+  // And what she already built is left exactly as it was. She asked for help
+  // finishing a profile, not for it to be started again.
+  const createBlock = adminRoute.slice(adminRoute.indexOf("action === 'create'"), adminRoute.indexOf("action === 'open'"))
+  const reuseReturn = createBlock.indexOf('reused: true')
+  const overwrite = createBlock.indexOf("from('candidate_profiles')")
+  assert.ok(reuseReturn > 0 && (overwrite < 0 || reuseReturn < overwrite),
+    'an existing profile must not be overwritten on the way past')
+})
+
+// Supabase phrases this several ways depending on the path it took.
+test('every way the database says "that address is taken" is understood', () => {
+  const lib = adminRoute.slice(adminRoute.indexOf('function alreadyRegistered'))
+  for (const phrase of ['already been registered', 'already registered', 'already exists', 'duplicate key']) {
+    assert.ok(lib.includes(phrase), `${phrase} is not recognised`)
+  }
+})
+
+// Reading writes nothing, so gating it behind account creation only hid the
+// useful button behind a step that can fail.
+test('a CV can be read before there is an account to save it to', () => {
+  const readBlock = adminRoute.slice(adminRoute.indexOf("action === 'read_cv'"), adminRoute.indexOf("action === 'apply_reading'"))
+  assert.doesNotMatch(readBlock, /if \(!request\.created_user_id\)/, 'reading must not require an account')
+  // Saving still does.
+  const applyBlock = adminRoute.slice(adminRoute.indexOf("action === 'apply_reading'"))
+  assert.match(applyBlock, /if \(!request\.created_user_id\)/)
+})
+
+// Word is what spa professionals actually send. Telling somebody to go and
+// convert their own CV is not a feature.
+test('a Word CV is read rather than refused', () => {
+  assert.match(adminRoute, /async function wordText/)
+  assert.match(adminRoute, /extractRawText/)
+  assert.match(adminRoute, /endsWith\('\.pdf'\)[\s\S]{0,200}else \{/)
+  // And a Word file that genuinely cannot be read says so, with a way round.
+  assert.match(adminRoute, /Paste the text in below, or ask them for a PDF/)
+  // An empty or near-empty extraction is not a reading.
+  assert.match(adminRoute, /text\.length >= 40 \? text : null/)
+})

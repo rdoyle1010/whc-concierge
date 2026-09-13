@@ -90,11 +90,15 @@ test('every failure comes back as a sentence', () => {
   assert.match(route, /cvReadingConfigured\(\)/)
 })
 
-// A Word document cannot be read directly. Saying so beats a reader that
-// quietly returns nothing useful from a file it never understood.
+// Word is what spa professionals actually send, so it is read rather than
+// refused. What cannot be read is named as such, with a way round it, because
+// a reader that quietly returns nothing from a file it never understood is
+// worse than one that says so.
 test('an unreadable file is named as one, with a way round it', () => {
-  assert.match(route, /endsWith\('\.pdf'\)/)
-  assert.match(route, /save it as a PDF, or paste the text/i)
+  assert.match(route, /endsWith\('\.pdf'\)/, 'PDFs still go to the reader as documents')
+  assert.match(route, /await wordText\(bytes\)/, 'and Word is extracted rather than turned away')
+  assert.match(route, /Paste the text in below, or ask them for a PDF/i)
+  // Pasted text remains the fallback for anything else somebody was sent.
   assert.match(route, /kind: 'text', text: pasted/)
 })
 
