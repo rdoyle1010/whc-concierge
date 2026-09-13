@@ -135,7 +135,11 @@ export async function readCv(source: Source): Promise<
       // need the model's full deliberation, and the difference is somebody's
       // money on a platform earning none yet.
       output_config: {
-        effort: 'medium',
+        // Low, because this is extraction against a fixed list rather than a
+        // judgement, and because the whole request has to finish inside a
+        // serverless timeout. A better answer that arrives after the function
+        // is killed is not a better answer.
+        effort: 'low',
         format: { type: 'json_schema', schema: SCHEMA as any },
       },
       messages: [{ role: 'user', content }],

@@ -237,3 +237,69 @@ test('a Word CV is read rather than refused', () => {
   // An empty or near-empty extraction is not a reading.
   assert.match(adminRoute, /text\.length >= 40 \? text : null/)
 })
+
+// Somebody who has given a name, an address, written consent and a CV has
+// given us an account. Asking an administrator to press a button to agree is
+// a step that exists only because the code was written in that order, and it
+// is a step that can be forgotten, fail, or be done to the wrong person.
+test('the account exists the moment somebody sends their CV', () => {
+  assert.match(intake, /createAccountFor\(admin, created\.id/)
+  assert.match(intake, /auth\.admin\.createUser/)
+  // Private and unapproved by its owner, because she has not seen any of it.
+  assert.match(intake, /\.\.\.visibilityColumns\('private'\)/)
+  // Through the tolerant write, like every other candidate_profiles seed.
+  assert.match(intake, /tolerantUpsert\(admin, 'candidate_profiles'/)
+})
+
+// A spam check that trips must not be able to create auth users.
+test('a flagged submission gets no account', () => {
+  assert.match(intake, /if \(!suspected\) \{[\s\S]{0,200}createAccountFor/)
+})
+
+// Her CV is saved either way. An account that did not get made is a button
+// away; a lost request is not.
+test('a failure to make the account never loses the request', () => {
+  const block = intake.slice(intake.indexOf('createAccountFor(admin, created.id'))
+  assert.match(block, /\.catch\(/)
+  assert.doesNotMatch(block.slice(0, 400), /return NextResponse\.json\(\{ error/)
+})
+
+// Converting a property account into a talent one locks its owner out of her
+// own dashboard. That has happened here once.
+test('an address belonging to a property is left completely alone', () => {
+  const helper = intake.slice(intake.indexOf('async function createAccountFor'))
+  const guard = helper.indexOf("role !== 'candidate'")
+  assert.ok(guard > 0, 'the role guard is gone')
+  // Nothing is written to an existing account before the check reads it.
+  const before = helper.slice(helper.indexOf('findExistingUser'), guard)
+  assert.doesNotMatch(before, /\.upsert\(|\.insert\(|\.update\(/)
+  // And the refusal is written where she will read it.
+  assert.match(helper, /admin_note: `That address already belongs to a/)
+})
+
+// The screen says the order rather than leaving somebody to work it out from
+// which buttons happen to be enabled.
+test('the four steps are written down, in order', () => {
+  const page = body('src/app/admin/profile-build/page.tsx')
+  const steps = ['1. Read the CV', '2. Save this to their profile', '3. Open their workspace', '4. Send it to them']
+  let last = -1
+  for (const step of steps) {
+    const at = page.indexOf(step)
+    assert.ok(at > last, `${step} is missing or out of order`)
+    last = at
+  }
+})
+
+// A function killed mid-request returns an error page, not JSON. "That did
+// not work" is what that looked like on screen: true, and useless.
+test('a failure says what actually happened', () => {
+  const page = body('src/app/admin/profile-build/page.tsx')
+  assert.match(page, /res\.status === 504 \|\| res\.status === 502/)
+  assert.match(page, /paste the CV text in instead of using the file/)
+  assert.match(page, /\$\{res\.status\}/)
+
+  // And the route is allowed longer than the ten-second default it inherited.
+  assert.match(adminRoute, /export const maxDuration = \d+/)
+  const seconds = Number((adminRoute.match(/export const maxDuration = (\d+)/) || [])[1])
+  assert.ok(seconds >= 30, `a CV read needs more than ${seconds} seconds`)
+})
