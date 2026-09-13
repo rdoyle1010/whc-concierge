@@ -300,8 +300,11 @@ test('a failure says what actually happened', () => {
 
   // And the route is allowed longer than the ten-second default it inherited.
   assert.match(adminRoute, /export const maxDuration = \d+/)
+  // Enough for a CV, and not more than the host will actually give. Asking
+  // for sixty when twenty-six is enforced reads as fixed and is not.
   const seconds = Number((adminRoute.match(/export const maxDuration = (\d+)/) || [])[1])
-  assert.ok(seconds >= 30, `a CV read needs more than ${seconds} seconds`)
+  assert.ok(seconds >= 20, `a CV read needs more than ${seconds} seconds`)
+  assert.ok(seconds <= 26, `${seconds} is above the host ceiling, so it is fiction`)
 })
 
 // Doing it yourself is the main door and always was. The concierge page is an

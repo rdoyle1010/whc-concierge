@@ -23,7 +23,13 @@ export const dynamic = 'force-dynamic'
 // learned this the same way: the request died mid-read, the browser got an
 // error page rather than JSON, and the screen said "That did not work",
 // which is true and tells nobody anything.
-export const maxDuration = 60
+//
+// Twenty-six, not sixty. The host caps a synchronous function at twenty-six
+// seconds and asking for sixty does not raise the ceiling, it just means the
+// number in the code disagrees with the number that is enforced - so the read
+// still died and the fix looked like it had not worked. The work below is cut
+// to fit inside this rather than the other way round.
+export const maxDuration = 26
 
 const SITE = 'https://talenthousecollective.co.uk'
 const BUCKET = 'talent-documents'

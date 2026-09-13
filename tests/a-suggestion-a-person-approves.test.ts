@@ -112,10 +112,35 @@ test('saving the draft does not publish anybody', () => {
   assert.match(applyBlock, /\.\.\.visibilityColumns\('private'\)/)
 })
 
+// The host kills a synchronous function at twenty-six seconds. A number in
+// the code larger than the number that is enforced does not raise the
+// ceiling, it just hides the fact that the read is still being killed.
+test('the work is cut to fit the time it is actually given', () => {
+  const route = body('src/app/api/admin/profile-build/route.ts')
+  const declared = Number((route.match(/export const maxDuration = (\d+)/) || [])[1])
+  assert.ok(declared >= 20 && declared <= 26,
+    `maxDuration is ${declared}: above the host ceiling it is fiction, below twenty a CV will not finish`)
+
+  // And the call abandons itself before the host does, so there is time left
+  // to answer with a sentence rather than an error page.
+  const timeout = Number((lib.match(/const CALL_TIMEOUT_MS = (\d+)/) || [])[1])
+  assert.ok(timeout > 0 && timeout < declared * 1000,
+    'the model call must give up before the function is killed')
+  assert.match(lib, /\{ timeout: CALL_TIMEOUT_MS \}/)
+  assert.match(lib, /APIConnectionTimeoutError/)
+  assert.match(lib, /Paste the text into the box below instead/)
+
+  // The input and the output are both bounded, because an unbounded worst
+  // case is what decides whether this returns at all.
+  assert.match(lib, /const MAX_CV_CHARS = \d+/)
+  assert.match(lib, /slice\(0, MAX_CV_CHARS\)/)
+  assert.match(lib, /max_tokens: MAX_OUTPUT_TOKENS/)
+})
+
 test('the model is named explicitly rather than left to a default', () => {
   assert.equal(CV_MODEL, 'claude-opus-5')
   assert.match(lib, /model: CV_MODEL/)
-  assert.match(lib, /max_tokens: \d+/)
+  assert.match(lib, /max_tokens: MAX_OUTPUT_TOKENS/, 'the output cap is named rather than left open')
 })
 
 // Seeing that ESPA is not ticked is how somebody remembers to ask about it.
