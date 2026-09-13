@@ -245,10 +245,47 @@ test('a Word CV is read rather than refused', () => {
 test('the account exists the moment somebody sends their CV', () => {
   assert.match(intake, /createAccountFor\(admin, created\.id/)
   assert.match(intake, /auth\.admin\.createUser/)
-  // Private and unapproved by its owner, because she has not seen any of it.
-  assert.match(intake, /\.\.\.visibilityColumns\('private'\)/)
-  // Through the tolerant write, like every other candidate_profiles seed.
-  assert.match(intake, /tolerantUpsert\(admin, 'candidate_profiles'/)
+  // Through the one helper, which creates the record when it is missing and
+  // otherwise fills only its blanks. It was a plain upsert, which meant a
+  // professional who already had a profile and sent a CV had her visibility
+  // reset to private on our say-so.
+  assert.match(intake, /ensureCandidateProfile\(admin, userId/)
+  assert.doesNotMatch(intake, /visibilityColumns\('private'\)/,
+    'the intake must not decide visibility for somebody who already chose')
+
+  // And the helper is where private-on-creation lives.
+  const record = body('src/lib/candidate-record.ts')
+  assert.match(record, /\.\.\.visibilityColumns\('private'\)/)
+  assert.match(record, /if \(!existing\)/)
+})
+
+// Not overwriting is not the same as not creating. An account that became
+// talent any other way - converted by hand, made for a course purchase - has
+// no candidate record, and its workspace says "Profile not found" while every
+// save reports success and writes nothing.
+test('a record is created when it is missing, and left alone when it is not', () => {
+  const record = body('src/lib/candidate-record.ts')
+  // Created: private, approved, seeded.
+  assert.match(record, /approval_status: 'approved'/)
+  // Present: only the blanks, and never approval status or visibility.
+  const patchBlock = record.slice(record.indexOf('const patch'))
+  assert.match(patchBlock, /blank\(existing\.full_name\) && seed\.full_name/)
+  assert.doesNotMatch(patchBlock, /approval_status|visibilityColumns/,
+    'an existing record keeps the decisions somebody already made')
+
+  // Both routes go through it.
+  assert.match(adminRoute, /ensureCandidateProfile\(admin, userId/)
+  assert.match(adminRoute, /ensureCandidateProfile\(admin, request\.created_user_id/)
+})
+
+// Saving a draft to a row that does not exist updates nothing and reports
+// success, which is the exact shape of failure this platform keeps being
+// caught by.
+test('saving a draft cannot write into thin air', () => {
+  const applyBlock = adminRoute.slice(adminRoute.indexOf("action === 'apply_reading'"))
+  const ensure = applyBlock.indexOf('ensureCandidateProfile')
+  const update = applyBlock.indexOf("from('candidate_profiles').update")
+  assert.ok(ensure > 0 && ensure < update, 'the row must be guaranteed before it is updated')
 })
 
 // A spam check that trips must not be able to create auth users.
