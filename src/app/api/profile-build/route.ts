@@ -241,8 +241,13 @@ function acknowledgementHtml(fullName: string): string {
           Nothing is visible to any property until you have seen it and said yes, and when you do go
           live you choose how much of you is shown.
         </p>
-        <p style="margin:0;font-size:15px;line-height:1.7;color:#3a3a3a;">
+        <p style="margin:0 0 16px;font-size:15px;line-height:1.7;color:#3a3a3a;">
           If you think of anything else worth including, just reply to this email.
+        </p>
+        <p style="margin:0;font-size:13px;line-height:1.7;color:#6b6b6b;">
+          We have opened an account in your name ready for it. You do not need to do anything with it,
+          but if you would rather get on without waiting for us, use "Forgot your password" on the
+          sign-in page to set a password and it is yours.
         </p>
         <p style="margin:22px 0 0;font-size:12px;color:#6b6b6b;">Talent House Collective &middot; talenthousecollective.co.uk</p>
       </div>

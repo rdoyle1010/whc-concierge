@@ -303,3 +303,33 @@ test('a failure says what actually happened', () => {
   const seconds = Number((adminRoute.match(/export const maxDuration = (\d+)/) || [])[1])
   assert.ok(seconds >= 30, `a CV read needs more than ${seconds} seconds`)
 })
+
+// Doing it yourself is the main door and always was. The concierge page is an
+// alternative for people who would rather not, and plenty of people would
+// rather not hand their CV to a stranger.
+test('both doors are open, and each points at the other', () => {
+  const concierge = body('src/app/set-up-my-profile/page.tsx')
+  assert.match(concierge, /href="\/register\/talent"/, 'no way back to doing it yourself')
+  assert.match(concierge, /Would rather do it yourself/i)
+
+  const register = body('src/app/register/talent/page.tsx')
+  assert.match(register, /href="\/set-up-my-profile"/)
+})
+
+// Making the account on arrival created a trap: somebody who sends a CV and
+// then gets impatient goes to register, is told an account already exists,
+// and is locked out of a profile they never knew they had, behind a password
+// that was never set.
+test('somebody who sends a CV and then registers is not locked out', () => {
+  const init = body('src/app/api/register/init/route.ts')
+  const message = (init.match(/return 'An account already exists[^']*'/) || [''])[0]
+  assert.ok(message, 'the already-exists message has moved')
+  assert.match(message, /sent us your CV/i, 'the likelier cause is not mentioned')
+  assert.match(message, /Forgot your password/i, 'no way through is offered')
+  assert.doesNotMatch(message, /^return 'An account already exists for that email\. Try signing in instead\.'$/)
+
+  // And the acknowledgement tells them the account is there, so nobody has to
+  // guess that it is.
+  assert.match(intake, /We have opened an account in your name/i)
+  assert.match(intake, /Forgot your password/i)
+})
