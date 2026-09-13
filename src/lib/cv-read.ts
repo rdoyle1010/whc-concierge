@@ -59,9 +59,10 @@ const MAX_OUTPUT_TOKENS = 3000
 //
 // A function killed at twenty-six seconds returns an error page rather than
 // JSON, and the screen can only say something vague about the server. Abandon
-// the call at twenty and there is time left to answer properly, in a sentence
-// that tells somebody what to do instead.
-const CALL_TIMEOUT_MS = 20000
+// the call at eighteen and there is time left to fetch the file, pull the text
+// out of a Word document and still answer properly, in a sentence that tells
+// somebody what to do instead.
+const CALL_TIMEOUT_MS = 18000
 
 /** Whether a reading can be attempted at all on this deployment. */
 export function cvReadingConfigured(): boolean {
@@ -148,7 +149,14 @@ export async function readCv(source: Source): Promise<
     return { ok: false, error: 'There is not enough text there to read. Paste the CV, or attach it as a PDF.' }
   }
 
-  const client = new Anthropic({ apiKey })
+  // No retries, because the ceiling is the ceiling.
+  //
+  // The SDK retries twice by default. With a twenty second timeout on each
+  // attempt that is sixty seconds of trying inside a function the host kills
+  // at twenty-six, so a slow first attempt guaranteed the whole route died
+  // and the screen said "the server gave up" rather than anything useful.
+  // One attempt, inside the budget, with an honest answer either way.
+  const client = new Anthropic({ apiKey, maxRetries: 0 })
 
   const content: Anthropic.ContentBlockParam[] = source.kind === 'pdf'
     ? [

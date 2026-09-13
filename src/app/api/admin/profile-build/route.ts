@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { adminRequestUser } from '@/lib/admin-api-auth'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { sendTransactionalEmail, SUPPORT_MAILBOX } from '@/lib/send-email'
-import { isBuildStatus } from '@/lib/profile-build'
+import { isBuildStatus, namesAgree } from '@/lib/profile-build'
 import { visibilityColumns } from '@/lib/talent-visibility'
 import { tolerantUpsert } from '@/lib/tolerant-upsert'
 import { ensureCandidateProfile } from '@/lib/candidate-record'
@@ -256,6 +256,22 @@ export async function POST(req: NextRequest) {
   if (action === 'handover') {
     if (!request.created_user_id) return NextResponse.json({ error: 'Create the account first.' }, { status: 400 })
 
+    // The last moment anybody can catch the wrong CV on the right account.
+    //
+    // Handing over a profile carries somebody's career history to whoever
+    // owns the email address on it. Colin's account was sent a profile in
+    // Rebecca's name, built from her CV, because the two names never had to
+    // agree with each other. They do now, and disagreeing costs one extra
+    // press rather than a disclosure.
+    const { data: built } = await admin.from('candidate_profiles')
+      .select('full_name').eq('user_id', request.created_user_id).maybeSingle()
+    if (built?.full_name && !namesAgree(built.full_name, request.full_name) && body.confirm !== true) {
+      return NextResponse.json({
+        error: `Hold on. This profile is in the name of ${built.full_name} but the request came from ${request.full_name}, so it may have been built from somebody else's CV. Fix the name and the details first, or press again to send it anyway.`,
+        needsConfirmation: true,
+      }, { status: 409 })
+    }
+
     const { data: link, error } = await admin.auth.admin.generateLink({
       type: 'recovery',
       email: request.email,
@@ -366,7 +382,14 @@ export async function POST(req: NextRequest) {
     // what was dropped is what stops a field quietly going missing.
     const written = await tolerantUpsert(admin, 'candidate_profiles', {
       user_id: request.created_user_id,
-      full_name: line(reading.full_name, 200) || request.full_name,
+      // The name they gave us, not the name on the document.
+      //
+      // A CV is a file somebody attached. Colin attached one belonging to
+      // Rebecca, the reader did exactly as instructed, and his account ended
+      // up carrying her name and her career. The name on the request is the
+      // name a person typed about themselves, so it wins, and the disagreement
+      // is reported rather than resolved quietly.
+      full_name: String(request.full_name || '').trim() || line(reading.full_name, 200),
       headline: line(reading.headline, 120),
       role_level: line(reading.role_level, 60),
       experience_years: Number.isFinite(years) && years >= 0 && years <= 60 ? Math.round(years) : null,
@@ -390,11 +413,19 @@ export async function POST(req: NextRequest) {
     }, { onConflict: 'user_id' })
 
     if (!written.ok) return NextResponse.json({ error: written.error }, { status: 500 })
+
+    const cvName = line(reading.full_name, 200)
+    const warnings: string[] = []
+    if (written.stripped.length) {
+      warnings.push(`These could not be stored and are missing from the profile: ${written.stripped.join(', ')}. Tell Claude.`)
+    }
+    if (cvName && !namesAgree(cvName, request.full_name)) {
+      warnings.push(`The CV is in the name of ${cvName} but this request came from ${request.full_name}. Check you have the right document before you send anything: the profile has been saved under ${request.full_name}.`)
+    }
+
     return NextResponse.json({
       success: true,
-      warning: written.stripped.length
-        ? `Saved, but these could not be stored and are missing from the profile: ${written.stripped.join(', ')}. Tell Claude.`
-        : undefined,
+      warning: warnings.length ? warnings.join(' ') : undefined,
     })
   }
 
