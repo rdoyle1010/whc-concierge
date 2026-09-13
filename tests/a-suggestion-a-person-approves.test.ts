@@ -71,6 +71,31 @@ test('the instructions forbid inventing anything', () => {
   assert.match(lib, /Prefer nothing to a guess/i)
   assert.match(lib, /worse than an empty field/i)
   assert.match(lib, /British English/i)
+
+  // Numbered once each. A renumbering that leaves two rules sharing a number
+  // is an instruction somebody skims past.
+  const rules = (lib.match(/^\d+\. /gm) || []).map(line => line.trim())
+  assert.deepEqual(rules, [...new Set(rules)], `duplicate rule numbers: ${rules.join(' ')}`)
+})
+
+// The bio is the exception to "prefer nothing to a guess", and it has to be
+// stated as one or the model takes the general instruction and returns
+// nothing. That is what happened on the first real CV: everything else came
+// back filled in and the bio was blank.
+test('the bio is always written when there is anything to write', () => {
+  assert.match(lib, /Always write the bio when the CV holds any career history/i)
+  assert.match(lib, /The bio is the one exception/i)
+  assert.match(lib, /most expensive field on a profile to leave blank/i)
+  // And when it genuinely cannot be written, that is said rather than left as
+  // an empty box somebody has to guess the reason for.
+  assert.match(lib, /too thin to summarise, say so in gaps/i)
+})
+
+// An employer's name is not an address. "The Savoy" does not make somebody
+// London-based, and a wrong location is worse than none on a platform that
+// matches on travel distance.
+test('a location is never inferred from an employer', () => {
+  assert.match(lib, /Never infer one from an employer's name/i)
 })
 
 // A stray 2015 read as a duration puts somebody at the top of every

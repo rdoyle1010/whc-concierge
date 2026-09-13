@@ -5,6 +5,7 @@ import { sendTransactionalEmail, SUPPORT_MAILBOX } from '@/lib/send-email'
 import { isBuildStatus } from '@/lib/profile-build'
 import { visibilityColumns } from '@/lib/talent-visibility'
 import { tolerantUpsert } from '@/lib/tolerant-upsert'
+import { ensureCandidateProfile } from '@/lib/candidate-record'
 import { cvReadingConfigured, readCv, type CvReading } from '@/lib/cv-read'
 
 // Building somebody's profile for them, from the queue to the handover.
@@ -145,11 +146,23 @@ export async function POST(req: NextRequest) {
         if (nameError) return NextResponse.json({ error: nameError.message }, { status: 500 })
       }
 
+      // Not overwriting is not the same as not creating. An account that
+      // became talent any other way - converted by hand, made for a course
+      // purchase - has no candidate record at all, and its workspace says
+      // "Profile not found" while every save reports success and writes
+      // nothing.
+      const record = await ensureCandidateProfile(admin, userId, {
+        full_name: request.full_name,
+        phone: request.phone,
+        cv_url: request.cv_path,
+      })
+      if (!record.ok) return NextResponse.json({ error: record.error }, { status: 500 })
+
       const { error: linkError } = await admin.from('profile_build_requests')
         .update({ created_user_id: userId, status: 'building', updated_at: new Date().toISOString() })
         .eq('id', id)
       if (linkError) return NextResponse.json({ error: linkError.message }, { status: 500 })
-      return NextResponse.json({ success: true, userId, reused: true })
+      return NextResponse.json({ success: true, userId, reused: true, created: record.created })
     }
 
     // A brand new account, which is ours to shape.
@@ -320,6 +333,12 @@ export async function POST(req: NextRequest) {
       return text ? text.slice(0, limit) : null
     }
     const years = Number(reading.experience_years)
+
+    // A row to update. Without this the save writes nothing and says it
+    // worked, which is the exact shape of failure this platform keeps being
+    // caught by.
+    const record = await ensureCandidateProfile(admin, request.created_user_id, { full_name: request.full_name })
+    if (!record.ok) return NextResponse.json({ error: record.error }, { status: 500 })
 
     const { error } = await admin.from('candidate_profiles').update({
       full_name: line(reading.full_name, 200) || request.full_name,

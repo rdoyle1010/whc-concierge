@@ -89,13 +89,13 @@ const SCHEMA = {
       description: 'Unknown when the CV does not make the level clear. Never guess a level from a job title alone.',
     },
     experience_years: { type: ['integer', 'null'] },
-    bio: { type: ['string', 'null'], description: 'Sixty to a hundred words in the third person, British English, drawn only from the CV.' },
+    bio: { type: ['string', 'null'], description: 'Sixty to a hundred words in the third person, British English, drawn only from the CV. Write one whenever there is any career history at all: an empty bio is the most expensive field on a profile to leave blank.' },
     product_houses: { type: 'array', items: { type: 'string', enum: [...PRODUCT_HOUSES] } },
     systems_experience: { type: 'array', items: { type: 'string', enum: [...SYSTEMS] } },
     qualifications: { type: 'array', items: { type: 'string', enum: [...QUALIFICATIONS] } },
     treatment_skills: { type: 'array', items: { type: 'string' }, description: 'Treatments they can actually deliver, named as the industry names them.' },
     hotel_brands: { type: 'array', items: { type: 'string' }, description: 'Hotel groups and properties they have worked for.' },
-    location: { type: ['string', 'null'] },
+    location: { type: ['string', 'null'], description: 'Town or city, if the CV gives one. Never inferred from an employer name.' },
     gaps: { type: 'array', items: { type: 'string' }, description: 'What this CV does not tell us that the profile needs.' },
   },
 } as const
@@ -105,12 +105,20 @@ const SYSTEM = `You are reading a spa or wellness professional's CV so that some
 Rules, in order of importance:
 
 1. Take nothing from anywhere but the CV. If a product house, system or qualification is not named in it, it is not in your answer. An invented qualification on somebody's professional profile is the worst thing you can produce here, and it is worse than an empty field.
+
 2. Use the given vocabulary. Product houses, systems, qualifications and role level must be chosen from the lists provided. If the CV names something outside the list, leave it out and say so in gaps.
-3. Prefer nothing to a guess. Every field may be null or empty. A human is reading this and filling in what you leave.
-4. British English throughout. No em dashes.
-5. The bio is written from the CV alone, in the third person, and claims nothing the CV does not support.
-6. role_level must be Unknown unless the CV makes the level plain. A therapist who once covered a manager's holiday is not a Spa Manager.
-7. gaps is where you are useful about what is missing: no qualifications listed, no systems named, dates unclear, no current role. Say it plainly so somebody knows what to ask for.`
+
+3. Prefer nothing to a guess. Every field may be null or empty, and a human is reading this and filling in what you leave. The bio is the one exception.
+
+4. Always write the bio when the CV holds any career history at all. Summarising what somebody has written about themselves is not a guess, and an empty bio is the most expensive field on a profile to leave blank: it is the first thing a property reads and the last thing anybody gets round to writing. Sixty to a hundred words, third person, British English, drawn only from the CV and claiming nothing it does not support. If the CV is genuinely too thin to summarise, say so in gaps rather than returning nothing without explanation.
+
+5. role_level must be Unknown unless the CV makes the level plain. A therapist who once covered a manager's holiday is not a Spa Manager.
+
+6. location is a town or city the CV actually gives. Never infer one from an employer's name.
+
+7. British English throughout, and no em dashes.
+
+8. gaps is where you are useful about what is missing: no qualifications listed, no systems named, dates unclear, no current role. Say it plainly so somebody knows what to ask for.`
 
 type Source =
   | { kind: 'pdf'; base64: string }

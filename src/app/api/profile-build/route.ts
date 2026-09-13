@@ -6,8 +6,7 @@ import { alertAdminOfSignup } from '@/lib/admin-alerts'
 import {
   BUILD_CONSENT_WORDING, CV_MAX_BYTES, cvStoragePath, cvTypeAllowed,
 } from '@/lib/profile-build'
-import { visibilityColumns } from '@/lib/talent-visibility'
-import { tolerantUpsert } from '@/lib/tolerant-upsert'
+import { ensureCandidateProfile } from '@/lib/candidate-record'
 
 // The intake for "send us your CV and we will do the rest".
 //
@@ -192,14 +191,16 @@ async function createAccountFor(
     }
   }
 
-  await tolerantUpsert(admin, 'candidate_profiles', {
-    user_id: userId,
+  // Created when it is missing, and otherwise only its blanks are filled.
+  // Somebody who already has a profile and sends a CV is asking for help with
+  // it, not for her visibility to be reset to private on our say-so.
+  if (!userId) throw new Error('No account to attach a profile to.')
+  const record = await ensureCandidateProfile(admin, userId, {
     full_name: person.fullName,
-    phone: person.phone || null,
+    phone: person.phone,
     cv_url: person.cvPath,
-    approval_status: 'approved',
-    ...visibilityColumns('private'),
-  }, { onConflict: 'user_id' })
+  })
+  if (!record.ok) throw new Error(record.error)
 
   const { error: linkError } = await admin.from('profile_build_requests')
     .update({ created_user_id: userId, status: 'building', updated_at: new Date().toISOString() })
