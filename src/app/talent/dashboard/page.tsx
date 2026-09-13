@@ -145,9 +145,11 @@ export default function TalentDashboard() {
         <p className="dashboard-intro">{isConsultant
           ? 'Your practice, your enquiries and the Academy, in one workspace.'
           : 'Permanent roles, flexible work, private conversations and your professional profile in one workspace.'}</p>
+        {/* Inside the intro, so it sits under the greeting rather than below
+            six cards. It was three screens down and she could not find it. */}
+        <DailyThought className="mt-7" />
       </>}
     >
-      <DailyThought className="mb-8" />
 
       <section className="dashboard-card mb-8">
           <p className="dashboard-eyebrow">Your brief</p>
