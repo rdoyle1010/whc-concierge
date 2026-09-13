@@ -14,20 +14,22 @@ interface CollapsibleCheckboxSectionProps {
   flatItems?: string[]
   selected: string[]
   onChange: (selected: string[]) => void
-  /**
-   * Whether "Select All" is offered. Off where selecting everything is never
-   * a true answer.
-   *
-   * A profile claiming all sixty treatments, all thirty-nine qualifications
-   * and forty product houses is not an impressive profile, it is an
-   * unbelievable one, and it makes matching worthless for everybody else on
-   * the register. One administrator opening five sections and pressing the
-   * link at the top of each did exactly that in about ten seconds.
-   */
-  allowSelectAll?: boolean
 }
 
-export default function CollapsibleCheckboxSection({ title, categories, flatItems, selected, onChange, allowSelectAll = true }: CollapsibleCheckboxSectionProps) {
+// There is no "Select All" here, and there is not meant to be.
+//
+// Every list this renders is a claim about somebody: the treatments they can
+// perform, the houses they have trained with, the systems they have run. A
+// profile claiming all eighty-seven treatments and all forty-seven product
+// houses is not an impressive profile, it is an unbelievable one, and it
+// makes matching worthless for everybody else on the register - a search for
+// a Biologique Recherche facialist that returns them is a search that has
+// stopped meaning anything.
+//
+// It took one person about ten seconds to do it to five sections at once,
+// because the link sat at the top of each one and looked like a convenience.
+// Clearing stays, because undoing it has to be one press.
+export default function CollapsibleCheckboxSection({ title, categories, flatItems, selected, onChange }: CollapsibleCheckboxSectionProps) {
   const [open, setOpen] = useState(false)
 
   const allItems = flatItems || (categories?.flatMap(c => c.items) ?? [])
@@ -35,12 +37,6 @@ export default function CollapsibleCheckboxSection({ title, categories, flatItem
 
   const toggle = (item: string) => {
     onChange(selected.includes(item) ? selected.filter(s => s !== item) : [...selected, item])
-  }
-
-  const selectAll = () => {
-    const newSelected = new Set(selected)
-    allItems.forEach(i => newSelected.add(i))
-    onChange(Array.from(newSelected))
   }
 
   const clearAll = () => {
@@ -60,11 +56,9 @@ export default function CollapsibleCheckboxSection({ title, categories, flatItem
 
       {open && (
         <div className="px-4 pb-4 border-t border-neutral-100">
-          <div className="flex space-x-4 py-3 mb-2">
-            {allowSelectAll && (
-              <button type="button" onClick={selectAll} className="text-xs text-neutral-500 hover:text-black underline">Select All</button>
-            )}
-            <button type="button" onClick={clearAll} className="text-xs text-neutral-500 hover:text-black underline">Clear All</button>
+          <div className="flex items-center justify-between gap-4 py-3 mb-2">
+            <p className="text-xs text-neutral-500">Tick only what you would be happy to be asked about.</p>
+            <button type="button" onClick={clearAll} className="shrink-0 text-xs text-neutral-500 hover:text-black underline">Clear All</button>
           </div>
 
           {categories ? (
