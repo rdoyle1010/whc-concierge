@@ -7,15 +7,22 @@ import { visibilityColumns } from '@/lib/talent-visibility'
 import { tolerantUpsert } from '@/lib/tolerant-upsert'
 import { ensureCandidateProfile } from '@/lib/candidate-record'
 import { cvReadingConfigured, readCv, type CvReading } from '@/lib/cv-read'
+import { sanitiseProfileEdit, completionPercent, missingFrom } from '@/lib/candidate-fields'
 
 // Building somebody's profile for them, from the queue to the handover.
 //
-// Three of these actions are ordinary admin. One is not: 'open' mints a
-// one-time link that signs an administrator in as the professional, which is
-// the only way to fill in a profile using the real form rather than a second
-// copy of it that drifts out of date. It is fenced accordingly - the
-// administrator's own two-step is enforced by adminRequestUser, the person
-// must have asked for this in writing, and every use is written down.
+// A profile is filled in here, by an administrator who stays signed in as
+// herself: 'profile' reads it and 'save_profile' writes it through the
+// service role.
+//
+// It used to be filled in by signing in as the professional. One magic link,
+// same browser, same origin, and the session it created replaced the
+// administrator's own - so the admin screen behind it answered "Unauthorised"
+// to everything and the workspace that opened was somebody else's. That link
+// still exists as 'open', because there are things only the real form can do,
+// but it is now the exception rather than the route: two-step enforced by
+// adminRequestUser, written consent required, every use logged, and the
+// screen says plainly what it will do to the session before she presses it.
 
 export const dynamic = 'force-dynamic'
 
@@ -235,7 +242,14 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'We could not record that access, so it has not been granted.' }, { status: 500 })
     }
 
-    return NextResponse.json({ success: true, url })
+    return NextResponse.json({
+      success: true,
+      url,
+      // Said here as well as on the screen, because the consequence is not
+      // reversible by pressing back: opening this in the browser she is
+      // already signed into ends her admin session.
+      warning: 'That link signs you in as them. Open it in a private window, or you will be signed out of admin here.',
+    })
   }
 
   // Hand it over: here is your profile, set a password and it is yours.
@@ -378,6 +392,89 @@ export async function POST(req: NextRequest) {
     if (!written.ok) return NextResponse.json({ error: written.error }, { status: 500 })
     return NextResponse.json({
       success: true,
+      warning: written.stripped.length
+        ? `Saved, but these could not be stored and are missing from the profile: ${written.stripped.join(', ')}. Tell Claude.`
+        : undefined,
+    })
+  }
+
+  // Read their profile back, so it can be edited here rather than there.
+  if (action === 'profile') {
+    if (!request.created_user_id) return NextResponse.json({ error: 'Create the account first.' }, { status: 400 })
+
+    // Created if it is missing. An account that became talent some other way
+    // has no candidate record, and an editor pointed at nothing saves nothing
+    // and says it worked.
+    const record = await ensureCandidateProfile(admin, request.created_user_id, { full_name: request.full_name })
+    if (!record.ok) return NextResponse.json({ error: record.error }, { status: 500 })
+
+    const { data: profile, error } = await admin.from('candidate_profiles')
+      .select('*').eq('user_id', request.created_user_id).maybeSingle()
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    if (!profile) return NextResponse.json({ error: 'Their profile could not be read.' }, { status: 500 })
+
+    return NextResponse.json({
+      success: true,
+      profile,
+      completion: completionPercent(profile),
+      missing: missingFrom(profile),
+    })
+  }
+
+  // Fill it in for them, from here, as herself.
+  //
+  // The whole point of this action is that nobody is signed in as anybody.
+  // The administrator stays in her own session and the write goes through the
+  // service role against the named list in candidate-fields.
+  if (action === 'save_profile') {
+    if (!request.created_user_id) return NextResponse.json({ error: 'Create the account first.' }, { status: 400 })
+
+    const fields = sanitiseProfileEdit(body.profile)
+    if (Object.keys(fields).length === 0) {
+      return NextResponse.json({ error: 'There is nothing to save.' }, { status: 400 })
+    }
+
+    const record = await ensureCandidateProfile(admin, request.created_user_id, { full_name: request.full_name })
+    if (!record.ok) return NextResponse.json({ error: record.error }, { status: 500 })
+
+    const written = await tolerantUpsert(admin, 'candidate_profiles', {
+      user_id: request.created_user_id,
+      ...fields,
+      // Still theirs to release. Filling somebody's profile in for them is
+      // not the same as them agreeing to be seen, and this action must never
+      // be the thing that puts a stranger in front of a hotel.
+      ...visibilityColumns('private'),
+    }, { onConflict: 'user_id' })
+    if (!written.ok) return NextResponse.json({ error: written.error }, { status: 500 })
+
+    // Read back and score, so the number on this screen and the number on
+    // their own profile page are the same number.
+    const { data: saved } = await admin.from('candidate_profiles')
+      .select('*').eq('user_id', request.created_user_id).maybeSingle()
+    const completion = completionPercent(saved || {})
+    if (saved?.id) {
+      await tolerantUpsert(admin, 'candidate_profiles', {
+        user_id: request.created_user_id,
+        profile_completion_score: completion,
+        profile_completion_pct: completion,
+      }, { onConflict: 'user_id' })
+    }
+
+    // The name on the account follows the name on the profile. A professional
+    // whose profile says one thing and whose dashboard greets her as another
+    // has been given somebody else's account, as far as she can tell.
+    const savedName = typeof fields.full_name === 'string' ? fields.full_name : ''
+    if (savedName) {
+      const { error: nameError } = await admin.from('profiles')
+        .update({ full_name: savedName }).eq('id', request.created_user_id)
+      if (nameError) console.error('Profile build name sync failed:', nameError.message)
+    }
+
+    return NextResponse.json({
+      success: true,
+      profile: saved || null,
+      completion,
+      missing: missingFrom(saved || {}),
       warning: written.stripped.length
         ? `Saved, but these could not be stored and are missing from the profile: ${written.stripped.join(', ')}. Tell Claude.`
         : undefined,

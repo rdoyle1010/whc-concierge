@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import DashboardShell from '@/components/DashboardShell'
 import { BUILD_STATUS_LABEL, type BuildStatus } from '@/lib/profile-build'
 import CvReadingReview, { type Reading } from '@/components/CvReadingReview'
+import AdminProfileEditor from '@/components/AdminProfileEditor'
 import { ExternalLink, FileText, RefreshCw, Send, Sparkles, UserPlus } from 'lucide-react'
 
 // The queue for "send us your CV and we will do the rest".
@@ -83,10 +84,23 @@ export default function AdminProfileBuildPage() {
     }
   }
 
-  async function openWorkspace(row: Request) {
+  // The sign-in link, handed over rather than followed.
+  //
+  // This used to open the link in a new tab, which is the one thing it must
+  // not do: the session it creates replaces the administrator's own on the
+  // same origin, so the tab behind it starts answering "Unauthorised" to
+  // everything and the workspace that opens belongs to somebody else. It is
+  // copied now, with the consequence said out loud, and there is a form on
+  // this page that makes it unnecessary for almost everything.
+  async function copyWorkspaceLink(row: Request) {
     const body = await act(row, 'open')
-    // A one-time link, so it is opened straight away or not at all.
-    if (body?.url) window.open(body.url, '_blank', 'noopener')
+    if (!body?.url) return
+    try {
+      await navigator.clipboard.writeText(body.url)
+      setNote('Link copied. Paste it into a private window. If you open it here you will be signed out of admin.')
+    } catch {
+      setError(`Copy this and open it in a private window, or you will be signed out of admin here: ${body.url}`)
+    }
   }
 
   return (
@@ -101,7 +115,7 @@ export default function AdminProfileBuildPage() {
         <ol className="mt-3 space-y-1 text-[13px] text-secondary">
           <li><strong className="text-ink">1. Read the CV</strong> and correct anything it got wrong</li>
           <li><strong className="text-ink">2. Save this to their profile</strong></li>
-          <li><strong className="text-ink">3. Open their workspace</strong> to add photographs or anything else</li>
+          <li><strong className="text-ink">3. Fill in the rest</strong> in the form on their card, without leaving this page</li>
           <li><strong className="text-ink">4. Send it to them</strong>, and they set a password</li>
         </ol>
         <p className="text-[13px] text-secondary mt-3 max-w-2xl">
@@ -166,9 +180,9 @@ export default function AdminProfileBuildPage() {
                     </button>
                   ) : (
                     <>
-                      <button type="button" disabled={busy === row.id} onClick={() => openWorkspace(row)}
-                        className="inline-flex items-center gap-1.5 border border-[#1c1c1c] px-3 py-1.5 text-[12px] font-semibold text-ink disabled:opacity-40">
-                        <ExternalLink size={13} /> Open their workspace
+                      <button type="button" disabled={busy === row.id} onClick={() => copyWorkspaceLink(row)}
+                        className="inline-flex items-center gap-1.5 border border-border px-3 py-1.5 text-[12px] font-medium text-secondary disabled:opacity-40">
+                        <ExternalLink size={13} /> Copy their sign-in link
                       </button>
                       <button type="button" disabled={busy === row.id} onClick={() => act(row, 'handover')}
                         className="inline-flex items-center gap-1.5 border border-[#1c1c1c] bg-[#1c1c1c] px-3 py-1.5 text-[12px] font-semibold text-white disabled:opacity-40">
@@ -226,7 +240,7 @@ export default function AdminProfileBuildPage() {
                         onSave={async () => {
                           const saved = await act(row, 'apply_reading', { reading: readings[row.id] })
                           if (saved) {
-                            setNote(`Saved to ${row.full_name}'s profile. Open their workspace to check it over.`)
+                            setNote(`Saved to ${row.full_name}'s profile. Finish the rest in the form below.`)
                             setReadings(current => {
                               const next = { ...current }
                               delete next[row.id]
@@ -240,9 +254,14 @@ export default function AdminProfileBuildPage() {
                 )}
 
                 {row.created_user_id && (
+                  <AdminProfileEditor requestId={row.id} fullName={row.full_name} onSaved={load} />
+                )}
+
+                {row.created_user_id && (
                   <p className="mt-3 text-[11px] text-muted">
-                    Opening their workspace signs you in as them to fill the profile in. Every time you do,
-                    it is written to the access log against your name.
+                    You are saving as yourself, and nothing here is visible to anybody until they release it.
+                    The sign-in link is only for the few things that need their own workspace, such as a
+                    photograph, and every use of it is written to the access log against your name.
                   </p>
                 )}
               </div>
