@@ -7,6 +7,7 @@ import { getClientIp, rateLimit } from '@/lib/rate-limit'
 import { recordTermsAcceptance, startMarketingOptIn } from '@/lib/privacy-consent'
 import { LAUNCH_COURSE_SLUGS, grantCourses, launchOfferOpen } from '@/lib/launch-offers'
 import { alertAdminOfSignup } from '@/lib/admin-alerts'
+import { tolerantUpsert } from '@/lib/tolerant-upsert'
 import { DEFAULT_VISIBILITY, isTalentVisibility, visibilityColumns } from '@/lib/talent-visibility'
 import { welcomeEmailHtml } from '@/lib/welcome-email-template'
 import { sendTransactionalEmail } from '@/lib/send-email'
@@ -127,7 +128,19 @@ export async function POST(req: NextRequest) {
 
       let coords: { latitude: number; longitude: number } | null = null
       if (postcode) { try { coords = await geocodePostcode(postcode) } catch {} }
-      const { error: candidateError } = await admin.from('candidate_profiles').upsert({
+      // Tolerant, because it has to be.
+      //
+      // This wrote `agreed_terms`, which is not a column on this table, and
+      // Postgres refuses a whole statement over one unknown column. So every
+      // talent registration failed here, the person was told their profile
+      // could not be opened, and they left - while the auth user, the
+      // profiles row and the name all survived, which made it look like three
+      // people who signed up and could not be bothered.
+      //
+      // Their acceptance of the terms is recorded above in its own ledger, by
+      // recordTermsAcceptance, which is where it belongs and where it always
+      // actually was.
+      const seeded = await tolerantUpsert(admin, 'candidate_profiles', {
         user_id: data.user.id,
         full_name: displayName || null,
         phone: phone || null,
@@ -135,12 +148,17 @@ export async function POST(req: NextRequest) {
         location: postcode || null,
         ...(coords ? { latitude: coords.latitude, longitude: coords.longitude } : {}),
         has_car: hasCar,
-        agreed_terms: true,
         approval_status: 'approved',
         ...visibilityColumns(visibility),
       }, { onConflict: 'user_id' })
-      if (candidateError) {
-        console.error('Talent signup candidate profile seed failed:', candidateError.message)
+
+      if (seeded.stripped.length) {
+        // Noisy on purpose. A column quietly vanishing from this write is how
+        // the bug hid for three days.
+        console.error('Talent signup wrote without unknown columns:', seeded.stripped.join(', '))
+      }
+      if (!seeded.ok) {
+        console.error('Talent signup candidate profile seed failed:', seeded.error)
         return NextResponse.json({ error: 'Your account was created, but we could not open your Talent profile. Please sign in and try again.' }, { status: 500 })
       }
 

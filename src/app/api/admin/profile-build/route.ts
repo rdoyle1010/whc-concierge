@@ -4,6 +4,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { sendTransactionalEmail, SUPPORT_MAILBOX } from '@/lib/send-email'
 import { isBuildStatus } from '@/lib/profile-build'
 import { visibilityColumns } from '@/lib/talent-visibility'
+import { tolerantUpsert } from '@/lib/tolerant-upsert'
 import { cvReadingConfigured, readCv, type CvReading } from '@/lib/cv-read'
 
 // Building somebody's profile for them, from the queue to the handover.
@@ -90,16 +91,22 @@ export async function POST(req: NextRequest) {
 
     // Private, and not merely by default. She has not seen this yet, so
     // nobody else may either.
-    const { error: candidateError } = await admin.from('candidate_profiles').upsert({
+    // No agreed_terms: that column does not exist on this table, and naming
+    // it refuses the whole statement. It cost three registrations on the
+    // launch weekend before anybody knew. Nobody has asked this person to
+    // agree to anything yet anyway; they will when they claim the account.
+    const seeded = await tolerantUpsert(admin, 'candidate_profiles', {
       user_id: userId,
       full_name: request.full_name,
       phone: request.phone || null,
       cv_url: request.cv_path || null,
-      agreed_terms: false,
       approval_status: 'approved',
       ...visibilityColumns('private'),
     }, { onConflict: 'user_id' })
-    if (candidateError) return NextResponse.json({ error: candidateError.message }, { status: 500 })
+    if (seeded.stripped.length) {
+      console.error('Profile build wrote without unknown columns:', seeded.stripped.join(', '))
+    }
+    if (!seeded.ok) return NextResponse.json({ error: seeded.error }, { status: 500 })
 
     const { error: linkError } = await admin.from('profile_build_requests')
       .update({ created_user_id: userId, status: 'building', updated_at: new Date().toISOString() })
