@@ -94,7 +94,7 @@ const SCHEMA = {
       description: 'Unknown when the CV does not make the level clear. Never guess a level from a job title alone.',
     },
     experience_years: { type: ['integer', 'null'] },
-    bio: { type: ['string', 'null'], description: 'Sixty to a hundred words in the third person, British English, drawn only from the CV. Write one whenever there is any career history at all: an empty bio is the most expensive field on a profile to leave blank.' },
+    bio: { type: ['string', 'null'], description: 'Sixty to a hundred words in the first person, as the professional would introduce herself, British English, drawn only from the CV. Write one whenever there is any career history at all: an empty bio is the most expensive field on a profile to leave blank.' },
     product_houses: { type: 'array', items: { type: 'string', enum: [...PRODUCT_HOUSES] } },
     systems_experience: { type: 'array', items: { type: 'string', enum: [...SYSTEMS] } },
     qualifications: { type: 'array', items: { type: 'string', enum: [...QUALIFICATIONS] } },
@@ -118,7 +118,9 @@ Rules, in order of importance:
 
 3. Prefer nothing to a guess. Every field may be null or empty, and a human is reading this and filling in what you leave. The bio is the one exception.
 
-4. Always write the bio when the CV holds any career history at all. Summarising what somebody has written about themselves is not a guess, and an empty bio is the most expensive field on a profile to leave blank: it is the first thing a property reads and the last thing anybody gets round to writing. Sixty to a hundred words, third person, British English, drawn only from the CV and claiming nothing it does not support. If the CV is genuinely too thin to summarise, say so in gaps rather than returning nothing without explanation.
+4. Always write the bio when the CV holds any career history at all. Summarising what somebody has written about themselves is not a guess, and an empty bio is the most expensive field on a profile to leave blank: it is the first thing a property reads and the last thing anybody gets round to writing.
+
+Write it in the FIRST PERSON, as the professional introducing herself. This has to read exactly as though she wrote it, because a profile that reads like a recruiter's write-up tells everybody it was filled in by somebody else. "I have spent twelve years in five-star resort spas", not "She has spent twelve years". No "Talent House", no third party, no summary of a document: her voice, plainly, sixty to a hundred words, British English, drawn only from the CV and claiming nothing it does not support. If the CV is genuinely too thin to summarise, say so in gaps rather than returning nothing without explanation.
 
 5. role_level must be Unknown unless the CV makes the level plain. A therapist who once covered a manager's holiday is not a Spa Manager.
 
