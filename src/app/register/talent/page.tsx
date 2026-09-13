@@ -15,7 +15,7 @@ import { DEFAULT_VISIBILITY, VISIBILITY_COPY, type TalentVisibility } from '@/li
 const MIN_PASSWORD_LENGTH = 8
 const MAX_PASSWORD_LENGTH = 64
 
-type PublicStats = { liveRoles: number | null; properties: number | null; verifiedReviews: number | null }
+type PublicStats = { liveRoles: number | null; properties: number | null; verifiedReviews: number | null; showLiveNumbers?: boolean }
 
 export default function TalentRegisterPage() {
   const router = useRouter()
@@ -122,11 +122,18 @@ export default function TalentRegisterPage() {
     }
   }
 
-  // Ruled fact rows for the charcoal panel. Numeric facts only appear once the
-  // live counts have loaded; the two standing promises always show.
+  // Ruled fact rows for the charcoal panel.
+  //
+  // The counts appear only when an administrator has judged them worth
+  // showing. The sign-in page has always honoured that setting and this page
+  // did not, so "1 live role open right now" was being shown to the exact
+  // person we are asking to join - which does not read as a young platform,
+  // it reads as an empty one. The two standing promises always show, because
+  // they are true on day one and on day one thousand.
+  const showCounts = stats?.showLiveNumbers === true
   const factRows: Array<{ value: string | null; label: string }> = [
-    stats?.liveRoles ? { value: String(stats.liveRoles), label: `live role${stats.liveRoles === 1 ? '' : 's'} open right now` } : null,
-    stats?.properties ? { value: String(stats.properties), label: `approved propert${stats.properties === 1 ? 'y' : 'ies'} hiring through Talent House` } : null,
+    showCounts && stats?.liveRoles ? { value: String(stats.liveRoles), label: `live role${stats.liveRoles === 1 ? '' : 's'} open right now` } : null,
+    showCounts && stats?.properties ? { value: String(stats.properties), label: `approved propert${stats.properties === 1 ? 'y' : 'ies'} hiring through Talent House` } : null,
     { value: null, label: 'Salary expectations stay private until you choose' },
     { value: null, label: 'Verified employers only' },
   ].filter(Boolean) as Array<{ value: string | null; label: string }>

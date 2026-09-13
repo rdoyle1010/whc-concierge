@@ -11,6 +11,7 @@ import SponsoredAd from '@/components/SponsoredAd'
 import { getWebsiteContent } from '@/lib/site-content-server'
 import { websiteCssVariables, type WebsiteContent, type WebsiteSectionId } from '@/lib/site-content'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { readConfigString } from '@/lib/platform-access'
 
 export const revalidate = 60
 
@@ -34,6 +35,8 @@ type LiveNumbers = {
   properties: number
   reviews: number
   certificates: number
+  /** Whether an administrator has judged these worth showing to a stranger. */
+  show: boolean
 }
 
 type VerifiedReview = {
@@ -86,20 +89,26 @@ const getFeaturedRoles = unstable_cache(async (): Promise<FeaturedRole[]> => {
 // The homepage's proof is the live state of the platform, not a claim. Each
 // count is real; a figure only appears once it is greater than zero.
 const getLiveNumbers = unstable_cache(async (): Promise<LiveNumbers> => {
-  const empty: LiveNumbers = { roles: 0, properties: 0, reviews: 0, certificates: 0 }
+  const empty: LiveNumbers = { roles: 0, properties: 0, reviews: 0, certificates: 0, show: false }
   try {
     const admin = createAdminClient()
-    const [roles, properties, reviews, certificates] = await Promise.all([
+    const [roles, properties, reviews, certificates, setting] = await Promise.all([
       admin.from('job_listings').select('id', { count: 'exact', head: true }).eq('is_live', true).eq('status', 'active'),
       admin.from('employer_profiles').select('id', { count: 'exact', head: true }).eq('approval_status', 'approved'),
       admin.from('reviews').select('id', { count: 'exact', head: true }).gte('rating', 1).lte('rating', 5),
       admin.from('course_enrollments').select('id', { count: 'exact', head: true }).not('completed_at', 'is', null),
+      // The same one switch the sign-in and registration pages read. Three
+      // surfaces were each deciding for themselves whether a number was worth
+      // showing, which is how a launch week front page came to advertise one
+      // role, one property and one review.
+      admin.from('platform_config').select('value').eq('key', 'login_live_numbers').maybeSingle(),
     ])
     return {
       roles: roles.count || 0,
       properties: properties.count || 0,
       reviews: reviews.count || 0,
       certificates: certificates.count || 0,
+      show: readConfigString(setting.data?.value).toLowerCase() === 'on',
     }
   } catch {
     return empty
@@ -155,6 +164,12 @@ function Eyebrow({ children }: { children: ReactNode }) {
 // A quiet ruled strip of what is actually live on the platform right now.
 // Figures come straight from the database and only render when above zero.
 function NumbersStrip({ numbers }: { numbers: LiveNumbers }) {
+  // "1 live role, 1 approved property, 1 verified staff review" does not read
+  // as a young platform to somebody arriving for the first time. It reads as
+  // an empty one, on the page doing the most work to persuade them otherwise.
+  // Off until an administrator turns it on, from the same setting that
+  // governs the sign-in and registration pages.
+  if (!numbers.show) return null
   const items = [
     numbers.roles > 0 ? { label: numbers.roles === 1 ? 'Live role' : 'Live roles', value: numbers.roles } : null,
     numbers.properties > 0 ? { label: numbers.properties === 1 ? 'Approved property' : 'Approved properties', value: numbers.properties } : null,
