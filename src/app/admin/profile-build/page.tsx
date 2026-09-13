@@ -6,7 +6,7 @@ import { BUILD_STATUS_LABEL, type BuildStatus } from '@/lib/profile-build'
 import CvReadingReview, { type Reading } from '@/components/CvReadingReview'
 import AdminProfileEditor from '@/components/AdminProfileEditor'
 import { BUILD_QUESTIONS } from '@/lib/profile-build-questions'
-import { ExternalLink, FileText, RefreshCw, Send, Sparkles, UserPlus } from 'lucide-react'
+import { Archive, ExternalLink, FileText, RefreshCw, RotateCcw, Send, Sparkles, Trash2, UserPlus } from 'lucide-react'
 
 // The queue for "send us your CV and we will do the rest".
 //
@@ -26,6 +26,7 @@ type Request = {
   created_user_id: string | null
   consent_wording: string
   answers: Record<string, unknown> | null
+  archived_at: string | null
   created_at: string
 }
 
@@ -57,6 +58,8 @@ export default function AdminProfileBuildPage() {
   const [link, setLink] = useState<{ url: string; name: string; copied: boolean } | null>(null)
   // Which row has been refused a handover once and is now one press from being sent anyway.
   const [confirming, setConfirming] = useState('')
+  // Archived requests are off the queue by default. That is the point of them.
+  const [showArchived, setShowArchived] = useState(false)
 
   async function load() {
     const res = await fetch('/api/admin/profile-build', { cache: 'no-store' })
@@ -113,6 +116,18 @@ export default function AdminProfileBuildPage() {
     setConfirming(sent ? '' : row.id)
   }
 
+  async function remove(row: Request) {
+    // Typed out rather than clicked through. A delete that only needs one
+    // press is a delete that happens by accident on a laptop trackpad, and
+    // the CV somebody sent goes with it.
+    const sure = window.confirm(
+      `Delete ${row.full_name}'s request and their CV?\n\nThis cannot be undone. Their account and profile are not touched.`,
+    )
+    if (!sure) return
+    const gone = await act(row, 'delete')
+    if (gone) setNote(gone.note || 'Deleted.')
+  }
+
   // The sign-in link, handed over rather than followed.
   //
   // This used to open the link in a new tab, which is the one thing it must
@@ -134,6 +149,9 @@ export default function AdminProfileBuildPage() {
       setLink({ url: body.url, name: row.full_name, copied: true })
     } catch { /* the panel below is the fallback */ }
   }
+
+  const archivedCount = rows.filter(row => row.archived_at).length
+  const visible = rows.filter(row => Boolean(row.archived_at) === showArchived)
 
   return (
     <DashboardShell role="admin">
@@ -191,15 +209,24 @@ export default function AdminProfileBuildPage() {
           <RefreshCw size={13} /> Refresh
         </button>
 
+        {archivedCount > 0 && (
+          <button type="button" onClick={() => setShowArchived(current => !current)}
+            className="mt-3 ml-4 text-[12px] text-secondary underline hover:text-ink">
+            {showArchived ? 'Hide archived' : `Show archived (${archivedCount})`}
+          </button>
+        )}
+
         {loading ? (
           <p className="mt-8 text-[13px] text-secondary">Loading...</p>
-        ) : rows.length === 0 ? (
+        ) : visible.length === 0 ? (
           <p className="mt-8 text-[13px] text-secondary">
-            Nobody has sent anything in yet. The page they use is talenthousecollective.co.uk/set-up-my-profile
+            {rows.length === 0
+              ? 'Nobody has sent anything in yet. The page they use is talenthousecollective.co.uk/set-up-my-profile'
+              : 'Nothing waiting on you. Everything that has come in is archived.'}
           </p>
         ) : (
           <div className="mt-6 space-y-3">
-            {rows.map(row => (
+            {visible.map(row => (
               <div key={row.id} className="dashboard-card">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div className="min-w-0">
@@ -266,6 +293,17 @@ export default function AdminProfileBuildPage() {
                       <option key={status} value={status}>{BUILD_STATUS_LABEL[status]}</option>
                     ))}
                   </select>
+
+                  <button type="button" disabled={busy === row.id}
+                    onClick={() => act(row, row.archived_at ? 'restore' : 'archive')}
+                    className="inline-flex items-center gap-1.5 border border-border px-3 py-1.5 text-[12px] font-medium text-secondary disabled:opacity-40">
+                    {row.archived_at ? <><RotateCcw size={13} /> Put it back</> : <><Archive size={13} /> Archive</>}
+                  </button>
+
+                  <button type="button" disabled={busy === row.id} onClick={() => remove(row)}
+                    className="inline-flex items-center gap-1.5 border border-red-200 px-3 py-1.5 text-[12px] font-medium text-red-700 disabled:opacity-40">
+                    <Trash2 size={13} /> Delete
+                  </button>
                 </div>
 
                 {/* Always available. Reading writes nothing, so hiding it behind

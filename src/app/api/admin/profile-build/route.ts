@@ -526,6 +526,46 @@ export async function POST(req: NextRequest) {
     })
   }
 
+  // Finished with it. Not deleted, and one press from being back.
+  if (action === 'archive' || action === 'restore') {
+    const { error } = await admin.from('profile_build_requests')
+      .update({
+        archived_at: action === 'archive' ? new Date().toISOString() : null,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', id)
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    return NextResponse.json({ success: true })
+  }
+
+  // Gone, along with the CV.
+  //
+  // Deliberately narrow. This removes the request and the document somebody
+  // sent us, which is the whole of what this queue holds. It does not touch
+  // the account, the profile or anything they have done since: deleting a
+  // person because an administrator tidied a list is not a thing this button
+  // is allowed to do, and Users is where an account is removed.
+  if (action === 'delete') {
+    if (request.cv_path) {
+      const { error: fileError } = await admin.storage.from(BUCKET).remove([request.cv_path])
+      // Reported, not fatal. A row that survives because a file did not is a
+      // request she has to look at again for no reason.
+      if (fileError) console.error('Profile build CV delete failed:', fileError.message)
+    }
+
+    const { error } = await admin.from('profile_build_requests').delete().eq('id', id)
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+    return NextResponse.json({
+      success: true,
+      // Said plainly, because "deleted" reads as "all of it is gone" and the
+      // account is still there.
+      note: request.created_user_id
+        ? 'Request and CV deleted. Their account and profile are untouched: remove those from Users if you meant to.'
+        : 'Request and CV deleted.',
+    })
+  }
+
   return NextResponse.json({ error: 'Unknown action' }, { status: 400 })
 }
 
