@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import DashboardShell from '@/components/DashboardShell'
 import { createClient } from '@/lib/supabase/client'
 import { Building2, CheckCircle2, FileText, MapPin, Paperclip, Search, Sparkles, Upload, X } from 'lucide-react'
+import AiWrite from '@/components/AiWrite'
 
 const BUCKET = 'property-fact-documents'
 const MAX_FILE_SIZE = 10 * 1024 * 1024
@@ -64,13 +65,25 @@ function FactFileSection({
           <div key={key} className={LONG_FIELDS.has(key) ? 'md:col-span-2' : ''}>
             <label className="block text-[11px] font-medium text-ink mb-1.5">{label}</label>
             {LONG_FIELDS.has(key) ? (
-              <textarea
-                rows={3}
-                aria-label={label}
-                className="input-field text-[13px] resize-y"
-                value={form[key] || ''}
-                onChange={e => onChange(key, e.target.value)}
-              />
+              <>
+                <textarea
+                  rows={4}
+                  aria-label={label}
+                  className="input-field text-[13px] resize-y"
+                  value={form[key] || ''}
+                  onChange={e => onChange(key, e.target.value)}
+                />
+                {/* Every long box, from one shape. Twelve near-identical
+                    entries in ai-write would have drifted apart within a
+                    month; the box tells the writer which one it is. */}
+                <AiWrite
+                  className="mt-2"
+                  field="property_policy"
+                  subject={label}
+                  value={form[key] || ''}
+                  onAccept={text => onChange(key, text)}
+                />
+              </>
             ) : (
               <input
                 aria-label={label}

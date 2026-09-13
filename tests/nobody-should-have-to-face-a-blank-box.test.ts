@@ -16,6 +16,8 @@ const route = body('src/app/api/ai/write/route.ts')
 const widget = body('src/components/AiWrite.tsx')
 const talent = read('src/app/talent/profile/page.tsx')
 const employer = read('src/app/employer/profile/page.tsx')
+const factFile = read('src/app/employer/property-fact-file/page.tsx')
+const practice = read('src/app/talent/consultancy/page.tsx')
 
 // The same problem on every account type: a person who can do the job cannot
 // face writing a paragraph about doing the job, so the field stays empty and
@@ -29,8 +31,38 @@ test('the blank box is answered wherever it appears', () => {
 
   assert.match(talent, /field="talent_bio"/)
   assert.match(talent, /field="talent_headline"/)
+  assert.match(talent, /field="talent_commercial"/)
   assert.match(employer, /field="employer_about"/)
   assert.match(employer, /field="employer_tagline"/)
+})
+
+// Every long box in the Property Fact File, and every free-text box in a
+// consultancy listing. These are the ones somebody stares at for a minute and
+// then leaves, and a listing with an empty "what changed" is a listing that
+// argues for nothing.
+test('the boxes further in are covered too', () => {
+  for (const field of ['talent_commercial', 'property_policy', 'practice_headline', 'practice_about', 'practice_work', 'practice_outcome']) {
+    assert.ok(WRITE_FIELDS.includes(field as any), `${field} has no writing help`)
+  }
+
+  // One shape for twelve boxes, told which one it is. Twelve entries would
+  // have drifted apart within a month.
+  assert.match(factFile, /field="property_policy"/)
+  assert.match(factFile, /subject=\{label\}/)
+  assert.match(factFile, /LONG_FIELDS\.has\(key\) \? \(\s*<>/, 'it sits with every long box, not one of them')
+
+  assert.match(practice, /field="practice_headline"/)
+  assert.match(practice, /field="practice_about"/)
+  assert.match(practice, /field="practice_work"/)
+  assert.match(practice, /field="practice_outcome"/)
+})
+
+// A hotel buys judgement on evidence, so the outcome line is the one place a
+// invented number would do real damage.
+test('a number is a fact, and an absent one is not invented', () => {
+  assert.match(lib, /A number in the draft is a fact and must survive exactly as it is/)
+  assert.match(lib, /never round one, never add a percentage sign/)
+  assert.match(lib, /never write "significant" or "substantial" where a number was expected/)
 })
 
 // A route that writes a biography from whatever JSON it is handed will

@@ -5,6 +5,7 @@ import Link from 'next/link'
 import DashboardShell from '@/components/DashboardShell'
 import { Plus, Trash2, Save, ExternalLink, Send, Star, Upload, X, Eye } from 'lucide-react'
 import { getViewer } from '@/lib/viewer'
+import AiWrite from '@/components/AiWrite'
 import {
   BUDGET_BANDS, CONSULTANCY_SPECIALISMS, ENGAGEMENT_TYPES, WORKS_WITH,
   missingForPublication, type ConsultancyProject,
@@ -267,11 +268,13 @@ export default function TalentConsultancyPage() {
           <input id="headline" value={profile?.headline || ''} onChange={e => set('headline', e.target.value)} className="input-field"
             placeholder="e.g. Pre-opening and commercial turnaround for five-star spas" />
           <p className="mt-1 text-[11px] text-muted">One line. This is what a hotel reads before deciding whether to open your listing.</p>
+          <AiWrite className="mt-2" field="practice_headline" value={profile?.headline || ''} onAccept={text => set('headline', text)} />
         </div>
         <div>
           <label htmlFor="summary" className="eyebrow block mb-1.5">About the practice *</label>
           <textarea id="summary" rows={6} value={profile?.summary || ''} onChange={e => set('summary', e.target.value)} className="input-field"
             placeholder="What you do, who you do it for, and what changes when you are involved." />
+          <AiWrite className="mt-2" field="practice_about" value={profile?.summary || ''} onAccept={text => set('summary', text)} />
         </div>
         <div className="grid gap-4 sm:grid-cols-3">
           <div>
@@ -380,8 +383,10 @@ export default function TalentConsultancyPage() {
               <input type="checkbox" checked={project.confidential} onChange={e => setProject(index, { confidential: e.target.checked })} className="w-4 h-4" />
               Under NDA - show the property type rather than the name
             </label>
-            <textarea rows={3} value={project.summary} onChange={e => setProject(index, { summary: e.target.value })}
+            <textarea rows={4} value={project.summary} onChange={e => setProject(index, { summary: e.target.value })}
               placeholder="What the work was - the brief, the state you found it in, what you did" aria-label={`Project ${index + 1} description`} className="input-field" />
+            <AiWrite field="practice_work" subject={project.title || `Project ${index + 1}`}
+              value={project.summary} onAccept={text => setProject(index, { summary: text })} />
             <PictureField
               label="Photograph" aspect="h-36 w-full max-w-md" busy={uploading === `project-${index}`}
               hint="Optional. The room, the space, the thing you built."
@@ -389,8 +394,10 @@ export default function TalentConsultancyPage() {
               onPick={async file => { const url = await upload(`project-${index}`, file); if (url) setProject(index, { image_url: url }) }}
               onClear={() => setProject(index, { image_url: '' })}
             />
-            <textarea rows={2} value={project.outcome} onChange={e => setProject(index, { outcome: e.target.value })}
+            <textarea rows={3} value={project.outcome} onChange={e => setProject(index, { outcome: e.target.value })}
               placeholder="What changed. e.g. Opened on schedule at 71% utilisation against a 55% plan, £1.2m first-year revenue" aria-label={`Project ${index + 1} outcome`} className="input-field" />
+            <AiWrite field="practice_outcome" subject={project.title || `Project ${index + 1}`}
+              value={project.outcome} onAccept={text => setProject(index, { outcome: text })} />
           </div>
         ))}
 

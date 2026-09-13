@@ -49,7 +49,8 @@ export async function POST(req: NextRequest) {
   const gathered = await gatherFacts(admin, user.id, field, body)
   if (!gathered.ok) return NextResponse.json({ error: gathered.error }, { status: gathered.status })
 
-  const result = await writeText({ field, mode, draft, steer, facts: gathered.facts })
+  const subject = typeof body.subject === 'string' ? body.subject : ''
+  const result = await writeText({ field, mode, draft, steer, subject, facts: gathered.facts })
   if (!result.ok) return NextResponse.json({ error: result.error }, { status: 502 })
 
   // Recorded, because this is a person's own words being drafted by a machine
@@ -87,9 +88,9 @@ async function gatherFacts(
   field: WriteField,
   body: any,
 ): Promise<Gathered> {
-  if (field === 'talent_bio' || field === 'talent_headline') {
+  if (field === 'talent_bio' || field === 'talent_headline' || field === 'talent_commercial') {
     const { data } = await admin.from('candidate_profiles')
-      .select('full_name, role_level, experience_years, services_offered, product_houses, qualifications, systems_experience, business_skills, current_employer, hotel_brands_worked, location, career_evidence, languages')
+      .select('full_name, role_level, experience_years, services_offered, product_houses, qualifications, systems_experience, business_skills, current_employer, hotel_brands_worked, location, career_evidence, languages, team_size_managed, revenue_responsibility, commercial_experience')
       .eq('user_id', userId).maybeSingle()
     if (!data) return { ok: false, error: 'We could not find your profile.', status: 404 }
     return {
@@ -106,6 +107,29 @@ async function gatherFacts(
         'Where they are': data.location,
         'Languages': data.languages,
         'Evidence from their CV': data.career_evidence,
+        'Largest team managed': data.team_size_managed,
+        'Revenue responsibility': data.revenue_responsibility,
+        'What they have said about commercial experience': data.commercial_experience,
+      },
+    }
+  }
+
+  if (field === 'practice_headline' || field === 'practice_about'
+    || field === 'practice_work' || field === 'practice_outcome') {
+    const { data } = await admin.from('consultancy_profiles')
+      .select('practice_name, headline, summary, specialisms, engagement_types, years_experience, based_in, works_with')
+      .eq('user_id', userId).maybeSingle()
+    if (!data) return { ok: false, error: 'We could not find your practice.', status: 404 }
+    return {
+      ok: true,
+      facts: {
+        'Practice': data.practice_name,
+        'Years in the industry': data.years_experience,
+        'Based in': data.based_in,
+        'Works': data.works_with,
+        'What they lead on': data.specialisms,
+        'How they are engaged': data.engagement_types,
+        'What they have said about the practice': data.summary,
       },
     }
   }
@@ -127,6 +151,14 @@ async function gatherFacts(
 
   if (field === 'employer_about' || field === 'employer_tagline') {
     return { ok: true, facts: { ...property, 'What they have said so far': employer.about_text } }
+  }
+
+  // A Fact File box. The draft is the substance here: this is a property
+  // saying how it does something, and there is no record anywhere of how a
+  // particular spa handles its break policy. The property details go along
+  // so the wording sounds like that place rather than a template.
+  if (field === 'property_policy') {
+    return { ok: true, facts: property }
   }
 
   // job_description. From the form, because the role does not exist yet.

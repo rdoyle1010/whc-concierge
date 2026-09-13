@@ -16,12 +16,14 @@ type Props = {
   /** What is in the box now. Empty means there is nothing to improve. */
   value: string
   onAccept: (text: string) => void
+  /** Which box this is, where one shape serves many. */
+  subject?: string
   /** Extra detail the server cannot read from a saved record, for an unsaved role. */
   context?: Record<string, unknown>
   className?: string
 }
 
-export default function AiWrite({ field, value, onAccept, context, className = '' }: Props) {
+export default function AiWrite({ field, value, onAccept, subject, context, className = '' }: Props) {
   const [busy, setBusy] = useState(false)
   const [draft, setDraft] = useState('')
   const [steer, setSteer] = useState('')
@@ -35,7 +37,7 @@ export default function AiWrite({ field, value, onAccept, context, className = '
       const res = await fetch('/api/ai/write', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ field, mode, draft: value, steer, ...(context || {}) }),
+        body: JSON.stringify({ field, mode, draft: value, steer, subject, ...(context || {}) }),
       })
       const body = await res.json().catch(() => null)
       if (!res.ok) {
