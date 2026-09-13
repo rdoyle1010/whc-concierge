@@ -340,7 +340,18 @@ export async function POST(req: NextRequest) {
     const record = await ensureCandidateProfile(admin, request.created_user_id, { full_name: request.full_name })
     if (!record.ok) return NextResponse.json({ error: record.error }, { status: 500 })
 
-    const { error } = await admin.from('candidate_profiles').update({
+    // Through the tolerant write, and reporting what it had to drop.
+    //
+    // This was a plain update and it wrote `hotel_brands`, which is not a
+    // column - the real one is hotel_brands_worked. Postgres refuses the whole
+    // statement over one bad name, so a corrected draft with eleven right
+    // fields saved none of them. That is the third time this shape has cost
+    // something on this platform.
+    //
+    // Stripping is right here because ten saved fields beat none, and naming
+    // what was dropped is what stops a field quietly going missing.
+    const written = await tolerantUpsert(admin, 'candidate_profiles', {
+      user_id: request.created_user_id,
       full_name: line(reading.full_name, 200) || request.full_name,
       headline: line(reading.headline, 120),
       role_level: line(reading.role_level, 60),
@@ -349,16 +360,28 @@ export async function POST(req: NextRequest) {
       product_houses: list(reading.product_houses, 30),
       systems_experience: list(reading.systems_experience, 30),
       qualifications: list(reading.qualifications, 30),
+      // Both, and services_offered above all: that is the column the
+      // matching engine reads. Writing the treatments only to
+      // treatment_skills filled a profile that still matched nothing.
+      services_offered: list(reading.treatment_skills, 40),
       treatment_skills: list(reading.treatment_skills, 40),
-      hotel_brands: list(reading.hotel_brands, 30),
+      business_skills: list(reading.business_skills, 20),
+      languages: list(reading.languages, 12),
+      current_employer: line(reading.current_employer, 160),
+      hotel_brands_worked: list(reading.hotel_brands, 30),
       location: line(reading.location, 120),
       // Still private. A draft somebody corrected is not the same as a person
       // saying yes to being seen.
       ...visibilityColumns('private'),
-    }).eq('user_id', request.created_user_id)
+    }, { onConflict: 'user_id' })
 
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-    return NextResponse.json({ success: true })
+    if (!written.ok) return NextResponse.json({ error: written.error }, { status: 500 })
+    return NextResponse.json({
+      success: true,
+      warning: written.stripped.length
+        ? `Saved, but these could not be stored and are missing from the profile: ${written.stripped.join(', ')}. Tell Claude.`
+        : undefined,
+    })
   }
 
   return NextResponse.json({ error: 'Unknown action' }, { status: 400 })

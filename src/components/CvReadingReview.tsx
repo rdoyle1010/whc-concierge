@@ -20,6 +20,9 @@ export type Reading = {
   systems_experience: string[]
   qualifications: string[]
   treatment_skills: string[]
+  business_skills: string[]
+  languages: string[]
+  current_employer: string | null
   hotel_brands: string[]
   location: string | null
   gaps: string[]
@@ -33,6 +36,8 @@ export default function CvReadingReview({ reading, onChange, onSave, saving }: {
 }) {
   const [skillText, setSkillText] = useState(reading.treatment_skills.join(', '))
   const [brandText, setBrandText] = useState(reading.hotel_brands.join(', '))
+  const [businessText, setBusinessText] = useState(reading.business_skills.join(', '))
+  const [languageText, setLanguageText] = useState(reading.languages.join(', '))
 
   const set = (patch: Partial<Reading>) => onChange({ ...reading, ...patch })
 
@@ -58,6 +63,7 @@ export default function CvReadingReview({ reading, onChange, onSave, saving }: {
         <Text label="Full name" value={reading.full_name} onChange={v => set({ full_name: v })} />
         <Text label="Location" value={reading.location} onChange={v => set({ location: v })} />
         <Text label="Headline" value={reading.headline} onChange={v => set({ headline: v })} full />
+        <Text label="Where they work now" value={reading.current_employer} onChange={v => set({ current_employer: v })} />
         <Choice label="Role level" value={reading.role_level} options={[...ROLE_LEVELS]} onChange={v => set({ role_level: v })} />
         <div>
           <label className="block text-[12px] font-semibold text-ink">Years of experience</label>
@@ -81,8 +87,11 @@ export default function CvReadingReview({ reading, onChange, onSave, saving }: {
         onChange={v => set({ qualifications: v })} />
 
       <div className="mt-4 grid gap-4 sm:grid-cols-2">
-        <div>
-          <label className="block text-[12px] font-semibold text-ink">Treatments (comma separated)</label>
+        <div className="sm:col-span-2">
+          <label className="block text-[12px] font-semibold text-ink">
+            Treatments (comma separated)
+            <span className="ml-2 font-normal text-[11px] text-muted">This is what the matching runs on, so it matters most</span>
+          </label>
           <input value={skillText}
             onChange={e => { setSkillText(e.target.value); set({ treatment_skills: split(e.target.value) }) }}
             className="input-field mt-1 w-full" />
@@ -93,7 +102,24 @@ export default function CvReadingReview({ reading, onChange, onSave, saving }: {
             onChange={e => { setBrandText(e.target.value); set({ hotel_brands: split(e.target.value) }) }}
             className="input-field mt-1 w-full" />
         </div>
+        <div>
+          <label className="block text-[12px] font-semibold text-ink">Business skills (comma separated)</label>
+          <input value={businessText}
+            onChange={e => { setBusinessText(e.target.value); set({ business_skills: split(e.target.value) }) }}
+            className="input-field mt-1 w-full" />
+        </div>
+        <div>
+          <label className="block text-[12px] font-semibold text-ink">Languages (comma separated)</label>
+          <input value={languageText}
+            onChange={e => { setLanguageText(e.target.value); set({ languages: split(e.target.value) }) }}
+            className="input-field mt-1 w-full" />
+        </div>
       </div>
+
+      <p className="mt-4 text-[11.5px] leading-relaxed text-muted">
+        Photographs, insurance, right to work, rates and availability are not on a CV. Add those in
+        their workspace after saving, or leave them for the person to finish.
+      </p>
 
       <button type="button" onClick={onSave} disabled={saving}
         className="btn-primary mt-5 px-5 py-2 text-[13px] disabled:opacity-50">
