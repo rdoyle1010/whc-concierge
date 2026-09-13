@@ -12,6 +12,7 @@
     "check": "npm run test && npm run readiness && npm run typecheck"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.125.0",
     "@napi-rs/canvas": "0.1.80",
     "@react-pdf/renderer": "^4.9.0",
     "@supabase/ssr": "0.12.4",

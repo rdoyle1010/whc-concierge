@@ -4,7 +4,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { normaliseAccountRole } from '@/lib/role-access'
 import { getRequestUser } from '@/lib/request-user'
 import { ACADEMY } from '@/lib/academy'
-import { isMissingColumnError } from '@/lib/private-mode'
+import { anonymiseDisplayName, isMissingColumnError } from '@/lib/private-mode'
 
 export const dynamic = 'force-dynamic'
 
@@ -60,13 +60,16 @@ async function safeRows(promise: PromiseLike<{ data: any[] | null; error: any }>
   }
 }
 
+// The one anonymiser, not a second copy of it.
+//
+// This was a byte-identical reimplementation of anonymiseDisplayName, which
+// is the dangerous kind of duplicate: nothing is wrong until the shared one
+// changes and this one silently does not. Private Career Mode has already
+// been honoured in two routes and forgotten in three, which is why the
+// presenter exists at all.
 function displayName(fullName: string | null, firstNameOnly: boolean): string {
-  const name = (fullName || '').trim()
-  if (!name) return 'Talent House professional'
-  if (!firstNameOnly) return name
-  const parts = name.split(/\s+/)
-  if (parts.length === 1) return parts[0]
-  return `${parts[0]} ${parts[parts.length - 1][0].toUpperCase()}.`
+  if (!firstNameOnly) return (fullName || '').trim() || 'Talent House professional'
+  return anonymiseDisplayName(fullName)
 }
 
 function joinParts(...parts: (string | null | undefined)[]): string {

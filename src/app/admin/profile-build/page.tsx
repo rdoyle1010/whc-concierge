@@ -3,7 +3,8 @@
 import { useEffect, useState } from 'react'
 import DashboardShell from '@/components/DashboardShell'
 import { BUILD_STATUS_LABEL, type BuildStatus } from '@/lib/profile-build'
-import { ExternalLink, FileText, RefreshCw, Send, UserPlus } from 'lucide-react'
+import CvReadingReview, { type Reading } from '@/components/CvReadingReview'
+import { ExternalLink, FileText, RefreshCw, Send, Sparkles, UserPlus } from 'lucide-react'
 
 // The queue for "send us your CV and we will do the rest".
 //
@@ -32,6 +33,9 @@ export default function AdminProfileBuildPage() {
   const [busy, setBusy] = useState('')
   const [error, setError] = useState('')
   const [note, setNote] = useState('')
+  // The draft, per request. Held here and nowhere else until somebody saves it.
+  const [readings, setReadings] = useState<Record<string, Reading>>({})
+  const [pasted, setPasted] = useState<Record<string, string>>({})
 
   async function load() {
     const res = await fetch('/api/admin/profile-build', { cache: 'no-store' })
@@ -156,6 +160,48 @@ export default function AdminProfileBuildPage() {
                     ))}
                   </select>
                 </div>
+
+                {row.created_user_id && (
+                  <div className="mt-4 border-t border-border pt-4">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <button type="button" disabled={busy === row.id}
+                        onClick={async () => {
+                          const result = await act(row, 'read_cv', { text: pasted[row.id] || '' })
+                          if (result?.reading) setReadings(current => ({ ...current, [row.id]: result.reading }))
+                        }}
+                        className="inline-flex items-center gap-1.5 border border-[#1c1c1c] px-3 py-1.5 text-[12px] font-semibold text-ink disabled:opacity-40">
+                        <Sparkles size={13} /> {busy === row.id ? 'Reading...' : 'Read the CV'}
+                      </button>
+                      <span className="text-[11px] text-muted">
+                        Fills in a draft you check. Nothing is saved until you say so.
+                      </span>
+                    </div>
+
+                    <textarea rows={3} value={pasted[row.id] || ''}
+                      onChange={e => setPasted(current => ({ ...current, [row.id]: e.target.value }))}
+                      placeholder="Or paste the CV text here, for a Word document or anything they sent in an email."
+                      className="input-field mt-3 w-full text-[12px]" />
+
+                    {readings[row.id] && (
+                      <CvReadingReview
+                        reading={readings[row.id]}
+                        saving={busy === row.id}
+                        onChange={next => setReadings(current => ({ ...current, [row.id]: next }))}
+                        onSave={async () => {
+                          const saved = await act(row, 'apply_reading', { reading: readings[row.id] })
+                          if (saved) {
+                            setNote(`Saved to ${row.full_name}'s profile. Open their workspace to check it over.`)
+                            setReadings(current => {
+                              const next = { ...current }
+                              delete next[row.id]
+                              return next
+                            })
+                          }
+                        }}
+                      />
+                    )}
+                  </div>
+                )}
 
                 {row.created_user_id && (
                   <p className="mt-3 text-[11px] text-muted">
