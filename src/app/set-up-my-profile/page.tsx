@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import type { Metadata } from 'next'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
@@ -60,6 +61,15 @@ export default function SetUpMyProfilePage() {
               masterclasses first. You decide who can see you, and the answer starts at nobody.
             </p>
           </div>
+
+          {/* The way out, said before the form rather than after it. Plenty of
+              people would rather not hand their CV to a stranger, and the
+              self-serve door has always been the main one. */}
+          <p className="mt-8 text-[14px] leading-relaxed text-[#555555]">
+            Would rather do it yourself? Perfectly reasonable, and it is the same profile either way.{' '}
+            <Link href="/register/talent" className="font-semibold text-[#1c1c1c] underline">Set it up yourself here</Link>,
+            and come back to this page later if you change your mind.
+          </p>
 
           <div className="mt-10">
             <h2 className="text-[24px] font-semibold text-[#1c1c1c]">Send it over</h2>

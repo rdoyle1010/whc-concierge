@@ -18,6 +18,13 @@ import { cvReadingConfigured, readCv, type CvReading } from '@/lib/cv-read'
 
 export const dynamic = 'force-dynamic'
 
+// A model reading a CV does not answer in ten seconds, and ten is the
+// platform default for a route that does not say otherwise. /api/cv/analyse
+// learned this the same way: the request died mid-read, the browser got an
+// error page rather than JSON, and the screen said "That did not work",
+// which is true and tells nobody anything.
+export const maxDuration = 60
+
 const SITE = 'https://talenthousecollective.co.uk'
 const BUCKET = 'talent-documents'
 

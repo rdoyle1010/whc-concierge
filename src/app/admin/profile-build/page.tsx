@@ -54,8 +54,18 @@ export default function AdminProfileBuildPage() {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id: row.id, action, ...extra }),
       })
-      const body = await res.json().catch(() => ({}))
-      if (!res.ok) { setError(body.error || 'That did not work.'); return null }
+      // Not every failure comes back as JSON. A function that was killed
+      // mid-request returns an error page, and "That did not work" is what
+      // that used to look like on screen: true, and useless to whoever has
+      // to fix it.
+      const body = await res.json().catch(() => null)
+      if (!res.ok) {
+        setError(body?.error
+          || (res.status === 504 || res.status === 502
+            ? 'That took too long and the server gave up. Try again, or paste the CV text in instead of using the file.'
+            : `That did not work (${res.status}). Tell Claude what you pressed and this number.`))
+        return null
+      }
       if (body.warning) setError(body.warning)
       else if (action === 'create') {
         setNote(body.reused
@@ -85,9 +95,17 @@ export default function AdminProfileBuildPage() {
         <p className="eyebrow">People &amp; operations</p>
         <h1 className="text-[32px] mt-1">Profiles we are building</h1>
         <p className="text-[13px] text-secondary mt-2 max-w-2xl">
-          People who sent a CV rather than filling in a form. Create the account, fill the profile in
-          using their own workspace, then send it to them to approve. Nothing they have is visible to
-          anybody until they say so.
+          People who sent a CV rather than filling in a form. Their account is made the moment they
+          send it, so there are four things to do and they are in order on each card:
+        </p>
+        <ol className="mt-3 space-y-1 text-[13px] text-secondary">
+          <li><strong className="text-ink">1. Read the CV</strong> and correct anything it got wrong</li>
+          <li><strong className="text-ink">2. Save this to their profile</strong></li>
+          <li><strong className="text-ink">3. Open their workspace</strong> to add photographs or anything else</li>
+          <li><strong className="text-ink">4. Send it to them</strong>, and they set a password</li>
+        </ol>
+        <p className="text-[13px] text-secondary mt-3 max-w-2xl">
+          Nothing they have is visible to anybody until they say so.
         </p>
 
         {unavailable && (
@@ -138,10 +156,13 @@ export default function AdminProfileBuildPage() {
                     <span className="text-[12px] text-muted">No CV attached</span>
                   )}
 
+                  {/* Normally already done: the account is made the moment
+                      somebody sends their CV. This is here for the ones that
+                      could not be, which the note on the row explains. */}
                   {!row.created_user_id ? (
                     <button type="button" disabled={busy === row.id} onClick={() => act(row, 'create')}
                       className="inline-flex items-center gap-1.5 border border-[#1c1c1c] bg-[#1c1c1c] px-3 py-1.5 text-[12px] font-semibold text-white disabled:opacity-40">
-                      <UserPlus size={13} /> Create their account
+                      <UserPlus size={13} /> Make their account
                     </button>
                   ) : (
                     <>
@@ -182,7 +203,7 @@ export default function AdminProfileBuildPage() {
                       <span className="text-[11px] text-muted">
                         {row.created_user_id
                           ? 'Fills in a draft you check. Nothing is saved until you say so.'
-                          : 'Reads a draft now. You will need their account before it can be saved.'}
+                          : 'Reads a draft now. This one has no account yet, so make one before saving.'}
                       </span>
                     </div>
 

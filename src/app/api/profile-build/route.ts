@@ -6,6 +6,8 @@ import { alertAdminOfSignup } from '@/lib/admin-alerts'
 import {
   BUILD_CONSENT_WORDING, CV_MAX_BYTES, cvStoragePath, cvTypeAllowed,
 } from '@/lib/profile-build'
+import { visibilityColumns } from '@/lib/talent-visibility'
+import { tolerantUpsert } from '@/lib/tolerant-upsert'
 
 // The intake for "send us your CV and we will do the rest".
 //
@@ -86,6 +88,7 @@ export async function POST(req: NextRequest) {
   // The CV goes to the private bucket, under a path we choose. A filename is
   // whatever the sender typed, and a storage path is not the place to discover
   // that.
+  let cvPath: string | null = null
   if (file && file.size > 0) {
     try {
       const path = cvStoragePath(created.id, file.name)
@@ -94,6 +97,7 @@ export async function POST(req: NextRequest) {
       if (uploadError) {
         console.error('Profile build CV upload failed:', uploadError.message)
       } else {
+        cvPath = path
         // Checked, because a request whose CV silently vanished is a request
         // she cannot act on and will not know is broken.
         const { error: attachError } = await admin.from('profile_build_requests')
@@ -104,6 +108,25 @@ export async function POST(req: NextRequest) {
     } catch (uploadThrew: any) {
       console.error('Profile build CV upload threw:', uploadThrew?.message)
     }
+  }
+
+  // The account, made now rather than on a button.
+  //
+  // Somebody who has given a name, an address, written consent and a CV has
+  // given us an account. Asking an administrator to press a button to agree
+  // is a step that exists only because the code was written in that order,
+  // and it is a step that can be forgotten, fail, or be done to the wrong
+  // person.
+  //
+  // Not for a flagged submission: a spam check that trips should not be able
+  // to create auth users. Those wait for a person.
+  if (!suspected) {
+    await createAccountFor(admin, created.id, { email, fullName, phone, cvPath })
+      .catch((accountError: any) => {
+        // Never fails the request. Her CV is saved either way, and an account
+        // that did not get made is a button away rather than a lost request.
+        console.error('Profile build account creation failed:', accountError?.message)
+      })
   }
 
   // She needs to know one has come in, and this is not a sign-up so it cannot
@@ -122,6 +145,79 @@ export async function POST(req: NextRequest) {
   }).catch(() => {})
 
   return NextResponse.json({ success: true })
+}
+
+/**
+ * Make the account, or link to the one that is already there.
+ *
+ * Everything it writes is private and unapproved by its owner, because she
+ * has not seen any of it yet. An address that already belongs to a property
+ * is left completely alone and the request waits for a person: converting a
+ * property account into a talent one locks its owner out of her own
+ * dashboard, which has happened here once already.
+ */
+async function createAccountFor(
+  admin: any,
+  requestId: string,
+  person: { email: string; fullName: string; phone: string; cvPath: string | null },
+): Promise<void> {
+  let userId: string | null = null
+
+  const { data: made, error: createError } = await admin.auth.admin.createUser({
+    email: person.email,
+    email_confirm: true,
+    user_metadata: { role: 'talent', full_name: person.fullName },
+  })
+
+  if (made?.user) {
+    userId = made.user.id
+    const { error: profileError } = await admin.from('profiles').insert({
+      id: userId, email: person.email, role: 'candidate', full_name: person.fullName,
+    })
+    if (profileError) throw new Error(profileError.message)
+  } else {
+    // Somebody who already has an account is the common case, not a problem.
+    // But nothing is written to it until we know what it is.
+    userId = await findExistingUser(admin, person.email)
+    if (!userId) throw new Error(createError?.message || 'The account could not be created.')
+
+    const { data: existing } = await admin.from('profiles').select('role').eq('id', userId).maybeSingle()
+    const role = String(existing?.role || '')
+    if (role && role !== 'candidate') {
+      await admin.from('profile_build_requests').update({
+        admin_note: `That address already belongs to a ${role === 'employer' ? 'property' : role} account, so no account was made. Ask them for a different address, or work from Users.`,
+        updated_at: new Date().toISOString(),
+      }).eq('id', requestId)
+      return
+    }
+  }
+
+  await tolerantUpsert(admin, 'candidate_profiles', {
+    user_id: userId,
+    full_name: person.fullName,
+    phone: person.phone || null,
+    cv_url: person.cvPath,
+    approval_status: 'approved',
+    ...visibilityColumns('private'),
+  }, { onConflict: 'user_id' })
+
+  const { error: linkError } = await admin.from('profile_build_requests')
+    .update({ created_user_id: userId, status: 'building', updated_at: new Date().toISOString() })
+    .eq('id', requestId)
+  if (linkError) throw new Error(linkError.message)
+}
+
+/** There is no getUserByEmail, so the list is paged through rather than guessed at. */
+async function findExistingUser(admin: any, email: string): Promise<string | null> {
+  const wanted = String(email || '').trim().toLowerCase()
+  for (let page = 1; page <= 20; page++) {
+    const { data, error } = await admin.auth.admin.listUsers({ page, perPage: 200 })
+    if (error || !data?.users?.length) return null
+    const found = data.users.find((user: any) => String(user.email || '').toLowerCase() === wanted)
+    if (found) return found.id
+    if (data.users.length < 200) return null
+  }
+  return null
 }
 
 const escape = (value: string) =>
@@ -145,8 +241,13 @@ function acknowledgementHtml(fullName: string): string {
           Nothing is visible to any property until you have seen it and said yes, and when you do go
           live you choose how much of you is shown.
         </p>
-        <p style="margin:0;font-size:15px;line-height:1.7;color:#3a3a3a;">
+        <p style="margin:0 0 16px;font-size:15px;line-height:1.7;color:#3a3a3a;">
           If you think of anything else worth including, just reply to this email.
+        </p>
+        <p style="margin:0;font-size:13px;line-height:1.7;color:#6b6b6b;">
+          We have opened an account in your name ready for it. You do not need to do anything with it,
+          but if you would rather get on without waiting for us, use "Forgot your password" on the
+          sign-in page to set a password and it is yours.
         </p>
         <p style="margin:22px 0 0;font-size:12px;color:#6b6b6b;">Talent House Collective &middot; talenthousecollective.co.uk</p>
       </div>

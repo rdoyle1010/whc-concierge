@@ -237,3 +237,99 @@ test('a Word CV is read rather than refused', () => {
   // An empty or near-empty extraction is not a reading.
   assert.match(adminRoute, /text\.length >= 40 \? text : null/)
 })
+
+// Somebody who has given a name, an address, written consent and a CV has
+// given us an account. Asking an administrator to press a button to agree is
+// a step that exists only because the code was written in that order, and it
+// is a step that can be forgotten, fail, or be done to the wrong person.
+test('the account exists the moment somebody sends their CV', () => {
+  assert.match(intake, /createAccountFor\(admin, created\.id/)
+  assert.match(intake, /auth\.admin\.createUser/)
+  // Private and unapproved by its owner, because she has not seen any of it.
+  assert.match(intake, /\.\.\.visibilityColumns\('private'\)/)
+  // Through the tolerant write, like every other candidate_profiles seed.
+  assert.match(intake, /tolerantUpsert\(admin, 'candidate_profiles'/)
+})
+
+// A spam check that trips must not be able to create auth users.
+test('a flagged submission gets no account', () => {
+  assert.match(intake, /if \(!suspected\) \{[\s\S]{0,200}createAccountFor/)
+})
+
+// Her CV is saved either way. An account that did not get made is a button
+// away; a lost request is not.
+test('a failure to make the account never loses the request', () => {
+  const block = intake.slice(intake.indexOf('createAccountFor(admin, created.id'))
+  assert.match(block, /\.catch\(/)
+  assert.doesNotMatch(block.slice(0, 400), /return NextResponse\.json\(\{ error/)
+})
+
+// Converting a property account into a talent one locks its owner out of her
+// own dashboard. That has happened here once.
+test('an address belonging to a property is left completely alone', () => {
+  const helper = intake.slice(intake.indexOf('async function createAccountFor'))
+  const guard = helper.indexOf("role !== 'candidate'")
+  assert.ok(guard > 0, 'the role guard is gone')
+  // Nothing is written to an existing account before the check reads it.
+  const before = helper.slice(helper.indexOf('findExistingUser'), guard)
+  assert.doesNotMatch(before, /\.upsert\(|\.insert\(|\.update\(/)
+  // And the refusal is written where she will read it.
+  assert.match(helper, /admin_note: `That address already belongs to a/)
+})
+
+// The screen says the order rather than leaving somebody to work it out from
+// which buttons happen to be enabled.
+test('the four steps are written down, in order', () => {
+  const page = body('src/app/admin/profile-build/page.tsx')
+  const steps = ['1. Read the CV', '2. Save this to their profile', '3. Open their workspace', '4. Send it to them']
+  let last = -1
+  for (const step of steps) {
+    const at = page.indexOf(step)
+    assert.ok(at > last, `${step} is missing or out of order`)
+    last = at
+  }
+})
+
+// A function killed mid-request returns an error page, not JSON. "That did
+// not work" is what that looked like on screen: true, and useless.
+test('a failure says what actually happened', () => {
+  const page = body('src/app/admin/profile-build/page.tsx')
+  assert.match(page, /res\.status === 504 \|\| res\.status === 502/)
+  assert.match(page, /paste the CV text in instead of using the file/)
+  assert.match(page, /\$\{res\.status\}/)
+
+  // And the route is allowed longer than the ten-second default it inherited.
+  assert.match(adminRoute, /export const maxDuration = \d+/)
+  const seconds = Number((adminRoute.match(/export const maxDuration = (\d+)/) || [])[1])
+  assert.ok(seconds >= 30, `a CV read needs more than ${seconds} seconds`)
+})
+
+// Doing it yourself is the main door and always was. The concierge page is an
+// alternative for people who would rather not, and plenty of people would
+// rather not hand their CV to a stranger.
+test('both doors are open, and each points at the other', () => {
+  const concierge = body('src/app/set-up-my-profile/page.tsx')
+  assert.match(concierge, /href="\/register\/talent"/, 'no way back to doing it yourself')
+  assert.match(concierge, /Would rather do it yourself/i)
+
+  const register = body('src/app/register/talent/page.tsx')
+  assert.match(register, /href="\/set-up-my-profile"/)
+})
+
+// Making the account on arrival created a trap: somebody who sends a CV and
+// then gets impatient goes to register, is told an account already exists,
+// and is locked out of a profile they never knew they had, behind a password
+// that was never set.
+test('somebody who sends a CV and then registers is not locked out', () => {
+  const init = body('src/app/api/register/init/route.ts')
+  const message = (init.match(/return 'An account already exists[^']*'/) || [''])[0]
+  assert.ok(message, 'the already-exists message has moved')
+  assert.match(message, /sent us your CV/i, 'the likelier cause is not mentioned')
+  assert.match(message, /Forgot your password/i, 'no way through is offered')
+  assert.doesNotMatch(message, /^return 'An account already exists for that email\. Try signing in instead\.'$/)
+
+  // And the acknowledgement tells them the account is there, so nobody has to
+  // guess that it is.
+  assert.match(intake, /We have opened an account in your name/i)
+  assert.match(intake, /Forgot your password/i)
+})

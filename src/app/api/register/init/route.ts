@@ -44,7 +44,12 @@ function friendlySignupError(message?: string) {
     return 'That password is too easy to guess. Try a longer phrase or a more unique combination.'
   }
   if (text.includes('already registered') || text.includes('already exists') || text.includes('user already')) {
-    return 'An account already exists for that email. Try signing in instead.'
+    // Two causes now, and the second one is invisible to the person in front
+    // of it: if they sent us a CV, we made the account for them and they have
+    // never set a password. Telling somebody to sign in to an account they do
+    // not know exists, with a password that was never created, is a locked
+    // door with a sign on it saying the door is open.
+    return 'An account already exists for that email. If you sent us your CV we have already started it for you, so use "Forgot your password" on the sign-in page to set a password and pick up where we left off.'
   }
   if (text.includes('email')) {
     return 'Please check your email address and try again.'
