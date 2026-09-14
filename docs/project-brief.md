@@ -177,6 +177,17 @@ fifteen-measure director dashboard all fall out of them by formula. The
 dashboard contains no typed numbers at all, because a dashboard filled in by
 hand disagrees with the reports behind it by the third month.
 
+One thing worth knowing about the drafted procedures. A draft that came back
+from the model without steps in it was stored as written anyway, so the
+register reported nothing left to write while a batch of documents could not
+be signed off, and they were found one at a time by pressing sign off and
+being refused. **Written** and **Written, not finished** are separate counts
+on the library screen now, and one press sends the unfinished ones to be
+drafted again. A redraft only replaces what is there if it comes back more
+complete, and only on a run that was deliberately sent to redraft: an
+unfinished document and one somebody started writing by hand look identical
+from the collection's point of view, so the default stays never overwrite.
+
 The xlsx writer is about three hundred lines in `src/lib/documents/xlsx.ts`
 rather than a dependency, because the file format is a zip of XML and node
 already has deflate. Every generated workbook is opened by a real spreadsheet
@@ -229,7 +240,7 @@ before anything in this library is called finished.
 ## Technical shape
 
 Next.js 16 App Router · Supabase (auth, Postgres, storage) · Stripe · Netlify.
-238 API routes, 172 pages, 132 migrations, 155 test files.
+239 API routes, 172 pages, 132 migrations, 157 test files.
 
 Two roles: `talent` and `employer`, stored on `profiles.role` (talent is
 stored as `candidate`). Admin is a third role on the same column.

@@ -1,5 +1,5 @@
 import { documentFromDraft } from './assemble'
-import type { SopDocument } from './types'
+import { missingFromSop, type SopDocument } from './types'
 
 // Working out what to write before writing any of it.
 //
@@ -28,19 +28,33 @@ export type CollectPlan = {
   failed: number
   /** The first few reasons, verbatim. */
   refused: string[]
-  /** Rows deliberately left alone: gone, approved, or already written. */
+  /** Rows deliberately left alone: gone, approved, finished, or not improved. */
   skipped: number
+  /** Unfinished drafts this run replaced with a better one. */
+  improved: number
 }
 
 export function planCollection(
   results: CollectResult[],
   targets: Map<string, Record<string, any>>,
   now: string,
+  /**
+   * Whether this run is allowed to replace a document that is already there
+   * but unfinished.
+   *
+   * Off by default, and that default is the important half. An incomplete
+   * document is indistinguishable from one a person started writing by hand,
+   * so nothing written is ever overwritten by an ordinary collection. Only a
+   * run that was deliberately sent to redraft the unfinished ones may, and
+   * even then only with something more complete.
+   */
+  options: { replaceUnfinished?: boolean } = {},
 ): CollectPlan {
   const writes: Record<string, any>[] = []
   const refused: string[] = []
   let failed = 0
   let skipped = 0
+  let improved = 0
 
   for (const result of results) {
     if (!result.draft) {
@@ -53,18 +67,40 @@ export function planCollection(
     }
 
     const target = targets.get(result.id)
-    // Gone, signed off, or written by a person while the batch was running.
-    // None of those are ours to overwrite.
+    // Gone, or signed off. Neither is ours to overwrite: an approval says
+    // somebody read that exact version.
     if (!target || target.status === 'approved') { skipped += 1; continue }
-    if (Object.keys(target.document || {}).length > 0) { skipped += 1; continue }
+
+    const written = documentFromDraft(target as any, result.draft)
+
+    // Something is already there. An ordinary collection leaves it alone,
+    // full stop: an incomplete document and a document somebody started by
+    // hand look identical from here.
+    //
+    // A first draft that came back with no steps in it was stored as written
+    // anyway, which is how a dozen documents ended up unsignable while the
+    // register reported nothing left to write. Redrafting those is the fix,
+    // and the old rule of never overwriting anything written would have
+    // skipped every one of them and charged for the privilege.
+    //
+    // So an unfinished draft can be replaced, and only by a better one.
+    // Nothing is ever replaced with something worse, and a document a person
+    // has completed by hand is finished by definition and left alone.
+    if (Object.keys(target.document || {}).length > 0) {
+      if (!options.replaceUnfinished) { skipped += 1; continue }
+      const before = missingFromSop(target.document as SopDocument)
+      if (!before.length) { skipped += 1; continue }
+      if (missingFromSop(written as SopDocument).length >= before.length) { skipped += 1; continue }
+      improved += 1
+    }
 
     writes.push({
       ...target,
-      document: documentFromDraft(target as any, result.draft),
+      document: written,
       status: 'draft',
       updated_at: now,
     })
   }
 
-  return { writes, failed, refused, skipped }
+  return { writes, failed, refused, skipped, improved }
 }
