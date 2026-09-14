@@ -251,9 +251,26 @@ export async function POST(req: NextRequest) {
       upgradeHref: '/talent/membership',
     }, { status: 403 })
 
-    const { data: job, error: jobError } = await supabase.from('job_listings').select('*, employer_profiles(*)').eq('id', jobId).maybeSingle()
+    // The role and the property, separately.
+    //
+    // The same query on the website embedded employer_profiles(*) in this
+    // one. That table has row level security a talent user does not satisfy,
+    // so the embed failed and took the role with it, and somebody who had
+    // chosen a role was told the role was gone. Here it produced "This role
+    // is no longer available" against a role plainly on the board.
+    const { data: job, error: jobError } = await supabase.from('job_listings')
+      .select('*').eq('id', jobId).maybeSingle()
     if (jobError || !job) return NextResponse.json({ error: 'This role is no longer available.' }, { status: 404 })
-    const employer = Array.isArray(job.employer_profiles) ? job.employer_profiles[0] : job.employer_profiles
+
+    // Property facts are a bonus, never a blocker: companyFacts names what is
+    // missing rather than inventing it.
+    let employer: any = null
+    if (job.employer_id) {
+      const { data: property, error: propertyError } = await supabase
+        .from('employer_profiles').select('*').eq('id', job.employer_id).maybeSingle()
+      if (propertyError) console.error('Interview Ready property query', propertyError.message)
+      employer = property || null
+    }
     const cvText = await extractCvText(supabase, candidate.cv_url, user.id)
     const base = fallback(candidate, job, employer, cvText)
     const level = seniority(job)
