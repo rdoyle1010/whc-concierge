@@ -77,10 +77,17 @@ const SITE_LINKS = [
   { href: '/residency', label: 'Residency' },
   { href: '/standards', label: 'Standards' },
   { href: '/academy', label: 'Academy' },
-  { href: '/events', label: 'Events' },
   { href: '/consultancy', label: 'Consultancy' },
-  { href: '/intelligence', label: 'Insight' },
 ]
+
+// Events and Insight are off the top bar.
+//
+// A nav is a statement about what this business does, and ten items reads as
+// a directory rather than as a proposition. Events currently lists nothing
+// and Insight is not what anybody arrives for, so both were spending the
+// scarcest space on the site to say very little. The pages stay, and so do
+// the footer links: this removes them from the first thing a visitor reads,
+// not from the site.
 
 export default function Navbar({ siteContent }: { siteContent?: WebsiteContent }) {
   const [mobileOpen, setMobileOpen] = useState(false)

@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createServerSupabaseClient } from '@/lib/supabase/server'
-import { ATTACHMENT_BUCKET, loadAttachments, attachmentsForSlugs } from '@/lib/documents/attachments'
+import { ATTACHMENT_BUCKET, attachmentsForSlugs } from '@/lib/documents/attachments'
+import { loadAttachments } from '@/lib/documents/attachments-server'
 import { slugsInOrders } from '@/lib/documents/entitlement'
 
 // One file, to somebody who bought a pack containing it.

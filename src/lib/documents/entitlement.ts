@@ -1,5 +1,6 @@
 import { createAdminClient } from '@/lib/supabase/admin'
-import { loadAttachments, attachmentsForSlugs, type Attachment } from './attachments'
+import { attachmentsForSlugs, type Attachment } from './attachments'
+import { loadAttachments } from './attachments-server'
 
 // Which pack slugs a buyer's orders cover.
 //

@@ -479,6 +479,52 @@ check('no stray cream or off-white surfaces under src', () => {
   assert.deepEqual(offenders, [])
 })
 
+// The service-role client reached a browser bundle.
+//
+// attachments.ts imported createAdminClient at the top and exported
+// readableSize at the bottom. A client component wanted the formatting
+// helper, got the admin client with it, evaluated it in a browser without
+// the environment it needs, and the shop rendered "Something went wrong" to
+// every visitor. The build said nothing: the import is legal, it just cannot
+// run where it ended up.
+//
+// So: no module reachable from a 'use client' component may import the admin
+// client, directly or through one hop. One hop is where this hid.
+check('no client component can reach the service-role client', () => {
+  const sourceFiles = listFiles('src').filter(file => /\.tsx?$/.test(file))
+  const localImports = (file: string) =>
+    [...read(file).matchAll(/from '(@\/[^']+|\.[^']+)'/g)]
+      .map(match => match[1])
+      .map(specifier => specifier.startsWith('@/')
+        ? `src/${specifier.slice(2)}`
+        : `${file.split('/').slice(0, -1).join('/')}/${specifier}`)
+      .map(path => path.split('/').reduce((parts: string[], part) => {
+        if (part === '.') return parts
+        if (part === '..') { parts.pop(); return parts }
+        return [...parts, part]
+      }, []).join('/'))
+      .flatMap(path => ['.ts', '.tsx', '/index.ts'].map(extension => path + extension))
+      .filter(path => sourceFiles.includes(path))
+
+  const reachesAdmin = new Map<string, boolean>()
+  const walk = (file: string, seen = new Set<string>()): boolean => {
+    if (reachesAdmin.has(file)) return reachesAdmin.get(file)!
+    if (seen.has(file)) return false
+    seen.add(file)
+    const source = read(file)
+    const direct = /from '@\/lib\/supabase\/admin'/.test(source)
+      || /createAdminClient/.test(source) && /supabase\/admin/.test(source)
+    const result = direct || localImports(file).some(next => walk(next, seen))
+    reachesAdmin.set(file, result)
+    return result
+  }
+
+  const offenders = sourceFiles
+    .filter(file => read(file).trimStart().startsWith("'use client'"))
+    .filter(file => localImports(file).some(next => walk(next)))
+  assert.deepEqual(offenders, [])
+})
+
 let passed = 0
 for (const [name, fn] of checks) {
   try { fn(); passed++; console.log(`PASS ${passed.toString().padStart(2, '0')} ${name}`) }

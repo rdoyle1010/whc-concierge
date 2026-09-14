@@ -1,6 +1,12 @@
-import { createAdminClient } from '@/lib/supabase/admin'
-
 // Files that travel with a pack.
+//
+// Nothing here reaches the database. It used to: loadAttachments lived in
+// this file and took a service-role client as a default argument, so the
+// moment a client component imported readableSize from here the admin client
+// came with it, was evaluated in the browser without the environment it
+// needs, and took the whole shop down with "Something went wrong". Reading
+// them is in ./attachments-server. This half is types, limits and formatting,
+// and it is safe anywhere.
 //
 // The compliance register this library grew out of is a spreadsheet, and a
 // spreadsheet is the right shape for it: a register is a live thing somebody
@@ -40,28 +46,6 @@ export type Attachment = {
   sortOrder: number
   /** This file is the reporting workbook, so the generated one stands down. */
   replacesWorkbook: boolean
-}
-
-const asAttachment = (row: any): Attachment => ({
-  id: row.id,
-  name: row.name,
-  description: row.description,
-  storagePath: row.storage_path,
-  fileName: row.file_name,
-  contentType: row.content_type,
-  sizeBytes: row.size_bytes,
-  packSlugs: row.pack_slugs || [],
-  isLive: row.is_live,
-  sortOrder: row.sort_order,
-  replacesWorkbook: Boolean(row.replaces_workbook),
-})
-
-export async function loadAttachments(liveOnly: boolean, admin = createAdminClient()): Promise<Attachment[]> {
-  let query = admin.from('standards_attachments').select('*').order('sort_order', { ascending: true })
-  if (liveOnly) query = query.eq('is_live', true)
-  const { data, error } = await query
-  if (error || !data) return []
-  return (data as any[]).map(asAttachment)
 }
 
 /**

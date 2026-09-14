@@ -6,7 +6,7 @@ import Link from 'next/link'
 import Wordmark from '@/components/Wordmark'
 import { createClient } from '@/lib/supabase/client'
 import { AGENCY_PLATFORM_FEE_PCT, COMPANY_TYPES, EMPLOYER_MEMBERSHIPS, JOB_TIERS, RECRUITMENT_SERVICE_RATE } from '@/lib/constants'
-import { MARKETING_CONSENT_WORDING } from '@/lib/privacy-consent'
+import { MARKETING_CONSENT_WORDING } from '@/lib/consent-wording'
 import { LAUNCH_OFFER_EMPLOYER, launchOfferClosesLabel, launchOfferOpen } from '@/lib/launch-offers'
 
 const pounds = (pence: number) => `£${(pence / 100).toFixed(pence % 100 === 0 ? 0 : 2)}`
