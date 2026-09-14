@@ -35,7 +35,19 @@ import { placeholdersIn } from '@/lib/documents/placeholders'
 // steps with auditable standards would pass every one of them by asking a
 // question that does not apply.
 function missingFor(kind: string, document: any): string[] {
-  if (!document || !Object.keys(document).length) return []
+  // An empty document is missing everything, and saying so is the whole job.
+  //
+  // This used to return an empty array for an unwritten document, so the list
+  // would not shout "missing everything" at four hundred and sixty rows that
+  // had not been drafted yet. The approve action calls the same function, so
+  // "nothing missing" read as "ready to sign off", and documents with nothing
+  // in them but a reference were signed off by name and by date.
+  //
+  // That is the exact failure this library exists to prevent: an approval is
+  // a statement that somebody read a finished document, and there was nothing
+  // to read. The list now decides for itself not to ask about an unwritten
+  // row, using the flag it already has.
+  if (!document || !Object.keys(document).length) return ['everything: nothing has been written into it yet']
   if (PLAN_KINDS.has(kind)) {
     return missingFromPlan(document as PlanDocument)
   }
@@ -74,7 +86,7 @@ export async function GET() {
     const { document, ...rest } = row
     return {
       ...rest,
-      missing: missingFor(row.kind, document),
+      missing: Object.keys(document || {}).length ? missingFor(row.kind, document) : [],
       stale: row.status === 'approved' && row.approved_version !== row.version,
       written: Object.keys(document || {}).length > 0,
       lifeSafety: isLifeSafety(row),
@@ -648,6 +660,16 @@ export async function POST(req: NextRequest) {
   if (action === 'approve') {
     if (!isValidReference(row.reference)) {
       return NextResponse.json({ error: 'That reference is not in the house format, so it cannot be approved.' }, { status: 400 })
+    }
+
+    // Nothing to read, so nothing to approve. Said before the completeness
+    // rules, because they answer a different question and one of them once
+    // answered this one wrongly.
+    if (!row.document || !Object.keys(row.document).length) {
+      return NextResponse.json({
+        error: 'There is nothing in that one yet. An approval says somebody read a finished document, '
+          + 'and there is nothing to read.',
+      }, { status: 400 })
     }
 
     // Refused while anything is missing. An approval is a statement that
