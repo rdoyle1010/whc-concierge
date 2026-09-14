@@ -59,8 +59,8 @@ export default function StandardsPage() {
                 that lives in one email is a library that goes with the inbox
                 when somebody changes job. */}
             <p className="mt-3 max-w-2xl text-[14px] leading-relaxed text-[#6b6b6b]">
-              You will need an account. Everything you buy is kept in it, so it is still there next year when a
-              new manager asks where the procedure is.
+              You will need an account, which takes four fields. Everything you buy is kept in it, so it is still
+              there next year when a new manager asks where the procedure is.
             </p>
           </div>
         </section>

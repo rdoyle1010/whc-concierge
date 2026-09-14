@@ -112,7 +112,7 @@ function Library() {
             than a sign-up prompt that explains nothing. */}
         <p className="max-w-md text-[13px] leading-relaxed text-[#6b6b6b]">
           Keep this link: it is the only way back without an account. If you
-          {' '}<Link href="/register" className="underline">create one</Link>{' '}
+          {' '}<Link href="/register/buyer" className="underline">create one</Link>{' '}
           with this address, everything you have bought appears under My Documents on your dashboard instead.
         </p>
       </div>
