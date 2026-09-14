@@ -67,3 +67,26 @@ test('the database keeps a star rating tied to real reviews', () => {
   assert.match(migration, /FROM public\.employer_profiles WHERE user_id IS NOT NULL/,
     'the backfill must visit every profile, not only the reviewed ones')
 })
+
+// Demonstration data carried a real hotel brand, at that brand's own
+// postcode, on fabricated vacancies. Admin-only, so nobody could trigger it
+// from outside, and still wrong: a therapist applying to it would be applying
+// for a job at a business that never advertised one.
+//
+// The brand taxonomy is the exception and has to be. hotel_brands is a list
+// of real brands a therapist picks from to say where they have worked, which
+// is the entire point of it.
+test('nothing fabricated carries a real business name', () => {
+  const BRANDS = /\b(Fairmont|Rosewood|Champneys|Ritz[- ]Carlton|Four Seasons|Mandarin Oriental|Soho House|Gleneagles|Chewton Glen|Lanesborough)\b/i
+
+  const seed = readFileSync('src/app/api/seed/route.ts', 'utf8')
+  assert.doesNotMatch(seed, BRANDS, 'demonstration listings must not name a real business')
+  assert.doesNotMatch(seed, /WA16|Knutsford/, 'nor sit at a real property postcode')
+
+  // The document library is sold to many properties. One client's name in it
+  // is that client's name on somebody else's wall.
+  for (const file of ['src/lib/documents/quarter-one.ts', 'src/lib/documents/library-plan.ts', 'src/lib/documents/examples.ts']) {
+    const source = readFileSync(file, 'utf8')
+    assert.doesNotMatch(source, BRANDS, `${file} names a real business`)
+  }
+})

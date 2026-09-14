@@ -4,12 +4,22 @@ import { isAdminRequest } from '@/lib/admin-api-auth'
 
 export const dynamic = 'force-dynamic'
 
+// Demonstration data, and why it carries nobody's name.
+//
+// These listings were written against a real hotel brand at that brand's own
+// postcode. Admin-only, so nobody could trigger it from outside, and still
+// wrong: a fabricated vacancy attributed to a named business, on a live
+// recruitment site, is a job a therapist could apply for at a company that
+// never advertised it. Demonstration data demonstrates the layout. It does
+// not need somebody else's name to do that.
+const DEMO_PROPERTY = 'Example Spa Hotel (demonstration)'
+
 const SEED_JOBS = [
   {
     title: 'Senior Spa Therapist',
-    description: 'Join our award-winning spa team delivering world-class ESPA and Elemis treatments to discerning guests at this iconic Cheshire property. You will deliver a full range of face and body treatments, maintain exceptional standards, and contribute to the spa\'s five-star reputation.',
-    location: 'Knutsford, Cheshire',
-    location_postcode: 'WA16 0SU',
+    description: 'Join our award-winning spa team delivering world-class ESPA and Elemis treatments to discerning guests at this country house spa. You will deliver a full range of face and body treatments, maintain exceptional standards, and contribute to the spa\'s five-star reputation.',
+    location: 'Example Town',
+    location_postcode: 'DEMO 1AA',
     job_type: 'Full-time',
     contract_type: 'permanent',
     required_role_level: 'Senior Therapist',
@@ -23,9 +33,9 @@ const SEED_JOBS = [
   },
   {
     title: 'Spa Manager',
-    description: 'Lead the spa operations at Fairmont, overseeing a team of 15+ therapists and reception staff. Full P&L responsibility, treatment menu development, team training, and guest experience management. A rare leadership opportunity at one of the UK\'s finest wellness destinations.',
-    location: 'Knutsford, Cheshire',
-    location_postcode: 'WA16 0SU',
+    description: 'Lead the spa operations at this demonstration property, overseeing a team of 15+ therapists and reception staff. Full P&L responsibility, treatment menu development, team training, and guest experience management. A rare leadership opportunity at one of the UK\'s finest wellness destinations.',
+    location: 'Example Town',
+    location_postcode: 'DEMO 1AA',
     job_type: 'Full-time',
     contract_type: 'permanent',
     required_role_level: 'Spa Manager',
@@ -39,9 +49,9 @@ const SEED_JOBS = [
   },
   {
     title: 'Spa Therapist - Agency Cover',
-    description: 'We are seeking experienced spa therapists for agency cover shifts at our Cheshire property. Flexible shifts available including weekends. Must hold valid professional insurance and be ESPA trained or willing to complete brand induction.',
-    location: 'Knutsford, Cheshire',
-    location_postcode: 'WA16 0SU',
+    description: 'We are seeking experienced spa therapists for agency cover shifts at this demonstration property. Flexible shifts available including weekends. Must hold valid professional insurance and be ESPA trained or willing to complete brand induction.',
+    location: 'Example Town',
+    location_postcode: 'DEMO 1AA',
     job_type: 'Freelance',
     contract_type: 'agency_cover',
     required_role_level: 'Therapist',
@@ -56,8 +66,8 @@ const SEED_JOBS = [
   {
     title: 'Beauty Therapist',
     description: 'Deliver premium beauty treatments including facials, manicures, pedicures, waxing and tinting. You will work with Elemis and Dermalogica product houses in a luxurious five-star environment.',
-    location: 'Knutsford, Cheshire',
-    location_postcode: 'WA16 0SU',
+    location: 'Example Town',
+    location_postcode: 'DEMO 1AA',
     job_type: 'Full-time',
     contract_type: 'permanent',
     required_role_level: 'Beauty Therapist',
@@ -72,8 +82,8 @@ const SEED_JOBS = [
   {
     title: 'Spa Receptionist',
     description: 'Be the first point of contact for our spa guests. Manage bookings, handle enquiries, process payments and ensure every guest receives a warm five-star welcome. Experience with Spa Booker or similar booking systems preferred.',
-    location: 'Knutsford, Cheshire',
-    location_postcode: 'WA16 0SU',
+    location: 'Example Town',
+    location_postcode: 'DEMO 1AA',
     job_type: 'Full-time',
     contract_type: 'permanent',
     required_role_level: 'Receptionist',
@@ -94,28 +104,28 @@ export async function POST(req: NextRequest) {
     const supabase = createAdminClient()
 
     // Check if we already have seed data
-    const { count } = await supabase.from('job_listings').select('id', { count: 'exact', head: true }).eq('location_postcode', 'WA16 0SU')
+    const { count } = await supabase.from('job_listings').select('id', { count: 'exact', head: true }).eq('location_postcode', 'DEMO 1AA')
     if (count && count >= 5) {
       return NextResponse.json({ message: 'Seed data already exists', count })
     }
 
-    // Need an employer to attach jobs to - create Fairmont if not exists
+    // Need an employer to attach jobs to - create the demonstration employer if not exists
     let employerId: string | null = null
-    const { data: existing } = await supabase.from('employer_profiles').select('id').eq('company_name', 'Fairmont').single()
+    const { data: existing } = await supabase.from('employer_profiles').select('id').eq('company_name', DEMO_PROPERTY).single()
 
     if (existing) {
       employerId = existing.id
     } else {
       const { data: newEmp } = await supabase.from('employer_profiles').insert({
-        company_name: 'Fairmont',
+        company_name: DEMO_PROPERTY,
         contact_name: 'Spa Director',
-        location: 'Knutsford, Cheshire',
-        postcode: 'WA16 0SU',
+        location: 'Example Town',
+        postcode: 'DEMO 1AA',
         company_type: 'Hotel',
         product_houses_used: ['ESPA', 'Elemis', 'Comfort Zone'],
         systems_used: ['Spa Booker'],
         approval_status: 'approved',
-        property_description: 'Fairmont is a luxury hotel and spa in the heart of the Cheshire countryside.',
+        property_description: 'A demonstration property used to show how a listing looks. Not a real business.',
       }).select('id').single()
       employerId = newEmp?.id || null
     }

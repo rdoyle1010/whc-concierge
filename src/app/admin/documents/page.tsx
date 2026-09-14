@@ -29,6 +29,7 @@ type Row = {
   stale: boolean
   written: boolean
   lifeSafety: boolean
+  blanks: number
   tier: 'day-1' | 'month-1' | 'quarter-1' | null
   tier_reason: string | null
   created_at: string
@@ -460,6 +461,24 @@ export default function AdminDocumentsPage() {
 
                 {!row.written && (
                   <p className="mt-2 text-[12px] text-muted">Not written yet. Nothing in it but the reference.</p>
+                )}
+
+                {/* What the property has to fill in. Said both ways round: a
+                    procedure with nothing to complete, on a subject that
+                    turns on a fact about one building, means the drafter
+                    stated something it could not know. */}
+                {row.written && (
+                  row.blanks > 0 ? (
+                    <p className="mt-2 text-[12px] text-secondary">
+                      {row.blanks} {row.blanks === 1 ? 'thing' : 'things'} for the property to fill in.
+                      The PDF has a box for each.
+                    </p>
+                  ) : (
+                    <p className="mt-2 text-[12px] text-amber-800">
+                      Nothing for the property to fill in. Check it has not stated a fact about a building it
+                      has never seen.
+                    </p>
+                  )
                 )}
 
                 {row.written && row.missing.length > 0 && (

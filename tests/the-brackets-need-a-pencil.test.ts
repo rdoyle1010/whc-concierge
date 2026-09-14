@@ -104,3 +104,17 @@ test('the shop lists documents by name, not only pack counts', () => {
   const catalogue = body('src/components/StandardsCatalogue.tsx')
   assert.match(catalogue, /<StandardsList available=\{available\} unavailable=\{unavailable\} \/>/)
 })
+
+test('the library says how much each document asks the property to fill in', () => {
+  const route = body('src/app/api/admin/documents/route.ts')
+  assert.match(route, /blanks: placeholdersIn/)
+
+  // Both directions matter. Nothing to complete on a procedure that turns on
+  // a fact about one building means the drafter stated something it could not
+  // know, which is the failure this whole library is built to avoid, and a
+  // silent zero looks exactly like a tidy document.
+  const page = body('src/app/admin/documents/page.tsx')
+  assert.match(page, /row\.blanks > 0/)
+  assert.match(page, /for the property to fill in/)
+  assert.match(page, /a fact about a building it/)
+})
