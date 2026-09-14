@@ -61,7 +61,14 @@ export async function GET() {
     }
   })
 
-  return NextResponse.json({ rows })
+  // What is being written right now, so nobody has to ask whether anything is
+  // happening. A screen that cannot answer that is a screen somebody presses
+  // a button on again.
+  const { data: runs } = await admin.from('document_batches')
+    .select('provider_batch_id, tier, requested, collected, failed, status, note, created_at')
+    .order('created_at', { ascending: false }).limit(5)
+
+  return NextResponse.json({ rows, runs: runs || [] })
 }
 
 export async function POST(req: NextRequest) {
@@ -191,6 +198,27 @@ export async function POST(req: NextRequest) {
     const tier = String(body.tier || '')
     if (!['day-1', 'month-1', 'quarter-1'].includes(tier)) {
       return NextResponse.json({ error: 'Choose a tier to draft.' }, { status: 400 })
+    }
+
+    // Not twice.
+    //
+    // A batch in flight has not written anything yet, so every document it is
+    // working on is still empty and still looks eligible. Pressing the button
+    // again while she waits therefore submits exactly the same documents a
+    // second time and pays for them twice, which is precisely what happened
+    // the first afternoon this existed.
+    const { data: inFlight } = await admin.from('document_batches')
+      .select('provider_batch_id, requested, created_at')
+      .eq('tier', tier).in('status', ['submitted', 'collecting']).limit(1)
+
+    if (inFlight?.length) {
+      const since = new Date(inFlight[0].created_at).toLocaleString('en-GB', { dateStyle: 'short', timeStyle: 'short' })
+      return NextResponse.json({
+        error: `That tier is already being written. ${inFlight[0].requested} documents went off at ${since} and `
+          + 'sending them again would write the same documents twice and pay for them twice. Press Collect what is '
+          + 'ready instead.',
+        alreadyRunning: true,
+      }, { status: 409 })
     }
 
     const { data: waiting, error: readError } = await admin.from('operational_documents')
