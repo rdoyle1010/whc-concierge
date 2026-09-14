@@ -238,23 +238,63 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true, submitted: 0, note: 'Every document in that tier is written already.' })
     }
 
-    const sent = await submitDraftBatch(items)
-    if (!sent.ok) return NextResponse.json({ error: sent.error }, { status: 502 })
-
-    const { error: receiptError } = await admin.from('document_batches').insert({
-      provider_batch_id: sent.batchId,
+    // The receipt is written before the money is spent.
+    //
+    // It used to be written after, and treated as a warning when it failed,
+    // on the reasoning that a batch already running should not be reported as
+    // a failure. That reasoning was wrong twice over. The warning carried the
+    // only record of the batch id and the screen showed the success message
+    // instead of it, so the id was lost the instant it was created. And a
+    // batch nobody has the id of cannot be collected, which means it was paid
+    // for and produced nothing: three hundred and thirty-eight documents,
+    // twice, with no way to reach either run.
+    //
+    // So a row is reserved first. If it cannot be written there is no way to
+    // track a batch, and a batch that cannot be tracked must not be started.
+    const reservation = `pending-${crypto.randomUUID()}`
+    const { data: receipt, error: receiptError } = await admin.from('document_batches').insert({
+      provider_batch_id: reservation,
       tier,
-      requested: sent.count,
+      requested: items.length,
       submitted_by: actor.id,
       status: 'submitted',
-    })
-    // The batch is running whether or not we managed to write that down, and
-    // saying it failed would have her submit the same four hundred documents
-    // again.
-    if (receiptError) {
+    }).select('id').maybeSingle()
+
+    if (receiptError || !receipt?.id) {
+      return NextResponse.json({
+        error: 'Nothing was sent, and nothing has been charged. The batch register could not be written to, so '
+          + `there would be no way to collect the results: ${receiptError?.message || 'no row came back'}. `
+          + 'Run the documents batch migration in Supabase and try again.',
+      }, { status: 500 })
+    }
+
+    const sent = await submitDraftBatch(items)
+    if (!sent.ok) {
+      // Nothing was started, so the reservation is removed rather than left
+      // sitting there blocking the next attempt at this tier. Checked,
+      // because a reservation that will not clear locks the tier out of every
+      // future submission and nothing on screen would say why.
+      const { error: clearError } = await admin.from('document_batches').delete().eq('id', receipt.id)
+      if (clearError) {
+        return NextResponse.json({
+          error: `${sent.error} Nothing was charged. A placeholder row was also left behind and could not be `
+            + `removed (${clearError.message}), which will block this tier until it is deleted.`,
+        }, { status: 502 })
+      }
+      return NextResponse.json({ error: sent.error }, { status: 502 })
+    }
+
+    const { error: idError } = await admin.from('document_batches')
+      .update({ provider_batch_id: sent.batchId, requested: sent.count, updated_at: new Date().toISOString() })
+      .eq('id', receipt.id)
+
+    // This one is genuinely a warning: the batch is running and paid for, and
+    // the id is on screen so it can be adopted by hand.
+    if (idError) {
       return NextResponse.json({
         success: true, submitted: sent.count,
-        warning: `Submitted, but the receipt did not save: ${receiptError.message}. The batch id is ${sent.batchId}.`,
+        warning: `Sent, and running. But the batch id did not save: ${idError.message}. Write this down and use `
+          + `Collect a batch by id: ${sent.batchId}`,
       })
     }
 
@@ -263,8 +303,18 @@ export async function POST(req: NextRequest) {
 
   // Collect whatever has finished.
   if (action === 'collect') {
-    const { data: runs } = await admin.from('document_batches')
+    const { data: runs, error: registerError } = await admin.from('document_batches')
       .select('*').in('status', ['submitted', 'collecting']).order('created_at', { ascending: true }).limit(10)
+
+    // A register that cannot be read and a register with nothing in it are
+    // completely different facts, and reporting both as "nothing is waiting"
+    // is how two paid batches went missing without a word.
+    if (registerError) {
+      return NextResponse.json({
+        error: `The batch register could not be read, so there is no way to know what is running: ${registerError.message}. `
+          + 'Run the documents batch migration in Supabase.',
+      }, { status: 500 })
+    }
 
     if (!runs?.length) return NextResponse.json({ success: true, collected: 0, note: 'Nothing is waiting to come back.' })
 
@@ -350,6 +400,36 @@ export async function POST(req: NextRequest) {
       refused: refused.length ? refused : undefined,
       warning: bookkeeping.length ? `The documents are saved, but: ${bookkeeping.join('; ')}.` : undefined,
     })
+  }
+
+  // Taking charge of a batch that was started but never written down.
+  //
+  // Two runs of three hundred and thirty-eight were submitted and paid for
+  // while the register could not be written to, and their ids went with the
+  // warning nobody was shown. They still exist at the provider, and the ids
+  // are in the Anthropic console. Pasting one here adopts it, so the work is
+  // collected rather than paid for twice and abandoned.
+  if (action === 'adopt_batch') {
+    const providerBatchId = String(body.providerBatchId || '').trim()
+    if (!/^[A-Za-z0-9_-]{8,120}$/.test(providerBatchId)) {
+      return NextResponse.json({ error: 'That does not look like a batch id. Copy it from the Anthropic console.' }, { status: 400 })
+    }
+
+    const { data: known } = await admin.from('document_batches')
+      .select('id').eq('provider_batch_id', providerBatchId).maybeSingle()
+    if (known?.id) return NextResponse.json({ error: 'That batch is already in the register.' }, { status: 400 })
+
+    const { error } = await admin.from('document_batches').insert({
+      provider_batch_id: providerBatchId,
+      tier: ['day-1', 'month-1', 'quarter-1'].includes(String(body.tier || '')) ? String(body.tier) : null,
+      requested: 0,
+      submitted_by: actor.id,
+      status: 'submitted',
+      note: 'Adopted by hand after the register could not be written to at submission.',
+    })
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+    return NextResponse.json({ success: true, note: 'Adopted. Press Collect what is ready to bring it in.' })
   }
 
   // Everything below this line is about one document, so it needs an id.

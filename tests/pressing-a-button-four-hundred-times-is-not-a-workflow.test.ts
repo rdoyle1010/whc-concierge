@@ -89,11 +89,23 @@ test('every write is checked, including the bookkeeping', () => {
   assert.match(collect, /const \{ error: receiptError \}/)
   assert.match(collect, /still marked as running/)
 
-  // The submission says so too, rather than reporting a failure that would
-  // have her send four hundred documents a second time.
+  // The receipt is written before the money is spent, which is the stronger
+  // version of the rule this used to check.
+  //
+  // It was written afterwards and treated as a warning when it failed, on the
+  // reasoning that a running batch should not be reported as a failure. That
+  // warning carried the only record of the batch id, the screen showed the
+  // success message instead of it, and two paid runs of three hundred and
+  // thirty-eight documents became unreachable.
   const submit = route.slice(route.indexOf("action === 'draft_tier'"), route.indexOf("action === 'collect'"))
-  assert.match(submit, /the receipt did not save/)
-  assert.match(submit, /The batch id is/)
+  assert.ok(submit.indexOf('document_batches') < submit.indexOf('submitDraftBatch'),
+    'a batch that cannot be tracked must not be started')
+  assert.match(submit, /Nothing was sent, and nothing has been charged/)
+  assert.match(submit, /Collect a batch by id/, 'and if the id fails to save afterwards, it is put on screen')
+
+  // A failed submission clears its own reservation, and says so if it cannot.
+  assert.match(submit, /const \{ error: clearError \}/)
+  assert.match(submit, /will block this tier until it is deleted/)
 })
 
 // A batch of four hundred and sixty and one press of a button must ask for
@@ -151,4 +163,37 @@ test('the page says what is being written right now', () => {
   assert.match(page, /Nothing back yet/)
   // And a finished run that had a problem does not sit there silently.
   assert.match(page, /The last run finished with a problem/)
+})
+
+// The warning carried the only record of a batch id and the page showed a
+// cheerful success line instead of it. Two paid runs of three hundred and
+// thirty-eight documents went missing in the gap between those two facts.
+test('a warning is never swallowed by a success message', () => {
+  assert.match(page, /if \(body\?\.warning\) \{\s*setError\(body\.warning\)/)
+  // Every handler that writes a success note checks for a warning first.
+  for (const action of ["'draft_tier'", "'collect'", "'draft'", "'approve'", "'adopt_batch'"]) {
+    const at = page.indexOf(`action === ${action}`)
+    assert.ok(at > 0, `${action} handler is missing`)
+    assert.match(page.slice(Math.max(0, at - 40), at), /!body\?\.warning && |\} else if \(/,
+      `${action} can overwrite a warning with a success message`)
+  }
+})
+
+// Two runs were started and paid for while the register could not be written
+// to. They still exist at the provider, and their ids are in the console.
+test('a batch that was started but never recorded can still be collected', () => {
+  assert.match(route, /action === 'adopt_batch'/)
+  assert.match(route, /\/\^\[A-Za-z0-9_-\]\{8,120\}\$\//, 'a pasted id is validated rather than trusted')
+  assert.match(route, /That batch is already in the register/)
+  assert.match(page, /Collect a batch by id/)
+  assert.match(page, /Paste a batch id from the Anthropic console/)
+})
+
+// A register that cannot be read and a register with nothing in it are
+// completely different facts.
+test('collect distinguishes an empty register from an unreadable one', () => {
+  const collect = route.slice(route.indexOf("action === 'collect'"), route.indexOf("action === 'adopt_batch'"))
+  assert.match(collect, /const \{ data: runs, error: registerError \}/)
+  assert.match(collect, /there is no way to know what is running/)
+  assert.match(collect, /Nothing is waiting to come back/)
 })
