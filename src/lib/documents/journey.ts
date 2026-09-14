@@ -19,33 +19,71 @@ import type { PlannedDocument } from './library-plan'
 // changed here, not a migration.
 
 export type JourneyStage =
-  | 'management' | 'pre-arrival' | 'arrival' | 'experience' | 'departure' | 'post-departure'
+  // What a guest walks through.
+  | 'pre-arrival' | 'arrival' | 'experience' | 'departure' | 'post-departure'
+  // What keeps it running, which they never see.
+  | 'money' | 'people' | 'training' | 'systems' | 'safety' | 'running-the-day'
 
-export const JOURNEY_STAGES: { slug: JourneyStage; label: string; blurb: string }[] = [
-  { slug: 'management', label: 'Management', blurb: 'How the business runs. Systems, money, people, compliance and the pre-opening work a guest never sees.' },
-  { slug: 'pre-arrival', label: 'Pre-arrival', blurb: 'Everything before they walk in. Enquiries, bookings, deposits, confirmations and the consent forms that should arrive early.' },
-  { slug: 'arrival', label: 'Arrival', blurb: 'The first ten minutes. Check-in, welcome, lockers, robes and the induction that sets the tone.' },
-  { slug: 'experience', label: 'Experience', blurb: 'The visit itself. Treatments, pool and thermal, the gym floor, classes, and the standards that keep all of it safe.' },
-  { slug: 'departure', label: 'Departure', blurb: 'Paying, buying and rebooking. The last five minutes decide whether there is a next visit.' },
-  { slug: 'post-departure', label: 'After the visit', blurb: 'Feedback, complaints, aftercare and getting them back. The part most spas leave to chance.' },
+/**
+ * Two groups, because they answer different questions.
+ *
+ * "Management" was one bucket of a hundred and ninety-eight, which is not an
+ * arrangement, it is a pile. Forty-one per cent of the library in a single
+ * pack also meant one price for configuring a booking system and for the
+ * accident reporting procedure, which are bought by different people in
+ * different weeks for different reasons.
+ */
+export type StageGroup = 'visit' | 'behind'
+
+export const JOURNEY_STAGES: { slug: JourneyStage; group: StageGroup; label: string; blurb: string }[] = [
+  { slug: 'pre-arrival', group: 'visit', label: 'Pre-arrival', blurb: 'Everything before they walk in. Enquiries, bookings, deposits, confirmations and the consent forms that should arrive early.' },
+  { slug: 'arrival', group: 'visit', label: 'Arrival', blurb: 'The first ten minutes. Check-in, welcome, lockers, robes and the induction that sets the tone.' },
+  { slug: 'experience', group: 'visit', label: 'Experience', blurb: 'The visit itself. Treatments, pool and thermal, the gym floor, classes, and the standards that keep all of it safe.' },
+  { slug: 'departure', group: 'visit', label: 'Departure', blurb: 'Paying, buying and rebooking. The last five minutes decide whether there is a next visit.' },
+  { slug: 'post-departure', group: 'visit', label: 'After the visit', blurb: 'Feedback, complaints, aftercare and getting them back. The part most spas leave to chance.' },
+  { slug: 'money', group: 'behind', label: 'Money and membership', blurb: 'Cash, revenue close, commission, chargebacks, and the membership contracts and direct debits underneath it.' },
+  { slug: 'people', group: 'behind', label: 'People', blurb: 'Recruiting, onboarding, rotas, absence, overtime and leavers, including the access somebody keeps after they go.' },
+  { slug: 'training', group: 'behind', label: 'Training', blurb: 'Induction, competency, observation and refreshers. What your team was taught, and the record that proves it.' },
+  { slug: 'systems', group: 'behind', label: 'Systems and setup', blurb: 'Configuring the booking system, pricing, reporting and templates, and the pre-opening work that has to happen once.' },
+  { slug: 'safety', group: 'behind', label: 'Safety and the building', blurb: 'Health and safety, security, governance and audit, plant and maintenance. What an inspector asks for first.' },
+  { slug: 'running-the-day', group: 'behind', label: 'Running the day', blurb: 'Briefings, duty manager rounds, escalation, staffing adjustments and the weekly review. How a shift is actually held together.' },
 ]
+
+export const VISIT_STAGES = JOURNEY_STAGES.filter(stage => stage.group === 'visit')
+export const BEHIND_STAGES = JOURNEY_STAGES.filter(stage => stage.group === 'behind')
 
 export const STAGE_LABEL: Record<JourneyStage, string> =
   Object.fromEntries(JOURNEY_STAGES.map(stage => [stage.slug, stage.label])) as Record<JourneyStage, string>
 
-// Reference prefixes that are management whatever the title says. Configuring
-// a payment gateway is not a departure procedure because it has the word
-// payment in it, and pre-opening work is not pre-arrival.
-const MANAGEMENT_PREFIXES = new Set([
-  'SYS', 'FIN', 'HR', 'TRN', 'SEC', 'HSE', 'FAC', 'MAINT', 'PROC',
-  'GOV', 'AUD', 'QUAL', 'ASSET', 'DES', 'COM', 'OPS', 'PRE', 'LIN',
-])
+// Reference prefixes that are behind the scenes whatever the title says.
+// Configuring a payment gateway is not a departure procedure because it has
+// the word payment in it, and pre-opening work is not pre-arrival.
+//
+// Split by prefix rather than by keyword because the prefix is the one part
+// of a reference that was decided rather than inferred, and because a person
+// arguing with one of these can move a single line and be done.
+const BEHIND_PREFIXES: Record<string, JourneyStage> = {
+  FIN: 'money', COM: 'money',
+  HR: 'people',
+  TRN: 'training',
+  SYS: 'systems', PRE: 'systems', DES: 'systems', PROC: 'systems',
+  HSE: 'safety', SEC: 'safety', GOV: 'safety', AUD: 'safety', QUAL: 'safety',
+  FAC: 'safety', MAINT: 'safety', LIN: 'safety', ASSET: 'safety',
+  // The pool and spa plans and the risk assessments. They sit here when the
+  // library is browsed, and they are deliberately not in any stage pack: see
+  // journeyPacks.
+  SPA: 'safety',
+  OPS: 'running-the-day',
+}
 
 // Where a department's work sits when the title gives nothing away.
 const PREFIX_FALLBACK: Record<string, JourneyStage> = {
   REC: 'arrival', THER: 'experience', GYM: 'experience', CLS: 'experience',
   PT: 'experience', HK: 'experience', CLN: 'experience',
-  RTL: 'departure', RET: 'departure', MEM: 'management',
+  RTL: 'departure', RET: 'departure',
+  // Membership administration is the revenue engine: contracts, direct
+  // debits, arrears, renewals and tiers. Not a stage of anybody's visit.
+  MEM: 'money',
 }
 
 // Read in journey order, latest stage first, because a document about what
@@ -85,13 +123,14 @@ const SIGNALS: [JourneyStage, string[]][] = [
 /** Where in a guest's visit this document is used. */
 export function stageOf(entry: { reference: string; title: string }): JourneyStage {
   const prefix = entry.reference.split('-')[0]
-  if (MANAGEMENT_PREFIXES.has(prefix)) return 'management'
+  const behind = BEHIND_PREFIXES[prefix]
+  if (behind) return behind
 
   const title = entry.title.toLowerCase()
   for (const [stage, signals] of SIGNALS) {
     if (signals.some(signal => title.includes(signal))) return stage
   }
-  return PREFIX_FALLBACK[prefix] || 'management'
+  return PREFIX_FALLBACK[prefix] || 'running-the-day'
 }
 
 // What kind of document it is, from the code in its reference. The house

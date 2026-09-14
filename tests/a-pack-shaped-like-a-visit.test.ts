@@ -6,6 +6,7 @@ import {
   SINGLE_DOCUMENT_PRICE, COMPLETE_LIBRARY_PRICE, JOURNEY_PACK_CEILING,
 } from '../src/lib/documents/pricing'
 import { sellableCatalogue } from '../src/lib/documents/catalogue'
+import { LIBRARY_PLAN } from '../src/lib/documents/library-plan'
 import { JOURNEY_STAGES } from '../src/lib/documents/journey'
 import { ownedReferences } from '../src/lib/documents/stock'
 import { PRICE_KEYS } from '../src/lib/documents/price-overrides'
@@ -16,7 +17,7 @@ const body = (file: string) =>
     .replace(/\/\*[\s\S]*?\*\//g, '')
     .replace(/^\s*\/\/.*$/gm, '')
 
-test('the six stages cover the library once, and nothing twice', () => {
+test('the stages cover the build plan once, and nothing twice', () => {
   const packs = journeyPacks()
   assert.equal(packs.length, JOURNEY_STAGES.length)
 
@@ -27,11 +28,46 @@ test('the six stages cover the library once, and nothing twice', () => {
       if (pack.includes(entry.reference)) seen.set(entry.reference, (seen.get(entry.reference) || 0) + 1)
     }
   }
-  assert.equal(seen.size, sellableCatalogue().length, 'every document is in a stage')
+  assert.equal(seen.size, LIBRARY_PLAN.length, 'every procedure is in a stage')
   assert.deepEqual([...new Set(seen.values())], [1], 'and in exactly one')
 })
 
-test('a stage never costs more than its parts, and six never undercut the library', () => {
+test('the flagship suites are in no stage pack at all', () => {
+  // The risk assessment suite is seven hundred and fifty and the safety
+  // operating procedure four hundred and ninety-five, each on its own
+  // argument. A stage pack at a third of its parts would hand both over
+  // inside a six hundred and fifty pound pack with forty-eight other
+  // documents, which is not a discount, it is undercutting your own flagship
+  // with your own shop.
+  const suites = sellableCatalogue().filter(entry => !LIBRARY_PLAN.some(p => p.reference === entry.reference))
+  assert.ok(suites.length >= 17, 'the suites exist')
+  for (const pack of journeyPacks()) {
+    for (const entry of suites) {
+      assert.equal(pack.includes(entry.reference), false, `${entry.reference} is inside ${pack.name}`)
+    }
+  }
+  // They are in the complete library, which is the top of the ladder.
+  const complete = tierPacks().find(pack => pack.slug === 'the-complete-library')
+  for (const entry of suites) assert.ok(complete!.includes(entry.reference))
+})
+
+test('no single pack swallows the library', () => {
+  // Management was a hundred and ninety-eight of four hundred and sixty:
+  // forty-one per cent in one pack, at one price, covering both the booking
+  // system configuration and the accident reporting procedure. That is not an
+  // arrangement, it is a pile with a label on it.
+  for (const pack of journeyPacks()) {
+    assert.ok(pack.count < LIBRARY_PLAN.length * 0.3,
+      `${pack.name} holds ${pack.count} of ${LIBRARY_PLAN.length}`)
+  }
+  // And both halves are real. A "behind the scenes" group of one is a
+  // heading doing no work.
+  assert.ok(journeyPacks().filter(pack => pack.group === 'visit').length >= 4)
+  assert.ok(journeyPacks().filter(pack => pack.group === 'behind').length >= 4)
+  assert.ok(journeyPacks().some(pack => pack.slug === 'journey-training'), 'training is its own pack')
+})
+
+test('a stage never costs more than its parts, and they never undercut the library', () => {
   for (const pack of journeyPacks()) {
     assert.ok(pack.price <= pack.count * SINGLE_DOCUMENT_PRICE,
       `${pack.name} costs more than buying its ${pack.count} documents singly`)
@@ -42,8 +78,9 @@ test('a stage never costs more than its parts, and six never undercut the librar
   // If all six were cheaper than the complete library, the library would be
   // the worst way to buy everything, and the page would be arguing with
   // itself in front of the buyer.
-  const six = journeyPacks().reduce((sum, pack) => sum + pack.price, 0)
-  assert.ok(six > COMPLETE_LIBRARY_PRICE, `six stages cost ${six}, the library ${COMPLETE_LIBRARY_PRICE}`)
+  const everyStage = journeyPacks().reduce((sum, pack) => sum + pack.price, 0)
+  assert.ok(everyStage > COMPLETE_LIBRARY_PRICE,
+    `every stage costs ${everyStage}, the library ${COMPLETE_LIBRARY_PRICE}`)
 
   // A tiny stage is priced off its parts rather than off the ceiling, down to
   // the floor of one document: a share of two documents rounds below the
@@ -79,6 +116,10 @@ test('a stage a buyer paid for still resolves, and so does every pack ever sold'
 test('the shop leads with the visit and keeps departments underneath', () => {
   const catalogue = body('src/components/StandardsCatalogue.tsx')
   assert.ok(catalogue.includes('journeyPacks'))
+  // Both halves are rendered. A group filtered but never shown is a pack
+  // nobody can buy, which is worse than not splitting at all.
+  assert.ok(catalogue.includes("stage.group === 'visit'"))
+  assert.ok(catalogue.includes("stage.group === 'behind'"))
   assert.ok(catalogue.indexOf('id="stages"') < catalogue.indexOf('id="departments"'),
     'the stages come first')
   assert.ok(catalogue.includes('departmentPacks'), 'and departments are still buyable')

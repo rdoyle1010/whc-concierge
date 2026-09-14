@@ -149,21 +149,36 @@ pack reaches everybody who owns that pack, including people who bought it
 months ago. A file belongs to a pack as a whole, never to a single document,
 because there is no sensible way to own half a workbook.
 
-The library is browsed and sold by the guest journey - management,
-pre-arrival, arrival, experience, departure, after the visit - and then by
-what kind of document it is. It used to be grouped by when a property needs a
-document, which is useful once while you are opening and useless every day
-after. A department pack asks a buyer to know which team owns a procedure; a
-stage asks where in a visit the problem is, which is the question they
-arrived with, and arrivals alone span reception, housekeeping and membership.
+The library is browsed and sold in two groups, not by when a property needs a
+document. That old arrangement - before the first guest, first thirty days,
+first quarter - is useful once while you are opening and useless every day
+after.
 
-A stage costs about a third of its documents bought singly, capped at £795
-and floored at the price of one document. Six stages come to more than the
-complete library at £2,450, deliberately: if somebody wants most of it, the
-library has to be the right answer. Departments are still sold underneath at
-£299, and every pack slug ever sold still resolves, because a slug is written
-into an order and that order is a buyer's entitlement for as long as they
-have an account.
+**What a guest walks through:** pre-arrival, arrival, experience, departure,
+after the visit. **What keeps it running:** money and membership, people,
+training, systems and setup, safety and the building, running the day. Eleven
+packs, and then a filter by what kind of document it is.
+
+A department pack asks a buyer to know which team owns a procedure. A stage
+asks where in a visit the problem is, or which part of the operation is thin,
+which is the question they arrived with. Arrival alone spans reception,
+housekeeping and membership.
+
+A pack costs about a third of its documents bought singly, capped at £795 and
+floored at the price of one document, so they run from £135 for training to
+£795 for systems. Every pack together comes to £5,395 against a complete
+library at £2,450, deliberately: if somebody wants most of it, the library has
+to be the right answer.
+
+The risk assessment suite and the safety operating procedure are in no stage
+pack. They are sold on their own arguments at £750 and £495, and a stage pack
+priced at a third of its parts would hand both over inside a £655 pack along
+with forty-eight other documents. They are in the complete library, which is
+the top of the ladder.
+
+Departments are still sold underneath at £299, and every pack slug ever sold
+still resolves, because a slug is written into an order and that order is a
+buyer's entitlement for as long as they have an account.
 
 One thing worth knowing about the rendering: for a period every plan and risk
 assessment printed with text on top of other text, because a page break was
