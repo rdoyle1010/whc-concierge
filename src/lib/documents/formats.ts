@@ -58,7 +58,9 @@ export function formatSummary(counts: Partial<Record<Format, number>>): string {
     .filter(format => (counts[format] || 0) > 0)
     .map(format => {
       const count = counts[format] || 0
-      if (format === 'PDF') return `${count} PDF${count === 1 ? '' : 's'}`
+      // "105 PDFs" sounds like homework. Fillable is the whole difference
+      // between a document somebody uses and a document somebody retypes.
+      if (format === 'PDF') return `${count} fillable PDF${count === 1 ? '' : 's'}`
       if (format === 'Excel') return `${count} Excel workbook${count === 1 ? '' : 's'}`
       if (format === 'Word') return `${count} Word document${count === 1 ? '' : 's'}`
       if (format === 'PowerPoint') return `${count} presentation${count === 1 ? '' : 's'}`

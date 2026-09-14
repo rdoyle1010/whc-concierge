@@ -8,7 +8,7 @@ import { usePublicSiteContent } from '@/lib/use-site-content'
 import { Eye, EyeOff } from 'lucide-react'
 import Wordmark from '@/components/Wordmark'
 import { createClient } from '@/lib/supabase/client'
-import { MARKETING_CONSENT_WORDING } from '@/lib/privacy-consent'
+import { MARKETING_CONSENT_WORDING } from '@/lib/consent-wording'
 import { LAUNCH_OFFER_TALENT, launchOfferClosesLabel, launchOfferOpen } from '@/lib/launch-offers'
 import { DEFAULT_VISIBILITY, VISIBILITY_COPY, type TalentVisibility } from '@/lib/talent-visibility'
 

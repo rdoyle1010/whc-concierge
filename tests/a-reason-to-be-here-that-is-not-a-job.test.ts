@@ -113,9 +113,15 @@ test('the public page shows only what is published, and only what has not finish
 })
 
 // The whole argument of this page is that it is worth finding.
-test('events are in the navigation and in the sitemap', () => {
-  const nav = body('src/components/Navbar.tsx')
-  assert.match(nav, /href: '\/events', label: 'Events'/)
+test('events are reachable and in the sitemap', () => {
+  // Off the top bar, because it lists nothing yet and a header that
+  // advertises a season and delivers an empty page teaches a visitor the
+  // site is thinner than it looks. In the footer, so it is not orphaned, and
+  // still in the sitemap, which is what actually matters for a page with no
+  // nav link: search is now the only way in, so being crawled is not
+  // optional.
+  const footer = body('src/components/Footer.tsx')
+  assert.match(footer, /href: '\/events'/)
   const sitemap = body('src/app/sitemap.ts')
   assert.match(sitemap, /\$\{BASE\}\/events/)
   assert.match(sitemap, /\$\{BASE\}\/events\/\$\{row\.slug\}/)

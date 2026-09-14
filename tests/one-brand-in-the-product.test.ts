@@ -23,7 +23,8 @@ const LEGAL_ENTITY_FILES = new Set([
   'src/app/advertising-terms/page.tsx',        // the contracting party
   'src/app/verify/[code]/page.tsx',            // who issued the certificate
   'src/app/talent/agency/statement/page.tsx',  // who received and paid the money
-  'src/lib/privacy-consent.ts',                // the wording people already consented to
+  'src/lib/consent-wording.ts',                // the wording people already consented to
+  'src/lib/privacy-consent.ts',                // the double opt-in emails it sends
   'src/lib/billing-identity.ts',               // a comment about invoice identity
   'src/lib/academy-manual-pdf.tsx',            // course authorship
   'mobile/app/security.tsx',                   // the IP and copyright statement
@@ -58,7 +59,10 @@ test('product copy carries one brand, and it is Talent House', () => {
 test('the legal entity is still named where it has to be', () => {
   // The other direction. A brand sweep that tidied these away would leave the
   // terms naming a company that is not party to them.
-  for (const file of ['src/app/terms/page.tsx', 'src/app/privacy/page.tsx', 'src/lib/privacy-consent.ts']) {
+  // consent-wording.ts, not privacy-consent.ts: the four sentences moved out
+  // so two client pages could import one of them without dragging the email
+  // sender and the service-role client it reaches into a browser bundle.
+  for (const file of ['src/app/terms/page.tsx', 'src/app/privacy/page.tsx', 'src/lib/consent-wording.ts']) {
     assert.match(readFileSync(file, 'utf8'), /Wellness House Collective/,
       `${file} must still name the operating company`)
   }

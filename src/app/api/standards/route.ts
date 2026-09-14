@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { sellableCatalogue } from '@/lib/documents/catalogue'
 import { loadPrices, loadBundles, referencesInBundle } from '@/lib/documents/pricing-server'
-import { loadAttachments } from '@/lib/documents/attachments'
+import { loadAttachments } from '@/lib/documents/attachments-server'
 import { formatOf } from '@/lib/documents/formats'
 
 // What is actually on the shelf.

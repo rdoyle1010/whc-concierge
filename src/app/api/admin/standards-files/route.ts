@@ -3,8 +3,9 @@ import { adminRequestUser } from '@/lib/admin-api-auth'
 import { createAdminClient } from '@/lib/supabase/admin'
 import {
   ATTACHMENT_BUCKET, MAX_ATTACHMENT_BYTES, ALLOWED_ATTACHMENT_TYPES,
-  attachmentPath, loadAttachments,
+  attachmentPath,
 } from '@/lib/documents/attachments'
+import { loadAttachments } from '@/lib/documents/attachments-server'
 import { departmentPacks, journeyPacks, tierPacks } from '@/lib/documents/pricing'
 import { loadBundles } from '@/lib/documents/pricing-server'
 

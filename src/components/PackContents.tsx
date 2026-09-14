@@ -1,24 +1,26 @@
 'use client'
 
 import { useState } from 'react'
+import Link from 'next/link'
 import { sellableCatalogue } from '@/lib/documents/catalogue'
-import { kindOf, KIND_LABEL } from '@/lib/documents/journey'
+import { highlights, stageSpread, kindSpread } from '@/lib/documents/highlights'
 import { DOCUMENT_FORMAT, formatSummary, type Format } from '@/lib/documents/formats'
 import { readableSize } from '@/lib/documents/attachments'
 import { ChevronDown } from 'lucide-react'
 
-// What is actually in the pack, before the buy button rather than after the
-// payment.
+// What is in the pack, put in a way that sells it.
 //
-// "36 documents" is not a description of anything. A spa director deciding
-// whether to spend eight hundred pounds wants to read the titles, and wants
-// to know whether what arrives is a folder of PDFs or an actual workbook they
-// can type into. Both questions were only answerable after paying, and the
-// answer to the second one is a selling point being kept quiet.
+// The first version printed every title. A reception pack opened with
+// "Aftercare Email Dispatch and Record", then "Apply Buffers and Setup
+// Times", and ran to a hundred and five lines of that. Accurate, complete,
+// and it reads as tedium: the buyer sees admin, not relief, and nobody
+// spends eight hundred pounds to be reminded how much filing there is.
 //
-// Grouped by kind rather than listed flat, because forty-eight titles in one
-// column is a wall nobody reads, and "12 risk assessments, 30 procedures, 6
-// checklists" is the shape of the thing.
+// The depth is still the argument. But depth is made by saying a hundred and
+// five, not by printing a hundred and five. So: the shape of the pack, the
+// handful of titles a spa director recognises as the thing that went wrong
+// last month, and a link to the full searchable list already on this page
+// for the one buyer in twenty who wants to audit it.
 
 export type PackFile = {
   name: string
@@ -29,19 +31,9 @@ export type PackFile = {
 }
 
 const FORMAT_TONE: Record<string, string> = {
-  PDF: 'border-[#dddddd] text-[#6b6b6b]',
   Excel: 'border-[#1a6b3c]/40 text-[#1a6b3c]',
   Word: 'border-[#1c3f6b]/40 text-[#1c3f6b]',
   PowerPoint: 'border-[#8a3a14]/40 text-[#8a3a14]',
-}
-
-function Tag({ format }: { format: Format }) {
-  return (
-    <span className={`shrink-0 border px-1.5 py-px text-[10px] uppercase tracking-[.08em] ${
-      FORMAT_TONE[format] || 'border-[#dddddd] text-[#6b6b6b]'}`}>
-      {format}
-    </span>
-  )
 }
 
 export default function PackContents({
@@ -57,82 +49,97 @@ export default function PackContents({
 
   const inPack = new Set(references)
   const entries = sellableCatalogue().filter(entry => inPack.has(entry.reference))
+  if (!entries.length && !files.length) return null
 
-  // Grouped by kind, biggest group first. Forty-eight titles in one column is
-  // a wall; "30 procedures, 12 risk assessments, 6 checklists" is a pack.
-  const groups = new Map<string, typeof entries>()
-  for (const entry of entries) {
-    const kind = kindOf(entry.reference)
-    groups.set(kind, [...(groups.get(kind) || []), entry])
-  }
-  const ordered = [...groups.entries()].sort((a, b) => b[1].length - a[1].length)
-
-  const counts: Partial<Record<Format, number>> = { [DOCUMENT_FORMAT]: entries.length }
+  const counts: Partial<Record<Format, number>> = entries.length ? { [DOCUMENT_FORMAT]: entries.length } : {}
   for (const file of files) counts[file.format] = (counts[file.format] || 0) + 1
 
-  if (!entries.length && !files.length) return null
+  const shown = highlights(entries)
+  const rest = entries.length - shown.length
+  const stages = stageSpread(entries)
+  const kinds = kindSpread(entries)
+  const notReady = showReady ? entries.filter(entry => !readySet.has(entry.reference)).length : 0
 
   return (
     <div className="mt-3">
+      {/* Said whether it is open or not, and said as what a buyer gets rather
+          than as a file count. "105 PDFs" sounds like homework. */}
+      <p className="text-[12px] text-[#6b6b6b]">{formatSummary(counts)}</p>
       <button type="button" onClick={() => setOpen(!open)}
         aria-expanded={open}
-        className="inline-flex items-center gap-1 text-[12px] font-medium text-[#1c1c1c] underline underline-offset-2">
+        className="mt-1.5 inline-flex items-center gap-1 text-[12px] font-medium text-[#1c1c1c] underline underline-offset-2">
         {open ? 'Hide what is in it' : 'See what is in it'}
         <ChevronDown size={13} className={open ? 'rotate-180 transition-transform' : 'transition-transform'} />
       </button>
 
-      {/* Said whether it is open or not. The formats are the part a buyer
-          repeats to whoever holds the budget, and burying them behind a
-          click means they never hear it. */}
-      <p className="mt-1.5 text-[12px] text-[#6b6b6b]">{formatSummary(counts)}</p>
-
       {open && (
         <div className="mt-3 border-t border-[#dddddd] pt-3">
-          {files.length > 0 && (
-            <div className="mb-4">
-              <p className="text-[11px] uppercase tracking-[.1em] text-[#6b6b6b]">Files</p>
-              <ul className="mt-1.5 space-y-1.5">
-                {files.map(file => (
-                  <li key={file.name} className="flex items-start gap-2">
-                    <Tag format={file.format} />
-                    <span className="min-w-0 text-[13px] text-[#1c1c1c]">
-                      {file.name}
-                      <span className="text-[#6b6b6b]"> · {readableSize(file.sizeBytes)}</span>
-                      {file.description && (
-                        <span className="block text-[12px] leading-relaxed text-[#6b6b6b]">{file.description}</span>
-                      )}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            </div>
+          {/* The shape of it, in two lines. A pack that covers the whole
+              visit should look like it does, and a buyer worried about one
+              part can see their part is in there. */}
+          {stages.length > 1 && (
+            <p className="text-[12px] leading-relaxed text-[#6b6b6b]">
+              {stages.map(stage => `${stage.label} ${stage.count}`).join(' · ')}
+            </p>
+          )}
+          {kinds.length > 1 && (
+            <p className="mt-1 text-[12px] leading-relaxed text-[#6b6b6b]">
+              {kinds.map(kind => `${kind.count} ${kind.label.toLowerCase()}${kind.count === 1 ? '' : 's'}`).join(' · ')}
+            </p>
           )}
 
-          {ordered.map(([kind, items]) => (
-            <div key={kind} className="mb-4 last:mb-0">
-              <p className="text-[11px] uppercase tracking-[.1em] text-[#6b6b6b]">
-                {items.length} {(KIND_LABEL[kind] || 'Document').toLowerCase()}
-                {items.length === 1 ? '' : 's'}
-              </p>
-              <ul className="mt-1.5 space-y-1">
-                {items.map(entry => (
-                  <li key={entry.reference} className="flex items-baseline gap-2 text-[13px] leading-relaxed">
-                    <span className="min-w-0 text-[#1c1c1c]">{entry.title}</span>
-                    {/* Only worth showing while some of the pack is still
-                        being written. Once it is all ready, a column of
-                        green ticks is noise. */}
-                    {showReady && !readySet.has(entry.reference) && (
-                      <span className="shrink-0 text-[11px] text-[#6b6b6b]">in preparation</span>
+          {files.length > 0 && (
+            <ul className="mt-3 space-y-1.5">
+              {files.map(file => (
+                <li key={file.name} className="flex items-start gap-2">
+                  <span className={`mt-px shrink-0 border px-1.5 py-px text-[10px] uppercase tracking-[.08em] ${
+                    FORMAT_TONE[file.format] || 'border-[#dddddd] text-[#6b6b6b]'}`}>
+                    {file.format}
+                  </span>
+                  <span className="min-w-0 text-[13px] text-[#1c1c1c]">
+                    {file.name}
+                    <span className="text-[#6b6b6b]"> · {readableSize(file.sizeBytes)}</span>
+                    {file.description && (
+                      <span className="block text-[12px] leading-relaxed text-[#6b6b6b]">{file.description}</span>
                     )}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+
+          {shown.length > 0 && (
+            <>
+              <p className="mt-3.5 text-[11px] uppercase tracking-[.1em] text-[#6b6b6b]">Including</p>
+              <ul className="mt-1.5 space-y-1">
+                {shown.map(entry => (
+                  <li key={entry.reference} className="text-[13.5px] leading-relaxed text-[#1c1c1c]">
+                    {entry.title}
                   </li>
                 ))}
               </ul>
-            </div>
-          ))}
+              {rest > 0 && (
+                <p className="mt-2 text-[13px] leading-relaxed text-[#555555]">
+                  and {rest} more.{' '}
+                  {/* The full searchable list is already further down this
+                      page. Reprinting it inside every card was the wall. */}
+                  <Link href="#every-document" className="underline underline-offset-2">
+                    Search every title
+                  </Link>
+                </p>
+              )}
+            </>
+          )}
+
+          {notReady > 0 && (
+            <p className="mt-2 text-[12px] text-[#6b6b6b]">
+              {notReady} of these {notReady === 1 ? 'is' : 'are'} still being written and signed off.
+            </p>
+          )}
 
           <p className="mt-3 text-[12px] leading-relaxed text-[#6b6b6b]">
-            Every document is a PDF with fillable fields, so the facts about your building are typed into it in
-            the free Adobe Reader rather than retyped into a new file. {name} is delivered as one download.
+            Every document is a PDF with fillable fields, so your muster point, your plant room and your
+            supplier go into it in the free Adobe Reader. {name} arrives as one download.
           </p>
         </div>
       )}

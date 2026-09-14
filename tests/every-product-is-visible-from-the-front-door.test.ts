@@ -48,13 +48,19 @@ test('every product is reachable from the front page', () => {
   }
 
   // The live revenue lines with something behind them stay at the top.
-  for (const href of ['/jobs', '/agency/about', '/residency', '/consultancy', '/academy', '/events', '/intelligence']) {
+  //
+  // Events and Insight came out on the same reasoning that took Properties
+  // and Brands out: Events lists nothing yet, and a header that advertises a
+  // season and delivers an empty page teaches a visitor the site is thinner
+  // than it looks. Eight names across the top is a proposition; ten is a
+  // directory.
+  for (const href of ['/jobs', '/agency/about', '/residency', '/consultancy', '/academy']) {
     assert.ok(navbar.includes(`href: '${href}'`), `${href} belongs in the header`)
   }
 
-  // And the two that left it have a home, which is the whole of the
+  // And everything that left it has a home, which is the whole of the
   // difference between shortening a nav and orphaning a page.
-  for (const href of ['/properties', '/brands']) {
+  for (const href of ['/properties', '/brands', '/events', '/intelligence']) {
     assert.ok(footer.includes(`href: '${href}'`), `${href} left the header and landed nowhere`)
   }
 })
@@ -76,7 +82,7 @@ test('the signed-out nav matches what a member sees after signing in', () => {
   assert.match(navbarCode, /const SITE_LINKS = \[/)
   assert.match(navbarCode, /const loggedInSiteLinks = SITE_LINKS/)
   assert.match(navbarCode, /const publicLinks = SITE_LINKS\.map/)
-  for (const href of ['/jobs', '/agency/about', '/academy', '/residency', '/consultancy', '/events', '/intelligence']) {
+  for (const href of ['/jobs', '/agency/about', '/academy', '/residency', '/consultancy']) {
     assert.ok(navbarCode.includes(`{ href: '${href}', label:`),
       `${href} appears in the one navigation both sides read`)
   }

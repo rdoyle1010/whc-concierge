@@ -1,15 +1,18 @@
 import { sendTransactionalEmail } from '@/lib/send-email'
+// The wording lives in ./consent-wording, which a browser can import. This
+// module signs tokens and sends email, and a client page that wanted one
+// sentence from it was pulling all of that with it.
+import {
+  PRIVACY_POLICY_VERSION, MARKETING_CONSENT_WORDING, TERMS_ACCEPTANCE_WORDING, NEWSLETTER_CONSENT_WORDING,
+} from '@/lib/consent-wording'
+export { PRIVACY_POLICY_VERSION, MARKETING_CONSENT_WORDING, TERMS_ACCEPTANCE_WORDING, NEWSLETTER_CONSENT_WORDING }
 import { createHash, createHmac, randomBytes, timingSafeEqual } from 'node:crypto'
 
-export const PRIVACY_POLICY_VERSION = '2026-08-26'
-export const MARKETING_CONSENT_WORDING = 'I would like Wellness House Collective to send me marketing emails about jobs, Academy courses, platform features, events and relevant Talent House services. I can unsubscribe at any time.'
 // What somebody accepts at the moment their account is created, recorded
 // verbatim against the account. The wording lives here rather than in the form
 // so the sentence shown and the sentence stored can never drift apart, which
 // is the only thing that makes a consent record worth having.
-export const TERMS_ACCEPTANCE_WORDING = 'I have read and agree to the Talent House Collective Terms & Conditions and Privacy Policy.'
 
-export const NEWSLETTER_CONSENT_WORDING = 'I would like Wellness House Collective to email me its newsletter, including industry news, jobs, Academy updates, events and relevant Talent House services. I can unsubscribe at any time.'
 
 const SITE = 'https://talenthousecollective.co.uk'
 
