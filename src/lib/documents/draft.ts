@@ -153,7 +153,14 @@ export async function draftDocument(input: {
   department: string
   /** Anything true about the property, where this is being drafted for one. */
   context?: Record<string, unknown>
-}): Promise<{ ok: true; draft: Partial<SopDocument> } | { ok: false; error: string }> {
+}): Promise<
+  | { ok: true; draft: Partial<SopDocument> }
+  // timedOut is separated from every other failure because it has a different
+  // answer. A refused key or a rate limit means stop and fix something. Out of
+  // time means the document is simply longer than a web request allows, and
+  // the caller should send it as a batch instead of telling her to try again.
+  | { ok: false; error: string; timedOut?: boolean }
+> {
   const apiKey = process.env.ANTHROPIC_API_KEY
   if (!apiKey) return { ok: false, error: 'Talent House AI is not switched on for this deployment.' }
 
@@ -198,7 +205,7 @@ export async function draftDocument(input: {
       return { ok: false, error: 'Too many at once. Wait a minute and carry on.' }
     }
     if (error instanceof Anthropic.APIConnectionTimeoutError) {
-      return { ok: false, error: 'That one took too long. Try it again.' }
+      return { ok: false, error: 'That one is too long to write inside a web request.', timedOut: true }
     }
     return { ok: false, error: error?.message || 'That could not be drafted just now.' }
   }

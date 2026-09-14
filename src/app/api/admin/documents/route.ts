@@ -8,6 +8,7 @@ import { LIBRARY_PLAN } from '@/lib/documents/library-plan'
 import { draftDocument, draftingConfigured } from '@/lib/documents/draft'
 import { submitDraftBatch, collectDraftBatch, batchingConfigured } from '@/lib/documents/batch'
 import { documentFromDraft } from '@/lib/documents/assemble'
+import { QUARTER_ONE_DRAFTS } from '@/lib/documents/quarter-one'
 import { planCollection } from '@/lib/documents/collect-plan'
 import { isLifeSafety, LIFE_SAFETY_CONFIRMATION } from '@/lib/documents/safety'
 
@@ -460,6 +461,63 @@ export async function POST(req: NextRequest) {
     })
   }
 
+  // The ones written by hand rather than drafted.
+  //
+  // The single Draft button gives the model twenty seconds inside a function
+  // the host kills at twenty-six, which on a document of this length is a
+  // coin toss and lost it nine times running. These nine are held as content
+  // in the repository, so writing them is a database update and nothing else:
+  // no model, no waiting, no failure mode beyond the write itself.
+  if (action === 'write_authored') {
+    const references = Object.keys(QUARTER_ONE_DRAFTS)
+
+    const { data: targets, error: readError } = await admin.from('operational_documents')
+      .select('*').is('employer_id', null).in('reference', references)
+    if (readError) return NextResponse.json({ error: readError.message }, { status: 500 })
+    if (!targets?.length) {
+      return NextResponse.json({
+        error: 'None of those nine are in the library. Import the build plan first.',
+      }, { status: 400 })
+    }
+
+    const now = new Date().toISOString()
+    const writes: Record<string, any>[] = []
+    let leftAlone = 0
+    for (const target of targets) {
+      // Signed off, or written since. Neither is ours to overwrite, and the
+      // whole point of this library is that an approval means somebody read
+      // that exact version.
+      if (target.status === 'approved' || Object.keys(target.document || {}).length > 0) {
+        leftAlone += 1
+        continue
+      }
+      writes.push({
+        ...target,
+        document: documentFromDraft(target, QUARTER_ONE_DRAFTS[target.reference] as any),
+        status: 'draft',
+        updated_at: now,
+      })
+    }
+
+    if (!writes.length) {
+      return NextResponse.json({
+        success: true, written: 0,
+        note: `Nothing to do: all ${leftAlone} are already written.`,
+      })
+    }
+
+    const { error: writeError } = await admin.from('operational_documents').upsert(writes)
+    if (writeError) return NextResponse.json({ error: writeError.message }, { status: 500 })
+
+    // Said plainly, including what was skipped. A count that silently excludes
+    // the ones left alone is the same class of lie as a truncated list.
+    return NextResponse.json({
+      success: true,
+      written: writes.length,
+      note: `${writes.length} written${leftAlone ? `, ${leftAlone} left alone because they already had content` : ''}. Read them before signing any off.`,
+    })
+  }
+
   // Taking charge of a batch that was started but never written down.
   //
   // Two runs of three hundred and thirty-eight were submitted and paid for
@@ -577,6 +635,52 @@ export async function POST(req: NextRequest) {
       reference: row.reference,
       department: row.department || '',
     })
+
+    // "That one took too long. Try it again" is a dead end dressed as advice:
+    // the request is bounded at twenty-six seconds by the host and a document
+    // of this length does not reliably fit, so trying again mostly fails
+    // again. A batch has no such ceiling, so a call that ran out of time is
+    // sent as a batch of one instead and collected like any other.
+    if (!result.ok && result.timedOut && batchingConfigured()) {
+      const reservation = `pending-${crypto.randomUUID()}`
+      const { data: receipt } = await admin.from('document_batches').insert({
+        provider_batch_id: reservation, tier: row.tier || null, requested: 1,
+        submitted_by: actor.id, status: 'submitted',
+      }).select('id').maybeSingle()
+
+      const sent = await submitDraftBatch([{
+        id: row.id, title: row.title, reference: row.reference, department: row.department || '',
+      }])
+
+      if (!sent.ok) {
+        if (receipt?.id) await admin.from('document_batches').delete().eq('id', receipt.id)
+        return NextResponse.json({ error: `${result.error} Sending it the slower way also failed: ${sent.error}` }, { status: 502 })
+      }
+
+      // The id, saved against the reservation. If this does not save, the
+      // run exists at the provider and nothing here knows how to reach it,
+      // which is precisely how five batches were paid for and abandoned. So
+      // the id goes on screen where she can adopt it by hand.
+      const { error: idError } = receipt?.id
+        ? await admin.from('document_batches')
+          .update({ provider_batch_id: sent.batchId, updated_at: new Date().toISOString() }).eq('id', receipt.id)
+        : { error: { message: 'the receipt was never created' } as any }
+
+      if (idError) {
+        return NextResponse.json({
+          success: true, queued: true,
+          warning: 'It has been sent the slower way, but its id could not be saved, so nothing here can find it. '
+            + `Write this down and use Collect a batch by id: ${sent.batchId}`,
+        })
+      }
+
+      return NextResponse.json({
+        success: true, queued: true,
+        note: 'That one is too long to write inside a web request, so it has been sent the slower way. '
+          + 'Come back in a few minutes and press Collect what is ready.',
+      })
+    }
+
     if (!result.ok) return NextResponse.json({ error: result.error }, { status: 502 })
 
     const document = documentFromDraft(row, result.draft)
