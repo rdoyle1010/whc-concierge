@@ -2,7 +2,7 @@ import React from 'react'
 import { Document, Page, Text, View, StyleSheet, TextInput, Font, renderToBuffer } from '@react-pdf/renderer'
 import type { PlanDocument, PlanSection, Fact, Hazard } from './plan-types'
 import { PLAN_KIND_LABEL, partsOf } from './plan-types'
-import { DOCUMENT_FOOTER, DOCUMENT_STATUS } from './status'
+import { footerFor, statusFor, GUIDE_KINDS } from './status'
 import { splitPlaceholders, fieldName } from './placeholders'
 
 // A plan as a form somebody completes.
@@ -165,7 +165,7 @@ function Footer({ document }: { document: PlanDocument }) {
       <Text>
         {document.reference} · Version {document.version} · Issued {document.issued} · Review by {document.reviewBy}
       </Text>
-      <Text style={{ marginTop: 2 }}>{DOCUMENT_FOOTER}</Text>
+      <Text style={{ marginTop: 2 }}>{footerFor(document.kind)}</Text>
     </View>
   )
 }
@@ -478,10 +478,16 @@ export function PlanPdf({ document }: { document: PlanDocument }) {
           <View style={styles.headerLeft}>
             <Text style={styles.eyebrow}>{label}</Text>
             <Text style={styles.title}>{document.title}</Text>
-            <View style={{ marginTop: 6, width: '92%' }}>
-              <TextInput name="f_property_name" style={styles.input} fontSize={9} />
-              <Text style={styles.factHint}>Property</Text>
-            </View>
+            {/* A guide is ours, not theirs. Asking a property to write its
+                name on the front of our advice is asking it to adopt the
+                advice as its own procedure, which is the one thing a guide
+                must not become. */}
+            {GUIDE_KINDS.has(document.kind) ? null : (
+              <View style={{ marginTop: 6, width: '92%' }}>
+                <TextInput name="f_property_name" style={styles.input} fontSize={9} />
+                <Text style={styles.factHint}>Property</Text>
+              </View>
+            )}
           </View>
           <View style={styles.refBox}>
             <Text style={styles.refLabel}>Reference</Text>
@@ -491,7 +497,7 @@ export function PlanPdf({ document }: { document: PlanDocument }) {
         </View>
         <View style={styles.headerRule} />
         <View style={{ flexDirection: 'row', marginTop: 9 }}>
-          <Text style={styles.statusBadge}>{DOCUMENT_STATUS}</Text>
+          <Text style={styles.statusBadge}>{statusFor(document.kind)}</Text>
         </View>
 
         <View style={styles.section}>
@@ -500,7 +506,7 @@ export function PlanPdf({ document }: { document: PlanDocument }) {
           <Text style={styles.para}>{document.scope}</Text>
         </View>
 
-        {document.legalFramework?.length ? (
+        {document.legalFramework?.length && !GUIDE_KINDS.has(document.kind) ? (
           <View style={styles.section}>
             <Text style={styles.sectionHead}>The framework this is written to</Text>
             {/* Named plainly, because an assessor expects to see it and a
@@ -645,6 +651,7 @@ export function PlanPdf({ document }: { document: PlanDocument }) {
         )
       })}
 
+      {GUIDE_KINDS.has(document.kind) ? null : (
       <Page size="A4" style={styles.page}>
         <Text style={styles.eyebrow}>{document.reference}</Text>
         <Text style={styles.title}>Adoption and sign-off</Text>
@@ -747,6 +754,7 @@ export function PlanPdf({ document }: { document: PlanDocument }) {
 
         <Footer document={document} />
       </Page>
+      )}
     </Document>
   )
 }

@@ -50,3 +50,25 @@ export function disclaimersFor(kind: string): string[] {
     ? [DOCUMENT_DISCLAIMER, RISK_ASSESSMENT_DISCLAIMER]
     : [DOCUMENT_DISCLAIMER]
 }
+
+
+// A guide is not a template.
+//
+// The footer and the badge on every other document say "professional
+// template, review and sign off before use", which is exactly right for a
+// procedure and wrong for the book explaining how to complete one. A guide
+// nobody has to sign, file or adopt should not carry a line telling them to.
+export const GUIDE_STATUS = 'Guidance. Nothing here needs completing or signing.'
+
+export const GUIDE_FOOTER =
+  'Talent House Collective. Guidance only: it does not form part of your procedures.'
+
+export const GUIDE_KINDS = new Set(['guide', 'training'])
+
+export function statusFor(kind: string): string {
+  return GUIDE_KINDS.has(kind) ? GUIDE_STATUS : DOCUMENT_STATUS
+}
+
+export function footerFor(kind: string): string {
+  return GUIDE_KINDS.has(kind) ? GUIDE_FOOTER : DOCUMENT_FOOTER
+}

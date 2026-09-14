@@ -122,6 +122,6 @@ test('a pack knows its own department', () => {
   assert.ok(!departmentPacks().some(pack => pack.slug === risk!.slug))
   const pool = packBySlug('pool-safety')
   assert.ok(pool, 'the pool safety pack should exist')
-  assert.equal(pool!.count, 2)
+  assert.equal(pool!.count, 4)
   assert.ok(!departmentPacks().some(pack => pack.slug === pool!.slug))
 })
