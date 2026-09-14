@@ -105,3 +105,19 @@ test('collection stops on the clock and says it has not finished', () => {
   assert.match(page, /body\?\.unfinished/)
   assert.match(page, /Press Collect what is ready again/)
 })
+
+test('a repeat run is not dressed up as a fault', () => {
+  // Four batches of the same tier were paid for. Every one of them finishes
+  // with a note saying nothing was new, which is the truth and not a problem,
+  // and putting it in amber under "finished with a problem" sends her looking
+  // for a fault that does not exist.
+  const page = body('src/app/admin/documents/page.tsx')
+  const banner = page.slice(page.indexOf("runs.filter(run => run.status === 'done'"), page.indexOf('{loading ?'))
+  assert.ok(banner.length > 200, 'the finished-run banner should have been found')
+  assert.match(banner, /run\.failed > 0 \? \(/, 'the failed count decides which it is')
+  const amber = banner.slice(banner.indexOf('run.failed > 0'), banner.indexOf(') : ('))
+  assert.match(amber, /finished with a problem/)
+  const plain = banner.slice(banner.indexOf(') : ('))
+  assert.doesNotMatch(plain, /finished with a problem/)
+  assert.doesNotMatch(plain, /amber/)
+})
