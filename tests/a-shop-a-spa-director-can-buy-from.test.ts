@@ -125,3 +125,30 @@ test('a pack knows its own department', () => {
   assert.equal(pool!.count, 4)
   assert.ok(!departmentPacks().some(pack => pack.slug === pool!.slug))
 })
+
+// The first version of this page was three screens of prose before a buyer
+// saw a price, and not one image on it. That is a page for somebody who has
+// already decided.
+test('the shop shows the thing it is selling', () => {
+  // Real pages from the real documents, rendered from the real files. Every
+  // competitor selling document packs uses a photograph of a candle, for the
+  // same reason they cannot show you a page.
+  for (const sample of [
+    'emergency-page', 'risk-matrix', 'operating-procedure', 'hazard-block',
+    'emergency-contacts', 'record-sheet',
+  ]) {
+    assert.match(page, new RegExp(`/images/standards/${sample}\\.jpg`), `no preview of ${sample}`)
+    assert.ok(
+      readFileSync(join(process.cwd(), `public/images/standards/${sample}.jpg`)).length > 10000,
+      `${sample}.jpg is missing or empty`,
+    )
+  }
+
+  // Every one described, because a page of pictures nobody can hear is a page
+  // half the buyers cannot use.
+  assert.doesNotMatch(page, /<Image(?![^>]*alt=)/, 'an image with no alt text')
+
+  // And a price is reachable from the first screen rather than after three.
+  assert.match(page, /href="#ways-to-buy"/)
+  assert.ok(page.indexOf('See what it costs') < page.indexOf('Ways to buy'))
+})
