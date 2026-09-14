@@ -63,7 +63,7 @@ test('a life safety document takes an explicit confirmation', () => {
   assert.doesNotMatch(page, /onClick=\{\(\) => act\('approve'/, 'no button approves directly')
   assert.doesNotMatch(page, /onClick=\{async \(\) => \{ if \(await act\('approve'/, 'nor the one in the reading view')
   assert.match(page, /onClick=\{\(\) => signOff\(row\)\}/)
-  assert.match(page, /if \(await signOff\(reading\)\)/)
+  assert.match(page, /if \(await signOff\(reading\.row\)\)/)
 
   const gate = page.slice(page.indexOf('async function signOff'), page.indexOf('if (reading) {'))
   assert.equal((page.match(/act\('approve'/g) || []).length, 2, 'two approve calls, and both are in signOff')

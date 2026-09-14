@@ -30,19 +30,34 @@ export async function GET() {
   if (!actor) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
   const admin = createAdminClient()
 
+  // All of them, and without their bodies.
+  //
+  // This was capped at three hundred, which did not truncate a list so much
+  // as quietly lie: the counts across the top are computed from what comes
+  // back, so a library of four hundred and sixty reported itself as three
+  // hundred planned and the tier totals underneath it were all wrong. A cap
+  // on a list is a display decision. A cap on the thing the summary is
+  // calculated from is a wrong number on screen with nothing to suggest it.
+  //
+  // The document bodies stay behind. Four hundred and sixty full procedures
+  // is a payload nobody needs to render a list, and one is fetched when
+  // somebody opens it.
   const { data, error } = await admin.from('operational_documents')
-    .select('*').is('employer_id', null).order('created_at', { ascending: false }).limit(300)
+    .select('*').is('employer_id', null).order('created_at', { ascending: false }).limit(2000)
   if (error) return NextResponse.json({ rows: [], unavailable: true, reason: error.message })
 
   // What each one still needs, worked out here rather than on the screen, so
   // the list and the document cannot disagree about whether it is ready.
-  const rows = (data || []).map((row: any) => ({
-    ...row,
-    missing: row.kind === 'sop' ? missingFromSop((row.document || {}) as SopDocument) : [],
-    stale: row.status === 'approved' && row.approved_version !== row.version,
-    written: Object.keys(row.document || {}).length > 0,
-    lifeSafety: isLifeSafety(row),
-  }))
+  const rows = (data || []).map((row: any) => {
+    const { document, ...rest } = row
+    return {
+      ...rest,
+      missing: row.kind === 'sop' ? missingFromSop((document || {}) as SopDocument) : [],
+      stale: row.status === 'approved' && row.approved_version !== row.version,
+      written: Object.keys(document || {}).length > 0,
+      lifeSafety: isLifeSafety(row),
+    }
+  })
 
   return NextResponse.json({ rows })
 }
@@ -251,6 +266,11 @@ export async function POST(req: NextRequest) {
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
     return NextResponse.json({ success: true, lifeSafety: isLifeSafety(row) })
+  }
+
+  // One document, fetched when it is opened rather than carried by the list.
+  if (action === 'read') {
+    return NextResponse.json({ success: true, document: row.document || {} })
   }
 
   if (action === 'delete') {
