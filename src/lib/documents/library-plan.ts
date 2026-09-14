@@ -326,7 +326,7 @@ export const LIBRARY_PLAN: PlannedDocument[] = [
   { reference: 'REC-SPLIT-MERGE-SOP-066', title: 'Split or Merge Bookings', department: 'RECEPTION TEAM', tier: 'month-1', why: 'Complex booking management builds over time' },
   { reference: 'REC-SYSOUTAGE-CONT-SOP-100', title: 'System Outage Manual Booking Contingency', department: 'RECEPTION TEAM', tier: 'day-1', why: 'System outage contingency - must be ready before opening' },
   { reference: 'REC-VERIFY-SOP-019', title: 'Booking Verification and Guest Identification', department: 'RECEPTION TEAM', tier: 'day-1', why: 'Booking verification before every treatment' },
-  { reference: 'REC-VIP-HAND-SOP-035', title: 'VIP and High-Profile Guest Handling at Front Desk', department: 'RECEPTION TEAM', tier: 'day-1', why: 'VIP guests likely in first week at Fairmont' },
+  { reference: 'REC-VIP-HAND-SOP-035', title: 'VIP and High-Profile Guest Handling at Front Desk', department: 'RECEPTION TEAM', tier: 'day-1', why: 'VIP guests likely in the first week' },
   { reference: 'REC-VOUCH-ENQ-SOP-038', title: 'Gift Voucher Enquiry and Expiry Handling', department: 'RECEPTION TEAM', tier: 'day-1', why: 'Gift vouchers sold/redeemed immediately' },
   { reference: 'REC-VOUCHER-REDEEM-SOP-081', title: 'Redeem Gift Voucher Against Booking', department: 'RECEPTION TEAM', tier: 'day-1', why: 'Gift vouchers redeemed from day one' },
   { reference: 'REC-WAIT-CONVERT-SOP-072', title: 'Convert Waitlist Entry to Confirmed Booking', department: 'RECEPTION TEAM', tier: 'month-1', why: 'Conversion builds over time' },

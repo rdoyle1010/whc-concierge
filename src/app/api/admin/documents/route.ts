@@ -11,6 +11,7 @@ import { documentFromDraft } from '@/lib/documents/assemble'
 import { QUARTER_ONE_DRAFTS } from '@/lib/documents/quarter-one'
 import { planCollection } from '@/lib/documents/collect-plan'
 import { isLifeSafety, LIFE_SAFETY_CONFIRMATION } from '@/lib/documents/safety'
+import { placeholdersIn } from '@/lib/documents/placeholders'
 
 // The library, and the sign-off that stands between a draft and a client.
 //
@@ -60,6 +61,11 @@ export async function GET() {
       stale: row.status === 'approved' && row.approved_version !== row.version,
       written: Object.keys(document || {}).length > 0,
       lifeSafety: isLifeSafety(row),
+      // How much the property has to fill in before this is usable in their
+      // building. Worth knowing both ways round: nothing to complete on a
+      // procedure that should name a muster point means the drafter invented
+      // one, and thirty things to complete is a document a buyer abandons.
+      blanks: placeholdersIn((document || {}) as SopDocument).length,
     }
   })
 
