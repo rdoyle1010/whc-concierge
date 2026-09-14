@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getStripe } from '@/lib/stripe'
 import { createServerSupabaseClient } from '@/lib/supabase/server'
-import { CURRENCY, SINGLE_DOCUMENT_PRICE, VAT_NOTE } from '@/lib/documents/pricing'
+import { CURRENCY, VAT_NOTE, singlePrice } from '@/lib/documents/pricing'
+import { loadPrices, loadBundles, referencesInBundle } from '@/lib/documents/pricing-server'
 import { priceSingle, pricePack } from '@/lib/documents/stock'
 import { DOCUMENT_STATUS } from '@/lib/documents/status'
 
@@ -58,9 +59,36 @@ export async function POST(req: NextRequest) {
   }
   const approved = new Set((rows || []).map((row: any) => row.reference))
 
-  const purchase = packSlug
-    ? pricePack(packSlug, approved)
-    : priceSingle(reference, approved, SINGLE_DOCUMENT_PRICE)
+  // Live prices, read at the moment of sale. A shop showing one number and a
+  // checkout charging another is a refund and a review, and it is the kind of
+  // fault nobody finds until a buyer does.
+  const prices = await loadPrices(admin)
+
+  // A bundle is one of her own, so it is checked before the coded packs: a
+  // bundle named the same as a pack sells the bundle, which is the one she
+  // built deliberately.
+  const bundle = packSlug ? (await loadBundles(true, admin)).find(entry => entry.slug === packSlug) : null
+  let purchase
+  if (bundle) {
+    const references = referencesInBundle(bundle, prices)
+    const missing = references.filter(entry => !approved.has(entry))
+    purchase = missing.length
+      ? {
+          ok: false as const,
+          reason: `${references.length - missing.length} of ${references.length} in that bundle are signed off. `
+            + 'We do not sell a bundle part-finished. Tell us you want it and we will prioritise the rest.',
+        }
+      : {
+          ok: true as const,
+          description: `${bundle.name} (${references.length} documents)`,
+          amountPence: bundle.pricePence,
+          packSlug: bundle.slug,
+        }
+  } else {
+    purchase = packSlug
+      ? pricePack(packSlug, approved, prices)
+      : priceSingle(reference, approved, singlePrice(prices))
+  }
   if (!purchase.ok) return NextResponse.json({ error: purchase.reason }, { status: 400 })
 
   const origin = req.nextUrl.origin

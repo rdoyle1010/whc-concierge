@@ -81,6 +81,13 @@ export const VAT_NOTE = VAT_REGISTERED
   ? 'Prices include VAT at the current rate.'
   : 'No VAT is charged. The price shown is the price paid.'
 
+// Overrides, keyed by the same names the admin screen uses. Absent means the
+// default in this file, which is the one argued for above.
+export type Prices = Partial<Record<
+  'single' | 'department' | 'day-one' | 'complete' | 'pool-safety' | 'risk-assessments',
+  number
+>>
+
 export type Pack = {
   slug: string
   name: string
@@ -105,11 +112,11 @@ export function formatPrice(pence: number): string {
  * than its parts is a pack nobody buys twice, and the person who works it out
  * tells everybody.
  */
-export function departmentPrice(count: number): number {
-  return Math.min(DEPARTMENT_PACK_PRICE, count * SINGLE_DOCUMENT_PRICE)
+export function departmentPrice(count: number, prices: Prices = {}): number {
+  return Math.min(prices.department ?? DEPARTMENT_PACK_PRICE, count * (prices.single ?? SINGLE_DOCUMENT_PRICE))
 }
 
-export function departmentPacks(): Pack[] {
+export function departmentPacks(prices: Prices = {}): Pack[] {
   const byDepartment = new Map<string, number>()
   for (const entry of LIBRARY_PLAN) {
     byDepartment.set(entry.department, (byDepartment.get(entry.department) || 0) + 1)
@@ -121,7 +128,7 @@ export function departmentPacks(): Pack[] {
       slug: `department-${department.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')}`,
       name: titleCase(department),
       blurb: `Every procedure, checklist and standard for the ${titleCase(department).toLowerCase()}.`,
-      price: departmentPrice(count),
+      price: departmentPrice(count, prices),
       includes: (reference: string) =>
         LIBRARY_PLAN.some(entry => entry.reference === reference && entry.department === department),
       count,
@@ -133,7 +140,7 @@ export function departmentPacks(): Pack[] {
     }))
 }
 
-export function tierPacks(): Pack[] {
+export function tierPacks(prices: Prices = {}): Pack[] {
   const dayOne = LIBRARY_PLAN.filter(entry => entry.tier === 'day-1')
   const poolReferences = POOL_PLAN_ENTRIES.map(entry => entry.reference)
   const riskReferences = RISK_ASSESSMENT_ENTRIES.map(entry => entry.reference)
@@ -146,7 +153,7 @@ export function tierPacks(): Pack[] {
         + 'pools, saunas and steam rooms, treatment rooms, changing areas, the plant room and chemical store, the '
         + 'gym, reception and back of house, fire and evacuation, outdoor areas, and cleaning. Forty-five hazards, '
         + 'each with the controls a competent operation would expect, and nothing scored for you.',
-      price: RISK_ASSESSMENT_PACK_PRICE,
+      price: prices['risk-assessments'] ?? RISK_ASSESSMENT_PACK_PRICE,
       includes: (reference: string) => riskReferences.includes(reference),
       count: riskReferences.length,
     },
@@ -157,7 +164,7 @@ export function tierPacks(): Pack[] {
         'The Normal Operating Procedure and the Emergency Action Plan for the whole spa: pools, heat and cold '
         + 'experiences, treatment rooms, gym, plant and front of house. Both halves of what an operator needs in '
         + 'writing: how the spa runs on an ordinary day, and who does what in the first minutes of an emergency.',
-      price: POOL_SAFETY_PACK_PRICE,
+      price: prices['pool-safety'] ?? POOL_SAFETY_PACK_PRICE,
       includes: (reference: string) => poolReferences.includes(reference),
       count: poolReferences.length,
     },
@@ -168,7 +175,7 @@ export function tierPacks(): Pack[] {
         'Everything a spa needs written down before it opens its doors. Treatment delivery, consultation and '
         + 'consent, arrival and check-in, room opening and closing, cash and revenue close, and the safety '
         + 'procedures that are regulated from the first day.',
-      price: DAY_ONE_PACK_PRICE,
+      price: prices['day-one'] ?? DAY_ONE_PACK_PRICE,
       includes: (reference: string) => dayOne.some(entry => entry.reference === reference),
       count: dayOne.length,
     },
@@ -178,15 +185,19 @@ export function tierPacks(): Pack[] {
       blurb:
         'Every document, across every department and every stage. The pre-opening suite, the first thirty days, '
         + 'and the governance and audit procedures that need an operation running before they can be written well.',
-      price: COMPLETE_LIBRARY_PRICE,
+      price: prices.complete ?? COMPLETE_LIBRARY_PRICE,
       includes: () => true,
       count: LIBRARY_PLAN.length + POOL_PLAN_ENTRIES.length + RISK_ASSESSMENT_ENTRIES.length,
     },
   ]
 }
 
-export function packBySlug(slug: string): Pack | null {
-  return [...tierPacks(), ...departmentPacks()].find(pack => pack.slug === slug) || null
+export function packBySlug(slug: string, prices: Prices = {}): Pack | null {
+  return [...tierPacks(prices), ...departmentPacks(prices)].find(pack => pack.slug === slug) || null
+}
+
+export function singlePrice(prices: Prices = {}): number {
+  return prices.single ?? SINGLE_DOCUMENT_PRICE
 }
 
 export function countInTier(tier: BuildTier): number {

@@ -102,7 +102,7 @@ test('the shop lists documents by name, not only pack counts', () => {
   assert.match(list, /item\.department\.toLowerCase\(\)\.includes\(needle\)/)
 
   const catalogue = body('src/components/StandardsCatalogue.tsx')
-  assert.match(catalogue, /<StandardsList available=\{available\} unavailable=\{unavailable\} \/>/)
+  assert.match(catalogue, /<StandardsList available=\{available\} unavailable=\{unavailable\} prices=\{prices\} \/>/)
 })
 
 test('the library says how much each document asks the property to fill in', () => {

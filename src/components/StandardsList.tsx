@@ -3,7 +3,7 @@
 import { useMemo, useState } from 'react'
 import { Search } from 'lucide-react'
 import { sellableCatalogue } from '@/lib/documents/catalogue'
-import { SINGLE_DOCUMENT_PRICE, formatPrice } from '@/lib/documents/pricing'
+import { formatPrice, singlePrice, type Prices } from '@/lib/documents/pricing'
 import BuyButton from '@/components/BuyButton'
 
 // Every document, by name, whether it is ready or not.
@@ -20,9 +20,14 @@ import BuyButton from '@/components/BuyButton'
 // see the document they need exists, even unwritten, asks for it. A buyer who
 // sees eleven titles assumes there are eleven.
 
-type Props = { available: { reference: string; department: string }[] | null; unavailable: boolean }
+type Props = {
+  available: { reference: string; department: string }[] | null
+  unavailable: boolean
+  prices?: Prices
+}
 
-export default function StandardsList({ available, unavailable }: Props) {
+export default function StandardsList({ available, unavailable, prices = {} }: Props) {
+  const single = singlePrice(prices)
   const [query, setQuery] = useState('')
   const [department, setDepartment] = useState('all')
   const [readyOnly, setReadyOnly] = useState(false)
@@ -58,7 +63,7 @@ export default function StandardsList({ available, unavailable }: Props) {
           <div>
             <h2 className="text-[28px] font-semibold text-[#1c1c1c] md:text-[32px]">Every document</h2>
             <p className="mt-2 max-w-2xl text-[14px] leading-relaxed text-[#555555]">
-              The full library, by name. Anything marked ready can be sent today at {formatPrice(SINGLE_DOCUMENT_PRICE)}
+              The full library, by name. Anything marked ready can be sent today at {formatPrice(single)}
               {' '}on its own, or inside its department pack. Tell us which you need and we will confirm before you pay.
             </p>
           </div>
@@ -128,7 +133,7 @@ export default function StandardsList({ available, unavailable }: Props) {
                     // Bought on its own, from the list, without a basket or an
                     // account. A spa manager needing one procedure this
                     // afternoon is the most common buyer there is.
-                    <BuyButton reference={item.reference} label={`Buy ${formatPrice(SINGLE_DOCUMENT_PRICE)}`} primary={false} />
+                    <BuyButton reference={item.reference} label={`Buy ${formatPrice(single)}`} primary={false} />
                   ) : (
                     <span className="shrink-0 text-[11px] text-[#8a8a8a]">In preparation</span>
                   )}

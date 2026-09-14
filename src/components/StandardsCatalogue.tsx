@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { departmentPacks, formatPrice } from '@/lib/documents/pricing'
+import { departmentPacks, formatPrice, type Prices } from '@/lib/documents/pricing'
 import { LIBRARY_PLAN } from '@/lib/documents/library-plan'
 import StandardsList from '@/components/StandardsList'
 import BuyButton from '@/components/BuyButton'
@@ -21,6 +21,11 @@ type Available = { reference: string; title: string; department: string; tier: s
 export default function StandardsCatalogue() {
   const [available, setAvailable] = useState<Available[] | null>(null)
   const [unavailable, setUnavailable] = useState(false)
+  // Live prices and her own bundles, rather than the constants in the code.
+  const [prices, setPrices] = useState<Prices>({})
+  const [bundles, setBundles] = useState<
+    { slug: string; name: string; blurb: string | null; price: number; references: string[] }[]
+  >([])
 
   useEffect(() => {
     fetch('/api/standards')
@@ -29,11 +34,13 @@ export default function StandardsCatalogue() {
         if (!data) { setUnavailable(true); return }
         setUnavailable(Boolean(data.unavailable))
         setAvailable(data.available || [])
+        setPrices(data.prices || {})
+        setBundles(data.bundles || [])
       })
       .catch(() => setUnavailable(true))
   }, [])
 
-  const packs = departmentPacks()
+  const packs = departmentPacks(prices)
   const readyIn = (department: string) =>
     (available || []).filter(entry => entry.department === department).length
   const readyTotal = available?.length ?? 0
@@ -110,11 +117,48 @@ export default function StandardsCatalogue() {
         )}
       </div>
 
+      {/* Her own bundles, above the departments, because a bundle she built
+          deliberately is a better answer than a department somebody has to
+          assemble for themselves. */}
+      {bundles.length > 0 && (
+        <div className="mx-auto max-w-5xl px-6 pb-14 lg:px-8">
+          <h3 className="text-[20px] font-semibold text-[#1c1c1c]">Bundles</h3>
+          <div className="mt-5 border-t border-[#dddddd]">
+            {bundles.map(bundle => {
+              const ready = bundle.references.filter(reference =>
+                (available || []).some(entry => entry.reference === reference)).length
+              const all = ready === bundle.references.length && bundle.references.length > 0
+              return (
+                <div key={bundle.slug}
+                  className="flex flex-wrap items-start justify-between gap-x-8 gap-y-3 border-b border-[#dddddd] py-5">
+                  <div className="min-w-0 flex-1">
+                    <h4 className="text-[17px] font-semibold text-[#1c1c1c]">{bundle.name}</h4>
+                    {bundle.blurb && <p className="mt-1.5 max-w-2xl text-[14px] leading-relaxed text-[#555555]">{bundle.blurb}</p>}
+                    <p className="mt-1.5 text-[13px] text-[#6b6b6b]">
+                      {bundle.references.length} documents
+                      {available !== null && !unavailable && (all ? ' · all ready' : ` · ${ready} ready now, the rest in preparation`)}
+                    </p>
+                  </div>
+                  <div className="flex shrink-0 items-center gap-5">
+                    <p className="font-serif text-[22px] text-[#1c1c1c]">{formatPrice(bundle.price)}</p>
+                    {available !== null && !unavailable && (
+                      all
+                        ? <BuyButton packSlug={bundle.slug} label="Buy this bundle" />
+                        : <Link href="/contact" className="border border-[#dddddd] px-3 py-2 text-[13px] font-medium text-[#555555]">Ask us</Link>
+                    )}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
       {/* The packs above price a department. This lists what is in it, by
           name, which is the question a buyer actually arrives with. She
           signed a document off and could not find it on her own shop,
           because nothing here ever listed a document. */}
-      <StandardsList available={available} unavailable={unavailable} />
+      <StandardsList available={available} unavailable={unavailable} prices={prices} />
     </section>
   )
 }
