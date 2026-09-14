@@ -76,8 +76,22 @@ test('importing the plan cannot touch what is already there', () => {
   // checking code that is not the import.
   const block = route.slice(route.indexOf("action === 'import_plan'"), route.indexOf("action === 'draft_tier'"))
   assert.ok(block.length > 200, 'the import block was not found')
-  assert.match(block, /already\.has\(entry\.reference\)/, 'anything already held is skipped entirely')
-  assert.doesNotMatch(block, /\.update\(|\.upsert\(|\.delete\(/, 'an import writes nothing over anything')
+  assert.match(block, /already\.has\(entry\.reference\)/, 'anything already held keeps its content')
+
+  // It may now fill a blank tier, and nothing else.
+  //
+  // Skipping an existing row entirely was right for content and wrong for a
+  // blank: the worked example was added before the import, so the import
+  // passed over it and left it with no tier, which made it invisible under
+  // every tier filter while the counter above said one document was written.
+  // Filling a blank is not overwriting. Touching any of these would be.
+  assert.doesNotMatch(block, /\.upsert\(|\.delete\(/, 'an import replaces and removes nothing')
+  const updates = block.match(/\.update\(\{[\s\S]*?\}\)/g) || []
+  assert.equal(updates.length, 1, 'exactly one write to an existing row, and it is the tier')
+  for (const field of ['document:', 'status:', 'approved_by', 'approved_at', 'approved_version', 'version:', 'title:']) {
+    assert.ok(!updates[0].includes(field), `an import must never write ${field} on a row that already exists`)
+  }
+  assert.match(updates[0], /tier: planned\.tier/)
   assert.match(block, /The whole plan is already in the library/)
 
   // Four hundred and sixty rows in one statement is a request that does not

@@ -134,3 +134,44 @@ test('it carries what the original template did not', () => {
     assert.ok(sheet.includes(section), `the renderer drops ${section}`)
   }
 })
+
+// A document she would send to a hotel printed with a burger menu, a logo and
+// a notification bell across the top of page one.
+//
+// The print rules named a handful of workspace selectors and the dashboard
+// header was not among them. A blocklist of chrome is only ever as complete
+// as whoever wrote it remembered to be, and every screen added afterwards is
+// a new way for it to be wrong.
+test('only the document prints', () => {
+  const css = read('src/app/globals.css')
+  const page = read('src/app/admin/documents/page.tsx')
+
+  assert.match(page, /className="document-print-root/, 'the document says which element it is')
+  assert.match(css, /body:has\(\.document-print-root\) \* \{\s*visibility: hidden;/,
+    'everything is hidden by default, rather than a list of things being hidden')
+  assert.match(css, /body:has\(\.document-print-root\) \.document-print-root,\s*body:has\(\.document-print-root\) \.document-print-root \* \{\s*visibility: visible;/)
+
+  // visibility rather than display, so the document keeps its place instead
+  // of being removed along with whatever contains it.
+  // Bounded at the rule that follows rather than by a character count: the
+  // older blocklist still applies to screens with no document on them, and
+  // an arbitrary window swept it up.
+  const start = css.indexOf('body:has(.document-print-root)')
+  const end = css.indexOf('Screens with no document on them', start)
+  assert.ok(start > 0 && end > start, 'the print rules were not found')
+  assert.doesNotMatch(css.slice(start, end), /display: none/,
+    'two mechanisms fighting is how a document gets hidden by the rule meant to reveal it')
+})
+
+// She signed one off and then could not filter to it.
+test('a signed off document can be found', () => {
+  const page = read('src/app/admin/documents/page.tsx')
+  assert.match(page, /<option value="signed">Signed off<\/option>/)
+  assert.match(page, /only === 'signed' && row\.status !== 'approved'/)
+
+  // One filter function, used by the list and by the count that explains an
+  // empty one. Two copies is how a screen says one thing at the top and
+  // another underneath.
+  assert.match(page, /const matchesState = \(row: Row\) =>/)
+  assert.equal((page.match(/only === 'signed'/g) || []).length, 1)
+})

@@ -55,7 +55,7 @@ export default function AdminDocumentsPage() {
   // filtered, counted, and worked through a tier at a time.
   const [tier, setTier] = useState<BuildTier | 'all'>('day-1')
   const [department, setDepartment] = useState('all')
-  const [only, setOnly] = useState<'all' | 'unwritten' | 'unsigned'>('all')
+  const [only, setOnly] = useState<'all' | 'unwritten' | 'unsigned' | 'signed'>('all')
 
   async function load() {
     const res = await fetch('/api/admin/documents', { cache: 'no-store' })
@@ -159,19 +159,35 @@ export default function AdminDocumentsPage() {
           </div>
           {error && <p className="mt-3 border border-red-200 bg-red-50 px-4 py-3 text-[13px] text-red-700">{error}</p>}
         </div>
-        <div className="mt-6 border border-border bg-white shadow-sm print:mt-0 print:border-0 print:shadow-none">
+        {/* Named, because printing is allowlisted rather than blocklisted.
+            The old print rules hid a list of workspace selectors, and the
+            dashboard header was not among them, so a document she would send
+            to a hotel came out with a burger menu, a logo and a notification
+            bell across the top of page one. Hiding everything and showing
+            only this cannot be defeated by a chrome element nobody listed. */}
+        <div className="document-print-root mt-6 border border-border bg-white shadow-sm print:mt-0 print:border-0 print:shadow-none">
           <SopSheet document={reading.document} />
         </div>
       </DashboardShell>
     )
   }
 
+  // What the current state filter matches outside the chosen tier, and what
+  // has no tier at all. Both are the answer to "it says one is written and I
+  // cannot see it".
+  const matchesState = (row: Row) => {
+    if (only === 'unwritten' && row.written) return false
+    if (only === 'unsigned' && (!row.written || row.status === 'approved')) return false
+    if (only === 'signed' && row.status !== 'approved') return false
+    return true
+  }
+  const elsewhere = rows.filter(row => row.tier !== tier && matchesState(row)).length
+  const untiered = rows.filter(row => !row.tier).length
+
   const visible = rows.filter(row => {
     if (tier !== 'all' && row.tier !== tier) return false
     if (department !== 'all' && row.department !== department) return false
-    if (only === 'unwritten' && row.written) return false
-    if (only === 'unsigned' && (!row.written || row.status === 'approved')) return false
-    return true
+    return matchesState(row)
   })
 
   return (
@@ -255,6 +271,7 @@ export default function AdminDocumentsPage() {
                 <option value="all">Any state</option>
                 <option value="unwritten">Not written yet</option>
                 <option value="unsigned">Written, not signed off</option>
+                <option value="signed">Signed off</option>
               </select>
             </div>
           </>
@@ -268,7 +285,27 @@ export default function AdminDocumentsPage() {
             drafts, or add the worked example on its own to look at the layout first.
           </p>
         ) : visible.length === 0 ? (
-          <p className="mt-8 text-[13px] text-secondary">Nothing matches those filters.</p>
+          <div className="mt-8 text-[13px] text-secondary">
+            {/* Not just "nothing matches". A count at the top saying one
+                document is written, above a list saying nothing matches, is
+                the screen contradicting itself and leaving her to work out
+                which half is lying. It says where the missing ones are. */}
+            <p>Nothing matches those filters.</p>
+            {elsewhere > 0 && (
+              <p className="mt-1.5">
+                {elsewhere === 1 ? 'One document matches' : `${elsewhere} documents match`} that state in another tier.
+                <button type="button" onClick={() => setTier('all')} className="ml-1.5 font-semibold text-ink underline">
+                  Show everything
+                </button>
+              </p>
+            )}
+            {untiered > 0 && (
+              <p className="mt-1.5">
+                {untiered === 1 ? 'One document has' : `${untiered} documents have`} no tier at all, so no tier filter will
+                ever show {untiered === 1 ? 'it' : 'them'}. Press Import the build plan and it will fill them in.
+              </p>
+            )}
+          </div>
         ) : (
           <div className="mt-6 space-y-3">
             {visible.slice(0, 60).map(row => (
