@@ -1,7 +1,7 @@
 import { sellableCatalogue } from './catalogue'
 import {
   SINGLE_DOCUMENT_PRICE, DEPARTMENT_PACK_PRICE, DAY_ONE_PACK_PRICE, COMPLETE_LIBRARY_PRICE,
-  POOL_SAFETY_PACK_PRICE, RISK_ASSESSMENT_PACK_PRICE,
+  POOL_SAFETY_PACK_PRICE, RISK_ASSESSMENT_PACK_PRICE, JOURNEY_PACK_CEILING,
 } from './pricing'
 
 // Prices she can change without a deploy, and bundles she can compose.
@@ -12,7 +12,7 @@ import {
 // being undone.
 
 export type PriceKey =
-  | 'single' | 'department' | 'day-one' | 'complete' | 'pool-safety' | 'risk-assessments'
+  | 'single' | 'department' | 'journey' | 'day-one' | 'complete' | 'pool-safety' | 'risk-assessments'
 
 export const PRICE_KEYS: { key: PriceKey; label: string; why: string; fallback: number }[] = [
   {
@@ -22,6 +22,10 @@ export const PRICE_KEYS: { key: PriceKey; label: string; why: string; fallback: 
   {
     key: 'department', label: 'A department pack', fallback: DEPARTMENT_PACK_PRICE,
     why: 'The cap. A department is never charged more than its documents bought one at a time, so a small department costs less than this.',
+  },
+  {
+    key: 'journey', label: 'A stage of the visit', fallback: JOURNEY_PACK_CEILING,
+    why: 'The ceiling. A stage is priced at a share of its documents bought singly, so the small stages cost less than this and only the two big ones reach it.',
   },
   {
     key: 'day-one', label: 'Before the First Guest', fallback: DAY_ONE_PACK_PRICE,

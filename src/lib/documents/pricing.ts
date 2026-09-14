@@ -2,6 +2,8 @@ import { LIBRARY_PLAN, TIER_LABEL, type BuildTier } from './library-plan'
 import { POOL_PLAN_ENTRIES } from './pool-plans'
 import { GUIDE_ENTRIES } from './guide/plans'
 import { RISK_ASSESSMENT_ENTRIES } from './risk-assessment-plans'
+import { sellableCatalogue } from './catalogue'
+import { JOURNEY_STAGES, stageOf } from './journey'
 
 // What a document costs, and why.
 //
@@ -63,6 +65,25 @@ export const POOL_SAFETY_PACK_PRICE = 49500
 // director can usually approve without a board.
 export const RISK_ASSESSMENT_PACK_PRICE = 75000
 
+// A stage of the guest journey, priced as a share of its parts.
+//
+// A department is flat because every department is a team, and a team either
+// has its procedures or it does not. A stage is not a team. "After the visit"
+// is seventeen documents and "Management" is a hundred and ninety-eight, and
+// charging one price for both would put a seventeen document pack beside a
+// hundred and five document department costing less. A buyer makes that
+// comparison in about four seconds and stops trusting every other number on
+// the page.
+//
+// So a stage is thirty-five per cent of its documents bought one at a time,
+// which is a discount deep enough to be obviously the right way to buy and
+// shallow enough that six of them cost more than the complete library. The
+// ceiling stops the two large stages becoming the most expensive thing in the
+// shop, and it sits under the eight hundred a spa director can usually
+// approve without a second signature.
+export const JOURNEY_PACK_SHARE = 0.35
+export const JOURNEY_PACK_CEILING = 79500
+
 export const CURRENCY = 'gbp'
 
 // Not VAT registered, so a price is simply the price.
@@ -85,7 +106,7 @@ export const VAT_NOTE = VAT_REGISTERED
 // Overrides, keyed by the same names the admin screen uses. Absent means the
 // default in this file, which is the one argued for above.
 export type Prices = Partial<Record<
-  'single' | 'department' | 'day-one' | 'complete' | 'pool-safety' | 'risk-assessments',
+  'single' | 'department' | 'journey' | 'day-one' | 'complete' | 'pool-safety' | 'risk-assessments',
   number
 >>
 
@@ -100,6 +121,8 @@ export type Pack = {
   count: number
   /** The department exactly as the register spells it, where the pack is one. */
   department?: string
+  /** A longer line for a pack that gets a card of its own. */
+  detail?: string
 }
 
 export function formatPrice(pence: number): string {
@@ -139,6 +162,84 @@ export function departmentPacks(prices: Prices = {}): Pack[] {
       // breaks the day a pack covers more than one.
       department,
     }))
+}
+
+/**
+ * What one stage of the visit costs.
+ *
+ * Never more than its documents bought singly, for the same reason a
+ * department is not, and never less than one document, so a stage that
+ * shrinks can never be cheaper than buying a single procedure out of it.
+ */
+export function journeyPrice(count: number, prices: Prices = {}): number {
+  const single = prices.single ?? SINGLE_DOCUMENT_PRICE
+  const ceiling = prices.journey ?? JOURNEY_PACK_CEILING
+  const share = Math.round((count * single * JOURNEY_PACK_SHARE) / 500) * 500
+  return Math.max(single, Math.min(ceiling, share, count * single))
+}
+
+/**
+ * The library sold the way a spa is actually run.
+ *
+ * A department pack asks a buyer to know which team owns a procedure. A stage
+ * asks them where in a visit the problem is, which is the question they
+ * arrived with: "our arrivals are a mess" and "nobody follows up afterwards"
+ * are how this gets described out loud, and neither maps to one department.
+ * Arrival alone spans reception, housekeeping and membership.
+ */
+export function journeyPacks(prices: Prices = {}): Pack[] {
+  const catalogue = sellableCatalogue()
+  return JOURNEY_STAGES.map(stage => {
+    const references = new Set(
+      catalogue.filter(entry => stageOf(entry) === stage.slug).map(entry => entry.reference),
+    )
+    return {
+      slug: `journey-${stage.slug}`,
+      name: JOURNEY_PACK_NAME[stage.slug],
+      blurb: stage.blurb,
+      detail: JOURNEY_PACK_DETAIL[stage.slug],
+      price: journeyPrice(references.size, prices),
+      includes: (reference: string) => references.has(reference),
+      count: references.size,
+    }
+  })
+}
+
+// Named for what a buyer gets rather than for the stage, because "Arrival" on
+// its own is a label and "Everything your arrivals need in writing" is an
+// offer.
+const JOURNEY_PACK_NAME: Record<string, string> = {
+  management: 'Running the Business',
+  'pre-arrival': 'Before They Arrive',
+  arrival: 'The First Ten Minutes',
+  experience: 'The Visit Itself',
+  departure: 'The Last Five Minutes',
+  'post-departure': 'After They Leave',
+}
+
+const JOURNEY_PACK_DETAIL: Record<string, string> = {
+  management:
+    'The paperwork that keeps the doors open and the inspector satisfied. Systems and configuration, cash and '
+    + 'revenue, people and rotas, procurement, governance, audit, and the health and safety regime the whole '
+    + 'operation sits on.',
+  'pre-arrival':
+    'Every procedure between somebody wanting to come and somebody walking in. Enquiries, bookings, deposits, '
+    + 'amendments, cancellations, confirmations and the consent and health screening that should reach a guest '
+    + 'before they are lying on a couch, not after.',
+  arrival:
+    'The ten minutes that decide what a guest thinks of the place. Check-in, welcome, lockers and robes, the '
+    + 'tour, accessibility and medical needs flagged at the desk, and what happens when somebody arrives late, '
+    + 'early or to a delay.',
+  experience:
+    'The visit itself, and the standards that keep it safe. Treatment delivery and draping, the pool, thermal '
+    + 'suite and cold plunge, water testing, the gym floor and studio, housekeeping of the areas a guest is '
+    + 'standing in, and what to do when something goes wrong in the middle of it.',
+  departure:
+    'Paying, buying and coming back. Checking out, settling a bill, retail at the till, refunds, gratuities and '
+    + 'the rebooking conversation that decides whether there is a next visit at all.',
+  'post-departure':
+    'The part most spas leave to chance. Aftercare, feedback and reviews, complaints and service recovery, '
+    + 'follow-up, retention and winning back somebody who has stopped coming.',
 }
 
 export function tierPacks(prices: Prices = {}): Pack[] {
@@ -198,7 +299,11 @@ export function tierPacks(prices: Prices = {}): Pack[] {
 }
 
 export function packBySlug(slug: string, prices: Prices = {}): Pack | null {
-  return [...tierPacks(prices), ...departmentPacks(prices)].find(pack => pack.slug === slug) || null
+  // Every pack that has ever been sold has to resolve here, whatever the
+  // shop happens to show today. A slug is written into an order and that
+  // order is the buyer's entitlement for as long as they have an account.
+  return [...tierPacks(prices), ...journeyPacks(prices), ...departmentPacks(prices)]
+    .find(pack => pack.slug === slug) || null
 }
 
 export function singlePrice(prices: Prices = {}): number {

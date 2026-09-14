@@ -5,6 +5,7 @@ import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
 import {
   formatPrice, SINGLE_DOCUMENT_PRICE, POOL_SAFETY_PACK_PRICE, RISK_ASSESSMENT_PACK_PRICE, VAT_NOTE,
+  journeyPacks,
 } from '@/lib/documents/pricing'
 import TierBuy from '@/components/TierBuy'
 import { sellableCatalogue } from '@/lib/documents/catalogue'
@@ -268,11 +269,13 @@ export default function StandardsPage() {
                   cta: 'Find it',
                 },
                 {
-                  name: 'A department',
-                  price: 'From £299',
-                  detail: 'Every procedure, checklist and standard for one team. Priced at whichever is cheaper: the pack, or its documents bought singly.',
-                  href: '#departments',
-                  cta: 'See departments',
+                  name: 'A stage of the visit',
+                  // Worked out from the packs rather than typed, so the card
+                  // cannot drift away from the prices below it.
+                  price: `From ${formatPrice(Math.min(...journeyPacks().map(pack => pack.price)))}`,
+                  detail: 'Everything one part of the guest journey needs in writing, across every team it touches. Arrivals, the visit itself, departures, or what happens afterwards.',
+                  href: '#stages',
+                  cta: 'See the six stages',
                 },
                 {
                   name: 'Before the first guest',

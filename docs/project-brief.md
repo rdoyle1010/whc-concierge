@@ -149,10 +149,21 @@ pack reaches everybody who owns that pack, including people who bought it
 months ago. A file belongs to a pack as a whole, never to a single document,
 because there is no sensible way to own half a workbook.
 
-The library is browsed by the guest journey - management, pre-arrival,
-arrival, experience, departure, after the visit - and then by what kind of
-document it is. It used to be grouped by when a property needs a document,
-which is useful once while you are opening and useless every day after.
+The library is browsed and sold by the guest journey - management,
+pre-arrival, arrival, experience, departure, after the visit - and then by
+what kind of document it is. It used to be grouped by when a property needs a
+document, which is useful once while you are opening and useless every day
+after. A department pack asks a buyer to know which team owns a procedure; a
+stage asks where in a visit the problem is, which is the question they
+arrived with, and arrivals alone span reception, housekeeping and membership.
+
+A stage costs about a third of its documents bought singly, capped at £795
+and floored at the price of one document. Six stages come to more than the
+complete library at £2,450, deliberately: if somebody wants most of it, the
+library has to be the right answer. Departments are still sold underneath at
+£299, and every pack slug ever sold still resolves, because a slug is written
+into an order and that order is a buyer's entitlement for as long as they
+have an account.
 
 One thing worth knowing about the rendering: for a period every plan and risk
 assessment printed with text on top of other text, because a page break was
