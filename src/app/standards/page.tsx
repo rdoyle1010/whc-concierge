@@ -300,12 +300,17 @@ export default function StandardsPage() {
                   {formatPrice(FINANCE_PACK_PRICE)}
                 </p>
                 <p className="mt-3 flex-1 text-[14px] leading-relaxed text-[#3a3a3a]">
-                  Twenty reports and, more usefully, the definitions behind them. What a spa director lacks is
-                  rarely a spreadsheet: it is agreement on which numbers, measured how, compared against what,
-                  and what somebody does when one of them moves.
+                  Twenty reports, the Excel workbook that computes them, and the definitions behind both. What a
+                  spa director lacks is rarely a spreadsheet: it is agreement on which numbers, measured how,
+                  compared against what, and what somebody does when one of them moves.
                 </p>
+                {/* The workbook was not mentioned anywhere on this page, on
+                    the one pack whose strongest claim is that it is a working
+                    spreadsheet rather than a picture of one. A differentiator
+                    nobody is told about is a differentiator nobody pays for. */}
                 <ul className="mt-4 space-y-1.5 text-[13px] text-[#555555]">
                   {[
+                    'An Excel workbook of 21 sheets: fill in eight numbers and the rest calculates',
                     'A director dashboard of fifteen measures, each drilling into a report',
                     'Revenue against capacity, not only against budget: RevPATH and unsold hours',
                     'Forward pace at 7, 14, 30 and 90 days against the same point last year',

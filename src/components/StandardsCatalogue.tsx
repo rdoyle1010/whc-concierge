@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { departmentPacks, journeyPacks, formatPrice, type Prices } from '@/lib/documents/pricing'
 import { sellableCatalogue } from '@/lib/documents/catalogue'
 import StandardsList from '@/components/StandardsList'
+import PackContents, { type PackFile } from '@/components/PackContents'
 import BuyButton from '@/components/BuyButton'
 import Link from 'next/link'
 
@@ -26,6 +27,10 @@ export default function StandardsCatalogue() {
   const [bundles, setBundles] = useState<
     { slug: string; name: string; blurb: string | null; price: number; references: string[] }[]
   >([])
+  // The files that travel with a pack. Named on the card, because whether the
+  // reporting pack is a real workbook or a picture of one is the question
+  // that decides the sale, and it was only answerable after paying.
+  const [files, setFiles] = useState<PackFile[]>([])
 
   useEffect(() => {
     fetch('/api/standards')
@@ -36,6 +41,7 @@ export default function StandardsCatalogue() {
         setAvailable(data.available || [])
         setPrices(data.prices || {})
         setBundles(data.bundles || [])
+        setFiles(data.files || [])
       })
       .catch(() => setUnavailable(true))
   }, [])
@@ -62,6 +68,11 @@ export default function StandardsCatalogue() {
   const readyIn = (pack: { includes: (reference: string) => boolean }) =>
     readyReferences.filter(reference => pack.includes(reference)).length
   const readyTotal = readySet.size
+
+  // Which references a pack covers, and which files come with it.
+  const referencesIn = (pack: { includes: (reference: string) => boolean }) =>
+    sellableCatalogue().map(entry => entry.reference).filter(reference => pack.includes(reference))
+  const filesFor = (slug: string) => files.filter(file => file.packSlugs.includes(slug))
 
   return (
     <>
@@ -104,6 +115,8 @@ export default function StandardsCatalogue() {
                     all ? ' · all ready' : ready > 0 ? ` · ${ready} ready now` : ' · in preparation'
                   )}
                 </p>
+                <PackContents name={stage.name} references={referencesIn(stage)}
+                  files={filesFor(stage.slug)} readySet={readySet} showReady={!all} />
                 <div className="mt-4">
                   {available !== null && !unavailable && (
                     all
@@ -145,6 +158,8 @@ export default function StandardsCatalogue() {
                     all ? ' · all ready' : ready > 0 ? ` · ${ready} ready now` : ' · in preparation'
                   )}
                 </p>
+                <PackContents name={stage.name} references={referencesIn(stage)}
+                  files={filesFor(stage.slug)} readySet={readySet} showReady={!all} />
                 <div className="mt-4">
                   {available !== null && !unavailable && (
                     all
@@ -205,6 +220,8 @@ export default function StandardsCatalogue() {
                           : ' · in preparation'
                     )}
                   </p>
+                  <PackContents name={pack.name} references={referencesIn(pack)}
+                    files={filesFor(pack.slug)} readySet={readySet} showReady={ready < pack.count} />
                 </div>
                 <div className="flex items-center gap-5">
                   <p className="font-serif text-[22px] text-[#1c1c1c]">{formatPrice(pack.price)}</p>
@@ -260,6 +277,8 @@ export default function StandardsCatalogue() {
                       {bundle.references.length} documents
                       {available !== null && !unavailable && (all ? ' · all ready' : ` · ${ready} ready now, the rest in preparation`)}
                     </p>
+                    <PackContents name={bundle.name} references={bundle.references}
+                      files={filesFor(bundle.slug)} readySet={readySet} showReady={!all} />
                   </div>
                   <div className="flex shrink-0 items-center gap-5">
                     <p className="font-serif text-[22px] text-[#1c1c1c]">{formatPrice(bundle.price)}</p>

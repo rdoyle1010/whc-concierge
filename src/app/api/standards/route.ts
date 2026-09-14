@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { sellableCatalogue } from '@/lib/documents/catalogue'
 import { loadPrices, loadBundles, referencesInBundle } from '@/lib/documents/pricing-server'
+import { loadAttachments } from '@/lib/documents/attachments'
+import { formatOf } from '@/lib/documents/formats'
 
 // What is actually on the shelf.
 //
@@ -30,6 +32,16 @@ export async function GET() {
   const prices = await loadPrices(admin)
   const bundles = await loadBundles(true, admin)
 
+  // The files that travel with a pack, named and with their format.
+  //
+  // "36 documents" tells somebody spending eight hundred pounds nothing about
+  // what lands in their inbox. Whether the reporting pack contains an actual
+  // spreadsheet or a picture of one is the question that decides the sale,
+  // and it was only answerable after paying.
+  //
+  // Names and formats only. The file itself is the product.
+  const attachments = await loadAttachments(true, admin)
+
   return NextResponse.json({
     available: (data || []).map((row: any) => ({
       reference: row.reference,
@@ -50,6 +62,13 @@ export async function GET() {
       blurb: bundle.blurb,
       price: bundle.pricePence,
       references: referencesInBundle(bundle, prices),
+    })),
+    files: attachments.map(attachment => ({
+      name: attachment.name,
+      description: attachment.description,
+      format: formatOf(attachment.contentType, attachment.fileName),
+      sizeBytes: attachment.sizeBytes,
+      packSlugs: attachment.packSlugs,
     })),
   })
 }
