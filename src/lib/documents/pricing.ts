@@ -152,11 +152,11 @@ export function tierPacks(): Pack[] {
     },
     {
       slug: 'pool-safety',
-      name: 'Pool Safety Operating Procedure',
+      name: 'Spa Safety Operating Procedure',
       blurb:
-        'The Normal Operating Procedure and the Emergency Action Plan for your pools, plunges, hydrotherapy '
-        + 'pools, saunas and steam rooms. Both halves of what a pool operator needs in writing: how the water '
-        + 'runs on an ordinary day, and who does what in the first minutes of an emergency.',
+        'The Normal Operating Procedure and the Emergency Action Plan for the whole spa: pools, heat and cold '
+        + 'experiences, treatment rooms, gym, plant and front of house. Both halves of what an operator needs in '
+        + 'writing: how the spa runs on an ordinary day, and who does what in the first minutes of an emergency.',
       price: POOL_SAFETY_PACK_PRICE,
       includes: (reference: string) => poolReferences.includes(reference),
       count: poolReferences.length,

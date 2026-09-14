@@ -21,9 +21,12 @@ import type { PlanSection } from './plan-types'
 // that a supervisor's zone has to be one they can actually see. The property
 // supplies the facts. We supply the questions, in the order HSG179 asks them.
 
+const PART = 'B. Pool and wet areas'
+
 export const POOL_NOP_SECTIONS: PlanSection[] = [
 
   {
+    part: PART,
     heading: 'The pools and wet facilities',
     intro:
       'Complete one row for every pool, plunge, hydrotherapy pool, sauna, steam room and experience shower on '
@@ -37,6 +40,7 @@ export const POOL_NOP_SECTIONS: PlanSection[] = [
   },
 
   {
+    part: PART,
     heading: 'Features, and the hazards they carry',
     intro:
       'Anything that changes how the water behaves or how a bather enters it. Each one alters supervision, and '
@@ -54,6 +58,7 @@ export const POOL_NOP_SECTIONS: PlanSection[] = [
   },
 
   {
+    part: PART,
     heading: 'Maximum bather load',
     intro:
       'The number of people permitted in the water at one time, calculated for this pool and written down. It is '
@@ -70,6 +75,7 @@ export const POOL_NOP_SECTIONS: PlanSection[] = [
   },
 
   {
+    part: PART,
     heading: 'Supervision',
     intro:
       'Who watches the water, from where, and what they can see from there. Constant poolside supervision and '
@@ -89,6 +95,7 @@ export const POOL_NOP_SECTIONS: PlanSection[] = [
   },
 
   {
+    part: PART,
     heading: 'Admission, and who may not swim unaccompanied',
     facts: [
       { label: 'Minimum age for unaccompanied use' },
@@ -102,6 +109,7 @@ export const POOL_NOP_SECTIONS: PlanSection[] = [
   },
 
   {
+    part: PART,
     heading: 'Water quality testing',
     intro:
       'Tested before opening, at intervals through the day, and recorded every time. A reading taken and not '
@@ -119,6 +127,7 @@ export const POOL_NOP_SECTIONS: PlanSection[] = [
   },
 
   {
+    part: PART,
     heading: 'Chemical handling and plant',
     intro:
       'The plant room is the highest-consequence area in the building and the one fewest people are competent '
@@ -139,6 +148,7 @@ export const POOL_NOP_SECTIONS: PlanSection[] = [
   },
 
   {
+    part: PART,
     heading: 'Rescue and first aid equipment',
     intro: 'Listed, located, and checked on a stated frequency by a named role.',
     table: {
@@ -161,6 +171,7 @@ export const POOL_NOP_SECTIONS: PlanSection[] = [
   },
 
   {
+    part: PART,
     heading: 'Opening the facility',
     intro: 'In order, every day, by a named role, recorded.',
     actions: [
@@ -176,6 +187,7 @@ export const POOL_NOP_SECTIONS: PlanSection[] = [
   },
 
   {
+    part: PART,
     heading: 'Through the day',
     actions: [
       { name: 'Test to schedule', action: 'Test and record water quality at the stated intervals, and again after any significant change in bather load.', by: '' },
@@ -187,6 +199,7 @@ export const POOL_NOP_SECTIONS: PlanSection[] = [
   },
 
   {
+    part: PART,
     heading: 'Closing the facility',
     actions: [
       { name: 'Clear the water', action: 'Check every pool, plunge and feature is empty, including any area not visible from the main poolside.', by: '' },
@@ -198,6 +211,7 @@ export const POOL_NOP_SECTIONS: PlanSection[] = [
   },
 
   {
+    part: PART,
     heading: 'Training and competence',
     facts: [
       { label: 'Induction required before working poolside', long: true },
@@ -211,6 +225,7 @@ export const POOL_NOP_SECTIONS: PlanSection[] = [
   },
 
   {
+    part: PART,
     heading: 'Hire to outside organisations',
     intro:
       'A hirer running a session in your water is operating under your procedures unless something in writing '
@@ -224,13 +239,4 @@ export const POOL_NOP_SECTIONS: PlanSection[] = [
     ],
   },
 
-  {
-    heading: 'Review',
-    facts: [
-      { label: 'Review frequency', hint: 'Annually as a minimum, and after any incident, any change to the facility, and any change to the team.' },
-      { label: 'Who reviews it' },
-      { label: 'What triggers a review before it is due', long: true },
-      { label: 'How the team is told a procedure has changed', long: true, hint: 'A revised document nobody has been briefed on is a revised document nobody follows.' },
-    ],
-  },
 ]

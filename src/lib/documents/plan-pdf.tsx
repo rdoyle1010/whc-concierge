@@ -1,7 +1,7 @@
 import React from 'react'
 import { Document, Page, Text, View, StyleSheet, TextInput, Font, renderToBuffer } from '@react-pdf/renderer'
 import type { PlanDocument, PlanSection, Fact, Hazard } from './plan-types'
-import { PLAN_KIND_LABEL } from './plan-types'
+import { PLAN_KIND_LABEL, partsOf } from './plan-types'
 import { DOCUMENT_FOOTER, DOCUMENT_STATUS } from './status'
 import { splitPlaceholders, fieldName } from './placeholders'
 
@@ -89,6 +89,21 @@ const styles = StyleSheet.create({
   bulletText: { flex: 1 },
 
   note: { fontSize: 8.5, color: MUTED, lineHeight: 1.55, marginBottom: 7 },
+
+  partDivider: {
+    marginTop: 22, marginBottom: 4, borderTopWidth: 2.5, borderTopColor: INK, paddingTop: 7,
+  },
+  partLabel: { fontFamily: 'Helvetica-Bold', fontSize: 7, letterSpacing: 1.8, color: MUTED, textTransform: 'uppercase' },
+  partName: { fontFamily: 'Times-Bold', fontSize: 15, marginTop: 2 },
+
+  contentsPart: { fontFamily: 'Helvetica-Bold', fontSize: 8, letterSpacing: 1.1, textTransform: 'uppercase', marginTop: 12, marginBottom: 4 },
+  contentsRow: { flexDirection: 'row', marginBottom: 2.5 },
+  contentsDash: { width: 12, color: FAINT },
+  contentsText: { flex: 1, fontSize: 9 },
+
+  legalRow: { flexDirection: 'row', borderBottomWidth: 0.5, borderBottomColor: RULE, paddingVertical: 5 },
+  legalName: { width: '38%', fontFamily: 'Helvetica-Bold', fontSize: 8.5, paddingRight: 8 },
+  legalCovers: { flex: 1, fontSize: 8.5 },
 
   hazard: { borderWidth: 0.75, borderColor: INK, marginBottom: 12 },
   hazardHead: { backgroundColor: '#f2f2f2', paddingHorizontal: 8, paddingVertical: 6, borderBottomWidth: 0.5, borderBottomColor: RULE },
@@ -328,6 +343,7 @@ export function PlanPdf({ document }: { document: PlanDocument }) {
   // the rest of a rescue is a design decision with consequences.
   const onOwnPage = document.sections.filter(section => section.ownPage)
   const inline = document.sections.filter(section => !section.ownPage)
+  const parts = partsOf({ ...document, sections: inline })
 
   return (
     <Document
@@ -362,6 +378,45 @@ export function PlanPdf({ document }: { document: PlanDocument }) {
           <Text style={styles.para}>{document.scope}</Text>
         </View>
 
+        {document.legalFramework?.length ? (
+          <View style={styles.section}>
+            <Text style={styles.sectionHead}>The framework this is written to</Text>
+            {/* Named plainly, because an assessor expects to see it and a
+                document that dances around it reads as evasive. What is never
+                done is citing a section number or telling a property what the
+                law requires of them. */}
+            <Text style={styles.intro}>
+              Written to practice in the United Kingdom. If this property is outside the United Kingdom, or is
+              subject to requirements of its own, the equivalent framework applies and this document must be
+              checked against it before use. Nothing here is legal advice, and none of it discharges a duty the
+              property owes.
+            </Text>
+            <View>
+              {document.legalFramework.map(entry => (
+                <View key={entry.name} style={styles.legalRow} wrap={false}>
+                  <Text style={styles.legalName}>{entry.name}</Text>
+                  <Text style={styles.legalCovers}>{entry.covers}</Text>
+                </View>
+              ))}
+            </View>
+            <View style={{ marginTop: 10 }}>
+              <Text style={styles.factLabel}>Jurisdiction this property operates in</Text>
+              <TextInput name="f_jurisdiction" style={styles.input} fontSize={9} />
+            </View>
+            <View style={{ marginTop: 8 }}>
+              <Text style={styles.factLabel}>Local authority, and the officer or team the property deals with</Text>
+              <TextInput name="f_local_authority" style={styles.input} fontSize={9} />
+            </View>
+            <View style={{ marginTop: 8 }}>
+              <Text style={styles.factLabel}>Any additional requirement that applies here</Text>
+              <Text style={styles.factHint}>
+                Licensing conditions, a brand standard, an insurer requirement, or a local by-law.
+              </Text>
+              <TextInput name="f_additional_requirements" style={styles.inputTall} fontSize={9} multiline />
+            </View>
+          </View>
+        ) : null}
+
         <View style={styles.section}>
           <Text style={styles.sectionHead}>Document control</Text>
           <View style={styles.table}>
@@ -391,12 +446,43 @@ export function PlanPdf({ document }: { document: PlanDocument }) {
           </View>
         </View>
 
-        {inline.map((section, index) => (
-          <View key={`s${index}`} style={styles.section}>
-            <Text style={styles.sectionHead} minPresenceAhead={48}>{section.heading}</Text>
-            <SectionBody section={section} keyBase={`s${index}`} />
+        {/* A contents page, once a document is long enough to need one. A
+            hundred pages with a flat list of sixty headings is a hundred
+            pages nobody navigates. */}
+        {parts.length > 1 || document.sections.length > 12 ? (
+          <View style={styles.section} break>
+            <Text style={styles.sectionHead}>What is in this document</Text>
+            {parts.map(part => (
+              <View key={part.part || 'main'} wrap={false}>
+                {part.part ? <Text style={styles.contentsPart}>{part.part}</Text> : null}
+                {part.headings.map(heading => (
+                  <View key={heading} style={styles.contentsRow}>
+                    <Text style={styles.contentsDash}>-</Text>
+                    <Text style={styles.contentsText}>{heading}</Text>
+                  </View>
+                ))}
+              </View>
+            ))}
           </View>
-        ))}
+        ) : null}
+
+        {inline.map((section, index) => {
+          // A rule and the part name wherever a new part begins, so somebody
+          // flicking through a hundred pages can see where they are.
+          const startsPart = Boolean(section.part) && section.part !== inline[index - 1]?.part
+          return (
+            <View key={`s${index}`} style={styles.section}>
+              {startsPart ? (
+                <View style={styles.partDivider} break={index > 0}>
+                  <Text style={styles.partLabel}>Part</Text>
+                  <Text style={styles.partName}>{section.part}</Text>
+                </View>
+              ) : null}
+              <Text style={styles.sectionHead} minPresenceAhead={48}>{section.heading}</Text>
+              <SectionBody section={section} keyBase={`s${index}`} />
+            </View>
+          )
+        })}
 
         <Footer document={document} />
       </Page>

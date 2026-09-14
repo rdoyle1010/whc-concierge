@@ -19,7 +19,7 @@ import type { Accountability, CrossReference, Revision } from './types'
 // cover the NOP, the EAP, a policy and a safe system of work, which is four
 // products from one shape rather than four shapes to keep in step.
 
-export type PlanKind = 'nop' | 'eap' | 'policy' | 'safe-system' | 'risk-assessment'
+export type PlanKind = 'nop' | 'eap' | 'policy' | 'safe-system' | 'risk-assessment' | 'guide' | 'training'
 
 /**
  * One thing the property has to state.
@@ -85,6 +85,15 @@ export type PlanTable = {
 }
 
 export type PlanSection = {
+  /**
+   * Which part of the document this belongs to.
+   *
+   * A hundred-page operating procedure with a flat list of sixty headings is
+   * a hundred pages nobody navigates. Parts give it a spine, a contents page
+   * that means something, and a way for a spa manager to hand one section to
+   * one team without printing the rest.
+   */
+  part?: string
   heading: string
   intro?: string
   paragraphs?: string[]
@@ -117,9 +126,36 @@ export type PlanDocument = {
   summary: string
   scope: string
 
+  /**
+   * The framework this is written to, named plainly.
+   *
+   * An assessor expects to see it and a document that dances around it reads
+   * as evasive. What is never done is citing a section number or telling a
+   * property what the law requires of them: this states what the framework
+   * covers, and the property confirms what applies to them and where.
+   *
+   * It carries a jurisdiction warning for the same reason. These are written
+   * to United Kingdom practice. Sold to a spa in another country, half of it
+   * is the wrong framework, and a document that does not say so is one that
+   * gets relied on anyway.
+   */
+  legalFramework?: { name: string; covers: string }[]
+
   sections: PlanSection[]
   references: CrossReference[]
   revisions: Revision[]
+}
+
+/** The parts of a document, in the order their sections first appear. */
+export function partsOf(document: PlanDocument): { part: string; headings: string[] }[] {
+  const parts: { part: string; headings: string[] }[] = []
+  for (const section of document.sections || []) {
+    const name = section.part || ''
+    const existing = parts.find(entry => entry.part === name)
+    if (existing) existing.headings.push(section.heading)
+    else parts.push({ part: name, headings: [section.heading] })
+  }
+  return parts
 }
 
 export const PLAN_KIND_LABEL: Record<PlanKind, string> = {
@@ -128,6 +164,8 @@ export const PLAN_KIND_LABEL: Record<PlanKind, string> = {
   policy: 'Policy',
   'safe-system': 'Safe System of Work',
   'risk-assessment': 'Risk Assessment',
+  guide: 'Guide',
+  training: 'Training Guide',
 }
 
 /** Everything a plan needs before it is worth handing to a property. */

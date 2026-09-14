@@ -20,6 +20,12 @@ test('both plans are complete enough to be signed off', () => {
     assert.deepEqual(missingFromPlan(plan), [], `${plan.reference} is incomplete`)
     assert.ok(isValidReference(plan.reference), `${plan.reference} is not in the house format`)
     assert.ok(plan.sections.length >= 10, `${plan.reference} has only ${plan.sections.length} sections`)
+    // Named plainly, because an assessor expects to see it, and carrying the
+    // jurisdiction warning because these are written to United Kingdom
+    // practice and are sold to spas that may not be in it.
+    if (plan.kind === 'nop') {
+      assert.ok((plan.legalFramework || []).length >= 10, 'the framework must be named')
+    }
   }
 })
 
@@ -42,7 +48,9 @@ test('a fact about one building is never stated for them', () => {
 
   // And there is a great deal to complete, which is the document rather than
   // a shortcoming of it.
-  assert.ok(factsInPlan(poolNop()) > 100, 'a NOP that asks little is a NOP that invented a lot')
+  // A spa-wide operating procedure asks thousands of things, because a spa is
+  // thousands of facts and none of them are ours.
+  assert.ok(factsInPlan(poolNop()) > 1000, 'a NOP that asks little is a NOP that invented a lot')
 })
 
 test('the emergency plan puts one emergency on each page', () => {
