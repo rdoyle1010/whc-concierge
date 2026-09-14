@@ -41,9 +41,26 @@ export default function StandardsCatalogue() {
   }, [])
 
   const packs = departmentPacks(prices)
-  const readyIn = (department: string) =>
-    (available || []).filter(entry => entry.department === department).length
-  const readyTotal = available?.length ?? 0
+
+  // Counted against the catalogue, not against the table.
+  //
+  // The shop once read "483 of 477 ready to send today", which is not a
+  // number a buyer forgives: the numerator was every signed-off row in the
+  // database and the denominator was only what is for sale, so retired
+  // references and anything written outside the catalogue inflated it past
+  // its own total. A stock figure that exceeds the stock reads as a shop
+  // that does not know what it has.
+  const catalogueReferences = new Set(sellableCatalogue().map(entry => entry.reference))
+  const readyReferences = (available || [])
+    .map(entry => entry.reference)
+    .filter(reference => catalogueReferences.has(reference))
+  const readySet = new Set(readyReferences)
+  // By what the pack actually contains rather than by a department label,
+  // for the same reason: a pool plan carrying a department name would count
+  // towards a department pack that does not include it.
+  const readyIn = (pack: { includes: (reference: string) => boolean }) =>
+    readyReferences.filter(reference => pack.includes(reference)).length
+  const readyTotal = readySet.size
 
   return (
     <section className="border-b border-[#dddddd]" id="departments">
@@ -66,7 +83,7 @@ export default function StandardsCatalogue() {
 
         <div className="mt-8 border-t border-[#dddddd]">
           {packs.map(pack => {
-            const ready = readyIn(pack.department || '')
+            const ready = readyIn(pack)
             return (
               <div key={pack.slug}
                 className="flex flex-wrap items-baseline justify-between gap-x-8 gap-y-2 border-b border-[#dddddd] py-5">
@@ -125,8 +142,7 @@ export default function StandardsCatalogue() {
           <h3 className="text-[20px] font-semibold text-[#1c1c1c]">Bundles</h3>
           <div className="mt-5 border-t border-[#dddddd]">
             {bundles.map(bundle => {
-              const ready = bundle.references.filter(reference =>
-                (available || []).some(entry => entry.reference === reference)).length
+              const ready = bundle.references.filter(reference => readySet.has(reference)).length
               const all = ready === bundle.references.length && bundle.references.length > 0
               return (
                 <div key={bundle.slug}

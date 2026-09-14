@@ -39,6 +39,14 @@ const RISK = {
   high: { ink: '#8a1c14', wash: '#fbe9e7', edge: '#d99089' },
 } as const
 
+// Leading, and why some styles set their own.
+//
+// The Page sets lineHeight for everything under it, and a unitless value is
+// resolved once, against the page's own font size. Anything smaller than nine
+// point is therefore merely generous. Anything larger is given too little:
+// a fifteen point part heading got thirteen points of leading and the line
+// after it printed across it. So every style above nine point carries its own
+// lineHeight, and anything added here above nine point needs one too.
 const styles = StyleSheet.create({
   page: {
     paddingTop: 44, paddingBottom: 54, paddingHorizontal: 44,
@@ -65,7 +73,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1.5, borderBottomColor: INK, paddingBottom: 3, marginBottom: 8,
   },
   intro: { fontSize: 8.5, color: MUTED, lineHeight: 1.55, marginBottom: 10 },
-  para: { marginBottom: 6 },
+  para: { lineHeight: 1.45, marginBottom: 6 },
 
   // The band on a section a competent person has to complete against the
   // building. It is the difference between a form and a liability.
@@ -92,15 +100,15 @@ const styles = StyleSheet.create({
   cellInput: { height: 15, backgroundColor: FIELD, fontSize: 8, paddingHorizontal: 3 },
 
   actionRow: { flexDirection: 'row', borderBottomWidth: 0.5, borderBottomColor: RULE, paddingVertical: 6 },
-  actionNum: { width: 18, fontFamily: 'Helvetica-Bold', fontSize: 10 },
+  actionNum: { width: 18, fontFamily: 'Helvetica-Bold', fontSize: 10, lineHeight: 1.45 },
   actionBody: { flex: 1, paddingRight: 8 },
-  actionName: { fontFamily: 'Helvetica-Bold', fontSize: 9.5, marginBottom: 2 },
+  actionName: { fontFamily: 'Helvetica-Bold', fontSize: 9.5, lineHeight: 1.35, marginBottom: 2 },
   actionBy: { width: 106 },
   actionByLabel: { fontSize: 6.2, letterSpacing: 0.6, color: FAINT, textTransform: 'uppercase' },
 
   bulletRow: { flexDirection: 'row', marginBottom: 3 },
   bulletMark: { width: 11, fontFamily: 'Helvetica-Bold' },
-  bulletText: { flex: 1 },
+  bulletText: { flex: 1, lineHeight: 1.45 },
 
   note: { fontSize: 8.5, color: MUTED, lineHeight: 1.55, marginBottom: 7 },
 
@@ -108,21 +116,21 @@ const styles = StyleSheet.create({
     marginTop: 22, marginBottom: 4, borderTopWidth: 2.5, borderTopColor: INK, paddingTop: 7,
   },
   partLabel: { fontFamily: 'Helvetica-Bold', fontSize: 7, letterSpacing: 1.8, color: MUTED, textTransform: 'uppercase' },
-  partName: { fontFamily: 'Times-Bold', fontSize: 15, marginTop: 2 },
+  partName: { fontFamily: 'Times-Bold', fontSize: 15, lineHeight: 1.2, marginTop: 2 },
 
   contentsPart: { fontFamily: 'Helvetica-Bold', fontSize: 8, letterSpacing: 1.1, textTransform: 'uppercase', marginTop: 12, marginBottom: 4 },
   contentsRow: { flexDirection: 'row', marginBottom: 2.5 },
   contentsDash: { width: 12, color: FAINT },
-  contentsText: { flex: 1, fontSize: 9 },
+  contentsText: { flex: 1, fontSize: 9, lineHeight: 1.35 },
 
   legalRow: { flexDirection: 'row', borderBottomWidth: 0.5, borderBottomColor: RULE, paddingVertical: 5 },
-  legalName: { width: '38%', fontFamily: 'Helvetica-Bold', fontSize: 8.5, paddingRight: 8 },
-  legalCovers: { flex: 1, fontSize: 8.5 },
+  legalName: { width: '38%', fontFamily: 'Helvetica-Bold', fontSize: 8.5, lineHeight: 1.4, paddingRight: 8 },
+  legalCovers: { flex: 1, fontSize: 8.5, lineHeight: 1.4 },
 
   hazard: { borderWidth: 0.75, borderColor: INK, marginBottom: 12 },
   hazardHead: { backgroundColor: '#f2f2f2', paddingHorizontal: 8, paddingVertical: 6, borderBottomWidth: 0.5, borderBottomColor: RULE },
   hazardRef: { fontSize: 6.5, letterSpacing: 1, color: MUTED, textTransform: 'uppercase' },
-  hazardName: { fontFamily: 'Helvetica-Bold', fontSize: 10.5, marginTop: 1 },
+  hazardName: { fontFamily: 'Helvetica-Bold', fontSize: 10.5, lineHeight: 1.3, marginTop: 1 },
   hazardBody: { paddingHorizontal: 8, paddingVertical: 7 },
   hazardLabel: { fontFamily: 'Helvetica-Bold', fontSize: 6.8, letterSpacing: 0.7, textTransform: 'uppercase', color: MUTED, marginBottom: 3 },
   tickLine: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: 3.5 },
@@ -136,7 +144,7 @@ const styles = StyleSheet.create({
   bandRow: { flexDirection: 'row', gap: 7, marginTop: 10, marginBottom: 4 },
   band: { flex: 1, borderWidth: 0.75, paddingHorizontal: 7, paddingVertical: 6 },
   bandName: { fontFamily: 'Helvetica-Bold', fontSize: 9 },
-  bandRange: { fontSize: 7.5, marginTop: 1 },
+  bandRange: { fontSize: 7.5, lineHeight: 1.35, marginTop: 1 },
   bandWhat: { fontSize: 7.5, marginTop: 3, lineHeight: 1.4 },
 
   matrix: { marginTop: 10, marginBottom: 4 },
@@ -224,7 +232,7 @@ function HazardBlock({ hazard, index, keyBase }: { hazard: Hazard; index: number
       </View>
       <View style={styles.hazardBody}>
         <Text style={styles.hazardLabel}>Who is at risk</Text>
-        <Text style={{ fontSize: 8.5, marginBottom: 8 }}>{hazard.whoIsAtRisk}</Text>
+        <Text style={{ fontSize: 8.5, lineHeight: 1.4, marginBottom: 8 }}>{hazard.whoIsAtRisk}</Text>
 
         <Text style={styles.hazardLabel}>Controls: tick each one you have seen in place</Text>
         {hazard.controlsToVerify.map((control, controlIndex) => (
@@ -386,7 +394,15 @@ function SectionBody({ section, keyBase }: { section: PlanSection; keyBase: stri
       {section.actions?.length ? (
         <View>
           {section.actions.map((action, index) => (
-            <View key={`${keyBase}-a${index}`} style={styles.actionRow} wrap={false}>
+            // Allowed to split. react-pdf will not move a step it has been
+            // told to keep whole once the page it is on has already broken:
+            // it prints it past the bottom of the text block instead, so two
+            // pages of the operating procedure had a water testing step lying
+            // across the reference line at the foot. A step broken over a page
+            // turn is a small ugliness. A step printed on top of the footer
+            // reads as a corrupt file, and minPresenceAhead keeps almost all
+            // of them whole anyway.
+            <View key={`${keyBase}-a${index}`} style={styles.actionRow} minPresenceAhead={64}>
               <Text style={styles.actionNum}>{index + 1}</Text>
               <View style={styles.actionBody}>
                 <Text style={styles.actionName}>{action.name}</Text>
@@ -432,7 +448,7 @@ function SectionBody({ section, keyBase }: { section: PlanSection; keyBase: stri
                 <View key={`${keyBase}-r${rowIndex}c${columnIndex}`}
                   style={[styles.td, columnIndex === 0 ? { flex: 1.4 } : { flex: 1 }, columnIndex ? styles.cellDivider : {}]}>
                   {row[columnIndex] ? (
-                    <Text style={{ fontSize: 8 }}>{row[columnIndex]}</Text>
+                    <Text style={{ fontSize: 8, lineHeight: 1.35 }}>{row[columnIndex]}</Text>
                   ) : section.table!.fillable ? (
                     <TextInput name={`${keyBase}_r${rowIndex}c${columnIndex}`} style={styles.cellInput} fontSize={8} />
                   ) : <Text> </Text>}
@@ -597,9 +613,19 @@ export function PlanPdf({ document }: { document: PlanDocument }) {
         {(groups[0] && !groups[0].own ? groups[0].sections : []).map((section, index) => {
           const startsPart = Boolean(section.part) && section.part !== groups[0].sections[index - 1]?.part
           return (
-            <View key={`s${index}`} style={styles.section}>
+            // The break belongs to the section, not to the rule at the top of
+            // it. Asked for on the divider instead, react-pdf moved the
+            // divider to a new page and then laid the rest of the section out
+            // against the space left on the old one: every line after it was
+            // given roughly half the leading it needed, so a part heading was
+            // struck through by its own section title and a note lay across
+            // the risk scoring row. It looked like a corrupt file. It was one
+            // attribute on the wrong element, and it was in every risk
+            // assessment, every operating procedure and every emergency plan
+            // this library sells.
+            <View key={`s${index}`} style={styles.section} break={startsPart && index > 0}>
               {startsPart ? (
-                <View style={styles.partDivider} break={index > 0}>
+                <View style={styles.partDivider}>
                   <Text style={styles.partLabel}>Part</Text>
                   <Text style={styles.partName}>{section.part}</Text>
                 </View>

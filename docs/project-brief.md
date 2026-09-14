@@ -135,10 +135,36 @@ property to review, amend and sign off. A risk assessment carries a second,
 specific statement, because it is a legal artefact completed by a competent
 person who knows the premises. No signature is ever pre-printed.
 
+### What is actually on the shelf
+
+The library is 477 sellable documents: 460 procedures by department, the pool
+and spa Normal Operating Procedure (79 pages) and Emergency Action Plan (66
+pages, one emergency per page), 13 risk assessments covering 61 hazards, and
+the completion guide and training guide that go free with the safety pack.
+They ship as PDFs with real form fields, so a buyer types the property name
+once and it fills in everywhere it appears.
+
+Packs can now carry working files as well: a spreadsheet uploaded against a
+pack reaches everybody who owns that pack, including people who bought it
+months ago. A file belongs to a pack as a whole, never to a single document,
+because there is no sensible way to own half a workbook.
+
+The library is browsed by the guest journey - management, pre-arrival,
+arrival, experience, departure, after the visit - and then by what kind of
+document it is. It used to be grouped by when a property needs a document,
+which is useful once while you are opening and useless every day after.
+
+One thing worth knowing about the rendering: for a period every plan and risk
+assessment printed with text on top of other text, because a page break was
+asked for on the rule at the top of a section rather than on the section. It
+was invisible in the code and obvious the moment anybody opened the file. The
+preview scripts under `scripts/` exist for that reason and should be used
+before anything in this library is called finished.
+
 ## Technical shape
 
 Next.js 16 App Router · Supabase (auth, Postgres, storage) · Stripe · Netlify.
-228 API routes, 166 pages, 124 migrations, 133 test files.
+237 API routes, 172 pages, 131 migrations, 150 test files.
 
 Two roles: `talent` and `employer`, stored on `profiles.role` (talent is
 stored as `candidate`). Admin is a third role on the same column.

@@ -7,9 +7,9 @@ import PlanSheet from '@/components/documents/PlanSheet'
 import type { PlanDocument } from '@/lib/documents/plan-types'
 import { PLAN_KINDS } from '@/lib/documents/render-pdf'
 import type { SopDocument } from '@/lib/documents/types'
-import { TIER_LABEL, type BuildTier } from '@/lib/documents/library-plan'
+import { JOURNEY_STAGES, stageOf, kindOf, KIND_LABEL, type JourneyStage } from '@/lib/documents/journey'
 import { LIFE_SAFETY_WARNING } from '@/lib/documents/safety'
-import { Check, Eye, Plus, Printer, RefreshCw, RotateCcw, Trash2, Download, Sparkles, ShieldAlert, Layers, Inbox, Pencil } from 'lucide-react'
+import { Check, CheckCheck, Eye, Plus, Printer, RefreshCw, RotateCcw, Trash2, Download, Sparkles, ShieldAlert, Inbox, Pencil } from 'lucide-react'
 
 // The library, and the desk it is signed off at.
 //
@@ -71,7 +71,12 @@ export default function AdminDocumentsPage() {
   const [opening, setOpening] = useState('')
   // Four hundred and sixty documents is not a list anybody scrolls. It is
   // filtered, counted, and worked through a tier at a time.
-  const [tier, setTier] = useState<BuildTier | 'all'>('day-1')
+  // Browsed by the guest journey, then by what kind of document it is.
+  // "Before the first guest" answers a question a property asks once,
+  // while it is opening. "Where in the visit does this happen" is the
+  // question everybody asks afterwards.
+  const [stage, setStage] = useState<JourneyStage | 'all'>('all')
+  const [kind, setKind] = useState<string>('all')
   const [department, setDepartment] = useState('all')
   const [only, setOnly] = useState<'all' | 'unwritten' | 'unsigned' | 'signed'>('all')
 
@@ -134,7 +139,7 @@ export default function AdminDocumentsPage() {
           setNote(body?.note || 'Nothing came back, and nothing is waiting. Press Write this whole tier to start one.')
         }
       }
-      if (!body?.warning && (action === 'write_authored' || action === 'add_pool_plans' || action === 'add_risk_assessments')) {
+      if (!body?.warning && (action === 'write_authored' || action === 'add_pool_plans' || action === 'add_risk_assessments' || action === 'approve_ready')) {
         setNote(body?.note || 'Done.')
       }
       // A document too long for a web request is now sent the slower way
@@ -244,14 +249,18 @@ export default function AdminDocumentsPage() {
     if (only === 'signed' && row.status !== 'approved') return false
     return true
   }
-  const elsewhere = rows.filter(row => row.tier !== tier && matchesState(row)).length
-  const untiered = rows.filter(row => !row.tier).length
+  const stageFor = (row: Row) => stageOf({ reference: row.reference, title: row.title })
+  const elsewhere = rows.filter(row => stage !== 'all' && stageFor(row) !== stage && matchesState(row)).length
 
   const visible = rows.filter(row => {
-    if (tier !== 'all' && row.tier !== tier) return false
+    if (stage !== 'all' && stageFor(row) !== stage) return false
+    if (kind !== 'all' && kindOf(row.reference) !== kind) return false
     if (department !== 'all' && row.department !== department) return false
     return matchesState(row)
   })
+
+  // Only the kinds actually present, so the filter never offers an empty one.
+  const kindsPresent = Array.from(new Set(rows.map(row => kindOf(row.reference)))).sort()
 
   return (
     <DashboardShell role="admin">
@@ -280,12 +289,6 @@ export default function AdminDocumentsPage() {
             className="inline-flex items-center gap-1.5 border border-[#1c1c1c] px-3 py-1.5 text-[12px] font-semibold text-ink disabled:opacity-40">
             <Download size={13} /> {busy === 'import_plan' ? 'Importing...' : 'Import the build plan'}
           </button>
-          {tier !== 'all' && (
-            <button type="button" disabled={busy === 'draft_tier'} onClick={() => act('draft_tier', undefined, { tier })}
-              className="inline-flex items-center gap-1.5 border border-[#1c1c1c] bg-[#1c1c1c] px-3 py-1.5 text-[12px] font-semibold text-white disabled:opacity-40">
-              <Layers size={13} /> {busy === 'draft_tier' ? 'Sending...' : 'Write this whole tier'}
-            </button>
-          )}
           <button type="button" disabled={busy === 'collect'} onClick={() => act('collect')}
             className="inline-flex items-center gap-1.5 border border-[#1c1c1c] px-3 py-1.5 text-[12px] font-semibold text-ink disabled:opacity-40">
             <Inbox size={13} /> {busy === 'collect' ? 'Checking...' : 'Collect what is ready'}
@@ -296,7 +299,7 @@ export default function AdminDocumentsPage() {
                 'Paste a batch id from the Anthropic console. Use this for a run that was started before the '
                 + 'register existed, so its results can still be collected.',
               )
-              if (providerBatchId?.trim()) act('adopt_batch', undefined, { providerBatchId: providerBatchId.trim(), tier })
+              if (providerBatchId?.trim()) act('adopt_batch', undefined, { providerBatchId: providerBatchId.trim() })
             }}
             className="inline-flex items-center gap-1.5 border border-border px-3 py-1.5 text-[12px] font-medium text-secondary disabled:opacity-40">
             <Inbox size={13} /> Collect a batch by id
@@ -312,6 +315,24 @@ export default function AdminDocumentsPage() {
           <button type="button" disabled={busy === 'write_authored'} onClick={() => act('write_authored')}
             className="inline-flex items-center gap-1.5 border border-border px-3 py-1.5 text-[12px] font-medium text-secondary disabled:opacity-40">
             <Pencil size={13} /> {busy === 'write_authored' ? 'Writing...' : 'Write the last nine'}
+          </button>
+          {/* One press for everything that is finished. The life safety ones
+              are held back by the route rather than here, because a rule that
+              only exists in a button is a rule until somebody calls the API
+              directly. */}
+          <button type="button" disabled={busy === 'approve_ready'}
+            onClick={() => {
+              const waiting = rows.filter(r => r.written && r.status === 'draft').length
+              if (!waiting) { setNote('Nothing is waiting to be signed off.'); return }
+              if (!window.confirm(
+                `Sign off every finished document that is not a life safety one. ${waiting} are written and waiting. `
+                + 'Life safety documents are held back and stay one at a time, because signing one says a competent '
+                + 'person checked it against the premises.',
+              )) return
+              act('approve_ready')
+            }}
+            className="inline-flex items-center gap-1.5 border border-border px-3 py-1.5 text-[12px] font-medium text-secondary disabled:opacity-40">
+            <CheckCheck size={13} /> {busy === 'approve_ready' ? 'Signing off...' : 'Sign off everything finished'}
           </button>
           <button type="button" disabled={busy === 'add_example'} onClick={() => act('add_example')}
             className="inline-flex items-center gap-1.5 border border-border px-3 py-1.5 text-[12px] font-medium text-secondary disabled:opacity-40">
@@ -336,15 +357,26 @@ export default function AdminDocumentsPage() {
             </div>
 
             <div className="mt-4 flex flex-wrap items-center gap-2">
-              {(['day-1', 'month-1', 'quarter-1', 'all'] as const).map(option => (
-                <button key={option} type="button" onClick={() => setTier(option)}
-                  className={`border px-3 py-1.5 text-[12px] ${tier === option ? 'border-[#1c1c1c] bg-[#1c1c1c] text-white' : 'border-border text-secondary'}`}>
-                  {option === 'all' ? 'Everything' : TIER_LABEL[option]}
-                  <span className="ml-1.5 opacity-60">
-                    {option === 'all' ? rows.length : rows.filter(r => r.tier === option).length}
-                  </span>
+              <button type="button" onClick={() => setStage('all')}
+                className={`border px-3 py-1.5 text-[12px] ${stage === 'all' ? 'border-[#1c1c1c] bg-[#1c1c1c] text-white' : 'border-border text-secondary'}`}>
+                Everything<span className="ml-1.5 opacity-60">{rows.length}</span>
+              </button>
+              {JOURNEY_STAGES.map(option => (
+                <button key={option.slug} type="button" onClick={() => setStage(option.slug)} title={option.blurb}
+                  className={`border px-3 py-1.5 text-[12px] ${stage === option.slug ? 'border-[#1c1c1c] bg-[#1c1c1c] text-white' : 'border-border text-secondary'}`}>
+                  {option.label}
+                  <span className="ml-1.5 opacity-60">{rows.filter(r => stageFor(r) === option.slug).length}</span>
                 </button>
               ))}
+              <select value={kind} onChange={e => setKind(e.target.value)}
+                className="border border-border px-2 py-1.5 text-[12px] text-secondary">
+                <option value="all">Every kind</option>
+                {kindsPresent.map(code => (
+                  <option key={code} value={code}>
+                    {KIND_LABEL[code] || code} ({rows.filter(r => kindOf(r.reference) === code).length})
+                  </option>
+                ))}
+              </select>
               <select value={department} onChange={e => setDepartment(e.target.value)}
                 className="border border-border px-2 py-1.5 text-[12px] text-secondary">
                 <option value="all">Every department</option>
@@ -416,15 +448,9 @@ export default function AdminDocumentsPage() {
             {elsewhere > 0 && (
               <p className="mt-1.5">
                 {elsewhere === 1 ? 'One document matches' : `${elsewhere} documents match`} that state in another tier.
-                <button type="button" onClick={() => setTier('all')} className="ml-1.5 font-semibold text-ink underline">
+                <button type="button" onClick={() => { setStage('all'); setKind('all') }} className="ml-1.5 font-semibold text-ink underline">
                   Show everything
                 </button>
-              </p>
-            )}
-            {untiered > 0 && (
-              <p className="mt-1.5">
-                {untiered === 1 ? 'One document has' : `${untiered} documents have`} no tier at all, so no tier filter will
-                ever show {untiered === 1 ? 'it' : 'them'}. Press Import the build plan and it will fill them in.
               </p>
             )}
           </div>

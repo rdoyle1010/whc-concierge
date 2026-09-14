@@ -122,8 +122,13 @@ test('the counts are calculated over the whole library', () => {
   assert.match(page, /async function open\(row: Row\)/)
 })
 
-test('the library is worked a tier at a time', () => {
-  assert.match(page, /const \[tier, setTier\]/)
+test('the library is worked a stage at a time', () => {
+  // It used to be a tier at a time: before the first guest, first thirty days,
+  // first quarter. That answers a question a property asks once, while it is
+  // opening, and never again. Where in a guest's visit a document is used is
+  // the question everybody asks afterwards.
+  assert.match(page, /const \[stage, setStage\]/)
+  assert.match(page, /const \[kind, setKind\]/)
   assert.match(page, /Not written yet/)
   assert.match(page, /Still to write/)
   assert.match(page, /disabled=\{!row\.written \|\| opening === row\.id\}/, 'an empty draft has nothing to read')

@@ -612,6 +612,93 @@ export async function POST(req: NextRequest) {
     })
   }
 
+  // Signing off everything that is finished, in one press.
+  //
+  // Four hundred and sixty documents at one click each is not a review, it is
+  // a repetitive strain injury, and the screen that demands it gets abandoned
+  // half way through. So this signs off every draft that is written, complete
+  // and correctly referenced, and it holds back the ones where signing in
+  // bulk would be a lie.
+  //
+  // Life safety documents are held back deliberately. Approving one states
+  // that a competent person checked it against the actual premises, and no
+  // single press covers forty fire and pool procedures. Those stay one at a
+  // time, which is the point of them.
+  if (action === 'approve_ready') {
+    const { data: drafts, error: readError } = await admin.from('operational_documents')
+      .select('id, reference, title, department, kind, version, document, status')
+      .is('employer_id', null).eq('status', 'draft').limit(2000)
+    if (readError) return NextResponse.json({ error: readError.message }, { status: 500 })
+
+    const ready: { id: string; version: string | null }[] = []
+    let lifeSafety = 0
+    let unwritten = 0
+    let incomplete = 0
+    let badReference = 0
+
+    for (const draft of drafts || []) {
+      if (!isValidReference(draft.reference)) { badReference += 1; continue }
+      if (!draft.document || !Object.keys(draft.document).length) { unwritten += 1; continue }
+      if (missingFor(draft.kind, draft.document).length) { incomplete += 1; continue }
+      if (isLifeSafety(draft)) { lifeSafety += 1; continue }
+      ready.push({ id: draft.id, version: draft.version })
+    }
+
+    // In chunks, and grouped by version, against a function the host kills at
+    // twenty-six seconds. One update per document would be four hundred round
+    // trips and a timeout that leaves half the library signed off and no way
+    // to tell which half. Grouped by version because an approval is recorded
+    // against the version it applied to, and those differ between documents,
+    // so one blanket update would record the wrong one.
+    const now = new Date().toISOString()
+    const byVersion = new Map<string, string[]>()
+    for (const item of ready) {
+      const version = item.version || ''
+      byVersion.set(version, [...(byVersion.get(version) || []), item.id])
+    }
+
+    let approved = 0
+    for (const [version, ids] of byVersion) {
+      for (let at = 0; at < ids.length; at += 100) {
+        const chunk = ids.slice(at, at + 100)
+        const { error } = await admin.from('operational_documents').update({
+          status: 'approved',
+          approved_by: actor.id,
+          approved_by_name: actor.email || null,
+          approved_at: now,
+          approved_version: version || null,
+          updated_at: now,
+        }).in('id', chunk)
+        // Reported with what did land rather than as a bare failure. Half a
+        // library signed off and a red box saying nothing is worse than half
+        // a library signed off and a number.
+        if (error) {
+          return NextResponse.json({
+            error: `${error.message} ${approved} were signed off before it stopped.`,
+          }, { status: 500 })
+        }
+        approved += chunk.length
+      }
+    }
+
+    // Said in full, including what was refused and why. A count that reports
+    // only the successes is how nine empty documents came to be signed off.
+    const held: string[] = []
+    if (lifeSafety) held.push(`${lifeSafety} life safety ${lifeSafety === 1 ? 'document' : 'documents'}, which need signing one at a time against the premises`)
+    if (unwritten) held.push(`${unwritten} not written yet`)
+    if (incomplete) held.push(`${incomplete} still missing something`)
+    if (badReference) held.push(`${badReference} with a reference that is not in the house format`)
+
+    return NextResponse.json({
+      success: true,
+      approved,
+      lifeSafety,
+      note: approved
+        ? `${approved} signed off.${held.length ? ` Held back: ${held.join('; ')}.` : ''}`
+        : `Nothing signed off.${held.length ? ` Held back: ${held.join('; ')}.` : ' There were no drafts waiting.'}`,
+    })
+  }
+
   // Taking charge of a batch that was started but never written down.
   //
   // Two runs of three hundred and thirty-eight were submitted and paid for

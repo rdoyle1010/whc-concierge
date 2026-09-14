@@ -3,7 +3,7 @@
 import { useEffect, useState, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
-import { Download, ArrowLeft, ShoppingBag } from 'lucide-react'
+import { Download, ArrowLeft, ShoppingBag, FileSpreadsheet } from 'lucide-react'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
 
@@ -14,6 +14,10 @@ import Footer from '@/components/Footer'
 // a support email waiting to happen.
 
 type Entry = { reference: string; title: string; department: string; ready: boolean }
+type FileEntry = { id: string; name: string; description: string | null; fileName: string; sizeBytes: number }
+
+const readable = (bytes: number) =>
+  bytes >= 1024 * 1024 ? `${(bytes / (1024 * 1024)).toFixed(1)} MB` : `${Math.round(bytes / 1024)} KB`
 
 function Library() {
   const params = useSearchParams()
@@ -23,7 +27,7 @@ function Library() {
   const [state, setState] = useState<
     { status: 'loading' }
     | { status: 'error'; message: string }
-    | { status: 'ready'; token: string; buyer: { name: string | null }; documents: Entry[]; ready: number; total: number }
+    | { status: 'ready'; token: string; buyer: { name: string | null }; documents: Entry[]; files?: FileEntry[]; ready: number; total: number }
   >({ status: 'loading' })
 
   useEffect(() => {
@@ -94,6 +98,41 @@ function Library() {
           </div>
         ))}
       </div>
+
+      {/* The files that came with a pack. A register in Excel is not a
+          lesser thing than a PDF, so it gets the same weight on the page:
+          a buyer who does not see it assumes it was not delivered. */}
+      {(state.files?.length ?? 0) > 0 && (
+        <div className="mt-10">
+          <h2 className="text-[17px] font-semibold text-[#1c1c1c]">Also included</h2>
+          <p className="mt-1 max-w-2xl text-[13px] leading-relaxed text-[#555555]">
+            Working files that came with what you bought. These open in Excel, Word or a reader, and they are
+            yours to edit.
+          </p>
+          <div className="mt-4 border-t border-[#dddddd]">
+            {(state.files || []).map(file => (
+              <div key={file.id}
+                className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2 border-b border-[#eeeeee] py-4">
+                <div className="min-w-0 flex-1">
+                  <p className="flex items-center gap-2 text-[15px] font-medium text-[#1c1c1c]">
+                    <FileSpreadsheet size={15} className="shrink-0 text-[#8a8a8a]" /> {file.name}
+                  </p>
+                  {file.description && (
+                    <p className="mt-0.5 max-w-xl text-[13px] leading-relaxed text-[#555555]">{file.description}</p>
+                  )}
+                  <p className="mt-0.5 text-[11px] text-[#8a8a8a]">{file.fileName} · {readable(file.sizeBytes)}</p>
+                </div>
+                <a
+                  href={`/api/standards/file?t=${encodeURIComponent(state.token)}&id=${encodeURIComponent(file.id)}`}
+                  className="inline-flex shrink-0 items-center gap-1.5 border border-[#1c1c1c] px-3 py-2 text-[13px] font-semibold text-[#1c1c1c]"
+                >
+                  <Download size={14} /> Download
+                </a>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       <p className="mt-8 max-w-2xl border-l-2 border-[#dddddd] pl-4 text-[13px] leading-relaxed text-[#555555]">
         Every document is a professional template for your property to review, amend and adopt. Anything concerning
