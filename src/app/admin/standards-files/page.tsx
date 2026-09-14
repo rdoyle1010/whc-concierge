@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import DashboardShell from '@/components/DashboardShell'
 import { Check, Loader2, Trash2, Upload, FileSpreadsheet } from 'lucide-react'
 import { readableSize, type Attachment } from '@/lib/documents/attachments'
+import { formatOf, type Format } from '@/lib/documents/formats'
 
 // Files that go in a pack.
 //
@@ -31,6 +32,9 @@ export default function StandardsFilesPage() {
   const [note, setNote] = useState('')
   const [error, setError] = useState('')
   const [drafts, setDrafts] = useState<Record<string, Attachment>>({})
+  // Just the spreadsheets, or just the manuals. A list of forty files where
+  // they are all called something sensible is still a list of forty files.
+  const [format, setFormat] = useState<Format | 'all'>('all')
   const fileInput = useRef<HTMLInputElement>(null)
 
   async function load() {
@@ -60,6 +64,15 @@ export default function StandardsFilesPage() {
     await load()
     setBusy('')
   }
+
+  // Which formats are actually here, in a stable order, so the row does not
+  // reshuffle itself every time a file is uploaded.
+  const ORDER: Format[] = ['Excel', 'Word', 'PowerPoint', 'PDF', 'CSV', 'File']
+  const presentFormats = ORDER.filter(option =>
+    attachments.some(attachment => formatOf(attachment.contentType, attachment.fileName) === option))
+  const visible = format === 'all'
+    ? attachments
+    : attachments.filter(attachment => formatOf(attachment.contentType, attachment.fileName) === format)
 
   async function upload(file: File) {
     setBusy('upload'); setError(''); setNote('')
@@ -116,13 +129,38 @@ export default function StandardsFilesPage() {
           </label>
         </div>
 
+        {/* Only worth showing once there is more than one kind of thing in
+            here. A filter over a list of three is furniture. */}
+        {presentFormats.length > 1 && (
+          <div className="mt-6 flex flex-wrap items-center gap-2">
+            {(['all', ...presentFormats] as const).map(option => (
+              <button key={option} type="button" onClick={() => setFormat(option as Format | 'all')}
+                className={format === option
+                  ? 'border border-[#1c1c1c] bg-[#1c1c1c] px-2.5 py-1 text-[11px] font-medium text-white'
+                  : 'border border-border px-2.5 py-1 text-[11px] text-secondary'}>
+                {option === 'all' ? 'Everything' : option}
+                <span className="ml-1.5 text-[10px] opacity-60">
+                  {option === 'all'
+                    ? attachments.length
+                    : attachments.filter(a => formatOf(a.contentType, a.fileName) === option).length}
+                </span>
+              </button>
+            ))}
+          </div>
+        )}
+
         {loading ? <p className="mt-8 text-[13px] text-secondary">Loading...</p> : attachments.length === 0 ? (
           <p className="mt-8 text-[13px] text-secondary">
             Nothing uploaded yet. The compliance register is the obvious first one.
           </p>
+        ) : visible.length === 0 ? (
+          <p className="mt-8 text-[13px] text-secondary">
+            Nothing in {format}. {attachments.length} {attachments.length === 1 ? 'file is' : 'files are'} here
+            in other formats.
+          </p>
         ) : (
           <div className="mt-8 border-t border-border">
-            {attachments.map(attachment => {
+            {visible.map(attachment => {
               const draft = drafts[attachment.id] || attachment
               const chosen = draft.packSlugs || []
               return (
