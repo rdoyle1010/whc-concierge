@@ -188,6 +188,15 @@ complete, and only on a run that was deliberately sent to redraft: an
 unfinished document and one somebody started writing by hand look identical
 from the collection's point of view, so the default stays never overwrite.
 
+Redrafting does not always work. Six documents were sent back to the model
+twice and came back with no steps both times, each one holding a department
+pack off the shelf on its own. They are written by hand in the repository
+now, alongside the nine written that way earlier, which is fifteen documents
+whose content lives in a diff rather than in a model's output. The lesson
+generalises: where a document has failed to draft twice, writing it is
+cheaper than a third attempt, and it is the only version that can be reviewed
+in a pull request.
+
 The xlsx writer is about three hundred lines in `src/lib/documents/xlsx.ts`
 rather than a dependency, because the file format is a zip of XML and node
 already has deflate. Every generated workbook is opened by a real spreadsheet
