@@ -20,6 +20,12 @@
 export const DOCUMENT_STATUS =
   'Professional template. Review, amend and sign off before use.'
 
+// A workbook is completed rather than signed off, so it says so. Telling
+// somebody to sign off a spreadsheet is the kind of wording that makes a
+// buyer wonder whether anybody read the page.
+export const FILE_STATUS =
+  'Editable template. Your own figures, your own conclusions.'
+
 export const DOCUMENT_DISCLAIMER =
   'This document is issued as a professional template for the named property to review, amend and adopt. '
   + 'It is not a completed assessment, a certification, or legal or regulatory advice, and it does not '

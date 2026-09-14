@@ -53,3 +53,31 @@ test('the app had the same query and therefore the same bug', () => {
   assert.match(mobile, /from\('employer_profiles'\)\.select\('\*'\)\.eq\('id', job\.employer_id\)/)
   assert.match(mobile, /employer = property \|\| null/)
 })
+
+test('a credit is spent by the server, not by the account spending it', () => {
+  // The update ran on the user's own client, and a talent account cannot
+  // write its own credit balance: row level security forbids it, correctly,
+  // because a column somebody can set for themselves is not an allowance. So
+  // the spend failed and returned "we could not confirm your allowance" to
+  // somebody the sidebar was telling had one credit left.
+  for (const [name, source] of [['website', route], ['app', mobile]] as const) {
+    const spend = source.slice(source.indexOf('const nextCredits = credits - 1'))
+    assert.match(spend, /createAdminClient\(\)/, `the ${name} still spends on the user's client`)
+    // Still their own row, and still atomic. The service role makes the write
+    // possible; it must not make it careless.
+    assert.match(spend, /\.eq\('id', candidate\.id\)/, `the ${name} must touch only that profile`)
+    assert.match(spend, /\.eq\('interview_ready_credits', credits\)/,
+      `the ${name} lost its compare-and-set, so two requests can spend one credit twice`)
+  }
+})
+
+test('nothing else lets an account write its own allowance', () => {
+  // The service role is used here because the column is a paid entitlement.
+  // That reasoning only holds while it is the only place writing it.
+  const writes = ['src/app/api/interview-ready/route.ts', 'src/app/api/mobile/interview-ready/route.ts']
+  for (const file of writes) {
+    const source = body(file)
+    const updates = source.match(/\.update\(\{ interview_ready_credits/g) || []
+    assert.equal(updates.length, 1, `${file} writes the balance in more than one place`)
+  }
+})

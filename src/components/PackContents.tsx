@@ -33,6 +33,9 @@ export type PackFile = {
   format: Format
   sizeBytes: number
   packSlugs: string[]
+  /** Set on the ones sold on their own as well as with a pack. */
+  slug?: string | null
+  price?: number | null
 }
 
 const FORMAT_TONE: Record<string, string> = {

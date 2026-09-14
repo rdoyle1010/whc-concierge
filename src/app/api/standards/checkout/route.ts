@@ -5,7 +5,9 @@ import { createServerSupabaseClient } from '@/lib/supabase/server'
 import { CURRENCY, VAT_NOTE, singlePrice } from '@/lib/documents/pricing'
 import { loadPrices, loadBundles, referencesInBundle } from '@/lib/documents/pricing-server'
 import { priceSingle, pricePack } from '@/lib/documents/stock'
-import { DOCUMENT_STATUS } from '@/lib/documents/status'
+import { DOCUMENT_STATUS, FILE_STATUS } from '@/lib/documents/status'
+import { soldSeparately } from '@/lib/documents/attachments'
+import { loadAttachments } from '@/lib/documents/attachments-server'
 
 // Buying a document.
 //
@@ -67,9 +69,29 @@ export async function POST(req: NextRequest) {
   // A bundle is one of her own, so it is checked before the coded packs: a
   // bundle named the same as a pack sells the bundle, which is the one she
   // built deliberately.
-  const bundle = packSlug ? (await loadBundles(true, admin)).find(entry => entry.slug === packSlug) : null
+  // A file sold on its own.
+  //
+  // Checked before bundles and packs because its slug is prefixed and cannot
+  // collide with either, and because the answer is cheap: a workbook has no
+  // documents to be part-finished, so there is nothing to verify against the
+  // shelf. It either exists, is live and is priced, or it is not for sale.
+  const file = packSlug
+    ? soldSeparately(await loadAttachments(true, admin)).find(entry => entry.slug === packSlug)
+    : null
+
+  const bundle = !file && packSlug
+    ? (await loadBundles(true, admin)).find(entry => entry.slug === packSlug)
+    : null
   let purchase
-  if (bundle) {
+  if (file) {
+    purchase = {
+      ok: true as const,
+      description: file.name,
+      amountPence: file.pricePence as number,
+      packSlug: file.slug as string,
+      isFile: true as const,
+    }
+  } else if (bundle) {
     const references = referencesInBundle(bundle, prices)
     const missing = references.filter(entry => !approved.has(entry))
     purchase = missing.length
@@ -110,7 +132,7 @@ export async function POST(req: NextRequest) {
             // Said at the moment of payment, not afterwards. What they are
             // buying is a professional template to review and sign off, and a
             // buyer who learns that after paying is a refund and a review.
-            description: `${DOCUMENT_STATUS} ${VAT_NOTE}`,
+            description: `${'isFile' in purchase && purchase.isFile ? FILE_STATUS : DOCUMENT_STATUS} ${VAT_NOTE}`,
           },
         },
       }],

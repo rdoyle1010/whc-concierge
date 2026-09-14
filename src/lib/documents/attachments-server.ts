@@ -19,6 +19,8 @@ const asAttachment = (row: any): Attachment => ({
   contentType: row.content_type,
   sizeBytes: row.size_bytes,
   packSlugs: row.pack_slugs || [],
+  slug: row.slug || null,
+  pricePence: row.price_pence ?? null,
   isLive: row.is_live,
   sortOrder: row.sort_order,
   replacesWorkbook: Boolean(row.replaces_workbook),

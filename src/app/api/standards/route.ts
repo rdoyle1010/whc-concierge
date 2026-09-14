@@ -69,6 +69,10 @@ export async function GET() {
       format: formatOf(attachment.contentType, attachment.fileName),
       sizeBytes: attachment.sizeBytes,
       packSlugs: attachment.packSlugs,
+      // Present only on the ones she sells on their own, so the shop can list
+      // them without a second request and without guessing.
+      slug: attachment.slug,
+      price: attachment.pricePence,
     })),
   })
 }

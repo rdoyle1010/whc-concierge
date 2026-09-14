@@ -5,6 +5,7 @@ import { departmentPacks, journeyPacks, formatPrice, type Prices } from '@/lib/d
 import { sellableCatalogue } from '@/lib/documents/catalogue'
 import StandardsList from '@/components/StandardsList'
 import PackContents, { type PackFile } from '@/components/PackContents'
+import StandardsTools from '@/components/StandardsTools'
 import BuyButton from '@/components/BuyButton'
 import Link from 'next/link'
 
@@ -76,6 +77,12 @@ export default function StandardsCatalogue() {
 
   return (
     <>
+    {/* The cheapest way into this shop, above the packs. A visitor who is not
+        spending eight hundred pounds today will spend two hundred and come
+        back, and a tool listed under a department pack is a tool nobody
+        finds. */}
+    <StandardsTools files={files} />
+
     {/* The guest journey first, and departments underneath.
         A department pack asks a buyer to know which team owns a procedure.
         A stage asks where in a visit the problem is, which is the question
