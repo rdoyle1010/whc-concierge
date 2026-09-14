@@ -190,6 +190,14 @@ export default function AdminDocumentsPage() {
               className="inline-flex items-center gap-1.5 border border-border px-3 py-1.5 text-[12px] font-medium text-secondary">
               <Printer size={13} /> Print or save as PDF
             </button>
+            {/* Printing the page gives a locked file full of square brackets.
+                This one has a form field for every bracket, so a property can
+                complete it in the free Adobe Reader. It is what gets sent to
+                a buyer; the print button is for checking the layout. */}
+            <a href={`/api/admin/documents/${reading.row.id}/pdf`}
+              className="inline-flex items-center gap-1.5 border border-[#1c1c1c] px-3 py-1.5 text-[12px] font-semibold text-ink">
+              <Download size={13} /> Fillable PDF
+            </a>
             {reading.row.status !== 'approved' ? (
               <button type="button" disabled={busy === reading.row.id}
                 onClick={async () => { if (await signOff(reading.row)) setReading(null) }}
@@ -472,6 +480,13 @@ export default function AdminDocumentsPage() {
                     className="inline-flex items-center gap-1.5 border border-[#1c1c1c] px-3 py-1.5 text-[12px] font-semibold text-ink disabled:opacity-30">
                     <Eye size={13} /> {opening === row.id ? 'Opening...' : 'Read it'}
                   </button>
+
+                  {row.written && (
+                    <a href={`/api/admin/documents/${row.id}/pdf`}
+                      className="inline-flex items-center gap-1.5 border border-border px-3 py-1.5 text-[12px] font-medium text-secondary">
+                      <Download size={13} /> Fillable PDF
+                    </a>
+                  )}
 
                   {row.status === 'approved' ? (
                     <button type="button" disabled={busy === row.id} onClick={() => act('unapprove', row.id)}

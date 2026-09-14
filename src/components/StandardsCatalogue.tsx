@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { departmentPacks, formatPrice } from '@/lib/documents/pricing'
 import { LIBRARY_PLAN } from '@/lib/documents/library-plan'
+import StandardsList from '@/components/StandardsList'
 
 // The shelf, and how much of it is actually stocked.
 //
@@ -90,6 +91,12 @@ export default function StandardsCatalogue() {
           </p>
         )}
       </div>
+
+      {/* The packs above price a department. This lists what is in it, by
+          name, which is the question a buyer actually arrives with. She
+          signed a document off and could not find it on her own shop,
+          because nothing here ever listed a document. */}
+      <StandardsList available={available} unavailable={unavailable} />
     </section>
   )
 }
