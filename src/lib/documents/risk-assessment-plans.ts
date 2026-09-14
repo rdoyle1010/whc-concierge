@@ -1,24 +1,30 @@
 import type { PlanDocument } from './plan-types'
-import { RISK_ASSESSMENTS, riskAssessmentSections, type RiskAssessmentTemplate } from './risk-assessments'
+import { RISK_REGISTER, type RegisterEntry } from './ra/register'
+import { UK_SPA_FRAMEWORK } from './pool-plans'
 
-// The twelve risk assessments as documents.
+// The register as documents.
 //
-// Held as one suite rather than sold singly, because an assessment of the
-// pool and none of the plant room is not half a job: it is a register with a
-// hole in it, and the hole is where the consequence is.
+// Organised by hazard type rather than by area, which is how an inspector
+// reads one and how the frameworks are written. By-area produced the
+// duplication that kills a register: manual handling appeared in five of the
+// twelve, and every copy drifted from every other.
+//
+// Sold as a suite and not singly. An assessment of the chemicals and none of
+// the fire is not half a job, it is a register with a hole in it, and a
+// property buying one category would buy the one it already worries about.
 
 const asDate = (value: Date) =>
   value.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
 
-export function riskAssessment(template: RiskAssessmentTemplate): PlanDocument {
+export function riskAssessment(entry: RegisterEntry): PlanDocument {
   const issued = new Date()
   const review = new Date(issued)
   review.setFullYear(review.getFullYear() + 1)
 
   return {
     kind: 'risk-assessment',
-    reference: template.reference,
-    title: template.title,
+    reference: entry.reference,
+    title: entry.title,
     version: '0.1',
     issued: asDate(issued),
     reviewBy: asDate(review),
@@ -33,29 +39,30 @@ export function riskAssessment(template: RiskAssessmentTemplate): PlanDocument {
       'Management of Health and Safety at Work Regulations',
       'Talent House Collective operational standards',
     ],
+    legalFramework: UK_SPA_FRAMEWORK,
     summary:
-      `${template.intro} It sets out the hazards a competent operation would expect to find, the controls that `
+      `${entry.intro} It sets out the hazards a competent operation would expect to find, the controls that `
       + 'should be in place against each, and the structure to record your own judgement of the risk.',
     scope:
       'Nothing in this document is scored. The likelihood, the severity and the number that follows are a '
       + 'judgement made by a person who has stood in the room, and a pre-scored assessment is a property filing '
-      + 'somebody else’s opinion of its own premises. The hazards listed are a starting point and are not '
+      + 'somebody else\u2019s opinion of its own premises. The hazards listed are a starting point and are not '
       + 'exhaustive: add anything specific to this building, this equipment and this team.',
-    sections: riskAssessmentSections(template),
+    sections: entry.sections,
     references: [],
     revisions: [{ date: asDate(issued), by: 'Talent House Collective', description: 'Issued as a template, version 0.1.' }],
   }
 }
 
-export const RISK_ASSESSMENT_PLANS = RISK_ASSESSMENTS.map(template => ({
-  reference: template.reference,
-  build: () => riskAssessment(template),
+export const RISK_ASSESSMENT_PLANS = RISK_REGISTER.map(entry => ({
+  reference: entry.reference,
+  build: () => riskAssessment(entry),
 }))
 
 /** Catalogue entries, so the suite can be listed and sold. */
-export const RISK_ASSESSMENT_ENTRIES = RISK_ASSESSMENTS.map(template => ({
-  reference: template.reference,
-  title: template.title,
+export const RISK_ASSESSMENT_ENTRIES = RISK_REGISTER.map(entry => ({
+  reference: entry.reference,
+  title: entry.title,
   department: 'HEALTH AND SAFETY',
   tier: 'day-1' as const,
   why: 'A written risk assessment is required before the area is used',

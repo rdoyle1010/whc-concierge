@@ -118,7 +118,7 @@ test('a pack knows its own department', () => {
   assert.equal(tierPacks().length, 4)
   const risk = packBySlug('risk-assessments')
   assert.ok(risk, 'the risk assessment suite should exist')
-  assert.equal(risk!.count, 12)
+  assert.equal(risk!.count, 13)
   assert.ok(!departmentPacks().some(pack => pack.slug === risk!.slug))
   const pool = packBySlug('pool-safety')
   assert.ok(pool, 'the pool safety pack should exist')

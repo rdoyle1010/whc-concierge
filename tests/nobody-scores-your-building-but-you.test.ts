@@ -1,7 +1,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
-import { RISK_ASSESSMENTS } from '../src/lib/documents/risk-assessments'
+import { RISK_REGISTER } from '../src/lib/documents/ra/register'
 import { riskAssessment, RISK_ASSESSMENT_ENTRIES } from '../src/lib/documents/risk-assessment-plans'
 import { missingFromPlan, hazardsInPlan, factsInPlan } from '../src/lib/documents/plan-types'
 import { isValidReference } from '../src/lib/documents/reference'
@@ -14,7 +14,7 @@ const body = (file: string) =>
     .replace(/\/\*[\s\S]*?\*\//g, '')
     .replace(/^\s*\/\/.*$/gm, '')
 
-const documents = RISK_ASSESSMENTS.map(riskAssessment)
+const documents = RISK_REGISTER.map(riskAssessment)
 
 test('nothing is scored, because a score is a judgement about one building', () => {
   // The rule this whole document type exists to hold. A pre-scored assessment
@@ -28,9 +28,11 @@ test('nothing is scored, because a score is a judgement about one building', () 
       `a Hazard must not be able to carry a ${forbidden}`)
   }
 
-  const source = body('src/lib/documents/risk-assessments.ts')
-  assert.doesNotMatch(source, /likelihood:\s*\d/)
-  assert.doesNotMatch(source, /severity:\s*\d/)
+  for (const file of ['coshh', 'physical', 'people-and-infection']) {
+    const source = body(`src/lib/documents/ra/${file}.ts`)
+    assert.doesNotMatch(source, /likelihood:\s*\d/, `${file} scores a hazard`)
+    assert.doesNotMatch(source, /severity:\s*\d/, `${file} scores a hazard`)
+  }
 })
 
 test('a control is something to tick, never something asserted', () => {
@@ -50,9 +52,14 @@ test('a control is something to tick, never something asserted', () => {
   }
 })
 
-test('every area of a spa is covered, and each one is complete', () => {
-  assert.equal(RISK_ASSESSMENTS.length, 12)
-  assert.equal(documents.reduce((total, doc) => total + hazardsInPlan(doc).length, 0), 45)
+test('every hazard category is covered, and each document is complete', () => {
+  // Organised by hazard type rather than by area, which is how an inspector
+  // reads one and how the frameworks are written. By-area produced the
+  // duplication that kills a register: manual handling appeared in five of
+  // the twelve, and every copy drifted from every other.
+  assert.equal(RISK_REGISTER.length, 13)
+  const hazards = documents.reduce((total, doc) => total + hazardsInPlan(doc).length, 0)
+  assert.ok(hazards >= 60, `only ${hazards} hazards across the register`)
 
   for (const document of documents) {
     assert.deepEqual(missingFromPlan(document), [], `${document.reference} is incomplete`)
@@ -60,12 +67,21 @@ test('every area of a spa is covered, and each one is complete', () => {
     assert.ok(factsInPlan(document) > 20, `${document.reference} asks almost nothing`)
   }
 
-  // The areas that hurt people. A suite missing any of these is a register
+  // The categories a register is judged against. One missing is a register
   // with a hole in it, and the hole is where the consequence is.
-  const titles = RISK_ASSESSMENTS.map(entry => entry.title.toLowerCase()).join(' | ')
-  for (const area of ['pool', 'cold plunge', 'hydrotherapy', 'sauna', 'treatment room', 'changing',
-    'plant room', 'gym', 'fire', 'outdoor', 'cleaning']) {
-    assert.ok(titles.includes(area), `no assessment covers ${area}`)
+  const titles = RISK_REGISTER.map(entry => entry.title.toLowerCase()).join(' | ')
+  for (const category of ['substances hazardous to health', 'electrical', 'fire', 'infection control',
+    'manual handling', 'slips', 'noise', 'lone working', 'vulnerable persons', 'swimming pool',
+    'cold plunge', 'hydrotherapy', 'saunas']) {
+    assert.ok(titles.includes(category), `no document covers ${category}`)
+  }
+
+  // And every hazard named in the register reaches a document.
+  const everyHazard = documents.flatMap(doc => hazardsInPlan(doc)).map(h => h.hazard.toLowerCase()).join(' | ')
+  for (const hazard of ['legionella', 'cryptosporidium', 'chlorine gas', 'dermatitis', 'needlestick',
+    'expectant mothers', 'display screen', 'repetitive strain', 'discharge to drain', 'first aid provision',
+    'lone working', 'violence and aggression', 'working at height']) {
+    assert.ok(everyHazard.includes(hazard), `no hazard covers ${hazard}`)
   }
 })
 
@@ -73,11 +89,15 @@ test('the hazards are led by the hazard, not by one hotel', () => {
   // Her register named three ice plunge pools and a specific terrace. That is
   // that property's document: another spa reading it either deletes half of
   // it or, worse, keeps it.
-  const source = body('src/lib/documents/risk-assessments.ts')
-  assert.doesNotMatch(source, /\b(Fairmont|Rosewood|Champneys|Ritz[- ]Carlton|Four Seasons)\b/i)
-  assert.doesNotMatch(source, /\bIce Plunge Pool [123]\b/)
-  assert.doesNotMatch(source, /\bHydrotherapy Pool [12]\b/)
-  assert.doesNotMatch(source, /\bMain Pool\b/)
+  for (const file of ['coshh', 'physical', 'people-and-infection', 'register']) {
+    const source = body(`src/lib/documents/ra/${file}.ts`)
+    assert.doesNotMatch(source, /\b(Fairmont|Rosewood|Champneys|Ritz[- ]Carlton|Four Seasons)\b/i)
+    assert.doesNotMatch(source, /\bIce Plunge Pool [123]\b/)
+    assert.doesNotMatch(source, /\bMain Pool\b/)
+    // A product range names the spas that use that supplier, not the hazard.
+    assert.doesNotMatch(source, /\b(Diversey|Ecolab|ESPA|Elemis|Aromatherapy Associates)\b/i,
+      `${file} names a supplier, which makes it a template for that supplier's customers`)
+  }
 
   for (const document of documents) {
     const text = JSON.stringify(document)
@@ -89,24 +109,60 @@ test('the hazards are led by the hazard, not by one hotel', () => {
 test('the method is stated, and it says walk the area', () => {
   const first = documents[0]
   const method = first.sections[0]
-  assert.match(method.heading, /How to complete/)
+  assert.match(method.part || '', /How to use this assessment/)
+  assert.match(method.heading, /Before you start/)
   assert.ok(method.mustBeChecked)
   const text = [method.intro || '', ...(method.bullets || [])].join(' ')
   assert.match(text, /Do not complete it at a desk|walk the area/i)
-  assert.match(text, /1 to 6 is low/)
   assert.match(text, /not exhaustive/)
+
+  // The bands live with the matrix, on the scoring page, where somebody
+  // reading a number can see what it means without turning back.
+  const scoring = first.sections[1]
+  assert.match(scoring.heading, /Scoring/)
+  assert.ok(scoring.riskMatrix)
+  const scoringText = [scoring.intro || '', ...(scoring.bullets || [])].join(' ')
+  assert.match(scoringText, /realistic worst outcome/)
+  assert.match(scoringText, /keep the number down/,
+    'the way a register ends up all green has to be named')
 
   // And a sign-off that asks who assessed it and what makes them competent.
   const review = first.sections[first.sections.length - 1]
-  assert.match(review.heading, /Review and sign-off/)
+  assert.match(review.heading, /Who did this/)
   assert.match(JSON.stringify(review.facts), /competence/)
+
+  // And an action plan, which is the only page that shows whether anything
+  // happened as a result of the assessment.
+  const plan = first.sections[first.sections.length - 2]
+  assert.match(plan.heading, /Action plan/)
+  assert.ok(plan.table?.fillable)
+})
+
+test('the register is colour coded, and the colour is functional', () => {
+  // A register printed in black and white is one somebody has to do
+  // arithmetic on before they can see where the problem is.
+  const pdf = body('src/lib/documents/plan-pdf.tsx')
+  assert.match(pdf, /function RiskMatrix/)
+  assert.match(pdf, /section\.riskMatrix/)
+  assert.match(pdf, /const RISK = \{/)
+
+  // Each band carries its word and its number range as well as its colour, so
+  // it still works for somebody who cannot tell red from green.
+  assert.match(pdf, /Score \{range\}/)
+  assert.match(pdf, /bandName/)
+
+  // The scoring section asks for the matrix, on every document in the suite.
+  for (const document of documents) {
+    assert.ok(document.sections.some(section => section.riskMatrix),
+      `${document.reference} has no risk matrix`)
+  }
 })
 
 test('the suite is sold whole, and priced against what it replaces', () => {
   const pack = packBySlug('risk-assessments')
   assert.ok(pack)
   assert.equal(pack!.price, RISK_ASSESSMENT_PACK_PRICE)
-  assert.equal(pack!.count, 12)
+  assert.equal(pack!.count, RISK_REGISTER.length)
 
   for (const entry of RISK_ASSESSMENT_ENTRIES) {
     assert.ok(pack!.includes(entry.reference))
@@ -115,7 +171,7 @@ test('the suite is sold whole, and priced against what it replaces', () => {
 
   // A property buying one area would buy the area it already worries about,
   // which is never the one that hurts somebody.
-  assert.ok(RISK_ASSESSMENT_PACK_PRICE > 12 * SINGLE_DOCUMENT_PRICE)
+  assert.ok(RISK_ASSESSMENT_PACK_PRICE > RISK_REGISTER.length * SINGLE_DOCUMENT_PRICE)
   // Still inside the two thousand a spa director can approve without a board.
   assert.ok(RISK_ASSESSMENT_PACK_PRICE < 200000)
 })
