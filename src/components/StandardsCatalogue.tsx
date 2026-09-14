@@ -115,7 +115,8 @@ export default function StandardsCatalogue() {
                     all ? ' · all ready' : ready > 0 ? ` · ${ready} ready now` : ' · in preparation'
                   )}
                 </p>
-                <PackContents name={stage.name} references={referencesIn(stage)}
+                <PackContents name={stage.name} price={formatPrice(stage.price)} detail={stage.detail}
+                  references={referencesIn(stage)}
                   files={filesFor(stage.slug)} readySet={readySet} showReady={!all} />
                 <div className="mt-4">
                   {available !== null && !unavailable && (
@@ -158,7 +159,8 @@ export default function StandardsCatalogue() {
                     all ? ' · all ready' : ready > 0 ? ` · ${ready} ready now` : ' · in preparation'
                   )}
                 </p>
-                <PackContents name={stage.name} references={referencesIn(stage)}
+                <PackContents name={stage.name} price={formatPrice(stage.price)} detail={stage.detail}
+                  references={referencesIn(stage)}
                   files={filesFor(stage.slug)} readySet={readySet} showReady={!all} />
                 <div className="mt-4">
                   {available !== null && !unavailable && (
@@ -220,7 +222,8 @@ export default function StandardsCatalogue() {
                           : ' · in preparation'
                     )}
                   </p>
-                  <PackContents name={pack.name} references={referencesIn(pack)}
+                  <PackContents name={pack.name} price={formatPrice(pack.price)}
+                    references={referencesIn(pack)}
                     files={filesFor(pack.slug)} readySet={readySet} showReady={ready < pack.count} />
                 </div>
                 <div className="flex items-center gap-5">
@@ -277,7 +280,8 @@ export default function StandardsCatalogue() {
                       {bundle.references.length} documents
                       {available !== null && !unavailable && (all ? ' · all ready' : ` · ${ready} ready now, the rest in preparation`)}
                     </p>
-                    <PackContents name={bundle.name} references={bundle.references}
+                    <PackContents name={bundle.name} price={formatPrice(bundle.price)}
+                      detail={bundle.blurb || undefined} references={bundle.references}
                       files={filesFor(bundle.slug)} readySet={readySet} showReady={!all} />
                   </div>
                   <div className="flex shrink-0 items-center gap-5">

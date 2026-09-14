@@ -79,14 +79,17 @@ test('a pack never costs more than buying its documents one at a time', () => {
 })
 
 test('nothing unfinished can be paid for', () => {
-  const refused = priceSingle('REC-OPEN-CHK-001', new Set(), SINGLE_DOCUMENT_PRICE)
+  // REC-OPENING-CHK-501, not REC-OPEN-CHK-001: the second was planned before
+  // the checklist suite existed, the suite then wrote the same shift properly,
+  // and two references for one sheet is worse than either alone.
+  const refused = priceSingle('REC-OPENING-CHK-501', new Set(), SINGLE_DOCUMENT_PRICE)
   assert.equal(refused.ok, false)
   assert.match((refused as any).reason, /still in preparation/)
 
   const unknown = priceSingle('NOT-A-REAL-REF-SOP-999', everything, SINGLE_DOCUMENT_PRICE)
   assert.equal(unknown.ok, false)
 
-  const sold = priceSingle('REC-OPEN-CHK-001', everything, SINGLE_DOCUMENT_PRICE)
+  const sold = priceSingle('REC-OPENING-CHK-501', everything, SINGLE_DOCUMENT_PRICE)
   assert.equal(sold.ok, true)
   assert.equal((sold as any).amountPence, SINGLE_DOCUMENT_PRICE)
 
