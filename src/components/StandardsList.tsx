@@ -3,6 +3,7 @@
 import { useMemo, useState } from 'react'
 import { Search } from 'lucide-react'
 import { sellableCatalogue } from '@/lib/documents/catalogue'
+import { JOURNEY_STAGES, stageOf, kindOf, KIND_LABEL, type JourneyStage } from '@/lib/documents/journey'
 import { formatPrice, singlePrice, type Prices } from '@/lib/documents/pricing'
 import BuyButton from '@/components/BuyButton'
 
@@ -30,6 +31,11 @@ export default function StandardsList({ available, unavailable, prices = {} }: P
   const single = singlePrice(prices)
   const [query, setQuery] = useState('')
   const [department, setDepartment] = useState('all')
+  // Where in a visit it is used, and what kind of thing it is. A buyer
+  // arrives asking "what covers our arrivals", not "what was a day one
+  // document".
+  const [stage, setStage] = useState<JourneyStage | 'all'>('all')
+  const [kind, setKind] = useState('all')
   const [readyOnly, setReadyOnly] = useState(false)
 
   const ready = useMemo(
@@ -46,13 +52,15 @@ export default function StandardsList({ available, unavailable, prices = {} }: P
     const needle = query.trim().toLowerCase()
     return sellableCatalogue().filter(item => {
       if (department !== 'all' && item.department !== department) return false
+      if (stage !== 'all' && stageOf(item) !== stage) return false
+      if (kind !== 'all' && kindOf(item.reference) !== kind) return false
       if (readyOnly && !ready.has(item.reference)) return false
       if (!needle) return true
       return item.title.toLowerCase().includes(needle)
         || item.reference.toLowerCase().includes(needle)
         || item.department.toLowerCase().includes(needle)
     })
-  }, [query, department, readyOnly, ready])
+  }, [query, department, stage, kind, readyOnly, ready])
 
   const readyShown = rows.filter(item => ready.has(item.reference)).length
 
@@ -69,7 +77,47 @@ export default function StandardsList({ available, unavailable, prices = {} }: P
           </div>
         </div>
 
-        <div className="mt-7 flex flex-wrap items-center gap-3">
+        {/* The guest journey, first. Six buttons answer the question a spa
+            manager actually arrives with, and the department filter below
+            answers the one an operations director arrives with. */}
+        <div className="mt-7 flex flex-wrap items-center gap-2">
+          <button type="button" onClick={() => setStage('all')}
+            className={stage === 'all'
+              ? 'border border-[#1c1c1c] bg-[#1c1c1c] px-3 py-1.5 text-[12px] font-medium text-white'
+              : 'border border-[#dddddd] px-3 py-1.5 text-[12px] text-[#555555]'}>
+            The whole library
+          </button>
+          {JOURNEY_STAGES.map(option => (
+            <button key={option.slug} type="button" onClick={() => setStage(option.slug)} title={option.blurb}
+              className={stage === option.slug
+                ? 'border border-[#1c1c1c] bg-[#1c1c1c] px-3 py-1.5 text-[12px] font-medium text-white'
+                : 'border border-[#dddddd] px-3 py-1.5 text-[12px] text-[#555555]'}>
+              {option.label}
+              <span className="ml-1.5 opacity-60">
+                {sellableCatalogue().filter(item => stageOf(item) === option.slug).length}
+              </span>
+            </button>
+          ))}
+        </div>
+
+        {stage !== 'all' && (
+          <p className="mt-3 max-w-2xl text-[13px] leading-relaxed text-[#555555]">
+            {JOURNEY_STAGES.find(option => option.slug === stage)?.blurb}
+          </p>
+        )}
+
+        <div className="mt-5 flex flex-wrap items-center gap-3">
+          <select
+            value={kind}
+            onChange={event => setKind(event.target.value)}
+            aria-label="Filter by kind of document"
+            className="border border-[#dddddd] px-3 py-2.5 text-[14px] text-[#555555]"
+          >
+            <option value="all">Every kind</option>
+            {Array.from(new Set(sellableCatalogue().map(item => kindOf(item.reference)))).sort().map(code => (
+              <option key={code} value={code}>{KIND_LABEL[code] || code}</option>
+            ))}
+          </select>
           <div className="relative min-w-[220px] flex-1">
             <Search size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#8a8a8a]" />
             <input

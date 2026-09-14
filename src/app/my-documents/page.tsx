@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import DashboardShell from '@/components/DashboardShell'
 import { createClient } from '@/lib/supabase/client'
-import { Download, ShoppingBag } from 'lucide-react'
+import { Download, ShoppingBag, FileSpreadsheet } from 'lucide-react'
 import { formatPrice } from '@/lib/documents/pricing'
 
 // Where a purchase lives afterwards.
@@ -20,12 +20,17 @@ import { formatPrice } from '@/lib/documents/pricing'
 
 type Entry = { reference: string; title: string; department: string; ready: boolean }
 type Order = { id: string; packSlug: string | null; reference: string | null; amountPence: number; boughtOn: string }
+type FileEntry = { id: string; name: string; description: string | null; fileName: string; sizeBytes: number }
+
+const readable = (bytes: number) =>
+  bytes >= 1024 * 1024 ? `${(bytes / (1024 * 1024)).toFixed(1)} MB` : `${Math.round(bytes / 1024)} KB`
 
 export default function MyDocumentsPage() {
   const supabase = createClient()
   const [role, setRole] = useState<'talent' | 'employer' | 'admin'>('talent')
   const [documents, setDocuments] = useState<Entry[] | null>(null)
   const [orders, setOrders] = useState<Order[]>([])
+  const [files, setFiles] = useState<FileEntry[]>([])
   const [error, setError] = useState('')
 
   useEffect(() => {
@@ -50,6 +55,7 @@ export default function MyDocumentsPage() {
       }
       setDocuments(body.documents || [])
       setOrders(body.orders || [])
+      setFiles(body.files || [])
     }
     load().catch(() => { setError('We could not reach your documents just now.'); setDocuments([]) })
   }, [])
@@ -68,7 +74,7 @@ export default function MyDocumentsPage() {
 
         {documents === null ? (
           <p className="mt-6 text-[13px] text-secondary">Loading...</p>
-        ) : documents.length === 0 ? (
+        ) : documents.length === 0 && files.length === 0 ? (
           <div className="mt-6">
             <p className="max-w-2xl text-[14px] leading-relaxed text-secondary">
               You have not bought any documents yet. The library holds standard operating procedures, risk
@@ -117,6 +123,39 @@ export default function MyDocumentsPage() {
                 </div>
               ))}
             </div>
+
+            {/* Working files that came with a pack. Given the same weight as
+                the documents, because a buyer who cannot see the register
+                they paid for assumes it was never sent. */}
+            {files.length > 0 && (
+              <div className="mt-10">
+                <h2 className="text-[13px] font-semibold uppercase tracking-[.14em] text-muted">Also included</h2>
+                <p className="mt-2 max-w-2xl text-[13px] leading-relaxed text-secondary">
+                  Working files that came with what you bought. They open in Excel, Word or a reader, and they
+                  are yours to edit.
+                </p>
+                <div className="mt-3 border-t border-border">
+                  {files.map(file => (
+                    <div key={file.id}
+                      className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2 border-b border-border py-3.5">
+                      <div className="min-w-0 flex-1">
+                        <p className="flex items-center gap-2 text-[14px] font-medium text-ink">
+                          <FileSpreadsheet size={14} className="shrink-0 text-muted" /> {file.name}
+                        </p>
+                        {file.description && (
+                          <p className="mt-0.5 max-w-xl text-[13px] leading-relaxed text-secondary">{file.description}</p>
+                        )}
+                        <p className="mt-0.5 text-[11px] text-muted">{file.fileName} · {readable(file.sizeBytes)}</p>
+                      </div>
+                      <a href={`/api/standards/file?id=${encodeURIComponent(file.id)}`}
+                        className="inline-flex shrink-0 items-center gap-1.5 border border-[#1c1c1c] px-3 py-1.5 text-[12px] font-semibold text-ink">
+                        <Download size={13} /> Download
+                      </a>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {orders.length > 0 && (
               <div className="mt-10">

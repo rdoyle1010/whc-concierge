@@ -108,7 +108,11 @@ test('the shop says what these are and are not', () => {
 // backwards from a document it happens to contain.
 test('a pack knows its own department', () => {
   for (const pack of departmentPacks()) assert.ok(pack.department, `${pack.name} cannot say which department it is`)
-  assert.match(catalogue, /readyIn\(pack\.department \|\| ''\)/)
+  // Counted by what the pack contains rather than by a department label, so
+  // a pool plan carrying a department name cannot count towards a pack that
+  // does not include it, and the total can never exceed the catalogue.
+  assert.match(catalogue, /readyIn\(pack\)/)
+  assert.match(catalogue, /pack\.includes\(reference\)/)
   assert.equal(packBySlug('before-the-first-guest')?.count, LIBRARY_PLAN.filter(e => e.tier === 'day-1').length)
   // Four: the pre-opening suite, the complete library, the pool safety
   // procedure and the risk assessment suite. The last two are priced on their

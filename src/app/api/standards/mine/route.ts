@@ -4,6 +4,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { ownedReferences } from '@/lib/documents/stock'
 import { bundleReferenceMap } from '@/lib/documents/pricing-server'
 import { sellableCatalogue } from '@/lib/documents/catalogue'
+import { filesForOrders } from '@/lib/documents/entitlement'
 import { getStripe } from '@/lib/stripe'
 import { fulfilCheckoutSession } from '@/lib/stripe-checkout-fulfilment'
 
@@ -78,6 +79,16 @@ export async function GET(req: NextRequest) {
         department: entry.department,
         ready: ready.has(entry.reference),
       })),
+    // The files that travel with a pack: a register in Excel is still the
+    // thing they paid for, and a shelf that shows only the PDFs looks like a
+    // short delivery.
+    files: (await filesForOrders(orders || [], admin)).map(file => ({
+      id: file.id,
+      name: file.name,
+      description: file.description,
+      fileName: file.fileName,
+      sizeBytes: file.sizeBytes,
+    })),
     orders: (orders || []).map(order => ({
       id: order.id,
       packSlug: order.pack_slug,
