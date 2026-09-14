@@ -805,9 +805,15 @@ export async function POST(req: NextRequest) {
   //
   // Nothing here re-approves anything. An approval is hers.
   if (action === 'repair_signed_unfinished') {
+    // The whole row, not the columns this needs.
+    //
+    // It selected seven columns and upserted what it had built from them, and
+    // Postgres runs an upsert as an insert that falls back to an update, so
+    // the insert had to satisfy every not-null constraint on the table and
+    // failed on reference before it reached the conflict. Nothing was
+    // written, which is the one good thing about a constraint.
     const { data: approved, error: readError } = await admin.from('operational_documents')
-      .select('id, reference, kind, title, department, version, document, status')
-      .is('employer_id', null).eq('status', 'approved').limit(2000)
+      .select('*').is('employer_id', null).eq('status', 'approved').limit(2000)
     if (readError) return NextResponse.json({ error: readError.message }, { status: 500 })
 
     const broken = (approved || []).filter((row: any) =>
@@ -832,9 +838,11 @@ export async function POST(req: NextRequest) {
 
     for (const row of broken) {
       // The sign-off goes back in every case. It is the one fact that is
-      // certainly wrong, whether or not the content can be fixed here.
+      // certainly wrong, whether or not the content can be fixed here. Spread
+      // over the row it came from, so the write carries every column the
+      // table requires rather than the handful this cares about.
       const cleared = {
-        id: row.id,
+        ...row,
         status: 'draft' as const,
         approved_by: null,
         approved_by_name: null,

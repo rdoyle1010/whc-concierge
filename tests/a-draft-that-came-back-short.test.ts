@@ -219,6 +219,17 @@ test('and it can be repaired in one press, without being signed off again', () =
   // half-finished repair is worse than none.
   assert.match(repair, /at \+= 20/)
 
+  // The whole row goes back, not the columns this action cares about.
+  //
+  // It read seven columns and upserted what it built from them. Postgres runs
+  // an upsert as an insert that falls back to an update, so the insert has to
+  // satisfy every not-null constraint on the table first, and it failed on
+  // reference before it ever reached the conflict. Nothing was written, which
+  // is the one good thing about a constraint, but the repair did nothing and
+  // said so in a wall of Postgres.
+  assert.match(repair, /\.select\('\*'\)/, 'a partial row cannot be upserted')
+  assert.match(repair, /const cleared = \{\s*\.\.\.row,/, 'the write carries the row it came from')
+
   const page = body('src/app/admin/documents/page.tsx')
   assert.ok(page.includes("act('repair_signed_unfinished')"))
   assert.ok(page.includes('Nothing is signed off again by this'), 'the confirmation says what it will not do')
@@ -239,4 +250,28 @@ test('neither way of signing off will accept an unfinished document', () => {
 
   const bulk = route.slice(route.indexOf("if (action === 'approve_ready')"))
   assert.match(bulk, /if \(missingFor\(draft\.kind, draft\.document\)\.length\) \{ incomplete \+= 1; continue \}/)
+})
+
+test('every bulk write to the library carries a whole row', () => {
+  // The repair built {id, status, approved_by: null, ...} and upserted it,
+  // which Postgres runs as an insert first. One not-null column away from
+  // working, and the failure arrives as a constraint name in a red box.
+  //
+  // So: anything pushed into a list that is later upserted either spreads the
+  // row it came from or states every required column itself.
+  const route = readFileSync('src/app/api/admin/documents/route.ts', 'utf8')
+  // A window after each push rather than a balanced match, because the shapes
+  // differ and a regex that only matches one of them is a check that passes
+  // by matching nothing.
+  const pushes: string[] = []
+  for (let at = route.indexOf('writes.push({'); at >= 0; at = route.indexOf('writes.push({', at + 1)) {
+    pushes.push(route.slice(at, at + 260))
+  }
+  assert.ok(pushes.length >= 3, `only found ${pushes.length} bulk writes, the check has stopped matching`)
+  for (const shape of pushes) {
+    const spreads = /\.\.\.(target|row|cleared|existing)/.test(shape)
+    const states = /reference:/.test(shape)
+    assert.ok(spreads || states,
+      `a bulk write carries neither a spread row nor a reference:\n${shape.trim().slice(0, 200)}`)
+  }
 })

@@ -5,6 +5,7 @@ import { ownedReferences } from '@/lib/documents/stock'
 import { bundleReferenceMap } from '@/lib/documents/pricing-server'
 import { sellableCatalogue } from '@/lib/documents/catalogue'
 import { filesForOrders } from '@/lib/documents/entitlement'
+import { replacementWorkbook } from '@/lib/documents/attachments'
 import { FINANCE_REGISTER } from '@/lib/documents/finance/register'
 import { getStripe } from '@/lib/stripe'
 import { fulfilCheckoutSession } from '@/lib/stripe-checkout-fulfilment'
@@ -71,6 +72,8 @@ export async function GET(req: NextRequest) {
     .is('employer_id', null).eq('status', 'approved').limit(2000)
   const ready = new Set((approved || []).map((row: any) => row.reference))
 
+  const theirFiles = await filesForOrders(orders || [], admin)
+
   return NextResponse.json({
     documents: sellableCatalogue()
       .filter(entry => owned.has(entry.reference))
@@ -83,11 +86,13 @@ export async function GET(req: NextRequest) {
     // The reporting workbook, where the pack is actually worked out. Offered
     // as a fact rather than a link the page has to guess at: a download that
     // 403s is a worse experience than one that is simply not shown.
-    workbook: owned.has(FINANCE_REGISTER[0].reference),
+    // Unless one of their own files replaces it. Two workbooks in one pack is
+    // worse than either alone: the buyer has to decide which is authoritative.
+    workbook: owned.has(FINANCE_REGISTER[0].reference) && !replacementWorkbook(theirFiles),
     // The files that travel with a pack: a register in Excel is still the
     // thing they paid for, and a shelf that shows only the PDFs looks like a
     // short delivery.
-    files: (await filesForOrders(orders || [], admin)).map(file => ({
+    files: theirFiles.map(file => ({
       id: file.id,
       name: file.name,
       description: file.description,
