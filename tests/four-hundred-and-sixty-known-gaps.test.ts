@@ -137,7 +137,7 @@ test('the library is worked a stage at a time', () => {
   // refused.
   assert.match(page, /Written, not finished/)
   assert.match(page, /only === 'incomplete'/)
-  assert.match(page, /r\.written && r\.missing\.length > 0/)
+  assert.match(page, /row\.written && row\.missing\.length > 0/)
   assert.match(page, /Not written yet/)
   assert.match(page, /Still to write/)
   assert.match(page, /disabled=\{!row\.written \|\| opening === row\.id\}/, 'an empty draft has nothing to read')

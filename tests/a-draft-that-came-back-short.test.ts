@@ -152,6 +152,37 @@ test('the unfinished ones can be found and sent again in one press', () => {
   const page = body('src/app/admin/documents/page.tsx')
   assert.ok(page.includes("act('draft_incomplete')"))
   // It says how many, because a button that spends money should say what for.
-  assert.ok(page.includes('unfinished ones again'))
+  assert.ok(page.includes('unfinished'))
   assert.ok(page.includes('window.confirm'))
+})
+
+test('the button counts what it will actually send, not what is unfinished', () => {
+  const page = body('src/app/admin/documents/page.tsx')
+
+  // It offered to write thirteen again and sent six, because it counted every
+  // unfinished document and the action only takes the ones it can honestly
+  // redraft: unapproved procedures. A button that reports its intention
+  // rather than its outcome is the thing this screen keeps getting wrong.
+  assert.ok(page.includes("row.kind === 'sop' && row.status !== 'approved'"),
+    'the count is the same filter the route applies')
+  assert.ok(page.includes('redraftable.length > 0'), 'and it is hidden when there are none')
+  assert.ok(!/rows\.filter\(r => r\.written && r\.missing\.length > 0\)\.length\} unfinished/.test(page),
+    'the old count is gone')
+})
+
+test('a document signed off and still unfinished is called out, not counted', () => {
+  const page = body('src/app/admin/documents/page.tsx')
+
+  // An approval says somebody read a finished document, so this state should
+  // not exist. It is the only thing on that screen that is actually wrong
+  // rather than merely unfinished, and folding it into a number hides it.
+  assert.ok(page.includes('signedUnfinished'))
+  assert.ok(page.includes('signed off and still missing something'))
+  assert.ok(page.includes("setOnly('signed-unfinished')"), 'and she can see which ones')
+  assert.ok(page.includes("only === 'signed-unfinished'"))
+
+  // The ones no redraft can fix are named separately, or the two counts read
+  // as the same problem reported twice.
+  assert.ok(page.includes('unfinishedPlans'))
+  assert.ok(page.includes('would not help'))
 })
