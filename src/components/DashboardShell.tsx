@@ -58,6 +58,7 @@ const navItems: Record<string, NavItem[]> = {
     { label: 'Academy', href: '/talent/academy', icon: <GraduationCap size={17} />, section: 'Grow' },
     { label: 'Career Intelligence', href: '/talent/career', icon: <TrendingUp size={17} /> },
     { label: 'My Toolkit', href: '/talent/toolkit', icon: <ClipboardList size={17} /> },
+    { label: 'My Documents', href: '/my-documents', icon: <FileText size={17} /> },
     { label: 'Interview Ready', href: '/talent/interview-ready', icon: <Brain size={17} />, accessKey: 'talent_interview_ready' },
     { label: 'Get Verified', href: '/talent/verification', icon: <Star size={17} /> },
     { label: 'Reviews', href: '/talent/reviews', icon: <Star size={17} /> },
@@ -88,6 +89,7 @@ const navItems: Record<string, NavItem[]> = {
     { label: 'Consultancy', href: '/consultancy', icon: <Lightbulb size={17} /> },
     { label: 'Company Profile', href: '/employer/profile', icon: <Building2 size={17} />, section: 'Your property' },
     { label: 'Property Fact File', href: '/employer/property-fact-file', icon: <FileText size={17} /> },
+    { label: 'My Documents', href: '/my-documents', icon: <FileText size={17} /> },
     { label: 'Awards & Recognition', href: '/employer/awards', icon: <Award size={17} /> },
     { label: 'Analytics', href: '/employer/analytics', icon: <BarChart3 size={17} />, section: 'Visibility', accessKey: 'employer_analytics' },
     { label: 'Social & Advertising', href: '/employer/social', icon: <Megaphone size={17} /> },
@@ -105,6 +107,7 @@ const navItems: Record<string, NavItem[]> = {
   // want a role - the link sits on their Consultancy page.
   consultant: [
     { label: 'My Practice', href: '/talent/consultancy', icon: <Lightbulb size={17} />, section: 'Consultancy' },
+    { label: 'My Documents', href: '/my-documents', icon: <FileText size={17} /> },
     { label: 'Messages', href: '/talent/messages', icon: <MessageSquare size={17} /> },
     { label: 'Academy', href: '/talent/academy', icon: <GraduationCap size={17} />, section: 'Grow' },
     { label: 'Billing', href: '/talent/billing', icon: <CreditCard size={17} />, section: 'Account' },
