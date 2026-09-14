@@ -108,7 +108,7 @@ test('nothing is sold to somebody who cannot get it back', () => {
   const button = body('src/components/BuyButton.tsx')
   assert.match(button, /Sign in to buy/)
   assert.match(button, /res\.status === 401 \|\| body\?\.needsAccount/)
-  assert.match(button, /\/login\?redirect=/)
+  assert.match(button, /\/register\/buyer\?redirect=/)
 
   // Said on the page before anybody presses anything.
   assert.match(body('src/app/standards/page.tsx'), /You will need an account/)
@@ -196,4 +196,33 @@ test('the receipt link is not a dead end', () => {
   assert.match(page, /href="\/standards"/)
   // And it says plainly that the link is the only key without an account.
   assert.match(page, /only way back without an account/)
+})
+
+test('the account a buyer is sent to make is four fields, not a property profile', () => {
+  const page = body('src/app/register/buyer/page.tsx')
+
+  // Exactly what it asks for. Somebody who came for a thirty-nine pound
+  // procedure will not first declare their treatment rooms, their product
+  // houses and their team size, and the ones who abandon that form do not
+  // come back to finish it.
+  for (const field of ['property', 'name', 'email', 'password']) {
+    assert.match(page, new RegExp(`key: '${field}'`), `the short form should ask for ${field}`)
+  }
+  for (const asked of ['num_treatment_rooms', 'team_size', 'product_houses_used', 'systems_used', 'postcode']) {
+    assert.doesNotMatch(page, new RegExp(asked), `the short form must not ask for ${asked}`)
+  }
+
+  // The same account as any other property, made with the least it can be.
+  assert.match(page, /role: 'employer'/)
+  assert.match(page, /api\/register\/employer/)
+  assert.match(page, /agreed_terms: true/)
+
+  // And it returns to what they were buying. An account created to finish a
+  // purchase that then drops somebody on a dashboard has not finished it.
+  assert.match(page, /router\.push\(init\.requiresEmailConfirmation \? '\/login\?registered=1&confirm=1' : back\)/)
+  assert.match(page, /requested\.startsWith\('\/'\) && !requested\.startsWith\('\/\/'\)/,
+    'an open redirect would send a buyer anywhere')
+
+  // The buy button sends them here rather than to the full registration.
+  assert.match(body('src/components/BuyButton.tsx'), /\/register\/buyer\?redirect=/)
 })

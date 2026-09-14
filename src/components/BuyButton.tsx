@@ -41,8 +41,12 @@ export default function BuyButton({ packSlug, reference, label, primary = true }
       // Not signed in. Send them to do it and bring them straight back here,
       // rather than showing a message that leaves them to find the way.
       if (res.status === 401 || body?.needsAccount) {
+        // The short registration, not the full property one. Somebody who
+        // came for a thirty-nine pound procedure will not first declare their
+        // treatment rooms, their product houses and their team size, and the
+        // ones who abandon that form do not come back to finish it.
         const back = encodeURIComponent(`${window.location.pathname}${window.location.hash || ''}`)
-        window.location.href = `/login?redirect=${back}`
+        window.location.href = `/register/buyer?redirect=${back}`
         return
       }
 
