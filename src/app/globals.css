@@ -348,7 +348,35 @@ html { scroll-behavior:smooth; }
     background: #ffffff;
   }
 
-  /* Nothing that belongs to the workspace rather than the document. */
+  /* Nothing that belongs to the workspace rather than the document.
+   *
+   * Allowlisted, not blocklisted. The first version of this named a handful
+   * of workspace selectors and the dashboard header was not among them, so a
+   * document going to a hotel printed with a burger menu, a logo and a
+   * notification bell across the top of page one. Listing what may print
+   * cannot be defeated by a chrome element nobody thought of.
+   *
+   * visibility rather than display, so the document keeps its place on the
+   * page instead of everything collapsing around it. */
+  body:has(.document-print-root) * {
+    visibility: hidden;
+  }
+
+  body:has(.document-print-root) .document-print-root,
+  body:has(.document-print-root) .document-print-root * {
+    visibility: visible;
+  }
+
+  body:has(.document-print-root) .document-print-root {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    margin: 0;
+    border: 0;
+  }
+
+  /* Screens with no document on them keep the older rule. */
   nav, aside, header.dashboard-header, .dashboard-nav, .print\:hidden {
     display: none !important;
   }

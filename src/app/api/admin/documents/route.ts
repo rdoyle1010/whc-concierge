@@ -79,6 +79,11 @@ export async function POST(req: NextRequest) {
       .select('id').eq('reference', EXAMPLE_SOP.reference).maybeSingle()
     if (exists?.id) return NextResponse.json({ error: 'That one is already in the library.' }, { status: 400 })
 
+    // Its tier comes from the plan, because it is in the plan. Added without
+    // one it is invisible under every tier filter, which is how a library
+    // reporting one written document could show none of them.
+    const planned = LIBRARY_PLAN.find(entry => entry.reference === EXAMPLE_SOP.reference)
+
     const { error } = await admin.from('operational_documents').insert({
       reference: EXAMPLE_SOP.reference,
       kind: EXAMPLE_SOP.kind,
@@ -87,6 +92,8 @@ export async function POST(req: NextRequest) {
       version: EXAMPLE_SOP.version,
       document: EXAMPLE_SOP,
       status: 'draft',
+      tier: planned?.tier || null,
+      tier_reason: planned?.why || null,
     })
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
     return NextResponse.json({ success: true })
@@ -105,12 +112,39 @@ export async function POST(req: NextRequest) {
   // be able to undo an approval.
   if (action === 'import_plan') {
     const { data: held } = await admin.from('operational_documents')
-      .select('reference').is('employer_id', null).limit(2000)
+      .select('id, reference, tier').is('employer_id', null).limit(2000)
     const already = new Set((held || []).map((row: any) => row.reference))
+
+    // A row already in the library but missing its tier gets it filled in.
+    //
+    // Skipping anything already held is right for content and wrong for a
+    // blank: the worked example was added before the import, so the import
+    // passed over it and left it with no tier at all, which made it invisible
+    // under every tier filter while the counter above said one document was
+    // written. Filling a blank is not overwriting, and nothing else here is
+    // touched.
+    let repaired = 0
+    const untiered = (held || []).filter((row: any) => !row.tier)
+    for (const row of untiered) {
+      const planned = LIBRARY_PLAN.find(entry => entry.reference === row.reference)
+      if (!planned) continue
+      const { error: tierError } = await admin.from('operational_documents')
+        .update({ tier: planned.tier, tier_reason: planned.why || null, updated_at: new Date().toISOString() })
+        .eq('id', row.id)
+      if (tierError) {
+        return NextResponse.json({ error: `Could not set the tier on ${row.reference}: ${tierError.message}` }, { status: 500 })
+      }
+      repaired += 1
+    }
 
     const missing = LIBRARY_PLAN.filter(entry => !already.has(entry.reference))
     if (!missing.length) {
-      return NextResponse.json({ success: true, added: 0, note: 'The whole plan is already in the library.' })
+      return NextResponse.json({
+        success: true, added: 0, repaired,
+        note: repaired
+          ? `The whole plan was already there. ${repaired} had no tier and now do.`
+          : 'The whole plan is already in the library.',
+      })
     }
 
     const rows = missing.map(entry => ({
@@ -141,7 +175,7 @@ export async function POST(req: NextRequest) {
       added += slice.length
     }
 
-    return NextResponse.json({ success: true, added })
+    return NextResponse.json({ success: true, added, repaired })
   }
 
   // Draft a whole tier at once, and collect it later.
