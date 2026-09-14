@@ -4,7 +4,8 @@ import { useEffect, useState } from 'react'
 import DashboardShell from '@/components/DashboardShell'
 import SopSheet from '@/components/documents/SopSheet'
 import type { SopDocument } from '@/lib/documents/types'
-import { Check, Eye, Plus, Printer, RefreshCw, RotateCcw, Trash2 } from 'lucide-react'
+import { TIER_LABEL, type BuildTier } from '@/lib/documents/library-plan'
+import { Check, Eye, Plus, Printer, RefreshCw, RotateCcw, Trash2, Download } from 'lucide-react'
 
 // The library, and the desk it is signed off at.
 //
@@ -26,6 +27,9 @@ type Row = {
   approved_version: string | null
   missing: string[]
   stale: boolean
+  written: boolean
+  tier: 'day-1' | 'month-1' | 'quarter-1' | null
+  tier_reason: string | null
   created_at: string
 }
 
@@ -43,6 +47,11 @@ export default function AdminDocumentsPage() {
   const [error, setError] = useState('')
   const [note, setNote] = useState('')
   const [reading, setReading] = useState<Row | null>(null)
+  // Four hundred and sixty documents is not a list anybody scrolls. It is
+  // filtered, counted, and worked through a tier at a time.
+  const [tier, setTier] = useState<BuildTier | 'all'>('day-1')
+  const [department, setDepartment] = useState('all')
+  const [only, setOnly] = useState<'all' | 'unwritten' | 'unsigned'>('all')
 
   async function load() {
     const res = await fetch('/api/admin/documents', { cache: 'no-store' })
@@ -107,6 +116,14 @@ export default function AdminDocumentsPage() {
     )
   }
 
+  const visible = rows.filter(row => {
+    if (tier !== 'all' && row.tier !== tier) return false
+    if (department !== 'all' && row.department !== department) return false
+    if (only === 'unwritten' && row.written) return false
+    if (only === 'unsigned' && (!row.written || row.status === 'approved')) return false
+    return true
+  })
+
   return (
     <DashboardShell role="admin">
       <div className="max-w-5xl">
@@ -130,21 +147,71 @@ export default function AdminDocumentsPage() {
             className="flex items-center gap-1.5 text-[12px] text-secondary hover:text-ink">
             <RefreshCw size={13} /> Refresh
           </button>
+          <button type="button" disabled={busy === 'import_plan'} onClick={() => act('import_plan')}
+            className="inline-flex items-center gap-1.5 border border-[#1c1c1c] px-3 py-1.5 text-[12px] font-semibold text-ink disabled:opacity-40">
+            <Download size={13} /> {busy === 'import_plan' ? 'Importing...' : 'Import the build plan'}
+          </button>
           <button type="button" disabled={busy === 'add_example'} onClick={() => act('add_example')}
             className="inline-flex items-center gap-1.5 border border-border px-3 py-1.5 text-[12px] font-medium text-secondary disabled:opacity-40">
             <Plus size={13} /> Add the worked example
           </button>
         </div>
 
+        {rows.length > 0 && (
+          <>
+            <div className="mt-6 grid grid-cols-2 gap-px border border-border bg-border sm:grid-cols-4">
+              {[
+                ['Planned', rows.length],
+                ['Written', rows.filter(r => r.written).length],
+                ['Signed off', rows.filter(r => r.status === 'approved').length],
+                ['Still to write', rows.filter(r => !r.written).length],
+              ].map(([label, value]) => (
+                <div key={String(label)} className="bg-white px-4 py-3">
+                  <p className="text-[10px] uppercase tracking-[.14em] text-muted">{label}</p>
+                  <p className="mt-0.5 text-[22px] font-semibold text-ink">{value}</p>
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-4 flex flex-wrap items-center gap-2">
+              {(['day-1', 'month-1', 'quarter-1', 'all'] as const).map(option => (
+                <button key={option} type="button" onClick={() => setTier(option)}
+                  className={`border px-3 py-1.5 text-[12px] ${tier === option ? 'border-[#1c1c1c] bg-[#1c1c1c] text-white' : 'border-border text-secondary'}`}>
+                  {option === 'all' ? 'Everything' : TIER_LABEL[option]}
+                  <span className="ml-1.5 opacity-60">
+                    {option === 'all' ? rows.length : rows.filter(r => r.tier === option).length}
+                  </span>
+                </button>
+              ))}
+              <select value={department} onChange={e => setDepartment(e.target.value)}
+                className="border border-border px-2 py-1.5 text-[12px] text-secondary">
+                <option value="all">Every department</option>
+                {Array.from(new Set(rows.map(r => r.department).filter(Boolean))).sort().map(name => (
+                  <option key={String(name)} value={String(name)}>{name}</option>
+                ))}
+              </select>
+              <select value={only} onChange={e => setOnly(e.target.value as typeof only)}
+                className="border border-border px-2 py-1.5 text-[12px] text-secondary">
+                <option value="all">Any state</option>
+                <option value="unwritten">Not written yet</option>
+                <option value="unsigned">Written, not signed off</option>
+              </select>
+            </div>
+          </>
+        )}
+
         {loading ? (
           <p className="mt-8 text-[13px] text-secondary">Loading...</p>
         ) : rows.length === 0 ? (
           <p className="mt-8 text-[13px] text-secondary">
-            Nothing in the library yet. Add the worked example to see the layout and decide whether you like it.
+            Nothing in the library yet. Import the build plan to put all four hundred and sixty documents in as
+            drafts, or add the worked example on its own to look at the layout first.
           </p>
+        ) : visible.length === 0 ? (
+          <p className="mt-8 text-[13px] text-secondary">Nothing matches those filters.</p>
         ) : (
           <div className="mt-6 space-y-3">
-            {rows.map(row => (
+            {visible.slice(0, 60).map(row => (
               <div key={row.id} className="dashboard-card">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div className="min-w-0">
@@ -179,15 +246,23 @@ export default function AdminDocumentsPage() {
                   </p>
                 )}
 
-                {row.missing.length > 0 && (
+                {row.tier_reason && !row.written && (
+                  <p className="mt-2 text-[12px] text-secondary">{row.tier_reason}</p>
+                )}
+
+                {!row.written && (
+                  <p className="mt-2 text-[12px] text-muted">Not written yet. Nothing in it but the reference.</p>
+                )}
+
+                {row.written && row.missing.length > 0 && (
                   <p className="mt-2 border border-amber-200 bg-amber-50 px-3 py-2 text-[12px] text-amber-800">
                     Not ready to sign off. Still needs: {row.missing.join(', ')}.
                   </p>
                 )}
 
                 <div className="mt-4 flex flex-wrap items-center gap-2">
-                  <button type="button" onClick={() => setReading(row)}
-                    className="inline-flex items-center gap-1.5 border border-[#1c1c1c] px-3 py-1.5 text-[12px] font-semibold text-ink">
+                  <button type="button" disabled={!row.written} onClick={() => setReading(row)}
+                    className="inline-flex items-center gap-1.5 border border-[#1c1c1c] px-3 py-1.5 text-[12px] font-semibold text-ink disabled:opacity-30">
                     <Eye size={13} /> Read it
                   </button>
 
@@ -215,6 +290,11 @@ export default function AdminDocumentsPage() {
                 </div>
               </div>
             ))}
+            {visible.length > 60 && (
+              <p className="pt-2 text-[12px] text-secondary">
+                Showing 60 of {visible.length}. Narrow it by department to see the rest.
+              </p>
+            )}
           </div>
         )}
       </div>

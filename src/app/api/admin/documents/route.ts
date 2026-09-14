@@ -4,6 +4,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { missingFromSop, type SopDocument } from '@/lib/documents/types'
 import { isValidReference } from '@/lib/documents/reference'
 import { EXAMPLE_SOP } from '@/lib/documents/examples'
+import { LIBRARY_PLAN } from '@/lib/documents/library-plan'
 
 // The library, and the sign-off that stands between a draft and a client.
 //
@@ -34,6 +35,7 @@ export async function GET() {
     ...row,
     missing: row.kind === 'sop' ? missingFromSop((row.document || {}) as SopDocument) : [],
     stale: row.status === 'approved' && row.approved_version !== row.version,
+    written: Object.keys(row.document || {}).length > 0,
   }))
 
   return NextResponse.json({ rows })
@@ -65,6 +67,58 @@ export async function POST(req: NextRequest) {
     })
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
     return NextResponse.json({ success: true })
+  }
+
+  // The register, before any of it is written.
+  //
+  // Four hundred and sixty documents across fourteen departments, each an
+  // empty draft carrying its reference, its department and the tier it
+  // belongs to. Knowing precisely which documents are owed is worth having on
+  // its own: four hundred and sixty known gaps is a plan, and four hundred
+  // and sixty unwritten documents nobody has listed is an intention.
+  //
+  // Safe to run twice. Anything already in the library is left exactly as it
+  // is, including anything already signed off, because an import must never
+  // be able to undo an approval.
+  if (action === 'import_plan') {
+    const { data: held } = await admin.from('operational_documents')
+      .select('reference').is('employer_id', null).limit(2000)
+    const already = new Set((held || []).map((row: any) => row.reference))
+
+    const missing = LIBRARY_PLAN.filter(entry => !already.has(entry.reference))
+    if (!missing.length) {
+      return NextResponse.json({ success: true, added: 0, note: 'The whole plan is already in the library.' })
+    }
+
+    const rows = missing.map(entry => ({
+      reference: entry.reference,
+      kind: entry.reference.includes('-CHK-') ? 'checklist' : 'sop',
+      title: entry.title,
+      department: entry.department,
+      version: '0.1',
+      status: 'draft',
+      tier: entry.tier,
+      tier_reason: entry.why || null,
+      // Empty on purpose. The shape is filled in when it is drafted, and
+      // missingFromSop will refuse to let an empty one be signed off.
+      document: {},
+    }))
+
+    // In batches, because four hundred and sixty rows in one statement is a
+    // request the platform will not finish inside its own time limit.
+    let added = 0
+    for (let at = 0; at < rows.length; at += 100) {
+      const slice = rows.slice(at, at + 100)
+      const { error } = await admin.from('operational_documents').insert(slice)
+      if (error) {
+        return NextResponse.json({
+          error: `Imported ${added} and then stopped: ${error.message}`,
+        }, { status: 500 })
+      }
+      added += slice.length
+    }
+
+    return NextResponse.json({ success: true, added })
   }
 
   const id = String(body.id || '')
