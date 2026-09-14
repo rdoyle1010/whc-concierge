@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
-import { departmentPacks, tierPacks, formatPrice, SINGLE_DOCUMENT_PRICE, VAT_NOTE } from '@/lib/documents/pricing'
+import { departmentPacks, tierPacks, formatPrice, SINGLE_DOCUMENT_PRICE, POOL_SAFETY_PACK_PRICE, VAT_NOTE } from '@/lib/documents/pricing'
 import TierBuy from '@/components/TierBuy'
 import { LIBRARY_PLAN, TIER_LABEL } from '@/lib/documents/library-plan'
 import StandardsCatalogue from '@/components/StandardsCatalogue'
@@ -112,6 +112,40 @@ export default function StandardsPage() {
                 <TierBuy slug="before-the-first-guest" label="Buy the pre-opening suite" />
               </div>
             )}
+
+            {/* The pool safety operating procedure, offered on its own.
+                A property with water needs both halves in writing before it
+                opens, an insurer asks for them first, and neither belongs
+                inside a department pack priced by the document. */}
+            <div className="mt-6 border border-[#1c1c1c] p-6 md:p-7">
+              <div className="flex flex-wrap items-start justify-between gap-6">
+                <div className="max-w-2xl">
+                  <p className="text-[11px] font-semibold uppercase tracking-[.16em] text-[#6b6b6b]">
+                    If you have water
+                  </p>
+                  <h3 className="mt-2 text-[22px] font-semibold leading-tight text-[#1c1c1c]">
+                    Pool Safety Operating Procedure
+                  </h3>
+                  <p className="mt-3 text-[14px] leading-relaxed text-[#3a3a3a]">
+                    Both halves, as the regulations expect them: the Normal Operating Procedure setting out how
+                    your pools, plunges, hydrotherapy pools, saunas and steam rooms run on an ordinary day, and
+                    the Emergency Action Plan setting out who does what in the first minutes of an emergency,
+                    one emergency per page.
+                  </p>
+                  <p className="mt-3 text-[13px] leading-relaxed text-[#555555]">
+                    Almost every value in them is blank, and that is the point. Dimensions, depths, bather loads,
+                    supervision positions, the muster point and the plant room are facts about your building, and
+                    nobody who has not walked it should be stating them. You type them once and they fill in
+                    throughout.
+                  </p>
+                </div>
+                <div className="shrink-0 text-right">
+                  <p className="font-serif text-[30px] leading-none text-[#1c1c1c]">{formatPrice(POOL_SAFETY_PACK_PRICE)}</p>
+                  <p className="mt-1.5 text-[12px] text-[#6b6b6b]">2 documents</p>
+                </div>
+              </div>
+              <TierBuy slug="pool-safety" label="Buy the pool safety procedure" />
+            </div>
 
             <div className="mt-6 grid gap-6 md:grid-cols-3">
               {[

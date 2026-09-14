@@ -31,7 +31,14 @@ test('a document is draft until somebody has read it', () => {
 // so the server refuses rather than the button merely being greyed out.
 test('an unfinished document cannot be signed off', () => {
   const approve = route.slice(route.indexOf("action === 'approve'"), route.indexOf("action === 'unapprove'"))
-  assert.match(approve, /missingFromSop/)
+  // What a document still needs is worked out by kind, because a plan and a
+  // procedure are complete in different ways: checking a Normal Operating
+  // Procedure for steps with auditable standards would pass every one of them
+  // by asking a question that does not apply to it.
+  assert.match(approve, /missingFor\(row\.kind, row\.document\)/)
+  assert.match(route, /function missingFor/)
+  assert.match(route, /missingFromSop/)
+  assert.match(route, /missingFromPlan/)
   assert.match(approve, /Not ready to sign off/)
   assert.match(approve, /status: 400/)
 

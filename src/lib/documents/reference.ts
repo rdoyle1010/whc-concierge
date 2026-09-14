@@ -101,7 +101,11 @@ export function buildReference(input: {
 // and the kind can be a checklist. Every one of these was found by running
 // the pattern against the four hundred and sixty documents that already
 // exist rather than by imagining what a reference might look like.
-const PATTERN = /^[A-Z]{2,6}(?:-[A-Z0-9]{2,16}){1,5}-(SOP|RA|JD|POL|CHK)-\d{2,4}$/
+// NOP and EAP join the list because they are kinds of document, not a new
+// naming convention. The two halves of a pool safety operating procedure are
+// filed and cross-referenced exactly like everything else, and a validator
+// that rejects them is a validator written before they existed.
+const PATTERN = /^[A-Z]{2,6}(?:-[A-Z0-9]{2,16}){1,5}-(SOP|RA|JD|POL|CHK|NOP|EAP|SSW)-\d{2,4}$/
 
 export function isValidReference(value: unknown): boolean {
   return typeof value === 'string' && value.length <= 60 && PATTERN.test(value)

@@ -1,4 +1,4 @@
-import { LIBRARY_PLAN } from './library-plan'
+import { sellableCatalogue, catalogueEntry } from './catalogue'
 import { packBySlug, type Pack } from './pricing'
 
 // What can honestly be sold today.
@@ -23,7 +23,7 @@ export type Readiness = {
 }
 
 export function packReadiness(pack: Pack, approved: Set<string>): Readiness {
-  const references = LIBRARY_PLAN
+  const references = sellableCatalogue()
     .filter(entry => pack.includes(entry.reference))
     .map(entry => entry.reference)
   const ready = references.filter(reference => approved.has(reference)).length
@@ -35,7 +35,7 @@ export function referencesForOrder(order: { pack_slug?: string | null; document_
   if (order.document_reference) return [order.document_reference]
   const pack = order.pack_slug ? packBySlug(order.pack_slug) : null
   if (!pack) return []
-  return LIBRARY_PLAN.filter(entry => pack.includes(entry.reference)).map(entry => entry.reference)
+  return sellableCatalogue().filter(entry => pack.includes(entry.reference)).map(entry => entry.reference)
 }
 
 /**
@@ -59,7 +59,7 @@ export type Purchase =
   | { ok: false; reason: string }
 
 export function priceSingle(reference: string, approved: Set<string>, price: number): Purchase {
-  const planned = LIBRARY_PLAN.find(entry => entry.reference === reference)
+  const planned = catalogueEntry(reference)
   if (!planned) return { ok: false, reason: 'That document is not in the library.' }
   if (!approved.has(reference)) {
     return { ok: false, reason: 'That one is still in preparation. Tell us and we will prioritise it.' }

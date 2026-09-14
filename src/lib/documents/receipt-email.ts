@@ -1,6 +1,6 @@
 import { sendTransactionalEmail } from '@/lib/send-email'
 import { packBySlug, formatPrice, VAT_NOTE } from './pricing'
-import { LIBRARY_PLAN } from './library-plan'
+import { sellableCatalogue } from './catalogue'
 import { DOCUMENT_STATUS } from './status'
 
 // The only thing the buyer actually receives.
@@ -19,7 +19,7 @@ export async function sendStandardsReceiptEmail(input: {
   libraryUrl: string
 }): Promise<boolean> {
   const pack = input.packSlug ? packBySlug(input.packSlug) : null
-  const single = input.reference ? LIBRARY_PLAN.find(entry => entry.reference === input.reference) : null
+  const single = input.reference ? sellableCatalogue().find(entry => entry.reference === input.reference) : null
 
   const what = pack
     ? `${pack.name}, ${pack.count} documents`

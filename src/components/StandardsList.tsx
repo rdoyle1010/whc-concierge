@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react'
 import { Search } from 'lucide-react'
-import { LIBRARY_PLAN } from '@/lib/documents/library-plan'
+import { sellableCatalogue } from '@/lib/documents/catalogue'
 import { SINGLE_DOCUMENT_PRICE, formatPrice } from '@/lib/documents/pricing'
 import BuyButton from '@/components/BuyButton'
 
@@ -33,13 +33,13 @@ export default function StandardsList({ available, unavailable }: Props) {
   )
 
   const departments = useMemo(
-    () => Array.from(new Set(LIBRARY_PLAN.map(item => item.department))).sort(),
+    () => Array.from(new Set(sellableCatalogue().map(item => item.department))).sort(),
     [],
   )
 
   const rows = useMemo(() => {
     const needle = query.trim().toLowerCase()
-    return LIBRARY_PLAN.filter(item => {
+    return sellableCatalogue().filter(item => {
       if (department !== 'all' && item.department !== department) return false
       if (readyOnly && !ready.has(item.reference)) return false
       if (!needle) return true
@@ -99,9 +99,9 @@ export default function StandardsList({ available, unavailable }: Props) {
         {/* The count of what is on screen, and how much of it can actually be
             sent. A list that does not say this reads as availability. */}
         <p className="mt-4 text-[13px] text-[#6b6b6b]">
-          {rows.length === LIBRARY_PLAN.length
-            ? `${LIBRARY_PLAN.length} documents`
-            : `${rows.length} of ${LIBRARY_PLAN.length} documents`}
+          {rows.length === sellableCatalogue().length
+            ? `${sellableCatalogue().length} documents`
+            : `${rows.length} of ${sellableCatalogue().length} documents`}
           {available !== null && !unavailable && ` · ${readyShown} ready to send today`}
         </p>
 

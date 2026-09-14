@@ -3,6 +3,9 @@
 import { useEffect, useState } from 'react'
 import DashboardShell from '@/components/DashboardShell'
 import SopSheet from '@/components/documents/SopSheet'
+import PlanSheet from '@/components/documents/PlanSheet'
+import type { PlanDocument } from '@/lib/documents/plan-types'
+import { PLAN_KINDS } from '@/lib/documents/render-pdf'
 import type { SopDocument } from '@/lib/documents/types'
 import { TIER_LABEL, type BuildTier } from '@/lib/documents/library-plan'
 import { LIFE_SAFETY_WARNING } from '@/lib/documents/safety'
@@ -131,7 +134,7 @@ export default function AdminDocumentsPage() {
           setNote(body?.note || 'Nothing came back, and nothing is waiting. Press Write this whole tier to start one.')
         }
       }
-      if (!body?.warning && action === 'write_authored') {
+      if (!body?.warning && (action === 'write_authored' || action === 'add_pool_plans')) {
         setNote(body?.note || 'Done.')
       }
       // A document too long for a web request is now sent the slower way
@@ -220,7 +223,13 @@ export default function AdminDocumentsPage() {
             bell across the top of page one. Hiding everything and showing
             only this cannot be defeated by a chrome element nobody listed. */}
         <div className="document-print-root mt-6 border border-border bg-white shadow-sm print:mt-0 print:border-0 print:shadow-none">
-          <SopSheet document={reading.document} />
+          {/* A plan and a procedure are different shapes. Rendering a Normal
+              Operating Procedure through the SOP sheet would show her a list
+              of steps that is not there and hide the hundred and fifty blanks
+              that are. */}
+          {PLAN_KINDS.has(reading.row.kind)
+            ? <PlanSheet document={reading.document as unknown as PlanDocument} />
+            : <SopSheet document={reading.document} />}
         </div>
       </DashboardShell>
     )
@@ -291,6 +300,10 @@ export default function AdminDocumentsPage() {
             }}
             className="inline-flex items-center gap-1.5 border border-border px-3 py-1.5 text-[12px] font-medium text-secondary disabled:opacity-40">
             <Inbox size={13} /> Collect a batch by id
+          </button>
+          <button type="button" disabled={busy === 'add_pool_plans'} onClick={() => act('add_pool_plans')}
+            className="inline-flex items-center gap-1.5 border border-border px-3 py-1.5 text-[12px] font-medium text-secondary disabled:opacity-40">
+            <ShieldAlert size={13} /> {busy === 'add_pool_plans' ? 'Adding...' : 'Add the pool safety plans'}
           </button>
           <button type="button" disabled={busy === 'write_authored'} onClick={() => act('write_authored')}
             className="inline-flex items-center gap-1.5 border border-border px-3 py-1.5 text-[12px] font-medium text-secondary disabled:opacity-40">

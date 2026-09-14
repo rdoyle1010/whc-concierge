@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createServerSupabaseClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { ownedReferences } from '@/lib/documents/stock'
-import { LIBRARY_PLAN } from '@/lib/documents/library-plan'
+import { sellableCatalogue } from '@/lib/documents/catalogue'
 import { getStripe } from '@/lib/stripe'
 import { fulfilCheckoutSession } from '@/lib/stripe-checkout-fulfilment'
 
@@ -69,7 +69,7 @@ export async function GET(req: NextRequest) {
   const ready = new Set((approved || []).map((row: any) => row.reference))
 
   return NextResponse.json({
-    documents: LIBRARY_PLAN
+    documents: sellableCatalogue()
       .filter(entry => owned.has(entry.reference))
       .map(entry => ({
         reference: entry.reference,

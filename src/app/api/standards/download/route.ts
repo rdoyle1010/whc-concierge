@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createServerSupabaseClient } from '@/lib/supabase/server'
-import { renderDocumentPdf } from '@/lib/documents/document-pdf'
+import { renderAnyDocumentPdf, PLAN_KINDS } from '@/lib/documents/render-pdf'
 import { ownedReferences } from '@/lib/documents/stock'
 import { missingFromSop, type SopDocument } from '@/lib/documents/types'
+import { missingFromPlan, type PlanDocument } from '@/lib/documents/plan-types'
 
 // One document, to somebody who has paid for it.
 //
@@ -69,13 +70,15 @@ export async function GET(req: NextRequest) {
   }
 
   const document = (row.document || {}) as SopDocument
-  const missing = row.kind === 'sop' ? missingFromSop(document) : []
+  const missing = PLAN_KINDS.has(row.kind)
+    ? missingFromPlan(document as unknown as PlanDocument)
+    : row.kind === 'sop' ? missingFromSop(document) : []
   if (!Object.keys(document).length || missing.length) {
     return NextResponse.json({ error: 'That one is not finished yet.' }, { status: 404 })
   }
 
   try {
-    const pdf = await renderDocumentPdf(document)
+    const pdf = await renderAnyDocumentPdf(row.kind, document)
     return new NextResponse(new Uint8Array(pdf), {
       headers: {
         'Content-Type': 'application/pdf',

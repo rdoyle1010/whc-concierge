@@ -4,6 +4,7 @@ import { readFileSync } from 'node:fs'
 import { packReadiness, referencesForOrder, ownedReferences, priceSingle, pricePack } from '../src/lib/documents/stock'
 import { packBySlug, SINGLE_DOCUMENT_PRICE, DEPARTMENT_PACK_PRICE, departmentPrice } from '../src/lib/documents/pricing'
 import { LIBRARY_PLAN } from '../src/lib/documents/library-plan'
+import { sellableCatalogue } from '../src/lib/documents/catalogue'
 
 const body = (file: string) =>
   readFileSync(file, 'utf8')
@@ -11,7 +12,7 @@ const body = (file: string) =>
     .replace(/\/\*[\s\S]*?\*\//g, '')
     .replace(/^\s*\/\/.*$/gm, '')
 
-const everything = new Set(LIBRARY_PLAN.map(entry => entry.reference))
+const everything = new Set(sellableCatalogue().map(entry => entry.reference))
 const firstDepartment = LIBRARY_PLAN[0].department
 const departmentSlug = `department-${firstDepartment.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')}`
 
@@ -39,8 +40,15 @@ test('an order entitles its buyer to exactly what the pack covers', () => {
   const single = referencesForOrder({ document_reference: 'REC-OPEN-CHK-001' })
   assert.deepEqual(single, ['REC-OPEN-CHK-001'])
 
+  // The complete library means complete, which now includes the two pool
+  // safety plans. They are priced separately and listed together, because
+  // "every document" that omits the two a pool operator needs most is a list
+  // that misleads by being complete-sounding.
   const complete = referencesForOrder({ pack_slug: 'the-complete-library' })
-  assert.equal(complete.length, LIBRARY_PLAN.length)
+  assert.equal(complete.length, sellableCatalogue().length)
+  assert.ok(complete.length > LIBRARY_PLAN.length)
+  assert.ok(complete.includes('POOL-SAFETY-NOP-001'))
+  assert.ok(complete.includes('POOL-SAFETY-EAP-002'))
 
   // A slug nobody sells entitles nobody to anything, rather than everything.
   assert.deepEqual(referencesForOrder({ pack_slug: 'not-a-pack' }), [])

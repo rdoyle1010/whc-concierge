@@ -1,4 +1,5 @@
 import { LIBRARY_PLAN, TIER_LABEL, type BuildTier } from './library-plan'
+import { POOL_PLAN_ENTRIES } from './pool-plans'
 
 // What a document costs, and why.
 //
@@ -31,6 +32,21 @@ export const SINGLE_DOCUMENT_PRICE = 3900
 export const DEPARTMENT_PACK_PRICE = 29900
 export const DAY_ONE_PACK_PRICE = 149500
 export const COMPLETE_LIBRARY_PRICE = 245000
+
+// The pool safety operating procedure, both halves, at four hundred and
+// ninety-five pounds.
+//
+// Priced against what it replaces rather than against the rest of the
+// library. A consultancy producing a NOP and an EAP for one property charges
+// four figures and takes weeks, and a pool operator cannot open without both:
+// this is the document an insurer asks for first and an environmental health
+// officer asks for second. Two documents at thirty-nine pounds each would be
+// mispricing it so badly that it reads as not being the real thing.
+//
+// Still under the five hundred a spa director can usually approve on their
+// own signature, which is the number that decides whether it is bought this
+// week or discussed next quarter.
+export const POOL_SAFETY_PACK_PRICE = 49500
 
 export const CURRENCY = 'gbp'
 
@@ -105,7 +121,19 @@ export function departmentPacks(): Pack[] {
 
 export function tierPacks(): Pack[] {
   const dayOne = LIBRARY_PLAN.filter(entry => entry.tier === 'day-1')
+  const poolReferences = POOL_PLAN_ENTRIES.map(entry => entry.reference)
   return [
+    {
+      slug: 'pool-safety',
+      name: 'Pool Safety Operating Procedure',
+      blurb:
+        'The Normal Operating Procedure and the Emergency Action Plan for your pools, plunges, hydrotherapy '
+        + 'pools, saunas and steam rooms. Both halves of what a pool operator needs in writing: how the water '
+        + 'runs on an ordinary day, and who does what in the first minutes of an emergency.',
+      price: POOL_SAFETY_PACK_PRICE,
+      includes: (reference: string) => poolReferences.includes(reference),
+      count: poolReferences.length,
+    },
     {
       slug: 'before-the-first-guest',
       name: TIER_LABEL['day-1'],
@@ -125,7 +153,7 @@ export function tierPacks(): Pack[] {
         + 'and the governance and audit procedures that need an operation running before they can be written well.',
       price: COMPLETE_LIBRARY_PRICE,
       includes: () => true,
-      count: LIBRARY_PLAN.length,
+      count: LIBRARY_PLAN.length + POOL_PLAN_ENTRIES.length,
     },
   ]
 }
