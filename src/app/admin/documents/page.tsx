@@ -114,7 +114,14 @@ export default function AdminDocumentsPage() {
         // queue and a run in which every request failed look identical from
         // here, and they need completely different things from her.
         if (body?.collected) {
-          setNote(`${body.collected} documents came back written. Read them before signing any off.`)
+          // A collection that stopped on the clock looks exactly like one
+          // that finished, unless it says so. It has to say so, or she reads
+          // a number, believes it is the whole batch, and never presses again.
+          setNote(body?.unfinished
+            ? `${body.collected} brought in so far, and there is more waiting. Press Collect what is ready again.`
+            : `${body.collected} documents came back written. Read them before signing any off.`)
+        } else if (body?.unfinished) {
+          setNote('Still working through it. Press Collect what is ready again.')
         } else if (body?.stillRunning) {
           setNote(`Still being written${body.progress ? `: ${body.progress}` : ''}. Nothing to do but come back later.`)
         } else if (body?.refused?.length) {

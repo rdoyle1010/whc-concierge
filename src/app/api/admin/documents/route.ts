@@ -8,6 +8,7 @@ import { LIBRARY_PLAN } from '@/lib/documents/library-plan'
 import { draftDocument, draftingConfigured } from '@/lib/documents/draft'
 import { submitDraftBatch, collectDraftBatch, batchingConfigured } from '@/lib/documents/batch'
 import { documentFromDraft } from '@/lib/documents/assemble'
+import { planCollection } from '@/lib/documents/collect-plan'
 import { isLifeSafety, LIFE_SAFETY_CONFIRMATION } from '@/lib/documents/safety'
 
 // The library, and the sign-off that stands between a draft and a client.
@@ -302,7 +303,27 @@ export async function POST(req: NextRequest) {
   }
 
   // Collect whatever has finished.
+  //
+  // Bounded by the clock, not by a count. The host kills a function at
+  // twenty-six seconds, and the first version of this did two round trips per
+  // document: read it, then update it. Three hundred and thirty-eight
+  // documents is six hundred and seventy-six sequential calls, which never
+  // fits, so the run was killed halfway through with no receipt written and
+  // the batch stayed unreachable.
+  //
+  // Now the whole run is read in one go, planned without touching anything,
+  // and saved fifty at a time, and the loop stops itself before the ceiling
+  // rather than being stopped at it. Whatever was saved is saved, the receipt
+  // records how far it got, and pressing the button again carries on: a
+  // document that already has content is never rewritten, which is the thing
+  // that makes stopping early safe.
   if (action === 'collect') {
+    const startedAt = Date.now()
+    // Six seconds of headroom under the host's ceiling: enough to finish the
+    // chunk in hand and write the receipt that says where it stopped.
+    const DEADLINE_MS = 20_000
+    const outOfTime = () => Date.now() - startedAt > DEADLINE_MS
+
     const { data: runs, error: registerError } = await admin.from('document_batches')
       .select('*').in('status', ['submitted', 'collecting']).order('created_at', { ascending: true }).limit(10)
 
@@ -320,6 +341,10 @@ export async function POST(req: NextRequest) {
 
     let collected = 0
     let stillRunning = 0
+    // Runs that were not finished inside this request. Not a failure, but she
+    // has to know to press it again, and a silent partial collection looks
+    // exactly like a finished one.
+    let unfinished = 0
     // Bookkeeping that did not save. The documents are safely written either
     // way, but a receipt that never updated leaves a finished batch marked as
     // still running, which means collecting it again forever.
@@ -328,8 +353,14 @@ export async function POST(req: NextRequest) {
     // nothing. Silence is the one answer that cannot be acted on.
     const waiting: string[] = []
     const refused: string[] = []
+    // Runs where every document had already been written by an earlier press
+    // or an earlier batch. Worth saying: five batches of the same tier were
+    // paid for, and four of them can only ever report nothing new.
+    let alreadyHad = 0
 
     for (const run of runs) {
+      if (outOfTime()) { unfinished += 1; continue }
+
       const progress = await collectDraftBatch(run.provider_batch_id)
       if (!progress.ok) {
         const { error: noteError } = await admin.from('document_batches')
@@ -339,7 +370,7 @@ export async function POST(req: NextRequest) {
       }
       if (!progress.ready) {
         stillRunning += 1
-        waiting.push(`${progress.counts.succeeded} of ${run.requested} written so far`)
+        waiting.push(`${progress.counts.succeeded} of ${run.requested || progress.counts.processing + progress.counts.succeeded} written so far`)
         const { error: tickError } = await admin.from('document_batches').update({
           status: 'collecting',
           collected: progress.counts.succeeded,
@@ -351,38 +382,61 @@ export async function POST(req: NextRequest) {
         continue
       }
 
-      let failed = 0
-      for (const result of progress.results) {
-        if (!result.draft) {
-          failed += 1
-          // The first few reasons, verbatim. Four hundred identical errors is
-          // one problem, and reporting it as a number she cannot act on is
-          // how an afternoon gets spent pressing a button.
-          if (result.error && refused.length < 3 && !refused.includes(result.error)) refused.push(result.error)
-          continue
-        }
-
-        const { data: target } = await admin.from('operational_documents')
-          .select('*').eq('id', result.id).maybeSingle()
-        // Gone, or written by a person while the batch was running. Either
-        // way it is not ours to overwrite.
-        if (!target || target.status === 'approved') continue
-        if (Object.keys(target.document || {}).length > 0) continue
-
-        const { error } = await admin.from('operational_documents').update({
-          document: documentFromDraft(target, result.draft),
-          status: 'draft',
-          updated_at: new Date().toISOString(),
-        }).eq('id', result.id)
-        if (error) failed += 1
-        else collected += 1
+      // Every document this run touches, read in a handful of calls rather
+      // than one per result.
+      const wanted = progress.results.filter(result => result.draft).map(result => result.id)
+      const targets = new Map<string, Record<string, any>>()
+      let unreadable = ''
+      for (let i = 0; i < wanted.length; i += 200) {
+        const { data: chunk, error: chunkError } = await admin.from('operational_documents')
+          .select('*').in('id', wanted.slice(i, i + 200))
+        if (chunkError) { unreadable = chunkError.message; break }
+        for (const target of chunk || []) targets.set(target.id, target)
+      }
+      if (unreadable) {
+        bookkeeping.push(`${run.provider_batch_id} finished, but the documents it belongs to could not be read: ${unreadable}`)
+        continue
       }
 
+      const plan = planCollection(progress.results, targets, new Date().toISOString())
+      for (const reason of plan.refused) {
+        if (refused.length < 3 && !refused.includes(reason)) refused.push(reason)
+      }
+
+      let failed = plan.failed
+      let saved = 0
+      let ranOut = false
+      for (let i = 0; i < plan.writes.length; i += 50) {
+        if (outOfTime()) { ranOut = true; break }
+        const slice = plan.writes.slice(i, i + 50)
+        const { error: writeError } = await admin.from('operational_documents').upsert(slice)
+        if (writeError) {
+          failed += slice.length
+          bookkeeping.push(`${slice.length} documents from ${run.provider_batch_id} would not save: ${writeError.message}`)
+        } else {
+          saved += slice.length
+        }
+      }
+      collected += saved
+      if (!plan.writes.length && plan.skipped) alreadyHad += 1
+
+      const receipt = ranOut
+        ? {
+            status: 'collecting',
+            note: `${saved} saved so far. Press Collect what is ready again to finish this one.`,
+          }
+        : {
+            status: 'done',
+            note: failed
+              ? `${failed} failed. ${plan.refused[0] || 'No reason was given.'}`
+              : plan.writes.length ? null : `Nothing new: all ${plan.skipped} were already written.`,
+          }
+      if (ranOut) unfinished += 1
+
       const { error: receiptError } = await admin.from('document_batches').update({
-        status: 'done',
-        collected: progress.results.length - failed,
+        ...receipt,
+        collected: saved,
         failed,
-        note: failed ? `${failed} failed. ${refused[0] || 'No reason was given.'}` : null,
         updated_at: new Date().toISOString(),
       }).eq('id', run.id)
       if (receiptError) {
@@ -394,10 +448,14 @@ export async function POST(req: NextRequest) {
       success: true,
       collected,
       stillRunning,
+      unfinished: unfinished || undefined,
       // Everything known about why nothing arrived, rather than the fact that
       // nothing arrived.
       progress: waiting.length ? waiting.join('; ') : undefined,
       refused: refused.length ? refused : undefined,
+      note: !collected && alreadyHad
+        ? `Nothing new. ${alreadyHad === 1 ? 'That batch was' : `Those ${alreadyHad} batches were`} a repeat of documents already written.`
+        : undefined,
       warning: bookkeeping.length ? `The documents are saved, but: ${bookkeeping.join('; ')}.` : undefined,
     })
   }

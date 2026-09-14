@@ -13,6 +13,10 @@ const body = (file: string) =>
 const batch = body('src/lib/documents/batch.ts')
 const draft = body('src/lib/documents/draft.ts')
 const route = body('src/app/api/admin/documents/route.ts')
+// The rules about which rows may be written moved out of the route so they
+// could be tested without a database, and so a run of three hundred and
+// thirty-eight could be saved in bulk rather than one document at a time.
+const plan = body('src/lib/documents/collect-plan.ts')
 const page = body('src/app/admin/documents/page.tsx')
 const reader = body('src/lib/cv-read.ts')
 const writer = body('src/lib/ai-write.ts')
@@ -73,12 +77,15 @@ test('collecting is honest about a batch that has not finished', () => {
 
 // Somebody may have written or signed one off while the batch was running.
 test('a batch never overwrites what a person has done since', () => {
+  assert.match(plan, /target\.status === 'approved'/)
+  assert.match(plan, /Object\.keys\(target\.document \|\| \{\}\)\.length > 0/)
+  assert.match(plan, /status: 'draft'/)
+  assert.doesNotMatch(plan, /status: 'approved',/)
+
+  // And the route must actually be asking it.
   const collect = route.slice(route.indexOf("action === 'collect'"), route.indexOf("const id = String"))
   assert.ok(collect.length > 200, 'the collect block was not found')
-  assert.match(collect, /target\.status === 'approved'/)
-  assert.match(collect, /Object\.keys\(target\.document \|\| \{\}\)\.length > 0/)
-  assert.match(collect, /status: 'draft'/)
-  assert.doesNotMatch(collect, /status: 'approved'/)
+  assert.match(collect, /planCollection\(progress\.results, targets/)
 })
 
 // A receipt that never saved leaves a finished batch marked as still running,
@@ -116,7 +123,7 @@ test('both paths draft from one brief and assemble one shape', () => {
   assert.match(draft, /messages: \[\{ role: 'user', content: draftPrompt\(input\) \}\]/)
   assert.match(batch, /DRAFT_SYSTEM/)
   assert.match(batch, /DRAFT_SCHEMA/)
-  assert.match(route, /documentFromDraft\(target, result\.draft\)/)
+  assert.match(plan, /documentFromDraft\(target as any, result\.draft\)/)
   assert.match(route, /documentFromDraft\(row, result\.draft\)/)
 })
 
