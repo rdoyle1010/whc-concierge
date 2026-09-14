@@ -3,7 +3,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { getStripe } from '@/lib/stripe'
 import { fulfilCheckoutSession } from '@/lib/stripe-checkout-fulfilment'
 import { ownedReferences } from '@/lib/documents/stock'
-import { LIBRARY_PLAN } from '@/lib/documents/library-plan'
+import { sellableCatalogue } from '@/lib/documents/catalogue'
 
 // What a buyer owns, reached by the token in their receipt.
 //
@@ -81,7 +81,7 @@ export async function GET(req: NextRequest) {
 
   const ready = new Map((approved || []).map((row: any) => [row.reference, row]))
 
-  const documents = LIBRARY_PLAN
+  const documents = sellableCatalogue()
     .filter(entry => owned.has(entry.reference))
     .map(entry => {
       const live = ready.get(entry.reference)

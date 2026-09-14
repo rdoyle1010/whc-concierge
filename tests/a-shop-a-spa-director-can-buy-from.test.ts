@@ -110,5 +110,13 @@ test('a pack knows its own department', () => {
   for (const pack of departmentPacks()) assert.ok(pack.department, `${pack.name} cannot say which department it is`)
   assert.match(catalogue, /readyIn\(pack\.department \|\| ''\)/)
   assert.equal(packBySlug('before-the-first-guest')?.count, LIBRARY_PLAN.filter(e => e.tier === 'day-1').length)
-  assert.equal(tierPacks().length, 2)
+  // Three: the pre-opening suite, the complete library, and the pool safety
+  // procedure. The last is priced on its own rather than as a department,
+  // because a two-document department would be offered at seventy-eight
+  // pounds by the "never more than its parts" rule.
+  assert.equal(tierPacks().length, 3)
+  const pool = packBySlug('pool-safety')
+  assert.ok(pool, 'the pool safety pack should exist')
+  assert.equal(pool!.count, 2)
+  assert.ok(!departmentPacks().some(pack => pack.slug === pool!.slug))
 })

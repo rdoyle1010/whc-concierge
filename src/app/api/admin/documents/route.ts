@@ -9,6 +9,8 @@ import { draftDocument, draftingConfigured } from '@/lib/documents/draft'
 import { submitDraftBatch, collectDraftBatch, batchingConfigured } from '@/lib/documents/batch'
 import { documentFromDraft } from '@/lib/documents/assemble'
 import { QUARTER_ONE_DRAFTS } from '@/lib/documents/quarter-one'
+import { POOL_PLANS } from '@/lib/documents/pool-plans'
+import { missingFromPlan, type PlanDocument } from '@/lib/documents/plan-types'
 import { planCollection } from '@/lib/documents/collect-plan'
 import { isLifeSafety, LIFE_SAFETY_CONFIRMATION } from '@/lib/documents/safety'
 import { placeholdersIn } from '@/lib/documents/placeholders'
@@ -24,6 +26,18 @@ import { placeholdersIn } from '@/lib/documents/placeholders'
 // The approval is recorded against the version it applied to. Approving
 // version one says nothing about version four, so any edit clears it and it
 // goes round again. That is deliberately inconvenient.
+
+// What a document of this kind still needs. A plan and a procedure are
+// complete in different ways, and checking a Normal Operating Procedure for
+// steps with auditable standards would pass every one of them by asking a
+// question that does not apply.
+function missingFor(kind: string, document: any): string[] {
+  if (!document || !Object.keys(document).length) return []
+  if (kind === 'nop' || kind === 'eap' || kind === 'policy' || kind === 'safe-system') {
+    return missingFromPlan(document as PlanDocument)
+  }
+  return kind === 'sop' ? missingFromSop(document as SopDocument) : []
+}
 
 export const dynamic = 'force-dynamic'
 
@@ -57,7 +71,7 @@ export async function GET() {
     const { document, ...rest } = row
     return {
       ...rest,
-      missing: row.kind === 'sop' ? missingFromSop((document || {}) as SopDocument) : [],
+      missing: missingFor(row.kind, document),
       stale: row.status === 'approved' && row.approved_version !== row.version,
       written: Object.keys(document || {}).length > 0,
       lifeSafety: isLifeSafety(row),
@@ -524,6 +538,62 @@ export async function POST(req: NextRequest) {
     })
   }
 
+  // The two pool safety plans, written rather than drafted.
+  //
+  // Nothing could draft these. A Normal Operating Procedure is a statement of
+  // facts about one building, and a model asked to produce one would produce
+  // plausible dimensions, a plausible bather load and a plausible evacuation
+  // route, all of which would be believed because they are typeset. So they
+  // are written as structure with every fact left blank, and the property
+  // supplies the facts.
+  if (action === 'add_pool_plans') {
+    const now = new Date().toISOString()
+    let added = 0
+    let leftAlone = 0
+
+    for (const plan of POOL_PLANS) {
+      const built = plan.build()
+      const { data: existing } = await admin.from('operational_documents')
+        .select('id, status, document').is('employer_id', null).eq('reference', plan.reference).maybeSingle()
+
+      if (existing?.id) {
+        // Signed off, or written since. Neither is ours to overwrite.
+        if (existing.status === 'approved' || Object.keys(existing.document || {}).length > 0) {
+          leftAlone += 1
+          continue
+        }
+        const { error } = await admin.from('operational_documents')
+          .update({ document: built, status: 'draft', updated_at: now }).eq('id', existing.id)
+        if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+        added += 1
+        continue
+      }
+
+      const { error } = await admin.from('operational_documents').insert({
+        reference: built.reference,
+        kind: built.kind,
+        title: built.title,
+        department: built.department,
+        version: built.version,
+        tier: 'day-1',
+        tier_reason: 'Required in writing before a pool opens',
+        document: built,
+        status: 'draft',
+      })
+      if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+      added += 1
+    }
+
+    return NextResponse.json({
+      success: true,
+      written: added,
+      note: added
+        ? `${added} added${leftAlone ? `, ${leftAlone} left alone because they already had content` : ''}. `
+          + 'Read both against a real pool before signing either off.'
+        : `Nothing to do: both are already written.`,
+    })
+  }
+
   // Taking charge of a batch that was started but never written down.
   //
   // Two runs of three hundred and thirty-eight were submitted and paid for
@@ -577,7 +647,7 @@ export async function POST(req: NextRequest) {
     // Refused while anything is missing. An approval is a statement that
     // somebody read a finished document, and a half-finished one being signed
     // off is exactly the failure this whole flow exists to prevent.
-    const missing = row.kind === 'sop' ? missingFromSop((row.document || {}) as SopDocument) : []
+    const missing = missingFor(row.kind, row.document)
     if (missing.length) {
       return NextResponse.json({
         error: `Not ready to sign off. It still needs: ${missing.join(', ')}.`,

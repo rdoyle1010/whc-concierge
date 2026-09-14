@@ -92,7 +92,7 @@ test('an unwritten or unfinished document is never handed over as a PDF', () => 
 
 test('the shop lists documents by name, not only pack counts', () => {
   const list = body('src/components/StandardsList.tsx')
-  assert.match(list, /LIBRARY_PLAN\.filter/, 'the whole plan is listed, ready or not')
+  assert.match(list, /sellableCatalogue\(\)\.filter/, 'the whole catalogue is listed, ready or not')
   assert.match(list, /Ready today/)
   assert.match(list, /In preparation/)
   assert.match(list, /ready to send today/)

@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { adminRequestUser } from '@/lib/admin-api-auth'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { renderDocumentPdf } from '@/lib/documents/document-pdf'
+import { renderAnyDocumentPdf, PLAN_KINDS } from '@/lib/documents/render-pdf'
 import { missingFromSop, type SopDocument } from '@/lib/documents/types'
+import { missingFromPlan, type PlanDocument } from '@/lib/documents/plan-types'
 
 // The document as a file somebody can complete.
 //
@@ -35,7 +36,9 @@ export async function GET(req: NextRequest, context: { params: Promise<{ id: str
     return NextResponse.json({ error: 'Nothing has been written into that one yet.' }, { status: 400 })
   }
 
-  const missing = row.kind === 'sop' ? missingFromSop(document) : []
+  const missing = PLAN_KINDS.has(row.kind)
+    ? missingFromPlan(document as unknown as PlanDocument)
+    : row.kind === 'sop' ? missingFromSop(document) : []
   if (missing.length) {
     return NextResponse.json({
       error: `That one is not finished: it still needs ${missing.join(', ')}.`,
@@ -43,7 +46,7 @@ export async function GET(req: NextRequest, context: { params: Promise<{ id: str
   }
 
   try {
-    const pdf = await renderDocumentPdf(document)
+    const pdf = await renderAnyDocumentPdf(row.kind, document)
     // The reference, not the title. It is what a property files under and
     // what every other document points at, and two files called
     // "Stock Transfer.pdf" in one folder is a filing system that has stopped
