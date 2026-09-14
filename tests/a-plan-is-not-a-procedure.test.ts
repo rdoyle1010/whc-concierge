@@ -111,7 +111,8 @@ test('the pool procedure is priced as what it replaces', () => {
   const pack = packBySlug('pool-safety')
   assert.ok(pack, 'the pool safety pack should exist')
   assert.equal(pack!.price, POOL_SAFETY_PACK_PRICE)
-  assert.equal(pack!.count, 2)
+  // Two plans, plus the two guides that come free with them.
+  assert.equal(pack!.count, 4)
 
   // Two documents at thirty-nine pounds would misprice it so badly it reads
   // as not being the real thing, and a consultancy charges four figures.

@@ -1,6 +1,7 @@
 import { LIBRARY_PLAN, type PlannedDocument } from './library-plan'
 import { POOL_PLAN_ENTRIES } from './pool-plans'
 import { RISK_ASSESSMENT_ENTRIES } from './risk-assessment-plans'
+import { GUIDE_ENTRIES } from './guide/plans'
 
 // Everything that can be listed and sold, in one list.
 //
@@ -14,7 +15,7 @@ import { RISK_ASSESSMENT_ENTRIES } from './risk-assessment-plans'
 // operator needs most is a list that misleads by being incomplete.
 
 export function sellableCatalogue(): PlannedDocument[] {
-  return [...LIBRARY_PLAN, ...POOL_PLAN_ENTRIES, ...RISK_ASSESSMENT_ENTRIES]
+  return [...LIBRARY_PLAN, ...POOL_PLAN_ENTRIES, ...RISK_ASSESSMENT_ENTRIES, ...GUIDE_ENTRIES]
 }
 
 export function catalogueEntry(reference: string): PlannedDocument | undefined {

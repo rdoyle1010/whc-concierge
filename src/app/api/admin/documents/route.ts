@@ -10,6 +10,7 @@ import { submitDraftBatch, collectDraftBatch, batchingConfigured } from '@/lib/d
 import { documentFromDraft } from '@/lib/documents/assemble'
 import { QUARTER_ONE_DRAFTS } from '@/lib/documents/quarter-one'
 import { POOL_PLANS } from '@/lib/documents/pool-plans'
+import { GUIDE_PLANS } from '@/lib/documents/guide/plans'
 import { missingFromPlan, type PlanDocument } from '@/lib/documents/plan-types'
 import { PLAN_KINDS } from '@/lib/documents/render-pdf'
 import { RISK_ASSESSMENT_PLANS } from '@/lib/documents/risk-assessment-plans'
@@ -549,7 +550,7 @@ export async function POST(req: NextRequest) {
   // are written as structure with every fact left blank, and the property
   // supplies the facts.
   if (action === 'add_pool_plans' || action === 'add_risk_assessments') {
-    const plans = action === 'add_pool_plans' ? POOL_PLANS : RISK_ASSESSMENT_PLANS
+    const plans = action === 'add_pool_plans' ? [...POOL_PLANS, ...GUIDE_PLANS] : RISK_ASSESSMENT_PLANS
     const now = new Date().toISOString()
     let added = 0
     let leftAlone = 0

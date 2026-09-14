@@ -1,5 +1,6 @@
 import { LIBRARY_PLAN, TIER_LABEL, type BuildTier } from './library-plan'
 import { POOL_PLAN_ENTRIES } from './pool-plans'
+import { GUIDE_ENTRIES } from './guide/plans'
 import { RISK_ASSESSMENT_ENTRIES } from './risk-assessment-plans'
 
 // What a document costs, and why.
@@ -142,7 +143,10 @@ export function departmentPacks(prices: Prices = {}): Pack[] {
 
 export function tierPacks(prices: Prices = {}): Pack[] {
   const dayOne = LIBRARY_PLAN.filter(entry => entry.tier === 'day-1')
-  const poolReferences = POOL_PLAN_ENTRIES.map(entry => entry.reference)
+  const poolReferences = [
+    ...POOL_PLAN_ENTRIES.map(entry => entry.reference),
+    ...GUIDE_ENTRIES.map(entry => entry.reference),
+  ]
   const riskReferences = RISK_ASSESSMENT_ENTRIES.map(entry => entry.reference)
   return [
     {
@@ -163,7 +167,8 @@ export function tierPacks(prices: Prices = {}): Pack[] {
       blurb:
         'The Normal Operating Procedure and the Emergency Action Plan for the whole spa: pools, heat and cold '
         + 'experiences, treatment rooms, gym, plant and front of house. Both halves of what an operator needs in '
-        + 'writing: how the spa runs on an ordinary day, and who does what in the first minutes of an emergency.',
+        + 'writing: how the spa runs on an ordinary day, and who does what in the first minutes of an emergency. '
+        + 'The guide to completing them and the guide to training your team on them are included free.',
       price: prices['pool-safety'] ?? POOL_SAFETY_PACK_PRICE,
       includes: (reference: string) => poolReferences.includes(reference),
       count: poolReferences.length,
@@ -187,7 +192,7 @@ export function tierPacks(prices: Prices = {}): Pack[] {
         + 'and the governance and audit procedures that need an operation running before they can be written well.',
       price: prices.complete ?? COMPLETE_LIBRARY_PRICE,
       includes: () => true,
-      count: LIBRARY_PLAN.length + POOL_PLAN_ENTRIES.length + RISK_ASSESSMENT_ENTRIES.length,
+      count: LIBRARY_PLAN.length + POOL_PLAN_ENTRIES.length + RISK_ASSESSMENT_ENTRIES.length + GUIDE_ENTRIES.length,
     },
   ]
 }
