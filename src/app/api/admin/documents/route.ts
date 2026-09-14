@@ -340,6 +340,111 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: true, submitted: sent.count })
   }
 
+  // Drafting again the ones whose first draft came back unfinished.
+  //
+  // A draft that returned without steps was stored as written, so the
+  // register reported nothing left to write while a dozen documents could not
+  // be signed off, and each one was met individually by pressing sign off and
+  // being refused. Finding them by hand is not a job anybody should do twice.
+  //
+  // Only procedures. Everything else in this library is written in the
+  // repository rather than drafted, so it is complete by construction, and
+  // sending a checklist to be rewritten would replace a finished document
+  // with a guess.
+  if (action === 'draft_incomplete') {
+    if (!batchingConfigured()) {
+      return NextResponse.json({ error: 'Talent House AI is not switched on yet.' }, { status: 503 })
+    }
+
+    // Not twice. A batch in flight has written nothing yet, so every document
+    // it is working on still looks unfinished and still looks eligible, and
+    // pressing again would send the same documents and pay for them twice.
+    const { data: inFlight } = await admin.from('document_batches')
+      .select('provider_batch_id, requested, created_at')
+      .is('tier', null).like('note', 'Redraft%').in('status', ['submitted', 'collecting']).limit(1)
+
+    if (inFlight?.length) {
+      const since = new Date(inFlight[0].created_at).toLocaleString('en-GB', { dateStyle: 'short', timeStyle: 'short' })
+      return NextResponse.json({
+        error: `Those are already being written again. ${inFlight[0].requested} went off at ${since}, and `
+          + 'sending them now would write the same documents twice and pay for them twice. Press Collect what '
+          + 'is ready instead.',
+        alreadyRunning: true,
+      }, { status: 409 })
+    }
+
+    const { data: rows, error: readError } = await admin.from('operational_documents')
+      .select('id, title, reference, department, kind, document, status')
+      .is('employer_id', null).eq('kind', 'sop').neq('status', 'approved').limit(2000)
+    if (readError) return NextResponse.json({ error: readError.message }, { status: 500 })
+
+    // Written, and still missing something. An empty one belongs to the tier
+    // drafting above; this is only about the ones that look done and are not.
+    const items = (rows || [])
+      .filter((row: any) => Object.keys(row.document || {}).length > 0)
+      .filter((row: any) => missingFor(row.kind, row.document).length > 0)
+      .map((row: any) => ({
+        id: row.id, title: row.title, reference: row.reference, department: row.department || '',
+      }))
+
+    if (!items.length) {
+      return NextResponse.json({
+        success: true, submitted: 0,
+        note: 'Nothing to do: every written procedure has everything it needs.',
+      })
+    }
+
+    // The receipt before the money, for the same reason as every other batch:
+    // a run nobody has the id of has been paid for and cannot be collected.
+    const reservation = `pending-${crypto.randomUUID()}`
+    const { data: receipt, error: receiptError } = await admin.from('document_batches').insert({
+      provider_batch_id: reservation,
+      tier: null,
+      requested: items.length,
+      submitted_by: actor.id,
+      status: 'submitted',
+      note: 'Redraft of documents whose first draft came back unfinished.',
+    }).select('id').maybeSingle()
+
+    if (receiptError || !receipt?.id) {
+      return NextResponse.json({
+        error: 'Nothing was sent and nothing has been charged. The batch register could not be written to, so '
+          + `there would be no way to collect the results: ${receiptError?.message || 'no row came back'}.`,
+      }, { status: 500 })
+    }
+
+    const sent = await submitDraftBatch(items)
+    if (!sent.ok) {
+      const { error: clearError } = await admin.from('document_batches').delete().eq('id', receipt.id)
+      if (clearError) {
+        return NextResponse.json({
+          error: `${sent.error} Nothing was charged. A placeholder row was also left behind and could not be `
+            + `removed (${clearError.message}), which will block the next attempt until it is deleted.`,
+        }, { status: 502 })
+      }
+      return NextResponse.json({ error: sent.error }, { status: 502 })
+    }
+
+    const { error: idError } = await admin.from('document_batches')
+      .update({ provider_batch_id: sent.batchId, requested: sent.count, updated_at: new Date().toISOString() })
+      .eq('id', receipt.id)
+
+    if (idError) {
+      return NextResponse.json({
+        success: true, submitted: sent.count,
+        warning: `Sent, and running. But the batch id did not save: ${idError.message}. Write this down and use `
+          + `Collect a batch by id: ${sent.batchId}`,
+      })
+    }
+
+    return NextResponse.json({
+      success: true,
+      submitted: sent.count,
+      note: `${sent.count} sent to be written again. A redraft only replaces what is there if it comes back `
+        + 'more complete, so nothing can get worse. Come back later and press Collect what is ready.',
+    })
+  }
+
   // Collect whatever has finished.
   //
   // Bounded by the clock, not by a count. The host kills a function at
@@ -436,7 +541,13 @@ export async function POST(req: NextRequest) {
         continue
       }
 
-      const plan = planCollection(progress.results, targets, new Date().toISOString())
+      // A redraft is allowed to replace an unfinished document, and only a
+      // redraft. The run says which it is: an ordinary collection has no
+      // business deciding that a half-written document was the model's fault
+      // rather than somebody's afternoon.
+      const plan = planCollection(progress.results, targets, new Date().toISOString(), {
+        replaceUnfinished: String(run.note || '').startsWith('Redraft'),
+      })
       for (const reason of plan.refused) {
         if (refused.length < 3 && !refused.includes(reason)) refused.push(reason)
       }

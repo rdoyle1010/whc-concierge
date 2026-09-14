@@ -142,6 +142,11 @@ export default function AdminDocumentsPage() {
           setNote(body?.note || 'Nothing came back, and nothing is waiting. Press Write this whole tier to start one.')
         }
       }
+      if (!body?.warning && action === 'draft_incomplete') {
+        setNote(body?.submitted
+          ? body.note || `${body.submitted} sent to be written again.`
+          : body?.note || 'Nothing to do.')
+      }
       if (!body?.warning && (action === 'write_authored' || action === 'add_pool_plans' || action === 'add_risk_assessments'
         || action === 'add_checklists' || action === 'add_finance_pack'
         || action === 'add_everything' || action === 'approve_ready')) {
@@ -319,6 +324,26 @@ export default function AdminDocumentsPage() {
           {/* One press for everything written in the repository. The four
               below it stay, because somebody whose import of one set just
               failed wants to retry that set rather than all of it. */}
+          {/* Only worth pressing when there are some, so it says how many.
+              Finding them by hand is not a job anybody should do twice. */}
+          {rows.some(r => r.written && r.missing.length > 0) && (
+            <button type="button" disabled={busy === 'draft_incomplete'}
+              onClick={() => {
+                const count = rows.filter(r => r.written && r.missing.length > 0).length
+                if (!window.confirm(
+                  `Write ${count} unfinished ${count === 1 ? 'document' : 'documents'} again. They came back `
+                  + 'short the first time. A redraft only replaces what is there if it comes back more '
+                  + 'complete, so nothing can get worse, and it costs what a batch of that size costs.',
+                )) return
+                act('draft_incomplete')
+              }}
+              className="inline-flex items-center gap-1.5 border border-[#8a1c14] px-3 py-1.5 text-[12px] font-semibold text-[#8a1c14] disabled:opacity-40">
+              <RefreshCw size={13} />
+              {busy === 'draft_incomplete'
+                ? 'Sending...'
+                : `Write the ${rows.filter(r => r.written && r.missing.length > 0).length} unfinished ones again`}
+            </button>
+          )}
           <button type="button" disabled={busy === 'add_everything'} onClick={() => act('add_everything')}
             className="inline-flex items-center gap-1.5 border border-[#1c1c1c] bg-[#1c1c1c] px-3 py-1.5 text-[12px] font-semibold text-white disabled:opacity-40">
             <Layers size={13} /> {busy === 'add_everything' ? 'Bringing them in...' : 'Bring the library up to date'}
