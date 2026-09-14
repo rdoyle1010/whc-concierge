@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { departmentPacks, formatPrice, type Prices } from '@/lib/documents/pricing'
+import { departmentPacks, journeyPacks, formatPrice, type Prices } from '@/lib/documents/pricing'
 import { sellableCatalogue } from '@/lib/documents/catalogue'
 import StandardsList from '@/components/StandardsList'
 import BuyButton from '@/components/BuyButton'
@@ -41,6 +41,7 @@ export default function StandardsCatalogue() {
   }, [])
 
   const packs = departmentPacks(prices)
+  const stages = journeyPacks(prices)
 
   // Counted against the catalogue, not against the table.
   //
@@ -63,15 +64,78 @@ export default function StandardsCatalogue() {
   const readyTotal = readySet.size
 
   return (
-    <section className="border-b border-[#dddddd]" id="departments">
+    <>
+    {/* The guest journey first, and departments underneath.
+        A department pack asks a buyer to know which team owns a procedure.
+        A stage asks where in a visit the problem is, which is the question
+        they arrived with: "our arrivals are a mess" is how this gets said
+        out loud, and arrivals are reception, housekeeping and membership at
+        once. */}
+    <section className="border-b border-[#dddddd]" id="stages">
       <div className="mx-auto max-w-5xl px-6 py-16 lg:px-8">
         <div className="flex flex-wrap items-end justify-between gap-4">
-          <h2 className="text-[28px] font-semibold text-[#1c1c1c] md:text-[32px]">By department</h2>
+          <div>
+            <h2 className="text-[28px] font-semibold text-[#1c1c1c] md:text-[32px]">By stage of the visit</h2>
+            <p className="mt-2 max-w-2xl text-[14px] leading-relaxed text-[#555555]">
+              A guest arrives, is welcomed, has their treatment, pays and leaves, and somebody decides whether
+              they come back. Each stage below is everything that part of your operation needs in writing,
+              across every team it touches.
+            </p>
+          </div>
           {available !== null && !unavailable && (
             <p className="text-[13px] text-[#6b6b6b]">
               {readyTotal} of {sellableCatalogue().length} ready to send today
             </p>
           )}
+        </div>
+
+        <div className="mt-9 grid gap-px border border-[#dddddd] bg-[#dddddd] sm:grid-cols-2 lg:grid-cols-3">
+          {stages.map(stage => {
+            const ready = readyIn(stage)
+            const all = ready >= stage.count && stage.count > 0
+            return (
+              <div key={stage.slug} className="flex flex-col bg-white p-6">
+                <h3 className="text-[19px] font-semibold text-[#1c1c1c]">{stage.name}</h3>
+                <p className="mt-2 font-serif text-[26px] text-[#1c1c1c]">{formatPrice(stage.price)}</p>
+                <p className="mt-3 flex-1 text-[13.5px] leading-relaxed text-[#555555]">{stage.detail}</p>
+                <p className="mt-4 text-[12px] text-[#6b6b6b]">
+                  {stage.count} documents
+                  {available !== null && !unavailable && (
+                    all ? ' · all ready' : ready > 0 ? ` · ${ready} ready now` : ' · in preparation'
+                  )}
+                </p>
+                <div className="mt-4">
+                  {available !== null && !unavailable && (
+                    all
+                      ? <BuyButton packSlug={stage.slug} label={`Buy ${stage.name.toLowerCase()}`} />
+                      : <Link href="/contact"
+                          className="inline-block border border-[#dddddd] px-3 py-2 text-[13px] font-medium text-[#555555]">
+                          Ask us
+                        </Link>
+                  )}
+                </div>
+              </div>
+            )
+          })}
+        </div>
+
+        <p className="mt-6 max-w-2xl text-[13px] leading-relaxed text-[#555555]">
+          A stage is priced at roughly a third of its documents bought one at a time. Buying all six costs more
+          than the complete library, so if you want most of them, buy the library.
+        </p>
+      </div>
+    </section>
+
+    <section className="border-b border-[#dddddd]" id="departments">
+      <div className="mx-auto max-w-5xl px-6 py-16 lg:px-8">
+        <div className="flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <h2 className="text-[28px] font-semibold text-[#1c1c1c] md:text-[32px]">By department</h2>
+            <p className="mt-2 max-w-2xl text-[14px] leading-relaxed text-[#555555]">
+              If you are equipping one team rather than one stage. Everything that team owns, whatever part of
+              the visit it falls in.
+            </p>
+          </div>
         </div>
 
         {unavailable && (
@@ -176,5 +240,6 @@ export default function StandardsCatalogue() {
           because nothing here ever listed a document. */}
       <StandardsList available={available} unavailable={unavailable} prices={prices} />
     </section>
+    </>
   )
 }
