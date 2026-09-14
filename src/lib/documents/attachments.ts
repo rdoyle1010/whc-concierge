@@ -42,6 +42,10 @@ export type Attachment = {
   contentType: string | null
   sizeBytes: number
   packSlugs: string[]
+  /** What a checkout and an order refer to, when this is sold on its own. */
+  slug: string | null
+  /** Set to sell it on its own. Null means it travels with its packs only. */
+  pricePence: number | null
   isLive: boolean
   sortOrder: number
   /** This file is the reporting workbook, so the generated one stands down. */
@@ -57,7 +61,28 @@ export type Attachment = {
  */
 export function attachmentsForSlugs(attachments: Attachment[], slugs: string[]): Attachment[] {
   const owned = new Set(slugs)
-  return attachments.filter(attachment => attachment.packSlugs.some(slug => owned.has(slug)))
+  return attachments.filter(attachment =>
+    attachment.packSlugs.some(slug => owned.has(slug))
+    // Or they bought the file itself. Its slug shares the namespace with pack
+    // slugs, so an order carrying it needs no new plumbing at either end.
+    || Boolean(attachment.slug && owned.has(attachment.slug)))
+}
+
+/** Files she sells on their own, in the order she set. */
+export function soldSeparately(attachments: Attachment[]): Attachment[] {
+  return attachments.filter(attachment =>
+    attachment.isLive && attachment.slug !== null && (attachment.pricePence || 0) > 0)
+}
+
+/**
+ * A slug from a name, for a file being sold on its own.
+ *
+ * Prefixed, because these share a namespace with pack slugs and a file called
+ * "The Complete Library" would otherwise quietly take a pack's checkout.
+ */
+export function fileSlug(name: string): string {
+  const stem = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 60)
+  return `file-${stem || 'untitled'}`
 }
 
 /**

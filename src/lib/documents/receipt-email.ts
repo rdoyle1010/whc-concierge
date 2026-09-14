@@ -15,6 +15,16 @@ export async function sendStandardsReceiptEmail(input: {
   name: string | null
   packSlug: string | null
   reference: string | null
+  /**
+   * What they bought, when it is neither a pack nor a document.
+   *
+   * A file sold on its own carries a slug that packBySlug does not know, and
+   * without this the receipt read "You have bought your documents" under the
+   * subject "Your documents are ready: Talent House Collective". A receipt
+   * that cannot name the thing it is charging for is the first thing a buyer
+   * forwards to their finance team with a question attached.
+   */
+  itemName?: string | null
   amountPence: number
   libraryUrl: string
 }): Promise<boolean> {
@@ -25,13 +35,14 @@ export async function sendStandardsReceiptEmail(input: {
     ? `${pack.name}, ${pack.count} documents`
     : single
       ? `${single.title} (${single.reference})`
-      : 'your documents'
+      : input.itemName || 'your documents'
 
   const greeting = input.name ? `Thank you, ${input.name.split(' ')[0]}` : 'Thank you'
 
   const result = await sendTransactionalEmail({
     to: input.to,
-    subject: `Your documents are ready: ${pack ? pack.name : single?.title || 'Talent House Collective'}`,
+    subject: `Your documents are ready: ${
+      pack ? pack.name : single?.title || input.itemName || 'Talent House Collective'}`,
     kind: 'notification',
     html: `
   <div style="font-family: Inter, -apple-system, sans-serif; max-width: 560px; margin: 0 auto; padding: 40px 20px;">

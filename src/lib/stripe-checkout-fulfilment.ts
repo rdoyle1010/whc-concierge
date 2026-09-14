@@ -227,11 +227,22 @@ export async function fulfilCheckoutSession(
     // after it leaves, and the second caller finds it already set.
     if (!order.receipt_sent_at) {
       const origin = (ctx?.requestUrl && new URL(ctx.requestUrl).origin) || 'https://talenthousecollective.co.uk'
+      // A file sold on its own carries a slug no pack knows, so the receipt
+      // is told its name. Looked up only for those, because every other
+      // purchase resolves from the catalogue without a round trip.
+      let itemName: string | null = null
+      if (String(meta.pack_slug || '').startsWith('file-')) {
+        const { data: sold } = await supabase.from('standards_attachments')
+          .select('name').eq('slug', meta.pack_slug).maybeSingle()
+        itemName = sold?.name || null
+      }
+
       const sent = await sendStandardsReceiptEmail({
         to: email,
         name: session.customer_details?.name || null,
         packSlug: meta.pack_slug || null,
         reference: meta.document_reference || null,
+        itemName,
         amountPence: Number(session.amount_total || 0),
         // Their account, not a bearer link. The token still exists on the
         // row and the old route still honours it, so a purchase made before

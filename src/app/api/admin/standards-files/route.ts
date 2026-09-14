@@ -3,7 +3,7 @@ import { adminRequestUser } from '@/lib/admin-api-auth'
 import { createAdminClient } from '@/lib/supabase/admin'
 import {
   ATTACHMENT_BUCKET, MAX_ATTACHMENT_BYTES, ALLOWED_ATTACHMENT_TYPES,
-  attachmentPath,
+  attachmentPath, fileSlug,
 } from '@/lib/documents/attachments'
 import { loadAttachments } from '@/lib/documents/attachments-server'
 import { departmentPacks, journeyPacks, tierPacks } from '@/lib/documents/pricing'
@@ -137,17 +137,49 @@ export async function POST(req: NextRequest) {
     // decision rather than leaving it to be discovered by a buyer.
     const replacesWorkbook = body.replacesWorkbook === true
 
+    // Sold on its own, or not. A price in pounds from the page, held in pence
+    // here like every other price on this platform, because a float is the
+    // wrong type for money and the rounding shows up as a penny out on a
+    // receipt somebody screenshots.
+    const rawPrice = Number(body.pricePounds)
+    const pricePence = Number.isFinite(rawPrice) && rawPrice > 0 ? Math.round(rawPrice * 100) : null
+    if (pricePence !== null && (pricePence < 100 || pricePence > 500000)) {
+      return NextResponse.json({
+        error: 'A standalone price has to be between one pound and five thousand.',
+      }, { status: 400 })
+    }
+    const name = String(body.name || '').trim()
+    // A price with nothing to buy is a buy button that 404s, so the slug is
+    // derived rather than asked for. Kept once set, because changing it would
+    // orphan every order already carrying the old one.
+    const { data: current } = await admin.from('standards_attachments')
+      .select('slug').eq('id', id).maybeSingle()
+    const slug = pricePence === null
+      ? current?.slug || null
+      : current?.slug || fileSlug(name || 'file')
+
+    if (pricePence !== null && !body.isLive) {
+      return NextResponse.json({
+        error: 'Make it live before pricing it, or it is on sale and undeliverable.',
+      }, { status: 400 })
+    }
+
     const { error } = await admin.from('standards_attachments').update({
       name: String(body.name || '').trim() || undefined,
       description: String(body.description || '').trim() || null,
       pack_slugs: packSlugs,
       is_live: body.isLive === true,
       replaces_workbook: replacesWorkbook,
+      slug,
+      price_pence: pricePence,
       sort_order: Number.isInteger(body.sortOrder) ? body.sortOrder : 0,
       updated_at: new Date().toISOString(),
     }).eq('id', id)
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
+    const priceNote = pricePence !== null
+      ? ` It is on sale on its own at £${(pricePence / 100).toFixed(2).replace(/\.00$/, '')}.`
+      : ''
     const workbookNote = replacesWorkbook
       ? ' It is now the reporting workbook, so the generated one is not offered to anybody who gets this file.'
       : ''
@@ -155,7 +187,7 @@ export async function POST(req: NextRequest) {
       success: true,
       note: (body.isLive === true
         ? 'Saved. Anybody who owns one of those packs can download it now.'
-        : 'Saved. It is not delivered to anybody until you make it live.') + workbookNote,
+        : 'Saved. It is not delivered to anybody until you make it live.') + priceNote + workbookNote,
     })
   }
 

@@ -197,6 +197,7 @@ export default function StandardsFilesPage() {
                           packSlugs: chosen,
                           isLive: draft.isLive === true,
                           replacesWorkbook: draft.replacesWorkbook === true,
+                          pricePounds: draft.pricePence ? draft.pricePence / 100 : null,
                           sortOrder: draft.sortOrder || 0,
                         }, attachment.id)}
                         className="inline-flex items-center gap-1.5 border border-[#1c1c1c] bg-[#1c1c1c] px-3 py-1.5 text-[12px] font-semibold text-white disabled:opacity-40">
@@ -258,6 +259,38 @@ export default function StandardsFilesPage() {
                       </span>
                     </label>
                   )}
+                  {/* Sold on its own as well as with a pack.
+                      An editable toolkit is a product: it is the natural
+                      first purchase for somebody not ready to buy a document
+                      library, and folding it into one department pack is the
+                      least valuable thing that can be done with it. */}
+                  <div className="mt-3 flex flex-wrap items-center gap-2">
+                    <label className="text-[12px] text-secondary">Sell it on its own for £</label>
+                    <input
+                      type="number" min={1} max={5000} step={1}
+                      aria-label="Standalone price in pounds"
+                      value={draft.pricePence ? String(draft.pricePence / 100) : ''}
+                      onChange={event => edit(attachment.id, {
+                        pricePence: event.target.value.trim()
+                          ? Math.round(Number(event.target.value) * 100)
+                          : null,
+                      })}
+                      placeholder="not on its own"
+                      className="w-32 border border-border px-2 py-1 text-[13px]"
+                    />
+                    {draft.pricePence ? (
+                      <span className="text-[11px] text-muted">
+                        Anybody can buy this without buying a pack. Leave it empty and it only comes with the
+                        packs above.
+                      </span>
+                    ) : null}
+                  </div>
+                  {Boolean(draft.pricePence) && draft.isLive !== true && (
+                    <p className="mt-1.5 text-[11px] text-[#7a4a00]">
+                      Priced but not live. Tick the box above or it is on sale and undeliverable.
+                    </p>
+                  )}
+
                   {chosen.length === 0 && (
                     <p className="mt-1.5 text-[11px] text-[#7a4a00]">
                       Not in any pack yet, so nobody can reach it.

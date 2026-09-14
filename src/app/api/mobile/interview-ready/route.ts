@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { createClient } from '@supabase/supabase-js'
 
 export const runtime = 'nodejs'
@@ -293,8 +294,21 @@ export async function POST(req: NextRequest) {
       readiness: { overall: Math.max(0, Math.min(100, Number(ai.readiness?.overall) || base.readiness.overall)), message: clean(ai.readiness?.message) || base.readiness.message },
     } : base
 
+    // Spent with the service role, on the row belonging to the signed-in user.
+    //
+    // This was the user's own client, and a talent account cannot write its
+    // own credit balance: row level security forbids it, correctly, because a
+    // column somebody can set for themselves is not an allowance, it is a
+    // suggestion. So the update failed and the honest answer, "we could not
+    // confirm your allowance", was returned to somebody the sidebar was
+    // telling they had one credit left.
+    //
+    // Two things keep this safe. candidate.id came from a row already matched
+    // on the authenticated user, so this can only ever touch their own
+    // profile. And the compare-and-set on the old balance survives, so two
+    // requests racing still spend one credit between them rather than two.
     const nextCredits = credits - 1
-    const { data: consumed, error: consumeError } = await supabase.from('candidate_profiles')
+    const { data: consumed, error: consumeError } = await createAdminClient().from('candidate_profiles')
       .update({ interview_ready_credits: nextCredits })
       .eq('id', candidate.id)
       .eq('interview_ready_credits', credits)
