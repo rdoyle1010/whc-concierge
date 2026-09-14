@@ -42,12 +42,13 @@ export async function sendStandardsReceiptEmail(input: {
     <p style="margin: 28px 0;">
       <a href="${input.libraryUrl}"
          style="display: inline-block; background: #1c1c1c; color: #ffffff; text-decoration: none;
-                padding: 14px 24px; font-size: 15px; font-weight: 600;">Open your library</a>
+                padding: 14px 24px; font-size: 15px; font-weight: 600;">Open My Documents</a>
     </p>
 
     <p style="color: #555555;">
-      That link is your library. Keep this email: there is no password and no account to sign into, and the link
-      is the only way back to it. Every document downloads as a PDF you can type into with the free Adobe Reader.
+      Everything you buy is kept in your account, under <strong>My Documents</strong>. It will still be there in a
+      year, on any device you sign in from. Each one downloads as a PDF you can type into with the free Adobe
+      Reader.
     </p>
 
     <p style="color: #555555; margin-top: 24px;">

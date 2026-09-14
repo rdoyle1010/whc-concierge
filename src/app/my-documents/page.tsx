@@ -36,7 +36,12 @@ export default function MyDocumentsPage() {
         if (profile?.role === 'employer' || profile?.role === 'admin') setRole(profile.role)
       }
 
-      const res = await fetch('/api/standards/mine', { cache: 'no-store' })
+      // Carried through when the browser has just come back from Stripe, so
+      // the purchase is delivered before the page tries to list it. Without
+      // it, somebody who has just paid sees an empty shelf and waits on a
+      // webhook they know nothing about.
+      const sessionId = new URLSearchParams(window.location.search).get('session_id')
+      const res = await fetch(`/api/standards/mine${sessionId ? `?session_id=${encodeURIComponent(sessionId)}` : ''}`, { cache: 'no-store' })
       const body = await res.json().catch(() => null)
       if (!res.ok || !body) {
         setError(body?.error || 'We could not reach your documents just now.')

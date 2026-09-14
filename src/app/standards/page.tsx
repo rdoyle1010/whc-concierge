@@ -53,6 +53,15 @@ export default function StandardsPage() {
             <p className="mt-4 max-w-2xl text-[15px] leading-relaxed text-[#555555]">
               Buy one. Buy a department. Or buy everything a spa needs written down before it opens its doors.
             </p>
+            {/* Said before the checkout, not discovered at it. An account is
+                where the documents are kept, which is the reason for it: a
+                procedure bought once is referred to for years, and a library
+                that lives in one email is a library that goes with the inbox
+                when somebody changes job. */}
+            <p className="mt-3 max-w-2xl text-[14px] leading-relaxed text-[#6b6b6b]">
+              You will need an account. Everything you buy is kept in it, so it is still there next year when a
+              new manager asks where the procedure is.
+            </p>
           </div>
         </section>
 

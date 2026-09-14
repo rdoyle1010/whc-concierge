@@ -233,7 +233,11 @@ export async function fulfilCheckoutSession(
         packSlug: meta.pack_slug || null,
         reference: meta.document_reference || null,
         amountPence: Number(session.amount_total || 0),
-        libraryUrl: `${origin}/standards/library?t=${order.access_token}`,
+        // Their account, not a bearer link. The token still exists on the
+        // row and the old route still honours it, so a purchase made before
+        // this rule was never stranded, but nothing new is sold on a link
+        // that can be forwarded or lost with an inbox.
+        libraryUrl: `${origin}/my-documents`,
       })
       if (sent) {
         await supabase.from('standards_orders')

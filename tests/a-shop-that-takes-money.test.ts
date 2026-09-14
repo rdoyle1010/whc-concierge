@@ -89,6 +89,31 @@ test('nothing unfinished can be paid for', () => {
   assert.match((partPack as any).reason, /of \d+ in that pack are signed off/)
 })
 
+test('nothing is sold to somebody who cannot get it back', () => {
+  const checkout = body('src/app/api/standards/checkout/route.ts')
+  // The account check is above every other thing the route does, so a request
+  // that is not signed in cannot reach Stripe at all.
+  const guard = checkout.indexOf('needsAccount')
+  assert.ok(guard > 0, 'checkout must refuse an unauthenticated request')
+  assert.ok(guard < checkout.indexOf('stripe.checkout.sessions.create'))
+  assert.match(checkout, /supabase\.auth\.getUser\(\)/)
+
+  // The receipt goes to the account's own address. One typed at the till is a
+  // purchase the account cannot find afterwards, which is the whole failure.
+  assert.match(checkout, /customer_email: user\.email/)
+  assert.match(checkout, /buyer_user_id: user\.id/)
+
+  // And the button says so rather than promising a checkout and delivering a
+  // login form.
+  const button = body('src/components/BuyButton.tsx')
+  assert.match(button, /Sign in to buy/)
+  assert.match(button, /res\.status === 401 \|\| body\?\.needsAccount/)
+  assert.match(button, /\/login\?redirect=/)
+
+  // Said on the page before anybody presses anything.
+  assert.match(body('src/app/standards/page.tsx'), /You will need an account/)
+})
+
 test('the browser never says what anything costs', () => {
   const checkout = body('src/app/api/standards/checkout/route.ts')
   // Only these two come off the request. An amount from the page is a shop

@@ -1,8 +1,10 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { createServerSupabaseClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { ownedReferences } from '@/lib/documents/stock'
 import { LIBRARY_PLAN } from '@/lib/documents/library-plan'
+import { getStripe } from '@/lib/stripe'
+import { fulfilCheckoutSession } from '@/lib/stripe-checkout-fulfilment'
 
 // Everything the signed-in person has bought, wherever they bought it from.
 //
@@ -13,13 +15,32 @@ import { LIBRARY_PLAN } from '@/lib/documents/library-plan'
 // too, and their email address is confirmed by Supabase rather than typed.
 
 export const dynamic = 'force-dynamic'
+export const maxDuration = 26
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   const supabase = await createServerSupabaseClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
 
   const admin = createAdminClient()
+
+  // Straight back from Stripe. Deliver before listing, rather than showing an
+  // empty shelf to somebody who has just paid and waiting on a webhook.
+  //
+  // This is the second path, and it exists because fulfilment in the webhook
+  // alone once took the money and delivered nothing for days on this platform
+  // when its URL was wrong, with nothing that would ever have noticed.
+  const sessionId = String(req.nextUrl.searchParams.get('session_id') || '').trim()
+  if (sessionId) {
+    try {
+      const session = await getStripe().checkout.sessions.retrieve(sessionId)
+      if (session.payment_status === 'paid') {
+        await fulfilCheckoutSession(admin, session, { requestUrl: req.url })
+      }
+    } catch (caught: any) {
+      console.error('[Standards] could not confirm the session:', caught?.message)
+    }
+  }
 
   const { data: orders, error } = await admin.from('standards_orders')
     .select('id, pack_slug, document_reference, amount_pence, created_at, access_token, buyer_user_id, buyer_email')

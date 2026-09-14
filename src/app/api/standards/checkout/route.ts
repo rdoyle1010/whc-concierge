@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getStripe } from '@/lib/stripe'
-import { getRequestUser } from '@/lib/request-user'
+import { createServerSupabaseClient } from '@/lib/supabase/server'
 import { CURRENCY, SINGLE_DOCUMENT_PRICE, VAT_NOTE } from '@/lib/documents/pricing'
 import { priceSingle, pricePack } from '@/lib/documents/stock'
 import { DOCUMENT_STATUS } from '@/lib/documents/status'
@@ -21,6 +21,23 @@ export const dynamic = 'force-dynamic'
 export const maxDuration = 26
 
 export async function POST(req: NextRequest) {
+  // An account, before anything is charged.
+  //
+  // A guest checkout puts the whole purchase in one email: lose it, change
+  // job, leave the property, and a library somebody paid for is gone with no
+  // way for us to prove they own it or for them to get it back. A document
+  // bought once is referred to for years, so the account is not a hurdle in
+  // front of the sale, it is where the thing they bought is kept.
+  const supabase = await createServerSupabaseClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user?.email) {
+    return NextResponse.json({
+      error: 'Create an account or sign in first. Documents are kept in your account, '
+        + 'so they are still there in a year when you need them again.',
+      needsAccount: true,
+    }, { status: 401 })
+  }
+
   const body = await req.json().catch(() => ({}))
   const packSlug = typeof body.packSlug === 'string' ? body.packSlug.trim() : ''
   const reference = typeof body.reference === 'string' ? body.reference.trim() : ''
@@ -46,18 +63,15 @@ export async function POST(req: NextRequest) {
     : priceSingle(reference, approved, SINGLE_DOCUMENT_PRICE)
   if (!purchase.ok) return NextResponse.json({ error: purchase.reason }, { status: 400 })
 
-  // Signed in is a convenience, never a requirement. It links the order to an
-  // account so it shows up on their dashboard later.
-  const user = await getRequestUser(req).catch(() => null)
-
   const origin = req.nextUrl.origin
   try {
     const stripe = getStripe()
     const session = await stripe.checkout.sessions.create({
       mode: 'payment',
-      // Stripe collects it, so a guest never has to type an address twice and
-      // the receipt has somewhere to go.
-      customer_email: (user as any)?.email || undefined,
+      // The account's own address, not one typed at the till. A receipt sent
+      // to an address that is not the account is a purchase the account
+      // cannot find afterwards, which is the entire failure this prevents.
+      customer_email: user.email,
       line_items: [{
         quantity: 1,
         price_data: {
@@ -77,9 +91,9 @@ export async function POST(req: NextRequest) {
         type: 'standards',
         ...(purchase.packSlug ? { pack_slug: purchase.packSlug } : {}),
         ...(purchase.reference ? { document_reference: purchase.reference } : {}),
-        ...(user?.id ? { buyer_user_id: user.id } : {}),
+        buyer_user_id: user.id,
       },
-      success_url: `${origin}/standards/library?session_id={CHECKOUT_SESSION_ID}`,
+      success_url: `${origin}/my-documents?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${origin}/standards`,
       allow_promotion_codes: true,
     })
