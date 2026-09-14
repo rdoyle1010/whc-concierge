@@ -581,7 +581,7 @@ export async function POST(req: NextRequest) {
         tier: 'day-1',
         tier_reason: built.kind === 'risk-assessment'
           ? 'A written risk assessment is required before the area is used'
-          : 'Required in writing before a pool opens',
+          : 'Required in writing before the spa opens',
         document: built,
         status: 'draft',
       })

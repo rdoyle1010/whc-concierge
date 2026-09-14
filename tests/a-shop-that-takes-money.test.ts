@@ -47,8 +47,8 @@ test('an order entitles its buyer to exactly what the pack covers', () => {
   const complete = referencesForOrder({ pack_slug: 'the-complete-library' })
   assert.equal(complete.length, sellableCatalogue().length)
   assert.ok(complete.length > LIBRARY_PLAN.length)
-  assert.ok(complete.includes('POOL-SAFETY-NOP-001'))
-  assert.ok(complete.includes('POOL-SAFETY-EAP-002'))
+  assert.ok(complete.includes('SPA-OPERATIONS-NOP-001'))
+  assert.ok(complete.includes('SPA-OPERATIONS-EAP-002'))
 
   // A slug nobody sells entitles nobody to anything, rather than everything.
   assert.deepEqual(referencesForOrder({ pack_slug: 'not-a-pack' }), [])

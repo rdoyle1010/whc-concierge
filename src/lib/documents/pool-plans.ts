@@ -1,5 +1,12 @@
 import type { PlanDocument } from './plan-types'
 import { POOL_NOP_SECTIONS } from './pool-nop'
+import { GOVERNANCE_SECTIONS } from './nop/governance'
+import { HEAT_SECTIONS } from './nop/heat-and-hydro'
+import { TREATMENT_SECTIONS } from './nop/treatments'
+import { GYM_SECTIONS, FRONT_SECTIONS } from './nop/gym-and-front'
+import { PLANT_SECTIONS, HYGIENE_SECTIONS, ROUTINE_SECTIONS } from './nop/plant-and-routines'
+import { PEOPLE_SECTIONS, SECURITY_SECTIONS, CONTINUITY_SECTIONS } from './nop/people-and-continuity'
+import { APPENDIX_SECTIONS } from './nop/appendices'
 import { POOL_EAP_SECTIONS } from './pool-eap'
 
 // The two halves of a Pool Safety Operating Procedure, as documents.
@@ -13,8 +20,31 @@ import { POOL_EAP_SECTIONS } from './pool-eap'
 const asDate = (value: Date) =>
   value.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
 
-export const POOL_NOP_REFERENCE = 'POOL-SAFETY-NOP-001'
-export const POOL_EAP_REFERENCE = 'POOL-SAFETY-EAP-002'
+// The framework, named plainly.
+//
+// An assessor expects to see it and a document that dances around it reads as
+// evasive. What is never done is citing a section number or telling a
+// property what the law requires of them: this says what each framework
+// covers, and the property confirms what applies to it and where.
+export const UK_SPA_FRAMEWORK = [
+  { name: 'Health and Safety at Work etc. Act 1974', covers: 'The general duty on an employer to protect employees and anybody else affected by the work, so far as is reasonably practicable.' },
+  { name: 'Management of Health and Safety at Work Regulations', covers: 'The requirement to assess risk, record the assessment, appoint competent people and put arrangements in place.' },
+  { name: 'HSG179 Health and safety in swimming pools', covers: 'The guidance a pool operator is judged against, including the requirement for a written pool safety operating procedure in two parts: the normal operating procedure and the emergency action plan.' },
+  { name: 'HSG282 Control of legionella and other infectious agents in spa-pool systems', covers: 'Warm water systems that create an aerosol, including hydrotherapy pools, spa baths and hot tubs.' },
+  { name: 'Approved Code of Practice L8, legionnaires disease', covers: 'The duty to assess and control the risk of legionella across the whole water system, not only the pools.' },
+  { name: 'Control of Substances Hazardous to Health Regulations', covers: 'Assessment and control of every chemical used, including pool chemicals, cleaning products and treatment products.' },
+  { name: 'Regulatory Reform (Fire Safety) Order 2005', covers: 'The fire risk assessment, the means of escape and the arrangements for evacuating everybody present.' },
+  { name: 'Provision and Use of Work Equipment Regulations', covers: 'Equipment being suitable, maintained, inspected and used by people trained to use it.' },
+  { name: 'Reporting of Injuries, Diseases and Dangerous Occurrences Regulations', covers: 'What must be reported to the enforcing authority, by when, and by whom.' },
+  { name: 'Health and Safety (First-Aid) Regulations', covers: 'Adequate first aid provision, equipment and trained people for the operation and its risks.' },
+  { name: 'Manual Handling Operations Regulations', covers: 'Avoiding, assessing and reducing manual handling risk, including the handling therapists do all day.' },
+  { name: 'Equality Act 2010', covers: 'Reasonable adjustments for disabled guests and employees, and access to the facilities offered.' },
+  { name: 'UK GDPR and the Data Protection Act 2018', covers: 'Guest records generally, and health information in particular, which is special category data.' },
+  { name: 'Food Information Regulations', covers: 'Allergen information, where the spa serves anything to eat or drink.' },
+]
+
+export const POOL_NOP_REFERENCE = 'SPA-OPERATIONS-NOP-001'
+export const POOL_EAP_REFERENCE = 'SPA-OPERATIONS-EAP-002'
 
 function base(reference: string) {
   const issued = new Date()
@@ -27,7 +57,7 @@ function base(reference: string) {
     issued: asDate(issued),
     reviewBy: asDate(review),
     property: '[property name]',
-    department: 'POOL AND WET AREAS',
+    department: 'SPA OPERATIONS',
     accountability: {
       author: 'Talent House Collective',
       authorRole: 'Spa operations',
@@ -45,20 +75,39 @@ export function poolNop(): PlanDocument {
   return {
     ...base(POOL_NOP_REFERENCE),
     kind: 'nop',
-    title: 'Pool and Wet Areas: Normal Operating Procedure',
+    title: 'Spa and Wellness: Normal Operating Procedure',
+    department: 'SPA OPERATIONS',
+    legalFramework: UK_SPA_FRAMEWORK,
     summary:
-      'How this property runs its pools, plunges, hydrotherapy pools, saunas and steam rooms on an ordinary day: '
-      + 'the facilities themselves, the maximum number of people permitted in the water, who supervises and from '
-      + 'where, how the water is tested, and how the facility is opened and closed. It is one half of the pool '
-      + 'safety operating procedure. The other half is the Emergency Action Plan.',
+      'How this property runs its entire spa and wellness operation on an ordinary day. Nine parts: who is '
+      + 'accountable and who is competent; the pools and wet areas; the heat, cold and hydrotherapy experiences; '
+      + 'the treatment rooms; the gym and studios; reception, retail and back of house; the plant, water safety '
+      + 'and chemicals; cleaning and hygiene; the routine that holds it together, day by day and year by year; '
+      + 'children, groups and conduct; security, keys and information; and incidents, complaints and continuity. '
+      + 'The final part is the blank record sheets the rest of it refers to, ready to print. It is one half of '
+      + 'the safety operating procedure. The other half is the Emergency Action Plan.',
     scope:
-      'Applies to every person who supervises, cleans, tests, doses or manages the wet facilities, and to any '
-      + 'outside organisation hiring them. Most of this document is blank when it arrives, and those blanks are '
-      + 'the document: the dimensions, depths, loads and positions are facts about one building and no one who '
-      + 'has not walked it may state them.',
-    sections: POOL_NOP_SECTIONS,
+      'Applies to every person who works in, supervises, cleans, tests, doses, instructs or manages any part of '
+      + 'the spa, and to any outside organisation using it. Most of this document is blank when it arrives, and '
+      + 'those blanks are the document: the dimensions, the loads, the positions, the names and the hours are '
+      + 'facts about one building, and nobody who has not walked it may state them.',
+    sections: [
+      ...GOVERNANCE_SECTIONS,
+      ...POOL_NOP_SECTIONS,
+      ...HEAT_SECTIONS,
+      ...TREATMENT_SECTIONS,
+      ...GYM_SECTIONS,
+      ...FRONT_SECTIONS,
+      ...PLANT_SECTIONS,
+      ...HYGIENE_SECTIONS,
+      ...ROUTINE_SECTIONS,
+      ...PEOPLE_SECTIONS,
+      ...SECURITY_SECTIONS,
+      ...CONTINUITY_SECTIONS,
+      ...APPENDIX_SECTIONS,
+    ],
     references: [
-      { name: 'Pool and Wet Areas: Emergency Action Plan', reference: POOL_EAP_REFERENCE },
+      { name: 'Spa and Wellness: Emergency Action Plan', reference: POOL_EAP_REFERENCE },
     ],
   }
 }
@@ -67,7 +116,7 @@ export function poolEap(): PlanDocument {
   return {
     ...base(POOL_EAP_REFERENCE),
     kind: 'eap',
-    title: 'Pool and Wet Areas: Emergency Action Plan',
+    title: 'Spa and Wellness: Emergency Action Plan',
     summary:
       'What each person does, in order, in the first minutes of an emergency in the pool or wet areas. Written to '
       + 'be read at speed by somebody with wet hands: one emergency per page, short actions, a named role against '
@@ -80,7 +129,7 @@ export function poolEap(): PlanDocument {
       + 'key - is blank, and must be completed and briefed before this plan is relied on.',
     sections: POOL_EAP_SECTIONS,
     references: [
-      { name: 'Pool and Wet Areas: Normal Operating Procedure', reference: POOL_NOP_REFERENCE },
+      { name: 'Spa and Wellness: Normal Operating Procedure', reference: POOL_NOP_REFERENCE },
     ],
   }
 }
@@ -103,15 +152,15 @@ export const POOL_PLANS = [
 export const POOL_PLAN_ENTRIES = [
   {
     reference: POOL_NOP_REFERENCE,
-    title: 'Pool and Wet Areas: Normal Operating Procedure',
-    department: 'POOL AND WET AREAS',
+    title: 'Spa and Wellness: Normal Operating Procedure',
+    department: 'SPA OPERATIONS',
     tier: 'day-1' as const,
     why: 'Required in writing before a pool opens',
   },
   {
     reference: POOL_EAP_REFERENCE,
     title: 'Pool and Wet Areas: Emergency Action Plan',
-    department: 'POOL AND WET AREAS',
+    department: 'SPA OPERATIONS',
     tier: 'day-1' as const,
     why: 'Required in writing before a pool opens',
   },
