@@ -51,38 +51,34 @@ async function getRoleOnce(userId: string) {
 
 // The top of the site, and what earns a place on it.
 //
-// This was nine links, plus a search, plus two portals: twelve things
-// competing before anybody read the headline. The nine were deliberate at the
-// time, and the reasoning still holds for most of them - six revenue lines
-// hidden behind a hover is a discovery problem dressed as tidiness, and
-// Consultancy sitting under "Flexible Work" was telling visitors something
-// untrue about a paid product. Dropdowns are not the answer here and are not
-// coming back.
+// No dropdowns. Six revenue lines behind a hover is a discovery problem
+// dressed as tidiness, and Consultancy filed under "Flexible Work" was
+// telling visitors something untrue about a paid product. That decision
+// stands and is not being revisited.
 //
-// What changed is that two of the nine lead somewhere effectively empty. The
-// public Properties directory holds one approved property, which is ours, and
-// Brands is the advertising surface with no advertisers on it yet. A header
-// that advertises nine sections and delivers seven teaches a visitor the site
-// is thinner than it looks, and the ones doing that damage are exactly the
-// two with nothing behind them. Both keep a footer link, so nothing is
-// unreachable and nothing loses its internal link.
+// Properties and Brands were taken out of here on the grounds that both
+// currently list almost nothing, and put back on better grounds: they are
+// what she is selling. A hotel deciding whether to be listed and a product
+// house deciding whether to advertise both arrive at the top of this page,
+// and a surface she is actively selling cannot live only in a footer. Both
+// pages already handle being empty properly, which was most of the original
+// objection.
 //
-// Everything that is a live revenue line stays at the top level, including
-// Roles: it has no listings today, but recruitment is the primary line and a
-// talent platform with no visible way to look at work is a stranger thing
-// than an empty results page.
-//
-// Put them back the day there is something behind them. Ten roles and half a
-// dozen properties is the moment, and at that point this is worth revisiting
-// properly rather than by adding one link at a time.
+// What actually made the header look crowded was never the count. It was nine
+// long uppercase labels at wide tracking with eight units of space between
+// them, spanning the full width and wrapping "Browse Roles" onto two lines.
+// Shorter labels and tighter spacing calm it without hiding anything, which
+// is the version that serves both the eye and the business.
 const SITE_LINKS = [
   { href: '/jobs', label: 'Roles' },
+  { href: '/properties', label: 'Properties' },
+  { href: '/brands', label: 'Brands' },
   { href: '/agency/about', label: 'Agency' },
   { href: '/residency', label: 'Residency' },
   { href: '/academy', label: 'Academy' },
   { href: '/events', label: 'Events' },
   { href: '/consultancy', label: 'Consultancy' },
-  { href: '/intelligence', label: 'Intelligence' },
+  { href: '/intelligence', label: 'Insight' },
 ]
 
 export default function Navbar({ siteContent }: { siteContent?: WebsiteContent }) {
@@ -159,16 +155,16 @@ export default function Navbar({ siteContent }: { siteContent?: WebsiteContent }
             <div className="flex h-full items-center gap-1">
               {loggedInSiteLinks.map(link => {
                 const active = isActive(link.href)
-                return <Link key={link.href} href={link.href} className={`relative flex h-full items-center px-3 text-[10px] font-semibold uppercase tracking-[0.12em] transition-colors ${active ? 'text-ink' : 'text-secondary hover:text-ink'}`}>
-                  {link.label}{active && <span className="absolute inset-x-3 bottom-0 h-[2px] bg-ink" />}
+                return <Link key={link.href} href={link.href} className={`relative flex h-full items-center whitespace-nowrap px-2.5 text-[10px] font-semibold uppercase tracking-[0.11em] transition-colors ${active ? 'text-ink' : 'text-secondary hover:text-ink'}`}>
+                  {link.label}{active && <span className="absolute inset-x-2.5 bottom-0 h-[2px] bg-ink" />}
                 </Link>
               })}
             </div>
           ) : (
-            <div className="flex h-full items-center gap-8">
+            <div className="flex h-full items-center gap-x-5 xl:gap-x-7">
               {publicLinks.map(link => (
                 <Link key={link.href} href={link.href}
-                  className={`relative flex h-full items-center text-[10px] font-semibold uppercase tracking-[0.16em] transition-colors ${isActive(link.href) ? 'text-ink' : 'text-secondary hover:text-ink'}`}>
+                  className={`relative flex h-full items-center whitespace-nowrap text-[10px] font-semibold uppercase tracking-[0.11em] transition-colors ${isActive(link.href) ? 'text-ink' : 'text-secondary hover:text-ink'}`}>
                   {link.label}
                   {isActive(link.href) && <span className="absolute inset-x-0 bottom-0 h-[2px] bg-ink" />}
                 </Link>

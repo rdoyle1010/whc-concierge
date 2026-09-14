@@ -315,6 +315,70 @@ const getFeaturedPlacements = unstable_cache(async (): Promise<{ properties: Fea
   } catch { return { properties: [], professionals: [] } }
 }, ['homepage-featured-placements-v1'], { revalidate: 300 })
 
+// The two things she is selling, on the page where people arrive.
+//
+// Properties and Brands are in the header, but a header link sends somebody
+// to a directory, and a directory argues for itself only once it is full.
+// This argues for the proposition instead, which works on day one: a hotel
+// deciding whether to be listed and a product house deciding whether to
+// advertise both need to be told why, not shown a list of who else already
+// has.
+//
+// Deliberately not dressed as a count of anything. Nothing here says how many
+// properties or brands are on the platform, because that number is small and
+// saying it would undo the argument the copy is making.
+function SellingBand() {
+  const cards = [
+    {
+      eyebrow: 'For properties',
+      heading: 'Be somewhere they are already looking',
+      body: 'The people worth hiring are rarely on job boards. They are here keeping their qualifications, '
+        + 'brand training and treatment record somewhere it counts, whether or not they are looking. Put your '
+        + 'spa in front of them, and be found by the ones who would never answer an advert.',
+      action: 'List your property',
+      href: '/register/employer',
+      secondary: 'See what it costs',
+      secondaryHref: '/pricing',
+    },
+    {
+      eyebrow: 'For product houses',
+      heading: 'In front of the people who specify you',
+      body: 'A spa director chooses the house her team trains with, and a therapist carries that training for '
+        + 'the rest of her career. Both are on this platform. A brand page puts your house, your training and '
+        + 'your standards where those two decisions are actually made.',
+      action: 'Advertise with us',
+      href: '/advertise',
+      secondary: 'See the brands',
+      secondaryHref: '/brands',
+    },
+  ]
+
+  return (
+    <section className="border-b border-border bg-white" aria-label="Work with Talent House">
+      <div className="mx-auto max-w-7xl px-6 py-14 lg:px-8">
+        <Eyebrow>Work with us</Eyebrow>
+        <div className="mt-7 grid gap-x-14 gap-y-10 md:grid-cols-2">
+          {cards.map(card => (
+            <div key={card.eyebrow} className="border-t border-[#1c1c1c] pt-6">
+              <p className="text-[10px] font-semibold uppercase tracking-[.18em] text-muted">{card.eyebrow}</p>
+              <h2 className="site-heading mt-2 text-[24px] font-semibold leading-tight md:text-[28px]">{card.heading}</h2>
+              <p className="mt-3 max-w-xl text-[14px] leading-relaxed text-secondary">{card.body}</p>
+              <div className="mt-5 flex flex-wrap items-center gap-5">
+                <Link href={card.href} className="border border-[#1c1c1c] bg-[#1c1c1c] px-5 py-2.5 text-[12px] font-semibold uppercase tracking-[.1em] text-white">
+                  {card.action}
+                </Link>
+                <Link href={card.secondaryHref} className="text-[12px] font-semibold text-ink underline underline-offset-4">
+                  {card.secondary}
+                </Link>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  )
+}
+
 function FeaturedPlacementsSection({ placements }: { placements: { properties: FeaturedEntry[]; professionals: FeaturedEntry[] } }) {
   if (!placements.properties.length && !placements.professionals.length) return null
   return (
@@ -467,6 +531,7 @@ export async function renderHome(previewingDraft: boolean) {
       <RoutesSection />
       <SponsoredAd placement="homepage_spotlight" />
       {content.sections.filter(section => section.visible).map(section => <div key={section.id}>{sections[section.id]}</div>)}
+      <SellingBand />
       <FeaturedPlacementsSection placements={featuredPlacements} />
     </main>
     <Footer siteContent={content} />
