@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react'
 import { departmentPacks, formatPrice } from '@/lib/documents/pricing'
 import { LIBRARY_PLAN } from '@/lib/documents/library-plan'
 import StandardsList from '@/components/StandardsList'
+import BuyButton from '@/components/BuyButton'
+import Link from 'next/link'
 
 // The shelf, and how much of it is actually stocked.
 //
@@ -74,7 +76,23 @@ export default function StandardsCatalogue() {
                     )}
                   </p>
                 </div>
-                <p className="font-serif text-[22px] text-[#1c1c1c]">{formatPrice(pack.price)}</p>
+                <div className="flex items-center gap-5">
+                  <p className="font-serif text-[22px] text-[#1c1c1c]">{formatPrice(pack.price)}</p>
+                  {/* Buyable only when every document in it is signed off.
+                      A pack sold part-finished is a refund and a story told
+                      to every other spa director in the county, and the
+                      alternative costs nothing but patience. */}
+                  {available !== null && !unavailable && (
+                    ready >= pack.count ? (
+                      <BuyButton packSlug={pack.slug} label="Buy this pack" />
+                    ) : (
+                      <Link href="/contact"
+                        className="border border-[#dddddd] px-3 py-2 text-[13px] font-medium text-[#555555]">
+                        Ask us
+                      </Link>
+                    )
+                  )}
+                </div>
               </div>
             )
           })}

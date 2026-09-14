@@ -9,6 +9,8 @@ import { sendFeaturedEmployerEmail } from '@/lib/featured-employer-email'
 import { fulfilCommercialPurchase, recordCommercialPurchase } from '@/lib/commercial-fulfilment'
 import { applyAgencyCaseAdjustment } from '@/lib/agency-case-adjustment'
 import { getStripe } from '@/lib/stripe'
+import { randomUUID } from 'node:crypto'
+import { sendStandardsReceiptEmail } from '@/lib/documents/receipt-email'
 
 // Everything a completed Stripe checkout has to deliver, in one place.
 //
@@ -170,6 +172,80 @@ export async function fulfilCheckoutSession(
     if (!result.ok) {
       console.error('[Commercial product] fulfilment failed:', result.error)
       return { ok: false, retry: true, message: 'commercial_product fulfilment failed' }
+    }
+  }
+
+  // A document, or a pack of them.
+  //
+  // Nothing is granted to an account, because a spa director buys without
+  // creating one. The order carries a token, the receipt carries a link with
+  // it, and that link is their library. Idempotent on the session id, so the
+  // webhook and the browser coming back from Stripe cannot deliver twice.
+  if (meta?.type === 'standards' && (meta?.pack_slug || meta?.document_reference)) {
+    delivered = true
+    const email = session.customer_details?.email || session.customer_email || ''
+    if (!email) {
+      // Without an address there is nowhere to send the library, and a buyer
+      // who has paid and received nothing must not be left to notice it
+      // themselves.
+      await notifyAdmins(
+        'A Standards purchase arrived with no email address',
+        `Stripe checkout ${session.id} was paid and carries no address, so the library link has nowhere to go. `
+        + 'Find the buyer in Stripe and send it by hand.',
+        '/admin/dashboard',
+      )
+      return { ok: true, note: 'standards_no_email' }
+    }
+
+    const { data: order, error: orderError } = await supabase.from('standards_orders').upsert({
+      pack_slug: meta.pack_slug || null,
+      document_reference: meta.document_reference || null,
+      buyer_email: email,
+      buyer_name: session.customer_details?.name || null,
+      buyer_user_id: meta.buyer_user_id || null,
+      amount_pence: Number(session.amount_total || 0),
+      currency: session.currency || 'gbp',
+      stripe_checkout_session_id: session.id,
+      stripe_payment_intent_id: typeof session.payment_intent === 'string'
+        ? session.payment_intent
+        : session.payment_intent?.id || null,
+      // Generated here rather than at checkout, so a token only ever exists
+      // for a purchase that was actually paid for.
+      access_token: randomUUID().replace(/-/g, '') + randomUUID().replace(/-/g, ''),
+      updated_at: new Date().toISOString(),
+    }, { onConflict: 'stripe_checkout_session_id', ignoreDuplicates: false })
+      .select('id, access_token, receipt_sent_at')
+      .maybeSingle()
+
+    if (orderError || !order) {
+      console.error('[Standards] order could not be recorded:', orderError?.message)
+      return { ok: false, retry: true, message: 'standards order failed' }
+    }
+
+    // The receipt is what the buyer actually receives, so a failure to send it
+    // is a failure to deliver, not a footnote. Sent once: the flag is set
+    // after it leaves, and the second caller finds it already set.
+    if (!order.receipt_sent_at) {
+      const origin = (ctx?.requestUrl && new URL(ctx.requestUrl).origin) || 'https://talenthousecollective.co.uk'
+      const sent = await sendStandardsReceiptEmail({
+        to: email,
+        name: session.customer_details?.name || null,
+        packSlug: meta.pack_slug || null,
+        reference: meta.document_reference || null,
+        amountPence: Number(session.amount_total || 0),
+        libraryUrl: `${origin}/standards/library?t=${order.access_token}`,
+      })
+      if (sent) {
+        await supabase.from('standards_orders')
+          .update({ receipt_sent_at: new Date().toISOString() }).eq('id', order.id)
+      } else {
+        await notifyAdmins(
+          'A Standards purchase was paid for and its link did not send',
+          `${email} paid for ${meta.pack_slug || meta.document_reference} and the receipt email failed. `
+          + 'They have paid and have nothing. Send them the library link by hand from the orders table.',
+          '/admin/dashboard',
+        )
+      }
     }
   }
 

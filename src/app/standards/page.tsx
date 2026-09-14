@@ -3,6 +3,7 @@ import Link from 'next/link'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
 import { departmentPacks, tierPacks, formatPrice, SINGLE_DOCUMENT_PRICE, VAT_NOTE } from '@/lib/documents/pricing'
+import TierBuy from '@/components/TierBuy'
 import { LIBRARY_PLAN, TIER_LABEL } from '@/lib/documents/library-plan'
 import StandardsCatalogue from '@/components/StandardsCatalogue'
 
@@ -99,6 +100,7 @@ export default function StandardsPage() {
                   A consultancy writes this over months and charges five figures for it. This is the same work,
                   done once, properly, and sold at a price a spa director can approve without a board meeting.
                 </p>
+                <TierBuy slug="before-the-first-guest" label="Buy the pre-opening suite" />
               </div>
             )}
 
