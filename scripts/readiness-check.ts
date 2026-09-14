@@ -184,6 +184,17 @@ check('all service-role API routes are protected or deliberately public', () => 
     // the select names its columns and a test asserts the document body is
     // not among them.
     'src/app/api/standards/route.ts',
+    // Public by design, and guarded by a token rather than a session. A spa
+    // director buys a document without creating an account, so the receipt
+    // email carries the only key there is. Both routes look the order up by
+    // that token and serve only what that buyer's own orders cover, and a
+    // test asserts the download refuses a reference they did not buy.
+    'src/app/api/standards/library/route.ts',
+    'src/app/api/standards/download/route.ts',
+    // Public by design: it starts a Stripe checkout and grants nothing. The
+    // price is worked out here against what is signed off, never taken from
+    // the caller.
+    'src/app/api/standards/checkout/route.ts',
     'src/app/api/agency/directory/route.ts',
     'src/app/api/fix-employer-columns/route.ts',
     'src/app/api/fix-null-live/route.ts',
@@ -192,7 +203,6 @@ check('all service-role API routes are protected or deliberately public', () => 
     'src/app/api/seed-residencies/route.ts',
     'src/app/api/seed-taxonomy/route.ts',
     'src/app/api/seed/route.ts',
-    'src/app/api/update-jobs/route.ts',
     'src/app/api/jobs/public/route.ts',
     'src/app/api/properties/[id]/reviews/route.ts',
     'src/app/api/privacy/marketing/confirm/route.ts',

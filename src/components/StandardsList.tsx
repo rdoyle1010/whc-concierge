@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react'
 import { Search } from 'lucide-react'
 import { LIBRARY_PLAN } from '@/lib/documents/library-plan'
 import { SINGLE_DOCUMENT_PRICE, formatPrice } from '@/lib/documents/pricing'
+import BuyButton from '@/components/BuyButton'
 
 // Every document, by name, whether it is ready or not.
 //
@@ -124,9 +125,10 @@ export default function StandardsList({ available, unavailable }: Props) {
                     </p>
                   </div>
                   {available === null || unavailable ? null : isReady ? (
-                    <span className="shrink-0 border border-[#166534]/30 bg-[#f3fbf5] px-2 py-1 text-[11px] font-medium text-[#166534]">
-                      Ready today
-                    </span>
+                    // Bought on its own, from the list, without a basket or an
+                    // account. A spa manager needing one procedure this
+                    // afternoon is the most common buyer there is.
+                    <BuyButton reference={item.reference} label={`Buy ${formatPrice(SINGLE_DOCUMENT_PRICE)}`} primary={false} />
                   ) : (
                     <span className="shrink-0 text-[11px] text-[#8a8a8a]">In preparation</span>
                   )}
