@@ -143,6 +143,34 @@ test('both suites are on the shelf, priced against what they replace', () => {
   }
 })
 
+test('one press brings in everything written in the repository', () => {
+  const route = body('src/app/api/admin/documents/route.ts')
+  const start = route.indexOf("if (action === 'add_pool_plans'")
+  assert.ok(start > 0)
+  const block = route.slice(start, start + 4500)
+
+  assert.ok(block.includes("action === 'add_everything'"))
+  // Every set, or the button lies about what it did.
+  for (const set of ['POOL_PLANS', 'GUIDE_PLANS', 'RISK_ASSESSMENT_PLANS', 'CHECKLIST_PLANS', 'FINANCE_PLANS']) {
+    assert.ok(block.includes(set), `${set} is not brought in`)
+  }
+
+  // Read once and written in chunks. Forty-six documents at a select and a
+  // write each is ninety-two round trips inside a function the host kills at
+  // twenty-six seconds, and the failure leaves half a library imported with
+  // no way to tell which half.
+  assert.ok(block.includes(".in('reference', references)"))
+  assert.ok(/at \+= 20/.test(block))
+  assert.ok(block.includes('were brought in before it stopped'))
+
+  // Nothing written or signed off is overwritten, whatever the button says.
+  assert.ok(block.includes("existing.status === 'approved'"))
+  assert.ok(block.includes('Object.keys(existing.document || {}).length > 0'))
+
+  const page = body('src/app/admin/documents/page.tsx')
+  assert.ok(page.includes("act('add_everything')"))
+})
+
 test('she can add both from the library screen, and change both prices', () => {
   const route = body('src/app/api/admin/documents/route.ts')
   assert.ok(route.includes("action === 'add_checklists'"))

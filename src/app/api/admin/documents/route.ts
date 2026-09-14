@@ -564,34 +564,51 @@ export async function POST(req: NextRequest) {
   // are written as structure with every fact left blank, and the property
   // supplies the facts.
   if (action === 'add_pool_plans' || action === 'add_risk_assessments'
-    || action === 'add_checklists' || action === 'add_finance_pack') {
+    || action === 'add_checklists' || action === 'add_finance_pack' || action === 'add_everything') {
+    // One press for all of it.
+    //
+    // Four buttons for four sets of documents was four chances to press three
+    // of them, and the library then reports a gap that is not a gap. These are
+    // all written in the repository rather than drafted, so bringing them in
+    // is a database write and nothing else: there is no reason for it to be
+    // four decisions.
+    //
+    // The individual actions stay, because a person who has just had one set
+    // go wrong wants to retry that set rather than all of it.
     const plans = action === 'add_pool_plans' ? [...POOL_PLANS, ...GUIDE_PLANS]
       : action === 'add_risk_assessments' ? RISK_ASSESSMENT_PLANS
         : action === 'add_checklists' ? CHECKLIST_PLANS
-          : FINANCE_PLANS
+          : action === 'add_finance_pack' ? FINANCE_PLANS
+            : [...POOL_PLANS, ...GUIDE_PLANS, ...RISK_ASSESSMENT_PLANS, ...CHECKLIST_PLANS, ...FINANCE_PLANS]
+
     const now = new Date().toISOString()
-    let added = 0
+    const references = plans.map(plan => plan.reference)
+
+    // Read once rather than once per document. Forty-six documents at a select
+    // and a write each is ninety-two round trips inside a function the host
+    // kills at twenty-six seconds, and the failure mode is half a library
+    // imported with no way to tell which half.
+    const { data: existingRows, error: readError } = await admin.from('operational_documents')
+      .select('id, reference, status, document').is('employer_id', null).in('reference', references)
+    if (readError) return NextResponse.json({ error: readError.message }, { status: 500 })
+    const existingBy = new Map((existingRows || []).map((row: any) => [row.reference, row]))
+
+    const writes: Record<string, any>[] = []
     let leftAlone = 0
 
     for (const plan of plans) {
-      const built = plan.build()
-      const { data: existing } = await admin.from('operational_documents')
-        .select('id, status, document').is('employer_id', null).eq('reference', plan.reference).maybeSingle()
-
-      if (existing?.id) {
-        // Signed off, or written since. Neither is ours to overwrite.
-        if (existing.status === 'approved' || Object.keys(existing.document || {}).length > 0) {
-          leftAlone += 1
-          continue
-        }
-        const { error } = await admin.from('operational_documents')
-          .update({ document: built, status: 'draft', updated_at: now }).eq('id', existing.id)
-        if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-        added += 1
+      const existing = existingBy.get(plan.reference)
+      // Signed off, or written since. Neither is ours to overwrite, and the
+      // whole point of the sign-off is that it applies to the exact version
+      // somebody read.
+      if (existing && (existing.status === 'approved' || Object.keys(existing.document || {}).length > 0)) {
+        leftAlone += 1
         continue
       }
 
-      const { error } = await admin.from('operational_documents').insert({
+      const built = plan.build()
+      writes.push({
+        ...(existing?.id ? { id: existing.id } : {}),
         reference: built.reference,
         kind: built.kind,
         title: built.title,
@@ -607,18 +624,32 @@ export async function POST(req: NextRequest) {
               : 'Required in writing before the spa opens',
         document: built,
         status: 'draft',
+        updated_at: now,
       })
-      if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-      added += 1
+    }
+
+    let added = 0
+    for (let at = 0; at < writes.length; at += 20) {
+      const chunk = writes.slice(at, at + 20)
+      const { error } = await admin.from('operational_documents')
+        .upsert(chunk, { onConflict: 'reference' })
+      // Reported with what did land. A red box over a half-imported library
+      // is worse than a red box with a number in it.
+      if (error) {
+        return NextResponse.json({
+          error: `${error.message} ${added} were brought in before it stopped. Press it again.`,
+        }, { status: 500 })
+      }
+      added += chunk.length
     }
 
     return NextResponse.json({
       success: true,
       written: added,
       note: added
-        ? `${added} added${leftAlone ? `, ${leftAlone} left alone because they already had content` : ''}. `
+        ? `${added} brought in${leftAlone ? `, ${leftAlone} left alone because they already had content` : ''}. `
           + 'Read each one against the actual premises before signing any of them off.'
-        : 'Nothing to do: they are all already written.',
+        : `Nothing to do: all ${leftAlone} are already written.`,
     })
   }
 

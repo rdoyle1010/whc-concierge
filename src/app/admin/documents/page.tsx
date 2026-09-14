@@ -11,7 +11,7 @@ import { JOURNEY_STAGES, stageOf, kindOf, KIND_LABEL, type JourneyStage } from '
 import { LIFE_SAFETY_WARNING } from '@/lib/documents/safety'
 import {
   Check, CheckCheck, Eye, Plus, Printer, RefreshCw, RotateCcw, Trash2, Download, Sparkles,
-  ShieldAlert, Inbox, Pencil, ClipboardCheck, Banknote,
+  ShieldAlert, Inbox, Pencil, ClipboardCheck, Banknote, Layers,
 } from 'lucide-react'
 
 // The library, and the desk it is signed off at.
@@ -143,7 +143,8 @@ export default function AdminDocumentsPage() {
         }
       }
       if (!body?.warning && (action === 'write_authored' || action === 'add_pool_plans' || action === 'add_risk_assessments'
-        || action === 'add_checklists' || action === 'add_finance_pack' || action === 'approve_ready')) {
+        || action === 'add_checklists' || action === 'add_finance_pack'
+        || action === 'add_everything' || action === 'approve_ready')) {
         setNote(body?.note || 'Done.')
       }
       // A document too long for a web request is now sent the slower way
@@ -311,6 +312,13 @@ export default function AdminDocumentsPage() {
           <button type="button" disabled={busy === 'add_risk_assessments'} onClick={() => act('add_risk_assessments')}
             className="inline-flex items-center gap-1.5 border border-border px-3 py-1.5 text-[12px] font-medium text-secondary disabled:opacity-40">
             <ShieldAlert size={13} /> {busy === 'add_risk_assessments' ? 'Adding...' : 'Add the risk assessments'}
+          </button>
+          {/* One press for everything written in the repository. The four
+              below it stay, because somebody whose import of one set just
+              failed wants to retry that set rather than all of it. */}
+          <button type="button" disabled={busy === 'add_everything'} onClick={() => act('add_everything')}
+            className="inline-flex items-center gap-1.5 border border-[#1c1c1c] bg-[#1c1c1c] px-3 py-1.5 text-[12px] font-semibold text-white disabled:opacity-40">
+            <Layers size={13} /> {busy === 'add_everything' ? 'Bringing them in...' : 'Bring the library up to date'}
           </button>
           <button type="button" disabled={busy === 'add_checklists'} onClick={() => act('add_checklists')}
             className="inline-flex items-center gap-1.5 border border-border px-3 py-1.5 text-[12px] font-medium text-secondary disabled:opacity-40">
