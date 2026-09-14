@@ -94,13 +94,22 @@ export default function AdminDocumentsPage() {
         setError(body?.error || `That did not work (${res.status}). Tell Claude what you pressed and this number.`)
         return false
       }
-      if (action === 'approve') setNote('Signed off. It can be issued to a property now.')
-      if (action === 'draft_tier') {
+      if (!body?.warning && action === 'approve') setNote('Signed off. It can be issued to a property now.')
+      // A warning is shown instead of the success line, never underneath it
+      // and never in place of it. The warning that carried the only record of
+      // a batch id was swallowed by the cheerful sentence below, and two paid
+      // runs of three hundred and thirty-eight documents went missing with it.
+      if (body?.warning) {
+        setError(body.warning)
+      } else if (action === 'draft_tier') {
         setNote(body?.submitted
           ? `${body.submitted} documents sent to be written. It takes a while, and you do not have to wait: come back later and press Collect what is ready.`
           : body?.note || 'Nothing to send.')
       }
-      if (action === 'collect') {
+      if (!body?.warning && action === 'adopt_batch') {
+        setNote(body?.note || 'Adopted. Press Collect what is ready to bring it in.')
+      }
+      if (!body?.warning && action === 'collect') {
         // Never just "nothing came back". A run still working through its
         // queue and a run in which every request failed look identical from
         // here, and they need completely different things from her.
@@ -114,7 +123,7 @@ export default function AdminDocumentsPage() {
           setNote(body?.note || 'Nothing came back, and nothing is waiting. Press Write this whole tier to start one.')
         }
       }
-      if (action === 'draft') {
+      if (!body?.warning && action === 'draft') {
         setNote(body?.lifeSafety
           ? 'Drafted. This one is life safety: read every step against the actual building before you sign it off.'
           : 'Drafted. Read it, correct it, then sign it off.')
@@ -248,6 +257,17 @@ export default function AdminDocumentsPage() {
           <button type="button" disabled={busy === 'collect'} onClick={() => act('collect')}
             className="inline-flex items-center gap-1.5 border border-[#1c1c1c] px-3 py-1.5 text-[12px] font-semibold text-ink disabled:opacity-40">
             <Inbox size={13} /> {busy === 'collect' ? 'Checking...' : 'Collect what is ready'}
+          </button>
+          <button type="button" disabled={busy === 'adopt_batch'}
+            onClick={() => {
+              const providerBatchId = window.prompt(
+                'Paste a batch id from the Anthropic console. Use this for a run that was started before the '
+                + 'register existed, so its results can still be collected.',
+              )
+              if (providerBatchId?.trim()) act('adopt_batch', undefined, { providerBatchId: providerBatchId.trim(), tier })
+            }}
+            className="inline-flex items-center gap-1.5 border border-border px-3 py-1.5 text-[12px] font-medium text-secondary disabled:opacity-40">
+            <Inbox size={13} /> Collect a batch by id
           </button>
           <button type="button" disabled={busy === 'add_example'} onClick={() => act('add_example')}
             className="inline-flex items-center gap-1.5 border border-border px-3 py-1.5 text-[12px] font-medium text-secondary disabled:opacity-40">
