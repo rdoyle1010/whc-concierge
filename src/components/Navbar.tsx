@@ -75,6 +75,7 @@ const SITE_LINKS = [
   { href: '/brands', label: 'Brands' },
   { href: '/agency/about', label: 'Agency' },
   { href: '/residency', label: 'Residency' },
+  { href: '/standards', label: 'Standards' },
   { href: '/academy', label: 'Academy' },
   { href: '/events', label: 'Events' },
   { href: '/consultancy', label: 'Consultancy' },

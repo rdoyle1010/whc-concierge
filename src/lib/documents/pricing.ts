@@ -34,6 +34,23 @@ export const COMPLETE_LIBRARY_PRICE = 245000
 
 export const CURRENCY = 'gbp'
 
+// Not VAT registered, so a price is simply the price.
+//
+// One flag rather than wording repeated on a shop page, a checkout, a receipt
+// and an invoice. When she crosses the registration threshold this becomes
+// true and every one of those changes with it, which is the difference
+// between a decision and an afternoon of finding all the places a number was
+// written out by hand.
+//
+// While it is false nothing may say "plus VAT", "inc VAT", or show a VAT
+// number. A business that is not registered must not charge or imply VAT, and
+// a shop page that does is a problem to unwind rather than edit.
+export const VAT_REGISTERED = false
+
+export const VAT_NOTE = VAT_REGISTERED
+  ? 'Prices include VAT at the current rate.'
+  : 'No VAT is charged. The price shown is the price paid.'
+
 export type Pack = {
   slug: string
   name: string
@@ -43,6 +60,8 @@ export type Pack = {
   /** Which documents it covers. */
   includes: (reference: string) => boolean
   count: number
+  /** The department exactly as the register spells it, where the pack is one. */
+  department?: string
 }
 
 export function formatPrice(pence: number): string {
@@ -76,6 +95,11 @@ export function departmentPacks(): Pack[] {
       includes: (reference: string) =>
         LIBRARY_PLAN.some(entry => entry.reference === reference && entry.department === department),
       count,
+      // Carried rather than reconstructed. The page needs to count what is
+      // ready in this department, and working that out by finding a document
+      // the pack includes and reading its department back is a lookup that
+      // breaks the day a pack covers more than one.
+      department,
     }))
 }
 
