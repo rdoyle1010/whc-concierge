@@ -5,7 +5,7 @@ import {
   ATTACHMENT_BUCKET, MAX_ATTACHMENT_BYTES, ALLOWED_ATTACHMENT_TYPES,
   attachmentPath, loadAttachments,
 } from '@/lib/documents/attachments'
-import { departmentPacks, tierPacks } from '@/lib/documents/pricing'
+import { departmentPacks, journeyPacks, tierPacks } from '@/lib/documents/pricing'
 import { loadBundles } from '@/lib/documents/pricing-server'
 
 // Uploading a file into a pack.
@@ -28,7 +28,8 @@ export async function GET() {
     // Packs and her own bundles together, because a file belongs to whichever
     // she says and a buyer does not know the difference.
     slugs: [
-      ...[...tierPacks(), ...departmentPacks()].map(pack => ({ slug: pack.slug, name: pack.name })),
+      ...[...tierPacks(), ...journeyPacks(), ...departmentPacks()]
+        .map(pack => ({ slug: pack.slug, name: pack.name })),
       ...bundles.map(bundle => ({ slug: bundle.slug, name: `${bundle.name} (bundle)` })),
     ],
     maxBytes: MAX_ATTACHMENT_BYTES,
@@ -41,12 +42,24 @@ export async function POST(req: NextRequest) {
   if (!actor) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
 
   const admin = createAdminClient()
-  const form = await req.formData().catch(() => null)
 
-  // The upload itself arrives as a form. Everything else is JSON.
-  if (form?.get('file')) {
-    const file = form.get('file') as File
-    const name = String(form.get('name') || file.name).trim()
+  // Which way to read the body, decided by the header rather than by trying
+  // one and falling back to the other.
+  //
+  // A request body can only be read once. Calling formData() on a JSON
+  // request consumed it, so the json() that followed returned nothing, the
+  // action came through empty, and every Save and Delete on this screen
+  // answered "Unknown action". The upload worked, which is what made it look
+  // like the screen was fine.
+  const contentType = req.headers.get('content-type') || ''
+
+  if (contentType.includes('multipart/form-data')) {
+    const form = await req.formData().catch(() => null)
+    const file = form?.get('file')
+    if (!(file instanceof File)) {
+      return NextResponse.json({ error: 'No file arrived. Choose one and try again.' }, { status: 400 })
+    }
+    const name = String(form?.get('name') || file.name).trim()
 
     if (file.size > MAX_ATTACHMENT_BYTES) {
       return NextResponse.json({
@@ -75,7 +88,7 @@ export async function POST(req: NextRequest) {
     // to delete, which is how storage bills grow without explanation.
     const { error } = await admin.from('standards_attachments').insert({
       name: name || file.name,
-      description: String(form.get('description') || '').trim() || null,
+      description: String(form?.get('description') || '').trim() || null,
       storage_path: path,
       file_name: file.name,
       content_type: file.type,
@@ -103,7 +116,7 @@ export async function POST(req: NextRequest) {
     const packSlugs: string[] = Array.isArray(body.packSlugs) ? body.packSlugs.map(String) : []
     const bundles = await loadBundles(false, admin)
     const known = new Set([
-      ...[...tierPacks(), ...departmentPacks()].map(pack => pack.slug),
+      ...[...tierPacks(), ...journeyPacks(), ...departmentPacks()].map(pack => pack.slug),
       ...bundles.map(bundle => bundle.slug),
     ])
     const unknown = packSlugs.filter(slug => !known.has(slug))
