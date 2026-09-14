@@ -78,7 +78,7 @@ export default function StandardsCatalogue() {
             <h2 className="text-[28px] font-semibold text-[#1c1c1c] md:text-[32px]">By stage of the visit</h2>
             <p className="mt-2 max-w-2xl text-[14px] leading-relaxed text-[#555555]">
               A guest arrives, is welcomed, has their treatment, pays and leaves, and somebody decides whether
-              they come back. Each stage below is everything that part of your operation needs in writing,
+              they come back. Each pack below is everything that part of your operation needs in writing,
               across every team it touches.
             </p>
           </div>
@@ -90,7 +90,7 @@ export default function StandardsCatalogue() {
         </div>
 
         <div className="mt-9 grid gap-px border border-[#dddddd] bg-[#dddddd] sm:grid-cols-2 lg:grid-cols-3">
-          {stages.map(stage => {
+          {stages.filter(stage => stage.group === 'visit').map(stage => {
             const ready = readyIn(stage)
             const all = ready >= stage.count && stage.count > 0
             return (
@@ -119,9 +119,51 @@ export default function StandardsCatalogue() {
           })}
         </div>
 
+        {/* The half of the operation a guest never sees, and the half that
+            is most often missing. Separated rather than mixed in, because
+            these are bought by different people in different weeks: a
+            finance manager and a spa therapist are not shopping for the
+            same thing on the same afternoon. */}
+        <h3 className="mt-14 text-[22px] font-semibold text-[#1c1c1c]">Behind the scenes</h3>
+        <p className="mt-2 max-w-2xl text-[14px] leading-relaxed text-[#555555]">
+          The half a guest never sees, and usually the half that is missing. Each of these is a part of the
+          operation somebody owns, and the documents they need to own it properly.
+        </p>
+
+        <div className="mt-7 grid gap-px border border-[#dddddd] bg-[#dddddd] sm:grid-cols-2 lg:grid-cols-3">
+          {stages.filter(stage => stage.group === 'behind').map(stage => {
+            const ready = readyIn(stage)
+            const all = ready >= stage.count && stage.count > 0
+            return (
+              <div key={stage.slug} className="flex flex-col bg-white p-6">
+                <h4 className="text-[19px] font-semibold text-[#1c1c1c]">{stage.name}</h4>
+                <p className="mt-2 font-serif text-[26px] text-[#1c1c1c]">{formatPrice(stage.price)}</p>
+                <p className="mt-3 flex-1 text-[13.5px] leading-relaxed text-[#555555]">{stage.detail}</p>
+                <p className="mt-4 text-[12px] text-[#6b6b6b]">
+                  {stage.count} documents
+                  {available !== null && !unavailable && (
+                    all ? ' · all ready' : ready > 0 ? ` · ${ready} ready now` : ' · in preparation'
+                  )}
+                </p>
+                <div className="mt-4">
+                  {available !== null && !unavailable && (
+                    all
+                      ? <BuyButton packSlug={stage.slug} label={`Buy ${stage.name.toLowerCase()}`} />
+                      : <Link href="/contact"
+                          className="inline-block border border-[#dddddd] px-3 py-2 text-[13px] font-medium text-[#555555]">
+                          Ask us
+                        </Link>
+                  )}
+                </div>
+              </div>
+            )
+          })}
+        </div>
+
         <p className="mt-6 max-w-2xl text-[13px] leading-relaxed text-[#555555]">
-          A stage is priced at roughly a third of its documents bought one at a time. Buying all six costs more
-          than the complete library, so if you want most of them, buy the library.
+          Each pack is priced at roughly a third of its documents bought one at a time. Buying every pack costs
+          more than the complete library, so if you want most of them, buy the library. The risk assessment
+          suite and the safety operating procedure are sold on their own and are in the library, not in these.
         </p>
       </div>
     </section>

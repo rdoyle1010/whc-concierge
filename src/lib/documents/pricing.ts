@@ -2,8 +2,7 @@ import { LIBRARY_PLAN, TIER_LABEL, type BuildTier } from './library-plan'
 import { POOL_PLAN_ENTRIES } from './pool-plans'
 import { GUIDE_ENTRIES } from './guide/plans'
 import { RISK_ASSESSMENT_ENTRIES } from './risk-assessment-plans'
-import { sellableCatalogue } from './catalogue'
-import { JOURNEY_STAGES, stageOf } from './journey'
+import { JOURNEY_STAGES, stageOf, type StageGroup } from './journey'
 
 // What a document costs, and why.
 //
@@ -123,6 +122,8 @@ export type Pack = {
   department?: string
   /** A longer line for a pack that gets a card of its own. */
   detail?: string
+  /** Whether a stage is part of the visit or behind it. */
+  group?: StageGroup
 }
 
 export function formatPrice(pence: number): string {
@@ -182,16 +183,25 @@ export function journeyPrice(count: number, prices: Prices = {}): number {
  * The library sold the way a spa is actually run.
  *
  * A department pack asks a buyer to know which team owns a procedure. A stage
- * asks them where in a visit the problem is, which is the question they
- * arrived with: "our arrivals are a mess" and "nobody follows up afterwards"
- * are how this gets described out loud, and neither maps to one department.
- * Arrival alone spans reception, housekeeping and membership.
+ * asks them where in a visit the problem is, or which part of the operation
+ * is thin, which is the question they arrived with: "our arrivals are a mess"
+ * and "we have nothing written down about training" are how this gets
+ * described out loud, and neither maps to one department. Arrival alone spans
+ * reception, housekeeping and membership.
+ *
+ * Built from the build plan rather than from the whole catalogue, and that is
+ * deliberate. The risk assessment suite and the pool safety plans are sold on
+ * their own arguments at seven hundred and fifty and four hundred and
+ * ninety-five, and a stage pack at a third of its parts would hand both of
+ * them over inside a six hundred and fifty pound pack along with forty-eight
+ * other documents. That is not a discount, it is undercutting your own
+ * flagship with your own shop. They are in the complete library, which is the
+ * top of the ladder and the right place for them.
  */
 export function journeyPacks(prices: Prices = {}): Pack[] {
-  const catalogue = sellableCatalogue()
   return JOURNEY_STAGES.map(stage => {
     const references = new Set(
-      catalogue.filter(entry => stageOf(entry) === stage.slug).map(entry => entry.reference),
+      LIBRARY_PLAN.filter(entry => stageOf(entry) === stage.slug).map(entry => entry.reference),
     )
     return {
       slug: `journey-${stage.slug}`,
@@ -201,27 +211,28 @@ export function journeyPacks(prices: Prices = {}): Pack[] {
       price: journeyPrice(references.size, prices),
       includes: (reference: string) => references.has(reference),
       count: references.size,
+      group: stage.group,
     }
   })
 }
 
 // Named for what a buyer gets rather than for the stage, because "Arrival" on
-// its own is a label and "Everything your arrivals need in writing" is an
-// offer.
+// its own is a label and "The first ten minutes" is an offer.
 const JOURNEY_PACK_NAME: Record<string, string> = {
-  management: 'Running the Business',
   'pre-arrival': 'Before They Arrive',
   arrival: 'The First Ten Minutes',
   experience: 'The Visit Itself',
   departure: 'The Last Five Minutes',
   'post-departure': 'After They Leave',
+  money: 'Money and Membership',
+  people: 'Hiring and Keeping People',
+  training: 'Training Your Team',
+  systems: 'Systems and Setup',
+  safety: 'Safety and the Building',
+  'running-the-day': 'Running the Day',
 }
 
 const JOURNEY_PACK_DETAIL: Record<string, string> = {
-  management:
-    'The paperwork that keeps the doors open and the inspector satisfied. Systems and configuration, cash and '
-    + 'revenue, people and rotas, procurement, governance, audit, and the health and safety regime the whole '
-    + 'operation sits on.',
   'pre-arrival':
     'Every procedure between somebody wanting to come and somebody walking in. Enquiries, bookings, deposits, '
     + 'amendments, cancellations, confirmations and the consent and health screening that should reach a guest '
@@ -240,6 +251,30 @@ const JOURNEY_PACK_DETAIL: Record<string, string> = {
   'post-departure':
     'The part most spas leave to chance. Aftercare, feedback and reviews, complaints and service recovery, '
     + 'follow-up, retention and winning back somebody who has stopped coming.',
+  money:
+    'Where the money actually goes. Float and banking, the daily revenue close, discrepancies and chargebacks, '
+    + 'commission and complimentary approvals, and the membership side underneath it: contracts, direct debits, '
+    + 'arrears, freezes, upgrades and renewals.',
+  people:
+    'Hiring somebody, keeping them, and the day they leave. Interviews and packs, onboarding, rotas and cover, '
+    + 'absence, overtime approval, conduct, and the leaver process including the system access somebody still '
+    + 'has three months after their last shift.',
+  training:
+    'What your team was taught, and the record that proves it. Induction, competency sign-off, observation and '
+    + 'coaching, refresher cycles and sales training. The documents an insurer asks for after an incident and '
+    + 'the ones nobody has.',
+  systems:
+    'The configuration nobody writes down and everybody needs when the person who set it up leaves. Booking '
+    + 'system setup end to end, pricing and packages, buffers and resources, reporting, receipts and email '
+    + 'templates, plus the pre-opening critical path and snagging.',
+  safety:
+    'What an inspector asks for first. Accident and near-miss reporting, COSHH and chemical handling, fire and '
+    + 'evacuation, security and CCTV, data protection and breach response, audit and corrective actions, and '
+    + 'the building itself: plant, anti-scald, HVAC, contractors and planned maintenance.',
+  'running-the-day':
+    'How a shift is actually held together. The leadership briefing, duty manager rounds, the priorities board, '
+    + 'daily risk review, escalation and decision protocol, staffing adjustments, major incident command, and '
+    + 'the weekly operations review.',
 }
 
 export function tierPacks(prices: Prices = {}): Pack[] {
