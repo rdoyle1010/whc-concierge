@@ -15,6 +15,13 @@ import { readableSize, type Attachment } from '@/lib/documents/attachments'
 
 type Slug = { slug: string; name: string }
 
+/** What can stand in for the reporting workbook. */
+const SPREADSHEET = new Set([
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  'application/vnd.ms-excel',
+  'application/vnd.ms-excel.sheet.macroEnabled.12',
+])
+
 export default function StandardsFilesPage() {
   const [attachments, setAttachments] = useState<Attachment[]>([])
   const [slugs, setSlugs] = useState<Slug[]>([])
@@ -151,6 +158,7 @@ export default function StandardsFilesPage() {
                           description: draft.description,
                           packSlugs: chosen,
                           isLive: draft.isLive === true,
+                          replacesWorkbook: draft.replacesWorkbook === true,
                           sortOrder: draft.sortOrder || 0,
                         }, attachment.id)}
                         className="inline-flex items-center gap-1.5 border border-[#1c1c1c] bg-[#1c1c1c] px-3 py-1.5 text-[12px] font-semibold text-white disabled:opacity-40">
@@ -192,6 +200,26 @@ export default function StandardsFilesPage() {
                         who have already paid is the thing she is deciding. */}
                     Deliver this to everybody who owns one of those packs
                   </label>
+                  {/* Only offered on a spreadsheet, because replacing the
+                      reporting workbook with a PDF is not a thing anybody
+                      means to do. Stated rather than guessed at: the
+                      compliance register is a spreadsheet too, and a rule
+                      that inferred this would withdraw the workbook the first
+                      time a register went into the same pack. */}
+                  {SPREADSHEET.has(attachment.contentType || '') && (
+                    <label className="mt-2 flex items-start gap-2 text-[12px] text-secondary">
+                      <input type="checkbox" checked={draft.replacesWorkbook === true}
+                        onChange={event => edit(attachment.id, { replacesWorkbook: event.target.checked })}
+                        className="mt-0.5 h-3.5 w-3.5" />
+                      <span>
+                        This is the reporting workbook
+                        <span className="block text-[11px] text-muted">
+                          The one built in code is not offered to anybody who gets this file. Yours is the
+                          workbook.
+                        </span>
+                      </span>
+                    </label>
+                  )}
                   {chosen.length === 0 && (
                     <p className="mt-1.5 text-[11px] text-[#7a4a00]">
                       Not in any pack yet, so nobody can reach it.

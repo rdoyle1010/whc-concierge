@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createServerSupabaseClient } from '@/lib/supabase/server'
 import { ownedReferences } from '@/lib/documents/stock'
+import { filesForOrders } from '@/lib/documents/entitlement'
+import { replacementWorkbook } from '@/lib/documents/attachments'
 import { bundleReferenceMap } from '@/lib/documents/pricing-server'
 import { reportingWorkbook, WORKBOOK_FILE_NAME } from '@/lib/documents/finance/workbook'
 import { FINANCE_REGISTER } from '@/lib/documents/finance/register'
@@ -54,6 +56,17 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({
       error: 'The reporting workbook comes with the financial reporting pack.',
     }, { status: 403 })
+  }
+
+  // Hers wins, if she has built one. Checked here as well as on the page that
+  // offers the link, because a bookmark outlives the button that made it and
+  // serving the generated workbook to somebody who has been given a better
+  // one is how two versions of the same numbers get into a building.
+  const replacement = replacementWorkbook(await filesForOrders(orders, admin))
+  if (replacement) {
+    return NextResponse.json({
+      error: `The reporting workbook for this pack is ${replacement.name}, in your files.`,
+    }, { status: 410 })
   }
 
   const workbook = reportingWorkbook()

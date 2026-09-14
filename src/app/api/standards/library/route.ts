@@ -6,6 +6,7 @@ import { ownedReferences } from '@/lib/documents/stock'
 import { bundleReferenceMap } from '@/lib/documents/pricing-server'
 import { sellableCatalogue } from '@/lib/documents/catalogue'
 import { filesForOrders } from '@/lib/documents/entitlement'
+import { replacementWorkbook } from '@/lib/documents/attachments'
 import { FINANCE_REGISTER } from '@/lib/documents/finance/register'
 
 // What a buyer owns, reached by the token in their receipt.
@@ -102,7 +103,8 @@ export async function GET(req: NextRequest) {
   // Files that came with a pack. Listed beside the documents rather than in a
   // section of their own: a buyer thinks in terms of what they bought, not in
   // terms of which of it happens to be a PDF.
-  const files = (await filesForOrders(orders, admin)).map(file => ({
+  const theirFiles = await filesForOrders(orders, admin)
+  const files = theirFiles.map(file => ({
     id: file.id,
     name: file.name,
     description: file.description,
@@ -115,7 +117,9 @@ export async function GET(req: NextRequest) {
     token: resolvedToken,
     documents,
     files,
-    workbook: owned.has(FINANCE_REGISTER[0].reference),
+    // The generated workbook, unless one of their own files replaces it. Two
+    // workbooks in one pack is worse than either alone.
+    workbook: owned.has(FINANCE_REGISTER[0].reference) && !replacementWorkbook(theirFiles),
     ready: documents.filter(entry => entry.ready).length,
     total: documents.length,
   })

@@ -131,21 +131,30 @@ export async function POST(req: NextRequest) {
       }, { status: 400 })
     }
 
+    // Marking a file as the reporting workbook withdraws the generated one
+    // from anybody who receives this file. Worth saying at the point of the
+    // decision rather than leaving it to be discovered by a buyer.
+    const replacesWorkbook = body.replacesWorkbook === true
+
     const { error } = await admin.from('standards_attachments').update({
       name: String(body.name || '').trim() || undefined,
       description: String(body.description || '').trim() || null,
       pack_slugs: packSlugs,
       is_live: body.isLive === true,
+      replaces_workbook: replacesWorkbook,
       sort_order: Number.isInteger(body.sortOrder) ? body.sortOrder : 0,
       updated_at: new Date().toISOString(),
     }).eq('id', id)
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
+    const workbookNote = replacesWorkbook
+      ? ' It is now the reporting workbook, so the generated one is not offered to anybody who gets this file.'
+      : ''
     return NextResponse.json({
       success: true,
-      note: body.isLive === true
+      note: (body.isLive === true
         ? 'Saved. Anybody who owns one of those packs can download it now.'
-        : 'Saved. It is not delivered to anybody until you make it live.',
+        : 'Saved. It is not delivered to anybody until you make it live.') + workbookNote,
     })
   }
 

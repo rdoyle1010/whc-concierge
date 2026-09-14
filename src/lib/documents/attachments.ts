@@ -38,6 +38,8 @@ export type Attachment = {
   packSlugs: string[]
   isLive: boolean
   sortOrder: number
+  /** This file is the reporting workbook, so the generated one stands down. */
+  replacesWorkbook: boolean
 }
 
 const asAttachment = (row: any): Attachment => ({
@@ -51,6 +53,7 @@ const asAttachment = (row: any): Attachment => ({
   packSlugs: row.pack_slugs || [],
   isLive: row.is_live,
   sortOrder: row.sort_order,
+  replacesWorkbook: Boolean(row.replaces_workbook),
 })
 
 export async function loadAttachments(liveOnly: boolean, admin = createAdminClient()): Promise<Attachment[]> {
@@ -71,6 +74,29 @@ export async function loadAttachments(liveOnly: boolean, admin = createAdminClie
 export function attachmentsForSlugs(attachments: Attachment[], slugs: string[]): Attachment[] {
   const owned = new Set(slugs)
   return attachments.filter(attachment => attachment.packSlugs.some(slug => owned.has(slug)))
+}
+
+/**
+ * The uploaded file that replaces the generated reporting workbook.
+ *
+ * The one built in code is a floor, not a ceiling. It computes, and it agrees
+ * with the documents beside it because both are rendered from the same
+ * register, but it cannot do a chart, a pivot or a conditional format, and
+ * the person who knows how a spa director reads a month can build a better
+ * one in Excel in an afternoon.
+ *
+ * Stated on the file rather than inferred from it being a spreadsheet: the
+ * compliance register is a spreadsheet too, and a rule that guessed would
+ * withdraw the reporting workbook the first time a register was uploaded to
+ * the same pack. Two workbooks in one pack is worse than either alone, since
+ * the buyer has to decide which is authoritative and will suspect the other
+ * disagreed.
+ *
+ * Asked of the files one buyer actually receives, so a bundle buyer whose
+ * pack does not carry hers still gets the generated one rather than nothing.
+ */
+export function replacementWorkbook(attachments: Attachment[]): Attachment | null {
+  return attachments.find(attachment => attachment.isLive && attachment.replacesWorkbook) || null
 }
 
 export function extensionFor(contentType: string | null, fileName: string): string {
