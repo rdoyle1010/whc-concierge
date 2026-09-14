@@ -28,6 +28,10 @@ export const KIND_CODES: Record<string, string> = {
   'risk-assessment': 'RA',
   'job-description': 'JD',
   policy: 'POL',
+  // A checklist is not a procedure. The opening and closing safety checks are
+  // CHK in the real library because somebody works down them with a pen,
+  // which is a different document from one somebody is trained against.
+  checklist: 'CHK',
 }
 
 const TOPIC_MAX = 12
@@ -81,8 +85,24 @@ export function buildReference(input: {
   return `${departmentCode(input.department)}-${topicCode(input.title)}-${kind}-${number}`
 }
 
-const PATTERN = /^[A-Z]{2,4}-[A-Z]{2,12}-(SOP|RA|JD|POL)-\d{3,4}$/
+// One topic segment was the wrong assumption.
+//
+// The real library uses as many as it needs:
+// FIN-CASH-DISCREPANCY-CLOSE-SOP-317, REC-OVERRIDE-AVAIL-SOP-070. Checked
+// against the four hundred and seventy documents already planned, the first
+// version of this pattern rejected four hundred and fifty-one of them. It
+// would have refused to approve almost the entire library, and it would have
+// done it one document at a time, months from now, with no clue that the
+// validator rather than the document was wrong.
+//
+// buildReference still makes short ones, because a reference it invents
+// should be readable. This accepts what the house already writes.
+// Departments run to six letters (MAINT, ASSET), topics to five segments,
+// and the kind can be a checklist. Every one of these was found by running
+// the pattern against the four hundred and sixty documents that already
+// exist rather than by imagining what a reference might look like.
+const PATTERN = /^[A-Z]{2,6}(?:-[A-Z0-9]{2,16}){1,5}-(SOP|RA|JD|POL|CHK)-\d{2,4}$/
 
 export function isValidReference(value: unknown): boolean {
-  return typeof value === 'string' && PATTERN.test(value)
+  return typeof value === 'string' && value.length <= 60 && PATTERN.test(value)
 }

@@ -1,0 +1,97 @@
+import { test } from 'node:test'
+import assert from 'node:assert/strict'
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
+import { LIBRARY_PLAN, plannedByTier, departments, TIER_LABEL } from '../src/lib/documents/library-plan'
+import { isValidReference } from '../src/lib/documents/reference'
+
+const read = (file: string) => readFileSync(join(process.cwd(), file), 'utf8')
+const body = (file: string) =>
+  read(file)
+    .replace(/\{\/\*[\s\S]*?\*\/\}/g, '')
+    .replace(/\/\*[\s\S]*?\*\//g, '')
+    .replace(/^\s*\/\/.*$/gm, '')
+
+const route = body('src/app/api/admin/documents/route.ts')
+const page = body('src/app/admin/documents/page.tsx')
+
+// A register with four hundred and sixty known gaps is a plan. Four hundred
+// and sixty unwritten documents nobody has listed is an intention.
+test('the whole library is a register before it is a set of drafts', () => {
+  assert.equal(LIBRARY_PLAN.length, 460)
+  assert.equal(departments().length, 14)
+
+  const counted = plannedByTier('day-1').length + plannedByTier('month-1').length + plannedByTier('quarter-1').length
+  assert.equal(counted, LIBRARY_PLAN.length, 'every document belongs to a tier')
+  assert.equal(plannedByTier('day-1').length, 339, 'the ones needed before the first guest')
+
+  for (const tier of ['day-1', 'month-1', 'quarter-1'] as const) {
+    assert.ok(TIER_LABEL[tier].length > 5, 'a tier a person can read, not a slug on screen')
+  }
+})
+
+// The first version of the reference pattern rejected four hundred and fifty
+// one of these. It would have refused to approve almost the whole library,
+// one document at a time, months from now, with nothing to suggest the
+// validator rather than the document was wrong.
+test('every planned reference passes the validator', () => {
+  const rejected = LIBRARY_PLAN.filter(entry => !isValidReference(entry.reference))
+  assert.deepEqual(rejected.map(entry => entry.reference), [],
+    'the pattern is checked against the library that exists, not one imagined')
+
+  // The shapes that broke it, kept as the cases they are.
+  for (const reference of [
+    'FIN-CASH-DISCREPANCY-CLOSE-SOP-317',
+    'MAINT-CONTRACTOR-PERMIT-SOP-348',
+    'ASSET-REGISTER-TAG-SOP-349',
+    'REC-OPEN-CHK-001',
+  ]) {
+    assert.ok(isValidReference(reference), `${reference} is a real reference and must validate`)
+  }
+  assert.ok(!isValidReference('REC-OPEN-CHK'), 'still rejects a reference with no number')
+  assert.ok(!isValidReference('rec-open-chk-001'), 'still rejects the wrong case')
+})
+
+// No document may be listed twice. The reference is what a client files it
+// under and what other documents point at.
+test('nothing is counted twice', () => {
+  const references = LIBRARY_PLAN.map(entry => entry.reference)
+  assert.equal(new Set(references).size, references.length)
+
+  // The ten that were: their document number had fallen into the title
+  // column, which hid them from a plain duplicate check and inflated both the
+  // cover total and the first-quarter tier.
+  for (const entry of LIBRARY_PLAN) {
+    assert.ok(!entry.title.includes('|'), `a reference is still stuck in a title: ${entry.title}`)
+    assert.ok(entry.department, `${entry.reference} has no department`)
+  }
+  assert.equal(plannedByTier('quarter-1').length, 9, 'nineteen was nine plus ten counted twice')
+})
+
+// An import must never be able to undo an approval, and it has to be safe to
+// press twice because somebody will.
+test('importing the plan cannot touch what is already there', () => {
+  const block = route.slice(route.indexOf("action === 'import_plan'"), route.indexOf("const id = String"))
+  assert.match(block, /already\.has\(entry\.reference\)/, 'anything already held is skipped entirely')
+  assert.doesNotMatch(block, /\.update\(|\.upsert\(|\.delete\(/, 'an import writes nothing over anything')
+  assert.match(block, /The whole plan is already in the library/)
+
+  // Four hundred and sixty rows in one statement is a request that does not
+  // finish inside the platform's own time limit.
+  assert.match(block, /at \+= 100/)
+  assert.match(block, /Imported \$\{added\} and then stopped/, 'a partial import says how far it got')
+
+  // Empty on purpose, and the completeness check keeps an empty one from
+  // being signed off.
+  assert.match(block, /document: \{\}/)
+})
+
+// Four hundred and sixty is not a list anybody scrolls.
+test('the library is worked a tier at a time', () => {
+  assert.match(page, /const \[tier, setTier\]/)
+  assert.match(page, /Not written yet/)
+  assert.match(page, /Still to write/)
+  assert.match(page, /disabled=\{!row\.written\}/, 'an empty draft has nothing to read')
+  assert.match(page, /visible\.slice\(0, 60\)/)
+  assert.match(page, /Showing 60 of \{visible\.length\}/, 'and it says when it is showing a subset')
+})

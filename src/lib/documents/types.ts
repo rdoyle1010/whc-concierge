@@ -22,7 +22,7 @@
 //   - What goes wrong. The failures a trainer would name out loud, written
 //     down, because they are the actual content of the training.
 
-export type DocumentKind = 'sop' | 'risk-assessment' | 'job-description' | 'policy'
+export type DocumentKind = 'sop' | 'risk-assessment' | 'job-description' | 'policy' | 'checklist'
 
 /** Who is accountable, as distinct from who typed it. */
 export type Accountability = {
