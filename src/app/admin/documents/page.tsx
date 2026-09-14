@@ -6,7 +6,7 @@ import SopSheet from '@/components/documents/SopSheet'
 import type { SopDocument } from '@/lib/documents/types'
 import { TIER_LABEL, type BuildTier } from '@/lib/documents/library-plan'
 import { LIFE_SAFETY_WARNING } from '@/lib/documents/safety'
-import { Check, Eye, Plus, Printer, RefreshCw, RotateCcw, Trash2, Download, Sparkles, ShieldAlert, Layers, Inbox } from 'lucide-react'
+import { Check, Eye, Plus, Printer, RefreshCw, RotateCcw, Trash2, Download, Sparkles, ShieldAlert, Layers, Inbox, Pencil } from 'lucide-react'
 
 // The library, and the desk it is signed off at.
 //
@@ -130,7 +130,14 @@ export default function AdminDocumentsPage() {
           setNote(body?.note || 'Nothing came back, and nothing is waiting. Press Write this whole tier to start one.')
         }
       }
-      if (!body?.warning && action === 'draft') {
+      if (!body?.warning && action === 'write_authored') {
+        setNote(body?.note || 'Done.')
+      }
+      // A document too long for a web request is now sent the slower way
+      // rather than refused, so the answer is different from a drafted one.
+      if (!body?.warning && action === 'draft' && body?.queued) {
+        setNote(body.note)
+      } else if (!body?.warning && action === 'draft') {
         setNote(body?.lifeSafety
           ? 'Drafted. This one is life safety: read every step against the actual building before you sign it off.'
           : 'Drafted. Read it, correct it, then sign it off.')
@@ -275,6 +282,10 @@ export default function AdminDocumentsPage() {
             }}
             className="inline-flex items-center gap-1.5 border border-border px-3 py-1.5 text-[12px] font-medium text-secondary disabled:opacity-40">
             <Inbox size={13} /> Collect a batch by id
+          </button>
+          <button type="button" disabled={busy === 'write_authored'} onClick={() => act('write_authored')}
+            className="inline-flex items-center gap-1.5 border border-border px-3 py-1.5 text-[12px] font-medium text-secondary disabled:opacity-40">
+            <Pencil size={13} /> {busy === 'write_authored' ? 'Writing...' : 'Write the last nine'}
           </button>
           <button type="button" disabled={busy === 'add_example'} onClick={() => act('add_example')}
             className="inline-flex items-center gap-1.5 border border-border px-3 py-1.5 text-[12px] font-medium text-secondary disabled:opacity-40">
