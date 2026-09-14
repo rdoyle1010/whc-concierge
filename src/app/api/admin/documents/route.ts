@@ -788,6 +788,105 @@ export async function POST(req: NextRequest) {
     })
   }
 
+  // Signed off and still missing something.
+  //
+  // This should not be possible and it is the exact failure a sign-off exists
+  // to prevent. It happened because a draft that came back without steps was
+  // stored as written, and written was enough to be swept up by the bulk
+  // approval. Seven documents now carry a signature saying somebody read a
+  // finished procedure, over a procedure with no steps in it.
+  //
+  // The repair is one press rather than seven trips through the screen,
+  // because seven trips is how one gets missed. Every one of them has its
+  // sign-off taken back, which is the honest state: nobody has read a
+  // finished version of it. Where the content exists in the repository it is
+  // rebuilt at the same time, so it comes back finished and can be signed
+  // again. Where it does not, it drops into the redraft queue as a draft.
+  //
+  // Nothing here re-approves anything. An approval is hers.
+  if (action === 'repair_signed_unfinished') {
+    const { data: approved, error: readError } = await admin.from('operational_documents')
+      .select('id, reference, kind, title, department, version, document, status')
+      .is('employer_id', null).eq('status', 'approved').limit(2000)
+    if (readError) return NextResponse.json({ error: readError.message }, { status: 500 })
+
+    const broken = (approved || []).filter((row: any) =>
+      Object.keys(row.document || {}).length === 0 || missingFor(row.kind, row.document).length > 0)
+
+    if (!broken.length) {
+      return NextResponse.json({
+        success: true, written: 0,
+        note: 'Nothing to repair: every signed off document is finished.',
+      })
+    }
+
+    // Everything the repository can rebuild, by reference.
+    const plans = new Map([...POOL_PLANS, ...GUIDE_PLANS, ...RISK_ASSESSMENT_PLANS,
+      ...CHECKLIST_PLANS, ...FINANCE_PLANS].map(plan => [plan.reference, plan]))
+
+    const now = new Date().toISOString()
+    const writes: Record<string, any>[] = []
+    let rebuilt = 0
+    let queued = 0
+    const stillShort: string[] = []
+
+    for (const row of broken) {
+      // The sign-off goes back in every case. It is the one fact that is
+      // certainly wrong, whether or not the content can be fixed here.
+      const cleared = {
+        id: row.id,
+        status: 'draft' as const,
+        approved_by: null,
+        approved_by_name: null,
+        approved_at: null,
+        approved_version: null,
+        updated_at: now,
+      }
+
+      const authored = AUTHORED_DRAFTS[row.reference as keyof typeof AUTHORED_DRAFTS]
+      const plan = plans.get(row.reference)
+
+      let document: Record<string, any> | null = null
+      if (authored) document = documentFromDraft(row, authored as any) as any
+      else if (plan) document = plan.build() as any
+
+      // A rebuild that is still short is not written. Replacing one unfinished
+      // document with another unfinished document, and reporting it as a
+      // repair, is how this started.
+      if (document && missingFor(row.kind, document).length === 0) {
+        rebuilt += 1
+        writes.push({ ...cleared, document })
+      } else {
+        if (document) stillShort.push(row.reference)
+        queued += 1
+        writes.push(cleared)
+      }
+    }
+
+    let done = 0
+    for (let at = 0; at < writes.length; at += 20) {
+      const chunk = writes.slice(at, at + 20)
+      const { error } = await admin.from('operational_documents').upsert(chunk)
+      if (error) {
+        return NextResponse.json({
+          error: `${error.message} ${done} were repaired before it stopped. Press it again.`,
+        }, { status: 500 })
+      }
+      done += chunk.length
+    }
+
+    const parts = [`${done} had the sign-off taken back`]
+    if (rebuilt) parts.push(`${rebuilt} rebuilt from the repository and ready to sign again`)
+    if (queued) parts.push(`${queued} left as drafts to be written`)
+    return NextResponse.json({
+      success: true,
+      written: done,
+      note: `${parts.join(', ')}.${stillShort.length
+        ? ` ${stillShort.length} could not be rebuilt complete: ${stillShort.slice(0, 5).join(', ')}.`
+        : ''} Read each rebuilt one before signing it off again.`,
+    })
+  }
+
   // Signing off everything that is finished, in one press.
   //
   // Four hundred and sixty documents at one click each is not a review, it is

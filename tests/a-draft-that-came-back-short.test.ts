@@ -186,3 +186,57 @@ test('a document signed off and still unfinished is called out, not counted', ()
   assert.ok(page.includes('unfinishedPlans'))
   assert.ok(page.includes('would not help'))
 })
+
+test('and it can be repaired in one press, without being signed off again', () => {
+  const route = body('src/app/api/admin/documents/route.ts')
+  const repair = route.slice(route.indexOf("action === 'repair_signed_unfinished'"),
+    route.indexOf("action === 'approve_ready'"))
+  assert.ok(repair.length > 500, 'the repair action should have been found')
+
+  // It looks at what is signed off and asks the same completeness question
+  // the screen asks, so the two can never disagree about which are broken.
+  assert.match(repair, /\.eq\('status', 'approved'\)/)
+  assert.match(repair, /missingFor\(row\.kind, row\.document\)/)
+
+  // The sign-off comes back on every one of them. That is the fact which is
+  // certainly wrong, whether or not the content can be rebuilt here.
+  assert.match(repair, /approved_by: null/)
+  assert.match(repair, /approved_at: null/)
+  assert.match(repair, /approved_version: null/)
+  assert.match(repair, /status: 'draft'/)
+
+  // And nothing is approved by it. Seven documents carrying a signature over
+  // an unfinished procedure is not fixed by a machine signing them again.
+  assert.doesNotMatch(repair, /status: 'approved'/, 'a repair never signs anything off')
+  assert.doesNotMatch(repair, /approved_by: actor/)
+
+  // A rebuild that is still short is not written. Replacing one unfinished
+  // document with another and calling it repaired is how this started.
+  assert.match(repair, /missingFor\(row\.kind, document\)\.length === 0/)
+  assert.match(repair, /stillShort/)
+
+  // Chunked, because the host kills the function at twenty-six seconds and a
+  // half-finished repair is worse than none.
+  assert.match(repair, /at \+= 20/)
+
+  const page = body('src/app/admin/documents/page.tsx')
+  assert.ok(page.includes("act('repair_signed_unfinished')"))
+  assert.ok(page.includes('Nothing is signed off again by this'), 'the confirmation says what it will not do')
+})
+
+test('neither way of signing off will accept an unfinished document', () => {
+  // Both of these refused already. Pinned because the seven that got through
+  // were signed before the completeness rule was tightened, which means the
+  // rule is the thing protecting them and a change to it is a change to this.
+  const route = body('src/app/api/admin/documents/route.ts')
+
+  const single = route.slice(route.indexOf("if (action === 'approve')"),
+    route.indexOf("if (action === 'unapprove'"))
+  assert.match(single, /const missing = missingFor\(row\.kind, row\.document\)/)
+  assert.match(single, /if \(missing\.length\)/)
+  assert.ok(single.indexOf('missingFor') < single.indexOf("status: 'approved'"),
+    'the check has to come before the write')
+
+  const bulk = route.slice(route.indexOf("if (action === 'approve_ready')"))
+  assert.match(bulk, /if \(missingFor\(draft\.kind, draft\.document\)\.length\) \{ incomplete \+= 1; continue \}/)
+})
