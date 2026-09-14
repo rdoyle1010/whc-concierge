@@ -6,6 +6,8 @@ import { isValidReference } from '@/lib/documents/reference'
 import { EXAMPLE_SOP } from '@/lib/documents/examples'
 import { LIBRARY_PLAN } from '@/lib/documents/library-plan'
 import { draftDocument, draftingConfigured } from '@/lib/documents/draft'
+import { submitDraftBatch, collectDraftBatch, batchingConfigured } from '@/lib/documents/batch'
+import { documentFromDraft } from '@/lib/documents/assemble'
 import { isLifeSafety, LIFE_SAFETY_CONFIRMATION } from '@/lib/documents/safety'
 
 // The library, and the sign-off that stands between a draft and a client.
@@ -207,6 +209,124 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: true })
   }
 
+  // Draft a whole tier at once, and collect it later.
+  //
+  // Pressing a button four hundred and sixty times is not a workflow. This
+  // submits every unwritten document in a tier to the batch API, which has no
+  // request timeout over it and costs half, and puts the receipt in
+  // document_batches so the results can be collected by a later request.
+  if (action === 'draft_tier') {
+    if (!batchingConfigured()) {
+      return NextResponse.json({ error: 'Talent House AI is not switched on yet.' }, { status: 503 })
+    }
+    const tier = String(body.tier || '')
+    if (!['day-1', 'month-1', 'quarter-1'].includes(tier)) {
+      return NextResponse.json({ error: 'Choose a tier to draft.' }, { status: 400 })
+    }
+
+    const { data: waiting, error: readError } = await admin.from('operational_documents')
+      .select('id, title, reference, department, document, status')
+      .is('employer_id', null).eq('tier', tier).eq('status', 'draft').limit(2000)
+    if (readError) return NextResponse.json({ error: readError.message }, { status: 500 })
+
+    // Only the empty ones. Redrafting over something already written throws
+    // away whatever a person corrected in it.
+    const items = (waiting || [])
+      .filter((row: any) => Object.keys(row.document || {}).length === 0)
+      .map((row: any) => ({
+        id: row.id, title: row.title, reference: row.reference, department: row.department || '',
+      }))
+
+    if (!items.length) {
+      return NextResponse.json({ success: true, submitted: 0, note: 'Every document in that tier is written already.' })
+    }
+
+    const sent = await submitDraftBatch(items)
+    if (!sent.ok) return NextResponse.json({ error: sent.error }, { status: 502 })
+
+    const { error: receiptError } = await admin.from('document_batches').insert({
+      provider_batch_id: sent.batchId,
+      tier,
+      requested: sent.count,
+      submitted_by: actor.id,
+      status: 'submitted',
+    })
+    // The batch is running whether or not we managed to write that down, and
+    // saying it failed would have her submit the same four hundred documents
+    // again.
+    if (receiptError) {
+      return NextResponse.json({
+        success: true, submitted: sent.count,
+        warning: `Submitted, but the receipt did not save: ${receiptError.message}. The batch id is ${sent.batchId}.`,
+      })
+    }
+
+    return NextResponse.json({ success: true, submitted: sent.count })
+  }
+
+  // Collect whatever has finished.
+  if (action === 'collect') {
+    const { data: runs } = await admin.from('document_batches')
+      .select('*').in('status', ['submitted', 'collecting']).order('created_at', { ascending: true }).limit(10)
+
+    if (!runs?.length) return NextResponse.json({ success: true, collected: 0, note: 'Nothing is waiting to come back.' })
+
+    let collected = 0
+    let stillRunning = 0
+    // Bookkeeping that did not save. The documents are safely written either
+    // way, but a receipt that never updated leaves a finished batch marked as
+    // still running, which means collecting it again forever.
+    const bookkeeping: string[] = []
+
+    for (const run of runs) {
+      const progress = await collectDraftBatch(run.provider_batch_id)
+      if (!progress.ok) {
+        const { error: noteError } = await admin.from('document_batches')
+          .update({ note: progress.error, updated_at: new Date().toISOString() }).eq('id', run.id)
+        if (noteError) bookkeeping.push(`could not record why ${run.provider_batch_id} failed: ${noteError.message}`)
+        continue
+      }
+      if (!progress.ready) { stillRunning += 1; continue }
+
+      let failed = 0
+      for (const result of progress.results) {
+        if (!result.draft) { failed += 1; continue }
+
+        const { data: target } = await admin.from('operational_documents')
+          .select('*').eq('id', result.id).maybeSingle()
+        // Gone, or written by a person while the batch was running. Either
+        // way it is not ours to overwrite.
+        if (!target || target.status === 'approved') continue
+        if (Object.keys(target.document || {}).length > 0) continue
+
+        const { error } = await admin.from('operational_documents').update({
+          document: documentFromDraft(target, result.draft),
+          status: 'draft',
+          updated_at: new Date().toISOString(),
+        }).eq('id', result.id)
+        if (error) failed += 1
+        else collected += 1
+      }
+
+      const { error: receiptError } = await admin.from('document_batches').update({
+        status: 'done',
+        collected: progress.results.length - failed,
+        failed,
+        updated_at: new Date().toISOString(),
+      }).eq('id', run.id)
+      if (receiptError) {
+        bookkeeping.push(`${run.provider_batch_id} was collected but is still marked as running: ${receiptError.message}`)
+      }
+    }
+
+    return NextResponse.json({
+      success: true,
+      collected,
+      stillRunning,
+      warning: bookkeeping.length ? `The documents are saved, but: ${bookkeeping.join('; ')}.` : undefined,
+    })
+  }
+
   // Draft it. Lands as draft, always, whatever it contains.
   if (action === 'draft') {
     if (!draftingConfigured()) {
@@ -225,38 +345,7 @@ export async function POST(req: NextRequest) {
     })
     if (!result.ok) return NextResponse.json({ error: result.error }, { status: 502 })
 
-    // The parts only we know, kept out of the model's hands: the reference it
-    // is filed under, who owns it, when it was issued and when it must be
-    // looked at again. A model inventing a review date would be inventing the
-    // one field an assessor checks first.
-    const issued = new Date()
-    const review = new Date(issued)
-    review.setFullYear(review.getFullYear() + 1)
-    const asDate = (value: Date) =>
-      value.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
-
-    const document = {
-      kind: row.kind === 'checklist' ? 'sop' : row.kind,
-      reference: row.reference,
-      title: row.title,
-      version: row.version || '0.1',
-      issued: asDate(issued),
-      reviewBy: asDate(review),
-      property: '[property name]',
-      department: row.department || '',
-      accountability: {
-        author: 'Talent House Collective',
-        authorRole: 'Spa operations',
-        owner: '[owner role]',
-      },
-      governance: [
-        'Brand operating standards',
-        'Talent House Collective operational standards',
-      ],
-      references: [],
-      revisions: [{ date: asDate(issued), by: 'Talent House Collective', description: 'Drafted, version 0.1.' }],
-      ...result.draft,
-    }
+    const document = documentFromDraft(row, result.draft)
 
     const { error } = await admin.from('operational_documents').update({
       document,

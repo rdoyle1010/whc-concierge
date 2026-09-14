@@ -29,7 +29,7 @@ export function draftingConfigured(): boolean {
   return Boolean(process.env.ANTHROPIC_API_KEY)
 }
 
-const SCHEMA = {
+export const DRAFT_SCHEMA = {
   type: 'object',
   additionalProperties: false,
   required: [
@@ -83,7 +83,7 @@ const SCHEMA = {
   },
 } as const
 
-const SYSTEM = `You write standard operating procedures for luxury spa and wellness operations, for Talent House Collective.
+export const DRAFT_SYSTEM = `You write standard operating procedures for luxury spa and wellness operations, for Talent House Collective.
 
 Who reads these: a spa receptionist, therapist, pool attendant or manager, being trained against the document and then audited on it. Write for somebody competent who is new to this property.
 
@@ -103,6 +103,50 @@ What you may and may not state:
 
 Return the structured object and nothing else.`
 
+/**
+ * The brief for one document, built once and used by both paths.
+ *
+ * A batch of four hundred and sixty and a single press of a button must ask
+ * for precisely the same thing, or the library ends up written in two voices
+ * and nobody can say which document came from where.
+ */
+export function draftPrompt(input: {
+  title: string
+  reference: string
+  department: string
+  context?: Record<string, unknown>
+}): string {
+  const safety = isLifeSafety(input)
+  const facts = Object.entries(input.context || {})
+    .filter(([, value]) => value !== null && value !== undefined && value !== '')
+    .map(([key, value]) => `${key}: ${Array.isArray(value) ? value.slice(0, 30).join(', ') : String(value).slice(0, 300)}`)
+    .join('\n')
+
+  return `Draft the procedure "${input.title}".
+
+Reference: ${input.reference}
+Department: ${input.department}
+${safety
+  ? '\nThis is a life safety procedure. Be conservative: state what must happen and who must be competent to do it, and use a placeholder for every fact about the building. Do not describe an evacuation route, a muster point or a plant room, because you do not know this one.\n'
+  : ''}
+${facts ? `\nWhat is true about the property:\n${facts}\n` : ''}`
+}
+
+/**
+ * The house rule, enforced rather than requested.
+ *
+ * A model asked nicely not to use an em dash will use one eventually, and
+ * this platform fails its own readiness check over a single one.
+ */
+export function cleanDraft(value: unknown): any {
+  if (typeof value === 'string') return value.replace(/[\u2014\u2013]/g, ' - ').trim()
+  if (Array.isArray(value)) return value.map(cleanDraft)
+  if (value && typeof value === 'object') {
+    return Object.fromEntries(Object.entries(value).map(([key, inner]) => [key, cleanDraft(inner)]))
+  }
+  return value
+}
+
 export async function draftDocument(input: {
   title: string
   reference: string
@@ -113,34 +157,29 @@ export async function draftDocument(input: {
   const apiKey = process.env.ANTHROPIC_API_KEY
   if (!apiKey) return { ok: false, error: 'Talent House AI is not switched on for this deployment.' }
 
-  const safety = isLifeSafety(input)
-  const facts = Object.entries(input.context || {})
-    .filter(([, value]) => value !== null && value !== undefined && value !== '')
-    .map(([key, value]) => `${key}: ${Array.isArray(value) ? value.slice(0, 30).join(', ') : String(value).slice(0, 300)}`)
-    .join('\n')
-
   const client = new Anthropic({ apiKey, maxRetries: 0 })
 
   try {
     const response = await client.messages.create({
       model: DRAFT_MODEL,
       max_tokens: MAX_OUTPUT_TOKENS,
-      system: SYSTEM,
+      system: DRAFT_SYSTEM,
+      // Thinking off, deliberately.
+      //
+      // On this model omitting the parameter does not mean no thinking: it
+      // runs adaptive, which is the default and was never chosen. Every call
+      // on this platform was paying for a reasoning phase before it produced
+      // a token, which is most of why they kept dying at the twenty-six
+      // second ceiling and reporting it as "that took too long".
+      //
+      // This is extraction against a fixed schema rather than a problem to
+      // work out. There is nothing here to think about.
+      thinking: { type: 'disabled' },
       output_config: {
         effort: 'low',
-        format: { type: 'json_schema', schema: SCHEMA as any },
+        format: { type: 'json_schema', schema: DRAFT_SCHEMA as any },
       },
-      messages: [{
-        role: 'user',
-        content: `Draft the procedure "${input.title}".
-
-Reference: ${input.reference}
-Department: ${input.department}
-${safety
-  ? '\nThis is a life safety procedure. Be conservative: state what must happen and who must be competent to do it, and use a placeholder for every fact about the building. Do not describe an evacuation route, a muster point or a plant room, because you do not know this one.\n'
-  : ''}
-${facts ? `\nWhat is true about the property:\n${facts}\n` : ''}`,
-      }],
+      messages: [{ role: 'user', content: draftPrompt(input) }],
     }, { timeout: CALL_TIMEOUT_MS })
 
     if (response.stop_reason === 'refusal') {
@@ -150,21 +189,7 @@ ${facts ? `\nWhat is true about the property:\n${facts}\n` : ''}`,
     const block = response.content.find(item => item.type === 'text')
     if (!block || block.type !== 'text') return { ok: false, error: 'Nothing usable came back. Try again.' }
 
-    const raw = JSON.parse(block.text)
-
-    // The house rule, enforced rather than requested. A model asked nicely not
-    // to use an em dash will use one eventually, and this platform fails its
-    // own readiness check over a single one.
-    const clean = (value: unknown): any => {
-      if (typeof value === 'string') return value.replace(/[\u2014\u2013]/g, ' - ').trim()
-      if (Array.isArray(value)) return value.map(clean)
-      if (value && typeof value === 'object') {
-        return Object.fromEntries(Object.entries(value).map(([key, inner]) => [key, clean(inner)]))
-      }
-      return value
-    }
-
-    return { ok: true, draft: clean(raw) as Partial<SopDocument> }
+    return { ok: true, draft: cleanDraft(JSON.parse(block.text)) as Partial<SopDocument> }
   } catch (error: any) {
     if (error instanceof Anthropic.AuthenticationError) {
       return { ok: false, error: 'The Anthropic API key on this deployment was refused. Check it in Netlify.' }

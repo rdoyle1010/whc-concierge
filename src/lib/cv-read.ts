@@ -181,6 +181,17 @@ export async function readCv(source: Source): Promise<
       model: CV_MODEL,
       max_tokens: MAX_OUTPUT_TOKENS,
       system: SYSTEM,
+      // Thinking off, deliberately.
+      //
+      // On this model omitting the parameter does not mean no thinking: it
+      // runs adaptive, which is the default and was never chosen. Every call
+      // on this platform was paying for a reasoning phase before it produced
+      // a token, which is most of why they kept dying at the twenty-six
+      // second ceiling and reporting it as "that took too long".
+      //
+      // This is extraction against a fixed schema rather than a problem to
+      // work out. There is nothing here to think about.
+      thinking: { type: 'disabled' },
       // A CV is a short document read against a fixed vocabulary. It does not
       // need the model's full deliberation, and the difference is somebody's
       // money on a platform earning none yet.

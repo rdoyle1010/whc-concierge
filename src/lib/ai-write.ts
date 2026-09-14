@@ -224,6 +224,17 @@ ${draft}`
       model: WRITE_MODEL,
       max_tokens: shape.maxTokens,
       system: HOUSE_STYLE,
+      // Thinking off, deliberately.
+      //
+      // On this model omitting the parameter does not mean no thinking: it
+      // runs adaptive, which is the default and was never chosen. Every call
+      // on this platform was paying for a reasoning phase before it produced
+      // a token, which is most of why they kept dying at the twenty-six
+      // second ceiling and reporting it as "that took too long".
+      //
+      // This is extraction against a fixed schema rather than a problem to
+      // work out. There is nothing here to think about.
+      thinking: { type: 'disabled' },
       messages: [{
         role: 'user',
         content: `${task}
