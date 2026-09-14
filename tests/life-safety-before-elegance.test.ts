@@ -102,11 +102,18 @@ test('drafting never approves anything', () => {
 
   // The fields an assessor checks first are ours, not the model's. A model
   // inventing a review date would be inventing the one field they look at.
-  for (const field of ['reference: row.reference', 'reviewBy:', 'issued:', "version: row.version"]) {
-    assert.ok(block.includes(field), `${field} must be set here rather than drafted`)
+  //
+  // They live in one assembler now, used by the single draft and by a batch
+  // of four hundred and sixty alike. Two paths assembling documents slightly
+  // differently is how a library ends up with two shapes in it and nobody
+  // able to say which is right.
+  assert.match(block, /documentFromDraft\(row, result\.draft\)/)
+  const assemble = body('src/lib/documents/assemble.ts')
+  for (const field of ['reference: row.reference', 'reviewBy:', 'issued:', 'version: row.version']) {
+    assert.ok(assemble.includes(field), `${field} must be set here rather than drafted`)
   }
-  assert.ok(block.indexOf('...result.draft') > block.indexOf('reviewBy:'),
-    'our fields must not be overwritable by the draft')
+  assert.ok(assemble.indexOf('...draft') < assemble.indexOf('reviewBy:'),
+    'the draft is spread first, so none of our fields can be overwritten by it')
 })
 
 test('drafting fits inside the ceiling the host enforces', () => {

@@ -6,7 +6,7 @@ import SopSheet from '@/components/documents/SopSheet'
 import type { SopDocument } from '@/lib/documents/types'
 import { TIER_LABEL, type BuildTier } from '@/lib/documents/library-plan'
 import { LIFE_SAFETY_WARNING } from '@/lib/documents/safety'
-import { Check, Eye, Plus, Printer, RefreshCw, RotateCcw, Trash2, Download, Sparkles, ShieldAlert } from 'lucide-react'
+import { Check, Eye, Plus, Printer, RefreshCw, RotateCcw, Trash2, Download, Sparkles, ShieldAlert, Layers, Inbox } from 'lucide-react'
 
 // The library, and the desk it is signed off at.
 //
@@ -80,6 +80,18 @@ export default function AdminDocumentsPage() {
         return false
       }
       if (action === 'approve') setNote('Signed off. It can be issued to a property now.')
+      if (action === 'draft_tier') {
+        setNote(body?.submitted
+          ? `${body.submitted} documents sent to be written. It takes a while, and you do not have to wait: come back later and press Collect what is ready.`
+          : body?.note || 'Nothing to send.')
+      }
+      if (action === 'collect') {
+        setNote(body?.collected
+          ? `${body.collected} documents came back written. Read them before signing any off.`
+          : body?.stillRunning
+            ? 'Still being written. Try again in a little while.'
+            : body?.note || 'Nothing came back.')
+      }
       if (action === 'draft') {
         setNote(body?.lifeSafety
           ? 'Drafted. This one is life safety: read every step against the actual building before you sign it off.'
@@ -188,6 +200,16 @@ export default function AdminDocumentsPage() {
           <button type="button" disabled={busy === 'import_plan'} onClick={() => act('import_plan')}
             className="inline-flex items-center gap-1.5 border border-[#1c1c1c] px-3 py-1.5 text-[12px] font-semibold text-ink disabled:opacity-40">
             <Download size={13} /> {busy === 'import_plan' ? 'Importing...' : 'Import the build plan'}
+          </button>
+          {tier !== 'all' && (
+            <button type="button" disabled={busy === 'draft_tier'} onClick={() => act('draft_tier', undefined, { tier })}
+              className="inline-flex items-center gap-1.5 border border-[#1c1c1c] bg-[#1c1c1c] px-3 py-1.5 text-[12px] font-semibold text-white disabled:opacity-40">
+              <Layers size={13} /> {busy === 'draft_tier' ? 'Sending...' : 'Write this whole tier'}
+            </button>
+          )}
+          <button type="button" disabled={busy === 'collect'} onClick={() => act('collect')}
+            className="inline-flex items-center gap-1.5 border border-[#1c1c1c] px-3 py-1.5 text-[12px] font-semibold text-ink disabled:opacity-40">
+            <Inbox size={13} /> {busy === 'collect' ? 'Checking...' : 'Collect what is ready'}
           </button>
           <button type="button" disabled={busy === 'add_example'} onClick={() => act('add_example')}
             className="inline-flex items-center gap-1.5 border border-border px-3 py-1.5 text-[12px] font-medium text-secondary disabled:opacity-40">
