@@ -81,7 +81,8 @@ export default function AdminDocumentsPage() {
   const [stage, setStage] = useState<JourneyStage | 'all'>('all')
   const [kind, setKind] = useState<string>('all')
   const [department, setDepartment] = useState('all')
-  const [only, setOnly] = useState<'all' | 'unwritten' | 'incomplete' | 'unsigned' | 'signed'>('all')
+  const [only, setOnly] = useState<
+    'all' | 'unwritten' | 'incomplete' | 'signed-unfinished' | 'unsigned' | 'signed'>('all')
 
   async function load() {
     const res = await fetch('/api/admin/documents', { cache: 'no-store' })
@@ -258,10 +259,29 @@ export default function AdminDocumentsPage() {
     // Written, and still missing something it needs before anybody can sign
     // it off. The draft came back short and was stored as though it had not.
     if (only === 'incomplete' && (!row.written || row.missing.length === 0)) return false
+    // Signed off and still missing something. The one state on this screen
+    // that is not merely unfinished but wrong.
+    if (only === 'signed-unfinished'
+      && (row.status !== 'approved' || !row.written || row.missing.length === 0)) return false
     if (only === 'unsigned' && (!row.written || row.status === 'approved')) return false
     if (only === 'signed' && row.status !== 'approved') return false
     return true
   }
+  // Written, still missing something, split by what can actually be done
+  // about it. The button used to offer to write thirteen again and send six,
+  // because it counted every unfinished document and the action only takes
+  // the ones it can honestly redraft. A button that reports its intention
+  // rather than its outcome is the thing this screen keeps getting wrong.
+  const unfinished = (row: Row) => row.written && row.missing.length > 0
+  // Unapproved procedures. Everything the redraft will actually send.
+  const redraftable = rows.filter(row => unfinished(row) && row.kind === 'sop' && row.status !== 'approved')
+  // Signed off and still missing something, which should not be possible and
+  // is the exact failure the sign-off exists to prevent.
+  const signedUnfinished = rows.filter(row => unfinished(row) && row.status === 'approved')
+  // Written in the repository rather than drafted, so a model cannot fix them.
+  const unfinishedPlans = rows.filter(row =>
+    unfinished(row) && row.kind !== 'sop' && row.status !== 'approved')
+
   const stageFor = (row: Row) => stageOf({ reference: row.reference, title: row.title })
   const elsewhere = rows.filter(row => stage !== 'all' && stageFor(row) !== stage && matchesState(row)).length
 
@@ -292,6 +312,40 @@ export default function AdminDocumentsPage() {
         )}
         {error && <p className="mt-4 border border-red-200 bg-red-50 px-4 py-3 text-[13px] text-red-700">{error}</p>}
         {note && <p className="mt-4 border border-[#166534]/30 bg-[#f3fbf5] px-4 py-3 text-[13px] text-[#166534]">{note}</p>}
+
+        {/* A signed-off document that is still missing something should not be
+            possible, and it is the exact failure the sign-off exists to
+            prevent: an approval says a person read a finished document. It
+            gets its own line rather than being folded into a count, because
+            it is the only state on this screen that is actually wrong. */}
+        {signedUnfinished.length > 0 && (
+          <div className="mt-4 border-l-2 border-[#8a1c14] bg-[#fbe9e7] px-4 py-3 text-[13px] text-[#8a1c14]">
+            <p className="font-semibold">
+              {signedUnfinished.length === 1
+                ? 'One document is signed off and still missing something.'
+                : `${signedUnfinished.length} documents are signed off and still missing something.`}
+            </p>
+            <p className="mt-1.5 leading-relaxed">
+              An approval says somebody read a finished document, so this should not be possible. Take the
+              sign-off back on each one and it joins the queue to be written again.
+            </p>
+            <button type="button" onClick={() => setOnly('signed-unfinished')}
+              className="mt-2 font-semibold underline">
+              Show me which ones
+            </button>
+          </div>
+        )}
+
+        {/* Written in the repository rather than drafted, so no amount of
+            redrafting will fix one. Worth saying, or the two counts look
+            like the same problem reported twice. */}
+        {unfinishedPlans.length > 0 && (
+          <p className="mt-3 border border-[#dddddd] px-4 py-3 text-[13px] text-secondary">
+            {unfinishedPlans.length === 1 ? 'One other document is' : `${unfinishedPlans.length} other documents are`}
+            {' '}unfinished and not a drafted procedure, so writing them again would not help. Press Bring the
+            library up to date, which rewrites them from the repository.
+          </p>
+        )}
 
         <div className="mt-5 flex flex-wrap items-center gap-3">
           <button type="button" onClick={load}
@@ -326,10 +380,10 @@ export default function AdminDocumentsPage() {
               failed wants to retry that set rather than all of it. */}
           {/* Only worth pressing when there are some, so it says how many.
               Finding them by hand is not a job anybody should do twice. */}
-          {rows.some(r => r.written && r.missing.length > 0) && (
+          {redraftable.length > 0 && (
             <button type="button" disabled={busy === 'draft_incomplete'}
               onClick={() => {
-                const count = rows.filter(r => r.written && r.missing.length > 0).length
+                const count = redraftable.length
                 if (!window.confirm(
                   `Write ${count} unfinished ${count === 1 ? 'document' : 'documents'} again. They came back `
                   + 'short the first time. A redraft only replaces what is there if it comes back more '
@@ -341,7 +395,7 @@ export default function AdminDocumentsPage() {
               <RefreshCw size={13} />
               {busy === 'draft_incomplete'
                 ? 'Sending...'
-                : `Write the ${rows.filter(r => r.written && r.missing.length > 0).length} unfinished ones again`}
+                : `Write the ${redraftable.length} unfinished ${redraftable.length === 1 ? 'one' : 'ones'} again`}
             </button>
           )}
           <button type="button" disabled={busy === 'add_everything'} onClick={() => act('add_everything')}
@@ -400,7 +454,7 @@ export default function AdminDocumentsPage() {
                 ['Planned', rows.length, 'all'],
                 ['Written', rows.filter(r => r.written).length, 'all'],
                 ['Signed off', rows.filter(r => r.status === 'approved').length, 'signed'],
-                ['Written, not finished', rows.filter(r => r.written && r.missing.length > 0).length, 'incomplete'],
+                ['Written, not finished', rows.filter(unfinished).length, 'incomplete'],
                 ['Still to write', rows.filter(r => !r.written).length, 'unwritten'],
               ] as const).map(([label, value, filter]) => (
                 <button key={label} type="button" onClick={() => setOnly(filter as typeof only)}
@@ -445,6 +499,7 @@ export default function AdminDocumentsPage() {
                 <option value="all">Any state</option>
                 <option value="unwritten">Not written yet</option>
                 <option value="incomplete">Written, not finished</option>
+                <option value="signed-unfinished">Signed off, not finished</option>
                 <option value="unsigned">Written, not signed off</option>
                 <option value="signed">Signed off</option>
               </select>
