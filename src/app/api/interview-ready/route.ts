@@ -323,16 +323,55 @@ export async function POST(req: NextRequest) {
     const jobId = typeof body.jobId === 'string' ? body.jobId : ''
     let job: any = null
     let employer: any = null
+    let jobLookupFailed = false
+
     if (jobId) {
-      const { data, error } = await supabase.from('job_listings').select('*, employer_profiles(*)').eq('id', jobId).maybeSingle()
-      if (error) console.error('Interview Ready job query', error.message)
+      // The role and the property are fetched separately, on purpose.
+      //
+      // This was one query with employer_profiles(*) embedded in it. That
+      // table has its own row level security and a talent user does not
+      // satisfy it, so the embed failed and took the role down with it: the
+      // page showed "Selected: Director of Spa" and the answer came back
+      // "Choose a role or enter a target role". The role was chosen. It was
+      // the property the query could not read, and the error said nothing
+      // about that.
+      // Every column of the role, and no join. The dossier reads the
+      // required skills, systems, brands and qualifications off it, so a
+      // narrowed select here would quietly thin the output instead of
+      // failing, which is the same bug one degree quieter.
+      const { data, error } = await supabase.from('job_listings')
+        .select('*').eq('id', jobId).maybeSingle()
+      if (error) {
+        console.error('Interview Ready job query', error.message)
+        jobLookupFailed = true
+      }
       job = data
-      employer = Array.isArray(data?.employer_profiles) ? data.employer_profiles[0] : data?.employer_profiles
+
+      // Property facts are a bonus, never a blocker. Everything this returns
+      // is already optional: companyFacts names what is missing rather than
+      // inventing it, so a property nobody can read produces a dossier with
+      // its gaps stated, which is the behaviour that was designed.
+      if (job?.employer_id) {
+        const { data: property, error: propertyError } = await supabase
+          .from('employer_profiles').select('*').eq('id', job.employer_id).maybeSingle()
+        if (propertyError) console.error('Interview Ready property query', propertyError.message)
+        employer = property || null
+      }
     }
 
     const customRole = clean(body.targetRole).slice(0, 180)
     const customDescription = clean(body.jobDescription).slice(0, 10000)
     const externalName = clean(body.companyName).slice(0, 180)
+
+    // Said as what actually happened. Telling somebody to choose a role when
+    // they have chosen one sends them round the same form again.
+    if (!job && jobId) {
+      return NextResponse.json({
+        error: jobLookupFailed
+          ? 'We could not read that role just now. Try again, or paste it in as an external role below.'
+          : 'That role is no longer listed. Choose another, or enter it as an external role below.',
+      }, { status: 400 })
+    }
     if (!job && !customRole) return NextResponse.json({ error: 'Choose a role or enter a target role.' }, { status: 400 })
 
     const role = job || { job_title: customRole, job_description: customDescription, required_role_level: customRole }
