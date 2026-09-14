@@ -34,6 +34,17 @@ type Row = {
   created_at: string
 }
 
+type Run = {
+  provider_batch_id: string
+  tier: string | null
+  requested: number
+  collected: number
+  failed: number
+  status: 'submitted' | 'collecting' | 'done' | 'failed'
+  note: string | null
+  created_at: string
+}
+
 const STATUS_LABEL: Record<Row['status'], string> = {
   draft: 'Draft, not signed off',
   approved: 'Signed off',
@@ -42,6 +53,9 @@ const STATUS_LABEL: Record<Row['status'], string> = {
 
 export default function AdminDocumentsPage() {
   const [rows, setRows] = useState<Row[]>([])
+  // What is being written right now. Without this on screen, the only way to
+  // find out whether anything is happening is to ask somebody.
+  const [runs, setRuns] = useState<Run[]>([])
   const [loading, setLoading] = useState(true)
   const [unavailable, setUnavailable] = useState(false)
   const [busy, setBusy] = useState('')
@@ -64,6 +78,7 @@ export default function AdminDocumentsPage() {
     if (!res.ok) { setError(body.error || 'Could not load the library.'); return }
     setUnavailable(Boolean(body.unavailable))
     setRows(body.rows || [])
+    setRuns(body.runs || [])
   }
   useEffect(() => { load() }, [])
 
@@ -283,6 +298,31 @@ export default function AdminDocumentsPage() {
             </div>
           </>
         )}
+
+        {/* Being written right now. A page that cannot answer "is anything
+            happening" is a page somebody presses the button on again, which
+            in this case means paying to write the same documents twice. */}
+        {runs.some(run => run.status === 'submitted' || run.status === 'collecting') && (
+          <div className="mt-6 border border-[#1c1c1c] px-4 py-3">
+            <p className="text-[11px] font-semibold uppercase tracking-[.14em] text-muted">Being written now</p>
+            {runs.filter(run => run.status === 'submitted' || run.status === 'collecting').map(run => (
+              <p key={run.provider_batch_id} className="mt-1.5 text-[13px] text-ink">
+                {run.requested} documents, sent {new Date(run.created_at).toLocaleString('en-GB', { dateStyle: 'short', timeStyle: 'short' })}
+                {run.collected > 0 ? `. ${run.collected} written so far` : '. Nothing back yet'}
+                {run.failed > 0 ? `, ${run.failed} failed` : ''}.
+              </p>
+            ))}
+            <p className="mt-1.5 text-[12px] text-secondary">
+              Nothing to do. Press Collect what is ready when you come back.
+            </p>
+          </div>
+        )}
+
+        {runs.filter(run => run.status === 'done' && run.note).slice(0, 1).map(run => (
+          <p key={run.provider_batch_id} className="mt-4 border border-amber-200 bg-amber-50 px-4 py-3 text-[13px] text-amber-800">
+            The last run finished with a problem. {run.note}
+          </p>
+        ))}
 
         {loading ? (
           <p className="mt-8 text-[13px] text-secondary">Loading...</p>

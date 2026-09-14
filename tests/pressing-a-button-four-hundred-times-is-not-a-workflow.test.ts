@@ -125,3 +125,30 @@ test('the library-wide actions are not gated on a document id', () => {
     assert.ok(route.indexOf(action) > guard, `${action} needs an id and must stay below the guard`)
   }
 })
+
+// A batch in flight has written nothing yet, so every document it is working
+// on is still empty and still looks eligible. Pressing the button again while
+// she waits submits exactly the same documents a second time and pays for
+// them twice, which is what happened the first afternoon this existed.
+test('a tier already being written cannot be sent again', () => {
+  const submit = route.slice(route.indexOf("action === 'draft_tier'"), route.indexOf("action === 'collect'"))
+  assert.match(submit, /from\('document_batches'\)[\s\S]{0,200}\.in\('status', \['submitted', 'collecting'\]\)/)
+  assert.match(submit, /status: 409/)
+  assert.match(submit, /pay for them twice/)
+
+  // Refused before the submission, not after it.
+  assert.ok(submit.indexOf('inFlight') < submit.indexOf('submitDraftBatch'),
+    'the check has to come before the money is spent')
+})
+
+// A screen that cannot answer "is anything happening" is a screen somebody
+// presses the button on again.
+test('the page says what is being written right now', () => {
+  assert.match(route, /const \{ data: runs \} = await admin\.from\('document_batches'\)/)
+  assert.match(route, /return NextResponse\.json\(\{ rows, runs: runs \|\| \[\] \}\)/)
+  assert.match(page, /Being written now/)
+  assert.match(page, /written so far/)
+  assert.match(page, /Nothing back yet/)
+  // And a finished run that had a problem does not sit there silently.
+  assert.match(page, /The last run finished with a problem/)
+})
