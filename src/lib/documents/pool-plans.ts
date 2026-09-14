@@ -7,7 +7,13 @@ import { GYM_SECTIONS, FRONT_SECTIONS } from './nop/gym-and-front'
 import { PLANT_SECTIONS, HYGIENE_SECTIONS, ROUTINE_SECTIONS } from './nop/plant-and-routines'
 import { PEOPLE_SECTIONS, SECURITY_SECTIONS, CONTINUITY_SECTIONS } from './nop/people-and-continuity'
 import { APPENDIX_SECTIONS } from './nop/appendices'
-import { POOL_EAP_SECTIONS } from './pool-eap'
+import { POOL_EAP_SECTIONS, FIRE_EAP_SECTIONS } from './pool-eap'
+import { COMMAND_SECTIONS } from './eap/command'
+import { MEDICAL_SECTIONS } from './eap/medical'
+import { CHEMICAL_SECTIONS, HEALTH_SECTIONS, BUILDING_SECTIONS } from './eap/facility'
+import {
+  PEOPLE_EMERGENCY_SECTIONS, AFTER_SECTIONS, DRILL_SECTIONS, EAP_APPENDIX_SECTIONS,
+} from './eap/people-and-after'
 
 // The two halves of a Pool Safety Operating Procedure, as documents.
 //
@@ -117,17 +123,32 @@ export function poolEap(): PlanDocument {
     ...base(POOL_EAP_REFERENCE),
     kind: 'eap',
     title: 'Spa and Wellness: Emergency Action Plan',
+    legalFramework: UK_SPA_FRAMEWORK,
     summary:
-      'What each person does, in order, in the first minutes of an emergency in the pool or wet areas. Written to '
-      + 'be read at speed by somebody with wet hands: one emergency per page, short actions, a named role against '
-      + 'each. It is one half of the pool safety operating procedure. The other half is the Normal Operating '
-      + 'Procedure.',
+      'What each person does, in order, in the first minutes of an emergency anywhere in the spa. Every '
+      + 'emergency a spa gets: in the water, in a treatment room, in a heat cabin, in the gym, in the plant room '
+      + 'and in the building itself. Written to be read at speed by somebody with wet hands, so it is one '
+      + 'emergency per page with short actions and a named role against each. It is one half of the safety '
+      + 'operating procedure. The other half is the Normal Operating Procedure.',
     scope:
-      'Applies to every person working in or supervising the wet facilities, and to any outside organisation '
-      + 'hiring them. The actions are general and hold in any building. Everything specific to this one - where '
-      + 'the alarm is, where the assembly point is, which door the ambulance comes to, who holds the plant room '
-      + 'key - is blank, and must be completed and briefed before this plan is relied on.',
-    sections: POOL_EAP_SECTIONS,
+      'Applies to every person working in or supervising any part of the spa, and to any outside organisation '
+      + 'using it. The actions are general and hold in any building. Everything specific to this one - where the '
+      + 'alarm is, the assembly point, the door the ambulance comes to, who holds the plant room key, who leads '
+      + '- is blank, and must be completed and briefed before this plan is relied on. A plan nobody has been '
+      + 'briefed on is a plan nobody follows.',
+    sections: [
+      ...COMMAND_SECTIONS,
+      ...POOL_EAP_SECTIONS,
+      ...MEDICAL_SECTIONS,
+      ...FIRE_EAP_SECTIONS,
+      ...CHEMICAL_SECTIONS,
+      ...HEALTH_SECTIONS,
+      ...BUILDING_SECTIONS,
+      ...PEOPLE_EMERGENCY_SECTIONS,
+      ...AFTER_SECTIONS,
+      ...DRILL_SECTIONS,
+      ...EAP_APPENDIX_SECTIONS,
+    ],
     references: [
       { name: 'Spa and Wellness: Normal Operating Procedure', reference: POOL_NOP_REFERENCE },
     ],

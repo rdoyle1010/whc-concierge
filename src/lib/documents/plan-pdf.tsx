@@ -341,9 +341,21 @@ export function PlanPdf({ document }: { document: PlanDocument }) {
   // An Emergency Action Plan prints one emergency per page. Somebody reading
   // it has wet hands and about ten seconds, and turning a sheet over to find
   // the rest of a rescue is a design decision with consequences.
-  const onOwnPage = document.sections.filter(section => section.ownPage)
-  const inline = document.sections.filter(section => !section.ownPage)
-  const parts = partsOf({ ...document, sections: inline })
+  // Grouped in document order, not sorted into inline and own-page.
+  //
+  // Filtering the two apart put Parts I and J in front of Parts B to H,
+  // because every own-page section was emitted after every inline one. A plan
+  // whose contents page and whose actual order disagree is worse than one
+  // with no contents page: somebody looks for the fire pages where the
+  // listing says they are and finds the drill records.
+  const groups: { own: boolean; sections: PlanSection[] }[] = []
+  for (const section of document.sections) {
+    const own = Boolean(section.ownPage)
+    const last = groups[groups.length - 1]
+    if (!own && last && !last.own) last.sections.push(section)
+    else groups.push({ own, sections: [section] })
+  }
+  const parts = partsOf(document)
 
   return (
     <Document
@@ -466,10 +478,8 @@ export function PlanPdf({ document }: { document: PlanDocument }) {
           </View>
         ) : null}
 
-        {inline.map((section, index) => {
-          // A rule and the part name wherever a new part begins, so somebody
-          // flicking through a hundred pages can see where they are.
-          const startsPart = Boolean(section.part) && section.part !== inline[index - 1]?.part
+        {(groups[0] && !groups[0].own ? groups[0].sections : []).map((section, index) => {
+          const startsPart = Boolean(section.part) && section.part !== groups[0].sections[index - 1]?.part
           return (
             <View key={`s${index}`} style={styles.section}>
               {startsPart ? (
@@ -487,17 +497,43 @@ export function PlanPdf({ document }: { document: PlanDocument }) {
         <Footer document={document} />
       </Page>
 
-      {onOwnPage.map((section, index) => (
-        <Page key={`own${index}`} size="A4" style={styles.page}>
-          <Text style={styles.eyebrow}>{label} · {document.reference}</Text>
-          <Text style={styles.title}>{section.heading}</Text>
-          <View style={styles.headerRule} />
-          <View style={{ marginTop: 12 }}>
-            <SectionBody section={section} keyBase={`own${index}`} />
-          </View>
-          <Footer document={document} />
-        </Page>
-      ))}
+      {groups.map((group, groupIndex) => {
+        // The first group is already on the page above.
+        if (groupIndex === 0 && !group.own) return null
+        return (
+          <Page key={`g${groupIndex}`} size="A4" style={styles.page}>
+            {group.sections.map((section, index) => {
+              const first = index === 0
+              const startsPart = Boolean(section.part)
+                && section.part !== (first ? groups[groupIndex - 1]?.sections.slice(-1)[0]?.part : group.sections[index - 1]?.part)
+              return (
+                <View key={`g${groupIndex}s${index}`} style={first ? {} : styles.section}>
+                  {startsPart ? (
+                    <View style={first ? { marginBottom: 4, borderTopWidth: 0, paddingTop: 0 } : styles.partDivider}>
+                      <Text style={styles.partLabel}>{section.part}</Text>
+                    </View>
+                  ) : null}
+                  {group.own ? (
+                    <>
+                      <Text style={styles.title}>{section.heading}</Text>
+                      <View style={styles.headerRule} />
+                      <View style={{ marginTop: 12 }}>
+                        <SectionBody section={section} keyBase={`g${groupIndex}s${index}`} />
+                      </View>
+                    </>
+                  ) : (
+                    <>
+                      <Text style={styles.sectionHead} minPresenceAhead={48}>{section.heading}</Text>
+                      <SectionBody section={section} keyBase={`g${groupIndex}s${index}`} />
+                    </>
+                  )}
+                </View>
+              )
+            })}
+            <Footer document={document} />
+          </Page>
+        )
+      })}
 
       <Page size="A4" style={styles.page}>
         <Text style={styles.eyebrow}>{document.reference}</Text>

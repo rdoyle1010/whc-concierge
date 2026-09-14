@@ -56,15 +56,25 @@ test('a fact about one building is never stated for them', () => {
 test('the emergency plan puts one emergency on each page', () => {
   // Somebody reading it has wet hands and about ten seconds. Turning a sheet
   // over to find the rest of a rescue is a design decision with consequences.
+  // Every emergency on its own page, and every one of them a list of actions
+  // rather than prose. The record sheets are also on their own pages and are
+  // tables, which is the other legitimate reason for a page of its own.
   const ownPage = poolEap().sections.filter(section => section.ownPage)
-  assert.ok(ownPage.length >= 8, `only ${ownPage.length} emergencies are on their own page`)
+  assert.ok(ownPage.length >= 40, `only ${ownPage.length} pages are on their own`)
   for (const section of ownPage) {
-    assert.ok(section.actions?.length, `${section.heading} has no actions`)
+    assert.ok(section.actions?.length || section.table,
+      `${section.heading} is on its own page with neither actions nor a table`)
   }
+  const emergencies = ownPage.filter(section => section.actions?.length)
+  assert.ok(emergencies.length >= 35, `only ${emergencies.length} emergencies have actions`)
 
+  // Rendered in document order, not sorted into inline and own-page. Sorting
+  // them put Parts I and J in front of Parts B to H, so the contents page and
+  // the document disagreed about where the fire pages were.
   const pdf = body('src/lib/documents/plan-pdf.tsx')
   assert.match(pdf, /section\.ownPage/)
-  assert.match(pdf, /onOwnPage\.map/)
+  assert.match(pdf, /groups\.map\(\(group, groupIndex\)/)
+  assert.doesNotMatch(pdf, /onOwnPage/, 'filtering the two apart breaks the order')
 })
 
 test('the sections that decide whether somebody is hurt are marked as such', () => {
@@ -141,4 +151,40 @@ test('every field in a plan is a form field, because the blanks are the document
   assert.match(pdf, /styles\.signLine/)
   const briefing = pdf.slice(pdf.indexOf('The team have read it'))
   assert.doesNotMatch(briefing, /name=\{`brief_r\$\{rowIndex\}c3`\}/, 'a typed signature is worth nothing')
+})
+
+test('the emergency plan covers the whole spa, not only the water', () => {
+  const headings = poolEap().sections.map(section => section.heading.toLowerCase()).join(' | ')
+
+  // The emergencies a spa actually gets. Heat, cold, exertion and being
+  // horizontal for an hour make several of these more likely here than
+  // anywhere a guest would otherwise be.
+  for (const emergency of [
+    'cardiac arrest', 'anaphylaxis', 'heat exhaustion', 'cold water shock', 'fainting', 'seizure',
+    'diabetic', 'stroke', 'choking', 'bleeding', 'head, neck or back', 'taken ill during a treatment',
+    'needlestick', 'casualty in the water', 'entrapment', 'fire or evacuation', 'chlorine gas',
+    'chemical spillage', 'faecal', 'legionella', 'power failure', 'gas leak', 'flood', 'lift entrapment',
+    'missing child', 'safeguarding', 'allegation against a member of staff',
+  ]) {
+    assert.ok(headings.includes(emergency), `no page covers ${emergency}`)
+  }
+
+  // And the parts that make a sixty-page plan navigable at speed.
+  const parts = new Set(poolEap().sections.map(section => section.part).filter(Boolean))
+  assert.ok(parts.size >= 8, `only ${parts.size} parts`)
+})
+
+test('the plan names who to call and who leads before it names an emergency', () => {
+  const eap = poolEap()
+  // Page one. Everything after it assumes somebody knows how to raise the
+  // alarm and who takes charge when they do.
+  assert.equal(eap.sections[0].heading, 'Before anything else')
+  assert.ok(eap.sections[0].mustBeChecked)
+
+  const first = JSON.stringify(eap.sections.slice(0, 4))
+  for (const entry of ['How the alarm is raised', 'Assembly point', 'defibrillator', 'isolation point']) {
+    assert.ok(first.includes(entry), `the first pages must name the ${entry}`)
+  }
+  // 999 is the one number we are entitled to state. Every other is theirs.
+  assert.match(first, /Emergency services.*999/)
 })
