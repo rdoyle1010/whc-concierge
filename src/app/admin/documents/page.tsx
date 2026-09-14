@@ -349,10 +349,33 @@ export default function AdminDocumentsPage() {
               An approval says somebody read a finished document, so this should not be possible. Take the
               sign-off back on each one and it joins the queue to be written again.
             </p>
-            <button type="button" onClick={() => setOnly('signed-unfinished')}
-              className="mt-2 font-semibold underline">
-              Show me which ones
-            </button>
+            <div className="mt-2 flex flex-wrap items-center gap-3">
+              {/* One press rather than seven trips through this screen, which
+                  is how one gets missed. The sign-off comes back on every one
+                  of them, which is the honest state; anything the repository
+                  can rebuild comes back finished at the same time. Nothing is
+                  re-approved: that is hers. */}
+              <button type="button" disabled={busy === 'repair_signed_unfinished'}
+                onClick={() => {
+                  const count = signedUnfinished.length
+                  if (!window.confirm(
+                    `Take the sign-off back on ${count} ${count === 1 ? 'document' : 'documents'} and rebuild `
+                    + 'the ones written in the repository. Nothing is signed off again by this: each one comes '
+                    + 'back as a draft for you to read and approve.',
+                  )) return
+                  act('repair_signed_unfinished')
+                }}
+                className="inline-flex items-center gap-1.5 border border-[#8a1c14] bg-[#8a1c14] px-3 py-1.5 text-[12px] font-semibold text-white disabled:opacity-40">
+                <RotateCcw size={13} />
+                {busy === 'repair_signed_unfinished'
+                  ? 'Repairing...'
+                  : `Repair ${signedUnfinished.length === 1 ? 'it' : 'all ' + signedUnfinished.length}`}
+              </button>
+              <button type="button" onClick={() => setOnly('signed-unfinished')}
+                className="font-semibold underline">
+                Show me which ones
+              </button>
+            </div>
           </div>
         )}
 
