@@ -178,6 +178,12 @@ check('all service-role API routes are protected or deliberately public', () => 
     'src/app/api/advertising/click/route.ts',
     // Public by design: read-only advert price list (label + pence only).
     'src/app/api/advertising/prices/route.ts',
+    // Public by design: the shop's shelf. Read only, and it lists what is on
+    // sale rather than serving it - approved documents only, and only their
+    // reference, title, department and tier. The content is the product, so
+    // the select names its columns and a test asserts the document body is
+    // not among them.
+    'src/app/api/standards/route.ts',
     'src/app/api/agency/directory/route.ts',
     'src/app/api/fix-employer-columns/route.ts',
     'src/app/api/fix-null-live/route.ts',

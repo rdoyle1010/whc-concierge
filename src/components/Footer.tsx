@@ -94,6 +94,7 @@ export default function Footer({ siteContent }: { siteContent?: WebsiteContent }
     { href: '/jobs', label: content.navigation.jobs },
     { href: '/agency/about', label: content.navigation.agency },
     { href: '/residency', label: content.navigation.residency },
+    { href: '/standards', label: 'Standards' },
     { href: '/academy', label: content.navigation.academy },
     { href: '/events', label: 'Events' },
     { href: '/consultancy', label: 'Consultancy' },
