@@ -49,6 +49,42 @@ async function getRoleOnce(userId: string) {
   return role
 }
 
+// The top of the site, and what earns a place on it.
+//
+// This was nine links, plus a search, plus two portals: twelve things
+// competing before anybody read the headline. The nine were deliberate at the
+// time, and the reasoning still holds for most of them - six revenue lines
+// hidden behind a hover is a discovery problem dressed as tidiness, and
+// Consultancy sitting under "Flexible Work" was telling visitors something
+// untrue about a paid product. Dropdowns are not the answer here and are not
+// coming back.
+//
+// What changed is that two of the nine lead somewhere effectively empty. The
+// public Properties directory holds one approved property, which is ours, and
+// Brands is the advertising surface with no advertisers on it yet. A header
+// that advertises nine sections and delivers seven teaches a visitor the site
+// is thinner than it looks, and the ones doing that damage are exactly the
+// two with nothing behind them. Both keep a footer link, so nothing is
+// unreachable and nothing loses its internal link.
+//
+// Everything that is a live revenue line stays at the top level, including
+// Roles: it has no listings today, but recruitment is the primary line and a
+// talent platform with no visible way to look at work is a stranger thing
+// than an empty results page.
+//
+// Put them back the day there is something behind them. Ten roles and half a
+// dozen properties is the moment, and at that point this is worth revisiting
+// properly rather than by adding one link at a time.
+const SITE_LINKS = [
+  { href: '/jobs', label: 'Roles' },
+  { href: '/agency/about', label: 'Agency' },
+  { href: '/residency', label: 'Residency' },
+  { href: '/academy', label: 'Academy' },
+  { href: '/events', label: 'Events' },
+  { href: '/consultancy', label: 'Consultancy' },
+  { href: '/intelligence', label: 'Intelligence' },
+]
+
 export default function Navbar({ siteContent }: { siteContent?: WebsiteContent }) {
   const [mobileOpen, setMobileOpen] = useState(false)
   const [profileOpen, setProfileOpen] = useState(false)
@@ -95,42 +131,17 @@ export default function Navbar({ siteContent }: { siteContent?: WebsiteContent }
   const profileHref = isEmployer ? '/employer/profile' : '/talent/profile'
   const labels = usePublicSiteContent(siteContent).navigation
 
-  const loggedInSiteLinks = [
-    { href: '/jobs', label: 'Browse Roles' },
-    { href: '/properties', label: 'Properties' },
-    { href: '/brands', label: 'Brands' },
-    { href: '/agency/about', label: 'Agency' },
-    { href: '/academy', label: 'Academy' },
-    { href: '/events', label: 'Events' },
-    { href: '/residency', label: 'Residency' },
-    { href: '/consultancy', label: 'Consultancy' },
-    { href: '/intelligence', label: 'Intelligence' },
-  ]
+  const loggedInSiteLinks = SITE_LINKS
 
-  // Every product, at the top level, in the order somebody meets them.
-  //
-  // These were two dropdowns: Careers held Roles, Match and Properties, and
-  // Flexible Work held Agency, Residency and Consultancy. Two things were
-  // wrong with that. Consultancy is not flexible work - it is advisers,
-  // designers and operators on projects, not shift cover - so the label was
-  // telling visitors something untrue about a paid product. And Properties,
-  // the page a hotel is most likely to want, was two clicks from the front
-  // door.
-  //
-  // Six revenue lines and half of them hidden behind a hover is a discovery
-  // problem dressed as tidiness. This is also exactly what a signed-in member
-  // already sees, so nobody has to relearn the navigation on the way in.
-  const publicLinks = [
-    { href: '/jobs', label: labels.jobs || 'Browse Roles' },
-    { href: '/properties', label: 'Properties' },
-    { href: '/brands', label: 'Brands' },
-    { href: '/agency/about', label: labels.agency || 'Agency' },
-    { href: '/residency', label: labels.residency || 'Residency' },
-    { href: '/consultancy', label: 'Consultancy' },
-    { href: '/academy', label: labels.academy || 'Academy' },
-    { href: '/events', label: 'Events' },
-    { href: '/intelligence', label: 'Intelligence' },
-  ]
+  const publicLinks = SITE_LINKS.map(link => ({
+    ...link,
+    // She can rename these from Website and Brand, and her name wins.
+    label: (link.href === '/jobs' && labels.jobs)
+      || (link.href === '/agency/about' && labels.agency)
+      || (link.href === '/residency' && labels.residency)
+      || (link.href === '/academy' && labels.academy)
+      || link.label,
+  }))
 
   const isActive = (href: string) => {
     const path = href.split('?')[0]

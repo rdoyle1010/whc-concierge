@@ -81,19 +81,19 @@ test('the bargain is visible from both sides', () => {
 })
 
 test('brands are reachable and administrable', () => {
-  // Both navigations, checked separately. The first version of this asserted
-  // the link appeared somewhere in the file, and it did - in the signed-in
-  // list. Signed-out visitors, who are the entire audience for a page that
-  // argues a brand's case, had no way to reach it.
-  const navbar = read('src/components/Navbar.tsx')
-  const listOf = (name: string) => {
-    const start = navbar.indexOf(`const ${name} = [`)
-    assert.ok(start > 0, `${name} should exist`)
-    return navbar.slice(start, navbar.indexOf(']', start))
-  }
-  assert.match(listOf('publicLinks'), /href: '\/brands'/,
+  // The point of this has always been that a signed-out visitor can get
+  // there. The first version asserted the link appeared somewhere in the
+  // file, and it did, in the signed-in list only, which left the entire
+  // audience for the page with no way to reach it.
+  //
+  // It is now in the footer rather than the header, because brand_profiles
+  // has no advertisers on it yet and a header link to an empty directory
+  // costs more than it earns. The footer is on every page and is not behind a
+  // hover, so the original requirement holds: signed out, no account, one
+  // click. When there are brands on it, it goes back up.
+  const footer = read('src/components/Footer.tsx')
+  assert.match(footer, /href: '\/brands'/,
     'a signed-out spa director is exactly who this page is for')
-  assert.match(listOf('loggedInSiteLinks'), /href: '\/brands'/)
   assert.match(read('src/components/DashboardShell.tsx'), /href: '\/admin\/brands'/)
 
   const api = body('src/app/api/admin/brands/route.ts')
