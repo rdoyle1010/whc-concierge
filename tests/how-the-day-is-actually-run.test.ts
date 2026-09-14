@@ -176,9 +176,14 @@ test('she can add both from the library screen, and change both prices', () => {
   assert.ok(route.includes("action === 'add_checklists'"))
   assert.ok(route.includes("action === 'add_finance_pack'"))
 
+  // Both are reachable from the screen. They sit behind The rest now, with
+  // everything else that adds one set of documents, because Bring the library
+  // up to date does all of it and a row of twelve buttons is a row nobody
+  // reads.
   const page = body('src/app/admin/documents/page.tsx')
-  assert.ok(page.includes("act('add_checklists')"))
-  assert.ok(page.includes("act('add_finance_pack')"))
+  assert.ok(page.includes("'add_checklists', 'the daily checklists'"))
+  assert.ok(page.includes("'add_finance_pack', 'the reporting pack'"))
+  assert.ok(page.includes('act(which)'), 'the set buttons are wired to their action')
 
   const prices = body('src/lib/documents/price-overrides.ts')
   assert.ok(prices.includes("key: 'checklists'"))

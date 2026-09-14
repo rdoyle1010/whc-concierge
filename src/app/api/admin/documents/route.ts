@@ -8,7 +8,7 @@ import { LIBRARY_PLAN } from '@/lib/documents/library-plan'
 import { draftDocument, draftingConfigured } from '@/lib/documents/draft'
 import { submitDraftBatch, collectDraftBatch, batchingConfigured } from '@/lib/documents/batch'
 import { documentFromDraft } from '@/lib/documents/assemble'
-import { QUARTER_ONE_DRAFTS } from '@/lib/documents/quarter-one'
+import { AUTHORED_DRAFTS, authoredReferences } from '@/lib/documents/authored'
 import { POOL_PLANS } from '@/lib/documents/pool-plans'
 import { GUIDE_PLANS } from '@/lib/documents/guide/plans'
 import { missingFromPlan, type PlanDocument } from '@/lib/documents/plan-types'
@@ -107,7 +107,10 @@ export async function GET() {
     .select('provider_batch_id, tier, requested, collected, failed, status, note, created_at')
     .order('created_at', { ascending: false }).limit(5)
 
-  return NextResponse.json({ rows, runs: runs || [] })
+  // Which references are written in the repository rather than drafted. The
+  // screen needs it to count honestly: a redraft cannot fix one of these, and
+  // a button offering to send them is a button that does nothing.
+  return NextResponse.json({ rows, runs: runs || [], authored: authoredReferences() })
 }
 
 export async function POST(req: NextRequest) {
@@ -617,31 +620,48 @@ export async function POST(req: NextRequest) {
   // in the repository, so writing them is a database update and nothing else:
   // no model, no waiting, no failure mode beyond the write itself.
   if (action === 'write_authored') {
-    const references = Object.keys(QUARTER_ONE_DRAFTS)
+    const references = Object.keys(AUTHORED_DRAFTS)
 
     const { data: targets, error: readError } = await admin.from('operational_documents')
       .select('*').is('employer_id', null).in('reference', references)
     if (readError) return NextResponse.json({ error: readError.message }, { status: 500 })
     if (!targets?.length) {
       return NextResponse.json({
-        error: 'None of those nine are in the library. Import the build plan first.',
+        error: 'None of the hand-written ones are in the library. Import the build plan first.',
       }, { status: 400 })
     }
 
     const now = new Date().toISOString()
     const writes: Record<string, any>[] = []
     let leftAlone = 0
+    let replaced = 0
     for (const target of targets) {
-      // Signed off, or written since. Neither is ours to overwrite, and the
-      // whole point of this library is that an approval means somebody read
-      // that exact version.
-      if (target.status === 'approved' || Object.keys(target.document || {}).length > 0) {
+      // Signed off is not ours to overwrite. An approval says somebody read
+      // that exact version, and a silent replacement would make the signature
+      // a signature on something else.
+      if (target.status === 'approved') {
         leftAlone += 1
         continue
       }
+
+      // Written and finished is left alone too. Written and unfinished is the
+      // case this button exists for: six documents came back from the model
+      // with no steps, were stored as written, and were then skipped by this
+      // action forever because they had content. Content is not the test.
+      // Finished is.
+      const stored = (target.document || {}) as Record<string, any>
+      const short = Object.keys(stored).length > 0
+        ? missingFromSop(stored as SopDocument)
+        : ['everything']
+      if (!short.length) {
+        leftAlone += 1
+        continue
+      }
+      if (Object.keys(stored).length > 0) replaced += 1
+
       writes.push({
         ...target,
-        document: documentFromDraft(target, QUARTER_ONE_DRAFTS[target.reference] as any),
+        document: documentFromDraft(target, AUTHORED_DRAFTS[target.reference] as any),
         status: 'draft',
         updated_at: now,
       })
@@ -650,19 +670,23 @@ export async function POST(req: NextRequest) {
     if (!writes.length) {
       return NextResponse.json({
         success: true, written: 0,
-        note: `Nothing to do: all ${leftAlone} are already written.`,
+        note: `Nothing to do: all ${leftAlone} are already written and finished.`,
       })
     }
 
     const { error: writeError } = await admin.from('operational_documents').upsert(writes)
     if (writeError) return NextResponse.json({ error: writeError.message }, { status: 500 })
 
-    // Said plainly, including what was skipped. A count that silently excludes
-    // the ones left alone is the same class of lie as a truncated list.
+    // Said plainly, including what was skipped and what was overwritten. A
+    // count that silently excludes either is the same class of lie as a
+    // truncated list.
+    const parts = [`${writes.length} written`]
+    if (replaced) parts.push(`${replaced} of them replacing a draft that was never finished`)
+    if (leftAlone) parts.push(`${leftAlone} left alone because they are signed off or already finished`)
     return NextResponse.json({
       success: true,
       written: writes.length,
-      note: `${writes.length} written${leftAlone ? `, ${leftAlone} left alone because they already had content` : ''}. Read them before signing any off.`,
+      note: `${parts.join(', ')}. Read them before signing any off.`,
     })
   }
 
