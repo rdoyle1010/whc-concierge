@@ -31,6 +31,7 @@ export default function MyDocumentsPage() {
   const [documents, setDocuments] = useState<Entry[] | null>(null)
   const [orders, setOrders] = useState<Order[]>([])
   const [files, setFiles] = useState<FileEntry[]>([])
+  const [workbook, setWorkbook] = useState(false)
   const [error, setError] = useState('')
 
   useEffect(() => {
@@ -56,6 +57,7 @@ export default function MyDocumentsPage() {
       setDocuments(body.documents || [])
       setOrders(body.orders || [])
       setFiles(body.files || [])
+      setWorkbook(Boolean(body.workbook))
     }
     load().catch(() => { setError('We could not reach your documents just now.'); setDocuments([]) })
   }, [])
@@ -74,7 +76,7 @@ export default function MyDocumentsPage() {
 
         {documents === null ? (
           <p className="mt-6 text-[13px] text-secondary">Loading...</p>
-        ) : documents.length === 0 && files.length === 0 ? (
+        ) : documents.length === 0 && files.length === 0 && !workbook ? (
           <div className="mt-6">
             <p className="max-w-2xl text-[14px] leading-relaxed text-secondary">
               You have not bought any documents yet. The library holds standard operating procedures, risk
@@ -123,6 +125,27 @@ export default function MyDocumentsPage() {
                 </div>
               ))}
             </div>
+
+            {/* The workbook. Given its own block above the files, because it
+                is not an attachment that came with a pack: it is where the
+                pack is actually worked out, and the PDFs are how a month is
+                presented once it has been. */}
+            {workbook && (
+              <div className="mt-10 border border-[#1c1c1c] p-5">
+                <h2 className="flex items-center gap-2 text-[15px] font-semibold text-ink">
+                  <FileSpreadsheet size={16} className="shrink-0 text-muted" /> Spa Reporting Pack workbook
+                </h2>
+                <p className="mt-2 max-w-2xl text-[13px] leading-relaxed text-secondary">
+                  One Excel file, a tab per report, with the arithmetic wired up. Fill in the eight numbers on
+                  the Setup tab and RevPATH, occupancy, unsold capacity and the director dashboard work
+                  themselves out. The PDFs are how you present the month; this is where you work it out.
+                </p>
+                <a href="/api/standards/workbook"
+                  className="mt-4 inline-flex items-center gap-1.5 border border-[#1c1c1c] bg-[#1c1c1c] px-4 py-2 text-[13px] font-semibold text-white">
+                  <Download size={13} /> Download the workbook
+                </a>
+              </div>
+            )}
 
             {/* Working files that came with a pack. Given the same weight as
                 the documents, because a buyer who cannot see the register

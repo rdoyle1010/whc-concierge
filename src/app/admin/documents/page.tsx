@@ -81,7 +81,7 @@ export default function AdminDocumentsPage() {
   const [stage, setStage] = useState<JourneyStage | 'all'>('all')
   const [kind, setKind] = useState<string>('all')
   const [department, setDepartment] = useState('all')
-  const [only, setOnly] = useState<'all' | 'unwritten' | 'unsigned' | 'signed'>('all')
+  const [only, setOnly] = useState<'all' | 'unwritten' | 'incomplete' | 'unsigned' | 'signed'>('all')
 
   async function load() {
     const res = await fetch('/api/admin/documents', { cache: 'no-store' })
@@ -250,6 +250,9 @@ export default function AdminDocumentsPage() {
   // cannot see it".
   const matchesState = (row: Row) => {
     if (only === 'unwritten' && row.written) return false
+    // Written, and still missing something it needs before anybody can sign
+    // it off. The draft came back short and was stored as though it had not.
+    if (only === 'incomplete' && (!row.written || row.missing.length === 0)) return false
     if (only === 'unsigned' && (!row.written || row.status === 'approved')) return false
     if (only === 'signed' && row.status !== 'approved') return false
     return true
@@ -362,17 +365,25 @@ export default function AdminDocumentsPage() {
 
         {rows.length > 0 && (
           <>
-            <div className="mt-6 grid grid-cols-2 gap-px border border-border bg-border sm:grid-cols-4">
-              {[
-                ['Planned', rows.length],
-                ['Written', rows.filter(r => r.written).length],
-                ['Signed off', rows.filter(r => r.status === 'approved').length],
-                ['Still to write', rows.filter(r => !r.written).length],
-              ].map(([label, value]) => (
-                <div key={String(label)} className="bg-white px-4 py-3">
+            <div className="mt-6 grid grid-cols-2 gap-px border border-border bg-border sm:grid-cols-5">
+              {/* Five, not four. "Written" counted a document whose draft came
+                  back with no steps in it, so the library reported nothing
+                  left to write and she met each one individually, by pressing
+                  sign off and being refused. A number that is only true if you
+                  do not look closely is worse than no number. */}
+              {([
+                ['Planned', rows.length, 'all'],
+                ['Written', rows.filter(r => r.written).length, 'all'],
+                ['Signed off', rows.filter(r => r.status === 'approved').length, 'signed'],
+                ['Written, not finished', rows.filter(r => r.written && r.missing.length > 0).length, 'incomplete'],
+                ['Still to write', rows.filter(r => !r.written).length, 'unwritten'],
+              ] as const).map(([label, value, filter]) => (
+                <button key={label} type="button" onClick={() => setOnly(filter as typeof only)}
+                  className="bg-white px-4 py-3 text-left">
                   <p className="text-[10px] uppercase tracking-[.14em] text-muted">{label}</p>
-                  <p className="mt-0.5 text-[22px] font-semibold text-ink">{value}</p>
-                </div>
+                  <p className={`mt-0.5 text-[22px] font-semibold ${
+                    label === 'Written, not finished' && value > 0 ? 'text-[#8a1c14]' : 'text-ink'}`}>{value}</p>
+                </button>
               ))}
             </div>
 
@@ -408,6 +419,7 @@ export default function AdminDocumentsPage() {
                 className="border border-border px-2 py-1.5 text-[12px] text-secondary">
                 <option value="all">Any state</option>
                 <option value="unwritten">Not written yet</option>
+                <option value="incomplete">Written, not finished</option>
                 <option value="unsigned">Written, not signed off</option>
                 <option value="signed">Signed off</option>
               </select>

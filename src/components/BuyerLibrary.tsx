@@ -27,7 +27,7 @@ function Library() {
   const [state, setState] = useState<
     { status: 'loading' }
     | { status: 'error'; message: string }
-    | { status: 'ready'; token: string; buyer: { name: string | null }; documents: Entry[]; files?: FileEntry[]; ready: number; total: number }
+    | { status: 'ready'; token: string; buyer: { name: string | null }; documents: Entry[]; files?: FileEntry[]; workbook?: boolean; ready: number; total: number }
   >({ status: 'loading' })
 
   useEffect(() => {
@@ -98,6 +98,23 @@ function Library() {
           </div>
         ))}
       </div>
+
+      {state.workbook && (
+        <div className="mt-10 border border-[#1c1c1c] p-6">
+          <h2 className="flex items-center gap-2 text-[17px] font-semibold text-[#1c1c1c]">
+            <FileSpreadsheet size={17} className="shrink-0 text-[#8a8a8a]" /> Spa Reporting Pack workbook
+          </h2>
+          <p className="mt-2 max-w-2xl text-[14px] leading-relaxed text-[#555555]">
+            One Excel file, a tab per report, with the arithmetic wired up. Fill in the eight numbers on the
+            Setup tab and RevPATH, occupancy, unsold capacity and the director dashboard work themselves out.
+            The PDFs are how you present the month; this is where you work it out.
+          </p>
+          <a href={`/api/standards/workbook?t=${encodeURIComponent(state.token)}`}
+            className="mt-4 inline-flex items-center gap-1.5 border border-[#1c1c1c] bg-[#1c1c1c] px-4 py-2 text-[13px] font-semibold text-white">
+            <Download size={14} /> Download the workbook
+          </a>
+        </div>
+      )}
 
       {/* The files that came with a pack. A register in Excel is not a
           lesser thing than a PDF, so it gets the same weight on the page:

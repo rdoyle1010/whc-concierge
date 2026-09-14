@@ -168,6 +168,21 @@ yield, vouchers, payroll, the departmental profit and loss, stock, complaints,
 standards, safety and marketing. Nothing is pre-filled: a printed benchmark
 would be somebody else's spa.
 
+The pack also ships one Excel workbook, generated from the same register the
+PDFs are, so the tabs and the definitions cannot drift from the documents.
+The split is deliberate: the PDFs are how a month is presented, the workbook
+is where it is worked out. A Setup tab takes eight constants, and RevPATH,
+occupancy, unsold capacity, payroll percentage, gross operating profit and a
+fifteen-measure director dashboard all fall out of them by formula. The
+dashboard contains no typed numbers at all, because a dashboard filled in by
+hand disagrees with the reports behind it by the third month.
+
+The xlsx writer is about three hundred lines in `src/lib/documents/xlsx.ts`
+rather than a dependency, because the file format is a zip of XML and node
+already has deflate. Every generated workbook is opened by a real spreadsheet
+reader in the test suite: a file a buyer downloads and cannot open costs more
+trust than a missing feature.
+
 Packs can now carry working files as well: a spreadsheet uploaded against a
 pack reaches everybody who owns that pack, including people who bought it
 months ago. A file belongs to a pack as a whole, never to a single document,
@@ -214,7 +229,7 @@ before anything in this library is called finished.
 ## Technical shape
 
 Next.js 16 App Router · Supabase (auth, Postgres, storage) · Stripe · Netlify.
-237 API routes, 172 pages, 131 migrations, 153 test files.
+238 API routes, 172 pages, 132 migrations, 155 test files.
 
 Two roles: `talent` and `employer`, stored on `profiles.role` (talent is
 stored as `candidate`). Admin is a third role on the same column.
