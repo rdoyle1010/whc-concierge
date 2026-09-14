@@ -144,71 +144,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: true, added })
   }
 
-  const id = String(body.id || '')
-  if (!id) return NextResponse.json({ error: 'Missing document' }, { status: 400 })
-
-  const { data: row, error: readError } = await admin.from('operational_documents')
-    .select('*').eq('id', id).maybeSingle()
-  if (readError) return NextResponse.json({ error: readError.message }, { status: 500 })
-  if (!row) return NextResponse.json({ error: 'That document was not found.' }, { status: 404 })
-
-  // Signed off, by name, against a version.
-  if (action === 'approve') {
-    if (!isValidReference(row.reference)) {
-      return NextResponse.json({ error: 'That reference is not in the house format, so it cannot be approved.' }, { status: 400 })
-    }
-
-    // Refused while anything is missing. An approval is a statement that
-    // somebody read a finished document, and a half-finished one being signed
-    // off is exactly the failure this whole flow exists to prevent.
-    const missing = row.kind === 'sop' ? missingFromSop((row.document || {}) as SopDocument) : []
-    if (missing.length) {
-      return NextResponse.json({
-        error: `Not ready to sign off. It still needs: ${missing.join(', ')}.`,
-      }, { status: 400 })
-    }
-
-    // Life safety before elegance, which is her own rule and the right one.
-    //
-    // The evacuation route, the muster point, the plant room and the person
-    // holding the pool operator qualification are facts about one building.
-    // Nothing that drafted this knows them, so signing one of these off is a
-    // separate statement rather than the same button.
-    if (isLifeSafety(row) && body.competentPersonChecked !== true) {
-      return NextResponse.json({
-        error: 'This is a life safety document. Confirm that a competent person has checked it against the actual premises before signing it off.',
-        needsCompetentPerson: true,
-        confirmation: LIFE_SAFETY_CONFIRMATION,
-      }, { status: 409 })
-    }
-
-    const { error } = await admin.from('operational_documents').update({
-      status: 'approved',
-      approved_by: actor.id,
-      approved_by_name: actor.email || null,
-      approved_at: new Date().toISOString(),
-      approved_version: row.version,
-      updated_at: new Date().toISOString(),
-    }).eq('id', id)
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-    return NextResponse.json({ success: true })
-  }
-
-  // Back to draft. Clears the approval rather than keeping it around greyed
-  // out, because a stale approval on screen is worse than none.
-  if (action === 'unapprove' || action === 'retire') {
-    const { error } = await admin.from('operational_documents').update({
-      status: action === 'retire' ? 'retired' : 'draft',
-      approved_by: null,
-      approved_by_name: null,
-      approved_at: null,
-      approved_version: null,
-      updated_at: new Date().toISOString(),
-    }).eq('id', id)
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-    return NextResponse.json({ success: true })
-  }
-
   // Draft a whole tier at once, and collect it later.
   //
   // Pressing a button four hundred and sixty times is not a workflow. This
@@ -325,6 +260,77 @@ export async function POST(req: NextRequest) {
       stillRunning,
       warning: bookkeeping.length ? `The documents are saved, but: ${bookkeeping.join('; ')}.` : undefined,
     })
+  }
+
+  // Everything below this line is about one document, so it needs an id.
+  //
+  // The two actions above are not: writing a tier and collecting a batch are
+  // both about the library. They were underneath this guard, so every press
+  // of either answered "Missing document", which is true of a question
+  // nobody asked.
+  const id = String(body.id || '')
+  if (!id) return NextResponse.json({ error: 'Missing document' }, { status: 400 })
+
+  const { data: row, error: readError } = await admin.from('operational_documents')
+    .select('*').eq('id', id).maybeSingle()
+  if (readError) return NextResponse.json({ error: readError.message }, { status: 500 })
+  if (!row) return NextResponse.json({ error: 'That document was not found.' }, { status: 404 })
+
+  // Signed off, by name, against a version.
+  if (action === 'approve') {
+    if (!isValidReference(row.reference)) {
+      return NextResponse.json({ error: 'That reference is not in the house format, so it cannot be approved.' }, { status: 400 })
+    }
+
+    // Refused while anything is missing. An approval is a statement that
+    // somebody read a finished document, and a half-finished one being signed
+    // off is exactly the failure this whole flow exists to prevent.
+    const missing = row.kind === 'sop' ? missingFromSop((row.document || {}) as SopDocument) : []
+    if (missing.length) {
+      return NextResponse.json({
+        error: `Not ready to sign off. It still needs: ${missing.join(', ')}.`,
+      }, { status: 400 })
+    }
+
+    // Life safety before elegance, which is her own rule and the right one.
+    //
+    // The evacuation route, the muster point, the plant room and the person
+    // holding the pool operator qualification are facts about one building.
+    // Nothing that drafted this knows them, so signing one of these off is a
+    // separate statement rather than the same button.
+    if (isLifeSafety(row) && body.competentPersonChecked !== true) {
+      return NextResponse.json({
+        error: 'This is a life safety document. Confirm that a competent person has checked it against the actual premises before signing it off.',
+        needsCompetentPerson: true,
+        confirmation: LIFE_SAFETY_CONFIRMATION,
+      }, { status: 409 })
+    }
+
+    const { error } = await admin.from('operational_documents').update({
+      status: 'approved',
+      approved_by: actor.id,
+      approved_by_name: actor.email || null,
+      approved_at: new Date().toISOString(),
+      approved_version: row.version,
+      updated_at: new Date().toISOString(),
+    }).eq('id', id)
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    return NextResponse.json({ success: true })
+  }
+
+  // Back to draft. Clears the approval rather than keeping it around greyed
+  // out, because a stale approval on screen is worse than none.
+  if (action === 'unapprove' || action === 'retire') {
+    const { error } = await admin.from('operational_documents').update({
+      status: action === 'retire' ? 'retired' : 'draft',
+      approved_by: null,
+      approved_by_name: null,
+      approved_at: null,
+      approved_version: null,
+      updated_at: new Date().toISOString(),
+    }).eq('id', id)
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    return NextResponse.json({ success: true })
   }
 
   // Draft it. Lands as draft, always, whatever it contains.
