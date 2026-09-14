@@ -101,6 +101,8 @@ export type PlanSection = {
   facts?: Fact[]
   actions?: PlanAction[]
   hazards?: Hazard[]
+  /** Prints the five by five matrix and the colour bands. */
+  riskMatrix?: boolean
   table?: PlanTable
   /** Printed on its own page. Used for each emergency in an EAP. */
   ownPage?: boolean

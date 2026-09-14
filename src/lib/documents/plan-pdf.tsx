@@ -25,6 +25,20 @@ const FAINT = '#8a8a8a'
 const RULE = '#c9c9c9'
 const FIELD = '#f4f6f8'
 
+// The only colour in this library, and it is functional rather than
+// decorative: a risk matrix is read by colour before it is read by number,
+// and a register printed in black and white is one somebody has to do
+// arithmetic on before they can see where the problem is.
+//
+// Chosen to survive a laser printer and to remain distinguishable to somebody
+// who cannot tell red from green, which is why each band also carries its
+// word and its number range.
+const RISK = {
+  low: { ink: '#14532d', wash: '#e7f4ec', edge: '#8fbfa3' },
+  medium: { ink: '#7a4a00', wash: '#fdf1df', edge: '#d9ab63' },
+  high: { ink: '#8a1c14', wash: '#fbe9e7', edge: '#d99089' },
+} as const
+
 const styles = StyleSheet.create({
   page: {
     paddingTop: 44, paddingBottom: 54, paddingHorizontal: 44,
@@ -118,6 +132,22 @@ const styles = StyleSheet.create({
   scoreCell: { flex: 1 },
   scoreLabel: { fontSize: 6.2, letterSpacing: 0.5, textTransform: 'uppercase', color: MUTED, marginBottom: 2 },
   scoreInput: { height: 16, backgroundColor: FIELD, borderWidth: 0.5, borderColor: '#9aa5b1', fontSize: 9, paddingHorizontal: 4, textAlign: 'center' },
+
+  bandRow: { flexDirection: 'row', gap: 7, marginTop: 10, marginBottom: 4 },
+  band: { flex: 1, borderWidth: 0.75, paddingHorizontal: 7, paddingVertical: 6 },
+  bandName: { fontFamily: 'Helvetica-Bold', fontSize: 9 },
+  bandRange: { fontSize: 7.5, marginTop: 1 },
+  bandWhat: { fontSize: 7.5, marginTop: 3, lineHeight: 1.4 },
+
+  matrix: { marginTop: 10, marginBottom: 4 },
+  matrixRow: { flexDirection: 'row' },
+  matrixCorner: { width: 62, height: 22 },
+  matrixHead: { flex: 1, height: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: '#f2f2f2', borderWidth: 0.5, borderColor: RULE },
+  matrixSide: { width: 62, height: 22, alignItems: 'flex-end', justifyContent: 'center', paddingRight: 5, backgroundColor: '#f2f2f2', borderWidth: 0.5, borderColor: RULE },
+  matrixCell: { flex: 1, height: 22, alignItems: 'center', justifyContent: 'center', borderWidth: 0.5 },
+  matrixLabel: { fontFamily: 'Helvetica-Bold', fontSize: 7 },
+  matrixValue: { fontFamily: 'Helvetica-Bold', fontSize: 8.5 },
+  matrixAxis: { fontSize: 6.5, color: MUTED, marginTop: 3 },
   signRow: { flexDirection: 'row', gap: 18, marginTop: 14 },
   signCol: { flex: 1 },
   signLabel: { fontSize: 7, textTransform: 'uppercase', letterSpacing: 0.7, color: MUTED, marginBottom: 3 },
@@ -207,12 +237,26 @@ function HazardBlock({ hazard, index, keyBase }: { hazard: Hazard; index: number
         {hazard.note ? <Text style={[styles.note, { marginTop: 6, marginBottom: 0 }]}>{hazard.note}</Text> : null}
 
         <View style={styles.scoreRow}>
-          {[['Likelihood 1-5', 'l'], ['Severity 1-5', 's'], ['Score L x S', 'score'], ['Risk level', 'level']].map(([label, suffix]) => (
+          {[['Likelihood 1-5', 'l'], ['Severity 1-5', 's'], ['Score L x S', 'score']].map(([label, suffix]) => (
             <View key={suffix} style={styles.scoreCell}>
               <Text style={styles.scoreLabel}>{label}</Text>
               <TextInput name={`${keyBase}_${suffix}`} style={styles.scoreInput} fontSize={9} />
             </View>
           ))}
+          <View style={{ flex: 1.6 }}>
+            <Text style={styles.scoreLabel}>Risk level: circle one</Text>
+            <View style={{ flexDirection: 'row', gap: 3, marginTop: 2 }}>
+              {[['Low', RISK.low], ['Med', RISK.medium], ['High', RISK.high]].map(([name, colour]: any) => (
+                <View key={name}
+                  style={{
+                    flex: 1, height: 16, alignItems: 'center', justifyContent: 'center',
+                    backgroundColor: colour.wash, borderWidth: 0.75, borderColor: colour.edge,
+                  }}>
+                  <Text style={{ fontFamily: 'Helvetica-Bold', fontSize: 7.5, color: colour.ink }}>{name}</Text>
+                </View>
+              ))}
+            </View>
+          </View>
         </View>
 
         <View style={{ marginTop: 8 }}>
@@ -234,6 +278,70 @@ function HazardBlock({ hazard, index, keyBase }: { hazard: Hazard; index: number
             <TextInput name={`${keyBase}_residual`} style={styles.scoreInput} fontSize={9} />
           </View>
         </View>
+      </View>
+    </View>
+  )
+}
+
+/** Which band a score falls in. The arithmetic, done once, in one place. */
+function bandFor(score: number) {
+  if (score >= 15) return RISK.high
+  if (score >= 8) return RISK.medium
+  return RISK.low
+}
+
+/**
+ * The five by five matrix, in colour.
+ *
+ * Read by colour before it is read by number, which is the entire reason a
+ * register is colour coded: somebody scanning forty assessments for the
+ * problem should not have to multiply anything.
+ */
+function RiskMatrix() {
+  const scale = [1, 2, 3, 4, 5]
+  return (
+    <View>
+      <View style={styles.bandRow}>
+        {[
+          ['Low', '1 to 6', 'Controls are adequate. Monitor and review.', RISK.low],
+          ['Medium', '8 to 12', 'Further controls needed, with an owner and a date.', RISK.medium],
+          ['High', '15 to 25', 'Stop or control it before the area is used again.', RISK.high],
+        ].map(([name, range, what, colour]: any) => (
+          <View key={name} style={[styles.band, { backgroundColor: colour.wash, borderColor: colour.edge }]}>
+            <Text style={[styles.bandName, { color: colour.ink }]}>{name}</Text>
+            <Text style={[styles.bandRange, { color: colour.ink }]}>Score {range}</Text>
+            <Text style={[styles.bandWhat, { color: colour.ink }]}>{what}</Text>
+          </View>
+        ))}
+      </View>
+
+      <View style={styles.matrix}>
+        <View style={styles.matrixRow}>
+          <View style={styles.matrixCorner} />
+          {scale.map(value => (
+            <View key={`h${value}`} style={styles.matrixHead}>
+              <Text style={styles.matrixLabel}>{value}</Text>
+            </View>
+          ))}
+        </View>
+        {[...scale].reverse().map(severity => (
+          <View key={`r${severity}`} style={styles.matrixRow}>
+            <View style={styles.matrixSide}>
+              <Text style={styles.matrixLabel}>Severity {severity}</Text>
+            </View>
+            {scale.map(likelihood => {
+              const score = severity * likelihood
+              const colour = bandFor(score)
+              return (
+                <View key={`c${severity}${likelihood}`}
+                  style={[styles.matrixCell, { backgroundColor: colour.wash, borderColor: colour.edge }]}>
+                  <Text style={[styles.matrixValue, { color: colour.ink }]}>{score}</Text>
+                </View>
+              )
+            })}
+          </View>
+        ))}
+        <Text style={styles.matrixAxis}>Likelihood, 1 very unlikely to 5 almost certain, across the top.</Text>
       </View>
     </View>
   )
@@ -297,6 +405,8 @@ function SectionBody({ section, keyBase }: { section: PlanSection; keyBase: stri
           ))}
         </View>
       ) : null}
+
+      {section.riskMatrix ? <RiskMatrix /> : null}
 
       {section.hazards?.length ? (
         <View>

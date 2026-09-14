@@ -1,7 +1,7 @@
 import { writeFileSync } from 'node:fs'
 import { renderPlanPdf } from '../src/lib/documents/plan-pdf'
 import { riskAssessment } from '../src/lib/documents/risk-assessment-plans'
-import { RISK_ASSESSMENTS } from '../src/lib/documents/risk-assessments'
+import { RISK_REGISTER as RISK_ASSESSMENTS } from '../src/lib/documents/ra/register'
 import { factsInPlan } from '../src/lib/documents/plan-types'
 
 // Render one risk assessment to a PDF on disk, to look at before shipping it.
