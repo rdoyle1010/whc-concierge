@@ -345,10 +345,21 @@ export default function AdminDocumentsPage() {
           </div>
         )}
 
+        {/* A finished run leaves a note for two completely different reasons:
+            something failed, or there was nothing new in it because the same
+            tier had been submitted more than once. Only the first is a
+            problem, and dressing the second in amber sends her looking for a
+            fault that is not there. The failed count says which it is. */}
         {runs.filter(run => run.status === 'done' && run.note).slice(0, 1).map(run => (
-          <p key={run.provider_batch_id} className="mt-4 border border-amber-200 bg-amber-50 px-4 py-3 text-[13px] text-amber-800">
-            The last run finished with a problem. {run.note}
-          </p>
+          run.failed > 0 ? (
+            <p key={run.provider_batch_id} className="mt-4 border border-amber-200 bg-amber-50 px-4 py-3 text-[13px] text-amber-800">
+              The last run finished with a problem. {run.note}
+            </p>
+          ) : (
+            <p key={run.provider_batch_id} className="mt-4 border border-border px-4 py-3 text-[13px] text-secondary">
+              {run.note}
+            </p>
+          )
         ))}
 
         {loading ? (
