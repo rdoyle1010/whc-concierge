@@ -3,8 +3,9 @@ import { RECEPTION_OPENING, RECEPTION_MID, RECEPTION_LATE } from './reception'
 import { THERAPIST_OPENING, THERAPIST_CLOSING } from './therapists'
 import { CLEANING_OPENING, CLEANING_CLOSING } from './cleaning'
 import { MANAGER_DAILY, MANAGER_WEEKLY } from './management'
+import { POOL_OPENING, POOL_CLOSING, WATER_HOURLY, GYM_OPENING, GYM_CLOSING } from './pool-and-gym'
 
-// The nine checklists, as a suite.
+// The checklists, as a suite.
 //
 // Sold together for the same reason the risk assessments are. A spa with a
 // therapist checklist and no cleaning checklist has not half solved the
@@ -120,5 +121,71 @@ export const CHECKLIST_REGISTER: ChecklistEntry[] = [
       + 'so a blank column is a conversation rather than an oversight.',
     drawnFrom: 'the planned maintenance schedule, the risk assessment suite, the incident procedures and the training and certification records',
     sections: MANAGER_WEEKLY,
+  },
+
+  // The wet area and the gym floor.
+  //
+  // These five keep the references they were planned under, which look
+  // nothing like the five hundreds above them. That is deliberate. They were
+  // in the build plan from the start, were drafted as procedures, and were
+  // stored with steps under headings; their references end in CHK, so the
+  // library judged them as checklists, asked for a summary and sections, and
+  // found neither. Seven documents sat unsignable for weeks over a three
+  // letter mismatch between what they were called and what they were written
+  // as, and no redraft could fix it, because the drafter was being asked for
+  // the wrong shape.
+  //
+  // Renumbering them now would leave the old references orphaned in the
+  // library and in anybody's order. Keeping them is the cheaper honesty.
+  {
+    reference: 'THER-OPEN-SAFETY-CHK-221',
+    title: 'Checklist: Pool and Thermal Opening',
+    department: 'POOL TEAM',
+    intro:
+      'What is confirmed before any guest enters the water or a thermal cabin: the readings, the plant, the '
+      + 'rescue equipment, and the person on duty holding the qualification that allows them to be on it.',
+    drawnFrom: 'the pool safety operating procedure, the water hygiene and slips assessments, and the emergency action plan',
+    sections: POOL_OPENING,
+  },
+  {
+    reference: 'THER-CLOSE-SAFETY-CHK-222',
+    title: 'Checklist: Pool and Thermal Closing',
+    department: 'POOL TEAM',
+    intro:
+      'Everybody out and confirmed out, the water and plant left safe overnight, and the area left ready for '
+      + 'an opening check that can be completed honestly.',
+    drawnFrom: 'the pool safety operating procedure, the plant room procedure, the cleaning standards and the emergency action plan',
+    sections: POOL_CLOSING,
+  },
+  {
+    reference: 'THER-WATER-HOURLY-CHK-SOP-226',
+    title: 'Checklist: Hourly Water Quality Spot Check',
+    department: 'POOL TEAM',
+    intro:
+      'The hourly test, the bathing load, and what happens when a reading comes back out of range. Written to '
+      + 'be completed at the poolside at the time, because a sheet filled in at the end of a shift is a record '
+      + 'of somebody’s memory rather than of the water.',
+    drawnFrom: 'the pool safety operating procedure, the water hygiene assessment and the plant room procedure',
+    sections: WATER_HOURLY,
+  },
+  {
+    reference: 'GYM-OPEN-SAFETY-CHK-245',
+    title: 'Checklist: Gym Floor and Studio Opening',
+    department: 'GYM FLOOR TEAM - PERSONAL TRAINERS',
+    intro:
+      'Every machine stops when it is told to, nothing tagged out has quietly gone back into use, and the '
+      + 'defibrillator is where the emergency plan says it is.',
+    drawnFrom: 'the preventive maintenance procedure, the gym floor safety and slips assessments, and the emergency action plan',
+    sections: GYM_OPENING,
+  },
+  {
+    reference: 'GYM-CLOSE-CHK-246',
+    title: 'Checklist: Gym Floor and Studio Closing',
+    department: 'GYM FLOOR TEAM - PERSONAL TRAINERS',
+    intro:
+      'The floor empty and confirmed empty, every fault found today raised before anybody leaves rather than '
+      + 'mentioned in passing, and the area left as the opening shift needs to find it.',
+    drawnFrom: 'the preventive maintenance procedure, the gym floor safety assessment, the cleaning standards and the security procedure',
+    sections: GYM_CLOSING,
   },
 ]

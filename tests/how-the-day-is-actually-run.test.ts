@@ -17,8 +17,12 @@ const body = (file: string) =>
     .replace(/\/\*[\s\S]*?\*\//g, '')
     .replace(/^\s*\/\/.*$/gm, '')
 
-test('nine checklists, each one finished and each one in the house format', () => {
-  assert.equal(CHECKLIST_REGISTER.length, 9)
+test('fourteen checklists, each one finished and each one in the house format', () => {
+  // Nine when the suite was written. Five more joined it when the pool,
+  // thermal and gym sheets were rewritten as checklists: they were planned as
+  // procedures, drafted with steps under headings, and judged as checklists
+  // because their reference ends in CHK, so they could never be signed off.
+  assert.equal(CHECKLIST_REGISTER.length, 14)
   for (const plan of CHECKLIST_PLANS) {
     const document = plan.build()
     assert.ok(isValidReference(document.reference), `${document.reference} is not a house reference`)
@@ -30,7 +34,10 @@ test('nine checklists, each one finished and each one in the house format', () =
   // ends, cleaning both ends, the manager's walk, and the weekly sheet.
   const references = CHECKLIST_REGISTER.map(entry => entry.reference)
   for (const needle of ['REC-OPENING', 'REC-MIDSHIFT', 'REC-CLOSING', 'THER-OPENING', 'THER-CLOSING',
-    'CLN-OPENING', 'CLN-CLOSING', 'OPS-DUTYDAY', 'OPS-WEEKLY']) {
+    'CLN-OPENING', 'CLN-CLOSING', 'OPS-DUTYDAY', 'OPS-WEEKLY',
+    // And the wet area and the gym floor, which the nine never covered: a
+    // therapist closing sheet says nothing about the plant room.
+    'THER-OPEN-SAFETY', 'THER-CLOSE-SAFETY', 'THER-WATER-HOURLY', 'GYM-OPEN-SAFETY', 'GYM-CLOSE']) {
     assert.ok(references.some(reference => reference.startsWith(needle)), `${needle} is missing`)
   }
 })
@@ -118,14 +125,14 @@ test('both suites are on the shelf, priced against what they replace', () => {
 
   const checklists = packBySlug('daily-checklists')
   const finance = packBySlug('financial-reporting')
-  assert.equal(checklists?.count, 9)
+  assert.equal(checklists?.count, 14)
   assert.equal(finance?.count, 20)
   assert.equal(checklists?.price, CHECKLIST_PACK_PRICE)
   assert.equal(finance?.price, FINANCE_PACK_PRICE)
 
   // Both cheaper than their documents bought one at a time, like everything
   // else here.
-  assert.ok(checklists!.price < 9 * SINGLE_DOCUMENT_PRICE * 4)
+  assert.ok(checklists!.price < 14 * SINGLE_DOCUMENT_PRICE * 4)
   assert.ok(finance!.price > 20 * SINGLE_DOCUMENT_PRICE,
     'the reporting pack is worth more than twenty documents and should say so')
 
@@ -163,9 +170,16 @@ test('one press brings in everything written in the repository', () => {
   assert.ok(/at \+= 20/.test(block))
   assert.ok(block.includes('were brought in before it stopped'))
 
-  // Nothing written or signed off is overwritten, whatever the button says.
-  assert.ok(block.includes("existing.status === 'approved'"))
-  assert.ok(block.includes('Object.keys(existing.document || {}).length > 0'))
+  // A sign-off is never overwritten, whatever the button says.
+  assert.ok(block.includes("existing?.status === 'approved'"))
+  // Written and finished is left alone too. Written and unfinished is
+  // rewritten, which is the case this had no answer for: five checklists were
+  // stored with steps rather than sections and were skipped here forever for
+  // having content. Content is not the test, finished is.
+  assert.ok(block.includes("missingFor(existing.kind, existing.document).length === 0"))
+  // And anything a later document replaced comes off sale in the same press.
+  assert.ok(block.includes('SUPERSEDED'))
+  assert.ok(block.includes("status: 'retired'"))
 
   const page = body('src/app/admin/documents/page.tsx')
   assert.ok(page.includes("act('add_everything')"))

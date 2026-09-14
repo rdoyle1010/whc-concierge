@@ -4,7 +4,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { missingFromSop, type SopDocument } from '@/lib/documents/types'
 import { isValidReference } from '@/lib/documents/reference'
 import { EXAMPLE_SOP } from '@/lib/documents/examples'
-import { LIBRARY_PLAN } from '@/lib/documents/library-plan'
+import { LIBRARY_PLAN, SUPERSEDED } from '@/lib/documents/library-plan'
 import { draftDocument, draftingConfigured } from '@/lib/documents/draft'
 import { submitDraftBatch, collectDraftBatch, batchingConfigured } from '@/lib/documents/batch'
 import { documentFromDraft } from '@/lib/documents/assemble'
@@ -733,10 +733,20 @@ export async function POST(req: NextRequest) {
 
     for (const plan of plans) {
       const existing = existingBy.get(plan.reference)
-      // Signed off, or written since. Neither is ours to overwrite, and the
-      // whole point of the sign-off is that it applies to the exact version
-      // somebody read.
-      if (existing && (existing.status === 'approved' || Object.keys(existing.document || {}).length > 0)) {
+      // Signed off is not ours to overwrite: the sign-off applies to the
+      // exact version somebody read.
+      if (existing?.status === 'approved') {
+        leftAlone += 1
+        continue
+      }
+      // Written and finished is left alone too. Written and unfinished is
+      // rewritten, which is the case this had no answer for: five checklists
+      // were drafted as procedures, stored with steps rather than sections,
+      // and judged as checklists because their reference says CHK. They could
+      // not be drafted into shape and were skipped here for having content.
+      // Content is not the test. Finished is.
+      if (existing && Object.keys(existing.document || {}).length > 0
+        && missingFor(existing.kind, existing.document).length === 0) {
         leftAlone += 1
         continue
       }
@@ -778,13 +788,36 @@ export async function POST(req: NextRequest) {
       added += chunk.length
     }
 
+    // Anything a later document replaced is withdrawn in the same press.
+    //
+    // Dropping a reference from the plan does not remove the row already in
+    // the library, so two reception opening checklists sat on the shop and a
+    // buyer had to work out which one this spa uses. Retired rather than
+    // deleted: it comes off sale and out of the counts, and the record that
+    // it existed survives.
+    let retired = 0
+    if (action === 'add_everything' || action === 'add_checklists') {
+      const { data: leftovers } = await admin.from('operational_documents')
+        .select('id, status').is('employer_id', null)
+        .in('reference', SUPERSEDED.map(entry => entry.reference)).neq('status', 'retired')
+      for (const row of leftovers || []) {
+        const { error } = await admin.from('operational_documents')
+          .update({ status: 'retired', updated_at: now }).eq('id', row.id)
+        if (!error) retired += 1
+      }
+    }
+
+    const parts: string[] = []
+    if (added) parts.push(`${added} brought in`)
+    if (retired) parts.push(`${retired} retired because a later document replaced them`)
+    if (leftAlone) parts.push(`${leftAlone} left alone because they are signed off or already finished`)
+
     return NextResponse.json({
       success: true,
       written: added,
-      note: added
-        ? `${added} brought in${leftAlone ? `, ${leftAlone} left alone because they already had content` : ''}. `
-          + 'Read each one against the actual premises before signing any of them off.'
-        : `Nothing to do: all ${leftAlone} are already written.`,
+      note: added || retired
+        ? `${parts.join(', ')}. Read each one against the actual premises before signing any of them off.`
+        : `Nothing to do: all ${leftAlone} are already written and finished.`,
     })
   }
 

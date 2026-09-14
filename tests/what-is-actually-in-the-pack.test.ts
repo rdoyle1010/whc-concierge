@@ -58,13 +58,19 @@ test('a pack is sold, not filed', () => {
   // hundred and five lines of that, which reads as admin rather than as
   // relief. Depth is made by saying a hundred and five, not by printing it.
   const panel = body('src/components/PackContents.tsx')
-  assert.ok(panel.includes('highlights(entries)'), 'a chosen handful, not all of them')
+  assert.ok(/highlights\(entries, \d+\)/.test(panel), 'a chosen handful, not all of them')
   assert.ok(panel.includes('stageSpread') && panel.includes('kindSpread'), 'the shape of the pack')
   assert.ok(panel.includes('and {rest} more'))
   // The full searchable list is already further down the page. Reprinting it
   // inside every card was the wall.
   assert.ok(panel.includes('#every-document'), 'the completist is sent to the list that already exists')
   assert.doesNotMatch(panel, /entries\.map\(/, 'nothing renders every title')
+  // And it opens over the page rather than inside the card. A grid row is as
+  // tall as its tallest cell, so an accordion in a three column grid left the
+  // two cards beside it with a wall of white space and their buy buttons
+  // drifting to the bottom of it. No amount of better content fixes that.
+  assert.ok(panel.includes('useDialog'), 'it opens over the page, not inside the grid')
+  assert.ok(panel.includes('fixed inset-0'))
 })
 
 test('the handful put in front of a buyer is the part they have been burned by', () => {

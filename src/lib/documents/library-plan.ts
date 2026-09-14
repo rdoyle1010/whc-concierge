@@ -86,7 +86,6 @@ export const LIBRARY_PLAN: PlannedDocument[] = [
   { reference: 'GYM-CARDIO-ESTOP-TEST-SOP-264', title: 'Cardio Equipment Emergency Stop Testing', department: 'GYM FLOOR TEAM - PERSONAL TRAINERS', tier: 'day-1', why: 'SAFETY - emergency stop test before opening' },
   { reference: 'GYM-CLASS-CHECKIN-CAPACITY-SOP-266', title: 'Class Check-In and Capacity Control', department: 'GYM FLOOR TEAM - PERSONAL TRAINERS', tier: 'month-1', why: 'Class check-in when classes launch' },
   { reference: 'GYM-CLASS-SCHEDULE-PUBLISH-SOP-265', title: 'Class Schedule Publication and Updates', department: 'GYM FLOOR TEAM - PERSONAL TRAINERS', tier: 'month-1', why: 'Class schedule builds over time' },
-  { reference: 'GYM-CLOSE-CHK-246', title: 'Gym Closing Checklist', department: 'GYM FLOOR TEAM - PERSONAL TRAINERS', tier: 'day-1', why: 'Gym closing check daily' },
   { reference: 'GYM-EMERGENCY-RESPONSE-SOP-261', title: 'Emergency Response in Gym Area', department: 'GYM FLOOR TEAM - PERSONAL TRAINERS', tier: 'day-1', why: 'SAFETY CRITICAL - gym emergency response' },
   { reference: 'GYM-EQUIP-DEMO-SAFEUSE-SOP-250', title: 'Equipment Demonstration and Safe Use Guidance', department: 'GYM FLOOR TEAM - PERSONAL TRAINERS', tier: 'day-1', why: 'Equipment demo for new users' },
   { reference: 'GYM-EQUIP-FAULT-ISOLATION-SOP-259', title: 'Equipment Fault Tagging and Isolation', department: 'GYM FLOOR TEAM - PERSONAL TRAINERS', tier: 'day-1', why: 'SAFETY - equipment fault tagging' },
@@ -101,7 +100,6 @@ export const LIBRARY_PLAN: PlannedDocument[] = [
   { reference: 'GYM-INJURY-FIRSTAID-SOP-262', title: 'Guest Injury Response and First Aid Escalation', department: 'GYM FLOOR TEAM - PERSONAL TRAINERS', tier: 'day-1', why: 'SAFETY CRITICAL - injury first aid' },
   { reference: 'GYM-MEMBER-CONDUCT-SOP-253', title: 'Member Conduct and Etiquette Management', department: 'GYM FLOOR TEAM - PERSONAL TRAINERS', tier: 'day-1', why: 'Conduct management from day one' },
   { reference: 'GYM-NEW-MEMBER-QUICKSTART-SOP-254', title: 'Fitness Programme Quick Start for New Members', department: 'GYM FLOOR TEAM - PERSONAL TRAINERS', tier: 'day-1', why: 'New member programme from day one' },
-  { reference: 'GYM-OPEN-SAFETY-CHK-245', title: 'Gym Opening Safety Checklist', department: 'GYM FLOOR TEAM - PERSONAL TRAINERS', tier: 'day-1', why: 'SAFETY - gym opening check before any gym access' },
   { reference: 'GYM-PEAK-MGMT-SOP-252', title: 'Peak Period Gym Floor Management', department: 'GYM FLOOR TEAM - PERSONAL TRAINERS', tier: 'month-1', why: 'Peak management once patterns are known' },
   { reference: 'GYM-PREVENTIVE-MAINT-SOP-260', title: 'Preventive Maintenance Request Process', department: 'GYM FLOOR TEAM - PERSONAL TRAINERS', tier: 'month-1', why: 'Preventive maintenance schedule' },
   { reference: 'GYM-SANITISER-REFILL-SOP-258', title: 'Sanitiser, Wipes and Consumables Refill Procedure', department: 'GYM FLOOR TEAM - PERSONAL TRAINERS', tier: 'day-1', why: 'Sanitiser refill from day one' },
@@ -205,7 +203,6 @@ export const LIBRARY_PLAN: PlannedDocument[] = [
   { reference: 'MEM-USAGE-INTERVENTION-SOP-182', title: 'Member Usage Review and Intervention Process', department: 'MEMBERSHIP', tier: 'month-1', why: 'Usage intervention after first month data' },
   { reference: 'THER-CAPACITY-CONTROL-SOP-233', title: 'Maximum Capacity Control and Queueing', department: 'POOL TEAM', tier: 'day-1', why: 'Capacity control from day one' },
   { reference: 'THER-CHEM-STORAGE-SOP-227', title: 'Chemical Dosing and Storage Control', department: 'POOL TEAM', tier: 'day-1', why: 'SAFETY/LEGAL - COSHH chemical storage' },
-  { reference: 'THER-CLOSE-SAFETY-CHK-222', title: 'Pool and Thermal Closing Checklist', department: 'POOL TEAM', tier: 'day-1', why: 'SAFETY CRITICAL - closing check daily' },
   { reference: 'THER-CONTAMINATION-RESPONSE-SOP-240', title: 'Contamination Event Response and Closure', department: 'POOL TEAM', tier: 'day-1', why: 'SAFETY CRITICAL - contamination response' },
   { reference: 'THER-FAECAL-INCIDENT-SOP-243', title: 'Faecal Incident Response Procedure', department: 'POOL TEAM', tier: 'day-1', why: 'SAFETY CRITICAL - faecal incident response' },
   { reference: 'THER-FAMILY-ACCESS-SOP-234', title: 'Children and Family Access Rules', department: 'POOL TEAM', tier: 'day-1', why: 'Child access rules must be set before opening' },
@@ -213,7 +210,6 @@ export const LIBRARY_PLAN: PlannedDocument[] = [
   { reference: 'THER-GUEST-GUIDANCE-SOP-238', title: 'Thermal Suite Guest Guidance and Etiquette Briefing', department: 'POOL TEAM', tier: 'day-1', why: 'Thermal briefing for every guest' },
   { reference: 'THER-GUEST-SUPERVISION-SOP-232', title: 'Guest Supervision and Behaviour Monitoring', department: 'POOL TEAM', tier: 'day-1', why: 'SAFETY - guest supervision from first pool/thermal guest' },
   { reference: 'THER-ICEBATH-START-SOP-224', title: 'Ice Bath Start-Up and Shutdown Procedure', department: 'POOL TEAM', tier: 'day-1', why: 'SAFETY - ice bath if operational' },
-  { reference: 'THER-OPEN-SAFETY-CHK-221', title: 'Pool and Thermal Opening Safety Checklist', department: 'POOL TEAM', tier: 'day-1', why: 'SAFETY CRITICAL - pool/thermal opening check before any guest access' },
   { reference: 'THER-OVERHEAT-RESPONSE-SOP-241', title: 'Thermal Overheating and Guest Distress Response', department: 'POOL TEAM', tier: 'day-1', why: 'SAFETY CRITICAL - overheating response' },
   { reference: 'THER-PLANTROOM-ACCESS-SOP-228', title: 'Pool Plant Room Access and Safety', department: 'POOL TEAM', tier: 'day-1', why: 'SAFETY - plant room access control' },
   { reference: 'THER-RESCUE-EQUIP-CHECK-SOP-231', title: 'Rescue Equipment and Lifesaving Aids Check', department: 'POOL TEAM', tier: 'day-1', why: 'SAFETY CRITICAL - rescue equipment check before opening' },
@@ -224,7 +220,6 @@ export const LIBRARY_PLAN: PlannedDocument[] = [
   { reference: 'THER-VOMITUS-RESPONSE-SOP-244', title: 'Vomitus Contamination Response Procedure', department: 'POOL TEAM', tier: 'day-1', why: 'SAFETY CRITICAL - vomitus response' },
   { reference: 'THER-WATER-CALIBRATION-SOP-230', title: 'Calibration of Water Testing Equipment', department: 'POOL TEAM', tier: 'day-1', why: 'Water testing equipment calibration before first use' },
   { reference: 'THER-WATER-DAILY-LOG-SOP-225', title: 'Daily Water Testing and Logging', department: 'POOL TEAM', tier: 'day-1', why: 'SAFETY/LEGAL - water testing is a legal requirement' },
-  { reference: 'THER-WATER-HOURLY-CHK-SOP-226', title: 'Hourly Water Quality Spot Check', department: 'POOL TEAM', tier: 'day-1', why: 'SAFETY/LEGAL - hourly water quality checks' },
   { reference: 'THER-WATERFEATURE-ISOLATION-SOP-242', title: 'Water Feature Failure and Isolation Procedure', department: 'POOL TEAM', tier: 'day-1', why: 'SAFETY - water feature isolation' },
   { reference: 'THER-WETAREA-INCIDENT-SOP-239', title: 'Wet Area Incident Response and Reporting', department: 'POOL TEAM', tier: 'day-1', why: 'SAFETY CRITICAL - wet area incident response' },
   { reference: 'REC-AFTERCARE-EMAIL-SOP-045', title: 'Aftercare Email Dispatch and Record', department: 'RECEPTION TEAM', tier: 'day-1', why: 'Aftercare emails go out from day one' },
@@ -252,7 +247,6 @@ export const LIBRARY_PLAN: PlannedDocument[] = [
   { reference: 'REC-CHANGE-SERV-SOP-064', title: 'Change Service Type on Existing Booking', department: 'RECEPTION TEAM', tier: 'day-1', why: 'Service changes happen immediately' },
   { reference: 'REC-CHILD-ACC-SOP-036', title: 'Children and Young Persons Access Management', department: 'RECEPTION TEAM', tier: 'day-1', why: 'Child access policy must be clear before opening' },
   { reference: 'REC-CLASS-CHECK-SOP-027', title: 'Fitness Class Arrival and Studio Check-In', department: 'RECEPTION TEAM', tier: 'month-1', why: 'Classes may not run week one' },
-  { reference: 'REC-CLOSE-CHK-002', title: 'Reception Closing Checklist', department: 'RECEPTION TEAM', tier: 'day-1', why: 'Operational baseline - spa cannot close safely without this' },
   { reference: 'REC-COMP-TRIAGE-SOP-033', title: 'Guest Complaint Intake and Triage', department: 'RECEPTION TEAM', tier: 'day-1', why: 'Complaints can arise on any visit' },
   { reference: 'REC-CONFIRM-MANUAL-SOP-093', title: 'Send Booking Confirmation (Manual Trigger)', department: 'RECEPTION TEAM', tier: 'day-1', why: 'Manual confirmation triggers needed' },
   { reference: 'REC-CONFIRM-RESEND-SOP-097', title: 'Resend Confirmation and Updated Itinerary', department: 'RECEPTION TEAM', tier: 'month-1', why: 'Resend confirmations - occasional' },
@@ -298,7 +292,6 @@ export const LIBRARY_PLAN: PlannedDocument[] = [
   { reference: 'REC-NOSHOW-CHARGE-SOP-077', title: 'Apply No-Show Charges', department: 'RECEPTION TEAM', tier: 'day-1', why: 'No-show charges from day one' },
   { reference: 'REC-NOSHOW-SOP-031', title: 'No-Show Handling and Charge Communication', department: 'RECEPTION TEAM', tier: 'day-1', why: 'No-shows from day one - revenue protection' },
   { reference: 'REC-NOTES-PREF-SOP-067', title: 'Add Notes, Alerts and Guest Preferences', department: 'RECEPTION TEAM', tier: 'day-1', why: 'Guest preferences must be captured from first visit' },
-  { reference: 'REC-OPEN-CHK-001', title: 'Reception Opening Checklist', department: 'RECEPTION TEAM', tier: 'day-1', why: 'Operational baseline - spa cannot open without this' },
   { reference: 'REC-OVERRIDE-AVAIL-SOP-070', title: 'Override Availability for Manager-Approved Booking', department: 'RECEPTION TEAM', tier: 'day-1', why: 'Manager overrides needed from day one' },
   { reference: 'REC-PACKAGE-REDEEM-SOP-087', title: 'Redeem Package Sessions', department: 'RECEPTION TEAM', tier: 'day-1', why: 'Package redemption from day one' },
   { reference: 'REC-PAYFAIL-HANDLING-SOP-102', title: 'Payment Failure Handling at Front Desk', department: 'RECEPTION TEAM', tier: 'day-1', why: 'Payment failures happen from day one' },
@@ -519,3 +512,20 @@ export function plannedByTier(tier: BuildTier): PlannedDocument[] {
 export function departments(): string[] {
   return Array.from(new Set(LIBRARY_PLAN.map(entry => entry.department))).sort()
 }
+
+// Superseded, and withdrawn rather than deleted.
+//
+// Reception opening and closing were planned here before the checklist suite
+// existed, and the suite then wrote both properly as REC-OPENING-CHK-501 and
+// REC-CLOSING-CHK-503. Two references describing the same shift is worse than
+// either alone: a buyer browsing the shop sees two reception opening
+// checklists and has to work out which one this spa actually uses.
+//
+// They are named here rather than quietly dropped, because dropping a
+// reference from the plan does not remove the row already sitting in the
+// library. Bringing the library up to date retires these, which takes them
+// off sale and out of the counts while leaving the record that they existed.
+export const SUPERSEDED: { reference: string; by: string }[] = [
+  { reference: 'REC-OPEN-CHK-001', by: 'REC-OPENING-CHK-501' },
+  { reference: 'REC-CLOSE-CHK-002', by: 'REC-CLOSING-CHK-503' },
+]

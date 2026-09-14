@@ -15,15 +15,21 @@ const body = (file: string) =>
 const route = body('src/app/api/admin/documents/route.ts')
 const page = body('src/app/admin/documents/page.tsx')
 
-// A register with four hundred and sixty known gaps is a plan. Four hundred
-// and sixty unwritten documents nobody has listed is an intention.
+// A register with its gaps known is a plan. The same number of unwritten
+// documents nobody has listed is an intention.
+//
+// Four hundred and sixty became four hundred and fifty three. Seven left the
+// drafted plan: five were rewritten as real checklists, where they belonged
+// all along, and two were duplicates of checklists the suite already
+// contained. A number in a test is only worth pinning if moving it has to be
+// argued for, which is what this comment is.
 test('the whole library is a register before it is a set of drafts', () => {
-  assert.equal(LIBRARY_PLAN.length, 460)
+  assert.equal(LIBRARY_PLAN.length, 453)
   assert.equal(departments().length, 14)
 
   const counted = plannedByTier('day-1').length + plannedByTier('month-1').length + plannedByTier('quarter-1').length
   assert.equal(counted, LIBRARY_PLAN.length, 'every document belongs to a tier')
-  assert.equal(plannedByTier('day-1').length, 339, 'the ones needed before the first guest')
+  assert.equal(plannedByTier('day-1').length, 332, 'the ones needed before the first guest')
 
   for (const tier of ['day-1', 'month-1', 'quarter-1'] as const) {
     assert.ok(TIER_LABEL[tier].length > 5, 'a tier a person can read, not a slug on screen')
