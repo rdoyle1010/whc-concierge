@@ -5,6 +5,8 @@ import { missingFromSop, type SopDocument } from '@/lib/documents/types'
 import { isValidReference } from '@/lib/documents/reference'
 import { EXAMPLE_SOP } from '@/lib/documents/examples'
 import { LIBRARY_PLAN } from '@/lib/documents/library-plan'
+import { draftDocument, draftingConfigured } from '@/lib/documents/draft'
+import { isLifeSafety, LIFE_SAFETY_CONFIRMATION } from '@/lib/documents/safety'
 
 // The library, and the sign-off that stands between a draft and a client.
 //
@@ -19,6 +21,9 @@ import { LIBRARY_PLAN } from '@/lib/documents/library-plan'
 // goes round again. That is deliberately inconvenient.
 
 export const dynamic = 'force-dynamic'
+
+// The model is given eighteen seconds inside the twenty-six the host allows.
+export const maxDuration = 26
 
 export async function GET() {
   const actor = await adminRequestUser()
@@ -36,6 +41,7 @@ export async function GET() {
     missing: row.kind === 'sop' ? missingFromSop((row.document || {}) as SopDocument) : [],
     stale: row.status === 'approved' && row.approved_version !== row.version,
     written: Object.keys(row.document || {}).length > 0,
+    lifeSafety: isLifeSafety(row),
   }))
 
   return NextResponse.json({ rows })
@@ -145,6 +151,20 @@ export async function POST(req: NextRequest) {
       }, { status: 400 })
     }
 
+    // Life safety before elegance, which is her own rule and the right one.
+    //
+    // The evacuation route, the muster point, the plant room and the person
+    // holding the pool operator qualification are facts about one building.
+    // Nothing that drafted this knows them, so signing one of these off is a
+    // separate statement rather than the same button.
+    if (isLifeSafety(row) && body.competentPersonChecked !== true) {
+      return NextResponse.json({
+        error: 'This is a life safety document. Confirm that a competent person has checked it against the actual premises before signing it off.',
+        needsCompetentPerson: true,
+        confirmation: LIFE_SAFETY_CONFIRMATION,
+      }, { status: 409 })
+    }
+
     const { error } = await admin.from('operational_documents').update({
       status: 'approved',
       approved_by: actor.id,
@@ -170,6 +190,67 @@ export async function POST(req: NextRequest) {
     }).eq('id', id)
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
     return NextResponse.json({ success: true })
+  }
+
+  // Draft it. Lands as draft, always, whatever it contains.
+  if (action === 'draft') {
+    if (!draftingConfigured()) {
+      return NextResponse.json({ error: 'Talent House AI is not switched on yet.' }, { status: 503 })
+    }
+    if (row.status === 'approved') {
+      return NextResponse.json({
+        error: 'That one is signed off. Take the sign-off back first if you want to redraft it.',
+      }, { status: 400 })
+    }
+
+    const result = await draftDocument({
+      title: row.title,
+      reference: row.reference,
+      department: row.department || '',
+    })
+    if (!result.ok) return NextResponse.json({ error: result.error }, { status: 502 })
+
+    // The parts only we know, kept out of the model's hands: the reference it
+    // is filed under, who owns it, when it was issued and when it must be
+    // looked at again. A model inventing a review date would be inventing the
+    // one field an assessor checks first.
+    const issued = new Date()
+    const review = new Date(issued)
+    review.setFullYear(review.getFullYear() + 1)
+    const asDate = (value: Date) =>
+      value.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
+
+    const document = {
+      kind: row.kind === 'checklist' ? 'sop' : row.kind,
+      reference: row.reference,
+      title: row.title,
+      version: row.version || '0.1',
+      issued: asDate(issued),
+      reviewBy: asDate(review),
+      property: '[property name]',
+      department: row.department || '',
+      accountability: {
+        author: 'Talent House Collective',
+        authorRole: 'Spa operations',
+        owner: '[owner role]',
+      },
+      governance: [
+        'Brand operating standards',
+        'Talent House Collective operational standards',
+      ],
+      references: [],
+      revisions: [{ date: asDate(issued), by: 'Talent House Collective', description: 'Drafted, version 0.1.' }],
+      ...result.draft,
+    }
+
+    const { error } = await admin.from('operational_documents').update({
+      document,
+      status: 'draft',
+      updated_at: new Date().toISOString(),
+    }).eq('id', id)
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+    return NextResponse.json({ success: true, lifeSafety: isLifeSafety(row) })
   }
 
   if (action === 'delete') {
