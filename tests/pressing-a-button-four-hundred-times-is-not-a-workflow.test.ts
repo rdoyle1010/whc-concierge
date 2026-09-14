@@ -39,6 +39,7 @@ test('a whole tier is written in one submission', () => {
   // Only the empty ones. Redrafting over something written throws away
   // whatever a person corrected in it.
   const submit = route.slice(route.indexOf("action === 'draft_tier'"), route.indexOf("action === 'collect'"))
+  assert.ok(submit.length > 200, 'the submit block was not found')
   assert.match(submit, /Object\.keys\(row\.document \|\| \{\}\)\.length === 0/)
   assert.match(submit, /\.eq\('status', 'draft'\)/)
 })
@@ -61,7 +62,8 @@ test('collecting is honest about a batch that has not finished', () => {
 
 // Somebody may have written or signed one off while the batch was running.
 test('a batch never overwrites what a person has done since', () => {
-  const collect = route.slice(route.indexOf("action === 'collect'"), route.indexOf("action === 'draft'"))
+  const collect = route.slice(route.indexOf("action === 'collect'"), route.indexOf("const id = String"))
+  assert.ok(collect.length > 200, 'the collect block was not found')
   assert.match(collect, /target\.status === 'approved'/)
   assert.match(collect, /Object\.keys\(target\.document \|\| \{\}\)\.length > 0/)
   assert.match(collect, /status: 'draft'/)
@@ -71,7 +73,7 @@ test('a batch never overwrites what a person has done since', () => {
 // A receipt that never saved leaves a finished batch marked as still running,
 // which means collecting it again forever.
 test('every write is checked, including the bookkeeping', () => {
-  const collect = route.slice(route.indexOf("action === 'collect'"), route.indexOf("action === 'draft'"))
+  const collect = route.slice(route.indexOf("action === 'collect'"), route.indexOf("const id = String"))
   assert.match(collect, /const \{ error: noteError \}/)
   assert.match(collect, /const \{ error: receiptError \}/)
   assert.match(collect, /still marked as running/)
@@ -93,4 +95,22 @@ test('both paths draft from one brief and assemble one shape', () => {
   assert.match(batch, /DRAFT_SCHEMA/)
   assert.match(route, /documentFromDraft\(target, result\.draft\)/)
   assert.match(route, /documentFromDraft\(row, result\.draft\)/)
+})
+
+// Writing a tier and collecting a batch are about the library, not about one
+// document. They sat underneath the guard that demands a document id, so
+// every press of either answered "Missing document", which is a true answer
+// to a question nobody asked.
+test('the library-wide actions are not gated on a document id', () => {
+  const guard = route.indexOf("const id = String(body.id || '')")
+  assert.ok(guard > 0)
+  for (const action of ["action === 'draft_tier'", "action === 'collect'", "action === 'import_plan'"]) {
+    const at = route.indexOf(action)
+    assert.ok(at > 0, `${action} is missing`)
+    assert.ok(at < guard, `${action} is below the id guard, so it can only ever answer "Missing document"`)
+  }
+  // And the per-document ones stay above it, because they genuinely need one.
+  for (const action of ["action === 'approve'", "action === 'draft'", "action === 'read'"]) {
+    assert.ok(route.indexOf(action) > guard, `${action} needs an id and must stay below the guard`)
+  }
 })

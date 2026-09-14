@@ -71,7 +71,11 @@ test('nothing is counted twice', () => {
 // An import must never be able to undo an approval, and it has to be safe to
 // press twice because somebody will.
 test('importing the plan cannot touch what is already there', () => {
-  const block = route.slice(route.indexOf("action === 'import_plan'"), route.indexOf("const id = String"))
+  // Bounded at the next action rather than at the id guard: the tier and
+  // collect blocks moved in between, and they write, so the slice was
+  // checking code that is not the import.
+  const block = route.slice(route.indexOf("action === 'import_plan'"), route.indexOf("action === 'draft_tier'"))
+  assert.ok(block.length > 200, 'the import block was not found')
   assert.match(block, /already\.has\(entry\.reference\)/, 'anything already held is skipped entirely')
   assert.doesNotMatch(block, /\.update\(|\.upsert\(|\.delete\(/, 'an import writes nothing over anything')
   assert.match(block, /The whole plan is already in the library/)
