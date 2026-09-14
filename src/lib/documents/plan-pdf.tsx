@@ -47,6 +47,14 @@ const RISK = {
 // a fifteen point part heading got thirteen points of leading and the line
 // after it printed across it. So every style above nine point carries its own
 // lineHeight, and anything added here above nine point needs one too.
+// How much room a section heading needs below it before it is worth printing.
+//
+// Forty-eight points was enough for a heading and a line of prose, and not
+// enough for a heading, an intro and a table header. A checklist printed a
+// column of headings across the footer with its rows overleaf: a table of
+// contents for a table that was not there.
+const SECTION_ROOM = 120
+
 const styles = StyleSheet.create({
   page: {
     paddingTop: 44, paddingBottom: 54, paddingHorizontal: 44,
@@ -434,7 +442,13 @@ function SectionBody({ section, keyBase }: { section: PlanSection; keyBase: stri
 
       {section.table ? (
         <View style={styles.table}>
-          <View style={styles.tr} fixed wrap={false}>
+          {/* Not fixed. A fixed row is placed on every page the table spans,
+              and on the page where the table begins it is placed at the flow
+              point rather than at the top, so a table starting two lines from
+              the bottom printed its column headings across the footer with
+              its rows overleaf. A repeated header on a long table is worth
+              having; a page that looks corrupt is not. */}
+          <View style={styles.tr} wrap={false}>
             {section.table.columns.map((column, index) => (
               <Text key={column || `c${index}`}
                 style={[styles.th, index === 0 ? { flex: 1.4 } : { flex: 1 }, index ? styles.cellDivider : {}]}>
@@ -630,7 +644,7 @@ export function PlanPdf({ document }: { document: PlanDocument }) {
                   <Text style={styles.partName}>{section.part}</Text>
                 </View>
               ) : null}
-              <Text style={styles.sectionHead} minPresenceAhead={48}>{section.heading}</Text>
+              <Text style={styles.sectionHead} minPresenceAhead={SECTION_ROOM}>{section.heading}</Text>
               <SectionBody section={section} keyBase={`s${index}`} />
             </View>
           )
@@ -665,7 +679,7 @@ export function PlanPdf({ document }: { document: PlanDocument }) {
                     </>
                   ) : (
                     <>
-                      <Text style={styles.sectionHead} minPresenceAhead={48}>{section.heading}</Text>
+                      <Text style={styles.sectionHead} minPresenceAhead={SECTION_ROOM}>{section.heading}</Text>
                       <SectionBody section={section} keyBase={`g${groupIndex}s${index}`} />
                     </>
                   )}

@@ -19,7 +19,12 @@ import type { Accountability, CrossReference, Revision } from './types'
 // cover the NOP, the EAP, a policy and a safe system of work, which is four
 // products from one shape rather than four shapes to keep in step.
 
-export type PlanKind = 'nop' | 'eap' | 'policy' | 'safe-system' | 'risk-assessment' | 'guide' | 'training'
+export type PlanKind =
+  | 'nop' | 'eap' | 'policy' | 'safe-system' | 'risk-assessment' | 'guide' | 'training'
+  // A checklist is the procedure reduced to what somebody does at seven
+  // in the morning with a pen. A report is the shape of a number before
+  // anybody has filled it in. Both are the same section machinery.
+  | 'checklist' | 'report'
 
 /**
  * One thing the property has to state.
@@ -168,6 +173,8 @@ export const PLAN_KIND_LABEL: Record<PlanKind, string> = {
   'risk-assessment': 'Risk Assessment',
   guide: 'Guide',
   training: 'Training Guide',
+  checklist: 'Checklist',
+  report: 'Management Report',
 }
 
 /** Everything a plan needs before it is worth handing to a property. */

@@ -15,6 +15,8 @@ import { missingFromPlan, type PlanDocument } from '@/lib/documents/plan-types'
 import { PLAN_KINDS } from '@/lib/documents/render-pdf'
 import { RISK_ASSESSMENT_PLANS } from '@/lib/documents/risk-assessment-plans'
 import { planCollection } from '@/lib/documents/collect-plan'
+import { CHECKLIST_PLANS } from '@/lib/documents/checklist-plans'
+import { FINANCE_PLANS } from '@/lib/documents/finance-plans'
 import { isLifeSafety, LIFE_SAFETY_CONFIRMATION } from '@/lib/documents/safety'
 import { placeholdersIn } from '@/lib/documents/placeholders'
 
@@ -561,8 +563,12 @@ export async function POST(req: NextRequest) {
   // route, all of which would be believed because they are typeset. So they
   // are written as structure with every fact left blank, and the property
   // supplies the facts.
-  if (action === 'add_pool_plans' || action === 'add_risk_assessments') {
-    const plans = action === 'add_pool_plans' ? [...POOL_PLANS, ...GUIDE_PLANS] : RISK_ASSESSMENT_PLANS
+  if (action === 'add_pool_plans' || action === 'add_risk_assessments'
+    || action === 'add_checklists' || action === 'add_finance_pack') {
+    const plans = action === 'add_pool_plans' ? [...POOL_PLANS, ...GUIDE_PLANS]
+      : action === 'add_risk_assessments' ? RISK_ASSESSMENT_PLANS
+        : action === 'add_checklists' ? CHECKLIST_PLANS
+          : FINANCE_PLANS
     const now = new Date().toISOString()
     let added = 0
     let leftAlone = 0
@@ -591,10 +597,14 @@ export async function POST(req: NextRequest) {
         title: built.title,
         department: built.department,
         version: built.version,
-        tier: 'day-1',
+        tier: built.kind === 'report' ? 'month-1' : 'day-1',
         tier_reason: built.kind === 'risk-assessment'
           ? 'A written risk assessment is required before the area is used'
-          : 'Required in writing before the spa opens',
+          : built.kind === 'checklist'
+            ? 'The daily running sheet for that shift'
+            : built.kind === 'report'
+              ? 'Management reporting, once there is an operation to report on'
+              : 'Required in writing before the spa opens',
         document: built,
         status: 'draft',
       })
@@ -608,7 +618,7 @@ export async function POST(req: NextRequest) {
       note: added
         ? `${added} added${leftAlone ? `, ${leftAlone} left alone because they already had content` : ''}. `
           + 'Read each one against the actual premises before signing any of them off.'
-        : `Nothing to do: both are already written.`,
+        : 'Nothing to do: they are all already written.',
     })
   }
 

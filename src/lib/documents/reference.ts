@@ -107,7 +107,7 @@ export function buildReference(input: {
 // two guides that come with them, are
 // filed and cross-referenced exactly like everything else, and a validator
 // that rejects them is a validator written before they existed.
-const PATTERN = /^[A-Z]{2,6}(?:-[A-Z0-9]{2,16}){1,5}-(SOP|RA|JD|POL|CHK|NOP|EAP|SSW|GDE|TRG)-\d{2,4}$/
+const PATTERN = /^[A-Z]{2,6}(?:-[A-Z0-9]{2,16}){1,5}-(SOP|RA|JD|POL|CHK|NOP|EAP|SSW|GDE|TRG|RPT)-\d{2,4}$/
 
 export function isValidReference(value: unknown): boolean {
   return typeof value === 'string' && value.length <= 60 && PATTERN.test(value)

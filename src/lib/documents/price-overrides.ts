@@ -2,6 +2,7 @@ import { sellableCatalogue } from './catalogue'
 import {
   SINGLE_DOCUMENT_PRICE, DEPARTMENT_PACK_PRICE, DAY_ONE_PACK_PRICE, COMPLETE_LIBRARY_PRICE,
   POOL_SAFETY_PACK_PRICE, RISK_ASSESSMENT_PACK_PRICE, JOURNEY_PACK_CEILING,
+  CHECKLIST_PACK_PRICE, FINANCE_PACK_PRICE,
 } from './pricing'
 
 // Prices she can change without a deploy, and bundles she can compose.
@@ -12,7 +13,8 @@ import {
 // being undone.
 
 export type PriceKey =
-  | 'single' | 'department' | 'journey' | 'day-one' | 'complete' | 'pool-safety' | 'risk-assessments'
+  | 'single' | 'department' | 'journey' | 'day-one' | 'complete'
+  | 'pool-safety' | 'risk-assessments' | 'checklists' | 'finance'
 
 export const PRICE_KEYS: { key: PriceKey; label: string; why: string; fallback: number }[] = [
   {
@@ -42,6 +44,14 @@ export const PRICE_KEYS: { key: PriceKey; label: string; why: string; fallback: 
   {
     key: 'risk-assessments', label: 'Spa Risk Assessment Suite', fallback: RISK_ASSESSMENT_PACK_PRICE,
     why: 'Thirteen assessments and sixty-one hazards, against what a consultant charges to walk the building for two days.',
+  },
+  {
+    key: 'checklists', label: 'Daily Running Checklists', fallback: CHECKLIST_PACK_PRICE,
+    why: 'Nine shift checklists drawn from the procedures. Deliberately cheaper than the procedures they enforce, and under the five hundred a spa director signs off alone.',
+  },
+  {
+    key: 'finance', label: 'Spa Financial Reporting Pack', fallback: FINANCE_PACK_PRICE,
+    why: 'Twenty reports and the measure definitions behind them. Above what a spa director approves alone, because a reporting pack is an owner or general manager decision.',
   },
 ]
 

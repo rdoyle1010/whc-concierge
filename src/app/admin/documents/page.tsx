@@ -9,7 +9,10 @@ import { PLAN_KINDS } from '@/lib/documents/render-pdf'
 import type { SopDocument } from '@/lib/documents/types'
 import { JOURNEY_STAGES, stageOf, kindOf, KIND_LABEL, type JourneyStage } from '@/lib/documents/journey'
 import { LIFE_SAFETY_WARNING } from '@/lib/documents/safety'
-import { Check, CheckCheck, Eye, Plus, Printer, RefreshCw, RotateCcw, Trash2, Download, Sparkles, ShieldAlert, Inbox, Pencil } from 'lucide-react'
+import {
+  Check, CheckCheck, Eye, Plus, Printer, RefreshCw, RotateCcw, Trash2, Download, Sparkles,
+  ShieldAlert, Inbox, Pencil, ClipboardCheck, Banknote,
+} from 'lucide-react'
 
 // The library, and the desk it is signed off at.
 //
@@ -139,7 +142,8 @@ export default function AdminDocumentsPage() {
           setNote(body?.note || 'Nothing came back, and nothing is waiting. Press Write this whole tier to start one.')
         }
       }
-      if (!body?.warning && (action === 'write_authored' || action === 'add_pool_plans' || action === 'add_risk_assessments' || action === 'approve_ready')) {
+      if (!body?.warning && (action === 'write_authored' || action === 'add_pool_plans' || action === 'add_risk_assessments'
+        || action === 'add_checklists' || action === 'add_finance_pack' || action === 'approve_ready')) {
         setNote(body?.note || 'Done.')
       }
       // A document too long for a web request is now sent the slower way
@@ -307,6 +311,14 @@ export default function AdminDocumentsPage() {
           <button type="button" disabled={busy === 'add_risk_assessments'} onClick={() => act('add_risk_assessments')}
             className="inline-flex items-center gap-1.5 border border-border px-3 py-1.5 text-[12px] font-medium text-secondary disabled:opacity-40">
             <ShieldAlert size={13} /> {busy === 'add_risk_assessments' ? 'Adding...' : 'Add the risk assessments'}
+          </button>
+          <button type="button" disabled={busy === 'add_checklists'} onClick={() => act('add_checklists')}
+            className="inline-flex items-center gap-1.5 border border-border px-3 py-1.5 text-[12px] font-medium text-secondary disabled:opacity-40">
+            <ClipboardCheck size={13} /> {busy === 'add_checklists' ? 'Adding...' : 'Add the daily checklists'}
+          </button>
+          <button type="button" disabled={busy === 'add_finance_pack'} onClick={() => act('add_finance_pack')}
+            className="inline-flex items-center gap-1.5 border border-border px-3 py-1.5 text-[12px] font-medium text-secondary disabled:opacity-40">
+            <Banknote size={13} /> {busy === 'add_finance_pack' ? 'Adding...' : 'Add the reporting pack'}
           </button>
           <button type="button" disabled={busy === 'add_pool_plans'} onClick={() => act('add_pool_plans')}
             className="inline-flex items-center gap-1.5 border border-border px-3 py-1.5 text-[12px] font-medium text-secondary disabled:opacity-40">
