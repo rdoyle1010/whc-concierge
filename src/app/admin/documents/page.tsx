@@ -5,7 +5,8 @@ import DashboardShell from '@/components/DashboardShell'
 import SopSheet from '@/components/documents/SopSheet'
 import type { SopDocument } from '@/lib/documents/types'
 import { TIER_LABEL, type BuildTier } from '@/lib/documents/library-plan'
-import { Check, Eye, Plus, Printer, RefreshCw, RotateCcw, Trash2, Download } from 'lucide-react'
+import { LIFE_SAFETY_WARNING } from '@/lib/documents/safety'
+import { Check, Eye, Plus, Printer, RefreshCw, RotateCcw, Trash2, Download, Sparkles, ShieldAlert } from 'lucide-react'
 
 // The library, and the desk it is signed off at.
 //
@@ -28,6 +29,7 @@ type Row = {
   missing: string[]
   stale: boolean
   written: boolean
+  lifeSafety: boolean
   tier: 'day-1' | 'month-1' | 'quarter-1' | null
   tier_reason: string | null
   created_at: string
@@ -63,12 +65,12 @@ export default function AdminDocumentsPage() {
   }
   useEffect(() => { load() }, [])
 
-  async function act(action: string, id?: string) {
+  async function act(action: string, id?: string, extra: Record<string, unknown> = {}) {
     setBusy(id || action); setError(''); setNote('')
     try {
       const res = await fetch('/api/admin/documents', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action, id }),
+        body: JSON.stringify({ action, id, ...extra }),
       })
       const body = await res.json().catch(() => null)
       if (!res.ok) {
@@ -76,12 +78,31 @@ export default function AdminDocumentsPage() {
         return false
       }
       if (action === 'approve') setNote('Signed off. It can be issued to a property now.')
+      if (action === 'draft') {
+        setNote(body?.lifeSafety
+          ? 'Drafted. This one is life safety: read every step against the actual building before you sign it off.'
+          : 'Drafted. Read it, correct it, then sign it off.')
+      }
       await load()
       return true
     } catch {
       setError('That did not work. Check your connection and try again.')
       return false
     } finally { setBusy('') }
+  }
+
+  // The extra statement a life safety document takes, asked once and plainly
+  // rather than buried in a tick box nobody reads.
+  async function signOff(row: Row) {
+    if (row.lifeSafety) {
+      const sure = window.confirm(
+        `${row.title}\n\nThis is a life safety document.\n\nConfirm that a competent person has checked it `
+        + 'against the actual premises, equipment and team.',
+      )
+      if (!sure) return false
+      return act('approve', row.id, { competentPersonChecked: true })
+    }
+    return act('approve', row.id)
   }
 
   if (reading) {
@@ -97,7 +118,7 @@ export default function AdminDocumentsPage() {
             </button>
             {reading.status !== 'approved' ? (
               <button type="button" disabled={busy === reading.id}
-                onClick={async () => { if (await act('approve', reading.id)) setReading(null) }}
+                onClick={async () => { if (await signOff(reading)) setReading(null) }}
                 className="inline-flex items-center gap-1.5 border border-[#1c1c1c] bg-[#1c1c1c] px-4 py-1.5 text-[12px] font-semibold text-white disabled:opacity-40">
                 <Check size={13} /> Sign this off
               </button>
@@ -246,6 +267,13 @@ export default function AdminDocumentsPage() {
                   </p>
                 )}
 
+                {row.lifeSafety && (
+                  <p className="mt-3 flex gap-2 border border-amber-300 bg-amber-50 px-3 py-2.5 text-[12px] leading-relaxed text-amber-900">
+                    <ShieldAlert size={15} className="mt-0.5 shrink-0" />
+                    <span><span className="font-semibold">Life safety. </span>{LIFE_SAFETY_WARNING}</span>
+                  </p>
+                )}
+
                 {row.tier_reason && !row.written && (
                   <p className="mt-2 text-[12px] text-secondary">{row.tier_reason}</p>
                 )}
@@ -261,6 +289,13 @@ export default function AdminDocumentsPage() {
                 )}
 
                 <div className="mt-4 flex flex-wrap items-center gap-2">
+                  {!row.written && (
+                    <button type="button" disabled={busy === row.id} onClick={() => act('draft', row.id)}
+                      className="inline-flex items-center gap-1.5 border border-[#1c1c1c] bg-[#1c1c1c] px-3 py-1.5 text-[12px] font-semibold text-white disabled:opacity-40">
+                      <Sparkles size={13} /> {busy === row.id ? 'Drafting...' : 'Draft it'}
+                    </button>
+                  )}
+
                   <button type="button" disabled={!row.written} onClick={() => setReading(row)}
                     className="inline-flex items-center gap-1.5 border border-[#1c1c1c] px-3 py-1.5 text-[12px] font-semibold text-ink disabled:opacity-30">
                     <Eye size={13} /> Read it
@@ -273,7 +308,7 @@ export default function AdminDocumentsPage() {
                     </button>
                   ) : (
                     <button type="button" disabled={busy === row.id || row.missing.length > 0}
-                      onClick={() => act('approve', row.id)}
+                      onClick={() => signOff(row)}
                       className="inline-flex items-center gap-1.5 border border-[#1c1c1c] bg-[#1c1c1c] px-3 py-1.5 text-[12px] font-semibold text-white disabled:opacity-40">
                       <Check size={13} /> Sign it off
                     </button>
