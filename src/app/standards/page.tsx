@@ -5,6 +5,7 @@ import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
 import {
   formatPrice, SINGLE_DOCUMENT_PRICE, POOL_SAFETY_PACK_PRICE, RISK_ASSESSMENT_PACK_PRICE, VAT_NOTE,
+  CHECKLIST_PACK_PRICE, FINANCE_PACK_PRICE,
   journeyPacks,
 } from '@/lib/documents/pricing'
 import TierBuy from '@/components/TierBuy'
@@ -256,6 +257,66 @@ export default function StandardsPage() {
                   ))}
                 </ul>
                 <TierBuy slug="risk-assessments" label="Buy the risk assessment suite" />
+              </div>
+
+              {/* The two that come after the procedures rather than before
+                  them. A spa with the procedures still runs the day off a
+                  sheet somebody printed in 2019 and still argues about how
+                  utilisation was calculated. */}
+              <div className="flex flex-col border border-[#1c1c1c] bg-white p-7">
+                <p className="text-[11px] font-semibold uppercase tracking-[.16em] text-[#6b6b6b]">How the day is run</p>
+                <h3 className="mt-2 text-[24px] font-semibold leading-tight text-[#1c1c1c]">
+                  Daily Running Checklists
+                </h3>
+                <p className="mt-1.5 font-serif text-[32px] leading-none text-[#1c1c1c]">
+                  {formatPrice(CHECKLIST_PACK_PRICE)}
+                </p>
+                <p className="mt-3 flex-1 text-[14px] leading-relaxed text-[#3a3a3a]">
+                  Nine sheets covering every shift a spa runs, drawn from the procedures, assessments and
+                  policies rather than written from scratch. Each block names its source, so a change to one
+                  procedure can be traced to every checklist it affects.
+                </p>
+                <ul className="mt-4 space-y-1.5 text-[13px] text-[#555555]">
+                  {[
+                    'Reception: opening, mid shift and close',
+                    'Therapist: opening and closing, by room',
+                    'Cleaning: opening and closing, including the deep work',
+                    'Duty manager: a walk, not a desk exercise',
+                    'Weekly: maintenance, safety, certification and training',
+                    'Stop checks that decide whether an area opens at all',
+                  ].map(line => (
+                    <li key={line} className="flex gap-2"><span className="text-[#1c1c1c]">·</span><span>{line}</span></li>
+                  ))}
+                </ul>
+                <TierBuy slug="daily-checklists" label="Buy the checklists" />
+              </div>
+
+              <div className="flex flex-col border border-[#1c1c1c] bg-white p-7">
+                <p className="text-[11px] font-semibold uppercase tracking-[.16em] text-[#6b6b6b]">What it is earning</p>
+                <h3 className="mt-2 text-[24px] font-semibold leading-tight text-[#1c1c1c]">
+                  Spa Financial Reporting Pack
+                </h3>
+                <p className="mt-1.5 font-serif text-[32px] leading-none text-[#1c1c1c]">
+                  {formatPrice(FINANCE_PACK_PRICE)}
+                </p>
+                <p className="mt-3 flex-1 text-[14px] leading-relaxed text-[#3a3a3a]">
+                  Twenty reports and, more usefully, the definitions behind them. What a spa director lacks is
+                  rarely a spreadsheet: it is agreement on which numbers, measured how, compared against what,
+                  and what somebody does when one of them moves.
+                </p>
+                <ul className="mt-4 space-y-1.5 text-[13px] text-[#555555]">
+                  {[
+                    'A director dashboard of fifteen measures, each drilling into a report',
+                    'Revenue against capacity, not only against budget: RevPATH and unsold hours',
+                    'Forward pace at 7, 14, 30 and 90 days against the same point last year',
+                    'Contribution per hour by treatment, which reorders most menus',
+                    'Discount and yield, including discount by approver',
+                    'Every line defined so two people cannot compute it differently',
+                  ].map(line => (
+                    <li key={line} className="flex gap-2"><span className="text-[#1c1c1c]">·</span><span>{line}</span></li>
+                  ))}
+                </ul>
+                <TierBuy slug="financial-reporting" label="Buy the reporting pack" />
               </div>
             </div>
 

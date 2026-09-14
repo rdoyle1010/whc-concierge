@@ -3,6 +3,8 @@ import { POOL_PLAN_ENTRIES } from './pool-plans'
 import { GUIDE_ENTRIES } from './guide/plans'
 import { RISK_ASSESSMENT_ENTRIES } from './risk-assessment-plans'
 import { JOURNEY_STAGES, stageOf, type StageGroup } from './journey'
+import { CHECKLIST_ENTRIES } from './checklist-plans'
+import { FINANCE_ENTRIES } from './finance-plans'
 
 // What a document costs, and why.
 //
@@ -83,6 +85,30 @@ export const RISK_ASSESSMENT_PACK_PRICE = 75000
 export const JOURNEY_PACK_SHARE = 0.35
 export const JOURNEY_PACK_CEILING = 79500
 
+// The nine daily checklists, at three hundred and ninety-five pounds.
+//
+// Priced against what it replaces, which is a manager spending a fortnight
+// turning procedures into shift sheets and then maintaining nine of them.
+// Under the five hundred a spa director signs off alone, and deliberately
+// cheaper than the procedures they enforce, because a spa that owns the
+// procedures and runs the day off a sheet somebody printed in 2019 has the
+// expensive half already and is getting no benefit from it.
+export const CHECKLIST_PACK_PRICE = 39500
+
+// The twenty report templates, at one thousand two hundred and fifty pounds.
+//
+// The most expensive thing in this library except the library itself, and the
+// one with the clearest payback. A spa running at sixty per cent room
+// occupancy and not measuring RevPATH is leaving five figures a month in
+// unsold capacity it cannot see, and the first month this pack is used it
+// either finds that or proves it is not there. Both are worth the price.
+//
+// Above the two spa directors can usually approve alone, which is correct: a
+// reporting pack is a general manager or owner decision, it changes what gets
+// discussed at board level, and pricing it to slip through on one signature
+// would sell it to the wrong person.
+export const FINANCE_PACK_PRICE = 125000
+
 export const CURRENCY = 'gbp'
 
 // Not VAT registered, so a price is simply the price.
@@ -105,7 +131,8 @@ export const VAT_NOTE = VAT_REGISTERED
 // Overrides, keyed by the same names the admin screen uses. Absent means the
 // default in this file, which is the one argued for above.
 export type Prices = Partial<Record<
-  'single' | 'department' | 'journey' | 'day-one' | 'complete' | 'pool-safety' | 'risk-assessments',
+  | 'single' | 'department' | 'journey' | 'day-one' | 'complete'
+  | 'pool-safety' | 'risk-assessments' | 'checklists' | 'finance',
   number
 >>
 
@@ -284,6 +311,8 @@ export function tierPacks(prices: Prices = {}): Pack[] {
     ...GUIDE_ENTRIES.map(entry => entry.reference),
   ]
   const riskReferences = RISK_ASSESSMENT_ENTRIES.map(entry => entry.reference)
+  const checklistReferences = CHECKLIST_ENTRIES.map(entry => entry.reference)
+  const financeReferences = FINANCE_ENTRIES.map(entry => entry.reference)
   return [
     {
       slug: 'risk-assessments',
@@ -310,6 +339,31 @@ export function tierPacks(prices: Prices = {}): Pack[] {
       count: poolReferences.length,
     },
     {
+      slug: 'daily-checklists',
+      name: 'Daily Running Checklists',
+      blurb:
+        'Nine checklists covering how a spa is actually run each day: reception opening, mid shift and close, '
+        + 'therapist opening and closing, cleaning opening and closing, the duty manager walk, and the weekly '
+        + 'maintenance, safety and training sheet. Each block names the procedure, assessment or policy it is '
+        + 'drawn from, so a change to one can be traced to every checklist it affects.',
+      price: prices.checklists ?? CHECKLIST_PACK_PRICE,
+      includes: (reference: string) => checklistReferences.includes(reference),
+      count: checklistReferences.length,
+    },
+    {
+      slug: 'financial-reporting',
+      name: 'Spa Financial Reporting Pack',
+      blurb:
+        'Twenty report templates and the definitions behind them: the director dashboard, daily trading, '
+        + 'revenue against capacity, forward pace, treatment and therapist performance, retail, membership, '
+        + 'guests, channels, discounting and yield, vouchers, payroll, the departmental profit and loss, stock, '
+        + 'complaints, standards, safety and marketing. Every line defined precisely enough that two people '
+        + 'cannot compute it differently.',
+      price: prices.finance ?? FINANCE_PACK_PRICE,
+      includes: (reference: string) => financeReferences.includes(reference),
+      count: financeReferences.length,
+    },
+    {
       slug: 'before-the-first-guest',
       name: TIER_LABEL['day-1'],
       blurb:
@@ -328,7 +382,8 @@ export function tierPacks(prices: Prices = {}): Pack[] {
         + 'and the governance and audit procedures that need an operation running before they can be written well.',
       price: prices.complete ?? COMPLETE_LIBRARY_PRICE,
       includes: () => true,
-      count: LIBRARY_PLAN.length + POOL_PLAN_ENTRIES.length + RISK_ASSESSMENT_ENTRIES.length + GUIDE_ENTRIES.length,
+      count: LIBRARY_PLAN.length + POOL_PLAN_ENTRIES.length + RISK_ASSESSMENT_ENTRIES.length
+        + GUIDE_ENTRIES.length + CHECKLIST_ENTRIES.length + FINANCE_ENTRIES.length,
     },
   ]
 }

@@ -137,12 +137,36 @@ person who knows the premises. No signature is ever pre-printed.
 
 ### What is actually on the shelf
 
-The library is 477 sellable documents: 460 procedures by department, the pool
+The library is 506 sellable documents: 460 procedures by department, the pool
 and spa Normal Operating Procedure (79 pages) and Emergency Action Plan (66
-pages, one emergency per page), 13 risk assessments covering 61 hazards, and
-the completion guide and training guide that go free with the safety pack.
-They ship as PDFs with real form fields, so a buyer types the property name
-once and it fills in everywhere it appears.
+pages, one emergency per page), 13 risk assessments covering 61 hazards, the
+completion and training guides that go free with the safety pack, 9 daily
+running checklists, and 20 management report templates. They ship as PDFs with
+real form fields, so a buyer types the property name once and it fills in
+everywhere it appears.
+
+Four suites are sold on their own argument rather than by document count: the
+safety operating procedure (£495), the risk assessment suite (£750), the daily
+running checklists (£395) and the financial reporting pack (£1,250).
+
+The checklists are the procedures in the form somebody uses them at seven in
+the morning: reception opening, mid shift and close, therapist opening and
+closing, cleaning opening and closing, the duty manager walk, and a weekly
+maintenance, safety and training sheet. Every block names the procedure,
+assessment or policy it is drawn from, so a change to one can be traced to
+every checklist it affects, and checks marked STOP decide whether an area
+opens at all.
+
+The reporting pack is twenty templates and, more usefully, the measure
+definitions behind them. What a spa director lacks is rarely a spreadsheet: it
+is agreement on which numbers, measured how, compared against what, and what
+somebody does when one moves. It leads with a fifteen-measure director
+dashboard and drills into revenue against capacity (RevPATH and unsold hours,
+not only budget variance), forward pace, contribution per hour by treatment,
+therapist productivity, retail, membership, guests, channels, discount and
+yield, vouchers, payroll, the departmental profit and loss, stock, complaints,
+standards, safety and marketing. Nothing is pre-filled: a printed benchmark
+would be somebody else's spa.
 
 Packs can now carry working files as well: a spreadsheet uploaded against a
 pack reaches everybody who owns that pack, including people who bought it
@@ -190,7 +214,7 @@ before anything in this library is called finished.
 ## Technical shape
 
 Next.js 16 App Router · Supabase (auth, Postgres, storage) · Stripe · Netlify.
-237 API routes, 172 pages, 131 migrations, 150 test files.
+237 API routes, 172 pages, 131 migrations, 153 test files.
 
 Two roles: `talent` and `employer`, stored on `profiles.role` (talent is
 stored as `candidate`). Admin is a third role on the same column.

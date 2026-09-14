@@ -147,6 +147,7 @@ export const KIND_LABEL: Record<string, string> = {
   NOP: 'Operating procedure',
   EAP: 'Emergency plan',
   SSW: 'Safe system of work',
+  RPT: 'Management report',
 }
 
 export function kindOf(reference: string): string {
