@@ -732,7 +732,6 @@ export const QUARTER_ONE_DRAFTS: Record<string, Authored> = {
   },
 }
 
-/** References we hold written content for, so a caller can say how many. */
-export function authoredReferences(): string[] {
-  return Object.keys(QUARTER_ONE_DRAFTS)
-}
+// authoredReferences moved to ./authored, which merges this with the six
+// written later. A count that only knew about this file would be wrong the
+// day anything was added beside it.

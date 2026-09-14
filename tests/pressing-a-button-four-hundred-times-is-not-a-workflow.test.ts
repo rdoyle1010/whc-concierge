@@ -164,7 +164,7 @@ test('a tier already being written cannot be sent again', () => {
 // presses the button on again.
 test('the page says what is being written right now', () => {
   assert.match(route, /const \{ data: runs \} = await admin\.from\('document_batches'\)/)
-  assert.match(route, /return NextResponse\.json\(\{ rows, runs: runs \|\| \[\] \}\)/)
+  assert.match(route, /return NextResponse\.json\(\{ rows, runs: runs \|\| \[\], authored: authoredReferences\(\) \}\)/)
   assert.match(page, /Being written now/)
   assert.match(page, /written so far/)
   assert.match(page, /Nothing back yet/)

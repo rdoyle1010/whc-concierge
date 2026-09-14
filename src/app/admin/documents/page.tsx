@@ -63,6 +63,12 @@ export default function AdminDocumentsPage() {
   // What is being written right now. Without this on screen, the only way to
   // find out whether anything is happening is to ask somebody.
   const [runs, setRuns] = useState<Run[]>([])
+  // Which references are written in the repository rather than drafted. It
+  // comes from the API because the content itself is a megabyte of procedure
+  // nobody needs in a browser, and a copy of the list kept here would drift.
+  const [authored, setAuthored] = useState<string[]>([])
+  // The buttons nobody presses on a normal day, out of the way until asked.
+  const [showRest, setShowRest] = useState(false)
   const [loading, setLoading] = useState(true)
   const [unavailable, setUnavailable] = useState(false)
   const [busy, setBusy] = useState('')
@@ -92,6 +98,7 @@ export default function AdminDocumentsPage() {
     setUnavailable(Boolean(body.unavailable))
     setRows(body.rows || [])
     setRuns(body.runs || [])
+    setAuthored(body.authored || [])
   }
   useEffect(() => { load() }, [])
 
@@ -273,14 +280,27 @@ export default function AdminDocumentsPage() {
   // the ones it can honestly redraft. A button that reports its intention
   // rather than its outcome is the thing this screen keeps getting wrong.
   const unfinished = (row: Row) => row.written && row.missing.length > 0
-  // Unapproved procedures. Everything the redraft will actually send.
-  const redraftable = rows.filter(row => unfinished(row) && row.kind === 'sop' && row.status !== 'approved')
+  const isAuthored = (row: Row) => authored.includes(row.reference)
+
+  // Hand-written, unsigned, and not yet finished in the database. Exactly
+  // what pressing Write the hand-written ones will change, which is the only
+  // number worth putting on a button.
+  const authoredShort = rows.filter(row =>
+    isAuthored(row) && row.status !== 'approved' && (!row.written || row.missing.length > 0))
+  // Unapproved drafted procedures. Everything the redraft will actually send,
+  // now excluding the hand-written ones: six of those went to the model twice
+  // and came back with nothing both times, which is what the written content
+  // exists to end.
+  const redraftable = rows.filter(row =>
+    unfinished(row) && row.kind === 'sop' && row.status !== 'approved' && !isAuthored(row))
   // Signed off and still missing something, which should not be possible and
   // is the exact failure the sign-off exists to prevent.
   const signedUnfinished = rows.filter(row => unfinished(row) && row.status === 'approved')
   // Written in the repository rather than drafted, so a model cannot fix them.
   const unfinishedPlans = rows.filter(row =>
-    unfinished(row) && row.kind !== 'sop' && row.status !== 'approved')
+    unfinished(row) && row.kind !== 'sop' && row.status !== 'approved' && !isAuthored(row))
+
+  const inFlight = runs.some(run => run.status === 'submitted' || run.status === 'collecting')
 
   const stageFor = (row: Row) => stageOf({ reference: row.reference, title: row.title })
   const elsewhere = rows.filter(row => stage !== 'all' && stageFor(row) !== stage && matchesState(row)).length
@@ -336,6 +356,18 @@ export default function AdminDocumentsPage() {
           </div>
         )}
 
+        {/* The six that would not sign off. They were sent to be drafted
+            again twice and came back with nothing both times, so they are
+            written in the repository now and one press puts them in. */}
+        {authoredShort.length > 0 && (
+          <p className="mt-3 border border-[#8a1c14] px-4 py-3 text-[13px] text-secondary">
+            {authoredShort.length === 1 ? 'One document is' : `${authoredShort.length} documents are`}
+            {' '}written by hand in the repository and not in the library yet, or in it unfinished. Drafting them
+            again will not fix them. Press Write the {authoredShort.length}{' '}
+            hand-written {authoredShort.length === 1 ? 'one' : 'ones'}, which is certain rather than a redraft.
+          </p>
+        )}
+
         {/* Written in the repository rather than drafted, so no amount of
             redrafting will fix one. Worth saying, or the two counts look
             like the same problem reported twice. */}
@@ -347,77 +379,44 @@ export default function AdminDocumentsPage() {
           </p>
         )}
 
+        {/* Twelve buttons was eleven too many on any given day.
+            Everything that adds a set of documents is inside Bring the
+            library up to date, which is the one that gets pressed; the rest
+            are here for the day one import fails on its own and somebody
+            wants to retry that set rather than all of it. */}
         <div className="mt-5 flex flex-wrap items-center gap-3">
           <button type="button" onClick={load}
             className="flex items-center gap-1.5 text-[12px] text-secondary hover:text-ink">
             <RefreshCw size={13} /> Refresh
           </button>
-          <button type="button" disabled={busy === 'import_plan'} onClick={() => act('import_plan')}
-            className="inline-flex items-center gap-1.5 border border-[#1c1c1c] px-3 py-1.5 text-[12px] font-semibold text-ink disabled:opacity-40">
-            <Download size={13} /> {busy === 'import_plan' ? 'Importing...' : 'Import the build plan'}
-          </button>
-          <button type="button" disabled={busy === 'collect'} onClick={() => act('collect')}
-            className="inline-flex items-center gap-1.5 border border-[#1c1c1c] px-3 py-1.5 text-[12px] font-semibold text-ink disabled:opacity-40">
-            <Inbox size={13} /> {busy === 'collect' ? 'Checking...' : 'Collect what is ready'}
-          </button>
-          <button type="button" disabled={busy === 'adopt_batch'}
-            onClick={() => {
-              const providerBatchId = window.prompt(
-                'Paste a batch id from the Anthropic console. Use this for a run that was started before the '
-                + 'register existed, so its results can still be collected.',
-              )
-              if (providerBatchId?.trim()) act('adopt_batch', undefined, { providerBatchId: providerBatchId.trim() })
-            }}
-            className="inline-flex items-center gap-1.5 border border-border px-3 py-1.5 text-[12px] font-medium text-secondary disabled:opacity-40">
-            <Inbox size={13} /> Collect a batch by id
-          </button>
-          <button type="button" disabled={busy === 'add_risk_assessments'} onClick={() => act('add_risk_assessments')}
-            className="inline-flex items-center gap-1.5 border border-border px-3 py-1.5 text-[12px] font-medium text-secondary disabled:opacity-40">
-            <ShieldAlert size={13} /> {busy === 'add_risk_assessments' ? 'Adding...' : 'Add the risk assessments'}
-          </button>
-          {/* One press for everything written in the repository. The four
-              below it stay, because somebody whose import of one set just
-              failed wants to retry that set rather than all of it. */}
-          {/* Only worth pressing when there are some, so it says how many.
-              Finding them by hand is not a job anybody should do twice. */}
-          {redraftable.length > 0 && (
-            <button type="button" disabled={busy === 'draft_incomplete'}
-              onClick={() => {
-                const count = redraftable.length
-                if (!window.confirm(
-                  `Write ${count} unfinished ${count === 1 ? 'document' : 'documents'} again. They came back `
-                  + 'short the first time. A redraft only replaces what is there if it comes back more '
-                  + 'complete, so nothing can get worse, and it costs what a batch of that size costs.',
-                )) return
-                act('draft_incomplete')
-              }}
-              className="inline-flex items-center gap-1.5 border border-[#8a1c14] px-3 py-1.5 text-[12px] font-semibold text-[#8a1c14] disabled:opacity-40">
-              <RefreshCw size={13} />
-              {busy === 'draft_incomplete'
-                ? 'Sending...'
-                : `Write the ${redraftable.length} unfinished ${redraftable.length === 1 ? 'one' : 'ones'} again`}
-            </button>
-          )}
           <button type="button" disabled={busy === 'add_everything'} onClick={() => act('add_everything')}
             className="inline-flex items-center gap-1.5 border border-[#1c1c1c] bg-[#1c1c1c] px-3 py-1.5 text-[12px] font-semibold text-white disabled:opacity-40">
             <Layers size={13} /> {busy === 'add_everything' ? 'Bringing them in...' : 'Bring the library up to date'}
           </button>
-          <button type="button" disabled={busy === 'add_checklists'} onClick={() => act('add_checklists')}
-            className="inline-flex items-center gap-1.5 border border-border px-3 py-1.5 text-[12px] font-medium text-secondary disabled:opacity-40">
-            <ClipboardCheck size={13} /> {busy === 'add_checklists' ? 'Adding...' : 'Add the daily checklists'}
-          </button>
-          <button type="button" disabled={busy === 'add_finance_pack'} onClick={() => act('add_finance_pack')}
-            className="inline-flex items-center gap-1.5 border border-border px-3 py-1.5 text-[12px] font-medium text-secondary disabled:opacity-40">
-            <Banknote size={13} /> {busy === 'add_finance_pack' ? 'Adding...' : 'Add the reporting pack'}
-          </button>
-          <button type="button" disabled={busy === 'add_pool_plans'} onClick={() => act('add_pool_plans')}
-            className="inline-flex items-center gap-1.5 border border-border px-3 py-1.5 text-[12px] font-medium text-secondary disabled:opacity-40">
-            <ShieldAlert size={13} /> {busy === 'add_pool_plans' ? 'Adding...' : 'Add the pool safety plans'}
-          </button>
-          <button type="button" disabled={busy === 'write_authored'} onClick={() => act('write_authored')}
-            className="inline-flex items-center gap-1.5 border border-border px-3 py-1.5 text-[12px] font-medium text-secondary disabled:opacity-40">
-            <Pencil size={13} /> {busy === 'write_authored' ? 'Writing...' : 'Write the last nine'}
-          </button>
+
+          {/* Written here, in the repository, so pressing this is certain
+              rather than a coin toss inside a twenty-six second function.
+              Two model redrafts of the same six came back with nothing. */}
+          {authoredShort.length > 0 && (
+            <button type="button" disabled={busy === 'write_authored'} onClick={() => act('write_authored')}
+              className="inline-flex items-center gap-1.5 border border-[#8a1c14] px-3 py-1.5 text-[12px] font-semibold text-[#8a1c14] disabled:opacity-40">
+              <Pencil size={13} />
+              {busy === 'write_authored'
+                ? 'Writing...'
+                : `Write the ${authoredShort.length} hand-written ${authoredShort.length === 1 ? 'one' : 'ones'}`}
+            </button>
+          )}
+
+          {/* Only while something is actually out. A collect button on a
+              screen with nothing in flight is a button that reports
+              "nothing new" and teaches her to ignore it. */}
+          {inFlight && (
+            <button type="button" disabled={busy === 'collect'} onClick={() => act('collect')}
+              className="inline-flex items-center gap-1.5 border border-[#1c1c1c] px-3 py-1.5 text-[12px] font-semibold text-ink disabled:opacity-40">
+              <Inbox size={13} /> {busy === 'collect' ? 'Checking...' : 'Collect what is ready'}
+            </button>
+          )}
+
           {/* One press for everything that is finished. The life safety ones
               are held back by the route rather than here, because a rule that
               only exists in a button is a rule until somebody calls the API
@@ -436,11 +435,83 @@ export default function AdminDocumentsPage() {
             className="inline-flex items-center gap-1.5 border border-border px-3 py-1.5 text-[12px] font-medium text-secondary disabled:opacity-40">
             <CheckCheck size={13} /> {busy === 'approve_ready' ? 'Signing off...' : 'Sign off everything finished'}
           </button>
-          <button type="button" disabled={busy === 'add_example'} onClick={() => act('add_example')}
-            className="inline-flex items-center gap-1.5 border border-border px-3 py-1.5 text-[12px] font-medium text-secondary disabled:opacity-40">
-            <Plus size={13} /> Add the worked example
+
+          <button type="button" onClick={() => setShowRest(!showRest)}
+            className="text-[12px] text-secondary underline hover:text-ink">
+            {showRest ? 'Hide the rest' : 'The rest'}
           </button>
         </div>
+
+        {/* Pressed once a quarter at most, and never on a normal day. */}
+        {showRest && (
+          <div className="mt-3 flex flex-wrap items-center gap-3 border-l-2 border-border pl-4">
+            <button type="button" disabled={busy === 'import_plan'} onClick={() => act('import_plan')}
+              className="inline-flex items-center gap-1.5 border border-border px-3 py-1.5 text-[12px] font-medium text-secondary disabled:opacity-40">
+              <Download size={13} /> {busy === 'import_plan' ? 'Importing...' : 'Import the build plan'}
+            </button>
+            {!inFlight && (
+              <button type="button" disabled={busy === 'collect'} onClick={() => act('collect')}
+                className="inline-flex items-center gap-1.5 border border-border px-3 py-1.5 text-[12px] font-medium text-secondary disabled:opacity-40">
+                <Inbox size={13} /> {busy === 'collect' ? 'Checking...' : 'Collect what is ready'}
+              </button>
+            )}
+            <button type="button" disabled={busy === 'adopt_batch'}
+              onClick={() => {
+                const providerBatchId = window.prompt(
+                  'Paste a batch id from the Anthropic console. Use this for a run that was started before the '
+                  + 'register existed, so its results can still be collected.',
+                )
+                if (providerBatchId?.trim()) act('adopt_batch', undefined, { providerBatchId: providerBatchId.trim() })
+              }}
+              className="inline-flex items-center gap-1.5 border border-border px-3 py-1.5 text-[12px] font-medium text-secondary disabled:opacity-40">
+              <Inbox size={13} /> Collect a batch by id
+            </button>
+
+            {/* Demoted. It counts only the ones a model could plausibly fix:
+                the hand-written ones are excluded, because sending those to
+                be drafted again is what already failed twice. */}
+            {redraftable.length > 0 && (
+              <button type="button" disabled={busy === 'draft_incomplete'}
+                onClick={() => {
+                  const count = redraftable.length
+                  if (!window.confirm(
+                    `Write ${count} unfinished ${count === 1 ? 'document' : 'documents'} again. They came back `
+                    + 'short the first time. A redraft only replaces what is there if it comes back more '
+                    + 'complete, so nothing can get worse, and it costs what a batch of that size costs.',
+                  )) return
+                  act('draft_incomplete')
+                }}
+                className="inline-flex items-center gap-1.5 border border-border px-3 py-1.5 text-[12px] font-medium text-secondary disabled:opacity-40">
+                <RefreshCw size={13} />
+                {busy === 'draft_incomplete'
+                  ? 'Sending...'
+                  : `Write the ${redraftable.length} drafted ${redraftable.length === 1 ? 'one' : 'ones'} again`}
+              </button>
+            )}
+            {authoredShort.length === 0 && (
+              <button type="button" disabled={busy === 'write_authored'} onClick={() => act('write_authored')}
+                className="inline-flex items-center gap-1.5 border border-border px-3 py-1.5 text-[12px] font-medium text-secondary disabled:opacity-40">
+                <Pencil size={13} /> {busy === 'write_authored' ? 'Writing...' : 'Write the hand-written ones again'}
+              </button>
+            )}
+
+            {([
+              ['add_risk_assessments', 'the risk assessments'],
+              ['add_checklists', 'the daily checklists'],
+              ['add_finance_pack', 'the reporting pack'],
+              ['add_pool_plans', 'the pool safety plans'],
+            ] as const).map(([which, label]) => (
+              <button key={which} type="button" disabled={busy === which} onClick={() => act(which)}
+                className="inline-flex items-center gap-1.5 border border-border px-3 py-1.5 text-[12px] font-medium text-secondary disabled:opacity-40">
+                <ShieldAlert size={13} /> {busy === which ? 'Adding...' : `Add ${label}`}
+              </button>
+            ))}
+            <button type="button" disabled={busy === 'add_example'} onClick={() => act('add_example')}
+              className="inline-flex items-center gap-1.5 border border-border px-3 py-1.5 text-[12px] font-medium text-secondary disabled:opacity-40">
+              <Plus size={13} /> Add the worked example
+            </button>
+          </div>
+        )}
 
         {rows.length > 0 && (
           <>
