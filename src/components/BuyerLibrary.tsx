@@ -3,7 +3,9 @@
 import { useEffect, useState, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
-import { Download, FileText } from 'lucide-react'
+import { Download, ArrowLeft, ShoppingBag } from 'lucide-react'
+import Navbar from '@/components/Navbar'
+import Footer from '@/components/Footer'
 
 // The library a buyer reaches from their receipt.
 //
@@ -98,22 +100,48 @@ function Library() {
         life safety must be checked against your building by a competent person and signed off before it is issued
         to anyone. It is not a completed assessment and it does not discharge any duty you owe as an employer.
       </p>
+
+      <div className="mt-9 flex flex-wrap items-center gap-x-6 gap-y-3">
+        <Link href="/standards"
+          className="inline-flex items-center gap-1.5 border border-[#1c1c1c] px-4 py-2 text-[13px] font-semibold text-[#1c1c1c]">
+          <ShoppingBag size={14} /> Browse the rest of the library
+        </Link>
+        {/* An account is optional and stays optional. It is offered here
+            because keeping a receipt email safe for three years is a worse
+            plan than a page they can sign into, and saying so is more useful
+            than a sign-up prompt that explains nothing. */}
+        <p className="max-w-md text-[13px] leading-relaxed text-[#6b6b6b]">
+          Keep this link: it is the only way back without an account. If you
+          {' '}<Link href="/register" className="underline">create one</Link>{' '}
+          with this address, everything you have bought appears under My Documents on your dashboard instead.
+        </p>
+      </div>
     </div>
   )
 }
 
 export default function BuyerLibrary() {
+  // The header and footer, because this page was a dead end: somebody who
+  // followed the link from their receipt had no way back to the shop, to the
+  // site, or anywhere else, which reads as having been dropped somewhere
+  // rather than delivered something.
   return (
-    <main className="mx-auto max-w-4xl px-6 py-16 lg:px-8">
-      <p className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[.18em] text-[#6b6b6b]">
-        <FileText size={13} /> Talent House Collective
-      </p>
-      <h1 className="mt-3 text-[32px] font-semibold text-[#1c1c1c] md:text-[40px]">Your documents</h1>
-      <div className="mt-8">
-        <Suspense fallback={<p className="text-[14px] text-[#555555]">Opening your library...</p>}>
-          <Library />
-        </Suspense>
-      </div>
-    </main>
+    <div className="min-h-screen bg-white">
+      <Navbar />
+      <main id="main-content" className="mx-auto max-w-4xl px-6 pb-20 pt-[108px] lg:px-8">
+        <Link href="/standards"
+          className="inline-flex items-center gap-1.5 text-[13px] text-[#6b6b6b] underline hover:text-[#1c1c1c]">
+          <ArrowLeft size={14} /> The document library
+        </Link>
+        <p className="mt-6 text-[11px] font-semibold uppercase tracking-[.18em] text-[#6b6b6b]">Standards</p>
+        <h1 className="mt-3 text-[32px] font-semibold text-[#1c1c1c] md:text-[40px]">Your documents</h1>
+        <div className="mt-8">
+          <Suspense fallback={<p className="text-[14px] text-[#555555]">Opening your library...</p>}>
+            <Library />
+          </Suspense>
+        </div>
+      </main>
+      <Footer />
+    </div>
   )
 }

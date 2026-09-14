@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { createServerSupabaseClient } from '@/lib/supabase/server'
 import { renderDocumentPdf } from '@/lib/documents/document-pdf'
 import { ownedReferences } from '@/lib/documents/stock'
 import { missingFromSop, type SopDocument } from '@/lib/documents/types'
@@ -17,23 +18,44 @@ export const maxDuration = 26
 export async function GET(req: NextRequest) {
   const token = String(req.nextUrl.searchParams.get('t') || '').trim()
   const reference = String(req.nextUrl.searchParams.get('reference') || '').trim()
-  if (!token || !reference) {
-    return NextResponse.json({ error: 'That link is incomplete.' }, { status: 400 })
-  }
+  if (!reference) return NextResponse.json({ error: 'That link is incomplete.' }, { status: 400 })
 
   const admin = createAdminClient()
 
-  const { data: order, error: orderError } = await admin.from('standards_orders')
-    .select('buyer_email').eq('access_token', token).maybeSingle()
-  if (orderError) {
-    return NextResponse.json({ error: 'We cannot reach your library just now. Try again shortly.' }, { status: 503 })
+  // Two ways of being the buyer, because there are two ways of buying.
+  //
+  // The token in the receipt, for somebody who never made an account, and the
+  // signed-in session for somebody who did. Requiring the token from a person
+  // looking at their own dashboard would mean going to find an email, which
+  // is exactly the friction not having an account was supposed to avoid.
+  let orders: { pack_slug: string | null; document_reference: string | null }[] | null = null
+
+  if (token) {
+    const { data: order, error: orderError } = await admin.from('standards_orders')
+      .select('buyer_email').eq('access_token', token).maybeSingle()
+    if (orderError) {
+      return NextResponse.json({ error: 'We cannot reach your library just now. Try again shortly.' }, { status: 503 })
+    }
+    if (!order) return NextResponse.json({ error: 'That link does not open a library.' }, { status: 404 })
+
+    const { data: theirs } = await admin.from('standards_orders')
+      .select('pack_slug, document_reference').ilike('buyer_email', order.buyer_email)
+    orders = theirs || []
+  } else {
+    const supabase = await createServerSupabaseClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+      return NextResponse.json({
+        error: 'Sign in, or use the link in your receipt email.',
+      }, { status: 401 })
+    }
+    const { data: theirs } = await admin.from('standards_orders')
+      .select('pack_slug, document_reference')
+      .or(`buyer_user_id.eq.${user.id},buyer_email.ilike.${(user.email || '').replace(/[,()]/g, '')}`)
+    orders = theirs || []
   }
-  if (!order) return NextResponse.json({ error: 'That link does not open a library.' }, { status: 404 })
 
-  const { data: theirs } = await admin.from('standards_orders')
-    .select('pack_slug, document_reference').ilike('buyer_email', order.buyer_email)
-
-  if (!ownedReferences(theirs || []).has(reference)) {
+  if (!ownedReferences(orders).has(reference)) {
     return NextResponse.json({ error: 'That document is not part of what you bought.' }, { status: 403 })
   }
 

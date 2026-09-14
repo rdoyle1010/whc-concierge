@@ -108,7 +108,7 @@ test('the browser never says what anything costs', () => {
 
 test('a download is refused unless that buyer bought it', () => {
   const download = body('src/app/api/standards/download/route.ts')
-  assert.match(download, /ownedReferences\(theirs \|\| \[\]\)\.has\(reference\)/)
+  assert.match(download, /ownedReferences\(orders\)\.has\(reference\)/)
   assert.match(download, /not part of what you bought/)
   // And only a signed off document ever leaves the platform.
   assert.match(download, /\.eq\('status', 'approved'\)/)
@@ -135,4 +135,40 @@ test('a paid purchase has two ways of being delivered', () => {
   assert.match(branch, /receipt_sent_at/)
   assert.match(branch, /notifyAdmins/)
   assert.match(branch, /paid and have nothing/)
+})
+
+test('a purchase lives on the dashboard, not only in an email', () => {
+  const shell = body('src/components/DashboardShell.tsx')
+  // Every workspace that can buy one. A talent, a property and a consultancy
+  // see the same shelf, so it is one page rather than three to keep in step.
+  for (const workspace of ['talent', 'employer', 'consultant']) {
+    const list = shell.slice(shell.indexOf(`${workspace}: [`), shell.indexOf('],', shell.indexOf(`${workspace}: [`)))
+    assert.ok(list.length > 100, `the ${workspace} navigation should have been found`)
+    assert.match(list, /My Documents', href: '\/my-documents'/, `${workspace} cannot reach what it bought`)
+  }
+})
+
+test('a signed-in buyer does not need to find their receipt', () => {
+  const download = body('src/app/api/standards/download/route.ts')
+  // Two ways of being the buyer, because there are two ways of buying.
+  assert.match(download, /if \(token\) \{/)
+  assert.match(download, /createServerSupabaseClient/)
+  assert.match(download, /buyer_user_id\.eq\.\$\{user\.id\}/)
+  // And neither way skips the entitlement check.
+  assert.match(download, /ownedReferences\(orders\)\.has\(reference\)/)
+
+  const mine = body('src/app/api/standards/mine/route.ts')
+  assert.match(mine, /Unauthorised/)
+  // Bought before they had an account, claimed onto it the first time they
+  // look, so it is theirs on every device from then on.
+  assert.match(mine, /buyer_user_id: user\.id/)
+})
+
+test('the receipt link is not a dead end', () => {
+  const page = body('src/components/BuyerLibrary.tsx')
+  assert.match(page, /<Navbar \/>/)
+  assert.match(page, /<Footer \/>/)
+  assert.match(page, /href="\/standards"/)
+  // And it says plainly that the link is the only key without an account.
+  assert.match(page, /only way back without an account/)
 })
