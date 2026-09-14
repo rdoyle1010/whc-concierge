@@ -26,10 +26,36 @@ const footer = read('src/components/Footer.tsx')
 // Six revenue lines with half of them behind a hover is a discovery problem
 // dressed up as tidiness.
 
-test('every product is one click from the front door', () => {
-  for (const href of ['/jobs', '/properties', '/agency/about', '/residency', '/consultancy', '/academy', '/intelligence']) {
-    assert.ok(navbar.includes(`href: '${href}'`),
-      `${href} must be a top-level link, not buried in a menu`)
+// What has changed since, and what has not.
+//
+// The header carried all nine and two of them led somewhere effectively
+// empty: the public Properties directory holds one approved property, ours,
+// and Brands reads brand_profiles, which has no advertisers on it yet. A
+// header that advertises nine sections and delivers seven teaches a visitor
+// the site is thinner than it looks.
+//
+// So the rule is no longer "every product is in the header". It is that every
+// product is reachable from the front page without a hover, in the header or
+// the footer, and that anything taken out of the header lands in the footer
+// rather than nowhere. That protects the original concern, which was
+// discovery, without requiring the header to advertise empty rooms.
+test('every product is reachable from the front page', () => {
+  const everything = ['/jobs', '/properties', '/brands', '/agency/about', '/residency', '/consultancy', '/academy', '/events', '/intelligence']
+  for (const href of everything) {
+    const inHeader = navbar.includes(`href: '${href}'`)
+    const inFooter = footer.includes(`href: '${href}'`)
+    assert.ok(inHeader || inFooter, `${href} is reachable from neither the header nor the footer`)
+  }
+
+  // The live revenue lines with something behind them stay at the top.
+  for (const href of ['/jobs', '/agency/about', '/residency', '/consultancy', '/academy', '/events', '/intelligence']) {
+    assert.ok(navbar.includes(`href: '${href}'`), `${href} belongs in the header`)
+  }
+
+  // And the two that left it have a home, which is the whole of the
+  // difference between shortening a nav and orphaning a page.
+  for (const href of ['/properties', '/brands']) {
+    assert.ok(footer.includes(`href: '${href}'`), `${href} left the header and landed nowhere`)
   }
 })
 
@@ -42,11 +68,17 @@ test('consultancy is not filed under flexible work', () => {
 
 test('the signed-out nav matches what a member sees after signing in', () => {
   // Somebody should not have to relearn the navigation on the way in.
-  const flat = /const publicLinks = \[/
-  assert.match(navbar, flat)
-  for (const href of ['/jobs', '/properties', '/agency/about', '/academy', '/residency', '/consultancy', '/intelligence']) {
-    assert.ok(navbar.includes(`{ href: '${href}', label:`),
-      `${href} appears in both navigations`)
+  //
+  // This used to be two hand-maintained arrays checked against each other,
+  // which is a rule that holds only while somebody remembers it. They are one
+  // list now, so the two cannot drift, and the test asserts the shared source
+  // rather than re-comparing two copies.
+  assert.match(navbarCode, /const SITE_LINKS = \[/)
+  assert.match(navbarCode, /const loggedInSiteLinks = SITE_LINKS/)
+  assert.match(navbarCode, /const publicLinks = SITE_LINKS\.map/)
+  for (const href of ['/jobs', '/agency/about', '/academy', '/residency', '/consultancy', '/events', '/intelligence']) {
+    assert.ok(navbarCode.includes(`{ href: '${href}', label:`),
+      `${href} appears in the one navigation both sides read`)
   }
 })
 

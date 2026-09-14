@@ -83,18 +83,29 @@ export default function Footer({ siteContent }: { siteContent?: WebsiteContent }
     return () => { active = false }
   }, [])
 
+  // Everything the platform does, whether or not it is in the header.
+  //
+  // The header now carries seven, because two of the nine led somewhere
+  // effectively empty and a nav that overpromises costs more than a short one
+  // does. This is where the full map lives instead: nothing is unreachable, a
+  // crawler finds every page, and an orphan page earns no internal link
+  // equity however good the copy on it is.
   const primary = [
     { href: '/jobs', label: content.navigation.jobs },
     { href: '/agency/about', label: content.navigation.agency },
-    { href: '/academy', label: content.navigation.academy },
     { href: '/residency', label: content.navigation.residency },
+    { href: '/academy', label: content.navigation.academy },
+    { href: '/events', label: 'Events' },
+    { href: '/consultancy', label: 'Consultancy' },
+    { href: '/intelligence', label: 'Intelligence' },
     { href: '/blog', label: content.navigation.blog },
   ]
   // Specialisms and How It Works were in the sitemap and in nobody's reach:
   // a crawler could find them, a visitor could not, and an orphan page earns
   // no internal link equity however good the copy on it is.
   const company = [
-    { href: '/properties', label: 'Properties' }, { href: '/specialisms', label: 'Specialisms' }, { href: '/pricing', label: 'Pricing' }, { href: '/advertise', label: 'Advertise' },
+    { href: '/properties', label: 'Properties' }, { href: '/brands', label: 'Brands' },
+    { href: '/specialisms', label: 'Specialisms' }, { href: '/pricing', label: 'Pricing' }, { href: '/advertise', label: 'Advertise' },
     { href: '/coming-soon', label: 'Coming Soon' }, { href: '/testimonials', label: 'Testimonials' }, { href: '/about', label: 'About' }, { href: '/contact', label: 'Contact' },
   ]
   const support = [
