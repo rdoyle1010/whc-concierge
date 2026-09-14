@@ -16,8 +16,14 @@ import { isLifeSafety } from './safety'
 // seconds is not a better procedure.
 
 export const DRAFT_MODEL = 'claude-sonnet-5'
-const CALL_TIMEOUT_MS = 18000
-const MAX_OUTPUT_TOKENS = 4000
+const CALL_TIMEOUT_MS = 20000
+// Smaller than it was, because the first real run timed out.
+//
+// A structured response is produced in one pass and a long one does not
+// arrive any earlier for being good. Seven steps is a procedure; nine is the
+// same procedure with two steps that could have been one, and the difference
+// between them was the difference between a document and an error message.
+const MAX_OUTPUT_TOKENS = 2800
 
 export function draftingConfigured(): boolean {
   return Boolean(process.env.ANTHROPIC_API_KEY)
@@ -33,11 +39,11 @@ const SCHEMA = {
   properties: {
     purpose: { type: 'string', description: 'One or two sentences. What this procedure exists to achieve.' },
     scope: { type: 'string', description: 'Which roles it applies to and which situations it covers.' },
-    equipment: { type: 'array', items: { type: 'string' }, description: 'Systems, documents and equipment needed. Four to eight.' },
+    equipment: { type: 'array', items: { type: 'string' }, description: 'Systems, documents and equipment needed. Four to six.' },
     whyItMatters: { type: 'string', description: 'One or two sentences on what it costs when this is not done. Concrete, not motivational.' },
     measuredBy: {
       type: 'array', items: { type: 'string' },
-      description: 'Three to five ways somebody would know whether this is actually being followed. Observable, and countable where they can be.',
+      description: 'Three ways somebody would know whether this is being followed. Observable, and countable where they can be.',
     },
     responsibilities: {
       type: 'array',
@@ -59,11 +65,11 @@ const SCHEMA = {
           standard: { type: 'string', description: 'The standard the step must meet, written so somebody could audit it.' },
         },
       },
-      description: 'Five to nine steps in the order they happen. Every one needs a standard: a step with an action and no standard is a description, not a procedure.',
+      description: 'Five to seven steps in the order they happen, and no more. Every one needs a standard: a step with an action and no standard is a description, not a procedure.',
     },
     commonFailures: {
       type: 'array', items: { type: 'string' },
-      description: 'Three to five ways this goes wrong in a real spa on a busy day. What a trainer would say out loud.',
+      description: 'Three ways this goes wrong in a real spa on a busy day. What a trainer would say out loud.',
     },
     definitions: {
       type: 'array',
@@ -72,7 +78,7 @@ const SCHEMA = {
         required: ['term', 'meaning'],
         properties: { term: { type: 'string' }, meaning: { type: 'string' } },
       },
-      description: 'Three to six terms used in the procedure that a new starter would not know.',
+      description: 'Three or four terms a new starter would not know.',
     },
   },
 } as const

@@ -22,7 +22,6 @@ type Row = {
   department: string | null
   version: string
   status: 'draft' | 'approved' | 'retired'
-  document: SopDocument
   approved_by_name: string | null
   approved_at: string | null
   approved_version: string | null
@@ -48,7 +47,10 @@ export default function AdminDocumentsPage() {
   const [busy, setBusy] = useState('')
   const [error, setError] = useState('')
   const [note, setNote] = useState('')
-  const [reading, setReading] = useState<Row | null>(null)
+  // The list no longer carries four hundred and sixty document bodies, so
+  // opening one fetches it.
+  const [reading, setReading] = useState<{ row: Row; document: SopDocument } | null>(null)
+  const [opening, setOpening] = useState('')
   // Four hundred and sixty documents is not a list anybody scrolls. It is
   // filtered, counted, and worked through a tier at a time.
   const [tier, setTier] = useState<BuildTier | 'all'>('day-1')
@@ -91,6 +93,21 @@ export default function AdminDocumentsPage() {
     } finally { setBusy('') }
   }
 
+  async function open(row: Row) {
+    setOpening(row.id); setError('')
+    try {
+      const res = await fetch('/api/admin/documents', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'read', id: row.id }),
+      })
+      const body = await res.json().catch(() => null)
+      if (!res.ok) { setError(body?.error || 'That document could not be opened.'); return }
+      setReading({ row, document: body.document as SopDocument })
+    } catch {
+      setError('That document could not be opened. Check your connection.')
+    } finally { setOpening('') }
+  }
+
   // The extra statement a life safety document takes, asked once and plainly
   // rather than buried in a tick box nobody reads.
   async function signOff(row: Row) {
@@ -116,15 +133,15 @@ export default function AdminDocumentsPage() {
               className="inline-flex items-center gap-1.5 border border-border px-3 py-1.5 text-[12px] font-medium text-secondary">
               <Printer size={13} /> Print or save as PDF
             </button>
-            {reading.status !== 'approved' ? (
-              <button type="button" disabled={busy === reading.id}
-                onClick={async () => { if (await signOff(reading)) setReading(null) }}
+            {reading.row.status !== 'approved' ? (
+              <button type="button" disabled={busy === reading.row.id}
+                onClick={async () => { if (await signOff(reading.row)) setReading(null) }}
                 className="inline-flex items-center gap-1.5 border border-[#1c1c1c] bg-[#1c1c1c] px-4 py-1.5 text-[12px] font-semibold text-white disabled:opacity-40">
                 <Check size={13} /> Sign this off
               </button>
             ) : (
               <span className="border border-[#166534]/30 bg-[#f3fbf5] px-3 py-1.5 text-[12px] font-semibold text-[#166534]">
-                Signed off by {reading.approved_by_name || 'you'}
+                Signed off by {reading.row.approved_by_name || 'you'}
               </span>
             )}
           </div>
@@ -296,9 +313,9 @@ export default function AdminDocumentsPage() {
                     </button>
                   )}
 
-                  <button type="button" disabled={!row.written} onClick={() => setReading(row)}
+                  <button type="button" disabled={!row.written || opening === row.id} onClick={() => open(row)}
                     className="inline-flex items-center gap-1.5 border border-[#1c1c1c] px-3 py-1.5 text-[12px] font-semibold text-ink disabled:opacity-30">
-                    <Eye size={13} /> Read it
+                    <Eye size={13} /> {opening === row.id ? 'Opening...' : 'Read it'}
                   </button>
 
                   {row.status === 'approved' ? (

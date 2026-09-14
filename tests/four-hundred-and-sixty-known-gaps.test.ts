@@ -87,11 +87,28 @@ test('importing the plan cannot touch what is already there', () => {
 })
 
 // Four hundred and sixty is not a list anybody scrolls.
+// A cap on a list is a display decision. A cap on the thing the summary is
+// calculated from is a wrong number on screen with nothing to suggest it: a
+// library of four hundred and sixty reported itself as three hundred planned,
+// and every tier total underneath was a subset of the wrong set.
+test('the counts are calculated over the whole library', () => {
+  const get = route.slice(route.indexOf('export async function GET'), route.indexOf('export async function POST'))
+  const limit = Number(get.match(/\.limit\((\d+)\)/)?.[1])
+  assert.ok(limit >= LIBRARY_PLAN.length * 2,
+    `a limit of ${limit} cannot summarise a library of ${LIBRARY_PLAN.length}`)
+
+  // The bodies stay behind, because four hundred and sixty procedures is a
+  // payload nobody needs to render a list.
+  assert.match(get, /const \{ document, \.\.\.rest \} = row/)
+  assert.match(route, /action === 'read'/, 'and one is fetched when it is opened')
+  assert.match(page, /async function open\(row: Row\)/)
+})
+
 test('the library is worked a tier at a time', () => {
   assert.match(page, /const \[tier, setTier\]/)
   assert.match(page, /Not written yet/)
   assert.match(page, /Still to write/)
-  assert.match(page, /disabled=\{!row\.written\}/, 'an empty draft has nothing to read')
+  assert.match(page, /disabled=\{!row\.written \|\| opening === row\.id\}/, 'an empty draft has nothing to read')
   assert.match(page, /visible\.slice\(0, 60\)/)
   assert.match(page, /Showing 60 of \{visible\.length\}/, 'and it says when it is showing a subset')
 })
