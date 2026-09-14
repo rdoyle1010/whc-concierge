@@ -134,7 +134,7 @@ export default function AdminDocumentsPage() {
           setNote(body?.note || 'Nothing came back, and nothing is waiting. Press Write this whole tier to start one.')
         }
       }
-      if (!body?.warning && (action === 'write_authored' || action === 'add_pool_plans')) {
+      if (!body?.warning && (action === 'write_authored' || action === 'add_pool_plans' || action === 'add_risk_assessments')) {
         setNote(body?.note || 'Done.')
       }
       // A document too long for a web request is now sent the slower way
@@ -300,6 +300,10 @@ export default function AdminDocumentsPage() {
             }}
             className="inline-flex items-center gap-1.5 border border-border px-3 py-1.5 text-[12px] font-medium text-secondary disabled:opacity-40">
             <Inbox size={13} /> Collect a batch by id
+          </button>
+          <button type="button" disabled={busy === 'add_risk_assessments'} onClick={() => act('add_risk_assessments')}
+            className="inline-flex items-center gap-1.5 border border-border px-3 py-1.5 text-[12px] font-medium text-secondary disabled:opacity-40">
+            <ShieldAlert size={13} /> {busy === 'add_risk_assessments' ? 'Adding...' : 'Add the risk assessments'}
           </button>
           <button type="button" disabled={busy === 'add_pool_plans'} onClick={() => act('add_pool_plans')}
             className="inline-flex items-center gap-1.5 border border-border px-3 py-1.5 text-[12px] font-medium text-secondary disabled:opacity-40">

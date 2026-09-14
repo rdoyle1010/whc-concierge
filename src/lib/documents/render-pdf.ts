@@ -8,7 +8,7 @@ import type { PlanDocument } from './plan-types'
 // eventually pick the wrong one and hand a property a Normal Operating
 // Procedure typeset as a list of steps.
 
-export const PLAN_KINDS = new Set(['nop', 'eap', 'policy', 'safe-system'])
+export const PLAN_KINDS = new Set(['nop', 'eap', 'policy', 'safe-system', 'risk-assessment'])
 
 export async function renderAnyDocumentPdf(kind: string, document: unknown): Promise<Buffer> {
   if (PLAN_KINDS.has(kind)) {

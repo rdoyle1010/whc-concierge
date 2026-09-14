@@ -19,7 +19,7 @@ import type { Accountability, CrossReference, Revision } from './types'
 // cover the NOP, the EAP, a policy and a safe system of work, which is four
 // products from one shape rather than four shapes to keep in step.
 
-export type PlanKind = 'nop' | 'eap' | 'policy' | 'safe-system'
+export type PlanKind = 'nop' | 'eap' | 'policy' | 'safe-system' | 'risk-assessment'
 
 /**
  * One thing the property has to state.
@@ -50,6 +50,33 @@ export type PlanAction = {
   by: string
 }
 
+/**
+ * One hazard, and everything about it we are entitled to state.
+ *
+ * The hazard, who it hurts, and the controls a competent operation would
+ * expect to find are general: they hold in any spa with a pool, and stating
+ * them is the value of the document.
+ *
+ * The likelihood, the severity and the score that follows are not, and they
+ * are never set here. A risk rating is a judgement made by a competent person
+ * who has stood in the room, and a pre-scored assessment is a property filing
+ * somebody else's opinion of its own building. It is also the one document in
+ * this library with a legal life of its own: an assessment nobody assessed,
+ * signed by somebody who only read it, is the failure that ends up in front
+ * of a coroner.
+ *
+ * So the controls are offered as things to verify rather than asserted as
+ * being in place, and every number is a blank.
+ */
+export type Hazard = {
+  hazard: string
+  whoIsAtRisk: string
+  /** Controls a competent operation would expect. Ticked only once seen. */
+  controlsToVerify: string[]
+  /** What makes this one worse in a spa than the general case. */
+  note?: string
+}
+
 export type PlanTable = {
   columns: string[]
   rows: string[][]
@@ -64,6 +91,7 @@ export type PlanSection = {
   bullets?: string[]
   facts?: Fact[]
   actions?: PlanAction[]
+  hazards?: Hazard[]
   table?: PlanTable
   /** Printed on its own page. Used for each emergency in an EAP. */
   ownPage?: boolean
@@ -99,6 +127,7 @@ export const PLAN_KIND_LABEL: Record<PlanKind, string> = {
   eap: 'Emergency Action Plan',
   policy: 'Policy',
   'safe-system': 'Safe System of Work',
+  'risk-assessment': 'Risk Assessment',
 }
 
 /** Everything a plan needs before it is worth handing to a property. */
@@ -124,7 +153,7 @@ export function missingFromPlan(document: PlanDocument): string[] {
   // it at seven in the morning.
   const empty = (document.sections || []).filter(section =>
     !section.paragraphs?.length && !section.bullets?.length
-    && !section.facts?.length && !section.actions?.length && !section.table)
+    && !section.facts?.length && !section.actions?.length && !section.hazards?.length && !section.table)
   if (empty.length) {
     missing.push(`content under ${empty.length === 1 ? 'one empty heading' : `${empty.length} empty headings`}`)
   }
@@ -133,9 +162,17 @@ export function missingFromPlan(document: PlanDocument): string[] {
 }
 
 /** How many things this plan asks the property to state. */
+/** Every hazard in the document, in order. */
+export function hazardsInPlan(document: PlanDocument): Hazard[] {
+  return (document.sections || []).flatMap(section => section.hazards || [])
+}
+
 export function factsInPlan(document: PlanDocument): number {
   return (document.sections || []).reduce((total, section) => {
     const fromTable = section.table?.fillable ? section.table.rows.length * section.table.columns.length : 0
-    return total + (section.facts?.length || 0) + fromTable
+    // Seven per hazard: likelihood, severity, score, level, further controls,
+    // who owns it and by when. None of them ours to answer.
+    const fromHazards = (section.hazards?.length || 0) * 7
+    return total + (section.facts?.length || 0) + fromTable + fromHazards
   }, 0)
 }
