@@ -21,6 +21,9 @@ export type ReportEntry = {
   department: string
   intro: string
   cadence: string
+  /** Its tab in the workbook. Thirty-one characters, and it never changes:
+   *  a renamed tab breaks every formula on the dashboard that points at it. */
+  sheet: string
   sections: PlanSection[]
 }
 
@@ -33,6 +36,7 @@ export const FINANCE_REGISTER: ReportEntry[] = [
       'One page, fifteen headline measures, each with the report behind it. Eighteen reports is the right '
       + 'amount of reporting and the wrong amount of reading.',
     cadence: 'Monthly',
+    sheet: 'Dashboard',
     sections: DIRECTOR_DASHBOARD,
   },
   {
@@ -43,6 +47,7 @@ export const FINANCE_REGISTER: ReportEntry[] = [
       'Revenue by line, guests, utilisation, average treatment value, retail conversion, no-shows and '
       + 'cancellations. Yesterday, in time to change today.',
     cadence: 'Daily',
+    sheet: 'Daily trading',
     sections: DAILY_TRADING,
   },
   {
@@ -53,6 +58,7 @@ export const FINANCE_REGISTER: ReportEntry[] = [
       'Revenue against the capacity you are paying for, not against a budget built from last year. RevPATH, '
       + 'revenue per room and per therapist hour, occupancy by hour and day, and what the unsold hours are worth.',
     cadence: 'Weekly',
+    sheet: 'Revenue and capacity',
     sections: CAPACITY_REPORT,
   },
   {
@@ -63,6 +69,7 @@ export const FINANCE_REGISTER: ReportEntry[] = [
       'The next seven, fourteen, thirty and ninety days against the same point last year. The only report in '
       + 'the pack you can still act on.',
     cadence: 'Weekly',
+    sheet: 'Forward pace',
     sections: PACE_REPORT,
   },
   {
@@ -73,6 +80,7 @@ export const FINANCE_REGISTER: ReportEntry[] = [
       'Revenue, volume, achieved price, product and therapist cost, and contribution per hour by treatment. '
       + 'It exposes the treatments that look popular and earn almost nothing.',
     cadence: 'Monthly',
+    sheet: 'Treatment performance',
     sections: TREATMENT_REPORT,
   },
   {
@@ -83,6 +91,7 @@ export const FINANCE_REGISTER: ReportEntry[] = [
       'Utilisation measured both ways, revenue per rostered hour, retail, rebooking, upgrades and feedback. '
       + 'With a note on which figure belongs in a performance conversation and which does not.',
     cadence: 'Monthly',
+    sheet: 'Therapist productivity',
     sections: THERAPIST_REPORT,
   },
   {
@@ -93,6 +102,7 @@ export const FINANCE_REGISTER: ReportEntry[] = [
       'Capture rate, spend per treated guest, margin, sales by therapist and by brand, stock turn and ageing. '
       + 'Whether retail is a business or a display.',
     cadence: 'Monthly',
+    sheet: 'Retail',
     sections: RETAIL_REPORT,
   },
   {
@@ -103,6 +113,7 @@ export const FINANCE_REGISTER: ReportEntry[] = [
       'Movement, churn, recurring revenue, utilisation, secondary spend and member profitability, including '
       + 'the peak capacity membership consumes at member rates.',
     cadence: 'Monthly',
+    sheet: 'Membership',
     sections: MEMBERSHIP_REPORT,
   },
   {
@@ -113,6 +124,7 @@ export const FINANCE_REGISTER: ReportEntry[] = [
       'New against returning, frequency, spend, booking source, rebooking, complaints, satisfaction and the '
       + 'lapsed guest list, which is the most valuable list a spa owns and the least used.',
     cadence: 'Monthly',
+    sheet: 'Guests and CRM',
     sections: GUEST_REPORT,
   },
   {
@@ -123,6 +135,7 @@ export const FINANCE_REGISTER: ReportEntry[] = [
       'Hotel guest, local, member, package, corporate and third party, compared on net revenue per hour of '
       + 'capacity consumed rather than on visit count.',
     cadence: 'Monthly',
+    sheet: 'Commercial channels',
     sections: CHANNEL_REPORT,
   },
   {
@@ -133,6 +146,7 @@ export const FINANCE_REGISTER: ReportEntry[] = [
       'Full price against discounted revenue, discount depth, promotions, complimentary treatments, upgrades '
       + 'and yield achieved. Including discount by approver, which is uncomfortable and effective.',
     cadence: 'Monthly',
+    sheet: 'Discount and yield',
     sections: DISCOUNT_REPORT,
   },
   {
@@ -143,6 +157,7 @@ export const FINANCE_REGISTER: ReportEntry[] = [
       'Sales, redemptions, outstanding liability and its ageing, expiry, uplift on redemption and the peak '
       + 'capacity redemptions consume.',
     cadence: 'Monthly',
+    sheet: 'Gift vouchers',
     sections: VOUCHER_REPORT,
   },
   {
@@ -153,6 +168,7 @@ export const FINANCE_REGISTER: ReportEntry[] = [
       'Payroll percentage, wage cost by group, agency and overtime, revenue per labour hour, and rostered '
       + 'hours against the occupancy forecast the rota was built on.',
     cadence: 'Monthly',
+    sheet: 'Payroll and labour',
     sections: PAYROLL_REPORT,
   },
   {
@@ -163,6 +179,7 @@ export const FINANCE_REGISTER: ReportEntry[] = [
       'Revenue, cost of sales including treatment product, payroll, commission, laundry, consumables, '
       + 'maintenance and marketing, down to gross operating profit and margin.',
     cadence: 'Monthly',
+    sheet: 'Profit and loss',
     sections: PL_REPORT,
   },
   {
@@ -173,6 +190,7 @@ export const FINANCE_REGISTER: ReportEntry[] = [
       'Opening, purchases, usage, closing and discrepancy, with retail and professional stock kept apart and '
       + 'usage per treatment tracked for drift.',
     cadence: 'Monthly',
+    sheet: 'Stock and inventory',
     sections: STOCK_REPORT,
   },
   {
@@ -183,6 +201,7 @@ export const FINANCE_REGISTER: ReportEntry[] = [
       'Type, area, root cause, cost of recovery, repeat issues and whether the guest came back. Built to find '
       + 'patterns rather than to record incidents.',
     cadence: 'Monthly',
+    sheet: 'Complaints',
     sections: COMPLAINTS_REPORT,
   },
   {
@@ -193,6 +212,7 @@ export const FINANCE_REGISTER: ReportEntry[] = [
       'Audit and mystery shopper scores, treatment audits, cleanliness, checklist completion and the '
       + 'verification rate that keeps the whole checklist system honest.',
     cadence: 'Monthly',
+    sheet: 'Quality and standards',
     sections: QUALITY_REPORT,
   },
   {
@@ -203,6 +223,7 @@ export const FINANCE_REGISTER: ReportEntry[] = [
       'Accidents, near misses, water testing, chemicals, equipment faults, planned maintenance, risk '
       + 'assessment reviews and certification expiry. Evidence, produced whether or not anybody asks.',
     cadence: 'Monthly',
+    sheet: 'Health and safety',
     sections: SAFETY_REPORT,
   },
   {
@@ -213,6 +234,7 @@ export const FINANCE_REGISTER: ReportEntry[] = [
       'Spend, bookings and revenue generated, cost per new guest acquired against the twelve month value of '
       + 'guests acquired a year ago, and off-peak campaign performance judged on incremental revenue.',
     cadence: 'Monthly',
+    sheet: 'Marketing',
     sections: MARKETING_REPORT,
   },
   {
@@ -223,6 +245,7 @@ export const FINANCE_REGISTER: ReportEntry[] = [
       'Not a financial report, and the one that decides whether the others were worth producing. Action, '
       + 'owner, date, expected impact, and the carry-over count that tells you when to drop something.',
     cadence: 'Continuous',
+    sheet: 'Action tracker',
     sections: ACTION_TRACKER,
   },
 ]

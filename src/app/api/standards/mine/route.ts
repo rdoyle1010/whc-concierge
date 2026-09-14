@@ -5,6 +5,7 @@ import { ownedReferences } from '@/lib/documents/stock'
 import { bundleReferenceMap } from '@/lib/documents/pricing-server'
 import { sellableCatalogue } from '@/lib/documents/catalogue'
 import { filesForOrders } from '@/lib/documents/entitlement'
+import { FINANCE_REGISTER } from '@/lib/documents/finance/register'
 import { getStripe } from '@/lib/stripe'
 import { fulfilCheckoutSession } from '@/lib/stripe-checkout-fulfilment'
 
@@ -79,6 +80,10 @@ export async function GET(req: NextRequest) {
         department: entry.department,
         ready: ready.has(entry.reference),
       })),
+    // The reporting workbook, where the pack is actually worked out. Offered
+    // as a fact rather than a link the page has to guess at: a download that
+    // 403s is a worse experience than one that is simply not shown.
+    workbook: owned.has(FINANCE_REGISTER[0].reference),
     // The files that travel with a pack: a register in Excel is still the
     // thing they paid for, and a shelf that shows only the PDFs looks like a
     // short delivery.

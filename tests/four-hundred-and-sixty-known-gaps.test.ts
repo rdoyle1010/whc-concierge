@@ -129,6 +129,15 @@ test('the library is worked a stage at a time', () => {
   // the question everybody asks afterwards.
   assert.match(page, /const \[stage, setStage\]/)
   assert.match(page, /const \[kind, setKind\]/)
+
+  // Written and finished are not the same thing, and the screen has to say so.
+  // A draft that came back with no steps was stored as written, so the library
+  // reported nothing left to write while a dozen documents could not be signed
+  // off, and she met them one at a time by pressing the button and being
+  // refused.
+  assert.match(page, /Written, not finished/)
+  assert.match(page, /only === 'incomplete'/)
+  assert.match(page, /r\.written && r\.missing\.length > 0/)
   assert.match(page, /Not written yet/)
   assert.match(page, /Still to write/)
   assert.match(page, /disabled=\{!row\.written \|\| opening === row\.id\}/, 'an empty draft has nothing to read')

@@ -6,6 +6,7 @@ import { ownedReferences } from '@/lib/documents/stock'
 import { bundleReferenceMap } from '@/lib/documents/pricing-server'
 import { sellableCatalogue } from '@/lib/documents/catalogue'
 import { filesForOrders } from '@/lib/documents/entitlement'
+import { FINANCE_REGISTER } from '@/lib/documents/finance/register'
 
 // What a buyer owns, reached by the token in their receipt.
 //
@@ -114,6 +115,7 @@ export async function GET(req: NextRequest) {
     token: resolvedToken,
     documents,
     files,
+    workbook: owned.has(FINANCE_REGISTER[0].reference),
     ready: documents.filter(entry => entry.ready).length,
     total: documents.length,
   })
