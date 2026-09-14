@@ -4,13 +4,14 @@ import Image from 'next/image'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
 import {
-  formatPrice, SINGLE_DOCUMENT_PRICE, POOL_SAFETY_PACK_PRICE, RISK_ASSESSMENT_PACK_PRICE, VAT_NOTE,
+  formatPrice, SINGLE_DOCUMENT_PRICE, COMPLETE_LIBRARY_PRICE, POOL_SAFETY_PACK_PRICE, RISK_ASSESSMENT_PACK_PRICE, VAT_NOTE,
   CHECKLIST_PACK_PRICE, FINANCE_PACK_PRICE,
   journeyPacks,
 } from '@/lib/documents/pricing'
 import TierBuy from '@/components/TierBuy'
 import { sellableCatalogue } from '@/lib/documents/catalogue'
 import StandardsCatalogue from '@/components/StandardsCatalogue'
+import StandardsStickyBuy from '@/components/StandardsStickyBuy'
 
 // The shop, rebuilt around the thing it is selling.
 //
@@ -81,6 +82,7 @@ export default function StandardsPage() {
   return (
     <div className="min-h-screen bg-white">
       <Navbar />
+      <StandardsStickyBuy from={formatPrice(SINGLE_DOCUMENT_PRICE)} />
       <main id="main-content" className="pt-[76px]">
 
         {/* The hero shows a page. Everything else on this site can be
@@ -97,9 +99,24 @@ export default function StandardsPage() {
                 luxury spa. Written by people who have run these departments, with an auditable standard against
                 every step.
               </p>
-              <p className="mt-4 max-w-xl text-[15px] leading-relaxed text-[#555555]">
+              {/* Held back on a phone. It is a good line and it is the third
+                  thing said, which on a 390 pixel screen is the difference
+                  between a price being visible and being a scroll away. */}
+              <p className="mt-4 hidden max-w-xl text-[15px] leading-relaxed text-[#555555] sm:block">
                 Every blank in them is a fact about your building, and typing it in takes an afternoon. Writing
                 them from nothing takes a consultancy and a quarter.
+              </p>
+
+              {/* A price in the first screen.
+                  The first number on this page used to be roughly six phone
+                  screens down, behind a hero, three trust blocks and six
+                  full-height photographs of documents. A visitor who cannot
+                  tell in ten seconds whether this costs forty pounds or four
+                  thousand leaves, and nothing below the fold gets a vote. */}
+              <p className="mt-5 text-[15px] leading-relaxed text-[#1c1c1c]">
+                From <strong className="font-semibold">{formatPrice(SINGLE_DOCUMENT_PRICE)}</strong> for one
+                document, <strong className="font-semibold">{formatPrice(COMPLETE_LIBRARY_PRICE)}</strong> for
+                all {catalogue.length}. {VAT_NOTE}
               </p>
 
               <div className="mt-7 flex flex-wrap items-center gap-3">
@@ -116,7 +133,9 @@ export default function StandardsPage() {
               <dl className="mt-9 grid max-w-lg grid-cols-3 gap-px border border-[#dddddd] bg-[#dddddd]">
                 {[
                   [`${catalogue.length}`, 'documents'],
-                  ['144', 'pages of safety procedure'],
+                  // "pages of safety procedure" wrapped to four lines inside
+                  // a 114 pixel column, which is a statistic nobody reads.
+                  ['144', 'pages of safety'],
                   ['61', 'hazards assessed'],
                 ].map(([value, label]) => (
                   <div key={label} className="bg-white px-4 py-3.5">
@@ -178,9 +197,19 @@ export default function StandardsPage() {
               </p>
             </div>
 
-            <div className="mt-9 grid gap-x-8 gap-y-10 sm:grid-cols-2 lg:grid-cols-3">
+            {/* Six A4 pages, stacked, is four phone screens of photographs
+                between a visitor and a price.
+                The pictures are the argument on this page and none of them
+                are cut. They swipe on a phone and stay a grid from small
+                upwards, so the gallery costs two thirds of a screen instead
+                of four. Scroll snapping and no JavaScript: a carousel that
+                needs a script is a carousel that is blank while the script
+                loads. */}
+            <div className="mt-9 -mx-6 flex snap-x snap-mandatory gap-5 overflow-x-auto px-6 pb-2
+              sm:mx-0 sm:grid sm:snap-none sm:grid-cols-2 sm:gap-x-8 sm:gap-y-10 sm:overflow-visible sm:px-0
+              lg:grid-cols-3">
               {SAMPLES.map(sample => (
-                <figure key={sample.src}>
+                <figure key={sample.src} className="w-[74%] shrink-0 snap-start sm:w-auto sm:shrink">
                   <div className="border border-[#dddddd] bg-white shadow-[0_14px_34px_-26px_rgba(0,0,0,0.5)]">
                     <Image src={sample.src} alt={sample.alt} width={620} height={877} className="h-auto w-full" />
                   </div>
@@ -191,6 +220,9 @@ export default function StandardsPage() {
                 </figure>
               ))}
             </div>
+            {/* Said, because a row that scrolls sideways with no edge in
+                view reads as a row of three on a phone. */}
+            <p className="mt-3 text-[12px] text-[#6b6b6b] sm:hidden">Swipe to see all {SAMPLES.length}.</p>
           </div>
         </section>
 
