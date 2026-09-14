@@ -90,3 +90,44 @@ test('it has a way in', () => {
   assert.match(shell, /href: '\/admin\/documents'/)
   assert.match(shell, /label: 'Standards'/)
 })
+
+// An empty document was signed off by name and by date, because the
+// completeness check answered "nothing missing" for a document with nothing
+// in it. That is the exact failure this whole flow exists to prevent: an
+// approval says somebody read a finished document, and there was nothing to
+// read.
+test('a document with nothing in it cannot be signed off', () => {
+  const source = read('src/app/api/admin/documents/route.ts')
+
+  // The check itself now says what is missing from an empty document, which
+  // is everything.
+  assert.match(source, /nothing has been written into it yet/)
+
+  // And approve refuses it in its own words, before the completeness rules,
+  // because they answer a different question and one of them answered this
+  // one wrongly.
+  const approve = source.slice(source.indexOf("action === 'approve'"), source.indexOf("action === 'unapprove'"))
+  assert.match(approve, /There is nothing in that one yet/)
+  assert.ok(
+    approve.indexOf('There is nothing in that one yet') < approve.indexOf('const missing = missingFor'),
+    'the emptiness check has to come before the completeness rules',
+  )
+  assert.ok(
+    approve.indexOf('There is nothing in that one yet') < approve.indexOf("status: 'approved'"),
+    'and before the write',
+  )
+
+  // The list asks only about documents that have something in them, using the
+  // flag it already has rather than by weakening the check everything else
+  // depends on.
+  assert.match(source, /missing: Object\.keys\(document \|\| \{\}\)\.length \? missingFor\(row\.kind, document\) : \[\]/)
+})
+
+test('the shop counts what it sells, not what it used to sell', () => {
+  // "483 of 460 ready to send today" was a count of everything approved
+  // measured against only the procedures. The library grew and the
+  // denominator did not.
+  const catalogue = read('src/components/StandardsCatalogue.tsx')
+  assert.match(catalogue, /of \{sellableCatalogue\(\)\.length\} ready to send today/)
+  assert.doesNotMatch(catalogue, /LIBRARY_PLAN\.length/, 'the denominator has to be everything on sale')
+})

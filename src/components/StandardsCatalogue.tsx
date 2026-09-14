@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { departmentPacks, formatPrice, type Prices } from '@/lib/documents/pricing'
-import { LIBRARY_PLAN } from '@/lib/documents/library-plan'
+import { sellableCatalogue } from '@/lib/documents/catalogue'
 import StandardsList from '@/components/StandardsList'
 import BuyButton from '@/components/BuyButton'
 import Link from 'next/link'
@@ -52,7 +52,7 @@ export default function StandardsCatalogue() {
           <h2 className="text-[28px] font-semibold text-[#1c1c1c] md:text-[32px]">By department</h2>
           {available !== null && !unavailable && (
             <p className="text-[13px] text-[#6b6b6b]">
-              {readyTotal} of {LIBRARY_PLAN.length} ready to send today
+              {readyTotal} of {sellableCatalogue().length} ready to send today
             </p>
           )}
         </div>
@@ -105,7 +105,7 @@ export default function StandardsCatalogue() {
           })}
         </div>
 
-        {available !== null && !unavailable && readyTotal < LIBRARY_PLAN.length && (
+        {available !== null && !unavailable && readyTotal < sellableCatalogue().length && (
           <p className="mt-6 max-w-2xl text-[13px] leading-relaxed text-[#555555]">
             {/* Said plainly rather than hidden. A buyer told what is ready
                 trusts what is ready; a buyer who orders a department and
