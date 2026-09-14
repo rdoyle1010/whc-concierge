@@ -81,6 +81,60 @@ function Section({ section }: { section: PlanSection }) {
         </table>
       ) : null}
 
+      {section.hazards?.length ? (
+        <div className="mt-3 space-y-3">
+          {section.hazards.map((hazard, index) => (
+            <div key={hazard.hazard} className="break-inside-avoid border border-[#1c1c1c]">
+              <div className="border-b border-[#c9c9c9] bg-[#f2f2f2] px-3 py-2">
+                <p className="text-[7.5pt] uppercase tracking-[.1em] text-[#6b6b6b]">Hazard {index + 1}</p>
+                <p className="text-[10.5pt] font-bold">{hazard.hazard}</p>
+              </div>
+              <div className="px-3 py-2.5">
+                <p className="text-[7.5pt] font-semibold uppercase tracking-[.07em] text-[#6b6b6b]">Who is at risk</p>
+                <p className="mb-2.5 text-[9.5pt]">{hazard.whoIsAtRisk}</p>
+
+                <p className="text-[7.5pt] font-semibold uppercase tracking-[.07em] text-[#6b6b6b]">
+                  Controls: tick each one you have seen in place
+                </p>
+                <ul className="mt-1 space-y-1">
+                  {hazard.controlsToVerify.map(control => (
+                    <li key={control} className="flex gap-2 text-[9.5pt] leading-snug">
+                      <span className="mt-[3px] inline-block h-2 w-2 shrink-0 border border-[#1c1c1c]" />
+                      <span>{control}</span>
+                    </li>
+                  ))}
+                </ul>
+
+                {hazard.note && <p className="mt-2.5 text-[9pt] text-[#5a5a5a]">{hazard.note}</p>}
+
+                {/* Blank, deliberately. A pre-scored assessment is a property
+                    filing somebody else's opinion of its own premises. */}
+                <div className="mt-3 grid grid-cols-4 gap-2">
+                  {['Likelihood 1-5', 'Severity 1-5', 'Score L x S', 'Risk level'].map(label => (
+                    <div key={label}>
+                      <p className="text-[6.5pt] uppercase tracking-[.05em] text-[#6b6b6b]">{label}</p>
+                      <Blank />
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-2">
+                  <p className="text-[6.5pt] uppercase tracking-[.05em] text-[#6b6b6b]">Further controls required</p>
+                  <Blank tall />
+                </div>
+                <div className="mt-2 grid grid-cols-3 gap-2">
+                  {['Responsible person', 'Target date', 'Residual level'].map(label => (
+                    <div key={label}>
+                      <p className="text-[6.5pt] uppercase tracking-[.05em] text-[#6b6b6b]">{label}</p>
+                      <Blank />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : null}
+
       {section.table ? (
         <table className="mt-3 w-full border-collapse">
           <thead>

@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
-import { departmentPacks, tierPacks, formatPrice, SINGLE_DOCUMENT_PRICE, POOL_SAFETY_PACK_PRICE, VAT_NOTE } from '@/lib/documents/pricing'
+import { departmentPacks, tierPacks, formatPrice, SINGLE_DOCUMENT_PRICE, POOL_SAFETY_PACK_PRICE, RISK_ASSESSMENT_PACK_PRICE, VAT_NOTE } from '@/lib/documents/pricing'
 import TierBuy from '@/components/TierBuy'
 import { LIBRARY_PLAN, TIER_LABEL } from '@/lib/documents/library-plan'
 import StandardsCatalogue from '@/components/StandardsCatalogue'
@@ -112,6 +112,39 @@ export default function StandardsPage() {
                 <TierBuy slug="before-the-first-guest" label="Buy the pre-opening suite" />
               </div>
             )}
+
+            {/* The risk assessments, as a suite. An assessment of the pool
+                and none of the plant room is not half a job: it is a register
+                with a hole in it, and the hole is where the consequence is. */}
+            <div className="mt-6 border border-[#1c1c1c] p-6 md:p-7">
+              <div className="flex flex-wrap items-start justify-between gap-6">
+                <div className="max-w-2xl">
+                  <p className="text-[11px] font-semibold uppercase tracking-[.16em] text-[#6b6b6b]">
+                    The legal ones
+                  </p>
+                  <h3 className="mt-2 text-[22px] font-semibold leading-tight text-[#1c1c1c]">
+                    Spa Risk Assessment Suite
+                  </h3>
+                  <p className="mt-3 text-[14px] leading-relaxed text-[#3a3a3a]">
+                    Twelve assessments covering every area: the pool and surround, cold plunges, hydrotherapy
+                    pools, saunas and steam rooms, treatment rooms, changing areas, the plant room and chemical
+                    store, the gym, reception and back of house, fire and evacuation, outdoor areas, and cleaning.
+                    Forty-five hazards, each with the controls a competent operation would expect to find.
+                  </p>
+                  <p className="mt-3 text-[13px] leading-relaxed text-[#555555]">
+                    Nothing is scored. The likelihood, the severity and the number that follows are a judgement
+                    made by somebody who has stood in the room, and a pre-scored assessment is your property
+                    filing another property&apos;s opinion of your building. The controls are yours to tick once
+                    you have seen them, not ours to assert.
+                  </p>
+                </div>
+                <div className="shrink-0 text-right">
+                  <p className="font-serif text-[30px] leading-none text-[#1c1c1c]">{formatPrice(RISK_ASSESSMENT_PACK_PRICE)}</p>
+                  <p className="mt-1.5 text-[12px] text-[#6b6b6b]">12 assessments</p>
+                </div>
+              </div>
+              <TierBuy slug="risk-assessments" label="Buy the risk assessment suite" />
+            </div>
 
             {/* The pool safety operating procedure, offered on its own.
                 A property with water needs both halves in writing before it

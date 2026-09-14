@@ -1,6 +1,6 @@
 import React from 'react'
 import { Document, Page, Text, View, StyleSheet, TextInput, Font, renderToBuffer } from '@react-pdf/renderer'
-import type { PlanDocument, PlanSection, Fact } from './plan-types'
+import type { PlanDocument, PlanSection, Fact, Hazard } from './plan-types'
 import { PLAN_KIND_LABEL } from './plan-types'
 import { DOCUMENT_FOOTER, DOCUMENT_STATUS } from './status'
 import { splitPlaceholders, fieldName } from './placeholders'
@@ -89,6 +89,20 @@ const styles = StyleSheet.create({
   bulletText: { flex: 1 },
 
   note: { fontSize: 8.5, color: MUTED, lineHeight: 1.55, marginBottom: 7 },
+
+  hazard: { borderWidth: 0.75, borderColor: INK, marginBottom: 12 },
+  hazardHead: { backgroundColor: '#f2f2f2', paddingHorizontal: 8, paddingVertical: 6, borderBottomWidth: 0.5, borderBottomColor: RULE },
+  hazardRef: { fontSize: 6.5, letterSpacing: 1, color: MUTED, textTransform: 'uppercase' },
+  hazardName: { fontFamily: 'Helvetica-Bold', fontSize: 10.5, marginTop: 1 },
+  hazardBody: { paddingHorizontal: 8, paddingVertical: 7 },
+  hazardLabel: { fontFamily: 'Helvetica-Bold', fontSize: 6.8, letterSpacing: 0.7, textTransform: 'uppercase', color: MUTED, marginBottom: 3 },
+  tickLine: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: 3.5 },
+  tickBox: { width: 8, height: 8, borderWidth: 0.75, borderColor: INK, marginRight: 6, marginTop: 1.5 },
+  tickText: { flex: 1, fontSize: 8.5, lineHeight: 1.4 },
+  scoreRow: { flexDirection: 'row', gap: 7, marginTop: 8 },
+  scoreCell: { flex: 1 },
+  scoreLabel: { fontSize: 6.2, letterSpacing: 0.5, textTransform: 'uppercase', color: MUTED, marginBottom: 2 },
+  scoreInput: { height: 16, backgroundColor: FIELD, borderWidth: 0.5, borderColor: '#9aa5b1', fontSize: 9, paddingHorizontal: 4, textAlign: 'center' },
   signRow: { flexDirection: 'row', gap: 18, marginTop: 14 },
   signCol: { flex: 1 },
   signLabel: { fontSize: 7, textTransform: 'uppercase', letterSpacing: 0.7, color: MUTED, marginBottom: 3 },
@@ -140,6 +154,72 @@ function FactRow({ fact, index }: { fact: Fact; index: string }) {
       ) : (
         <TextInput name={`${fieldName(fact.label)}_${index}`} style={fact.long ? styles.inputTall : styles.input} fontSize={9} multiline={fact.long} />
       )}
+    </View>
+  )
+}
+
+/**
+ * One hazard, as the block a competent person completes.
+ *
+ * Everything printed is general and holds in any spa. Everything blank is a
+ * judgement about one building: a pre-scored risk assessment is a property
+ * filing somebody else's opinion of its own premises, signed by somebody who
+ * only read it.
+ *
+ * The controls are tick boxes rather than statements, because printing "non
+ * slip flooring in place" on a document for a spa nobody has visited asserts
+ * something that may not be true, and the assertion is what gets relied on.
+ */
+function HazardBlock({ hazard, index, keyBase }: { hazard: Hazard; index: number; keyBase: string }) {
+  return (
+    <View style={styles.hazard} wrap={false}>
+      <View style={styles.hazardHead}>
+        <Text style={styles.hazardRef}>Hazard {index + 1}</Text>
+        <Text style={styles.hazardName}>{hazard.hazard}</Text>
+      </View>
+      <View style={styles.hazardBody}>
+        <Text style={styles.hazardLabel}>Who is at risk</Text>
+        <Text style={{ fontSize: 8.5, marginBottom: 8 }}>{hazard.whoIsAtRisk}</Text>
+
+        <Text style={styles.hazardLabel}>Controls: tick each one you have seen in place</Text>
+        {hazard.controlsToVerify.map((control, controlIndex) => (
+          <View key={`${keyBase}-c${controlIndex}`} style={styles.tickLine}>
+            <View style={styles.tickBox} />
+            <Text style={styles.tickText}>{control}</Text>
+          </View>
+        ))}
+
+        {hazard.note ? <Text style={[styles.note, { marginTop: 6, marginBottom: 0 }]}>{hazard.note}</Text> : null}
+
+        <View style={styles.scoreRow}>
+          {[['Likelihood 1-5', 'l'], ['Severity 1-5', 's'], ['Score L x S', 'score'], ['Risk level', 'level']].map(([label, suffix]) => (
+            <View key={suffix} style={styles.scoreCell}>
+              <Text style={styles.scoreLabel}>{label}</Text>
+              <TextInput name={`${keyBase}_${suffix}`} style={styles.scoreInput} fontSize={9} />
+            </View>
+          ))}
+        </View>
+
+        <View style={{ marginTop: 8 }}>
+          <Text style={styles.scoreLabel}>Further controls required</Text>
+          <TextInput name={`${keyBase}_further`} style={styles.inputTall} fontSize={9} multiline />
+        </View>
+
+        <View style={styles.scoreRow}>
+          <View style={{ flex: 2 }}>
+            <Text style={styles.scoreLabel}>Responsible person</Text>
+            <TextInput name={`${keyBase}_owner`} style={styles.input} fontSize={9} />
+          </View>
+          <View style={styles.scoreCell}>
+            <Text style={styles.scoreLabel}>Target date</Text>
+            <TextInput name={`${keyBase}_target`} style={styles.input} fontSize={9} />
+          </View>
+          <View style={styles.scoreCell}>
+            <Text style={styles.scoreLabel}>Residual level</Text>
+            <TextInput name={`${keyBase}_residual`} style={styles.scoreInput} fontSize={9} />
+          </View>
+        </View>
+      </View>
     </View>
   )
 }
@@ -199,6 +279,14 @@ function SectionBody({ section, keyBase }: { section: PlanSection; keyBase: stri
                   : <TextInput name={`${keyBase}_by_${index}`} style={styles.input} fontSize={8} />}
               </View>
             </View>
+          ))}
+        </View>
+      ) : null}
+
+      {section.hazards?.length ? (
+        <View>
+          {section.hazards.map((hazard, index) => (
+            <HazardBlock key={`${keyBase}-h${index}`} hazard={hazard} index={index} keyBase={`${keyBase}_h${index}`} />
           ))}
         </View>
       ) : null}

@@ -11,6 +11,8 @@ import { documentFromDraft } from '@/lib/documents/assemble'
 import { QUARTER_ONE_DRAFTS } from '@/lib/documents/quarter-one'
 import { POOL_PLANS } from '@/lib/documents/pool-plans'
 import { missingFromPlan, type PlanDocument } from '@/lib/documents/plan-types'
+import { PLAN_KINDS } from '@/lib/documents/render-pdf'
+import { RISK_ASSESSMENT_PLANS } from '@/lib/documents/risk-assessment-plans'
 import { planCollection } from '@/lib/documents/collect-plan'
 import { isLifeSafety, LIFE_SAFETY_CONFIRMATION } from '@/lib/documents/safety'
 import { placeholdersIn } from '@/lib/documents/placeholders'
@@ -33,7 +35,7 @@ import { placeholdersIn } from '@/lib/documents/placeholders'
 // question that does not apply.
 function missingFor(kind: string, document: any): string[] {
   if (!document || !Object.keys(document).length) return []
-  if (kind === 'nop' || kind === 'eap' || kind === 'policy' || kind === 'safe-system') {
+  if (PLAN_KINDS.has(kind)) {
     return missingFromPlan(document as PlanDocument)
   }
   return kind === 'sop' ? missingFromSop(document as SopDocument) : []
@@ -546,12 +548,13 @@ export async function POST(req: NextRequest) {
   // route, all of which would be believed because they are typeset. So they
   // are written as structure with every fact left blank, and the property
   // supplies the facts.
-  if (action === 'add_pool_plans') {
+  if (action === 'add_pool_plans' || action === 'add_risk_assessments') {
+    const plans = action === 'add_pool_plans' ? POOL_PLANS : RISK_ASSESSMENT_PLANS
     const now = new Date().toISOString()
     let added = 0
     let leftAlone = 0
 
-    for (const plan of POOL_PLANS) {
+    for (const plan of plans) {
       const built = plan.build()
       const { data: existing } = await admin.from('operational_documents')
         .select('id, status, document').is('employer_id', null).eq('reference', plan.reference).maybeSingle()
@@ -576,7 +579,9 @@ export async function POST(req: NextRequest) {
         department: built.department,
         version: built.version,
         tier: 'day-1',
-        tier_reason: 'Required in writing before a pool opens',
+        tier_reason: built.kind === 'risk-assessment'
+          ? 'A written risk assessment is required before the area is used'
+          : 'Required in writing before a pool opens',
         document: built,
         status: 'draft',
       })
@@ -589,7 +594,7 @@ export async function POST(req: NextRequest) {
       written: added,
       note: added
         ? `${added} added${leftAlone ? `, ${leftAlone} left alone because they already had content` : ''}. `
-          + 'Read both against a real pool before signing either off.'
+          + 'Read each one against the actual premises before signing any of them off.'
         : `Nothing to do: both are already written.`,
     })
   }

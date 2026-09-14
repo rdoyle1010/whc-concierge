@@ -1,5 +1,6 @@
 import { LIBRARY_PLAN, TIER_LABEL, type BuildTier } from './library-plan'
 import { POOL_PLAN_ENTRIES } from './pool-plans'
+import { RISK_ASSESSMENT_ENTRIES } from './risk-assessment-plans'
 
 // What a document costs, and why.
 //
@@ -47,6 +48,19 @@ export const COMPLETE_LIBRARY_PRICE = 245000
 // own signature, which is the number that decides whether it is bought this
 // week or discussed next quarter.
 export const POOL_SAFETY_PACK_PRICE = 49500
+
+// The twelve risk assessments, at seven hundred and fifty pounds.
+//
+// Sold as a suite and not singly, because an assessment of the pool and none
+// of the plant room is not half a job: it is a register with a hole in it,
+// and the hole is where the consequence is. A property buying one area would
+// buy the area it already worries about, which is never the one that hurts
+// somebody.
+//
+// Priced against a consultant walking the building for two days, which is
+// what this replaces the first draft of. Still inside the two thousand a spa
+// director can usually approve without a board.
+export const RISK_ASSESSMENT_PACK_PRICE = 75000
 
 export const CURRENCY = 'gbp'
 
@@ -122,7 +136,20 @@ export function departmentPacks(): Pack[] {
 export function tierPacks(): Pack[] {
   const dayOne = LIBRARY_PLAN.filter(entry => entry.tier === 'day-1')
   const poolReferences = POOL_PLAN_ENTRIES.map(entry => entry.reference)
+  const riskReferences = RISK_ASSESSMENT_ENTRIES.map(entry => entry.reference)
   return [
+    {
+      slug: 'risk-assessments',
+      name: 'Spa Risk Assessment Suite',
+      blurb:
+        'Twelve risk assessments covering every area of a spa: the pool and surround, cold plunges, hydrotherapy '
+        + 'pools, saunas and steam rooms, treatment rooms, changing areas, the plant room and chemical store, the '
+        + 'gym, reception and back of house, fire and evacuation, outdoor areas, and cleaning. Forty-five hazards, '
+        + 'each with the controls a competent operation would expect, and nothing scored for you.',
+      price: RISK_ASSESSMENT_PACK_PRICE,
+      includes: (reference: string) => riskReferences.includes(reference),
+      count: riskReferences.length,
+    },
     {
       slug: 'pool-safety',
       name: 'Pool Safety Operating Procedure',
@@ -153,7 +180,7 @@ export function tierPacks(): Pack[] {
         + 'and the governance and audit procedures that need an operation running before they can be written well.',
       price: COMPLETE_LIBRARY_PRICE,
       includes: () => true,
-      count: LIBRARY_PLAN.length + POOL_PLAN_ENTRIES.length,
+      count: LIBRARY_PLAN.length + POOL_PLAN_ENTRIES.length + RISK_ASSESSMENT_ENTRIES.length,
     },
   ]
 }
