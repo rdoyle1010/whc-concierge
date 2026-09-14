@@ -130,6 +130,29 @@ test('a file cannot go live with no pack, and the file follows the row', () => {
   assert.ok(deleteRow > 0 && deleteFile > deleteRow, 'the row goes before the file')
 })
 
+test('a body can only be read once, so the header decides how to read it', () => {
+  const route = body('src/app/api/admin/standards-files/route.ts')
+
+  // Calling formData() on a JSON request consumed the body, so the json()
+  // that followed returned nothing, the action arrived empty, and every Save
+  // and Delete on that screen answered "Unknown action". The upload worked,
+  // which is exactly what made the screen look fine.
+  assert.ok(route.includes("req.headers.get('content-type')"))
+  const branch = route.indexOf("includes('multipart/form-data')")
+  const json = route.indexOf('req.json()')
+  assert.ok(branch > 0 && json > branch, 'the form is read only inside the multipart branch')
+  assert.equal((route.match(/req\.formData\(\)/g) || []).length, 1)
+})
+
+test('every pack a file can be attached to is a pack that exists', () => {
+  const route = body('src/app/api/admin/standards-files/route.ts')
+  // The list offered and the list accepted have to be the same list, or she
+  // ticks a pack and the save refuses it.
+  assert.equal((route.match(/journeyPacks\(\)/g) || []).length, 2)
+  assert.equal((route.match(/departmentPacks\(\)/g) || []).length, 2)
+  assert.equal((route.match(/tierPacks\(\)/g) || []).length, 2)
+})
+
 test('a buyer sees the files they paid for, not only the PDFs', () => {
   for (const page of ['src/app/my-documents/page.tsx', 'src/components/BuyerLibrary.tsx']) {
     const source = body(page)
