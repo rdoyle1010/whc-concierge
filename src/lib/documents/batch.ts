@@ -60,9 +60,18 @@ export async function submitDraftBatch(items: BatchItem[]): Promise<
   }
 }
 
+/** What the provider says about the run itself, before any result is read. */
+export type BatchCounts = {
+  processing: number
+  succeeded: number
+  errored: number
+  canceled: number
+  expired: number
+}
+
 export type BatchProgress =
-  | { ok: true; ready: false; status: string }
-  | { ok: true; ready: true; results: { id: string; draft: Partial<SopDocument> | null; error: string | null }[] }
+  | { ok: true; ready: false; status: string; counts: BatchCounts }
+  | { ok: true; ready: true; counts: BatchCounts; results: { id: string; draft: Partial<SopDocument> | null; error: string | null }[] }
   | { ok: false; error: string }
 
 /**
@@ -79,8 +88,24 @@ export async function collectDraftBatch(batchId: string): Promise<BatchProgress>
 
   try {
     const batch = await client.messages.batches.retrieve(batchId)
+
+    // What the provider itself says, before a single result is read.
+    //
+    // Without this, a run in which every request failed and a run still
+    // working through its queue are the same thing on screen: nothing came
+    // back. They need completely different responses from her, and only one
+    // of them is worth waiting for.
+    const raw: any = (batch as any).request_counts || {}
+    const counts: BatchCounts = {
+      processing: Number(raw.processing || 0),
+      succeeded: Number(raw.succeeded || 0),
+      errored: Number(raw.errored || 0),
+      canceled: Number(raw.canceled || 0),
+      expired: Number(raw.expired || 0),
+    }
+
     if (batch.processing_status !== 'ended') {
-      return { ok: true, ready: false, status: batch.processing_status }
+      return { ok: true, ready: false, status: batch.processing_status, counts }
     }
 
     const results: { id: string; draft: Partial<SopDocument> | null; error: string | null }[] = []
@@ -88,7 +113,16 @@ export async function collectDraftBatch(batchId: string): Promise<BatchProgress>
       const id = entry.custom_id
 
       if (entry.result.type !== 'succeeded') {
-        results.push({ id, draft: null, error: `The model run ${entry.result.type}.` })
+        // The provider's own words. "The model run errored" is a sentence
+        // that sends somebody to ask a person what it means, and the person
+        // has to go and look it up anyway.
+        const detail: any = (entry.result as any).error
+        const said = detail?.error?.message || detail?.message || ''
+        results.push({
+          id,
+          draft: null,
+          error: said ? `${entry.result.type}: ${said}` : `The model run ${entry.result.type}.`,
+        })
         continue
       }
 
@@ -111,7 +145,7 @@ export async function collectDraftBatch(batchId: string): Promise<BatchProgress>
       }
     }
 
-    return { ok: true, ready: true, results }
+    return { ok: true, ready: true, counts, results }
   } catch (error: any) {
     return { ok: false, error: error?.message || 'That batch could not be read.' }
   }

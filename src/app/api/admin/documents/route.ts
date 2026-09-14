@@ -246,6 +246,10 @@ export async function POST(req: NextRequest) {
     // way, but a receipt that never updated leaves a finished batch marked as
     // still running, which means collecting it again forever.
     const bookkeeping: string[] = []
+    // How far each unfinished run has got, and why a finished one produced
+    // nothing. Silence is the one answer that cannot be acted on.
+    const waiting: string[] = []
+    const refused: string[] = []
 
     for (const run of runs) {
       const progress = await collectDraftBatch(run.provider_batch_id)
@@ -255,11 +259,30 @@ export async function POST(req: NextRequest) {
         if (noteError) bookkeeping.push(`could not record why ${run.provider_batch_id} failed: ${noteError.message}`)
         continue
       }
-      if (!progress.ready) { stillRunning += 1; continue }
+      if (!progress.ready) {
+        stillRunning += 1
+        waiting.push(`${progress.counts.succeeded} of ${run.requested} written so far`)
+        const { error: tickError } = await admin.from('document_batches').update({
+          status: 'collecting',
+          collected: progress.counts.succeeded,
+          failed: progress.counts.errored,
+          note: null,
+          updated_at: new Date().toISOString(),
+        }).eq('id', run.id)
+        if (tickError) bookkeeping.push(`could not record progress on ${run.provider_batch_id}: ${tickError.message}`)
+        continue
+      }
 
       let failed = 0
       for (const result of progress.results) {
-        if (!result.draft) { failed += 1; continue }
+        if (!result.draft) {
+          failed += 1
+          // The first few reasons, verbatim. Four hundred identical errors is
+          // one problem, and reporting it as a number she cannot act on is
+          // how an afternoon gets spent pressing a button.
+          if (result.error && refused.length < 3 && !refused.includes(result.error)) refused.push(result.error)
+          continue
+        }
 
         const { data: target } = await admin.from('operational_documents')
           .select('*').eq('id', result.id).maybeSingle()
@@ -281,6 +304,7 @@ export async function POST(req: NextRequest) {
         status: 'done',
         collected: progress.results.length - failed,
         failed,
+        note: failed ? `${failed} failed. ${refused[0] || 'No reason was given.'}` : null,
         updated_at: new Date().toISOString(),
       }).eq('id', run.id)
       if (receiptError) {
@@ -292,6 +316,10 @@ export async function POST(req: NextRequest) {
       success: true,
       collected,
       stillRunning,
+      // Everything known about why nothing arrived, rather than the fact that
+      // nothing arrived.
+      progress: waiting.length ? waiting.join('; ') : undefined,
+      refused: refused.length ? refused : undefined,
       warning: bookkeeping.length ? `The documents are saved, but: ${bookkeeping.join('; ')}.` : undefined,
     })
   }

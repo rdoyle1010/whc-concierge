@@ -57,7 +57,18 @@ test('a result is matched back by id, never by position', () => {
 test('collecting is honest about a batch that has not finished', () => {
   assert.match(batch, /batch\.processing_status !== 'ended'/)
   assert.match(batch, /ready: false/)
-  assert.match(page, /Still being written\./)
+  assert.match(page, /Still being written/)
+
+  // And it says how far, because "still being written" for the third time in
+  // an hour is indistinguishable from broken.
+  assert.match(page, /body\.progress/)
+  assert.match(route, /written so far/)
+
+  // A run that finished and produced nothing is a different thing entirely,
+  // and it reports the provider's own words rather than a count.
+  assert.match(page, /The run finished and wrote nothing/)
+  assert.match(batch, /detail\?\.error\?\.message \|\| detail\?\.message/)
+  assert.match(route, /refused\.length < 3/)
 })
 
 // Somebody may have written or signed one off while the batch was running.

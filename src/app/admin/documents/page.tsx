@@ -86,11 +86,18 @@ export default function AdminDocumentsPage() {
           : body?.note || 'Nothing to send.')
       }
       if (action === 'collect') {
-        setNote(body?.collected
-          ? `${body.collected} documents came back written. Read them before signing any off.`
-          : body?.stillRunning
-            ? 'Still being written. Try again in a little while.'
-            : body?.note || 'Nothing came back.')
+        // Never just "nothing came back". A run still working through its
+        // queue and a run in which every request failed look identical from
+        // here, and they need completely different things from her.
+        if (body?.collected) {
+          setNote(`${body.collected} documents came back written. Read them before signing any off.`)
+        } else if (body?.stillRunning) {
+          setNote(`Still being written${body.progress ? `: ${body.progress}` : ''}. Nothing to do but come back later.`)
+        } else if (body?.refused?.length) {
+          setError(`The run finished and wrote nothing. ${body.refused.join(' ')}`)
+        } else {
+          setNote(body?.note || 'Nothing came back, and nothing is waiting. Press Write this whole tier to start one.')
+        }
       }
       if (action === 'draft') {
         setNote(body?.lifeSafety
