@@ -3,6 +3,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { createServerSupabaseClient } from '@/lib/supabase/server'
 import { renderAnyDocumentPdf, PLAN_KINDS } from '@/lib/documents/render-pdf'
 import { ownedReferences } from '@/lib/documents/stock'
+import { bundleReferenceMap } from '@/lib/documents/pricing-server'
 import { missingFromSop, type SopDocument } from '@/lib/documents/types'
 import { missingFromPlan, type PlanDocument } from '@/lib/documents/plan-types'
 
@@ -56,7 +57,7 @@ export async function GET(req: NextRequest) {
     orders = theirs || []
   }
 
-  if (!ownedReferences(orders).has(reference)) {
+  if (!ownedReferences(orders, await bundleReferenceMap(admin)).has(reference)) {
     return NextResponse.json({ error: 'That document is not part of what you bought.' }, { status: 403 })
   }
 

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createServerSupabaseClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { ownedReferences } from '@/lib/documents/stock'
+import { bundleReferenceMap } from '@/lib/documents/pricing-server'
 import { sellableCatalogue } from '@/lib/documents/catalogue'
 import { getStripe } from '@/lib/stripe'
 import { fulfilCheckoutSession } from '@/lib/stripe-checkout-fulfilment'
@@ -61,7 +62,7 @@ export async function GET(req: NextRequest) {
       .update({ buyer_user_id: user.id, updated_at: new Date().toISOString() }).in('id', unclaimed)
   }
 
-  const owned = ownedReferences(orders || [])
+  const owned = ownedReferences(orders || [], await bundleReferenceMap(admin))
 
   const { data: approved } = await admin.from('operational_documents')
     .select('reference, title, department')

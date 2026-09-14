@@ -141,7 +141,7 @@ test('the browser never says what anything costs', () => {
 
 test('a download is refused unless that buyer bought it', () => {
   const download = body('src/app/api/standards/download/route.ts')
-  assert.match(download, /ownedReferences\(orders\)\.has\(reference\)/)
+  assert.match(download, /ownedReferences\(orders, await bundleReferenceMap\(admin\)\)\.has\(reference\)/)
   assert.match(download, /not part of what you bought/)
   // And only a signed off document ever leaves the platform.
   assert.match(download, /\.eq\('status', 'approved'\)/)
@@ -188,7 +188,7 @@ test('a signed-in buyer does not need to find their receipt', () => {
   assert.match(download, /createServerSupabaseClient/)
   assert.match(download, /buyer_user_id\.eq\.\$\{user\.id\}/)
   // And neither way skips the entitlement check.
-  assert.match(download, /ownedReferences\(orders\)\.has\(reference\)/)
+  assert.match(download, /ownedReferences\(orders, await bundleReferenceMap\(admin\)\)\.has\(reference\)/)
 
   const mine = body('src/app/api/standards/mine/route.ts')
   assert.match(mine, /Unauthorised/)

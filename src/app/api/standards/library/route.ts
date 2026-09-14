@@ -3,6 +3,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { getStripe } from '@/lib/stripe'
 import { fulfilCheckoutSession } from '@/lib/stripe-checkout-fulfilment'
 import { ownedReferences } from '@/lib/documents/stock'
+import { bundleReferenceMap } from '@/lib/documents/pricing-server'
 import { sellableCatalogue } from '@/lib/documents/catalogue'
 
 // What a buyer owns, reached by the token in their receipt.
@@ -71,7 +72,7 @@ export async function GET(req: NextRequest) {
     .ilike('buyer_email', order.buyer_email).order('created_at', { ascending: true })
 
   const orders = theirs?.length ? theirs : [order]
-  const owned = ownedReferences(orders)
+  const owned = ownedReferences(orders, await bundleReferenceMap(admin))
 
   // Only what is signed off can be downloaded, because only a signed off
   // document may leave this platform at all.

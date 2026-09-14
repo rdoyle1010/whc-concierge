@@ -1,5 +1,5 @@
 import { sellableCatalogue, catalogueEntry } from './catalogue'
-import { packBySlug, type Pack } from './pricing'
+import { packBySlug, type Pack, type Prices } from './pricing'
 
 // What can honestly be sold today.
 //
@@ -31,8 +31,13 @@ export function packReadiness(pack: Pack, approved: Set<string>): Readiness {
 }
 
 /** Every document reference an order entitles its buyer to. */
-export function referencesForOrder(order: { pack_slug?: string | null; document_reference?: string | null }): string[] {
+export function referencesForOrder(
+  order: { pack_slug?: string | null; document_reference?: string | null },
+  /** Bundles, resolved to the references they cover. Keyed by slug. */
+  bundles: Record<string, string[]> = {},
+): string[] {
   if (order.document_reference) return [order.document_reference]
+  if (order.pack_slug && bundles[order.pack_slug]) return bundles[order.pack_slug]
   const pack = order.pack_slug ? packBySlug(order.pack_slug) : null
   if (!pack) return []
   return sellableCatalogue().filter(entry => pack.includes(entry.reference)).map(entry => entry.reference)
@@ -45,10 +50,13 @@ export function referencesForOrder(order: { pack_slug?: string | null; document_
  * own the union, and asking "does this order cover it" one order at a time
  * gets the answer wrong the moment there are two.
  */
-export function ownedReferences(orders: { pack_slug?: string | null; document_reference?: string | null }[]): Set<string> {
+export function ownedReferences(
+  orders: { pack_slug?: string | null; document_reference?: string | null }[],
+  bundles: Record<string, string[]> = {},
+): Set<string> {
   const owned = new Set<string>()
   for (const order of orders) {
-    for (const reference of referencesForOrder(order)) owned.add(reference)
+    for (const reference of referencesForOrder(order, bundles)) owned.add(reference)
   }
   return owned
 }
@@ -67,8 +75,8 @@ export function priceSingle(reference: string, approved: Set<string>, price: num
   return { ok: true, description: `${planned.title} (${planned.reference})`, amountPence: price, reference }
 }
 
-export function pricePack(slug: string, approved: Set<string>): Purchase {
-  const pack = packBySlug(slug)
+export function pricePack(slug: string, approved: Set<string>, prices: Prices = {}): Purchase {
+  const pack = packBySlug(slug, prices)
   if (!pack) return { ok: false, reason: 'That pack does not exist.' }
   const readiness = packReadiness(pack, approved)
   if (!readiness.buyable) {

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { LIBRARY_PLAN } from '@/lib/documents/library-plan'
+import { sellableCatalogue } from '@/lib/documents/catalogue'
+import { loadPrices, loadBundles, referencesInBundle } from '@/lib/documents/pricing-server'
 
 // What is actually on the shelf.
 //
@@ -26,6 +27,9 @@ export async function GET() {
   // one. Those are different facts and only one of them is her fault.
   if (error) return NextResponse.json({ available: [], unavailable: true })
 
+  const prices = await loadPrices(admin)
+  const bundles = await loadBundles(true, admin)
+
   return NextResponse.json({
     available: (data || []).map((row: any) => ({
       reference: row.reference,
@@ -33,6 +37,19 @@ export async function GET() {
       department: row.department,
       tier: row.tier,
     })),
-    planned: LIBRARY_PLAN.length,
+    planned: sellableCatalogue().length,
+    // Live prices, so the shop and the checkout cannot disagree about what
+    // something costs. A page showing one number and a till charging another
+    // is a refund and a review.
+    prices,
+    // Only the live ones, and only what each covers, so the page can say how
+    // much of a bundle is ready without a second request.
+    bundles: bundles.map(bundle => ({
+      slug: bundle.slug,
+      name: bundle.name,
+      blurb: bundle.blurb,
+      price: bundle.pricePence,
+      references: referencesInBundle(bundle, prices),
+    })),
   })
 }
