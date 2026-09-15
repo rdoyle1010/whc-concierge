@@ -282,6 +282,25 @@ stored as `candidate`). Admin is a third role on the same column.
   change and not worth it at this volume. Both overrides take effect on the
   next deploy, not immediately: Netlify reads environment variables into a
   function when it builds it.
+- **AI is free for members, but bounded.** The question was whether to put AI
+  behind the paywall. The answer was no for the profile writer and yes for the
+  career tools, and the reasoning matters: what this platform sells to hotels
+  is a register of well-presented professionals, so the writer is not a member
+  perk, it is what turns a thin profile into sellable inventory. Charging for
+  it is charging people to fill in our own catalogue at the moment a new member
+  is most likely to leave. Two pence to convert a signup into a complete
+  profile is the cheapest acquisition available anywhere.
+  Instead there are monthly per-person allowances: 25 profile writes and 3 CV
+  reads, settable by Rebecca at `/admin/ai-allowances` with no deploy. Worst
+  case a free member reaches about 20p a month; the median spends two or three
+  pence. Paying members are not metered, employer content is never metered
+  (an advert that gets written is a listing, and a listing is the revenue
+  event), and Interview Ready stays on credits because it helps one person win
+  one job rather than improving the register.
+  That screen also shows the month's real spend per member, read from the
+  ledger rather than estimated, which is the number the whole exercise existed
+  to produce.
+
 - **Every AI call is labelled and logs its token counts**, held by readiness
   check 47. This exists because the first bill was misread. Roughly sixteen
   dollars in a fortnight looked like a run rate and was blamed on the live

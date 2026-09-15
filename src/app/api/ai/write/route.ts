@@ -3,6 +3,8 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { getRequestUser } from '@/lib/request-user'
 import { enforceRateLimit } from '@/lib/rate-limit'
 import { isWriteField, writeText, writingConfigured, type WriteField } from '@/lib/ai-write'
+import { fieldIsMetered } from '@/lib/ai-allowance'
+import { claimAllowance, releaseAllowance, recordSpend } from '@/lib/ai-allowance-server'
 
 // Writing the blank box, for whoever is looking at it.
 //
@@ -49,9 +51,27 @@ export async function POST(req: NextRequest) {
   const gathered = await gatherFacts(admin, user.id, field, body)
   if (!gathered.ok) return NextResponse.json({ error: gathered.error }, { status: gathered.status })
 
+  // This month's allowance, taken before the call and handed back if the call
+  // produces nothing. Free members get a bounded number of presses rather than
+  // a paywall, because the writer is what turns a thin profile into something
+  // an employer reads, and charging for that is charging people to fill in our
+  // own catalogue.
+  const metered = fieldIsMetered(field)
+  const claim = metered
+    ? await claimAllowance(admin, user.id, 'profile_writing', await membershipTierFor(admin, user.id))
+    : null
+  if (claim && !claim.ok) {
+    return NextResponse.json({ error: claim.error }, { status: claim.status })
+  }
+
   const subject = typeof body.subject === 'string' ? body.subject : ''
   const result = await writeText({ field, mode, draft, steer, subject, facts: gathered.facts })
-  if (!result.ok) return NextResponse.json({ error: result.error }, { status: 502 })
+  if (!result.ok) {
+    // A press that produced nothing has not had its turn.
+    if (claim) await releaseAllowance(admin, user.id, claim, 'profile_writing')
+    return NextResponse.json({ error: result.error }, { status: 502 })
+  }
+  if (claim) await recordSpend(admin, user.id, 'profile_writing', result.spend)
 
   // Recorded, because this is a person's own words being drafted by a machine
   // and the honest thing is to be able to say when and for what.
@@ -66,7 +86,28 @@ export async function POST(req: NextRequest) {
     })
   } catch { /* the log is not allowed to be the reason the draft fails */ }
 
-  return NextResponse.json({ success: true, text: result.text })
+  return NextResponse.json({
+    success: true,
+    text: result.text,
+    // Shown only once it starts to matter, so the common case never mentions
+    // a limit the member will not reach.
+    ...(claim?.ok && claim.metered && claim.limit - claim.used <= 5
+      ? { allowanceLeft: claim.limit - claim.used, allowanceOf: claim.limit }
+      : {}),
+  })
+}
+
+/**
+ * The caller's tier, from whichever profile they have.
+ *
+ * Read here rather than inside gatherFacts because a consultant is metered on
+ * their talent membership: the practice boxes and the profile boxes are the
+ * same person filling in the same register.
+ */
+async function membershipTierFor(admin: any, userId: string): Promise<string | null> {
+  const { data } = await admin.from('candidate_profiles')
+    .select('membership_tier').eq('user_id', userId).maybeSingle()
+  return (data as any)?.membership_tier ?? null
 }
 
 type Gathered =

@@ -128,6 +128,7 @@ const navItems: Record<string, NavItem[]> = {
     { label: 'Standards', href: '/admin/documents', icon: <FileText size={17} /> },
     { label: 'Prices & Bundles', href: '/admin/standards-pricing', icon: <Banknote size={17} /> },
     { label: 'Files In A Pack', href: '/admin/standards-files', icon: <Paperclip size={17} /> },
+    { label: 'What Free Members Get', href: '/admin/ai-allowances', icon: <Banknote size={17} /> },
     { label: 'Messages', href: '/admin/messages', icon: <MessageSquare size={17} /> },
     { label: 'Messages We Sent', href: '/admin/messages-sent', icon: <Mail size={17} /> },
     { label: 'Who Is Online', href: '/admin/activity', icon: <Activity size={17} /> },

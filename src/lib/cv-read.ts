@@ -155,8 +155,11 @@ type Source =
  * Never throws: the caller is an administrator looking at a queue, and a
  * stack trace is not an answer to "why is this button not working".
  */
+/** What a read cost, passed back so the caller can put it against a person. */
+export type CvSpend = { input: number; output: number }
+
 export async function readCv(source: Source): Promise<
-  { ok: true; reading: CvReading } | { ok: false; error: string }
+  { ok: true; reading: CvReading; spend: CvSpend } | { ok: false; error: string }
 > {
   const apiKey = process.env.ANTHROPIC_API_KEY
   if (!apiKey) {
@@ -232,7 +235,14 @@ export async function readCv(source: Source): Promise<
       return { ok: false, error: 'The reader returned nothing usable. Try again, or fill it in by hand.' }
     }
 
-    return { ok: true, reading: normalise(JSON.parse(text.text)) }
+    return {
+      ok: true,
+      reading: normalise(JSON.parse(text.text)),
+      spend: {
+        input: Number(response.usage?.input_tokens || 0),
+        output: Number(response.usage?.output_tokens || 0),
+      },
+    }
   } catch (error: any) {
     if (error instanceof Anthropic.AuthenticationError) {
       return { ok: false, error: 'The Anthropic API key on this deployment was refused. Check it in Netlify.' }

@@ -753,6 +753,44 @@ check('no half-finished merge reaches a deploy', () => {
   assert.deepEqual(conflicted, [])
 })
 
+// Nothing that costs money runs unmetered for somebody who has not paid.
+//
+// Members join free, so every AI call is carried before any revenue. The two
+// surfaces that cost real money per press take a claim first and hand it back
+// if the call produced nothing. A third surface added later without a claim
+// would not fail anything, would work perfectly, and would quietly be the one
+// that made the bill unpredictable again.
+check('every metered AI surface claims before it spends', () => {
+  const METERED: [string, string][] = [
+    ['src/app/api/ai/write/route.ts', 'profile_writing'],
+    ['src/app/api/cv/analyse/route.ts', 'cv_reading'],
+  ]
+  for (const [file, bucket] of METERED) {
+    const source = read(file)
+    assert.match(source, new RegExp(`claimAllowance\\([\\s\\S]{0,200}'${bucket}'`),
+      `${file} must claim from ${bucket} before calling the model`)
+    // Near the failure branch rather than merely somewhere in the file. Worth
+    // being honest about the limit of this: reading text cannot tell a refund
+    // that runs from one sitting behind a condition that is never true, and it
+    // was tried. What it does catch is the failure that will actually happen,
+    // which is a third metered route added later with no claim and no refund
+    // at all. The test file holds the shape of the branch itself.
+    assert.match(source, /(?:!result\.ok|!claim\.ok|aiEnhanced)[\s\S]{0,400}?releaseAllowance\(/,
+      `${file} must hand the claim back on the path where the call produced nothing`)
+  }
+
+  // The claim itself is one statement. Read-then-write is the bug that lets a
+  // double-click past a limit, and it is invisible until somebody does it.
+  assert.match(read('src/lib/ai-allowance-server.ts'), /rpc\('claim_ai_allowance'/)
+
+  // And it is decided on the server. A limit a browser enforces is a
+  // suggestion.
+  const clientSide = listFiles('src')
+    .filter(file => /\.tsx$/.test(file) && /^'use client'/.test(read(file).trimStart()))
+    .filter(file => /claimAllowance|claim_ai_allowance/.test(read(file)))
+  assert.deepEqual(clientSide, [])
+})
+
 let passed = 0
 for (const [name, fn] of checks) {
   try { fn(); passed++; console.log(`PASS ${passed.toString().padStart(2, '0')} ${name}`) }

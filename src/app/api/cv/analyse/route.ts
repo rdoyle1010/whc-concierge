@@ -4,6 +4,7 @@ import { cookies } from 'next/headers'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { analyseCvText, type CvSuggestions } from '@/lib/cv-analysis'
 import { cvReadingConfigured, readCv, type CvReading } from '@/lib/cv-read'
+import { claimAllowance, releaseAllowance, recordSpend } from '@/lib/ai-allowance-server'
 
 export const runtime = 'nodejs'
 
@@ -67,7 +68,10 @@ let lastAiFailure = ''
  * stays underneath it as a floor, because it costs nothing and it still finds
  * the obvious when the model cannot be reached at all.
  */
+let lastSpend: { input: number; output: number } | null = null
+
 async function aiReadCv(text: string, deterministic: CvSuggestions): Promise<CvSuggestions | null> {
+  lastSpend = null
   lastAiFailure = ''
   if (!cvReadingConfigured()) {
     lastAiFailure = 'Talent House AI is not switched on for this deployment.'
@@ -76,6 +80,7 @@ async function aiReadCv(text: string, deterministic: CvSuggestions): Promise<CvS
 
   const result = await readCv({ kind: 'text', text })
   if (!result.ok) { lastAiFailure = result.error; return null }
+  lastSpend = result.spend
 
   const reading: CvReading = result.reading
   const merge = (a: string[] | undefined, b: string[] | undefined, limit: number) =>
@@ -122,7 +127,28 @@ export async function POST(req: NextRequest) {
     const extension=path.split('.').pop()?.toLowerCase()||''; if(!['pdf','docx'].includes(extension))return NextResponse.json({error:'For CV analysis, please use a PDF or modern Word .docx file.'},{status:400})
     const {data:file,error}=await admin.storage.from(bucket).download(path); if(error||!file)return NextResponse.json({error:'CV could not be read'},{status:500}); if(file.size>MAX_CV_SIZE)return NextResponse.json({error:'CV is too large to analyse'},{status:400})
     const text=await extractText(Buffer.from(await file.arrayBuffer()),extension); if(text.trim().length<80)return NextResponse.json({error:'Very little readable text was found. If this is a scanned CV, upload a text-based PDF or Word .docx file.'},{status:422})
-    const deterministic=analyseCvText(text), suggestions=await aiReadCv(text,deterministic)||deterministic
+    const deterministic=analyseCvText(text)
+
+    // An exhausted allowance does not refuse the upload, it drops to the
+    // plain reading this route already falls back to whenever the model is
+    // unavailable. Somebody who has used their three reads still gets their
+    // CV parsed; they just do not get the good version, and they are told
+    // which it was rather than left to wonder.
+    const {data:tier}=await admin.from('candidate_profiles').select('membership_tier').eq('id',profileId).maybeSingle()
+    const claim = await claimAllowance(admin, user.id, 'cv_reading', (tier as any)?.membership_tier ?? null)
+
+    let suggestions = deterministic
+    if (!claim.ok) {
+      lastAiFailure = claim.error
+    } else {
+      suggestions = await aiReadCv(text, deterministic) || deterministic
+      if (suggestions.aiEnhanced && lastSpend) {
+        await recordSpend(admin, user.id, 'cv_reading', lastSpend)
+      } else {
+        // A read that fell back has not had its turn.
+        await releaseAllowance(admin, user.id, claim, 'cv_reading')
+      }
+    }
     try { await admin.from('consent_events').insert({user_id:user.id,consent_type:'ai_cv_analysis',action:'accepted',policy_version:'2026-08',wording:'User requested Talent House AI CV analysis. CV text is processed for suggestions and is not added to the profile without approval.',source:'talent_profile_cv_analysis'}) } catch {}
     // The reason travels with the answer. "AI was unavailable" on its own
     // sends somebody to check a key that was never the problem.
