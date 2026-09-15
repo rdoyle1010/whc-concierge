@@ -5,8 +5,8 @@ import DashboardShell from '@/components/DashboardShell'
 import { Upload, Save, Send, Eye, Image as ImageIcon, CheckCircle2 } from 'lucide-react'
 import { cloneDefaultPublicPagesContent, PAGE_SECTIONS, PUBLIC_PAGE_SLUGS, type PublicPageSlug, type PublicPagesContent } from '@/lib/public-page-content'
 
-const pageNames: Record<PublicPageSlug,string> = { properties:'Properties', agency:'Agency', residency:'Residency', pricing:'Pricing', 'coming-soon':'Coming Soon', about:'About', advertise:'Advertise', 'how-to-use':'How It Works', academy:'Academy', 'agency-cover':'Agency Cover' }
-const pagePaths: Record<PublicPageSlug,string> = { properties:'/properties', agency:'/agency/about', residency:'/residency', pricing:'/pricing', 'coming-soon':'/coming-soon', about:'/about', advertise:'/advertise', 'how-to-use':'/how-to-use', academy:'/academy', 'agency-cover':'/agency' }
+const pageNames: Record<PublicPageSlug,string> = { properties:'Properties', agency:'Agency', residency:'Residency', pricing:'Pricing', 'coming-soon':'Coming Soon', about:'About', advertise:'Advertise', 'how-to-use':'How It Works', academy:'Academy', 'agency-cover':'Agency Cover', contact:'Contact' }
+const pagePaths: Record<PublicPageSlug,string> = { properties:'/properties', agency:'/agency/about', residency:'/residency', pricing:'/pricing', 'coming-soon':'/coming-soon', about:'/about', advertise:'/advertise', 'how-to-use':'/how-to-use', academy:'/academy', 'agency-cover':'/agency', contact:'/contact' }
 
 // Where "Preview page" goes.
 //
@@ -20,6 +20,7 @@ const previewHref = (slug: PublicPageSlug) =>
 
 export default function PublicPagesEditor() {
   const [content, setContent] = useState<PublicPagesContent>(cloneDefaultPublicPagesContent())
+  const [onFaq, setOnFaq] = useState(false)
   const [published, setPublished] = useState<PublicPagesContent>(cloneDefaultPublicPagesContent())
   const [selected, setSelected] = useState<PublicPageSlug>('properties')
   const [loading, setLoading] = useState(true)
@@ -64,6 +65,12 @@ export default function PublicPagesEditor() {
       return next
     })
   }
+
+  // The questions. A list of lists, so it needs adding and removing rather
+  // than a fixed set of boxes, which is the reason FAQ was left out of the
+  // first pass instead of being squeezed into the page shape.
+  function updateFaq(next: PublicPagesContent['faq']) { updateRoot('faq', next) }
+  const faq = content.faq || []
 
   async function save(action: 'save'|'publish') {
     setBusy(action); setNotice('')
@@ -124,8 +131,73 @@ export default function PublicPagesEditor() {
       </section>
 
       <div className="grid lg:grid-cols-[230px_1fr] gap-6">
-        <aside className="bg-white border border-border p-3 h-fit">{PUBLIC_PAGE_SLUGS.map(slug => <button key={slug} onClick={()=>setSelected(slug)} className={`w-full text-left px-4 py-3 text-[12px] border-l-2 ${selected===slug?'border-accent bg-surface text-ink':'border-transparent text-muted hover:text-ink'}`}>{pageNames[slug]}</button>)}</aside>
+        <aside className="bg-white border border-border p-3 h-fit">
+          {PUBLIC_PAGE_SLUGS.map(slug => <button key={slug} onClick={()=>{setSelected(slug);setOnFaq(false)}} className={`w-full text-left px-4 py-3 text-[12px] border-l-2 ${!onFaq&&selected===slug?'border-accent bg-surface text-ink':'border-transparent text-muted hover:text-ink'}`}>{pageNames[slug]}</button>)}
+          <button onClick={()=>setOnFaq(true)} className={`w-full text-left px-4 py-3 text-[12px] border-l-2 ${onFaq?'border-accent bg-surface text-ink':'border-transparent text-muted hover:text-ink'}`}>Questions (FAQ)</button>
+        </aside>
         <div className="space-y-6">
+          {onFaq ? (
+            <>
+              <section className="dashboard-panel">
+                <p className="dashboard-eyebrow">Questions</p>
+                <h2 className="dashboard-section-title mt-1">The FAQ page</h2>
+                <p className="mt-2 text-[12px] leading-6 text-muted">
+                  Grouped the way they appear on the page. Anything you write here goes
+                  live when you publish, the same as the pages.
+                </p>
+                <p className="mt-2 text-[12px] leading-6 text-muted">
+                  Prices are not typed in. Write <code>{'{featured_7day_price}'}</code>,{' '}
+                  <code>{'{featured_7day_days}'}</code>, <code>{'{featured_30day_price}'}</code> or{' '}
+                  <code>{'{featured_30day_days}'}</code> and the live figure is filled in when
+                  somebody reads it, so changing a price on Prices &amp; Bundles changes it here too.
+                </p>
+              </section>
+
+              {faq.map((section, si) => (
+                <section key={si} className="dashboard-panel">
+                  <div className="flex items-center justify-between gap-3">
+                    <label className="flex-1 text-[11px]">Group heading
+                      <input className="input-field mt-1" value={section.title}
+                        onChange={e=>updateFaq(faq.map((x,i)=>i===si?{...x,title:e.target.value}:x))}/>
+                    </label>
+                    <button type="button" className="btn-secondary !py-2 !px-3 text-[12px] mt-4"
+                      onClick={()=>{ if (confirm(`Remove "${section.title}" and its ${section.items.length} questions?`)) updateFaq(faq.filter((_,i)=>i!==si)) }}>
+                      Remove group
+                    </button>
+                  </div>
+
+                  <div className="mt-5 space-y-4">
+                    {section.items.map((item, qi) => (
+                      <div key={qi} className="border border-border rounded-lg p-4">
+                        <label className="block text-[11px]">Question
+                          <input className="input-field mt-1" value={item.question}
+                            onChange={e=>updateFaq(faq.map((x,i)=>i!==si?x:{...x,items:x.items.map((y,j)=>j===qi?{...y,question:e.target.value}:y)}))}/>
+                        </label>
+                        <label className="block text-[11px] mt-3">Answer
+                          <textarea rows={4} className="input-field mt-1 resize-y" value={item.answer}
+                            onChange={e=>updateFaq(faq.map((x,i)=>i!==si?x:{...x,items:x.items.map((y,j)=>j===qi?{...y,answer:e.target.value}:y)}))}/>
+                        </label>
+                        <button type="button" className="mt-3 text-[11px] text-red-600 underline"
+                          onClick={()=>updateFaq(faq.map((x,i)=>i!==si?x:{...x,items:x.items.filter((_,j)=>j!==qi)}))}>
+                          Remove this question
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+
+                  <button type="button" className="btn-secondary mt-4 !py-2 !px-3 text-[12px]"
+                    onClick={()=>updateFaq(faq.map((x,i)=>i!==si?x:{...x,items:[...x.items,{question:'',answer:''}]}))}>
+                    Add a question
+                  </button>
+                </section>
+              ))}
+
+              <button type="button" className="btn-primary"
+                onClick={()=>updateFaq([...faq,{title:'New group',items:[{question:'',answer:''}]}])}>
+                Add a group
+              </button>
+            </>
+          ) : (<>
           <section className="dashboard-panel"><p className="dashboard-eyebrow">{page.label}</p><h2 className="dashboard-section-title mt-1">Hero wording</h2><div className="grid md:grid-cols-2 gap-4 mt-5"><label className="text-[11px]">Small heading<input className="input-field mt-1" value={page.hero.eyebrow} onChange={e=>update('hero.eyebrow',e.target.value)}/></label><label className="text-[11px]">Main heading<input className="input-field mt-1" value={page.hero.heading} onChange={e=>update('hero.heading',e.target.value)}/></label></div><label className="block text-[11px] mt-4">Introduction<textarea rows={4} className="input-field mt-1 resize-y" value={page.hero.text} onChange={e=>update('hero.text',e.target.value)}/></label></section>
           {/* Only what the page actually renders.
               An editor offering a field the page ignores is worse than no
@@ -143,6 +215,7 @@ export default function PublicPagesEditor() {
               </p>
             )}
           {PAGE_SECTIONS[selected].blocks && page.blocks.map((b,i)=><section key={i} className="dashboard-panel"><div className="flex items-center justify-between"><div><p className="dashboard-eyebrow">Section {i+1}</p><h2 className="dashboard-section-title">Page section</h2></div><label className="text-[11px] flex items-center gap-2"><input type="checkbox" checked={b.visible} onChange={e=>update(`blocks.${i}.visible`,e.target.checked)}/>Show section</label></div><div className="grid md:grid-cols-2 gap-4 mt-5"><label className="text-[11px]">Small heading<input className="input-field mt-1" value={b.eyebrow} onChange={e=>update(`blocks.${i}.eyebrow`,e.target.value)}/></label><label className="text-[11px]">Heading<input className="input-field mt-1" value={b.heading} onChange={e=>update(`blocks.${i}.heading`,e.target.value)}/></label></div><label className="block text-[11px] mt-4">Wording<textarea rows={4} className="input-field mt-1 resize-y" value={b.text} onChange={e=>update(`blocks.${i}.text`,e.target.value)}/></label><div className="mt-5"><ImageEditor path={`blocks.${i}.image`} image={b.image} title={`Section ${i+1} image`}/></div></section>)}
+          </>)}
         </div>
       </div>
     </div>

@@ -1,8 +1,8 @@
 import { z } from 'zod'
 // Moved out so the browser can read the defaults without the validator;
 // re-exported so nothing that already imports them has to change.
-import { DEFAULT_PUBLIC_PAGES_CONTENT, defaultEditorialBand } from './public-page-content-values'
-export { DEFAULT_PUBLIC_PAGES_CONTENT }
+import { DEFAULT_PUBLIC_PAGES_CONTENT, DEFAULT_FAQ_SECTIONS, defaultEditorialBand } from './public-page-content-values'
+export { DEFAULT_PUBLIC_PAGES_CONTENT, DEFAULT_FAQ_SECTIONS }
 import { normaliseLegacySiteLinks } from '@/lib/site-content'
 
 export const PUBLIC_PAGES_DRAFT_KEY = 'public_pages_content_draft_v1'
@@ -14,7 +14,7 @@ export const PUBLIC_PAGE_SLUGS = [
   // Added once the site had outgrown the five it started with. These are the
   // pages a stranger reads before deciding whether to take this seriously, and
   // until now only a deploy could change a word of them.
-  'about', 'advertise', 'how-to-use', 'academy', 'agency-cover',
+  'about', 'advertise', 'how-to-use', 'academy', 'agency-cover', 'contact',
 ] as const
 
 /**
@@ -47,6 +47,7 @@ export const PAGE_SECTIONS: Record<PublicPageSlug, PageSections> = {
   'how-to-use': { heroImage: false, blocks: false },
   academy: { heroImage: false, blocks: false },
   'agency-cover': { heroImage: false, blocks: false },
+  contact: { heroImage: false, blocks: false },
 }
 export type PublicPageSlug = typeof PUBLIC_PAGE_SLUGS[number]
 
@@ -62,9 +63,18 @@ const pageSchema = z.object({
 })
 
 
+// Questions and answers, which are a list of lists rather than a hero and
+// three blocks. Forcing them into the page shape was the reason FAQ was left
+// out of the first pass, and the reason it is a separate key now: a screen
+// that lets somebody edit three of their twenty-three questions is not an
+// improvement on a screen that lets them edit none.
+const faqItemSchema = z.object({ question: text, answer: text })
+const faqSectionSchema = z.object({ title: text, items: z.array(faqItemSchema).max(40) })
+
 export const PublicPagesContentSchema = z.object({
   version: z.literal(1),
   editorialBand: z.array(labelledImageSchema).length(4).default(defaultEditorialBand),
+  faq: z.array(faqSectionSchema).max(12).default(() => DEFAULT_FAQ_SECTIONS),
   pages: z.object({
     properties: pageSchema,
     agency: pageSchema,
@@ -76,6 +86,7 @@ export const PublicPagesContentSchema = z.object({
     'how-to-use': pageSchema,
     academy: pageSchema,
     'agency-cover': pageSchema,
+    contact: pageSchema,
   }),
 })
 
