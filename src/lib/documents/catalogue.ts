@@ -6,6 +6,7 @@ import { CHECKLIST_ENTRIES } from './checklist-plans'
 import { FINANCE_ENTRIES } from './finance-plans'
 import { JOB_DESCRIPTION_ENTRIES } from './job-description-plans'
 import { POLICY_ENTRIES } from './policy-plans'
+import { HIRING_ENTRIES } from './hiring-plans'
 
 // Everything that can be listed and sold, in one list.
 //
@@ -21,7 +22,7 @@ import { POLICY_ENTRIES } from './policy-plans'
 export function sellableCatalogue(): PlannedDocument[] {
   return [
     ...LIBRARY_PLAN, ...POOL_PLAN_ENTRIES, ...RISK_ASSESSMENT_ENTRIES, ...GUIDE_ENTRIES,
-    ...CHECKLIST_ENTRIES, ...FINANCE_ENTRIES, ...JOB_DESCRIPTION_ENTRIES, ...POLICY_ENTRIES,
+    ...CHECKLIST_ENTRIES, ...FINANCE_ENTRIES, ...JOB_DESCRIPTION_ENTRIES, ...POLICY_ENTRIES, ...HIRING_ENTRIES,
   ]
 }
 

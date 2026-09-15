@@ -43,7 +43,14 @@ module.exports = {
         sans: ['var(--font-poppins)', 'Poppins', 'Segoe UI', 'sans-serif'],
         // The platform's display face is Manrope, as on the main WHC site.
         // Legacy font-serif usages resolve to it so nothing looks templated.
-        serif: ['var(--font-manrope)', 'Manrope', 'Segoe UI', 'sans-serif'],
+        // A serif that is actually a serif.
+        //
+        // This mapped to Manrope, which is a sans, so every price on the
+        // shop rendered in the body face one weight lighter. Cormorant
+        // Garamond was already being downloaded on every page and used by
+        // one CMS token, so the editorial voice was paid for and never
+        // heard.
+        serif: ['var(--font-editorial)', 'Cormorant Garamond', 'Georgia', 'serif'],
       },
       fontSize: { eyebrow: ['11px', { letterSpacing: '0.08em', lineHeight: '1.4' }] },
     },

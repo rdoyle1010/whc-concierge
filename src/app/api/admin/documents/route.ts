@@ -19,6 +19,7 @@ import { CHECKLIST_PLANS } from '@/lib/documents/checklist-plans'
 import { FINANCE_PLANS } from '@/lib/documents/finance-plans'
 import { JOB_DESCRIPTION_PLANS } from '@/lib/documents/job-description-plans'
 import { POLICY_PLANS } from '@/lib/documents/policy-plans'
+import { HIRING_PLANS } from '@/lib/documents/hiring-plans'
 import { isLifeSafety, LIFE_SAFETY_CONFIRMATION } from '@/lib/documents/safety'
 import { placeholdersIn } from '@/lib/documents/placeholders'
 
@@ -717,7 +718,8 @@ export async function POST(req: NextRequest) {
         : action === 'add_checklists' ? CHECKLIST_PLANS
           : action === 'add_finance_pack' ? FINANCE_PLANS
             : [...POOL_PLANS, ...GUIDE_PLANS, ...RISK_ASSESSMENT_PLANS, ...CHECKLIST_PLANS, ...FINANCE_PLANS,
-              ...JOB_DESCRIPTION_PLANS, ...POLICY_PLANS]
+              ...JOB_DESCRIPTION_PLANS, ...POLICY_PLANS,
+              ...HIRING_PLANS]
 
     const now = new Date().toISOString()
     const references = plans.map(plan => plan.reference)
