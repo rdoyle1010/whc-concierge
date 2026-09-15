@@ -6,6 +6,7 @@ import { JOURNEY_STAGES, stageOf, type StageGroup } from './journey'
 import { CHECKLIST_ENTRIES } from './checklist-plans'
 import { FINANCE_ENTRIES } from './finance-plans'
 import { JOB_DESCRIPTION_ENTRIES } from './job-description-plans'
+import { POLICY_ENTRIES } from './policy-plans'
 
 // What a document costs, and why.
 //
@@ -106,6 +107,16 @@ export const CHECKLIST_PACK_PRICE = 39500
 // defend a decision about one of them.
 export const JOB_DESCRIPTION_PACK_PRICE = 39500
 
+// Twenty policies, at four hundred and ninety-five pounds.
+//
+// Priced above the job descriptions because the consequence of not having one
+// is larger: a job description that is missing costs an argument at an
+// appraisal, and a safeguarding or lone working policy that is missing costs
+// an investigation. Still under the five hundred a spa director signs off
+// alone, because the property most exposed by having none of these is the one
+// least likely to have a budget line for them.
+export const POLICY_PACK_PRICE = 49500
+
 // The twenty report templates, at one thousand two hundred and fifty pounds.
 //
 // The most expensive thing in this library except the library itself, and the
@@ -144,7 +155,7 @@ export const VAT_NOTE = VAT_REGISTERED
 export type Prices = Partial<Record<
   | 'single' | 'department' | 'journey' | 'day-one' | 'complete'
   | 'pool-safety' | 'risk-assessments' | 'checklists' | 'finance' | 'guest-journey'
-  | 'job-descriptions',
+  | 'job-descriptions' | 'policies',
   number
 >>
 
@@ -381,6 +392,7 @@ export function tierPacks(prices: Prices = {}): Pack[] {
   const checklistReferences = CHECKLIST_ENTRIES.map(entry => entry.reference)
   const financeReferences = FINANCE_ENTRIES.map(entry => entry.reference)
   const roleReferences = JOB_DESCRIPTION_ENTRIES.map(entry => entry.reference)
+  const policyReferences = POLICY_ENTRIES.map(entry => entry.reference)
   return [
     {
       slug: 'risk-assessments',
@@ -449,6 +461,24 @@ export function tierPacks(prices: Prices = {}): Pack[] {
       count: roleReferences.length,
     },
     {
+      slug: 'policies',
+      name: 'Spa Policy Suite',
+      blurb:
+        'Twenty policies, from health and safety and safeguarding to chaperoning, under-eighteens, '
+        + 'cancellation and discount authority. Each one states the position, what follows from it, who is '
+        + 'accountable, what has to be recorded, and what happens when it is breached.',
+      detail:
+        'A policy is not a procedure. A procedure says how something is done; a policy says what the '
+        + 'property\u2019s position is and who decides. Most spa policies fail by being one or the other badly. '
+        + 'These include the ones nobody else writes, because they are the ones a spa most needs: chaperoning '
+        + 'and intimate treatments, under-eighteens, pregnancy, photography in a building where people are '
+        + 'undressed. Disciplinary and grievance procedures are deliberately not included: take those from an '
+        + 'employment adviser rather than from a template.',
+      price: prices.policies ?? POLICY_PACK_PRICE,
+      includes: (reference: string) => policyReferences.includes(reference),
+      count: policyReferences.length,
+    },
+    {
       slug: 'before-the-first-guest',
       name: TIER_LABEL['day-1'],
       blurb:
@@ -492,6 +522,7 @@ export function categoryPacks(prices: Prices = {}): Pack[] {
   const bySlug = (slug: string) => [...tiers, ...stages].find(pack => pack.slug === slug)!
   return [
     bySlug('risk-assessments'),
+    bySlug('policies'),
     bySlug('job-descriptions'),
     bySlug('pool-safety'),
     bySlug('journey-safety'),
