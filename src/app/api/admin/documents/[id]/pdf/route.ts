@@ -18,7 +18,7 @@ export const maxDuration = 26
 
 export async function GET(req: NextRequest, context: { params: Promise<{ id: string }> }) {
   const actor = await adminRequestUser()
-  if (!actor) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+  if (!actor) return NextResponse.json({ error: 'Please sign in to continue. If you have just signed in, refresh the page.' }, { status: 401 })
 
   const { id } = await context.params
   const admin = createAdminClient()

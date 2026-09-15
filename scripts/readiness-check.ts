@@ -525,6 +525,78 @@ check('no client component can reach the service-role client', () => {
   assert.deepEqual(offenders, [])
 })
 
+// The product itself, shipped to the browser, free.
+//
+// The shop lists every title, so a client component imported the catalogue,
+// which imported the entry lists, each of which builds itself from a register
+// that holds the finished text. Nothing in that chain is wrong on its face and
+// the build reported nothing. The result was a four hundred and forty kilobyte
+// public chunk carrying hazard prose out of the seven hundred and fifty pound
+// risk assessment suite: readable in the page source, by anybody, for nothing.
+//
+// A written procedure is the entire product here. So no module reachable from
+// a 'use client' component may reach the drafted text, at any depth. The
+// titles come from catalogue-index, which is flat data with no way back.
+check('no client component can reach the drafted documents', () => {
+  const sourceFiles = listFiles('src').filter(file => /\.tsx?$/.test(file))
+  const localImports = (file: string) =>
+    [...read(file).matchAll(/(?<!import type )from '(@\/[^']+|\.[^']+)'/g)]
+      .map(match => match[1])
+      .map(specifier => specifier.startsWith('@/')
+        ? `src/${specifier.slice(2)}`
+        : `${file.split('/').slice(0, -1).join('/')}/${specifier}`)
+      .map(path => path.split('/').reduce((parts: string[], part) => {
+        if (part === '.') return parts
+        if (part === '..') { parts.pop(); return parts }
+        return [...parts, part]
+      }, []).join('/'))
+      .flatMap(path => ['.ts', '.tsx', '/index.ts'].map(extension => path + extension))
+      .filter(path => sourceFiles.includes(path))
+
+  // Where the writing lives. Two neighbours are deliberately not here:
+  // library-plan, which is four hundred and sixty titles and no text, and
+  // safety.ts, which is a classifier and the warning she signs against. Both
+  // belong in a browser. The drafts do not.
+  const isDrafted = (file: string) =>
+    /^src\/lib\/documents\/(ra|policies|roles|hiring|checklists|finance|nop|eap|guide|tools)\//.test(file)
+    || /^src\/lib\/documents\/(.+-plans|pool-nop|pool-eap|quarter-one|the-last-six|authored|risk-assessments)\.tsx?$/.test(file)
+
+  const reaches = new Map<string, boolean>()
+  const walk = (file: string, seen = new Set<string>()): boolean => {
+    if (reaches.has(file)) return reaches.get(file)!
+    if (seen.has(file)) return false
+    seen.add(file)
+    const result = isDrafted(file) || localImports(file).some(next => walk(next, seen))
+    reaches.set(file, result)
+    return result
+  }
+
+  const offenders = sourceFiles
+    .filter(file => read(file).trimStart().startsWith("'use client'"))
+    .filter(file => localImports(file).some(next => walk(next)))
+  assert.deepEqual(offenders, [])
+})
+
+
+// A status word, handed to a buyer as an explanation.
+//
+// Two hundred and three routes answered a signed-out request with the JSON
+// body { error: 'Unauthorised' }, and the pages in front of them print
+// whatever error the API returns. So the shelf headed "Your documents" showed
+// "Unauthorised" in a box, with "you have not bought any documents yet"
+// underneath it, to somebody who had bought plenty. She read it as her
+// purchases being gone, which is exactly what it says.
+//
+// The status code carries the status. The body is read by a person, so it has
+// to tell them what to do about it.
+check('no API answers a person with a bare status word', () => {
+  const offenders = listFiles('src/app/api')
+    .filter(file => /route\.tsx?$/.test(file))
+    .filter(file => /error:\s*'(Unauthorised|Unauthorized|Forbidden|Bad Request|Not Found|Conflict)'/.test(read(file)))
+  assert.deepEqual(offenders, [])
+})
+
+
 let passed = 0
 for (const [name, fn] of checks) {
   try { fn(); passed++; console.log(`PASS ${passed.toString().padStart(2, '0')} ${name}`) }

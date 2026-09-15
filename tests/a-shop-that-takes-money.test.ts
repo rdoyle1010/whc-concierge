@@ -203,7 +203,10 @@ test('a signed-in buyer does not need to find their receipt', () => {
   assert.match(download, /ownedReferences\(orders, await bundleReferenceMap\(admin\)\)\.has\(reference\)/)
 
   const mine = body('src/app/api/standards/mine/route.ts')
-  assert.match(mine, /Unauthorised/)
+  // Refused when signed out, by status code. The body used to carry the
+  // word Unauthorised and the page printed it at a buyer, so the check is
+  // on the code that means it rather than on a word that leaks.
+  assert.match(mine, /status: 401/)
   // Bought before they had an account, claimed onto it the first time they
   // look, so it is theirs on every device from then on.
   assert.match(mine, /buyer_user_id: user\.id/)

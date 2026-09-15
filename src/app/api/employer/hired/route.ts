@@ -5,7 +5,7 @@ import { createServerSupabaseClient } from '@/lib/supabase/server'
 export async function GET() {
   const auth = await createServerSupabaseClient()
   const { data: { user } } = await auth.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+  if (!user) return NextResponse.json({ error: 'Please sign in to continue. If you have just signed in, refresh the page.' }, { status: 401 })
 
   const admin = createAdminClient()
   const { data: employer } = await admin.from('employer_profiles').select('id').eq('user_id', user.id).maybeSingle()
@@ -54,7 +54,7 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   const auth = await createServerSupabaseClient()
   const { data: { user } } = await auth.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+  if (!user) return NextResponse.json({ error: 'Please sign in to continue. If you have just signed in, refresh the page.' }, { status: 401 })
 
   const body = await req.json().catch(() => ({}))
   const applicationId = String(body.applicationId || '')
@@ -70,7 +70,7 @@ export async function POST(req: NextRequest) {
 
   const jobId = application.role_id || application.job_id
   const { data: job } = await admin.from('job_listings').select('id,employer_id').eq('id', jobId).maybeSingle()
-  if (!job || job.employer_id !== employer.id) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  if (!job || job.employer_id !== employer.id) return NextResponse.json({ error: 'You do not have access to that. If that looks wrong, sign in with the account that does.' }, { status: 403 })
 
   const { error } = await admin.from('applications').update({ archived_at: null, updated_at: new Date().toISOString() }).eq('id', application.id)
   if (error) return NextResponse.json({ error: 'Could not reopen placement record.' }, { status: 500 })

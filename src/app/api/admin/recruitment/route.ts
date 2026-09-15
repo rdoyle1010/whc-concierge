@@ -21,7 +21,7 @@ async function requireAdmin() {
 
 export async function GET() {
   const user = await requireAdmin()
-  if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+  if (!user) return NextResponse.json({ error: 'Please sign in to continue. If you have just signed in, refresh the page.' }, { status: 401 })
   const admin = createAdminClient()
   const { data: rows, error } = await admin.from('recruitment_requests')
     .select('*').order('created_at', { ascending: false }).limit(200)
@@ -37,7 +37,7 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   const user = await requireAdmin()
-  if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+  if (!user) return NextResponse.json({ error: 'Please sign in to continue. If you have just signed in, refresh the page.' }, { status: 401 })
   try {
     const body = await req.json()
     const id = String(body.id || '')

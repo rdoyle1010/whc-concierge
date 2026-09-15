@@ -110,13 +110,13 @@ export async function POST(req: NextRequest) {
   try {
     const cookieStore = await cookies()
     const auth = createServerClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, { cookies:{ getAll(){return cookieStore.getAll()}, setAll(){} } })
-    const { data:{ user } } = await auth.auth.getUser(); if (!user) return NextResponse.json({error:'Unauthorised'},{status:401})
+    const { data:{ user } } = await auth.auth.getUser(); if (!user) return NextResponse.json({error: 'Please sign in to continue. If you have just signed in, refresh the page.'},{status:401})
     const body = await req.json().catch(()=>({})); const profileId = typeof body.profileId === 'string' ? body.profileId : ''
     if (!profileId) return NextResponse.json({error:'Profile is required'},{status:400})
     if (body.aiConsent !== true) return NextResponse.json({error:'Please confirm that you want Talent House AI to analyse your CV.'},{status:400})
 
     const admin=createAdminClient(); const {data:profile}=await admin.from('candidate_profiles').select('user_id, cv_url').eq('id',profileId).single()
-    if(!profile||profile.user_id!==user.id)return NextResponse.json({error:'Forbidden'},{status:403}); if(!profile.cv_url)return NextResponse.json({error:'Upload a CV first'},{status:400})
+    if(!profile||profile.user_id!==user.id)return NextResponse.json({error: 'You do not have access to that. If that looks wrong, sign in with the account that does.'},{status:403}); if(!profile.cv_url)return NextResponse.json({error:'Upload a CV first'},{status:400})
     const fileUrl=new URL(profile.cv_url,'https://whc.local'), bucket=fileUrl.searchParams.get('bucket'), path=fileUrl.searchParams.get('path')
     if(bucket!=='talent-documents'||!path||!path.startsWith(`${user.id}/`)||path.includes('..'))return NextResponse.json({error:'CV storage reference is invalid'},{status:400})
     const extension=path.split('.').pop()?.toLowerCase()||''; if(!['pdf','docx'].includes(extension))return NextResponse.json({error:'For CV analysis, please use a PDF or modern Word .docx file.'},{status:400})

@@ -12,7 +12,7 @@ const pounds = (value: unknown) => Number(value || 0)
 const toPence = (amount: number) => Math.round(amount * 100)
 
 export async function GET() {
-  if (!await adminRequestUser()) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+  if (!await adminRequestUser()) return NextResponse.json({ error: 'Please sign in to continue. If you have just signed in, refresh the page.' }, { status: 401 })
   const admin = createAdminClient()
   const windowStart = rollingWindowStart()
   const threeMonthStart = (() => { const d = new Date(); d.setMonth(d.getMonth() - 3); return d.toISOString() })()

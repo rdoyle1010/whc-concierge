@@ -133,7 +133,7 @@ export async function GET() {
   try {
     const supabase = await createServerSupabaseClient()
     const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+    if (!user) return NextResponse.json({ error: 'Please sign in to continue. If you have just signed in, refresh the page.' }, { status: 401 })
     const admin = createAdminClient()
     const { count, error } = await admin.from('mfa_recovery_codes')
       .select('id', { count: 'exact', head: true })

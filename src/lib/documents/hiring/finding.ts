@@ -256,75 +256,195 @@ export const FINDING: HiringEntry[] = [
       {
         part: 'Competencies',
         heading: 'Guest recovery and difficult conversations',
-        bullets: [
-          'Tell me about a guest who was unhappy and you could not give them what they wanted. What did you do?',
-          'Describe a time you had to tell a guest no. How did you say it?',
-          'Tell me about a complaint that was your fault. What happened afterwards?',
-          'When did you last apologise to a guest for something that was not your fault?',
-        ],
+        intro:
+          'Every one of these is asked because the answer cannot be rehearsed from a careers page. What you are listening for is in the right-hand column, and it is almost never the outcome: it is what they did and whether they know why.',
+        table: {
+          columns: ['Ask', 'Why this one, and what a weak answer sounds like'],
+          rows: [
+            [
+              'Tell me about a guest who was unhappy and you could not give them what they wanted. What did you do?',
+              'The commonest situation in a spa and the one that separates people fastest. You are listening for what they offered instead, and whether they stayed in the conversation. Weak answers describe the guest at length and the therapist barely at all, or end at "I got my manager".',
+            ],
+            [
+              'Describe a time you had to tell a guest no. How did you say it?',
+              'Holding a boundary warmly is a trained skill and most people have never been taught it. You want the actual words. Weak answers give you the policy instead of the sentence, which means they have not found one that works.',
+            ],
+            [
+              'Tell me about a complaint that was your fault. What happened afterwards?',
+              'Tests whether they can say the words out loud. Anybody who cannot name one in an interview will not raise one on shift, and a complaint you hear about first from the guest is the expensive kind. Weak answers reach for a fault that turns out to be somebody else’s.',
+            ],
+            [
+              'When did you last apologise to a guest for something that was not your fault?',
+              'Separates people who represent the property from people who defend themselves. Weak answers explain why it was not their fault, which is the behaviour the question is looking for.',
+            ],
+          ],
+        },
       },
       {
         part: 'Competencies',
         heading: 'Standards and judgement under pressure',
-        bullets: [
-          'Tell me about a time you were running late and something had to give. What did you drop?',
-          'Describe a time you noticed something unsafe. What did you do, and what happened?',
-          'When have you had to stop a treatment or refuse a guest? Talk me through it.',
-          'Tell me about a standard you were asked to let slide. What did you do?',
-        ],
+        table: {
+          columns: ['Ask', 'Why this one, and what a weak answer sounds like'],
+          rows: [
+            [
+              'Tell me about a time you were running late and something had to give. What did you drop?',
+              'Everybody runs late. What they sacrifice tells you their real standard, because it is the thing they decided mattered least when nobody was watching. Weak answers claim nothing was dropped, which means something was and they did not notice what.',
+            ],
+            [
+              'Describe a time you noticed something unsafe. What did you do, and what happened?',
+              'The most important question on this page for a wet area, and the answer you can verify against your own reporting culture. You want an action and a result. Weak answers report it to somebody and stop there, without ever finding out whether it was fixed.',
+            ],
+            [
+              'When have you had to stop a treatment or refuse a guest? Talk me through it.',
+              'Contraindications, intoxication, a guest who is unwell. A therapist who has never stopped one has either been lucky or has not been looking. Weak answers cannot recall an occasion, which is worth more probing than a clumsy answer.',
+            ],
+            [
+              'Tell me about a standard you were asked to let slide. What did you do?',
+              'Tests where their line is when the pressure comes from above rather than from a guest. Weak answers never mention having said anything, and that is the useful part of the answer.',
+            ],
+          ],
+        },
       },
       {
         part: 'Competencies',
         heading: 'Working with other people',
-        bullets: [
-          'Tell me about a colleague you found difficult to work with. What did you do about it?',
-          'Describe a time you had to rely on somebody who let you down.',
-          'When did you last give a colleague feedback they did not want?',
-          'Tell me about a handover you received that was not good enough. What happened?',
-        ],
+        table: {
+          columns: ['Ask', 'Why this one, and what a weak answer sounds like'],
+          rows: [
+            [
+              'Tell me about a colleague you found difficult to work with. What did you do about it?',
+              'A small spa team is close quarters and one unresolved relationship costs you the rota. You want evidence they addressed it directly. Weak answers describe the colleague rather than the handling, and that is how they will describe your team to their next interviewer.',
+            ],
+            [
+              'Describe a time you had to rely on somebody who let you down.',
+              'Tells you what they do when a handover fails, which happens weekly. Weak answers end in resentment with no conversation in the middle.',
+            ],
+            [
+              'When did you last give a colleague feedback they did not want?',
+              'The single best predictor of whether a supervisory promotion will work. Weak answers give feedback upwards to a manager only, or describe telling somebody off rather than a conversation.',
+            ],
+            [
+              'Tell me about a handover you received that was not good enough. What happened?',
+              'Specific, common, and unrehearsable. You are listening for what they did with the gap, not how bad it was.',
+            ],
+          ],
+        },
       },
       {
         part: 'Competencies',
         heading: 'Commercial instinct',
-        bullets: [
-          'Tell me about a product you recommended that the guest did not buy. Why do you think that was?',
-          'Describe a time you rebooked somebody who had not planned to rebook.',
-          'What do you say when a guest asks whether a treatment is worth the money?',
-          'Tell me about a target you did not hit. What did you change?',
-        ],
+        intro:
+          'Ask at least one of these of every candidate including therapists. Retail and rebooking are the difference between a spa that washes its face and one that does not, and it is a trainable skill only in somebody who is not embarrassed by it.',
+        table: {
+          columns: ['Ask', 'Why this one, and what a weak answer sounds like'],
+          rows: [
+            [
+              'Tell me about a product you recommended that the guest did not buy. Why do you think that was?',
+              'Tests whether they think about selling at all. You want a reason that involves the guest rather than the price. Weak answers blame the price list, which is the answer of somebody who has decided the products are too expensive and is telling guests so without words.',
+            ],
+            [
+              'Describe a time you rebooked somebody who had not planned to rebook.',
+              'Rebooking at the bed is worth more than any marketing spend you can buy. You want the sentence they used. Weak answers describe reception doing it.',
+            ],
+            [
+              'What do you say when a guest asks whether a treatment is worth the money?',
+              'The hardest question in a luxury spa and the one nobody prepares for. A good answer talks about what the guest gets. Weak answers apologise for the price or dodge to a cheaper option.',
+            ],
+            [
+              'Tell me about a target you did not hit. What did you change?',
+              'Tests whether targets are something they own or something done to them. Weak answers explain why the target was unfair, and stop.',
+            ],
+          ],
+        },
       },
       {
         part: 'By role',
         heading: 'Therapists',
-        bullets: [
-          'Talk me through your consultation, from the guest sitting down to the treatment starting.',
-          'Tell me about a contraindication you found that the guest had not mentioned. What did you do?',
-          'How do you decide pressure, and how do you check without interrupting the treatment?',
-          'What do you do in the fifteen minutes between guests?',
-          'Which treatment do you least enjoy giving, and how does the guest know?',
-        ],
+        intro:
+          'Two of these, alongside four from the competencies above. They are written to be asked by somebody who is not a therapist: the right-hand column tells you what a good answer contains so you can score it without having done the job yourself.',
+        table: {
+          columns: ['Ask', 'Why this one, and what a weak answer sounds like'],
+          rows: [
+            [
+              'Talk me through your consultation, from the guest sitting down to the treatment starting.',
+              'The most revealing question you can ask a therapist. A good answer covers contraindications, pressure, expectations and what the guest wants from the hour, in a way that sounds like a conversation rather than a form. Weak answers are the form.',
+            ],
+            [
+              'Tell me about a contraindication you found that the guest had not mentioned. What did you do?',
+              'Tests whether the consultation is real or ceremonial. You want an adaptation or a refusal and a guest who was not embarrassed. Weak answers have never found one.',
+            ],
+            [
+              'How do you decide pressure, and how do you check without interrupting the treatment?',
+              'Pressure is the single commonest complaint in massage and the fix is entirely about checking early. A good answer checks in the first few minutes. Weak answers wait to be told.',
+            ],
+            [
+              'What do you do in the fifteen minutes between guests?',
+              'Tells you their standard when unobserved: the room, the linen, the notes, the next consultation. Weak answers describe a break.',
+            ],
+            [
+              'Which treatment do you least enjoy giving, and how does the guest know?',
+              'Everybody has one, so an honest answer is a good sign in itself. The second half is the real question. A good answer is specific about how they keep it off the bed.',
+            ],
+          ],
+        },
       },
       {
         part: 'By role',
         heading: 'Reception',
-        bullets: [
-          'The diary has a two-hour gap this afternoon. What do you actually do about it?',
-          'A guest arrives twenty minutes late for a sixty minute treatment. Walk me through the conversation.',
-          'Tell me about a booking you took that went wrong because of something you missed.',
-          'How do you sell a retail product from behind a desk without sounding like you are selling it?',
-          'The system is down and the phone is ringing. What is the first thing you do?',
-        ],
+        table: {
+          columns: ['Ask', 'Why this one, and what a weak answer sounds like'],
+          rows: [
+            [
+              'The diary has a two-hour gap this afternoon. What do you actually do about it?',
+              'The most commercially valuable habit on reception, and one most people have never been asked to own. A good answer names who they would call and what they would offer. Weak answers wait for the manager to notice.',
+            ],
+            [
+              'A guest arrives twenty minutes late for a sixty minute treatment. Walk me through the conversation.',
+              'Happens weekly, and the cost of handling it badly is the therapist’s next guest. You want the words and the arithmetic. Weak answers either give away the full hour or deliver the bad news without an option.',
+            ],
+            [
+              'Tell me about a booking you took that went wrong because of something you missed.',
+              'Tests whether they check their own work. Weak answers blame the system, and every spa system does the same thing.',
+            ],
+            [
+              'How do you sell a retail product from behind a desk without sounding like you are selling it?',
+              'Retail at reception is almost entirely a confidence problem. A good answer ties it to what the guest has just had. Weak answers say they do not like to push, which is the whole answer.',
+            ],
+            [
+              'The system is down and the phone is ringing. What is the first thing you do?',
+              'Composure under a small crisis, which is most of the job. A good answer keeps the guest in front of them first and has a paper fallback. Weak answers go to find somebody.',
+            ],
+          ],
+        },
       },
       {
         part: 'By role',
         heading: 'Supervisors and managers',
-        bullets: [
-          'Tell me about somebody you managed who was not performing. What did you do, and how did it end?',
-          'Describe a decision you took on shift that you later found out was wrong.',
-          'How do you know whether a checklist was actually completed or just signed?',
-          'Tell me about a time you had to hold a standard that made you unpopular.',
-          'What is the first number you look at in the morning, and why that one?',
-        ],
+        table: {
+          columns: ['Ask', 'Why this one, and what a weak answer sounds like'],
+          rows: [
+            [
+              'Tell me about somebody you managed who was not performing. What did you do, and how did it end?',
+              'The question that decides the hire. You want a conversation, a documented step and an outcome either way. Weak answers wait for the person to leave, or move straight to a process without ever having had the conversation.',
+            ],
+            [
+              'Describe a decision you took on shift that you later found out was wrong.',
+              'Tests whether they can be wrong out loud, which determines whether their team will tell them anything. Weak answers choose a decision that turned out fine.',
+            ],
+            [
+              'How do you know whether a checklist was actually completed or just signed?',
+              'Separates managers who audit from managers who collect paper. A good answer describes spot-checking the thing rather than the sheet. Weak answers trust the signature.',
+            ],
+            [
+              'Tell me about a time you had to hold a standard that made you unpopular.',
+              'A spa supervisor is usually promoted from the team they now manage, and this is the part that breaks people. Weak answers have never been unpopular, which usually means the standard moved.',
+            ],
+            [
+              'What is the first number you look at in the morning, and why that one?',
+              'Tells you whether they run the business or the rota. There is no single right answer: occupancy, average spend, tomorrow’s gaps and retail conversion are all defensible. Having no number is not.',
+            ],
+          ],
+        },
       },
       {
         part: 'By role',
@@ -378,10 +498,48 @@ export const FINDING: HiringEntry[] = [
       },
       {
         part: 'The scorecard',
+        heading: 'If you have not chosen six, ask these',
+        intro:
+          'The question bank holds thirty-four questions and tells you what each one is for. If there was '
+          + 'no time to choose, these six work for almost any spa role, and the column on the right is what '
+          + 'you are scoring so that somebody who has never interviewed can still score it honestly.',
+        table: {
+          columns: ['Ask', 'What the score is for'],
+          rows: [
+            [
+              'Tell me about a guest who was unhappy and you could not give them what they wanted. What did you do?',
+              'Guest recovery. Score what they offered instead and whether they stayed in the conversation, not how the story ended.',
+            ],
+            [
+              'Tell me about a time you were running late and something had to give. What did you drop?',
+              'Standards under pressure. Score the thing they sacrificed, because that is their real standard when nobody is watching.',
+            ],
+            [
+              'Describe a time you noticed something unsafe. What did you do, and what happened?',
+              'Safety behaviour. Score whether there was an action and whether they found out if it was fixed.',
+            ],
+            [
+              'Tell me about a colleague you found difficult to work with. What did you do about it?',
+              'Working in a small team. Score the handling. An answer that only describes the colleague scores low however reasonable it sounds.',
+            ],
+            [
+              'What do you say when a guest asks whether a treatment is worth the money?',
+              'Commercial confidence. Score whether they can talk about value without apologising for the price.',
+            ],
+            [
+              'Tell me about something you got wrong at work. What happened afterwards?',
+              'Whether they can be wrong out loud. Score the ownership, not the size of the mistake.',
+            ],
+          ],
+        },
+      },
+      {
+        part: 'The scorecard',
         heading: 'The six questions',
         intro:
           'Write the question, then the score, then one line of evidence. The evidence line is what makes '
-          + 'this defensible three months later, and it is the part people skip.',
+          + 'this defensible three months later, and it is the part people skip. Ask the same six of every '
+          + 'candidate for the role.',
         table: {
           columns: ['Question asked', '1 to 4', 'Evidence: what they actually said'],
           rows: [['', '', ''], ['', '', ''], ['', '', ''], ['', '', ''], ['', '', ''], ['', '', '']],

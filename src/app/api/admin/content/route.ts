@@ -53,7 +53,7 @@ async function saveConfigValue(
 
 export async function GET(req: NextRequest) {
   const user = await requireAdmin()
-  if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+  if (!user) return NextResponse.json({ error: 'Please sign in to continue. If you have just signed in, refresh the page.' }, { status: 401 })
 
   const kind = req.nextUrl.searchParams.get('kind')
   const admin = createAdminClient()
@@ -141,7 +141,7 @@ const ACCESS_KEYS = new Set(['platform_access', 'platform_preview_code'])
 
 export async function POST(req: NextRequest) {
   const user = await requireAdmin()
-  if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+  if (!user) return NextResponse.json({ error: 'Please sign in to continue. If you have just signed in, refresh the page.' }, { status: 401 })
 
   const admin = createAdminClient()
   try {

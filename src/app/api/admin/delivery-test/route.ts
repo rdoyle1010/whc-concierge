@@ -36,7 +36,7 @@ function maskEmail(address: string): string {
 
 export async function GET() {
   const user = await adminRequestUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+  if (!user) return NextResponse.json({ error: 'Please sign in to continue. If you have just signed in, refresh the page.' }, { status: 401 })
   const [mobile, email] = await Promise.all([config('admin_alert_mobile'), config('admin_alert_email')])
   // The destination shown has to be the one a message would really go to.
   // Reporting only the configured value read "Nothing saved to send to" on a
@@ -66,7 +66,7 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   const user = await adminRequestUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+  if (!user) return NextResponse.json({ error: 'Please sign in to continue. If you have just signed in, refresh the page.' }, { status: 401 })
   const { channel } = await req.json().catch(() => ({ channel: '' }))
   const stamp = new Date().toLocaleString('en-GB', { timeZone: 'Europe/London' })
 

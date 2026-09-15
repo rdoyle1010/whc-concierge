@@ -88,7 +88,7 @@ async function getMessagingRelationship(admin: ReturnType<typeof createAdminClie
 export async function GET(req: NextRequest) {
   try {
     const user = await getRequestUser(req)
-    if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+    if (!user) return NextResponse.json({ error: 'Please sign in to continue. If you have just signed in, refresh the page.' }, { status: 401 })
     const recipientId = req.nextUrl.searchParams.get('recipientId') || ''
     if (!recipientId) return NextResponse.json({ error: 'Missing recipient' }, { status: 400 })
     if (recipientId === user.id) return NextResponse.json({ error: 'You cannot message yourself' }, { status: 400 })
@@ -107,7 +107,7 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const user = await getRequestUser(req)
-    if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+    if (!user) return NextResponse.json({ error: 'Please sign in to continue. If you have just signed in, refresh the page.' }, { status: 401 })
 
     const body = await req.json()
     const { recipientId, content, attachmentUrl, attachmentName, attachmentType } = body

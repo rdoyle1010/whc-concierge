@@ -143,7 +143,13 @@ const styles = StyleSheet.create({
   legalName: { width: '38%', fontFamily: 'Helvetica-Bold', fontSize: 8.5, lineHeight: 1.4, paddingRight: 8 },
   legalCovers: { flex: 1, fontSize: 8.5, lineHeight: 1.4 },
 
-  hazard: { borderWidth: 0.75, borderColor: INK, marginBottom: 12 },
+  // Spaced above rather than below, so a run of hazards carries no
+  // trailing margin. A twelve point margin hanging off the last block on
+  // a full page does not fit on that page, so it takes a page of its own:
+  // an entirely empty sheet, footer and all, in the middle of a risk
+  // assessment. It was doing that in eight documents, the pool operating
+  // procedure and the emergency action plan among them.
+  hazard: { borderWidth: 0.75, borderColor: INK },
   hazardHead: { backgroundColor: '#f2f2f2', paddingHorizontal: 8, paddingVertical: 6, borderBottomWidth: 0.5, borderBottomColor: RULE },
   hazardRef: { fontSize: 6.5, letterSpacing: 1, color: MUTED, textTransform: 'uppercase' },
   hazardName: { fontFamily: 'Helvetica-Bold', fontSize: 10.5, lineHeight: 1.3, marginTop: 1 },
@@ -241,7 +247,7 @@ function FactRow({ fact, index }: { fact: Fact; index: string }) {
  */
 function HazardBlock({ hazard, index, keyBase }: { hazard: Hazard; index: number; keyBase: string }) {
   return (
-    <View style={styles.hazard} wrap={false}>
+    <View style={[styles.hazard, index ? { marginTop: 12 } : {}]} wrap={false}>
       <View style={styles.hazardHead}>
         <Text style={styles.hazardRef}>Hazard {index + 1}</Text>
         <Text style={styles.hazardName}>{hazard.hazard}</Text>
@@ -504,6 +510,10 @@ export function PlanPdf({ document }: { document: PlanDocument }) {
     else groups.push({ own, sections: [section] })
   }
   const parts = partsOf(document)
+  // Long enough to need a contents page. Named because the answer is
+  // needed twice: once to print it, and once so the first section knows
+  // to start on the page after it.
+  const hasContents = parts.length > 1 || document.sections.length > 12
 
   return (
     <Document
@@ -615,7 +625,7 @@ export function PlanPdf({ document }: { document: PlanDocument }) {
         {/* A contents page, once a document is long enough to need one. A
             hundred pages with a flat list of sixty headings is a hundred
             pages nobody navigates. */}
-        {parts.length > 1 || document.sections.length > 12 ? (
+        {hasContents ? (
           <View style={styles.section} break>
             <Text style={styles.sectionHead}>What is in this document</Text>
             {parts.map(part => (
@@ -634,6 +644,7 @@ export function PlanPdf({ document }: { document: PlanDocument }) {
 
         {(groups[0] && !groups[0].own ? groups[0].sections : []).map((section, index) => {
           const startsPart = Boolean(section.part) && section.part !== groups[0].sections[index - 1]?.part
+          const breaks = (startsPart && index > 0) || (hasContents && index === 0)
           return (
             // The break belongs to the section, not to the rule at the top of
             // it. Asked for on the divider instead, react-pdf moved the
@@ -645,9 +656,34 @@ export function PlanPdf({ document }: { document: PlanDocument }) {
             // attribute on the wrong element, and it was in every risk
             // assessment, every operating procedure and every emergency plan
             // this library sells.
-            <View key={`s${index}`} style={styles.section} break={startsPart && index > 0}>
+            // The first section starts its own page when there is a contents
+            // page, rather than running on underneath the contents list. It
+            // reads as a contents page instead of a contents list somebody
+            // forgot to finish, and it was producing a blank page three in
+            // the question bank.
+            //
+            // A section that breaks carries no top margin, and neither does
+            // the part divider on it. This is the whole of the blank page
+            // problem and it is worth stating plainly, because it looks like
+            // a cosmetic line and is not. A breaking section had forty points
+            // of leading margin. When the previous page had less than forty
+            // points left, that margin did not fit, so it took a page of its
+            // own: an entirely empty sheet with nothing on it but the footer.
+            // Then the break moved the actual content to the page after. Nine
+            // of those were printing across the library, two of them inside
+            // the pool operating procedure, which is the most expensive and
+            // most scrutinised document here. On a fresh page the margin buys
+            // nothing anyway: the page padding is already there.
+            //
+            // Seven remain, in five documents, and they come from a trailing
+            // margin on the last element of the section before rather than a
+            // leading one here. scripts/blank-page-sweep.tsx renders the whole
+            // library and finds them: run it before calling any change to this
+            // file finished, because nothing in the source shows a blank page.
+            <View key={`s${index}`}
+              style={[styles.section, breaks ? { marginTop: 0 } : {}]} break={breaks}>
               {startsPart ? (
-                <View style={styles.partDivider}>
+                <View style={[styles.partDivider, breaks ? { marginTop: 0 } : {}]}>
                   <Text style={styles.partLabel}>Part</Text>
                   <Text style={styles.partName}>{section.part}</Text>
                 </View>

@@ -122,7 +122,7 @@ export async function POST(req: NextRequest) {
 
     // Everything below requires a signed-in user.
     if (!user) {
-      return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+      return NextResponse.json({ error: 'Please sign in to continue. If you have just signed in, refresh the page.' }, { status: 401 })
     }
 
     // ── Talent House Academy bundle - every course for £79 ──
@@ -135,7 +135,7 @@ export async function POST(req: NextRequest) {
       const admin = createAdminClient()
       const { data: cand } = await admin.from('candidate_profiles').select('id, user_id, academy_discount_pct').eq('id', candidateId).maybeSingle()
       if (!cand || cand.user_id !== user.id) {
-        return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+        return NextResponse.json({ error: 'You do not have access to that. If that looks wrong, sign in with the account that does.' }, { status: 403 })
       }
 
       // Nothing to buy if every core course is already owned
@@ -185,7 +185,7 @@ export async function POST(req: NextRequest) {
       const admin = createAdminClient()
       const { data: cand } = await admin.from('candidate_profiles').select('id, user_id, academy_discount_pct').eq('id', candidateId).maybeSingle()
       if (!cand || cand.user_id !== user.id) {
-        return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+        return NextResponse.json({ error: 'You do not have access to that. If that looks wrong, sign in with the account that does.' }, { status: 403 })
       }
 
       // Member Academy discount, applied the same way as the mobile checkout.
@@ -223,7 +223,7 @@ export async function POST(req: NextRequest) {
       const { data: cand } = await admin.from('candidate_profiles')
         .select('id, user_id').eq('id', candidateId).maybeSingle()
       if (!cand || cand.user_id !== user.id) {
-        return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+        return NextResponse.json({ error: 'You do not have access to that. If that looks wrong, sign in with the account that does.' }, { status: 403 })
       }
 
       const session = await stripe.checkout.sessions.create({
@@ -265,7 +265,7 @@ export async function POST(req: NextRequest) {
       // The paying employer must own the booking
       const { data: emp } = await admin.from('employer_profiles').select('id, user_id').eq('id', booking.employer_id).maybeSingle()
       if (!emp || emp.user_id !== user.id) {
-        return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+        return NextResponse.json({ error: 'You do not have access to that. If that looks wrong, sign in with the account that does.' }, { status: 403 })
       }
       if (booking.status !== 'accepted') {
         return NextResponse.json({ error: `Payment is due once a shift is accepted (this one is ${booking.status}).` }, { status: 400 })
@@ -335,7 +335,7 @@ export async function POST(req: NextRequest) {
       const admin = createAdminClient()
       const { data: cand } = await admin.from('candidate_profiles').select('id, user_id, right_to_work_status').eq('id', candidateId).maybeSingle()
       if (!cand || cand.user_id !== user.id) {
-        return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+        return NextResponse.json({ error: 'You do not have access to that. If that looks wrong, sign in with the account that does.' }, { status: 403 })
       }
 
       // Right to work is a condition of appearing on the register, so taking
@@ -385,7 +385,7 @@ export async function POST(req: NextRequest) {
       const admin = createAdminClient()
       const { data: emp } = await admin.from('employer_profiles').select('id, user_id').eq('id', employerId).maybeSingle()
       if (!emp || emp.user_id !== user.id) {
-        return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+        return NextResponse.json({ error: 'You do not have access to that. If that looks wrong, sign in with the account that does.' }, { status: 403 })
       }
 
       const meta = { type: 'employer_registration', employer_id: employerId, user_id: user.id }
@@ -421,7 +421,7 @@ export async function POST(req: NextRequest) {
       const admin = createAdminClient()
       const { data: emp } = await admin.from('employer_profiles').select('id, user_id, agency_plus_active').eq('id', employerId).maybeSingle()
       if (!emp || emp.user_id !== user.id) {
-        return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+        return NextResponse.json({ error: 'You do not have access to that. If that looks wrong, sign in with the account that does.' }, { status: 403 })
       }
       if (emp.agency_plus_active) {
         return NextResponse.json({ error: 'Agency Plus is already active on this account.' }, { status: 400 })
@@ -473,7 +473,7 @@ export async function POST(req: NextRequest) {
         admin.from('job_listings').select('id, employer_id').eq('id', jobId).maybeSingle(),
       ])
       if (!emp || emp.user_id !== user.id || !job || job.employer_id !== emp.id) {
-        return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+        return NextResponse.json({ error: 'You do not have access to that. If that looks wrong, sign in with the account that does.' }, { status: 403 })
       }
 
       // The purchase order comes from the property's own billing settings, not

@@ -103,7 +103,7 @@ export default function StandardsFilesPage() {
         <h1 className="mt-1 text-[32px]">Files in a pack</h1>
         <p className="mt-2 max-w-2xl text-[13px] leading-relaxed text-secondary">
           Spreadsheets, registers and anything else that belongs with a pack but is not a procedure. Upload it,
-          tick the packs it goes with, then make it live. Anybody who has already bought one of those packs gets
+          tick the packs it goes with, then tick Live. Anybody who has already bought one of those packs gets
           it too, without paying again.
         </p>
 
@@ -230,14 +230,27 @@ export default function StandardsFilesPage() {
                     })}
                   </div>
 
-                  <label className="mt-3 flex items-center gap-2 text-[12px] text-secondary">
+                  {/* This box was labelled purely by its consequence:
+                      "Deliver this to everybody who owns one of those packs".
+                      The reasoning was that "Live" means nothing on its own.
+                      The result was that the banner said make it live, the
+                      warning underneath said tick the box above, and there
+                      was no box on the screen with the word live on it. She
+                      could not find it, which is the only test that counts.
+                      So: the state first, in the word every other screen
+                      uses, and the consequence under it where it explains
+                      rather than hides. */}
+                  <label className="mt-3 flex items-start gap-2 text-[12px] text-secondary">
                     <input type="checkbox" checked={draft.isLive === true}
                       onChange={event => edit(attachment.id, { isLive: event.target.checked })}
-                      className="h-3.5 w-3.5" />
-                    {/* Said as a consequence rather than as a state. "Live"
-                        means nothing on its own; being delivered to people
-                        who have already paid is the thing she is deciding. */}
-                    Deliver this to everybody who owns one of those packs
+                      className="mt-0.5 h-3.5 w-3.5" />
+                    <span>
+                      <span className="font-semibold text-[#1c1c1c]">Live</span>
+                      <span className="block text-[11px] text-muted">
+                        Delivered to everybody who already owns one of the packs ticked above, and buyable
+                        on its own if it is priced below. Until this is ticked, nobody gets it.
+                      </span>
+                    </span>
                   </label>
                   {/* Only offered on a spreadsheet, because replacing the
                       reporting workbook with a PDF is not a thing anybody
@@ -287,7 +300,7 @@ export default function StandardsFilesPage() {
                   </div>
                   {Boolean(draft.pricePence) && draft.isLive !== true && (
                     <p className="mt-1.5 text-[11px] text-[#7a4a00]">
-                      Priced but not live. Tick the box above or it is on sale and undeliverable.
+                      Priced but not live. Tick Live above, or it is on sale and undeliverable.
                     </p>
                   )}
 

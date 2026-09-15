@@ -33,7 +33,7 @@ async function saveValue(key: string, value: string) {
 
 export async function GET() {
   const user = await requireAdmin()
-  if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+  if (!user) return NextResponse.json({ error: 'Please sign in to continue. If you have just signed in, refresh the page.' }, { status: 401 })
   const admin = createAdminClient()
   const { data } = await admin.from('platform_config').select('key,value').in('key', [PUBLIC_PAGES_DRAFT_KEY, PUBLIC_PAGES_PUBLISHED_KEY, PUBLIC_PAGES_HISTORY_KEY])
   const values = new Map((data || []).map(row => [row.key, row.value]))
@@ -46,7 +46,7 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   const user = await requireAdmin()
-  if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+  if (!user) return NextResponse.json({ error: 'Please sign in to continue. If you have just signed in, refresh the page.' }, { status: 401 })
   try {
     const body = await req.json()
     const parsed = PublicPagesContentSchema.safeParse(body.content)

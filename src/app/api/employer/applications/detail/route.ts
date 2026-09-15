@@ -55,7 +55,7 @@ function cvStorageRef(value?: string | null) {
 export async function GET(req: NextRequest) {
   try {
     const user = await getRequestUser(req)
-    if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+    if (!user) return NextResponse.json({ error: 'Please sign in to continue. If you have just signed in, refresh the page.' }, { status: 401 })
 
     const applicationId = req.nextUrl.searchParams.get('applicationId')
     if (!applicationId) return NextResponse.json({ error: 'Application is required.' }, { status: 400 })
@@ -81,7 +81,7 @@ export async function GET(req: NextRequest) {
       selectCandidate(admin, application.candidate_id),
     ])
 
-    if (!job || job.employer_id !== employer.id) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    if (!job || job.employer_id !== employer.id) return NextResponse.json({ error: 'You do not have access to that. If that looks wrong, sign in with the account that does.' }, { status: 403 })
     if (!candidate) return NextResponse.json({ error: 'Candidate profile not found.' }, { status: 404 })
 
     // Anonymity and the salary the professional marked private, both applied

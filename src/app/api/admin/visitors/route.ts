@@ -13,7 +13,7 @@ import { londonDateOffset } from '@/lib/agency-time'
 export const dynamic = 'force-dynamic'
 
 export async function GET(req: NextRequest) {
-  if (!await adminRequestUser()) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+  if (!await adminRequestUser()) return NextResponse.json({ error: 'Please sign in to continue. If you have just signed in, refresh the page.' }, { status: 401 })
   const admin = createAdminClient()
   const days = Math.min(180, Math.max(1, Number(new URL(req.url).searchParams.get('days')) || 30))
   const from = londonDateOffset(-(days - 1))

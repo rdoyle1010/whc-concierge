@@ -32,7 +32,7 @@ export async function POST(req: NextRequest) {
 
   const { data: job } = await admin.from('job_listings')
     .select('id, employer_id, status, is_live').eq('id', jobId).maybeSingle()
-  if (!job || job.employer_id !== employer.id) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  if (!job || job.employer_id !== employer.id) return NextResponse.json({ error: 'You do not have access to that. If that looks wrong, sign in with the account that does.' }, { status: 403 })
 
   // Already sorted, by the webhook or by an earlier press of this button.
   if (job.is_live || job.status === 'active') {

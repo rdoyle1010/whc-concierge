@@ -36,7 +36,7 @@ function daysAgo(count: number): string {
 }
 
 export async function GET(req: NextRequest) {
-  if (!await adminRequestUser()) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+  if (!await adminRequestUser()) return NextResponse.json({ error: 'Please sign in to continue. If you have just signed in, refresh the page.' }, { status: 401 })
 
   const window = Number(req.nextUrl.searchParams.get('days') || 1)
   const days = [1, 7, 30].includes(window) ? window : 1

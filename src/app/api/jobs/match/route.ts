@@ -14,8 +14,8 @@ const EMPLOYER_FIELDS = `id,company_name,property_name,property_photos,tagline,r
 export async function GET() {
   const cookieStore = await cookies()
   const supabase = createServerClient(process.env.NEXT_PUBLIC_SUPABASE_URL!,process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,{cookies:{getAll(){return cookieStore.getAll()},setAll(){}}})
-  const {data:{user}}=await supabase.auth.getUser(); if(!user)return NextResponse.json({error:'Unauthorised'},{status:401})
-  const admin=createAdminClient(); const {data:profile}=await admin.from('profiles').select('role').eq('id',user.id).maybeSingle(); if(profile?.role!=='candidate')return NextResponse.json({error:'Forbidden'},{status:403})
+  const {data:{user}}=await supabase.auth.getUser(); if(!user)return NextResponse.json({error: 'Please sign in to continue. If you have just signed in, refresh the page.'},{status:401})
+  const admin=createAdminClient(); const {data:profile}=await admin.from('profiles').select('role').eq('id',user.id).maybeSingle(); if(profile?.role!=='candidate')return NextResponse.json({error: 'You do not have access to that. If that looks wrong, sign in with the account that does.'},{status:403})
   const now=new Date().toISOString(); const {data:jobs,error:jobsError}=await admin.from('job_listings').select(JOB_FIELDS).eq('is_live',true).or(`expires_at.is.null,expires_at.gt.${now}`).order('posted_date',{ascending:false}).limit(100)
   if(jobsError){console.error('Match jobs query failed:',jobsError.message);return NextResponse.json({error:'Could not load live roles.'},{status:500})}
   const employerIds=Array.from(new Set((jobs||[]).map((j:any)=>j.employer_id).filter(Boolean))); let employerById=new Map<string,any>()

@@ -26,12 +26,12 @@ export async function POST(req: NextRequest) {
   try {
     // -- Auth: caller must be logged in --
     const { data: { user } } = await getAuthedUser()
-    if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+    if (!user) return NextResponse.json({ error: 'Please sign in to continue. If you have just signed in, refresh the page.' }, { status: 401 })
 
     const { createAdminClient } = await import('@/lib/supabase/admin')
     const admin = createAdminClient()
     const { data: caller } = await admin.from('profiles').select('role').eq('id', user.id).maybeSingle()
-    if (caller?.role !== 'admin') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    if (caller?.role !== 'admin') return NextResponse.json({ error: 'You do not have access to that. If that looks wrong, sign in with the account that does.' }, { status: 403 })
 
     const { userId, type, title, message, link } = await req.json()
     if (!userId || !type || !title || !message) {

@@ -393,7 +393,7 @@ test('uploaded pictures are resized before they are stored', () => {
 test('reprocessing stored pictures is admin-only and survives a timeout', () => {
   const route = readFileSync(new URL('../src/app/api/admin/optimise-images/route.ts', import.meta.url), 'utf8')
   assert.match(route, /adminRequestUser/, 'this rewrites production storage')
-  assert.match(route, /Unauthorised/)
+  assert.match(route, /status: 401/)
   // A bucket can hold hundreds of photographs and a serverless function has a
   // hard timeout, so asking for all of them at once loses the lot. Counting
   // images is the wrong unit: checking one downloads it, applying downloads,

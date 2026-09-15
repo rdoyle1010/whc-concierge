@@ -42,7 +42,7 @@ const ACTIVITY_SINCE = () => new Date(Date.now() - ACTIVITY_WINDOW_DAYS * 24 * 6
 export async function GET(req: NextRequest) {
   const auth = await createServerSupabaseClient()
   const { data: { user } } = await auth.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+  if (!user) return NextResponse.json({ error: 'Please sign in to continue. If you have just signed in, refresh the page.' }, { status: 401 })
 
   const role = req.nextUrl.searchParams.get('role')
   if (role !== 'talent' && role !== 'employer') return NextResponse.json({ error: 'Invalid role.' }, { status: 400 })

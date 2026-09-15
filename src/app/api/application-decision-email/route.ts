@@ -16,7 +16,7 @@ export async function POST(req: NextRequest) {
       { cookies: { getAll() { return cookieStore.getAll() }, setAll() {} } }
     )
     const { data: { user } } = await supabaseAuth.auth.getUser()
-    if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+    if (!user) return NextResponse.json({ error: 'Please sign in to continue. If you have just signed in, refresh the page.' }, { status: 401 })
 
     const { applicationId, decision } = await req.json()
     if (!applicationId || !['approved', 'rejected'].includes(decision)) {
@@ -46,7 +46,7 @@ export async function POST(req: NextRequest) {
       .maybeSingle()
     const isAdmin = callerProfile?.role === 'admin'
     if (!isAdmin && employer?.user_id !== user.id) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+      return NextResponse.json({ error: 'You do not have access to that. If that looks wrong, sign in with the account that does.' }, { status: 403 })
     }
 
     // Preference-gated ('application_updates'): decision emails honour the

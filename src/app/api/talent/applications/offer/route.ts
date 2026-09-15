@@ -12,7 +12,7 @@ async function sendOfferResponseEmail(to: string, subject: string, bodyHtml: str
 
 export async function POST(req: NextRequest) {
   const user = await getRequestUser(req)
-  if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+  if (!user) return NextResponse.json({ error: 'Please sign in to continue. If you have just signed in, refresh the page.' }, { status: 401 })
 
   try {
     const body = await req.json()
@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
     const { data: candidate } = await admin.from('candidate_profiles').select('id,user_id,full_name').eq('user_id', user.id).maybeSingle()
     if (!candidate) return NextResponse.json({ error: 'Candidate profile not found.' }, { status: 404 })
     const { data: application } = await admin.from('applications').select('id,candidate_id,role_id,job_id,status').eq('id', applicationId).maybeSingle()
-    if (!application || application.candidate_id !== candidate.id) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    if (!application || application.candidate_id !== candidate.id) return NextResponse.json({ error: 'You do not have access to that. If that looks wrong, sign in with the account that does.' }, { status: 403 })
     if (application.status !== 'offered') return NextResponse.json({ error: 'There is no active offer to respond to.' }, { status: 409 })
 
     const nextOfferStatus = action === 'accept' ? 'accepted' : 'declined'

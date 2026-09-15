@@ -85,7 +85,7 @@ export async function POST(req: NextRequest) {
     const { data: { user: signedInUser } } = await authClient.auth.getUser()
     const proof = verifyRegistrationProof(registrationProof, { userId, role: 'talent' })
     if (signedInUser?.id !== userId && !proof) {
-      return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+      return NextResponse.json({ error: 'Please sign in to continue. If you have just signed in, refresh the page.' }, { status: 401 })
     }
 
     const supabase = createAdminClient()

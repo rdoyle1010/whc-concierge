@@ -39,7 +39,7 @@ async function notifyParties(admin: any, booking: any, title: string, candidateM
 }
 
 export async function GET() {
-  if (!await requireAdmin()) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+  if (!await requireAdmin()) return NextResponse.json({ error: 'Please sign in to continue. If you have just signed in, refresh the page.' }, { status: 401 })
 
   const admin = createAdminClient()
   const BOOKING_LIMIT = 250
@@ -72,7 +72,7 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
-  if (!await requireAdmin()) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+  if (!await requireAdmin()) return NextResponse.json({ error: 'Please sign in to continue. If you have just signed in, refresh the page.' }, { status: 401 })
 
   const body = await req.json().catch(() => ({}))
   if (!body.bookingId || !['mark_paid_out', 'open_dispute', 'resolve_dispute'].includes(body.action)) {

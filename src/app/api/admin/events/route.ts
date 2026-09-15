@@ -17,7 +17,7 @@ const SITE = 'https://talenthousecollective.co.uk'
 const MAX_PER_SEND = 2000
 
 export async function GET() {
-  if (!await adminRequestUser()) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+  if (!await adminRequestUser()) return NextResponse.json({ error: 'Please sign in to continue. If you have just signed in, refresh the page.' }, { status: 401 })
   const admin = createAdminClient()
   const { data, error } = await admin.from('events').select('*').order('starts_at', { ascending: true }).limit(300)
   // The table arrives with a migration. Say so rather than showing an empty
@@ -27,7 +27,7 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
-  if (!await adminRequestUser()) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+  if (!await adminRequestUser()) return NextResponse.json({ error: 'Please sign in to continue. If you have just signed in, refresh the page.' }, { status: 401 })
   const body = await req.json().catch(() => ({}))
   const action = String(body.action || 'save')
   const admin = createAdminClient()

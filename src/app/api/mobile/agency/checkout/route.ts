@@ -9,7 +9,7 @@ const RETURN_PATHS = new Set(['/agency', '/employer/agency'])
 
 export async function POST(req: NextRequest) {
   const user = await getRequestUser(req)
-  if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+  if (!user) return NextResponse.json({ error: 'Please sign in to continue. If you have just signed in, refresh the page.' }, { status: 401 })
 
   try {
     const body = await req.json()
@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
     if (!booking) return NextResponse.json({ error: 'Booking not found' }, { status: 404 })
 
     const { data: employer } = await admin.from('employer_profiles').select('id,user_id').eq('id', booking.employer_id).maybeSingle()
-    if (!employer || employer.user_id !== user.id) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    if (!employer || employer.user_id !== user.id) return NextResponse.json({ error: 'You do not have access to that. If that looks wrong, sign in with the account that does.' }, { status: 403 })
     if (booking.status !== 'accepted') {
       return NextResponse.json({ error: `Payment is due once a shift is accepted (this one is ${booking.status}).` }, { status: 400 })
     }

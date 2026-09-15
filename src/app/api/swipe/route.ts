@@ -40,7 +40,7 @@ async function replaceSwipe(admin: any, row: SwipeRow) {
 export async function GET() {
   try {
     const { data: { user } } = await getAuthedUser()
-    if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+    if (!user) return NextResponse.json({ error: 'Please sign in to continue. If you have just signed in, refresh the page.' }, { status: 401 })
     const admin = createAdminClient()
     const { data } = await admin.from('swipes').select('target_id,target_type,action,context_job_id')
       .eq('swiper_id', user.id)
@@ -65,7 +65,7 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   try {
     const { data: { user } } = await getAuthedUser()
-    if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+    if (!user) return NextResponse.json({ error: 'Please sign in to continue. If you have just signed in, refresh the page.' }, { status: 401 })
 
     const body = await req.json()
     const { targetId, targetType, action, contextJobId } = body as {

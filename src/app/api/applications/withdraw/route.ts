@@ -6,7 +6,7 @@ import { trackEvent } from '@/lib/analytics'
 
 export async function POST(req: NextRequest) {
   const user = await getRequestUser(req)
-  if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+  if (!user) return NextResponse.json({ error: 'Please sign in to continue. If you have just signed in, refresh the page.' }, { status: 401 })
 
   const { applicationId } = await req.json()
   if (!applicationId) return NextResponse.json({ error: 'Application is required' }, { status: 400 })
@@ -16,7 +16,7 @@ export async function POST(req: NextRequest) {
   if (!candidate) return NextResponse.json({ error: 'Candidate profile not found' }, { status: 404 })
 
   const { data: application } = await admin.from('applications').select('id, candidate_id, status, role_id, job_id').eq('id', applicationId).maybeSingle()
-  if (!application || application.candidate_id !== candidate.id) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  if (!application || application.candidate_id !== candidate.id) return NextResponse.json({ error: 'You do not have access to that. If that looks wrong, sign in with the account that does.' }, { status: 403 })
   if (['accepted', 'rejected'].includes(application.status)) return NextResponse.json({ error: 'This application can no longer be withdrawn' }, { status: 409 })
 
   // A draft was never sent - deleting it is genuinely just tidying up.

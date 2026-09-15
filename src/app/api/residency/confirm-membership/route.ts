@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
     if (session.payment_status !== 'paid' || session.metadata?.type !== 'residency_listing') {
       return NextResponse.json({ error: 'Residency membership payment has not completed.' }, { status: 400 })
     }
-    if (session.metadata.user_id !== user.id) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    if (session.metadata.user_id !== user.id) return NextResponse.json({ error: 'You do not have access to that. If that looks wrong, sign in with the account that does.' }, { status: 403 })
 
     const subscriptionId = typeof session.subscription === 'string' ? session.subscription : session.subscription?.id
     let endsAt: string | null = null

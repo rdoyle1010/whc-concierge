@@ -20,7 +20,7 @@ async function sendHireConfirmation(email: string, name: string, jobTitle: strin
 
 export async function POST(req: NextRequest) {
   const user = await getRequestUser(req)
-  if (!user) return NextResponse.json({ error:'Unauthorised' }, { status:401 })
+  if (!user) return NextResponse.json({ error: 'Please sign in to continue. If you have just signed in, refresh the page.' }, { status:401 })
 
   try {
     const user = await getRequestUser(req)
@@ -51,7 +51,7 @@ export async function POST(req: NextRequest) {
       admin.from('candidate_profiles').select('id,user_id,full_name').eq('id', application.candidate_id).maybeSingle(),
       admin.from('application_offers').select('id,status,salary_amount,salary_period,start_date').eq('application_id', application.id).maybeSingle(),
     ])
-    if (!job || job.employer_id !== employer.id || !candidate?.user_id) return NextResponse.json({ error:'Forbidden' }, { status:403 })
+    if (!job || job.employer_id !== employer.id || !candidate?.user_id) return NextResponse.json({ error: 'You do not have access to that. If that looks wrong, sign in with the account that does.' }, { status:403 })
     if (acceptedOffer?.status !== 'accepted') return NextResponse.json({ error:'The offer has not been accepted yet.' }, { status:409 })
 
     const now = new Date().toISOString()

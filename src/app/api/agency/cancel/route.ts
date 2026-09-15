@@ -32,7 +32,7 @@ export async function POST(req: NextRequest) {
   ])
   if (!booking) return NextResponse.json({ error: 'Booking not found' }, { status: 404 })
   const role = booking.candidate_id === candidate?.id ? 'candidate' : booking.employer_id === employer?.id ? 'employer' : null
-  if (!role) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  if (!role) return NextResponse.json({ error: 'You do not have access to that. If that looks wrong, sign in with the account that does.' }, { status: 403 })
   if (!['accepted','confirmed'].includes(booking.status)) return NextResponse.json({ error: `This shift is currently '${booking.status}', so there is nothing to cancel - it may have just been actioned from the other side. Refresh the page to see its latest state.` }, { status: 400 })
   if (booking.shift_date < londonToday()) return NextResponse.json({ error: 'This shift has already passed. Use Shift Resolution instead.' }, { status: 400 })
 

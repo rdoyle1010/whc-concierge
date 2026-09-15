@@ -3,7 +3,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { isAdminRequest as requireAdmin } from '@/lib/admin-api-auth'
 
 export async function GET() {
-  if (!(await requireAdmin())) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  if (!(await requireAdmin())) return NextResponse.json({ error: 'You do not have access to that. If that looks wrong, sign in with the account that does.' }, { status: 403 })
 
   const admin = createAdminClient()
   const { data: reviews, error } = await admin
