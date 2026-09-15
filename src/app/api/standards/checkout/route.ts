@@ -25,23 +25,17 @@ export const dynamic = 'force-dynamic'
 export const maxDuration = 26
 
 export async function POST(req: NextRequest) {
-  // An account, before anything is charged.
+  // What is for sale is settled before who is buying it.
   //
-  // A guest checkout puts the whole purchase in one email: lose it, change
-  // job, leave the property, and a library somebody paid for is gone with no
-  // way for us to prove they own it or for them to get it back. A document
-  // bought once is referred to for years, so the account is not a hurdle in
-  // front of the sale, it is where the thing they bought is kept.
-  const supabase = await createServerSupabaseClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user?.email) {
-    return NextResponse.json({
-      error: 'Create an account or sign in first. Documents are kept in your account, '
-        + 'so they are still there in a year when you need them again.',
-      needsAccount: true,
-    }, { status: 401 })
-  }
-
+  // The account check used to come first, and the availability check came
+  // after it. So somebody who clicked Buy on a pack that is not fully signed
+  // off was sent to create an account, came back, clicked again and was then
+  // told we will not sell it. An account created to finish a purchase that
+  // never existed is the worst thing this shop can do to a stranger, and it
+  // is the shape of the only sale most visitors will ever attempt.
+  //
+  // So: price it, check the shelf, refuse if we cannot deliver, and only ask
+  // for an account once there is something real to charge for.
   const body = await req.json().catch(() => ({}))
   const packSlug = typeof body.packSlug === 'string' ? body.packSlug.trim() : ''
   const reference = typeof body.reference === 'string' ? body.reference.trim() : ''
@@ -134,6 +128,24 @@ export async function POST(req: NextRequest) {
       : priceSingle(reference, approved, singlePrice(prices))
   }
   if (!purchase.ok) return NextResponse.json({ error: purchase.reason }, { status: 400 })
+
+  // An account, before anything is charged, and after we know there is
+  // something to charge for.
+  //
+  // A guest checkout puts the whole purchase in one email: lose it, change
+  // job, leave the property, and a library somebody paid for is gone with no
+  // way for us to prove they own it or for them to get it back. A document
+  // bought once is referred to for years, so the account is not a hurdle in
+  // front of the sale, it is where the thing they bought is kept.
+  const supabase = await createServerSupabaseClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user?.email) {
+    return NextResponse.json({
+      error: 'Create an account or sign in first. Documents are kept in your account, '
+        + 'so they are still there in a year when you need them again.',
+      needsAccount: true,
+    }, { status: 401 })
+  }
 
   const origin = req.nextUrl.origin
   try {

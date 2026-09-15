@@ -106,7 +106,14 @@ function Form() {
 
     // Back to what they were buying. An account created to finish a purchase
     // that then drops somebody on a dashboard has not finished the purchase.
-    router.push(init.requiresEmailConfirmation ? '/login?registered=1&confirm=1' : back)
+    //
+    // Including down the confirmation path, which is where it was being lost.
+    // Somebody who had to confirm an email address went to the inbox, came
+    // back, signed in, and landed on a dashboard with no memory of the pack
+    // they were buying when they started. The redirect travels with them.
+    router.push(init.requiresEmailConfirmation
+      ? `/login?registered=1&confirm=1&redirect=${encodeURIComponent(back)}`
+      : back)
   }
 
   return (

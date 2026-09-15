@@ -106,9 +106,16 @@ export default function StandardsCatalogue() {
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
             <h2 className="text-[28px] font-semibold text-[#1c1c1c] md:text-[32px]">What do you need</h2>
+            {/* The claim that was here said every pack costs roughly a third
+                of its documents bought singly. For five of the fourteen it is
+                the other way round: the pool safety pack is four documents at
+                495 pounds and the same four are 39 pounds each in the list
+                further down the same page. A buyer who can do that sum in
+                their head, in front of both numbers, does not conclude they
+                have found a discount. So the page no longer claims one. */}
             <p className="mt-2 max-w-2xl text-[14px] leading-relaxed text-[#555555]">
-              Each pack is everything a spa needs in writing for one part of the operation. Priced at roughly
-              a third of its documents bought one at a time.
+              Each pack is everything a spa needs in writing for one part of the operation, written to be
+              adopted together rather than assembled. Buy the pack, or any document in it on its own.
             </p>
           </div>
           {available !== null && !unavailable && (

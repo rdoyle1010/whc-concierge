@@ -32,7 +32,24 @@ export default function TierBuy({ slug, label }: { slug: string; label: string }
       .catch(() => setUnavailable(true))
   }, [slug])
 
-  if (!pack || unavailable || ready === null) return null
+  if (!pack) return null
+
+  // The shelf could not be read. Offer the button anyway rather than nothing.
+  //
+  // This returned null while loading and null for ever if the request failed,
+  // so a tier card worth two and a half thousand pounds rendered with no way
+  // to buy it and no explanation, and it looked exactly like a page that had
+  // finished loading. The checkout is the authority on what can be sold and
+  // now says so before asking anybody to make an account, so the worst this
+  // can do is show a button that answers honestly when pressed. That is
+  // better in every case than a card with nothing under it.
+  if (unavailable || ready === null) {
+    return (
+      <div className="mt-5">
+        <BuyButton packSlug={slug} label={label} />
+      </div>
+    )
+  }
 
   if (ready >= total) {
     return (
