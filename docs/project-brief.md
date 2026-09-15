@@ -264,14 +264,24 @@ stored as `candidate`). Admin is a third role on the same column.
   calls one provider through one client, `src/lib/ai.ts`, with one key
   (`ANTHROPIC_API_KEY`). `OPENAI_API_KEY` is no longer read anywhere and can be
   removed. Readiness checks 45 and 46 hold both.
-- **Two models, chosen by the job.** Writing prose a person reads (bios,
-  headlines, job adverts, employer messages) uses the better model;
-  reading a document and returning a shape (CV extraction, Interview Ready,
-  application analysis) uses the cheaper one, because almost all of those
-  tokens are input and nobody reads the model's sentences. `ANTHROPIC_MODEL`
-  and `ANTHROPIC_MODEL_READING` override them in Netlify, and both take effect
-  on the next deploy, not immediately: Netlify reads environment variables into
-  a function when it builds it.
+- **Nothing on the live site runs on a premium model, and that is deliberate.**
+  Members join free, so every AI call is a cost carried before any revenue.
+  Both surfaces run Sonnet 5 ($2 per million input, $10 output) rather than
+  Opus 5 ($5 / $25). The realistic cost of a new member who uses every AI
+  feature on the platform is single-digit pence, and a member who signs in and
+  browses costs nothing at all, because AI only runs when somebody presses a
+  button. Going back up a tier is one environment variable, and is the right
+  move the day members are paying for something.
+- **The two jobs are still split, as a lever rather than a saving.** Writing
+  prose a person reads (bios, headlines, job adverts, employer messages) and
+  reading a document into a shape (CV extraction, Interview Ready, application
+  analysis) have separate model constants, `ANTHROPIC_MODEL` and
+  `ANTHROPIC_MODEL_READING`. They point at the same model today. Haiku was
+  tried for the reading half and rejects the effort setting every call uses,
+  taking the older fixed-budget shape, so it is a rewrite rather than a string
+  change and not worth it at this volume. Both overrides take effect on the
+  next deploy, not immediately: Netlify reads environment variables into a
+  function when it builds it.
 - **Every AI call is labelled and logs its token counts**, held by readiness
   check 47. This exists because the first bill was misread. Roughly sixteen
   dollars in a fortnight looked like a run rate and was blamed on the live
