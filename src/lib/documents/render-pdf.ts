@@ -10,6 +10,10 @@ import type { PlanDocument } from './plan-types'
 
 export const PLAN_KINDS = new Set([
   'nop', 'eap', 'policy', 'safe-system', 'risk-assessment', 'guide', 'training', 'checklist', 'report',
+  // Without this a job description is validated by nothing: missingFor falls
+  // through to an empty array for any kind it does not know, so an empty one
+  // would report itself ready and be signed off by name and by date.
+  'job-description',
 ])
 
 export async function renderAnyDocumentPdf(kind: string, document: unknown): Promise<Buffer> {
