@@ -1,6 +1,7 @@
 'use client'
 
 import { FormEvent, useEffect, useState } from 'react'
+import { DEFAULT_PUBLIC_PAGES_CONTENT, type PublicPageContent } from '@/lib/public-page-content'
 import Link from 'next/link'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
@@ -88,6 +89,18 @@ function formatPounds(pence: number) {
 }
 
 export default function AdvertisePage() {
+  // Header wording, hers to change without a deploy. Loaded in the browser
+  // so the page itself stays static for everybody, with the code default
+  // showing until it arrives - which is the same words, so nothing flickers.
+  const [cms, setCms] = useState<PublicPageContent>(DEFAULT_PUBLIC_PAGES_CONTENT.pages['advertise'])
+  useEffect(() => {
+    const draft = typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('pagePreview') === 'draft' ? '&draft=1' : ''
+    fetch(`/api/public/page-content?slug=advertise${draft}`)
+      .then(r => r.ok ? r.json() : null)
+      .then(data => { if (data?.page) setCms(data.page) })
+      .catch(() => {})
+  }, [])
+
   const [placement, setPlacement] = useState<AdPlacementKey>('homepage_spotlight')
   const [prices, setPrices] = useState<Record<string, number>>({})
   const [form, setForm] = useState({ brandName: '', contactEmail: '', tagline: '', websiteUrl: '', logoUrl: '' })
@@ -158,9 +171,9 @@ export default function AdvertisePage() {
     <main id="main-content" className="pt-[76px]">
       <section className="bg-[#ede8df] text-ink">
         <div className="max-w-7xl mx-auto px-6 lg:px-8 py-16 md:py-20">
-          <p className="text-[10px] uppercase tracking-[0.2em] text-[#57544c] font-semibold mb-4">Advertise with Talent House Collective</p>
-          <h1 className="text-[42px] md:text-[58px] leading-[1.02] tracking-[-0.05em] font-semibold text-ink max-w-4xl">A real placement, with a clear audience and clear terms.</h1>
-          <p className="text-[15px] leading-7 text-secondary max-w-2xl mt-5">Choose where your brand appears, pay securely through Stripe, then Talent House reviews the creative before publication.</p>
+          <p className="text-[10px] uppercase tracking-[0.2em] text-[#57544c] font-semibold mb-4">{cms.hero.eyebrow}</p>
+          <h1 className="text-[42px] md:text-[58px] leading-[1.02] tracking-[-0.05em] font-semibold text-ink max-w-4xl">{cms.hero.heading}</h1>
+          <p className="text-[15px] leading-7 text-secondary max-w-2xl mt-5">{cms.hero.text}</p>
         </div>
       </section>
 

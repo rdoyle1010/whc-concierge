@@ -105,5 +105,83 @@ export const DEFAULT_PUBLIC_PAGES_CONTENT: PublicPagesContent = {
         block('Property arrival packs', 'Know the property before your first shift starts.', 'Confirmed Agency and Residency professionals receive the practical details they need before they arrive.', 'https://images.unsplash.com/photo-1600334129128-685c5582fd35?auto=format&fit=crop&q=82&w=1600', 'Spa operations'),
       ],
     },
+    // The five added once the site had outgrown the originals. Each carries
+    // exactly what the page said on the day it was made editable, so nothing
+    // moved when this shipped.
+    //
+    // Text heroes, all of them: no hero photograph and no three-block band, so
+    // the editor shows three boxes and no image picker. PAGE_SECTIONS says so
+    // and a test holds it, because an editor offering a field the page does
+    // not render is how somebody concludes the whole screen is broken.
+    about: {
+      label: 'About',
+      hero: {
+        eyebrow: 'About',
+        heading: 'Built for an industry that deserves better.',
+        text: 'Talent House Collective is the professional platform for spa and wellness careers - built by someone who has lived inside the industry.',
+        image: image('', ''),
+      },
+      blocks: [
+        block('', '', ''),
+        block('', '', ''),
+        block('', '', ''),
+      ],
+    },
+    advertise: {
+      label: 'Advertise',
+      hero: {
+        eyebrow: 'Advertise with Talent House Collective',
+        heading: 'A real placement, with a clear audience and clear terms.',
+        text: 'Choose where your brand appears, pay securely through Stripe, then Talent House reviews the creative before publication.',
+        image: image('', ''),
+      },
+      blocks: [
+        block('', '', ''),
+        block('', '', ''),
+        block('', '', ''),
+      ],
+    },
+    'how-to-use': {
+      label: 'How it works',
+      hero: {
+        eyebrow: 'How Talent House works',
+        heading: 'One platform. A much simpler way to move through spa careers and recruitment.',
+        text: 'Use the website or the app. Your account and live data stay together, so you can start something in one and continue in the other.',
+        image: image('', ''),
+      },
+      blocks: [
+        block('', '', ''),
+        block('', '', ''),
+        block('', '', ''),
+      ],
+    },
+    academy: {
+      label: 'Academy',
+      hero: {
+        eyebrow: 'Talent House Academy',
+        heading: 'Learn what luxury spas actually expect from you.',
+        text: 'Professional courses with assessments, verified certificates and CPD hours - built for spa careers, from the treatment room to director level.',
+        image: image('', ''),
+      },
+      blocks: [
+        block('', '', ''),
+        block('', '', ''),
+        block('', '', ''),
+      ],
+    },
+    'agency-cover': {
+      label: 'Agency Cover',
+      hero: {
+        eyebrow: 'Agency Cover',
+        heading: 'Spa professionals on cover when your rota is short.',
+        text: 'Agency Cover is the Talent House register of self-employed spa professionals available for individual shifts at hotels and spas across the UK. Search by date, hours and distance.',
+        image: image('', ''),
+      },
+      blocks: [
+        block('', '', ''),
+        block('', '', ''),
+        block('', '', ''),
+      ],
+    },
   },
 }

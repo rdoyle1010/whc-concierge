@@ -9,7 +9,45 @@ export const PUBLIC_PAGES_DRAFT_KEY = 'public_pages_content_draft_v1'
 export const PUBLIC_PAGES_PUBLISHED_KEY = 'public_pages_content_published_v1'
 export const PUBLIC_PAGES_HISTORY_KEY = 'public_pages_content_history_v1'
 
-export const PUBLIC_PAGE_SLUGS = ['properties', 'agency', 'residency', 'pricing', 'coming-soon'] as const
+export const PUBLIC_PAGE_SLUGS = [
+  'properties', 'agency', 'residency', 'pricing', 'coming-soon',
+  // Added once the site had outgrown the five it started with. These are the
+  // pages a stranger reads before deciding whether to take this seriously, and
+  // until now only a deploy could change a word of them.
+  'about', 'advertise', 'how-to-use', 'academy', 'agency-cover',
+] as const
+
+/**
+ * What each page actually renders, so the editor only offers what exists.
+ *
+ * This map is the answer to the complaint that started it: an editor full of
+ * boxes that change nothing is worse than no editor, because somebody writes
+ * something, saves it, looks at the page and concludes the whole screen is
+ * broken. The five newer pages have text heroes and no hero photograph and no
+ * three-block band, so they get three fields and no image picker.
+ *
+ * A test holds this against what the pages consume. If a page starts rendering
+ * its blocks, or stops, the map is wrong until somebody changes it here.
+ */
+export type PageSections = { heroImage: boolean; blocks: boolean }
+
+export const PAGE_SECTIONS: Record<PublicPageSlug, PageSections> = {
+  properties: { heroImage: true, blocks: true },
+  agency: { heroImage: true, blocks: true },
+  residency: { heroImage: true, blocks: true },
+  // Pricing has offered three section editors since it was built and has
+  // never rendered one of them. Not something this change broke: it was live,
+  // and it is exactly the complaint that started all of this. Recorded here
+  // rather than fixed by adding three sections nobody designed, so the boxes
+  // stop being offered until somebody decides the page wants them.
+  pricing: { heroImage: true, blocks: false },
+  'coming-soon': { heroImage: true, blocks: true },
+  about: { heroImage: false, blocks: false },
+  advertise: { heroImage: false, blocks: false },
+  'how-to-use': { heroImage: false, blocks: false },
+  academy: { heroImage: false, blocks: false },
+  'agency-cover': { heroImage: false, blocks: false },
+}
 export type PublicPageSlug = typeof PUBLIC_PAGE_SLUGS[number]
 
 const text = z.string().trim().max(6000)
@@ -33,6 +71,11 @@ export const PublicPagesContentSchema = z.object({
     residency: pageSchema,
     pricing: pageSchema,
     'coming-soon': pageSchema,
+    about: pageSchema,
+    advertise: pageSchema,
+    'how-to-use': pageSchema,
+    academy: pageSchema,
+    'agency-cover': pageSchema,
   }),
 })
 

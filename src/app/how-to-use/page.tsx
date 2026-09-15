@@ -1,7 +1,8 @@
 'use client'
 
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { useState } from 'react'
+import { DEFAULT_PUBLIC_PAGES_CONTENT, type PublicPageContent } from '@/lib/public-page-content'
 
 type Role = 'talent' | 'employer'
 
@@ -26,15 +27,27 @@ const employer: Step[] = [
 ]
 
 export default function HowToUsePage(){
+  // Header wording, hers to change without a deploy. Loaded in the browser
+  // so the page itself stays static for everybody, with the code default
+  // showing until it arrives - which is the same words, so nothing flickers.
+  const [cms, setCms] = useState<PublicPageContent>(DEFAULT_PUBLIC_PAGES_CONTENT.pages['how-to-use'])
+  useEffect(() => {
+    const draft = typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('pagePreview') === 'draft' ? '&draft=1' : ''
+    fetch(`/api/public/page-content?slug=how-to-use${draft}`)
+      .then(r => r.ok ? r.json() : null)
+      .then(data => { if (data?.page) setCms(data.page) })
+      .catch(() => {})
+  }, [])
+
   const [role,setRole]=useState<Role>('talent')
   const steps=role==='talent'?talent:employer
 
   return <main id="main-content" className="min-h-screen bg-parchment text-[#222321]">
     <section className="mx-auto max-w-6xl px-6 py-16 md:py-24">
       <div className="mb-12 max-w-3xl">
-        <p className="mb-4 text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">How Talent House works</p>
-        <h1 className="text-4xl font-medium leading-tight text-[#222321] md:text-6xl">One platform. A much simpler way to move through spa careers and recruitment.</h1>
-        <p className="mt-6 max-w-2xl text-base leading-7 text-slate-600">Use the website or the app. Your account and live data stay together, so you can start something in one and continue in the other.</p>
+        <p className="mb-4 text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">{cms.hero.eyebrow}</p>
+        <h1 className="text-4xl font-medium leading-tight text-[#222321] md:text-6xl">{cms.hero.heading}</h1>
+        <p className="mt-6 max-w-2xl text-base leading-7 text-slate-600">{cms.hero.text}</p>
       </div>
 
       <div className="mb-10 inline-flex border border-slate-200 p-1">

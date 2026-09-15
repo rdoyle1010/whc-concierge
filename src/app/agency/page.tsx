@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
+import { DEFAULT_PUBLIC_PAGES_CONTENT, type PublicPageContent } from '@/lib/public-page-content'
 import { createClient } from '@/lib/supabase/client'
 import DashboardShell from '@/components/DashboardShell'
 import SwipeDeck from '@/components/SwipeDeck'
@@ -62,6 +63,18 @@ const VERIFICATION_ROWS = [
 type PublicStats = { professionals: number; whc_verified: number; insured: number }
 
 export default function AgencyPage() {
+  // Header wording, hers to change without a deploy. Loaded in the browser
+  // so the page itself stays static for everybody, with the code default
+  // showing until it arrives - which is the same words, so nothing flickers.
+  const [cms, setCms] = useState<PublicPageContent>(DEFAULT_PUBLIC_PAGES_CONTENT.pages['agency-cover'])
+  useEffect(() => {
+    const draft = typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('pagePreview') === 'draft' ? '&draft=1' : ''
+    fetch(`/api/public/page-content?slug=agency-cover${draft}`)
+      .then(r => r.ok ? r.json() : null)
+      .then(data => { if (data?.page) setCms(data.page) })
+      .catch(() => {})
+  }, [])
+
   const supabase = createClient()
   const [candidates, setCandidates] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
@@ -358,9 +371,9 @@ export default function AgencyPage() {
     return <DashboardShell role="employer">
       <div className="max-w-5xl mx-auto">
         <section className="pt-4 pb-14 md:pb-16">
-          <p className="public-eyebrow">Agency Cover</p>
-          <h1 className="mt-4 font-serif text-[34px] md:text-[46px] font-semibold leading-[1.08] tracking-[-.02em] text-ink max-w-3xl">Spa professionals on cover when your rota is short.</h1>
-          <p className="mt-6 text-[15px] leading-7 text-secondary max-w-2xl">Agency Cover is the Talent House register of self-employed spa professionals available for individual shifts at hotels and spas across the UK. Search by date, hours and distance, see on every profile exactly what Talent House has checked, and send an offer - nothing is booked until both sides agree.</p>
+          <p className="public-eyebrow">{cms.hero.eyebrow}</p>
+          <h1 className="mt-4 font-serif text-[34px] md:text-[46px] font-semibold leading-[1.08] tracking-[-.02em] text-ink max-w-3xl">{cms.hero.heading}</h1>
+          <p className="mt-6 text-[15px] leading-7 text-secondary max-w-2xl">{cms.hero.text}</p>
           <p className="mt-5 border-l-2 border-accent pl-5 font-serif text-[17px] md:text-[19px] font-medium leading-7 text-accent max-w-2xl">{FEE_SENTENCE}</p>
         </section>
 

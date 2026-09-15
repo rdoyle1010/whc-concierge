@@ -3,10 +3,10 @@
 import { useEffect, useMemo, useState } from 'react'
 import DashboardShell from '@/components/DashboardShell'
 import { Upload, Save, Send, Eye, Image as ImageIcon, CheckCircle2 } from 'lucide-react'
-import { cloneDefaultPublicPagesContent, PUBLIC_PAGE_SLUGS, type PublicPageSlug, type PublicPagesContent } from '@/lib/public-page-content'
+import { cloneDefaultPublicPagesContent, PAGE_SECTIONS, PUBLIC_PAGE_SLUGS, type PublicPageSlug, type PublicPagesContent } from '@/lib/public-page-content'
 
-const pageNames: Record<PublicPageSlug,string> = { properties:'Properties', agency:'Agency', residency:'Residency', pricing:'Pricing', 'coming-soon':'Coming Soon' }
-const pagePaths: Record<PublicPageSlug,string> = { properties:'/properties', agency:'/agency/about', residency:'/residency', pricing:'/pricing', 'coming-soon':'/coming-soon' }
+const pageNames: Record<PublicPageSlug,string> = { properties:'Properties', agency:'Agency', residency:'Residency', pricing:'Pricing', 'coming-soon':'Coming Soon', about:'About', advertise:'Advertise', 'how-to-use':'How It Works', academy:'Academy', 'agency-cover':'Agency Cover' }
+const pagePaths: Record<PublicPageSlug,string> = { properties:'/properties', agency:'/agency/about', residency:'/residency', pricing:'/pricing', 'coming-soon':'/coming-soon', about:'/about', advertise:'/advertise', 'how-to-use':'/how-to-use', academy:'/academy', 'agency-cover':'/agency' }
 
 // Where "Preview page" goes.
 //
@@ -127,8 +127,22 @@ export default function PublicPagesEditor() {
         <aside className="bg-white border border-border p-3 h-fit">{PUBLIC_PAGE_SLUGS.map(slug => <button key={slug} onClick={()=>setSelected(slug)} className={`w-full text-left px-4 py-3 text-[12px] border-l-2 ${selected===slug?'border-accent bg-surface text-ink':'border-transparent text-muted hover:text-ink'}`}>{pageNames[slug]}</button>)}</aside>
         <div className="space-y-6">
           <section className="dashboard-panel"><p className="dashboard-eyebrow">{page.label}</p><h2 className="dashboard-section-title mt-1">Hero wording</h2><div className="grid md:grid-cols-2 gap-4 mt-5"><label className="text-[11px]">Small heading<input className="input-field mt-1" value={page.hero.eyebrow} onChange={e=>update('hero.eyebrow',e.target.value)}/></label><label className="text-[11px]">Main heading<input className="input-field mt-1" value={page.hero.heading} onChange={e=>update('hero.heading',e.target.value)}/></label></div><label className="block text-[11px] mt-4">Introduction<textarea rows={4} className="input-field mt-1 resize-y" value={page.hero.text} onChange={e=>update('hero.text',e.target.value)}/></label></section>
-          <ImageEditor path="hero.image" image={page.hero.image} title="Hero image"/>
-          {page.blocks.map((b,i)=><section key={i} className="dashboard-panel"><div className="flex items-center justify-between"><div><p className="dashboard-eyebrow">Section {i+1}</p><h2 className="dashboard-section-title">Page section</h2></div><label className="text-[11px] flex items-center gap-2"><input type="checkbox" checked={b.visible} onChange={e=>update(`blocks.${i}.visible`,e.target.checked)}/>Show section</label></div><div className="grid md:grid-cols-2 gap-4 mt-5"><label className="text-[11px]">Small heading<input className="input-field mt-1" value={b.eyebrow} onChange={e=>update(`blocks.${i}.eyebrow`,e.target.value)}/></label><label className="text-[11px]">Heading<input className="input-field mt-1" value={b.heading} onChange={e=>update(`blocks.${i}.heading`,e.target.value)}/></label></div><label className="block text-[11px] mt-4">Wording<textarea rows={4} className="input-field mt-1 resize-y" value={b.text} onChange={e=>update(`blocks.${i}.text`,e.target.value)}/></label><div className="mt-5"><ImageEditor path={`blocks.${i}.image`} image={b.image} title={`Section ${i+1} image`}/></div></section>)}
+          {/* Only what the page actually renders.
+              An editor offering a field the page ignores is worse than no
+              editor: somebody writes something, saves it, looks at the page,
+              sees no change and concludes the whole screen is broken. The five
+              newer pages have text heroes and no block band, so they get three
+              boxes and nothing else. PAGE_SECTIONS is the record of which is
+              which, and a test holds it against what the pages consume. */}
+          {PAGE_SECTIONS[selected].heroImage
+            ? <ImageEditor path="hero.image" image={page.hero.image} title="Hero image"/>
+            : (
+              <p className="dashboard-panel text-[12px] leading-6 text-muted">
+                This page has a wording-only header. There is no hero photograph or
+                page sections on it, so there is nothing else here to change.
+              </p>
+            )}
+          {PAGE_SECTIONS[selected].blocks && page.blocks.map((b,i)=><section key={i} className="dashboard-panel"><div className="flex items-center justify-between"><div><p className="dashboard-eyebrow">Section {i+1}</p><h2 className="dashboard-section-title">Page section</h2></div><label className="text-[11px] flex items-center gap-2"><input type="checkbox" checked={b.visible} onChange={e=>update(`blocks.${i}.visible`,e.target.checked)}/>Show section</label></div><div className="grid md:grid-cols-2 gap-4 mt-5"><label className="text-[11px]">Small heading<input className="input-field mt-1" value={b.eyebrow} onChange={e=>update(`blocks.${i}.eyebrow`,e.target.value)}/></label><label className="text-[11px]">Heading<input className="input-field mt-1" value={b.heading} onChange={e=>update(`blocks.${i}.heading`,e.target.value)}/></label></div><label className="block text-[11px] mt-4">Wording<textarea rows={4} className="input-field mt-1 resize-y" value={b.text} onChange={e=>update(`blocks.${i}.text`,e.target.value)}/></label><div className="mt-5"><ImageEditor path={`blocks.${i}.image`} image={b.image} title={`Section ${i+1} image`}/></div></section>)}
         </div>
       </div>
     </div>
