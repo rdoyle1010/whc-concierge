@@ -136,6 +136,14 @@ export async function askForText({ label, tier = 'writing', prompt, system, maxT
 
     logUsage(label, model, response.usage)
 
+    // Same rule as the profile writer: a half answer is not an answer. Every
+    // surface here either fills a box somebody reads or is parsed as JSON, and
+    // truncated JSON fails later and less clearly than it fails here.
+    if (response.stop_reason === 'max_tokens') {
+      console.error(`[AI] ${label} hit the token ceiling of ${maxTokens}`)
+      return { ok: false, error: 'That came out too long and was cut off before it finished. Try again, or shorten what you gave it.' }
+    }
+
     const text = response.content
       .filter((block): block is Anthropic.TextBlock => block.type === 'text')
       .map(block => block.text)

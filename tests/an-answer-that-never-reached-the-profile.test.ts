@@ -58,9 +58,15 @@ test('filling blanks fills only blanks', () => {
 // tokens come out, not how clever the model is. Three reads in a row died
 // past eighteen seconds and told an administrator to paste the text in.
 test('the CV reader is chosen for speed, because the ceiling is fixed', () => {
-  // One model constant for the whole platform now, set in src/lib/ai.ts and
-  // overridable from Netlify without a deploy. What matters here is that one
-  // is named at all: a default silently becomes whatever the SDK ships next.
+  // Reading a CV is extraction, so it uses the reading model rather than the
+  // writing one. Overridable from Netlify, which takes effect on the next
+  // deploy and not before. What matters here is that a model is named at all:
+  // a default silently becomes whatever the SDK ships next.
+  //
+  // The ceiling stays tight here and only here. Everywhere else the budget
+  // was raised, because thinking spends it too and short fields were being
+  // cut off mid word. This surface cannot follow, because eighteen seconds
+  // is the real limit and tokens take time to produce.
   assert.match(CV_MODEL, /^claude-[a-z0-9-]+$/)
   assert.match(reader, /model: CV_MODEL/)
   const output = Number(reader.match(/const MAX_OUTPUT_TOKENS = (\d+)/)?.[1])

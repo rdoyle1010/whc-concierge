@@ -24,7 +24,7 @@ async function generate(input: string) {
     label: 'employer communication',
     system: HOUSE_RULES,
     prompt: input,
-    maxTokens: 700,
+    maxTokens: 1700,
   })
   if (!result.ok) throw new Error(result.error)
   return result.text

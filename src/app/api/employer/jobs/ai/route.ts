@@ -136,7 +136,7 @@ export async function POST(req: NextRequest) {
         'Rewrite it so it reads well and says the same thing. Keep every fact they gave.',
         'Do not add facts they did not give. Do not make it longer than it needs to be.',
         'Reply with the rewritten text only. No preamble, no quotation marks, no explanation.',
-      ].join('\n'), 900)
+      ].join('\n'), 1900)
 
       if (!text) return NextResponse.json({ error: 'Nothing came back. Please try again.' }, { status: 502 })
       return NextResponse.json({ text })
@@ -171,7 +171,7 @@ export async function POST(req: NextRequest) {
       'interview_process: the stages, who they meet, roughly how long. Empty string if not stated.',
       '',
       'An empty string is the right answer whenever the facts and notes do not support one. Never fill a gap with something plausible.',
-    ].join('\n'), 1800)
+    ].join('\n'), 2800)
 
     const cleaned = raw.replace(/^```json\s*/i, '').replace(/```$/i, '').trim()
     let parsed: Record<string, string>

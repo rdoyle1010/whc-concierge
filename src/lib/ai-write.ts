@@ -51,6 +51,22 @@ type Shape = {
   label: string
   /** Roughly how long, said to the model and shown to the person. */
   length: string
+  /**
+   * The ceiling for thinking AND the answer together, which is the part that
+   * was got wrong.
+   *
+   * These were first sized against the answer alone: two hundred tokens for a
+   * hundred-and-twenty-character headline is generous if a headline is all
+   * that is being paid for. It is not. Thinking runs inside the same budget,
+   * so the model spent most of it reasoning and the headline was cut off mid
+   * word, which is how "Authored Mandarin Oriental & Fairmont S" reached
+   * somebody's profile. The short fields are the ones that break, because they
+   * were given the least room and the thinking does not get shorter just
+   * because the answer is.
+   *
+   * Every field now has room for both. Unused tokens are not billed, so the
+   * headroom costs nothing and the truncation costs a draft.
+   */
   maxTokens: number
   /** Whose voice it is written in. */
   voice: string
@@ -60,37 +76,37 @@ const SHAPES: Record<WriteField, Shape> = {
   talent_bio: {
     label: 'About you',
     length: 'eighty to a hundred and thirty words',
-    maxTokens: 700,
+    maxTokens: 1600,
     voice: 'the first person, as she would introduce herself to a spa director she respects',
   },
   talent_headline: {
     label: 'Your headline',
     length: 'one line, under a hundred and twenty characters',
-    maxTokens: 200,
+    maxTokens: 1200,
     voice: 'the third person as a title, with no full stop',
   },
   employer_about: {
     label: 'About the property',
     length: 'a hundred to a hundred and sixty words',
-    maxTokens: 800,
+    maxTokens: 1800,
     voice: 'the property speaking about itself, warm and specific, never a brochure',
   },
   employer_tagline: {
     label: 'Tagline',
     length: 'one line, under ninety characters',
-    maxTokens: 150,
+    maxTokens: 1200,
     voice: 'a plain statement of what this place is, with no full stop',
   },
   job_description: {
     label: 'The role',
     length: 'a hundred and fifty to two hundred and fifty words',
-    maxTokens: 1100,
+    maxTokens: 2200,
     voice: 'the property addressing the person who might take the job, as "you"',
   },
   talent_commercial: {
     label: 'Commercial experience',
     length: 'forty to eighty words',
-    maxTokens: 500,
+    maxTokens: 1400,
     voice: 'the first person, plainly, about money and teams she has actually been responsible for',
   },
   // One shape for every box in the Property Fact File. They are all the same
@@ -100,31 +116,31 @@ const SHAPES: Record<WriteField, Shape> = {
   property_policy: {
     label: 'This section',
     length: 'thirty to a hundred words, whichever the subject actually needs',
-    maxTokens: 600,
+    maxTokens: 1500,
     voice: 'the property telling a worker arriving for a shift what to do, direct and unfussy',
   },
   practice_headline: {
     label: 'Practice headline',
     length: 'one line, under a hundred and twenty characters',
-    maxTokens: 200,
+    maxTokens: 1200,
     voice: 'a plain claim about what this consultancy does, with no full stop',
   },
   practice_about: {
     label: 'About the practice',
     length: 'a hundred and twenty to two hundred words',
-    maxTokens: 900,
+    maxTokens: 1900,
     voice: 'the first person, as the consultant would describe her own practice to a hotel owner',
   },
   practice_work: {
     label: 'What the work was',
     length: 'sixty to a hundred and twenty words',
-    maxTokens: 600,
+    maxTokens: 1500,
     voice: 'the first person, past tense: the brief, the state she found it in, what she did',
   },
   practice_outcome: {
     label: 'What changed',
     length: 'one or two sentences, no more',
-    maxTokens: 300,
+    maxTokens: 1300,
     voice: 'a flat statement of the outcome, numbers first where there are numbers',
   },
 }
@@ -272,6 +288,20 @@ export async function writeText(request: WriteRequest): Promise<
 
     if (response.stop_reason === 'refusal') {
       return { ok: false, error: 'That could not be written. Try putting a little more in the box first.' }
+    }
+
+    // A draft that ran out of room is not a draft.
+    //
+    // This is the defect the small ceilings exposed rather than caused. The
+    // model stopped mid word, the text that had arrived was returned as a
+    // success, and somebody was shown "Authored Mandarin Oriental & Fairmont
+    // S" under a heading that said A DRAFT, FOR YOU TO READ. Half a sentence
+    // offered as finished work is worse than an honest failure, because the
+    // person cannot tell whether the platform is broken or whether that is
+    // genuinely what it thinks of them.
+    if (response.stop_reason === 'max_tokens') {
+      console.error(`[AI] ${request.field} hit the token ceiling of ${maxTokens}`)
+      return { ok: false, error: 'That came out too long and was cut off. Press it again, or shorten what is in the box.' }
     }
 
     logUsage(`write ${request.field}`, WRITE_MODEL, response.usage)

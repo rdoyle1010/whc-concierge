@@ -27,7 +27,7 @@ async function generateJson(input: string) {
     label: 'application analysis',
     system: HOUSE_RULES,
     prompt: input,
-    maxTokens: 1800,
+    maxTokens: 2800,
   })
   if (!result.ok) throw new Error(result.error)
   return result.data
