@@ -1,12 +1,5 @@
 import { LIBRARY_PLAN, type PlannedDocument } from './library-plan'
-import { POOL_PLAN_ENTRIES } from './pool-plans'
-import { RISK_ASSESSMENT_ENTRIES } from './risk-assessment-plans'
-import { GUIDE_ENTRIES } from './guide/plans'
-import { CHECKLIST_ENTRIES } from './checklist-plans'
-import { FINANCE_ENTRIES } from './finance-plans'
-import { JOB_DESCRIPTION_ENTRIES } from './job-description-plans'
-import { POLICY_ENTRIES } from './policy-plans'
-import { HIRING_ENTRIES } from './hiring-plans'
+import { REGISTER_INDEX } from './catalogue-index'
 
 // Everything that can be listed and sold, in one list.
 //
@@ -19,11 +12,14 @@ import { HIRING_ENTRIES } from './hiring-plans'
 // buyer looks, because "every document" that quietly omits the two a pool
 // operator needs most is a list that misleads by being incomplete.
 
+// The register-written documents come from catalogue-index, not from the plan
+// modules that build them. Reading them from the plan modules pulled every
+// finished document into the browser bundle along with its title, which is a
+// long way of publishing the thing being sold. catalogue-index carries the
+// listing fields and nothing else, and a test keeps it honest.
+
 export function sellableCatalogue(): PlannedDocument[] {
-  return [
-    ...LIBRARY_PLAN, ...POOL_PLAN_ENTRIES, ...RISK_ASSESSMENT_ENTRIES, ...GUIDE_ENTRIES,
-    ...CHECKLIST_ENTRIES, ...FINANCE_ENTRIES, ...JOB_DESCRIPTION_ENTRIES, ...POLICY_ENTRIES, ...HIRING_ENTRIES,
-  ]
+  return [...LIBRARY_PLAN, ...REGISTER_INDEX]
 }
 
 export function catalogueEntry(reference: string): PlannedDocument | undefined {

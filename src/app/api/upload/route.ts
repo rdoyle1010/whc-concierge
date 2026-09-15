@@ -106,7 +106,7 @@ export async function POST(req: NextRequest) {
 
     if (profileId) {
       const { data: profile } = await admin.from('candidate_profiles').select('user_id').eq('id', profileId).single()
-      if (!profile || profile.user_id !== effectiveUserId) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+      if (!profile || profile.user_id !== effectiveUserId) return NextResponse.json({ error: 'You do not have access to that. If that looks wrong, sign in with the account that does.' }, { status: 403 })
     }
 
     const original = Buffer.from(await file.arrayBuffer())

@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
   try {
     // -- Auth: caller must be logged in --
     const { data: { user } } = await getAuthedUser()
-    if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+    if (!user) return NextResponse.json({ error: 'Please sign in to continue. If you have just signed in, refresh the page.' }, { status: 401 })
 
     const { jobId } = await req.json()
     if (!jobId) return NextResponse.json({ error: 'jobId required' }, { status: 400 })
@@ -48,7 +48,7 @@ export async function POST(req: NextRequest) {
     const ownsJob = !!emp && !!employerId && emp.id === employerId
     const isAdmin = prof?.role === 'admin'
     if (!ownsJob && !isAdmin) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+      return NextResponse.json({ error: 'You do not have access to that. If that looks wrong, sign in with the account that does.' }, { status: 403 })
     }
 
     // Get approved candidates

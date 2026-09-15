@@ -40,7 +40,7 @@ function stillRunning(until: string | null | undefined): boolean {
 
 export async function GET() {
   const user = await requireAdmin()
-  if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+  if (!user) return NextResponse.json({ error: 'Please sign in to continue. If you have just signed in, refresh the page.' }, { status: 401 })
   const admin = createAdminClient()
   const [{ data: campaigns }, { data: cands }, { data: emps }, { data: audience }, { data: optedIn }, { data: newsletter }] = await Promise.all([
     admin.from('campaigns').select('*').order('created_at', { ascending: false }),
@@ -80,7 +80,7 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   const user = await requireAdmin()
-  if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+  if (!user) return NextResponse.json({ error: 'Please sign in to continue. If you have just signed in, refresh the page.' }, { status: 401 })
   const admin = createAdminClient()
   try {
     const body = await req.json()

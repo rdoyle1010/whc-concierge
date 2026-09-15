@@ -19,7 +19,7 @@ async function getCandidate(req: NextRequest) {
 
 export async function GET(req: NextRequest) {
   const { user, candidate, admin } = await getCandidate(req)
-  if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+  if (!user) return NextResponse.json({ error: 'Please sign in to continue. If you have just signed in, refresh the page.' }, { status: 401 })
   if (!candidate || !admin) return NextResponse.json({ error: 'Only professionals can manage a blocklist' }, { status: 403 })
 
   const q = (req.nextUrl.searchParams.get('q') || '').trim().slice(0, 80).replace(/[%_,().\\]/g, '')
@@ -60,7 +60,7 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   const { user, candidate, admin } = await getCandidate(req)
-  if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+  if (!user) return NextResponse.json({ error: 'Please sign in to continue. If you have just signed in, refresh the page.' }, { status: 401 })
   if (!candidate || !admin) return NextResponse.json({ error: 'Only professionals can manage a blocklist' }, { status: 403 })
 
   const body = await req.json().catch(() => ({}))

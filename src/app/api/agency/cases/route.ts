@@ -75,7 +75,7 @@ export async function POST(req: NextRequest) {
     const { data: booking } = await admin.from('agency_bookings').select('*').eq('id', body.bookingId).maybeSingle()
     if (!booking || !['confirmed','completed'].includes(booking.status)) return NextResponse.json({ error: 'This shift cannot have a case opened yet.' }, { status: 400 })
     const role = booking.candidate_id === candidate?.id ? 'candidate' : booking.employer_id === employer?.id ? 'employer' : null
-    if (!role) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    if (!role) return NextResponse.json({ error: 'You do not have access to that. If that looks wrong, sign in with the account that does.' }, { status: 403 })
     const description = String(body.description || '').trim()
     if (description.length < 5) return NextResponse.json({ error: 'Please explain what happened.' }, { status: 400 })
     const { data: existing } = await admin.from('agency_cases').select('id').eq('booking_id', booking.id).in('status', ['open','awaiting_response','under_review','awaiting_agreement','awaiting_payment']).maybeSingle()
@@ -113,7 +113,7 @@ export async function POST(req: NextRequest) {
   const { data: row } = await admin.from('agency_cases').select('*, booking:agency_bookings(*)').eq('id', body.caseId).maybeSingle()
   if (!row) return NextResponse.json({ error: 'Case not found' }, { status: 404 })
   const role = roleForCase(row, candidate, employer, profile)
-  if (!role) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  if (!role) return NextResponse.json({ error: 'You do not have access to that. If that looks wrong, sign in with the account that does.' }, { status: 403 })
 
   if (body.action === 'respond') {
     if (row.opened_by_user_id === user.id && role !== 'admin') return NextResponse.json({ error: 'The other party needs to respond first.' }, { status: 400 })

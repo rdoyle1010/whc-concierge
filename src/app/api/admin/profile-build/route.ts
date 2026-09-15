@@ -45,7 +45,7 @@ const BUCKET = 'talent-documents'
 
 export async function GET() {
   const admin_user = await adminRequestUser()
-  if (!admin_user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+  if (!admin_user) return NextResponse.json({ error: 'Please sign in to continue. If you have just signed in, refresh the page.' }, { status: 401 })
   const admin = createAdminClient()
 
   const { data, error } = await admin.from('profile_build_requests')
@@ -95,7 +95,7 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   const actor = await adminRequestUser()
-  if (!actor) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+  if (!actor) return NextResponse.json({ error: 'Please sign in to continue. If you have just signed in, refresh the page.' }, { status: 401 })
 
   const body = await req.json().catch(() => ({}))
   const action = String(body.action || '')

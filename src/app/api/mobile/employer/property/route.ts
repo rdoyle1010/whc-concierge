@@ -13,7 +13,7 @@ const EDITABLE = [
 
 export async function GET(req: NextRequest) {
   const user = await getRequestUser(req)
-  if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+  if (!user) return NextResponse.json({ error: 'Please sign in to continue. If you have just signed in, refresh the page.' }, { status: 401 })
   const admin = createAdminClient()
   const { data: profile } = await admin.from('employer_profiles').select('*').eq('user_id', user.id).maybeSingle()
   if (!profile) return NextResponse.json({ error: 'Employer profile not found.' }, { status: 404 })
@@ -22,7 +22,7 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   const user = await getRequestUser(req)
-  if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+  if (!user) return NextResponse.json({ error: 'Please sign in to continue. If you have just signed in, refresh the page.' }, { status: 401 })
   const body = await req.json().catch(() => ({}))
   const admin = createAdminClient()
   const { data: profile } = await admin.from('employer_profiles').select('id,postcode').eq('user_id', user.id).maybeSingle()

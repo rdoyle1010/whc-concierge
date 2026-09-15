@@ -83,7 +83,7 @@ async function candidateRelationshipStrength(
 
 export async function GET(req: NextRequest) {
   const user = await getRequestUser(req)
-  if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+  if (!user) return NextResponse.json({ error: 'Please sign in to continue. If you have just signed in, refresh the page.' }, { status: 401 })
 
   const bucket = String(req.nextUrl.searchParams.get('bucket') || '')
   const path = String(req.nextUrl.searchParams.get('path') || '')
@@ -116,7 +116,7 @@ export async function GET(req: NextRequest) {
     })
   }
 
-  if (!allowed) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  if (!allowed) return NextResponse.json({ error: 'You do not have access to that. If that looks wrong, sign in with the account that does.' }, { status: 403 })
 
   const { data, error } = await admin.storage.from(bucket).createSignedUrl(path, 60)
   if (error || !data?.signedUrl) return NextResponse.json({ error: 'File not found' }, { status: 404 })

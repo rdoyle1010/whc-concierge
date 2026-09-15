@@ -14,7 +14,7 @@ function monthStartIso() {
 }
 
 export async function GET() {
-  if (!await requireAdmin()) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+  if (!await requireAdmin()) return NextResponse.json({ error: 'Please sign in to continue. If you have just signed in, refresh the page.' }, { status: 401 })
   const admin = createAdminClient()
   const monthStart = monthStartIso()
   const now = new Date().toISOString()

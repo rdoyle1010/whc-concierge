@@ -210,7 +210,7 @@ function fallback(candidate: any, job: any, employer: any, cvText: string) {
 export async function POST(req: NextRequest) {
   const authorization = req.headers.get('authorization') || ''
   const token = authorization.startsWith('Bearer ') ? authorization.slice(7).trim() : ''
-  if (!token) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+  if (!token) return NextResponse.json({ error: 'Please sign in to continue. If you have just signed in, refresh the page.' }, { status: 401 })
 
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
@@ -218,7 +218,7 @@ export async function POST(req: NextRequest) {
 
   const authClient = createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false } })
   const { data: { user }, error: authError } = await authClient.auth.getUser(token)
-  if (authError || !user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+  if (authError || !user) return NextResponse.json({ error: 'Please sign in to continue. If you have just signed in, refresh the page.' }, { status: 401 })
 
   // Two-step verification applies to bearer tokens here exactly as in
   // getRequestUser: an account with a verified authenticator must present an
@@ -230,7 +230,7 @@ export async function POST(req: NextRequest) {
       const payload = JSON.parse(Buffer.from((token.split('.')[1] || ''), 'base64url').toString('utf8'))
       if (payload?.aal !== 'aal2') return NextResponse.json({ error: 'Two-step verification required' }, { status: 401 })
     }
-  } catch { return NextResponse.json({ error: 'Unauthorised' }, { status: 401 }) }
+  } catch { return NextResponse.json({ error: 'Please sign in to continue. If you have just signed in, refresh the page.' }, { status: 401 }) }
 
   const supabase = createClient(url, key, {
     accessToken: async () => token,

@@ -51,7 +51,7 @@ function parseLondonSlot(value: string): Date | null {
 
 export async function POST(req: NextRequest) {
   const user = await getRequestUser(req)
-  if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+  if (!user) return NextResponse.json({ error: 'Please sign in to continue. If you have just signed in, refresh the page.' }, { status: 401 })
 
   try {
     const body = await req.json()
@@ -121,7 +121,7 @@ export async function POST(req: NextRequest) {
       admin.from('job_listings').select('id,job_title,employer_id').eq('id', jobId).maybeSingle(),
       admin.from('candidate_profiles').select('id,user_id,full_name,phone,sms_opt_in').eq('id', application.candidate_id).maybeSingle(),
     ])
-    if (!job || job.employer_id !== employer.id || !candidate?.user_id) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    if (!job || job.employer_id !== employer.id || !candidate?.user_id) return NextResponse.json({ error: 'You do not have access to that. If that looks wrong, sign in with the account that does.' }, { status: 403 })
 
     const { data: interview, error: interviewError } = await admin.from('application_interviews').upsert({
       application_id: application.id,
@@ -211,7 +211,7 @@ export async function POST(req: NextRequest) {
 
 export async function PATCH(req: NextRequest) {
   const user = await getRequestUser(req)
-  if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+  if (!user) return NextResponse.json({ error: 'Please sign in to continue. If you have just signed in, refresh the page.' }, { status: 401 })
   try {
     const body = await req.json()
     const interviewId = String(body.interviewId || '')
@@ -227,7 +227,7 @@ export async function PATCH(req: NextRequest) {
     const { data: application } = await admin.from('applications').select('id,role_id,job_id').eq('id', interview.application_id).maybeSingle()
     const jobId = application?.role_id || application?.job_id
     const { data: job } = jobId ? await admin.from('job_listings').select('id,employer_id').eq('id', jobId).maybeSingle() : { data: null }
-    if (!job || job.employer_id !== employer.id) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    if (!job || job.employer_id !== employer.id) return NextResponse.json({ error: 'You do not have access to that. If that looks wrong, sign in with the account that does.' }, { status: 403 })
 
     if (interview.status === 'completed') return NextResponse.json({ success: true, interview })
     if (interview.status !== 'confirmed' || !interview.selected_slot) return NextResponse.json({ error: 'The interview needs a confirmed time before it can be marked complete.' }, { status: 409 })

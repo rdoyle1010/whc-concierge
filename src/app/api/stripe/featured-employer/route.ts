@@ -10,7 +10,7 @@ const RETURN_PATHS = new Set(['/employer/billing', '/billing'])
 export async function POST(req: NextRequest) {
   try {
     const user = await getRequestUser(req)
-    if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+    if (!user) return NextResponse.json({ error: 'Please sign in to continue. If you have just signed in, refresh the page.' }, { status: 401 })
 
     const body = await req.json().catch(() => ({}))
     const employerId = String(body.employerId || '')
@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
       .eq('id', employerId)
       .maybeSingle()
     if (!employer || employer.user_id !== user.id) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+      return NextResponse.json({ error: 'You do not have access to that. If that looks wrong, sign in with the account that does.' }, { status: 403 })
     }
 
     const currentlyFeatured = Boolean(

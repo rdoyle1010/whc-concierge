@@ -58,7 +58,7 @@ async function withCoordinates(clean: Record<string, unknown>): Promise<Record<s
 export async function POST(req: NextRequest) {
   try {
     const user = await getRequestUser(req)
-    if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+    if (!user) return NextResponse.json({ error: 'Please sign in to continue. If you have just signed in, refresh the page.' }, { status: 401 })
 
     const body = await req.json()
     const validation = validateRequest(profileUpdateSchema, body)
@@ -67,7 +67,7 @@ export async function POST(req: NextRequest) {
 
     const admin = createAdminClient()
     const { data: profile } = await admin.from('candidate_profiles').select('user_id,salary_expectation_min,salary_expectation_max,role_level').eq('id', profileId).single()
-    if (!profile || profile.user_id !== user.id) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    if (!profile || profile.user_id !== user.id) return NextResponse.json({ error: 'You do not have access to that. If that looks wrong, sign in with the account that does.' }, { status: 403 })
 
     const safeData = stripToAllowed(data)
     if (!Object.keys(safeData).length) return NextResponse.json({ error: 'No valid fields provided' }, { status: 400 })

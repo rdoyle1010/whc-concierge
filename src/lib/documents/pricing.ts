@@ -1,13 +1,15 @@
 import { LIBRARY_PLAN, TIER_LABEL, type BuildTier } from './library-plan'
-import { POOL_PLAN_ENTRIES } from './pool-plans'
-import { GUIDE_ENTRIES } from './guide/plans'
-import { RISK_ASSESSMENT_ENTRIES } from './risk-assessment-plans'
+import {
+  POOL_INDEX as POOL_PLAN_ENTRIES,
+  GUIDE_INDEX as GUIDE_ENTRIES,
+  RISK_ASSESSMENT_INDEX as RISK_ASSESSMENT_ENTRIES,
+  CHECKLIST_INDEX as CHECKLIST_ENTRIES,
+  FINANCE_INDEX as FINANCE_ENTRIES,
+  JOB_DESCRIPTION_INDEX as JOB_DESCRIPTION_ENTRIES,
+  POLICY_INDEX as POLICY_ENTRIES,
+  HIRING_INDEX as HIRING_ENTRIES,
+} from './catalogue-index'
 import { JOURNEY_STAGES, stageOf, type StageGroup } from './journey'
-import { CHECKLIST_ENTRIES } from './checklist-plans'
-import { FINANCE_ENTRIES } from './finance-plans'
-import { JOB_DESCRIPTION_ENTRIES } from './job-description-plans'
-import { POLICY_ENTRIES } from './policy-plans'
-import { HIRING_ENTRIES } from './hiring-plans'
 
 // What a document costs, and why.
 //

@@ -81,7 +81,7 @@ test('the PDF is generated, never printed, so the blanks are real fields', () =>
 test('an unwritten or unfinished document is never handed over as a PDF', () => {
   const route = body('src/app/api/admin/documents/[id]/pdf/route.ts')
   assert.match(route, /adminRequestUser/)
-  assert.match(route, /Unauthorised/)
+  assert.match(route, /status: 401/)
   assert.match(route, /Nothing has been written into that one yet/)
   assert.match(route, /missingFromSop/)
   assert.match(route, /it still needs/)

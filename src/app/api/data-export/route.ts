@@ -73,7 +73,7 @@ export async function GET(req: NextRequest) {
   // depend on which device you happen to be holding, and the app had no way
   // to ask for one.
   const user = await getRequestUser(req)
-  if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+  if (!user) return NextResponse.json({ error: 'Please sign in to continue. If you have just signed in, refresh the page.' }, { status: 401 })
 
   const admin = createAdminClient()
   const unavailable: string[] = []

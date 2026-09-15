@@ -10,7 +10,7 @@ import { createNotification } from '@/lib/notifications'
 // is why the queue is ordered by when it was last touched rather than created.
 
 export async function GET() {
-  if (!await adminRequestUser()) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+  if (!await adminRequestUser()) return NextResponse.json({ error: 'Please sign in to continue. If you have just signed in, refresh the page.' }, { status: 401 })
   const admin = createAdminClient()
   const { data, error } = await admin.from('consultancy_profiles')
     .select('*').order('updated_at', { ascending: false }).limit(300)
@@ -19,7 +19,7 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
-  if (!await adminRequestUser()) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+  if (!await adminRequestUser()) return NextResponse.json({ error: 'Please sign in to continue. If you have just signed in, refresh the page.' }, { status: 401 })
   const body = await req.json().catch(() => ({}))
   const id = String(body.id || '')
   const action = String(body.action || '')

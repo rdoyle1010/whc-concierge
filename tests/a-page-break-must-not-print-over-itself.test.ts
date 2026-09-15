@@ -21,8 +21,15 @@ test('a page break is asked for on the section, never on the rule at the top of 
   // react-pdf moved the divider to a new page and then laid the rest of the
   // section out against the space left on the old one, so everything after it
   // got about half the leading it needed.
-  assert.ok(source.includes('style={styles.section} break={startsPart && index > 0}'),
+  assert.ok(/style=\{\[styles\.section[^\]]*\]\} break=\{breaks\}/.test(source),
     'the section carries the break')
+  // And a section that breaks carries no top margin, on itself or on its
+  // divider. Forty points of leading margin that will not fit on the page
+  // being left behind takes a page of its own, and that page is blank.
+  assert.ok(/styles\.section, breaks \? \{ marginTop: 0 \}/.test(source),
+    'a breaking section drops its top margin')
+  assert.ok(/styles\.partDivider, breaks \? \{ marginTop: 0 \}/.test(source),
+    'and so does its part divider')
   assert.ok(!/styles\.partDivider\} break=/.test(source),
     'the divider must not carry it')
 })

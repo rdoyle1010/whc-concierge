@@ -9,7 +9,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 // within days. Now it has one place.
 
 export async function GET(req: NextRequest) {
-  if (!await adminRequestUser()) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+  if (!await adminRequestUser()) return NextResponse.json({ error: 'Please sign in to continue. If you have just signed in, refresh the page.' }, { status: 401 })
   const admin = createAdminClient()
   const params = req.nextUrl.searchParams
   const channel = params.get('channel')

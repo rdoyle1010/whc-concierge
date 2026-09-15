@@ -12,7 +12,7 @@ const ACTIVE_STATUSES = ['pending', 'reviewed', 'shortlisted', 'interview', 'off
 
 export async function POST(req: NextRequest) {
   const user = await getRequestUser(req)
-  if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+  if (!user) return NextResponse.json({ error: 'Please sign in to continue. If you have just signed in, refresh the page.' }, { status: 401 })
 
   const { jobId, action } = await req.json()
   if (!jobId || !['filled', 'closed', 'reopen', 'delete'].includes(action)) return NextResponse.json({ error: 'Invalid request' }, { status: 400 })
@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
   if (!employer) return NextResponse.json({ error: 'Employer profile not found' }, { status: 404 })
 
   const { data: job } = await admin.from('job_listings').select('id, employer_id, job_title, expires_at').eq('id', jobId).maybeSingle()
-  if (!job || job.employer_id !== employer.id) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  if (!job || job.employer_id !== employer.id) return NextResponse.json({ error: 'You do not have access to that. If that looks wrong, sign in with the account that does.' }, { status: 403 })
 
   // Putting a role back up used to be a write straight from the browser to
   // the database, guarded by nothing but a JavaScript alert about the paid

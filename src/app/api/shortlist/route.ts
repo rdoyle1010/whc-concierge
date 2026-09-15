@@ -51,7 +51,7 @@ async function mayShortlist(admin: ReturnType<typeof createAdminClient>, profile
 
 export async function GET() {
   const profile = await getEmployerProfile()
-  if (!profile) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+  if (!profile) return NextResponse.json({ error: 'Please sign in to continue. If you have just signed in, refresh the page.' }, { status: 401 })
   if (profile.approval_status !== 'approved') return NextResponse.json({ error: 'Employer approval required' }, { status: 403 })
 
   const admin = createAdminClient()
@@ -84,7 +84,7 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   const profile = await getEmployerProfile()
-  if (!profile) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+  if (!profile) return NextResponse.json({ error: 'Please sign in to continue. If you have just signed in, refresh the page.' }, { status: 401 })
   if (profile.approval_status !== 'approved') return NextResponse.json({ error: 'Employer approval required' }, { status: 403 })
 
   const { candidateId, jobId, notes } = await req.json()
@@ -120,7 +120,7 @@ export async function POST(req: NextRequest) {
 
 export async function PATCH(req: NextRequest) {
   const profile = await getEmployerProfile()
-  if (!profile) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+  if (!profile) return NextResponse.json({ error: 'Please sign in to continue. If you have just signed in, refresh the page.' }, { status: 401 })
   if (profile.approval_status !== 'approved') return NextResponse.json({ error: 'Employer approval required' }, { status: 403 })
 
   const { id, notes } = await req.json()
@@ -133,7 +133,7 @@ export async function PATCH(req: NextRequest) {
 
 export async function DELETE(req: NextRequest) {
   const profile = await getEmployerProfile()
-  if (!profile) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+  if (!profile) return NextResponse.json({ error: 'Please sign in to continue. If you have just signed in, refresh the page.' }, { status: 401 })
   if (profile.approval_status !== 'approved') return NextResponse.json({ error: 'Employer approval required' }, { status: 403 })
 
   const { id } = await req.json()

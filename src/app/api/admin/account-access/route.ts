@@ -109,7 +109,7 @@ async function diagnose(email: string): Promise<Diagnosis> {
 }
 
 export async function GET(req: NextRequest) {
-  if (!await adminRequestUser()) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+  if (!await adminRequestUser()) return NextResponse.json({ error: 'Please sign in to continue. If you have just signed in, refresh the page.' }, { status: 401 })
   const email = String(req.nextUrl.searchParams.get('email') || '').trim().toLowerCase()
   if (!email) return NextResponse.json({ error: 'Enter the email address on the account.' }, { status: 400 })
   return NextResponse.json(await diagnose(email))
@@ -117,7 +117,7 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   const actor = await adminRequestUser()
-  if (!actor) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+  if (!actor) return NextResponse.json({ error: 'Please sign in to continue. If you have just signed in, refresh the page.' }, { status: 401 })
 
   const body = await req.json().catch(() => ({}))
   const email = String(body.email || '').trim().toLowerCase()

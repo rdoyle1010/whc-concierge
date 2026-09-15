@@ -34,6 +34,12 @@ export default function MyDocumentsPage() {
   const [workbook, setWorkbook] = useState(false)
   const [tools, setTools] = useState<{ slug: string; name: string; blurb: string }[]>([])
   const [error, setError] = useState('')
+  // Signed out is not an error. It was being treated as one, and the page
+  // printed the API's own word for it: a shelf headed "Your documents" with
+  // "Unauthorised" in a box, and underneath it, in full confidence, "you have
+  // not bought any documents yet". Somebody who had bought plenty read that
+  // as their purchases being gone.
+  const [signedOut, setSignedOut] = useState(false)
 
   useEffect(() => {
     async function load() {
@@ -50,6 +56,11 @@ export default function MyDocumentsPage() {
       const sessionId = new URLSearchParams(window.location.search).get('session_id')
       const res = await fetch(`/api/standards/mine${sessionId ? `?session_id=${encodeURIComponent(sessionId)}` : ''}`, { cache: 'no-store' })
       const body = await res.json().catch(() => null)
+      if (res.status === 401) {
+        setSignedOut(true)
+        setDocuments([])
+        return
+      }
       if (!res.ok || !body) {
         setError(body?.error || 'We could not reach your documents just now.')
         setDocuments([])
@@ -78,6 +89,23 @@ export default function MyDocumentsPage() {
 
         {documents === null ? (
           <p className="mt-6 text-[13px] text-secondary">Loading...</p>
+        ) : signedOut ? (
+          // The whole shelf lives behind the account, so there is nothing
+          // useful to show and one thing useful to do. It sends them back
+          // here afterwards rather than to a dashboard they did not ask for.
+          <div className="mt-6">
+            <p className="max-w-2xl text-[14px] leading-relaxed text-secondary">
+              You are not signed in on this browser, so we cannot show you what you have bought. Sign in with
+              the address you paid with and everything appears here.
+            </p>
+            <p className="mt-3 max-w-2xl text-[13px] text-muted">
+              No account? The link in your receipt email opens your documents without one.
+            </p>
+            <Link href="/login?redirect=%2Fmy-documents"
+              className="mt-5 inline-flex items-center gap-1.5 border border-[#1c1c1c] bg-[#1c1c1c] px-4 py-2 text-[13px] font-semibold text-white">
+              Sign in
+            </Link>
+          </div>
         ) : documents.length === 0 && files.length === 0 && !workbook && tools.length === 0 ? (
           <div className="mt-6">
             <p className="max-w-2xl text-[14px] leading-relaxed text-secondary">

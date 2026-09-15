@@ -184,7 +184,7 @@ async function sweep(admin: Admin, execute: boolean): Promise<RetentionResult[]>
 }
 
 export async function GET(_req: NextRequest) {
-  if (!(await requireAdmin())) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+  if (!(await requireAdmin())) return NextResponse.json({ error: 'Please sign in to continue. If you have just signed in, refresh the page.' }, { status: 401 })
 
   const admin = createAdminClient()
   try {
@@ -225,7 +225,7 @@ export async function GET(_req: NextRequest) {
 export async function POST(req: NextRequest) {
   const scheduled = isInternalApiRequest(req)
   const ranBy = scheduled ? null : await adminRequestUserId()
-  if (!scheduled && !ranBy) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+  if (!scheduled && !ranBy) return NextResponse.json({ error: 'Please sign in to continue. If you have just signed in, refresh the page.' }, { status: 401 })
 
   const admin = createAdminClient()
   try {

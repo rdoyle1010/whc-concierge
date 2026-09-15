@@ -249,7 +249,8 @@ before anything in this library is called finished.
 ## Technical shape
 
 Next.js 16 App Router · Supabase (auth, Postgres, storage) · Stripe · Netlify.
-239 API routes, 172 pages, 132 migrations, 157 test files.
+239 API routes, 174 pages, 134 migrations, 168 test files. 1,206 tests and
+41 production-readiness checks, all green.
 
 Two roles: `talent` and `employer`, stored on `profiles.role` (talent is
 stored as `candidate`). Admin is a third role on the same column.
@@ -258,6 +259,17 @@ stored as `candidate`). Admin is a third role on the same column.
 
 - **British English** everywhere, including code comments and user-facing copy.
 - **No em dashes.** A readiness check enforces this across `src/`.
+- **Nothing paid reaches a browser.** The shop lists every title, and it reads
+  them from `src/lib/documents/catalogue-index.ts`, which is generated listing
+  data with no route back to the writing. Importing the plan modules into a
+  client component instead once shipped the hazard prose out of the risk
+  assessment suite in a public 444KB chunk. A readiness check now walks the
+  import graph from every `'use client'` file and fails if it can reach a
+  draft.
+- **An API error is read by a person.** No route answers with a bare status
+  word. `{ error: 'Unauthorised' }` was returned by 203 routes and the pages in
+  front of them print whatever the API says, so a buyer signed out on one
+  browser saw "Unauthorised" above "you have not bought any documents yet".
 - **Secrets live only in Netlify environment variables.** Never in the repo,
   never in a chat, never in a file.
 - **SQL is pasted into chat in a code block**, never delivered as a file to run.
