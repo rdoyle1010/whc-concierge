@@ -9,7 +9,9 @@ import { Eye, EyeOff } from 'lucide-react'
 import Wordmark from '@/components/Wordmark'
 import { createClient } from '@/lib/supabase/client'
 import { MARKETING_CONSENT_WORDING } from '@/lib/consent-wording'
-import { LAUNCH_OFFER_TALENT, launchOfferClosesLabel, launchOfferOpen } from '@/lib/launch-offers'
+import {
+  LAUNCH_OFFER_TALENT, launchOfferClosesLabel, launchOfferOpen, SIGNUP_CODE, normaliseSignupCode,
+} from '@/lib/launch-offers'
 import { DEFAULT_VISIBILITY, VISIBILITY_COPY, type TalentVisibility } from '@/lib/talent-visibility'
 
 const MIN_PASSWORD_LENGTH = 8
@@ -30,6 +32,9 @@ export default function TalentRegisterPage() {
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [refCode, setRefCode] = useState('')
+  // The campaign code. Prefilled from ?code= so a link out of an email or an
+  // Instagram bio fills it in and nobody has to type anything off a poster.
+  const [signupCode, setSignupCode] = useState('')
   // Private until she says otherwise. The platform used to decide this for
   // her and decide it wrong: registration published her, by name, to every
   // verified property, without asking. In an industry this small that is the
@@ -55,6 +60,8 @@ export default function TalentRegisterPage() {
     const params = new URLSearchParams(window.location.search)
     const r = params.get('ref')
     if (r) setRefCode(r.slice(0, 30))
+    const code = params.get('code')
+    if (code) setSignupCode(code.slice(0, 30))
     if (params.get('focus') === 'consultant') setConsultantFocus(true)
     // Same-origin only. An open redirect on a registration form sends new
     // accounts to whatever a link says.
@@ -93,6 +100,7 @@ export default function TalentRegisterPage() {
           displayName: fullName,
           visibility,
           refCode: refCode || undefined,
+          signupCode: signupCode || undefined,
         }),
       })
       const init = await initResponse.json().catch(() => ({}))
@@ -167,9 +175,28 @@ export default function TalentRegisterPage() {
 
             {launchOfferOpen() && (
               <div className="mb-5 border border-[#dcd4c8] bg-[#ede8df] px-3.5 py-3">
-                <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#222321]">Opening month</p>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#222321]">Opening season</p>
                 <p className="mt-1.5 text-[12.5px] leading-5 text-[#3a4239]">{LAUNCH_OFFER_TALENT}</p>
-                <p className="mt-1.5 text-[11px] text-[#6e6a60]">Applied automatically. Closes {launchOfferClosesLabel()}.</p>
+                {/* The code is a campaign handle, not a gate. Somebody who
+                    arrives without it still gets the courses, so the box says
+                    optional and the offer line says the courses are theirs
+                    either way. A field that looks compulsory and is not is a
+                    field people abandon a form over. */}
+                <label className="mt-2.5 block">
+                  <span className="text-[11px] text-[#6e6a60]">Code, if you have one</span>
+                  <input
+                    value={signupCode}
+                    onChange={event => setSignupCode(event.target.value.slice(0, 30))}
+                    placeholder={SIGNUP_CODE}
+                    aria-label="Sign-up code"
+                    className="mt-1 w-full border border-[#dcd4c8] bg-white px-3 py-2 text-[13px] uppercase tracking-[.06em] text-[#222321] placeholder:normal-case placeholder:tracking-normal placeholder:text-[#7e7a70]"
+                  />
+                </label>
+                <p className="mt-1.5 text-[11px] text-[#6e6a60]">
+                  {normaliseSignupCode(signupCode) === normaliseSignupCode(SIGNUP_CODE)
+                    ? `${SIGNUP_CODE} applied. Both courses are in your Academy the moment you are in.`
+                    : `Both courses are yours either way. Closes ${launchOfferClosesLabel()}.`}
+                </p>
               </div>
             )}
 
