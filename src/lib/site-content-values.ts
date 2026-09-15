@@ -110,7 +110,18 @@ export const DEFAULT_WEBSITE_CONTENT: WebsiteContent = {
   },
   hero: {
     slides: [
-      { image: image('https://images.unsplash.com/photo-1720678418766-2628e52f4634?w=1920&q=80&auto=format&fit=crop', 'Luxury spa interior'), eyebrow: 'Talent House Collective', heading: 'The professional platform for spa and wellness careers', text: 'Find exceptional people. Build better careers. Develop stronger spa businesses.' },
+      // Both businesses, in the first sentence.
+      //
+      // This said careers and only careers, on a hero that filled the whole
+      // window, so a spa director who had searched for a risk assessment
+      // template met a full screen about hotel jobs and left before scrolling.
+      // That is most of the answer to nobody understanding what this is.
+      //
+      // It is a default, so it only reaches a site whose hero has not been
+      // edited. The second button under the hero is structural for that
+      // reason: the part of the business that takes the money cannot depend on
+      // whether a default won.
+      { image: image('https://images.unsplash.com/photo-1720678418766-2628e52f4634?w=1920&q=80&auto=format&fit=crop', 'Luxury spa interior'), eyebrow: 'Talent House Collective', heading: 'The documents a luxury spa runs on, and the people who run it', text: 'Operating procedures, risk assessments, policies and checklists, written for five-star spas and ready for your name. And the platform that matches spa professionals to the properties that want them.' },
       { image: image('https://images.unsplash.com/photo-1590490360836-2e3b067c082b?w=1920&q=80&auto=format&fit=crop', 'Calm luxury treatment space'), eyebrow: 'Intelligent matching', heading: 'Precision matching, not guesswork', text: 'Skills, qualifications, brands, location and availability, weighted and scored - so both sides can see why a match is right.' },
       { image: image('https://images.unsplash.com/photo-1540555700478-4be289fbecef?w=1920&q=80&auto=format&fit=crop', 'Wellness treatment setting'), eyebrow: 'Verified by Talent House', heading: 'Every profile tells the full story', text: 'Right-to-work, insurance and qualifications reviewed by Talent House before the Verified badge is awarded.' },
     ],

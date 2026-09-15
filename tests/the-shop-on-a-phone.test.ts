@@ -77,3 +77,31 @@ test('the first screen offers a document to open, not a statistic to read', () =
   assert.match(hero, /Free, now, no sign-up/,
     'and nothing is asked for in exchange, because a form halves the number who see it')
 })
+
+// The hero is sized to what it holds, and names both businesses.
+//
+// It was the full viewport less the navigation bar, carrying three slides
+// about recruitment on a twelve second timer. So the only route from the home
+// page to the document library, which is the part of this business that takes
+// the money, was below the fold on every visit on every screen, and whichever
+// slide happened to be showing decided what the business appeared to be.
+const hero = readFileSync('src/components/HeroCarousel.tsx', 'utf8')
+
+test('the hero does not fill the window', () => {
+  assert.doesNotMatch(hero, /h-\[calc\(100vh/, 'a hero that fills the window is a hero that hides the page')
+  assert.match(hero, /h-\[66vh\]/)
+  assert.match(hero, /max-h-\[680px\]/, 'and it does not grow without limit on a tall screen')
+})
+
+test('the hero does not advance on its own', () => {
+  assert.doesNotMatch(hero, /setInterval/, 'almost everybody reads slide one and leaves')
+  assert.match(hero, /aria-label={'Go to hero slide/, 'the dots still work')
+})
+
+test('the library is on the first screen whatever the slides say', () => {
+  // Structural rather than content. The hero copy is editable and has been
+  // edited, so a default written in this repository does not necessarily
+  // reach the live page, and the revenue cannot depend on which one won.
+  assert.match(hero, /href="\/standards"/)
+  assert.match(hero, /See the documents/)
+})
