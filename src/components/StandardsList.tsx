@@ -6,6 +6,8 @@ import { sellableCatalogue } from '@/lib/documents/catalogue'
 import { JOURNEY_STAGES, stageOf, kindOf, KIND_LABEL, type JourneyStage } from '@/lib/documents/journey'
 import { formatPrice, singlePrice, type Prices } from '@/lib/documents/pricing'
 import BuyButton from '@/components/BuyButton'
+import type { Tool } from '@/components/StandardsTools'
+import type { PackFile } from '@/components/PackContents'
 
 // Every document, by name, whether it is ready or not.
 //
@@ -25,9 +27,20 @@ type Props = {
   available: { reference: string; department: string }[] | null
   unavailable: boolean
   prices?: Prices
+  /**
+   * The tools and the files, so a search can find them.
+   *
+   * They are not documents and they are not in this list, which meant a
+   * search for "audit" or "costings" or "staffing" returned nothing at all
+   * while every one of those was a product on the same page. A search that
+   * confidently says nothing matches is worse than no search: it does not
+   * send somebody to look elsewhere, it tells them there is nothing there.
+   */
+  tools?: Tool[]
+  files?: PackFile[]
 }
 
-export default function StandardsList({ available, unavailable, prices = {} }: Props) {
+export default function StandardsList({ available, unavailable, prices = {}, tools = [], files = [] }: Props) {
   const single = singlePrice(prices)
   const [query, setQuery] = useState('')
   const [department, setDepartment] = useState('all')
@@ -63,6 +76,22 @@ export default function StandardsList({ available, unavailable, prices = {} }: P
   }, [query, department, stage, kind, readyOnly, ready])
 
   const readyShown = rows.filter(item => ready.has(item.reference)).length
+
+  // Tools and files that match the same search. Only while somebody is
+  // actually searching: listing them under every empty query would make this
+  // section look like it sells four spreadsheets.
+  const elsewhere = useMemo(() => {
+    const needle = query.trim().toLowerCase()
+    if (needle.length < 2) return []
+    const fromTools = tools
+      .filter(tool => `${tool.name} ${tool.blurb} ${tool.detail}`.toLowerCase().includes(needle))
+      .map(tool => ({ key: tool.slug, name: tool.name, note: tool.blurb, price: tool.price }))
+    const fromFiles = files
+      .filter(file => file.slug && (file.price || 0) > 0)
+      .filter(file => `${file.name} ${file.description || ''}`.toLowerCase().includes(needle))
+      .map(file => ({ key: file.slug!, name: file.name, note: file.description || '', price: file.price! }))
+    return [...fromTools, ...fromFiles]
+  }, [query, tools, files])
 
   return (
     <section className="border-b border-[#dddddd]" id="every-document">
@@ -158,9 +187,37 @@ export default function StandardsList({ available, unavailable, prices = {} }: P
           {available !== null && !unavailable && ` · ${readyShown} ready to send today`}
         </p>
 
+        {/* Said before the document list, because when the document list is
+            empty this is the whole answer. */}
+        {elsewhere.length > 0 && (
+          <div className="mt-6 border border-[#1c1c1c] p-5">
+            <p className="text-[11px] uppercase tracking-[.12em] text-[#6b6b6b]">
+              Not a document, but we have {elsewhere.length === 1 ? 'this' : 'these'}
+            </p>
+            <ul className="mt-3 space-y-3">
+              {elsewhere.map(match => (
+                <li key={match.key} className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1">
+                  <span className="min-w-0 flex-1">
+                    <span className="text-[15px] font-semibold text-[#1c1c1c]">{match.name}</span>
+                    {match.note && (
+                      <span className="block text-[13px] leading-relaxed text-[#555555]">{match.note}</span>
+                    )}
+                  </span>
+                  <span className="shrink-0 font-serif text-[18px] text-[#1c1c1c]">{formatPrice(match.price)}</span>
+                </li>
+              ))}
+            </ul>
+            <a href="#tools" className="mt-3 inline-block text-[13px] font-medium text-[#1c1c1c] underline underline-offset-2">
+              See it in Tools
+            </a>
+          </div>
+        )}
+
         {rows.length === 0 ? (
           <p className="mt-8 text-[14px] text-[#555555]">
-            Nothing matches that. Try a shorter search, or ask us: if it is not in the library we will write it.
+            {elsewhere.length > 0
+              ? 'No document matches that, but the tools above do.'
+              : 'Nothing matches that. Try a shorter search, or ask us: if it is not in the library we will write it.'}
           </p>
         ) : (
           <div className="mt-5 max-h-[620px] overflow-y-auto border-t border-[#dddddd]">

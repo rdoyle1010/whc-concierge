@@ -323,7 +323,8 @@ export default function StandardsCatalogue() {
           name, which is the question a buyer actually arrives with. She
           signed a document off and could not find it on her own shop,
           because nothing here ever listed a document. */}
-      <StandardsList available={available} unavailable={unavailable} prices={prices} />
+      <StandardsList available={available} unavailable={unavailable} prices={prices}
+        tools={tools} files={files} />
     </section>
     </>
   )
