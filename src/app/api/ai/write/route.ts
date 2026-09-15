@@ -119,19 +119,47 @@ async function gatherFacts(
     const { data } = await admin.from('consultancy_profiles')
       .select('practice_name, headline, summary, specialisms, engagement_types, years_experience, based_in, works_with')
       .eq('user_id', userId).maybeSingle()
-    if (!data) return { ok: false, error: 'We could not find your practice.', status: 404 }
-    return {
-      ok: true,
-      facts: {
-        'Practice': data.practice_name,
-        'Years in the industry': data.years_experience,
-        'Based in': data.based_in,
-        'Works': data.works_with,
-        'What they lead on': data.specialisms,
-        'How they are engaged': data.engagement_types,
-        'What they have said about the practice': data.summary,
-      },
+
+    // A practice being written has not been saved yet.
+    //
+    // This returned 404, "We could not find your practice", to anybody who had
+    // not already saved. So the button that exists for somebody staring at a
+    // blank box refused to work until the box was filled in, which is the one
+    // moment it was built for and the only moment it was useless. A consultant
+    // hit it on their first visit and reported that they could not use it. The
+    // owner, who has a saved listing, could not reproduce it.
+    //
+    // Same answer as the unsaved role above: a fixed list of fields read from
+    // the form, capped, and labelled as unsaved in the prompt. These are the
+    // caller's own keystrokes about their own practice. Nothing about anybody
+    // else is reachable from here, because no other row is ever read.
+    const typed = (key: string) =>
+      typeof body?.[key] === 'string' && body[key].trim() ? String(body[key]).trim().slice(0, 2000) : null
+
+    const facts = {
+      'Practice': typed('practice_name') || data?.practice_name,
+      'Years in the industry': typed('years_experience') || data?.years_experience,
+      'Based in': typed('based_in') || data?.based_in,
+      'Works': typed('works_with') || data?.works_with,
+      'What they lead on': typed('specialisms') || data?.specialisms,
+      'How they are engaged': typed('engagement_types') || data?.engagement_types,
+      'What they have said about the practice': typed('summary') || data?.summary,
     }
+
+    // Typed beats saved on purpose. Somebody who has changed three fields and
+    // not pressed save wants a draft about what is on their screen, not about
+    // what was true last week.
+    const knowsAnything = Object.values(facts).some(value =>
+      value !== null && value !== undefined && String(value).trim() !== '')
+    if (!knowsAnything) {
+      return {
+        ok: false,
+        status: 400,
+        error: 'Put your practice name and what you lead on in the boxes above, then press this again. '
+          + 'It writes from what you tell it, so it needs something to go on.',
+      }
+    }
+    return { ok: true, facts }
   }
 
   const { data: employer } = await admin.from('employer_profiles')
