@@ -250,7 +250,7 @@ before anything in this library is called finished.
 
 Next.js 16 App Router · Supabase (auth, Postgres, storage) · Stripe · Netlify.
 240 API routes, 174 pages, 134 migrations, 169 test files. 1,226 tests and
-44 production-readiness checks, all green.
+46 production-readiness checks, all green.
 
 Two roles: `talent` and `employer`, stored on `profiles.role` (talent is
 stored as `candidate`). Admin is a third role on the same column.
@@ -261,10 +261,10 @@ stored as `candidate`). Admin is a third role on the same column.
 - **No em dashes.** A readiness check enforces this across `src/`.
 - **One house style for every AI surface**, in `src/lib/house-style.ts`, shared
   by all eight writing routes and checked by readiness check 44. Note the
-  platform calls two providers: Anthropic (profile writing, CV reading) needs
-  `ANTHROPIC_API_KEY`, OpenAI (job adverts, applications, certificates,
-  interview prep) needs `OPENAI_API_KEY`. Either being unset kills half the
-  AI features while the other half keep working.
+  platform now calls one provider through one client, `src/lib/ai.ts`, with one
+  key (`ANTHROPIC_API_KEY`) and one model constant (`ANTHROPIC_MODEL`
+  overrides it in Netlify without a deploy). `OPENAI_API_KEY` is no longer
+  read anywhere and can be removed. Readiness checks 45 and 46 hold both.
 - **The palette is ivory, forest, stone and charcoal, and there is no metal.**
   Ground `#F6F3ED`, structure and accent `#28322B`, body copy `#222321`, warm
   taupe `#B5A898` and muted sage `#879080` for hairlines and quiet detail only.

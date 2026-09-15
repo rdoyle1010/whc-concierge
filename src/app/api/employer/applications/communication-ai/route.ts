@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createServerSupabaseClient } from '@/lib/supabase/server'
 import { HOUSE_RULES } from '@/lib/house-style'
+import { askForText, AI_MODEL } from '@/lib/ai'
 
 // Twenty-six seconds, and eighteen for the model inside it.
 //
@@ -12,41 +13,20 @@ import { HOUSE_RULES } from '@/lib/house-style'
 // screen that is a writing assistant that "just does not work sometimes",
 // which is the hardest kind of broken to report and the easiest to live with.
 export const maxDuration = 26
-const AI_TIMEOUT_MS = 18000
 
 
-const OPENAI_API_KEY = process.env.OPENAI_API_KEY
-const MODEL = process.env.OPENAI_APPLICATION_MODEL || 'gpt-5-mini'
 
-function extractText(payload: any): string {
-  if (typeof payload?.output_text === 'string') return payload.output_text
-  for (const item of payload?.output || []) {
-    for (const content of item?.content || []) {
-      if (content?.type === 'output_text' && typeof content.text === 'string') return content.text
-    }
-  }
-  return ''
-}
-
-// The house rules, prepended to whatever this route asks for.
-//
-// This route had none. Three of the AI surfaces on this platform had none, so
-// the same brand wrote in three different voices depending on which button
-// somebody pressed, and two of the five banned em dashes while three did not.
+// One client, one key, one bill. See src/lib/ai.ts for why there used to be
+// two, and what the six hand-written fetch calls cost in errors nobody could
+// read.
 async function generate(input: string) {
-  input = `${HOUSE_RULES}\n\n${input}`
-  if (!OPENAI_API_KEY) throw new Error('AI is not configured yet.')
-  const response = await fetch('https://api.openai.com/v1/responses', {
-    method: 'POST',
-    signal: AbortSignal.timeout(AI_TIMEOUT_MS),
-    headers: { Authorization: `Bearer ${OPENAI_API_KEY}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ model: MODEL, reasoning: { effort: 'low' }, input, max_output_tokens: 700 }),
+  const result = await askForText({
+    system: HOUSE_RULES,
+    prompt: input,
+    maxTokens: 700,
   })
-  if (!response.ok) {
-    console.error('Recruitment communication AI failed:', response.status, (await response.text().catch(() => '')).slice(0, 400))
-    throw new Error('The AI assistant is temporarily unavailable. Please try again.')
-  }
-  return extractText(await response.json()).trim()
+  if (!result.ok) throw new Error(result.error)
+  return result.text
 }
 
 export async function POST(req: NextRequest) {
@@ -108,7 +88,7 @@ Rules:
 - Return only the message body, no subject line and no markdown.`
 
     const note = await generate(prompt)
-    return NextResponse.json({ note: note.slice(0, 3000), model: MODEL })
+    return NextResponse.json({ note: note.slice(0, 3000), model: AI_MODEL })
   } catch (error: any) {
     return NextResponse.json({ error: error?.message || 'AI assistant unavailable' }, { status: 500 })
   }

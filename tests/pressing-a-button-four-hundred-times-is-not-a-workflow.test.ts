@@ -27,8 +27,16 @@ const writer = body('src/lib/ai-write.ts')
 // That is most of why they kept dying at the twenty-six second ceiling and
 // reporting it as "that took too long".
 test('nothing pays for thinking it never asked for', () => {
+  // This asserted thinking: { type: 'disabled' } on all four. That was right
+  // on Sonnet and is a documented trap on Opus: with thinking off the model
+  // occasionally writes a tool call into its visible text, where nothing runs
+  // it and the turn still succeeds, and it can leak internal tags into the
+  // answer. Low effort is the replacement. It costs less than disabled
+  // thinking did and does neither.
   for (const [name, source] of [['the CV reader', reader], ['the writing assistant', writer], ['the drafter', draft], ['the batch', batch]] as const) {
-    assert.match(source, /thinking: \{ type: 'disabled'( as const)? \}/, `${name} still runs adaptive thinking by default`)
+    assert.match(source, /effort: 'low'/, `${name} still runs at the default effort`)
+    assert.doesNotMatch(source, /thinking: \{ type: 'disabled'( as const)? \}[^.]/,
+      `${name} disables thinking, which is a trap on this model`)
   }
 })
 

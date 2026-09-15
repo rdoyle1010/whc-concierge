@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getRequestUser } from '@/lib/request-user'
 import { HOUSE_RULES } from '@/lib/house-style'
+import { askForText, aiConfigured, AI_MODEL } from '@/lib/ai'
 
 // Twenty-six seconds, and eighteen for the model inside it.
 //
@@ -12,7 +13,6 @@ import { HOUSE_RULES } from '@/lib/house-style'
 // screen that is a writing assistant that "just does not work sometimes",
 // which is the hardest kind of broken to report and the easiest to live with.
 export const maxDuration = 26
-const AI_TIMEOUT_MS = 18000
 
 
 // Help a spa manager write an advert.
@@ -34,8 +34,6 @@ const AI_TIMEOUT_MS = 18000
 //   problem that surfaces at interview, in front of the person you were
 //   trying to impress.
 
-const OPENAI_API_KEY = process.env.OPENAI_API_KEY
-const OPENAI_APPLICATION_MODEL = process.env.OPENAI_APPLICATION_MODEL || 'gpt-5-mini'
 
 const STORY_FIELDS = [
   'why_role_exists', 'success_90_days', 'reporting_line', 'opening_hours',
@@ -59,38 +57,11 @@ const HOUSE_STYLE = `${HOUSE_RULES}
 
 For an advert specifically: write as the property speaking to a professional it respects, not as a job board.`
 
-function extractResponseText(payload: any): string {
-  if (typeof payload?.output_text === 'string') return payload.output_text
-  for (const item of payload?.output || []) {
-    for (const content of item?.content || []) {
-      if (content?.type === 'output_text' && typeof content.text === 'string') return content.text
-    }
-  }
-  return ''
-}
-
+// One client, one key, one bill. See src/lib/ai.ts.
 async function ask(input: string, maxTokens: number) {
-  if (!OPENAI_API_KEY) throw new Error('The writing assistant is not configured yet.')
-
-  const response = await fetch('https://api.openai.com/v1/responses', {
-    method: 'POST',
-    signal: AbortSignal.timeout(AI_TIMEOUT_MS),
-    headers: { Authorization: `Bearer ${OPENAI_API_KEY}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      model: OPENAI_APPLICATION_MODEL,
-      reasoning: { effort: 'low' },
-      input,
-      max_output_tokens: maxTokens,
-    }),
-  })
-
-  if (!response.ok) {
-    const detail = await response.text().catch(() => '')
-    console.error(`Job copy assistant failed ${response.status}:`, detail.slice(0, 500))
-    throw new Error('The writing assistant is temporarily unavailable. Please try again.')
-  }
-
-  return extractResponseText(await response.json()).trim()
+  const result = await askForText({ system: HOUSE_STYLE, prompt: input, maxTokens })
+  if (!result.ok) throw new Error(result.error)
+  return result.text
 }
 
 /** What the model is allowed to know. Nothing else about the property. */
@@ -155,8 +126,7 @@ export async function POST(req: NextRequest) {
 
       const text = await ask([
         'You are helping a luxury spa or hotel write one part of a job advert.',
-        HOUSE_STYLE,
-        '',
+          '',
         'Facts about the role. You may use these and nothing else:',
         factsFor(role),
         '',
@@ -180,7 +150,6 @@ export async function POST(req: NextRequest) {
 
     const raw = await ask([
       'You are helping a luxury spa or hotel turn rough notes into the parts of a job advert that persuade somebody to apply.',
-      HOUSE_STYLE,
       '',
       'Facts about the role. You may use these and nothing else:',
       factsFor(role),

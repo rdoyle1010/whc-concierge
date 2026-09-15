@@ -118,7 +118,9 @@ test('the house style is not left to good manners', () => {
 // A better paragraph that arrives after the function has been killed is not a
 // better paragraph.
 test('every writing route fits inside the ceiling the host enforces', () => {
-  assert.equal(WRITE_MODEL, 'claude-sonnet-5')
+  // One model constant for the whole platform, named rather than defaulted: a
+  // default silently becomes whatever the SDK ships next.
+  assert.match(WRITE_MODEL, /^claude-[a-z0-9-]+$/)
   for (const file of [
     'src/app/api/ai/write/route.ts',
     'src/app/api/employer/jobs/ai/route.ts',
@@ -131,15 +133,13 @@ test('every writing route fits inside the ceiling the host enforces', () => {
     assert.ok(declared > 0 && declared <= 26, `${file} declares ${declared}, which the host will not honour`)
   }
   // And the model is cut off before the function is, so a failure can be
-  // written into a sentence instead of an error page.
-  for (const file of [
-    'src/app/api/employer/jobs/ai/route.ts',
-    'src/app/api/applications/ai/route.ts',
-    'src/app/api/employer/applications/communication-ai/route.ts',
-    'src/app/api/employer/applications/message-ai/route.ts',
-  ]) {
-    assert.match(body(file), /AbortSignal\.timeout\(AI_TIMEOUT_MS\)/, `${file} lets the model run until the host kills it`)
-  }
+  // written into a sentence instead of an error page. That timeout used to be
+  // repeated in each route beside its own hand-written fetch call; it lives in
+  // the one client now, which is the point of there being one.
+  const client = body('src/lib/ai.ts')
+  const timeout = Number(client.match(/const TIMEOUT_MS = (\d+)/)?.[1])
+  assert.ok(timeout > 0 && timeout < 26000, `the client waits ${timeout}ms inside a 26 second ceiling`)
+  assert.match(client, /timeout: TIMEOUT_MS/)
 })
 
 // One account, one allowance. A shared office address should not stop the

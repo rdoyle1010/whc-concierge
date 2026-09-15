@@ -58,7 +58,10 @@ test('filling blanks fills only blanks', () => {
 // tokens come out, not how clever the model is. Three reads in a row died
 // past eighteen seconds and told an administrator to paste the text in.
 test('the CV reader is chosen for speed, because the ceiling is fixed', () => {
-  assert.equal(CV_MODEL, 'claude-sonnet-5')
+  // One model constant for the whole platform now, set in src/lib/ai.ts and
+  // overridable from Netlify without a deploy. What matters here is that one
+  // is named at all: a default silently becomes whatever the SDK ships next.
+  assert.match(CV_MODEL, /^claude-[a-z0-9-]+$/)
   assert.match(reader, /model: CV_MODEL/)
   const output = Number(reader.match(/const MAX_OUTPUT_TOKENS = (\d+)/)?.[1])
   assert.ok(output > 0 && output <= 2500, 'the worst case output has to fit inside the ceiling')

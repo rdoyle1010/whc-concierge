@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { adminRequestUser } from '@/lib/admin-api-auth'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { HOUSE_RULES } from '@/lib/house-style'
+import { askForJson, aiConfigured, AI_MODEL } from '@/lib/ai'
 
 // AI review assistant for certificate verification. It reasons about the
 // submission details (qualification name, awarding body, country, year)
@@ -10,18 +11,6 @@ import { HOUSE_RULES } from '@/lib/house-style'
 // makes the decision, and the assistant is told to be honest about what a
 // document check cannot prove.
 
-const OPENAI_API_KEY = process.env.OPENAI_API_KEY
-const OPENAI_APPLICATION_MODEL = process.env.OPENAI_APPLICATION_MODEL || 'gpt-5-mini'
-
-function extractResponseText(payload: any): string {
-  if (typeof payload?.output_text === 'string') return payload.output_text
-  for (const item of payload?.output || []) {
-    for (const content of item?.content || []) {
-      if (content?.type === 'output_text' && typeof content.text === 'string') return content.text
-    }
-  }
-  return ''
-}
 
 // Delegated to the shared admin guard, which enforces two-step
 // verification as well as the admin role.
@@ -47,9 +36,9 @@ export async function POST(req: NextRequest) {
       .select('full_name,role_level,experience_years,services_offered,qualifications,location_country')
       .eq('id', certificate.candidate_id).maybeSingle()
 
-    if (!OPENAI_API_KEY) {
+    if (!aiConfigured()) {
       return NextResponse.json({
-        assessment: 'AI assistance is not configured (no API key). Review the document manually: check the name matches the profile, the awarding body is legible on the certificate, and the qualification title matches what was submitted.',
+        assessment: 'AI assistance is not switched on (ANTHROPIC_API_KEY is not set). Review the document manually: check the name matches the profile, the awarding body is legible on the certificate, and the qualification title matches what was submitted.',
         checks: [],
         drafts: null,
         model: 'fallback',
@@ -82,24 +71,18 @@ Return STRICT JSON, no markdown, with exactly these keys:
   }
 }`
 
-    const response = await fetch('https://api.openai.com/v1/responses', {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${OPENAI_API_KEY}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ model: OPENAI_APPLICATION_MODEL, reasoning: { effort: 'low' }, input: `${HOUSE_RULES}\n\n${prompt}`, max_output_tokens: 900 }),
-    })
-    if (!response.ok) {
-      const detail = await response.text().catch(() => '')
-      console.error(`Certificate assist failed ${response.status}:`, detail.slice(0, 300))
-      return NextResponse.json({ error: 'The AI assistant is unavailable right now - review manually or try again.' }, { status: 502 })
+    const result = await askForJson<any>({ system: HOUSE_RULES, prompt, maxTokens: 900 })
+    if (!result.ok) {
+      return NextResponse.json({ error: result.error }, { status: 502 })
     }
-    const payload = await response.json()
-    const raw = extractResponseText(payload).trim()
-    let parsed: any = null
-    try { parsed = JSON.parse(raw.replace(/^```json?\s*/i, '').replace(/```\s*$/, '')) } catch { /* fall through */ }
+    const parsed: any = result.data
     if (!parsed?.assessment) {
-      return NextResponse.json({ assessment: raw.slice(0, 1500) || 'The assistant returned nothing useful - review manually.', checks: [], drafts: null, model: OPENAI_APPLICATION_MODEL })
+      return NextResponse.json({
+        assessment: 'The assistant returned nothing useful. Review this one by hand.',
+        checks: [], drafts: null, model: AI_MODEL,
+      })
     }
-    return NextResponse.json({ ...parsed, model: OPENAI_APPLICATION_MODEL })
+    return NextResponse.json({ ...parsed, model: AI_MODEL })
   } catch (e: any) {
     return NextResponse.json({ error: e?.message || 'Assist failed.' }, { status: 500 })
   }
