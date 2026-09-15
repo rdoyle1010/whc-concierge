@@ -11,7 +11,11 @@ const body = (file: string) =>
     .replace(/\/\*[\s\S]*?\*\//g, '')
     .replace(/^\s*\/\/.*$/gm, '')
 
-const lib = body('src/lib/ai-write.ts')
+// The rules the writer actually sends: the shared house style, which every AI
+// surface on the platform now prepends, plus what the profile writer adds on
+// top of it. They were one file until the same rules had to reach five routes
+// across two AI providers.
+const lib = body('src/lib/ai-write.ts') + body('src/lib/house-style.ts')
 const route = body('src/app/api/ai/write/route.ts')
 const widget = body('src/components/AiWrite.tsx')
 const talent = read('src/app/talent/profile/page.tsx')
@@ -60,9 +64,12 @@ test('the boxes further in are covered too', () => {
 // A hotel buys judgement on evidence, so the outcome line is the one place a
 // invented number would do real damage.
 test('a number is a fact, and an absent one is not invented', () => {
-  assert.match(lib, /A number in the draft is a fact and must survive exactly as it is/)
+  assert.match(lib, /A number is a fact and survives exactly as it is/)
   assert.match(lib, /never round one, never add a percentage sign/)
   assert.match(lib, /never write "significant" or "substantial" where a number was expected/)
+  // And the rule that stops a rewrite quietly deleting an award, which is
+  // the commonest way this makes a profile worse.
+  assert.match(lib, /What must survive, always:/)
 })
 
 // A route that writes a biography from whatever JSON it is handed will

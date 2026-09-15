@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createClient } from '@supabase/supabase-js'
+import { HOUSE_RULES } from '@/lib/house-style'
 
 export const runtime = 'nodejs'
 
@@ -41,7 +42,7 @@ async function generatePreparation(prompt: string) {
       method: 'POST',
       signal: controller.signal,
       headers: { Authorization: `Bearer ${OPENAI_API_KEY}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ model: INTERVIEW_MODEL, reasoning: { effort: 'low' }, input: prompt, max_output_tokens: 2600 }),
+      body: JSON.stringify({ model: INTERVIEW_MODEL, reasoning: { effort: 'low' }, input: `${HOUSE_RULES}\n\n${prompt}`, max_output_tokens: 2600 }),
     })
     if (!response.ok) return null
     return parseJson(parseResponseText(await response.json()))

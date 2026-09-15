@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerSupabaseClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { HOUSE_RULES } from '@/lib/house-style'
 
 export const runtime = 'nodejs'
 
@@ -43,7 +44,7 @@ async function generateJson(prompt: string, maxOutputTokens = 1800) {
       body: JSON.stringify({
         model: INTERVIEW_MODEL,
         reasoning: { effort: 'low' },
-        input: prompt,
+        input: `${HOUSE_RULES}\n\n${prompt}`,
         max_output_tokens: maxOutputTokens,
       }),
     })

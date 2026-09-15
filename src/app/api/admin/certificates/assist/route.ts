@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { adminRequestUser } from '@/lib/admin-api-auth'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { HOUSE_RULES } from '@/lib/house-style'
 
 // AI review assistant for certificate verification. It reasons about the
 // submission details (qualification name, awarding body, country, year)
@@ -84,7 +85,7 @@ Return STRICT JSON, no markdown, with exactly these keys:
     const response = await fetch('https://api.openai.com/v1/responses', {
       method: 'POST',
       headers: { Authorization: `Bearer ${OPENAI_API_KEY}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ model: OPENAI_APPLICATION_MODEL, reasoning: { effort: 'low' }, input: prompt, max_output_tokens: 900 }),
+      body: JSON.stringify({ model: OPENAI_APPLICATION_MODEL, reasoning: { effort: 'low' }, input: `${HOUSE_RULES}\n\n${prompt}`, max_output_tokens: 900 }),
     })
     if (!response.ok) {
       const detail = await response.text().catch(() => '')

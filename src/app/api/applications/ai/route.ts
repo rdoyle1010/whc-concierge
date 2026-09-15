@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getRequestUser } from '@/lib/request-user'
+import { HOUSE_RULES } from '@/lib/house-style'
 
 // Twenty-six seconds, and eighteen for the model inside it.
 //
@@ -27,7 +28,13 @@ function extractResponseText(payload: any): string {
   return ''
 }
 
+// The house rules, prepended to whatever this route asks for.
+//
+// This route had none. Three of the AI surfaces on this platform had none, so
+// the same brand wrote in three different voices depending on which button
+// somebody pressed, and two of the five banned em dashes while three did not.
 async function generateJson(input: string) {
+  input = `${HOUSE_RULES}\n\n${input}`
   if (!OPENAI_API_KEY) throw new Error('AI is not configured yet. Add OPENAI_API_KEY to the production environment.')
 
   const response = await fetch('https://api.openai.com/v1/responses', {
