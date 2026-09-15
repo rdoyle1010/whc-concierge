@@ -5,6 +5,7 @@ import { RISK_ASSESSMENT_ENTRIES } from './risk-assessment-plans'
 import { JOURNEY_STAGES, stageOf, type StageGroup } from './journey'
 import { CHECKLIST_ENTRIES } from './checklist-plans'
 import { FINANCE_ENTRIES } from './finance-plans'
+import { JOB_DESCRIPTION_ENTRIES } from './job-description-plans'
 
 // What a document costs, and why.
 //
@@ -95,6 +96,16 @@ export const JOURNEY_PACK_CEILING = 79500
 // expensive half already and is getting no benefit from it.
 export const CHECKLIST_PACK_PRICE = 39500
 
+// Twenty-five job descriptions, at three hundred and ninety-five pounds.
+//
+// Priced against what it replaces, which is a spa director writing them at
+// eleven at night, one at a time, each one a duty list copied from the last
+// one and edited. Under the five hundred a spa director signs off alone,
+// because this is the purchase that has to be easy: a property that cannot
+// describe its own roles cannot recruit for them, appraise against them, or
+// defend a decision about one of them.
+export const JOB_DESCRIPTION_PACK_PRICE = 39500
+
 // The twenty report templates, at one thousand two hundred and fifty pounds.
 //
 // The most expensive thing in this library except the library itself, and the
@@ -132,7 +143,8 @@ export const VAT_NOTE = VAT_REGISTERED
 // default in this file, which is the one argued for above.
 export type Prices = Partial<Record<
   | 'single' | 'department' | 'journey' | 'day-one' | 'complete'
-  | 'pool-safety' | 'risk-assessments' | 'checklists' | 'finance' | 'guest-journey',
+  | 'pool-safety' | 'risk-assessments' | 'checklists' | 'finance' | 'guest-journey'
+  | 'job-descriptions',
   number
 >>
 
@@ -368,6 +380,7 @@ export function tierPacks(prices: Prices = {}): Pack[] {
   const riskReferences = RISK_ASSESSMENT_ENTRIES.map(entry => entry.reference)
   const checklistReferences = CHECKLIST_ENTRIES.map(entry => entry.reference)
   const financeReferences = FINANCE_ENTRIES.map(entry => entry.reference)
+  const roleReferences = JOB_DESCRIPTION_ENTRIES.map(entry => entry.reference)
   return [
     {
       slug: 'risk-assessments',
@@ -419,6 +432,23 @@ export function tierPacks(prices: Prices = {}): Pack[] {
       count: financeReferences.length,
     },
     {
+      slug: 'job-descriptions',
+      name: 'Spa Job Descriptions',
+      blurb:
+        'Twenty-five roles, from Spa Director to Linen Attendant. Each one states what the job is for, who it '
+        + 'reports to, the duties grouped by area, what good looks like as observable behaviour, and the '
+        + 'measures it is judged on. Pay, hours and notice are left blank, because those belong to a contract.',
+      detail:
+        'Written to be used three times: at interview as the thing a candidate is assessed against, at '
+        + 'appraisal as the thing performance is discussed against, and at appointment as the record of what '
+        + 'somebody was told the job was. Most spa job descriptions are a duty list, which serves none of '
+        + 'those three. The set also joins up: every role names who it reports to and who reports to it, so '
+        + 'the pack reads as a structure rather than as twenty-five forms.',
+      price: prices['job-descriptions'] ?? JOB_DESCRIPTION_PACK_PRICE,
+      includes: (reference: string) => roleReferences.includes(reference),
+      count: roleReferences.length,
+    },
+    {
       slug: 'before-the-first-guest',
       name: TIER_LABEL['day-1'],
       blurb:
@@ -462,6 +492,7 @@ export function categoryPacks(prices: Prices = {}): Pack[] {
   const bySlug = (slug: string) => [...tiers, ...stages].find(pack => pack.slug === slug)!
   return [
     bySlug('risk-assessments'),
+    bySlug('job-descriptions'),
     bySlug('pool-safety'),
     bySlug('journey-safety'),
     bySlug('financial-reporting'),

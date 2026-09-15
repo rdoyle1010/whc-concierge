@@ -2,7 +2,7 @@ import { sellableCatalogue } from './catalogue'
 import {
   SINGLE_DOCUMENT_PRICE, DEPARTMENT_PACK_PRICE, DAY_ONE_PACK_PRICE, COMPLETE_LIBRARY_PRICE,
   POOL_SAFETY_PACK_PRICE, RISK_ASSESSMENT_PACK_PRICE, JOURNEY_PACK_CEILING,
-  CHECKLIST_PACK_PRICE, FINANCE_PACK_PRICE, GUEST_JOURNEY_PRICE,
+  CHECKLIST_PACK_PRICE, FINANCE_PACK_PRICE, GUEST_JOURNEY_PRICE, JOB_DESCRIPTION_PACK_PRICE,
 } from './pricing'
 
 // Prices she can change without a deploy, and bundles she can compose.
@@ -15,6 +15,7 @@ import {
 export type PriceKey =
   | 'single' | 'department' | 'journey' | 'day-one' | 'complete'
   | 'pool-safety' | 'risk-assessments' | 'checklists' | 'finance' | 'guest-journey'
+  | 'job-descriptions'
 
 export const PRICE_KEYS: { key: PriceKey; label: string; why: string; fallback: number }[] = [
   {
@@ -48,6 +49,10 @@ export const PRICE_KEYS: { key: PriceKey; label: string; why: string; fallback: 
   {
     key: 'checklists', label: 'Daily Running Checklists', fallback: CHECKLIST_PACK_PRICE,
     why: 'Nine shift checklists drawn from the procedures. Deliberately cheaper than the procedures they enforce, and under the five hundred a spa director signs off alone.',
+  },
+  {
+    key: 'job-descriptions', label: 'Spa Job Descriptions', fallback: JOB_DESCRIPTION_PACK_PRICE,
+    why: 'Twenty-five roles. Under the five hundred a spa director signs off alone, because a property that cannot describe its own roles cannot recruit for them or defend a decision about one.',
   },
   {
     key: 'guest-journey', label: 'The Guest Journey', fallback: GUEST_JOURNEY_PRICE,

@@ -23,8 +23,11 @@ export type PlanKind =
   | 'nop' | 'eap' | 'policy' | 'safe-system' | 'risk-assessment' | 'guide' | 'training'
   // A checklist is the procedure reduced to what somebody does at seven
   // in the morning with a pen. A report is the shape of a number before
-  // anybody has filled it in. Both are the same section machinery.
-  | 'checklist' | 'report'
+  // anybody has filled it in. A job description is the same again: a
+  // structured document of headings, bullets and a table, which is exactly
+  // what this machinery already renders and validates. Writing a separate
+  // renderer for it would be writing this one twice.
+  | 'checklist' | 'report' | 'job-description'
 
 /**
  * One thing the property has to state.
@@ -175,6 +178,7 @@ export const PLAN_KIND_LABEL: Record<PlanKind, string> = {
   training: 'Training Guide',
   checklist: 'Checklist',
   report: 'Management Report',
+  'job-description': 'Job Description',
 }
 
 /** Everything a plan needs before it is worth handing to a property. */
