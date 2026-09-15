@@ -198,3 +198,35 @@ test('the age band catches somebody on the first sweep after they join', () => {
   assert.ok(older * 60 <= 60, 'the band has to be reachable within one hour')
   assert.ok(minute >= 0 && minute < 60)
 })
+
+// The button for a blank box refused to work until the box was filled in.
+//
+// The AI writing route read the caller's saved row and returned 404, "We could
+// not find your practice", when there was not one. A consultancy row is only
+// created on first save, so a consultant filling the form for the first time
+// got that from the one button built for somebody staring at a blank box. The
+// owner, with a saved listing, could not reproduce it.
+test('the writing assistant works before the practice has been saved', () => {
+  const route = readFileSync('src/app/api/ai/write/route.ts', 'utf8')
+  const practice = route.slice(route.indexOf("field === 'practice_headline'"), route.indexOf("const { data: employer }"))
+  // The phrase survives in the comment explaining why it went. What must not
+  // survive is the refusal: a missing row is the normal state of a first
+  // visit, not an error.
+  assert.doesNotMatch(practice, /error: 'We could not find your practice'/,
+    'a missing row is the normal state of a first visit, not an error')
+  assert.match(practice, /typed\('practice_name'\)/, 'it reads what is in the form')
+  assert.match(practice, /slice\(0, 2000\)/, 'and caps what it will take from a request body')
+  // Typed beats saved: somebody who has changed three fields and not pressed
+  // save wants a draft about their screen, not about last week.
+  assert.match(practice, /typed\('summary'\) \|\| data\?\.summary/)
+  // With nothing at all to go on it says what to do, rather than inventing a
+  // practice or failing silently.
+  assert.match(practice, /then press this again/)
+})
+
+test('the consultancy form sends what is in its boxes', () => {
+  const page = readFileSync('src/app/talent/consultancy/page.tsx', 'utf8')
+  assert.match(page, /const typedSoFar = \(\) => \(\{/)
+  const uses = page.match(/context=\{typedSoFar\(\)\}/g) || []
+  assert.equal(uses.length, 2, 'both the headline and the about box send it')
+})

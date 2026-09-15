@@ -177,6 +177,23 @@ export default function TalentConsultancyPage() {
   const status = profile?.approval_status
   const live = profile?.is_live && status === 'approved'
 
+  // What is in the boxes right now, sent with every AI request.
+  //
+  // The route used to read the saved row and nothing else, so a consultant
+  // filling the form for the first time got "We could not find your practice"
+  // from the one button that exists for somebody staring at a blank box. It
+  // also meant that somebody who had changed three fields and not yet saved
+  // got a draft about last week.
+  const typedSoFar = () => ({
+    practice_name: profile?.practice_name || '',
+    years_experience: profile?.years_experience ? String(profile.years_experience) : '',
+    based_in: profile?.based_in || '',
+    works_with: profile?.works_with || '',
+    specialisms: (profile?.specialisms || []).join(', '),
+    engagement_types: (profile?.engagement_types || []).join(', '),
+    summary: profile?.summary || '',
+  })
+
   return (
     <DashboardShell role="talent">
       <div className="mb-7">
@@ -268,13 +285,15 @@ export default function TalentConsultancyPage() {
           <input id="headline" value={profile?.headline || ''} onChange={e => set('headline', e.target.value)} className="input-field"
             placeholder="e.g. Pre-opening and commercial turnaround for five-star spas" />
           <p className="mt-1 text-[11px] text-muted">One line. This is what a hotel reads before deciding whether to open your listing.</p>
-          <AiWrite className="mt-2" field="practice_headline" value={profile?.headline || ''} onAccept={text => set('headline', text)} />
+          <AiWrite className="mt-2" field="practice_headline" value={profile?.headline || ''}
+            context={typedSoFar()} onAccept={text => set('headline', text)} />
         </div>
         <div>
           <label htmlFor="summary" className="eyebrow block mb-1.5">About the practice *</label>
           <textarea id="summary" rows={6} value={profile?.summary || ''} onChange={e => set('summary', e.target.value)} className="input-field"
             placeholder="What you do, who you do it for, and what changes when you are involved." />
-          <AiWrite className="mt-2" field="practice_about" value={profile?.summary || ''} onAccept={text => set('summary', text)} />
+          <AiWrite className="mt-2" field="practice_about" value={profile?.summary || ''}
+            context={typedSoFar()} onAccept={text => set('summary', text)} />
         </div>
         <div className="grid gap-4 sm:grid-cols-3">
           <div>
