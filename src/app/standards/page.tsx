@@ -184,7 +184,7 @@ export default function StandardsPage() {
                     <li key={sample.reference}>
                       <a href={`/api/standards/sample?reference=${sample.reference}`}
                         target="_blank" rel="noopener"
-                        className="text-[13px] text-[#1c1c1c] underline decoration-[#b39a6b] decoration-2 underline-offset-4">
+                        className="text-[13px] font-medium text-[#1c1c1c] underline decoration-1 underline-offset-4 hover:decoration-2">
                         {sample.label}
                       </a>
                     </li>

@@ -253,3 +253,21 @@ test('the account a buyer is sent to make is four fields, not a property profile
   // The buy button sends them here rather than to the full registration.
   assert.match(body('src/components/BuyButton.tsx'), /\/register\/buyer\?redirect=/)
 })
+
+// Where somebody was going before they were asked to make an account.
+//
+// The sign-in page sends people to /register/talent and /register/employer
+// with ?redirect= on it, and so do the brand pages. Neither register page read
+// it. So somebody sent to sign up from the match deck made an account and
+// landed on an empty profile editor, with no way back to the thing they were
+// looking at, at the most motivated moment in the whole funnel.
+test('both registration forms come back to what sent somebody there', () => {
+  for (const page of ['src/app/register/talent/page.tsx', 'src/app/register/employer/page.tsx']) {
+    const source = readFileSync(page, 'utf8')
+    assert.match(source, /get\('redirect'\)/, `${page} must read the redirect`)
+    assert.match(source, /startsWith\('\/'\) && !wanted\.startsWith\('\/\/'\)/,
+      `${page}: an open redirect on a registration form sends new accounts anywhere`)
+    assert.match(source, /confirm=1\$\{carry\}/,
+      `${page}: the destination has to survive the email confirmation too`)
+  }
+})

@@ -10,6 +10,7 @@ import Navbar from '@/components/Navbar'
 import SponsoredAd from '@/components/SponsoredAd'
 import { getWebsiteContent } from '@/lib/site-content-server'
 import { websiteCssVariables, type WebsiteContent, type WebsiteSectionId } from '@/lib/site-content'
+import { cheapestSingle, formatPrice } from '@/lib/documents/pricing'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { readConfigString } from '@/lib/platform-access'
 
@@ -24,8 +25,8 @@ export const revalidate = 60
 export const metadata: Metadata = {
   title: { absolute: 'Talent House Collective | Spa Documents and Wellness Careers' },
   description: 'Spa operating documents written for luxury properties: SOPs, risk assessments, '
-    + 'policies, job descriptions and checklists, from 39 pounds. And the recruitment platform '
-    + 'that matches spa professionals to exceptional properties on real skills.',
+    + `policies, job descriptions and checklists, from ${formatPrice(cheapestSingle())}. And the `
+    + 'recruitment platform that matches spa professionals to exceptional properties on real skills.',
   alternates: { canonical: 'https://talenthousecollective.co.uk' },
 }
 
@@ -233,8 +234,11 @@ function RoutesSection() {
     // jobs and left. The words in this one are the words they searched for.
     {
       title: 'I need the documents my spa is expected to have',
+      // Read from the price list, not typed. It said thirty-nine pounds for
+      // a day after the entry price became ten, on the front page, in the one
+      // card that exists to send somebody to the shop.
       copy: 'Standard operating procedures, risk assessments, policies, job descriptions and daily '
-        + 'checklists, written for luxury spas and ready for your name. From 39 pounds for one.',
+        + `checklists, written for luxury spas and ready for your name. From ${formatPrice(cheapestSingle())} for one.`,
       href: '/standards',
       cta: 'See the library',
     },
