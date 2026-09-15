@@ -5,3 +5,7 @@ node_modules/
 out/
 *.tsbuildinfo
 next-env.d.ts
+
+# The output of scripts/compare-writers.ts. Model output about invented people,
+# and an answer key that is only useful before it is read.
+/comparison/

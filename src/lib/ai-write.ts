@@ -175,17 +175,18 @@ function factLines(facts: Record<string, unknown>): string {
 }
 
 /**
- * Write it, or write it better. Never throws.
+ * The exact prompt this platform sends, built without sending it.
  *
- * The caller is somebody staring at an empty box, and a stack trace is not an
- * answer to "why is this button not working".
+ * Pulled out of writeText so it can be handed to something other than the
+ * Anthropic client: a test that reads what is actually asked for, and
+ * scripts/compare-writers.ts, which puts the identical prompt to two providers
+ * so a choice between them is a judgement about the answers rather than about
+ * the vendors. A comparison where each side gets a slightly different prompt
+ * measures the prompts.
  */
-export async function writeText(request: WriteRequest): Promise<
-  { ok: true; text: string } | { ok: false; error: string }
-> {
-  const apiKey = process.env.ANTHROPIC_API_KEY
-  if (!apiKey) return { ok: false, error: 'Talent House AI is not switched on for this deployment.' }
-
+export function buildWriteRequest(request: WriteRequest):
+  | { ok: true; system: string; prompt: string; maxTokens: number }
+  | { ok: false; error: string } {
   const shape = SHAPES[request.field]
   const facts = factLines(request.facts)
   if (!facts.trim() && !String(request.draft || '').trim()) {
@@ -215,13 +216,44 @@ Their current version:
 ${draft}`
       : `Write the "${named}" from the details below. There is nothing written yet.`
 
+  return {
+    ok: true,
+    system: HOUSE_STYLE,
+    maxTokens: shape.maxTokens,
+    prompt: `${task}
+
+This is the "${named}" field.
+Length: ${shape.length}.
+Voice: ${shape.voice}.
+${steer ? `\nWhat they have asked for: ${steer}\n` : ''}
+What is true about them:
+${facts || '(nothing beyond the draft above)'}`,
+  }
+}
+
+/**
+ * Write it, or write it better. Never throws.
+ *
+ * The caller is somebody staring at an empty box, and a stack trace is not an
+ * answer to "why is this button not working".
+ */
+export async function writeText(request: WriteRequest): Promise<
+  { ok: true; text: string } | { ok: false; error: string }
+> {
+  const apiKey = process.env.ANTHROPIC_API_KEY
+  if (!apiKey) return { ok: false, error: 'Talent House AI is not switched on for this deployment.' }
+
+  const built = buildWriteRequest(request)
+  if (!built.ok) return built
+  const { system, prompt, maxTokens } = built
+
   const client = new Anthropic({ apiKey, maxRetries: 0 })
 
   try {
     const response = await client.messages.create({
       model: WRITE_MODEL,
-      max_tokens: shape.maxTokens,
-      system: HOUSE_STYLE,
+      max_tokens: maxTokens,
+      system,
       // Thinking is left on at low effort rather than disabled.
       //
       // Disabled was the right call on the previous model and is a documented
@@ -235,17 +267,7 @@ ${draft}`
       // twenty-six second ceiling where a better answer that arrives after the
       // function is killed is not a better answer.
       output_config: { effort: 'low' },
-      messages: [{
-        role: 'user',
-        content: `${task}
-
-This is the "${named}" field.
-Length: ${shape.length}.
-Voice: ${shape.voice}.
-${steer ? `\nWhat they have asked for: ${steer}\n` : ''}
-What is true about them:
-${facts || '(nothing beyond the draft above)'}`,
-      }],
+      messages: [{ role: 'user', content: prompt }],
     }, { timeout: CALL_TIMEOUT_MS })
 
     if (response.stop_reason === 'refusal') {
