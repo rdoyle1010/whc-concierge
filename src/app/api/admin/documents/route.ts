@@ -18,6 +18,7 @@ import { planCollection } from '@/lib/documents/collect-plan'
 import { CHECKLIST_PLANS } from '@/lib/documents/checklist-plans'
 import { FINANCE_PLANS } from '@/lib/documents/finance-plans'
 import { JOB_DESCRIPTION_PLANS } from '@/lib/documents/job-description-plans'
+import { POLICY_PLANS } from '@/lib/documents/policy-plans'
 import { isLifeSafety, LIFE_SAFETY_CONFIRMATION } from '@/lib/documents/safety'
 import { placeholdersIn } from '@/lib/documents/placeholders'
 
@@ -716,7 +717,7 @@ export async function POST(req: NextRequest) {
         : action === 'add_checklists' ? CHECKLIST_PLANS
           : action === 'add_finance_pack' ? FINANCE_PLANS
             : [...POOL_PLANS, ...GUIDE_PLANS, ...RISK_ASSESSMENT_PLANS, ...CHECKLIST_PLANS, ...FINANCE_PLANS,
-              ...JOB_DESCRIPTION_PLANS]
+              ...JOB_DESCRIPTION_PLANS, ...POLICY_PLANS]
 
     const now = new Date().toISOString()
     const references = plans.map(plan => plan.reference)
@@ -770,7 +771,9 @@ export async function POST(req: NextRequest) {
               ? 'Management reporting, once there is an operation to report on'
               : built.kind === 'job-description'
                 ? 'Nobody is appointed to a role that has not been described'
-                : 'Required in writing before the spa opens',
+                : built.kind === 'policy'
+                  ? 'A written position an assessor or an insurer asks to see'
+                  : 'Required in writing before the spa opens',
         document: built,
         status: 'draft',
         updated_at: now,

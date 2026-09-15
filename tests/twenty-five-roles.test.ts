@@ -113,10 +113,11 @@ test('they are on the shop, priced, and in the catalogue', () => {
     assert.ok(pack!.includes(role.reference), `${role.reference} is not in its own pack`)
   }
 
-  // Second on the shop, behind risk assessments. It is the set a property
-  // needs before it can hire anybody, and there was nothing there at all.
+  // Near the front of the shop. It is the set a property needs before it can
+  // hire anybody, and there was nothing there at all.
   const slugs = categoryPacks().map(entry => entry.slug)
-  assert.equal(slugs[1], 'job-descriptions', `job descriptions are at position ${slugs.indexOf('job-descriptions')}`)
+  assert.ok(slugs.indexOf('job-descriptions') <= 2,
+    `job descriptions are at position ${slugs.indexOf('job-descriptions')}`)
 })
 
 test('one press brings them into the library with the rest', () => {

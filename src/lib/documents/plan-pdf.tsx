@@ -62,7 +62,15 @@ const styles = StyleSheet.create({
   },
 
   eyebrow: { fontFamily: 'Helvetica-Bold', fontSize: 7.5, letterSpacing: 1.6, color: MUTED, textTransform: 'uppercase' },
-  title: { fontFamily: 'Times-Bold', fontSize: 19, lineHeight: 1.15, marginTop: 4 },
+  // 1.35, not 1.15.
+  //
+  // A title that fits on one line looks fine at either. A title that wraps
+  // printed its second line into the first: nineteen point Times needs more
+  // than 21.85 points of advance to clear its own ascenders and descenders,
+  // and every title in this library was short enough to hide it until a
+  // policy called "Chaperone and Intimate Treatments Policy" arrived. Checked
+  // by measuring glyph ink rather than by looking at it.
+  title: { fontFamily: 'Times-Bold', fontSize: 19, lineHeight: 1.35, marginTop: 4 },
   headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', gap: 16 },
   headerLeft: { flex: 1 },
   refBox: { borderWidth: 1.2, borderColor: INK, paddingHorizontal: 9, paddingVertical: 5, minWidth: 150 },
