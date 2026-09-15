@@ -41,11 +41,25 @@ export default function TalentRegisterPage() {
   const [consultantFocus, setConsultantFocus] = useState(false)
   const [stats, setStats] = useState<PublicStats | null>(null)
 
+  // Where they were going before they were asked to make an account.
+  //
+  // The sign-in page sends people here with ?redirect= on it, and so does a
+  // brand page, and this read the referral code and the consultant flag and
+  // threw the rest away. Somebody sent to sign up from the match deck made an
+  // account and landed on an empty profile editor, with no way back to the
+  // thing they were looking at. The most motivated moment in the whole funnel,
+  // spent on a form.
+  const [back, setBack] = useState('')
+
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
     const r = params.get('ref')
     if (r) setRefCode(r.slice(0, 30))
     if (params.get('focus') === 'consultant') setConsultantFocus(true)
+    // Same-origin only. An open redirect on a registration form sends new
+    // accounts to whatever a link says.
+    const wanted = params.get('redirect') || ''
+    if (wanted.startsWith('/') && !wanted.startsWith('//')) setBack(wanted)
   }, [])
 
   useEffect(() => {
@@ -97,9 +111,12 @@ export default function TalentRegisterPage() {
       }
 
       if (init.requiresEmailConfirmation) {
+        // The destination travels through the confirmation too, or it is lost
+        // in the inbox, which is the longest gap in the journey.
+        const carry = back ? `&redirect=${encodeURIComponent(back)}` : ''
         router.push(consultantFocus
-          ? '/login?registered=1&confirm=1&role=consultant'
-          : '/login?registered=1&confirm=1')
+          ? `/login?registered=1&confirm=1&role=consultant${carry}`
+          : `/login?registered=1&confirm=1${carry}`)
         return
       }
 
@@ -114,7 +131,7 @@ export default function TalentRegisterPage() {
         return
       }
 
-      router.push('/talent/profile?welcome=1')
+      router.push(back || '/talent/profile?welcome=1')
     } catch {
       setError('We could not create your account. Please try again.')
     } finally {

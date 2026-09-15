@@ -30,7 +30,13 @@ module.exports = {
         // deliberately in September and this does not reopen that.
         charcoal: '#262626',
         success: '#22C55E',
-        gold: { DEFAULT: '#b39a6b', light: '#c9b68f', dark: '#96804f' },
+        // No gold. It was declared here and used nowhere for the life of the
+        // project, and the one time it was used, on an underline, it made the
+        // page look like every AI-generated luxury landing page there is:
+        // serif headline, cream ground, gold rule. That combination is now a
+        // tell rather than a signal, and a spa director has seen it a hundred
+        // times this year. This palette is charcoal and paper, and what makes
+        // it read as expensive is spacing and restraint, not metal.
         navy: { DEFAULT: '#1c1c1c', light: '#333333', dark: '#0f0f0f' },
         match: {
           perfect: { bg: '#dcfce7', text: '#166534' },

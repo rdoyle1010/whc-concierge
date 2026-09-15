@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Wordmark from '@/components/Wordmark'
@@ -18,6 +18,17 @@ export default function EmployerRegisterPage() {
   const [loading, setLoading] = useState(false)
   const [marketingOptIn, setMarketingOptIn] = useState(false)
   const [error, setError] = useState('')
+  // Where they were going before they were asked to make an account. This
+  // page read no parameters at all, though the sign-in page and the brand
+  // pages both send it one.
+  const [back, setBack] = useState('')
+
+  useEffect(() => {
+    const wanted = new URLSearchParams(window.location.search).get('redirect') || ''
+    // Same-origin only. An open redirect on a registration form sends new
+    // accounts to whatever a link says.
+    if (wanted.startsWith('/') && !wanted.startsWith('//')) setBack(wanted)
+  }, [])
 
   const [form, setForm] = useState({
     email: '', password: '', confirmPassword: '',
@@ -93,7 +104,14 @@ export default function EmployerRegisterPage() {
       return
     }
 
-    router.push(init.requiresEmailConfirmation ? '/login?registered=1&confirm=1' : '/employer/dashboard')
+    // Back to whatever sent them here, if anything did. This page read no
+    // parameters at all, so every deep link into employer signup landed on a
+    // dashboard instead of the role, the pack or the property page the person
+    // was actually looking at.
+    const carry = back ? `&redirect=${encodeURIComponent(back)}` : ''
+    router.push(init.requiresEmailConfirmation
+      ? `/login?registered=1&confirm=1${carry}`
+      : (back || '/employer/dashboard'))
   }
 
   const commercialRows = [
