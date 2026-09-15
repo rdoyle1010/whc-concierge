@@ -145,7 +145,14 @@ export default function MediaLibraryPage() {
     const data = await res.json().catch(() => ({}))
     setBusy(null)
     if (!res.ok) { setNotice({ type: 'error', text: data.error || 'Those could not be deleted.' }); return }
-    setNotice({ type: 'success', text: `${data.removed} old picture${data.removed === 1 ? '' : 's'} deleted for good.` })
+    // Say what actually went, not what was asked for. The version before this
+    // reported success and left thirteen pictures exactly where they were.
+    setNotice({
+      type: 'success',
+      text: data.asked && data.removed < data.asked
+        ? `${data.removed} of ${data.asked} old pictures deleted. The rest could not be removed.`
+        : `${data.removed} old picture${data.removed === 1 ? '' : 's'} deleted for good.`,
+    })
     countUnused()
   }
 
