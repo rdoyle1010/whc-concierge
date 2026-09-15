@@ -61,7 +61,7 @@ export default function PropertyAddressLookup({
   return (
     <div className="md:col-span-2 border border-border bg-[#ede8df] p-4">
       <div className="flex items-center gap-2 mb-1"><MapPin size={15} className="text-ink"/><p className="text-[12px] font-semibold text-ink">Find the property address</p></div>
-      <p className="text-[11px] text-muted mb-4">Enter the property postcode, then choose the correct address. Spa Platform creates the map link automatically.</p>
+      <p className="text-[11px] text-muted mb-4">Enter the property postcode, then choose the correct address. Talent House Collective creates the map link automatically.</p>
 
       <div className="flex flex-col sm:flex-row gap-2 max-w-xl">
         <input aria-label="Property postcode" className="input-field text-[13px] flex-1" value={query} onChange={e => setQuery(e.target.value.toUpperCase())} placeholder="e.g. BD20 5QG" onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); findAddresses() } }} />

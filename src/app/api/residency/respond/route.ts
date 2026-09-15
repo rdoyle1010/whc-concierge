@@ -62,7 +62,7 @@ export async function POST(req: NextRequest) {
       const talentName = candidate.full_name || 'The specialist'
       const title = action === 'accept' ? 'Residency offer accepted' : action === 'counter' ? 'New residency counter-offer' : 'Residency offer declined'
       const message = action === 'accept'
-        ? `${talentName} accepted your residency offer. Confirm and pay securely through Spa Platform to lock in the booking.`
+        ? `${talentName} accepted your residency offer. Confirm and pay securely through Talent House Collective to lock in the booking.`
         : action === 'counter'
           ? `${talentName} proposed £${Number(patch.proposed_day_rate).toFixed(0)}/day. Review the updated offer in Residency.`
           : `${talentName} declined the residency offer.`

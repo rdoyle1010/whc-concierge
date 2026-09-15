@@ -139,7 +139,7 @@ export async function POST(req: NextRequest) {
       .update({ dispute_status: 'open', dispute_reason: reason })
       .eq('id', booking.id)
     if (updateError) return NextResponse.json({ error: updateError.message }, { status: 500 })
-    await notifyParties(admin, booking, 'Residency booking under review', 'Spa Platform is reviewing an issue with this Residency. Payout is on hold while it is reviewed.', 'Spa Platform is reviewing an issue with this Residency. Specialist payout is on hold while it is reviewed.')
+    await notifyParties(admin, booking, 'Residency booking under review', 'Talent House Collective is reviewing an issue with this Residency. Payout is on hold while it is reviewed.', 'Talent House Collective is reviewing an issue with this Residency. Specialist payout is on hold while it is reviewed.')
     return NextResponse.json({ success: true })
   }
 
