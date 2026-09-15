@@ -30,6 +30,7 @@ export async function GET() {
       label: entry.label,
       why: entry.why,
       fallback: entry.fallback,
+      group: entry.group,
       current: prices[entry.key] ?? entry.fallback,
       overridden: prices[entry.key] !== undefined,
     })),

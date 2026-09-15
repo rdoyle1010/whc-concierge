@@ -195,6 +195,13 @@ check('all service-role API routes are protected or deliberately public', () => 
     // price is worked out here against what is signed off, never taken from
     // the caller.
     'src/app/api/standards/checkout/route.ts',
+    // Public by design, and the point of it. Three complete documents, free,
+    // to anybody who asks, because a stranger being asked for two and a half
+    // thousand pounds for files has no other way to find out whether they are
+    // any good. The list of what is given away is a constant in samples.ts
+    // and the route serves nothing that is not on it, so widening what is
+    // free is a commit rather than a query string.
+    'src/app/api/standards/sample/route.ts',
     'src/app/api/agency/directory/route.ts',
     'src/app/api/fix-employer-columns/route.ts',
     'src/app/api/fix-null-live/route.ts',

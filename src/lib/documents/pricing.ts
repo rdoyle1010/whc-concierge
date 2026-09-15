@@ -9,7 +9,7 @@ import {
   POLICY_INDEX as POLICY_ENTRIES,
   HIRING_INDEX as HIRING_ENTRIES,
 } from './catalogue-index'
-import { JOURNEY_STAGES, stageOf, type StageGroup } from './journey'
+import { JOURNEY_STAGES, stageOf, kindOf, KIND_LABEL, type StageGroup } from './journey'
 
 // What a document costs, and why.
 //
@@ -168,9 +168,96 @@ export const VAT_NOTE = VAT_REGISTERED
 export type Prices = Partial<Record<
   | 'single' | 'department' | 'journey' | 'day-one' | 'complete'
   | 'pool-safety' | 'risk-assessments' | 'checklists' | 'finance' | 'guest-journey'
-  | 'job-descriptions' | 'policies' | 'recruitment',
+  | 'job-descriptions' | 'policies' | 'recruitment'
+  | SingleKindKey,
   number
 >>
+
+// What one document costs, by what kind of document it is.
+//
+// One flat price for everything was wrong in both directions at once. A
+// two-page cleaning procedure and a pool emergency action plan are not the
+// same purchase, and pricing them the same made the packs look like a con:
+// the pool safety pack is four documents at four hundred and ninety-five
+// pounds, and the same four sat at thirty-nine pounds each in the list
+// further down the page, where anybody could do the sum.
+//
+// A procedure is ten pounds. That is deliberate and it is the whole entry to
+// the ladder: cheap enough that a spa manager buys one this afternoon without
+// asking anybody, and once they have opened one and seen what it is, the
+// department and the pack are a different conversation. The documents that
+// carry real liability are priced against what they replace, which is a
+// consultant's day rate, not against the rest of the list.
+//
+// Every one of these is hers to change from Prices and Bundles without a
+// deploy. These are the starting points, and the test in
+// tests/a-shop-that-takes-money.test.ts holds the one rule that matters: no
+// pack may cost more than its own documents bought one at a time.
+
+export type SingleKindKey =
+  | 'single-sop' | 'single-chk' | 'single-jd' | 'single-pol' | 'single-gde'
+  | 'single-trg' | 'single-ssw' | 'single-ra' | 'single-rpt' | 'single-nop' | 'single-eap'
+
+/** The price key for a document kind, so one code names one setting. */
+export const KIND_PRICE_KEY: Record<string, SingleKindKey> = {
+  SOP: 'single-sop', CHK: 'single-chk', JD: 'single-jd', POL: 'single-pol',
+  GDE: 'single-gde', TRG: 'single-trg', SSW: 'single-ssw', RA: 'single-ra',
+  RPT: 'single-rpt', NOP: 'single-nop', EAP: 'single-eap',
+}
+
+export const KIND_PRICE: Record<SingleKindKey, number> = {
+  // A procedure. The way in.
+  'single-sop': 1000,
+  // A checklist is a working sheet a team prints every day, and it is the
+  // thing most often bought on its own.
+  'single-chk': 3500,
+  // A job description is used once per hire and saves a morning.
+  'single-jd': 2900,
+  // A policy is the thing an assessor asks for, and it is read by lawyers.
+  'single-pol': 3900,
+  'single-gde': 3900,
+  // A training manual is a course somebody else would charge to deliver.
+  'single-trg': 4900,
+  'single-ssw': 4500,
+  // A risk assessment is the document an inspector opens first. A consultant
+  // writing one for a property charges a day for it.
+  'single-ra': 7500,
+  // A reporting pack replaces a spreadsheet somebody builds badly over weeks.
+  'single-rpt': 7500,
+  // The pool operating procedure and its emergency plan. A pool cannot open
+  // without both, a consultancy charges four figures for the pair, and two
+  // documents at thirty-nine pounds each read as not being the real thing.
+  'single-nop': 25000,
+  'single-eap': 25000,
+}
+
+/** What this one document costs, with her overrides applied. */
+export function singlePriceFor(reference: string, prices: Prices = {}): number {
+  const key = KIND_PRICE_KEY[kindOf(reference)] || 'single-sop'
+  return prices[key] ?? KIND_PRICE[key] ?? (prices.single ?? SINGLE_DOCUMENT_PRICE)
+}
+
+/** What a set of documents costs bought one at a time. The ceiling on a pack. */
+export function sumSingles(references: string[], prices: Prices = {}): number {
+  return references.reduce((total, reference) => total + singlePriceFor(reference, prices), 0)
+}
+
+/** The cheapest single document in the library, for "from" prices. */
+export function cheapestSingle(prices: Prices = {}): number {
+  return Math.min(...Object.keys(KIND_PRICE).map(key =>
+    prices[key as SingleKindKey] ?? KIND_PRICE[key as SingleKindKey]))
+}
+
+/** The kinds, priced, for a screen that lists what things cost. */
+export function kindPrices(prices: Prices = {}): { code: string; label: string; price: number }[] {
+  return Object.entries(KIND_PRICE_KEY)
+    .map(([code, key]) => ({
+      code,
+      label: KIND_LABEL[code] || code,
+      price: prices[key] ?? KIND_PRICE[key],
+    }))
+    .sort((a, b) => a.price - b.price)
+}
 
 export type Pack = {
   slug: string
@@ -210,7 +297,10 @@ export function formatPrice(pence: number): string {
  * tells everybody.
  */
 export function departmentPrice(count: number, prices: Prices = {}): number {
-  return Math.min(prices.department ?? DEPARTMENT_PACK_PRICE, count * (prices.single ?? SINGLE_DOCUMENT_PRICE))
+  // The cap against the parts is applied by capped(), which knows which
+  // documents are in this department and what each of them actually costs.
+  // This is only the ceiling.
+  return prices.department ?? DEPARTMENT_PACK_PRICE
 }
 
 export function departmentPacks(prices: Prices = {}): Pack[] {
@@ -235,6 +325,9 @@ export function departmentPacks(prices: Prices = {}): Pack[] {
       // breaks the day a pack covers more than one.
       department,
     }))
+    // Capped here rather than by the caller. A rule a caller has to remember
+    // is a rule that holds until somebody writes a new screen.
+    .map(pack => capped(pack, prices))
 }
 
 /**
@@ -248,7 +341,10 @@ export function journeyPrice(count: number, prices: Prices = {}): number {
   const single = prices.single ?? SINGLE_DOCUMENT_PRICE
   const ceiling = prices.journey ?? JOURNEY_PACK_CEILING
   const share = Math.round((count * single * JOURNEY_PACK_SHARE) / 500) * 500
-  return Math.max(single, Math.min(ceiling, share, count * single))
+  // capped() brings this down to the real cost of its parts where that is
+  // lower. The share is still worked from the flat price because it is a
+  // shape, not a sum: it decides how a big stage relates to a small one.
+  return Math.max(single, Math.min(ceiling, share))
 }
 
 /**
@@ -296,7 +392,7 @@ export function guestJourneyPack(prices: Prices = {}): Pack {
   const references = new Set(
     LIBRARY_PLAN.filter(entry => RETIRED_STAGES.has(stageOf(entry))).map(entry => entry.reference),
   )
-  return {
+  return capped({
     slug: 'guest-journey',
     name: 'The Guest Journey',
     blurb:
@@ -310,7 +406,7 @@ export function guestJourneyPack(prices: Prices = {}): Pack {
     price: prices['guest-journey'] ?? GUEST_JOURNEY_PRICE,
     includes: (reference: string) => references.has(reference),
     count: references.size,
-  }
+  }, prices)
 }
 
 export function journeyPacks(prices: Prices = {}): Pack[] {
@@ -329,7 +425,7 @@ export function journeyPacks(prices: Prices = {}): Pack[] {
       group: stage.group,
       retired: RETIRED_STAGES.has(stage.slug),
     }
-  })
+  }).map(pack => capped(pack, prices))
 }
 
 // Named for what a buyer gets rather than for the stage, because "Arrival" on
@@ -531,7 +627,7 @@ export function tierPacks(prices: Prices = {}): Pack[] {
       count: LIBRARY_PLAN.length + POOL_PLAN_ENTRIES.length + RISK_ASSESSMENT_ENTRIES.length
         + GUIDE_ENTRIES.length + CHECKLIST_ENTRIES.length + FINANCE_ENTRIES.length,
     },
-  ]
+  ].map(pack => capped(pack, prices))
 }
 
 /**
@@ -547,6 +643,46 @@ export function tierPacks(prices: Prices = {}): Pack[] {
  * training. So that is the order, and the two "buy everything" options are
  * kept separate underneath, because they answer a different question.
  */
+
+/**
+ * A pack never costs more than its own documents bought one at a time.
+ *
+ * This was a rule stated in a comment and enforced in one function, so it held
+ * for departments and quietly failed everywhere else. With one flat single
+ * price it failed for five of the fourteen packs at once: the pool safety pack
+ * was four documents at four hundred and ninety-five pounds sitting above the
+ * same four at thirty-nine pounds each, on the same page, where anybody could
+ * do the sum and conclude they were being had.
+ *
+ * So it is applied here, to every pack, from the one place they are all built,
+ * and it is the reason per-kind prices can be changed from the admin screen
+ * without anybody having to re-check fourteen numbers by hand. Set a document
+ * kind too low and the packs containing it come down with it, which is the
+ * correct behaviour and the only one that cannot embarrass the shop.
+ */
+export function capped(pack: Pack, prices: Prices = {}): Pack {
+  const parts = sumSingles(everyReference().filter(pack.includes), prices)
+  return parts > 0 && parts < pack.price ? { ...pack, price: parts } : pack
+}
+
+let everyReferenceCache: string[] | null = null
+function everyReference(): string[] {
+  if (!everyReferenceCache) {
+    everyReferenceCache = [
+      ...LIBRARY_PLAN.map(entry => entry.reference),
+      ...POOL_PLAN_ENTRIES.map(entry => entry.reference),
+      ...GUIDE_ENTRIES.map(entry => entry.reference),
+      ...RISK_ASSESSMENT_ENTRIES.map(entry => entry.reference),
+      ...CHECKLIST_ENTRIES.map(entry => entry.reference),
+      ...FINANCE_ENTRIES.map(entry => entry.reference),
+      ...JOB_DESCRIPTION_ENTRIES.map(entry => entry.reference),
+      ...POLICY_ENTRIES.map(entry => entry.reference),
+      ...HIRING_ENTRIES.map(entry => entry.reference),
+    ]
+  }
+  return everyReferenceCache
+}
+
 export function categoryPacks(prices: Prices = {}): Pack[] {
   const tiers = tierPacks(prices)
   const stages = journeyPacks(prices).filter(pack => !pack.retired)
@@ -566,7 +702,7 @@ export function categoryPacks(prices: Prices = {}): Pack[] {
     bySlug('journey-people'),
     bySlug('journey-training'),
     bySlug('journey-systems'),
-  ]
+  ].map(pack => capped(pack, prices))
 }
 
 /** The two that answer "just give me all of it". */
@@ -574,14 +710,18 @@ export function everythingPacks(prices: Prices = {}): Pack[] {
   const tiers = tierPacks(prices)
   return ['before-the-first-guest', 'the-complete-library']
     .map(slug => tiers.find(pack => pack.slug === slug)!)
+    .map(pack => capped(pack, prices))
 }
 
 export function packBySlug(slug: string, prices: Prices = {}): Pack | null {
   // Every pack that has ever been sold has to resolve here, whatever the
   // shop happens to show today. A slug is written into an order and that
   // order is the buyer's entitlement for as long as they have an account.
-  return [...tierPacks(prices), ...journeyPacks(prices), ...departmentPacks(prices), guestJourneyPack(prices)]
-    .find(pack => pack.slug === slug) || null
+  const found = [...tierPacks(prices), ...journeyPacks(prices), ...departmentPacks(prices), guestJourneyPack(prices)]
+    .find(pack => pack.slug === slug)
+  // Capped here too, because this is the one the checkout charges from. A
+  // shop showing one number and a till taking another is a refund.
+  return found ? capped(found, prices) : null
 }
 
 export function singlePrice(prices: Prices = {}): number {

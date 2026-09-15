@@ -14,12 +14,18 @@ test('an override changes the price and the default still works without one', ()
   assert.equal(singlePrice(), SINGLE_DOCUMENT_PRICE)
   assert.equal(singlePrice({ single: 4900 }), 4900)
 
-  // The rule survives an override: a pack never costs more than its parts.
-  assert.equal(departmentPrice(3, { single: 4900, department: 29900 }), 14700)
-  assert.equal(departmentPrice(100, { single: 4900, department: 29900 }), 29900)
+  // departmentPrice is only the ceiling now. The rule that a pack never costs
+  // more than its parts moved into capped(), which knows which documents are
+  // in the pack and what each of them costs, and is applied to every pack the
+  // shop can show. tests/a-price-ladder-that-holds.test.ts is where that rule
+  // is checked, against every pack, at three sets of prices.
+  assert.equal(departmentPrice(3, { department: 29900 }), 29900)
+  assert.equal(departmentPrice(100, { department: 29900 }), 29900)
 
+  // An override above the parts is brought back down to them, which is the
+  // point: she cannot set a price here that embarrasses the shop.
   const pool = packBySlug('pool-safety', { 'pool-safety': 99500 })
-  assert.equal(pool?.price, 99500)
+  assert.ok(pool!.price <= 99500)
   assert.ok(packBySlug('pool-safety')!.price > 0)
 })
 
