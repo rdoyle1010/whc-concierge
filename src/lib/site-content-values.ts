@@ -60,6 +60,16 @@ export function websiteCssVariables(content: WebsiteContent): CSSProperties {
 }
 
 
+// No photographs in the code, for the same reason the page defaults have none.
+//
+// The homepage slides and the dark panels load in the browser, so whatever is
+// written here is painted first and swapped for hers a moment later. Eight
+// stock pictures were still doing that after the page defaults were emptied,
+// which is how the same complaint survived the fix for it: two files hold
+// defaults, one was cleared, and the homepage is driven by the other.
+//
+// The alt text and the crops stay. A page shows the photography Talent House
+// owns, or none.
 const image = (url: string, alt: string): WebsiteContent['howItWorks']['image'] => ({ url, alt, focalX: 50, focalY: 50 })
 
 // Moved here with DEFAULT_LOGO: use-site-content.ts is the hook behind both
@@ -121,9 +131,9 @@ export const DEFAULT_WEBSITE_CONTENT: WebsiteContent = {
       // edited. The second button under the hero is structural for that
       // reason: the part of the business that takes the money cannot depend on
       // whether a default won.
-      { image: image('https://images.unsplash.com/photo-1720678418766-2628e52f4634?w=1920&q=80&auto=format&fit=crop', 'Luxury spa interior'), eyebrow: 'Talent House Collective', heading: 'The documents a luxury spa runs on, and the people who run it', text: 'Operating procedures, risk assessments, policies and checklists, written for five-star spas and ready for your name. And the platform that matches spa professionals to the properties that want them.' },
-      { image: image('https://images.unsplash.com/photo-1590490360836-2e3b067c082b?w=1920&q=80&auto=format&fit=crop', 'Calm luxury treatment space'), eyebrow: 'Intelligent matching', heading: 'Precision matching, not guesswork', text: 'Skills, qualifications, brands, location and availability, weighted and scored - so both sides can see why a match is right.' },
-      { image: image('https://images.unsplash.com/photo-1540555700478-4be289fbecef?w=1920&q=80&auto=format&fit=crop', 'Wellness treatment setting'), eyebrow: 'Verified by Talent House', heading: 'Every profile tells the full story', text: 'Right-to-work, insurance and qualifications reviewed by Talent House before the Verified badge is awarded.' },
+      { image: image('', 'Luxury spa interior'), eyebrow: 'Talent House Collective', heading: 'The documents a luxury spa runs on, and the people who run it', text: 'Operating procedures, risk assessments, policies and checklists, written for five-star spas and ready for your name. And the platform that matches spa professionals to the properties that want them.' },
+      { image: image('', 'Calm luxury treatment space'), eyebrow: 'Intelligent matching', heading: 'Precision matching, not guesswork', text: 'Skills, qualifications, brands, location and availability, weighted and scored - so both sides can see why a match is right.' },
+      { image: image('', 'Wellness treatment setting'), eyebrow: 'Verified by Talent House', heading: 'Every profile tells the full story', text: 'Right-to-work, insurance and qualifications reviewed by Talent House before the Verified badge is awarded.' },
     ],
     primaryLabel: 'Post a Role', primaryHref: '/register/employer',
     secondaryLabel: 'Join as a Professional', secondaryHref: '/register/talent',
@@ -131,7 +141,7 @@ export const DEFAULT_WEBSITE_CONTENT: WebsiteContent = {
   proof: { items: ['Hand-picked professionals', 'Insurance verified', 'Five-star properties only'] },
   howItWorks: {
     eyebrow: 'How it works', heading: 'Three steps to your next chapter',
-    image: image('https://images.unsplash.com/photo-1540555700478-4be289fbecef?w=1600&q=80&auto=format&fit=crop', 'Luxury spa treatment room'),
+    image: image('', 'Luxury spa treatment room'),
   },
   product: {
     eyebrow: 'Tools built for the industry', heading: 'See the product, not just the promise.',
@@ -149,13 +159,13 @@ export const DEFAULT_WEBSITE_CONTENT: WebsiteContent = {
   roles: {
     eyebrow: 'Latest opportunities', heading: 'Featured roles', linkLabel: 'View all roles',
     images: [
-      image('https://plus.unsplash.com/premium_photo-1663100126765-1ad02ca4ff69?w=900&q=80&auto=format&fit=crop', 'Luxury hotel spa'),
-      image('https://images.unsplash.com/photo-1590490360836-2e3b067c082b?w=900&q=80&auto=format&fit=crop', 'Wellness treatment room'),
-      image('https://images.unsplash.com/photo-1647960563439-0160d88ca2b7?w=900&q=80&auto=format&fit=crop', 'Luxury spa pool'),
+      image('', 'Luxury hotel spa'),
+      image('', 'Wellness treatment room'),
+      image('', 'Luxury spa pool'),
     ],
   },
   cta: {
-    background: image('https://images.unsplash.com/photo-1551816646-d64cca8d3ba0?w=1920&q=80&auto=format&fit=crop', 'Quiet luxury spa setting'),
+    background: image('', 'Quiet luxury spa setting'),
     talent: { eyebrow: 'For talent', heading: 'Ready for your next role?', text: 'Create your free profile and get matched to live roles at exceptional properties on real skills, not CV keywords.', buttonLabel: 'Create free profile', buttonHref: '/register/talent' },
     employer: { eyebrow: 'For employers', heading: 'Ready to find exceptional talent?', text: 'Post roles, search verified candidates and hire with confidence using intelligent matching.', buttonLabel: 'Post a role', buttonHref: '/register/employer' },
   },

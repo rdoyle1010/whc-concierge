@@ -53,17 +53,25 @@ export default function HeroCarousel({ siteContent }: { siteContent?: WebsiteCon
     // of the next section visible, which is what tells somebody there is one.
     <div className="relative w-full min-h-[460px] h-[66vh] max-h-[680px] overflow-hidden bg-accent">
       <div key={current} className="absolute inset-0 animate-fade-in">
-        <Image
-          src={slide.image.url}
-          alt={slide.image.alt}
-          fill
-          sizes="100vw"
-          priority={current === 0}
-          fetchPriority={current === 0 ? 'high' : 'auto'}
-          quality={72}
-          className="object-cover"
-          style={{ objectPosition: slide.image.focalX + '% ' + slide.image.focalY + '%' }}
-        />
+        {/* Nothing rather than an empty src.
+            next/image throws on an empty string, and before the defaults were
+            emptied this could not happen because there was always a stock
+            photograph to fall back on. The panel behind is already the brand
+            charcoal, so a slide with no picture reads as a colour field rather
+            than a hole. */}
+        {slide.image.url ? (
+          <Image
+            src={slide.image.url}
+            alt={slide.image.alt}
+            fill
+            sizes="100vw"
+            priority={current === 0}
+            fetchPriority={current === 0 ? 'high' : 'auto'}
+            quality={72}
+            className="object-cover"
+            style={{ objectPosition: slide.image.focalX + '% ' + slide.image.focalY + '%' }}
+          />
+        ) : null}
         {/* Charcoal legibility gradient - the destination-page idiom. */}
         <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, rgba(34,35,33,.92) 0%, rgba(34,35,33,.5) 50%, rgba(34,35,33,.18) 100%)' }} />
       </div>

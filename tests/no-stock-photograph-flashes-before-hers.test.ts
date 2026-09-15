@@ -71,3 +71,24 @@ test('an empty picture renders nothing, not a broken one', () => {
     }
   }
 })
+
+test('the other defaults file has no photographs either', () => {
+  // This is why the same complaint survived the fix for it. Two files hold
+  // defaults. The page defaults were emptied; the website content - which
+  // drives the homepage slides and the dark panels - kept eight, so the
+  // homepage went on painting stock pictures before hers on every load.
+  const site = readFileSync('src/lib/site-content-values.ts', 'utf8').replace(/^\s*\/\/.*$/gm, '')
+  assert.doesNotMatch(site, /unsplash/i,
+    'the homepage slides and panels must not ship somebody else photography')
+})
+
+test('nothing renders a picture it was not given', () => {
+  // next/image throws outright on an empty src, and a plain img draws a broken
+  // glyph. Neither could happen while there was always a stock photograph to
+  // fall back on, which is exactly why emptying the defaults had to come with
+  // these guards.
+  for (const file of ['src/components/HeroCarousel.tsx', 'src/components/WebsiteEditorPreview.tsx']) {
+    const source = readFileSync(file, 'utf8')
+    assert.match(source, /image\.url \? \(/, `${file} renders without checking there is a picture`)
+  }
+})
